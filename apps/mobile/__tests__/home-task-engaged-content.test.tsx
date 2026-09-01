@@ -8,11 +8,21 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockUseBalance = jest.fn();
 const mockRefresh = jest.fn();
+
+// Mock the data source (`useCoinMarketData`'s own dependency), not the hook
+// itself — this suite never leaves Solana, so the hook stays disabled and
+// these never resolve, but the real hook still needs its real import to
+// exist.
+jest.mock('@salmon/shared/src/api/services', () => ({
+  getTokenCoinInfo: jest.fn(),
+  getTokenMarketChart: jest.fn(),
+}));
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-haptics', () => ({
@@ -88,10 +98,8 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
-  getCoinInfo: jest.fn().mockResolvedValue(null),
-  getMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+    .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: () => 'solana',
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana' },
@@ -215,6 +223,16 @@ const solToken = {
   usdBalance: 10,
 };
 
+function renderScreen(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  const result = render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return {
+    ...result,
+    rerender: (nextUi: React.ReactElement) =>
+      result.rerender(<QueryClientProvider client={client}>{nextUi}</QueryClientProvider>),
+  };
+}
+
 describe('home content vs an engaged task', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -228,7 +246,7 @@ describe('home content vs an engaged task', () => {
   });
 
   it('shows the balance block, sub-tabs and token list while no task is engaged', () => {
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByTestId('home-content')).toBeTruthy();
     expect(screen.getByText('SOL')).toBeTruthy();
@@ -237,7 +255,7 @@ describe('home content vs an engaged task', () => {
   it('takes the home content away while a task owns the screen', () => {
     mockTaskChrome.isTaskEngaged = true;
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     // The screen itself stays mounted — only its content leaves, so the
     // mounted ground behind it never travels.
@@ -248,7 +266,7 @@ describe('home content vs an engaged task', () => {
 
   it('brings the home content back when the task releases the screen', () => {
     mockTaskChrome.isTaskEngaged = true;
-    const { rerender } = render(<HomeScreen />);
+    const { rerender } = renderScreen(<HomeScreen />);
 
     mockTaskChrome.isTaskEngaged = false;
     rerender(<HomeScreen />);
@@ -263,7 +281,7 @@ describe('home content vs an engaged task', () => {
     // the screen was already playing — one gesture at two depths, which the
     // verb never does (DESIGN.md rule 5).
     mockTaskChrome.isTaskEngaged = true;
-    const { rerender } = render(<HomeScreen />);
+    const { rerender } = renderScreen(<HomeScreen />);
 
     mockTaskChrome.isTaskEngaged = false;
     rerender(<HomeScreen />);

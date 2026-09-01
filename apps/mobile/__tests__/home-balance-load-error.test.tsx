@@ -8,11 +8,21 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockUseBalance = jest.fn();
 const mockRefresh = jest.fn();
+
+// Mock the data source (`useCoinMarketData`'s own dependency), not the hook
+// itself — this screen never leaves Solana in this suite, so the hook stays
+// disabled and these never resolve, but the real hook still needs its real
+// import to exist.
+jest.mock('@salmon/shared/src/api/services', () => ({
+  getTokenCoinInfo: jest.fn(),
+  getTokenMarketChart: jest.fn(),
+}));
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-haptics', () => ({
@@ -78,10 +88,8 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
-  getCoinInfo: jest.fn().mockResolvedValue(null),
-  getMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+    .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: () => 'solana',
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana' },
@@ -205,6 +213,11 @@ const solToken = {
   usdBalance: 10,
 };
 
+function renderScreen(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
 describe('home token list — load failure vs empty wallet', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -218,7 +231,7 @@ describe('home token list — load failure vs empty wallet', () => {
       error: 'rpc down',
     });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByTestId('token-list-error')).toBeTruthy();
     expect(screen.getByTestId('token-list-retry-button')).toBeTruthy();
@@ -238,7 +251,7 @@ describe('home token list — load failure vs empty wallet', () => {
       error: 'rpc down',
     });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByText('SOL')).toBeTruthy();
     expect(screen.queryByTestId('token-list-error')).toBeNull();
@@ -248,7 +261,7 @@ describe('home token list — load failure vs empty wallet', () => {
   it('reads an empty wallet as empty, never as an error', () => {
     mockUseBalance.mockReturnValue({ ...baseBalance, hasData: true, state: 'ready' });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByText('No tokens found')).toBeTruthy();
     expect(screen.queryByTestId('token-list-error')).toBeNull();

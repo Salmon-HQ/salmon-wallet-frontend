@@ -10,11 +10,21 @@
  */
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockChangeNetwork = jest.fn(() => Promise.resolve());
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
+
+// Mock the data source (`useCoinMarketData`'s own dependency), not the hook
+// itself — several cases below swipe to Bitcoin, so this hook actually
+// fires; resolving to `null` keeps the chart/market/about mocks (which
+// ignore their data props here) from seeing an unhandled rejection.
+jest.mock('@salmon/shared/src/api/services', () => ({
+  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  getTokenMarketChart: jest.fn().mockResolvedValue(null),
+}));
 
 const networksState = {
   networkId: 'solana-mainnet',
@@ -91,10 +101,8 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
-  getCoinInfo: jest.fn().mockResolvedValue(null),
-  getMarketChart: jest.fn().mockResolvedValue(null),
-  getTokenMarketChart: jest.fn().mockResolvedValue(null),
-  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+    .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: () => 'solana',
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
@@ -215,6 +223,11 @@ jest.mock('../src/components', () => {
   };
 });
 
+function renderScreen(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
 describe('home sub-tabs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -229,7 +242,7 @@ describe('home sub-tabs', () => {
       { id: 'bitcoin-mainnet', name: 'Bitcoin' },
     ];
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     // The tab is offered on every chain — it never hides per chain.
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
@@ -239,7 +252,7 @@ describe('home sub-tabs', () => {
   });
 
   it('pins the balance above the list on Portfolio and hands it to the grid on NFTs', () => {
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     // Portfolio: the balance is a sibling of the list, not part of it.
     expect(screen.getByTestId('balance-header')).toBeTruthy();
@@ -255,7 +268,7 @@ describe('home sub-tabs', () => {
   });
 
   it('sends the balance pill to the Activity screen, not to a sheet', () => {
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     fireEvent.press(screen.getByTestId('home-activity-button'));
 
@@ -274,7 +287,7 @@ describe('home sub-tabs', () => {
       { id: 'bitcoin-mainnet', name: 'Bitcoin' },
     ];
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
     expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
 
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
@@ -288,7 +301,7 @@ describe('home sub-tabs', () => {
     // The snap is one-way. Re-reporting the chain the block is already on
     // remounts the value wrappers for nothing, and on device that read as a
     // chain switch (owner).
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
 
@@ -306,7 +319,7 @@ describe('home sub-tabs', () => {
       { id: 'bitcoin-mainnet', name: 'Bitcoin' },
     ];
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
 
     expect(mockChangeNetwork).not.toHaveBeenCalled();
@@ -321,7 +334,7 @@ describe('home sub-tabs', () => {
       { id: 'bitcoin-mainnet', name: 'Bitcoin' },
     ];
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
 
@@ -341,7 +354,7 @@ describe('home sub-tabs', () => {
       { id: 'bitcoin-mainnet', name: 'Bitcoin' },
     ];
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
     const screenWrapper = screen.getByTestId('home-content');
     // Nothing has swapped yet, so the chain wrapper owes no verb.
     expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();

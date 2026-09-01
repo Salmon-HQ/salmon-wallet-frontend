@@ -41,13 +41,12 @@ import {
   componentSizes,
   fontFamilyNative,
   fontSize,
-  getCoinInfo,
-  getMarketChart,
   s,
   spacing,
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
+  useCoinMarketData,
   usePrefetchBalances,
   useCurrencyContext,
   isWatchOnlyAccount,
@@ -56,7 +55,6 @@ import {
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
   coinInfoToMarketData,
-  type CoinInfo,
   type NetworkId,
   type PriceChartPeriod,
   type PriceDataPoint,
@@ -169,12 +167,8 @@ export default function HomeScreen() {
   const [balanceBlockHeight, setBalanceBlockHeight] = useState(0);
   const [subTabsHeight, setSubTabsHeight] = useState(0);
 
-  // Bitcoin-specific data states
-  const [bitcoinChartData, setBitcoinChartData] = useState<PriceDataPoint[]>([]);
-  const [bitcoinCoinInfo, setBitcoinCoinInfo] = useState<CoinInfo | null>(null);
+  // Bitcoin chart period — the fetch itself is `useCoinMarketData` below.
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
-  const [bitcoinDataLoading, setBitcoinDataLoading] = useState(false);
-  const [bitcoinChartError, setBitcoinChartError] = useState(false);
 
   // ReceiveSheet visibility
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
@@ -389,57 +383,24 @@ export default function HomeScreen() {
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
   const tokenListItems = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
 
-  // Load Bitcoin chart data when user swipes to Bitcoin or changes period
-  useEffect(() => {
-    const loadBitcoinChartData = async () => {
-      if (currentBlockchain !== 'bitcoin') return;
-
-      setBitcoinDataLoading(true);
-      setBitcoinChartError(false);
-      try {
-        const coinId = BLOCKCHAIN_TO_COINGECKO[currentBlockchain];
-        const days = PERIOD_TO_DAYS[bitcoinChartPeriod];
-
-        const chartResponse = await getMarketChart(coinId, days, currency);
-
-        // Transform chart data to PriceDataPoint format
-        if (chartResponse?.prices) {
-          const priceData: PriceDataPoint[] = chartResponse.prices.map(([timestamp, price]) => ({
-            timestamp,
-            price,
-          }));
-          setBitcoinChartData(priceData);
-        }
-      } catch (error) {
-        console.error('Failed to load Bitcoin chart data:', error);
-        setBitcoinChartError(true);
-      } finally {
-        setBitcoinDataLoading(false);
-      }
-    };
-
-    loadBitcoinChartData();
-  }, [currentBlockchain, bitcoinChartPeriod, currency]);
-
-  // Load Bitcoin coin info once when user swipes to Bitcoin
-  useEffect(() => {
-    const loadBitcoinCoinInfo = async () => {
-      if (currentBlockchain !== 'bitcoin') return;
-      if (bitcoinCoinInfo) return; // Already loaded
-
-      try {
-        const coinId = BLOCKCHAIN_TO_COINGECKO[currentBlockchain];
-        const infoResponse = await getCoinInfo(coinId, currency);
-        if (infoResponse) {
-          setBitcoinCoinInfo(infoResponse);
-        }
-      } catch (error) {
-        console.error('Failed to load Bitcoin coin info:', error);
-      }
-    };
-
-    loadBitcoinCoinInfo();
-  }, [currentBlockchain, bitcoinCoinInfo, currency]);
+  // Bitcoin coin info + chart data via the shared React Query hook (WP4) —
+  // same hook web/extension's HomePage and this app's token detail screen
+  // use, replacing this column's own useState+useEffect fetch pair.
+  const bitcoinCoinId =
+    currentBlockchain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain] : undefined;
+  const {
+    coinInfo: bitcoinCoinInfo,
+    chartData: bitcoinChartDataRaw,
+    chartLoading: bitcoinDataLoading,
+    error: bitcoinDataError,
+  } = useCoinMarketData({
+    coinId: bitcoinCoinId,
+    currency,
+    days: PERIOD_TO_DAYS[bitcoinChartPeriod],
+    enabled: currentBlockchain === 'bitcoin',
+  });
+  const bitcoinChartData: PriceDataPoint[] = bitcoinChartDataRaw ?? [];
+  const bitcoinChartError = !!bitcoinDataError && bitcoinChartData.length === 0;
 
   // Handle chart period change
   const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => {
@@ -844,7 +805,7 @@ export default function HomeScreen() {
                         selectedPeriod={bitcoinChartPeriod}
                         onPeriodChange={handleChartPeriodChange}
                         loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                        error={bitcoinChartError && bitcoinChartData.length === 0}
+                        error={bitcoinChartError}
                         height={180}
                         bleed
                       />

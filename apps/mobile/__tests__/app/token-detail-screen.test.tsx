@@ -9,7 +9,8 @@
  *    an empty screen.
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockRouter = { back: jest.fn(), push: jest.fn() };
 const mockRouteParams = { id: 'MintKnown11111111111111111111111111111111' };
@@ -25,6 +26,14 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
+
+// Mock the data source (`useCoinMarketData`'s own dependency), not the hook
+// itself — this test now exercises the real shared hook the screen calls,
+// same convention as `useCoinMarketData.test.tsx`.
+jest.mock('@salmon/shared/src/api/services', () => ({
+  getTokenCoinInfo: jest.fn(),
+  getTokenMarketChart: jest.fn(),
+}));
 
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
@@ -77,24 +86,27 @@ jest.mock('@salmon/shared', () => ({
     { currency: 'usd' },
     { formatValue: (value: number) => `$${value}` },
   ],
+  // Real implementations — the mocked `api/services` module above is their
+  // only external dependency, so exercising them here catches wiring bugs a
+  // hand-stubbed hook return would hide.
+  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+    .useCoinMarketData,
+  PERIOD_TO_DAYS: jest.requireActual('@salmon/shared/src/utils/price-constants').PERIOD_TO_DAYS,
+  coinInfoToMarketData: jest.requireActual('@salmon/shared/src/utils/price-constants')
+    .coinInfoToMarketData,
 }));
 
-const mockTokenDetailState = {
-  chartData: [
-    { timestamp: 1, price: 100 },
-    { timestamp: 2, price: 104.2 },
-  ],
-  chartPeriod: '1M',
-  setChartPeriod: jest.fn(),
-  coinInfo: null as { description?: string; links?: { homepage?: string } } | null,
-  marketData: undefined as Record<string, number> | undefined,
-  loading: false,
-  chartError: false,
-};
+import { getTokenCoinInfo, getTokenMarketChart } from '@salmon/shared/src/api/services';
 
-jest.mock('../../hooks/useTokenDetail', () => ({
-  useTokenDetail: () => mockTokenDetailState,
-}));
+const mockGetTokenCoinInfo = getTokenCoinInfo as jest.Mock;
+const mockGetTokenMarketChart = getTokenMarketChart as jest.Mock;
+
+function renderScreen(ui: React.ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({ scrollBottomPadding: 0 }),
@@ -166,28 +178,41 @@ beforeEach(() => {
   mockRouteParams.id = 'MintKnown11111111111111111111111111111111';
   mockAccountState.ready = true;
   mockBalanceState.state = 'ready';
-  mockTokenDetailState.chartData = [
-    { timestamp: 1, price: 100 },
-    { timestamp: 2, price: 104.2 },
-  ];
+  mockGetTokenCoinInfo.mockResolvedValue(null);
+  mockGetTokenMarketChart.mockResolvedValue({
+    prices: [
+      [1, 100],
+      [2, 104.2],
+    ],
+    marketCaps: [],
+    totalVolumes: [],
+  });
 });
 
 describe('token detail screen', () => {
-  it('renders the header and the Performance chart for a known id', () => {
-    render(<TokenDetailScreen />);
+  it('renders the header and the Performance chart for a known id', async () => {
+    renderScreen(<TokenDetailScreen />);
 
     expect(screen.getByTestId('token-detail-screen')).toBeTruthy();
     expect(screen.getByTestId('screen-header-title').props.children).toBe('Known Token');
     expect(screen.getByTestId('screen-header-subtitle').props.children).toBe('KNOWN');
     expect(screen.getByTestId('token-detail-chart')).toBeTruthy();
     expect(screen.queryByTestId('redirect')).toBeNull();
+
+    // Flush the query so no promise settles after the test tears down.
+    await waitFor(() => expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
+      { coingeckoId: 'known-token', address: 'MintKnown11111111111111111111111111111111' },
+      30,
+      'usd'
+    ));
   });
 
   it('redirects home for an id that matches no token in the active list', () => {
     mockRouteParams.id = 'UnknownMint1111111111111111111111111111111';
-    render(<TokenDetailScreen />);
+    renderScreen(<TokenDetailScreen />);
 
     expect(screen.getByTestId('redirect').props.children).toBe('/');
     expect(screen.queryByTestId('token-detail-screen')).toBeNull();
+    expect(mockGetTokenMarketChart).not.toHaveBeenCalled();
   });
 });

@@ -18,7 +18,7 @@
  * DEFERRED to a later spec (spec 019 D4/D5, not ruled yet): Send/Receive
  * actions on this screen, and a per-token "Recent activity" section.
  */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Animated, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -26,6 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 
 import {
+  coinInfoToMarketData,
   fontFamilyNative,
   fontSize,
   formatLargeNumber,
@@ -33,15 +34,18 @@ import {
   getShortAddress,
   hiddenValue,
   lineHeight,
+  PERIOD_TO_DAYS,
   s,
   semantic,
   spacing,
   tabularNums,
   useAccountsContext,
   useBalance,
+  useCoinMarketData,
   useCurrencyContext,
   vs,
   type NetworkId,
+  type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
 import {
@@ -63,7 +67,6 @@ import {
   TokenLogo,
 } from '../../../src/components';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { useTokenDetail } from '../../../hooks/useTokenDetail';
 
 const TOKEN_LOGO_SIZE = 42;
 
@@ -71,7 +74,7 @@ export default function TokenDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [, { formatValue }] = useCurrencyContext();
+  const [{ currency }, { formatValue }] = useCurrencyContext();
 
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -98,8 +101,31 @@ export default function TokenDetailScreen() {
     };
   }, [tokens, id]);
 
-  const { chartData, chartPeriod, setChartPeriod, coinInfo, marketData, loading, chartError } =
-    useTokenDetail(token);
+  const [chartPeriod, setChartPeriod] = useState<PriceChartPeriod>('1M');
+
+  // Same shared hook web/extension use for their token-detail and Bitcoin
+  // columns (WP4) — retires this screen's own useState+useEffect fetch pair.
+  // `enabled` falls out of `useCoinMarketData` itself: it derives its own
+  // token identity from coinId/contractAddress and only fires when one of
+  // them is set, so a token with neither never requests.
+  const {
+    coinInfo,
+    chartData: chartDataRaw,
+    chartLoading,
+    error: chartFetchError,
+  } = useCoinMarketData({
+    coinId: token?.coingeckoId ?? undefined,
+    contractAddress: token?.address,
+    currency,
+    days: PERIOD_TO_DAYS[chartPeriod],
+  });
+  const chartData = useMemo(() => chartDataRaw ?? [], [chartDataRaw]);
+  const marketData = useMemo(
+    () => (coinInfo ? coinInfoToMarketData(coinInfo) : undefined),
+    [coinInfo]
+  );
+  const loading = chartLoading && chartData.length === 0;
+  const chartError = !!chartFetchError && chartData.length === 0;
 
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
