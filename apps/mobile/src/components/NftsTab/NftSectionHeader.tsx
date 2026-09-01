@@ -8,8 +8,9 @@
  */
 import React from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { fontFamilyNative, fontSize, s, semantic, spacing, vs } from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { NftCardSkeleton } from '../NftCard';
 import { SectionLabel } from '../SectionLabel';
 import { SubAccountSelector, type SubAccount } from '../SubAccountSelector';
@@ -39,6 +40,8 @@ export function NftSectionHeader({
   rowStyle,
   cardStyle,
 }: NftSectionHeaderProps) {
+  const styles = useThemedStyles(stylesFor);
+
   return (
     <View style={styles.block}>
       {!!title && (
@@ -75,24 +78,25 @@ export function NftSectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  /** The heading, the selector and the skeletons are one composed block; the
-      component gap separates it from the grid below. */
-  block: {
-    gap: vs(spacing.md),
-    marginBottom: vs(spacing.screenGutter),
-  },
-  selector: {
-    paddingHorizontal: 0,
-  },
-  heading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  count: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    color: semantic.text.tertiary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /** The heading, the selector and the skeletons are one composed block; the
+        component gap separates it from the grid below. */
+    block: {
+      gap: vs(spacing.md),
+      marginBottom: vs(spacing.screenGutter),
+    },
+    selector: {
+      paddingHorizontal: 0,
+    },
+    heading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    count: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      color: t.text.tertiary,
+    },
+  });

@@ -17,9 +17,9 @@ import {
   getShortAddress,
   lineHeight,
   s,
-  semantic,
   spacing,
   truncateHash,
+  type Semantic,
 } from '@salmon/shared';
 
 import * as Haptics from '../../utils/haptics';
@@ -27,6 +27,7 @@ import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { AddressCopyRow } from '../Activity/AddressCopyRow';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { Transaction } from './types';
 
 /** How much of the signature is shown before it elides. */
@@ -42,6 +43,8 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
   onCopyHash,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, text } = useSemantic();
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyHash = useCallback(async () => {
@@ -131,10 +134,10 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
                 confirmation. */}
             {copied ? (
               <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+                <CheckIcon size={iconSize.sm} color={status.success} />
               </Animated.View>
             ) : (
-              <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
+              <CopyIcon size={iconSize.sm} color={text.accent} />
             )}
           </TouchableOpacity>
         </View>
@@ -143,46 +146,47 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
   );
 };
 
-const styles = StyleSheet.create({
-  /** The copy row is a card child now: it draws no ground of its own. */
-  addressRow: {
-    marginVertical: 0,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  hashRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  hashLabel: {
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-  },
-  hashValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  /**
-   * Monospace-Is-For-Scanning Rule: a transaction hash is compared character
-   * by character against an explorer, so it sets in Geist Mono at the address
-   * size, exactly as the addresses above it do.
-   */
-  hashValue: {
-    fontSize: s(fontSize.mono),
-    fontFamily: fontFamilyNative.mono,
-    color: semantic.text.primary,
-  },
-  copyButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /** The copy row is a card child now: it draws no ground of its own. */
+    addressRow: {
+      marginVertical: 0,
+      borderWidth: 0,
+      backgroundColor: 'transparent',
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
+    hashRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    hashLabel: {
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.secondary,
+    },
+    hashValueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    /**
+     * Monospace-Is-For-Scanning Rule: a transaction hash is compared character
+     * by character against an explorer, so it sets in Geist Mono at the address
+     * size, exactly as the addresses above it do.
+     */
+    hashValue: {
+      fontSize: s(fontSize.mono),
+      fontFamily: fontFamilyNative.mono,
+      color: t.text.primary,
+    },
+    copyButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
 
 export default TransactionDetailReceipt;

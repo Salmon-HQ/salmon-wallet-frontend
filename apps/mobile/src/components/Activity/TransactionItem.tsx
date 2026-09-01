@@ -14,11 +14,12 @@ import {
   getTransactionDescription,
   lineHeight,
   spacing,
-  semantic,
   tabularNums,
+  type Semantic,
 } from '@salmon/shared';
 import { ListRow } from '../ListRow';
-import { TRANSACTION_TYPE_CONFIG, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
+import { transactionTypeConfigFor, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { TransactionItemProps, TransactionTokenAmount } from './types';
 
 // ============================================================================
@@ -52,11 +53,13 @@ const AmountDisplay: React.FC<{
   sign: '+' | '-';
   hidden: boolean;
 }> = ({ token, sign, hidden }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
   const displayAmount = hidden
     ? `${sign} ${HIDDEN_VALUE} ${token.symbol}`
     : `${sign} ${formatRawAmount(token.amount, token.decimals)} ${token.symbol}`;
 
-  const color = sign === '+' ? semantic.status.success : semantic.status.danger;
+  const color = sign === '+' ? status.success : status.danger;
 
   return (
     <Text
@@ -104,8 +107,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semanticTokens = useSemantic();
+  const { status: statusTokens } = semanticTokens;
   const { type, timestamp, status, inputs, outputs, description, source } = transaction;
-  const config = TRANSACTION_TYPE_CONFIG[type] || TRANSACTION_TYPE_CONFIG.unknown;
+  const typeConfig = transactionTypeConfigFor(semanticTokens);
+  const config = typeConfig[type] || typeConfig.unknown;
 
   // Calculate if we should show collapsed view
   const totalAmounts = inputs.length + outputs.length;
@@ -153,7 +160,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'failed' || status === 'pending') {
       const failed = status === 'failed';
       const StatusIcon = failed ? XCircleIcon : ClockIcon;
-      const ink = failed ? semantic.status.danger : semantic.status.warning;
+      const ink = failed ? statusTokens.danger : statusTokens.warning;
 
       return (
         <View style={styles.statusBadge}>
@@ -224,59 +231,60 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  /**
-   * List glue only — the row's ground, radius and padding are the kit's.
-   * The component gap (DESIGN.md §Layout): every card sits 20 from its
-   * sibling — the day label above it included — not a tighter in-run value.
-   */
-  rowSpacing: {
-    marginTop: vs(spacing.screenGutter),
-  },
-  rightSection: {
-    alignItems: 'flex-end',
-    // The amount column: it reserves its width before the row's left half is
-    // laid out, and it never gives it back.
-    minWidth: s(AMOUNT_COLUMN_MIN_WIDTH),
-    flexShrink: 0,
-    gap: vs(spacing.xxs),
-  },
-  amountText: {
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    // Money Composition Rule: amounts right-aligned in a fixed column, on
-    // tabular figures, so the column edge is the same on every row.
-    textAlign: 'right',
-    ...TABULAR,
-  },
-  timeText: {
-    fontSize: s(fontSize.micro),
-    lineHeight: s(fontSize.micro) * lineHeight.snug,
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-    ...TABULAR,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  statusText: {
-    fontSize: s(fontSize.caption),
-    fontFamily: fontFamilyNative.bold,
-  },
-  /**
-   * One Living Thing Rule: the accent is a budget, and a count that repeats
-   * once per complex swap would spend it four times a screen. A remainder is
-   * chrome — it reads in quiet ink.
-   */
-  moreText: {
-    fontSize: s(fontSize.micro),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-    textAlign: 'right',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /**
+     * List glue only — the row's ground, radius and padding are the kit's.
+     * The component gap (DESIGN.md §Layout): every card sits 20 from its
+     * sibling — the day label above it included — not a tighter in-run value.
+     */
+    rowSpacing: {
+      marginTop: vs(spacing.screenGutter),
+    },
+    rightSection: {
+      alignItems: 'flex-end',
+      // The amount column: it reserves its width before the row's left half is
+      // laid out, and it never gives it back.
+      minWidth: s(AMOUNT_COLUMN_MIN_WIDTH),
+      flexShrink: 0,
+      gap: vs(spacing.xxs),
+    },
+    amountText: {
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      // Money Composition Rule: amounts right-aligned in a fixed column, on
+      // tabular figures, so the column edge is the same on every row.
+      textAlign: 'right',
+      ...TABULAR,
+    },
+    timeText: {
+      fontSize: s(fontSize.micro),
+      lineHeight: s(fontSize.micro) * lineHeight.snug,
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      ...TABULAR,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    statusText: {
+      fontSize: s(fontSize.caption),
+      fontFamily: fontFamilyNative.bold,
+    },
+    /**
+     * One Living Thing Rule: the accent is a budget, and a count that repeats
+     * once per complex swap would spend it four times a screen. A remainder is
+     * chrome — it reads in quiet ink.
+     */
+    moreText: {
+      fontSize: s(fontSize.micro),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      textAlign: 'right',
+    },
+  });
 
 export default TransactionItem;

@@ -15,38 +15,40 @@ import {
   fontSize,
   letterSpacing,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useSemantic } from '../../theme/useThemedStyles';
 import type { PowerupBadgeProps, PowerupTier } from './types';
 
-const TIERS: Record<PowerupTier, { background: string; ink: string; key: string; fallback: string }> =
-  {
-    official: {
-      background: semantic.accent.tint,
-      ink: semantic.accent.ink,
-      key: 'powerups.badge.official',
-      fallback: 'Official',
-    },
-    community: {
-      background: semantic.surface.raised,
-      ink: semantic.text.secondary,
-      key: 'powerups.badge.community',
-      fallback: 'Community',
-    },
-    featured: {
-      background: semantic.accent.fill,
-      ink: semantic.accent.onFill,
-      key: 'powerups.badge.featured',
-      fallback: 'Featured',
-    },
-  };
+const tiersFor = (
+  t: Semantic
+): Record<PowerupTier, { background: string; ink: string; key: string; fallback: string }> => ({
+  official: {
+    background: t.accent.tint,
+    ink: t.accent.ink,
+    key: 'powerups.badge.official',
+    fallback: 'Official',
+  },
+  community: {
+    background: t.surface.raised,
+    ink: t.text.secondary,
+    key: 'powerups.badge.community',
+    fallback: 'Community',
+  },
+  featured: {
+    background: t.accent.fill,
+    ink: t.accent.onFill,
+    key: 'powerups.badge.featured',
+    fallback: 'Featured',
+  },
+});
 
 export function PowerupBadge({ tier, style, testID }: PowerupBadgeProps) {
   const { t } = useTranslation();
-  const { background, ink, key, fallback } = TIERS[tier];
+  const { background, ink, key, fallback } = tiersFor(useSemantic())[tier];
 
   return (
     <View testID={testID} style={[styles.badge, { backgroundColor: background }, style]}>

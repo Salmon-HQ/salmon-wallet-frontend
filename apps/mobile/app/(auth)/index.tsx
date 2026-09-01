@@ -24,8 +24,8 @@ import {
   lineHeight,
   onboardingIdentityGridFull,
   s,
-  semantic,
   useAccountsContext,
+  type Semantic,
 } from '@salmon/shared';
 import {
   BrandMark,
@@ -35,6 +35,7 @@ import {
   TextButton,
   Wordmark,
 } from '../../src/components';
+import { useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
@@ -45,6 +46,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [state, actions] = useAccountsContext();
 
   // Check if there are existing accounts stored
@@ -130,14 +132,15 @@ export default function WelcomeScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // The slogan is a brand line at body size in secondary ink — quieter than
-  // the flow's description token, subordinate to the wordmark above it.
-  slogan: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: fontSize.body * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The slogan is a brand line at body size in secondary ink — quieter than
+    // the flow's description token, subordinate to the wordmark above it.
+    slogan: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

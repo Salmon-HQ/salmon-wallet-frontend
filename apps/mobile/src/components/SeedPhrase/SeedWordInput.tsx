@@ -17,10 +17,11 @@ import {
   fontSize,
   borderWidth,
   fontFamilyNative,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 type ValidationState = 'idle' | 'correct' | 'incorrect';
 
@@ -71,6 +72,8 @@ export function SeedWordInput({
   testID,
 }: SeedWordInputProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, input, text } = useSemantic();
 
   /**
    * BIP-39 words are lowercase, and a capitalised one is an invalid mnemonic
@@ -88,11 +91,11 @@ export function SeedWordInput({
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct':
-        return semantic.status.success;
+        return status.success;
       case 'incorrect':
-        return semantic.status.danger;
+        return status.danger;
       default:
-        return semantic.input.edge;
+        return input.edge;
     }
   };
 
@@ -112,7 +115,7 @@ export function SeedWordInput({
           style={styles.compactInput}
           value={value}
           onChangeText={onChangeText}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           onKeyPress={onKeyPress}
           autoFocus={autoFocus}
           onSubmitEditing={onSubmitEditing}
@@ -135,7 +138,7 @@ export function SeedWordInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={t('wallet.create.enter_word_number', { position })}
-        placeholderTextColor={semantic.text.tertiary}
+        placeholderTextColor={text.tertiary}
         onKeyPress={onKeyPress}
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
@@ -164,12 +167,13 @@ const secretInputProps = {
   keyboardType: 'visible-password',
 } as const;
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     width: '100%',
   },
   label: {
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.caption,
     marginBottom: spacing.xs,
@@ -178,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: componentSizes.buttonHeightSmall,
-    backgroundColor: semantic.input.ground,
+    backgroundColor: t.input.ground,
     borderWidth: borderWidth.thin,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.sm,
@@ -206,10 +210,10 @@ const styles = StyleSheet.create({
    *   fits the box's `minWidth` and the word after it does not shift at all.
    */
   indexDot: {
-    color: semantic.text.accent,
+    color: t.text.accent,
   },
   compactIndex: {
-    color: semantic.text.tertiary,
+    color: t.text.tertiary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.caption,
     minWidth: spacing.lg,
@@ -220,7 +224,7 @@ const styles = StyleSheet.create({
   compactInput: {
     flex: 1,
     height: '100%',
-    color: semantic.text.primary,
+    color: t.text.primary,
     fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.body,
     padding: 0,
@@ -229,11 +233,11 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: componentSizes.inputHeight,
     paddingVertical: spacing.xs,
-    backgroundColor: semantic.input.ground,
+    backgroundColor: t.input.ground,
     borderWidth: borderWidth.thin,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
-    color: semantic.text.primary,
+    color: t.text.primary,
     // Seed Phrase Rule: the typed word renders in the mono face.
     fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.bodyLg,

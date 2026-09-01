@@ -22,7 +22,7 @@ import {
   useSolanaNfts,
   vs,
   type Nft,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -36,6 +36,7 @@ import {
   View,
 } from 'react-native';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { NftCard, type NftBlockchain, type NftData } from '../NftCard';
 import type { SubAccount } from '../SubAccountSelector';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
@@ -89,6 +90,8 @@ export function NftsTab({
 }: NftsTabProps = {}) {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const { text, accent } = useSemantic();
   const { scrollBottomPadding } = useTabChrome();
 
   // Per-section sub-account index (each blockchain section can pick its own derived account)
@@ -287,7 +290,7 @@ export function NftsTab({
   if (!ready) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={semantic.accent.ink} />
+        <ActivityIndicator size="large" color={accent.ink} />
         <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
@@ -324,8 +327,8 @@ export function NftsTab({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={semantic.text.primary}
-            colors={[semantic.accent.ink]}
+            tintColor={text.primary}
+            colors={[accent.ink]}
           />
         }
         ListHeaderComponent={
@@ -372,7 +375,8 @@ export function NftsTab({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -384,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     fontSize: s(fontSize.bodyLg),
     marginTop: vs(spacing.screenGutter),
   },

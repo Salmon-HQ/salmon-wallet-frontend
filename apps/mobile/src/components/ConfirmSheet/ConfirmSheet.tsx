@@ -9,12 +9,13 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
-import { spacing, fontSize, fontFamilyNative, s, vs, semantic } from '@salmon/shared';
+import { spacing, fontSize, fontFamilyNative, s, vs, type Semantic } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
 import { SecondaryButton } from '../Button/SecondaryButton';
 import { PasswordInput } from '../PasswordInput';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Types
@@ -76,6 +77,8 @@ export function ConfirmSheet({
   onConfirm,
 }: ConfirmSheetProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
   const { compactContentBottomPadding } = useBottomSheetChrome();
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | undefined>();
@@ -145,7 +148,7 @@ export function ConfirmSheet({
       title={
         <SheetTitle
           // Colour is never the only channel: glyph, fill and label all say it
-          leading={isDanger && <WarningIcon size={fontSize.heading} color={semantic.status.danger} />}
+          leading={isDanger && <WarningIcon size={fontSize.heading} color={status.danger} />}
         >
           {title}
         </SheetTitle>
@@ -224,26 +227,27 @@ export default ConfirmSheet;
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  sheet: {
-    maxHeight: undefined,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-  },
-  message: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-    // Left-aligned: the message runs to several lines, and a centred block
-    // moves the start of every line.
-    textAlign: 'left',
-    marginBottom: vs(spacing.screenGutter),
-  },
-  passwordSection: {
-    marginBottom: vs(spacing.screenGutter),
-  },
-  actions: {
-    gap: vs(spacing.sm),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    sheet: {
+      maxHeight: undefined,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+    },
+    message: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      // Left-aligned: the message runs to several lines, and a centred block
+      // moves the start of every line.
+      textAlign: 'left',
+      marginBottom: vs(spacing.screenGutter),
+    },
+    passwordSection: {
+      marginBottom: vs(spacing.screenGutter),
+    },
+    actions: {
+      gap: vs(spacing.sm),
+    },
+  });

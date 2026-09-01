@@ -29,14 +29,15 @@ import {
   borderWidth,
   componentSizes,
   motionMs,
-  semantic,
   vs,
   s,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
 import { curve, timing } from '../../utils/motion';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Constants
@@ -196,6 +197,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   dismissible = true,
   testID,
 }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { surface } = useSemantic();
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
@@ -395,7 +398,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                 pointerEvents="none"
               >
                 <LinearGradient
-                  colors={[semantic.surface.raised, 'transparent']}
+                  colors={[surface.raised, 'transparent']}
                   style={StyleSheet.absoluteFill}
                 />
               </Animated.View>
@@ -411,65 +414,66 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  gestureRoot: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: semantic.overlay.backdrop,
-  },
-  sheetContainer: {
-    // The background element (thermocline by default) carries the material;
-    // the container itself stays transparent.
-    borderTopLeftRadius: borderRadius.header,
-    borderTopRightRadius: borderRadius.header,
-    borderTopWidth: borderWidth.sheet,
-    borderTopColor: semantic.border.default,
-    // No minHeight: a sheet hugs its content (a short receipt ends where it
-    // ends); tall content is bounded by maxHeight and scrolls inside.
-    maxHeight: '92%',
-    ...shadows.sheet,
-  },
-  // The material fills the sheet and clips itself to the sheet's own top
-  // corners.
-  thermocline: {
-    ...StyleSheet.absoluteFillObject,
-    borderTopLeftRadius: borderRadius.header,
-    borderTopRightRadius: borderRadius.header,
-  },
-  dragArea: {
-    // Gesture is attached here; keep it empty so consumers can add dragAreaStyle
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: vs(spacing.md),
-    paddingBottom: vs(spacing.sm),
-  },
-  handle: {
-    width: s(HANDLE_WIDTH),
-    height: vs(HANDLE_HEIGHT),
-    borderRadius: borderRadius.full,
-    backgroundColor: semantic.sheet.handle,
-    opacity: componentSizes.sheetHandleOpacity,
-  },
-  topFadeGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    // Positioned by caller via absolute placement; default sits just below handle
-    top: vs(spacing.md) + vs(8),
-    height: componentSizes.sheetFadeGradientHeight,
-    zIndex: 1,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    gestureRoot: {
+      flex: 1,
+    },
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: t.overlay.backdrop,
+    },
+    sheetContainer: {
+      // The background element (thermocline by default) carries the material;
+      // the container itself stays transparent.
+      borderTopLeftRadius: borderRadius.header,
+      borderTopRightRadius: borderRadius.header,
+      borderTopWidth: borderWidth.sheet,
+      borderTopColor: t.border.default,
+      // No minHeight: a sheet hugs its content (a short receipt ends where it
+      // ends); tall content is bounded by maxHeight and scrolls inside.
+      maxHeight: '92%',
+      ...shadows.sheet,
+    },
+    // The material fills the sheet and clips itself to the sheet's own top
+    // corners.
+    thermocline: {
+      ...StyleSheet.absoluteFillObject,
+      borderTopLeftRadius: borderRadius.header,
+      borderTopRightRadius: borderRadius.header,
+    },
+    dragArea: {
+      // Gesture is attached here; keep it empty so consumers can add dragAreaStyle
+    },
+    handleContainer: {
+      alignItems: 'center',
+      paddingTop: vs(spacing.md),
+      paddingBottom: vs(spacing.sm),
+    },
+    handle: {
+      width: s(HANDLE_WIDTH),
+      height: vs(HANDLE_HEIGHT),
+      borderRadius: borderRadius.full,
+      backgroundColor: t.sheet.handle,
+      opacity: componentSizes.sheetHandleOpacity,
+    },
+    topFadeGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      // Positioned by caller via absolute placement; default sits just below handle
+      top: vs(spacing.md) + vs(8),
+      height: componentSizes.sheetFadeGradientHeight,
+      zIndex: 1,
+    },
+  });
 
 export default BottomSheetContainer;

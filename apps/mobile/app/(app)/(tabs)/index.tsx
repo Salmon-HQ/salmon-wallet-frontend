@@ -54,7 +54,7 @@ import {
   type PriceChartPeriod,
   type PriceDataPoint,
   type Token,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import {
   AboutCard,
@@ -76,6 +76,7 @@ import {
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
+import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
@@ -133,6 +134,8 @@ type SubTabKey = 'portfolio' | 'nfts';
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { headerContentOffset, floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
@@ -924,7 +927,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -936,7 +939,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     fontSize: s(fontSize.bodyLg),
     marginTop: spacing.lg,
   },
@@ -978,7 +981,7 @@ const styles = StyleSheet.create({
   },
   stickySubTabsScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: semantic.depth.abyss,
+    backgroundColor: t.depth.abyss,
   },
   listContainer: {
     flex: 1,

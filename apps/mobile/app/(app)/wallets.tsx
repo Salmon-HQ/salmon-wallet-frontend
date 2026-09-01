@@ -31,12 +31,12 @@ import {
   letterSpacing,
   ms,
   s,
-  semantic,
   spacing,
   tabularNums,
   vs,
   type Account,
   type NetworkId,
+  type Semantic,
 } from '@salmon/shared';
 import {
   Card,
@@ -58,6 +58,7 @@ import {
   PlusIcon,
   iconSize,
 } from '../../src/icons';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 
 /** The wallet thumb, per `.pen` CORE 10. */
 const WALLET_BUBBLE_SIZE = 44;
@@ -73,6 +74,8 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 export default function WalletsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
 
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, accountId, activeBlockchainAccount, networkId } = accountState;
@@ -289,6 +292,8 @@ function WalletCard({
   onToggleInclude,
 }: WalletCardProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const [{ accountId: activeId, pathIndex }, accountActions] = useAccountsContext();
   const [imgError, setImgError] = useState(false);
 
@@ -408,98 +413,99 @@ function WalletCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: s(spacing.screenGutter),
-    // No top padding: the header block already ends 20 above the content.
-    // The component gap (DESIGN.md §Layout): 20 between sibling blocks.
-    gap: vs(spacing.screenGutter),
-  },
-  totalLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  totalLabel: {
-    flex: 1,
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.caption),
-  },
-  totalValue: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    fontSize: ms(fontSize.display),
-    letterSpacing: letterSpacing.balance,
-    ...TABULAR,
-  },
-  totalCaption: {
-    color: semantic.text.tertiary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.micro),
-  },
-  headingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headingHint: {
-    color: semantic.text.tertiary,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.micro),
-  },
-  activeCard: {
-    borderWidth: 1,
-    borderColor: semantic.accent.ink,
-  },
-  // The kept-custom `ListRow` subtitle node: `ListRow` draws a string
-  // subtitle in this same body/secondary style, but the balance needs the
-  // Tabular Rule, which the row's own subtitle text doesn't carry.
-  walletBalance: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.body),
-    ...TABULAR,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarInitials: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize.body),
-  },
-  derivedRow: {
-    paddingHorizontal: 0,
-    // `ListRow`'s own card no longer contains these chips (no footer slot),
-    // so the tight internal step that used to be the card's own `gap` prop
-    // is redrawn here instead of falling to the screen's 20 sibling gap.
-    marginTop: vs(spacing.sm),
-  },
-  addCard: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: semantic.border.raised,
-  },
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  addLabel: {
-    color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    fontSize: ms(fontSize.body),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: s(spacing.screenGutter),
+      // No top padding: the header block already ends 20 above the content.
+      // The component gap (DESIGN.md §Layout): 20 between sibling blocks.
+      gap: vs(spacing.screenGutter),
+    },
+    totalLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    totalLabel: {
+      flex: 1,
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: ms(fontSize.caption),
+    },
+    totalValue: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: ms(fontSize.display),
+      letterSpacing: letterSpacing.balance,
+      ...TABULAR,
+    },
+    totalCaption: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.micro),
+    },
+    headingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headingHint: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: ms(fontSize.micro),
+    },
+    activeCard: {
+      borderWidth: 1,
+      borderColor: t.accent.ink,
+    },
+    // The kept-custom `ListRow` subtitle node: `ListRow` draws a string
+    // subtitle in this same body/secondary style, but the balance needs the
+    // Tabular Rule, which the row's own subtitle text doesn't carry.
+    walletBalance: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.body),
+      ...TABULAR,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    avatarInitials: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: ms(fontSize.body),
+    },
+    derivedRow: {
+      paddingHorizontal: 0,
+      // `ListRow`'s own card no longer contains these chips (no footer slot),
+      // so the tight internal step that used to be the card's own `gap` prop
+      // is redrawn here instead of falling to the screen's 20 sibling gap.
+      marginTop: vs(spacing.sm),
+    },
+    addCard: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.border.raised,
+    },
+    addRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    addLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: ms(fontSize.body),
+    },
+  });

@@ -15,10 +15,10 @@ import {
   fontSize,
   getShortAddress,
   s,
-  semantic,
   spacing,
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
+  type Semantic,
 } from '@salmon/shared';
 import { Card } from '../../Card';
 import { IconBubble } from '../../IconBubble';
@@ -27,6 +27,7 @@ import { SecondaryButton } from '../../Button';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { WarningNotice } from '../../WarningNotice';
 import { ConfirmSheet } from '../../ConfirmSheet';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 
 /** The initial the avatar bubble carries, same idiom as the send recipients. */
 function initialOf(contact: AddressBookItem): string {
@@ -47,6 +48,8 @@ export function AddressBookPanel({
   onRetry,
 }: AddressBookSelectorBaseProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, accent } = useSemantic();
   const [contactToRemove, setContactToRemove] = useState<AddressBookItem | null>(null);
 
   const handleRemoveConfirmed = useCallback(async () => {
@@ -77,7 +80,7 @@ export function AddressBookPanel({
               size={36}
               tone="ghost"
               icon={TrashIcon}
-              iconColor={semantic.status.danger}
+              iconColor={status.danger}
               onPress={() => setContactToRemove(contact)}
               accessibilityLabel={t('actions.remove', 'Remove')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -95,7 +98,7 @@ export function AddressBookPanel({
         }
       />
     ),
-    [onEditContact, t]
+    [onEditContact, t, styles, status]
   );
 
   // The one action that is not a contact: outlined, so it reads as an empty
@@ -110,7 +113,7 @@ export function AddressBookPanel({
       style={styles.addCard}
     >
       <View style={styles.addRow}>
-        <PlusIcon size={iconSize.md} color={semantic.accent.ink} />
+        <PlusIcon size={iconSize.md} color={accent.ink} />
         <Text style={styles.addLabel}>{t('settings.addressbook.addnew', 'Add New Address')}</Text>
       </View>
     </Card>
@@ -172,26 +175,27 @@ export default AddressBookPanel;
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  trailing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  addCard: {
-    backgroundColor: 'transparent',
-    borderStyle: 'dashed',
-    borderColor: semantic.border.raised,
-  },
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  addLabel: {
-    color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    trailing: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    addCard: {
+      backgroundColor: 'transparent',
+      borderStyle: 'dashed',
+      borderColor: t.border.raised,
+    },
+    addRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    addLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+    },
+  });

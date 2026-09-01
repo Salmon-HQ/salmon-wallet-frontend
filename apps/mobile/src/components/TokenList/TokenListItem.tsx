@@ -13,13 +13,14 @@ import {
   spacing,
   useCurrencyContext,
   vs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { ListRow } from '../ListRow';
 import { TokenLogo } from '../TokenLogo';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { TokenListItemProps } from './types';
 
 /** The card's own logo size — pinned by the redesign spec, not the legacy
@@ -62,6 +63,8 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { change: changeTones } = useSemantic();
   const [, { formatValue }] = useCurrencyContext();
   const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange } = token;
 
@@ -72,7 +75,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   // Get the label type for coloring the percentage
   const percentageChange = last24HoursChange?.perc ?? 0;
   const labelType = getLabelValue(percentageChange);
-  const changeColor = semantic.change[labelType];
+  const changeColor = changeTones[labelType];
 
   // Format display values
   const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
@@ -232,58 +235,59 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  // The card ground, radius and hairline are `Card`'s; what stays here is the
-  // list glue — how far one row sits from the next. Card→card is a
-  // sibling-component seam per DESIGN.md's component gap rule, so it takes
-  // the same `screenGutter` (20) as the screen's side gutters, not an
-  // internal-anatomy step.
-  cardSpacing: {
-    marginBottom: vs(spacing.screenGutter),
-  },
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The card ground, radius and hairline are `Card`'s; what stays here is the
+    // list glue — how far one row sits from the next. Card→card is a
+    // sibling-component seam per DESIGN.md's component gap rule, so it takes
+    // the same `screenGutter` (20) as the screen's side gutters, not an
+    // internal-anatomy step.
+    cardSpacing: {
+      marginBottom: vs(spacing.screenGutter),
+    },
 
-  // Secondary line: "SOL · $159.58 · +4.2%", drawn as one shrinking segment
-  // (the ticker) and two fixed ones, so neither the price nor the change is
-  // ever the part that gets cut.
-  sublineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 0,
-  },
-  subline: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-  },
-  // The one segment allowed to give up room, all the way to nothing.
-  sublineTicker: {
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  // Price and change: never truncated, never shrunk.
-  sublineFixed: {
-    flexShrink: 0,
-  },
-  change: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.semiBold,
-  },
-  valueContainer: {
-    alignItems: 'flex-end',
-    gap: vs(spacing.xxs),
-    flexShrink: 0,
-    maxWidth: '46%',
-  },
-  usdValue: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-  },
-  tokenAmount: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-  },
-});
+    // Secondary line: "SOL · $159.58 · +4.2%", drawn as one shrinking segment
+    // (the ticker) and two fixed ones, so neither the price nor the change is
+    // ever the part that gets cut.
+    sublineRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minWidth: 0,
+    },
+    subline: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    // The one segment allowed to give up room, all the way to nothing.
+    sublineTicker: {
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    // Price and change: never truncated, never shrunk.
+    sublineFixed: {
+      flexShrink: 0,
+    },
+    change: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+    },
+    valueContainer: {
+      alignItems: 'flex-end',
+      gap: vs(spacing.xxs),
+      flexShrink: 0,
+      maxWidth: '46%',
+    },
+    usdValue: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    tokenAmount: {
+      fontSize: ms(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+  });
 
 export default TokenListItem;

@@ -16,17 +16,21 @@ import {
   fontScaleCap,
   fontSize,
   lineHeight,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text } from 'react-native';
+
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 export interface OnboardingTextProps extends Testable {
   children: ReactNode;
 }
 
 export function OnboardingTitle({ children, testID }: OnboardingTextProps) {
+  const styles = useThemedStyles(stylesFor);
+
   return (
     <Text
       style={styles.title}
@@ -40,6 +44,8 @@ export function OnboardingTitle({ children, testID }: OnboardingTextProps) {
 }
 
 export function OnboardingDescription({ children, testID }: OnboardingTextProps) {
+  const styles = useThemedStyles(stylesFor);
+
   return (
     <Text style={styles.description} maxFontSizeMultiplier={fontScaleCap.chrome} testID={testID}>
       {children}
@@ -47,19 +53,20 @@ export function OnboardingDescription({ children, testID }: OnboardingTextProps)
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.headline,
-    lineHeight: fontSize.headline * lineHeight.tight,
-    textAlign: 'center',
-  },
-  description: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    title: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: fontSize.headline,
+      lineHeight: fontSize.headline * lineHeight.tight,
+      textAlign: 'center',
+    },
+    description: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      lineHeight: fontSize.bodyLg * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

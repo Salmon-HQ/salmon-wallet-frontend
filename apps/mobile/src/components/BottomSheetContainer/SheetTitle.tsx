@@ -6,9 +6,10 @@ import {
   letterSpacing,
   lineHeight,
   ms,
-  semantic,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 export interface SheetTitleProps {
   /** Optional element rendered before the title text, inline (e.g. a warning icon). */
@@ -22,6 +23,7 @@ export interface SheetTitleProps {
  * belongs to the sheet's content, not to this component.
  */
 export const SheetTitle: React.FC<SheetTitleProps> = ({ leading, children }) => {
+  const styles = useThemedStyles(stylesFor);
   if (!leading) {
     return <Text style={styles.title}>{children}</Text>;
   }
@@ -34,21 +36,22 @@ export const SheetTitle: React.FC<SheetTitleProps> = ({ leading, children }) => 
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(fontSize.headline * lineHeight.condensed),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+    },
+    title: {
+      fontSize: ms(fontSize.headline),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.primary,
+      textAlign: 'center',
+      letterSpacing: letterSpacing.snug,
+      lineHeight: ms(fontSize.headline * lineHeight.condensed),
+    },
+  });
 
 export default SheetTitle;

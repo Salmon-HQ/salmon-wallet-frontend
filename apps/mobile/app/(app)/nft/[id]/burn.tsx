@@ -25,9 +25,9 @@ import {
   isSignableAccount,
   lineHeight,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
 import {
@@ -42,6 +42,7 @@ import {
 } from '../../../../src/components';
 import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
 import { useTabChrome } from '../../../../hooks/useTabChrome';
+import { useThemedStyles } from '../../../../src/theme/useThemedStyles';
 
 /** SOL's decimals — what the lookup table's rent estimate is denominated in. */
 const LAMPORT_DECIMALS = 9;
@@ -49,6 +50,7 @@ const LAMPORT_DECIMALS = 9;
 export default function NftBurnScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
   const { floatingBottomOffset } = useTabChrome();
   const { nft, account, burnPreview, burnPreparing, burnError, confirmBurn, resetBurn } =
     useNftFlow();
@@ -130,38 +132,39 @@ export default function NftBurnScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  group: {
-    gap: vs(spacing.sm),
-  },
-  bodyText: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.normal,
-    color: semantic.text.secondary,
-  },
-  footnote: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.normal,
-    color: semantic.text.tertiary,
-  },
-  notice: {
-    marginTop: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    group: {
+      gap: vs(spacing.sm),
+    },
+    bodyText: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.normal,
+      color: t.text.secondary,
+    },
+    footnote: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.normal,
+      color: t.text.tertiary,
+    },
+    notice: {
+      marginTop: 0,
+    },
+    action: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+    },
+  });

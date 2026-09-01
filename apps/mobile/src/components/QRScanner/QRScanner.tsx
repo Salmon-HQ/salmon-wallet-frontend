@@ -14,8 +14,9 @@ import {
   fontFamilyNative,
   fontSize,
   fontWeight,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { QRScannerProps } from './types';
 
 /**
@@ -29,6 +30,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   containerStyle,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const resolvedTitle = title ?? t('qrScanner.title', 'Scan QR Code');
 
   if (!visible) {
@@ -76,87 +78,88 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.scanner.ground,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.scanner.frame,
-  },
-  title: {
-    fontSize: fontSize.heading,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-    color: semantic.text.primary,
-  },
-  closeButton: {
-    padding: spacing.sm,
-  },
-  closeButtonText: {
-    color: semantic.scanner.hint,
-    fontSize: fontSize.bodyLg,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing['3xl'],
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: semantic.scanner.frame,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  icon: {
-    fontSize: fontSize.display,
-  },
-  messageTitle: {
-    fontSize: fontSize.title,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-    color: semantic.text.primary,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  messageText: {
-    fontSize: fontSize.bodyLg,
-    color: semantic.scanner.hint,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  messageSubtext: {
-    fontSize: fontSize.body,
-    color: semantic.scanner.hint,
-    textAlign: 'center',
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing['2xl'],
-  },
-  button: {
-    backgroundColor: semantic.scanner.corner,
-    paddingVertical: 14,
-    paddingHorizontal: spacing['2xl'],
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: semantic.text.primary,
-    fontSize: fontSize.bodyLg,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.scanner.ground,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: t.scanner.frame,
+    },
+    title: {
+      fontSize: fontSize.heading,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+      color: t.text.primary,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    closeButtonText: {
+      color: t.scanner.hint,
+      fontSize: fontSize.bodyLg,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing['3xl'],
+    },
+    iconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: t.scanner.frame,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: spacing['2xl'],
+    },
+    icon: {
+      fontSize: fontSize.display,
+    },
+    messageTitle: {
+      fontSize: fontSize.title,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+      color: t.text.primary,
+      marginBottom: spacing.md,
+      textAlign: 'center',
+    },
+    messageText: {
+      fontSize: fontSize.bodyLg,
+      color: t.scanner.hint,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    messageSubtext: {
+      fontSize: fontSize.body,
+      color: t.scanner.hint,
+      textAlign: 'center',
+    },
+    footer: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing['2xl'],
+    },
+    button: {
+      backgroundColor: t.scanner.corner,
+      paddingVertical: 14,
+      paddingHorizontal: spacing['2xl'],
+      borderRadius: borderRadius.lg,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: t.text.primary,
+      fontSize: fontSize.bodyLg,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+    },
+  });
 
 export default QRScanner;

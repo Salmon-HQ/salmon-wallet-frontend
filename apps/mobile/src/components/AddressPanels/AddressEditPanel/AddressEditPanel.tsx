@@ -12,12 +12,12 @@ import { useTranslation } from 'react-i18next';
 import {
   fontFamilyNative,
   fontSize,
-  semantic,
   useAccountsContext,
   useAddressBookForm,
   useAddressValidation,
   type AddressBookEditBaseProps,
   type BlockchainType,
+  type Semantic,
 } from '@salmon/shared';
 import { Card } from '../../Card';
 import { PrimaryButton } from '../../Button';
@@ -25,6 +25,7 @@ import { QRScanner } from '../../QRScanner';
 import type { QRScanResult } from '../../QRScanner';
 import { RecipientInput } from '../../Send';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 
 // ============================================================================
 // Component
@@ -37,6 +38,8 @@ export function AddressEditPanel({
   onBack,
 }: AddressBookEditBaseProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const [accountState] = useAccountsContext();
   const form = useAddressBookForm({
     label: contact.name,
@@ -78,7 +81,7 @@ export function AddressEditPanel({
           value={form.label}
           onChangeText={form.setLabel}
           placeholder={t('settings.addressbook.label', 'Label')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           autoCapitalize="words"
           autoCorrect={false}
         />
@@ -123,16 +126,17 @@ export default AddressEditPanel;
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  input: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    padding: 0,
-  },
-  networkText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    input: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      padding: 0,
+    },
+    networkText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+    },
+  });

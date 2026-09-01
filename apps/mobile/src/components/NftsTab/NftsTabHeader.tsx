@@ -8,9 +8,10 @@
  */
 import React, { type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { fontFamilyNative, fontSize, s, semantic, spacing, vs } from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { StateBlock } from '../StateBlock';
@@ -36,6 +37,7 @@ export function NftsTabHeader({
   onRetry,
 }: NftsTabHeaderProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
 
   return (
     <View style={styles.blocks}>
@@ -129,32 +131,33 @@ export function NftsTabHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  blocks: {
-    gap: vs(spacing.screenGutter),
-    marginBottom: vs(spacing.screenGutter),
-  },
-  /** Present to assistive tech, absent to the eye. See the render comment. */
-  assistiveHeading: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
-  },
-  devBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  devBannerText: {
-    flex: 1,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    color: semantic.accent.ink,
-  },
-  partialRetry: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: s(fontSize.body),
-    color: semantic.accent.ink,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    blocks: {
+      gap: vs(spacing.screenGutter),
+      marginBottom: vs(spacing.screenGutter),
+    },
+    /** Present to assistive tech, absent to the eye. See the render comment. */
+    assistiveHeading: {
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      opacity: 0,
+    },
+    devBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    devBannerText: {
+      flex: 1,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      color: t.accent.ink,
+    },
+    partialRetry: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.body),
+      color: t.accent.ink,
+    },
+  });

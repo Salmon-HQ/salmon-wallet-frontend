@@ -9,9 +9,10 @@ import {
   fontWeight,
   borderWidth,
   fontFamilyNative,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 interface SeedWordGridProps {
   /** Array of mnemonic words */
@@ -24,6 +25,7 @@ export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
   // Rendering a mnemonic is by definition a secret surface, so protection
   // rides on this primitive rather than on each screen that uses it.
   useSecretScreen('seed-word-grid');
+  const styles = useThemedStyles(stylesFor);
 
   return (
     <View style={styles.container}>
@@ -44,7 +46,8 @@ export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -57,9 +60,9 @@ const styles = StyleSheet.create({
   wordCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: semantic.surface.bedrock,
+    backgroundColor: t.surface.bedrock,
     borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
+    borderColor: t.border.raised,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -76,19 +79,19 @@ const styles = StyleSheet.create({
    * accent.
    */
   indexDot: {
-    color: semantic.accent.ink,
+    color: t.accent.ink,
   },
   // Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
   // size so they are never mistaken for part of the phrase.
   wordIndex: {
-    color: semantic.text.tertiary,
+    color: t.text.tertiary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.label,
     minWidth: 20,
   },
   // Seed Phrase Rule: Geist Mono at the larger mono size, weight 500.
   wordText: {
-    color: semantic.text.primary,
+    color: t.text.primary,
     fontFamily: fontFamilyNative.mono,
     fontWeight: fontWeight.medium,
     fontSize: fontSize.monoLg,

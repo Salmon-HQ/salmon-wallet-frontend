@@ -12,6 +12,7 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, AppState, useColorScheme, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
@@ -22,6 +23,7 @@ import { I18nProvider } from '../src/i18n';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
+import { useSemantic } from '../src/theme/useThemedStyles';
 import {
   AccountsProvider,
   CurrencyProvider,
@@ -146,6 +148,13 @@ function RootLayoutNav() {
   // The bar's glyphs are the inverse of the ground under them: light glyphs on
   // deep water, dark ones on the pale ground.
   const barStyle = mode === 'dark' ? 'light' : 'dark';
+  const semantic = useSemantic();
+  // `app.json`'s `backgroundColor` is a static dark hex, so it paints the
+  // native window behind every screen transition — a light-mode transition
+  // would flash the shipped dark ground without this following the mode.
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(semantic.depth.column);
+  }, [semantic]);
   const [state, actions] = useAccountsContext();
   const segments = useSegments();
   const navigationState = useRootNavigationState();

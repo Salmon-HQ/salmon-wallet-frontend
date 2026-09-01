@@ -38,11 +38,11 @@ import {
   lineHeight,
   s,
   sanitizeDecimalInput,
-  semantic,
   spacing,
   tabularNums,
   useCurrencyContext,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
 import {
@@ -56,6 +56,7 @@ import {
 } from '../../../src/components';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
+import { useThemedStyles, useSemantic } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 
@@ -92,6 +93,8 @@ function formatSolAmount(value: number): string {
 export default function SendAmountScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
@@ -285,52 +288,53 @@ export default function SendAmountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  amountCard: {
-    alignItems: 'center',
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: s(spacing.sm),
-  },
-  amountInput: {
-    ...TABULAR,
-    minWidth: s(80),
-    fontSize: s(AMOUNT_ENTRY_FONT),
-    lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-    textAlign: 'right',
-    paddingVertical: 0,
-  },
-  ticker: {
-    fontSize: s(fontSize.body),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.secondary,
-  },
-  fiat: {
-    ...TABULAR,
-    fontSize: s(fontSize.mono),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-  },
-  shortcuts: {
-    flexGrow: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    amountCard: {
+      alignItems: 'center',
+    },
+    amountRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: s(spacing.sm),
+    },
+    amountInput: {
+      ...TABULAR,
+      minWidth: s(80),
+      fontSize: s(AMOUNT_ENTRY_FONT),
+      lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      textAlign: 'right',
+      paddingVertical: 0,
+    },
+    ticker: {
+      fontSize: s(fontSize.body),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.secondary,
+    },
+    fiat: {
+      ...TABULAR,
+      fontSize: s(fontSize.mono),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    shortcuts: {
+      flexGrow: 0,
+    },
+    action: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+    },
+  });

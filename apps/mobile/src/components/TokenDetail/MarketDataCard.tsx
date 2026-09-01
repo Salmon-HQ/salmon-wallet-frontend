@@ -15,14 +15,15 @@ import {
   formatLargeNumber,
   lineHeight,
   s,
-  semantic,
   spacing,
   useCurrencyContext,
+  type Semantic,
 } from '@salmon/shared';
 
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SkeletonRow } from '../Skeleton';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { MarketData } from './types';
 
 export interface MarketDataCardProps {
@@ -39,6 +40,7 @@ export function MarketDataCard({
   testID = 'token-detail-market-data',
 }: MarketDataCardProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [, { formatValue }] = useCurrencyContext();
 
   if (loading) {
@@ -84,11 +86,12 @@ export function MarketDataCard({
   );
 }
 
-const styles = StyleSheet.create({
-  cardTitle: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    cardTitle: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      color: t.text.primary,
+    },
+  });

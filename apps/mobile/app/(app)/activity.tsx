@@ -25,7 +25,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   s,
-  semantic,
   spacing,
   useAccountsContext,
   useBalance,
@@ -55,6 +54,7 @@ import {
 } from '../../src/components';
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
 import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
+import { useSemantic } from '../../src/theme/useThemedStyles';
 
 // ============================================================================
 // Screen
@@ -63,6 +63,7 @@ import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
 export default function ActivityScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const semantic = useSemantic();
   const developerMode = useDeveloperMode();
 
   const [accountState] = useAccountsContext();
@@ -176,7 +177,7 @@ export default function ActivityScreen() {
         <ActivityIndicator size="small" color={semantic.accent.fill} />
       </View>
     );
-  }, [loadingMore]);
+  }, [loadingMore, semantic]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

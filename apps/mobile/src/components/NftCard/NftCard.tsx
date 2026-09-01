@@ -17,10 +17,10 @@ import {
   lineHeight,
   ms,
   s,
-  semantic,
   spacing,
   vs,
   gradients,
+  type Semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
@@ -29,6 +29,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 import { Card } from '../Card';
 import { PressSpecular } from '../PressSpecular';
@@ -46,6 +47,8 @@ const FALLBACK_GRADIENT = {
 
 export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const { scale, pressHandlers, specular } = usePressMotion();
@@ -110,7 +113,7 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
                   end={FALLBACK_GRADIENT.end}
                   style={styles.fill}
                 />
-                <ActivityIndicator size="small" color={semantic.accent.onFill} />
+                <ActivityIndicator size="small" color={accent.onFill} />
               </View>
             )}
           </>
@@ -137,58 +140,63 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
  * NftCardSkeleton — the tile's own geometry while a section loads, so the
  * placeholder grid lines up with the grid that replaces it.
  */
-export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(({ style, testID }) => (
-  <View style={[styles.tile, style]} testID={testID}>
-    <Card radius="lg" style={styles.card}>
-      {/* `ShimmerRect` takes pixels, and the tile is fluid: the band is drawn
-          at the tile's drawn size and clipped by the card's own radius. */}
-      <ShimmerRect
-        width={s(componentSizes.nftCardWidth)}
-        height={vs(componentSizes.nftCardHeight)}
-        borderRadius={ms(borderRadius.r3)}
-      />
-    </Card>
-  </View>
-));
+export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(({ style, testID }) => {
+  const styles = useThemedStyles(stylesFor);
+
+  return (
+    <View style={[styles.tile, style]} testID={testID}>
+      <Card radius="lg" style={styles.card}>
+        {/* `ShimmerRect` takes pixels, and the tile is fluid: the band is drawn
+            at the tile's drawn size and clipped by the card's own radius. */}
+        <ShimmerRect
+          width={s(componentSizes.nftCardWidth)}
+          height={vs(componentSizes.nftCardHeight)}
+          borderRadius={ms(borderRadius.r3)}
+        />
+      </Card>
+    </View>
+  );
+});
 
 NftCardSkeleton.displayName = 'NftCardSkeleton';
 
-const styles = StyleSheet.create({
-  tile: {
-    width: s(componentSizes.nftCardWidth),
-    aspectRatio: componentSizes.nftCardWidth / componentSizes.nftCardHeight,
-  },
-  card: {
-    flex: 1,
-    padding: 0,
-    justifyContent: 'flex-end',
-  },
-  fill: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameBand: {
-    backgroundColor: semantic.overlay.scrim,
-    paddingVertical: vs(spacing.sm),
-    paddingHorizontal: s(spacing.md),
-    gap: vs(spacing.xxs),
-  },
-  name: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-  collection: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    tile: {
+      width: s(componentSizes.nftCardWidth),
+      aspectRatio: componentSizes.nftCardWidth / componentSizes.nftCardHeight,
+    },
+    card: {
+      flex: 1,
+      padding: 0,
+      justifyContent: 'flex-end',
+    },
+    fill: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nameBand: {
+      backgroundColor: t.overlay.scrim,
+      paddingVertical: vs(spacing.sm),
+      paddingHorizontal: s(spacing.md),
+      gap: vs(spacing.xxs),
+    },
+    name: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.primary,
+    },
+    collection: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+  });
 
 export default NftCard;

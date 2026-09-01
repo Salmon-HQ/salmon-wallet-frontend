@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { View, FlatList, StyleSheet, ListRenderItem, RefreshControl } from 'react-native';
 import TokenListItem from './TokenListItem';
 import { SkeletonRow } from '../Skeleton';
-import { semantic, spacing } from '@salmon/shared';
+import { spacing } from '@salmon/shared';
 import type { Token } from '@salmon/shared';
 import type { TokenListProps } from './types';
+import { useSemantic } from '../../theme/useThemedStyles';
 
 /**
  * Key extractor for FlatList
@@ -56,6 +57,7 @@ const TokenList: React.FC<TokenListProps> = ({
   scrollEventThrottle = 16,
 }) => {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
 
   // Render item callback - memoized for performance
   // Must be defined before any conditional returns to comply with Rules of Hooks
@@ -122,8 +124,8 @@ const TokenList: React.FC<TokenListProps> = ({
     <RefreshControl
       refreshing={pulling}
       onRefresh={handlePull}
-      tintColor={semantic.accent.ink}
-      colors={[semantic.accent.ink]}
+      tintColor={accent.ink}
+      colors={[accent.ink]}
     />
   ) : undefined;
 

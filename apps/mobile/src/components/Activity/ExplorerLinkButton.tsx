@@ -17,10 +17,11 @@ import {
   type NetworkEnvironment,
   fontFamilyNative,
   type ExplorerWithKey,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { SecondaryButton } from '../Button';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Types
@@ -89,6 +90,8 @@ export function ExplorerLinkButton({
   style,
 }: ExplorerLinkButtonProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const [menuVisible, setMenuVisible] = useState(false);
 
   // Get available explorers for this blockchain/network
@@ -157,10 +160,10 @@ export function ExplorerLinkButton({
         testID="tx-detail-explorer-link"
         onPress={handlePress}
         style={style}
-        icon={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.primary} />}
+        icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
         trailingIcon={
           showMenu && availableExplorers.length > 1 ? (
-            <CaretDownIcon size={iconSize.sm} color={semantic.text.primary} />
+            <CaretDownIcon size={iconSize.sm} color={text.primary} />
           ) : undefined
         }
       >
@@ -186,9 +189,9 @@ export function ExplorerLinkButton({
                     onPress={() => openExplorer(explorer)}
                     activeOpacity={0.7}
                   >
-                    <GlobeIcon size={18} color={semantic.text.primary} style={styles.menuItemIcon} />
+                    <GlobeIcon size={18} color={text.primary} style={styles.menuItemIcon} />
                     <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.tertiary} />
+                    <ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />
                   </TouchableOpacity>
                 ))}
               </BlurContainer>
@@ -204,47 +207,48 @@ export function ExplorerLinkButton({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: semantic.overlay.backdrop,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  menuContainer: {
-    width: '100%',
-    maxWidth: 320,
-  },
-  menu: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-  },
-  menuTitle: {
-    fontSize: ms(fontSize.heading),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.screenGutter),
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: vs(spacing.lg),
-    paddingHorizontal: s(spacing.md),
-    borderRadius: borderRadius.md,
-    backgroundColor: semantic.surface.raised,
-    marginBottom: vs(spacing.sm),
-  },
-  menuItemIcon: {
-    marginRight: s(spacing.md),
-  },
-  menuItemText: {
-    flex: 1,
-    fontSize: ms(fontSize.body),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: t.overlay.backdrop,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.lg,
+    },
+    menuContainer: {
+      width: '100%',
+      maxWidth: 320,
+    },
+    menu: {
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+    },
+    menuTitle: {
+      fontSize: ms(fontSize.heading),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      textAlign: 'center',
+      marginBottom: vs(spacing.screenGutter),
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: vs(spacing.lg),
+      paddingHorizontal: s(spacing.md),
+      borderRadius: borderRadius.md,
+      backgroundColor: t.surface.raised,
+      marginBottom: vs(spacing.sm),
+    },
+    menuItemIcon: {
+      marginRight: s(spacing.md),
+    },
+    menuItemText: {
+      flex: 1,
+      fontSize: ms(fontSize.body),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.primary,
+    },
+  });
 
 export default ExplorerLinkButton;

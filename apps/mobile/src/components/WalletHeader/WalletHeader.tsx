@@ -26,7 +26,7 @@ import {
   vs,
   getShortAddress,
   motionMs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +46,7 @@ import {
   SINK_FLOAT_TRAVEL,
 } from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 
 /** Left thumb — the account's own face, a 38pt circle; opens the wallet switcher. */
 const WALLET_THUMB_SIZE = 38;
@@ -84,6 +85,8 @@ export function WalletHeader({
   avatarUrl,
 }: WalletHeaderProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, status } = useSemantic();
   const [imgError, setImgError] = useState(false);
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
   const isReduceMotionEnabled = useReducedMotion();
@@ -259,10 +262,10 @@ export function WalletHeader({
                 renderer does not reproduce native paint. */}
             {copied ? (
               <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <CheckIcon size={s(23)} color={semantic.status.success} />
+                <CheckIcon size={s(23)} color={status.success} />
               </Animated.View>
             ) : (
-              <ContentCopySvgIcon size={s(23)} color={semantic.text.secondary} />
+              <ContentCopySvgIcon size={s(23)} color={text.secondary} />
             )}
           </TouchableOpacity>
         </View>
@@ -291,71 +294,72 @@ export function WalletHeader({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // The header's slot in the tab shell. Absolute, so the content below scrolls
-  // under it exactly as it always has; `useTabChrome` reserves the same height.
-  slot: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  container: {
-    // The row is exactly as tall as its own content — the 38pt account thumb.
-    height: componentSizes.walletHeaderRowHeight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    // The redesign's one gutter: the thumb's left edge and the balance's left
-    // edge below it are the same line.
-    paddingHorizontal: s(spacing.screenGutter),
-  },
-  leftSection: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.base),
-  },
-  accountInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  // The flex/minWidth pair moved from the Text to this wrapper when the text
-  // gained its animated shell — the row math is unchanged.
-  accountTextWrapper: {
-    flex: 1,
-    minWidth: 0,
-  },
-  // `.pen` draws 14/700 over 11/500. 14 is `fontSize.body`; there is no 11
-  // step, so the address takes the nearest one (`caption`, 12) — the scale is
-  // the contract, the frame is the sketch.
-  accountName: {
-    fontSize: ms(fontSize.body),
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    color: semantic.text.primary,
-    letterSpacing: letterSpacing.normal,
-    lineHeight: vs(18),
-  },
-  accountAddress: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.medium,
-    fontWeight: fontWeight.medium,
-    // The `.pen`'s muted address: no salmon in the header, and the name is
-    // the line that has to carry.
-    color: semantic.text.tertiary,
-    letterSpacing: letterSpacing.label,
-    lineHeight: vs(15),
-  },
-  copyButton: {
-    flexShrink: 0,
-    padding: s(spacing.xs),
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The header's slot in the tab shell. Absolute, so the content below scrolls
+    // under it exactly as it always has; `useTabChrome` reserves the same height.
+    slot: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
+    container: {
+      // The row is exactly as tall as its own content — the 38pt account thumb.
+      height: componentSizes.walletHeaderRowHeight,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      // The redesign's one gutter: the thumb's left edge and the balance's left
+      // edge below it are the same line.
+      paddingHorizontal: s(spacing.screenGutter),
+    },
+    leftSection: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.base),
+    },
+    accountInfo: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    // The flex/minWidth pair moved from the Text to this wrapper when the text
+    // gained its animated shell — the row math is unchanged.
+    accountTextWrapper: {
+      flex: 1,
+      minWidth: 0,
+    },
+    // `.pen` draws 14/700 over 11/500. 14 is `fontSize.body`; there is no 11
+    // step, so the address takes the nearest one (`caption`, 12) — the scale is
+    // the contract, the frame is the sketch.
+    accountName: {
+      fontSize: ms(fontSize.body),
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.normal,
+      lineHeight: vs(18),
+    },
+    accountAddress: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      fontWeight: fontWeight.medium,
+      // The `.pen`'s muted address: no salmon in the header, and the name is
+      // the line that has to carry.
+      color: t.text.tertiary,
+      letterSpacing: letterSpacing.label,
+      lineHeight: vs(15),
+    },
+    copyButton: {
+      flexShrink: 0,
+      padding: s(spacing.xs),
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+  });

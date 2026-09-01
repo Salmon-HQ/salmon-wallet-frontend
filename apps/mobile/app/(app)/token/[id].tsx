@@ -35,7 +35,6 @@ import {
   lineHeight,
   PERIOD_TO_DAYS,
   s,
-  semantic,
   spacing,
   tabularNums,
   useAccountsContext,
@@ -46,6 +45,7 @@ import {
   type NetworkId,
   type PriceChartPeriod,
   type Token,
+  type Semantic,
 } from '@salmon/shared';
 import {
   AboutCard,
@@ -57,6 +57,7 @@ import {
   ScreenHeader,
   TokenLogo,
 } from '../../../src/components';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 
 const TOKEN_LOGO_SIZE = 42;
 
@@ -64,6 +65,7 @@ export default function TokenDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const styles = useThemedStyles(stylesFor);
   const [{ currency }, { formatValue }] = useCurrencyContext();
 
   const [accountState] = useAccountsContext();
@@ -242,48 +244,49 @@ export default function TokenDetailScreen() {
 
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  balanceBlock: {
-    gap: vs(spacing.sm),
-  },
-  balanceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  tokenName: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-    color: semantic.text.primary,
-    flexShrink: 1,
-  },
-  amount: {
-    ...TABULAR,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.display),
-    lineHeight: s(fontSize.display) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-  fiat: {
-    ...TABULAR,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-  // The block's own anatomy: rows and chart at the in-component step.
-  performance: {
-    gap: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    balanceBlock: {
+      gap: vs(spacing.sm),
+    },
+    balanceHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    tokenName: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.heading),
+      lineHeight: s(fontSize.heading) * lineHeight.snug,
+      color: t.text.primary,
+      flexShrink: 1,
+    },
+    amount: {
+      ...TABULAR,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.display),
+      lineHeight: s(fontSize.display) * lineHeight.snug,
+      color: t.text.primary,
+    },
+    fiat: {
+      ...TABULAR,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+    // The block's own anatomy: rows and chart at the in-component step.
+    performance: {
+      gap: vs(spacing.md),
+    },
+  });

@@ -16,14 +16,13 @@ import React, { useId } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
-import { semantic } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/useThemedStyles';
 
 /** DESIGN.md's 120px radius. */
 export const SPECULAR_RADIUS = 120;
 /** DESIGN.md's 12%. */
 export const SPECULAR_OPACITY = 0.12;
-/** The cold light — the token the wait's crest shares. */
-const SPECULAR_INK = semantic.water.light;
 
 const SIZE = SPECULAR_RADIUS * 2;
 
@@ -37,6 +36,8 @@ export interface PressSpecularProps {
 
 export function PressSpecular({ x, y, opacity }: PressSpecularProps) {
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  /** The cold light — the token the wait's crest shares. */
+  const specularInk = useSemantic().water.light;
 
   const style = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -51,8 +52,8 @@ export function PressSpecular({ x, y, opacity }: PressSpecularProps) {
       <Svg width={SIZE} height={SIZE}>
         <Defs>
           <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={SPECULAR_INK} stopOpacity="1" />
-            <Stop offset="1" stopColor={SPECULAR_INK} stopOpacity="0" />
+            <Stop offset="0" stopColor={specularInk} stopOpacity="1" />
+            <Stop offset="1" stopColor={specularInk} stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect width={SIZE} height={SIZE} fill={`url(#${gradientId})`} />

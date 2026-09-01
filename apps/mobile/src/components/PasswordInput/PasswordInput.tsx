@@ -11,8 +11,10 @@ import {
   borderWidth,
   fontSize,
   fontFamilyNative,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 interface PasswordInputProps {
   value: string;
@@ -36,13 +38,15 @@ export function PasswordInput({
   testID,
 }: PasswordInputProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, accent, input, text } = useSemantic();
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
-    if (error) return semantic.status.danger;
-    if (isFocused) return semantic.accent.ink;
-    return semantic.input.edge;
+    if (error) return status.danger;
+    if (isFocused) return accent.ink;
+    return input.edge;
   };
 
   return (
@@ -54,7 +58,7 @@ export function PasswordInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder ?? t('lock.password_placeholder')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           autoCorrect={false}
@@ -75,9 +79,9 @@ export function PasswordInput({
           style={styles.toggleButton}
         >
           {showPassword ? (
-            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={semantic.text.secondary} />
+            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={text.secondary} />
           ) : (
-            <EyeIcon size={componentSizes.iconSizeMedium} color={semantic.text.secondary} />
+            <EyeIcon size={componentSizes.iconSizeMedium} color={text.secondary} />
           )}
         </TouchableOpacity>
       </View>
@@ -86,34 +90,35 @@ export function PasswordInput({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: componentSizes.inputHeight,
-    paddingVertical: spacing.xs,
-    backgroundColor: semantic.input.ground,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.lg,
-  },
-  input: {
-    flex: 1,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  toggleButton: {
-    padding: spacing.xs,
-  },
-  errorText: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: componentSizes.inputHeight,
+      paddingVertical: spacing.xs,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.lg,
+    },
+    input: {
+      flex: 1,
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+    },
+    toggleButton: {
+      padding: spacing.xs,
+    },
+    errorText: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.caption,
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.xs,
+    },
+  });

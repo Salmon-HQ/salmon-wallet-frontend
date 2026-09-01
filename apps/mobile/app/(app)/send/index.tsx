@@ -28,7 +28,6 @@ import {
   formatTokenAmount,
   getShortAddress,
   s,
-  semantic,
   spacing,
   useAddressValidation,
   useSendContacts,
@@ -55,6 +54,7 @@ import {
 import type { QRScanResult } from '../../../src/components';
 import { CaretRightIcon, iconSize } from '../../../src/icons';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
+import { useSemantic } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 
@@ -76,6 +76,7 @@ function initialOf(option: RecipientOption): string {
 export default function SendRecipientScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const semantic = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
   const {

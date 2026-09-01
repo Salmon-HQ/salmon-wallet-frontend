@@ -20,9 +20,10 @@ import {
   s,
   spacing,
   vs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 export interface WalletInitErrorScreenProps {
   /** Re-runs wallet initialization. The gate stays up until it succeeds. */
@@ -31,6 +32,7 @@ export interface WalletInitErrorScreenProps {
 
 export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [retrying, setRetrying] = useState(false);
 
   const handleRetry = useCallback(async () => {
@@ -66,33 +68,34 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing['2xl']),
-    backgroundColor: semantic.depth.abyss,
-  },
-  title: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.title),
-    color: semantic.text.primary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.md),
-  },
-  body: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.body),
-    color: semantic.text.secondary,
-    textAlign: 'center',
-    marginBottom: vs(spacing['2xl']),
-  },
-  // Size only. Radius, fill, border, bezel and material belong to the button.
-  retryButton: {
-    minHeight: vs(componentSizes.buttonHeightMedium),
-    height: vs(componentSizes.buttonHeightMedium),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: s(spacing['2xl']),
+      backgroundColor: t.depth.abyss,
+    },
+    title: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: ms(fontSize.title),
+      color: t.text.primary,
+      textAlign: 'center',
+      marginBottom: vs(spacing.md),
+    },
+    body: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: ms(fontSize.body),
+      color: t.text.secondary,
+      textAlign: 'center',
+      marginBottom: vs(spacing['2xl']),
+    },
+    // Size only. Radius, fill, border, bezel and material belong to the button.
+    retryButton: {
+      minHeight: vs(componentSizes.buttonHeightMedium),
+      height: vs(componentSizes.buttonHeightMedium),
+    },
+  });
 
 export default WalletInitErrorScreen;

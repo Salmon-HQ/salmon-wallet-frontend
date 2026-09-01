@@ -18,10 +18,11 @@ import {
   motionMs,
   opacity,
   s,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { ShimmerRect } from '../ShimmerRect';
 import { UnderlineTabs } from '../UnderlineTabs';
 import type { PriceChartProps } from './types';
@@ -42,10 +43,10 @@ const PULSE_TIMING = timing(motionMs.tide, false, curve.settle);
 /**
  * Default colors for positive/negative performance
  */
-const CHART_COLORS = {
-  positive: semantic.status.success,
-  negative: semantic.status.danger,
-} as const;
+const chartColorsFor = (t: Semantic) => ({
+  positive: t.status.success,
+  negative: t.status.danger,
+});
 
 /**
  * Calculate min and max values from data
@@ -141,6 +142,7 @@ const ChartSkeleton: React.FC<{ height: number; width: number }> = ({ height, wi
 const PeriodSelectorSkeleton: React.FC = () => {
   const buttonWidth = 36;
   const buttonHeight = 24;
+  const styles = useThemedStyles(stylesFor);
 
   return (
     <View style={styles.periodContainer}>
@@ -191,6 +193,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   bleed = false,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const CHART_COLORS = useMemo(() => chartColorsFor(semantic), [semantic]);
   // Edge to edge. `bleed` is the home Bitcoin column's variant: the chart
   // escapes the column's left gutter to sit on the physical screen edge and
   // stops one gutter short of the right one, so the curve reads as water
@@ -205,7 +210,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   const chartColor = useMemo(() => {
     if (color) return color;
     return isPositivePerformance(data) ? CHART_COLORS.positive : CHART_COLORS.negative;
-  }, [data, color]);
+  }, [data, color, CHART_COLORS]);
 
   // Calculate data bounds
   const bounds = useMemo(() => getDataBounds(data), [data]);
@@ -384,32 +389,33 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: SCREEN_WIDTH,
-  },
-  chartContainer: {
-    width: SCREEN_WIDTH,
-    overflow: 'hidden',
-  },
-  periodContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  periodTabs: {
-    alignSelf: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyStateText: {
-    fontSize: s(fontSize.body),
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    wrapper: {
+      width: SCREEN_WIDTH,
+    },
+    chartContainer: {
+      width: SCREEN_WIDTH,
+      overflow: 'hidden',
+    },
+    periodContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    periodTabs: {
+      alignSelf: 'center',
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyStateText: {
+      fontSize: s(fontSize.body),
+      color: t.text.secondary,
+    },
+  });
 
 export default PriceChart;

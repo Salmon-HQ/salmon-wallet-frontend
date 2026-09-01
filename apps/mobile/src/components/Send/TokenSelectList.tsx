@@ -15,13 +15,14 @@ import {
   formatTokenAmount,
   lineHeight,
   s,
-  semantic,
   spacing,
   tabularNums,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 import type { SendToken, StepTokenSelectProps } from '@salmon/shared';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { ListRow } from '../ListRow';
 import { SearchField } from '../SearchField';
@@ -51,6 +52,7 @@ export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
   loading,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [searchQuery, setSearchQuery] = useState('');
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
 
@@ -93,7 +95,7 @@ export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
         />
       );
     },
-    [onSelectToken]
+    [onSelectToken, styles]
   );
 
   const keyExtractor = useCallback((item: SendToken) => item.address, []);
@@ -132,32 +134,33 @@ export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  // The component gap — sheet title to search, search to list, and row to
-  // row — is the screen's 20. The top gap used to be a stray margin on the
-  // title itself; it belongs to this container, the content below the title.
-  container: {
-    flex: 1,
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  list: {
-    gap: vs(spacing.screenGutter),
-  },
-  skeletonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-    height: vs(ROW_HEIGHT),
-  },
-  balance: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.primary,
-    fontVariant: [...tabularNums.native.fontVariant],
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The component gap — sheet title to search, search to list, and row to
+    // row — is the screen's 20. The top gap used to be a stray margin on the
+    // title itself; it belongs to this container, the content below the title.
+    container: {
+      flex: 1,
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    list: {
+      gap: vs(spacing.screenGutter),
+    },
+    skeletonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+      height: vs(ROW_HEIGHT),
+    },
+    balance: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.primary,
+      fontVariant: [...tabularNums.native.fontVariant],
+    },
+  });
 
 export default TokenSelectList;

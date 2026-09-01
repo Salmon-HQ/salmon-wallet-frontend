@@ -19,8 +19,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { componentSizes, motionMs, semantic } from '@salmon/shared';
+import { componentSizes, motionMs, type Semantic } from '@salmon/shared';
 import { timing } from '../../utils/motion';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { StepIndicatorProps } from './types';
 
 /** Centre-to-centre distance between two dots. */
@@ -28,6 +29,7 @@ const stride = componentSizes.stepDotSize + componentSizes.stepDotGap;
 
 export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const isReduceMotionEnabled = useReducedMotion();
   // Zero-indexed position of the salmon dot, in dots.
   const position = useSharedValue(Math.max(0, currentStep - 1));
@@ -67,7 +69,8 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     justifyContent: 'center',
   },
@@ -86,9 +89,9 @@ const styles = StyleSheet.create({
     left: 0,
   },
   dotActive: {
-    backgroundColor: semantic.step.active,
+    backgroundColor: t.step.active,
   },
   dotInactive: {
-    backgroundColor: semantic.step.inactive,
+    backgroundColor: t.step.inactive,
   },
 });

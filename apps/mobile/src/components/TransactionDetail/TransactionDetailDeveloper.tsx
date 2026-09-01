@@ -8,11 +8,12 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CodeIcon, iconSize } from '../../icons';
-import { getShortAddress, s, semantic, spacing } from '@salmon/shared';
+import { getShortAddress, s, spacing } from '@salmon/shared';
 
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SectionLabel } from '../SectionLabel';
+import { useSemantic } from '../../theme/useThemedStyles';
 import type { Transaction } from './types';
 
 export interface TransactionDetailDeveloperProps {
@@ -23,11 +24,12 @@ export const TransactionDetailDeveloper: React.FC<TransactionDetailDeveloperProp
   transaction,
 }) => {
   const { t } = useTranslation();
+  const { text } = useSemantic();
 
   return (
     <Card padding="lg" gap={spacing.md} testID="tx-detail-developer">
       <View style={styles.header}>
-        <CodeIcon size={iconSize.sm} color={semantic.text.secondary} />
+        <CodeIcon size={iconSize.sm} color={text.secondary} />
         <SectionLabel variant="caps">
           {t('transactions.detail.developerInfo', 'Developer Info')}
         </SectionLabel>

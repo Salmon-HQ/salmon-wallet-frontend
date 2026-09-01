@@ -29,12 +29,12 @@ import {
   ms,
   NETWORK_DISPLAY,
   s,
-  semantic,
   showPercentage,
   spacing,
   tabularNums,
   useCurrencyContext,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +61,7 @@ import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndF
 import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { PendingValue } from '../PendingValue';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { BalanceHeaderProps } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
@@ -110,6 +111,7 @@ const ChainDot: React.FC<ChainDotProps> = ({
   accessibilityLabel,
   onPress,
 }) => {
+  const styles = useThemedStyles(stylesFor);
   const width = useSharedValue(isActive ? DOT_ACTIVE_WIDTH : DOT_SIZE);
 
   useEffect(() => {
@@ -150,6 +152,8 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   testID,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, change } = useSemantic();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const [internalIndex, setInternalIndex] = React.useState(0);
   const activeIndex = controlledIndex ?? internalIndex;
@@ -210,7 +214,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // unknown, not zero: defaulting it to 0 rendered "+$0.00 · 0% 24h", a
   // flat day the wallet never measured. Unknown renders as an em-dash.
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
-  const changeColor = hasChange ? semantic.change[getLabelValue(changePercent)] : semantic.text.secondary;
+  const changeColor = hasChange ? change[getLabelValue(changePercent)] : text.secondary;
 
   const networkLabel = showNetworkLabel
     ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet'))
@@ -309,7 +313,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 <Text
                   style={[
                     styles.change,
-                    { color: hiddenBalance ? semantic.text.secondary : changeColor },
+                    { color: hiddenBalance ? text.secondary : changeColor },
                   ]}
                 >
                   {hiddenBalance
@@ -326,7 +330,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               variant="outline"
               label={t('actions.activity', 'Activity')}
               leadingIcon={
-                <ClockIcon size={ms(componentSizes.iconSizeXxs)} color={semantic.text.secondary} />
+                <ClockIcon size={ms(componentSizes.iconSizeXxs)} color={text.secondary} />
               }
               onPress={onActivityPress}
               accessibilityLabel={t('accessibility.view_activity', 'View activity')}
@@ -392,84 +396,85 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  column: {
-    flex: 1,
-    gap: vs(spacing.xs),
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  label: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-  },
-  networkLabel: {
-    fontSize: ms(fontSize.label),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: letterSpacing.label,
-  },
-  balance: {
-    // `balance` is 38 now, the size the `.pen` draws: the number sits beside
-    // the Send/Receive circles rather than alone on a card, so it no longer
-    // needs `adjustsFontSizeToFit` to survive a long total.
-    fontSize: ms(fontSize.balance),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-    letterSpacing: letterSpacing.balance,
-    ...TABULAR,
-  },
-  changeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.base),
-  },
-  // The swap wrapper may shrink; the pill beside it keeps its own width.
-  changeText: {
-    flexShrink: 1,
-  },
-  change: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.bold,
-    letterSpacing: letterSpacing.change,
-    ...TABULAR,
-  },
-  cueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  dot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: ms(borderRadius.full),
-    backgroundColor: semantic.text.disabled,
-  },
-  // Width is animated (see `ChainDot`); only the ink is static here.
-  dotActive: {
-    backgroundColor: semantic.accent.fill,
-  },
-  nextHint: {
-    fontSize: ms(fontSize.micro),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    column: {
+      flex: 1,
+      gap: vs(spacing.xs),
+    },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    label: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    networkLabel: {
+      fontSize: ms(fontSize.label),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.tertiary,
+      textTransform: 'uppercase',
+      letterSpacing: letterSpacing.label,
+    },
+    balance: {
+      // `balance` is 38 now, the size the `.pen` draws: the number sits beside
+      // the Send/Receive circles rather than alone on a card, so it no longer
+      // needs `adjustsFontSizeToFit` to survive a long total.
+      fontSize: ms(fontSize.balance),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.balance,
+      ...TABULAR,
+    },
+    changeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.base),
+    },
+    // The swap wrapper may shrink; the pill beside it keeps its own width.
+    changeText: {
+      flexShrink: 1,
+    },
+    change: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.bold,
+      letterSpacing: letterSpacing.change,
+      ...TABULAR,
+    },
+    cueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    dot: {
+      width: DOT_SIZE,
+      height: DOT_SIZE,
+      borderRadius: ms(borderRadius.full),
+      backgroundColor: t.text.disabled,
+    },
+    // Width is animated (see `ChainDot`); only the ink is static here.
+    dotActive: {
+      backgroundColor: t.accent.fill,
+    },
+    nextHint: {
+      fontSize: ms(fontSize.micro),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.secondary,
+    },
+    actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+  });
 
 export default BalanceHeader;

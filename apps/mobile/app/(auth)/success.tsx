@@ -24,8 +24,8 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
 import {
   BrandMark,
@@ -36,6 +36,7 @@ import {
   SecondaryButton,
   TextButton,
 } from '../../src/components';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +48,8 @@ import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 
 export default function SuccessScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const [showDialog, setShowDialog] = useState(false);
 
   /**
@@ -138,37 +141,38 @@ export default function SuccessScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // Dialog styles
-  dialogOverlay: {
-    flex: 1,
-    backgroundColor: semantic.overlay.backdrop,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  dialogContent: {
-    width: '100%',
-    backgroundColor: semantic.depth.abyss,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: semantic.border.default,
-    padding: spacing['2xl'],
-  },
-  dialogTitle: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.title),
-    lineHeight: fontSize.title * lineHeight.snug,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  dialogBody: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: fontSize.body * lineHeight.normal,
-    textAlign: 'center',
-    marginBottom: spacing['2xl'],
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // Dialog styles
+    dialogOverlay: {
+      flex: 1,
+      backgroundColor: t.overlay.backdrop,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: contentPadding.screen,
+    },
+    dialogContent: {
+      width: '100%',
+      backgroundColor: t.depth.abyss,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: t.border.default,
+      padding: spacing['2xl'],
+    },
+    dialogTitle: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.title),
+      lineHeight: fontSize.title * lineHeight.snug,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+    dialogBody: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.normal,
+      textAlign: 'center',
+      marginBottom: spacing['2xl'],
+    },
+  });

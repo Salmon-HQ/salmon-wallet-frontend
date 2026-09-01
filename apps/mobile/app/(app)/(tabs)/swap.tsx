@@ -37,7 +37,7 @@ import {
   type SolanaAccount,
   type SwapNetworkId,
   unifiedToSwapToken,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import {
   SwapScreen,
@@ -48,6 +48,7 @@ import {
   type SwapToken,
 } from '../../../src/components';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 
 /**
  * Since SwapQuote now uses the backend structure directly,
@@ -66,6 +67,7 @@ function transformQuoteForUI(
 
 export default function SwapScreenPage() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const { headerChromeHeight } = useTabChrome();
   const router = useRouter();
 
@@ -422,23 +424,24 @@ export default function SwapScreenPage() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: semantic.text.secondary,
-    fontSize: fontSize.bodyLg,
-    marginTop: spacing.lg,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    contentContainer: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingText: {
+      color: t.text.secondary,
+      fontSize: fontSize.bodyLg,
+      marginTop: spacing.lg,
+    },
+  });

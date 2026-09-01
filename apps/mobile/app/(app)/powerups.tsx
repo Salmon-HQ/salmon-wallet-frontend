@@ -21,9 +21,9 @@ import {
   lineHeight,
   ms,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 import {
   Card,
@@ -42,6 +42,7 @@ import { LightningIcon } from '../../src/icons';
 import { useTabChrome } from '../../hooks/useTabChrome';
 import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
 import { getPowerups, type Powerup } from '../../src/powerups/catalog';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 
 /** The lightning that marks the catalogue, per the `.pen` header. */
 const TITLE_GLYPH_SIZE = 17;
@@ -72,6 +73,8 @@ export default function PowerupsScreen() {
   // inset is already inside `scrollBottomPadding`, so padding it here too
   // would count it twice.
   const { topInset, scrollBottomPadding } = useTabChrome();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const developerMode = useDeveloperMode();
 
   // No close-on-lock effect: this is a plain screen of the `(app)` stack now,
@@ -275,80 +278,81 @@ export default function PowerupsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: s(spacing.screenGutter),
-    gap: vs(spacing.xl),
-  },
-  filters: {
-    alignSelf: 'flex-start',
-  },
-  // Section label to its card/row group, and card→card or row→row within
-  // the group, are both sibling seams per DESIGN.md's component gap rule —
-  // one `gap` covers both since every child here (label, Card, ListRow) is
-  // a flat sibling of the next.
-  section: {
-    gap: vs(spacing.xl),
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    // Tiles are siblings too, but 20 on both axes doesn't fit 3-per-row at
-    // 30% basis on a 350-350px screen (3*29%+2*20 already overflows a
-    // 320-360pt content width) — kept at 12 (spacing.md) here, a deliberate
-    // exception to the sibling-seam rule so the 3-tile grid the spec calls
-    // for (POWERUPS 01/02 installed row) doesn't wrap on narrow devices.
-    columnGap: s(spacing.md),
-    rowGap: vs(spacing.md),
-  },
-  // Three to a row: 30% each leaves the two 12pt gutters their room, and
-  // nothing grows, so a lone tile stays tile-sized instead of stretching.
-  tile: {
-    flexBasis: '30%',
-    flexGrow: 0,
-    alignItems: 'center',
-  },
-  tileLabel: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    color: semantic.text.primary,
-    textAlign: 'center',
-  },
-  featuredTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  badges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  },
-  featuredText: {
-    gap: vs(spacing.xs),
-  },
-  featuredTitle: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-  description: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: s(spacing.screenGutter),
+      gap: vs(spacing.xl),
+    },
+    filters: {
+      alignSelf: 'flex-start',
+    },
+    // Section label to its card/row group, and card→card or row→row within
+    // the group, are both sibling seams per DESIGN.md's component gap rule —
+    // one `gap` covers both since every child here (label, Card, ListRow) is
+    // a flat sibling of the next.
+    section: {
+      gap: vs(spacing.xl),
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      // Tiles are siblings too, but 20 on both axes doesn't fit 3-per-row at
+      // 30% basis on a 350-350px screen (3*29%+2*20 already overflows a
+      // 320-360pt content width) — kept at 12 (spacing.md) here, a deliberate
+      // exception to the sibling-seam rule so the 3-tile grid the spec calls
+      // for (POWERUPS 01/02 installed row) doesn't wrap on narrow devices.
+      columnGap: s(spacing.md),
+      rowGap: vs(spacing.md),
+    },
+    // Three to a row: 30% each leaves the two 12pt gutters their room, and
+    // nothing grows, so a lone tile stays tile-sized instead of stretching.
+    tile: {
+      flexBasis: '30%',
+      flexGrow: 0,
+      alignItems: 'center',
+    },
+    tileLabel: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      color: t.text.primary,
+      textAlign: 'center',
+    },
+    featuredTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    badges: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+      flexShrink: 1,
+      flexWrap: 'wrap',
+      justifyContent: 'flex-end',
+    },
+    featuredText: {
+      gap: vs(spacing.xs),
+    },
+    featuredTitle: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.heading),
+      lineHeight: s(fontSize.heading) * lineHeight.snug,
+      color: t.text.primary,
+    },
+    description: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+  });

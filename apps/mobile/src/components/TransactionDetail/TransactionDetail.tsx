@@ -18,11 +18,11 @@ import {
   getBlockchainFromNetworkId,
   lineHeight,
   s,
-  semantic,
   spacing,
   vs,
   type Blockchain,
   type NetworkEnvironment,
+  type Semantic,
 } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,21 +33,22 @@ import { KeyValueRow } from '../KeyValueRow';
 import { TextButton } from '../Button';
 import { ExplorerLinkButton } from '../Activity/ExplorerLinkButton';
 import {
-  TRANSACTION_TYPE_CONFIG,
+  transactionTypeConfigFor,
   TYPE_LABEL_KEYS,
 } from '../Activity/transactionTypes';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
 import { TransactionDetailSwap } from './TransactionDetailSwap';
 import { TransactionDetailTransfer } from './TransactionDetailTransfer';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { TransactionDetailProps } from './types';
 import type { KeyValueTone } from '../KeyValueRow';
 
-const STATUS_CONFIG = {
-  completed: { label: 'Completed', color: semantic.status.success, icon: CheckCircleIcon },
-  failed: { label: 'Failed', color: semantic.status.danger, icon: XCircleIcon },
-  pending: { label: 'Pending', color: semantic.status.warning, icon: ClockIcon },
-};
+const statusConfigFor = (t: Semantic) => ({
+  completed: { label: 'Completed', color: t.status.success, icon: CheckCircleIcon },
+  failed: { label: 'Failed', color: t.status.danger, icon: XCircleIcon },
+  pending: { label: 'Pending', color: t.status.warning, icon: ClockIcon },
+});
 
 /**
  * Confirmation depth, said in the row's value ink. It used to be a tinted
@@ -86,6 +87,10 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
 }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const STATUS_CONFIG = useMemo(() => statusConfigFor(semantic), [semantic]);
+  const TRANSACTION_TYPE_CONFIG = useMemo(() => transactionTypeConfigFor(semantic), [semantic]);
 
   const handleShare = useCallback(() => {
     if (transaction && onShare) {
@@ -96,12 +101,12 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   const typeConfig = useMemo(() => {
     if (!transaction) return TRANSACTION_TYPE_CONFIG.unknown;
     return TRANSACTION_TYPE_CONFIG[transaction.type] || TRANSACTION_TYPE_CONFIG.unknown;
-  }, [transaction]);
+  }, [transaction, TRANSACTION_TYPE_CONFIG]);
 
   const statusConfig = useMemo(() => {
     if (!transaction) return STATUS_CONFIG.completed;
     return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
-  }, [transaction]);
+  }, [transaction, STATUS_CONFIG]);
 
   // A swap with no route data still has a rate: one token in, one token out.
   // The row's inline panel derived it, and the detail is now the only place
@@ -250,65 +255,66 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexShrink: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.md),
-  },
-  headerInfo: {
-    flex: 1,
-    minWidth: 0,
-    gap: vs(spacing.xs),
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    columnGap: s(spacing.sm),
-    rowGap: vs(spacing.xxs),
-  },
-  title: {
-    fontSize: s(fontSize.title),
-    lineHeight: s(fontSize.title) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-    flexShrink: 1,
-  },
-  sourceChip: {
-    flexShrink: 1,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  statusText: {
-    fontSize: s(fontSize.mono),
-    lineHeight: s(fontSize.mono) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-  },
-  content: {
-    flexGrow: 0,
-    flexShrink: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.md),
-    gap: vs(spacing.md),
-  },
-  actions: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-    gap: vs(spacing.sm),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: semantic.border.hairline,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flexShrink: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.md),
+    },
+    headerInfo: {
+      flex: 1,
+      minWidth: 0,
+      gap: vs(spacing.xs),
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      columnGap: s(spacing.sm),
+      rowGap: vs(spacing.xxs),
+    },
+    title: {
+      fontSize: s(fontSize.title),
+      lineHeight: s(fontSize.title) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      flexShrink: 1,
+    },
+    sourceChip: {
+      flexShrink: 1,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    statusText: {
+      fontSize: s(fontSize.mono),
+      lineHeight: s(fontSize.mono) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+    },
+    content: {
+      flexGrow: 0,
+      flexShrink: 1,
+    },
+    contentContainer: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.md),
+      gap: vs(spacing.md),
+    },
+    actions: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.sm),
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: t.border.hairline,
+    },
+  });
 
 export default TransactionDetail;

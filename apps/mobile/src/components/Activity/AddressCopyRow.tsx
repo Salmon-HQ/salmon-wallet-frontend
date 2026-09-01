@@ -4,10 +4,11 @@ import { Animated, Text, StyleSheet, ViewStyle } from 'react-native';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import { fontFamilyNative, fontSize, getShortAddress, ms, semantic } from '@salmon/shared';
+import { fontFamilyNative, fontSize, getShortAddress, ms, type Semantic } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // The copy control is the kit's 32-ish well; `IconBubble`'s closed union has
 // no 32, so this takes the nearest step (36) rather than growing a tenth size
@@ -89,6 +90,8 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, text } = useSemantic();
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress = getTruncatedAddress(address, truncate);
@@ -134,10 +137,10 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
         >
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+              <CheckIcon size={iconSize.sm} color={status.success} />
             </Animated.View>
           ) : (
-            <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
+            <CopyIcon size={iconSize.sm} color={text.accent} />
           )}
         </IconBubble>
       }
@@ -149,18 +152,19 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  /**
-   * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
-   * against suffix, so its characters must hold a fixed width — Geist Mono at
-   * the address size.
-   */
-  address: {
-    fontSize: ms(fontSize.mono),
-    fontFamily: fontFamilyNative.mono,
-    color: semantic.text.primary,
-    flexShrink: 1,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /**
+     * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
+     * against suffix, so its characters must hold a fixed width — Geist Mono at
+     * the address size.
+     */
+    address: {
+      fontSize: ms(fontSize.mono),
+      fontFamily: fontFamilyNative.mono,
+      color: t.text.primary,
+      flexShrink: 1,
+    },
+  });
 
 export default AddressCopyRow;

@@ -7,9 +7,10 @@ import {
   borderRadius,
   fontSize,
   fontFamilyNative,
-  semantic,
 } from '@salmon/shared';
 import { PasswordStrength, getPasswordStrengthLabel } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/useThemedStyles';
 
 interface PasswordStrengthBarProps {
   strength: PasswordStrength;
@@ -17,14 +18,16 @@ interface PasswordStrengthBarProps {
 }
 
 export function PasswordStrengthBar({ strength, t }: PasswordStrengthBarProps) {
+  const { status, step } = useSemantic();
+
   const getStrengthColor = () => {
     switch (strength) {
       case 'strong':
-        return semantic.status.success;
+        return status.success;
       case 'medium':
-        return semantic.status.warning;
+        return status.warning;
       default:
-        return semantic.status.danger;
+        return status.danger;
     }
   };
 
@@ -51,7 +54,7 @@ export function PasswordStrengthBar({ strength, t }: PasswordStrengthBarProps) {
             key={index}
             style={[
               styles.bar,
-              { backgroundColor: index < activeCount ? barColor : semantic.step.inactive },
+              { backgroundColor: index < activeCount ? barColor : step.inactive },
             ]}
           />
         ))}

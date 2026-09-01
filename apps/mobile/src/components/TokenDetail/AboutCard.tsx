@@ -11,7 +11,7 @@ import React, { useCallback } from 'react';
 import { Animated, Linking, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
-import { fontFamilyNative, fontSize, lineHeight, s, semantic, spacing, vs } from '@salmon/shared';
+import { fontFamilyNative, fontSize, lineHeight, s, spacing, vs, type Semantic } from '@salmon/shared';
 
 import {
   ArrowSquareOutIcon,
@@ -25,6 +25,7 @@ import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { SkeletonRow } from '../Skeleton';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 
 export interface AboutCardProps {
   description?: string;
@@ -45,6 +46,8 @@ export function AboutCard({
   testID = 'token-detail-about',
 }: AboutCardProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, status } = useSemantic();
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyAddress = useCallback(async () => {
@@ -89,7 +92,7 @@ export function AboutCard({
           trailing={
             copied ? (
               <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+                <CheckIcon size={iconSize.sm} color={status.success} />
               </Animated.View>
             ) : undefined
           }
@@ -105,27 +108,28 @@ export function AboutCard({
           })}
           leading={<IconBubble size={36} tone="surface" icon={GlobeIcon} iconSize={iconSize.sm} />}
           title={t('token.info.visitWebsite', 'Visit Website')}
-          trailing={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />}
+          trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.secondary} />}
         />
       )}
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
-  cardTitle: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-  aboutText: {
-    gap: vs(spacing.sm),
-  },
-  description: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.relaxed,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    cardTitle: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      color: t.text.primary,
+    },
+    aboutText: {
+      gap: vs(spacing.sm),
+    },
+    description: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.relaxed,
+      color: t.text.secondary,
+    },
+  });

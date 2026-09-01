@@ -31,7 +31,9 @@ import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 import { ScreenHeader } from '../ScreenHeader';
 
-import { spacing, contentPadding, fontSize, fontFamilyNative, lineHeight, s, semantic, vs } from '@salmon/shared';
+import { spacing, contentPadding, fontSize, fontFamilyNative, lineHeight, s, vs, type Semantic } from '@salmon/shared';
+
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Types
@@ -74,6 +76,7 @@ export function SettingsScreenLayout({
   footer,
 }: SettingsScreenLayoutProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   return (
     <View style={styles.container}>
       {/* Pushed over the tab shell, so the screen paints its own water — the
@@ -148,7 +151,8 @@ export function SettingsScreenLayout({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -159,7 +163,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subtitle: {
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: s(fontSize.body),
     lineHeight: s(fontSize.body) * lineHeight.snug,

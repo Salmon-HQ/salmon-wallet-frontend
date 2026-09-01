@@ -17,15 +17,16 @@ import {
   formatRawAmount,
   lineHeight,
   s,
-  semantic,
   spacing,
   tabularNums,
+  type Semantic,
 } from '@salmon/shared';
 
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SectionLabel } from '../SectionLabel';
 import { TokenLogo } from '../TokenLogo';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { NftAttribute, Transaction, TransactionTokenAmount } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
@@ -43,30 +44,34 @@ const NFT_PREVIEW_SIZE = 120;
 const TokenAmountRow: React.FC<{ token: TransactionTokenAmount; sign: '+' | '-' }> = ({
   token,
   sign,
-}) => (
-  <View style={styles.tokenRow}>
-    <TokenLogo uri={token.logo || undefined} symbol={token.symbol} size={TOKEN_MARK_SIZE} />
-    <View style={styles.tokenInfo}>
-      <Text style={styles.tokenSymbol} maxFontSizeMultiplier={fontScaleCap.dense}>
-        {token.symbol}
-      </Text>
-      {token.name && (
-        <Text style={styles.tokenName} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
-          {token.name}
+}) => {
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
+  return (
+    <View style={styles.tokenRow}>
+      <TokenLogo uri={token.logo || undefined} symbol={token.symbol} size={TOKEN_MARK_SIZE} />
+      <View style={styles.tokenInfo}>
+        <Text style={styles.tokenSymbol} maxFontSizeMultiplier={fontScaleCap.dense}>
+          {token.symbol}
         </Text>
-      )}
+        {token.name && (
+          <Text style={styles.tokenName} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+            {token.name}
+          </Text>
+        )}
+      </View>
+      <Text
+        style={[
+          styles.tokenAmount,
+          { color: sign === '+' ? status.success : status.danger },
+        ]}
+        maxFontSizeMultiplier={fontScaleCap.dense}
+      >
+        {sign} {formatRawAmount(token.amount, token.decimals)}
+      </Text>
     </View>
-    <Text
-      style={[
-        styles.tokenAmount,
-        { color: sign === '+' ? semantic.status.success : semantic.status.danger },
-      ]}
-      maxFontSizeMultiplier={fontScaleCap.dense}
-    >
-      {sign} {formatRawAmount(token.amount, token.decimals)}
-    </Text>
-  </View>
-);
+  );
+};
 
 /**
  * One NFT trait, as a key/value pair inside the metadata card.
@@ -77,6 +82,8 @@ const NftAttributeRow: React.FC<{ attribute: NftAttribute }> = ({ attribute }) =
 
 const NftMetadataCard: React.FC<{ token: TransactionTokenAmount }> = ({ token }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
   if (!token.isNft) return null;
 
   return (
@@ -103,7 +110,7 @@ const NftMetadataCard: React.FC<{ token: TransactionTokenAmount }> = ({ token })
             style={styles.collectionValue}
           />
           {token.nftCollectionVerified && (
-            <CheckCircleIcon size={iconSize.sm} color={semantic.status.success} />
+            <CheckCircleIcon size={iconSize.sm} color={status.success} />
           )}
         </View>
       )}
@@ -130,6 +137,7 @@ export const TransactionDetailTransfer: React.FC<TransactionDetailTransferProps>
   transaction,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const { inputs, outputs } = transaction;
   const nftTokens = [...inputs, ...outputs].filter((token) => token.isNft);
 
@@ -166,62 +174,63 @@ export const TransactionDetailTransfer: React.FC<TransactionDetailTransferProps>
   );
 };
 
-const styles = StyleSheet.create({
-  cardTitle: {
-    fontSize: s(fontSize.mono),
-    lineHeight: s(fontSize.mono) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: semantic.border.hairline,
-  },
-  tokenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  tokenInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  tokenSymbol: {
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-  },
-  tokenName: {
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-  },
-  tokenAmount: {
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    textAlign: 'right',
-    ...TABULAR,
-  },
-  nftMedia: {
-    alignItems: 'center',
-  },
-  nftPreview: {
-    width: s(NFT_PREVIEW_SIZE),
-    height: s(NFT_PREVIEW_SIZE),
-    borderRadius: borderRadius.r3,
-    backgroundColor: semantic.surface.raised,
-  },
-  collectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  collectionValue: {
-    flex: 1,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    cardTitle: {
+      fontSize: s(fontSize.mono),
+      lineHeight: s(fontSize.mono) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: t.border.hairline,
+    },
+    tokenRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    tokenInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    tokenSymbol: {
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+    tokenName: {
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    tokenAmount: {
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      textAlign: 'right',
+      ...TABULAR,
+    },
+    nftMedia: {
+      alignItems: 'center',
+    },
+    nftPreview: {
+      width: s(NFT_PREVIEW_SIZE),
+      height: s(NFT_PREVIEW_SIZE),
+      borderRadius: borderRadius.r3,
+      backgroundColor: t.surface.raised,
+    },
+    collectionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    collectionValue: {
+      flex: 1,
+    },
+  });
 
 export default TransactionDetailTransfer;

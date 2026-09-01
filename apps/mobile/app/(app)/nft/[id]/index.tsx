@@ -32,11 +32,11 @@ import {
   isSolanaNft,
   lineHeight,
   s,
-  semantic,
   spacing,
   trackEvent,
   vs,
   type NftAttribute,
+  type Semantic,
 } from '@salmon/shared';
 
 import {
@@ -54,6 +54,7 @@ import { CheckIcon, CopyIcon, FireIcon, iconSize } from '../../../../src/icons';
 import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
 import { useTabChrome } from '../../../../hooks/useTabChrome';
 import { useCopyFeedback } from '../../../../hooks/useCopyFeedback';
+import { useSemantic, useThemedStyles } from '../../../../src/theme/useThemedStyles';
 
 /** The fallback the media falls back to — the primary fill, drawn flat. */
 const FALLBACK_GRADIENT = {
@@ -67,6 +68,8 @@ export default function NftDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; section?: string; sub?: string }>();
   const { floatingBottomOffset } = useTabChrome();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { nft, nftLoading, account, prepareBurn, resetBurn } = useNftFlow();
 
   const [imageLoading, setImageLoading] = useState(true);
@@ -329,84 +332,85 @@ export default function NftDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  // The component gap: every top-level child of a screen is 20 from the next
-  // (DESIGN.md §Layout — "The component gap").
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  // A heading and the card it introduces are one composed block, so they sit
-  // at the tighter in-component step and the 20 belongs to the seam above.
-  group: {
-    gap: vs(spacing.sm),
-  },
-  hero: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: borderRadius.r4,
-    overflow: 'hidden',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: borderRadius.r4,
-  },
-  heroLoading: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  description: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.normal,
-    color: semantic.text.secondary,
-  },
-  copyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  copyRowValue: {
-    flex: 1,
-  },
-  rarityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  rarityLabel: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    color: semantic.text.secondary,
-  },
-  rarityBadge: {
-    paddingHorizontal: s(spacing.sm),
-    paddingVertical: vs(spacing.xs),
-    borderRadius: borderRadius.r1,
-  },
-  rarityText: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.label),
-    color: semantic.accent.onFill,
-    textTransform: 'uppercase',
-  },
-  notice: {
-    marginTop: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-    gap: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+    },
+    // The component gap: every top-level child of a screen is 20 from the next
+    // (DESIGN.md §Layout — "The component gap").
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    // A heading and the card it introduces are one composed block, so they sit
+    // at the tighter in-component step and the 20 belongs to the seam above.
+    group: {
+      gap: vs(spacing.sm),
+    },
+    hero: {
+      width: '100%',
+      aspectRatio: 1,
+      borderRadius: borderRadius.r4,
+      overflow: 'hidden',
+    },
+    heroImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: borderRadius.r4,
+    },
+    heroLoading: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    description: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.normal,
+      color: t.text.secondary,
+    },
+    copyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    copyRowValue: {
+      flex: 1,
+    },
+    rarityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    rarityLabel: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.caption),
+      color: t.text.secondary,
+    },
+    rarityBadge: {
+      paddingHorizontal: s(spacing.sm),
+      paddingVertical: vs(spacing.xs),
+      borderRadius: borderRadius.r1,
+    },
+    rarityText: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.label),
+      color: t.accent.onFill,
+      textTransform: 'uppercase',
+    },
+    notice: {
+      marginTop: 0,
+    },
+    action: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.md),
+    },
+  });

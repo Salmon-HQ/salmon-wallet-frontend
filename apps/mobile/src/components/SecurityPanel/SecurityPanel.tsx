@@ -17,13 +17,14 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
   PASSWORD_CONSTRAINTS,
+  type Semantic,
 } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FingerprintIcon, KeyIcon, ShieldCheckIcon, SquaresFourIcon, iconSize } from '../../icons';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
@@ -54,6 +55,8 @@ export function SecurityPanel({
   onPasswordChanged,
 }: SecurityPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { border, accent, text } = useSemantic();
   const [accountState, accountActions] = useAccountsContext();
 
   // Password state
@@ -205,8 +208,8 @@ export function SecurityPanel({
                 onValueChange={onToggleBiometric}
                 // Off-track on `border.default`: the card token vanished against
                 // the row's own card ground, leaving the off state invisible.
-                trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
-                thumbColor={semantic.text.primary}
+                trackColor={{ false: border.default, true: accent.ink }}
+                thumbColor={text.primary}
               />
             </View>
           }
@@ -326,26 +329,27 @@ export function SecurityPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  trailing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  strength: {
-    marginTop: s(spacing.sm),
-    paddingHorizontal: s(spacing.xs),
-  },
-  error: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-  },
-  success: {
-    color: semantic.status.success,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    trailing: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    strength: {
+      marginTop: s(spacing.sm),
+      paddingHorizontal: s(spacing.xs),
+    },
+    error: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+    },
+    success: {
+      color: t.status.success,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+    },
+  });

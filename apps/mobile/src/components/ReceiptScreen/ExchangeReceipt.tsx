@@ -21,18 +21,19 @@ import {
   resolveOnboardingBands,
   resolveOnboardingGrid,
   s,
-  semantic,
   SINK_FLOAT_STAGGER_MS,
   spacing,
   tabularNums,
   useWaitExit,
   useWaitGate,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 
 import { ArrowDownIcon, CheckIcon } from '../../icons';
 import { floatEntering } from '../../utils/sinkAndFloat';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { TokenLogo } from '../TokenLogo';
@@ -104,6 +105,8 @@ export function ExchangeReceipt({
   const bridgeStep = exchange ? 4 : 2;
   const actionStep = isBridge ? bridgeStep + 1 : bridgeStep;
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, status } = useSemantic();
   const { floatingBottomOffset, insets } = useTabChrome();
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -208,7 +211,7 @@ export function ExchangeReceipt({
               <ArrowDownIcon
                 weight="bold"
                 size={GRAPHIC_ICON_SIZE}
-                color={semantic.text.secondary}
+                color={text.secondary}
               />
             </Animated.View>
             <Animated.View
@@ -233,7 +236,7 @@ export function ExchangeReceipt({
                 {exchange.receive.amount}
               </Text>
               <View style={styles.tickSlot} testID="tx-success-tick">
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
+                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={status.success} />
               </View>
             </Animated.View>
           </View>
@@ -340,7 +343,7 @@ export function ExchangeReceipt({
                   <Text
                     style={[
                       styles.bridgeValue,
-                      { color: semantic.text.accent, textDecorationLine: 'underline' },
+                      { color: text.accent, textDecorationLine: 'underline' },
                     ]}
                   >
                     {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
@@ -373,7 +376,7 @@ export function ExchangeReceipt({
           {!isBridge && explorerUrl ? (
             <TextButton
               onPress={handleExplorerPress}
-              color={semantic.text.secondary}
+              color={text.secondary}
               testID="tx-success-explorer-link"
             >
               {t('transaction.viewOnExplorer')}
@@ -395,7 +398,8 @@ export function ExchangeReceipt({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -431,14 +435,14 @@ const styles = StyleSheet.create({
   // keeps all three channels: the glyph's colour, the glyph, and the label.
   statusGlyph: {
     fontSize: ms(fontSize.headline),
-    color: semantic.status.success,
+    color: t.status.success,
     fontFamily: fontFamilyNative.bold,
     fontWeight: fontWeight.bold,
   },
   statusLabel: {
     fontSize: ms(fontSize.headline),
     fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.primary,
+    color: t.text.primary,
     letterSpacing: letterSpacing.snug,
   },
   amountContainer: {
@@ -480,7 +484,7 @@ const styles = StyleSheet.create({
     ...TABULAR,
     fontSize: ms(fontSize.title),
     fontFamily: fontFamilyNative.medium,
-    color: semantic.text.primary,
+    color: t.text.primary,
     textAlign: 'center',
     lineHeight: ms(fontSize.title * lineHeight.tight),
     // On the exchange line the two amounts share the row with two marks and
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
   amountSpent: {
     fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
   },
   // The quiet receipt: label left, value right, no card — secondary rank
@@ -515,18 +519,18 @@ const styles = StyleSheet.create({
   receiptLabel: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
-    color: semantic.text.tertiary,
+    color: t.text.tertiary,
   },
   receiptValue: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     textAlign: 'right',
     flexShrink: 1,
   },
   bridgeInfoBox: {
     width: '100%',
-    backgroundColor: semantic.surface.raised,
+    backgroundColor: t.surface.raised,
     borderRadius: borderRadius.card,
     padding: s(spacing.lg),
     marginBottom: vs(spacing.xl),
@@ -534,14 +538,14 @@ const styles = StyleSheet.create({
   bridgeLabel: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
-    color: semantic.text.tertiary,
+    color: t.text.tertiary,
     marginBottom: vs(spacing.xs),
   },
   bridgeValue: {
     ...TABULAR,
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: semantic.text.primary,
+    color: t.text.primary,
     marginBottom: vs(spacing.md),
   },
   // The bottom of the column, on the onboarding ending's bands: the assist

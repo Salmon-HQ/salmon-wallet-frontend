@@ -25,7 +25,7 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { WarningIcon } from '../../src/icons';
 import {
@@ -34,6 +34,7 @@ import {
   PrimaryButton,
   ScreenHeader,
 } from '../../src/components';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,8 @@ const END_SLOP = 8;
 
 export default function SeedWarningScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const [read, setRead] = useState(false);
   const viewportHeight = useRef(0);
   const contentHeight = useRef(0);
@@ -131,16 +134,17 @@ export default function SeedWarningScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bodyContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  body: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    bodyContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+    },
+    body: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: fontSize.bodyLg * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

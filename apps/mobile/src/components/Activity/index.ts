@@ -15,7 +15,7 @@ export {
   matchesFilter,
 } from './activityRows';
 export { EmptyState, ErrorState, TransactionListSkeleton } from './ActivityStates';
-export { TRANSACTION_TYPE_CONFIG, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
+export { transactionTypeConfigFor, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
 export { PriceImpactBadge } from './PriceImpactBadge';
 export { ConversionRateDisplay } from './ConversionRateDisplay';
 export { ExplorerLinkButton } from './ExplorerLinkButton';

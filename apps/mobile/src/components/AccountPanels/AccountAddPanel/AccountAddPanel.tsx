@@ -47,7 +47,7 @@ import {
   type Account,
   type AccountAddStep,
   type DerivedAccountInfo,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
@@ -63,6 +63,7 @@ import { SeedPhraseEntry } from '../../SeedPhrase';
 import { PasswordInput } from '../../PasswordInput';
 import { useSecretScreen } from '../../../../hooks/useSecretScreen';
 import { useWaitPassage } from '../../../utils/useWaitPassage';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -74,6 +75,8 @@ const ROW_BUBBLE_SIZE = 40;
 
 export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, accent } = useSemantic();
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, activeAccount } = accountState;
 
@@ -465,7 +468,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         title={t(method.titleKey)}
         subtitle={t(method.descriptionKey)}
         onPress={method.onPress}
-        trailing={<CaretRightIcon size={iconSize.sm} color={semantic.text.tertiary} />}
+        trailing={<CaretRightIcon size={iconSize.sm} color={text.tertiary} />}
       />
     ));
 
@@ -473,7 +476,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     if (scanning) {
       return (
         <View style={styles.scanState}>
-          <ActivityIndicator size="large" color={semantic.accent.ink} />
+          <ActivityIndicator size="large" color={accent.ink} />
           <Text style={styles.scanStateText}>{t('settings.account_add.scanning')}</Text>
         </View>
       );
@@ -590,7 +593,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
           value={watchOnlyImport.value}
           onChangeText={watchOnlyImport.setValue}
           placeholder={t('wallet.watchOnly.placeholder')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           autoFocus
           autoCapitalize="none"
           autoCorrect={false}
@@ -658,7 +661,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
           value={accountName}
           onChangeText={setAccountName}
           placeholder={t('settings.account_add.set_name_placeholder')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           autoFocus
           maxLength={32}
           returnKeyType="done"
@@ -732,60 +735,61 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  /**
-   * The inside of one step. 12 binds a label to its field and a field to its
-   * hint; the 20 between steps' blocks is the layout's own (DESIGN.md
-   * §Layout, the component gap).
-   */
-  stack: {
-    gap: s(spacing.md),
-  },
-  scanState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing['3xl']),
-    gap: s(spacing.md),
-  },
-  scanStateText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-  },
-  bodyText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-  },
-  /** Matches PasswordInput's own error text, so hint and error share a slot. */
-  hintText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    paddingHorizontal: s(spacing.xs),
-  },
-  errorText: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    paddingHorizontal: s(spacing.xs),
-  },
-  addressText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontSize: s(fontSize.mono),
-  },
-  // An address is read character by character, so the field it is typed into
-  // is mono like every other address surface in the app.
-  addressInput: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontSize: s(fontSize.mono),
-  },
-  nameInput: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /**
+     * The inside of one step. 12 binds a label to its field and a field to its
+     * hint; the 20 between steps' blocks is the layout's own (DESIGN.md
+     * §Layout, the component gap).
+     */
+    stack: {
+      gap: s(spacing.md),
+    },
+    scanState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: vs(spacing['3xl']),
+      gap: s(spacing.md),
+    },
+    scanStateText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+    },
+    bodyText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+    },
+    /** Matches PasswordInput's own error text, so hint and error share a slot. */
+    hintText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      paddingHorizontal: s(spacing.xs),
+    },
+    errorText: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      paddingHorizontal: s(spacing.xs),
+    },
+    addressText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.mono),
+    },
+    // An address is read character by character, so the field it is typed into
+    // is mono like every other address surface in the app.
+    addressInput: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.mono),
+    },
+    nameInput: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+    },
+  });

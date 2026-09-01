@@ -22,10 +22,10 @@ import {
   getShortAddress,
   isWatchOnlyAccount,
   s,
-  semantic,
   spacing,
   vs,
   type Account,
+  type Semantic,
 } from '@salmon/shared';
 import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { Card } from '../../Card';
@@ -33,6 +33,7 @@ import { IconBubble } from '../../IconBubble';
 import { WatchOnlyBadge } from '../../WatchOnlyBadge';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { ConfirmSheet } from '../../ConfirmSheet';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountsPanelProps } from './types';
 
 /** The avatar well every account row carries — the same size Wallets draws. */
@@ -55,6 +56,8 @@ interface AccountRowProps {
 
 function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }: AccountRowProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, accent } = useSemantic();
   const [imgError, setImgError] = useState(false);
 
   const address = getAccountAddress(account);
@@ -118,7 +121,7 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
               tone="ghost"
               icon={TrashIcon}
               iconSize={iconSize.sm}
-              iconColor={semantic.status.danger}
+              iconColor={status.danger}
               onPress={onDelete}
               accessibilityLabel={t('accessibility.delete_account', 'Delete account')}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -132,7 +135,7 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
               tone="ghost"
               icon={CheckCircleIcon}
               iconSize={iconSize.lg}
-              iconColor={semantic.accent.ink}
+              iconColor={accent.ink}
             />
           )}
         </View>
@@ -155,6 +158,8 @@ export function AccountsPanel({
   onBack,
 }: AccountsPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const canDelete = accounts.length > 1;
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
@@ -194,7 +199,7 @@ export function AccountsPanel({
         style={styles.addCard}
       >
         <View style={styles.addRow}>
-          <PlusIcon size={iconSize.md} color={semantic.accent.ink} />
+          <PlusIcon size={iconSize.md} color={accent.ink} />
           <Text style={styles.addLabel}>{t('settings.account_add.title')}</Text>
         </View>
       </Card>
@@ -218,70 +223,71 @@ export function AccountsPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  activeCard: {
-    borderWidth: 1,
-    borderColor: semantic.accent.ink,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  info: {
-    flex: 1,
-    minWidth: 0,
-    gap: vs(spacing.xxs),
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    flexWrap: 'wrap',
-  },
-  name: {
-    flexShrink: 1,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    fontSize: s(fontSize.bodyLg),
-  },
-  address: {
-    color: semantic.text.secondary,
-    // An address is position-critical, so it reads in mono at the mono step.
-    fontFamily: fontFamilyNative.mono,
-    fontSize: s(fontSize.mono),
-  },
-  trailing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarInitials: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-  },
-  addCard: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: semantic.border.raised,
-  },
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  addLabel: {
-    color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    fontSize: s(fontSize.body),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    activeCard: {
+      borderWidth: 1,
+      borderColor: t.accent.ink,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    info: {
+      flex: 1,
+      minWidth: 0,
+      gap: vs(spacing.xxs),
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+      flexWrap: 'wrap',
+    },
+    name: {
+      flexShrink: 1,
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: s(fontSize.bodyLg),
+    },
+    address: {
+      color: t.text.secondary,
+      // An address is position-critical, so it reads in mono at the mono step.
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.mono),
+    },
+    trailing: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    avatarInitials: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+    },
+    addCard: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.border.raised,
+    },
+    addRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    addLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: s(fontSize.body),
+    },
+  });

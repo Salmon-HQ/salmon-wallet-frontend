@@ -8,8 +8,9 @@
  */
 import React, { memo } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { contentPadding, s, semantic, spacing } from '@salmon/shared';
+import { contentPadding, s, spacing } from '@salmon/shared';
 
+import { useSemantic } from '../../theme/useThemedStyles';
 import { Chip } from '../Chip';
 import type { SubAccountSelectorProps } from './types';
 
@@ -21,6 +22,8 @@ export const SubAccountSelector = memo(function SubAccountSelector({
   style,
   testID,
 }: SubAccountSelectorProps) {
+  const { text } = useSemantic();
+
   if (accounts.length < 2) return null;
 
   return (
@@ -30,7 +33,7 @@ export const SubAccountSelector = memo(function SubAccountSelector({
         if (isPending) {
           return (
             <View key={account.index} style={styles.pending}>
-              <ActivityIndicator size="small" color={semantic.text.secondary} />
+              <ActivityIndicator size="small" color={text.secondary} />
             </View>
           );
         }

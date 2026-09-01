@@ -13,11 +13,12 @@ import {
   letterSpacing,
   lineHeight,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { CheckIcon } from '../../icons';
 import { Card } from '../Card';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -41,6 +42,8 @@ export function TransferReceipt({
   testID = 'tx-success-screen',
 }: Omit<TransferReceiptScreenProps, 'tone'>) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
 
   // The haptic is the whole of the arrival: the receipt is simply there,
@@ -61,7 +64,7 @@ export function TransferReceipt({
           icon={CheckIcon}
           iconSize={SEAL_ICON_SIZE}
           iconWeight="bold"
-          iconColor={semantic.status.success}
+          iconColor={status.success}
           testID="tx-success-seal"
         />
         <Text style={styles.title} testID="tx-success-title">
@@ -102,37 +105,38 @@ export function TransferReceipt({
   );
 }
 
-const styles = StyleSheet.create({
-  // The report sits in the middle of the water; the actions keep the bottom
-  // edge.
-  cluster: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  title: {
-    fontSize: s(fontSize.display),
-    lineHeight: s(fontSize.display) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    letterSpacing: letterSpacing.snug,
-    color: semantic.text.primary,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.normal,
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-    textAlign: 'center',
-  },
-  receipt: {
-    alignSelf: 'stretch',
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-    gap: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The report sits in the middle of the water; the actions keep the bottom
+    // edge.
+    cluster: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: s(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    title: {
+      fontSize: s(fontSize.display),
+      lineHeight: s(fontSize.display) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      letterSpacing: letterSpacing.snug,
+      color: t.text.primary,
+      textAlign: 'center',
+    },
+    body: {
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.normal,
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      textAlign: 'center',
+    },
+    receipt: {
+      alignSelf: 'stretch',
+    },
+    action: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.md),
+    },
+  });

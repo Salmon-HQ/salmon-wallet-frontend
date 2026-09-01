@@ -24,12 +24,13 @@ import {
   getShortAddress,
   lineHeight,
   s,
-  semantic,
   spacing,
   useAccountsContext,
   type Account,
   type AccountKeyInfo,
+  type Semantic,
 } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
@@ -94,6 +95,8 @@ export function PrivateKeyPanel({
   authenticateWithBiometric,
 }: PrivateKeyPanelProps): React.ReactElement | null {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
 
   // A private key is a full spending credential; protect the panel from the
   // network picker onward so backgrounding mid-flow is never a gap.
@@ -296,7 +299,7 @@ export function PrivateKeyPanel({
                     testID={`private-key-reveal-overlay-${index}`}
                     accessibilityRole="button"
                   >
-                    <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
+                    <EyeIcon size={iconSize.xl} color={text.primary} />
                     {/* Both branches cost a proof of identity, so the label
                         does not promise a free tap. */}
                     <Text style={styles.revealText}>{t('settings.authenticate_to_reveal')}</Text>
@@ -353,51 +356,52 @@ export function PrivateKeyPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // The Bedrock Rule (DESIGN.md): a private key is a bedrock surface like the
-  // seed — its exhibiting ground is `surface.bedrock`, α 1.00, never a
-  // translucent card that lets the water show through the key.
-  keyContainer: {
-    position: 'relative',
-    backgroundColor: semantic.surface.bedrock,
-    borderRadius: borderRadius.r3,
-    padding: s(spacing.lg),
-    minHeight: 80,
-    justifyContent: 'center',
-  },
-  // Geist Mono, as every value read character by character renders — the key
-  // is the most position-critical string in the app. Mono is fixed-pitch, so
-  // no added tracking.
-  keyText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontSize: s(fontSize.monoLg),
-    lineHeight: s(fontSize.monoLg) * lineHeight.normal,
-  },
-  // Opaque, not a scrim: a translucent cover over a masked key reads as a
-  // loading state and lets the water column through the gate.
-  revealCover: {
-    ...StyleSheet.absoluteFillObject,
-    // Declared, not implied by sibling order: a reorder must not uncover the gate.
-    zIndex: 10,
-    backgroundColor: semantic.surface.bedrock,
-    borderRadius: borderRadius.r3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  revealText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.bodyLg),
-  },
-  emptyText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The Bedrock Rule (DESIGN.md): a private key is a bedrock surface like the
+    // seed — its exhibiting ground is `surface.bedrock`, α 1.00, never a
+    // translucent card that lets the water show through the key.
+    keyContainer: {
+      position: 'relative',
+      backgroundColor: t.surface.bedrock,
+      borderRadius: borderRadius.r3,
+      padding: s(spacing.lg),
+      minHeight: 80,
+      justifyContent: 'center',
+    },
+    // Geist Mono, as every value read character by character renders — the key
+    // is the most position-critical string in the app. Mono is fixed-pitch, so
+    // no added tracking.
+    keyText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.monoLg),
+      lineHeight: s(fontSize.monoLg) * lineHeight.normal,
+    },
+    // Opaque, not a scrim: a translucent cover over a masked key reads as a
+    // loading state and lets the water column through the gate.
+    revealCover: {
+      ...StyleSheet.absoluteFillObject,
+      // Declared, not implied by sibling order: a reorder must not uncover the gate.
+      zIndex: 10,
+      backgroundColor: t.surface.bedrock,
+      borderRadius: borderRadius.r3,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    revealText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.bodyLg),
+    },
+    emptyText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      textAlign: 'center',
+    },
+  });
 
 export default PrivateKeyPanel;

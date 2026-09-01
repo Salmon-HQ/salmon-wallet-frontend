@@ -43,12 +43,12 @@ import {
   fontFamilyNative,
   fontSize,
   s,
-  semantic,
   spacing,
   vs,
   LANGUAGE_NAMES,
   type LanguageCode,
   type SettingsScreen,
+  type Semantic,
 } from '@salmon/shared';
 import {
   DepthBackground,
@@ -60,6 +60,7 @@ import {
 } from '../../../src/components';
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
+import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
@@ -144,6 +145,8 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
 export default function SettingsScreenIndex() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
 
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -353,7 +356,9 @@ export default function SettingsScreenIndex() {
       developerNetworks,
       handleRowPress,
       rowValues,
+      semantic,
       setAnalyticsConsent,
+      styles,
       t,
       toggleDeveloperNetworks,
     ]
@@ -393,38 +398,39 @@ export default function SettingsScreenIndex() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: s(spacing.screenGutter),
-    // No top padding: the header block already ends 20 above the content.
-    gap: vs(spacing.xl),
-  },
-  // The component gap (DESIGN.md §Layout): the caps label, and every row card
-  // under it, are sibling components — 20 between each, as the `.pen` draws
-  // them (CORE 10: heading y=140/h16 → first card y=176).
-  section: {
-    gap: vs(spacing.screenGutter),
-  },
-  sectionCard: {
-    gap: vs(spacing.screenGutter),
-  },
-  dangerLabel: {
-    color: semantic.status.danger,
-  },
-  dangerRow: {
-    backgroundColor: semantic.status.dangerTint,
-  },
-  rowValue: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-    maxWidth: '45%',
-    textAlign: 'right',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: s(spacing.screenGutter),
+      // No top padding: the header block already ends 20 above the content.
+      gap: vs(spacing.xl),
+    },
+    // The component gap (DESIGN.md §Layout): the caps label, and every row card
+    // under it, are sibling components — 20 between each, as the `.pen` draws
+    // them (CORE 10: heading y=140/h16 → first card y=176).
+    section: {
+      gap: vs(spacing.screenGutter),
+    },
+    sectionCard: {
+      gap: vs(spacing.screenGutter),
+    },
+    dangerLabel: {
+      color: t.status.danger,
+    },
+    dangerRow: {
+      backgroundColor: t.status.dangerTint,
+    },
+    rowValue: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      maxWidth: '45%',
+      textAlign: 'right',
+    },
+  });

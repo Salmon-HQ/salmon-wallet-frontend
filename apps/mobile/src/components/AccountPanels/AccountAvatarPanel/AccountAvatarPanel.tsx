@@ -31,11 +31,12 @@ import {
   useAvatarNfts,
   type NftAvatarItem,
   type AvatarPickerPropsBase,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
 import { UnderlineTabs } from '../../UnderlineTabs';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 
 // ============================================================================
 // Constants
@@ -78,6 +79,8 @@ export function AccountAvatarPanel({
   onBack,
 }: AccountAvatarPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const { width: windowWidth } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<Tab>('presets');
   const [selectedUrl, setSelectedUrl] = useState<string | undefined>(currentAvatarUrl);
@@ -142,7 +145,7 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [presetItemSize, selectedUrl]
+    [presetItemSize, selectedUrl, styles]
   );
 
   // NFT item renderer
@@ -173,7 +176,7 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [nftItemSize, selectedUrl]
+    [nftItemSize, selectedUrl, styles]
   );
 
   const presetKeyExtractor = useCallback((_item: string, index: number) => `preset-${index}`, []);
@@ -210,7 +213,7 @@ export function AccountAvatarPanel({
           />
         ) : nftsLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={semantic.accent.ink} />
+            <ActivityIndicator size="large" color={accent.ink} />
           </View>
         ) : nfts.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -245,69 +248,70 @@ export function AccountAvatarPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tabs: {
-    marginBottom: spacing.lg,
-  },
-  list: {
-    flex: 1,
-  },
-  gridContent: {
-    paddingBottom: spacing.lg,
-  },
-  columnWrapper: {
-    gap: GRID_GAP,
-    marginBottom: GRID_GAP,
-  },
-  presetItem: {
-    overflow: 'hidden',
-    borderWidth: borderWidth.medium,
-    borderColor: 'transparent',
-  },
-  presetItemSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  presetImage: {
-    width: '100%',
-    height: '100%',
-  },
-  nftItem: {
-    borderRadius: borderRadius.r2,
-    overflow: 'hidden',
-    borderWidth: borderWidth.medium,
-    borderColor: 'transparent',
-  },
-  nftItemSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  nftImage: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-  },
-  emptyText: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    color: semantic.text.secondary,
-    textAlign: 'center',
-  },
-  saveButtonContainer: {
-    marginTop: spacing.md,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    tabs: {
+      marginBottom: spacing.lg,
+    },
+    list: {
+      flex: 1,
+    },
+    gridContent: {
+      paddingBottom: spacing.lg,
+    },
+    columnWrapper: {
+      gap: GRID_GAP,
+      marginBottom: GRID_GAP,
+    },
+    presetItem: {
+      overflow: 'hidden',
+      borderWidth: borderWidth.medium,
+      borderColor: 'transparent',
+    },
+    presetItemSelected: {
+      borderColor: t.state.selectedEdge,
+    },
+    presetImage: {
+      width: '100%',
+      height: '100%',
+    },
+    nftItem: {
+      borderRadius: borderRadius.r2,
+      overflow: 'hidden',
+      borderWidth: borderWidth.medium,
+      borderColor: 'transparent',
+    },
+    nftItemSelected: {
+      borderColor: t.state.selectedEdge,
+    },
+    nftImage: {
+      width: '100%',
+      height: '100%',
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing['3xl'],
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing['3xl'],
+    },
+    emptyText: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      color: t.text.secondary,
+      textAlign: 'center',
+    },
+    saveButtonContainer: {
+      marginTop: spacing.md,
+    },
+  });
 
 export default AccountAvatarPanel;

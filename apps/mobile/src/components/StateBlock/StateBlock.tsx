@@ -14,10 +14,11 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { Card } from '../Card';
 import { SecondaryButton } from '../Button';
 
@@ -32,6 +33,8 @@ export function StateBlock({
   retryTestID,
   testID,
 }: StateBlockProps) {
+  const styles = useThemedStyles(stylesFor);
+
   return (
     <View
       style={styles.wrapper}
@@ -51,7 +54,8 @@ export function StateBlock({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -65,14 +69,14 @@ const styles = StyleSheet.create({
     fontSize: s(fontSize.heading),
     lineHeight: s(fontSize.heading) * lineHeight.snug,
     fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
+    color: t.text.primary,
     textAlign: 'center',
   },
   body: {
     fontSize: s(fontSize.body),
     lineHeight: s(fontSize.body) * lineHeight.snug,
     fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     textAlign: 'center',
   },
 });

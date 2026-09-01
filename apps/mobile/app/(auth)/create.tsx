@@ -23,11 +23,11 @@ import {
   lineHeight,
   motionMs,
   s,
-  semantic,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonicWords,
+  type Semantic,
 } from '@salmon/shared';
 import {
   HoldToCopyButton,
@@ -39,6 +39,7 @@ import {
   SeedWordGrid,
   SeedWordInput,
 } from '../../src/components';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -70,6 +71,8 @@ interface ToastProps {
 }
 
 function Toast({ message, visible }: ToastProps) {
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   if (!visible) return null;
 
   return (
@@ -94,6 +97,7 @@ interface SeedPhraseStepProps {
 }
 
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
+  const semantic = useSemantic();
   const [showToast, setShowToast] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
@@ -167,6 +171,8 @@ interface ValidateStepProps {
 }
 
 function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const words = useMemo(() => (mnemonic ? mnemonic.split(' ') : []), [mnemonic]);
   const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
 
@@ -329,34 +335,35 @@ export default function CreateWalletScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  validationInputs: {
-    width: '100%',
-    gap: spacing.lg,
-  },
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    validationInputs: {
+      width: '100%',
+      gap: spacing.lg,
+    },
 
-  // Toast
-  toastContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: semantic.overlay.backdrop,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius['2xl'],
-    gap: spacing.sm,
-  },
-  toastText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: fontSize.body * lineHeight.snug,
-  },
-});
+    // Toast
+    toastContainer: {
+      position: 'absolute',
+      bottom: 100,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      paddingHorizontal: contentPadding.screen,
+    },
+    toast: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.overlay.backdrop,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius['2xl'],
+      gap: spacing.sm,
+    },
+    toastText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+    },
+  });

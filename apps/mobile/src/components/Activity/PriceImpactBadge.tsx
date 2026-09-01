@@ -12,8 +12,9 @@ import {
   fontFamilyNative,
   getPriceImpactSeverity,
   type PriceImpactSeverity,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+import { useSemantic } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Types
@@ -58,11 +59,11 @@ const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
 /**
  * Color mapping for each severity level
  */
-const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: semantic.status.success,
-  warning: semantic.status.warning,
-  high: semantic.status.danger,
-};
+const severityColorsFor = (t: Semantic): Record<PriceImpactSeverity, string> => ({
+  safe: t.status.success,
+  warning: t.status.warning,
+  high: t.status.danger,
+});
 
 /**
  * Size configurations for each variant
@@ -121,8 +122,9 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
   size = 'medium',
   showIcon = false,
 }) => {
+  const t = useSemantic();
   const severity = getPriceImpactSeverity(value);
-  const color = SEVERITY_COLORS[severity];
+  const color = severityColorsFor(t)[severity];
   const SeverityIcon = SEVERITY_ICONS[severity];
   const sizeConfig = SIZE_CONFIG[size];
 

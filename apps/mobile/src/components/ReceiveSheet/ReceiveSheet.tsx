@@ -9,7 +9,7 @@ import {
   ms,
   s,
   vs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect } from 'react';
 import {
@@ -23,6 +23,7 @@ import {
 import { CheckIcon, CopyIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
@@ -74,6 +75,8 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   const { width: screenWidth } = useWindowDimensions();
   const { copied, scale: tickScale, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, depth, accent } = useSemantic();
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
 
   // Calculate QR size: full width minus padding and border
@@ -139,8 +142,8 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
             <QRCode
               value={address}
               size={qrSize}
-              backgroundColor={semantic.text.primary}
-              color={semantic.depth.abyss}
+              backgroundColor={text.primary}
+              color={depth.abyss}
               // The centered mark hides modules, so the code carries level-H
               // redundancy — a wallet QR must stay scannable before it looks good.
               ecLevel="H"
@@ -162,7 +165,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
               >
                 <BrandMark
                   size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                  color={semantic.depth.abyss}
+                  color={depth.abyss}
                 />
               </View>
             </View>
@@ -193,10 +196,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           <FleshBackground />
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <CheckIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
+              <CheckIcon weight="bold" size={ms(23)} color={accent.onFill} />
             </Animated.View>
           ) : (
-            <CopyIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
+            <CopyIcon weight="bold" size={ms(23)} color={accent.onFill} />
           )}
           {/* The written address is gone from the sheet, so this control is the
               only path to the string: the copied state has to be announced,
@@ -215,7 +218,8 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   sheetContainer: {
     maxHeight: '92%',
     overflow: 'hidden',
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
   qrContainer: {
     borderRadius: ms(borderRadius.xl),
     borderWidth: componentSizes.qrBorderWidth,
-    borderColor: semantic.text.primary,
+    borderColor: t.text.primary,
     overflow: 'hidden',
   },
   qrLogoOverlay: {
@@ -253,22 +257,22 @@ const styles = StyleSheet.create({
   qrLogoKnockout: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.text.primary,
+    backgroundColor: t.text.primary,
   },
   chainBadge: {
-    backgroundColor: semantic.surface.raised,
+    backgroundColor: t.surface.raised,
     // A text chip takes the chip step, not a pill: the Control Radius Rule
     // reserves `full` for what genuinely is a circle (avatars, toggles).
     borderRadius: ms(borderRadius.r1),
     borderWidth: 1,
-    borderColor: semantic.border.raised,
+    borderColor: t.border.raised,
     paddingVertical: vs(spacing.xs),
     paddingHorizontal: s(spacing.md),
   },
   chainBadgeText: {
     fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.primary,
+    color: t.text.primary,
     letterSpacing: letterSpacing.label,
   },
   copyButton: {
@@ -277,7 +281,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.accent.fill,
+    backgroundColor: t.accent.fill,
     borderRadius: ms(borderRadius.lg),
     minWidth: s(componentSizes.copyButtonWidth),
     maxWidth: '100%',
@@ -290,7 +294,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
-    color: semantic.accent.onFill,
+    color: t.accent.onFill,
     textAlign: 'center',
   },
 });

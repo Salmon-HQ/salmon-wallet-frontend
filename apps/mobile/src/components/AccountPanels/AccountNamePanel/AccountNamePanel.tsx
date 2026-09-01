@@ -10,10 +10,11 @@ import React, { useState, useCallback } from 'react';
 import { Text, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { borderWidth, fontFamilyNative, fontSize, semantic } from '@salmon/shared';
+import { borderWidth, fontFamilyNative, fontSize, type Semantic } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { Card } from '../../Card';
 import { PrimaryButton } from '../../Button';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountNamePanelProps } from './types';
 
 export function AccountNamePanel({
@@ -22,6 +23,8 @@ export function AccountNamePanel({
   onBack,
 }: AccountNamePanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const [name, setName] = useState(currentName);
   const [error, setError] = useState('');
 
@@ -56,7 +59,7 @@ export function AccountNamePanel({
           value={name}
           onChangeText={handleChangeText}
           placeholder={t('settings.account_add.set_name_placeholder')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           autoFocus
           maxLength={32}
           returnKeyType="done"
@@ -74,25 +77,26 @@ export function AccountNamePanel({
   );
 }
 
-const styles = StyleSheet.create({
-  fieldError: {
-    borderColor: semantic.status.danger,
-    borderWidth: borderWidth.thin,
-  },
-  input: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    padding: 0,
-  },
-  errorText: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-  },
-  disclaimer: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    fieldError: {
+      borderColor: t.status.danger,
+      borderWidth: borderWidth.thin,
+    },
+    input: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      padding: 0,
+    },
+    errorText: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.caption,
+    },
+    disclaimer: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.caption,
+    },
+  });

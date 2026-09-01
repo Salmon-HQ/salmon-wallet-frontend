@@ -13,12 +13,12 @@ import { useTranslation } from 'react-i18next';
 import {
   fontFamilyNative,
   fontSize,
-  semantic,
   useAccountsContext,
   useAddressBookForm,
   useAddressValidation,
   type AddressBookAddBaseProps,
   type BlockchainType,
+  type Semantic,
 } from '@salmon/shared';
 import { Card } from '../../Card';
 import { PrimaryButton } from '../../Button';
@@ -26,6 +26,7 @@ import { QRScanner } from '../../QRScanner';
 import type { QRScanResult } from '../../QRScanner';
 import { RecipientInput } from '../../Send';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 
 // ============================================================================
 // Component
@@ -39,6 +40,8 @@ export function AddressAddPanel({
   onBack,
 }: AddressBookAddBaseProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const [accountState] = useAccountsContext();
   const form = useAddressBookForm({ networkId: activeNetworkId });
   const [showScanner, setShowScanner] = useState(false);
@@ -71,7 +74,7 @@ export function AddressAddPanel({
           value={form.label}
           onChangeText={form.setLabel}
           placeholder={t('settings.addressbook.label', 'Label')}
-          placeholderTextColor={semantic.text.tertiary}
+          placeholderTextColor={text.tertiary}
           autoCapitalize="words"
           autoCorrect={false}
         />
@@ -121,16 +124,17 @@ export default AddressAddPanel;
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  input: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    padding: 0,
-  },
-  networkText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    input: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      padding: 0,
+    },
+    networkText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+    },
+  });

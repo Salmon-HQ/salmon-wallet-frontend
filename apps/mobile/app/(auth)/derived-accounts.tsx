@@ -25,7 +25,6 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   getScanNetworks,
   getShortAddress,
   spacing,
@@ -36,6 +35,7 @@ import {
   getMirrorNetworkId,
   type DerivedAccountInfo,
   type BlockchainAccount,
+  type Semantic,
 } from '@salmon/shared';
 import {
   DerivedAccountCard,
@@ -49,6 +49,7 @@ import {
   SkeletonRow,
   WarningNotice,
 } from '../../src/components';
+import { useSemantic, useThemedStyles, useThemeMode } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
@@ -60,6 +61,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 // ============================================================================
 
 function LoadingSkeleton() {
+  const styles = useThemedStyles(stylesFor);
   return (
     <View style={styles.skeletonContainer}>
       <SkeletonRow
@@ -78,6 +80,9 @@ function LoadingSkeleton() {
 
 export default function DerivedAccountsScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const mode = useThemeMode();
   const [{ activeAccount }, actions] = useAccountsContext();
 
   // State
@@ -287,7 +292,7 @@ export default function DerivedAccountsScreen() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <OnboardingLayout
         testID="derived-accounts-screen"
         variant="content"
@@ -328,73 +333,74 @@ export default function DerivedAccountsScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // Loading state
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-    marginTop: spacing.lg,
-    marginBottom: spacing['2xl'],
-  },
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // Loading state
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      marginTop: spacing.lg,
+      marginBottom: spacing['2xl'],
+    },
 
-  // Empty state
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-    marginTop: spacing.lg,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: fontSize.body * lineHeight.snug,
-    marginTop: spacing.sm,
-    textAlign: 'center',
-  },
+    // Empty state
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyTitle: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      marginTop: spacing.lg,
+      textAlign: 'center',
+    },
+    emptySubtitle: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+      marginTop: spacing.sm,
+      textAlign: 'center',
+    },
 
-  retryButtonContainer: {
-    marginTop: spacing.lg,
-    width: '100%',
-  },
-  partialWarning: {
-    marginBottom: spacing.lg,
-  },
+    retryButtonContainer: {
+      marginTop: spacing.lg,
+      width: '100%',
+    },
+    partialWarning: {
+      marginBottom: spacing.lg,
+    },
 
-  // Accounts list
-  accountsContainer: {
-    flex: 1,
-    width: '100%',
-  },
-  foundText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-  },
-  accountsList: {
-    flex: 1,
-    width: '100%',
-  },
-  accountsListContent: {
-    paddingBottom: spacing.lg,
-  },
+    // Accounts list
+    accountsContainer: {
+      flex: 1,
+      width: '100%',
+    },
+    foundText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      marginBottom: spacing.lg,
+      textAlign: 'center',
+    },
+    accountsList: {
+      flex: 1,
+      width: '100%',
+    },
+    accountsListContent: {
+      paddingBottom: spacing.lg,
+    },
 
-  // Skeleton
-  skeletonContainer: {
-    width: '100%',
-  },
-});
+    // Skeleton
+    skeletonContainer: {
+      width: '100%',
+    },
+  });

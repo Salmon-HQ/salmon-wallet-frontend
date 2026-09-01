@@ -28,10 +28,10 @@ import {
   formatTokenAmount,
   getShortAddress,
   s,
-  semantic,
   spacing,
   vs,
   type SendToken,
+  type Semantic,
 } from '@salmon/shared';
 
 import {
@@ -46,11 +46,13 @@ import {
 } from '../../../src/components';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 export default function SendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
   const { floatingBottomOffset } = useTabChrome();
   const {
     token,
@@ -216,31 +218,32 @@ export default function SendReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  notice: {
-    marginTop: 0,
-  },
-  changeLink: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: s(fontSize.body),
-    color: semantic.text.accent,
-  },
-  // The cancel sits above the commit: the decision reads down to the control
-  // that performs it.
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-    gap: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    body: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    notice: {
+      marginTop: 0,
+    },
+    changeLink: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.body),
+      color: t.text.accent,
+    },
+    // The cancel sits above the commit: the decision reads down to the control
+    // that performs it.
+    action: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.md),
+    },
+  });

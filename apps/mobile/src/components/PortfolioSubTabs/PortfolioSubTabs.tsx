@@ -13,8 +13,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { semantic } from '@salmon/shared';
 
+import { useSemantic } from '../../theme/useThemedStyles';
 import { SlidersIcon } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import { UnderlineTabs } from '../UnderlineTabs';
@@ -32,6 +32,7 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
   testID,
 }) => {
   const { t } = useTranslation();
+  const { text } = useSemantic();
 
   return (
     <View style={[styles.container, style]} testID={testID}>
@@ -53,7 +54,7 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
         // `.pen`: this glyph is secondary ink while the Receive circle beside
         // it — the same `outline` tone — carries primary. The button is an
         // adjustment, not an action.
-        iconColor={semantic.text.secondary}
+        iconColor={text.secondary}
         onPress={onVisibilityPress}
         accessibilityLabel={t(
           'accessibility.portfolio_visibility',

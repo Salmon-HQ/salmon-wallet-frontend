@@ -36,13 +36,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   getShortAddress,
   isWatchOnlyAccount,
-  semantic,
   useAccountsContext,
   useWaitExit,
+  type Semantic,
 } from '@salmon/shared';
 
 import { DepthBackground, LoadingScreen, ScalesBackground, SendFailure } from '../../../src/components';
 import { SendFlowProvider, useSendFlow } from '../../../src/contexts/SendFlowContext';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { floatEntering } from '../../../src/utils/sinkAndFloat';
 
 /**
@@ -55,6 +56,7 @@ import { floatEntering } from '../../../src/utils/sinkAndFloat';
 function SendPassage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
   const insets = useSafeAreaInsets();
   const isReduceMotionEnabled = useReducedMotion();
   const { sendHook, token, amount, recipient, txId, submit, reset } = useSendFlow();
@@ -178,13 +180,14 @@ export default function SendLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  /** The failure's window: the same water column the task shell paints. */
-  taskSurface: {
-    flex: 1,
-    backgroundColor: semantic.depth.column,
-  },
-  failureSurface: {
-    flex: 1,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /** The failure's window: the same water column the task shell paints. */
+    taskSurface: {
+      flex: 1,
+      backgroundColor: t.depth.column,
+    },
+    failureSurface: {
+      flex: 1,
+    },
+  });

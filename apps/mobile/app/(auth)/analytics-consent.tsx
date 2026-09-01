@@ -23,8 +23,8 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   useAnalyticsConsent,
+  type Semantic,
 } from '@salmon/shared';
 import {
   OnboardingLayout,
@@ -33,6 +33,7 @@ import {
   ScreenHeader,
 } from '../../src/components';
 import { ChartBarIcon } from '../../src/icons';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -43,6 +44,8 @@ const ICON_SIZE = componentSizes.logoSizeSmall;
 
 export default function AnalyticsConsentScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { resolveConsentPrompt } = useAnalyticsConsent();
 
   const resolve = useCallback(
@@ -113,27 +116,28 @@ export default function AnalyticsConsentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bodyContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copy: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    textAlign: 'center',
-  },
-  bold: {
-    fontFamily: fontFamilyNative.bold,
-  },
-  foot: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: fontSize.body * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    bodyContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copy: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: fontSize.bodyLg * lineHeight.normal,
+      textAlign: 'center',
+    },
+    bold: {
+      fontFamily: fontFamilyNative.bold,
+    },
+    foot: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

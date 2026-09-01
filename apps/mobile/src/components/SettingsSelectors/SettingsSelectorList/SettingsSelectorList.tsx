@@ -12,7 +12,8 @@ import React, { useCallback } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize } from '../../../icons';
-import { fontFamilyNative, fontSize, s, semantic, spacing, vs } from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import { IconBubble } from '../../IconBubble';
 import { ListRow } from '../../ListRow';
 import { SkeletonRow } from '../../Skeleton';
@@ -70,6 +71,8 @@ export function SettingsSelectorList<T>({
   testIdPrefix,
 }: SettingsSelectorListProps<T>) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
 
   const renderItem = useCallback(
     (item: T) => {
@@ -94,12 +97,12 @@ export function SettingsSelectorList<T>({
           title={getPrimaryText(item)}
           subtitle={getSecondaryText?.(item)}
           trailing={
-            selected ? <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} /> : undefined
+            selected ? <CheckCircleIcon size={iconSize.lg} color={accent.ink} /> : undefined
           }
         />
       );
     },
-    [isSelected, getKey, onSelect, getPrimaryText, getSecondaryText, renderLeadingElement, testIdPrefix]
+    [isSelected, getKey, onSelect, getPrimaryText, getSecondaryText, renderLeadingElement, testIdPrefix, accent]
   );
 
   if (loading) {
@@ -127,9 +130,10 @@ export default SettingsSelectorList;
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   emptyText: {
-    color: semantic.text.secondary,
+    color: t.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: s(fontSize.body),
     textAlign: 'center',

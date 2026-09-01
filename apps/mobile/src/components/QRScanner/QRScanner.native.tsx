@@ -8,8 +8,9 @@ import {
   fontFamilyNative,
   fontSize,
   fontWeight,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { classifyScanPayload } from './scan-payload';
 import type { QRScannerProps } from './types';
 
@@ -22,6 +23,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   containerStyle,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [permission, requestPermission] = useCameraPermissions();
   const [appActive, setAppActive] = useState(
     AppState.currentState !== 'background' && AppState.currentState !== 'inactive'
@@ -140,85 +142,86 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.scanner.ground,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    paddingTop: spacing['5xl'],
-  },
-  title: {
-    fontSize: fontSize.heading,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-    color: semantic.text.primary,
-  },
-  closeButton: {
-    padding: spacing.sm,
-  },
-  closeButtonText: {
-    color: semantic.scanner.hint,
-    fontSize: fontSize.bodyLg,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  camera: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  messageContainer: {
-    alignItems: 'center',
-    paddingHorizontal: spacing['3xl'],
-  },
-  messageTitle: {
-    fontSize: fontSize.title,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-    color: semantic.text.primary,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  messageText: {
-    fontSize: fontSize.bodyLg,
-    color: semantic.scanner.hint,
-    textAlign: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  settingsButton: {
-    backgroundColor: semantic.scanner.corner,
-    paddingVertical: 14,
-    paddingHorizontal: spacing['2xl'],
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-  },
-  settingsButtonText: {
-    color: semantic.text.primary,
-    fontSize: fontSize.bodyLg,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-  },
-  rejectionContainer: {
-    position: 'absolute',
-    bottom: spacing['5xl'],
-    left: spacing.lg,
-    right: spacing.lg,
-    backgroundColor: semantic.scanner.frame,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-  },
-  rejectionText: {
-    color: semantic.text.primary,
-    fontSize: fontSize.bodyLg,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.scanner.ground,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      paddingTop: spacing['5xl'],
+    },
+    title: {
+      fontSize: fontSize.heading,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+      color: t.text.primary,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    closeButtonText: {
+      color: t.scanner.hint,
+      fontSize: fontSize.bodyLg,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    camera: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    messageContainer: {
+      alignItems: 'center',
+      paddingHorizontal: spacing['3xl'],
+    },
+    messageTitle: {
+      fontSize: fontSize.title,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+      color: t.text.primary,
+      marginBottom: spacing.md,
+      textAlign: 'center',
+    },
+    messageText: {
+      fontSize: fontSize.bodyLg,
+      color: t.scanner.hint,
+      textAlign: 'center',
+      marginBottom: spacing['2xl'],
+    },
+    settingsButton: {
+      backgroundColor: t.scanner.corner,
+      paddingVertical: 14,
+      paddingHorizontal: spacing['2xl'],
+      borderRadius: borderRadius.lg,
+      alignItems: 'center',
+    },
+    settingsButtonText: {
+      color: t.text.primary,
+      fontSize: fontSize.bodyLg,
+      fontFamily: fontFamilyNative.semiBold,
+      fontWeight: fontWeight.semibold,
+    },
+    rejectionContainer: {
+      position: 'absolute',
+      bottom: spacing['5xl'],
+      left: spacing.lg,
+      right: spacing.lg,
+      backgroundColor: t.scanner.frame,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+    },
+    rejectionText: {
+      color: t.text.primary,
+      fontSize: fontSize.bodyLg,
+      textAlign: 'center',
+    },
+  });
 
 export default QRScanner;

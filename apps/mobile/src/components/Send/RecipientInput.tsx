@@ -18,11 +18,12 @@ import {
   fontFamilyNative,
   fontSize,
   s,
-  semantic,
   spacing,
+  type Semantic,
   type ValidationState,
 } from '@salmon/shared';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { QrCodeIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
@@ -45,18 +46,20 @@ export interface RecipientInputProps {
 }
 
 /** The edge each validation state paints. `idle`/`loading` keep the hairline. */
-const EDGE: Partial<Record<ValidationState, string>> = {
-  valid: semantic.status.success,
-  invalid: semantic.status.danger,
-  warning: semantic.status.warning,
-};
+const edgeFor = (t: Semantic): Partial<Record<ValidationState, string>> => ({
+  valid: t.status.success,
+  invalid: t.status.danger,
+  warning: t.status.warning,
+});
 
 /** The glyph the field shows once an address has been judged. */
-const MARK: Partial<Record<ValidationState, { glyph: string; color: string }>> = {
-  valid: { glyph: '✓', color: semantic.status.success },
-  invalid: { glyph: '✕', color: semantic.status.danger },
-  warning: { glyph: '⚠', color: semantic.status.warning },
-};
+const markFor = (
+  t: Semantic
+): Partial<Record<ValidationState, { glyph: string; color: string }>> => ({
+  valid: { glyph: '✓', color: t.status.success },
+  invalid: { glyph: '✕', color: t.status.danger },
+  warning: { glyph: '⚠', color: t.status.warning },
+});
 
 export function RecipientInput({
   value,
@@ -69,8 +72,10 @@ export function RecipientInput({
   testID = 'send-recipient-field',
   testIDPrefix = 'send',
 }: RecipientInputProps) {
-  const edge = EDGE[validationState];
-  const mark = value.length > 0 && !isValidating ? MARK[validationState] : undefined;
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const edge = edgeFor(semantic)[validationState];
+  const mark = value.length > 0 && !isValidating ? markFor(semantic)[validationState] : undefined;
 
   return (
     <Card
@@ -115,7 +120,8 @@ export function RecipientInput({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,7 +132,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: s(fontSize.mono),
     fontFamily: fontFamilyNative.mono,
-    color: semantic.text.primary,
+    color: t.text.primary,
     paddingVertical: 0,
   },
   mark: {

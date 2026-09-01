@@ -14,19 +14,22 @@ import { useTranslation } from 'react-i18next';
 import {
   type TrustedAppsSelectorBaseProps,
   type TrustedAppItem,
-  semantic,
+  type Semantic,
   spacing,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 
 /** The leading well every app row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
 
 export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorBaseProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, status } = useSemantic();
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const handleRevoke = useCallback(
@@ -54,7 +57,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
               {app.icon ? (
                 <Image source={{ uri: app.icon }} style={styles.appIcon} />
               ) : (
-                <GlobeIcon size={iconSize.md} color={semantic.text.secondary} />
+                <GlobeIcon size={iconSize.md} color={text.secondary} />
               )}
             </IconBubble>
           }
@@ -67,7 +70,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
               tone="ghost"
               icon={TrashIcon}
               iconSize={iconSize.sm}
-              iconColor={semantic.status.danger}
+              iconColor={status.danger}
               onPress={() => handleRevoke(app.domain)}
               disabled={isRevoking}
               accessibilityLabel={t('settings.trusted_apps_revoke', 'Revoke')}
@@ -76,7 +79,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
         />
       );
     },
-    [handleRevoke, revoking, t]
+    [handleRevoke, revoking, t, text, status, styles]
   );
 
   return (
@@ -99,21 +102,22 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
 
 export default TrustedAppsSelector;
 
-const styles = StyleSheet.create({
-  appIcon: {
-    width: '100%',
-    height: '100%',
-    borderRadius: ROW_BUBBLE_SIZE / 2,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing['2xl'],
-  },
-  emptyCentered: {
-    textAlign: 'center',
-  },
-  emptyHint: {
-    color: semantic.text.tertiary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    appIcon: {
+      width: '100%',
+      height: '100%',
+      borderRadius: ROW_BUBBLE_SIZE / 2,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing['2xl'],
+    },
+    emptyCentered: {
+      textAlign: 'center',
+    },
+    emptyHint: {
+      color: t.text.tertiary,
+    },
+  });

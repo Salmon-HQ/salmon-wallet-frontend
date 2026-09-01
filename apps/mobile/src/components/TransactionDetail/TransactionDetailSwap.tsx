@@ -18,10 +18,10 @@ import {
   formatRawAmount,
   lineHeight,
   s,
-  semantic,
   spacing,
   tabularNums,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
 import { Card } from '../Card';
@@ -29,6 +29,7 @@ import { Chip } from '../Chip';
 import { TokenLogo } from '../TokenLogo';
 import { ConversionRateDisplay } from '../Activity/ConversionRateDisplay';
 import { PriceImpactBadge } from '../Activity/PriceImpactBadge';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { SwapConversionRate, Transaction } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
@@ -47,17 +48,20 @@ const ConversionColumn: React.FC<{
   amount: string;
   decimals: number;
   testID?: string;
-}> = ({ logo, symbol, amount, decimals, testID }) => (
-  <View style={styles.column} testID={testID}>
-    <TokenLogo uri={logo || undefined} symbol={symbol} size={TOKEN_MARK_SIZE} />
-    <Text style={styles.amount} maxFontSizeMultiplier={fontScaleCap.dense} numberOfLines={1}>
-      {formatRawAmount(amount, decimals)}
-    </Text>
-    <Text style={styles.ticker} maxFontSizeMultiplier={fontScaleCap.dense} numberOfLines={1}>
-      {symbol}
-    </Text>
-  </View>
-);
+}> = ({ logo, symbol, amount, decimals, testID }) => {
+  const styles = useThemedStyles(stylesFor);
+  return (
+    <View style={styles.column} testID={testID}>
+      <TokenLogo uri={logo || undefined} symbol={symbol} size={TOKEN_MARK_SIZE} />
+      <Text style={styles.amount} maxFontSizeMultiplier={fontScaleCap.dense} numberOfLines={1}>
+        {formatRawAmount(amount, decimals)}
+      </Text>
+      <Text style={styles.ticker} maxFontSizeMultiplier={fontScaleCap.dense} numberOfLines={1}>
+        {symbol}
+      </Text>
+    </View>
+  );
+};
 
 export interface TransactionDetailSwapProps {
   transaction: Transaction;
@@ -70,6 +74,8 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
   conversionRate,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const fromToken = transaction.outputs[0];
   const toToken = transaction.inputs[0];
   const hops = transaction.swapRoute?.hops ?? [];
@@ -93,7 +99,7 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
               decimals={fromToken.decimals}
               testID="tx-detail-conversion-from"
             />
-            <ArrowRightIcon size={iconSize.lg} color={semantic.text.secondary} />
+            <ArrowRightIcon size={iconSize.lg} color={text.secondary} />
             <ConversionColumn
               logo={toToken.logo}
               symbol={toToken.symbol}
@@ -124,7 +130,7 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
               <Chip label={hop.dex} size="sm" variant="outline" />
               <View style={styles.hopTokens}>
                 <Text style={styles.hopText}>{hop.inputToken.symbol}</Text>
-                <ArrowRightIcon size={iconSize.sm} color={semantic.text.secondary} />
+                <ArrowRightIcon size={iconSize.sm} color={text.secondary} />
                 <Text style={styles.hopText}>{hop.outputToken.symbol}</Text>
               </View>
               {hop.percent < 100 && <Text style={styles.hopText}>{hop.percent}%</Text>}
@@ -136,66 +142,67 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    fontSize: s(fontSize.mono),
-    lineHeight: s(fontSize.mono) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-  },
-  conversion: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  column: {
-    flex: 1,
-    alignItems: 'center',
-    gap: vs(spacing.xs),
-  },
-  amount: {
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-    ...TABULAR,
-  },
-  ticker: {
-    fontSize: s(fontSize.micro),
-    lineHeight: s(fontSize.micro) * lineHeight.snug,
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-  },
-  /** The exchange rate closes the card under a hairline, as CORE 09 draws it. */
-  rateRow: {
-    alignItems: 'center',
-    paddingTop: vs(spacing.md),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: semantic.border.hairline,
-  },
-  hopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  hopTokens: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xs),
-  },
-  hopText: {
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardTitle: {
+      fontSize: s(fontSize.mono),
+      lineHeight: s(fontSize.mono) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+    conversion: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    column: {
+      flex: 1,
+      alignItems: 'center',
+      gap: vs(spacing.xs),
+    },
+    amount: {
+      fontSize: s(fontSize.heading),
+      lineHeight: s(fontSize.heading) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      ...TABULAR,
+    },
+    ticker: {
+      fontSize: s(fontSize.micro),
+      lineHeight: s(fontSize.micro) * lineHeight.snug,
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.secondary,
+    },
+    /** The exchange rate closes the card under a hairline, as CORE 09 draws it. */
+    rateRow: {
+      alignItems: 'center',
+      paddingTop: vs(spacing.md),
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: t.border.hairline,
+    },
+    hopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    hopTokens: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    hopText: {
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.secondary,
+    },
+  });
 
 export default TransactionDetailSwap;

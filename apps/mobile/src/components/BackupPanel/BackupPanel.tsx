@@ -22,10 +22,10 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
   useAccountsContext,
   getAccountMnemonic,
+  type Semantic,
 } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
@@ -34,6 +34,7 @@ import { ConfirmSheet } from '../ConfirmSheet';
 import { SeedWordGrid } from '../SeedPhrase';
 import { WarningNotice } from '../WarningNotice';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 interface BackupPanelProps {
   onBack: () => void;
@@ -51,6 +52,8 @@ export function BackupPanel({
   authenticateWithBiometric,
 }: BackupPanelProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
 
   // `SeedWordGrid` protects the frames it is mounted for; the panel holds the
   // mnemonic in memory for its whole lifetime, including before the reveal, so
@@ -134,7 +137,7 @@ export function BackupPanel({
               testID="backup-seed-reveal-overlay"
               accessibilityRole="button"
             >
-              <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
+              <EyeIcon size={iconSize.xl} color={text.primary} />
               <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
             </TouchableOpacity>
           )}
@@ -178,37 +181,38 @@ export function BackupPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  seedContainer: {
-    position: 'relative',
-  },
-  // The Bedrock Rule (DESIGN.md): the cover over an unrevealed phrase is
-  // opaque bedrock, not a translucent scrim — a scrim over masked cells reads
-  // as a loading state, and it lets the water column through the gate.
-  revealCover: {
-    ...StyleSheet.absoluteFillObject,
-    // Declared, not implied by sibling order: a reorder must not uncover the gate.
-    zIndex: 10,
-    backgroundColor: semantic.surface.bedrock,
-    borderRadius: borderRadius.r3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  revealText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.bodyLg),
-  },
-  emptyText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-  },
-  actions: {
-    gap: s(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    seedContainer: {
+      position: 'relative',
+    },
+    // The Bedrock Rule (DESIGN.md): the cover over an unrevealed phrase is
+    // opaque bedrock, not a translucent scrim — a scrim over masked cells reads
+    // as a loading state, and it lets the water column through the gate.
+    revealCover: {
+      ...StyleSheet.absoluteFillObject,
+      // Declared, not implied by sibling order: a reorder must not uncover the gate.
+      zIndex: 10,
+      backgroundColor: t.surface.bedrock,
+      borderRadius: borderRadius.r3,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    revealText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.bodyLg),
+    },
+    emptyText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+    },
+    actions: {
+      gap: s(spacing.md),
+    },
+  });
 
 export default BackupPanel;

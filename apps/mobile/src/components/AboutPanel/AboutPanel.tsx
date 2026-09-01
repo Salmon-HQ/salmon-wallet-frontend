@@ -25,8 +25,8 @@ import {
   useOpenLink,
   fontSize,
   lineHeight,
-  semantic,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { BrandMark, Wordmark } from '../BrandMark';
@@ -35,6 +35,7 @@ import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 const LINKS = {
   website: 'https://www.salmonwallet.io',
@@ -57,6 +58,8 @@ interface AboutPanelProps {
 export function AboutPanel({ onBack }: AboutPanelProps) {
   const { t } = useTranslation();
   const openLink = useOpenLink();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
 
   // Empty fallbacks on purpose: a missing version beats a wrong literal one.
   const appVersion = Constants.expoConfig?.version || '';
@@ -73,10 +76,10 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         leading={<IconBubble size={ROW_BUBBLE_SIZE} shape="rounded" tone="surface" icon={Icon} />}
         title={label}
         onPress={() => openLink(url)}
-        trailing={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />}
+        trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.secondary} />}
       />
     ),
-    [openLink]
+    [openLink, text.secondary]
   );
 
   const renderSocialButton = useCallback(
@@ -144,33 +147,34 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  appInfo: {
-    alignItems: 'center',
-  },
-  socialSection: {
-    width: '100%',
-  },
-  socialLabel: {
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  linksSection: {
-    width: '100%',
-    gap: spacing.screenGutter,
-  },
-  copyright: {
-    color: semantic.text.tertiary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    textAlign: 'center',
-    lineHeight: fontSize.caption * lineHeight.normal,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    appInfo: {
+      alignItems: 'center',
+    },
+    socialSection: {
+      width: '100%',
+    },
+    socialLabel: {
+      textAlign: 'center',
+      marginBottom: spacing.md,
+    },
+    socialButtons: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.lg,
+    },
+    linksSection: {
+      width: '100%',
+      gap: spacing.screenGutter,
+    },
+    copyright: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.caption,
+      textAlign: 'center',
+      lineHeight: fontSize.caption * lineHeight.normal,
+    },
+  });
 
 export default AboutPanel;

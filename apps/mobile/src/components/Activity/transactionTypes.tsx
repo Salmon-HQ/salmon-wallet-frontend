@@ -26,12 +26,13 @@ import {
   chainMarks,
   componentSizes,
   s,
-  semantic,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
 
 import { IconBubble } from '../IconBubble';
 import { TokenLogo } from '../TokenLogo';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { Transaction, TransactionType } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
@@ -43,20 +44,24 @@ const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 /** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
 const SWAP_LOGO_SIZE = 30;
 
-export const TRANSACTION_TYPE_CONFIG: Record<
-  TransactionType,
-  { label: string; icon: IconComponent; color: string }
-> = {
-  send: { label: 'Sent', icon: ArrowUpIcon, color: semantic.change.negative },
-  receive: { label: 'Received', icon: ArrowDownIcon, color: semantic.change.positive },
+/**
+ * Was a module-scope constant; now a function of the active tokens because
+ * `send`/`receive`/`unknown` read theme colour. Call with `useSemantic()`'s
+ * result at render — see `TransactionMark` and `TransactionItem` below.
+ */
+export const transactionTypeConfigFor = (
+  t: Semantic
+): Record<TransactionType, { label: string; icon: IconComponent; color: string }> => ({
+  send: { label: 'Sent', icon: ArrowUpIcon, color: t.change.negative },
+  receive: { label: 'Received', icon: ArrowDownIcon, color: t.change.positive },
   swap: { label: 'Swapped', icon: ArrowsLeftRightIcon, color: chainMarks.purple },
   mint: { label: 'Minted', icon: PlusCircleIcon, color: chainMarks.cyan },
   burn: { label: 'Burned', icon: FireIcon, color: chainMarks.orange },
   stake: { label: 'Staked', icon: LockIcon, color: chainMarks.green },
   loan: { label: 'Loan', icon: MoneyIcon, color: chainMarks.amber },
   interaction: { label: 'Interaction', icon: CubeIcon, color: chainMarks.blue },
-  unknown: { label: 'Unknown', icon: QuestionIcon, color: semantic.text.secondary },
-};
+  unknown: { label: 'Unknown', icon: QuestionIcon, color: t.text.secondary },
+});
 
 /** Translation keys for the verbs above — resolved via `t()` at the call site. */
 export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
@@ -76,11 +81,15 @@ const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean
   icon: Icon,
   color,
   single = false,
-}) => (
-  <View style={[styles.typeBadge, single && styles.typeBadgeSingle, { backgroundColor: color }]}>
-    <Icon size={10} color={semantic.text.primary} />
-  </View>
-);
+}) => {
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
+  return (
+    <View style={[styles.typeBadge, single && styles.typeBadgeSingle, { backgroundColor: color }]}>
+      <Icon size={10} color={text.primary} />
+    </View>
+  );
+};
 
 /**
  * The row's leading mark: the token that moved, badged with the type — or,
@@ -88,8 +97,11 @@ const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean
  * has no logo.
  */
 export const TransactionMark: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
+  const styles = useThemedStyles(stylesFor);
+  const t = useSemantic();
   const { type, inputs, outputs } = transaction;
-  const config = TRANSACTION_TYPE_CONFIG[type] || TRANSACTION_TYPE_CONFIG.unknown;
+  const typeConfig = transactionTypeConfigFor(t);
+  const config = typeConfig[type] || typeConfig.unknown;
 
   if (type === 'swap' && inputs[0]?.logo && outputs[0]?.logo) {
     return (
@@ -125,36 +137,37 @@ export const TransactionMark: React.FC<{ transaction: Transaction }> = ({ transa
   );
 };
 
-const styles = StyleSheet.create({
-  swapPair: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: LEADING_SIZE,
-  },
-  swapOverlap: {
-    marginLeft: -s(spacing.md),
-    borderWidth: borderWidth.medium,
-    borderColor: semantic.depth.abyss,
-    borderRadius: borderRadius.full,
-  },
-  singleMark: {
-    width: LEADING_SIZE,
-    height: LEADING_SIZE,
-  },
-  typeBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: TYPE_BADGE_SIZE,
-    height: TYPE_BADGE_SIZE,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: borderWidth.medium,
-    borderColor: semantic.depth.abyss,
-  },
-  typeBadgeSingle: {
-    top: -2,
-    right: -2,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    swapPair: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: LEADING_SIZE,
+    },
+    swapOverlap: {
+      marginLeft: -s(spacing.md),
+      borderWidth: borderWidth.medium,
+      borderColor: t.depth.abyss,
+      borderRadius: borderRadius.full,
+    },
+    singleMark: {
+      width: LEADING_SIZE,
+      height: LEADING_SIZE,
+    },
+    typeBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      width: TYPE_BADGE_SIZE,
+      height: TYPE_BADGE_SIZE,
+      borderRadius: borderRadius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: borderWidth.medium,
+      borderColor: t.depth.abyss,
+    },
+    typeBadgeSingle: {
+      top: -2,
+      right: -2,
+    },
+  });
