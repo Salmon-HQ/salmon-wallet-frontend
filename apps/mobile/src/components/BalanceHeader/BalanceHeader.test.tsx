@@ -56,10 +56,13 @@ jest.mock('react-native-reanimated', () => {
           ReactActual.createElement(Component, { ...props, ref })
         ),
     },
-    useReducedMotion: () => false,
-    useSharedValue: (value: unknown) => ({ value }),
+    // Reduce motion is switchable and `withTiming` is a spy that echoes its
+    // target, so a test can also read the duration the component chose
+    // (0 under reduce motion, via `resolveMotionMs`).
+    useReducedMotion: jest.fn(() => false),
+    useSharedValue: (value: unknown) => ReactActual.useRef({ value }).current,
     useAnimatedStyle: () => ({}),
-    withTiming: (toValue: unknown) => toValue,
+    withTiming: jest.fn((toValue: unknown) => toValue),
     withRepeat: (animation: unknown) => animation,
     Easing: { bezier: () => () => 0, linear: () => 0 },
     runOnJS: (fn: unknown) => fn,
@@ -110,7 +113,18 @@ jest.mock('../../../hooks/usePressMotion', () => ({
   }),
 }));
 
+import { motionMs } from '@salmon/shared';
+import { useReducedMotion, withTiming } from 'react-native-reanimated';
+
 import { BalanceHeader } from './BalanceHeader';
+
+const mockUseReducedMotion = useReducedMotion as unknown as jest.Mock;
+const mockWithTiming = withTiming as unknown as jest.Mock;
+
+beforeEach(() => {
+  mockUseReducedMotion.mockReturnValue(false);
+  mockWithTiming.mockClear();
+});
 
 const BLOCKCHAINS = [
   {
@@ -245,6 +259,80 @@ describe('BalanceHeader value swap', () => {
     // The chain actually changing is the one event that owes the gesture.
     remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
     expect(remounted.getByTestId('balance-amount').props.entering).toBeDefined();
+  });
+
+  it('gates the sink on the same condition as the float, so the verb is never half played', () => {
+    // Symmetry (DESIGN.md rule 3): arriving undoes exactly what leaving did.
+    // An ungated `exiting` meant a sub-tab change — which unmounts this whole
+    // block — sank the values with nothing floating back, half a verb.
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    for (const id of ['balance-amount', 'balance-change', 'balance-next-hint']) {
+      expect(view.getByTestId(id).props.exiting).toBeUndefined();
+    }
+
+    view.unmount();
+    const remounted = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    expect(remounted.getByTestId('balance-amount').props.exiting).toBeUndefined();
+
+    remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    const swapped = remounted.getByTestId('balance-amount');
+    expect(swapped.props.entering).toBeDefined();
+    expect(swapped.props.exiting).toBeDefined();
+  });
+});
+
+describe('BalanceHeader unknown values', () => {
+  const NO_CHANGE_YET = [
+    { network: { id: 'solana-mainnet', name: 'Solana', blockchain: 'solana' }, usdTotal: 1200 },
+  ] as any;
+
+  it('renders an em-dash for a change the backend has not returned, never a fabricated 0', () => {
+    const view = render(<BalanceHeader blockchains={NO_CHANGE_YET} activeIndex={0} />);
+
+    expect(view.getByText('—')).toBeTruthy();
+    // The fabricated flat day the `= 0` defaults used to draw.
+    expect(view.queryByText(/0%/)).toBeNull();
+    expect(view.queryByText(/\$0/)).toBeNull();
+  });
+
+  it('still reads the change when the data is there', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    expect(view.getByText('+$61.45 · 2.8% 24h')).toBeTruthy();
+    expect(view.queryByText('—')).toBeNull();
+  });
+});
+
+describe('BalanceHeader chain dots', () => {
+  it('travels the active pill on the same beat the sub-tab underline uses', () => {
+    render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    const durations = mockWithTiming.mock.calls.map(
+      (call) => (call[1] as { duration?: number } | undefined)?.duration
+    );
+    expect(durations).toContain(motionMs.drift);
+  });
+
+  it('snaps instead of travelling when reduce motion is on', () => {
+    mockUseReducedMotion.mockReturnValue(true);
+
+    render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    expect(mockWithTiming).toHaveBeenCalled();
+    for (const call of mockWithTiming.mock.calls) {
+      expect((call[1] as { duration: number }).duration).toBe(0);
+    }
+  });
+
+  it('keeps the dot ids and their hit slop', () => {
+    const onBlockchainChange = jest.fn();
+    const view = render(
+      <BalanceHeader blockchains={BLOCKCHAINS} onBlockchainChange={onBlockchainChange} />
+    );
+
+    const dot = view.getByTestId('balance-carousel-dot-1');
+    expect(dot.props.hitSlop).toBeTruthy();
+    fireEvent.press(dot);
+    expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
   });
 });
 

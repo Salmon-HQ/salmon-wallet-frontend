@@ -73,7 +73,6 @@ import {
   PowerupsFab,
   PriceChart,
   ReceiveSheet,
-  SendSheet,
   TokenAbout,
   TokenInformationSheet,
   TokenList,
@@ -197,9 +196,6 @@ export default function HomeScreen() {
   // ReceiveSheet visibility
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
-  // SendSheet visibility
-  const [sendSheetVisible, setSendSheetVisible] = useState(false);
-
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -210,7 +206,6 @@ export default function HomeScreen() {
 
     setTokenSheetVisible(false);
     setReceiveSheetVisible(false);
-    setSendSheetVisible(false);
     // Powerups is a route now, not a sheet — it closes itself on lock (see
     // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
     // mounts the lock overlay and Home cannot reach it from here.
@@ -373,24 +368,39 @@ export default function HomeScreen() {
     return activeBalance?.network.blockchain || 'solana';
   }, [activeBlockchainIndex, blockchainBalances]);
 
-  // The beat between sink and float (owner, on-device): the incoming chain's
-  // float waits out the outgoing chain's sink plus a short pause — but only
-  // once a chain has actually switched. On the screen's first mount nothing
+  // The beat between sink and float (owner, on-device): the incoming content's
+  // float waits out the outgoing content's sink plus a short pause — but only
+  // once something has actually swapped. On the screen's first mount nothing
   // sinks, so a delay there would read as lag. Tracked with the render-time
   // setState pattern (not a ref: refs cannot be read during render).
-  // A task disengaging is the same shape of event: the content really sank
-  // when the task took the screen, so its return owes the beat too. Both
-  // triggers feed one flag and one delay, so a chain switch that lands on a
-  // task hand-back still waits exactly one beat instead of two.
-  const [contentSwap, setContentSwap] = useState({
+  //
+  // Two causes can swap content here and they must never speak at once (the
+  // verb never nests — DESIGN.md §The balance block's motion, rule 5): a task
+  // taking or releasing the screen owns `home-content`, and a chain change
+  // owns `chainContent`. One flag for both used to hand the beat to both
+  // wrappers, so a task hand-back sank the screen *and* the list inside it —
+  // one gesture at two depths. The cause of the current swap is recorded, and
+  // only the wrapper that owns that cause animates.
+  const [contentSwap, setContentSwap] = useState<{
+    chain: string;
+    engaged: boolean;
+    cause: 'none' | 'chain' | 'task';
+  }>({
     chain: currentBlockchain,
     engaged: isTaskEngaged,
-    hasPrior: false,
+    cause: 'none',
   });
   if (contentSwap.chain !== currentBlockchain || contentSwap.engaged !== isTaskEngaged) {
-    setContentSwap({ chain: currentBlockchain, engaged: isTaskEngaged, hasPrior: true });
+    setContentSwap({
+      chain: currentBlockchain,
+      engaged: isTaskEngaged,
+      // A task change that also lands a chain change is still one gesture, and
+      // the task is the one that took the screen.
+      cause: contentSwap.engaged !== isTaskEngaged ? 'task' : 'chain',
+    });
   }
-  const contentFloatDelayMs = contentSwap.hasPrior ? FLOAT_DELAY_MS : 0;
+  const taskHasPrior = contentSwap.cause === 'task';
+  const chainHasPrior = contentSwap.cause === 'chain';
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -541,9 +551,13 @@ export default function HomeScreen() {
   }, [bitcoinCoinInfo]);
 
   // Handlers
+  // Send is a flow of four screens now (spec 018), not a sheet: the first of
+  // them is a route like Activity's. The watch-only guard stays on the control
+  // *and* on the route — `sendDisabled` below hides the door, the send stack's
+  // layout locks it.
   const handleSendPress = useCallback(() => {
-    setSendSheetVisible(true);
-  }, []);
+    router.push('/send');
+  }, [router]);
 
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
@@ -552,18 +566,6 @@ export default function HomeScreen() {
   const handleReceiveSheetClose = useCallback(() => {
     setReceiveSheetVisible(false);
   }, []);
-
-  const handleSendSheetClose = useCallback(() => {
-    setSendSheetVisible(false);
-  }, []);
-
-  const handleSendSuccess = useCallback(
-    (_txId: string) => {
-      setSendSheetVisible(false);
-      refresh();
-    },
-    [refresh]
-  );
 
   // The header's copy affordance. Silent by design: the row shows its own
   // checkmark, so a toast on top of it would say the same thing twice.
@@ -623,11 +625,17 @@ export default function HomeScreen() {
       // and the amount pointing at a chain the wallet never switched to.
       if (!activeAccount?.networksAccounts?.[newNetworkId]) return;
       setActiveBlockchainIndex(index);
+      // The incoming chain's list starts at the top, so the offsets the fade
+      // and the sticky row read must start over with it — the same reset the
+      // sub-tab switch does. Without it a chain switched while scrolled kept a
+      // top fade over content that was no longer scrolled.
+      scrollY.setValue(0);
+      topFadeOpacity.setValue(0);
       void accountActions
         .changeNetwork(newNetworkId)
         .catch((error) => console.warn('[home] changeNetwork failed:', error));
     },
-    [blockchainBalances, accountActions, activeAccount]
+    [blockchainBalances, accountActions, activeAccount, scrollY, topFadeOpacity]
   );
 
   // Handle scroll to show/hide top fade gradient dynamically
@@ -858,7 +866,9 @@ export default function HomeScreen() {
         <Reanimated.View
           testID="home-content"
           style={styles.content}
-          entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
+          entering={floatEntering(isReduceMotionEnabled, {
+            delayMs: taskHasPrior ? FLOAT_DELAY_MS : 0,
+          })}
           exiting={sinkExiting(isReduceMotionEnabled)}
         >
           {activeSubTab === 'portfolio' ? (
@@ -896,9 +906,18 @@ export default function HomeScreen() {
               <View style={styles.listContainer}>
                 <Reanimated.View
                   key={currentBlockchain}
+                  testID="home-chain-content"
                   style={styles.chainContent}
-                  entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
-                  exiting={sinkExiting(isReduceMotionEnabled)}
+                  // Only a chain change moves this wrapper. It remounts on a
+                  // task hand-back too (it lives inside `home-content`), and
+                  // animating there stacked a second sink/float on the one
+                  // the screen was already playing.
+                  entering={
+                    chainHasPrior
+                      ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                      : undefined
+                  }
+                  exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
                 >
                   {currentBlockchain === 'bitcoin' ? (
                     // Bitcoin lives inside Portfolio with chart, market data
@@ -1036,7 +1055,7 @@ export default function HomeScreen() {
           token={selectedToken}
           // networkId is the single chain source for sheet props — the
           // carousel index (currentBlockchain) can lag behind it during a
-          // chain switch. Same rule as SendSheet below.
+          // chain switch.
           blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
           chartData={selectedTokenChartData}
           chartPeriod={selectedTokenChartPeriod}
@@ -1054,26 +1073,10 @@ export default function HomeScreen() {
         onClose={handleReceiveSheetClose}
         address={address}
         // networkId is the single chain source for sheet props — `address`
-        // already derives from it. Same rule as SendSheet below.
+        // already derives from it.
         blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         onCopy={handleReceiveSheetCopy}
       />
-
-      {/* Send Sheet */}
-      <SendSheet
-        visible={sendSheetVisible}
-        onClose={handleSendSheetClose}
-        tokens={tokens}
-        // networkId is the single chain source here: `tokens` and `account`
-        // already derive from it, and the carousel index can lag behind it
-        // during a chain switch — mixing the two hands the sheet
-        // cross-chain props.
-        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
-        account={activeBlockchainAccount}
-        onSuccess={handleSendSuccess}
-        showUnverifiedTokens={developerNetworks}
-      />
-
     </View>
   );
 }
@@ -1103,9 +1106,12 @@ const styles = StyleSheet.create({
   tabGutter: {
     paddingHorizontal: s(spacing.screenGutter),
   },
+  // Block seams are the component gap (20): balance block → sub-tabs row is
+  // `pinnedSubTabs`' marginTop, sub-tabs row → list is this padding. The
+  // anatomy inside each block keeps the finer 4/8/12 steps.
   pinnedHeader: {
     paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.md),
+    paddingBottom: vs(spacing.xl),
   },
   pinnedSubTabs: {
     marginTop: vs(spacing.xl),
@@ -1113,12 +1119,14 @@ const styles = StyleSheet.create({
   nftBalanceBlock: {
     paddingBottom: vs(spacing.xl),
   },
+  // On NFTs the row is an overlay, so its own bottom padding IS the seam to
+  // the grid (it is also the height the list header reserves) — same 20.
   stickySubTabs: {
     position: 'absolute',
     left: 0,
     right: 0,
     paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.sm),
+    paddingBottom: vs(spacing.xl),
     zIndex: 2,
   },
   // Measuring, not yet placed: the row must not paint over the balance.
@@ -1137,7 +1145,7 @@ const styles = StyleSheet.create({
   },
   balanceErrorBanner: {
     marginHorizontal: s(spacing.screenGutter),
-    marginBottom: vs(spacing.md),
+    marginBottom: vs(spacing.xl),
   },
   listContent: {
     paddingTop: 0,
@@ -1187,6 +1195,8 @@ const styles = StyleSheet.create({
   bitcoinContent: {
     paddingTop: 0,
     paddingBottom: vs(componentSizes.tabBarScrollPadding),
-    gap: vs(spacing.md),
+    // The component gap (DESIGN.md §Layout): chart, market data and About are
+    // sibling components on this surface.
+    gap: vs(spacing.screenGutter),
   },
 });

@@ -26,6 +26,7 @@ import {
   getNetworkLabel,
   hiddenValue,
   letterSpacing,
+  motionMs,
   ms,
   NETWORK_DISPLAY,
   s,
@@ -36,7 +37,7 @@ import {
   useCurrencyContext,
   vs,
 } from '@salmon/shared';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityActionEvent,
@@ -47,9 +48,16 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
+import { timing } from '../../utils/motion';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
@@ -60,6 +68,9 @@ import type { BalanceHeaderProps } from './types';
 // mutable one, so the token is copied rather than spread in place.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
+/** A value the backend has not returned yet — never a fabricated 0. */
+const EM_DASH = '—';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 /** Same commit distance the card carousel uses. */
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -67,6 +78,8 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 // Dot touch geometry, unchanged from the carousel: hit boxes may meet but
 // never cross, and within that cap they take everything they can get.
 const DOT_SIZE = s(spacing.xs);
+/** The active dot is a pill, not a dot: it travels between chains on `drift`. */
+const DOT_ACTIVE_WIDTH = s(componentSizes.iconSizeXxsm);
 const DOT_GAP = s(spacing.xxs + 1);
 const TOUCH_TARGET_MIN = 44;
 const DOT_HIT_SLOP = {
@@ -74,6 +87,53 @@ const DOT_HIT_SLOP = {
   right: DOT_GAP,
   top: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
   bottom: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
+};
+
+interface ChainDotProps {
+  index: number;
+  isActive: boolean;
+  isReduceMotionEnabled: boolean;
+  accessibilityLabel: string;
+  onPress: () => void;
+}
+
+/**
+ * One chain dot. Selection indicators inside one block agree (DESIGN.md
+ * §The balance block's motion, rule 8): the active pill widens and the row
+ * re-flows around it on the same `drift` beat the sub-tab underline travels
+ * on, so neither indicator out-speaks the other. `timing()` is built on the
+ * JS thread and handed to the worklet — never called inside one.
+ */
+const ChainDot: React.FC<ChainDotProps> = ({
+  index,
+  isActive,
+  isReduceMotionEnabled,
+  accessibilityLabel,
+  onPress,
+}) => {
+  const width = useSharedValue(isActive ? DOT_ACTIVE_WIDTH : DOT_SIZE);
+
+  useEffect(() => {
+    width.value = withTiming(
+      isActive ? DOT_ACTIVE_WIDTH : DOT_SIZE,
+      timing(motionMs.drift, isReduceMotionEnabled)
+    );
+  }, [isActive, isReduceMotionEnabled, width]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ width: width.value }));
+
+  return (
+    <Pressable
+      testID={`balance-carousel-dot-${index}`}
+      onPress={onPress}
+      hitSlop={DOT_HIT_SLOP}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected: isActive }}
+    >
+      <Animated.View style={[styles.dot, isActive && styles.dotActive, animatedStyle]} />
+    </Pressable>
+  );
 };
 
 export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
@@ -145,8 +205,13 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
   const current = blockchains[activeIndex];
   const currentBlockchainId = current?.network.blockchain ?? 'solana';
-  const { usdTotal, changePercent = 0, changeAmount = 0, loading = false } = current ?? {};
-  const changeColor = colors.change[getLabelValue(changePercent)];
+  const { usdTotal, changePercent, changeAmount, loading = false } = current ?? {};
+  // Recalculation is reported by every value that can change and by none that
+  // cannot (DESIGN.md rule 7). A change the backend has not returned yet is
+  // unknown, not zero: defaulting it to 0 rendered "+$0.00 · 0% 24h", a
+  // flat day the wallet never measured. Unknown renders as an em-dash.
+  const hasChange = changePercent !== undefined && changeAmount !== undefined;
+  const changeColor = hasChange ? colors.change[getLabelValue(changePercent)] : semantic.text.secondary;
 
   const networkLabel = showNetworkLabel
     ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet'))
@@ -181,11 +246,15 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // wrappers replayed the float: an in-page tab change looked exactly like a
   // chain switch. The float belongs to a real chain change, which is the only
   // thing that sets `hasPrior`.
+  // The swap is symmetric or it does not run (DESIGN.md rule 3): `exiting` is
+  // gated on the same `hasPrior` as `entering`, so a remount that is not a
+  // chain change — Home moving this block between the pinned wrapper and the
+  // NFT grid's list header — cuts instead of playing half the verb.
   const swapMotion = {
     entering: chainSwap.hasPrior
       ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
       : undefined,
-    exiting: sinkExiting(isReduceMotionEnabled),
+    exiting: chainSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined,
   };
 
   return (
@@ -237,16 +306,20 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               style={styles.changeText}
               {...swapMotion}
             >
-              <Text
-                style={[
-                  styles.change,
-                  { color: hiddenBalance ? semantic.text.secondary : changeColor },
-                ]}
-              >
-                {hiddenBalance
-                  ? `${hiddenValue} · ${hiddenValue}`
-                  : `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`}
-              </Text>
+              <PendingValue pending={loading}>
+                <Text
+                  style={[
+                    styles.change,
+                    { color: hiddenBalance ? semantic.text.secondary : changeColor },
+                  ]}
+                >
+                  {hiddenBalance
+                    ? `${hiddenValue} · ${hiddenValue}`
+                    : hasChange
+                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
+                      : EM_DASH}
+                </Text>
+              </PendingValue>
             </Animated.View>
             <Chip
               testID="home-activity-button"
@@ -264,17 +337,15 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
           {blockchains.length > 1 && (
             <View style={styles.cueRow}>
               {blockchains.map((chain, index) => (
-                <Pressable
+                <ChainDot
                   key={chain.network.id}
-                  testID={`balance-carousel-dot-${index}`}
-                  onPress={() => index !== activeIndex && updateIndex(index)}
-                  hitSlop={DOT_HIT_SLOP}
-                  accessibilityRole="button"
+                  index={index}
+                  isActive={index === activeIndex}
+                  isReduceMotionEnabled={isReduceMotionEnabled}
                   accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
                     name: chain.network.name,
                   })}
-                  accessibilityState={{ selected: index === activeIndex }}
-                  style={[styles.dot, index === activeIndex && styles.dotActive]}
+                  onPress={() => index !== activeIndex && updateIndex(index)}
                 />
               ))}
               {hintSymbol && (
@@ -386,8 +457,8 @@ const styles = StyleSheet.create({
     borderRadius: ms(borderRadius.full),
     backgroundColor: semantic.text.disabled,
   },
+  // Width is animated (see `ChainDot`); only the ink is static here.
   dotActive: {
-    width: s(componentSizes.iconSizeXxsm),
     backgroundColor: semantic.accent.fill,
   },
   nextHint: {
