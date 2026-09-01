@@ -12,11 +12,10 @@
  * ways out, and a chevron would be a fourth that means the same thing.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
-  borderRadius,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -36,16 +35,15 @@ import {
   ScreenHeader,
   SectionLabel,
   UnderlineTabs,
+  SearchField,
 } from '../../src/components';
-import { LightningIcon, MagnifyingGlassIcon } from '../../src/icons';
+import { LightningIcon } from '../../src/icons';
 import { useTabChrome } from '../../hooks/useTabChrome';
 import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
 import { getPowerups, type Powerup } from '../../src/powerups/catalog';
 
 /** The lightning that marks the catalogue, per the `.pen` header. */
 const TITLE_GLYPH_SIZE = 17;
-/** The search pill's magnifier. */
-const SEARCH_GLYPH_SIZE = 18;
 /** The installed tile's mark. */
 const TILE_BUBBLE_SIZE = 48;
 /** The featured card's mark — the same 48, on ink. */
@@ -155,21 +153,12 @@ export default function PowerupsScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.searchPill}>
-          <MagnifyingGlassIcon size={ms(SEARCH_GLYPH_SIZE)} color={semantic.text.secondary} />
-          <TextInput
-            testID="powerups-search-input"
-            style={styles.searchInput}
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t('powerups.search_placeholder')}
-            placeholderTextColor={semantic.text.tertiary}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            accessibilityLabel={t('powerups.search_placeholder')}
-          />
-        </View>
+        <SearchField
+          testID="powerups-search-input"
+          value={query}
+          onChangeText={setQuery}
+          placeholder={t('powerups.search_placeholder')}
+        />
 
         {/* Lateral choices take the travelling underline, never a filled
             pill — DESIGN.md §Navigation. Same row as the Activity filters. */}
@@ -301,22 +290,6 @@ const styles = StyleSheet.create({
   },
   filters: {
     alignSelf: 'flex-start',
-  },
-  searchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    paddingHorizontal: s(spacing.lg),
-    height: vs(44),
-    borderRadius: borderRadius.full,
-    backgroundColor: semantic.surface.raised,
-  },
-  searchInput: {
-    flex: 1,
-    padding: 0,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.mono),
-    color: semantic.text.primary,
   },
   // Section label to its card/row group, and card→card or row→row within
   // the group, are both sibling seams per DESIGN.md's component gap rule —

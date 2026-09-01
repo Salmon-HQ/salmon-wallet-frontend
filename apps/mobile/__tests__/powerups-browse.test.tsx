@@ -67,10 +67,23 @@ jest.mock('../src/icons', () => {
 
 jest.mock('../src/components', () => {
   const ReactActual = require('react');
-  const { Text, View } = require('react-native');
+  const { Text, TextInput, View } = require('react-native');
 
   return {
     DepthBackground: () => null,
+    SearchField: ({
+      testID,
+      value,
+      onChangeText,
+      placeholder,
+    }: {
+      testID?: string;
+      value: string;
+      onChangeText: (text: string) => void;
+      placeholder: string;
+    }) => (
+      <TextInput testID={testID} value={value} onChangeText={onChangeText} placeholder={placeholder} />
+    ),
     ScalesBackground: () => null,
     IconBubble: () => null,
     ScreenHeader: ({ title, subtitle }: { title?: string; subtitle?: string }) => (

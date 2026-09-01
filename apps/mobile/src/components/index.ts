@@ -78,6 +78,8 @@ export { LoadingScreen } from './LoadingScreen';
 export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
+export { SearchField } from './SearchField';
+export type { SearchFieldProps } from './SearchField';
 
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
