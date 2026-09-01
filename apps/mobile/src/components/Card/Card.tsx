@@ -53,6 +53,7 @@ export function Card({
   gap,
   radius = 'xl',
   onPress,
+  accessibilityRole = 'button',
   accessibilityLabel,
   style,
   children,
@@ -82,7 +83,7 @@ export function Card({
   return (
     <TouchableOpacity
       testID={testID}
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       activeOpacity={0.7}

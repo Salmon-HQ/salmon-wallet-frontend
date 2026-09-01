@@ -7,7 +7,6 @@
 import type { ReactNode } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   spacing,
@@ -73,7 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   disabled: {
-    opacity: colors.button.disabledOpacity,
+    opacity: semantic.state.disabledOpacity,
   },
   text: {
     color: semantic.text.accent,

@@ -29,6 +29,11 @@ export interface ListRowProps extends Testable {
   /** A value, a chevron, a badge — whatever closes the row on the right. */
   trailing?: ReactNode;
   onPress?: () => void;
+  /**
+   * Announced role when pressable. Defaults to `button`; pass `link` for a
+   * row whose press opens an external URL.
+   */
+  accessibilityRole?: 'button' | 'link';
   /** The ground the row sits on — `Card`'s own tones. */
   tone?: CardTone;
   padding?: ListRowPadding;

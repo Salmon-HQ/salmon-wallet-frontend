@@ -10,7 +10,6 @@
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -64,7 +63,7 @@ export function PrimaryButton({
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
         <ActivityIndicator
-          color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
+          color={isDisabled ? semantic.text.disabled : semantic.accent.onFill}
         />
       ) : (
         <Text
@@ -86,7 +85,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: componentSizes.buttonHeight,
-    backgroundColor: colors.button.primaryBackground,
+    backgroundColor: semantic.accent.fill,
     borderRadius: componentSizes.buttonRadius,
     alignItems: 'center',
     justifyContent: 'center',
@@ -106,7 +105,7 @@ const styles = StyleSheet.create({
     color: semantic.text.disabled,
   },
   text: {
-    color: colors.button.primaryText,
+    color: semantic.accent.onFill,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.normal,

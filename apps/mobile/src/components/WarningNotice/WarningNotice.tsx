@@ -11,9 +11,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import { WarningIcon, iconSize } from '../../icons';
 import {
   borderRadius,
-  colors,
   fontFamilyNative,
   fontSize,
+  s,
   spacing,
   semantic,
 } from '@salmon/shared';
@@ -25,12 +25,14 @@ export function WarningNotice({
   children,
   action,
   style,
+  testID,
 }: WarningNoticeProps): React.ReactElement {
   const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
   const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <View
+      testID={testID}
       style={[styles.container, { backgroundColor: background, borderColor: accent }, style]}
       accessibilityRole="alert"
     >
@@ -64,17 +66,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.sm,
-    marginBottom: 2,
+    fontSize: s(fontSize.caption),
+    marginBottom: spacing.xxs,
   },
   action: {
     marginTop: 6,
     alignSelf: 'flex-start',
   },
   body: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.45,
+    fontSize: s(fontSize.caption),
+    lineHeight: s(fontSize.caption) * 1.45,
   },
 });

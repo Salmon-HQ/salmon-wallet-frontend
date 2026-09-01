@@ -26,6 +26,12 @@ export interface CardProps extends Testable {
   radius?: CardRadius;
   /** When present the card becomes a button and takes the pressed feedback. */
   onPress?: () => void;
+  /**
+   * Announced role when pressable. Defaults to `button`; pass `link` for a
+   * row whose press opens an external URL, so it announces as a link rather
+   * than an action.
+   */
+  accessibilityRole?: 'button' | 'link';
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;

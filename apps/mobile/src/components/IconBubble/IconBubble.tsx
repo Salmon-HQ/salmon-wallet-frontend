@@ -77,6 +77,7 @@ export function IconBubble({
   rotation,
   style,
   accessibilityLabel,
+  accessibilityHint,
   testID,
 }: IconBubbleProps) {
   const { scale: pressScale, pressHandlers, specular } = usePressMotion();
@@ -146,6 +147,7 @@ export function IconBubble({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled }}
       onPress={onPress}
       disabled={isDisabled}

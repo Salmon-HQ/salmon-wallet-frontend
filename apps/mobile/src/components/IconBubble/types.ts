@@ -105,4 +105,6 @@ export interface IconBubbleProps extends Testable {
   rotation?: SharedValue<number>;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /** Pressable only. Announces the press's consequence, the third state channel. */
+  accessibilityHint?: string;
 }

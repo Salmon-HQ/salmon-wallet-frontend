@@ -36,6 +36,12 @@ export interface RecipientInputProps {
   validationState: ValidationState;
   isValidating: boolean;
   testID?: string;
+  /**
+   * Prefix for the field's own testIDs (`${prefix}-recipient-input`,
+   * `${prefix}-scan-button`). Defaults to `'send'` so the send flow and its
+   * tests keep their existing ids; the address-book panels pass their own.
+   */
+  testIDPrefix?: string;
 }
 
 /** The edge each validation state paints. `idle`/`loading` keep the hairline. */
@@ -61,6 +67,7 @@ export function RecipientInput({
   validationState,
   isValidating,
   testID = 'send-recipient-field',
+  testIDPrefix = 'send',
 }: RecipientInputProps) {
   const edge = EDGE[validationState];
   const mark = value.length > 0 && !isValidating ? MARK[validationState] : undefined;
@@ -75,7 +82,7 @@ export function RecipientInput({
       ])}
     >
       <TextInput
-        testID="send-recipient-input"
+        testID={`${testIDPrefix}-recipient-input`}
         style={styles.input}
         placeholder={placeholder}
         placeholderTextColor={semantic.text.tertiary}
@@ -95,7 +102,7 @@ export function RecipientInput({
         </Text>
       )}
       <IconBubble
-        testID="send-scan-button"
+        testID={`${testIDPrefix}-scan-button`}
         size={36}
         tone="ghost"
         icon={QrCodeIcon}

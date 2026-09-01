@@ -10,7 +10,6 @@ import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from
 import Animated from 'react-native-reanimated';
 import {
   borderWidth,
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
     borderColor: semantic.status.danger,
   },
   disabled: {
-    opacity: colors.button.disabledOpacity,
+    opacity: semantic.state.disabledOpacity,
   },
   text: {
     color: semantic.text.primary,

@@ -54,4 +54,14 @@ describe('Card', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Open')).toBeTruthy();
   });
+
+  it('announces as a link when it opens an external URL', () => {
+    render(
+      <Card testID="external" onPress={jest.fn()} accessibilityRole="link" accessibilityLabel="Docs">
+        <Text>external</Text>
+      </Card>
+    );
+
+    expect(screen.getByTestId('external').props.accessibilityRole).toBe('link');
+  });
 });

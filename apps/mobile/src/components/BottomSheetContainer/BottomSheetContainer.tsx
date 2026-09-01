@@ -24,12 +24,12 @@ import Reanimated, {
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  colors,
   shadows,
   borderRadius,
   borderWidth,
   componentSizes,
   motionMs,
+  semantic,
   vs,
   s,
   spacing,
@@ -395,7 +395,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                 pointerEvents="none"
               >
                 <LinearGradient
-                  colors={[colors.background.secondary, 'transparent']}
+                  colors={[semantic.surface.raised, 'transparent']}
                   style={StyleSheet.absoluteFill}
                 />
               </Animated.View>
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.sheet.backdrop,
+    backgroundColor: semantic.overlay.backdrop,
   },
   sheetContainer: {
     // The background element (thermocline by default) carries the material;
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.header,
     borderTopRightRadius: borderRadius.header,
     borderTopWidth: borderWidth.sheet,
-    borderTopColor: colors.border.default,
+    borderTopColor: semantic.border.default,
     // No minHeight: a sheet hugs its content (a short receipt ends where it
     // ends); tall content is bounded by maxHeight and scrolls inside.
     maxHeight: '92%',
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     width: s(HANDLE_WIDTH),
     height: vs(HANDLE_HEIGHT),
     borderRadius: borderRadius.full,
-    backgroundColor: colors.sheet.handle,
+    backgroundColor: semantic.sheet.handle,
     opacity: componentSizes.sheetHandleOpacity,
   },
   topFadeGradient: {

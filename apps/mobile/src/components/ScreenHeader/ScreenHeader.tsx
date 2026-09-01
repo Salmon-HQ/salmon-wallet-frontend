@@ -13,7 +13,6 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CaretLeftIcon, XIcon } from '../../icons';
 import {
-  colors,
   componentSizes,
   contentPadding,
   fontFamilyNative,
@@ -190,7 +189,7 @@ const styles = StyleSheet.create({
   },
   // The glyph dims; the well stays, so the target never moves or disappears.
   backDisabled: {
-    opacity: colors.button.disabledOpacity,
+    opacity: semantic.state.disabledOpacity,
   },
   center: {
     flex: 1,

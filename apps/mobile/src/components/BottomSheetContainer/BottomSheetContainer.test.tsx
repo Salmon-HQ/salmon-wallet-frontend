@@ -36,12 +36,7 @@ jest.mock('react-native-reanimated', () => {
 jest.mock('@salmon/shared', () => ({
   // The mobile motion wrapper reads the real motion vocabulary.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  colors: {
-    background: { primary: '#0B0F19', secondary: '#10131C' },
-    sheet: { backdrop: 'rgba(0,0,0,0.5)', handle: '#fff' },
-    border: { default: '#58637B' },
-    interactive: { surface: '#222' },
-  },
+  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
   shadows: { sheet: {} },
   borderRadius: { card: 24, full: 999 },
   borderWidth: { sheet: 1 },

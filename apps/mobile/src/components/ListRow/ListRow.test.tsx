@@ -39,4 +39,18 @@ describe('ListRow', () => {
 
     expect(screen.getByLabelText('Ana, 9xQe…4f2')).toBeTruthy();
   });
+
+  it('forwards accessibilityRole="link" for a row that opens an external URL', () => {
+    render(
+      <ListRow
+        testID="explorer-row"
+        leading={<Text>L</Text>}
+        title="View on explorer"
+        onPress={jest.fn()}
+        accessibilityRole="link"
+      />
+    );
+
+    expect(screen.getByTestId('explorer-row').props.accessibilityRole).toBe('link');
+  });
 });

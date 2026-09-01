@@ -3,12 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { EyeIcon, iconSize } from '../../icons';
 import {
-  colors,
   semantic,
   spacing,
   borderRadius,
   fontSize,
   fontFamilyNative,
+  s,
 } from '@salmon/shared';
 
 export interface WatchOnlyBadgeProps {
@@ -28,7 +28,7 @@ export function WatchOnlyBadge({ testID = 'watch-only-badge' }: WatchOnlyBadgePr
 
   return (
     <View testID={testID} style={styles.badge}>
-      <EyeIcon color={colors.text.secondary} size={iconSize.sm} />
+      <EyeIcon color={semantic.text.secondary} size={iconSize.sm} />
       <Text style={styles.label}>{t('wallet.watchOnly.badge')}</Text>
     </View>
   );
@@ -46,9 +46,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   label: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption,
+    fontSize: s(fontSize.caption),
+    lineHeight: s(fontSize.caption),
   },
 });

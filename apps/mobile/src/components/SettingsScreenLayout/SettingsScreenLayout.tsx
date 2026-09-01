@@ -8,6 +8,10 @@
  *
  * `showHeader` stays for the rare body that owns its own header row; it
  * defaults to on, because a screen without a back well has no way out.
+ *
+ * `footer` renders outside the `ScrollView`, on the safe area, for a panel
+ * that pins a `PrimaryButton` (or similar committing action) below the
+ * scrollable body instead of letting it scroll away with the content.
  */
 
 import React, { type ReactNode } from 'react';
@@ -50,6 +54,8 @@ export interface SettingsScreenLayoutProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
   /** Whether to render the screen header. Default: true */
   showHeader?: boolean;
+  /** Sticky action band rendered below the scrollable body, on the safe area. */
+  footer?: ReactNode;
 }
 
 // ============================================================================
@@ -65,6 +71,7 @@ export function SettingsScreenLayout({
   scrollable = true,
   contentContainerStyle,
   showHeader = true,
+  footer,
 }: SettingsScreenLayoutProps) {
   const { t } = useTranslation();
   return (
@@ -129,6 +136,8 @@ export function SettingsScreenLayout({
               {children}
             </View>
           )}
+
+          {footer && <View style={styles.footer}>{footer}</View>}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>
@@ -152,10 +161,10 @@ const styles = StyleSheet.create({
   subtitle: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.snug,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
     paddingHorizontal: contentPadding.screen,
-    marginBottom: spacing.lg,
+    marginBottom: vs(spacing.screenGutter),
   },
   subtitleStandalone: {
     marginTop: spacing.md,
@@ -178,5 +187,9 @@ const styles = StyleSheet.create({
   },
   scrollContentHeaderless: {
     paddingTop: spacing.md,
+  },
+  footer: {
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingTop: vs(spacing.md),
   },
 });

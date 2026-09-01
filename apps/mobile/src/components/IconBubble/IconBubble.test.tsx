@@ -131,6 +131,21 @@ describe('IconBubble', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  it('forwards accessibilityHint when pressable', () => {
+    render(
+      <IconBubble
+        testID="delete"
+        size={42}
+        tone="accent"
+        onPress={() => {}}
+        accessibilityLabel="Delete"
+        accessibilityHint="Removes the recipient"
+      />
+    );
+
+    expect(screen.getByTestId('delete').props.accessibilityHint).toBe('Removes the recipient');
+  });
+
   it('swaps a disabled control to the crest ground instead of dimming the fill', () => {
     const onPress = jest.fn();
     render(

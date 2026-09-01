@@ -27,6 +27,7 @@ export function ListRow({
   subtitle,
   trailing,
   onPress,
+  accessibilityRole,
   tone,
   padding = 'md',
   emphasis = 'default',
@@ -41,6 +42,7 @@ export function ListRow({
     <Card
       testID={testID}
       onPress={onPress}
+      accessibilityRole={accessibilityRole}
       tone={tone}
       accessibilityLabel={spokenName}
       padding={padding}
