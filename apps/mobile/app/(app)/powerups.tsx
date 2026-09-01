@@ -72,9 +72,12 @@ export default function PowerupsScreen() {
   const { scrollBottomPadding, floatingBottomOffset } = useTabChrome();
   const developerMode = useDeveloperMode();
 
-  // The lock overlay is mounted by the tab shell, which is BEHIND this screen:
-  // a lock that lands while the catalogue is open would leave it sitting on
-  // top of the lock. The screen closes itself instead.
+  // The lock overlay mounts in `(app)/_layout.tsx`, above the whole stack —
+  // that covers every plain pushed screen (Wallets, Activity). Powerups is
+  // the one exception: `presentation: 'fullScreenModal'` (see the Stack
+  // config in `(app)/_layout.tsx`) gives iOS its own native window, stacked
+  // above the entire React tree, so no React-level overlay — however high —
+  // can paint over it. This screen has to close itself instead.
   const [{ locked }] = useAccountsContext();
   useEffect(() => {
     if (locked) router.back();
