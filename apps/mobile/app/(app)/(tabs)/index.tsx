@@ -147,10 +147,13 @@ export default function HomeScreen() {
   const contentTopOffset = headerContentOffset + vs(spacing.xl);
 
   // Top fade gradient opacity - animated based on scroll position
-  const topFadeOpacity = useRef(new Animated.Value(0)).current;
+  // `useMemo`, not a ref read during render: the hooks lint (v7) forbids
+  // `.current` in the render body, and a memo with no deps is the same
+  // one-instance guarantee.
+  const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   // Raw scroll offset of whichever sub-tab owns the screen. On NFTs it also
   // drives the sticky sub-tab row (see `subTabsTranslateY`).
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useMemo(() => new Animated.Value(0), []);
 
   // Active blockchain index for carousel
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
@@ -212,12 +215,13 @@ export default function HomeScreen() {
   // Filter networks to only include those the user has accounts for
   // This prevents showing networks in the carousel that the user can't switch to
   // (e.g., accounts created before multi-chain derivation won't have BTC/ETH)
+  const networksAccounts = activeAccount?.networksAccounts;
   const allNetworks = useMemo(() => {
-    if (!activeAccount?.networksAccounts) return availableNetworks;
+    if (!networksAccounts) return availableNetworks;
 
-    const userNetworkIds = Object.keys(activeAccount.networksAccounts);
+    const userNetworkIds = Object.keys(networksAccounts);
     return availableNetworks.filter((network) => userNetworkIds.includes(network.id));
-  }, [availableNetworks, activeAccount?.networksAccounts]);
+  }, [availableNetworks, networksAccounts]);
 
   // Sync the carousel index with the persisted networkId — but only when that
   // id actually changes.

@@ -22,24 +22,44 @@ jest.mock('../../utils/haptics', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The mobile wrapper hook reads the real motion vocabulary.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  borderRadius: { md: 12, xl: 20 },
-  borderWidth: { thin: 1 },
-  colors: {
-    background: { card: '#111' },
-    border: { default: '#222' },
-    text: { secondary: '#999', primary: '#fff' },
-  },
-  fontFamilyNative: { medium: 'System', regular: 'System', mono: 'GeistMonoRegular' },
-  fontSize: { base: 16, mono: 13 },
+  // `IconBubble` and `KeyValueRow` pull tokens (componentSizes, fontScaleCap,
+  // tabularNums, semantic.*, borderRadius.r3/r4/full, …) this row never used
+  // to reach directly — the shared token mock is the one place that keeps
+  // all of them (plus the motion vocabulary the mobile wrapper hook reads)
+  // in sync, with `s`/`ms`/`vs` as identities instead of the real
+  // `Dimensions`-backed scalers.
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  motionMs: { feedbackHold: 1500 },
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
-  semantic: { status: { success: '#0f0' }, text: { accent: '#f54' } },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16 },
+}));
+
+// No worklets runtime in Jest: `IconBubble`'s animated touchable and its
+// press hook need plain-JS stand-ins (same shape as `IconBubble.test.tsx`).
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
 }));
 
 import { AddressCopyRow } from './AddressCopyRow';

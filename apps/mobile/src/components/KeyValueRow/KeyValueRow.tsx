@@ -50,13 +50,17 @@ export function KeyValueRow({
         {label}
       </Text>
       <View style={styles.valueGroup}>
-        <Text
-          style={[styles.value, { color: VALUE_INK[valueTone] }]}
-          maxFontSizeMultiplier={fontScaleCap.dense}
-          numberOfLines={1}
-        >
-          {value}
-        </Text>
+        {typeof value === 'string' ? (
+          <Text
+            style={[styles.value, { color: VALUE_INK[valueTone] }]}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+            numberOfLines={1}
+          >
+            {value}
+          </Text>
+        ) : (
+          value
+        )}
         {action}
       </View>
     </View>

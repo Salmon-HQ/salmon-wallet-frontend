@@ -125,12 +125,12 @@ describe('TokenListItem hidden balance', () => {
   });
 
   it('hides the absolute change, which is money, and keeps the percentage', () => {
-    const { queryByText, getByText } = render(
+    const { queryByText, getByTestId } = render(
       <TokenListItem token={TOKEN} blockchain="bitcoin" hiddenBalance />
     );
 
     expect(queryByText(/\+\$6.4/)).toBeNull();
-    expect(getByText('+4.2%')).toBeTruthy();
+    expect(getByTestId('token-row-change-SOL').props.children).toBe(' · +4.2%');
   });
 });
 

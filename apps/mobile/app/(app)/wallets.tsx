@@ -33,6 +33,7 @@ import {
   s,
   semantic,
   spacing,
+  tabularNums,
   vs,
   type Account,
   type NetworkId,
@@ -41,6 +42,7 @@ import {
   Card,
   DepthBackground,
   IconBubble,
+  ListRow,
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
@@ -63,6 +65,10 @@ const WALLET_BUBBLE_SIZE = 44;
 const RENAME_BUBBLE_SIZE = 24;
 /** The include control at the end of a wallet card. */
 const INCLUDE_ICON_SIZE = 22;
+
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one, so this copy is what satisfies the style typing.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
 export default function WalletsScreen() {
   const { t } = useTranslation();
@@ -302,41 +308,46 @@ function WalletCard({
   }, [account.networksAccounts, networkId]);
 
   return (
-    <Card
-      testID={`wallet-card-${account.id}`}
-      padding="lg"
-      gap={spacing.sm}
-      onPress={onSelect}
-      accessibilityLabel={
-        isActive
-          ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
-          : account.name
-      }
-      style={isActive ? styles.activeCard : undefined}
-    >
-      <View style={styles.walletRow}>
-        <IconBubble
-          size={WALLET_BUBBLE_SIZE}
-          shape="circle"
-          tone={isActive ? 'ink' : 'accent-tint'}
-        >
-          {account.avatar && !imgError ? (
-            <Image
-              source={{ uri: account.avatar }}
-              style={styles.avatarImage}
-              contentFit="cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <Text style={styles.avatarInitials}>{initials}</Text>
-          )}
-        </IconBubble>
-
-        <View style={styles.walletInfo}>
-          <View style={styles.nameRow}>
-            <Text style={styles.walletName} numberOfLines={1} ellipsizeMode="tail">
-              {account.name}
-            </Text>
+    // `ListRow` is the card here — its own leading/title/trailing geometry
+    // replaces what used to be hand-drawn styles duplicating it exactly. The
+    // derived-account chips have no slot on `ListRow` (there is no footer),
+    // so a wallet with more than one derived path renders them as a sibling
+    // block below the row instead of inside one shared card. Wrapped in a
+    // `View` (not a fragment) so the screen's sibling gap of 20 applies once,
+    // between wallets — not a second time between a wallet's own row and its
+    // derived chips, which stay at the tighter internal-anatomy step.
+    <View>
+      <ListRow
+        testID={`wallet-card-${account.id}`}
+        padding="lg"
+        onPress={onSelect}
+        accessibilityLabel={
+          isActive
+            ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
+            : account.name
+        }
+        style={isActive ? styles.activeCard : undefined}
+        leading={
+          <IconBubble
+            size={WALLET_BUBBLE_SIZE}
+            shape="circle"
+            tone={isActive ? 'ink' : 'accent-tint'}
+          >
+            {account.avatar && !imgError ? (
+              <Image
+                source={{ uri: account.avatar }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            )}
+          </IconBubble>
+        }
+        title={account.name}
+        titleAccessory={
+          <>
             <IconBubble
               testID={`wallet-rename-${account.id}`}
               size={RENAME_BUBBLE_SIZE}
@@ -351,29 +362,32 @@ function WalletCard({
             {isWatchOnlyAccount(account) && (
               <WatchOnlyBadge testID={`wallet-watch-only-${account.id}`} />
             )}
-          </View>
+          </>
+        }
+        subtitle={
           <Text testID={`wallet-balance-${account.id}`} style={styles.walletBalance}>
             {hiddenBalance ? hiddenValue : formatValue(total)}
             {shortAddress ? ` · ${shortAddress}` : ''}
           </Text>
-        </View>
-
-        <IconBubble
-          testID={`wallet-include-${account.id}`}
-          size={24}
-          tone="ghost"
-          icon={included ? CheckCircleIcon : CircleIcon}
-          iconSize={INCLUDE_ICON_SIZE}
-          iconColor={included ? semantic.accent.ink : semantic.text.tertiary}
-          onPress={onToggleInclude}
-          accessibilityLabel={
-            included
-              ? t('settings.wallets.exclude_from_total_a11y', { name: account.name })
-              : t('settings.wallets.include_in_total_a11y', { name: account.name })
-          }
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        />
-      </View>
+        }
+        trailing={
+          <IconBubble
+            testID={`wallet-include-${account.id}`}
+            size={24}
+            tone="ghost"
+            icon={included ? CheckCircleIcon : CircleIcon}
+            iconSize={INCLUDE_ICON_SIZE}
+            iconColor={included ? semantic.accent.ink : semantic.text.tertiary}
+            onPress={onToggleInclude}
+            accessibilityLabel={
+              included
+                ? t('settings.wallets.exclude_from_total_a11y', { name: account.name })
+                : t('settings.wallets.include_in_total_a11y', { name: account.name })
+            }
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          />
+        }
+      />
 
       {derived.length > 0 && (
         <SubAccountSelector
@@ -390,7 +404,7 @@ function WalletCard({
           style={styles.derivedRow}
         />
       )}
-    </Card>
+    </View>
   );
 }
 
@@ -424,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     fontSize: ms(fontSize.display),
     letterSpacing: letterSpacing.balance,
-    fontVariant: ['tabular-nums'],
+    ...TABULAR,
   },
   totalCaption: {
     color: semantic.text.tertiary,
@@ -445,34 +459,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: semantic.accent.ink,
   },
-  walletRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  walletInfo: {
-    flex: 1,
-    minWidth: 0,
-    gap: vs(spacing.xxs),
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    flexWrap: 'wrap',
-  },
-  walletName: {
-    flexShrink: 1,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-    fontSize: ms(fontSize.bodyLg),
-  },
+  // The kept-custom `ListRow` subtitle node: `ListRow` draws a string
+  // subtitle in this same body/secondary style, but the balance needs the
+  // Tabular Rule, which the row's own subtitle text doesn't carry.
   walletBalance: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.caption),
-    fontVariant: ['tabular-nums'],
+    fontSize: ms(fontSize.body),
+    ...TABULAR,
   },
   avatarImage: {
     width: '100%',
@@ -485,6 +479,10 @@ const styles = StyleSheet.create({
   },
   derivedRow: {
     paddingHorizontal: 0,
+    // `ListRow`'s own card no longer contains these chips (no footer slot),
+    // so the tight internal step that used to be the card's own `gap` prop
+    // is redrawn here instead of falling to the screen's 20 sibling gap.
+    marginTop: vs(spacing.sm),
   },
   addCard: {
     backgroundColor: 'transparent',

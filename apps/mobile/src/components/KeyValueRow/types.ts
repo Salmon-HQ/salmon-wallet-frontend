@@ -7,7 +7,13 @@ export type KeyValueTone = 'primary' | 'success' | 'danger' | 'secondary';
 
 export interface KeyValueRowProps extends Testable {
   label: string;
-  value: string;
+  /**
+   * A string is drawn in the row's own value style. A node is drawn as it
+   * arrives, for a value the row cannot style as one typeface — an address,
+   * which the Monospace-Is-For-Scanning Rule pins to Geist Mono regardless of
+   * `valueTone`.
+   */
+  value: string | ReactNode;
   valueTone?: KeyValueTone;
   /** 600 is the emphasised label a summary row uses; 500 is the default. */
   labelWeight?: 500 | 600;

@@ -1,23 +1,18 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { Animated, Text, StyleSheet, ViewStyle } from 'react-native';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import {
-  borderRadius,
-  borderWidth,
-  colors,
-  fontFamilyNative,
-  fontSize,
-  getShortAddress,
-  ms,
-  s,
-  semantic,
-  spacing,
-  vs,
-} from '@salmon/shared';
+import { fontFamilyNative, fontSize, getShortAddress, ms, semantic } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
+import { IconBubble } from '../IconBubble';
+import { KeyValueRow } from '../KeyValueRow';
+
+// The copy control is the kit's 32-ish well; `IconBubble`'s closed union has
+// no 32, so this takes the nearest step (36) rather than growing a tenth size
+// for one caller.
+const COPY_BUBBLE_SIZE = 36;
 
 // ============================================================================
 // Types
@@ -115,29 +110,28 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   }, [address, showCopied]);
 
   return (
-    <View style={[styles.container, style]}>
-      {/* Label */}
-      <Text style={styles.label}>{label}</Text>
-
-      {/* Address and Copy Button */}
-      <View style={styles.rightSection}>
+    <KeyValueRow
+      style={style}
+      label={label}
+      // Monospace-Is-For-Scanning Rule: an address is read positionally,
+      // prefix against suffix, so its characters must hold a fixed width —
+      // Geist Mono at the address size. `KeyValueRow`'s own value style is
+      // bold body, so the address arrives as a node rather than a string.
+      value={
         <Text style={styles.address} numberOfLines={1}>
           {displayAddress}
         </Text>
-
-        <TouchableOpacity
+      }
+      action={
+        <IconBubble
           testID={`tx-detail-copy-address-${label}`}
+          size={COPY_BUBBLE_SIZE}
+          tone={copied ? 'success-tint' : 'surface'}
           onPress={handleCopy}
-          style={[styles.copyButton, copied && styles.copyButtonCopied]}
-          activeOpacity={0.6}
-          accessibilityRole="button"
           accessibilityLabel={
             copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
           }
-          accessibilityHint={copied ? undefined : t('transactions.detail.copyAddressHint')}
         >
-          {/* The copy control is the affordance in this row; the address beside it
-              is data to read and stays neutral mono. */}
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
               <CheckIcon size={iconSize.sm} color={semantic.status.success} />
@@ -145,9 +139,9 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           ) : (
             <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
           )}
-        </TouchableOpacity>
-      </View>
-    </View>
+        </IconBubble>
+      }
+    />
   );
 };
 
@@ -156,29 +150,6 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: vs(spacing.md),
-    paddingHorizontal: s(spacing.lg),
-    backgroundColor: `${colors.background.card}60`,
-    borderRadius: borderRadius.md,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
-  },
-  label: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.secondary,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'flex-end',
-    marginLeft: s(spacing.md),
-  },
   /**
    * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
    * against suffix, so its characters must hold a fixed width — Geist Mono at
@@ -187,20 +158,8 @@ const styles = StyleSheet.create({
   address: {
     fontSize: ms(fontSize.mono),
     fontFamily: fontFamilyNative.mono,
-    color: colors.text.primary,
-    marginRight: s(spacing.sm),
+    color: semantic.text.primary,
     flexShrink: 1,
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: `${colors.background.card}80`,
-  },
-  copyButtonCopied: {
-    backgroundColor: `${semantic.status.success}20`,
   },
 });
 
