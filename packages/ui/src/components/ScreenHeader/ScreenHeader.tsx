@@ -69,7 +69,8 @@ export function ScreenHeader({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          paddingTop: spacing.screenTop,
+          // The panel's inset stands in for mobile's safe area (spacing.ts).
+          paddingTop: spacing.panelTop + spacing.screenTop,
           paddingBottom: spacing.xl,
           paddingLeft: spacing.screenGutter,
           paddingRight: spacing.screenGutter,

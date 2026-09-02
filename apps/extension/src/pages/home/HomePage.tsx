@@ -1452,7 +1452,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             wallet switcher can change the account or the network, which remounts
             the flow, so both are withheld while a signed transaction is still
             being reported. */}
-        <div style={{ paddingTop: spacing.screenTop }}>
+        <div style={{ paddingTop: spacing.panelTop + spacing.screenTop }}>
           <WalletHeader
             // Surfaces WITH the content, as its sibling: the header's own
             // chrome-scale float plays at the same moment as the screen's,

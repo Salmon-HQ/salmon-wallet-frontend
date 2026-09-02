@@ -50,6 +50,14 @@ export const spacing = {
    * device may need it back.
    */
   screenTop: 0,
+  /**
+   * 20px - The side panel's stand-in for the safe-area top inset. The DOM has
+   * no island to clear, so without it the header row touched the panel's top
+   * edge while the sides and the bottom kept their 20 (owner, 2026-09-02).
+   * A DOM screen's top edge is `panelTop + screenTop`, exactly as mobile's is
+   * `insets.top + screenTop`.
+   */
+  panelTop: 20,
   /** 20px - Redesigned screen bottom padding, added to the safe-area bottom inset */
   screenBottom: 20,
 } as const;
