@@ -855,9 +855,10 @@ describe('contrast: the bezel', () => {
  * it is painted over, and held to 1.4.11's 3:1 as a cue, not body copy.
  *
  * The measured worst cases: amber 8.64 dark / 1.89 light, purple 4.38 / 3.74,
- * indigo 4.15 / 3.94. The whole hint — symbol and arrow — is held to the
- * 3:1 glyph floor (owner ruling, 2026-09-02: the symbol carries the hue too),
- * so only amber in light misses it and light Bitcoin spends no hue at all.
+ * indigo 4.15 / 3.94. Owner ruling (2026-09-02): the whole hint — symbol and
+ * arrow — takes the chain's hue in both modes, floor or no floor; amber in
+ * light is faint by that decision. The numbers are asserted so the record
+ * stays measured, and the hue is asserted so no fallback creeps back in.
  */
 describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
   const grounds = [
@@ -873,12 +874,11 @@ describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
     keyof typeof chainMarks.byChain,
     string,
   ][]) {
-    it(`${chainName}: the hint takes the hue only where it clears the glyph floor`, () => {
-      const ink = tokens.chain.hintInk[chainName];
-      expect(ink).toBe(worst(hue) >= AA_NON_TEXT ? hue : tokens.text.secondary);
-      for (const [, ground] of grounds) {
-        expect(contrast(ink, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-      }
+    it(`${chainName}: the hint takes the hue in this mode, whatever it measures`, () => {
+      expect(tokens.chain.hintInk[chainName]).toBe(hue);
+      // The record: every hue but amber-on-light clears the glyph floor.
+      const clears = worst(hue) >= AA_NON_TEXT;
+      expect(clears).toBe(!(chainName === 'bitcoin' && _mode === 'light'));
     });
   }
 

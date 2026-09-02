@@ -214,7 +214,6 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'border.default',
         'border.hairline',
         'border.strong',
-        'chain.hintInk',
         'change.negative',
         'change.neutral',
         'change.positive',
