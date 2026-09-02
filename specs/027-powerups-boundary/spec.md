@@ -42,7 +42,7 @@ Placement rules stay AGENTS.md's: cross-platform logic in shared, DOM in `packag
 
 ## 4. Kill switch and region gating (backend-driven, fail-closed)
 
-The client reads the backend's capability matrix — `sections` in `GET /v1/networks`, fetched today and ignored — **plus a per-Powerup allowlist served alongside it**. A Powerup is enabled only when the registry entry's requirements are satisfied by the matrix **and** the allowlist admits it for this stage/network/region. A stored reference to a disabled Powerup (the extension's session-restored tab, spec note: a real crash path today) falls back to Home.
+The client reads the backend's capability matrix — `sections` in `GET /v1/networks`, fetched today and ignored — **plus a per-Powerup allowlist served alongside it**. A Powerup is enabled only when the registry entry's requirements are satisfied by the matrix **and** the allowlist admits it for the active network; region is not in the catalog — it is decided per request at quote time (below). A stored reference to a disabled Powerup (the extension's session-restored tab, spec note: a real crash path today) falls back to Home.
 
 Region gating is **decided server-side from the request IP** (CloudFront-Viewer-Country / -Country-Region forwarded to the API). The client:
 
