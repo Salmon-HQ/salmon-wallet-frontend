@@ -15,7 +15,15 @@ export { IconDefaults, iconSize } from './icons';
 export type { IconComponent, IconSizeToken } from './icons';
 
 // Theme
-export { salmonTheme } from './theme';
+export { createSalmonTheme, salmonTheme, salmonThemeFor } from './theme';
+export {
+  SalmonThemeProvider,
+  useSemantic,
+  useShadows,
+  useSystemScheme,
+  useThemeMode,
+} from './theme/ThemeProvider';
+export { applySemanticCssVars, semanticToCssVars } from './theme/cssVars';
 
 // Utilities
 export { styled } from './utils/styled';

@@ -22,9 +22,10 @@ import {
   CurrencyProvider,
 } from '@salmon/shared';
 
-// Theme — MUI needs an explicit dark theme; its default is light.
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { IconDefaults, salmonTheme } from '@salmon/ui';
+// Theme — the provider owns the mode (stored preference + system scheme),
+// writes the `--sw-*` tokens on the root and supplies MUI's theme from inside.
+import { CssBaseline } from '@mui/material';
+import { IconDefaults, SalmonThemeProvider } from '@salmon/ui';
 
 // App
 import { App } from './App';
@@ -41,7 +42,7 @@ initAnalytics({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider theme={salmonTheme}>
+    <SalmonThemeProvider>
       <CssBaseline />
       <IconDefaults>
         <I18nextProvider i18n={i18n}>
@@ -53,6 +54,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           </AccountsProvider>
         </I18nextProvider>
       </IconDefaults>
-    </ThemeProvider>
+    </SalmonThemeProvider>
   </React.StrictMode>
 );

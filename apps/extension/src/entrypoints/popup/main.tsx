@@ -5,9 +5,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../assets/fonts.css';
 
-// Theme — MUI needs an explicit dark theme; its default is light.
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { IconDefaults, salmonTheme } from '@salmon/ui';
+// Theme — the provider owns the mode (stored preference + system scheme),
+// writes the `--sw-*` tokens on the root and supplies MUI's theme from inside.
+import { CssBaseline } from '@mui/material';
+import { IconDefaults, SalmonThemeProvider } from '@salmon/ui';
 
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
@@ -39,7 +40,7 @@ function Root() {
   const [queryClient] = React.useState(() => createQueryClient());
   return (
     <React.StrictMode>
-      <ThemeProvider theme={salmonTheme}>
+      <SalmonThemeProvider>
         <CssBaseline />
         <IconDefaults>
           <QueryClientProvider client={queryClient}>
@@ -54,7 +55,7 @@ function Root() {
             </I18nextProvider>
           </QueryClientProvider>
         </IconDefaults>
-      </ThemeProvider>
+      </SalmonThemeProvider>
     </React.StrictMode>
   );
 }

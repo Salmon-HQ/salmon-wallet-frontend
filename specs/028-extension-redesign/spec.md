@@ -38,6 +38,42 @@
 4. **Screens** — Wallets (a screen, not a sheet), Activity + transaction detail, Send as the mobile 4-step flow, Token detail, NFT detail with send/burn, Settings route composing `SettingsPanelStack` with the Appearance row, onboarding/auth screens on `OnboardingLayout`, Lock on `LockScreen` with the wait. Powerups surface follows the same flag as mobile (off for the submission).
 5. **Extension-only** — dApp connect / sign / approve and the popup window restyled on the kit (bedrock rule: no water, no scales, opaque).
 
+### Lot 1 — what landed (2026-09-02)
+
+- `packages/ui/src/theme/ThemeProvider.tsx` — `SalmonThemeProvider` wraps the
+  shared `ThemeProvider` and feeds it `systemScheme` from
+  `matchMedia('(prefers-color-scheme: dark)')`, subscribed (a system switch
+  moves the app while it is open). It exposes `useSemantic()`, `useThemeMode()`
+  and `useShadows()` under the mobile names and shapes, with the same
+  fall-back-to-deep-water contract mobile's `useThemedStyles` has, so a kit leaf
+  rendered outside the provider is dark rather than a crash.
+- `packages/ui/src/theme/cssVars.ts` — `semanticToCssVars(semantic)` flattens
+  the resolved set to `--sw-<group>-<token>`, joining every further level with
+  another `-`: tuples index by position (`--sw-water-gradient-0`), records take
+  their key (`--sw-water-crestShadow-color`, `--sw-chain-hintInk-bitcoin`).
+  Token names keep their camelCase so a variable is greppable from its token.
+  `applySemanticCssVars` writes them on `document.documentElement` together with
+  `color-scheme`, on every mode change.
+- `packages/ui/src/theme/index.ts` — the MUI theme is now an adapter:
+  `createSalmonTheme(tokens, mode)` builds it from a resolved set, and
+  `salmonThemeFor(mode)` memoises one theme per mode in a module `Map` (MUI's
+  theme is an identity every styled component is keyed on, so it must not be
+  rebuilt per render). `salmonTheme` stays as `salmonThemeFor('dark')`, marked
+  `@deprecated`, for consumers not yet inside the provider — dark is unchanged
+  byte for byte, which `theme.test.ts` still asserts.
+- The three roots (`apps/extension` sidepanel + popup, `apps/web`) mount
+  `<SalmonThemeProvider>` where they mounted MUI's `ThemeProvider`; MUI's now
+  lives inside ours, which is what lets a mode change rebuild it. Both extension
+  html entries declare `<meta name="color-scheme" content="dark light">`.
+- Switching, for verification only: the stored `STORAGE_KEYS.APPEARANCE`
+  preference and the system scheme. No Settings row — that is lot 4.
+
+Deviations worth knowing: `createShadows` is exposed through `useShadows()` but
+is **not** fed into the MUI theme — no MUI slot reads an elevation today, and
+wiring one would change dark. No component was restyled; the kit still reads
+the static `semantic`, which is the dark set, until lot 2 moves it onto
+`useSemantic()`.
+
 ## Open questions (owner)
 
 1. **MUI**: keep it as the base under the kit, or remove it as the kit replaces each usage? (Default: keep as an adapter in lot 1, remove at the end of lot 4 if nothing reads it.)

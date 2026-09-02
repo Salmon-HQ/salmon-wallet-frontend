@@ -4,11 +4,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '../../assets/fonts.css';
 
-// Theme — MUI needs an explicit dark theme; its default is light. The theme
-// object itself is pulled in below, after layout, because it is exported from
-// the `@salmon/ui` barrel alongside styled components that read the viewport
-// at module-evaluation time.
-import { CssBaseline, ThemeProvider } from '@mui/material';
+// Theme — the provider owns the mode (stored preference + system scheme),
+// writes the `--sw-*` tokens on the root and supplies MUI's theme from inside.
+// It is pulled in below, after layout, because it is exported from the
+// `@salmon/ui` barrel alongside styled components that read the viewport at
+// module-evaluation time.
+import { CssBaseline } from '@mui/material';
 
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
@@ -59,13 +60,13 @@ const waitForLayout = (): Promise<void> =>
 
   // Dynamic import so styled components see real viewport dimensions
   const { default: App } = await import('../popup/App');
-  const { IconDefaults, salmonTheme } = await import('@salmon/ui');
+  const { IconDefaults, SalmonThemeProvider } = await import('@salmon/ui');
 
   function Root() {
     const [queryClient] = React.useState(() => createQueryClient());
     return (
       <React.StrictMode>
-        <ThemeProvider theme={salmonTheme}>
+        <SalmonThemeProvider>
           <CssBaseline />
           <IconDefaults>
             <QueryClientProvider client={queryClient}>
@@ -80,7 +81,7 @@ const waitForLayout = (): Promise<void> =>
               </I18nextProvider>
             </QueryClientProvider>
           </IconDefaults>
-        </ThemeProvider>
+        </SalmonThemeProvider>
       </React.StrictMode>
     );
   }
