@@ -28,6 +28,7 @@ import {
   useAccountsContext,
   type Account,
   type AccountKeyInfo,
+  type PrivateKeyPanelPropsBase,
   type Semantic,
 } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
@@ -75,10 +76,9 @@ interface Network {
 // nothing should be readable about a key before its gate.
 const KEY_MASK = '••••••••••••••••••••••••';
 
-export interface PrivateKeyPanelProps {
+export interface PrivateKeyPanelProps extends PrivateKeyPanelPropsBase {
   networks: Network[];
   activeAccount: Account;
-  onBack: () => void;
   biometricAvailable: boolean;
   authenticateWithBiometric: () => Promise<string | null>;
 }

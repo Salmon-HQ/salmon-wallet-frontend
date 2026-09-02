@@ -18,12 +18,12 @@
  * otherwise spill past a 48px pill.
  */
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
-import { motionEasing, motionMs, semantic } from '@salmon/shared';
+import { motionEasing, motionMs, SPECULAR_OPACITY, SPECULAR_RADIUS } from '@salmon/shared';
+import type { PressSpecularPropsBase } from '@salmon/shared';
 
-/** DESIGN.md's 120px radius. */
-export const SPECULAR_RADIUS = 120;
-/** DESIGN.md's 12%. */
-export const SPECULAR_OPACITY = 0.12;
+import { useSemantic } from '../../theme/ThemeProvider';
+
+export { SPECULAR_OPACITY, SPECULAR_RADIUS };
 
 const SIZE = SPECULAR_RADIUS * 2;
 
@@ -38,7 +38,7 @@ export function setSpecularOrigin(event: ReactPointerEvent<HTMLElement>): void {
   event.currentTarget.style.setProperty('--specular-y', `${event.clientY - rect.top}px`);
 }
 
-export interface PressSpecularProps {
+export interface PressSpecularProps extends PressSpecularPropsBase {
   /** `usePressed().pressed` from the control that mounts this. */
   pressed: boolean;
   /** Mobile keeps the specular under reduce motion but drops its fade to a
@@ -47,6 +47,7 @@ export interface PressSpecularProps {
 }
 
 export function PressSpecular({ pressed, reducedMotion }: PressSpecularProps) {
+  const { water } = useSemantic();
   const style: CSSProperties = {
     position: 'absolute',
     left: `calc(var(--specular-x, 50%) - ${SPECULAR_RADIUS}px)`,
@@ -56,7 +57,7 @@ export function PressSpecular({ pressed, reducedMotion }: PressSpecularProps) {
     // The shape is a falloff, not a blur: full ink at the touch point,
     // nothing at the 120px edge — the same two stops mobile's RadialGradient
     // draws.
-    background: `radial-gradient(closest-side, ${semantic.water.light}, transparent)`,
+    background: `radial-gradient(closest-side, ${water.light}, transparent)`,
     // Transient light adds; it does not tint the fill underneath it.
     mixBlendMode: 'screen',
     pointerEvents: 'none',

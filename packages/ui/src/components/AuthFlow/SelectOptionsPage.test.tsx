@@ -14,11 +14,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
-
 // The water is not under test, and its shaders drag their own dependencies.
 vi.mock('../WaterColumn', () => ({
   WaterColumn: () => null,

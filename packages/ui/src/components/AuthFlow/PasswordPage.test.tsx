@@ -66,11 +66,6 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
   getPasswordStrengthLabel: (strength: string) => `strength-${strength}`,
 }));
 
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
-
 function renderPage() {
   return render(
     <PasswordPage

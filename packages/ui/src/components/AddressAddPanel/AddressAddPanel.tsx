@@ -1,84 +1,23 @@
 /**
- * AddressAddPanel - Add new contact page
+ * AddressAddPanel — add a contact, on the DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressAddPanel`:
+ * each field is a `Card` — the placeholder carries the label, so the form
+ * has no heading of its own above a control — then the network card and the
+ * save button.
  */
-
 import React, { useCallback } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import InputBase from '@mui/material/InputBase';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  semantic,
-  spacing,
-  fontFamily,
-  fontWeight,
-  useAddressBookForm,
-  borderRadius,
-  borderWidth,
-  fontSize,
-  opacity,
-} from '@salmon/shared';
+import { fontFamily, fontSize, spacing, useAddressBookForm } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
-import { SettingsPanelContent } from '../SettingsPanelContent';
+import { Card } from '../Card';
 import { InputAddress } from '../InputAddress';
+import { SettingsPanelContent } from '../SettingsPanelContent';
+import { TextInput } from '../TextInput';
+import { WarningNotice } from '../WarningNotice';
 import type { AddressAddPanelProps } from './types';
-
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const FieldLabel = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.body,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  marginBottom: spacing.sm,
-  marginTop: spacing.lg,
-});
-
-const StyledInput = styled(InputBase)({
-  width: '100%',
-  backgroundColor: colors.input.background,
-  borderRadius: borderRadius.r3,
-  border: `${borderWidth.thin}px solid ${colors.input.border}`,
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  '& .MuiInputBase-input': {
-    padding: `${spacing.md}px 0`,
-    '&::placeholder': {
-      color: colors.text.tertiary,
-      opacity: opacity.full,
-    },
-  },
-});
-
-const NetworkBox = styled(Box)({
-  backgroundColor: colors.input.background,
-  borderRadius: borderRadius.r3,
-  padding: `${spacing.md}px ${spacing.lg}px`,
-});
-
-const NetworkText = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.bodyLg,
-  fontFamily: fontFamily.sans,
-});
-
-const ErrorText = styled(Typography)({
-  fontSize: fontSize.caption,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: semantic.status.danger,
-  marginTop: spacing.sm,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function AddressAddPanel({
   activeNetworkId,
@@ -89,6 +28,7 @@ export function AddressAddPanel({
   errorText,
 }: AddressAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const { text } = useSemantic();
   const form = useAddressBookForm({ networkId: activeNetworkId });
 
   const handleSave = useCallback(async () => {
@@ -97,48 +37,52 @@ export function AddressAddPanel({
   }, [form, onSave]);
 
   return (
-    <SettingsPanelContent title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
-      <Box sx={{ px: `${spacing.lg}px` }}>
-        {/* Label */}
-        <FieldLabel>{t('settings.addressbook.label', 'Label')}</FieldLabel>
-        <StyledInput
-          value={form.label}
-          onChange={(e) => form.setLabel(e.target.value)}
-          placeholder={t('settings.addressbook.label', 'Label')}
-          autoComplete="off"
-          inputProps={{ spellCheck: false, 'data-testid': 'address-book-label-input' }}
-        />
+    <SettingsPanelContent
+      title={t('settings.addressbook.add', 'Add Address')}
+      subtitle={t('settings.addressbook.add_subtitle', 'Save a label and address for later.')}
+      onBack={onBack}
+    >
+      <TextInput
+        testID="address-book-label-input"
+        value={form.label}
+        onChangeText={form.setLabel}
+        placeholder={t('settings.addressbook.label', 'Label')}
+      />
 
-        {/* Address */}
-        <Box sx={{ mt: `${spacing.lg}px` }}>
-          <InputAddress
-            address={form.address}
-            onChange={form.setAddress}
-            onValidation={form.handleValidation}
-            label={t('general.address', 'Address')}
-            testID="address-book-address"
-          />
-        </Box>
+      <InputAddress
+        address={form.address}
+        onChange={form.setAddress}
+        onValidation={form.handleValidation}
+        label={t('general.address', 'Address')}
+        testID="address-book-address"
+      />
 
-        {/* Network */}
-        <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
-        <NetworkBox>
-          <NetworkText>
-            {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
-          </NetworkText>
-        </NetworkBox>
+      <Card padding="md" accessibilityLabel={t('settings.addressbook.network')}>
+        <span
+          style={{
+            color: text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.bodyLg,
+          }}
+        >
+          {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
+        </span>
+      </Card>
 
-        {/* Save */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
         <PrimaryButton
-          onPress={handleSave}
+          onPress={() => void handleSave()}
           disabled={!form.canSave}
           testID="address-book-save-button"
-          style={{ marginTop: spacing['2xl'] }}
         >
           {t('settings.addressbook.save', 'Save Address')}
         </PrimaryButton>
-        {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}
-      </Box>
+        {errorText && (
+          <div data-testid="address-book-save-error">
+            <WarningNotice tone="error" title={errorText} />
+          </div>
+        )}
+      </div>
     </SettingsPanelContent>
   );
 }

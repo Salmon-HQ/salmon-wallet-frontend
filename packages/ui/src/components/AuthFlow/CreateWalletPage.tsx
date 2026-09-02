@@ -1,6 +1,10 @@
 /**
  * The create path, on the onboarding slot grid: warning, phrase, confirm.
  *
+ * The mobile twins are `apps/mobile/app/(auth)/seed-warning.tsx` (the
+ * warning, a route of its own there) and `apps/mobile/app/(auth)/create.tsx`
+ * (phrase and confirm). Same anatomy, same glyphs, same copy.
+ *
  * ## The warning is a step, not a preamble
  *
  * `wallet.create.messageBody` used to share the screen with nothing and then
@@ -15,14 +19,13 @@
  *
  * ## Bedrock, and no water
  *
- * The two screens that carry the recovery phrase paint on
- * `semantic.surface.bedrock`, opaque: no scales, no caustic, no iridescence,
- * nothing alive moving behind the one secret that cannot be reissued. That is
- * a security decision, not a stylistic one.
+ * The three screens that exhibit the recovery phrase paint on
+ * `surface.bedrock`, opaque: no scales, no caustic, no iridescence, nothing
+ * alive moving behind the one secret that cannot be reissued. That is a
+ * security decision, not a stylistic one.
  */
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import {
+  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
@@ -30,14 +33,22 @@ import {
   generateValidationPositions,
   lineHeight,
   motionMs,
-  semantic,
   spacing,
   validateMnemonicWords,
 } from '@salmon/shared';
-import { SparkleIcon, WarningIcon } from '../../icons';
-import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type UIEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
+
+import { CheckCircleIcon, iconSize, SparkleIcon, WarningIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
 import { HoldToApproveButton } from '../DAppApproval/HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
@@ -62,39 +73,6 @@ interface ValidationWord {
   userInput: string;
 }
 
-const WarningCopy = styled(Typography)({
-  color: semantic.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
-  textAlign: 'center',
-  // The copy carries two literal paragraph breaks that MUI's default
-  // `white-space: normal` collapsed, so three intended paragraphs rendered as
-  // one block.
-  whiteSpace: 'pre-line',
-});
-
-const ValidationInputs = styled(Box)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.lg,
-});
-
-const Toast = styled(Box)({
-  position: 'fixed',
-  bottom: 100,
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 1000,
-  backgroundColor: semantic.surface.crest,
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  borderRadius: spacing['2xl'],
-  color: semantic.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.body,
-});
-
 function MessageStep({
   onNext,
   onBack,
@@ -104,6 +82,7 @@ function MessageStep({
   onBack: () => void;
   t: (key: string) => string;
 }) {
+  const { surface, text } = useSemantic();
   const [read, setRead] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -121,18 +100,29 @@ function MessageStep({
     if (node.scrollTop + node.clientHeight >= node.scrollHeight - END_SLOP) setRead(true);
   }, []);
 
+  const copy: CSSProperties = {
+    color: text.secondary,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.bodyLg,
+    lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
+    textAlign: 'center',
+    margin: 0,
+    // The copy carries two literal paragraph breaks; without this the three
+    // intended paragraphs collapse into one block.
+    whiteSpace: 'pre-line',
+  };
+
   return (
     <OnboardingLayout
       testID="seed-warning-screen"
       variant="content"
-      backgroundColor={semantic.surface.bedrock}
+      backgroundColor={surface.bedrock}
       /*
         The warning glyph, in the mark slot — the gate names itself. Mirrors
-        the mobile flow (owner, 2026-08-18): the fish stays on welcome and the
-        lock only; each flow step wears one semantic glyph, the consent
-        screen's pattern and size.
+        mobile (owner, 2026-08-18): the fish stays on welcome and the lock
+        only; each flow step wears one semantic glyph.
       */
-      mark={<WarningIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      mark={<WarningIcon size={ICON_SIZE} color={text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}
@@ -141,9 +131,20 @@ function MessageStep({
       }
       title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
       body={
-        <Box ref={bodyRef} onScroll={handleScroll} sx={{ overflowY: 'auto', minHeight: 0 }}>
-          <WarningCopy>{t('wallet.create.messageBody')}</WarningCopy>
-        </Box>
+        <div
+          ref={bodyRef}
+          onScroll={handleScroll}
+          style={{
+            overflowY: 'auto',
+            minHeight: 0,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          <p style={copy}>{t('wallet.create.messageBody')}</p>
+        </div>
       }
       action={
         <PrimaryButton
@@ -159,6 +160,52 @@ function MessageStep({
   );
 }
 
+/**
+ * The copy confirmation — mobile's toast: the success glyph and the line, on
+ * the backdrop scrim, floating over the action.
+ */
+function Toast({ message }: { message: string }) {
+  const { overlay, status, text } = useSemantic();
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 100,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        zIndex: 1000,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm,
+          backgroundColor: overlay.backdrop,
+          padding: `${spacing.md}px ${spacing.lg}px`,
+          borderRadius: borderRadius['2xl'],
+        }}
+      >
+        <CheckCircleIcon size={iconSize.md} color={status.success} />
+        <span
+          style={{
+            color: text.primary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.body,
+            lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
+          }}
+        >
+          {message}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function SeedPhraseStep({
   mnemonic,
   onNext,
@@ -170,6 +217,7 @@ function SeedPhraseStep({
   onBack: () => void;
   t: (key: string) => string;
 }) {
+  const { surface, text } = useSemantic();
   const [showToast, setShowToast] = useState(false);
   const words = mnemonic.split(' ');
 
@@ -188,11 +236,11 @@ function SeedPhraseStep({
       <OnboardingLayout
         testID="create-seed-screen"
         variant="content"
-        backgroundColor={semantic.surface.bedrock}
+        backgroundColor={surface.bedrock}
         scrollBody
         // The sparkle: something new coming into being. See the warning
         // phase's mark note above.
-        mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
+        mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -225,7 +273,7 @@ function SeedPhraseStep({
           </PrimaryButton>
         }
       />
-      {showToast && <Toast>{t('wallet.copied')}</Toast>}
+      {showToast && <Toast message={t('wallet.copied')} />}
     </>
   );
 }
@@ -241,6 +289,7 @@ function ValidateStep({
   onBack: () => void;
   t: (key: string, params?: Record<string, unknown>) => string;
 }) {
+  const { surface, text } = useSemantic();
   const words = useMemo(() => mnemonic.split(' '), [mnemonic]);
   const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
 
@@ -287,11 +336,11 @@ function ValidateStep({
     <OnboardingLayout
       testID="create-validate-screen"
       variant="content"
-      backgroundColor={semantic.surface.bedrock}
+      backgroundColor={surface.bedrock}
       scrollBody
       // Same glyph as the phrase it confirms — the step dots carry which half
       // of the creation this is.
-      mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      mark={<SparkleIcon size={ICON_SIZE} color={text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}
@@ -303,7 +352,7 @@ function ValidateStep({
         <OnboardingDescription>{t('wallet.create.confirm_seed_phrase_body')}</OnboardingDescription>
       }
       body={
-        <ValidationInputs>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
           {validationWords.map((word, index) => (
             <SeedWordInput
               key={`word-${word.position}`}
@@ -320,7 +369,7 @@ function ValidateStep({
               }}
             />
           ))}
-        </ValidationInputs>
+        </div>
       }
       action={
         <PrimaryButton

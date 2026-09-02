@@ -66,6 +66,17 @@ export interface SettingsSheetBaseProps {
   onDeveloperNetworksToggle?: (enabled: boolean) => void;
 
   /**
+   * Whether unverified (spam-flagged) tokens are shown in the lists. Its own
+   * toggle since spec 026 D4 — developer mode only offers networks.
+   */
+  unverifiedTokensEnabled?: boolean;
+
+  /**
+   * Callback when the unverified-tokens toggle is changed.
+   */
+  onUnverifiedTokensToggle?: (enabled: boolean) => void;
+
+  /**
    * Whether anonymous usage analytics is enabled (opt-in, default off).
    */
   analyticsEnabled?: boolean;

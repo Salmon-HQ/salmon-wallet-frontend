@@ -27,7 +27,12 @@ vi.mock('../WaterColumn', () => ({
   waterColumnHost: { position: 'relative', isolation: 'isolate' },
 }));
 
-vi.mock('@salmon/shared', async () => ({
+// The real barrel, with the wait's own numbers pinned so the phase
+// arithmetic the assertions below count on cannot drift with a token change.
+// The screen reads its inks off the live theme (`useSemantic()`), which the
+// real barrel's context and token set supply.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   // The crest's shape is real, not stubbed: it is pure arithmetic over theme
   // tokens, and a fake here would let the two platforms draw two different
   // waves without a test noticing.
@@ -37,26 +42,7 @@ vi.mock('@salmon/shared', async () => ({
   // this vocabulary, and a fake here would let it drift from the mobile twin.
   ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/motion/sinkFloat')),
   DEFAULT_WALLET_TIP_KEYS: ['tips.one'],
-  colors: {
-    background: { primary: '#10131C', secondary: '#070911' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4' },
-    accent: { primary: '#FF5C45' },
-  },
-  fontFamily: { sans: 'sans-serif' },
-  fontWeight: { regular: 400, bold: 700 },
-  fontSize: { sm: 12, base: 14, bodyLg: 16, '2xl': 24 },
-  lineHeight: { condensed: 1.2, normal: 1.5, tokenListItem: 1.4 },
-  spacing: { sm: 8, lg: 16, '2xl': 24, '3xl': 32, '5xl': 48, '7xl': 72 },
-  borderWidth: { heavy: 3 },
-  duration: { slower: '0.4s' },
   durationMs: { slow: 300, slower: 400, spinSlow: 1200, pulse: 2000 },
-  easing: { easeInOut: 'ease-in-out' },
-  componentSizes: {
-    descentTrackWidth: 2,
-    descentTrackHeight: 120,
-    descentSegmentHeight: 44,
-    waveAmplitude: 3,
-  },
   motionMs: {
     flick: 90,
     swell: 180,
@@ -66,18 +52,6 @@ vi.mock('@salmon/shared', async () => ({
     shimmerCycle: 1400,
     pulseCycle: 1200,
     waitFloor: 5000,
-  },
-  motionDuration: { tide: '720ms' },
-  motionEasing: {
-    current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-    settle: { css: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-    sink: { css: 'cubic-bezier(0.4, 0, 1, 1)' },
-  },
-  reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
-  semantic: {
-    text: { accent: '#FF5C45', primary: '#EDF1F7' },
-    border: { hairline: 'rgba(199, 211, 232, 0.10)' },
-    accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
   },
   // The mark that emits the wave. One path is enough to assert it is drawn.
   markPaths: ['M0 0h1v1H0z'],

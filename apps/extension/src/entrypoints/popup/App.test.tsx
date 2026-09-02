@@ -108,10 +108,6 @@ vi.mock('../../pages/auth/AnalyticsConsentPage', () => ({
   AnalyticsConsentPage: () => null,
 }));
 
-vi.mock('../../pages/auth/DerivedAccountsPage', () => ({
-  DerivedAccountsPage: () => null,
-}));
-
 describe('Extension popup inactivity lock', () => {
   afterEach(() => {
     cleanup();

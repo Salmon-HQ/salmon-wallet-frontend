@@ -58,14 +58,18 @@ export function AppearanceSelector({
   );
 
   return (
-    <SettingsPanelContent title={t('settings.appearance', 'Appearance')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.appearance', 'Appearance')}
+      subtitle={t('settings.appearance_subtitle', 'Choose light, dark, or system.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={options}
         getKey={(item) => item.preference}
         isSelected={(item) => activePreference === item.preference}
         onSelect={handleSelect}
         getPrimaryText={(item) => item.label}
-        getSecondaryText={(item) => item.hint ?? ''}
+        getSecondaryText={(item) => item.hint}
         renderLeadingElement={(item) => (
           <IconBubble
             size={ROW_BUBBLE_SIZE}

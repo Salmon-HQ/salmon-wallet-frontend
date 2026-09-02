@@ -1,27 +1,23 @@
 /**
  * Welcome — the flow's entry point, on the onboarding slot grid.
  *
- * The brand speaks in full here (owner, 2026-08-18, superseding "only the
- * fish"), mirroring mobile: the fish in `mark`, the wordmark in `title` — its
- * pinned gap is the grid's own fish→title air, the same distance success
- * keeps to "Congratulations!" — and the slogan in `description`, so nothing
- * below the pair moves. The primary action is bottom-most (spec 013,
- * decision 1), which pins its Y for free.
+ * The mobile twin is `apps/mobile/app/(auth)/index.tsx`. The brand speaks in
+ * full here (owner, 2026-08-18, superseding "only the fish"): the fish in
+ * `mark` — in the brand accent, as it is on the lock and the wait (owner,
+ * 2026-09-02) — the wordmark in `title` (its pinned gap is the grid's own
+ * fish→title air, the same distance success keeps to "Congratulations!") and
+ * the slogan in `description`, so nothing below the pair moves. The primary
+ * action is bottom-most (spec 013, decision 1), which pins its Y for free.
  *
  * The third action, offered only when accounts already exist, is a text
  * affordance in `assist`: the reserved `secondary` band holds one control, and
  * a third button would be the one place in the flow where the grid overflows.
  */
-import Typography from '@mui/material/Typography';
-import {
-  fontFamily,
-  fontSize,
-  lineHeight,
-  onboardingIdentityGridFull,
-  semantic,
-} from '@salmon/shared';
+import { fontFamily, fontSize, lineHeight, onboardingIdentityGridFull } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { BrandMark, Wordmark } from '../BrandMark';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingLayout } from '../OnboardingLayout';
@@ -35,6 +31,7 @@ export function SelectOptionsPage({
   onAccessExisting,
 }: SelectOptionsPageProps): React.ReactElement {
   const { t } = useTranslation();
+  const { accent, text } = useSemantic();
 
   return (
     <OnboardingLayout
@@ -49,7 +46,7 @@ export function SelectOptionsPage({
       */
       mark={
         <div data-testid="welcome-brand-mark">
-          <BrandMark size={onboardingIdentityGridFull.markSize} />
+          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />
         </div>
       }
       /*
@@ -60,19 +57,23 @@ export function SelectOptionsPage({
       */
       title={<Wordmark />}
       description={
-        // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
-        <Typography
+        // Brand line, not UI copy — deliberately untranslated, like the
+        // wordmark itself (PRODUCT.md §Positioning). Body size in secondary
+        // ink: quieter than the flow's description token, subordinate to the
+        // wordmark above it.
+        <p
           data-testid="welcome-slogan"
-          sx={{
-            color: semantic.text.secondary,
+          style={{
+            color: text.secondary,
             fontFamily: fontFamily.sans,
             fontSize: fontSize.body,
             lineHeight: `${Math.round(fontSize.body * lineHeight.normal)}px`,
             textAlign: 'center',
+            margin: 0,
           }}
         >
           Open code. Open ownership.
-        </Typography>
+        </p>
       }
       assist={
         hasAccounts && onAccessExisting ? (

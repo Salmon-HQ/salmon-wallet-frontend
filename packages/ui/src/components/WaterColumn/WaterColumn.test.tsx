@@ -51,7 +51,7 @@ describe('the surfaces the water column must never reach', () => {
     // The Bedrock Rule, narrowed (owner, 2026-08-18): bedrock covers the
     // views that SHOW a seed — create's warning, display and validation.
     const source = read('../AuthFlow/CreateWalletPage.tsx');
-    expect(source).toContain('semantic.surface.bedrock');
+    expect(source).toContain('surface.bedrock');
     expect(source).not.toContain('WaterColumn');
   });
 
@@ -61,7 +61,7 @@ describe('the surfaces the water column must never reach', () => {
     // capture protection is unchanged — only the ground moved.
     const source = read('../AuthFlow/RecoverWalletPage.tsx');
     expect(source).toContain('WaterColumn');
-    expect(source).not.toContain('semantic.surface.bedrock');
+    expect(source).not.toContain('surface.bedrock');
   });
 
   it.each([
@@ -78,7 +78,7 @@ describe('the surfaces the water column must never reach', () => {
 
   it.each([
     ['the approval views', '../DAppApproval'],
-    ['the sheet chrome', '../BaseSheetDialog'],
+    ['the sheet chrome', '../BottomSheetContainer'],
   ])('mounts no field on %s', (_name, dir) => {
     // A sheet is a membrane, and a membrane's texture belongs to the material
     // it is made of, not to the water. The thermocline mounts its own field —

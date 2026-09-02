@@ -1,105 +1,64 @@
 /**
- * DerivedAccountCardSkeleton - Loading placeholder for derived account cards
- *
- * Web version using MUI keyframe animations for shimmer effect.
+ * DerivedAccountCardSkeleton — the placeholder a scan shows while it looks,
+ * on the DOM. Built from the kit's `ShimmerRect`, in the card's own geometry.
  */
 import React from 'react';
-import { styled, keyframes } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  durationMs,
-  easing,
-  reducedMotion,
-} from '@salmon/shared';
+import { borderRadius, borderWidth, componentSizes, spacing } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ShimmerRect } from '../ShimmerRect';
 import type { DerivedAccountCardSkeletonProps } from './types';
 
-const shimmer = keyframes`
-  0% { background-position: -${componentSizes.shimmerOffset}px 0; }
-  100% { background-position: ${componentSizes.shimmerOffset}px 0; }
-`;
+/** The two text lines the card draws, at the heights the real ones measure. */
+const ADDRESS_LINE_HEIGHT = componentSizes.iconSizeXs;
+const ADDRESS_WIDTH = 140;
+const PATH_WIDTH = 90;
 
-const Card = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: colors.card.background,
-  border: `${borderWidth.thin}px solid ${colors.card.border}`,
-  borderRadius: borderRadius.xl,
-  padding: spacing.lg,
-  marginBottom: spacing.md,
-});
-
-const SkeletonRect = styled(Box)({
-  borderRadius: borderRadius.sm,
-  background: `linear-gradient(90deg, ${colors.skeleton?.base ?? 'rgba(255,255,255,0.05)'} 25%, ${colors.skeleton?.highlight ?? 'rgba(255,255,255,0.1)'} 50%, ${colors.skeleton?.base ?? 'rgba(255,255,255,0.05)'} 75%)`,
-  backgroundSize: `${componentSizes.shimmerWidth}px 100%`,
-  animation: `${shimmer} ${durationMs.shimmer}ms ${easing.easeInOut} infinite`,
-  // The calm form: the gradient stays as the resting placeholder, the sweep
-  // does not run. Same per-component guard the rest of the package carries
-  // (PendingValue, LoadingScreen) — the global CssBaseline collapse is a
-  // backstop, not the contract.
-  [`@media ${reducedMotion.query}`]: {
-    animation: 'none',
-  },
-});
-
-const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonProps> = ({
+function DerivedAccountCardSkeletonComponent({
   style,
   className,
-}) => {
+}: DerivedAccountCardSkeletonProps) {
+  const t = useSemantic();
+
   return (
-    <Card style={style} className={className}>
-      {/* Checkbox skeleton */}
-      <SkeletonRect
-        sx={{
-          width: componentSizes.checkboxSize,
-          height: componentSizes.checkboxSize,
-          borderRadius: `${borderRadius.sm}px`,
-          mr: `${spacing.lg}px`,
-          flexShrink: 0,
-        }}
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        backgroundColor: t.surface.raised,
+        borderRadius: borderRadius.xl,
+        borderStyle: 'solid',
+        borderWidth: borderWidth.thin,
+        borderColor: t.border.raised,
+        padding: spacing.lg,
+        gap: spacing.lg,
+        ...style,
+      }}
+    >
+      <ShimmerRect
+        width={componentSizes.checkboxSize}
+        height={componentSizes.checkboxSize}
+        borderRadius={borderRadius.sm}
       />
-
-      {/* Info skeleton */}
-      <Box sx={{ flex: 1 }}>
-        <SkeletonRect
-          sx={{ width: '55%', height: componentSizes.iconSizeXs, mb: `${spacing.xxs}px` }}
-        />
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: `${spacing.xs}px`,
-          }}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: spacing.xxs }}>
+        <ShimmerRect width={ADDRESS_WIDTH} height={ADDRESS_LINE_HEIGHT} />
+        <div
+          style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
         >
-          <SkeletonRect
-            sx={{
-              width: componentSizes.iconSizeXs,
-              height: componentSizes.iconSizeXs,
-              borderRadius: `${borderRadius.md}px`,
-              flexShrink: 0,
-            }}
+          <ShimmerRect
+            width={componentSizes.iconSizeXs}
+            height={componentSizes.iconSizeXs}
+            borderRadius={borderRadius.md}
           />
-          <SkeletonRect sx={{ width: '35%', height: spacing.md }} />
-        </Box>
-      </Box>
-
-      {/* Balance skeleton */}
-      <SkeletonRect
-        sx={{
-          width: componentSizes.skeletonBalanceWidth,
-          height: componentSizes.iconSizeXs,
-          flexShrink: 0,
-        }}
-      />
-    </Card>
+          <ShimmerRect width={PATH_WIDTH} height={spacing.md} />
+        </div>
+      </div>
+      <ShimmerRect width={componentSizes.skeletonBalanceWidth} height={ADDRESS_LINE_HEIGHT} />
+    </div>
   );
-};
+}
 
 export const DerivedAccountCardSkeleton = React.memo(DerivedAccountCardSkeletonComponent);

@@ -1,42 +1,95 @@
 /**
- * SettingsPanelContent - Shared layout for settings panels
+ * SettingsPanelContent — the layout every settings screen composes, on the
+ * DOM.
  *
- * This component provides a consistent layout structure for settings panels,
- * including:
- * - Header with back button and title
- * - Content area for panel-specific content
- * - Consistent styling and spacing
+ * The mobile twin is `apps/mobile/src/components/SettingsScreenLayout`: the
+ * screen paints its own water (ramp + scales), draws the kit's `ScreenHeader`
+ * with the title and the subtitle, and hands every block the panel gives it
+ * to a body that spaces them by the component gap (DESIGN.md §Layout, 20
+ * between sibling blocks). A footer, when present, pins under the body.
  *
- * Used by: BackupPanel, CurrencySelector, AboutPanel, and other settings panels
+ * Painted per screen rather than once by the stack, so a panel sliding in
+ * over the list never ghosts the list through it.
  */
-
 import React from 'react';
 import { spacing } from '@salmon/shared';
-import { PageShell } from '../PageShell';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { DepthBackground } from '../DepthBackground';
+import { ScalesBackground } from '../ScalesBackground';
+import { ScreenHeader } from '../ScreenHeader';
 import type { SettingsPanelContentProps } from './types';
 
-// ============================================================================
-// Component
-// ============================================================================
-
-/**
- * SettingsPanelContent - Reusable layout for settings panels
- */
 export function SettingsPanelContent({
   title,
+  subtitle,
   onBack,
   children,
+  scrollable = true,
+  footer,
   className,
+  style,
+  testID,
 }: SettingsPanelContentProps): React.ReactElement {
+  const t = useSemantic();
+
   return (
-    <PageShell
-      title={title}
-      onBack={onBack}
-      backgroundColor="primary"
-      scrollContentStyle={{ paddingTop: spacing.lg }}
+    <div
+      data-testid={testID}
       className={className}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+        overflow: 'hidden',
+        backgroundColor: t.water.gradient[1],
+        ...style,
+      }}
     >
-      {children}
-    </PageShell>
+      <DepthBackground style={{ zIndex: 0 }} />
+      <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        <ScreenHeader onBack={onBack} title={title} subtitle={subtitle} />
+
+        <div
+          data-testid="settings-panel-body"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: scrollable ? 'auto' : 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            // The header block already ends 20 above the content.
+            padding: `0 ${spacing.screenGutter}px ${spacing.screenGutter}px`,
+            gap: spacing.screenGutter,
+          }}
+        >
+          {children}
+        </div>
+
+        {footer && (
+          <div
+            style={{
+              flexShrink: 0,
+              padding: `${spacing.md}px ${spacing.screenGutter}px ${spacing.screenGutter}px`,
+            }}
+          >
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

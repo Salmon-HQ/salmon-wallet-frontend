@@ -25,6 +25,7 @@ import {
   spacing,
   useAccountsContext,
   getAccountMnemonic,
+  type BackupPanelPropsBase,
   type Semantic,
 } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
@@ -36,8 +37,7 @@ import { WarningNotice } from '../WarningNotice';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
-interface BackupPanelProps {
-  onBack: () => void;
+interface BackupPanelProps extends BackupPanelPropsBase {
   biometricAvailable?: boolean;
   authenticateWithBiometric?: () => Promise<string | null>;
 }

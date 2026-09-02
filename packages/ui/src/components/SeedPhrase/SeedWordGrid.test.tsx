@@ -12,17 +12,10 @@
  * lets anything through is the violation, whatever its container is made of.
  */
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
-// The root `@salmon/shared` barrel reaches React Native, which Vite cannot
-// parse. The theme subtree is pure, so it stands in for the barrel and the
-// real tokens are exercised.
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  return { ...theme };
-});
-
-import { semantic } from '@salmon/shared';
+import { createSemantic, semantic, shadows, ThemeContext } from '@salmon/shared';
+import type { ThemeContextValue } from '@salmon/shared';
 import { SeedWordGrid } from './SeedWordGrid';
 
 const placeholders = ['alpha', 'bravo', 'charlie', 'delta'];
@@ -40,6 +33,28 @@ describe('SeedWordGrid', () => {
       expect(background).not.toContain('rgba');
       expect(background).toBe(hexToRgb(semantic.surface.bedrock));
     }
+  });
+
+  it("rests on light's bedrock when the mode is light — still opaque", () => {
+    const light = createSemantic('light');
+    const value = {
+      mode: 'light',
+      preference: 'light',
+      setPreference: async () => undefined,
+      semantic: light,
+      shadows,
+      ready: true,
+    } as unknown as ThemeContextValue;
+
+    render(
+      <ThemeContext.Provider value={value}>
+        <SeedWordGrid words={placeholders} columns={2} />
+      </ThemeContext.Provider>
+    );
+
+    const background = getComputedStyle(screen.getByTestId('seed-word-cell-1')).backgroundColor;
+    expect(background).not.toContain('rgba');
+    expect(background).toBe(hexToRgb(light.surface.bedrock));
   });
 
   it('numbers every cell so an index is never read as part of the phrase', () => {

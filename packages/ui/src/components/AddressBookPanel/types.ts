@@ -1,3 +1,3 @@
-import type { AddressBookSelectorBaseProps } from '@salmon/shared';
+import type { AddressBookPanelPropsBase } from '@salmon/shared';
 
-export interface AddressBookPanelProps extends AddressBookSelectorBaseProps {}
+export interface AddressBookPanelProps extends AddressBookPanelPropsBase {}

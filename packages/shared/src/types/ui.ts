@@ -107,7 +107,7 @@ export const PRICE_CHART_PERIODS: PriceChartPeriod[] = [
 /**
  * Base props for LoadingScreen component (platform-agnostic)
  */
-export interface LoadingScreenBaseProps {
+export interface LoadingScreenPropsBase {
   /** Whether the loading screen is visible */
   visible: boolean;
   /** Optional title to display */
@@ -174,6 +174,9 @@ export interface LoadingScreenBaseProps {
    */
   onExited?: () => void;
 }
+
+/** @deprecated Read `LoadingScreenPropsBase`. Kept for the existing consumers. */
+export type LoadingScreenBaseProps = LoadingScreenPropsBase;
 
 /**
  * Translation key identifiers for loading screen tips.

@@ -25,36 +25,35 @@
 import {
   fontSize,
   onboardingMarkTitleGap,
-  semantic,
   wordmarkAspectRatio,
   wordmarkPaths,
   wordmarkText,
   wordmarkViewBoxAttr,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
+import type { WordmarkPropsBase } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 
 /** The token the `OnboardingTitle` this replaces set its size from. */
 const DEFAULT_HEIGHT = fontSize.headline;
 
-export interface WordmarkProps extends Testable {
-  /** Drawn height in px. Width follows the aspect ratio. */
-  height?: number;
-  /** Ink. White, like the mark it sits under. */
-  color?: string;
-}
+/** The shared contract, whole: nothing DOM-specific to add. */
+export type WordmarkProps = WordmarkPropsBase;
 
 export function Wordmark({
   height = DEFAULT_HEIGHT,
-  color = semantic.text.primary,
+  color,
   testID = 'wordmark',
 }: WordmarkProps): React.ReactElement {
+  const { text } = useSemantic();
+
   return (
     <svg
       data-testid={testID}
       width={height * wordmarkAspectRatio}
       height={height}
       viewBox={wordmarkViewBoxAttr}
-      fill={color}
+      fill={color ?? text.primary}
       focusable="false"
       // It is the product's name, not decoration: a screen reader must still
       // read it, and it is the only thing naming this screen.

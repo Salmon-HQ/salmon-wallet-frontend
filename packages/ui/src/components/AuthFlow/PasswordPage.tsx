@@ -1,10 +1,14 @@
-import { useCallback, useRef, useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+/**
+ * The password step, on the onboarding slot grid.
+ *
+ * The mobile twin is `apps/mobile/app/(auth)/password.tsx`: same bands, same
+ * reserved slots for the strength meter and the failure line, the terms line
+ * in `assist` with its link in `step.active`, every ink off the live mode.
+ */
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ApiError,
-  colors,
   createAccount,
   fontFamily,
   fontSize,
@@ -12,7 +16,6 @@ import {
   getScanNetworks,
   lineHeight,
   PASSWORD_CONSTRAINTS,
-  semantic,
   spacing,
   trackOnboardingEvent,
   useAccountsContext,
@@ -23,7 +26,7 @@ import {
 } from '@salmon/shared';
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
-import { styled } from '../../utils/styled';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
@@ -38,10 +41,10 @@ import { WaterColumn } from '../WaterColumn';
 import { CREATE_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
 
-const InputContainer = styled(Box)({
+const inputContainer: CSSProperties = {
   width: '100%',
   marginBottom: spacing.lg,
-});
+};
 
 /**
  * Feedback about the field above it, so it sits against that field rather than
@@ -49,34 +52,11 @@ const InputContainer = styled(Box)({
  * disappears as the user types, which is exactly why it belongs in `body` —
  * the give in the grid (spec 013, decision 6).
  */
-const StrengthContainer = styled(Box)({
+const strengthContainer: CSSProperties = {
   marginTop: spacing.sm,
   paddingLeft: spacing.xs,
   paddingRight: spacing.xs,
-});
-
-const ErrorText = styled(Typography)({
-  color: semantic.status.danger,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.caption,
-  lineHeight: `${Math.round(fontSize.caption * lineHeight.snug)}px`,
-  marginBottom: spacing.lg,
-  textAlign: 'center',
-  width: '100%',
-});
-
-const TermsText = styled(Typography)({
-  color: semantic.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.caption,
-  lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
-  textAlign: 'center',
-});
-
-const TermsLink = styled('span')({
-  color: colors.step?.active ?? colors.accent.primary,
-  cursor: 'pointer',
-});
+};
 
 export function PasswordPage({
   mnemonic,
@@ -86,7 +66,28 @@ export function PasswordPage({
   onBack,
 }: PasswordPageProps): React.ReactElement {
   const { t } = useTranslation();
+  const { status, step, text } = useSemantic();
   const [state, actions] = useAccountsContext();
+
+  const errorText: CSSProperties = {
+    color: status.danger,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.caption,
+    lineHeight: `${Math.round(fontSize.caption * lineHeight.snug)}px`,
+    marginTop: 0,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+    width: '100%',
+  };
+
+  const termsText: CSSProperties = {
+    color: text.secondary,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.caption,
+    lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
+    textAlign: 'center',
+    margin: 0,
+  };
 
   const showSingleInput = state.requiredLock;
   const [password, setPassword] = useState('');
@@ -262,7 +263,7 @@ export function PasswordPage({
         scrollBody
         // The lock: what the password buys. Mirrors mobile — one semantic
         // glyph per flow step, the fish stays on welcome and the lock only.
-        mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+        mark={<LockIcon size={componentSizes.logoSizeSmall} color={text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -291,7 +292,7 @@ export function PasswordPage({
         }
         body={
           <>
-            <InputContainer>
+            <div style={inputContainer}>
               <PasswordInput
                 testID="password-input"
                 value={password}
@@ -310,15 +311,15 @@ export function PasswordPage({
                 confirmation field down. */}
               {!showSingleInput && (
                 <ReservedSlot visible={password.length > 0}>
-                  <StrengthContainer>
+                  <div style={strengthContainer}>
                     <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                  </StrengthContainer>
+                  </div>
                 </ReservedSlot>
               )}
-            </InputContainer>
+            </div>
 
             {!showSingleInput && (
-              <InputContainer>
+              <div style={inputContainer}>
                 <PasswordInput
                   testID="password-confirm-input"
                   value={confirmPassword}
@@ -328,28 +329,31 @@ export function PasswordPage({
                   editable={!isLoading && !isChecking}
                   onSubmitEditing={handleSubmit}
                 />
-              </InputContainer>
+              </div>
             )}
 
             {/* Reserved for the same reason as the strength bar: a failure
               message must not shove the layout when it lands. */}
             <ReservedSlot visible={!!error}>
-              <ErrorText>{error ?? ' '}</ErrorText>
+              <p style={errorText}>{error ?? ' '}</p>
             </ReservedSlot>
           </>
         }
         assist={
-          <TermsText>
+          <p style={termsText}>
             {flowType === 'recover'
               ? t('wallet.recover.terms_prefix')
               : t('wallet.create.terms_prefix')}
-            <TermsLink
+            <a
               data-testid="password-terms-link"
-              onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
+              href="https://salmonwallet.io/terms"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: step.active, cursor: 'pointer', textDecoration: 'none' }}
             >
               {t('general.terms_and_conditions')}
-            </TermsLink>
-          </TermsText>
+            </a>
+          </p>
         }
         action={
           <PrimaryButton

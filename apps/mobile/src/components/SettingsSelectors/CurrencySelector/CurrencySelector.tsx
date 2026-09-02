@@ -8,7 +8,7 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type CurrencySelectorBaseProps, type CurrencySelectorItem } from '@salmon/shared';
+import { type CurrencySelectorPropsBase, type CurrencySelectorItem } from '@salmon/shared';
 import { IconBubble } from '../../IconBubble';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
@@ -22,7 +22,7 @@ export function CurrencySelector({
   activeCurrencyCode,
   onSelectCurrency,
   onBack,
-}: CurrencySelectorBaseProps) {
+}: CurrencySelectorPropsBase) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(

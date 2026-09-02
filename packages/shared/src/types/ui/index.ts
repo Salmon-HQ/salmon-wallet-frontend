@@ -67,11 +67,8 @@ export type { BalanceHeaderPropsBase } from './balance-header';
 // Derived Accounts Sheet — which funded paths become wallets
 export type { DerivedAccountsSheetPropsBase } from './derived-accounts-sheet';
 
-// Action Button Row
-export type { ActionButtonBase, ActionButtonRowPropsBase } from './action-button-row';
-
 // Step Indicator
-export type { StepIndicatorProps } from './step-indicator';
+export type { StepIndicatorProps, StepIndicatorPropsBase } from './step-indicator';
 
 // QR Code
 export type { QRCodePropsBase } from './qr-code';
@@ -101,12 +98,6 @@ export type { TransactionDetailModalPropsBase } from './transaction-detail-modal
 // Wallet Header
 export type { WalletHeaderPropsBase } from './wallet-header';
 
-// Wallet Switcher Sheet
-export type {
-  WalletSwitcherSheetPropsBase,
-  AccountListItemPropsBase,
-} from './wallet-switcher-sheet';
-
 // Avatar Picker
 export type { NftAvatarItem, AvatarPickerPropsBase } from './avatar-picker';
 
@@ -120,7 +111,7 @@ export type { AccountEditPanelPropsBase } from './account-edit-panel';
 export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
 
 // Security Panel
-export type { SecurityPanelPropsBase, SecurityPanelPropsMobile } from './security-panel';
+export type { SecurityPanelPropsBase } from './security-panel';
 
 // Transaction Success Screen
 export type { TransactionSuccessScreenProps } from './transaction-success-screen';
@@ -139,6 +130,26 @@ export type { PendingActivityBannerPropsBase } from './pending-activity-banner';
 
 // Onboarding Layout
 export type { OnboardingLayoutPropsBase } from './onboarding-layout';
+
+// Settings panels — the selectors, the layout, the confirm sheet and the
+// small twins that grew a DOM half in lot 4B
+export type {
+  AppearanceSelectorPropsBase,
+  CurrencySelectorPropsBase,
+  ExplorerSelectorPropsBase,
+  LanguageSelectorPropsBase,
+  SupportSelectorPropsBase,
+  TrustedAppsSelectorPropsBase,
+  AddressBookPanelPropsBase,
+  AddressAddPanelPropsBase,
+  AddressEditPanelPropsBase,
+  SettingsScreenLayoutPropsBase,
+  SettingsSelectorListPropsBase,
+  AccountNamePanelPropsBase,
+  ConfirmSheetPropsBase,
+  DerivedAccountCardPropsBase,
+  WatchOnlyBadgePropsBase,
+} from './settings-panels';
 
 // Home Tab Order Sheet
 export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';
@@ -206,3 +217,24 @@ export type {
   ExchangeReceiptScreenPropsBase,
   ReceiptScreenPropsBase,
 } from './receipt-screen';
+
+// Brand Mark
+export type { BrandMarkPropsBase, WordmarkPropsBase } from './brand-mark';
+
+// Lock Screen
+export type { LockScreenPropsBase } from './lock-screen';
+
+// Password Input
+export type { PasswordInputPropsBase, PasswordStrengthBarPropsBase } from './password-input';
+
+// Seed Phrase
+export type {
+  SeedWordValidationState,
+  SeedWordGridPropsBase,
+  SeedWordInputPropsBase,
+  SeedPhraseEntryPropsBase,
+} from './seed-phrase';
+
+// Press Specular
+export { SPECULAR_RADIUS, SPECULAR_OPACITY } from './press-specular';
+export type { PressSpecularPropsBase } from './press-specular';

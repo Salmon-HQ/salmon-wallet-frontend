@@ -1,7 +1,7 @@
 /**
  * OnboardingLayout — the DOM half of the onboarding slot grid.
  *
- * Every screen in the create, recover and unlock flows on web and extension
+ * Every screen in the create, recover and unlock flows on the extension
  * composes on this. The reserved heights come from `resolveOnboardingGrid` in
  * `@salmon/shared`, so the DOM and React Native read one table instead of each
  * re-deriving spacing per screen. Nothing here decides a number.
@@ -61,10 +61,9 @@
  * action with no way to scroll to it. Only the *overlap* between the keyboard
  * and the column counts, so a keyboard that covers nothing moves nothing.
  */
-import Box from '@mui/material/Box';
-import { keyframes } from '@mui/material/styles';
+import { keyframes } from '@emotion/react';
+import styled from '@emotion/styled';
 import {
-  colors,
   contentPadding,
   identityClusterCenterOffset,
   motionEasing,
@@ -76,8 +75,9 @@ import {
   spacing,
   type OnboardingLayoutPropsBase,
 } from '@salmon/shared';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { styled } from '../../utils/styled';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { BrandMark } from '../BrandMark';
 import { waterColumnHost } from '../WaterColumn';
 
@@ -95,6 +95,13 @@ export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
    * reserved height and no slot's Y changes while it goes down.
    */
   sunk?: boolean;
+  /**
+   * Ink override for the default mark, when `mark` itself is not passed. The
+   * doors (welcome, success, the lock) pass `accent.fill` — the brand accent,
+   * the same ink as the crest (owner, 2026-09-02); every other family's mark
+   * keeps `BrandMark`'s own default. Mirrors the mobile twin's prop.
+   */
+  markColor?: string;
 }
 
 /**
@@ -149,21 +156,6 @@ function useMeasuredHeight(ref: React.RefObject<HTMLElement | null>): number | u
   return height;
 }
 
-const Root = styled(Box)({
-  // A stacking context, so a `<WaterColumn />` passed as `background` paints
-  // above this element's own fill and below every slot.
-  ...waterColumnHost,
-  display: 'flex',
-  backgroundColor: colors.background.primary,
-  flexDirection: 'column',
-  width: '100%',
-  // `100dvh` rather than `100vh`: the audit found neither here, and on a
-  // mobile browser the difference is the URL bar hiding the primary action.
-  height: '100dvh',
-  minHeight: '100dvh',
-  overflow: 'hidden',
-});
-
 /**
  * The column leaving under a wait. It stays mounted while it goes down — the
  * wait's overlay covers it — so a failure puts it back exactly where it was,
@@ -175,7 +167,7 @@ const sinkAwayKeyframes = keyframes`
   to { opacity: 0; transform: translateY(${SINK_FLOAT_TRAVEL}px); }
 `;
 
-const Column = styled(Box)<{ $sunk: boolean }>(({ $sunk }) => ({
+const Column = styled('div')<{ $sunk: boolean }>(({ $sunk }) => ({
   position: 'relative',
   flex: 1,
   minHeight: 0,
@@ -189,23 +181,18 @@ const Column = styled(Box)<{ $sunk: boolean }>(({ $sunk }) => ({
   },
 }));
 
-const Stack = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-});
-
-const Slot = styled(Box)({
+const slot: CSSProperties = {
   flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
-});
+};
 
-const Padded = styled(Slot)({
+const padded: CSSProperties = {
+  ...slot,
   paddingLeft: contentPadding.screen,
   paddingRight: contentPadding.screen,
-});
+};
 
 export function OnboardingLayout({
   chrome,
@@ -221,8 +208,10 @@ export function OnboardingLayout({
   backgroundColor,
   background,
   sunk = false,
+  markColor,
   testID,
 }: OnboardingLayoutProps): React.ReactElement {
+  const { depth } = useSemantic();
   const columnRef = useRef<HTMLDivElement>(null);
   const measured = useMeasuredHeight(columnRef);
   const occlusion = useKeyboardOcclusion();
@@ -303,16 +292,38 @@ export function OnboardingLayout({
   const bodyHeight = Math.max(0, height - reservedAbove - reservedBelow);
 
   return (
-    <Root data-testid={testID} sx={backgroundColor ? { backgroundColor } : undefined}>
+    <div
+      data-testid={testID}
+      style={{
+        // A stacking context, so a `<WaterColumn />` passed as `background`
+        // paints above this element's own fill and below every slot.
+        ...waterColumnHost,
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        // `100dvh` rather than `100vh`: on a mobile browser the difference is
+        // the URL bar hiding the primary action.
+        height: '100dvh',
+        minHeight: '100dvh',
+        overflow: 'hidden',
+        backgroundColor: backgroundColor ?? depth.column,
+      }}
+    >
       {background}
       <Column ref={columnRef} $sunk={sunk} data-testid="onboarding-column">
-        <Stack
-          style={{ height, marginTop: centersCluster ? 0 : slack / 2 }}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height,
+            marginTop: centersCluster ? 0 : slack / 2,
+          }}
           data-testid="onboarding-stack"
         >
-          <Slot style={{ height: grid.chrome }} data-testid="onboarding-slot-chrome">
+          <div style={{ ...slot, height: grid.chrome }} data-testid="onboarding-slot-chrome">
             {chrome}
-          </Slot>
+          </div>
 
           {/*
             The centring lead, never a slot: the empty run that drops the hero
@@ -320,7 +331,7 @@ export function OnboardingLayout({
             not centre their mark, and before first measurement.
           */}
           {lead > 0 && (
-            <Box
+            <div
               style={{ height: lead, flexShrink: 0 }}
               data-testid="onboarding-lead"
               aria-hidden
@@ -328,12 +339,12 @@ export function OnboardingLayout({
           )}
 
           {!dropMark && (
-            <Slot
-              style={{ height: grid.mark, alignItems: 'center' }}
+            <div
+              style={{ ...slot, height: grid.mark, alignItems: 'center' }}
               data-testid="onboarding-slot-mark"
             >
-              {mark ?? <BrandMark size={grid.markSize} />}
-            </Slot>
+              {mark ?? <BrandMark size={grid.markSize} color={markColor} />}
+            </div>
           )}
 
           {/*
@@ -341,23 +352,28 @@ export function OnboardingLayout({
             top of its own, so the space each reserves for a second line that
             did not come collects outside the pair rather than between them.
           */}
-          <Padded
-            style={{ minHeight: grid.title, justifyContent: 'flex-end', paddingBottom: spacing.md }}
+          <div
+            style={{
+              ...padded,
+              minHeight: grid.title,
+              justifyContent: 'flex-end',
+              paddingBottom: spacing.md,
+            }}
             data-testid="onboarding-slot-title"
           >
             {title}
-          </Padded>
+          </div>
 
           {!dropDescription && (
-            <Padded
-              style={{ minHeight: grid.description, justifyContent: 'flex-start' }}
+            <div
+              style={{ ...padded, minHeight: grid.description, justifyContent: 'flex-start' }}
               data-testid="onboarding-slot-description"
             >
               {description}
-            </Padded>
+            </div>
           )}
 
-          <Box
+          <div
             style={{
               height: bodyHeight,
               flexShrink: 0,
@@ -379,18 +395,22 @@ export function OnboardingLayout({
             data-testid="onboarding-slot-body"
           >
             {body}
-          </Box>
+          </div>
 
-          <Padded style={{ height: grid.assist }} data-testid="onboarding-slot-assist">
+          <div style={{ ...padded, height: grid.assist }} data-testid="onboarding-slot-assist">
             {assist}
-          </Padded>
+          </div>
 
-          <Padded style={{ height: grid.secondary }} data-testid="onboarding-slot-secondary">
+          <div
+            style={{ ...padded, height: grid.secondary }}
+            data-testid="onboarding-slot-secondary"
+          >
             {secondary}
-          </Padded>
+          </div>
 
-          <Padded
+          <div
             style={{
+              ...padded,
               height: grid.action,
               justifyContent: 'flex-start',
               paddingTop: spacing.lg,
@@ -399,9 +419,9 @@ export function OnboardingLayout({
             data-testid="onboarding-slot-action"
           >
             {action}
-          </Padded>
-        </Stack>
+          </div>
+        </div>
       </Column>
-    </Root>
+    </div>
   );
 }

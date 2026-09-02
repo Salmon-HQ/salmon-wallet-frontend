@@ -1,3 +1,3 @@
-import type { SupportSelectorBaseProps } from '@salmon/shared';
+import type { SupportSelectorPropsBase } from '@salmon/shared';
 
-export interface SupportSelectorProps extends SupportSelectorBaseProps {}
+export interface SupportSelectorProps extends SupportSelectorPropsBase {}

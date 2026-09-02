@@ -16,7 +16,7 @@ import {
   getShortAddress,
   s,
   spacing,
-  type AddressBookSelectorBaseProps,
+  type AddressBookPanelPropsBase,
   type AddressBookItem,
   type Semantic,
 } from '@salmon/shared';
@@ -46,7 +46,7 @@ export function AddressBookPanel({
   onBack,
   error = null,
   onRetry,
-}: AddressBookSelectorBaseProps) {
+}: AddressBookPanelPropsBase) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { status, accent } = useSemantic();

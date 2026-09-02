@@ -1,3 +1,3 @@
-import type { AppearanceSelectorBaseProps } from '@salmon/shared';
+import type { AppearanceSelectorPropsBase } from '@salmon/shared';
 
-export interface AppearanceSelectorProps extends AppearanceSelectorBaseProps {}
+export interface AppearanceSelectorProps extends AppearanceSelectorPropsBase {}

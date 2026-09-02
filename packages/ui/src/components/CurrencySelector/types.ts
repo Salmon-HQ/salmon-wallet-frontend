@@ -1,3 +1,3 @@
-import type { CurrencySelectorBaseProps } from '@salmon/shared';
+import type { CurrencySelectorPropsBase } from '@salmon/shared';
 
-export interface CurrencySelectorProps extends CurrencySelectorBaseProps {}
+export interface CurrencySelectorProps extends CurrencySelectorPropsBase {}

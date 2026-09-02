@@ -1,2 +1,4 @@
-// Re-export shared type (fully platform-agnostic, no extension needed)
-export type { StepIndicatorProps } from '@salmon/shared';
+// The shared contract, whole: nothing platform-specific to add.
+import type { StepIndicatorPropsBase } from '@salmon/shared';
+
+export type StepIndicatorProps = StepIndicatorPropsBase;

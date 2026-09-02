@@ -13,37 +13,35 @@
  * squashed into a square.
  *
  * The React Native twin is `apps/mobile/src/components/BrandMark`; both read
- * `markPaths` from `@salmon/shared` rather than either owning the geometry.
+ * `markPaths` from `@salmon/shared` rather than either owning the geometry,
+ * and both default their ink to the live mode's `text.primary`.
  */
-import { markAspectRatio, markPaths, markViewBoxAttr, semantic } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
+import { markAspectRatio, markPaths, markViewBoxAttr } from '@salmon/shared';
+import type { BrandMarkPropsBase } from '@salmon/shared';
 
-export interface BrandMarkProps extends Testable {
-  /** Drawn width in px. Height follows the aspect ratio. */
-  size: number;
-  /**
-   * Ink. Defaults to `semantic.text.primary` — white, which is what the mark
-   * has always looked like on these screens, except that it was the PNG's
-   * baked `#FCFCFC` rather than a token anyone chose.
-   */
-  color?: string;
+import { useSemantic } from '../../theme/ThemeProvider';
+
+export interface BrandMarkProps extends BrandMarkPropsBase {
   /** Accessible name. Omit for a decorative mark, which is the usual case. */
   title?: string;
 }
 
 export function BrandMark({
   size,
-  color = semantic.text.primary,
+  color,
   title,
   testID = 'brand-mark',
 }: BrandMarkProps): React.ReactElement {
+  const { text } = useSemantic();
+  const ink = color ?? text.primary;
+
   return (
     <svg
       data-testid={testID}
       width={size}
       height={size / markAspectRatio}
       viewBox={markViewBoxAttr}
-      fill={color}
+      fill={ink}
       focusable="false"
       role={title ? 'img' : 'presentation'}
       aria-hidden={title ? undefined : true}

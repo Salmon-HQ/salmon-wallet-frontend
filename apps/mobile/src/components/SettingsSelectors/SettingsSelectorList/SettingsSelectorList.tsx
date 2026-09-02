@@ -12,7 +12,15 @@ import React, { useCallback } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize } from '../../../icons';
-import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
+import {
+  fontFamilyNative,
+  fontSize,
+  s,
+  spacing,
+  vs,
+  type Semantic,
+  type SettingsSelectorListPropsBase,
+} from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import { IconBubble } from '../../IconBubble';
 import { ListRow } from '../../ListRow';
@@ -28,31 +36,8 @@ const ROW_BUBBLE_SIZE = 40;
 // Types
 // ============================================================================
 
-export interface SettingsSelectorListProps<T> {
-  /** Array of items to render */
-  items: T[];
-  /** Extract unique key per item */
-  getKey: (item: T) => string;
-  /** Whether an item is currently selected */
-  isSelected: (item: T) => boolean;
-  /** Callback when an item is pressed */
-  onSelect: (item: T) => void;
-  /** Primary display text */
-  getPrimaryText: (item: T) => string;
-  /** Optional secondary display text (return undefined to omit the row's subtitle) */
-  getSecondaryText?: (item: T) => string | undefined;
-  /** Optional custom element before the text (e.g., currency symbol) */
-  renderLeadingElement?: (item: T) => React.ReactNode;
-  /** Show loading spinner instead of items */
-  loading?: boolean;
-  /** Message shown when items is empty and not loading */
-  emptyMessage?: string;
-  /**
-   * Prefix for a per-item `testID` (e.g. `language-option`). Each row gets
-   * `${testIdPrefix}-${getKey(item)}` so Maestro flows select options by value.
-   */
-  testIdPrefix?: string;
-}
+/** The RN half of `SettingsSelectorListPropsBase`. */
+export interface SettingsSelectorListProps<T> extends SettingsSelectorListPropsBase<T> {}
 
 // ============================================================================
 // Component

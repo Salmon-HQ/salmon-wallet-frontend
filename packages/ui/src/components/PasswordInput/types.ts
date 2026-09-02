@@ -1,34 +1,17 @@
 /**
- * PasswordInput types for web version
+ * PasswordInput types, on the DOM — the shared contract plus the DOM's own
+ * style hooks. The mobile twin reads the same `*PropsBase`.
  */
-import type { PasswordStrength, Testable } from '@salmon/shared';
+import type { PasswordInputPropsBase, PasswordStrengthBarPropsBase } from '@salmon/shared';
 
-export interface PasswordInputProps extends Testable {
-  /** Current password value */
-  value: string;
-  /** Callback when password text changes */
-  onChangeText: (text: string) => void;
-  /** Placeholder text (defaults to "Enter password") */
-  placeholder?: string;
-  /** Error message to display below the input */
-  error?: string;
-  /** Whether the input is editable (defaults to true) */
-  editable?: boolean;
-  /** Whether to auto-focus the input on mount */
-  autoFocus?: boolean;
-  /** Callback when Enter key is pressed */
-  onSubmitEditing?: () => void;
+export interface PasswordInputProps extends PasswordInputPropsBase {
   /** Additional CSS class */
   className?: string;
   /** Additional styles */
   style?: React.CSSProperties;
 }
 
-export interface PasswordStrengthBarProps {
-  /** Password strength level */
-  strength: PasswordStrength;
-  /** Optional translation function (i18next) */
-  t?: (key: string) => string;
+export interface PasswordStrengthBarProps extends PasswordStrengthBarPropsBase {
   /** Additional CSS class */
   className?: string;
   /** Additional styles */

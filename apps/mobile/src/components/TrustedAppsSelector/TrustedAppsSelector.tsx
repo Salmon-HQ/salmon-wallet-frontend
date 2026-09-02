@@ -12,7 +12,7 @@ import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  type TrustedAppsSelectorBaseProps,
+  type TrustedAppsSelectorPropsBase,
   type TrustedAppItem,
   type Semantic,
   spacing,
@@ -26,7 +26,7 @@ import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 /** The leading well every app row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
 
-export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorBaseProps) {
+export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorPropsBase) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();

@@ -1,18 +1,17 @@
 /**
  * LockScreen — the unlock screen, once, for the DOM.
  *
- * The (retired) web app's LockPage and
- * `apps/extension/src/pages/lock/LockPage.tsx` were near-verbatim duplicates:
- * same element order, same styled components, same numbers, diverging in
- * exactly two places (web hardcoded `72` and `'14px 16px'` where the extension
- * read tokens). Two files kept in sync by hand drift by construction, so the
- * screen lives here and the apps supply only what is genuinely theirs — how a
- * password is checked, and where to go afterwards.
+ * The mobile twin is `apps/mobile/src/components/LockOverlay/LockContent.tsx`;
+ * this screen carries the same anatomy on the same slot grid — the coral mark
+ * on the water, "Welcome back", the field, the forgot affordance against it,
+ * every piece of feedback in `assist`, the action bottom-most — and the same
+ * copy keys, so the two read as one screen. Only what is genuinely the
+ * app's is supplied by the caller: how a password is checked, and where to go
+ * afterwards. Biometric unlock is mobile-only (spec 013, decision 8).
  *
- * It composes on the onboarding slot grid, which is the point: unlock is the
- * most-seen screen in the product and the one a returning user meets right
- * after onboarding, and its primary action used to sit 307px higher than the
- * onboarding password screen's. On the grid the two agree by construction.
+ * Every ink is read off the live mode: the mark is `accent.fill` (the brand
+ * accent, the same ink as the crest it throws — owner, 2026-09-02), the field
+ * is `input.ground` inside `input.edge`, the forgot link is `text.primary`.
  *
  * Two behaviours worth naming:
  *
@@ -31,85 +30,75 @@
  *   allowed. Focus follows the notice in both directions so a screen-reader
  *   user is never left wondering why the button went dead.
  */
-import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
-import Typography from '@mui/material/Typography';
+import styled from '@emotion/styled';
 import {
-  colors,
+  borderWidth,
   componentSizes,
   fontFamily,
   fontSize,
-  semantic,
+  fontWeight,
+  lineHeight,
+  opacity,
   spacing,
   useUnlockThrottle,
   useWaitExit,
 } from '@salmon/shared';
+import type { LockScreenPropsBase } from '@salmon/shared';
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type KeyboardEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, TextButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 
-export interface LockScreenProps {
-  /** Checks the password. Resolves true when the wallet is unlocked. */
-  onUnlock: (password: string) => Promise<boolean>;
+export interface LockScreenProps extends LockScreenPropsBase {
   /** Ran after a successful unlock — session-key caching, navigation. */
   onUnlocked?: () => void | Promise<void>;
   /** Ran once on mount — clearing a stale session key. */
   onMount?: () => void | Promise<void>;
-  /** Wipes the wallet after the two-step confirmation. */
-  onRemoveAllAccounts: () => Promise<void>;
 }
 
-const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) => ({
+/**
+ * The system input, not a variant of it: `componentSizes.inputHeight` tall,
+ * `input.ground` fill, the sheet stroke, the control radius — the same field
+ * the mobile lock draws.
+ */
+const Field = styled('input')<{
+  $edge: string;
+  $ground: string;
+  $ink: string;
+  $placeholder: string;
+}>(({ $edge, $ground, $ink, $placeholder }) => ({
+  boxSizing: 'border-box',
   width: '100%',
-  padding: `${componentSizes.inputPaddingVertical}px ${spacing.lg}px`,
-  fontSize: fontSize.bodyLg,
-  fontFamily: fontFamily.sans,
-  backgroundColor: colors.input.background,
-  border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,
+  height: componentSizes.inputHeight,
+  backgroundColor: $ground,
+  border: `${borderWidth.sheet}px solid ${$edge}`,
   borderRadius: componentSizes.inputRadius,
-  color: colors.text.primary,
+  paddingLeft: spacing.lg,
+  paddingRight: spacing.lg,
+  outline: 'none',
+  color: $ink,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  fontSize: fontSize.bodyLg,
   transition: 'border-color 0.15s ease',
-  '&.Mui-focused': {
-    borderColor: $hasError ? semantic.status.danger : colors.accent.primary,
+  '&::placeholder': {
+    color: $placeholder,
+    opacity: opacity.full,
   },
 }));
-
-const ErrorText = styled(Typography)({
-  color: semantic.status.danger,
-  fontSize: fontSize.xs,
-  fontFamily: fontFamily.sans,
-  textAlign: 'center',
-});
-
-/**
- * The error's shape in the warning ink — a message, not a card. The full
- * WarningNotice is ~94px against the assist band's 60, and a card that
- * overflows its band moves the very controls the grid exists to pin.
- */
-const ThrottleText = styled(Typography)({
-  color: semantic.status.warning,
-  fontSize: fontSize.xs,
-  fontFamily: fontFamily.sans,
-  textAlign: 'center',
-});
-
-const ForgotRow = styled(Box)({
-  display: 'flex',
-  justifyContent: 'center',
-  marginTop: spacing.sm,
-});
 
 export function LockScreen({
   onUnlock,
@@ -118,8 +107,10 @@ export function LockScreen({
   onRemoveAllAccounts,
 }: LockScreenProps): React.ReactElement {
   const { t } = useTranslation();
+  const { accent, input, status, text } = useSemantic();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -177,7 +168,7 @@ export function LockScreen({
 
   const handleSubmit = useCallback(async () => {
     if (!password.trim()) {
-      setError(t('lock.error.empty_password'));
+      setError(t('lock.enter_password_error'));
       return;
     }
 
@@ -189,7 +180,7 @@ export function LockScreen({
       const success = await onUnlock(password);
       if (!success) {
         refreshThrottle();
-        setError(t('lock.error.invalid_password'));
+        setError(t('lock.wrong_password'));
         setPassword('');
         setShowLoadingScreen(false);
         return;
@@ -200,7 +191,7 @@ export function LockScreen({
       setSubmerged(true);
       setShowLoadingScreen(false);
     } catch {
-      setError(t('lock.error.unlock_failed'));
+      setError(t('lock.unlock_failed'));
       setShowLoadingScreen(false);
     } finally {
       setIsUnlocking(false);
@@ -211,9 +202,26 @@ export function LockScreen({
     try {
       await onRemoveAllAccounts();
     } catch {
-      setError(t('lock.error.reset_failed'));
+      setError(t('lock.reset_failed'));
     }
   }, [onRemoveAllAccounts, t]);
+
+  const edge = error ? status.danger : isFocused ? accent.ink : input.edge;
+
+  /**
+   * The feedback band's two inks. The throttle notice is the warning ink — a
+   * message, not a card: the full WarningNotice is ~94px against the assist
+   * band's 60, and a card that overflows its band moves the very controls the
+   * grid exists to pin.
+   */
+  const feedback = (ink: string): CSSProperties => ({
+    color: ink,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.caption,
+    lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
+    textAlign: 'center',
+    margin: 0,
+  });
 
   return (
     <>
@@ -228,19 +236,25 @@ export function LockScreen({
         */
         sunk={showLoadingScreen || submerged}
         /*
-        `lock`, not `credential`: the same cluster as the create flow's
-        password screen, but the always-empty description band collapses so
-        the title sits one title line above the input — the same air that
-        separates the fish from the title (owner decision, 2026-08-18). The
-        subtitle came off with it, mirroring mobile, which never carried one:
-        the collapsed band holds no line of copy.
-      */
+          `lock`, not `credential`: the same cluster as the create flow's
+          password screen, but the always-empty description band collapses so
+          "Welcome back" sits one title line above the input — the same air
+          that separates the fish from the title (owner decision, 2026-08-18).
+        */
         variant="lock"
         background={<WaterColumn />}
-        title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
+        // Coral, not white (owner ruling, 2026-09-01): the lock's mark is
+        // `accent.fill`, the button's own salmon, invariant across modes
+        // (token settled 2026-09-02) — the same ink as the crest.
+        markColor={accent.fill}
+        title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
         body={
-          <Box sx={{ width: '100%' }}>
-            <StyledInput
+          <div style={{ width: '100%' }}>
+            <Field
+              $edge={edge}
+              $ground={input.ground}
+              $ink={text.primary}
+              $placeholder={input.placeholder}
               type="password"
               value={password}
               onChange={(event: ChangeEvent<HTMLInputElement>) => {
@@ -250,49 +264,52 @@ export function LockScreen({
               onKeyDown={(event: KeyboardEvent) => {
                 if (event.key === 'Enter') void handleSubmit();
               }}
-              placeholder={t('lock.password_placeholder')}
-              $hasError={!!error}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={t('lock.enter_password')}
               disabled={isUnlocking || throttled}
               autoFocus
-              fullWidth
-              inputProps={{
-                'data-testid': 'lock-password-input',
-                'aria-label': t('lock.password_placeholder'),
-              }}
+              autoCapitalize="none"
+              autoCorrect="off"
+              data-testid="lock-password-input"
+              aria-label={t('lock.enter_password')}
             />
             {/* The escape hatch belongs to the field it escapes from, so it
-              sits directly under it rather than in a band of its own. */}
-            <ForgotRow>
+              sits directly under it rather than in a band of its own. Primary
+              ink, as on mobile: a link in the accent would pull the eye off
+              the one control that matters here. */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: spacing.sm }}>
               <TextButton
                 onPress={() => setShowResetDialog(true)}
                 disabled={isUnlocking}
+                color={text.primary}
                 testID="lock-forgot-password-button"
               >
                 {t('lock.forgot_password')}
               </TextButton>
-            </ForgotRow>
-          </Box>
+            </div>
+          </div>
         }
         assist={
           throttled ? (
-            <Box
+            <div
               ref={throttleRef}
               tabIndex={-1}
               aria-live="polite"
               data-testid="lock-throttle-notice"
             >
-              <ThrottleText>
+              <p style={feedback(status.warning)}>
                 {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-              </ThrottleText>
-            </Box>
+              </p>
+            </div>
           ) : error ? (
-            <ErrorText aria-live="polite" data-testid="lock-error">
+            <p style={feedback(status.danger)} aria-live="polite" data-testid="lock-error">
               {error}
-            </ErrorText>
+            </p>
           ) : null
         }
         action={
-          <Box ref={unlockRef} tabIndex={-1}>
+          <div ref={unlockRef} tabIndex={-1}>
             <PrimaryButton
               onPress={() => void handleSubmit()}
               disabled={!password.trim() || throttled}
@@ -302,17 +319,17 @@ export function LockScreen({
             >
               {t('lock.unlock')}
             </PrimaryButton>
-          </Box>
+          </div>
         }
       />
 
       <ConfirmDialog
         visible={showResetDialog}
         onClose={() => setShowResetDialog(false)}
-        title={t('lock.reset_wallet.title')}
-        message={t('lock.reset_wallet.message')}
-        confirmText={t('lock.reset_wallet.reset')}
-        cancelText={t('lock.reset_wallet.cancel')}
+        title={t('lock.reset_wallet_title')}
+        message={t('lock.reset_wallet_message')}
+        confirmText={t('lock.reset_button')}
+        cancelText={t('lock.cancel')}
         isDanger
         onConfirm={async () => {
           setShowResetDialog(false);
@@ -323,10 +340,10 @@ export function LockScreen({
       <ConfirmDialog
         visible={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
-        title={t('lock.confirm_reset.title')}
-        message={t('lock.confirm_reset.message')}
-        confirmText={t('lock.confirm_reset.confirm')}
-        cancelText={t('lock.confirm_reset.cancel')}
+        title={t('lock.confirm_title')}
+        message={t('lock.confirm_message')}
+        confirmText={t('lock.delete_button')}
+        cancelText={t('lock.cancel')}
         isDanger
         onConfirm={handleFinalConfirm}
       />

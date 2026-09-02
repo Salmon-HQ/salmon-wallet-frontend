@@ -72,6 +72,7 @@ export type { TokenFeaturesProps } from './TokenFeatures';
 export { SettingsPanelStack } from './SettingsPanelStack';
 export type {
   SettingsPanelStackProps,
+  SettingsRowValues,
   PanelContentProps,
   PanelRenderer,
   PanelRegistry,
@@ -81,9 +82,9 @@ export type {
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 
-// WalletSwitcherSheet - Account selection dialog
-export { WalletSwitcherSheet } from './WalletSwitcherSheet';
-export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';
+// WalletsScreen - CORE 10: the wallets, a screen (spec 028 ruling 3)
+export { WalletsScreen } from './WalletsScreen';
+export type { WalletsScreenProps } from './WalletsScreen';
 
 // BrandMark - the salmon mark, drawn from the vector rather than Logo.png
 export { BrandMark, Wordmark } from './BrandMark';
@@ -288,11 +289,10 @@ export type {
   DAppTransactionApprovalViewProps,
 } from './DAppApproval';
 
-// AuthFlow - Shared auth screens for web and extension
+// AuthFlow - the onboarding screens, on the slot grid
 export {
   AnalyticsConsentPage,
   CreateWalletPage,
-  DerivedAccountsPage,
   PasswordPage,
   RecoverWalletPage,
   SelectOptionsPage,
@@ -301,7 +301,6 @@ export {
 export type {
   AnalyticsConsentPageProps,
   CreateWalletPageProps,
-  DerivedAccountsPageProps,
   PasswordPageProps,
   RecoverWalletPageProps,
   SelectOptionsPageProps,
@@ -320,16 +319,17 @@ export type {
   HeaderProps,
 } from './BaseDialog';
 
-// BaseSheetDialog - Base compound component for sheet-style dialogs
-export { BaseSheetDialog } from './BaseSheetDialog';
-
 // PageShell - Shared page layout wrapper for full-page views
 export { PageShell } from './PageShell';
 export type { PageShellProps } from './PageShell';
 
-// ConfirmDialog - Reusable confirmation dialog for destructive actions
+// ConfirmDialog - the confirmation sheet for destructive actions (mobile's ConfirmSheet)
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
+
+// TextInput - a Card holding an input, the settings screens' plain field
+export { TextInput } from './TextInput';
+export type { TextInputProps } from './TextInput';
 
 // NftSendDialog - Dialog for sending NFTs to another address
 export { NftSendDialog } from './NftSendDialog';
@@ -428,7 +428,7 @@ export { Card } from './Card';
 export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
 
 // ListRow - a Card laid out as leading mark / title stack / trailing slot
-export { ListRow } from './ListRow';
+export { ListRow, RowPress, StopPress } from './ListRow';
 export type { ListRowEmphasis, ListRowPadding, ListRowProps } from './ListRow';
 
 // SectionLabel - the three sizes of heading that sit above a block

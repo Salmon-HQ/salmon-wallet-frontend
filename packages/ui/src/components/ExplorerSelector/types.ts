@@ -1,3 +1,3 @@
-import type { ExplorerSelectorBaseProps } from '@salmon/shared';
+import type { ExplorerSelectorPropsBase } from '@salmon/shared';
 
-export interface ExplorerSelectorProps extends ExplorerSelectorBaseProps {}
+export interface ExplorerSelectorProps extends ExplorerSelectorPropsBase {}

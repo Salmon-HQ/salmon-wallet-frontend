@@ -1,22 +1,19 @@
 /**
  * Seed entry, on the onboarding slot grid.
  *
- * The phrase is typed one word per box (`SeedPhraseEntry`), not into a single
- * free-text field. The textarea this replaces hid every mistake that matters —
- * a missing word, a transposed pair, a word the browser "corrected" — and the
- * DOM was the last surface still showing one after mobile moved.
+ * The mobile twin is `apps/mobile/app/(auth)/recover.tsx`. The phrase is
+ * typed one word per box (`SeedPhraseEntry`), not into a single free-text
+ * field: a textarea hid every mistake that matters — a missing word, a
+ * transposed pair, a word the browser "corrected".
  *
- * The other thing that had to survive is why this screen was already the least
- * broken in the flow: it reserved the "Next" button's space with
- * `visibility: hidden` instead of mounting it when the phrase became valid.
- * That is now `ReservedSlot`, used by every screen with a conditional control.
+ * The "Next" button's space is reserved (`ReservedSlot`) rather than mounted
+ * when the phrase becomes valid, so the twelfth word does not move the mark,
+ * title, description and input under the user's hands.
  *
  * Water, not bedrock (owner, 2026-08-18): the Bedrock Rule narrowed to seed
  * EXHIBITION (create's warning/display/validate). Entry of an existing phrase
- * is not that ceremony, so this screen stands in the flow's own water. The
- * capture protection is unchanged.
+ * is not that ceremony, so this screen stands in the flow's own water.
  */
-import Typography from '@mui/material/Typography';
 import {
   componentSizes,
   distributePhrase,
@@ -24,16 +21,16 @@ import {
   fontSize,
   lineHeight,
   normalizeMnemonic,
-  semantic,
   SHORT_PHRASE,
+  spacing,
   validateMnemonic,
 } from '@salmon/shared';
-import { KeyIcon } from '../../icons';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
+
+import { KeyIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
-import { SeedPhraseEntry } from '../SeedPhrase';
 import {
   OnboardingDescription,
   OnboardingLayout,
@@ -41,22 +38,16 @@ import {
   ReservedSlot,
 } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
+import { SeedPhraseEntry } from '../SeedPhrase';
 import { WaterColumn } from '../WaterColumn';
 import type { RecoverWalletPageProps } from './types';
-
-const InvalidNotice = styled(Typography)({
-  color: semantic.status.danger,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.body,
-  lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
-  textAlign: 'center',
-});
 
 export function RecoverWalletPage({
   onComplete,
   onBack,
 }: RecoverWalletPageProps): React.ReactElement {
   const { t } = useTranslation();
+  const { status, text } = useSemantic();
   // One entry per box. Twelve to begin with; a paste or a thirteenth typed
   // word grows it to twenty-four.
   const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
@@ -86,9 +77,9 @@ export function RecoverWalletPage({
    */
   const handlePaste = useCallback(async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      if (!text) return;
-      const { words: pasted, fits, count } = distributePhrase(text);
+      const clipboard = await navigator.clipboard.readText();
+      if (!clipboard) return;
+      const { words: pasted, fits, count } = distributePhrase(clipboard);
       setPastedCount(fits ? null : count);
       setWords(pasted);
     } catch {
@@ -109,21 +100,14 @@ export function RecoverWalletPage({
     <OnboardingLayout
       testID="recover-screen"
       variant="content"
-      /*
-        No bedrock (owner, 2026-08-18): the Bedrock Rule narrowed to the
-        EXHIBITION of a seed — create's warning/display/validate. Entering an
-        existing phrase is not the ceremonial moment of its birth, so recover
-        stands in the same water as the rest of the flow. Capture protection
-        is unchanged.
-      */
       background={<WaterColumn />}
+      scrollBody
       /*
         The key: what this screen asks for is the thing that reopens the
-        wallet. Mirrors the mobile flow (owner, 2026-08-18): the fish stays on
-        welcome and the lock only; each flow step wears one semantic glyph in
-        the mark slot, the consent screen's pattern and size.
+        wallet. Mirrors mobile: the fish stays on welcome and the lock only;
+        each flow step wears one semantic glyph in the mark slot.
       */
-      mark={<KeyIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+      mark={<KeyIcon size={componentSizes.logoSizeSmall} color={text.primary} />}
       chrome={<ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
       description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
@@ -137,11 +121,23 @@ export function RecoverWalletPage({
       }
       assist={
         showInvalid ? (
-          <InvalidNotice data-testid="recover-invalid-phrase">
+          <p
+            data-testid="recover-invalid-phrase"
+            style={{
+              color: status.danger,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
+              paddingLeft: spacing.sm,
+              paddingRight: spacing.sm,
+              textAlign: 'center',
+              margin: 0,
+            }}
+          >
             {pastedCount !== null
               ? t('wallet.recover.pastedWordCount', { count: pastedCount })
               : t('wallet.create.invalidSeed')}
-          </InvalidNotice>
+          </p>
         ) : undefined
       }
       secondary={

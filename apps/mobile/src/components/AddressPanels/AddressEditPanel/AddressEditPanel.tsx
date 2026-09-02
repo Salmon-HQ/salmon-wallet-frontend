@@ -15,7 +15,7 @@ import {
   useAccountsContext,
   useAddressBookForm,
   useAddressValidation,
-  type AddressBookEditBaseProps,
+  type AddressEditPanelPropsBase,
   type BlockchainType,
   type Semantic,
 } from '@salmon/shared';
@@ -36,7 +36,7 @@ export function AddressEditPanel({
   activeBlockchain: _activeBlockchain,
   onSave,
   onBack,
-}: AddressBookEditBaseProps) {
+}: AddressEditPanelPropsBase) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();

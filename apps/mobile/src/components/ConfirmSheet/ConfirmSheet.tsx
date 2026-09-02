@@ -9,7 +9,15 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
-import { spacing, fontSize, fontFamilyNative, s, vs, type Semantic } from '@salmon/shared';
+import {
+  spacing,
+  fontSize,
+  fontFamilyNative,
+  s,
+  vs,
+  type ConfirmSheetPropsBase,
+  type Semantic,
+} from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
@@ -21,43 +29,8 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 // Types
 // ============================================================================
 
-export interface ConfirmSheetProps {
-  /** Controls sheet visibility */
-  visible: boolean;
-  /** Close callback */
-  onClose: () => void;
-  /** Sheet title */
-  title: string;
-  /** Description of the action to confirm */
-  message: string;
-  /** Confirm button text */
-  confirmText?: string;
-  /** Cancel button text */
-  cancelText?: string;
-  /** Whether this is a destructive action (red confirm button) */
-  isDanger?: boolean;
-  /**
-   * Renders a single dismiss button instead of the cancel/confirm pair.
-   *
-   * For a sheet that only reports something — a failure the user can do
-   * nothing about here — two buttons that both dismiss read as a choice that
-   * does not exist, and "Cancel" invites the user to think the thing might
-   * still be undone.
-   */
-  acknowledgeOnly?: boolean;
-  /** Whether to require password confirmation */
-  requirePassword?: boolean;
-  /** Password validation function */
-  validatePassword?: (password: string) => Promise<boolean>;
-  /**
-   * Async callback when the user confirms.
-   *
-   * Receives the entered password when `requirePassword` is set, so a caller
-   * can hand it to an operation that needs it — the sheet has already checked
-   * it with `validatePassword` by then.
-   */
-  onConfirm: (password?: string) => Promise<void>;
-}
+/** The RN half of `ConfirmSheetPropsBase`. */
+export interface ConfirmSheetProps extends ConfirmSheetPropsBase {}
 
 // ============================================================================
 // Component

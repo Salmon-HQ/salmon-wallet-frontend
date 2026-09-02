@@ -24,6 +24,7 @@ import {
   fontFamilyNative,
   useOpenLink,
   fontSize,
+  type AboutPanelPropsBase,
   lineHeight,
   spacing,
   type Semantic,
@@ -51,11 +52,7 @@ const ROW_BUBBLE_SIZE = 40;
 /** The round wells the social row draws. */
 const SOCIAL_BUBBLE_SIZE = 44;
 
-interface AboutPanelProps {
-  onBack: () => void;
-}
-
-export function AboutPanel({ onBack }: AboutPanelProps) {
+export function AboutPanel({ onBack }: AboutPanelPropsBase) {
   const { t } = useTranslation();
   const openLink = useOpenLink();
   const styles = useThemedStyles(stylesFor);

@@ -5,19 +5,14 @@
  * still read as the name of the screen to a screen reader.
  */
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  return { ...theme };
-});
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   fontSize,
   onboardingMarkTitleGap,
   wordmarkAspectRatio,
   wordmarkText,
-} from '../../../../shared/src/theme';
+} from '@salmon/shared';
 import { Wordmark } from './Wordmark';
 
 afterEach(cleanup);

@@ -1,3 +1,3 @@
-import type { TrustedAppsSelectorBaseProps } from '@salmon/shared';
+import type { TrustedAppsSelectorPropsBase } from '@salmon/shared';
 
-export interface TrustedAppsSelectorProps extends TrustedAppsSelectorBaseProps {}
+export interface TrustedAppsSelectorProps extends TrustedAppsSelectorPropsBase {}

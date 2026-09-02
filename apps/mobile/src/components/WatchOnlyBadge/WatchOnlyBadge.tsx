@@ -9,13 +9,11 @@ import {
   fontFamilyNative,
   s,
   type Semantic,
+  type WatchOnlyBadgePropsBase,
 } from '@salmon/shared';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 
-export interface WatchOnlyBadgeProps {
-  /** Test hook for the surface rendering the badge. */
-  testID?: string;
-}
+export interface WatchOnlyBadgeProps extends WatchOnlyBadgePropsBase {}
 
 /**
  * Marks a wallet the user can read but not operate.

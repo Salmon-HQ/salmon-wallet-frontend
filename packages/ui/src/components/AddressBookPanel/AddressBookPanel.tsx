@@ -1,99 +1,40 @@
 /**
- * AddressBookPanel - Contact list management page
+ * AddressBookPanel — the contact list, on the DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressBookPanel`:
+ * a `ListRow` per contact (initial bubble, name, domain or short address plus
+ * the whole network name), trash + edit trailing, and the outlined "Add"
+ * card — the same idiom as Wallets' "Add wallet".
  */
-
 import React, { useCallback, useState } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
-import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  semantic,
-  spacing,
-  getShortAddress,
-  getNetworkName,
   AddressbookError,
-  type AddressBookItem,
+  borderWidth,
+  fontFamily,
   fontSize,
   fontWeight,
-  componentSizes,
+  getNetworkName,
+  getShortAddress,
+  spacing,
+  type AddressBookItem,
 } from '@salmon/shared';
-import { SettingsPanelContent } from '../SettingsPanelContent';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CaretRightIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
+import { SecondaryButton } from '../Button';
+import { Card } from '../Card';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
+import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
 import type { AddressBookPanelProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const StyledList = styled(List)({
-  padding: `${spacing.sm}px 0`,
-});
-
-// The row itself does nothing — edit and remove beside it are the only
-// controls. It used to be a `ListItemButton` with no `onClick`, which is a
-// focusable `role="button"` that a keyboard user lands on and cannot act on,
-// so it is inert markup now (DESIGN.md §"The settings surface joined the
-// system"). The hover tint went with it: a highlight on a row that cannot be
-// pressed promises an action that is not there.
-const ContactRow = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  minWidth: 0,
-});
-
-const ContactAvatar = styled(Avatar)({
-  width: componentSizes.iconSizeXL,
-  height: componentSizes.iconSizeXL,
-  backgroundColor: colors.card.border,
-});
-
-const EmptyContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: `${spacing['3xl']}px ${spacing.lg}px`,
-  gap: spacing.md,
-});
-
-const EmptyText = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.body,
-  textAlign: 'center',
-  whiteSpace: 'pre-line',
-});
-
-const AddButton = styled(Button)({
-  color: colors.accent.primary,
-  textTransform: 'none',
-  fontWeight: fontWeight.medium,
-  fontSize: fontSize.body,
-  marginTop: spacing.sm,
-});
-
-const WriteErrorText = styled(Typography)({
-  color: semantic.status.danger,
-  fontSize: fontSize.caption,
-  fontWeight: fontWeight.medium,
-  textAlign: 'center',
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+/** The initial the avatar bubble carries, same idiom as the send recipients. */
+function initialOf(contact: AddressBookItem): string {
+  return (contact.name.trim()[0] ?? contact.address[0] ?? '?').toUpperCase();
+}
 
 export function AddressBookPanel({
   contacts,
@@ -105,13 +46,14 @@ export function AddressBookPanel({
   onRetry,
 }: AddressBookPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const [deleteTarget, setDeleteTarget] = useState<AddressBookItem | null>(null);
+  const tokens = useSemantic();
+  const [contactToRemove, setContactToRemove] = useState<AddressBookItem | null>(null);
   const [removeErrorKey, setRemoveErrorKey] = useState<string | null>(null);
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTarget) return;
+  const handleRemoveConfirmed = useCallback(async () => {
+    if (!contactToRemove) return;
     try {
-      await onRemoveContact(deleteTarget.address);
+      await onRemoveContact(contactToRemove.address);
       setRemoveErrorKey(null);
     } catch (err) {
       // 'resolve' means the write persisted but redisplay failed; anything
@@ -121,153 +63,140 @@ export function AddressBookPanel({
           ? 'settings.addressbook.resolve_failed'
           : 'settings.addressbook.remove_failed'
       );
-    } finally {
-      setDeleteTarget(null);
     }
-  }, [deleteTarget, onRemoveContact]);
+  }, [contactToRemove, onRemoveContact]);
+
+  const renderContactItem = useCallback(
+    (contact: AddressBookItem) => (
+      <ListRow
+        key={contact.address}
+        testID={`address-book-contact-${contact.address}`}
+        leading={
+          <IconBubble size={40} tone="accent-tint">
+            {initialOf(contact)}
+          </IconBubble>
+        }
+        title={contact.name}
+        // The whole network, environment included: this is the list a send
+        // destination is picked from, and a devnet contact that reads
+        // "Solana" is the confusion DESIGN.md §Chain identity exists to prevent.
+        subtitle={`${contact.domain || (getShortAddress(contact.address, 6) ?? contact.address)} · ${getNetworkName(contact.networkId)}`}
+        trailing={
+          // Two presses, not one row press: the chevron is what opens edit.
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}>
+            <IconBubble
+              testID={`address-book-remove-${contact.address}`}
+              size={36}
+              tone="ghost"
+              icon={TrashIcon}
+              iconColor={tokens.status.danger}
+              onPress={() => setContactToRemove(contact)}
+              accessibilityLabel={t('actions.remove', 'Remove')}
+            />
+            <IconBubble
+              testID={`address-book-edit-${contact.address}`}
+              size={36}
+              tone="ghost"
+              icon={CaretRightIcon}
+              onPress={() => onEditContact(contact)}
+              accessibilityLabel={t('actions.edit', 'Edit')}
+            />
+          </span>
+        }
+      />
+    ),
+    [onEditContact, t, tokens.status.danger]
+  );
+
+  // The one action that is not a contact: outlined, so it reads as an empty
+  // slot rather than a card with nothing in it.
+  const addAction = (
+    <Card
+      testID="address-book-add-button"
+      padding="lg"
+      onPress={onAddContact}
+      accessibilityLabel={t('settings.addressbook.addnew', 'Add New Address')}
+      style={{
+        backgroundColor: 'transparent',
+        borderStyle: 'dashed',
+        borderWidth: borderWidth.thin,
+        borderColor: tokens.border.raised,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+      }}
+    >
+      <PlusIcon size={iconSize.md} color={tokens.accent.ink} />
+      <span
+        style={{
+          color: tokens.accent.ink,
+          fontFamily: fontFamily.sans,
+          fontWeight: fontWeight.bold,
+          fontSize: fontSize.body,
+        }}
+      >
+        {t('settings.addressbook.addnew', 'Add New Address')}
+      </span>
+    </Card>
+  );
 
   return (
-    <SettingsPanelContent title={t('settings.address_book', 'Address Book')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.address_book', 'Address Book')}
+      subtitle={t('settings.address_book_subtitle', 'Save addresses you send to often.')}
+      onBack={onBack}
+    >
       {error ? (
-        <EmptyContainer data-testid="address-book-error">
-          <EmptyText>
-            {t('settings.addressbook.load_error', "Couldn't load your contacts")}
-          </EmptyText>
-          {onRetry && (
-            <AddButton onClick={onRetry} data-testid="address-book-retry-button">
-              {t('transactions.tapToRetry', 'Tap to retry')}
-            </AddButton>
-          )}
-        </EmptyContainer>
+        <div data-testid="address-book-error">
+          <WarningNotice
+            tone="error"
+            title={t('settings.addressbook.load_error', "Couldn't load your contacts")}
+            action={
+              onRetry ? (
+                <SecondaryButton testID="address-book-retry-button" onPress={onRetry}>
+                  {t('transactions.tapToRetry')}
+                </SecondaryButton>
+              ) : undefined
+            }
+          />
+        </div>
       ) : contacts.length > 0 ? (
         <>
-          <StyledList>
-            {contacts.map((contact: AddressBookItem) => (
-              <ListItem
-                key={contact.address}
-                disablePadding
-                secondaryAction={
-                  <Box sx={{ display: 'flex', gap: `${spacing.xs}px` }}>
-                    <IconButton
-                      edge="end"
-                      onClick={() => onEditContact(contact)}
-                      size="small"
-                      aria-label={t('actions.edit', 'Edit')}
-                      data-testid={`address-book-edit-${contact.address}`}
-                      sx={{
-                        color: colors.text.secondary,
-                        '&:hover': { backgroundColor: colors.background.card },
-                      }}
-                    >
-                      <PencilSimpleIcon size={iconSize.md} />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => setDeleteTarget(contact)}
-                      size="small"
-                      aria-label={t('actions.remove', 'Remove')}
-                      data-testid={`address-book-remove-${contact.address}`}
-                      sx={{
-                        color: semantic.status.danger,
-                        '&:hover': { backgroundColor: semantic.status.dangerTint },
-                      }}
-                    >
-                      <TrashIcon size={iconSize.md} />
-                    </IconButton>
-                  </Box>
-                }
-              >
-                <ContactRow data-testid={`address-book-contact-${contact.address}`}>
-                  <ListItemAvatar>
-                    <ContactAvatar>
-                      <UserIcon size={iconSize.md} color={colors.text.secondary} />
-                    </ContactAvatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={contact.name}
-                    secondary={
-                      <>
-                        {contact.domain || getShortAddress(contact.address, 6)}
-                        {' \u00B7 '}
-                        {/* The whole network, environment included: this is the list a
-                            send destination is picked from, and a devnet contact that
-                            reads "Solana" is the confusion DESIGN.md §Chain identity
-                            exists to prevent. */}
-                        {getNetworkName(contact.networkId)}
-                      </>
-                    }
-                    primaryTypographyProps={{
-                      sx: {
-                        color: colors.text.primary,
-                        fontWeight: fontWeight.medium,
-                        fontSize: fontSize.body,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      },
-                    }}
-                    secondaryTypographyProps={{
-                      sx: {
-                        color: colors.text.secondary,
-                        fontSize: fontSize.caption,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      },
-                    }}
-                  />
-                </ContactRow>
-              </ListItem>
-            ))}
-          </StyledList>
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <AddButton
-              startIcon={<PlusCircleIcon />}
-              onClick={onAddContact}
-              data-testid="address-book-add-button"
-            >
-              {t('settings.addressbook.addnew', 'Add New Address')}
-            </AddButton>
-          </Box>
+          {contacts.map(renderContactItem)}
+          {addAction}
         </>
       ) : (
-        <EmptyContainer>
-          <EmptyText>
-            {t(
+        <>
+          <WarningNotice
+            tone="warning"
+            title={t(
               'settings.addressbook.empty',
               'Looks empty in here.\nAdd your first contact clicking the button.'
             )}
-          </EmptyText>
-          <AddButton
-            startIcon={<PlusCircleIcon />}
-            onClick={onAddContact}
-            data-testid="address-book-add-button"
-          >
-            {t('settings.addressbook.addnew', 'Add New Address')}
-          </AddButton>
-        </EmptyContainer>
+          />
+          {addAction}
+        </>
       )}
 
       {removeErrorKey && (
-        <WriteErrorText data-testid="address-book-remove-error">{t(removeErrorKey)}</WriteErrorText>
+        <div data-testid="address-book-remove-error">
+          <WarningNotice tone="error" title={t(removeErrorKey)} />
+        </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        visible={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        visible={contactToRemove !== null}
+        onClose={() => setContactToRemove(null)}
         title={t('actions.remove', 'Remove')}
-        message={
-          deleteTarget
-            ? t('settings.addressbook.remove_confirmation', {
-                name: deleteTarget.name,
-                defaultValue: `Are you sure you want to remove ${deleteTarget.name} from your address book?`,
-              })
-            : ''
-        }
+        message={t('settings.addressbook.remove_confirmation', {
+          name: contactToRemove?.name ?? '',
+          defaultValue: `Are you sure you want to remove ${contactToRemove?.name} from your address book?`,
+        })}
         confirmText={t('actions.remove', 'Remove')}
         isDanger
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleRemoveConfirmed}
       />
     </SettingsPanelContent>
   );

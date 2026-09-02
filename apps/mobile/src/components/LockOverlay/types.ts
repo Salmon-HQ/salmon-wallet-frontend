@@ -1,4 +1,14 @@
 /**
+ * The lock's contract, shared with the DOM `LockScreen`: a password check and
+ * the wipe. Native adds biometrics on top (below). `LockContent.tsx` declares
+ * its props inline today — the next touch on that file extends
+ * `LockScreenPropsBase` here.
+ */
+import type { LockScreenPropsBase } from '@salmon/shared';
+
+export type { LockScreenPropsBase };
+
+/**
  * State representing the device's biometric capabilities.
  * Provided by the consumer's biometric hook (e.g., useBiometricAuth).
  */

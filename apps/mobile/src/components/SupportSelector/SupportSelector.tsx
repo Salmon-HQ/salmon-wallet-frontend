@@ -19,7 +19,7 @@ import {
 } from '../../icons';
 import type { IconComponent } from '../../icons';
 
-import { type SupportSelectorBaseProps, type SupportOptionItem, semantic } from '@salmon/shared';
+import { type SupportSelectorPropsBase, type SupportOptionItem, semantic } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -35,7 +35,7 @@ const ICON_MAP: Record<string, IconComponent> = {
   email: EnvelopeIcon,
 };
 
-export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorBaseProps) {
+export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorPropsBase) {
   const { t } = useTranslation();
 
   const renderOption = useCallback(

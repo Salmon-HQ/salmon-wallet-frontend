@@ -1,93 +1,25 @@
 /**
- * TrustedAppsSelector - Connected dApps management component for browser extension
+ * TrustedAppsSelector — connected dApps, on the DOM.
  *
- * Displays a list of trusted/connected dApps for the current network
- * and allows the user to revoke their access.
+ * The mobile twin is `apps/mobile/src/components/TrustedAppsSelector`: a
+ * `ListRow` per connected dApp — its icon or a `GlobeIcon` fallback leading,
+ * name and domain stacked, a revoke trash trailing. The empty state is a
+ * heading and a line of copy, not a warning: nothing here failed.
  */
-
 import React, { useCallback, useState } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  semantic,
-  spacing,
-  type TrustedAppItem,
-  fontSize,
-  fontWeight,
-  componentSizes,
-} from '@salmon/shared';
+import { spacing, type TrustedAppItem } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
+import { SectionLabel } from '../SectionLabel';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { TrustedAppsSelectorProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const StyledList = styled(List)({
-  padding: `${spacing.sm}px 0`,
-});
-
-// The row itself does nothing — the revoke button beside it is the only
-// control. It used to be a `ListItemButton` with no `onClick`, which is a
-// focusable `role="button"` that a keyboard user lands on and cannot act on,
-// so it is inert markup now (DESIGN.md §"The settings surface joined the
-// system"). The hover tint went with it: a highlight on a row that cannot be
-// pressed promises an action that is not there.
-const AppRow = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  minWidth: 0,
-});
-
-const RevokeButton = styled(IconButton)({
-  color: semantic.status.danger,
-  '&:hover': {
-    backgroundColor: semantic.status.dangerTint,
-  },
-});
-
-const AppAvatar = styled(Avatar)({
-  width: componentSizes.iconSizeXL,
-  height: componentSizes.iconSizeXL,
-  backgroundColor: colors.card.border,
-});
-
-const EmptyContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: `${spacing['3xl']}px ${spacing.lg}px`,
-  gap: spacing.sm,
-});
-
-const EmptyText = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.body,
-  textAlign: 'center',
-});
-
-const EmptySubtext = styled(Typography)({
-  color: colors.text.disabled,
-  fontSize: fontSize.caption,
-  textAlign: 'center',
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+/** The leading well every app row carries — Settings' own row bubble size. */
+const ROW_BUBBLE_SIZE = 40;
 
 export function TrustedAppsSelector({
   apps,
@@ -95,6 +27,7 @@ export function TrustedAppsSelector({
   onBack,
 }: TrustedAppsSelectorProps): React.ReactElement {
   const { t } = useTranslation();
+  const { text, status } = useSemantic();
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const handleRevoke = useCallback(
@@ -109,71 +42,76 @@ export function TrustedAppsSelector({
     [onRevokeApp]
   );
 
+  const renderAppRow = useCallback(
+    (app: TrustedAppItem) => (
+      <ListRow
+        key={app.domain}
+        testID={`trusted-apps-item-${app.domain}`}
+        leading={
+          <IconBubble size={ROW_BUBBLE_SIZE} shape="circle" tone="surface">
+            {app.icon ? (
+              <img
+                src={app.icon}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: ROW_BUBBLE_SIZE / 2,
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <GlobeIcon size={iconSize.md} color={text.secondary} />
+            )}
+          </IconBubble>
+        }
+        title={app.name || app.domain}
+        subtitle={app.name ? app.domain : undefined}
+        trailing={
+          <IconBubble
+            testID={`trusted-apps-revoke-${app.domain}`}
+            size={ROW_BUBBLE_SIZE}
+            tone="ghost"
+            icon={TrashIcon}
+            iconSize={iconSize.sm}
+            iconColor={status.danger}
+            onPress={() => void handleRevoke(app.domain)}
+            disabled={revoking === app.domain}
+            accessibilityLabel={t('settings.trusted_apps_revoke', 'Revoke')}
+          />
+        }
+      />
+    ),
+    [handleRevoke, revoking, t, text.secondary, status.danger]
+  );
+
   return (
-    <SettingsPanelContent title={t('settings.trusted_apps', 'Trusted Apps')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.trusted_apps', 'Trusted Apps')}
+      subtitle={t('settings.trusted_apps_subtitle', "Apps you've connected to your wallet.")}
+      onBack={onBack}
+    >
       {apps.length > 0 ? (
-        <StyledList>
-          {apps.map((app: TrustedAppItem) => (
-            <ListItem
-              key={app.domain}
-              disablePadding
-              secondaryAction={
-                <RevokeButton
-                  edge="end"
-                  onClick={() => handleRevoke(app.domain)}
-                  disabled={revoking === app.domain}
-                  size="small"
-                  aria-label={t('settings.trusted_apps_revoke', 'Revoke')}
-                  data-testid={`trusted-apps-revoke-${app.domain}`}
-                >
-                  <TrashIcon size={iconSize.md} />
-                </RevokeButton>
-              }
-            >
-              <AppRow data-testid={`trusted-apps-item-${app.domain}`}>
-                <ListItemAvatar>
-                  {app.icon ? (
-                    <AppAvatar src={app.icon} alt={app.name || app.domain} />
-                  ) : (
-                    <AppAvatar>
-                      <GlobeIcon size={iconSize.md} color={colors.text.secondary} />
-                    </AppAvatar>
-                  )}
-                </ListItemAvatar>
-                <ListItemText
-                  primary={app.name || app.domain}
-                  secondary={app.name ? app.domain : undefined}
-                  primaryTypographyProps={{
-                    sx: {
-                      color: colors.text.primary,
-                      fontWeight: fontWeight.medium,
-                      fontSize: fontSize.body,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    },
-                  }}
-                  secondaryTypographyProps={{
-                    sx: {
-                      color: colors.text.secondary,
-                      fontSize: fontSize.caption,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    },
-                  }}
-                />
-              </AppRow>
-            </ListItem>
-          ))}
-        </StyledList>
+        apps.map(renderAppRow)
       ) : (
-        <EmptyContainer>
-          <EmptyText>{t('settings.no_trusted_apps', 'No connected apps')}</EmptyText>
-          <EmptySubtext>
+        <div
+          data-testid="trusted-apps-empty"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: spacing.xs,
+            padding: `${spacing['2xl']}px 0`,
+            textAlign: 'center',
+          }}
+        >
+          <SectionLabel variant="title">
+            {t('settings.no_trusted_apps', 'No connected apps')}
+          </SectionLabel>
+          <SectionLabel variant="group" style={{ color: text.tertiary }}>
             {t('settings.no_trusted_apps_hint', 'Apps you connect to will appear here')}
-          </EmptySubtext>
-        </EmptyContainer>
+          </SectionLabel>
+        </div>
       )}
     </SettingsPanelContent>
   );

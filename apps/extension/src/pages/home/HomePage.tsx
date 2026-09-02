@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import {
   useAccountsContext,
   isWatchOnlyAccount,
@@ -17,7 +14,6 @@ import {
   useDerivedAccountsScan,
   useHomeTabOrder,
   getNetworkLabel,
-  colors,
   spacing,
   componentSizes,
   fontSize,
@@ -79,7 +75,7 @@ import {
   ReceiveSheet,
   useTaskChrome,
   SettingsPanelStack,
-  WalletSwitcherSheet,
+  WalletsScreen,
   ConfirmDialog,
   DepthBackground,
   ScalesBackground,
@@ -103,9 +99,10 @@ import {
   AddressAddPanel,
   AddressEditPanel,
   AboutPanel,
+  SettingsPanelContent,
+  useSemantic,
   type PanelRegistry,
 } from '../../components';
-import IconButton from '@mui/material/IconButton';
 
 // i18n
 import { useLanguage } from '../../i18n';
@@ -129,7 +126,7 @@ const TOP_FADE_SCROLL_RANGE = 30;
 /**
  * Available page views within HomePage
  */
-type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send';
+type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets';
 
 // Network ID → BlockchainId mapping for carousel theming
 const NETWORK_TO_BLOCKCHAIN: Record<string, BlockchainId> = {
@@ -149,21 +146,21 @@ const NETWORK_TO_BLOCKCHAIN: Record<string, BlockchainId> = {
  * (mobile mounts the same three in `app/(app)/(tabs)/_layout.tsx`). The
  * screens are siblings of it, so the water never travels with them.
  */
-const Container = styled(Box)({
+const containerStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   height: '100dvh',
   position: 'relative',
   overflow: 'hidden',
   backgroundColor: 'var(--sw-water-gradient-1)',
-});
+};
 
 /**
  * The bottom fade. It starts and ends on the ramp's own floor —
  * `transparent` is black at alpha 0, which smudged the fade grey on its way to
  * nothing, and on the pale ground it painted a dark band.
  */
-const BottomFadeGradient = styled(Box)({
+const bottomFadeStyle: React.CSSProperties = {
   position: 'absolute',
   left: 0,
   right: 0,
@@ -175,49 +172,49 @@ const BottomFadeGradient = styled(Box)({
     'linear-gradient(to bottom, var(--sw-water-fadeBottom-0), var(--sw-water-fadeBottom-1))',
   pointerEvents: 'none',
   zIndex: 0,
-});
+};
 
 /** Everything the user reads sits above the ground, in flow. */
-const Screen = styled(Box)({
+const screenStyle: React.CSSProperties = {
   position: 'relative',
   zIndex: 1,
   flex: 1,
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-});
+};
 
 /**
  * The block above the content region. It is fixed on both sub-tabs — nothing
  * above the sub-tab row scrolls, on either of them (DESIGN.md §Navigation).
  * Block seams are the component gap (20) on every side.
  */
-const PinnedHeader = styled(Box)({
+const pinnedHeaderStyle: React.CSSProperties = {
   paddingLeft: spacing.screenGutter,
   paddingRight: spacing.screenGutter,
   paddingTop: spacing.xl,
   paddingBottom: spacing.xl,
-});
+};
 
-const PinnedSubTabs = styled(Box)({
+const pinnedSubTabsStyle: React.CSSProperties = {
   marginTop: spacing.xl,
-});
+};
 
 /** The content region: the only part of Home that scrolls. */
-const ContentRegion = styled(Box)({
+const contentRegionStyle: React.CSSProperties = {
   position: 'relative',
   flex: 1,
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-});
+};
 
 /**
  * The one mask on this screen: the seam between the fixed row above and the
  * list scrolling under it. It starts on the ramp's own top stop and ends on
  * that same colour at alpha 0, so it clears without smudging on either ground.
  */
-const TopSeamFade = styled(Box)({
+const topSeamFadeStyle: React.CSSProperties = {
   position: 'absolute',
   top: 0,
   left: 0,
@@ -227,20 +224,20 @@ const TopSeamFade = styled(Box)({
   pointerEvents: 'none',
   zIndex: 1,
   opacity: 0,
-});
+};
 
 /** The scroller Portfolio's list and the Bitcoin column live in. */
-const ScrollColumn = styled(Box)({
+const scrollColumnStyle: React.CSSProperties = {
   flex: 1,
   minHeight: 0,
   overflowY: 'auto',
   paddingLeft: spacing.screenGutter,
   paddingRight: spacing.screenGutter,
   paddingBottom: spacing['2xl'],
-});
+};
 
 /**
- * Placeholder page for settings screens not yet fully implemented
+ * Placeholder page for a view that has nothing to show yet.
  */
 function PlaceholderPage({
   title,
@@ -250,40 +247,14 @@ function PlaceholderPage({
   onBack: () => void;
 }): React.ReactElement {
   const { t } = useTranslation();
+  const { text } = useSemantic();
 
   return (
-    <Container>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: `${spacing.md}px ${spacing.lg}px`,
-          borderBottom: `1px solid ${colors.border.default}`,
-        }}
-      >
-        <IconButton onClick={onBack} sx={{ color: colors.text.secondary, mr: 1 }}>
-          <Box component="span" sx={{ fontSize: fontSize.xl }}>
-            &#8592;
-          </Box>
-        </IconButton>
-        <Typography sx={{ fontSize: fontSize.lg, fontWeight: 600, color: colors.text.primary }}>
-          {title}
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: spacing.xl,
-        }}
-      >
-        <Typography sx={{ color: colors.text.secondary }}>
-          {t('common.coming_soon', 'Coming soon...')}
-        </Typography>
-      </Box>
-    </Container>
+    <SettingsPanelContent title={title} onBack={onBack}>
+      <p style={{ margin: 0, color: text.secondary, fontSize: fontSize.body, textAlign: 'center' }}>
+        {t('common.coming_soon', 'Coming soon...')}
+      </p>
+    </SettingsPanelContent>
   );
 }
 
@@ -325,6 +296,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const {
     developerNetworks,
     toggleDeveloperNetworks,
+    showUnverifiedTokens,
+    setShowUnverifiedTokens,
     explorer,
     explorers,
     changeExplorer,
@@ -393,10 +366,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Sheet visibility state
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [walletSwitcherVisible, setWalletSwitcherVisible] = useState(false);
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
-  // Settings panel stack state (for deep-linking from WalletSwitcher)
+  // Settings panel stack state (for deep-linking from Wallets)
   const [settingsInitialPanels, setSettingsInitialPanels] = useState<
     SettingsPanelEntry[] | undefined
   >(undefined);
@@ -538,7 +510,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId: networkId as NetworkId | undefined,
     skip: !ready || !activeBlockchainAccount || !networksReady,
     // BE filters unknown-only-tagged SPL tokens by default; opt in via developer mode.
-    includeSpam: !!developerNetworks,
+    includeSpam: showUnverifiedTokens,
   });
 
   // Warm the chains the user is not looking at, so the first arrow press of the
@@ -549,7 +521,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkIds: allNetworks.map((network) => network.id as NetworkId),
     activeNetworkId: networkId as NetworkId | undefined,
     pathIndex: state.pathIndex,
-    includeSpam: !!developerNetworks,
+    includeSpam: showUnverifiedTokens,
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
@@ -590,8 +562,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setSettingsVisible(true);
   }, []);
 
+  // Wallets is a screen, not a sheet (spec 028 ruling 3): the second tap
+  // inside it changes what it is.
   const handleWalletPress = useCallback(() => {
-    setWalletSwitcherVisible(true);
+    setCurrentPage('wallets');
   }, []);
 
   /**
@@ -637,42 +611,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [actions]
   );
 
-  const handleSelectAccount = useCallback(
-    (targetAccountId: string) => {
-      actions.changeAccount(targetAccountId);
-      setWalletSwitcherVisible(false);
-    },
-    [actions]
-  );
-
+  // One add-wallet screen, two entry points. `returnTo` says which one
+  // opened it, so completing lands on the surface the user came from with
+  // the new wallet already active — Home by default, as it always did.
   const handleAddAccount = useCallback(() => {
-    setWalletSwitcherVisible(false);
-    setSettingsInitialPanels([{ screen: 'account-add' }]);
+    setSettingsInitialPanels([{ screen: 'account-add', props: { returnTo: 'wallets' } }]);
     setSettingsVisible(true);
   }, []);
 
-  const handleEditAccount = useCallback((targetAccountId: string) => {
+  // The same rename screen Settings → Accounts → Edit reaches.
+  const handleRenameAccount = useCallback((targetAccountId: string) => {
     setEditingAccountId(targetAccountId);
-    setWalletSwitcherVisible(false);
-    setSettingsInitialPanels([
-      { screen: 'accounts' },
-      { screen: 'account-edit', props: { accountId: targetAccountId } },
-    ]);
+    setSettingsInitialPanels([{ screen: 'account-name', props: { accountId: targetAccountId } }]);
     setSettingsVisible(true);
   }, []);
-
-  const handleDeleteAccount = useCallback(
-    async (targetAccountId: string) => {
-      // The WalletSwitcherSheet already shows a confirmation dialog
-      // and only calls this after user confirms, so we can directly remove
-      await actions.removeAccount(targetAccountId);
-
-      // If we deleted the active account, the hook will auto-switch
-      // Close the wallet switcher sheet
-      setWalletSwitcherVisible(false);
-    },
-    [actions]
-  );
 
   const handleSendPress = useCallback(() => {
     setCurrentPage('send');
@@ -1073,7 +1025,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Build panel registry for SettingsPanelStack
   const panelRegistry: PanelRegistry = useMemo(
     () => ({
-      avatar: ({ onBack }) => <AccountAvatarPanel onBack={onBack} />,
+      avatar: ({ onBack }) => {
+        if (!activeAccount) return null;
+        return (
+          <AccountAvatarPanel
+            currentAvatarUrl={activeAccount.avatar}
+            account={activeAccount}
+            onSave={async (avatarUrl: string) => {
+              await actions.editAccount(activeAccount.id, { avatar: avatarUrl });
+              onBack();
+            }}
+            onBack={onBack}
+          />
+        );
+      },
       backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
       privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
       currency: ({ onBack }) => {
@@ -1232,41 +1197,67 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           />
         );
       },
-      security: ({ onBack }) => (
-        <SecurityPanel onBack={onBack} onPasswordChanged={clearSessionKey} />
+      security: ({ onBack, onNavigate }) => (
+        <SecurityPanel
+          onBack={onBack}
+          onNavigate={onNavigate}
+          onPasswordChanged={clearSessionKey}
+        />
       ),
       accounts: ({ onBack, onNavigate }) => (
         <AccountsPanel
-          onBack={onBack}
+          accounts={accounts}
+          activeAccountId={accountId || ''}
+          onSelectAccount={(id) => actions.changeAccount(id)}
           onEditAccount={(id) => {
             setEditingAccountId(id);
             onNavigate('account-edit', { accountId: id });
           }}
+          onDeleteAccount={(id) => actions.removeAccount(id)}
           onAddAccount={() => onNavigate('account-add')}
-        />
-      ),
-      'account-edit': ({ onBack, onNavigate, ...props }) => (
-        <AccountEditPanel
-          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-          onEditName={(id) => {
-            setEditingAccountId(id);
-            onNavigate('account-name', { accountId: id });
-          }}
-          onEditAvatar={() => onNavigate('avatar')}
-          onBackupSeed={() => onNavigate('backup')}
-          onExportPrivateKey={() => onNavigate('privateKey')}
           onBack={onBack}
         />
       ),
-      'account-name': ({ onBack, ...props }) => (
-        <AccountNamePanel
-          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-          onBack={onBack}
-        />
-      ),
-      'account-add': ({ onBack, onWait, onClose }) => (
+      'account-edit': ({ onBack, onNavigate, ...props }) => {
+        const targetId = (props.accountId as string) || editingAccountId || accountId || '';
+        const account = accounts.find((a) => a.id === targetId) || activeAccount;
+        if (!account) return null;
+        return (
+          <AccountEditPanel
+            account={account}
+            onEditName={() => {
+              setEditingAccountId(account.id);
+              onNavigate('account-name', { accountId: account.id });
+            }}
+            onEditAvatar={() => onNavigate('avatar')}
+            onBackupSeed={() => onNavigate('backup')}
+            onExportPrivateKey={() => onNavigate('privateKey')}
+            onBack={onBack}
+          />
+        );
+      },
+      'account-name': ({ onBack, ...props }) => {
+        const targetId = (props.accountId as string) || editingAccountId || accountId || '';
+        const account = accounts.find((a) => a.id === targetId) || activeAccount;
+        if (!account) return null;
+        return (
+          <AccountNamePanel
+            currentName={account.name}
+            onSave={async (name: string) => {
+              await actions.editAccount(account.id, { name });
+              onBack();
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      'account-add': ({ onBack, onWait, onClose, ...props }) => (
         <AccountAddPanel
-          onComplete={onBack}
+          // `returnTo` lands the finished flow back on Wallets with the new
+          // wallet already active; the panel closes settings itself.
+          onComplete={() => {
+            if (props.returnTo === 'wallets') setCurrentPage('wallets');
+          }}
           onBack={onBack}
           onWait={onWait}
           onCloseSettings={onClose}
@@ -1300,7 +1291,26 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       actions,
       editingAccountId,
       accountId,
+      accounts,
+      activeAccount,
     ]
+  );
+
+  // What the four choosable rows currently read. Proper nouns and a currency
+  // code — identical in both languages, so the list states the user's own
+  // choice without inventing copy (mobile's `settings/index.tsx`).
+  const settingsRowValues = useMemo(
+    () => ({
+      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
+      currency: currency?.toUpperCase(),
+      explorer: explorer?.name,
+      appearance: {
+        system: t('settings.appearance_options.system', 'System'),
+        light: t('settings.appearance_options.light', 'Light'),
+        dark: t('settings.appearance_options.dark', 'Dark'),
+      }[appearancePreference],
+    }),
+    [currentLanguage, currency, explorer, appearancePreference, t]
   );
 
   // Reset initialPanels after settings closes
@@ -1395,6 +1405,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onFlowLockChange={setFlowLocked}
           />
         );
+      case 'wallets':
+        return (
+          <WalletsScreen
+            onBack={handleBack}
+            onRename={handleRenameAccount}
+            onAddWallet={handleAddAccount}
+            onRescan={(id) => void derivedAccounts.rescan(id)}
+            scanningAccountId={derivedAccounts.scanningAccountId}
+            showUnverifiedTokens={showUnverifiedTokens}
+          />
+        );
       case 'activity':
         return (
           <TransactionHistoryPage
@@ -1417,21 +1438,21 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }
 
   return (
-    <Container data-testid="home-screen">
+    <div data-testid="home-screen" style={containerStyle}>
       {/* The ground, mounted once behind every screen: a depth ramp darkening
           toward the abyss, the scales over it, and the bottom fade that ends
           on the ramp's own floor. */}
       <DepthBackground style={{ zIndex: 0 }} />
       <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
-      <BottomFadeGradient />
+      <div style={bottomFadeStyle} />
 
-      <Screen>
+      <div style={screenStyle}>
         {/* The identity line. It is the screen's first child in flow — it owns
             its top padding and nothing scrolls behind it. Settings and the
             wallet switcher can change the account or the network, which remounts
             the flow, so both are withheld while a signed transaction is still
             being reported. */}
-        <Box style={{ paddingTop: spacing.screenTop }}>
+        <div style={{ paddingTop: spacing.screenTop }}>
           <WalletHeader
             // Surfaces WITH the content, as its sibling: the header's own
             // chrome-scale float plays at the same moment as the screen's,
@@ -1447,7 +1468,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             avatarUrl={activeAccount?.avatar}
             accountId={activeAccount?.id}
           />
-        </Box>
+        </div>
 
         {/* The balance, the sub-tabs and the content are CONTENT, not chrome:
             when a task engages the shell they leave with the verb at full depth
@@ -1464,7 +1485,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
-            <PinnedHeader>
+            <div style={pinnedHeaderStyle}>
               <BalanceHeader
                 testID="balance-header"
                 blockchains={blockchainBalances}
@@ -1477,7 +1498,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 onActivityPress={handleActivityPress}
                 sendDisabled={isWatchOnly}
               />
-              <PinnedSubTabs>
+              <div style={pinnedSubTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
                   tabs={subTabs}
@@ -1490,14 +1511,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   // remounts them.
                   tabsKey={subTabsKey}
                 />
-              </PinnedSubTabs>
-            </PinnedHeader>
+              </div>
+            </div>
 
             {/* The content region plays the verb on a sub-tab change: the
                 outgoing list sinks, the incoming one floats. Keyed by sub-tab,
                 the same mechanism the chain swap uses; the block above it holds
                 still (rule four). */}
-            <ContentRegion>
+            <div style={contentRegionStyle}>
               <SinkFloat
                 transitionKey={subTabHasPrior ? effectiveSubTab : 'home-subtab-content'}
                 testID="home-subtab-content"
@@ -1513,16 +1534,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     testID="home-chain-content"
                     style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
                   >
-                    <ScrollColumn onScroll={handleContentScroll}>
+                    <div style={scrollColumnStyle} onScroll={handleContentScroll}>
                       {/* Partial-load failure: keep whatever data loaded
                           visible. Only 'ready' carries data, so a total failure
                           is left to the list's own error state rather than told
                           "shown data may be incomplete". */}
                       {balanceError && balanceState === 'ready' && (
-                        <Box
-                          sx={{ marginBottom: `${spacing.xl}px` }}
-                          data-testid="balance-load-error"
-                        >
+                        <div style={{ marginBottom: spacing.xl }} data-testid="balance-load-error">
                           <WarningNotice
                             tone="warning"
                             title={t(
@@ -1530,7 +1548,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                               "Some balances couldn't be loaded. Shown data may be incomplete."
                             )}
                           />
-                        </Box>
+                        </div>
                       )}
 
                       {currentChain === 'bitcoin' ? (
@@ -1584,7 +1602,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                           )}
                         />
                       )}
-                    </ScrollColumn>
+                    </div>
                   </SinkFloat>
                 ) : (
                   // NFTs: the grid owns the only scroller in the content
@@ -1592,7 +1610,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   // Portfolio shows.
                   <NftsTab
                     onNftPress={handleNftDetailPress}
-                    includeSpam={!!developerNetworks}
+                    includeSpam={showUnverifiedTokens}
                     onScroll={handleContentScroll}
                     contentStyle={{
                       paddingLeft: spacing.screenGutter,
@@ -1605,11 +1623,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
               {/* The seam between the fixed row above and whatever scrolls
                   under it, faded in off that region's own offset. */}
-              <TopSeamFade ref={seamFadeRef} />
-            </ContentRegion>
+              <div ref={seamFadeRef} style={topSeamFadeStyle} />
+            </div>
           </SinkFloat>
         )}
-      </Screen>
+      </div>
 
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
           rows are dropped, and there is nothing to save. */}
@@ -1637,23 +1655,21 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         panelRegistry={panelRegistry}
         initialPanels={settingsInitialPanels}
         developerNetworksEnabled={developerNetworks}
-        onDeveloperNetworksToggle={() => void toggleDeveloperNetworks()}
+        // Turning the flag off while the session stands on devnet moves it to
+        // the mainnet sibling first — the shared toggle owns that passage.
+        onDeveloperNetworksToggle={() =>
+          void toggleDeveloperNetworks({
+            activeNetworkId: networkId,
+            changeNetwork: actions.changeNetwork,
+          })
+        }
+        unverifiedTokensEnabled={showUnverifiedTokens}
+        onUnverifiedTokensToggle={(show) => void setShowUnverifiedTokens(show)}
         analyticsEnabled={analyticsConsent}
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}
         onRemoveAllWallets={handleRemoveAllWallets}
-      />
-
-      {/* Wallet Switcher Sheet */}
-      <WalletSwitcherSheet
-        visible={walletSwitcherVisible}
-        onClose={() => setWalletSwitcherVisible(false)}
-        accounts={accounts}
-        activeAccountId={accountId || ''}
-        onSelectAccount={handleSelectAccount}
-        onAddAccount={handleAddAccount}
-        onEditAccount={handleEditAccount}
-        onDeleteAccount={handleDeleteAccount}
+        rowValues={settingsRowValues}
       />
 
       {/* Remove Current Wallet Confirmation Dialog */}
@@ -1696,7 +1712,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         // to a devnet address is not money (spec 026 D6).
         networkLabel={getNetworkLabel(currentNetworkId) ?? undefined}
       />
-    </Container>
+    </div>
   );
 }
 

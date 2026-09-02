@@ -1,64 +1,27 @@
 /**
- * ConfirmDialog Component
+ * ConfirmDialog — the confirmation sheet for destructive and sensitive
+ * actions, on the DOM.
  *
- * A reusable confirmation dialog for destructive actions.
- * Supports both simple confirmations and password-protected actions.
- *
- * Features:
- * - Danger styling for destructive actions
- * - Optional password verification
- * - Customizable title, message, and button text
+ * The mobile twin is `apps/mobile/src/components/ConfirmSheet`: a
+ * `BottomSheetContainer` with a `SheetTitle` (a danger glyph before it when
+ * the action destroys something), the message, an optional password gate,
+ * and the two kit buttons. On a danger sheet the buttons trade places —
+ * backing out takes the primary fill and comes first, because on a sheet
+ * that destroys a wallet the recommended outcome is the one that changes
+ * nothing; the destructive action keeps the secondary shell with the danger
+ * fill painted into it.
  */
-
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import { spacing } from '@salmon/shared';
-import { BaseDialog, MessageText } from '../BaseDialog';
+import { fontFamily, fontSize, lineHeight, spacing } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { WarningIcon } from '../../icons';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
+import { PasswordInput } from '../PasswordInput';
 import type { ConfirmDialogProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const PasswordSection = styled('div')({
-  marginTop: spacing.lg,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
-
-/**
- * Confirmation dialog for actions that need user verification.
- *
- * @example
- * ```tsx
- * // Simple confirmation
- * <ConfirmDialog
- *   visible={showDialog}
- *   onClose={() => setShowDialog(false)}
- *   title="Remove Wallet"
- *   message="Are you sure you want to remove this wallet?"
- *   confirmText="Remove"
- *   isDanger
- *   onConfirm={handleRemove}
- * />
- *
- * // With password verification
- * <ConfirmDialog
- *   visible={showDialog}
- *   onClose={() => setShowDialog(false)}
- *   title="Remove All Wallets"
- *   message="This will remove all wallets from this device."
- *   confirmText="Remove All"
- *   isDanger
- *   requirePassword
- *   validatePassword={checkPassword}
- *   onConfirm={handleRemoveAll}
- * />
- * ```
- */
 export function ConfirmDialog({
   visible,
   onClose,
@@ -67,21 +30,23 @@ export function ConfirmDialog({
   confirmText,
   cancelText,
   isDanger = false,
+  acknowledgeOnly = false,
   requirePassword = false,
   validatePassword,
   onConfirm,
   confirmTestID,
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
+  const { status, text } = useSemantic();
   const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
-  // Reset state when dialog opens/closes
+  // Reset state when the sheet opens
   useEffect(() => {
     if (visible) {
       setPassword('');
-      setPasswordError(null);
+      setPasswordError(undefined);
       setLoading(false);
     }
   }, [visible]);
@@ -89,7 +54,6 @@ export function ConfirmDialog({
   const handleConfirm = useCallback(async () => {
     if (loading) return;
 
-    // Validate password if required
     if (requirePassword && validatePassword) {
       if (!password) {
         setPasswordError(t('errors.password_required', 'Password is required'));
@@ -113,7 +77,7 @@ export function ConfirmDialog({
 
     setLoading(true);
     try {
-      await onConfirm();
+      await onConfirm(requirePassword ? password : undefined);
       onClose();
     } catch (err) {
       console.error('Confirm action failed:', err);
@@ -125,74 +89,103 @@ export function ConfirmDialog({
   const handlePasswordChange = useCallback(
     (value: string) => {
       setPassword(value);
-      if (passwordError) {
-        setPasswordError(null);
-      }
+      if (passwordError) setPasswordError(undefined);
     },
     [passwordError]
-  );
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key === 'Enter') {
-        handleConfirm();
-      }
-    },
-    [handleConfirm]
   );
 
   const canConfirm = !requirePassword || password.length > 0;
 
   return (
-    <BaseDialog visible={visible} onClose={onClose} ariaLabelledBy="confirm-dialog-title">
-      <BaseDialog.Header title={title} showWarning={isDanger} showClose={!isDanger} />
-
-      <BaseDialog.Content>
-        <MessageText>{message}</MessageText>
+    <BottomSheetContainer
+      visible={visible}
+      onClose={onClose}
+      dismissible={!loading}
+      testID="confirm-dialog"
+      title={
+        <SheetTitle
+          // Colour is never the only channel: glyph, fill and label all say it
+          leading={
+            isDanger ? <WarningIcon size={fontSize.heading} color={status.danger} /> : undefined
+          }
+        >
+          {title}
+        </SheetTitle>
+      }
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.screenGutter,
+          padding: `0 ${spacing.lg}px ${spacing.lg}px`,
+        }}
+      >
+        <p
+          data-testid="confirm-dialog-message"
+          style={{
+            margin: 0,
+            color: text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.bodyLg,
+            lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
+            // Left-aligned: the message runs to several lines, and a centred
+            // block moves the start of every line.
+            textAlign: 'left',
+          }}
+        >
+          {message}
+        </p>
 
         {requirePassword && (
-          <PasswordSection>
-            <BaseDialog.TextField
-              type="password"
-              label={t('general.password', 'Password')}
-              value={password}
-              onChange={handlePasswordChange}
-              onKeyDown={handleKeyDown}
-              error={!!passwordError}
-              helperText={passwordError || undefined}
-              disabled={loading}
-              autoFocus
-            />
-          </PasswordSection>
+          <PasswordInput
+            value={password}
+            onChangeText={handlePasswordChange}
+            placeholder={t('general.password', 'Password')}
+            error={passwordError}
+            editable={!loading}
+            autoFocus
+            onSubmitEditing={handleConfirm}
+            testID="confirm-dialog-password"
+          />
         )}
-      </BaseDialog.Content>
 
-      {/*
-        On a danger dialog the buttons stack and the safe one comes first — in
-        reading order, in tab order, and in weight. The destructive action is
-        still one click away; it just stops being the click the layout invites.
-      */}
-      <BaseDialog.Actions stacked={isDanger}>
-        <BaseDialog.CancelButton
-          onClick={onClose}
-          disabled={loading}
-          prominent={isDanger}
-          // Only when nothing else claims the caret: with a password field the
-          // field is the friction and deserves the focus.
-          autoFocus={isDanger && !requirePassword}
-        >
-          {cancelText || t('actions.cancel', 'Cancel')}
-        </BaseDialog.CancelButton>
-        <BaseDialog.ActionButton
-          isDanger={isDanger}
-          onClick={handleConfirm}
-          disabled={!canConfirm}
-          loading={loading}
-          testID={confirmTestID}
-        >
-          {confirmText || t('actions.confirm', 'Confirm')}
-        </BaseDialog.ActionButton>
-      </BaseDialog.Actions>
-    </BaseDialog>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+          {acknowledgeOnly ? (
+            <PrimaryButton onPress={onClose} disabled={loading} testID={confirmTestID}>
+              {confirmText || t('actions.close', 'Close')}
+            </PrimaryButton>
+          ) : isDanger ? (
+            <>
+              <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                {cancelText || t('actions.cancel', 'Cancel')}
+              </PrimaryButton>
+              <SecondaryButton
+                onPress={handleConfirm}
+                disabled={!canConfirm || loading}
+                tone="danger-fill"
+                testID={confirmTestID ?? 'confirm-dialog-confirm'}
+              >
+                {confirmText || t('actions.confirm', 'Confirm')}
+              </SecondaryButton>
+            </>
+          ) : (
+            <>
+              <SecondaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                {cancelText || t('actions.cancel', 'Cancel')}
+              </SecondaryButton>
+              <PrimaryButton
+                onPress={handleConfirm}
+                disabled={!canConfirm}
+                loading={loading}
+                testID={confirmTestID ?? 'confirm-dialog-confirm'}
+              >
+                {confirmText || t('actions.confirm', 'Confirm')}
+              </PrimaryButton>
+            </>
+          )}
+        </div>
+      </div>
+    </BottomSheetContainer>
   );
 }

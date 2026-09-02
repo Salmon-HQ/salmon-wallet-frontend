@@ -1,3 +1,3 @@
-export interface AccountAvatarPanelProps {
-  onBack: () => void;
-}
+import type { AvatarPickerPropsBase } from '@salmon/shared';
+
+export interface AccountAvatarPanelProps extends AvatarPickerPropsBase {}

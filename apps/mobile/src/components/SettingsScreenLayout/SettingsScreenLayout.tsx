@@ -14,7 +14,7 @@
  * scrollable body instead of letting it scroll away with the content.
  */
 
-import React, { type ReactNode } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Text,
@@ -40,6 +40,7 @@ import {
   s,
   vs,
   type Semantic,
+  type SettingsScreenLayoutPropsBase,
 } from '@salmon/shared';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
@@ -48,25 +49,14 @@ import { useThemedStyles } from '../../theme/useThemedStyles';
 // Types
 // ============================================================================
 
-export interface SettingsScreenLayoutProps {
-  /** The main title of the screen */
-  title: string;
-  /** Optional subtitle text shown below the title */
-  subtitle?: string;
-  /** Content to render in the scrollable area */
-  children: ReactNode;
-  /** Back navigation handler (required) */
-  onBack: () => void;
+/** The RN half of `SettingsScreenLayoutPropsBase`: the contract plus the scroll extras. */
+export interface SettingsScreenLayoutProps extends SettingsScreenLayoutPropsBase {
   /** Whether to show vertical scroll indicator. Default: false */
   showsVerticalScrollIndicator?: boolean;
-  /** Whether layout should provide its own ScrollView wrapper. Default: true */
-  scrollable?: boolean;
   /** Optional style override for the content container */
   contentContainerStyle?: StyleProp<ViewStyle>;
   /** Whether to render the screen header. Default: true */
   showHeader?: boolean;
-  /** Sticky action band rendered below the scrollable body, on the safe area. */
-  footer?: ReactNode;
 }
 
 // ============================================================================

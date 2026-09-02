@@ -1,7 +1,9 @@
 /**
  * LoadingScreen — the wait, on the app's own ground.
  *
- * Uses Emotion keyframes + styled() for consistency with the rest of @salmon/ui.
+ * Emotion keyframes + styled(), with every ink read off the live mode via
+ * `useSemantic()` and handed down as `$` props — the same tokens the mobile
+ * twin (`apps/mobile/src/components/LoadingScreen`) reads.
  *
  * The choreography, and the one idea it is built on: **the wait goes down and
  * the success comes up.** A wait may not compete with the receipt — it is
@@ -55,9 +57,8 @@ import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'rea
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { keyframes } from '@emotion/react';
-import { styled } from '../../utils/styled';
+import styled from '@emotion/styled';
 import {
-  colors,
   fontFamily,
   fontWeight,
   fontSize,
@@ -80,7 +81,6 @@ import {
   motionMs,
   planWavefrontExit,
   reducedMotion,
-  semantic,
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
@@ -90,6 +90,7 @@ import {
   WAVEFRONT_SINK_MS,
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../utils/useReducedMotion';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import type { LoadingScreenProps } from './types';
@@ -210,41 +211,45 @@ const sinkOutKeyframes = keyframes`
 // Styled Components
 // ============================================================================
 
-const Overlay = styled('div')<{ $isFadingOut: boolean; $waveOut: boolean }>(
-  ({ $isFadingOut, $waveOut }) => ({
-    ...waterColumnHost,
-    // `fixed` rather than the host's `relative`: this overlay covers the viewport
-    // rather than its parent. It is still a containing block, and `isolation`
-    // still gives the stacking context the ground's negative layer needs.
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-    background: `linear-gradient(180deg, ${colors.background.primary} 0%, ${colors.background.secondary} 100%)`,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // When the wave is driving the exit, the ground has to outlive the riders:
-    // it holds for whatever the front still in flight has left to travel, then
-    // ebbs. The hold arrives as `--wave-hold`, written by the exit effect from
-    // `planWavefrontExit`, so what the caller is told and what the screen does
-    // are the same number.
-    // The ramp is `WAVEFRONT_EBB_MS` — shared with `planWavefrontExit`, so
-    // what the caller is told and what the ground does are the same number.
-    animation: $waveOut
-      ? `${fadeOutKeyframes} ${WAVEFRONT_EBB_MS}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
-      : // The plain ramp, in tokens: `durationMs.slow` is the same number the
-        // exit timer below spends, so what the caller is told and what the
-        // screen does are one number here too. Arriving decelerates (`settle`),
-        // leaving accelerates away (`sink`).
-        `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} ${durationMs.slow}ms ${
-          $isFadingOut ? motionEasing.sink.css : motionEasing.settle.css
-        } forwards`,
-  })
-);
+const Overlay = styled('div')<{
+  $isFadingOut: boolean;
+  $waveOut: boolean;
+  $ground: readonly [string, string];
+}>(({ $isFadingOut, $waveOut, $ground }) => ({
+  ...waterColumnHost,
+  // `fixed` rather than the host's `relative`: this overlay covers the viewport
+  // rather than its parent. It is still a containing block, and `isolation`
+  // still gives the stacking context the ground's negative layer needs.
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 9999,
+  // The water ramp's own stops, so a wait on bedrock (no column) still
+  // stands on the ground the column would have painted.
+  background: `linear-gradient(180deg, ${$ground[0]} 0%, ${$ground[1]} 100%)`,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  // When the wave is driving the exit, the ground has to outlive the riders:
+  // it holds for whatever the front still in flight has left to travel, then
+  // ebbs. The hold arrives as `--wave-hold`, written by the exit effect from
+  // `planWavefrontExit`, so what the caller is told and what the screen does
+  // are the same number.
+  // The ramp is `WAVEFRONT_EBB_MS` — shared with `planWavefrontExit`, so
+  // what the caller is told and what the ground does are the same number.
+  animation: $waveOut
+    ? `${fadeOutKeyframes} ${WAVEFRONT_EBB_MS}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
+    : // The plain ramp, in tokens: `durationMs.slow` is the same number the
+      // exit timer below spends, so what the caller is told and what the
+      // screen does are one number here too. Arriving decelerates (`settle`),
+      // leaving accelerates away (`sink`).
+      `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} ${durationMs.slow}ms ${
+        $isFadingOut ? motionEasing.sink.css : motionEasing.settle.css
+      } forwards`,
+}));
 
 /**
  * Everything the wait owns — mark, words, tips — as one travelling cluster.
@@ -302,22 +307,22 @@ const Words = styled('div')({
   pointerEvents: 'none',
 });
 
-const Title = styled('div')({
-  color: colors.text.primary,
+const Title = styled('div')<{ $ink: string }>(({ $ink }) => ({
+  color: $ink,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.bold,
   fontSize: fontSize['2xl'],
   lineHeight: `${fontSize['2xl'] * lineHeight.condensed}px`,
   marginBottom: spacing.sm,
-});
+}));
 
-const Subtitle = styled('div')({
-  color: colors.text.secondary,
+const Subtitle = styled('div')<{ $ink: string }>(({ $ink }) => ({
+  color: $ink,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.regular,
   fontSize: fontSize.bodyLg,
   lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
-});
+}));
 
 /**
  * The emitter. The mark was removed with the spinning ring and is back by
@@ -327,7 +332,7 @@ const Subtitle = styled('div')({
  *
  * It **sinks**; it does not pulse. See `sinkKeyframes`.
  */
-const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
+const Emitter = styled('div')<{ $waves: boolean; $ink: string }>(({ $waves, $ink }) => ({
   // The true centre of whatever the wait occupies — not of the viewport. The
   // overlay is the surface, so its middle is the origin, and a wait rendered in
   // a smaller box gets its own centre with no special case.
@@ -341,7 +346,7 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: semantic.accent.fill,
+  color: $ink,
   // Not stopped on close: the front in flight is left to finish crossing, and
   // the ground has faded before the next emission is due.
   // The per-step curves live inside the keyframes (fast in, slow out), so the
@@ -380,8 +385,8 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
  * to be), alive only while the wait is, travelling outward and down, and gone
  * before the receipt mounts.
  */
-const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>(
-  ({ $alpha, $lagMs, $waves }) => ({
+const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $ink: string }>(
+  ({ $alpha, $lagMs, $waves, $ink }) => ({
     position: 'absolute',
     top: '50%',
     left: '50%',
@@ -392,7 +397,7 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>
     width: 'var(--wave-ring, 0px)',
     height: 'var(--wave-ring, 0px)',
     borderRadius: '50%',
-    background: crestGradientCSS($alpha, semantic.accent.fill),
+    background: crestGradientCSS($alpha, $ink),
     opacity: 0,
     pointerEvents: 'none',
     transform: 'translate(-50%, -50%) scale(0)',
@@ -461,8 +466,8 @@ const TipsContainer = styled('div')({
     TIP_LINE_HEIGHT_PX * MAX_TIP_LINES,
 });
 
-const TipLabel = styled('div')({
-  color: colors.accent.primary,
+const TipLabel = styled('div')<{ $ink: string }>(({ $ink }) => ({
+  color: $ink,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.bold,
   fontSize: fontSize.sm,
@@ -471,10 +476,10 @@ const TipLabel = styled('div')({
   letterSpacing: '1px',
   textAlign: 'center',
   marginBottom: spacing.sm,
-});
+}));
 
-const TipText = styled('div')<{ $fading: boolean }>(({ $fading }) => ({
-  color: colors.text.secondary,
+const TipText = styled('div')<{ $fading: boolean; $ink: string }>(({ $fading, $ink }) => ({
+  color: $ink,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.regular,
   fontSize: fontSize.base,
@@ -523,6 +528,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   onExited,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
+  const { accent, text, water } = useSemantic();
   const isReduceMotionEnabled = useReducedMotion();
 
   // Resolve tip keys through t() for i18n
@@ -732,6 +738,7 @@ export const LoadingScreen = memo(function LoadingScreen({
       ref={contentRef}
       $isFadingOut={isFadingOut}
       $waveOut={isClosing}
+      $ground={water.gradient}
       role="status"
       aria-busy="true"
       data-testid="loading-screen"
@@ -757,6 +764,7 @@ export const LoadingScreen = memo(function LoadingScreen({
             $alpha={alpha}
             $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
             $waves={riding}
+            $ink={accent.fill}
             aria-hidden="true"
           />
         ))}
@@ -768,7 +776,13 @@ export const LoadingScreen = memo(function LoadingScreen({
             of a radial front is the one thing on this screen that may not be
             off-centre. */}
         {riding && (
-          <Emitter ref={originRef} $waves={riding} aria-hidden="true" data-testid="loading-emitter">
+          <Emitter
+            ref={originRef}
+            $waves={riding}
+            $ink={accent.fill}
+            aria-hidden="true"
+            data-testid="loading-emitter"
+          >
             <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">
               {markPaths.map((d) => (
                 <path key={d} d={d} />
@@ -782,8 +796,8 @@ export const LoadingScreen = memo(function LoadingScreen({
             también, cuando te dije que no debería." They arrive and leave with
             the rest of the wait, which is the passage, not a rider. */}
         <Words>
-          {title && <Title>{title}</Title>}
-          {subtitle && <Subtitle>{subtitle}</Subtitle>}
+          {title && <Title $ink={text.primary}>{title}</Title>}
+          {subtitle && <Subtitle $ink={text.secondary}>{subtitle}</Subtitle>}
         </Words>
 
         {/* The tips, stationary too. They used to be the far-field passenger that
@@ -792,8 +806,10 @@ export const LoadingScreen = memo(function LoadingScreen({
         {showTips && resolvedTips.length > 0 && (
           <div style={tipsAnchor}>
             <TipsContainer>
-              <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
-              <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
+              <TipLabel $ink={accent.ink}>{t('general.tip', 'Tip')}</TipLabel>
+              <TipText $fading={tipFading} $ink={text.secondary}>
+                {resolvedTips[currentTipIndex]}
+              </TipText>
             </TipsContainer>
           </div>
         )}

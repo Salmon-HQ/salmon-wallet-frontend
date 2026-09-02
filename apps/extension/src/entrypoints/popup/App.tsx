@@ -32,7 +32,6 @@ import { RecoverWalletPage } from '../../pages/auth/RecoverWalletPage';
 import { PasswordPage } from '../../pages/auth/PasswordPage';
 import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
-import { DerivedAccountsPage } from '../../pages/auth/DerivedAccountsPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 import { sessionArea } from '../../utils/storageCompat';
 
@@ -40,8 +39,7 @@ import { sessionArea } from '../../utils/storageCompat';
 // Types
 // ============================================================================
 
-type AuthStep =
-  'select' | 'create' | 'recover' | 'password' | 'success' | 'derived' | 'analytics-consent';
+type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'success' | 'analytics-consent';
 
 interface AuthData {
   mnemonic: string;
@@ -357,9 +355,9 @@ function App() {
     setAuthStep('success');
   }, []);
 
-  // Consent is the final step, after success — both of success's exits funnel
-  // through it (directly, or after the derived-accounts detour), so it is
-  // asked exactly once. Resolving it is what leaves the auth flow.
+  // Consent is the final step, after success — success's one exit funnels
+  // through it, so it is asked exactly once. Resolving it is what leaves the
+  // auth flow.
   const handleConsentResolve = useCallback(
     (enabled: boolean) => {
       void resolveConsentPrompt(enabled);
@@ -380,14 +378,6 @@ function App() {
   }, [authData]);
 
   const handleGoToWallet = useCallback(() => {
-    setAuthStep('analytics-consent');
-  }, []);
-
-  const handleCheckDerived = useCallback(() => {
-    setAuthStep('derived');
-  }, []);
-
-  const handleDerivedComplete = useCallback(() => {
     setAuthStep('analytics-consent');
   }, []);
 
@@ -500,9 +490,7 @@ function App() {
           />
         );
       case 'success':
-        return <SuccessPage onGoToWallet={handleGoToWallet} onCheckDerived={handleCheckDerived} />;
-      case 'derived':
-        return <DerivedAccountsPage onComplete={handleDerivedComplete} />;
+        return <SuccessPage onGoToWallet={handleGoToWallet} />;
       default:
         return (
           <SelectOptionsPage

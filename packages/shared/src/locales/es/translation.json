@@ -72,7 +72,6 @@
     "back": "Volver",
     "copied": "¡Copiado!",
     "edit": "Editar",
-    "hide": "Ocultar",
     "reveal": "Revelar",
     "select": "Seleccionar",
     "sending": "Enviando..."
@@ -227,7 +226,6 @@
     "analytics_prompt_footnote": "Apagalo cuando quieras desde <bold>Ajustes</bold>.",
     "analytics_prompt_accept": "Aceptar",
     "analytics_prompt_close": "Cerrar sin aceptar",
-    "app_version": "Versión v{{version}}",
     "remove_wallet": "Eliminar Billetera",
     "remove_all_wallets": "Eliminar Todas las Billeteras",
     "sections": {
@@ -358,12 +356,6 @@
       "connected_apps_description": "Revisá los permisos de tu billetera",
       "lock_now": "Bloquear billetera ahora"
     },
-    "about_general": "General",
-    "about_legal": "Legal",
-    "about_made_with_love": "Hecho con amor por el equipo de Salmon",
-    "about_social": "Seguinos",
-    "backup_warning_title": "Nunca compartas tu frase de recuperación",
-    "backup_warning_description": "Cualquiera con tu frase de recuperación puede quedarse con tus fondos, y si la perdés nadie puede restaurar tu cuenta: ni siquiera Salmon. Guardala de forma segura y nunca la ingreses en sitios web.",
     "reveal_phrase_title": "Confirmá que sos vos",
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
@@ -372,10 +364,8 @@
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
     "no_seed_phrase": "Esta cuenta se importó con una clave privada y no tiene frase de recuperación.",
-    "recovery_phrase": "Frase de Recuperación",
     "remove_all_wallets_description": "Esto eliminará TODAS las billeteras de este dispositivo. Esta acción no se puede deshacer. Asegurate de haber respaldado todas las frases de recuperación.",
     "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
-    "tap_to_reveal": "Tocá para revelar",
     "trusted_apps_revoke": "Revocar",
     "copy_failed": "Falló el copiado — no se copió nada al portapapeles",
     "subtitle": "Administrá tu billetera y preferencias."
@@ -471,7 +461,6 @@
     }
   },
   "lock": {
-    "title": "Hola de nuevo",
     "forgot_password": "Olvidé mi contraseña",
     "reset_wallet_title": "Restablecer Billetera",
     "reset_wallet_message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos de este dispositivo.\n\nPodrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
@@ -497,25 +486,7 @@
     "biometric_prompt": "Autenticate para desbloquear tu billetera",
     "biometric_enroll_prompt": "Confirmá para activar el desbloqueo biométrico",
     "password_placeholder": "Contraseña",
-    "password_label": "Contraseña",
-    "error": {
-      "empty_password": "Por favor ingresá tu contraseña",
-      "invalid_password": "La contraseña es incorrecta",
-      "unlock_failed": "Error al desbloquear la billetera",
-      "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo."
-    },
-    "confirm_reset": {
-      "title": "¿Estás seguro?",
-      "message": "Esta acción no se puede deshacer. Todos los datos de la billetera se eliminarán permanentemente.",
-      "confirm": "Eliminar Todos los Datos",
-      "cancel": "Cancelar"
-    },
-    "reset_wallet": {
-      "title": "Restablecer Billetera",
-      "message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos. Podrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
-      "reset": "Restablecer Billetera",
-      "cancel": "Cancelar"
-    }
+    "password_label": "Contraseña"
   },
   "wallet": {
     "partial_load_error": "Algunos balances no se pudieron cargar. Los datos mostrados pueden estar incompletos.",
@@ -553,10 +524,6 @@
       "success_message": "¡Felicitaciones!",
       "success_message_body": "Tu Cuenta ya está lista.",
       "go_to_my_wallet": "¡Ir a mi Cuenta!",
-      "check_derivables": "Comprobar Derivables",
-      "derivable_info_icon": "¿Qué es una cuenta derivable?",
-      "derivable_info": "¿Qué es una cuenta derivable?",
-      "derivable_description": "Las Derivables son \"sub cuentas\" que nacen del mismo seed-phrase. Usando criptografía, se combina la seed-phrase con un patrón de derivación que genera estas diferentes cuentas. Permite así la generación de tantas cuentas como se quieran crear bajo la misma seed-phrase.",
       "invalidSeed": "Seed phrase inválida",
       "recovery_error": "Error al recuperar la cuenta. Por favor, verificá tu seed phrase e intentalo de nuevo.",
       "recovery_network_error": "No se pudo conectar con el servidor. Revisá tu conexión e intentalo de nuevo. Tu seed phrase está bien.",
@@ -578,16 +545,6 @@
       "recovering_account": "Recuperando Cuenta"
     },
     "derived": {
-      "title": "Cuentas Derivadas",
-      "subtitle": "Buscá cuentas adicionales derivadas de tu seed phrase.",
-      "searching": "Buscando cuentas...",
-      "empty_title": "No se encontraron cuentas derivadas",
-      "empty_subtitle": "No se pudieron derivar cuentas adicionales de tu seed phrase.",
-      "found_one": "Se encontró {{count}} cuenta derivada",
-      "found_other": "Se encontraron {{count}} cuentas derivadas",
-      "import_selected": "Importar seleccionadas ({{count}})",
-      "continue": "Continuar",
-      "skip": "Omitir",
       "scan_failed_title": "No se pudieron buscar las cuentas",
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
       "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos.",
@@ -886,9 +843,7 @@
     "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
   },
   "common": {
-    "cancel": "Cancelar",
     "coming_soon": "Próximamente...",
-    "delete": "Eliminar",
     "no_explorers": "No hay explorers disponibles para esta red"
   },
   "errors": {
@@ -948,12 +903,6 @@
       "no_funds": "Esta dirección no tiene saldo de ETH",
       "unknown": "Error de validación desconocido"
     }
-  },
-  "walletSwitcher": {
-    "title": "Tus Billeteras",
-    "addAccount": "Agregar Nueva Cuenta",
-    "deleteConfirmTitle": "¿Eliminar Cuenta?",
-    "deleteConfirmMessage": "¿Estás seguro de que querés eliminar \"{{name}}\"? Esta acción no se puede deshacer."
   },
   "pending": {
     "send": {

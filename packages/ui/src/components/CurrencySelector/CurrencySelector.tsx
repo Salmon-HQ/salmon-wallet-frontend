@@ -1,45 +1,18 @@
+/**
+ * CurrencySelector — the display currency panel, on the DOM. The mobile twin
+ * is `apps/mobile/src/components/SettingsSelectors/CurrencySelector`.
+ */
 import React, { useCallback } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  type CurrencySelectorItem,
-  fontSize,
-  fontWeight,
-  componentSizes,
-} from '@salmon/shared';
+import { type CurrencySelectorItem } from '@salmon/shared';
+
+import { IconBubble } from '../IconBubble';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { CurrencySelectorProps } from './types';
 
-// ============================================================================
-// Styled Components (currency-specific leading element)
-// ============================================================================
-
-const CurrencySymbol = styled(Box)({
-  width: componentSizes.iconSize2XL,
-  height: componentSizes.iconSize2XL,
-  borderRadius: borderRadius.md,
-  backgroundColor: colors.background.card,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: spacing.md,
-});
-
-const SymbolText = styled(Typography)({
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.primary,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+/** The leading well every option row carries — Settings' own row bubble size. */
+const ROW_BUBBLE_SIZE = 40;
 
 export function CurrencySelector({
   currencies,
@@ -54,8 +27,21 @@ export function CurrencySelector({
     [onSelectCurrency]
   );
 
+  const renderSymbol = useCallback(
+    (item: CurrencySelectorItem) => (
+      <IconBubble size={ROW_BUBBLE_SIZE} tone="surface">
+        {item.symbol}
+      </IconBubble>
+    ),
+    []
+  );
+
   return (
-    <SettingsPanelContent title={t('settings.currency', 'Display Currency')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.currency', 'Display Currency')}
+      subtitle={t('settings.currency_subtitle', 'Choose the currency balances show in.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={currencies}
         getKey={(item) => item.code}
@@ -63,11 +49,7 @@ export function CurrencySelector({
         onSelect={handleSelect}
         getPrimaryText={(item) => item.name}
         getSecondaryText={(item) => item.code.toUpperCase()}
-        renderLeadingElement={(item) => (
-          <CurrencySymbol>
-            <SymbolText>{item.symbol}</SymbolText>
-          </CurrencySymbol>
-        )}
+        renderLeadingElement={renderSymbol}
         testIdPrefix="currency-option"
       />
     </SettingsPanelContent>

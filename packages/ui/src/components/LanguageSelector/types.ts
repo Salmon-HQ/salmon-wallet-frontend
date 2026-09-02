@@ -1,3 +1,3 @@
-import type { LanguageSelectorBaseProps } from '@salmon/shared';
+import type { LanguageSelectorPropsBase } from '@salmon/shared';
 
-export interface LanguageSelectorProps extends LanguageSelectorBaseProps {}
+export interface LanguageSelectorProps extends LanguageSelectorPropsBase {}

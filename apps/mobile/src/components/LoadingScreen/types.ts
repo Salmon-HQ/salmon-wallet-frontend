@@ -1,13 +1,13 @@
 /**
  * LoadingScreen types
  */
-import type { LoadingScreenBaseProps } from '@salmon/shared';
+import type { LoadingScreenPropsBase } from '@salmon/shared';
 
 /**
  * Props for the LoadingScreen component (React Native)
  * Extends base props with React Native-specific options
  */
-export interface LoadingScreenProps extends LoadingScreenBaseProps {
+export interface LoadingScreenProps extends LoadingScreenPropsBase {
   /**
    * Space to reserve at the bottom for chrome that floats over this screen
    * (e.g. the tab bar). Shrinks the centred content box and lifts the tips

@@ -8,7 +8,7 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type ExplorerSelectorBaseProps, type ExplorerSelectorItem } from '@salmon/shared';
+import { type ExplorerSelectorPropsBase, type ExplorerSelectorItem } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 
@@ -22,7 +22,7 @@ export function ExplorerSelector({
   onSelectExplorer,
   onBack,
   loading,
-}: ExplorerSelectorBaseProps) {
+}: ExplorerSelectorPropsBase) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(

@@ -32,11 +32,6 @@ export interface PasswordPageProps {
 
 export interface SuccessPageProps {
   onGoToWallet: () => void;
-  onCheckDerived: () => void;
-}
-
-export interface DerivedAccountsPageProps {
-  onComplete: () => void;
 }
 
 export interface AnalyticsConsentPageProps {

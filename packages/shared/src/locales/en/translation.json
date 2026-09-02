@@ -72,7 +72,6 @@
     "back": "Back",
     "copied": "Copied!",
     "edit": "Edit",
-    "hide": "Hide",
     "reveal": "Reveal",
     "select": "Select",
     "sending": "Sending..."
@@ -227,7 +226,6 @@
     "analytics_prompt_footnote": "Turn it off any time in <bold>Settings</bold>.",
     "analytics_prompt_accept": "Accept",
     "analytics_prompt_close": "Close without accepting",
-    "app_version": "Version v{{version}}",
     "remove_wallet": "Remove Wallet",
     "remove_all_wallets": "Remove All Wallets",
     "sections": {
@@ -358,12 +356,6 @@
       "connected_apps_description": "Review wallet permissions",
       "lock_now": "Lock wallet now"
     },
-    "about_general": "General",
-    "about_legal": "Legal",
-    "about_made_with_love": "Made with love by the Salmon team",
-    "about_social": "Follow Us",
-    "backup_warning_title": "Never share your recovery phrase",
-    "backup_warning_description": "Anyone with your recovery phrase can take your funds, and if you lose it no one can restore your account — not even Salmon. Keep it stored securely and never enter it on websites.",
     "reveal_phrase_title": "Confirm it is you",
     "reveal_phrase_message": "Enter your password to show the recovery phrase. Anyone who sees it owns every account in this wallet, forever.",
     "clipboard_warning_title": "The clipboard is not private",
@@ -372,10 +364,8 @@
     "reveal_private_key_title": "Confirm it is you",
     "reveal_private_key_message": "Enter your password to show the private key. Anyone who sees it can spend everything in this account, and there is no way to undo it.",
     "no_seed_phrase": "This account was imported using a private key and does not have a recovery phrase.",
-    "recovery_phrase": "Recovery Phrase",
     "remove_all_wallets_description": "This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.",
     "remove_wallet_description": "Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.",
-    "tap_to_reveal": "Tap to reveal",
     "trusted_apps_revoke": "Revoke",
     "copy_failed": "Copy failed — nothing was copied to the clipboard",
     "subtitle": "Manage your wallet and preferences."
@@ -471,7 +461,6 @@
     }
   },
   "lock": {
-    "title": "Welcome back",
     "forgot_password": "I forgot my password",
     "reset_wallet_title": "Reset Wallet",
     "reset_wallet_message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data from this device.\n\nYou can restore your wallet using your seed phrase after resetting.",
@@ -497,25 +486,7 @@
     "biometric_prompt": "Authenticate to unlock your wallet",
     "biometric_enroll_prompt": "Confirm to enable biometric unlock",
     "password_placeholder": "Password",
-    "password_label": "Password",
-    "error": {
-      "empty_password": "Please enter your password",
-      "invalid_password": "Invalid password",
-      "unlock_failed": "Failed to unlock wallet",
-      "reset_failed": "Failed to reset wallet. Please try again."
-    },
-    "confirm_reset": {
-      "title": "Are you sure?",
-      "message": "This action cannot be undone. All wallet data will be permanently deleted.",
-      "confirm": "Delete All Data",
-      "cancel": "Cancel"
-    },
-    "reset_wallet": {
-      "title": "Reset Wallet",
-      "message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data. You can restore your wallet using your seed phrase after resetting.",
-      "reset": "Reset Wallet",
-      "cancel": "Cancel"
-    }
+    "password_label": "Password"
   },
   "wallet": {
     "partial_load_error": "Some balances couldn't be loaded. Shown data may be incomplete.",
@@ -553,10 +524,6 @@
       "success_message": "Congratulations!",
       "success_message_body": "Your account is now ready",
       "go_to_my_wallet": "Go to my Account!",
-      "check_derivables": "Check Derivables",
-      "derivable_info_icon": "What is a derivable?",
-      "derivable_info": "What is a derivable?",
-      "derivable_description": "Derivables are \"sub accounts\" born from the same seed phrase. Using cryptography, the seed phrase is combined with a derivation path to create these different accounts. This lets you have as many accounts as you wish under the same seed phrase.",
       "invalidSeed": "Invalid seed phrase",
       "recovery_error": "Failed to recover account. Please check your seed phrase and try again.",
       "recovery_network_error": "Could not reach the server. Check your connection and try again. Your seed phrase is fine.",
@@ -578,16 +545,6 @@
       "recovering_account": "Recovering Account"
     },
     "derived": {
-      "title": "Derived Accounts",
-      "subtitle": "Search for additional accounts derived from your seed phrase.",
-      "searching": "Searching for accounts...",
-      "empty_title": "No Derived Accounts Found",
-      "empty_subtitle": "Could not derive additional accounts from your seed phrase.",
-      "found_one": "Found {{count}} derived account",
-      "found_other": "Found {{count}} derived accounts",
-      "import_selected": "Import selected ({{count}})",
-      "continue": "Continue",
-      "skip": "Skip",
       "scan_failed_title": "Couldn't scan for accounts",
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
       "scan_partial": "Some networks couldn't be scanned. Results may be incomplete.",
@@ -886,9 +843,7 @@
     "partial_error": "Some of your collectibles could not be loaded. Pull to refresh to try again."
   },
   "common": {
-    "cancel": "Cancel",
     "coming_soon": "Coming soon...",
-    "delete": "Delete",
     "no_explorers": "No explorers available for this network"
   },
   "errors": {
@@ -948,12 +903,6 @@
       "no_funds": "This address has no ETH balance",
       "unknown": "Unknown validation error"
     }
-  },
-  "walletSwitcher": {
-    "title": "Your Wallets",
-    "addAccount": "Add New Account",
-    "deleteConfirmTitle": "Delete Account?",
-    "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
   },
   "pending": {
     "send": {
