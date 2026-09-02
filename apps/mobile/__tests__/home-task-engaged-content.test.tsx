@@ -47,9 +47,13 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
-const mockTaskChrome = { isTaskEngaged: false };
+const mockTaskChrome = { isTaskEngaged: false, surfaceKey: 0 };
 jest.mock('../src/contexts/TaskChromeContext', () => ({
-  useTaskChrome: () => ({ isTaskEngaged: mockTaskChrome.isTaskEngaged, setTaskEngaged: jest.fn() }),
+  useTaskChrome: () => ({
+    isTaskEngaged: mockTaskChrome.isTaskEngaged,
+    setTaskEngaged: jest.fn(),
+    surfaceKey: mockTaskChrome.surfaceKey,
+  }),
 }));
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
@@ -300,5 +304,21 @@ describe('home content vs an engaged task', () => {
     const chainWrapper = screen.getByTestId('home-chain-content');
     expect(chainWrapper.props.entering).toBeUndefined();
     expect(chainWrapper.props.exiting).toBeUndefined();
+  });
+
+  it('floats again when the screen surfaces from under the lock overlay', () => {
+    // The overlay leaving bumps the surface count; the content remounts on it
+    // and floats with no beat — the water is clear, nothing sank before it.
+    mockTaskChrome.surfaceKey = 1;
+    const { rerender } = renderScreen(<HomeScreen />);
+    const first = screen.getByTestId('home-content');
+    expect(first.props.entering).toEqual({ verb: 'float', delayMs: 0 });
+
+    mockTaskChrome.surfaceKey = 2;
+    rerender(<HomeScreen />);
+    const second = screen.getByTestId('home-content');
+    expect(second).not.toBe(first);
+    expect(second.props.entering).toEqual({ verb: 'float', delayMs: 0 });
+    mockTaskChrome.surfaceKey = 0;
   });
 });

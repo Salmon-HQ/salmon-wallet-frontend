@@ -59,6 +59,13 @@ export default function AppLayout() {
   );
 
   const isLocked = accountState.locked || unlockHeld;
+  // The screen surfaces each time the overlay leaves — after the unlock wave
+  // has exited — and once on an unlocked mount. Home keys its content on the
+  // count so its float plays when the water is actually clear.
+  const [surfaceKey, setSurfaceKey] = useState(0);
+  useEffect(() => {
+    if (!isLocked) setSurfaceKey((key) => key + 1);
+  }, [isLocked]);
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -146,7 +153,7 @@ export default function AppLayout() {
   );
 
   return (
-    <TaskChromeProvider>
+    <TaskChromeProvider surfaceKey={surfaceKey}>
       {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
           row the tabs layout renders, and every pushed screen draws the
           kit's own `ScreenHeader`. A native header would double up on both.

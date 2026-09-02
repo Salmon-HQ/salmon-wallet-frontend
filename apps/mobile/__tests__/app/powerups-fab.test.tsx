@@ -58,7 +58,11 @@ jest.mock('../../src/contexts/TaskChromeContext', () => {
   return {
     TaskChromeProvider: ({ children }: { children: React.ReactNode }) =>
       ReactActual.createElement(ReactActual.Fragment, null, children),
-    useTaskChrome: () => ({ isTaskEngaged: taskChrome.isTaskEngaged, setTaskEngaged: jest.fn() }),
+    useTaskChrome: () => ({
+      isTaskEngaged: taskChrome.isTaskEngaged,
+      setTaskEngaged: jest.fn(),
+      surfaceKey: 0,
+    }),
   };
 });
 

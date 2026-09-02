@@ -29,14 +29,29 @@ interface TaskChromeContextValue {
    * unmount — a claim left open keeps the shell's chrome off screen.
    */
   setTaskEngaged: (owner: symbol, engaged: boolean) => void;
+  /**
+   * Bumped each time the screen surfaces — the lock overlay leaving after the
+   * unlock wave, or the first unlocked mount. Home keys its content on it so
+   * the float plays when the water clears, not hidden under the overlay
+   * (owner, 2026-09-02: entering Home showed the content already there).
+   */
+  surfaceKey: number;
 }
 
 const TaskChromeContext = createContext<TaskChromeContextValue>({
   isTaskEngaged: false,
   setTaskEngaged: () => {},
+  surfaceKey: 0,
 });
 
-export function TaskChromeProvider({ children }: { children: React.ReactNode }) {
+export function TaskChromeProvider({
+  children,
+  surfaceKey = 0,
+}: {
+  children: React.ReactNode;
+  /** See `TaskChromeContextValue.surfaceKey`; the owner of the overlay counts. */
+  surfaceKey?: number;
+}) {
   const claimsRef = useRef<Set<symbol>>(new Set());
   const [isTaskEngaged, setIsTaskEngaged] = useState(false);
 
@@ -49,7 +64,10 @@ export function TaskChromeProvider({ children }: { children: React.ReactNode }) 
     setIsTaskEngaged(claims.size > 0);
   }, []);
 
-  const value = useMemo(() => ({ isTaskEngaged, setTaskEngaged }), [isTaskEngaged, setTaskEngaged]);
+  const value = useMemo(
+    () => ({ isTaskEngaged, setTaskEngaged, surfaceKey }),
+    [isTaskEngaged, setTaskEngaged, surfaceKey]
+  );
   return <TaskChromeContext.Provider value={value}>{children}</TaskChromeContext.Provider>;
 }
 

@@ -150,7 +150,7 @@ export default function HomeScreen() {
   const { floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
-  const { isTaskEngaged } = useTaskChrome();
+  const { isTaskEngaged, surfaceKey } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
@@ -720,11 +720,20 @@ export default function HomeScreen() {
           never travels with it. */}
       {!isTaskEngaged && (
         <Reanimated.View
+          // Keyed on the surface count: the content remounts — and floats —
+          // when the lock overlay leaves, instead of having floated unseen
+          // under it. Mounted while still locked it owes no verb; the float
+          // belongs to the surfacing.
+          key={surfaceKey}
           testID="home-content"
           style={styles.content}
-          entering={floatEntering(isReduceMotionEnabled, {
-            delayMs: taskHasPrior ? FLOAT_DELAY_MS : 0,
-          })}
+          entering={
+            accountState.locked
+              ? undefined
+              : floatEntering(isReduceMotionEnabled, {
+                  delayMs: taskHasPrior ? FLOAT_DELAY_MS : 0,
+                })
+          }
           exiting={sinkExiting(isReduceMotionEnabled)}
         >
           {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
