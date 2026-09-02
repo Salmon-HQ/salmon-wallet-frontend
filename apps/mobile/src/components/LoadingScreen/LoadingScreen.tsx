@@ -201,8 +201,8 @@ function crestBox(origin: WavefrontPoint) {
  * not the whole disc, and `userSpaceOnUse` makes a gradient offset and a
  * fraction of the front's radius the same number on both platforms.
  */
-function CrestArc({ id, alpha }: { id: string; alpha: number }) {
-  const stops = crestStops(alpha);
+function CrestArc({ id, alpha, color }: { id: string; alpha: number; color: string }) {
+  const stops = crestStops(alpha, color);
   const inner = stops[0].offset;
   const outer = stops[stops.length - 1].offset;
   return (
@@ -263,7 +263,7 @@ export function LoadingScreen({
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { depth, surface, text } = useSemantic();
+  const { depth, surface, accent } = useSemantic();
 
   // Resolve tip keys through t() for i18n
   const resolvedTips = useMemo(() => tips.map((tipKey) => t(tipKey, tipKey)), [tips, t]);
@@ -729,7 +729,7 @@ export function LoadingScreen({
                   crestStyles[index],
                 ]}
               >
-                <CrestArc id={`crest-${index}`} alpha={alpha} />
+                <CrestArc id={`crest-${index}`} alpha={alpha} color={accent.ink} />
               </Animated.View>
             ))}
           </>
@@ -761,10 +761,9 @@ export function LoadingScreen({
               The cluster is centred as one column instead, so the wait's
               content is centred on both axes whatever number of lines the
               caller passes, and the front's origin is still measured from
-              this box rather than assumed. The mark is **white**
-              (`semantic.text.primary`, the same ink as the title below it) and
-              deliberately not the accent: salmon is the ink of *action*, and a
-              wait has no action in it — see DESIGN.md §The wait. */}
+              this box rather than assumed. The mark is the brand accent,
+              `accent.ink`, mode-aware — same as the crest it emits (owner
+              ruling, 2026-09-01, DESIGN.md §The wait). */}
             {waves && (
               <Animated.View
                 style={[styles.emitter, sinkStyle]}
@@ -775,7 +774,7 @@ export function LoadingScreen({
               >
                 <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
                   {markPaths.map((d) => (
-                    <Path key={d} d={d} fill={text.primary} />
+                    <Path key={d} d={d} fill={accent.ink} />
                   ))}
                 </Svg>
               </Animated.View>

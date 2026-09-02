@@ -67,7 +67,7 @@
  * @module motion/crest
  */
 
-import { water } from '../theme/semantic';
+import { semantic } from '../theme/semantic';
 
 // ============================================================================
 // Shape
@@ -202,15 +202,18 @@ export const CREST_DECAY = 0.45;
 export const CREST_FADE_FROM = 0.85;
 
 /**
- * The lit crowns.
+ * The lit crowns' default colour.
  *
- * `water.light`, the cold caustic ink — **not** the brand salmon it was.
- * Product, 2026-08: *"las ondas siguen siendo naranjas."* A salmon ring crossing
- * the screen reads as a brand element travelling; this is light returning off
- * water, so it takes the colour of the material. It is the same ink the press
- * specular uses, which is where DESIGN.md licenses cold light (§The wait).
+ * Owner ruling, 2026-09-01, supersedes the cold-ink argument this constant
+ * used to carry: the crest and the marks on the wait and the lock are the
+ * brand accent in both modes, not `water.light` — see DESIGN.md §The wait.
+ * `accent.ink` is mode-aware (`salmon-500` dark / `salmon-700` light), so a
+ * single module-scope constant can only ever be right for one mode; this
+ * default is dark's. A caller that runs under a live theme (mobile) passes
+ * its own resolved `accent.ink` to {@link crestStops} / {@link crestGradientCSS}
+ * instead of relying on the default.
  */
-export const CREST_LIGHT_COLOR = water.light;
+export const CREST_LIGHT_COLOR = semantic.accent.ink;
 
 /** The shadow lines. */
 export const CREST_SHADOW_COLOR = '#000000';
@@ -251,24 +254,25 @@ export interface CrestStop {
  *
  * @param alpha Overall multiplier — how alive this crest node is (1 for the
  *   leading one, less for any trailing it).
+ * @param lightColor The lit crowns' colour. Defaults to {@link CREST_LIGHT_COLOR}
+ *   (dark's `accent.ink`); a caller under a live theme passes its own
+ *   resolved colour so the crest follows the mode.
  */
-export function crestStops(alpha = 1): CrestStop[] {
+export function crestStops(alpha = 1, lightColor: string = CREST_LIGHT_COLOR): CrestStop[] {
   const inner = 1 - CREST_BAND;
   const foot = CREST_BAND * CREST_FOOT;
   const start = inner + foot;
   const spacing = (CREST_BAND - 2 * foot) / CREST_RINGS;
   const half = spacing * CREST_FALLOFF;
 
-  const stops: CrestStop[] = [
-    { offset: inner, color: CREST_LIGHT_COLOR, opacity: 0, role: 'foot' },
-  ];
+  const stops: CrestStop[] = [{ offset: inner, color: lightColor, opacity: 0, role: 'foot' }];
   // The lift decays with its ring like everything else: a calm level that stayed
   // put while the crowns faded would eventually sit *above* the outer crowns,
   // and a ring dimmer than the water around it is a groove, not a crest.
   const lift = (offset: number, decay: number) => {
     stops.push({
       offset,
-      color: CREST_LIGHT_COLOR,
+      color: lightColor,
       opacity: CREST_LIFT_ALPHA * decay * alpha,
       role: 'lift',
     });
@@ -293,14 +297,14 @@ export function crestStops(alpha = 1): CrestStop[] {
     lift(crown - half, decay);
     stops.push({
       offset: crown,
-      color: CREST_LIGHT_COLOR,
+      color: lightColor,
       opacity: CREST_LIGHT_ALPHA * decay * alpha,
       role: 'crown',
     });
     lift(crown + half, decay);
   }
 
-  stops.push({ offset: 1, color: CREST_LIGHT_COLOR, opacity: 0, role: 'foot' });
+  stops.push({ offset: 1, color: lightColor, opacity: 0, role: 'foot' });
   return stops;
 }
 
@@ -331,8 +335,8 @@ export function crestTrain(): { lag: number; alpha: number }[] {
  * gradient itself is never animated, so the layer is rasterised once and the
  * front stays on the compositor.
  */
-export function crestGradientCSS(alpha = 1): string {
-  const stops = crestStops(alpha)
+export function crestGradientCSS(alpha = 1, lightColor: string = CREST_LIGHT_COLOR): string {
+  const stops = crestStops(alpha, lightColor)
     .map(({ offset, color, opacity }) => `${rgba(color, opacity)} ${(offset * 100).toFixed(2)}%`)
     .join(', ');
   // `closest-side` on a square box puts the gradient's 100% exactly on the

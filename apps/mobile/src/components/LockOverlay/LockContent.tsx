@@ -451,6 +451,9 @@ export function LockContent({
                 that separates the fish from the title (owner decision, 2026-08-18).
               */
               variant="lock"
+              // Coral, not white (owner ruling, 2026-09-01): the lock's mark
+              // is the brand accent, mode-aware.
+              markColor={semantic.accent.ink}
               title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
               body={
                 /*
