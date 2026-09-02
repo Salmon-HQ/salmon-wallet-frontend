@@ -729,7 +729,7 @@ export function LoadingScreen({
                   crestStyles[index],
                 ]}
               >
-                <CrestArc id={`crest-${index}`} alpha={alpha} color={accent.ink} />
+                <CrestArc id={`crest-${index}`} alpha={alpha} color={accent.fill} />
               </Animated.View>
             ))}
           </>
@@ -762,7 +762,7 @@ export function LoadingScreen({
               content is centred on both axes whatever number of lines the
               caller passes, and the front's origin is still measured from
               this box rather than assumed. The mark is the brand accent,
-              `accent.ink`, mode-aware — same as the crest it emits (owner
+              `accent.fill`, the button's own salmon in both modes — same as the crest it emits (owner
               ruling, 2026-09-01, DESIGN.md §The wait). */}
             {waves && (
               <Animated.View
@@ -774,7 +774,7 @@ export function LoadingScreen({
               >
                 <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
                   {markPaths.map((d) => (
-                    <Path key={d} d={d} fill={accent.ink} />
+                    <Path key={d} d={d} fill={accent.fill} />
                   ))}
                 </Svg>
               </Animated.View>

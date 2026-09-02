@@ -453,7 +453,7 @@ export function LockContent({
               variant="lock"
               // Coral, not white (owner ruling, 2026-09-01): the lock's mark
               // is the brand accent, mode-aware.
-              markColor={semantic.accent.ink}
+              markColor={semantic.accent.fill}
               title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
               body={
                 /*

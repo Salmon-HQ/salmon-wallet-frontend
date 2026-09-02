@@ -96,7 +96,7 @@ export default function WelcomeScreen() {
         <View testID="welcome-brand-mark">
           {/* The fish at the door is the brand accent, as it is on the lock and
               the wait (owner, 2026-09-02). */}
-          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.ink} />
+          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />
         </View>
       }
       /*

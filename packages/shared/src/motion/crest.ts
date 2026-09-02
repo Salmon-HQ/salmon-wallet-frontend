@@ -207,13 +207,12 @@ export const CREST_FADE_FROM = 0.85;
  * Owner ruling, 2026-09-01, supersedes the cold-ink argument this constant
  * used to carry: the crest and the marks on the wait and the lock are the
  * brand accent in both modes, not `water.light` — see DESIGN.md §The wait.
- * `accent.ink` is mode-aware (`salmon-500` dark / `salmon-700` light), so a
- * single module-scope constant can only ever be right for one mode; this
- * default is dark's. A caller that runs under a live theme (mobile) passes
- * its own resolved `accent.ink` to {@link crestStops} / {@link crestGradientCSS}
- * instead of relying on the default.
+ * `accent.fill` is the button's own salmon, invariant across modes (owner,
+ * 2026-09-02: the fish and the waves are the colour of the buttons, not the
+ * darker text ink light uses for AA). A caller under a live theme may still
+ * pass its own colour to {@link crestStops} / {@link crestGradientCSS}.
  */
-export const CREST_LIGHT_COLOR = semantic.accent.ink;
+export const CREST_LIGHT_COLOR = semantic.accent.fill;
 
 /** The shadow lines. */
 export const CREST_SHADOW_COLOR = '#000000';

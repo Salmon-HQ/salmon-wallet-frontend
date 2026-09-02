@@ -321,7 +321,7 @@ const Subtitle = styled('div')({
 /**
  * The emitter. The mark was removed with the spinning ring and is back by
  * decision, not by drift: without a visible source a radial front reads as
- * unrelated elements twitching. It is the brand accent — `semantic.accent.ink`
+ * unrelated elements twitching. It is the brand accent — `semantic.accent.fill`
  * — same as the crest it emits (owner ruling, 2026-09-01, DESIGN.md §The wait).
  *
  * It **sinks**; it does not pulse. See `sinkKeyframes`.
@@ -340,7 +340,7 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: semantic.accent.ink,
+  color: semantic.accent.fill,
   // Not stopped on close: the front in flight is left to finish crossing, and
   // the ground has faded before the next emission is due.
   // The per-step curves live inside the keyframes (fast in, slow out), so the
@@ -374,7 +374,7 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
  * This is a light event during a wait, which §Overview used to forbid outright
  * ("one light event"). That rule has been amended in DESIGN.md rather than
  * quietly broken here: the ring is now the one event the system allows. The
- * light is still rationed — `semantic.accent.ink` at low alpha (owner ruling,
+ * light is still rationed — `semantic.accent.fill` at low alpha (owner ruling,
  * 2026-09-01: the crest is the brand accent, not the cold caustic ink it used
  * to be), alive only while the wait is, travelling outward and down, and gone
  * before the receipt mounts.
@@ -391,7 +391,7 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>
     width: 'var(--wave-ring, 0px)',
     height: 'var(--wave-ring, 0px)',
     borderRadius: '50%',
-    background: crestGradientCSS($alpha, semantic.accent.ink),
+    background: crestGradientCSS($alpha, semantic.accent.fill),
     opacity: 0,
     pointerEvents: 'none',
     transform: 'translate(-50%, -50%) scale(0)',

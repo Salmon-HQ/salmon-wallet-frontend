@@ -53,7 +53,7 @@ export default function SuccessScreen() {
         door's own size — this screen mirrors welcome, only the copy differs.
         Only success — the other flow screens keep their icons.
       */
-      mark={<BrandMark size={onboardingIdentityGridFull.markSize} color={accent.ink} />}
+      mark={<BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />}
       title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
       description={
         <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>
