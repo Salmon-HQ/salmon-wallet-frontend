@@ -765,8 +765,9 @@ export default function HomeScreen() {
         // Surfaces WITH the content, as its sibling: the header's own
         // chrome-scale float plays at the same moment as `home-content`'s,
         // never nested inside it (owner, 2026-09-02 — the header used to hold
-        // still while the screen came back).
-        key={surfaceKey}
+        // still while the screen came back). Prefixed: it shares the parent
+        // with `home-content`, and two siblings cannot carry the same key.
+        key={`header-${surfaceKey}`}
         accountName={activeAccount?.name || t('wallet.unnamed_account', 'Account')}
         address={activeBlockchainAccount?.getReceiveAddress() || ''}
         onCopyAddress={handleHeaderCopyAddress}
