@@ -146,6 +146,8 @@ vi.mock('@salmon/shared', () => {
       screenTop: 12,
     },
     fontSize: { sm: 14, base: 16, lg: 18, xl: 20 },
+    componentSizes: { sheetFadeGradientHeight: 30 },
+    useTheme: () => ({ preference: 'system', setPreference: vi.fn() }),
     isWatchOnlyAccount: () => false,
     AddressbookError: class AddressbookError extends Error {},
     getBlockchainFromNetworkId: (id: string) => id.split('-')[0],

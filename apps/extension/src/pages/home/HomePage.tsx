@@ -19,7 +19,10 @@ import {
   getNetworkLabel,
   colors,
   spacing,
+  componentSizes,
   fontSize,
+  useTheme,
+  type AppearancePreference,
   type SettingsPanelEntry,
   type BlockchainBalance,
   type BlockchainId,
@@ -83,6 +86,7 @@ import {
   SendPage,
   NftSendDialog,
   ExplorerSelector,
+  AppearanceSelector,
   LanguageSelector,
   TrustedAppsSelector,
   SupportSelector,
@@ -164,7 +168,8 @@ const BottomFadeGradient = styled(Box)({
   left: 0,
   right: 0,
   bottom: 0,
-  // No `componentSizes` token fits this fade's height.
+  // No `componentSizes` token fits this fade's height (mobile's shell uses the
+  // same 180 in `(tabs)/_layout.tsx`).
   height: 180,
   background:
     'linear-gradient(to bottom, var(--sw-water-fadeBottom-0), var(--sw-water-fadeBottom-1))',
@@ -217,7 +222,7 @@ const TopSeamFade = styled(Box)({
   top: 0,
   left: 0,
   right: 0,
-  height: 30,
+  height: componentSizes.sheetFadeGradientHeight,
   background: 'linear-gradient(to bottom, var(--sw-water-fadeTop-0), var(--sw-water-fadeTop-1))',
   pointerEvents: 'none',
   zIndex: 1,
@@ -294,6 +299,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
   const [{ currency }, { changeCurrency }] = useCurrencyContext();
+  // The stored appearance preference — the same context the provider reads,
+  // so a pick here re-themes the panel at once (mobile's `panelRegistry`).
+  const { preference: appearancePreference, setPreference: setAppearancePreference } = useTheme();
   const {
     ready,
     activeAccount,
@@ -1085,6 +1093,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           />
         );
       },
+      appearance: ({ onBack }) => (
+        <AppearanceSelector
+          activePreference={appearancePreference}
+          onSelectPreference={(pref: AppearancePreference) => {
+            void setAppearancePreference(pref);
+          }}
+          onBack={onBack}
+        />
+      ),
       about: ({ onBack }) => <AboutPanel onBack={onBack} />,
       support: ({ onBack }) => (
         <SupportSelector
@@ -1259,6 +1276,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [
       currency,
       changeCurrency,
+      appearancePreference,
+      setAppearancePreference,
       supportedLanguages,
       currentLanguage,
       setLanguage,
@@ -1400,8 +1419,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   return (
     <Container data-testid="home-screen">
       {/* The ground, mounted once behind every screen: a depth ramp darkening
-          toward the abyss, the deep field the marine snow is read through, and
-          the bottom fade that ends on the ramp's own floor. */}
+          toward the abyss, the scales over it, and the bottom fade that ends
+          on the ramp's own floor. */}
       <DepthBackground style={{ zIndex: 0 }} />
       <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
       <BottomFadeGradient />

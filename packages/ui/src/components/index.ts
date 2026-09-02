@@ -161,11 +161,11 @@ export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 export { Thermocline } from './Thermocline';
 export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 
-// DepthBackground - the water column's ground: depth ramp plus marine snow
+// DepthBackground - the water column's ground: the depth ramp
 export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';
 
-// WaterColumn - the ground the whole app stands in: ramp, snow, deep field
+// WaterColumn - the ground the whole app stands in: ramp, deep field
 export { WaterColumn, waterColumnHost } from './WaterColumn';
 
 // FleshBackground - the myoseptal texture inside a salmon fill
@@ -366,6 +366,9 @@ export { ExplorerSelector } from './ExplorerSelector';
 
 // LanguageSelector - Language selection for settings
 export { LanguageSelector } from './LanguageSelector';
+
+// AppearanceSelector - System / Light / Dark for settings
+export { AppearanceSelector } from './AppearanceSelector';
 
 // TrustedAppsSelector - Connected dApps management for settings
 export { TrustedAppsSelector } from './TrustedAppsSelector';

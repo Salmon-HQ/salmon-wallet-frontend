@@ -9,6 +9,7 @@ export {
   AddressAddPanel,
   AddressBookPanel,
   AddressEditPanel,
+  AppearanceSelector,
   BackupPanel,
   DerivedAccountsSheet,
   ConfirmDialog,

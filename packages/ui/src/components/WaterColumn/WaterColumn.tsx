@@ -2,7 +2,7 @@
  * WaterColumn — the app ground, everywhere it is allowed to be.
  *
  * The two layers that make the ground water rather than a colour: the depth
- * ramp plus marine snow (`DepthBackground`), and the deep field of scales
+ * ramp (`DepthBackground`), and the deep field of scales
  * (`ScalesBackground variant="deepField"`) read against it. They were mounted
  * as a pair on the home ground of each app; they are a pair everywhere,
  * because the motif belongs to the water and not to a screen. What changes

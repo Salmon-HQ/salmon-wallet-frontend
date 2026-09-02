@@ -18,7 +18,6 @@ const DARK_SNAPSHOT = {
     gradient: ['#10131C', '#070911'],
     fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
     fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
-    snow: 'rgba(199, 211, 232, 0.09)',
     light: '#9FE0EF',
     crestShadow: { color: '#070911', alpha: 0.9 },
   },

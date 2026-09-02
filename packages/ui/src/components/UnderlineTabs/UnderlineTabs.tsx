@@ -276,7 +276,11 @@ export function UnderlineTabs({
                   fontFamily: fontFamily.sans,
                   fontWeight: isActive ? fontWeight.bold : fontWeight.semibold,
                   fontSize: metrics.font,
-                  lineHeight: metrics.font * lineHeight.snug,
+                  // With a unit: React treats a bare number here as a
+                  // multiplier of the font size, which made every tab
+                  // `font × snug` lines tall and pushed the underline a
+                  // screen below its label (side panel, 2026-09-02).
+                  lineHeight: `${metrics.font * lineHeight.snug}px`,
                   letterSpacing: metrics.letterSpacing,
                   textTransform: metrics.uppercase ? 'uppercase' : 'none',
                   color: isActive ? t.text.primary : t.text.secondary,

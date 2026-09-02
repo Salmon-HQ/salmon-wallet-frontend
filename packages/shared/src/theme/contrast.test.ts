@@ -70,7 +70,7 @@ const MOTIF_CEILING = 1.4;
  * sits on whichever end of the ramp the app is reading (spec 021).
  *
  * The blocks that stay dark-only below are the ones whose subject is the dark
- * material itself — the membrane tiers, the water column and its snow, the
+ * material itself — the membrane tiers, the water column, the
  * two-band focus ring, the bezel. Those are re-tuned in the light material
  * pass; asserting them against light tokens today would assert a mode that
  * does not render.
@@ -469,8 +469,8 @@ describe('contrast: component-owned focus borders', () => {
 });
 
 /**
- * The water column: the ground's depth ramp and the marine snow suspended in
- * it. Two separate guarantees, and they fail in opposite directions.
+ * The water column: the ground's depth ramp, and the deep field of scales read
+ * against it.
  *
  * The **ramp** is a background colour, so the danger is that it drops text
  * below AA somewhere along its length. It cannot: both stops are neutrals and
@@ -478,11 +478,9 @@ describe('contrast: component-owned focus borders', () => {
  * the top clears it by more at the bottom. Asserted rather than assumed,
  * because someone will eventually want a lighter floor.
  *
- * The **snow** is a motif, so the danger is the opposite — that it climbs
- * until it reads as content. DESIGN.md caps any non-informational stroke at
- * 1.4:1, and every floc in `depthField.ts` is a multiplier ≤ 1 on this one
- * token (asserted in `depthField.test.ts`), so pinning the token pins the
- * whole field.
+ * The **scales** are a motif, so the danger is the opposite — that they climb
+ * until they read as content. DESIGN.md caps any non-informational stroke at
+ * 1.4:1.
  */
 describe('contrast: the water column', () => {
   /** Straight alpha in sRGB — what both renderers actually do. */
@@ -500,13 +498,6 @@ describe('contrast: the water column', () => {
   };
 
   const [rampTop, rampFloor] = water.gradient;
-  /**
-   * Read out of `water.snow` rather than restated. A copy of the alpha here
-   * goes stale silently the first time the token is tuned, and then this
-   * suite is asserting the ceiling against a value nothing renders.
-   */
-  const SNOW_HEX = '#C7D3E8';
-  const SNOW_ALPHA = Number(/,\s*([\d.]+)\s*\)/.exec(water.snow)?.[1]);
 
   it('the ramp starts on the ground the apps already paint', () => {
     // A different top stop would seam against every header, overlay and sheet
@@ -532,22 +523,9 @@ describe('contrast: the water column', () => {
     });
   }
 
-  it('the brightest floc stays decoration on the lightest ground it can land on', () => {
-    const over = composite(SNOW_HEX, rampTop, SNOW_ALPHA);
-    expect(contrast(over, rampTop)).toBeLessThan(MOTIF_CEILING);
-  });
-
-  it('and on the darkest, where the ratio is highest', () => {
-    const over = composite(SNOW_HEX, rampFloor, SNOW_ALPHA);
-    expect(contrast(over, rampFloor)).toBeLessThan(MOTIF_CEILING);
-  });
-
-  it('the deep field it frames is under the same ceiling', () => {
-    // Sanity: the snow is meant to sit beside the scales, not out-read them.
+  it('the deep field is under the motif ceiling', () => {
     const scalesOver = composite('#C7D3E8', depth.column, 0.03);
-    const snowOver = composite(SNOW_HEX, depth.column, SNOW_ALPHA);
     expect(contrast(scalesOver, depth.column)).toBeLessThan(MOTIF_CEILING);
-    expect(contrast(snowOver, depth.column)).toBeLessThan(MOTIF_CEILING);
   });
 
   it('the deep field stays under the ceiling at the floor it fades to', () => {

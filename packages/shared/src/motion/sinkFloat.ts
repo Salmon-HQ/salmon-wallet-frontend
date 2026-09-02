@@ -40,8 +40,8 @@
  * a **named tunable** calibrated by eye on device, with its band recorded
  * beside it.
  *
- * Beer–Lambert light: opacity is not linear in time. `depthField` computes a
- * floc's opacity as `exp(−μ·depth)`, so the entering opacity runs on the
+ * Beer–Lambert light: opacity is not linear in time. Transmittance through a
+ * scattering medium decays as `exp(−μ·depth)`, so the entering opacity runs on the
  * accelerating `sink` bezier — the vocabulary's closest curve to that
  * exponential — while the travel runs on `settle`. The light returns late and
  * fast; the arrival is heavily damped. Sinking is the mirror.

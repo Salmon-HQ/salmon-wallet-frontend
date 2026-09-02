@@ -136,4 +136,18 @@ describe('UnderlineTabs', () => {
     fireEvent.wheel(scroller, { deltaX: 40 });
     expect(scroller.scrollLeft).toBe(0);
   });
+
+  it('gives a tab a line height in pixels, not a bare multiplier', () => {
+    // A unitless number is a multiplier of the font size on the DOM: each
+    // tab became `font × snug` lines tall and the underline sat a screen
+    // below its label. The row must hug the text.
+    stubDom();
+    renderInMode(
+      'dark',
+      <UnderlineTabs tabs={TABS} activeKey="portfolio" onChange={vi.fn()} tabTestIDPrefix="tab" />
+    );
+
+    const tab = screen.getByTestId('tab-portfolio') as HTMLButtonElement;
+    expect(tab.style.lineHeight).toMatch(/^\d+(\.\d+)?px$/);
+  });
 });

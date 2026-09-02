@@ -16,6 +16,7 @@ import {
   AddressBookIcon,
   CaretRightIcon,
   ChartLineUpIcon,
+  CircleHalfIcon,
   CodeIcon,
   CompassIcon,
   CurrencyDollarIcon,
@@ -86,6 +87,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   language: <GlobeIcon />,
   currency: <CurrencyDollarIcon />,
   explorer: <CompassIcon />,
+  appearance: <CircleHalfIcon />,
   addressBook: <AddressBookIcon />,
   trustedApps: <PlugsConnectedIcon />,
   developerNetworks: <CodeIcon />,
@@ -114,6 +116,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
       { id: 'language', labelKey: 'settings.display_language', type: 'navigation' },
       { id: 'currency', labelKey: 'settings.currency', type: 'navigation' },
       { id: 'explorer', labelKey: 'settings.explorer', type: 'navigation' },
+      { id: 'appearance', labelKey: 'settings.appearance', type: 'navigation' },
     ],
   },
   {

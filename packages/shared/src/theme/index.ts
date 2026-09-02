@@ -75,33 +75,6 @@ export type {
   OnboardingVariant,
 } from './onboardingGrid';
 
-// Marine snow geometry — the water column's suspended matter, as data both
-// platforms draw. The DOM serialises it; mobile draws the array directly.
-export {
-  depthDrift,
-  depthFieldCycleMs,
-  depthFieldTile,
-  depthFieldTileHeight,
-  marineSnow,
-  marineSnowTiled,
-  marineSnowSvg,
-  wrapDepthOffset,
-} from './depthField';
-export type { SnowFloc } from './depthField';
-
-// Blizzard variant — the same field with heroes, a mid-field lift, and
-// clustering. Renderers pick a variant through their debug switches.
-export {
-  blizzard,
-  blizzardClusterCenters,
-  blizzardHeroes,
-  blizzardMidFlocs,
-  blizzardSnow,
-  blizzardSnowSvg,
-  blizzardSnowTiled,
-} from './depthFieldBlizzard';
-export type { HeroFloc } from './depthFieldBlizzard';
-
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
 export { fleshTile, fleshFills } from './flesh';
 export type { FleshFill } from './flesh';
