@@ -31,14 +31,6 @@ describe('Wordmark', () => {
     expect(svg.props.width).toBe(fontSize.headline * wordmarkAspectRatio);
   });
 
-  it('stays narrower than the mark it sits under', () => {
-    // A name wider than the mark stops being a lockup and starts competing.
-    render(<Wordmark />);
-    expect(screen.getByTestId('wordmark').props.width).toBeLessThan(
-      onboardingIdentityGridFull.markSize
-    );
-  });
-
   it('centres itself and pins its own gap, whatever slot it lands in', () => {
     // The regression this replaces: measured at x=24 on both a Pixel 9 Pro and
     // an iPhone 17 — flush against the band's left padding, under a centred

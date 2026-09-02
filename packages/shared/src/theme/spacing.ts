@@ -208,6 +208,12 @@ export const componentSizes = {
   avatarProfileMax: 180,
 
   // Logo
+  /**
+   * 96px - The brand mark wherever it IS the screen: the wait's emitter, the
+   * lock, welcome, success and the password door. One size on both platforms
+   * (owner, 2026-09-02: the doors take the wait's mark, not a larger one).
+   */
+  markHero: 96,
   logoSizeLarge: 137,
   logoSizeMedium: 120,
   logoSizeSmall: 80,

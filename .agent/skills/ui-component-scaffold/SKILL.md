@@ -56,3 +56,7 @@ Report findings with file paths and specific recommendations for each violation.
 ## Test labels
 
 Any interactive DOM component must follow the `e2e-test-labels` skill: thread a `testID?` prop (forwarded to `data-testid`), keep the correct implicit role, and add `aria-label` on icon-only controls so Playwright/Maestro can select it without CSS or text matching.
+
+## Twins and the parity gate
+
+Every `packages/ui` component that mobile also draws is one half of a pair (`AGENTS.md` §Twins). Before finishing: the DOM `types.ts` `extends` the shared `XPropsBase` (not merely imports it); mobile's twin builds on the same base; any size/colour/spacing both share is a token in `packages/shared/src/theme`, not a literal; nothing reads static `semantic`/`colors`, MUI or hex. A DOM component with no mobile twin is listed in `scripts/check-dom-parity.mjs` `DOM_ONLY` with its reason. Run `pnpm check:parity` — it is strict in CI.

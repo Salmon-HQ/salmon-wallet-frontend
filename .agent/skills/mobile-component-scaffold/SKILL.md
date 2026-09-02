@@ -65,3 +65,7 @@ Report findings with file paths and concrete recommendations.
 ## Test labels
 
 Any interactive RN component must follow the `e2e-test-labels` skill: accept/forward `testID`, and set `accessibilityRole`, `accessibilityLabel` (defaulting to the visible text), and `accessibilityState` for disabled/loading so Maestro can select it by `id` without relying on copy.
+
+## Twins and the parity gate
+
+Every `apps/mobile/src/components` component and every `apps/mobile/app` route is one half of a pair with the extension (`AGENTS.md` §Twins). Before finishing: mobile's `types.ts` `extends` the shared `XPropsBase` (not merely imports it) and the component imports its props from `./types`; the DOM twin in `packages/ui` builds on the same base and gets the same change; any size/colour/spacing both share is a token in `packages/shared/src/theme`, not a literal. A mobile-only component or route is listed in `scripts/check-dom-parity.mjs` `MOBILE_ONLY` / `MOBILE_ONLY_SCREENS` with its reason. Run `pnpm check:parity` — it is strict in CI.

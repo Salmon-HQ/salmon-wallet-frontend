@@ -88,6 +88,7 @@ import {
   WAVEFRONT_SINK_MS,
   type Semantic,
   type WavefrontPoint,
+  componentSizes,
 } from '@salmon/shared';
 
 import { LoadingScreenProps } from './types';
@@ -127,7 +128,7 @@ const MARK_SINK_DIM = 0.12;
  * middle of the phone and bigger*, because the origin of a radial front is the
  * one thing on a wait screen that may not be off-centre.
  */
-const MARK_SIZE = 96;
+const MARK_SIZE = componentSizes.markHero;
 /** Clear space between the mark's edge and the first word under it. */
 const MARK_TO_WORDS = spacing['3xl'];
 

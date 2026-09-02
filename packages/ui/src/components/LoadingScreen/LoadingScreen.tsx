@@ -88,6 +88,7 @@ import {
   WAVEFRONT_PERIOD_MS,
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
+  componentSizes,
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -282,7 +283,7 @@ const Cluster = styled('div')<{ $waveOut: boolean }>(({ $waveOut }) => ({
 }));
 
 /** Diameter of the mark that emits the wave, px. */
-const MARK_SIZE = 96;
+const MARK_SIZE = componentSizes.markHero;
 
 /** Clear space between the mark's edge and the first word under it. */
 const MARK_TO_WORDS = spacing['3xl'];

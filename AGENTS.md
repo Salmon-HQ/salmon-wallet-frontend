@@ -131,6 +131,32 @@ full-repo run):
 Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 `@salmon/extension`.
 
+- DOM parity: `pnpm check:parity` (strict in CI) after any change under
+  `apps/mobile/src/components`, `apps/mobile/app`, `packages/ui` or
+  `packages/shared/src/types/ui`; `pnpm check:parity:report` to read
+  findings without failing.
+
+## Twins — the extension is the mobile app on the DOM
+
+Every kit component and every screen exists twice — once in React Native
+(`apps/mobile`), once on the DOM (`packages/ui`, `apps/extension`) — on one
+contract. A change to one twin is a change to both; a visual decision taken
+on one platform is taken on both, from the same token. Rules a change must
+keep, and `scripts/check-dom-parity.mjs` enforces:
+
+- One contract per pair in `packages/shared/src/types/ui` (`XPropsBase`);
+  each platform's `types.ts` **extends** it and the component imports its
+  props from `./types`. Importing the base without building on it does not
+  count.
+- A new mobile component or route with no DOM twin fails CI until it has one,
+  or until it is listed in the script's `MOBILE_ONLY` / `MOBILE_ONLY_SCREENS`
+  with the reason it never will; `DOM_ONLY` the other way round. Those maps
+  are the only place a platform difference may live.
+- DOM code reads the live mode through `useSemantic()` — no static
+  `semantic` / `colors` import, no MUI, no hex, no `mode ===` in a component.
+- A size, colour or spacing both twins share is a token in
+  `packages/shared/src/theme`, never a literal repeated in two files.
+
 ## Testing rules
 
 - Prioritize functional tests over UI/UX tests — business logic bugs in a

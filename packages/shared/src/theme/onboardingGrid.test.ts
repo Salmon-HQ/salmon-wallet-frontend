@@ -109,18 +109,16 @@ describe('the onboarding slot grid', () => {
     expect(grid.action).toBe(spacing.lg + componentSizes.buttonHeight + spacing['2xl']);
   });
 
-  it('the mark-led families draw it large — it is the screen, not a badge on it', () => {
-    // Welcome, unlock and the password screen. The first pass drew it at 80
-    // and it read as a small mark floating above an enormous void.
-    expect(onboardingIdentityGridFull.markSize).toBe(componentSizes.logoSizeLarge + spacing['4xl']);
-    expect(onboardingIdentityGridFull.markSize).toBe(177);
+  it("the mark-led families draw it at the wait's size — one fish on every identity moment", () => {
+    // Welcome, unlock and the password screen share the wait screen's mark
+    // (owner, 2026-09-02); before that they drew it at 177.
+    expect(onboardingIdentityGridFull.markSize).toBe(componentSizes.markHero);
+    expect(onboardingIdentityGridFull.markSize).toBe(96);
     expect(onboardingIdentityGridFull.mark).toBe(
       onboardingIdentityGridFull.markSize + spacing['2xl']
     );
-    // Substantially larger than the first pass, not a nudge.
-    expect(onboardingIdentityGridFull.markSize).toBeGreaterThan(
-      2 * onboardingContentGridFull.markSize
-    );
+    // Still the largest mark in the flow — content keeps its small one.
+    expect(onboardingIdentityGridFull.markSize).toBeGreaterThan(onboardingContentGridFull.markSize);
     // `credential` is the same front door with a field on it.
     expect(onboardingCredentialGridFull.markSize).toBe(onboardingIdentityGridFull.markSize);
     expect(onboardingCredentialGridFull.mark).toBe(onboardingIdentityGridFull.mark);
@@ -142,7 +140,7 @@ describe('the onboarding slot grid', () => {
     expect(onboardingIdentityGridFull.body).toBe(onboardingCredentialGridFull.body);
     expect(onboardingIdentityGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingContentGridFull.description).toBe(2 * 24 + spacing['2xl']);
-    expect(onboardingIdentityGridFull.stack).toBe(817);
+    expect(onboardingIdentityGridFull.stack).toBe(736);
   });
 
   it('the lock collapses its empty description so title→input equals fish→title', () => {
