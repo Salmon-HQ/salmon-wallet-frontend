@@ -90,7 +90,7 @@ export const wordmarkToSvg = (fill: string, width?: number): string => {
  * cleanup), which now re-exports these same values — `apps/web` and
  * `apps/extension` still read `colors.palette` directly.
  */
-export const chainMarks = {
+const chainMarkHues = {
   orange: '#FF5C45',
   green: '#10B981',
   purple: '#8B5CF6',
@@ -99,6 +99,25 @@ export const chainMarks = {
   pink: '#EC4899',
   cyan: '#06B6D4',
   indigo: '#6366F1',
+} as const;
+
+export const chainMarks = {
+  ...chainMarkHues,
+  /**
+   * Which of the hues above each chain answers to — the one place a chain
+   * name is turned into a colour, so two surfaces cannot pick different
+   * ambers for Bitcoin. No new hue is minted here: Bitcoin takes `amber`,
+   * Solana `purple`, Ethereum `indigo`.
+   *
+   * A hue is not a legibility guarantee. Whether a given surface may spend
+   * one on *text* is decided in `semantic.ts` (`chain.hintInk` /
+   * `chain.hintArrowInk`), per mode, against that mode's own ground.
+   */
+  byChain: {
+    bitcoin: chainMarkHues.amber,
+    solana: chainMarkHues.purple,
+    ethereum: chainMarkHues.indigo,
+  },
 } as const;
 
 export type ChainMarks = typeof chainMarks;

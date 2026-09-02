@@ -98,13 +98,35 @@ const DARK_SNAPSHOT = {
   sheet: { handle: '#8B96AD' },
   step: { active: '#FF5C45', inactive: '#58637B' },
   scanner: { ground: '#070911', frame: '#161C2D', corner: '#8B96AD', hint: '#A7B1C4' },
+  chain: {
+    hintInk: {
+      bitcoin: '#F59E0B',
+      solana: '#A7B1C4',
+      ethereum: '#A7B1C4',
+      'bitcoin-testnet': '#F59E0B',
+      'solana-devnet': '#A7B1C4',
+      'ethereum-sepolia': '#A7B1C4',
+    },
+    hintArrowInk: {
+      bitcoin: '#F59E0B',
+      solana: '#8B5CF6',
+      ethereum: '#6366F1',
+      'bitcoin-testnet': '#F59E0B',
+      'solana-devnet': '#8B5CF6',
+      'ethereum-sepolia': '#6366F1',
+    },
+  },
 };
 
 /** Every leaf as `group.token`, so two modes can be diffed path by path. */
 const flatten = (tokens: Record<string, Record<string, unknown>>): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(tokens).flatMap(([group, entries]) =>
-      Object.entries(entries).map(([name, value]) => [`${group}.${name}`, String(value)])
+      // `JSON.stringify` rather than `String`: a group whose leaves are
+      // themselves records — `chain.*`, keyed by chain — collapses to
+      // "[object Object]" under `String`, and two modes that really differ
+      // would compare equal.
+      Object.entries(entries).map(([name, value]) => [`${group}.${name}`, JSON.stringify(value)])
     )
   );
 
@@ -199,6 +221,8 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'border.default',
         'border.hairline',
         'border.strong',
+        'chain.hintArrowInk',
+        'chain.hintInk',
         'change.negative',
         'change.neutral',
         'change.positive',

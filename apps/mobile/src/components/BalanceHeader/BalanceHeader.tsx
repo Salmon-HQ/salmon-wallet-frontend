@@ -36,7 +36,7 @@ import {
   vs,
   type Semantic,
 } from '@salmon/shared';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityActionEvent,
@@ -56,8 +56,16 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
-import { timing } from '../../utils/motion';
-import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
+import { curve, timing } from '../../utils/motion';
+import {
+  DRAG_FOLLOW,
+  FLOAT_DELAY_MS,
+  LATERAL_SWAP_TRAVEL,
+  SINK_EXIT_SCALE,
+  SINK_FLOAT_TRAVEL,
+  floatEntering,
+  sinkExiting,
+} from '../../utils/sinkAndFloat';
 import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { PendingValue } from '../PendingValue';
@@ -153,12 +161,26 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 }) => {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text, change } = useSemantic();
+  const { text, change, chain } = useSemantic();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const [internalIndex, setInternalIndex] = React.useState(0);
   const activeIndex = controlledIndex ?? internalIndex;
 
   const isReduceMotionEnabled = useReducedMotion();
+
+  // The amount answers the finger; nothing else in the block does.
+  // `dragX` is the amount's horizontal position — under the finger during a
+  // drag, and the axis its exit and the next chain's arrival both ride.
+  // `sinkProgress` is how far along the gesture is, 0 at rest and 1 at the
+  // commit distance: the amount loses its light on it and the 24h change
+  // plays the sink *in place* on it, so one gesture drives both.
+  const dragX = useSharedValue(0);
+  const sinkProgress = useSharedValue(0);
+
+  // Leaving accelerates (`sink`); arriving and springing back come to rest
+  // (`settle`). Both on `drift`, the beat the dots already travel on.
+  const leaveTiming = timing(motionMs.drift, isReduceMotionEnabled, curve.sink);
+  const arriveTiming = timing(motionMs.drift, isReduceMotionEnabled, curve.settle);
 
   const updateIndex = useCallback(
     (newIndex: number) => {
@@ -173,38 +195,112 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     [blockchains, onBlockchainChange, controlledIndex]
   );
 
+  /**
+   * Send the amount off the edge it is heading for, and change the chain when
+   * it gets there. One verb for every chain change that is not a finger — a
+   * dot, an assistive increment — so a tap and a swipe arrive the same way.
+   *
+   * `'worklet'` because the pan's `onEnd` calls it on the UI thread; a press
+   * calls the same function on the JS thread, where writing a shared value is
+   * equally legal.
+   */
+  const leaveFor = (newIndex: number) => {
+    'worklet';
+    const direction = newIndex > activeIndex ? -1 : 1;
+    // Never walk the value back: a long drag is already further out than the
+    // exit distance, and the exit only has to finish what the finger started.
+    const target = direction * Math.max(Math.abs(dragX.value), LATERAL_SWAP_TRAVEL);
+    sinkProgress.value = withTiming(1, leaveTiming);
+    dragX.value = withTiming(target, leaveTiming, (finished) => {
+      if (finished) runOnJS(updateIndex)(newIndex);
+    });
+  };
+
+  // The arrival is the horizontal mirror of the exit: the new amount starts at
+  // the opposite edge with no light and comes back to rest gaining it, and the
+  // change un-sinks and floats. Run from an effect rather than from the
+  // callback above so the new value is already committed when it starts —
+  // otherwise the old number would be the one sliding in.
+  const enteredIndex = useRef(activeIndex);
+  useEffect(() => {
+    if (enteredIndex.current === activeIndex) return;
+    const fromRight = activeIndex > enteredIndex.current;
+    enteredIndex.current = activeIndex;
+    sinkProgress.value = 0;
+    dragX.value = fromRight ? LATERAL_SWAP_TRAVEL : -LATERAL_SWAP_TRAVEL;
+    dragX.value = withTiming(0, arriveTiming);
+  }, [activeIndex, arriveTiming, dragX, sinkProgress]);
+
   // Swipes are invisible to assistive tech, so the balance exposes
-  // increment/decrement the way the carousel's logo group did.
-  const handleAccessibilityAction = useCallback(
-    (event: AccessibilityActionEvent) => {
-      const { actionName } = event.nativeEvent;
-      if (actionName === 'increment' && activeIndex < blockchains.length - 1) {
-        updateIndex(activeIndex + 1);
-      } else if (actionName === 'decrement' && activeIndex > 0) {
-        updateIndex(activeIndex - 1);
-      }
-    },
-    [activeIndex, blockchains.length, updateIndex]
-  );
+  // increment/decrement the way the carousel's logo group did — and it leaves
+  // on the same slide a finger would have given it. Not memoised: it closes
+  // over `leaveFor`, which is rebuilt every render by design, and the Text it
+  // hangs on is not a memoised child.
+  const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    const { actionName } = event.nativeEvent;
+    if (actionName === 'increment' && activeIndex < blockchains.length - 1) {
+      leaveFor(activeIndex + 1);
+    } else if (actionName === 'decrement' && activeIndex > 0) {
+      leaveFor(activeIndex - 1);
+    }
+  };
 
   // The swipe is the same gesture and the same commit distance the carousel
-  // used, but the block no longer travels with the finger. Sliding the whole
-  // thing off-screen took the label, the dots, the History pill and the two
-  // money circles with it — a frame's worth of furniture moving to report a
-  // number change (owner, first device run). The frame holds still; only the
-  // values inside it swap, on the verb.
+  // used. What travels with the finger is the amount and only the amount:
+  // sliding the whole block off-screen took the label, the dots, the History
+  // pill and the two money circles with it — a frame's worth of furniture
+  // moving to report a number change (owner, first device run) — and holding
+  // everything still made the gesture answerless. The frame holds; the number
+  // answers the finger, with resistance and losing its light as it goes.
   // Horizontal only. Unconstrained, the block now sits inside the NFTs
   // SectionList header and claimed vertical drags too, so a scroll started on
   // the balance went nowhere.
   const panGesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
     .failOffsetY([-10, 10])
+    .onUpdate((event) => {
+      // Reduce motion: the gesture still commits, it just does not travel.
+      if (isReduceMotionEnabled) return;
+      // A drag toward a chain that is not there moves nothing — the same rule
+      // the hint follows, in the same direction.
+      const reachable =
+        event.translationX < 0 ? activeIndex < blockchains.length - 1 : activeIndex > 0;
+      dragX.value = reachable ? event.translationX * DRAG_FOLLOW : 0;
+      sinkProgress.value = reachable
+        ? Math.min(1, Math.abs(event.translationX) / SWIPE_THRESHOLD)
+        : 0;
+    })
     .onEnd((event) => {
       const goNext = event.translationX < -SWIPE_THRESHOLD && activeIndex < blockchains.length - 1;
       const goPrevious = event.translationX > SWIPE_THRESHOLD && activeIndex > 0;
-      if (!goNext && !goPrevious) return;
-      runOnJS(updateIndex)(activeIndex + (goNext ? 1 : -1));
+      if (!goNext && !goPrevious) {
+        // Short of the threshold nothing changed, so nothing swaps: the amount
+        // springs back to rest and the change un-sinks on the same beat.
+        dragX.value = withTiming(0, arriveTiming);
+        sinkProgress.value = withTiming(0, arriveTiming);
+        return;
+      }
+      leaveFor(activeIndex + (goNext ? 1 : -1));
     });
+
+  // The amount's light falls with distance the way the sink's does — slow,
+  // then fast — rather than linearly with the drag.
+  const amountStyle = useAnimatedStyle(() => ({
+    opacity: 1 - sinkProgress.value * sinkProgress.value,
+    transform: [{ translateX: dragX.value }],
+  }));
+
+  // The 24h change never moves sideways — it has neighbours on both sides and
+  // would collide with them. It plays the sink *in place* instead, the same
+  // drop, recession and loss of light `sinkExiting` draws, driven by the drag
+  // rather than by a clock.
+  const changeSinkStyle = useAnimatedStyle(() => ({
+    opacity: 1 - sinkProgress.value * sinkProgress.value,
+    transform: [
+      { translateY: sinkProgress.value * SINK_FLOAT_TRAVEL },
+      { scale: 1 - sinkProgress.value * (1 - SINK_EXIT_SCALE) },
+    ],
+  }));
 
   const current = blockchains[activeIndex];
   const currentBlockchainId = current?.network.blockchain ?? 'solana';
@@ -229,6 +325,11 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const hintChain = nextChain ?? previousChain;
   const hintSymbol = hintChain ? NETWORK_DISPLAY[hintChain.network.id]?.symbol : undefined;
   const hintArrow = nextChain ? '→' : '←';
+  // The hint takes the destination chain's own hue — a second channel on a cue
+  // that already reads without it. Whether the symbol may spend the hue or
+  // only the arrow glyph may is decided per mode in the tokens, against that
+  // mode's ground; the component never asks which mode it is in.
+  const hintBlockchain = hintChain?.network.blockchain ?? currentBlockchainId;
 
   // The value swap: everything that reports the active chain is keyed on it,
   // so a switch remounts exactly those nodes and the sink/float plays in
@@ -260,6 +361,15 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     exiting: chainSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined,
   };
 
+  // The change is the one value whose sink has already been played by the
+  // time it swaps — the gesture sank it in place on the way out (see
+  // `changeSinkStyle`), so the keyed node owes only the float, and owes it
+  // with no beat: the amount's own exit was the beat. Handing it a second
+  // `exiting` here would sink the old value twice.
+  const changeMotion = {
+    entering: chainSwap.hasPrior ? floatEntering(isReduceMotionEnabled) : undefined,
+  };
+
   return (
     <GestureDetector gesture={panGesture}>
       <View style={[styles.container, style]} testID={testID}>
@@ -286,11 +396,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
           {/* The value stays readable while it is being recalculated — the
               number breathes, it is never replaced by a placeholder. */}
-          <Animated.View
-            key={`amount-${currentBlockchainId}`}
-            testID="balance-amount"
-            {...swapMotion}
-          >
+          <Animated.View testID="balance-amount" style={amountStyle}>
             <PendingValue pending={loading}>
               <Text
                 style={styles.balance}
@@ -308,22 +414,26 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
           <View style={styles.changeRow}>
             <Animated.View
-              key={`change-${currentBlockchainId}`}
-              testID="balance-change"
-              style={styles.changeText}
-              {...swapMotion}
+              testID="balance-change-sink"
+              style={[styles.changeText, changeSinkStyle]}
             >
-              <PendingValue pending={loading}>
-                <Text
-                  style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
-                >
-                  {hiddenBalance
-                    ? `${hiddenValue} · ${hiddenValue}`
-                    : hasChange
-                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
-                      : EM_DASH}
-                </Text>
-              </PendingValue>
+              <Animated.View
+                key={`change-${currentBlockchainId}`}
+                testID="balance-change"
+                {...changeMotion}
+              >
+                <PendingValue pending={loading}>
+                  <Text
+                    style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
+                  >
+                    {hiddenBalance
+                      ? `${hiddenValue} · ${hiddenValue}`
+                      : hasChange
+                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
+                        : EM_DASH}
+                  </Text>
+                </PendingValue>
+              </Animated.View>
             </Animated.View>
             <Chip
               testID="home-activity-button"
@@ -349,7 +459,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
                     name: chain.network.name,
                   })}
-                  onPress={() => index !== activeIndex && updateIndex(index)}
+                  onPress={() => index !== activeIndex && leaveFor(index)}
                 />
               ))}
               {hintSymbol && (
@@ -358,7 +468,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   testID="balance-next-hint"
                   {...swapMotion}
                 >
-                  <Text style={styles.nextHint}>{`${hintArrow} ${hintSymbol}`}</Text>
+                  <Text style={styles.nextHint}>
+                    <Text
+                      style={{ color: chain.hintArrowInk[hintBlockchain] }}
+                    >{`${hintArrow} `}</Text>
+                    <Text style={{ color: chain.hintInk[hintBlockchain] }}>{hintSymbol}</Text>
+                  </Text>
                 </Animated.View>
               )}
             </View>

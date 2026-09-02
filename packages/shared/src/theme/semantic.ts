@@ -26,6 +26,7 @@
  * Works for both React Native (Expo) and Web (WXT+Vite extension).
  */
 
+import { chainMarks } from './brand';
 import { danger, neutral, salmon, success, warning } from './palette';
 import { withAlpha } from './withAlpha';
 
@@ -592,6 +593,61 @@ export function createSemantic(mode: ThemeMode) {
     hint: neutral[300],
   } as const;
 
+  /**
+   * Chain identity where it has to be *read* rather than recognised.
+   *
+   * §Chain identity says identity is a mark or a labelled chip, never a tint.
+   * The balance block's next-chain hint — "→ BTC", "← SOL" — is the one place
+   * a chain's own hue is allowed on type, and only because the text is
+   * already saying the whole thing: the hue is a second channel on a cue that
+   * reads without it, never the channel itself.
+   *
+   * A hue only gets the type if it earns it on this mode's ground. Measured
+   * (`contrast.test.ts`) against the worst of `depth.column` and both stops of
+   * `water.gradient`:
+   *
+   * | hue            | dark        | light       |
+   * | -------------- | ----------- | ----------- |
+   * | amber (BTC)    | 8.64–9.26   | 1.89–2.02   |
+   * | purple (SOL)   | 4.38–4.70   | 3.74–3.98   |
+   * | indigo (ETH)   | 4.15–4.45   | 3.94–4.20   |
+   *
+   * So exactly one cell clears AA for text: amber on dark. Everywhere else
+   * the **symbol keeps `text.secondary` and only the arrow glyph takes the
+   * hue** — a glyph is a non-text mark and is held to 1.4.11's 3:1 instead.
+   * Amber in light does not clear even that (1.89:1), so light Bitcoin spends
+   * no hue at all: an arrow the user cannot see is not a cue, and the arrow
+   * is the half of the hint that carries the direction.
+   */
+  /**
+   * A test network reads as its mainnet: which chain you are on is the
+   * question the hue answers, and *which environment* is the chip's job
+   * (§Chain identity). One entry per `BlockchainId` so no consumer has to
+   * strip a suffix before it can ask for a colour.
+   */
+  const perNetwork = <T>(byChain: { solana: T; bitcoin: T; ethereum: T }) =>
+    ({
+      ...byChain,
+      'solana-devnet': byChain.solana,
+      'bitcoin-testnet': byChain.bitcoin,
+      'ethereum-sepolia': byChain.ethereum,
+    }) as const;
+
+  const chain = {
+    /** The hint's symbol — the hue only where it clears AA on this ground. */
+    hintInk: perNetwork({
+      bitcoin: pick({ dark: chainMarks.byChain.bitcoin, light: text.secondary }),
+      solana: text.secondary,
+      ethereum: text.secondary,
+    }),
+    /** The hint's arrow glyph — the hue wherever it clears the 3:1 floor. */
+    hintArrowInk: perNetwork({
+      bitcoin: pick({ dark: chainMarks.byChain.bitcoin, light: text.secondary }),
+      solana: chainMarks.byChain.solana,
+      ethereum: chainMarks.byChain.ethereum,
+    }),
+  } as const;
+
   return {
     depth,
     water,
@@ -610,6 +666,7 @@ export function createSemantic(mode: ThemeMode) {
     sheet,
     step,
     scanner,
+    chain,
   } as const;
 }
 
@@ -646,4 +703,5 @@ export const {
   sheet,
   step,
   scanner,
+  chain,
 } = semantic;

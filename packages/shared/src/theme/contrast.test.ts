@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { chainMarks } from './brand';
 import { neutral, salmon } from './palette';
 import { AVATAR_COLORS } from '../types/settings';
 import {
@@ -840,5 +841,59 @@ describe('contrast: the bezel', () => {
     // the glyph box, and the shade is `Math.abs(offsetY)` pixels tall.
     const clearance = (componentSizes.buttonHeight - fontSize.bodyLg) / 2;
     expect(clearance).toBeGreaterThan(Math.abs(insets[1].offsetY));
+  });
+});
+
+/**
+ * The next-chain hint's hue — the balance block's "→ BTC" / "← SOL".
+ *
+ * §Chain identity allows a chain's own hue here because the cue is already
+ * saying the whole thing in text; the hue is a second channel, never the
+ * channel. What that costs is measured, per mode, against every ground the
+ * hint can sit on: the app's `depth.column` and both stops of the water ramp
+ * it is painted over. The symbol is text (1.4.3, 4.5:1); the arrow is a glyph
+ * carrying the direction (1.4.11, 3:1).
+ *
+ * The measured worst cases, which are why the fallbacks below are not
+ * hypothetical: amber 8.64 dark / 1.89 light, purple 4.38 / 3.74, indigo
+ * 4.15 / 3.94. Exactly one of the six clears AA for text — amber on dark —
+ * and amber in light misses even the glyph floor, so light Bitcoin spends no
+ * hue at all.
+ */
+describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
+  const grounds = [
+    ['depth.column', tokens.depth.column],
+    ['water.gradient top', tokens.water.gradient[0]],
+    ['water.gradient bottom', tokens.water.gradient[1]],
+  ] as const;
+
+  /** The hue only earns a ground if it earns the worst of them. */
+  const worst = (hue: string) => Math.min(...grounds.map(([, ground]) => contrast(hue, ground)));
+
+  for (const [chainName, hue] of Object.entries(chainMarks.byChain) as [
+    keyof typeof chainMarks.byChain,
+    string,
+  ][]) {
+    it(`${chainName}: the symbol takes the hue only where it clears AA`, () => {
+      const ink = tokens.chain.hintInk[chainName];
+      expect(ink).toBe(worst(hue) >= AA_TEXT ? hue : tokens.text.secondary);
+      for (const [, ground] of grounds) {
+        expect(contrast(ink, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      }
+    });
+
+    it(`${chainName}: the arrow takes the hue only where it clears the glyph floor`, () => {
+      const ink = tokens.chain.hintArrowInk[chainName];
+      expect(ink).toBe(worst(hue) >= AA_NON_TEXT ? hue : tokens.text.secondary);
+      for (const [, ground] of grounds) {
+        expect(contrast(ink, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      }
+    });
+  }
+
+  it('a test network reads as its mainnet', () => {
+    expect(tokens.chain.hintInk['bitcoin-testnet']).toBe(tokens.chain.hintInk.bitcoin);
+    expect(tokens.chain.hintArrowInk['solana-devnet']).toBe(tokens.chain.hintArrowInk.solana);
+    expect(tokens.chain.hintArrowInk['ethereum-sepolia']).toBe(tokens.chain.hintArrowInk.ethereum);
   });
 });

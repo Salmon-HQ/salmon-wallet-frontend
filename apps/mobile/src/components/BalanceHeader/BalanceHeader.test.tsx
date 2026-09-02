@@ -12,6 +12,10 @@ import { render, fireEvent, within } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  // The motion constants are real too: the drag geometry is arithmetic on
+  // them, and a mocked-away `DRAG_FOLLOW` would make every travel assertion
+  // below read `NaN` and pass for the wrong reason.
+  ...jest.requireActual('@salmon/shared/src/motion'),
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
@@ -61,8 +65,16 @@ jest.mock('react-native-reanimated', () => {
     // (0 under reduce motion, via `resolveMotionMs`).
     useReducedMotion: jest.fn(() => false),
     useSharedValue: (value: unknown) => ReactActual.useRef({ value }).current,
-    useAnimatedStyle: () => ({}),
-    withTiming: jest.fn((toValue: unknown) => toValue),
+    // Run the worklet at render, so a test can read the style the component
+    // actually computes from its shared values rather than an empty object.
+    useAnimatedStyle: (factory: () => unknown) => factory(),
+    // The chain change is reported from `withTiming`'s completion callback —
+    // the amount finishes leaving, and only then does the chain change. A
+    // mock that dropped the callback would report no chain change at all.
+    withTiming: jest.fn((toValue: unknown, _config: unknown, callback?: (f: boolean) => void) => {
+      callback?.(true);
+      return toValue;
+    }),
     withRepeat: (animation: unknown) => animation,
     Easing: { bezier: () => () => 0, linear: () => 0 },
     runOnJS: (fn: unknown) => fn,
@@ -113,7 +125,15 @@ jest.mock('../../../hooks/usePressMotion', () => ({
   }),
 }));
 
-import { motionMs } from '@salmon/shared';
+import { Dimensions, Text } from 'react-native';
+
+import {
+  DRAG_FOLLOW,
+  LATERAL_SWAP_TRAVEL,
+  SINK_FLOAT_TRAVEL,
+  motionMs,
+  semantic,
+} from '@salmon/shared';
 import { useReducedMotion, withTiming } from 'react-native-reanimated';
 
 import { BalanceHeader } from './BalanceHeader';
@@ -125,6 +145,9 @@ beforeEach(() => {
   mockUseReducedMotion.mockReturnValue(false);
   mockWithTiming.mockClear();
 });
+
+/** `Dimensions.get('window').width * 0.25`, the block's own commit distance. */
+const SWIPE_THRESHOLD = Dimensions.get('window').width * 0.25;
 
 const BLOCKCHAINS = [
   {
@@ -249,35 +272,239 @@ describe('BalanceHeader value swap', () => {
     // animation on first mount, an in-page tab change on the SAME chain looked
     // exactly like a chain switch (owner, on device).
     const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(view.getByTestId('balance-amount').props.entering).toBeUndefined();
+    expect(view.getByTestId('balance-change').props.entering).toBeUndefined();
+    expect(view.getByTestId('balance-next-hint').props.entering).toBeUndefined();
 
     // A remount with the same chain is a fresh component: still no float.
     view.unmount();
     const remounted = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(remounted.getByTestId('balance-amount').props.entering).toBeUndefined();
+    expect(remounted.getByTestId('balance-change').props.entering).toBeUndefined();
 
     // The chain actually changing is the one event that owes the gesture.
     remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    expect(remounted.getByTestId('balance-amount').props.entering).toBeDefined();
+    expect(remounted.getByTestId('balance-change').props.entering).toBeDefined();
+    expect(remounted.getByTestId('balance-next-hint').props.entering).toBeDefined();
   });
 
-  it('gates the sink on the same condition as the float, so the verb is never half played', () => {
+  it("gates the hint's sink on the same condition as its float", () => {
     // Symmetry (DESIGN.md rule 3): arriving undoes exactly what leaving did.
     // An ungated `exiting` meant a sub-tab change — which unmounts this whole
     // block — sank the values with nothing floating back, half a verb.
     const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    for (const id of ['balance-amount', 'balance-change', 'balance-next-hint']) {
-      expect(view.getByTestId(id).props.exiting).toBeUndefined();
-    }
+    expect(view.getByTestId('balance-next-hint').props.exiting).toBeUndefined();
 
     view.unmount();
     const remounted = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(remounted.getByTestId('balance-amount').props.exiting).toBeUndefined();
+    expect(remounted.getByTestId('balance-next-hint').props.exiting).toBeUndefined();
 
     remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    const swapped = remounted.getByTestId('balance-amount');
-    expect(swapped.props.entering).toBeDefined();
-    expect(swapped.props.exiting).toBeDefined();
+    const hint = remounted.getByTestId('balance-next-hint');
+    expect(hint.props.entering).toBeDefined();
+    expect(hint.props.exiting).toBeDefined();
+  });
+
+  it('owes the change a float and never a second sink', () => {
+    // The change sinks on the gesture, in place, while the amount travels —
+    // so by the time the value swaps it has already left. A keyed `exiting`
+    // here would sink the outgoing number twice.
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+
+    const change = view.getByTestId('balance-change');
+    expect(change.props.entering).toBeDefined();
+    expect(change.props.exiting).toBeUndefined();
+  });
+});
+
+/** Every `transform` entry in a style, however deeply the arrays nest. */
+const transformsOf = (style: unknown): Record<string, number>[] => {
+  const flat = (Array.isArray(style) ? style.flat(Infinity) : [style]) as (
+    { transform?: Record<string, number>[] } | undefined
+  )[];
+  return flat.flatMap((entry) => entry?.transform ?? []);
+};
+
+const hasKey = (style: unknown, key: string): boolean =>
+  transformsOf(style).some((entry) => key in entry);
+
+const drag = (translationX: number) =>
+  (panConfig.onUpdate as (event: { translationX: number }) => void)({ translationX });
+
+const release = (translationX: number) =>
+  (panConfig.onEnd as (event: { translationX: number }) => void)({ translationX });
+
+describe('BalanceHeader amount travel', () => {
+  it('moves the amount with the finger and nothing else in the block', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    drag(-60);
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    expect(transformsOf(view.getByTestId('balance-amount').props.style)).toContainEqual({
+      translateX: -60 * DRAG_FOLLOW,
+    });
+
+    // Rule one: the frame holds still. Nothing else may carry the drag.
+    for (const id of [
+      'balance-carousel-dot-0',
+      'balance-carousel-dot-1',
+      'balance-next-hint',
+      'home-activity-button',
+      'home-send-button',
+      'home-receive-button',
+      'balance-change',
+      'balance-change-sink',
+    ]) {
+      expect(hasKey(view.getByTestId(id).props.style, 'translateX')).toBe(false);
+    }
+  });
+
+  it('sinks the 24h change in place as the amount travels', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    drag(-SWIPE_THRESHOLD);
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    // At the commit distance the sink is fully played: the full drop, and the
+    // light gone. It has still not moved sideways (asserted above).
+    const sink = view.getByTestId('balance-change-sink');
+    expect(transformsOf(sink.props.style)).toContainEqual({ translateY: SINK_FLOAT_TRAVEL });
+    expect(
+      (sink.props.style as { opacity?: number }[]).flat(Infinity).some((s) => s?.opacity === 0)
+    ).toBe(true);
+  });
+
+  it('does not travel toward a chain that is not there', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    // Index 0: there is nothing to the left, so a rightward drag moves nothing.
+    drag(120);
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    expect(transformsOf(view.getByTestId('balance-amount').props.style)).toContainEqual({
+      translateX: 0,
+    });
+  });
+
+  it('springs back and changes nothing when the drag stops short', () => {
+    const onBlockchainChange = jest.fn();
+    render(
+      <BalanceHeader
+        blockchains={BLOCKCHAINS}
+        activeIndex={0}
+        onBlockchainChange={onBlockchainChange}
+      />
+    );
+
+    drag(-20);
+    release(-20);
+
+    expect(onBlockchainChange).not.toHaveBeenCalled();
+  });
+
+  it('changes the chain once, on the right index, when the drag passes the threshold', () => {
+    const onBlockchainChange = jest.fn();
+    render(
+      <BalanceHeader
+        blockchains={BLOCKCHAINS}
+        activeIndex={0}
+        onBlockchainChange={onBlockchainChange}
+      />
+    );
+
+    release(-(SWIPE_THRESHOLD + 1));
+
+    expect(onBlockchainChange).toHaveBeenCalledTimes(1);
+    expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
+  });
+
+  it('leaves by the edge it is heading for, and comes back from the other one', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    mockWithTiming.mockClear();
+    release(-(SWIPE_THRESHOLD + 1));
+    // Heading left, so it finishes leaving to the left.
+    expect(mockWithTiming).toHaveBeenCalledWith(
+      -LATERAL_SWAP_TRAVEL,
+      expect.anything(),
+      expect.any(Function)
+    );
+
+    // Going the other way is the same verb with the sign flipped.
+    const back = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    mockWithTiming.mockClear();
+    release(SWIPE_THRESHOLD + 1);
+    expect(mockWithTiming).toHaveBeenCalledWith(
+      LATERAL_SWAP_TRAVEL,
+      expect.anything(),
+      expect.any(Function)
+    );
+    back.unmount();
+
+    // And the arrival lands the amount back at rest on the same axis.
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    expect(transformsOf(view.getByTestId('balance-amount').props.style)).toContainEqual({
+      translateX: 0,
+    });
+  });
+
+  it('commits without animating when reduce motion is on', () => {
+    mockUseReducedMotion.mockReturnValue(true);
+    const onBlockchainChange = jest.fn();
+    const view = render(
+      <BalanceHeader
+        blockchains={BLOCKCHAINS}
+        activeIndex={0}
+        onBlockchainChange={onBlockchainChange}
+      />
+    );
+
+    drag(-120);
+    release(-(SWIPE_THRESHOLD + 1));
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    // A second pass, so the style is read after the arrival effect has run.
+    view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+
+    // The chain still changes; the amount never travelled, and every clock the
+    // block spent resolved to zero.
+    expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
+    expect(transformsOf(view.getByTestId('balance-amount').props.style)).toContainEqual({
+      translateX: 0,
+    });
+    for (const call of mockWithTiming.mock.calls) {
+      expect((call[1] as { duration: number }).duration).toBe(0);
+    }
+  });
+});
+
+describe('BalanceHeader next-chain hint', () => {
+  const inks = (view: ReturnType<typeof render>) => {
+    const [, arrow, symbol] = within(view.getByTestId('balance-next-hint')).UNSAFE_getAllByType(
+      Text
+    );
+    return {
+      arrow: (arrow.props.style as { color: string }).color,
+      symbol: (symbol.props.style as { color: string }).color,
+    };
+  };
+
+  it('takes the destination chain hue from the tokens, never from a literal', () => {
+    // Bitcoin's amber clears AA on the deep ground, so the whole hint takes it.
+    const toBitcoin = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    expect(inks(toBitcoin)).toEqual({
+      arrow: semantic.chain.hintArrowInk.bitcoin,
+      symbol: semantic.chain.hintInk.bitcoin,
+    });
+
+    // Solana's purple does not, so only the arrow glyph spends the hue and the
+    // symbol keeps `text.secondary` — the token decides, not the component.
+    const toSolana = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    expect(inks(toSolana)).toEqual({
+      arrow: semantic.chain.hintArrowInk.solana,
+      symbol: semantic.chain.hintInk.solana,
+    });
+    expect(inks(toSolana).symbol).toBe(semantic.text.secondary);
   });
 });
 

@@ -65,6 +65,22 @@ import { motionMs } from '../theme/durations';
 export const SINK_FLOAT_TRAVEL = 8;
 
 /**
+ * How much of a finger's travel a value under the finger actually takes. Below
+ * 1 the value lags the drag, which is what reads as resistance — water, not a
+ * page turning. Band 0.4–0.8: at 1 the value is stuck to the finger and the
+ * gesture has no cost; under ~0.4 it stops answering at all.
+ */
+export const DRAG_FOLLOW = 0.6;
+
+/**
+ * How far a value travels sideways to leave, and the distance its replacement
+ * arrives from — one number, because arriving is exactly the mirror of
+ * leaving. Far enough to be a departure rather than a nudge; the light is
+ * already out before it gets there, so it never has to reach a real edge.
+ */
+export const LATERAL_SWAP_TRAVEL = 64;
+
+/**
  * Where the incoming content arrives from — small → full, an arrival *from*
  * depth, the exact mirror of {@link SINK_EXIT_SCALE} so the two halves ride
  * one continuous Z axis. Band 0.88–0.93: above ~0.93 the depth is too subtle
