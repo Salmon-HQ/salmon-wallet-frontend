@@ -14,7 +14,7 @@ export { IconDefaults, iconSize } from './icons';
 export type { IconComponent, IconSizeToken } from './icons';
 
 // Theme
-export { createSalmonTheme, salmonTheme, salmonThemeFor } from './theme';
+export { focusRing, focusRingNone, focusRingOnWrapper } from './theme';
 export {
   SalmonThemeProvider,
   useSemantic,
@@ -33,7 +33,6 @@ export { TaskChromeProvider, useTaskChrome } from './contexts/TaskChromeContext'
 export type { TaskChromeContextValue } from './contexts/TaskChromeContext';
 
 // Utilities
-export { styled } from './utils/styled';
 export { visuallyHidden } from './utils/visuallyHidden';
 export { injectKeyframes } from './utils/injectKeyframes';
 export { usePressed } from './utils/usePressed';

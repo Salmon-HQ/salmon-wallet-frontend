@@ -16,8 +16,8 @@
  * Internal to `packages/ui` — not exported from the public barrel.
  */
 import type { CSSProperties, ReactNode } from 'react';
+import styled from '@emotion/styled';
 import { motionDuration, motionEasing, reducedMotion } from '@salmon/shared';
-import { styled } from '../../utils/styled';
 
 export interface CopyTickProps {
   /** True while the "Copied" confirmation is showing. */
@@ -35,7 +35,9 @@ const Stack = styled('span')({
   lineHeight: 0,
 });
 
-const Layer = styled('span')<{ $visible: boolean }>(({ $visible }) => ({
+const Layer = styled('span', { shouldForwardProp: (prop) => prop !== '$visible' })<{
+  $visible: boolean;
+}>(({ $visible }) => ({
   gridArea: '1 / 1',
   display: 'inline-flex',
   alignItems: 'center',

@@ -16,7 +16,6 @@ import {
   useAccountsContext,
   useAddressBookForm,
   useAddressValidation,
-  type AddressAddPanelPropsBase,
   type BlockchainType,
   type Semantic,
 } from '@salmon/shared';
@@ -27,6 +26,7 @@ import type { QRScanResult } from '../../QRScanner';
 import { RecipientInput } from '../../Send';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import type { AddressAddPanelProps } from './types';
 
 // ============================================================================
 // Component
@@ -38,7 +38,7 @@ export function AddressAddPanel({
   activeBlockchain,
   onSave,
   onBack,
-}: AddressAddPanelPropsBase) {
+}: AddressAddPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();

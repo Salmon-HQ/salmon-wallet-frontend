@@ -8,11 +8,12 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type AppearancePreference, type AppearanceSelectorPropsBase } from '@salmon/shared';
+import { type AppearancePreference } from '@salmon/shared';
 import { CircleHalfIcon, MoonIcon, SunIcon, iconSize } from '../../../icons';
 import { IconBubble, type IconGlyphProps } from '../../IconBubble';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import type { AppearanceSelectorProps } from './types';
 
 // ============================================================================
 // Component
@@ -33,7 +34,7 @@ export function AppearanceSelector({
   activePreference,
   onSelectPreference,
   onBack,
-}: AppearanceSelectorPropsBase) {
+}: AppearanceSelectorProps) {
   const { t } = useTranslation();
 
   const options: AppearanceOption[] = useMemo(

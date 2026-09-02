@@ -20,11 +20,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
-
 vi.mock('../SettingsPanelContent', () => ({
   SettingsPanelContent: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));

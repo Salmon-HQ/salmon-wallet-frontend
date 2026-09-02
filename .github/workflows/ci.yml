@@ -48,10 +48,14 @@ jobs:
       - name: i18n parity (en/es keys, orphans)
         run: node scripts/check-i18n.mjs
 
-      # Ratchet while spec 028 lot 4 is open: counts may only fall. Drop the
-      # flag when the baseline reaches zero and the check becomes strict.
+      # The extension is the mobile app on the DOM (spec 028): live-mode tokens
+      # only, one twin per kit component, one contract per pair, one DOM screen
+      # per mobile route. Strict since 2026-09-02; the script's own fixtures
+      # run first so the gate cannot silently stop catching things.
       - name: DOM parity (extension = mobile on the DOM)
-        run: node scripts/check-dom-parity.mjs --ratchet
+        run: |
+          node --test scripts/check-dom-parity.test.mjs
+          node scripts/check-dom-parity.mjs
 
   pr-title:
     name: conventional PR title

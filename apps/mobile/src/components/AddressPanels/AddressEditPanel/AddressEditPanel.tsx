@@ -15,7 +15,6 @@ import {
   useAccountsContext,
   useAddressBookForm,
   useAddressValidation,
-  type AddressEditPanelPropsBase,
   type BlockchainType,
   type Semantic,
 } from '@salmon/shared';
@@ -26,6 +25,7 @@ import type { QRScanResult } from '../../QRScanner';
 import { RecipientInput } from '../../Send';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import type { AddressEditPanelProps } from './types';
 
 // ============================================================================
 // Component
@@ -36,7 +36,7 @@ export function AddressEditPanel({
   activeBlockchain: _activeBlockchain,
   onSave,
   onBack,
-}: AddressEditPanelPropsBase) {
+}: AddressEditPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();

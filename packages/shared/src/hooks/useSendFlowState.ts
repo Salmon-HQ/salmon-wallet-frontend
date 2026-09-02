@@ -1,22 +1,22 @@
 /**
- * The send flow's state — mobile's `SendFlowContext`, as a hook.
+ * The send flow's state — one implementation for the four send screens on
+ * every platform.
  *
- * Mobile mounts the state in a provider above four routes; the DOM mounts
- * one component stepping through the same four, so the same state sits in a
- * hook that component owns. What it holds is byte-for-byte the provider's:
- * the default token (the chain's own asset), the live balance re-read from
- * the reactive list, the fee estimated once per (token, recipient) pair, and
- * `submit`, which is the sheet's `submitSend` moved up a level.
+ * Mobile mounts it in a provider above four routes (`SendFlowProvider`); the
+ * DOM mounts one component stepping through the same four (`SendPage`) and
+ * calls it directly. What it holds is the same on both: the default token
+ * (the chain's own asset), the live balance re-read from the reactive list,
+ * the fee estimated once per (token, recipient) pair, and `submit`, which is
+ * the sheet's `submitSend` moved up a level.
+ *
+ * It owns no platform: the account, the chain and the token list come in as
+ * params; haptics, routing and keyboards stay with the caller.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  SOL_CONSTANTS,
-  useSendTransaction,
-  type BlockchainAccount,
-  type BlockchainType,
-  type SendRecipient,
-  type SendToken,
-} from '@salmon/shared';
+import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
+import type { SendRecipient, SendToken } from '../types/ui/send-sheet';
+import { SOL_CONSTANTS } from '../utils/balance';
+import { useSendTransaction } from './useSendTransaction';
 
 /** Reads a token balance the way every send surface has always read it. */
 function toNumber(value: number | string | undefined): number | undefined {
@@ -58,12 +58,15 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
   );
 
   // The fee, held against the pair it was measured on: Solana charges per
-  // signature, so the estimate does not move with the amount being typed.
+  // signature, so the estimate does not move with the amount being typed. The
+  // pair changing drops the estimate rather than showing yesterday's number.
   const [fee, setFee] = useState<{ key: string; value: string } | null>(null);
   const feeRequestedFor = useRef<string | null>(null);
   const feeKey = token && recipient ? `${token.address}:${recipient.address}` : null;
   const estimatedFee = fee && fee.key === feeKey ? fee.value : null;
 
+  // The estimate is not keyed on the amount, but the call still carries one,
+  // so the latest is kept beside the request rather than in its closure.
   const amountRef = useRef(amount);
   useEffect(() => {
     amountRef.current = amount;
@@ -83,6 +86,8 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
         resolvedRecipientAddress: recipient.resolvedAddress,
         amount: parseFloat(amountRef.current),
       });
+      // A failed estimate releases the key so the next screen can try again;
+      // the hook's own `feeEstimateFailed` is what surfaces the failure.
       if (result) setFee({ key: feeKey, value: result.fee });
       else if (feeRequestedFor.current === feeKey) feeRequestedFor.current = null;
     })();

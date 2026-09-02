@@ -104,7 +104,7 @@ docs/
 | **UI**        | React 19.1          | React 19.1         | React 19.2 / React Native 0.83.6 |
 | **Framework** | Vite 7              | WXT 0.20           | Expo SDK 55                      |
 | **Routing**   | react-router-dom 7  | react-router-dom 7 | expo-router 55                   |
-| **Styling**   | MUI 7 + Emotion     | MUI 7 + Emotion    | react-native-paper 5             |
+| **Styling**   | Emotion + tokens    | Emotion + tokens   | react-native-paper 5             |
 | **Testing**   | Vitest + Playwright | Vitest             | Jest + Maestro                   |
 
 **Monorepo tooling:** pnpm Workspaces · Turborepo · ESLint 9

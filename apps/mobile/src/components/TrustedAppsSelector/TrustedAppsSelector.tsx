@@ -11,22 +11,18 @@ import { Image, View, StyleSheet } from 'react-native';
 import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
-import {
-  type TrustedAppsSelectorPropsBase,
-  type TrustedAppItem,
-  type Semantic,
-  spacing,
-} from '@salmon/shared';
+import { type TrustedAppItem, type Semantic, spacing } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
+import type { TrustedAppsSelectorProps } from './types';
 
 /** The leading well every app row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
 
-export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorPropsBase) {
+export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();

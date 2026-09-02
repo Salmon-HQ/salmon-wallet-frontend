@@ -1,5 +1,5 @@
 import type { ViewStyle } from 'react-native';
-import type { TransactionDetailModalPropsBase } from '@salmon/shared';
+import type { TransactionDetailPropsBase } from '@salmon/shared';
 
 // Re-export the transaction shapes the detail's variant files consume
 export type {
@@ -16,10 +16,7 @@ export type {
  * it owns no visibility: the surface that shows it decides when it is on
  * screen (DESIGN.md §The sink and the float — the transition verb).
  */
-export interface TransactionDetailProps extends Omit<
-  TransactionDetailModalPropsBase<ViewStyle>,
-  'visible' | 'onClose'
-> {
+export interface TransactionDetailProps extends TransactionDetailPropsBase<ViewStyle> {
   /**
    * Active network ID (e.g. 'solana-mainnet', 'bitcoin-testnet') used to pick
    * the right block explorer. Falls back to Solana mainnet when omitted.

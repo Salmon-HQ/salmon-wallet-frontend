@@ -24,7 +24,6 @@ import {
   fontFamilyNative,
   useOpenLink,
   fontSize,
-  type AboutPanelPropsBase,
   lineHeight,
   spacing,
   type Semantic,
@@ -37,6 +36,7 @@ import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { AboutPanelProps } from './types';
 
 const LINKS = {
   website: 'https://www.salmonwallet.io',
@@ -52,7 +52,7 @@ const ROW_BUBBLE_SIZE = 40;
 /** The round wells the social row draws. */
 const SOCIAL_BUBBLE_SIZE = 44;
 
-export function AboutPanel({ onBack }: AboutPanelPropsBase) {
+export function AboutPanel({ onBack }: AboutPanelProps) {
   const { t } = useTranslation();
   const openLink = useOpenLink();
   const styles = useThemedStyles(stylesFor);

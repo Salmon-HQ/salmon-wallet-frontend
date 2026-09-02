@@ -78,6 +78,11 @@ export type {
 export { useSendTransaction } from './useSendTransaction';
 export type { UseSendTransactionParams, UseSendTransactionResult } from './useSendTransaction';
 
+// The send flow's state (token, recipient, amount, fee, submit) — one
+// implementation; mobile wraps it in a provider, the DOM calls it directly.
+export { useSendFlowState } from './useSendFlowState';
+export type { UseSendFlowStateParams, SendFlowState } from './useSendFlowState';
+
 // Private-key import hook
 export { useImportPrivateKey } from './useImportPrivateKey';
 export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';

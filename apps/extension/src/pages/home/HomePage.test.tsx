@@ -10,32 +10,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import type { ComponentType, PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
   }),
-}));
-
-function sanitizeDomProps(props: Record<string, unknown>) {
-  const next = { ...props };
-  for (const key of Object.keys(next)) {
-    if (key.startsWith('$') || typeof next[key] === 'function') delete next[key];
-  }
-  delete next.loading;
-  delete next.fullWidth;
-  delete next.tone;
-  delete next.bleed;
-  return next;
-}
-
-vi.mock('../../utils/styled', () => ({
-  styled: (Component: React.ElementType | ComponentType<unknown>) => () => {
-    const StyledComponent = ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) =>
-      React.createElement(Component as React.ElementType, sanitizeDomProps(props), children);
-    return StyledComponent;
-  },
 }));
 
 function stub(testID: string) {

@@ -1,13 +1,13 @@
 import type { Transaction } from '../index';
 
 /**
- * Props for the TransactionDetailModal component (base - platform-agnostic)
+ * Props for the TransactionDetail component (base — platform-agnostic).
+ *
+ * The detail itself owns no visibility: the surface that shows it (a sheet,
+ * a modal) decides when it is on screen, so this contract carries only what
+ * the detail actually renders — no `visible`/`onClose`.
  */
-export interface TransactionDetailModalPropsBase<TStyle> {
-  /** Whether the modal is visible */
-  visible: boolean;
-  /** Callback when the modal is closed */
-  onClose: () => void;
+export interface TransactionDetailPropsBase<TStyle> {
   /** Transaction to display details for */
   transaction: Transaction | null;
   /** Callback when "View on Explorer" is triggered */

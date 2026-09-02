@@ -16,7 +16,6 @@ import {
   getShortAddress,
   s,
   spacing,
-  type AddressBookPanelPropsBase,
   type AddressBookItem,
   type Semantic,
 } from '@salmon/shared';
@@ -28,6 +27,7 @@ import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { WarningNotice } from '../../WarningNotice';
 import { ConfirmSheet } from '../../ConfirmSheet';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import type { AddressBookPanelProps } from './types';
 
 /** The initial the avatar bubble carries, same idiom as the send recipients. */
 function initialOf(contact: AddressBookItem): string {
@@ -46,7 +46,7 @@ export function AddressBookPanel({
   onBack,
   error = null,
   onRetry,
-}: AddressBookPanelPropsBase) {
+}: AddressBookPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { status, accent } = useSemantic();

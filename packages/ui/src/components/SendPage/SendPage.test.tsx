@@ -34,14 +34,20 @@ const sendState = {
 const sendTransaction = vi.fn(async () => ({ txId: 'tx-1' }));
 const sendNft = vi.fn(async () => ({ txId: 'nft-tx-1' }));
 
-vi.mock('@salmon/shared', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@salmon/shared')>()),
+// The flow's state is the shared `useSendFlowState`, which reaches the
+// transfer hook by its own module path — so the fake has to sit on that
+// module, not only on the barrel the page imports from.
+vi.mock('@salmon/shared/src/hooks/useSendTransaction', () => ({
   useSendTransaction: () => ({
     ...sendState,
     reset: vi.fn(),
     estimateFee: vi.fn(async () => null),
     sendTransaction,
   }),
+}));
+
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useNftTransfer: () => ({ sendNft, settling: false, reset: vi.fn() }),
   getTransactionUrl: () => 'https://explorer.example/tx',
   getDefaultExplorer: () => 'explorer',

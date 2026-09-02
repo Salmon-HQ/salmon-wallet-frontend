@@ -23,11 +23,8 @@
  * all ~1,500 icons through the bundler, which costs both dev transpile time
  * and, under a misconfigured build, bundle size the extension cannot spend.
  *
- * Known exception: `components/DAppApproval` and `components/PendingActivityBanner`
- * still import `@mui/icons-material` directly. They are owned by concurrent work
- * and were left alone on purpose; that dependency stays in this package's
- * manifest until they move too, at which point it can be dropped here as it
- * already was from `apps/extension`.
+ * MUI left this package on 2026-09-02 (spec 028, lot 4 close): no `@mui`
+ * package is in the manifest, and no DOM glyph comes from anywhere but here.
  */
 
 import { createElement } from 'react';

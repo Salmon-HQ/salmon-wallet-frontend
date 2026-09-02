@@ -8,10 +8,11 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type CurrencySelectorPropsBase, type CurrencySelectorItem } from '@salmon/shared';
+import { type CurrencySelectorItem } from '@salmon/shared';
 import { IconBubble } from '../../IconBubble';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import type { CurrencySelectorProps } from './types';
 
 // ============================================================================
 // Component
@@ -22,7 +23,7 @@ export function CurrencySelector({
   activeCurrencyCode,
   onSelectCurrency,
   onBack,
-}: CurrencySelectorPropsBase) {
+}: CurrencySelectorProps) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(

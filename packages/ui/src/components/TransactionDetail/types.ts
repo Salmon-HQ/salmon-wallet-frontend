@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { TransactionDetailModalPropsBase } from '@salmon/shared';
+import type { TransactionDetailPropsBase } from '@salmon/shared';
 
 // Re-export the transaction shapes the detail's variant files consume
 export type {
@@ -16,10 +16,7 @@ export type {
  * of its own, so it owns no visibility: the surface that shows it decides
  * when it is on screen.
  */
-export interface TransactionDetailProps extends Omit<
-  TransactionDetailModalPropsBase<CSSProperties>,
-  'visible' | 'onClose'
-> {
+export interface TransactionDetailProps extends TransactionDetailPropsBase<CSSProperties> {
   /** Additional CSS class for the container */
   className?: string;
   /**

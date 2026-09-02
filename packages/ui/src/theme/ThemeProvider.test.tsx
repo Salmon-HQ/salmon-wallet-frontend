@@ -3,7 +3,7 @@
  *
  * What the DOM provider is responsible for: resolving the mode from the stored
  * preference and the system scheme, writing the resolved tokens onto the
- * document root, and handing MUI one theme per mode rather than one per render.
+ * document root, and mounting the global baseline (canvas inks, focus ring).
  */
 import React from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
@@ -34,7 +34,6 @@ vi.mock('@salmon/shared', async () => ({
 const { createSemantic } = await import('../../../shared/src/theme');
 const { useTheme } = await import('../../../shared/src/contexts/ThemeContext');
 const { SalmonThemeProvider, useSemantic, useThemeMode } = await import('./ThemeProvider');
-const { salmonThemeFor } = await import('./index');
 
 function stubMatchMedia() {
   vi.stubGlobal(
@@ -154,21 +153,5 @@ describe('SalmonThemeProvider', () => {
       expect(rootVar('--sw-text-primary')).toBe(createSemantic('light').text.primary)
     );
     expect(document.documentElement.style.colorScheme).toBe('light');
-  });
-});
-
-describe('salmonThemeFor', () => {
-  it('builds one MUI theme per mode and reuses it', () => {
-    expect(salmonThemeFor('dark')).toBe(salmonThemeFor('dark'));
-    expect(salmonThemeFor('light')).toBe(salmonThemeFor('light'));
-    expect(salmonThemeFor('dark')).not.toBe(salmonThemeFor('light'));
-  });
-
-  it('runs each mode’s palette on that mode’s tokens', () => {
-    expect(salmonThemeFor('dark').palette.mode).toBe('dark');
-    expect(salmonThemeFor('light').palette.mode).toBe('light');
-    expect(salmonThemeFor('light').palette.background.default).toBe(
-      createSemantic('light').depth.column
-    );
   });
 });

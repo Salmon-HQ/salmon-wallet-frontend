@@ -102,7 +102,7 @@ export type { TokenAboutPropsBase } from './token-about';
 export type { BlurTint, BlurContainerPropsBase } from './blur-container';
 
 // Transaction Detail Modal
-export type { TransactionDetailModalPropsBase } from './transaction-detail-modal';
+export type { TransactionDetailPropsBase } from './transaction-detail-modal';
 
 // Wallet Header
 export type { WalletHeaderPropsBase } from './wallet-header';

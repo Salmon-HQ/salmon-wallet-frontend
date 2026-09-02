@@ -19,11 +19,12 @@ import {
 } from '../../icons';
 import type { IconComponent } from '../../icons';
 
-import { type SupportSelectorPropsBase, type SupportOptionItem, semantic } from '@salmon/shared';
+import { type SupportOptionItem, semantic } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { WarningNotice } from '../WarningNotice';
+import type { SupportSelectorProps } from './types';
 
 /** The leading well every option row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
@@ -35,7 +36,7 @@ const ICON_MAP: Record<string, IconComponent> = {
   email: EnvelopeIcon,
 };
 
-export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorPropsBase) {
+export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorProps) {
   const { t } = useTranslation();
 
   const renderOption = useCallback(

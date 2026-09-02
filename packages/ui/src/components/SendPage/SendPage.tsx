@@ -6,8 +6,9 @@
  * state and the passage — the wait and the failure. With a collectible it is
  * `app/(app)/nft/[id]` instead: recipient, review, receipt, no amount.
  *
- * The DOM has no route stack, so the four screens are one component and the
- * state is a hook it owns (`useSendFlowState`, mobile's `SendFlowContext`).
+ * The DOM has no route stack, so the four screens are one component that
+ * calls the shared `useSendFlowState` directly — the same hook mobile's
+ * `SendFlowProvider` mounts above its routes.
  * A step change speaks the verb: what leaves sinks, what arrives floats —
  * `SinkFloat` in place of the stack's slide. The first step is simply there
  * when the flow opens, and the receipt arrives whole, so neither floats.
@@ -24,6 +25,7 @@ import {
   classifyTransactionError,
   getShortAddress,
   useNftTransfer,
+  useSendFlowState,
   useWaitExit,
   type SendRecipient,
   type SendStep,
@@ -41,7 +43,7 @@ import { StepAmount } from './StepAmount';
 import { StepRecipient } from './StepRecipient';
 import { StepReview } from './StepReview';
 import { StepSuccess } from './StepSuccess';
-import { useSendFlowState } from './useSendFlowState';
+
 import type { SendPageProps } from './types';
 
 /** The verb's frame is transparent to the layout it was inserted into. */

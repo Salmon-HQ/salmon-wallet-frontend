@@ -1,7 +1,7 @@
 # Feature Specification: The extension side panel becomes the mobile app, on the DOM
 
 **Feature Branch**: `feat/redesign-mobile-home` · spec dir `028-extension-redesign`
-**Created**: 2026-09-02 · **Status**: Approved by the owner 2026-09-02 (answers below); lot 1 landed, lot 2 in implementation
+**Created**: 2026-09-02 · **Status**: Approved by the owner 2026-09-02 (answers below); lots 1–5 landed 2026-09-02; MUI removed; `check-dom-parity` strict in CI
 
 ## Owner rulings (2026-09-02)
 
@@ -81,9 +81,23 @@ and the `packages/ui` components only it read. The extension is the only DOM
 app; `.web` platform files in `packages/shared` resolve for it. The mobile
 app drops its react-native-web twins too.
 
+### Lots 4–5 — what landed (2026-09-02)
+
+- Lock and the seven onboarding screens on `OnboardingLayout`; Wallets as a
+  screen; Settings as mobile's registry with trailing values and switches;
+  Activity with the detail in a sheet; token and NFT detail; Send in four
+  steps with the NFT on the same flow; the dApp approval views and the popup
+  on the kit under the bedrock rule, approval content byte-identical.
+- Every DOM component reads `useSemantic()`; MUI, `recharts` and
+  `keen-slider` left both manifests; the send-flow state lives once in
+  `packages/shared/src/hooks/useSendFlowState.ts`.
+- The gate: `scripts/check-dom-parity.mjs` (theme / twins / contract / dead /
+  screens) with its own fixtures, strict in CI. Platform differences live only
+  in its maps, each with a reason.
+
 ## Owner answers (2026-09-02, multiple choice)
 
-1. **MUI**: adapter now; removed at the end of lot 4 if nothing reads it.
+1. **MUI**: adapter now; removed at the end of lot 4 if nothing reads it — removed 2026-09-02.
 2. **Send**: the mobile 4-step flow.
 3. **Wallets**: a screen like mobile, replacing the switcher sheet.
 4. **Balance without touch**: keyboard arrows + click on the dots + horizontal wheel; the same keyboard/wheel navigation applies to the sub-tab row when it overflows the panel and must move both ways.
