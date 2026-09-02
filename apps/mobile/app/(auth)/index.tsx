@@ -38,6 +38,8 @@ import {
 import { useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+
+import { useSemantic } from '../../src/theme/useThemedStyles';
 import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
@@ -46,6 +48,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
   const styles = useThemedStyles(stylesFor);
   const [state, actions] = useAccountsContext();
 
@@ -91,7 +94,9 @@ export default function WelcomeScreen() {
       */
       mark={
         <View testID="welcome-brand-mark">
-          <BrandMark size={onboardingIdentityGridFull.markSize} />
+          {/* The fish at the door is the brand accent, as it is on the lock and
+              the wait (owner, 2026-09-02). */}
+          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.ink} />
         </View>
       }
       /*

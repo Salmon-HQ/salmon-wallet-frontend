@@ -24,12 +24,15 @@ import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useSemantic } from '../../src/theme/useThemedStyles';
+
 // ============================================================================
 // Component
 // ============================================================================
 
 export default function SuccessScreen() {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
 
   /**
    * Leave through the analytics-consent step, which is what enters the app.
@@ -50,7 +53,7 @@ export default function SuccessScreen() {
         door's own size — this screen mirrors welcome, only the copy differs.
         Only success — the other flow screens keep their icons.
       */
-      mark={<BrandMark size={onboardingIdentityGridFull.markSize} />}
+      mark={<BrandMark size={onboardingIdentityGridFull.markSize} color={accent.ink} />}
       title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
       description={
         <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>
