@@ -384,4 +384,22 @@ describe('home sub-tabs', () => {
     expect(chainWrapper.props.exiting).toBeDefined();
     expect(screen.getByTestId('home-content')).toBe(screenWrapper);
   });
+
+  it('hands a sub-tab change to the content region alone, never to the chain wrapper', () => {
+    // The grid used to appear from nothing. The region under the row plays
+    // the verb (rule four, amended); the chain wrapper inside it stays silent
+    // even though opening NFTs may snap the chain to Solana in the same render.
+    renderScreen(<HomeScreen />);
+    expect(screen.getByTestId('home-subtab-content').props.entering).toBeUndefined();
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    const region = screen.getByTestId('home-subtab-content');
+    expect(region.props.entering).toBeDefined();
+    expect(region.props.exiting).toBeDefined();
+    expect(screen.queryByTestId('home-chain-content')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-portfolio'));
+    expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();
+  });
 });

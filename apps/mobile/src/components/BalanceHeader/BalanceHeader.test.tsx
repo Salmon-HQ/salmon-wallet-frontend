@@ -125,12 +125,13 @@ jest.mock('../../../hooks/usePressMotion', () => ({
   }),
 }));
 
-import { Dimensions, Text } from 'react-native';
+import { Dimensions, StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 
 import {
   DRAG_FOLLOW,
   LATERAL_SWAP_TRAVEL,
   SINK_FLOAT_TRAVEL,
+  chainMarks,
   motionMs,
   semantic,
 } from '@salmon/shared';
@@ -479,32 +480,21 @@ describe('BalanceHeader amount travel', () => {
 });
 
 describe('BalanceHeader next-chain hint', () => {
-  const inks = (view: ReturnType<typeof render>) => {
-    const [, arrow, symbol] = within(view.getByTestId('balance-next-hint')).UNSAFE_getAllByType(
-      Text
-    );
-    return {
-      arrow: (arrow.props.style as { color: string }).color,
-      symbol: (symbol.props.style as { color: string }).color,
-    };
+  const ink = (view: ReturnType<typeof render>) => {
+    const [hint] = within(view.getByTestId('balance-next-hint')).UNSAFE_getAllByType(Text);
+    const flat = StyleSheet.flatten(hint.props.style as StyleProp<TextStyle>) as { color: string };
+    return flat.color;
   };
 
   it('takes the destination chain hue from the tokens, never from a literal', () => {
-    // Bitcoin's amber clears AA on the deep ground, so the whole hint takes it.
+    // The whole hint — arrow and symbol — reads one token; the token decides
+    // per mode whether that is the chain's hue or `text.secondary`.
     const toBitcoin = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(inks(toBitcoin)).toEqual({
-      arrow: semantic.chain.hintArrowInk.bitcoin,
-      symbol: semantic.chain.hintInk.bitcoin,
-    });
+    expect(ink(toBitcoin)).toBe(semantic.chain.hintInk.bitcoin);
 
-    // Solana's purple does not, so only the arrow glyph spends the hue and the
-    // symbol keeps `text.secondary` — the token decides, not the component.
     const toSolana = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    expect(inks(toSolana)).toEqual({
-      arrow: semantic.chain.hintArrowInk.solana,
-      symbol: semantic.chain.hintInk.solana,
-    });
-    expect(inks(toSolana).symbol).toBe(semantic.text.secondary);
+    expect(ink(toSolana)).toBe(semantic.chain.hintInk.solana);
+    expect(ink(toSolana)).toBe(chainMarks.byChain.solana);
   });
 });
 

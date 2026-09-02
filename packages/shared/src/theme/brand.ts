@@ -110,8 +110,8 @@ export const chainMarks = {
    * Solana `purple`, Ethereum `indigo`.
    *
    * A hue is not a legibility guarantee. Whether a given surface may spend
-   * one on *text* is decided in `semantic.ts` (`chain.hintInk` /
-   * `chain.hintArrowInk`), per mode, against that mode's own ground.
+   * one on the hint is decided in `semantic.ts` (`chain.hintInk`), per mode,
+   * against that mode's own ground.
    */
   byChain: {
     bitcoin: chainMarkHues.amber,

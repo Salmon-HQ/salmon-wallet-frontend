@@ -851,14 +851,12 @@ describe('contrast: the bezel', () => {
  * saying the whole thing in text; the hue is a second channel, never the
  * channel. What that costs is measured, per mode, against every ground the
  * hint can sit on: the app's `depth.column` and both stops of the water ramp
- * it is painted over. The symbol is text (1.4.3, 4.5:1); the arrow is a glyph
- * carrying the direction (1.4.11, 3:1).
+ * it is painted over, and held to 1.4.11's 3:1 as a cue, not body copy.
  *
- * The measured worst cases, which are why the fallbacks below are not
- * hypothetical: amber 8.64 dark / 1.89 light, purple 4.38 / 3.74, indigo
- * 4.15 / 3.94. Exactly one of the six clears AA for text — amber on dark —
- * and amber in light misses even the glyph floor, so light Bitcoin spends no
- * hue at all.
+ * The measured worst cases: amber 8.64 dark / 1.89 light, purple 4.38 / 3.74,
+ * indigo 4.15 / 3.94. The whole hint — symbol and arrow — is held to the
+ * 3:1 glyph floor (owner ruling, 2026-09-02: the symbol carries the hue too),
+ * so only amber in light misses it and light Bitcoin spends no hue at all.
  */
 describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
   const grounds = [
@@ -874,16 +872,8 @@ describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
     keyof typeof chainMarks.byChain,
     string,
   ][]) {
-    it(`${chainName}: the symbol takes the hue only where it clears AA`, () => {
+    it(`${chainName}: the hint takes the hue only where it clears the glyph floor`, () => {
       const ink = tokens.chain.hintInk[chainName];
-      expect(ink).toBe(worst(hue) >= AA_TEXT ? hue : tokens.text.secondary);
-      for (const [, ground] of grounds) {
-        expect(contrast(ink, ground)).toBeGreaterThanOrEqual(AA_TEXT);
-      }
-    });
-
-    it(`${chainName}: the arrow takes the hue only where it clears the glyph floor`, () => {
-      const ink = tokens.chain.hintArrowInk[chainName];
       expect(ink).toBe(worst(hue) >= AA_NON_TEXT ? hue : tokens.text.secondary);
       for (const [, ground] of grounds) {
         expect(contrast(ink, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
@@ -893,7 +883,7 @@ describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
 
   it('a test network reads as its mainnet', () => {
     expect(tokens.chain.hintInk['bitcoin-testnet']).toBe(tokens.chain.hintInk.bitcoin);
-    expect(tokens.chain.hintArrowInk['solana-devnet']).toBe(tokens.chain.hintArrowInk.solana);
-    expect(tokens.chain.hintArrowInk['ethereum-sepolia']).toBe(tokens.chain.hintArrowInk.ethereum);
+    expect(tokens.chain.hintInk['solana-devnet']).toBe(tokens.chain.hintInk.solana);
+    expect(tokens.chain.hintInk['ethereum-sepolia']).toBe(tokens.chain.hintInk.ethereum);
   });
 });

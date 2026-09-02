@@ -468,11 +468,8 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   testID="balance-next-hint"
                   {...swapMotion}
                 >
-                  <Text style={styles.nextHint}>
-                    <Text
-                      style={{ color: chain.hintArrowInk[hintBlockchain] }}
-                    >{`${hintArrow} `}</Text>
-                    <Text style={{ color: chain.hintInk[hintBlockchain] }}>{hintSymbol}</Text>
+                  <Text style={[styles.nextHint, { color: chain.hintInk[hintBlockchain] }]}>
+                    {`${hintArrow} ${hintSymbol}`}
                   </Text>
                 </Animated.View>
               )}

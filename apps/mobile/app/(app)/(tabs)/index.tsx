@@ -342,32 +342,46 @@ export default function HomeScreen() {
   // sinks, so a delay there would read as lag. Tracked with the render-time
   // setState pattern (not a ref: refs cannot be read during render).
   //
-  // Two causes can swap content here and they must never speak at once (the
-  // verb never nests — DESIGN.md §The balance block's motion, rule 5): a task
-  // taking or releasing the screen owns `home-content`, and a chain change
-  // owns `chainContent`. One flag for both used to hand the beat to both
-  // wrappers, so a task hand-back sank the screen *and* the list inside it —
-  // one gesture at two depths. The cause of the current swap is recorded, and
-  // only the wrapper that owns that cause animates.
+  // Three causes can swap content here and they must never speak at once
+  // (the verb never nests — DESIGN.md §The balance block's motion, rule 5): a
+  // task taking or releasing the screen owns `home-content`, a sub-tab change
+  // owns `home-subtab-content`, and a chain change owns `chainContent`. One
+  // flag for all used to hand the beat to every wrapper, so a task hand-back
+  // sank the screen *and* the list inside it — one gesture at two depths. The
+  // cause of the current swap is recorded, and only the wrapper that owns
+  // that cause animates. Opening NFTs can also snap the chain to Solana in
+  // the same render; that is still one gesture, and the sub-tab is the one
+  // the user touched.
   const [contentSwap, setContentSwap] = useState<{
     chain: string;
+    subTab: SubTabKey;
     engaged: boolean;
-    cause: 'none' | 'chain' | 'task';
+    cause: 'none' | 'chain' | 'subtab' | 'task';
   }>({
     chain: currentBlockchain,
+    subTab: activeSubTab,
     engaged: isTaskEngaged,
     cause: 'none',
   });
-  if (contentSwap.chain !== currentBlockchain || contentSwap.engaged !== isTaskEngaged) {
+  if (
+    contentSwap.chain !== currentBlockchain ||
+    contentSwap.subTab !== activeSubTab ||
+    contentSwap.engaged !== isTaskEngaged
+  ) {
     setContentSwap({
       chain: currentBlockchain,
+      subTab: activeSubTab,
       engaged: isTaskEngaged,
-      // A task change that also lands a chain change is still one gesture, and
-      // the task is the one that took the screen.
-      cause: contentSwap.engaged !== isTaskEngaged ? 'task' : 'chain',
+      cause:
+        contentSwap.engaged !== isTaskEngaged
+          ? 'task'
+          : contentSwap.subTab !== activeSubTab
+            ? 'subtab'
+            : 'chain',
     });
   }
   const taskHasPrior = contentSwap.cause === 'task';
+  const subTabHasPrior = contentSwap.cause === 'subtab';
   const chainHasPrior = contentSwap.cause === 'chain';
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
@@ -690,146 +704,163 @@ export default function HomeScreen() {
             <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
           </View>
 
-          {activeSubTab === 'portfolio' ? (
-            <>
-              {/* Partial-load failure: keep whatever data loaded visible;
+          {/* The content region plays the verb on a sub-tab change: the
+              outgoing list sinks, the incoming one floats — NFTs used to
+              appear from nothing (owner, on device). Keyed by sub-tab so the
+              swap is a remount, the same mechanism the chain swap uses; the
+              block above it holds still (rule four). */}
+          <Reanimated.View
+            key={activeSubTab}
+            testID="home-subtab-content"
+            style={styles.chainContent}
+            entering={
+              subTabHasPrior
+                ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                : undefined
+            }
+            exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+          >
+            {activeSubTab === 'portfolio' ? (
+              <>
+                {/* Partial-load failure: keep whatever data loaded visible;
                   retry is pull-to-refresh on the token list. Only 'ready'
                   carries data, so a total failure is left to the list's own
                   error state rather than told "shown data may be incomplete". */}
-              {balanceError && balanceState === 'ready' && !switchingNetwork && (
-                <View style={styles.balanceErrorBanner} testID="balance-load-error">
-                  <WarningNotice
-                    tone="warning"
-                    title={t(
-                      'wallet.partial_load_error',
-                      "Some balances couldn't be loaded. Shown data may be incomplete."
-                    )}
-                  />
-                </View>
-              )}
+                {balanceError && balanceState === 'ready' && !switchingNetwork && (
+                  <View style={styles.balanceErrorBanner} testID="balance-load-error">
+                    <WarningNotice
+                      tone="warning"
+                      title={t(
+                        'wallet.partial_load_error',
+                        "Some balances couldn't be loaded. Shown data may be incomplete."
+                      )}
+                    />
+                  </View>
+                )}
 
-              {/* Scrollable Token List or Bitcoin View.
+                {/* Scrollable Token List or Bitcoin View.
                   Keyed by chain so switching chains swaps the whole container
                   with the sink and the float: the outgoing chain's content
                   sinks 12dp as its light goes, the incoming one floats up into
                   place. The frame above holds still; only the content travels.
                   Under reduce motion both props are undefined and the swap
                   stays instant. */}
-              <View style={styles.listContainer}>
-                <Reanimated.View
-                  key={currentBlockchain}
-                  testID="home-chain-content"
-                  style={styles.chainContent}
-                  // Only a chain change moves this wrapper. It remounts on a
-                  // task hand-back too (it lives inside `home-content`), and
-                  // animating there stacked a second sink/float on the one
-                  // the screen was already playing.
-                  entering={
-                    chainHasPrior
-                      ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                      : undefined
-                  }
-                  exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-                >
-                  {currentBlockchain === 'bitcoin' ? (
-                    // Bitcoin lives inside Portfolio with chart, market data
-                    // and about — it has no asset-detail screen of its own.
-                    <ScrollView
-                      style={styles.bitcoinScrollView}
-                      contentContainerStyle={[
-                        styles.bitcoinContent,
-                        styles.tabGutter,
-                        { paddingBottom: floatingBottomOffset },
-                      ]}
-                      showsVerticalScrollIndicator={false}
-                      onScroll={handleScroll}
-                      scrollEventThrottle={16}
-                    >
-                      {/* Price Chart */}
-                      {/* The one card that does not sit inside the column's
+                <View style={styles.listContainer}>
+                  <Reanimated.View
+                    key={currentBlockchain}
+                    testID="home-chain-content"
+                    style={styles.chainContent}
+                    // Only a chain change moves this wrapper. It remounts on a
+                    // task hand-back too (it lives inside `home-content`), and
+                    // animating there stacked a second sink/float on the one
+                    // the screen was already playing.
+                    entering={
+                      chainHasPrior
+                        ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                        : undefined
+                    }
+                    exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+                  >
+                    {currentBlockchain === 'bitcoin' ? (
+                      // Bitcoin lives inside Portfolio with chart, market data
+                      // and about — it has no asset-detail screen of its own.
+                      <ScrollView
+                        style={styles.bitcoinScrollView}
+                        contentContainerStyle={[
+                          styles.bitcoinContent,
+                          styles.tabGutter,
+                          { paddingBottom: floatingBottomOffset },
+                        ]}
+                        showsVerticalScrollIndicator={false}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                      >
+                        {/* Price Chart */}
+                        {/* The one card that does not sit inside the column's
                           gutters: it runs off the left screen edge and stops
                           a gutter short of the right. */}
-                      <PriceChart
-                        data={bitcoinChartData}
-                        selectedPeriod={bitcoinChartPeriod}
-                        onPeriodChange={handleChartPeriodChange}
-                        loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                        error={bitcoinChartError}
-                        height={180}
-                        bleed
-                      />
+                        <PriceChart
+                          data={bitcoinChartData}
+                          selectedPeriod={bitcoinChartPeriod}
+                          onPeriodChange={handleChartPeriodChange}
+                          loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                          error={bitcoinChartError}
+                          height={180}
+                          bleed
+                        />
 
-                      {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-                      {balanceState === 'loading' ? (
-                        <SkeletonRow padding="lg" leadingSize={44} trailingWidth={50} />
-                      ) : balanceState === 'error' ? (
-                        /* A load that failed with nothing cached owes the user
+                        {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
+                        {balanceState === 'loading' ? (
+                          <SkeletonRow padding="lg" leadingSize={44} trailingWidth={50} />
+                        ) : balanceState === 'error' ? (
+                          /* A load that failed with nothing cached owes the user
                            the error state and its retry, never an endless
                            skeleton. */
-                        ListEmptyComponent
-                      ) : (
-                        bitcoinToken && (
-                          <TokenListItem
-                            token={bitcoinToken}
-                            hiddenBalance={hiddenBalance}
-                            blockchain="bitcoin"
-                            // The column already spaces its children by 20
-                            // (`gap`); the row's own list margin would make
-                            // it 40 under this one card.
-                            style={styles.bitcoinCard}
-                          />
-                        )
-                      )}
+                          ListEmptyComponent
+                        ) : (
+                          bitcoinToken && (
+                            <TokenListItem
+                              token={bitcoinToken}
+                              hiddenBalance={hiddenBalance}
+                              blockchain="bitcoin"
+                              // The column already spaces its children by 20
+                              // (`gap`); the row's own list margin would make
+                              // it 40 under this one card.
+                              style={styles.bitcoinCard}
+                            />
+                          )
+                        )}
 
-                      {/* Market Data */}
-                      <MarketDataCard
-                        data={bitcoinMarketData}
-                        symbol="BTC"
-                        loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      />
+                        {/* Market Data */}
+                        <MarketDataCard
+                          data={bitcoinMarketData}
+                          symbol="BTC"
+                          loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                        />
 
-                      {/* About Section - at the end */}
-                      <AboutCard
-                        description={bitcoinCoinInfo?.description}
-                        loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                        {/* About Section - at the end */}
+                        <AboutCard
+                          description={bitcoinCoinInfo?.description}
+                          loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                        />
+                      </ScrollView>
+                    ) : (
+                      // Normal token list for Solana/Ethereum
+                      <TokenList
+                        tokens={tokenListItems}
+                        loading={balanceState === 'loading'}
+                        onTokenPress={handleTokenPress}
+                        hiddenBalance={hiddenBalance}
+                        ListEmptyComponent={ListEmptyComponent}
+                        onRefresh={refresh}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                        contentContainerStyle={[
+                          styles.listContent,
+                          styles.tabGutter,
+                          { paddingBottom: floatingBottomOffset },
+                        ]}
+                        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
                       />
-                    </ScrollView>
-                  ) : (
-                    // Normal token list for Solana/Ethereum
-                    <TokenList
-                      tokens={tokenListItems}
-                      loading={balanceState === 'loading'}
-                      onTokenPress={handleTokenPress}
-                      hiddenBalance={hiddenBalance}
-                      ListEmptyComponent={ListEmptyComponent}
-                      onRefresh={refresh}
-                      onScroll={handleScroll}
-                      scrollEventThrottle={16}
-                      contentContainerStyle={[
-                        styles.listContent,
-                        styles.tabGutter,
-                        { paddingBottom: floatingBottomOffset },
-                      ]}
-                      blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-                    />
-                  )}
-                </Reanimated.View>
-                {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                    )}
+                  </Reanimated.View>
+                  {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                  {topFade}
+                </View>
+              </>
+            ) : (
+              // NFTs: the grid owns the only scroll view in the content region,
+              // and everything above it is the same fixed block Portfolio shows.
+              <View style={styles.listContainer}>
+                <NftsTab
+                  contentContainerStyle={styles.tabGutter}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                />
                 {topFade}
               </View>
-            </>
-          ) : (
-            // NFTs: the grid owns the only scroll view in the content region,
-            // and everything above it is the same fixed block Portfolio shows.
-            <View style={styles.listContainer}>
-              <NftsTab
-                contentContainerStyle={styles.tabGutter}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-              />
-              {topFade}
-            </View>
-          )}
+            )}
+          </Reanimated.View>
         </Reanimated.View>
       )}
 

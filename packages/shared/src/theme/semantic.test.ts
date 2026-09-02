@@ -101,14 +101,6 @@ const DARK_SNAPSHOT = {
   chain: {
     hintInk: {
       bitcoin: '#F59E0B',
-      solana: '#A7B1C4',
-      ethereum: '#A7B1C4',
-      'bitcoin-testnet': '#F59E0B',
-      'solana-devnet': '#A7B1C4',
-      'ethereum-sepolia': '#A7B1C4',
-    },
-    hintArrowInk: {
-      bitcoin: '#F59E0B',
       solana: '#8B5CF6',
       ethereum: '#6366F1',
       'bitcoin-testnet': '#F59E0B',
@@ -221,7 +213,6 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'border.default',
         'border.hairline',
         'border.strong',
-        'chain.hintArrowInk',
         'chain.hintInk',
         'change.negative',
         'change.neutral',

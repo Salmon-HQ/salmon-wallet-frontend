@@ -612,12 +612,14 @@ export function createSemantic(mode: ThemeMode) {
    * | purple (SOL)   | 4.38–4.70   | 3.74–3.98   |
    * | indigo (ETH)   | 4.15–4.45   | 3.94–4.20   |
    *
-   * So exactly one cell clears AA for text: amber on dark. Everywhere else
-   * the **symbol keeps `text.secondary` and only the arrow glyph takes the
-   * hue** — a glyph is a non-text mark and is held to 1.4.11's 3:1 instead.
-   * Amber in light does not clear even that (1.89:1), so light Bitcoin spends
-   * no hue at all: an arrow the user cannot see is not a cue, and the arrow
-   * is the half of the hint that carries the direction.
+   * The owner's ruling (2026-09-02) is that the symbol carries the hue as
+   * much as the arrow does — "SOL" in Solana's purple, not only its arrow —
+   * so the whole hint is held to one floor: 1.4.11's 3:1, the non-text bar,
+   * because the hint is a cue that already reads in `text.secondary` weight
+   * and size beside a row of dots, not body copy. Purple and indigo clear it
+   * in both modes; amber clears it in dark only. Amber in light (1.89:1) is
+   * invisible, and an invisible cue is no cue, so light Bitcoin keeps
+   * `text.secondary` for both halves.
    */
   /**
    * A test network reads as its mainnet: which chain you are on is the
@@ -634,14 +636,8 @@ export function createSemantic(mode: ThemeMode) {
     }) as const;
 
   const chain = {
-    /** The hint's symbol — the hue only where it clears AA on this ground. */
+    /** The hint — arrow and symbol alike — in the chain's hue where it clears 3:1. */
     hintInk: perNetwork({
-      bitcoin: pick({ dark: chainMarks.byChain.bitcoin, light: text.secondary }),
-      solana: text.secondary,
-      ethereum: text.secondary,
-    }),
-    /** The hint's arrow glyph — the hue wherever it clears the 3:1 floor. */
-    hintArrowInk: perNetwork({
       bitcoin: pick({ dark: chainMarks.byChain.bitcoin, light: text.secondary }),
       solana: chainMarks.byChain.solana,
       ethereum: chainMarks.byChain.ethereum,
