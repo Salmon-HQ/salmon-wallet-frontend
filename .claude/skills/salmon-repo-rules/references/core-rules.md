@@ -5,7 +5,6 @@
 - `packages/shared`: only code shared by `mobile`, `web`, and `extension`
 - `packages/ui`: only shared React DOM components for `web` and `extension`
 - `apps/mobile`: React Native-only UI and platform-specific logic
-- `apps/web`: web-only pages, routes, and web-specific UI
 - `apps/extension`: extension-only pages, flows, and browser-extension logic
 
 ## Shared code placement

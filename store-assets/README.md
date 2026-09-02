@@ -65,9 +65,9 @@ larger PNG. Edit the table in that script, re-run it, and commit the output —
 do not retouch the PNGs by hand, or the next run silently reverts the retouch.
 
     python3 store-assets/make-icons.py            # every target
-    python3 store-assets/make-icons.py extension  # extension | web | store
+    python3 store-assets/make-icons.py extension  # extension | store
 
-It owns `apps/extension/public/icon-*.png`, `apps/web/public/` icons, both
+It owns `apps/extension/public/icon-*.png`, both
 128 store icons, and `play/icon-512.png`, and it strips the alpha from
 `play/feature-graphic.png`. It does **not** own the screenshots — those stay
 with `compose.py`.
@@ -101,4 +101,4 @@ Store *are* uploaded by hand alongside the screenshots.
 
 Framing/captions (optional, when wanted): `npx appshots frame <dir> --device <preset> --out <dir>` —
 validates store dimensions too (`npx appshots validate <dir>`). Capture stays on
-Maestro (mobile) and Playwright (extension/web); do not add fastlane for this.
+Maestro (mobile) and Playwright (extension); do not add fastlane for this.

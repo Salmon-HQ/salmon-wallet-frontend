@@ -87,8 +87,8 @@ export const wordmarkToSvg = (fill: string, width?: number): string => {
  * These are brand marks, not theme colours: a chain's identity color is
  * fixed by that chain's own brand, not by "Deep Water"'s ramp, so they live
  * here rather than in `semantic.ts`. Moved from `colors.palette` (2026-09-01
- * cleanup), which now re-exports these same values — `apps/web` and
- * `apps/extension` still read `colors.palette` directly.
+ * cleanup), which now re-exports these same values —
+ * `apps/extension` still reads `colors.palette` directly.
  */
 const chainMarkHues = {
   orange: '#FF5C45',

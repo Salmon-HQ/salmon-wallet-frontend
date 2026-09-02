@@ -20,7 +20,7 @@ pnpm turbo run typecheck lint test   # full check, or scope with --filter=@salmo
 pnpm check:i18n                      # locale parity, missing keys and orphans
 ```
 
-Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`, `@salmon/web`,
+Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 `@salmon/extension`.
 
 ## Pull requests

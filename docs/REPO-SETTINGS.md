@@ -68,7 +68,6 @@ Area labels used by templates and triage: `app:web`, `app:mobile`,
 will trigger the E2E workflow on PRs once that workflow lands). Create once:
 
 ```bash
-gh label create app:web --color 1d76db --description "apps/web"
 gh label create app:mobile --color 1d76db --description "apps/mobile"
 gh label create app:extension --color 1d76db --description "apps/extension"
 gh label create pkg:shared --color 0e8a16 --description "packages/shared"

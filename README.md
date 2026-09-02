@@ -84,7 +84,6 @@ docs/
 | Package          | Description                                    |
 | ---------------- | ---------------------------------------------- |
 | `apps/extension` | Browser extension built with WXT and React     |
-| `apps/web`       | Web wallet built with Vite and React           |
 | `apps/mobile`    | Mobile wallet built with Expo and React Native |
 
 ### Shared Packages
@@ -157,7 +156,6 @@ pnpm mobile:android
 Each application includes example environment files:
 
 ```text
-apps/web/.env.example
 apps/extension/.env.example
 apps/mobile/.env.example
 apps/mobile/.env.local.example
@@ -166,7 +164,6 @@ apps/mobile/.env.local.example
 Copy the relevant file before running locally:
 
 ```bash
-cp apps/web/.env.example apps/web/.env
 cp apps/extension/.env.example apps/extension/.env
 cp apps/mobile/.env.example apps/mobile/.env
 ```
@@ -241,7 +238,6 @@ Unit and integration tests live with the package or application that owns the be
 
 - Shared wallet logic → `packages/shared`
 - Shared UI → `packages/ui`
-- Web-specific functionality → `apps/web`
 - Extension-specific functionality → `apps/extension`
 - Mobile-specific functionality → `apps/mobile`
 
@@ -255,7 +251,6 @@ E2E suites are application-owned:
 
 ```text
 apps/extension/.playwright
-apps/web/.playwright
 apps/mobile/.maestro
 ```
 
@@ -270,7 +265,7 @@ The repository follows a simple ownership model:
 - Shared cross-platform wallet logic belongs in `packages/shared`
 - Shared React UI belongs in `packages/ui`
 - React Native code belongs in `apps/mobile`
-- Browser-specific runtime code belongs in `apps/web` or `apps/extension`
+- Browser-specific runtime code belongs in `apps/extension`
 
 Before moving code across package boundaries, read:
 

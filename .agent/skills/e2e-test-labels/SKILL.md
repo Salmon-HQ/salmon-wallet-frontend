@@ -1,6 +1,6 @@
 ---
 name: e2e-test-labels
-description: "Add and maintain stable test/accessibility labels (testID, data-testid, accessibilityRole/Label, aria-label, semantic roles) on components, screens, and pages so Maestro flows and Playwright suites can select elements reliably. Use whenever creating or modifying interactive UI in apps/mobile, apps/web, apps/extension, or packages/ui, or when a cross-platform contract in packages/shared/src/types/ui gains a new interactive element. Use together with mobile-component-scaffold, ui-component-scaffold, and salmon-repo-rules whenever new UI is built."
+description: "Add and maintain stable test/accessibility labels (testID, data-testid, accessibilityRole/Label, aria-label, semantic roles) on components, screens, and pages so Maestro flows and Playwright suites can select elements reliably. Use whenever creating or modifying interactive UI in apps/mobile, apps/extension, or packages/ui, or when a cross-platform contract in packages/shared/src/types/ui gains a new interactive element. Use together with mobile-component-scaffold, ui-component-scaffold, and salmon-repo-rules whenever new UI is built."
 ---
 
 # E2E Test Labels

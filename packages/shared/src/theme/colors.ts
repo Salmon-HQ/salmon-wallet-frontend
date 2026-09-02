@@ -123,7 +123,7 @@ export const colors = {
    *
    * Values live in `brand.ts` as `chainMarks` (2026-09-01 cleanup) — these
    * are per-chain brand marks, not theme colours. Kept here, referencing
-   * `chainMarks`, because `apps/web` and `apps/extension` still read
+   * `chainMarks`, because `apps/extension` still reads
    * `colors.palette` directly.
    */
   palette: chainMarks,

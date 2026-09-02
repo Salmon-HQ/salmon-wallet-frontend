@@ -3,7 +3,7 @@
  *
  * Constrains content to a phone-like column (max-width 375px) on wide screens,
  * while going full-width on mobile.  Intended to wrap the entire route tree
- * in apps/web so every page gets a consistent centred layout.
+ * around a route tree so every page gets a consistent centred layout.
  */
 
 import React from 'react';

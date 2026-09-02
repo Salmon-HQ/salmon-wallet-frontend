@@ -5,8 +5,8 @@ each one, and what is and isn't covered today. This is a **state-of-reality**
 document: it marks what is automated, what is manual, and the known debt — it
 does not promise coverage that isn't there.
 
-Scope: the monorepo's three runtimes — `apps/web` (React + MUI), `apps/extension`
-(wxt + MUI), `apps/mobile` (React Native / Expo) — plus the shared packages
+Scope: the monorepo's two runtimes — `apps/extension` (wxt + MUI) and
+`apps/mobile` (React Native / Expo) — plus the shared packages
 (`packages/shared`, `packages/ui`). The backend lives in the sibling repo
 `../salmon-wallet-backend` and runs in Docker.
 
@@ -51,7 +51,6 @@ in Docker and real `.env.test` files (copied from `.env.test.example`, filled
 with the funded test seeds):
 
 ```bash
-pnpm --filter @salmon/web e2e          # all 3 browser projects
 pnpm --filter @salmon/extension e2e    # headed by default
 ```
 
@@ -122,17 +121,6 @@ a stop.
 
 ## Running each check
 
-### Web e2e (functional + a11y + responsive, all browsers)
-
-```bash
-pnpm --filter @salmon/web e2e          # starts the vite dev server itself
-```
-
-Specs in `apps/web/.playwright/tests/`: `smoke` (boot + lock contract), `a11y`
-(axe on the boot screen), `responsive` (no horizontal overflow at
-375/768/1024/1440, chromium only). Every spec runs on chromium, firefox and
-webkit via the `projects` in `playwright.config.ts`.
-
 ### Extension e2e (functional + a11y)
 
 ```bash
@@ -157,34 +145,9 @@ Flows select by `id:` (React Native `testID`) — immune to copy/i18n. Secret /
 destructive flows (`flows/actions/reveal/*`, `flows/actions/reset/*`) exist for
 id coverage; do not run them casually.
 
-### Lighthouse (performance + a11y + SEO + best-practices budgets)
+### Lighthouse
 
-```bash
-pnpm --filter @salmon/web build
-pnpm --filter @salmon/web lh
-```
-
-`lighthouserc.cjs` serves the **production build** through `vite preview` (SPA
-fallback) and runs Lighthouse 3× against the welcome screen, asserting:
-
-| Category / metric | Threshold      | Current  |
-| ----------------- | -------------- | -------- |
-| Accessibility     | ≥ 0.95         | **1.00** |
-| Best Practices    | ≥ 0.95         | **1.00** |
-| SEO               | ≥ 0.95         | **1.00** |
-| Performance       | ≥ 0.80         | 0.84     |
-| LCP               | ≤ 2.5 s        | ~1.8 s   |
-| CLS               | ≤ 0.1          | ok       |
-| TBT               | ≤ 300 ms       | ok       |
-| FCP               | ≤ 1.5 s (warn) | ~1.8 s   |
-
-> Note: serve via `vite preview`, **not** a bare static dir — a static dir 404s
-> client routes and Lighthouse ends up scoring the React Router error page.
-
-Thresholds are ratcheted to the current build with variance headroom. Tighten
-as the app improves; never loosen silently.
-
----
+Retired with the web app (2026-09-02).
 
 ## Accessibility
 

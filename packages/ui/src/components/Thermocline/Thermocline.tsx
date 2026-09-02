@@ -7,7 +7,7 @@
  * DESIGN.md §The thermocline.
  *
  * DOM build — the mobile twin is
- * `apps/mobile/src/components/Thermocline/Thermocline.native.tsx`. The material is
+ * `apps/mobile/src/components/Thermocline/Thermocline.tsx`. The material is
  * the tint: the translucent membrane ink alone, adopted over the glass/blur
  * ladder on 2026-08-19 (owner's live comparison). `prefers-reduced-transparency`
  * collapses it to the nearest opaque plane without moving the layout by a

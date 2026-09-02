@@ -1,7 +1,7 @@
 /**
- * LockScreen — the unlock screen, once, for web and extension.
+ * LockScreen — the unlock screen, once, for the DOM.
  *
- * `apps/web/src/pages/lock/LockPage.tsx` and
+ * The (retired) web app's LockPage and
  * `apps/extension/src/pages/lock/LockPage.tsx` were near-verbatim duplicates:
  * same element order, same styled components, same numbers, diverging in
  * exactly two places (web hardcoded `72` and `'14px 16px'` where the extension

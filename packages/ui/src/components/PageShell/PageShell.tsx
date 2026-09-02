@@ -4,7 +4,7 @@
  * Eliminates the duplicated Container / Header / BackButton / HeaderTitle /
  * ScrollContent pattern that appears identically in:
  *   TokenDetailPage, TransactionHistoryPage, NftDetailPage,
- *   NftSeeAllPage, SendPage, and SettingsPanelContent.
+ *   SendPage and SettingsPanelContent.
  *
  * Usage:
  *   <PageShell title="Token Information" onBack={onBack}>

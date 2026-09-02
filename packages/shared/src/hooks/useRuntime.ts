@@ -1,10 +1,9 @@
 /**
  * @fileoverview Platform-agnostic runtime hook with automatic environment detection.
  *
- * This module provides a unified interface for runtime context across all platforms:
- * - Web browsers
- * - Browser extensions (WXT/Chrome/Firefox)
- * - React Native / Expo mobile apps
+ * This module provides a unified interface for runtime context across both platforms:
+ * - Browser extension (WXT/Chrome/Firefox) — this file, resolved by Vite
+ * - React Native / Expo mobile app — `useRuntime.native.ts`, resolved by Metro
  *
  * The hook automatically detects the runtime environment and provides
  * appropriate adapter detection logic for each platform.
@@ -14,9 +13,8 @@
  * // Direct import - will use the correct implementation based on bundler config
  * import { useRuntime } from '@salmon/shared/hooks';
  *
- * // Or use platform-specific imports if needed:
- * import { useRuntime } from '@salmon/shared/hooks/useRuntime.web';  // Web/Extension
- * import { useRuntime } from '@salmon/shared/hooks/useRuntime.native'; // React Native
+ * // Or import the React Native implementation by name if needed:
+ * import { useRuntime } from '@salmon/shared/hooks/useRuntime.native';
  * ```
  */
 
@@ -57,7 +55,7 @@ const useRuntimeWeb = (): RuntimeInfo => {
 /**
  * Runtime hook for detecting adapter mode and connection context.
  *
- * This is the base implementation for web environments. For React Native,
+ * This is the DOM implementation (the extension). For React Native,
  * use the platform-specific import or configure your bundler to resolve
  * `.native.ts` extensions automatically.
  *

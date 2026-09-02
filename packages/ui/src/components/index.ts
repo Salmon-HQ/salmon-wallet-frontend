@@ -1,7 +1,7 @@
 /**
  * @salmon/ui - Shared web UI components
  *
- * React DOM + MUI components shared between apps/extension and apps/web.
+ * React DOM + MUI components for apps/extension.
  * All components use design tokens from @salmon/shared for consistent styling.
  */
 
@@ -34,14 +34,6 @@ export type { UnifiedIconProps } from './Icon';
 // WalletHeader - Account info and settings navigation
 export { WalletHeader } from './WalletHeader';
 export type { WalletHeaderProps } from './WalletHeader';
-
-// BalanceCard - Portfolio balance display with gradient
-export { BalanceCard, BalanceCardCarousel } from './BalanceCard';
-export type { BalanceCardCarouselProps, BalanceCardProps } from './BalanceCard';
-
-// ActionButtonRow - Send/Receive/Activity action buttons
-export { ActionButtonRow } from './ActionButtonRow';
-export type { ActionButton, ActionButtonRowProps } from './ActionButtonRow';
 
 // TokenList - Token list display components
 export { TokenList, TokenListItem, TokenListSkeleton, TokenLogo } from './TokenList';
@@ -199,17 +191,6 @@ export type { NftCardProps, NftCardSkeletonProps, NftData } from './NftCard';
 export { NftDetailPage } from './NftDetailPage';
 export type { NftAttribute, NftDetailData, NftDetailPageProps } from './NftDetailPage';
 
-// NftCarouselSection - Horizontal NFT carousel with arrow navigation
-export { NftCarouselSection, NftCarouselSectionSkeleton } from './NftCarouselSection';
-export type {
-  NftCarouselSectionProps,
-  NftCarouselSectionSkeletonProps,
-} from './NftCarouselSection';
-
-// NftSeeAllPage - Full-page grid view of all NFTs for a blockchain section
-export { NftSeeAllPage } from './NftSeeAllPage';
-export type { NftSeeAllPageProps } from './NftSeeAllPage';
-
 // TokenSelector - Token selection with search and pagination
 export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
 export type {
@@ -357,9 +338,6 @@ export type { NftSendDialogProps } from './NftSendDialog';
 // SeedPhrase - Seed word display grid and validation input
 export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
 export type { SeedPhraseEntryProps, SeedWordGridProps, SeedWordInputProps } from './SeedPhrase';
-
-// NetworkSelector - Network selection for settings
-export { NetworkSelector } from './NetworkSelector';
 
 // ExplorerSelector - Block explorer selection for settings
 export { ExplorerSelector } from './ExplorerSelector';

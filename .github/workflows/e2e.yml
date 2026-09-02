@@ -22,53 +22,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  web:
-    name: web (playwright, chromium)
-    # PRs run only when carrying the `e2e` label; schedule/dispatch always run.
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright chromium
-        run: pnpm --filter @salmon/web exec playwright install chromium --with-deps
-
-      # Minimal env, NOT a copy of .env.test.example: the example ships
-      # CHANGE_ME placeholders, and a *set* SALMON_TEST_SEED_A (even garbage)
-      # defeats the specs' skip guards. Leaving seed keys unset makes
-      # seed-gated specs skip cleanly; smoke/a11y/responsive still run.
-      # Optional depth: define SALMON_TEST_SEED_A/B etc. as repo secrets —
-      # fork PRs never receive secrets, so the guards stay safe there.
-      - name: Write minimal test env
-        working-directory: apps/web/.playwright
-        run: printf 'SALMON_TEST_PASSWORD=CiSmoke-Pass1!\n' > .env.test
-
-      - name: Run web E2E (chromium project)
-        run: pnpm --filter @salmon/web e2e --project=chromium
-
-      - name: Upload report on failure
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: web-playwright-report
-          path: apps/web/.playwright/playwright-report
-          retention-days: 7
-
   extension:
     name: extension (playwright, chromium headless)
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')

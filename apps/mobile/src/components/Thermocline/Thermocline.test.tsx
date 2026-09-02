@@ -18,7 +18,7 @@ jest.mock('@salmon/shared', () => ({
   },
 }));
 
-import { Thermocline } from './Thermocline.native';
+import { Thermocline } from './Thermocline';
 
 // The tab bar's geometry: `componentSizes.tabBarRadius` (the control radius,
 // 12 — a control, not a pill; pinned in shared's `controlRadius.test.ts`).

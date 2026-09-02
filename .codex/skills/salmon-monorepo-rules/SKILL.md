@@ -1,6 +1,6 @@
 ---
 name: salmon-monorepo-rules
-description: Resolve package ownership, shared-vs-app boundaries, and placement decisions in salmon-wallet-v3. Use this skill whenever a task could change where code lives across `packages/shared`, `packages/ui`, `apps/mobile`, `apps/web`, or `apps/extension`.
+description: Resolve package ownership, shared-vs-app boundaries, and placement decisions in salmon-wallet-v3. Use this skill whenever a task could change where code lives across `packages/shared`, `packages/ui`, `apps/mobile`, or `apps/extension`.
 ---
 
 Thin pointer — the canonical rules live elsewhere; do not duplicate them here.

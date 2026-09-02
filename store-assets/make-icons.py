@@ -11,7 +11,7 @@ squeezed down. That is the whole point of the file.
     python3 store-assets/make-icons.py extension  # one group
     python3 store-assets/make-icons.py measure    # re-derive the ink bounds
 
-Groups: extension, web, store.
+Groups: extension, store.
 
 Alpha is decided per target, because the stores disagree with each other:
 Play's feature graphic forbids it, Play's 512 icon requires the container to
@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 BRAND_TS = ROOT / "packages/shared/src/theme/brand.ts"
 
 # Coral tile gradient — the same two stops as `compose.py` (CORAL_TOP /
-# CORAL_BOT) and `apps/web/public/favicon.svg`. The bottom stop is salmon-500
+# CORAL_BOT). The bottom stop is salmon-500
 # `#FF5C45` from packages/shared/src/theme/palette.ts.
 CORAL_TOP, CORAL_BOT = (0xFF, 0x81, 0x70), (0xFF, 0x5C, 0x45)
 # The mark's ink: `#FCFCFC`, not pure white. DESIGN.md — "Deep water has no
@@ -155,7 +155,6 @@ PX32 = dict(scale=0.78)
 MASKABLE = dict(scale=0.48)
 
 EXT = ROOT / "apps/extension/public"
-WEB = ROOT / "apps/web/public"
 
 # (path, size, kwargs, alpha, note)
 TARGETS = {
@@ -186,15 +185,6 @@ TARGETS = {
         # `apps/extension/dist/chrome-mv3/manifest.json`.
         (EXT / "icon-192.png", 192, {}, True, "manifest icons (WXT auto-discovered)"),
         (EXT / "icon-512.png", 512, {}, True, "manifest icons (WXT auto-discovered)"),
-    ],
-    "web": [
-        (WEB / "favicon-32.png", 32, PX32, True, "browser tab"),
-        (WEB / "icon-192.png", 192, {}, True, "webmanifest purpose=any"),
-        (WEB / "icon-512.png", 512, {}, True, "webmanifest purpose=any"),
-        (WEB / "icon-192-maskable.png", 192, MASKABLE, True, "purpose=maskable"),
-        (WEB / "icon-512-maskable.png", 512, MASKABLE, True, "purpose=maskable"),
-        # iOS composites this on an opaque ground and masks it itself.
-        (WEB / "apple-touch-icon.png", 180, {}, False, "iOS home screen, opaque"),
     ],
     "store": [
         # Same rule and same bytes as the manifest icon above; the store folder

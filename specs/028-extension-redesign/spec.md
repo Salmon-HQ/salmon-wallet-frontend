@@ -74,6 +74,13 @@ wiring one would change dark. No component was restyled; the kit still reads
 the static `semantic`, which is the dark set, until lot 2 moves it onto
 `useSemantic()`.
 
+### Lot 3.6 — web retired (2026-09-02)
+
+`apps/web` is deleted, with its deploy workflow, its E2E job, its root scripts
+and the `packages/ui` components only it read. The extension is the only DOM
+app; `.web` platform files in `packages/shared` resolve for it. The mobile
+app drops its react-native-web twins too.
+
 ## Owner answers (2026-09-02, multiple choice)
 
 1. **MUI**: adapter now; removed at the end of lot 4 if nothing reads it.
@@ -84,4 +91,4 @@ the static `semantic`, which is the dark set, until lot 2 moves it onto
 
 ## Verification
 
-Per lot: `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/ui --filter=@salmon/extension --filter=@salmon/web`, `pnpm format:check`, `node scripts/check-i18n.mjs`; the extension's Playwright suite when a lot touches a covered page. Owner review in Chrome's side panel at 320 and 400px, both modes.
+Per lot: `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/ui --filter=@salmon/extension` (web retired in lot 3.6), `pnpm format:check`, `node scripts/check-i18n.mjs`; the extension's Playwright suite when a lot touches a covered page. Owner review in Chrome's side panel at 320 and 400px, both modes.

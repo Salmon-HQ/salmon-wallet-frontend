@@ -53,14 +53,14 @@ jest.mock('expo-camera', () => ({
 }));
 
 import { CameraView } from 'expo-camera';
-import { QRScanner } from './QRScanner.native';
+import { QRScanner } from './QRScanner';
 
 const scanFrame = (data: string) => {
   const props = (CameraView as unknown as jest.Mock).mock.calls.at(-1)?.[0];
   act(() => props.onBarcodeScanned({ data }));
 };
 
-describe('QRScanner.native', () => {
+describe('QRScanner', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPermission = { granted: true, canAskAgain: true };

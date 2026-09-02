@@ -7,13 +7,11 @@ Este documento describe la arquitectura del monorepo por responsabilidades de ca
 El repo sigue una estructura de monorepo con separación por ownership y plataforma:
 
 - `packages/shared`
-  - lógica compartida entre mobile, web y extension
+  - lógica compartida entre mobile y extension
 - `packages/ui`
-  - componentes React DOM compartidos entre web y extension
+  - componentes React DOM de la extension (la app web se retiró el 2026-09-02)
 - `apps/mobile`
   - app React Native y UI mobile-only
-- `apps/web`
-  - app web
 - `apps/extension`
   - browser extension
 
@@ -100,17 +98,8 @@ Responsabilidad:
 
 No debería contener:
 
-- lógica que debería reutilizarse en web y extension
+- lógica que debería reutilizarse en la extension
 - componentes DOM
-
-### `apps/web/`
-
-Responsabilidad:
-
-- shell web
-- routing y providers web
-- páginas y wiring web-specific
-- adaptaciones browser-only
 
 ### `apps/extension/`
 

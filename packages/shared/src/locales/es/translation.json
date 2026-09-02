@@ -7,7 +7,6 @@
   },
   "tabs": {
     "swap": "Intercambiar",
-    "collectibles": "Coleccionables",
     "home": "Inicio",
     "portfolio": "Portfolio",
     "nfts": "NFTs"
@@ -42,9 +41,7 @@
     "yes": "Sí",
     "no": "No",
     "page": "Página",
-    "go_home": "Ir al Inicio",
     "not_supported": "No soportado",
-    "network_mainnet": "Mainnet",
     "network_solana_mainnet": "Solana Mainnet",
     "not_found": {
       "title": "¡Ups!",
@@ -65,7 +62,6 @@
     "change": "Cambiar",
     "done": "Listo",
     "send": "Enviar",
-    "receive": "Recibir",
     "search_placeholder": "Buscar...",
     "view_more": "Ver más",
     "continue": "Continuar",
@@ -85,9 +81,6 @@
     "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
     "connect_title": "Conectar con dApp",
     "connect_subtitle": "Este sitio quiere conectar con tu Salmon Wallet",
-    "unlock_subtitle": "Ingresá tu contraseña para aprobar esta solicitud",
-    "no_wallet_title": "No se encontró ninguna billetera",
-    "no_wallet_subtitle": "Abrí Salmon Wallet y configurá una cuenta, después volvé a intentarlo.",
     "requesting_site": "Sitio que solicita",
     "wallet_address": "Billetera",
     "approve": "Aprobar",
@@ -777,8 +770,7 @@
     "unnamed": "NFT sin nombre",
     "emptyTitle": "Sin Coleccionables",
     "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
-    "notFound": "NFT no encontrado. Volvé a entrar desde tu colección.",
-    "noCollectionData": "No hay datos de la colección. Volvé a entrar desde tu colección."
+    "notFound": "NFT no encontrado. Volvé a entrar desde tu colección."
   },
   "swap": {
     "you_send": "Enviás",
@@ -853,10 +845,7 @@
     "permissionMessage": "Para escanear códigos QR se necesita acceso a la cámara. Igual podés escribir o pegar la dirección manualmente.",
     "openSettings": "Abrir Ajustes",
     "notAddress": "Este código no es una dirección válida",
-    "wrongNetwork": "Esta dirección pertenece a otra red",
-    "mobileAppOnly": "Usá la app móvil de Salmon Wallet para escanear códigos QR.",
-    "unavailableTitle": "Escáner QR no disponible",
-    "unavailableMessage": "El escaneo de códigos QR solo está disponible en la app móvil."
+    "wrongNetwork": "Esta dirección pertenece a otra red"
   },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",
@@ -876,8 +865,6 @@
     "hide_balance": "Ocultar balance",
     "token_on_network": "{{token}} en {{network}}",
     "select_blockchain": "Cambiar a {{name}}",
-    "previous_blockchain": "Blockchain anterior",
-    "next_blockchain": "Blockchain siguiente",
     "loading_token_info": "Cargando información del token",
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
@@ -894,8 +881,6 @@
     "portfolio_order": "Ordenar las pestañas"
   },
   "collectibles": {
-    "title": "Coleccionables",
-    "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
     "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
@@ -921,8 +906,6 @@
     }
   },
   "home": {
-    "no_tokens": "No se encontraron tokens",
-    "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
     "unnamed_account": "Cuenta",
     "total_balance": "Balance total",
     "change_period_24h": "24h",

@@ -27,7 +27,7 @@
  * still import `@mui/icons-material` directly. They are owned by concurrent work
  * and were left alone on purpose; that dependency stays in this package's
  * manifest until they move too, at which point it can be dropped here as it
- * already was from `apps/web` and `apps/extension`.
+ * already was from `apps/extension`.
  */
 
 import { createElement } from 'react';

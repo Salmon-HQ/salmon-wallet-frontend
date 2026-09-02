@@ -1,5 +1,5 @@
 import React from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCodeSVG from 'react-native-qrcode-svg';
 import type { QRCodeProps } from './types';
 
 const QRCode: React.FC<QRCodeProps> = ({
@@ -9,7 +9,13 @@ const QRCode: React.FC<QRCodeProps> = ({
   color = '#000000',
   ecLevel = 'M',
 }) => (
-  <QRCodeSVG value={value} size={size} bgColor={backgroundColor} fgColor={color} level={ecLevel} />
+  <QRCodeSVG
+    value={value}
+    size={size}
+    backgroundColor={backgroundColor}
+    color={color}
+    ecl={ecLevel}
+  />
 );
 
 export default QRCode;

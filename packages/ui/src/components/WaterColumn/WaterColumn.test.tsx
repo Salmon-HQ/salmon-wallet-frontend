@@ -66,7 +66,6 @@ describe('the surfaces the water column must never reach', () => {
 
   it.each([
     ['a card in a grid', '../NftCard/NftCardSkeleton.tsx'],
-    ['a carousel in a page', '../NftCarouselSection/NftCarouselSectionSkeleton.tsx'],
     ['a row in a list', '../DerivedAccountCard/DerivedAccountCardSkeleton.tsx'],
   ])('leaves the skeleton of %s plain, because a skeleton is content', (_name, path) => {
     // The rule that decides this is not "does it spin" but "is it the ground".

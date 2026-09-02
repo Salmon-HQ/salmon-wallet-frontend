@@ -378,7 +378,7 @@ const CloseActionButton = styled(Button)({
 // DESIGN.md, §Chain identity. Mainnet is the silent default: Solana rows carry
 // nothing (in a Solana-first wallet a badge on every row says "you are where
 // you always are"), and a non-Solana mainnet token gets only its quiet chain
-// mark — the brand's own glyph, the same one BalanceCard and DerivedAccountCard
+// mark — the brand's own glyph, the same one DerivedAccountCard
 // draw, never a redrawn interface icon. Anything that is NOT mainnet keeps the
 // loud text chip, so a devnet or testnet token can never be mistaken for the
 // real thing; the chip stays a machine identifier and is deliberately not

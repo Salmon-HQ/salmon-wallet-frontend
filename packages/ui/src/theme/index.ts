@@ -44,7 +44,7 @@ const ms = (value: string): number => Number.parseInt(value, 10);
  * It used to be drawn outside — a salmon outline held off by a 2px gap filled
  * with `depth.abyss`. Two things were wrong with that. Almost every focusable
  * surface in this app sits inside a clipping ancestor (`BlurContainer`, a
- * scroll container, a sheet, `ActionButtonRow`), so anything painted outside
+ * scroll container, a sheet), so anything painted outside
  * the border box was cut off; and MUI's own `ButtonBase`/`InputBase` ship
  * `outline: 0`, which quietly won against the old single-class selector and
  * left only the `box-shadow` behind — the black rectangle.

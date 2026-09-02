@@ -4,6 +4,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useSemantic } from '../../theme/useThemedStyles';
 
+import { useMembraneMaterial } from '../../../hooks/useMembraneMaterial';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
 /** Scrim per tier — the floor, always painted, never negotiated. */
@@ -18,24 +19,24 @@ const opaqueFor = (t: Semantic): Record<ThermoclineTier, string> => ({
   thick: t.surface.crest,
 });
 
-/** Opaque-rung entry on the DOM: the OS signal, `prefers-reduced-transparency`. */
-function prefersReducedTransparency(): boolean {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-transparency: reduce)').matches
-    );
-  } catch {
-    return false;
-  }
-}
-
 /**
- * Thermocline — web (react-native-web) build of the material. Same contract
- * as the native file: the tint alone (adopted 2026-08-19), collapsing to the
- * opaque plane when the OS asks for reduced transparency. See
- * `Thermocline.native.tsx` for the material's full story.
+ * Thermocline — the P3 membrane material, named after the phenomenon it is.
+ *
+ * A thermocline is the boundary layer between water masses of different
+ * density; light crossing it refracts, so everything seen through it blurs
+ * and shimmers. Tint over scrolling content is that, rendered. See
+ * DESIGN.md §The thermocline.
+ *
+ * The material is the tint: the translucent membrane ink alone, adopted over
+ * the glass/blur ladder on 2026-08-19 (owner's live comparison). The OS
+ * Reduce Transparency signal (surfaced as `material === 'opaque'`) collapses
+ * it to the nearest opaque plane — accessibility outranks the look.
+ *
+ * Use it for chrome that floats over scrolling content (tab bar, sheets,
+ * sticky headers). Content is never glass; approval and seed screens are
+ * `surface.bedrock`, never this. Renders background only — no pointer
+ * events, no children. Evolves the former `Membrane` component; the
+ * `surface.membrane*` tokens keep their name.
  *
  * The material is tint + scrim only (2026-09-01) — the membrane field, the
  * flat dark scales layer that used to cover the whole surface, is retired.
@@ -48,9 +49,12 @@ function prefersReducedTransparency(): boolean {
  */
 export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   const semantic = useSemantic();
+  const material = useMembraneMaterial();
+  const rung = material === 'opaque' ? 'opaque' : 'tint';
   const scrim = scrimFor(semantic)[tier];
-  const rung = prefersReducedTransparency() ? 'opaque' : 'tint';
 
+  // The root owns the geometry and clips the strip; every rung fills it, so
+  // switching rungs never moves the layout by a pixel.
   const flat = StyleSheet.flatten(style) ?? {};
   const fill: StyleProp<ViewStyle> = [
     StyleSheet.absoluteFill,
