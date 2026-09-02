@@ -21,9 +21,11 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
+  formatLargeNumber,
   getLabelValue,
   getNetworkLabel,
   hiddenValue,
+  isMainnetNetworkId,
   letterSpacing,
   motionMs,
   ms,
@@ -34,6 +36,7 @@ import {
   tabularNums,
   useCurrencyContext,
   vs,
+  type BlockchainBalance,
   type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -303,7 +306,19 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
   const current = blockchains[activeIndex];
   const currentBlockchainId = current?.network.blockchain ?? 'solana';
-  const { usdTotal, changePercent, changeAmount, loading = false } = current ?? {};
+  const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
+  const currentNetworkId = current?.network.id ?? 'solana-mainnet';
+
+  // Off mainnet there is no price, so there is no USD total to print (the
+  // balance hook strips every fiat figure there) and the block used to sit on
+  // an em-dash forever. The honest total on a test network is the native
+  // quantity, formatted exactly as the token rows format theirs, and a 24h
+  // change is not withheld but absent: nothing priced it. Unknown is still
+  // unknown — a balance that has not been read yet is not a zero.
+  const isTestNetwork = !isMainnetNetworkId(currentNetworkId);
+  const nativeSymbol = NETWORK_DISPLAY[currentNetworkId]?.symbol ?? '';
+  const nativeTotal =
+    nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
   // Recalculation is reported by every value that can change and by none that
   // cannot (DESIGN.md rule 7). A change the backend has not returned yet is
   // unknown, not zero: defaulting it to 0 rendered "+$0.00 · 0% 24h", a
@@ -316,22 +331,28 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // is on, and mainnet says nothing (DESIGN.md §Chain identity — a non-mainnet
   // environment always keeps a text chip). `getNetworkLabel` returns null on
   // every mainnet, which is the whole rule.
-  const networkLabel = getNetworkLabel(current?.network.id ?? 'solana-mainnet');
+  const networkLabel = getNetworkLabel(currentNetworkId);
 
-  // The hint points where the next swipe actually goes, arrow included: the
-  // next chain is to the RIGHT, the previous one to the LEFT. It used to wrap
-  // around and read "→ SOL" on the last chain, pointing the wrong way at a
-  // swipe that does not exist. With one chain there is no cue row at all.
-  const nextChain = blockchains[activeIndex + 1];
-  const previousChain = blockchains[activeIndex - 1];
-  const hintChain = nextChain ?? previousChain;
-  const hintSymbol = hintChain ? NETWORK_DISPLAY[hintChain.network.id]?.symbol : undefined;
-  const hintArrow = nextChain ? '→' : '←';
-  // The hint takes the destination chain's own hue — a second channel on a cue
-  // that already reads without it. Whether the symbol may spend the hue or
+  // The hints point where the swipes actually go, arrow included, and both
+  // sides are shown: a middle page has a chain behind it as well as ahead of
+  // it, and naming only one of them hid half the carousel. The leading hint
+  // mirrors the trailing one — "SOL ←" to the left, "→ BTC" to the right — so
+  // each arrow points away from the dots, toward the chain it names. With one
+  // chain there is no hint at all.
+  //
+  // Each hint takes its own destination chain's hue — a second channel on a
+  // cue that already reads without it. Whether the symbol may spend the hue or
   // only the arrow glyph may is decided per mode in the tokens, against that
   // mode's ground; the component never asks which mode it is in.
-  const hintBlockchain = hintChain?.network.blockchain ?? currentBlockchainId;
+  const hintFor = (chainBalance: BlockchainBalance | undefined) =>
+    chainBalance
+      ? {
+          symbol: NETWORK_DISPLAY[chainBalance.network.id]?.symbol,
+          ink: chain.hintInk[chainBalance.network.blockchain],
+        }
+      : undefined;
+  const previousHint = hintFor(blockchains[activeIndex - 1]);
+  const nextHint = hintFor(blockchains[activeIndex + 1]);
 
   // The value swap: everything that reports the active chain is keyed on it,
   // so a switch remounts exactly those nodes and the sink/float plays in
@@ -408,34 +429,42 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
                 onAccessibilityAction={handleAccessibilityAction}
               >
-                {hiddenBalance ? hiddenValue : formatValue(usdTotal)}
+                {hiddenBalance ? hiddenValue : isTestNetwork ? nativeTotal : formatValue(usdTotal)}
               </Text>
             </PendingValue>
           </Animated.View>
 
           <View style={styles.changeRow}>
-            <Animated.View
-              testID="balance-change-sink"
-              style={[styles.changeText, changeSinkStyle]}
-            >
+            {/* Off mainnet nothing priced the balance, so there is no 24h
+                change to report — the line is absent rather than an em-dash,
+                which would promise a figure that is merely late. */}
+            {!isTestNetwork && (
               <Animated.View
-                key={`change-${currentBlockchainId}`}
-                testID="balance-change"
-                {...changeMotion}
+                testID="balance-change-sink"
+                style={[styles.changeText, changeSinkStyle]}
               >
-                <PendingValue pending={loading}>
-                  <Text
-                    style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
-                  >
-                    {hiddenBalance
-                      ? `${hiddenValue} · ${hiddenValue}`
-                      : hasChange
-                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
-                        : EM_DASH}
-                  </Text>
-                </PendingValue>
+                <Animated.View
+                  key={`change-${currentBlockchainId}`}
+                  testID="balance-change"
+                  {...changeMotion}
+                >
+                  <PendingValue pending={loading}>
+                    <Text
+                      style={[
+                        styles.change,
+                        { color: hiddenBalance ? text.secondary : changeColor },
+                      ]}
+                    >
+                      {hiddenBalance
+                        ? `${hiddenValue} · ${hiddenValue}`
+                        : hasChange
+                          ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
+                          : EM_DASH}
+                    </Text>
+                  </PendingValue>
+                </Animated.View>
               </Animated.View>
-            </Animated.View>
+            )}
             <Chip
               testID="home-activity-button"
               size="sm"
@@ -454,19 +483,46 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               warning a test-network session gets (spec 026 D5/D6). */}
           {(blockchains.length > 1 || !!networkLabel) && (
             <View style={styles.cueRow}>
-              {blockchains.length > 1 &&
-                blockchains.map((chain, index) => (
-                  <ChainDot
-                    key={chain.network.id}
-                    index={index}
-                    isActive={index === activeIndex}
-                    isReduceMotionEnabled={isReduceMotionEnabled}
-                    accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                      name: chain.network.name,
-                    })}
-                    onPress={() => index !== activeIndex && leaveFor(index)}
-                  />
-                ))}
+              {previousHint?.symbol && (
+                <Animated.View
+                  key={`prev-hint-${currentBlockchainId}`}
+                  testID="balance-prev-hint"
+                  {...swapMotion}
+                >
+                  <Text style={[styles.nextHint, { color: previousHint.ink }]}>
+                    {`${previousHint.symbol} ←`}
+                  </Text>
+                </Animated.View>
+              )}
+              {blockchains.length > 1 && (
+                <View style={styles.dotRow}>
+                  {blockchains.map((chainBalance, index) => (
+                    <ChainDot
+                      key={chainBalance.network.id}
+                      index={index}
+                      isActive={index === activeIndex}
+                      isReduceMotionEnabled={isReduceMotionEnabled}
+                      accessibilityLabel={t(
+                        'accessibility.select_blockchain',
+                        'Switch to {{name}}',
+                        { name: chainBalance.network.name }
+                      )}
+                      onPress={() => index !== activeIndex && leaveFor(index)}
+                    />
+                  ))}
+                </View>
+              )}
+              {nextHint?.symbol && (
+                <Animated.View
+                  key={`hint-${currentBlockchainId}`}
+                  testID="balance-next-hint"
+                  {...swapMotion}
+                >
+                  <Text style={[styles.nextHint, { color: nextHint.ink }]}>
+                    {`→ ${nextHint.symbol}`}
+                  </Text>
+                </Animated.View>
+              )}
               {networkLabel && (
                 <Chip
                   testID="balance-network-chip"
@@ -474,17 +530,6 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   variant="outline"
                   label={networkLabel}
                 />
-              )}
-              {hintSymbol && (
-                <Animated.View
-                  key={`hint-${currentBlockchainId}`}
-                  testID="balance-next-hint"
-                  {...swapMotion}
-                >
-                  <Text style={[styles.nextHint, { color: chain.hintInk[hintBlockchain] }]}>
-                    {`${hintArrow} ${hintSymbol}`}
-                  </Text>
-                </Animated.View>
               )}
             </View>
           )}
@@ -570,6 +615,13 @@ const stylesFor = (t: Semantic) =>
       ...TABULAR,
     },
     cueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    // The dots keep the step they always had; the row around them spends the
+    // wider one, so the hints flank the group instead of joining it.
+    dotRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.sm),

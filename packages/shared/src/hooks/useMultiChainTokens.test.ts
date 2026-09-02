@@ -27,6 +27,7 @@ function makeBalanceState(overrides: Record<string, any> = {}) {
     balance: null,
     tokens: [],
     usdTotal: undefined,
+    nativeAmount: undefined,
     changePercent: undefined,
     changeAmount: undefined,
     loading: false,

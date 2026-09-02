@@ -59,8 +59,9 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
+const mockDeveloperNetworks = { on: false };
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => false,
+  useDeveloperMode: () => mockDeveloperNetworks.on,
   useUnverifiedTokens: () => false,
 }));
 jest.mock('../hooks/useTabChrome', () => ({
@@ -133,7 +134,33 @@ jest.mock('@salmon/shared', () => ({
     },
     { clearSwitchingNetwork: jest.fn(), changeNetwork: mockChangeNetwork },
   ],
-  useAvailableNetworks: () => ({ allNetworks: networksState.allNetworks }),
+  // A faithful fake of the hook's one subtle contract: its internal
+  // `useUserConfig` reads the flag from storage at mount and reloads only when
+  // the network it is keyed on changes, so a caller that does not pass the
+  // `developerNetworks` override keeps whatever the flag was when it mounted.
+  // Home must pass the override, or a toggle reaches the carousel only after
+  // the next chain change.
+  useAvailableNetworks: ({
+    developerNetworks,
+    activeNetworkId,
+  }: {
+    developerNetworks?: boolean;
+    activeNetworkId?: string | null;
+  }) => {
+    const ReactActual = require('react');
+    const flagAtMount = ReactActual.useRef(mockDeveloperNetworks.on).current;
+    const offered = developerNetworks ?? flagAtMount;
+    return {
+      allNetworks: offered
+        ? networksState.allNetworks
+        : // With the flag off the offer is the mainnets plus whatever network
+          // the session is standing on, so nobody is stranded on a page the
+          // carousel cannot reach (`visibleNetworkIds`).
+          networksState.allNetworks.filter(
+            (network) => network.id.endsWith('-mainnet') || network.id === activeNetworkId
+          ),
+    };
+  },
   useBalance: () => ({
     tokens: [],
     usdTotal: 0,
@@ -260,6 +287,7 @@ describe('home sub-tabs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockStoredTabOrder = null;
+    mockDeveloperNetworks.on = false;
     networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
   });
@@ -486,5 +514,60 @@ describe('home sub-tabs', () => {
     const row = screen.getByTestId('portfolio-tabs-region');
     expect(row.props.entering).toBeDefined();
     expect(row.props.exiting).toBeDefined();
+  });
+});
+
+describe('home developer networks', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDeveloperNetworks.on = false;
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'solana-devnet', name: 'Solana Devnet' },
+    ];
+  });
+
+  it('offers the test-network pages as soon as the setting is on, with no chain change', () => {
+    // Regression (owner, on device): the devnet page appeared only after
+    // switching chains. Home read the flag from the hoisted context but let
+    // `useAvailableNetworks` read its own copy, and that copy reloads from
+    // storage only when the network it is keyed on changes — so the offer
+    // stayed on the value it had when Home mounted.
+    const view = renderScreen(<HomeScreen />);
+    expect(screen.queryByText('solana-devnet')).toBeNull();
+
+    mockDeveloperNetworks.on = true;
+    view.rerender(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })}
+      >
+        <HomeScreen />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('solana-devnet')).toBeTruthy();
+    // The pages arrive on their own: nothing had to move the session to
+    // another chain to shake them loose.
+    expect(mockChangeNetwork).not.toHaveBeenCalled();
+  });
+
+  it('drops the pages again when the setting goes off', () => {
+    mockDeveloperNetworks.on = true;
+    const view = renderScreen(<HomeScreen />);
+    expect(screen.getByText('solana-devnet')).toBeTruthy();
+
+    // Turning it off moves the session back to mainnet first (the toggle's own
+    // job, covered where it lives); what Home owes is dropping the page.
+    mockDeveloperNetworks.on = false;
+    view.rerender(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })}
+      >
+        <HomeScreen />
+      </QueryClientProvider>
+    );
+
+    expect(screen.queryByText('solana-devnet')).toBeNull();
   });
 });

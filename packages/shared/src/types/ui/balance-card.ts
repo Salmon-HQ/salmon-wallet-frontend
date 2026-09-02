@@ -22,6 +22,12 @@ export interface BlockchainBalance {
   network: BlockchainNetworkInfo;
   /** Total balance in USD */
   usdTotal: number | undefined;
+  /**
+   * The native token's quantity (SOL, BTC, ETH). Off mainnet there is no USD
+   * figure at all, so this is what a total can honestly report; `undefined`
+   * means the balance has not been read yet.
+   */
+  nativeAmount?: number;
   /** 24-hour change percentage */
   changePercent?: number;
   /** 24-hour change in USD */

@@ -226,8 +226,16 @@ export default function HomeScreen() {
     () => (networksAccounts ? Object.keys(networksAccounts) : undefined),
     [networksAccounts]
   );
+  // The flag comes from the hoisted context, not from the hook's own
+  // `useUserConfig` instance. That instance reloads from storage only when the
+  // blockchain or environment it is keyed on changes, so a toggle written by
+  // the settings screen left this copy stale until the session changed
+  // network — which is exactly why the devnet pages only appeared after a
+  // chain switch. The override is the documented seam for a caller that
+  // already holds a `useUserConfig`.
   const { allNetworks } = useAvailableNetworks({
     activeBlockchainAccount: userConfigAccount,
+    developerNetworks,
     heldNetworkIds,
     activeNetworkId: networkId,
   });
@@ -263,6 +271,7 @@ export default function HomeScreen() {
   const {
     tokens,
     usdTotal,
+    nativeAmount,
     changePercent,
     changeAmount,
     loading,
@@ -312,6 +321,7 @@ export default function HomeScreen() {
 
       let balanceData: {
         usdTotal: number | undefined;
+        nativeAmount: number | undefined;
         changePercent: number | undefined;
         changeAmount: number | undefined;
         loading: boolean;
@@ -325,6 +335,9 @@ export default function HomeScreen() {
         const showSkeleton = !hasData;
         balanceData = {
           usdTotal: showSkeleton ? undefined : usdTotal,
+          // Off mainnet there is no USD figure at all, so this is what the
+          // block prints as the total.
+          nativeAmount: showSkeleton ? undefined : nativeAmount,
           changePercent: showSkeleton ? undefined : changePercent,
           changeAmount: showSkeleton ? undefined : changeAmount,
           loading: showSkeleton,
@@ -332,6 +345,7 @@ export default function HomeScreen() {
       } else {
         balanceData = {
           usdTotal: undefined,
+          nativeAmount: undefined,
           changePercent: undefined,
           changeAmount: undefined,
           loading: false,
@@ -347,7 +361,7 @@ export default function HomeScreen() {
         ...balanceData,
       };
     });
-  }, [allNetworks, networkId, usdTotal, changePercent, changeAmount, hasData]);
+  }, [allNetworks, networkId, usdTotal, nativeAmount, changePercent, changeAmount, hasData]);
 
   // The network the screen stands on, and its chain family. Every surface
   // below follows the NETWORK — `network.blockchain` is the id minus

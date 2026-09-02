@@ -30,6 +30,7 @@ import type { BlockchainAccount, NetworkId } from '../types/blockchain';
 import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/account';
 import { removeDecimals } from '../utils/decimals';
 import { isMainnetNetworkId } from '../utils/network';
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { queryKeys } from '../query/keys';
 
 import { type WalletBalance, type TokenBalanceWithPrice, SOL_CONSTANTS } from '../utils/balance';
@@ -66,6 +67,17 @@ export interface UseBalanceResult {
   balance: WalletBalance | null;
   tokens: TokenBalanceWithPrice[];
   usdTotal: number | undefined;
+  /**
+   * The native token's own quantity — SOL on Solana, BTC on Bitcoin — or
+   * `undefined` when no balance is held yet.
+   *
+   * It exists because off mainnet there is no USD figure to report at all
+   * (`withoutUsd` below), so the surfaces that print a total have nothing to
+   * print. The native unit is the honest answer there, and deriving it here
+   * means the three apps read one implementation of "which item is native"
+   * instead of each re-deriving it from the mint.
+   */
+  nativeAmount: number | undefined;
   changePercent: number | undefined;
   changeAmount: number | undefined;
   /** True only while there is nothing to show yet (no cached balance for this key). */
@@ -346,6 +358,15 @@ export function useBalance({
 
   const data = query.data;
   const tokens = data?.items ?? [];
+  // The native item carries the chain's own name as its mint (see the three
+  // fetchers above), so the family the network belongs to identifies it.
+  const nativeItem = data?.items.find(
+    (item) => item.mint === getBlockchainFromNetworkId(networkId)
+  );
+  const nativeUiAmount =
+    typeof nativeItem?.uiAmount === 'string'
+      ? parseFloat(nativeItem.uiAmount)
+      : nativeItem?.uiAmount;
   // Held data always wins, so a failed refetch keeps showing the balance.
   // With nothing held, a fetch in flight (including a user-pressed retry) is a
   // skeleton and a settled failure is the error state.
@@ -357,6 +378,10 @@ export function useBalance({
     balance: data ?? null,
     tokens,
     usdTotal: data?.usdTotal,
+    // A held balance with no native item is a real zero, not an unknown: the
+    // backend answered and the wallet holds none.
+    nativeAmount:
+      data === undefined ? undefined : Number.isFinite(nativeUiAmount) ? nativeUiAmount : 0,
     changePercent: data?.last24HoursChangePercent,
     changeAmount: data?.last24HoursChange,
     loading: query.isPending && enabled,

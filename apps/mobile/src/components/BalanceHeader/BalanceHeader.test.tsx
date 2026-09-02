@@ -24,9 +24,15 @@ jest.mock('@salmon/shared', () => ({
   showPercentage: (value: number) => `${value}%`,
   getNetworkLabel: (id: string) =>
     id === 'solana-devnet' ? 'Devnet' : id === 'bitcoin-testnet' ? 'Testnet' : null,
+  // The real rule, not a stub: a test network is anything the mirror map does
+  // not name as a mainnet, and the headline off mainnet is the native unit.
+  isMainnetNetworkId: (id: string) => id.endsWith('-mainnet'),
+  formatLargeNumber: (value: number) => String(value),
   NETWORK_DISPLAY: {
     'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
+    'solana-devnet': { symbol: 'SOL', name: 'Solana Devnet', blockchain: 'solana' },
     'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
+    'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet', blockchain: 'bitcoin' },
   },
   useCurrencyContext: () => [
     {},
@@ -221,15 +227,17 @@ describe('BalanceHeader', () => {
     expect(view.getByText('•••• · ••••')).toBeTruthy();
   });
 
-  it('points the next-chain hint in the direction the swipe goes', () => {
-    // First chain: the next one is to the right. Last chain: there is no next,
-    // so the cue points back at the previous one — it used to wrap around and
-    // read "→ SOL", an arrow pointing at a swipe that does not exist.
+  it('points each chain hint in the direction the swipe goes', () => {
+    // First chain: the next one is to the right, and there is nothing behind
+    // it. Last chain: nothing ahead, and the way back reads on the left — the
+    // hint used to wrap around and read "→ SOL" on the last page, an arrow
+    // pointing at a swipe that does not exist.
     const first = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
     expect(first.getByText('→ BTC')).toBeTruthy();
+    expect(first.queryByTestId('balance-prev-hint')).toBeNull();
 
     const last = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    expect(last.getByText('← SOL')).toBeTruthy();
+    expect(last.getByText('SOL ←')).toBeTruthy();
     expect(last.queryByText('→ SOL')).toBeNull();
   });
 
@@ -285,7 +293,7 @@ describe('BalanceHeader value swap', () => {
     // The chain actually changing is the one event that owes the gesture.
     remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
     expect(remounted.getByTestId('balance-change').props.entering).toBeDefined();
-    expect(remounted.getByTestId('balance-next-hint').props.entering).toBeDefined();
+    expect(remounted.getByTestId('balance-prev-hint').props.entering).toBeDefined();
   });
 
   it("gates the hint's sink on the same condition as its float", () => {
@@ -300,7 +308,7 @@ describe('BalanceHeader value swap', () => {
     expect(remounted.getByTestId('balance-next-hint').props.exiting).toBeUndefined();
 
     remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    const hint = remounted.getByTestId('balance-next-hint');
+    const hint = remounted.getByTestId('balance-prev-hint');
     expect(hint.props.entering).toBeDefined();
     expect(hint.props.exiting).toBeDefined();
   });
@@ -480,22 +488,85 @@ describe('BalanceHeader amount travel', () => {
   });
 });
 
-describe('BalanceHeader next-chain hint', () => {
-  const ink = (view: ReturnType<typeof render>) => {
-    const [hint] = within(view.getByTestId('balance-next-hint')).UNSAFE_getAllByType(Text);
+describe('BalanceHeader chain hints', () => {
+  const ink = (view: ReturnType<typeof render>, testID: string) => {
+    const [hint] = within(view.getByTestId(testID)).UNSAFE_getAllByType(Text);
     const flat = StyleSheet.flatten(hint.props.style as StyleProp<TextStyle>) as { color: string };
     return flat.color;
   };
 
-  it('takes the destination chain hue from the tokens, never from a literal', () => {
+  it('takes each destination chain hue from the tokens, never from a literal', () => {
     // The whole hint — arrow and symbol — reads one token; the token decides
     // per mode whether that is the chain's hue or `text.secondary`.
     const toBitcoin = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(ink(toBitcoin)).toBe(semantic.chain.hintInk.bitcoin);
+    expect(ink(toBitcoin, 'balance-next-hint')).toBe(semantic.chain.hintInk.bitcoin);
 
     const toSolana = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    expect(ink(toSolana)).toBe(semantic.chain.hintInk.solana);
-    expect(ink(toSolana)).toBe(chainMarks.byChain.solana);
+    expect(ink(toSolana, 'balance-prev-hint')).toBe(semantic.chain.hintInk.solana);
+    expect(ink(toSolana, 'balance-prev-hint')).toBe(chainMarks.byChain.solana);
+  });
+
+  it('names the chain on each side of the dots, and only the sides that exist', () => {
+    const THREE = [
+      ...BLOCKCHAINS,
+      { network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' } },
+    ] as any;
+
+    // First page: only what a forward swipe reaches.
+    const first = render(<BalanceHeader blockchains={THREE} activeIndex={0} />);
+    expect(first.queryByTestId('balance-prev-hint')).toBeNull();
+    expect(first.getByText('→ BTC')).toBeTruthy();
+
+    // Middle page: both, each arrow pointing away from the dots.
+    const middle = render(<BalanceHeader blockchains={THREE} activeIndex={1} />);
+    expect(middle.getByText('SOL ←')).toBeTruthy();
+    expect(middle.getByText('→ SOL')).toBeTruthy();
+
+    // Last page: only the way back.
+    const last = render(<BalanceHeader blockchains={THREE} activeIndex={2} />);
+    expect(last.getByText('BTC ←')).toBeTruthy();
+    expect(last.queryByTestId('balance-next-hint')).toBeNull();
+  });
+});
+
+describe('BalanceHeader on a test network', () => {
+  const DEVNET = [
+    {
+      network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' },
+      usdTotal: undefined,
+      nativeAmount: 1.25,
+    },
+  ] as any;
+
+  it('reports the total in the native unit and reports no 24h change', () => {
+    const view = render(<BalanceHeader blockchains={DEVNET} activeIndex={0} />);
+
+    expect(view.getByText('1.25 SOL')).toBeTruthy();
+    // Nothing priced it, so there is no change line at all — not an em-dash,
+    // which would promise a figure that is merely late.
+    expect(view.queryByTestId('balance-change')).toBeNull();
+    expect(view.queryByTestId('balance-change-sink')).toBeNull();
+  });
+
+  it('reports an empty test wallet as zero, never as an em-dash', () => {
+    const EMPTY = [{ ...DEVNET[0], nativeAmount: 0 }] as any;
+    const view = render(<BalanceHeader blockchains={EMPTY} activeIndex={0} />);
+
+    expect(view.getByText('0 SOL')).toBeTruthy();
+  });
+
+  it('masks the native total exactly as it masks a fiat one', () => {
+    const view = render(<BalanceHeader blockchains={DEVNET} activeIndex={0} hiddenBalance />);
+
+    expect(view.queryByText('1.25 SOL')).toBeNull();
+    expect(view.getByText('••••')).toBeTruthy();
+  });
+
+  it('keeps the USD headline and the change line on mainnet', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    expect(view.getByText('$1200')).toBeTruthy();
+    expect(view.getByTestId('balance-change')).toBeTruthy();
   });
 });
 
