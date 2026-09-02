@@ -8,21 +8,15 @@
  * put in the cache is what this paints, and nothing is fetched twice.
  *
  * The total is the one for the network currently on screen, which is the same
- * chain the home balance reads — one chain, one source (DESIGN.md §Chain
- * identity: every surface reads the chain from `networkId`).
- *
- * A wallet's total is the sum of **every** derived account it holds on that
- * network, not just the one the user happens to be standing on (owner,
- * 2026-09-02): Wallets answers "what is in this wallet", and a seed's money is
- * spread across its paths. Home is unchanged — it shows the active
- * sub-account, which is what picking one in Wallets is for.
+ * number the home balance shows for the active wallet — one chain, one source
+ * (DESIGN.md §Chain identity: every surface reads the chain from `networkId`).
  */
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 
 import { queryKeys } from '../query/keys';
 import type { Account } from '../types/account';
-import type { BlockchainAccount, NetworkId } from '../types/blockchain';
+import type { NetworkId } from '../types/blockchain';
 import { fetchBalanceForAccount } from './useBalance';
 
 export interface UseWalletTotalsParams {
@@ -30,17 +24,9 @@ export interface UseWalletTotalsParams {
   accounts: Account[];
   /** The network the screen is reading. */
   networkId: NetworkId | undefined;
-  /** Derivation indexes the user has hidden, per wallet — left out of the sum. */
-  hiddenDerivedAccounts?: Record<string, number[]>;
+  /** Derivation index in use; keep it aligned with the active balance query. */
+  pathIndex?: number;
   includeSpam?: boolean;
-}
-
-/** One priced address: a wallet's derived account on the network being read. */
-export interface WalletBalanceEntry {
-  walletId: string;
-  index: number;
-  address: string | undefined;
-  blockchainAccount: BlockchainAccount;
 }
 
 export interface UseWalletTotalsResult {
@@ -48,35 +34,6 @@ export interface UseWalletTotalsResult {
   totals: Record<string, number | undefined>;
   /** True while at least one wallet is still without a number. */
   loading: boolean;
-}
-
-/**
- * Every address that counts towards a wallet's total on one network.
- *
- * Pulled out of the hook so the two rules it encodes — every derived account
- * counts, a hidden one does not — can be tested without a query client.
- */
-export function walletBalanceEntries(
-  accounts: Account[],
-  networkId: NetworkId | undefined,
-  hiddenDerivedAccounts: Record<string, number[]> = {}
-): WalletBalanceEntry[] {
-  if (!networkId) return [];
-  return accounts.flatMap((account) => {
-    const hidden = hiddenDerivedAccounts[account.id] ?? [];
-    return (account.networksAccounts?.[networkId] ?? []).flatMap((blockchainAccount, index) =>
-      blockchainAccount && !hidden.includes(index)
-        ? [
-            {
-              walletId: account.id,
-              index,
-              address: blockchainAccount.getReceiveAddress?.(),
-              blockchainAccount,
-            },
-          ]
-        : []
-    );
-  });
 }
 
 /**
@@ -101,12 +58,21 @@ export function sumIncludedTotals(
 export function useWalletTotals({
   accounts,
   networkId,
-  hiddenDerivedAccounts,
+  pathIndex = 0,
   includeSpam = false,
 }: UseWalletTotalsParams): UseWalletTotalsResult {
   const entries = useMemo(
-    () => walletBalanceEntries(accounts, networkId, hiddenDerivedAccounts),
-    [accounts, networkId, hiddenDerivedAccounts]
+    () =>
+      accounts.map((account) => {
+        const networkAccounts = networkId ? account.networksAccounts?.[networkId] : undefined;
+        // A wallet derived from another seed's path sits at its derivation
+        // index, so position 0 of its array is empty — `find` takes the one
+        // address the wallet actually holds instead of reading the hole.
+        const blockchainAccount = networkAccounts?.[pathIndex] ?? networkAccounts?.find(Boolean);
+        const address = blockchainAccount?.getReceiveAddress?.();
+        return { walletId: account.id, blockchainAccount, address };
+      }),
+    [accounts, networkId, pathIndex]
   );
 
   const results = useQueries({
@@ -116,27 +82,21 @@ export function useWalletTotals({
         networkId: networkId ?? ('solana-mainnet' as NetworkId),
         includeSpam,
       }),
-      queryFn: () => fetchBalanceForAccount(blockchainAccount, networkId!, includeSpam),
-      enabled: Boolean(address && networkId),
+      queryFn: () => fetchBalanceForAccount(blockchainAccount!, networkId!, includeSpam),
+      enabled: Boolean(blockchainAccount && address && networkId),
     })),
   });
 
   return useMemo(() => {
-    // Every wallet is present from the start, at `undefined`, so a wallet whose
-    // chains have not answered yet reads as "no number yet" rather than as a
-    // zero balance.
     const totals: Record<string, number | undefined> = {};
-    for (const account of accounts) totals[account.id] = undefined;
-
     let loading = false;
     entries.forEach(({ walletId }, index) => {
       const result = results[index];
-      const value = result?.data?.usdTotal;
-      if (value != null) totals[walletId] = (totals[walletId] ?? 0) + value;
+      totals[walletId] = result?.data?.usdTotal;
       if (result?.isPending) loading = true;
     });
     return { totals, loading };
     // `results` is a fresh array every render; its identity is not a signal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accounts, entries, results.map((r) => r.dataUpdatedAt).join(','), results.length]);
+  }, [entries, results.map((r) => r.dataUpdatedAt).join(','), results.length]);
 }

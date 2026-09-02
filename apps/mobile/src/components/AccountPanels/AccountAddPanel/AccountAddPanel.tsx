@@ -290,6 +290,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
       networkIds: await getScanNetworks(),
       startIndex: selectedDerived ? selectedDerived.index : 0,
+      // A derived account is a wallet of its own that happens to share this
+      // wallet's seed; recording which one lets Wallets draw the descent
+      // (spec 025). An imported phrase descends from nothing.
+      ...(selectedDerived && activeAccount ? { derivedFrom: activeAccount.id } : {}),
     });
   }, [
     accountName,

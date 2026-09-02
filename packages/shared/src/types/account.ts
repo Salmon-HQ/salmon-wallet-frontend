@@ -43,6 +43,16 @@ export interface StoredAccount {
   avatar: string;
   /** Path indexes by network ID */
   pathIndexes: NetworkPathIndexes;
+  /**
+   * The wallet this one was derived from — the id of the wallet whose seed
+   * produced this path. A wallet the user created or imported on its own has
+   * none, so absence is the norm and only descent is stored.
+   *
+   * It says where a wallet came from, nothing more: a derived wallet is a
+   * wallet of its own (its own name, avatar, "include in total"), and this is
+   * only what lets Wallets draw it under the wallet it shares a seed with.
+   */
+  derivedFrom?: string;
 }
 
 /**
@@ -106,6 +116,8 @@ export interface CreateAccountOptions {
   networkIds?: string[];
   /** Starting derivation index (defaults to 0) */
   startIndex?: number;
+  /** The wallet whose seed this path came from — see {@link StoredAccount.derivedFrom} */
+  derivedFrom?: string;
 }
 
 /**
@@ -236,13 +248,4 @@ export interface UserConfig {
    * install and every pre-existing config get the scan for free.
    */
   derivedScannedAccountIds?: string[];
-  /**
-   * Derivation indexes the user has hidden, per wallet id. Absent or empty
-   * means every derived account is shown — exceptions only, as above.
-   *
-   * Hidden, not deleted: a derived account comes out of the seed, so removing
-   * it removes nothing real and the next scan would find it again. Index 0 is
-   * the wallet itself and is never hideable.
-   */
-  hiddenDerivedAccounts?: Record<string, number[]>;
 }

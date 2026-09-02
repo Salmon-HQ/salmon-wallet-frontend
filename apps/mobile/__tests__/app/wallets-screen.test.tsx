@@ -1,16 +1,15 @@
 /**
- * Wallets — the descent under a wallet card.
+ * Wallets — where a derived wallet sits.
  *
- * The chips that used to sit under a wallet said nothing about where a derived
- * account came from; the rows that replaced them are drawn as descendants and
- * carry the address they activate. What is pinned here is that half: the rows
- * belong to the right parent and arrive in index order, tapping one makes both
- * calls in the order that works, the active one is marked, a scan draws
- * skeletons instead of rows, and the rescan action is present exactly where a
- * seed can be scanned and inert while a scan is running.
+ * A derived path is a wallet of its own (spec 025): its own card, its own
+ * name, its own place in the total. The only thing that says where it came
+ * from is its position — right under the wallet it shares a seed with, stepped
+ * in, joined by a descent line, subtitled "Derived from {parent}". That, and
+ * the rescan action being offered exactly where there is a seed to scan, is
+ * what is pinned here. No index number appears anywhere.
  */
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockRouter = { back: jest.fn(), push: jest.fn() };
 
@@ -18,9 +17,7 @@ const mockChangeAccount = jest.fn(async () => {});
 const mockChangePathIndex = jest.fn(async () => {});
 const mockRescan = jest.fn(async () => {});
 
-const mockDerivedStatus: { scanningAccountId: string | null } = { scanningAccountId: null };
-const mockHidden: Record<string, number[]> = {};
-const mockSetDerivedHidden = jest.fn(async () => {});
+const mockDerived: { scanningAccountId: string | null } = { scanningAccountId: null };
 
 const blockchainAccount = (address: string) => ({ getReceiveAddress: () => address });
 
@@ -30,11 +27,20 @@ const seedWallet = {
   avatar: '',
   secret: { kind: 'mnemonic', mnemonic: 'twelve words' },
   networksAccounts: {
-    'solana-mainnet': [
-      blockchainAccount('AAAAaaaaAAAAaaaaAAAAaaaaAAAAaaaaAAAAaaaa'),
-      blockchainAccount('BBBBbbbbBBBBbbbbBBBBbbbbBBBBbbbbBBBBbbbb'),
-      blockchainAccount('CCCCccccCCCCccccCCCCccccCCCCccccCCCCcccc'),
-    ],
+    'solana-mainnet': [blockchainAccount('AAAAaaaaAAAAaaaaAAAAaaaaAAAAaaaaAAAAaaaa')],
+  },
+};
+
+// Created from the same phrase at a derived path: its only address sits at
+// that position, with holes before it.
+const derivedWallet = {
+  id: 'w3',
+  name: 'Account 3',
+  avatar: '',
+  derivedFrom: 'w1',
+  secret: { kind: 'mnemonic', mnemonic: 'twelve words' },
+  networksAccounts: {
+    'solana-mainnet': [null, null, blockchainAccount('CCCCccccCCCCccccCCCCccccCCCCccccCCCCcccc')],
   },
 };
 
@@ -51,9 +57,11 @@ const watchedWallet = {
 const mockAccountState = {
   ready: true,
   locked: false,
-  accounts: [seedWallet, watchedWallet],
+  // Deliberately out of descent order: the screen is what puts a derived
+  // wallet under its parent, not the order the accounts happen to be stored in.
+  accounts: [seedWallet, watchedWallet, derivedWallet],
   accountId: 'w1',
-  pathIndex: 1,
+  pathIndex: 0,
   networkId: 'solana-mainnet',
   activeBlockchainAccount: seedWallet.networksAccounts['solana-mainnet'][0],
 };
@@ -105,8 +113,8 @@ jest.mock('@salmon/shared', () => {
     getAccountMnemonic: actualSecret.getAccountMnemonic,
     isWatchOnlyAccount: actualSecret.isWatchOnlyAccount,
     getAccountAddress: (account: {
-      networksAccounts: Record<string, { getReceiveAddress: () => string }[]>;
-    }) => Object.values(account.networksAccounts)[0]?.[0]?.getReceiveAddress() ?? '',
+      networksAccounts: Record<string, ({ getReceiveAddress: () => string } | null)[]>;
+    }) => Object.values(account.networksAccounts)[0]?.find(Boolean)?.getReceiveAddress() ?? '',
     getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
     getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : ''),
     useAccountsContext: () => [
@@ -121,18 +129,19 @@ jest.mock('@salmon/shared', () => {
     useUserConfig: () => ({
       excludedFromTotal: [],
       setIncludedInTotal: jest.fn(),
-      hiddenDerivedAccounts: mockHidden,
-      setDerivedHidden: mockSetDerivedHidden,
     }),
-    useWalletTotals: () => ({ totals: { w1: 10, w2: 5 } }),
-    sumIncludedTotals: () => 15,
+    useWalletTotals: () => ({ totals: { w1: 10, w2: 5, w3: 3 } }),
+    sumIncludedTotals: () => 18,
     ContentLoader: () => null,
     Rect: () => null,
   };
 });
 
 jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
-  useDerivedAccounts: () => ({ status: mockDerivedStatus, rescan: mockRescan }),
+  useDerivedAccounts: () => ({
+    scanningAccountId: mockDerived.scanningAccountId,
+    rescan: mockRescan,
+  }),
 }));
 
 jest.mock('react-native-reanimated', () => {
@@ -187,98 +196,52 @@ import WalletsScreen from '../../app/(app)/wallets';
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockDerivedStatus.scanningAccountId = null;
-  for (const key of Object.keys(mockHidden)) delete mockHidden[key];
+  mockDerived.scanningAccountId = null;
 });
 
-describe('Wallets — derived accounts', () => {
-  it('draws one row per derived account, nested under its own wallet, in index order', () => {
+describe('Wallets — wallets of one seed', () => {
+  it('puts a derived wallet right after the wallet it came from', () => {
     render(<WalletsScreen />);
 
-    const block = screen.getByTestId('wallet-derived-w1');
-    // Index 0 is the card itself, never a row under it.
-    expect(screen.queryByTestId('wallet-derived-w1-0')).toBeNull();
-    const rows = ['wallet-derived-w1-1', 'wallet-derived-w1-2'];
-    for (const id of rows) expect(screen.getByTestId(id)).toBeTruthy();
-    // The rows are inside the wallet's own block, not siblings of the card.
-    for (const id of rows) expect(screen.getByTestId(id).parent).toBeTruthy();
-    expect(block).toBeTruthy();
-
-    // A wallet with a single path index has nothing to descend into.
-    expect(screen.queryByTestId('wallet-derived-w2')).toBeNull();
+    const order = screen.getAllByTestId(/^wallet-card-/).map((node) => node.props.testID as string);
+    expect(order).toEqual(['wallet-card-w1', 'wallet-card-w3', 'wallet-card-w2']);
   });
 
-  it('activates a derived account with both calls, in the order that works', async () => {
+  it('draws the descent and names the wallet it descends from', () => {
     render(<WalletsScreen />);
 
-    fireEvent.press(screen.getByTestId('wallet-derived-w1-2'));
-
-    // Same wallet, so only the path index moves; the wallet switch would have
-    // to land first if it were another one.
-    await waitFor(() => expect(mockChangePathIndex).toHaveBeenCalledWith(2));
-    expect(mockChangeAccount).not.toHaveBeenCalled();
-  });
-
-  it('marks the derived account the wallet is currently on', () => {
-    render(<WalletsScreen />);
-
-    // `pathIndex` is 1 on the active wallet, so that row — and only that row —
-    // announces itself as the one in use.
-    expect(screen.getByTestId('wallet-derived-w1-1').props.accessibilityLabel).toContain('active');
-    expect(screen.getByTestId('wallet-derived-w1-2').props.accessibilityLabel).not.toContain(
-      'active'
+    expect(screen.getByTestId('wallet-descent-w3')).toBeTruthy();
+    expect(screen.getByTestId('wallet-derived-from-w3').props.children).toBe(
+      'Derived from Account 1'
     );
+
+    // A wallet nobody derived carries neither.
+    expect(screen.queryByTestId('wallet-descent-w1')).toBeNull();
+    expect(screen.queryByTestId('wallet-derived-from-w1')).toBeNull();
   });
 
-  it('leaves a hidden derived account out of the rows, behind its own disclosure', () => {
-    mockHidden.w1 = [2];
+  it('reads a derived wallet at its own path, not at the hole in front of it', () => {
     render(<WalletsScreen />);
 
-    expect(screen.queryByTestId('wallet-derived-w1-2')).toBeNull();
-
-    // Collapsed by default; opening it shows the hidden one with a way back.
-    fireEvent.press(screen.getByTestId('wallet-hidden-toggle-w1'));
-    expect(screen.getByTestId('wallet-derived-w1-2')).toBeTruthy();
-
-    fireEvent.press(screen.getByTestId('wallet-derived-hide-w1-2'));
-    expect(mockSetDerivedHidden).toHaveBeenCalledWith('w1', 2, false);
+    expect(screen.getByTestId('wallet-balance-w3').props.children.join('')).toBe('$3 · CCCC…cccc');
   });
 
-  it('never offers to hide index 0 — that is the wallet itself', () => {
-    render(<WalletsScreen />);
+  it('says nothing about derivation indexes', () => {
+    const { toJSON } = render(<WalletsScreen />);
 
-    expect(screen.queryByTestId('wallet-derived-hide-w1-0')).toBeNull();
-    expect(screen.getByTestId('wallet-derived-hide-w1-1')).toBeTruthy();
+    // "Account 1 · 2" and every other index label is gone: a wallet is read by
+    // name, never by its position in a derivation tree.
+    expect(JSON.stringify(toJSON())).not.toContain('· 2');
   });
 
-  it('lands on index 0 when the card itself is picked', async () => {
+  it('activates a wallet by its card alone', async () => {
     render(<WalletsScreen />);
 
-    fireEvent.press(screen.getByTestId('wallet-card-w1'));
+    fireEvent.press(screen.getByTestId('wallet-card-w3'));
 
-    await waitFor(() => expect(mockChangePathIndex).toHaveBeenCalledWith(0));
-  });
-
-  it('falls back to index 0 before hiding the account in use', async () => {
-    render(<WalletsScreen />);
-
-    // `pathIndex` is 1, so hiding row 1 would leave the app standing on
-    // something it no longer shows.
-    fireEvent.press(screen.getByTestId('wallet-derived-hide-w1-1'));
-
-    await waitFor(() => expect(mockSetDerivedHidden).toHaveBeenCalledWith('w1', 1, true));
-    expect(mockChangePathIndex).toHaveBeenCalledWith(0);
-    expect(mockChangePathIndex.mock.invocationCallOrder[0]).toBeLessThan(
-      mockSetDerivedHidden.mock.invocationCallOrder[0]
-    );
-  });
-
-  it('draws skeleton rows in place of the descent while that wallet is scanning', () => {
-    mockDerivedStatus.scanningAccountId = 'w1';
-    render(<WalletsScreen />);
-
-    expect(screen.getByTestId('wallet-derived-skeleton-w1')).toBeTruthy();
-    expect(screen.queryByTestId('wallet-derived-w1-1')).toBeNull();
+    expect(mockChangeAccount).toHaveBeenCalledWith('w3');
+    // The card is the whole wallet now — there is no path index to fall back to.
+    expect(mockChangePathIndex).not.toHaveBeenCalled();
   });
 
   it('offers the rescan only where there is a seed to scan, and stops it while one runs', () => {
@@ -291,7 +254,7 @@ describe('Wallets — derived accounts', () => {
     expect(mockRescan).toHaveBeenCalledWith('w1');
 
     mockRescan.mockClear();
-    mockDerivedStatus.scanningAccountId = 'w1';
+    mockDerived.scanningAccountId = 'w1';
     rerender(<WalletsScreen />);
     fireEvent.press(screen.getByTestId('wallet-rescan-w1'));
     expect(mockRescan).not.toHaveBeenCalled();

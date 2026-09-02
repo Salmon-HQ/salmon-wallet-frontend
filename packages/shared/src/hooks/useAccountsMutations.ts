@@ -100,7 +100,8 @@ export function useAccountsMutations({
       setAccounts(newAccounts);
       setAccountId(newAccountId);
       setNetworkId(newNetworkId);
-      setPathIndex(getDefaultPathIndex(account, newNetworkId));
+      const newPathIndex = getDefaultPathIndex(account, newNetworkId);
+      setPathIndex(newPathIndex);
 
       await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
       if (password) {
@@ -109,7 +110,10 @@ export function useAccountsMutations({
 
       await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
       await persistAccounts(newAccounts, formatAccountForStorage);
-      await persistActiveSelection(newAccountId, 0, newNetworkId);
+      // The same index the runtime was just put on: a wallet whose only
+      // address sits at a derived path would otherwise come back on an empty
+      // index 0 after the next launch.
+      await persistActiveSelection(newAccountId, newPathIndex, newNetworkId);
     },
     [
       accounts,

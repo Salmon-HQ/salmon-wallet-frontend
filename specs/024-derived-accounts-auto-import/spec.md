@@ -1,7 +1,7 @@
 # Feature Specification: Derived accounts import themselves, and Wallets shows where they come from
 
 **Feature Branch**: `feat/redesign-mobile-home` (spec dir `024-derived-accounts-auto-import`)
-**Created**: 2026-09-02 · **Status**: Approved by the owner 2026-09-02, in implementation
+**Created**: 2026-09-02 · **Status**: Superseded by 025 (model)
 
 ## Owner rulings (2026-09-02)
 

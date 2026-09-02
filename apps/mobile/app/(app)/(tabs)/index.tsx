@@ -65,6 +65,7 @@ import {
 import {
   AboutCard,
   BalanceHeader,
+  DerivedAccountsSheet,
   HomeTabOrderSheet,
   MarketDataCard,
   NftsTab,
@@ -81,6 +82,7 @@ import {
   type BlockchainId,
   type MarketData,
 } from '../../../src/components';
+import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
@@ -148,6 +150,7 @@ export default function HomeScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
+  const derivedAccounts = useDerivedAccounts();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
   const { isTaskEngaged, surfaceKey } = useTaskChrome();
@@ -932,6 +935,16 @@ export default function HomeScreen() {
         // already derives from it.
         blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         onCopy={handleReceiveSheetCopy}
+      />
+
+      {/* The question the derived-account scan raises, asked over Home and
+          nowhere else: the scan belongs to the unlocked session, so its answer
+          is taken on the first screen the session lands on. */}
+      <DerivedAccountsSheet
+        visible={derivedAccounts.sheetVisible}
+        finds={derivedAccounts.finds}
+        onImport={(indexes) => void derivedAccounts.importFinds(indexes)}
+        onDismiss={() => void derivedAccounts.dismiss()}
       />
     </View>
   );

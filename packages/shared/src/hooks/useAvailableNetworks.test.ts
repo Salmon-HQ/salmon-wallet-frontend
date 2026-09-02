@@ -201,8 +201,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
     });
 
@@ -295,8 +293,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
     });
 
@@ -361,8 +357,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -400,8 +394,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -434,8 +426,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -465,8 +455,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -498,8 +486,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -529,8 +515,6 @@ describe('useAvailableNetworks Hook', () => {
         setIncludedInTotal: vi.fn(),
         derivedScannedAccountIds: [],
         markDerivedScanned: vi.fn(),
-        hiddenDerivedAccounts: {},
-        setDerivedHidden: vi.fn(),
       });
 
       const { result } = renderHook(() =>

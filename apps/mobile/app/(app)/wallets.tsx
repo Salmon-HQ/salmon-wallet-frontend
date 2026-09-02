@@ -47,11 +47,10 @@ import {
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
-  SkeletonRow,
+  SubAccountSelector,
   WatchOnlyBadge,
 } from '../../src/components';
 import {
-  CaretRightIcon,
   CheckCircleIcon,
   CircleIcon,
   EyeIcon,
@@ -70,8 +69,6 @@ const WALLET_BUBBLE_SIZE = 44;
 const RENAME_BUBBLE_SIZE = 24;
 /** The include control at the end of a wallet card. */
 const INCLUDE_ICON_SIZE = 22;
-/** The leading well on a derived row — a step under the wallet's own 44. */
-const DERIVED_BUBBLE_SIZE = 36;
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one, so this copy is what satisfies the style typing.
@@ -98,10 +95,9 @@ export default function WalletsScreen() {
     }),
     [activeBlockchainAccount, networkId]
   );
-  const { excludedFromTotal, setIncludedInTotal, hiddenDerivedAccounts, setDerivedHidden } =
-    useUserConfig({
-      activeBlockchainAccount: userConfigAccount,
-    });
+  const { excludedFromTotal, setIncludedInTotal } = useUserConfig({
+    activeBlockchainAccount: userConfigAccount,
+  });
 
   // The eye is the app's one balance-visibility preference, not a second one
   // for this screen: `useBalance` owns it and persists it. Skipped, so mounting
@@ -112,12 +108,9 @@ export default function WalletsScreen() {
     skip: true,
   });
 
-  // Every wallet's total is the sum of all its derived accounts on this
-  // network, minus the ones the user hid.
   const { totals } = useWalletTotals({
     accounts,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
-    hiddenDerivedAccounts,
   });
 
   const isIncluded = useCallback(
@@ -126,6 +119,29 @@ export default function WalletsScreen() {
   );
 
   const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
+
+  // The cards of one seed sit together: a wallet, then the wallets derived
+  // from it, then the next wallet. A derived wallet whose parent is gone has
+  // nothing to sit under, so it stands on its own rather than disappearing.
+  const ordered = useMemo(() => {
+    const derivedByParent = new Map<string, Account[]>();
+    const roots: Account[] = [];
+    for (const account of accounts) {
+      const parent = account.derivedFrom
+        ? accounts.find(({ id }) => id === account.derivedFrom)
+        : undefined;
+      if (parent)
+        derivedByParent.set(parent.id, [...(derivedByParent.get(parent.id) ?? []), account]);
+      else roots.push(account);
+    }
+    return roots.flatMap((root) => [
+      { account: root, parentName: undefined as string | undefined },
+      ...(derivedByParent.get(root.id) ?? []).map((child) => ({
+        account: child,
+        parentName: root.name,
+      })),
+    ]);
+  }, [accounts]);
 
   const aggregated = useMemo(
     () =>
@@ -142,9 +158,6 @@ export default function WalletsScreen() {
   const handleSelect = useCallback(
     async (id: string) => {
       if (id !== accountId) await accountActions.changeAccount(id);
-      // The card is the wallet itself — index 0. Its derived accounts are
-      // the rows under it; picking the card always lands on the parent.
-      await accountActions.changePathIndex(0);
       router.back();
     },
     [accountId, accountActions, router]
@@ -240,10 +253,11 @@ export default function WalletsScreen() {
           <Text style={styles.headingHint}>{t('settings.wallets.include_hint')}</Text>
         </View>
 
-        {accounts.map((account) => (
+        {ordered.map(({ account, parentName }) => (
           <WalletCard
             key={account.id}
             account={account}
+            parentName={parentName}
             isActive={account.id === accountId}
             included={isIncluded(account.id)}
             total={totals[account.id]}
@@ -251,8 +265,6 @@ export default function WalletsScreen() {
             hiddenValue={hiddenValue}
             formatValue={formatValue}
             networkId={(networkId ?? undefined) as NetworkId | undefined}
-            hiddenIndexes={hiddenDerivedAccounts[account.id]}
-            onSetHidden={(index, hidden) => setDerivedHidden(account.id, index, hidden)}
             onSelect={() => handleSelect(account.id)}
             onRename={() => handleRename(account.id)}
             onToggleInclude={() => handleToggleInclude(account.id)}
@@ -284,6 +296,8 @@ export default function WalletsScreen() {
 
 interface WalletCardProps {
   account: Account;
+  /** The wallet this one was derived from, when it descends from one. */
+  parentName: string | undefined;
   isActive: boolean;
   included: boolean;
   total: number | undefined;
@@ -291,9 +305,6 @@ interface WalletCardProps {
   hiddenValue: string;
   formatValue: (value: number | undefined) => string;
   networkId: NetworkId | undefined;
-  /** Derivation indexes this wallet's owner has hidden. */
-  hiddenIndexes: number[] | undefined;
-  onSetHidden: (index: number, hidden: boolean) => Promise<void>;
   onSelect: () => void;
   onRename: () => void;
   onToggleInclude: () => void;
@@ -301,6 +312,7 @@ interface WalletCardProps {
 
 function WalletCard({
   account,
+  parentName,
   isActive,
   included,
   total,
@@ -308,8 +320,6 @@ function WalletCard({
   hiddenValue,
   formatValue,
   networkId,
-  hiddenIndexes,
-  onSetHidden,
   onSelect,
   onRename,
   onToggleInclude,
@@ -318,7 +328,7 @@ function WalletCard({
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const [{ accountId: activeId, pathIndex }, accountActions] = useAccountsContext();
-  const { status, rescan } = useDerivedAccounts();
+  const { scanningAccountId, rescan } = useDerivedAccounts();
   const [imgError, setImgError] = useState(false);
 
   const address = getAccountAddress(account);
@@ -328,58 +338,35 @@ function WalletCard({
   // watched address has nothing to find, so the action is absent rather than
   // present and inert.
   const canRescan = !!getAccountMnemonic(account);
-  const isScanning = status.scanningAccountId === account.id;
 
   // The derived accounts this wallet holds on the chain being read. Removed
-  // from Home in 015; this is where a wallet's path indexes live now. Null
-  // slots are holes in the derivation tree, not accounts.
+  // from Home in 015; this is where a wallet's path indexes live now.
   const derived = useMemo(() => {
     const list = networkId ? account.networksAccounts?.[networkId] : undefined;
-    if (!list || list.length < 2) return [];
-    // Index 0 is the card itself, never a row under it (owner, 2026-09-02).
-    return list.flatMap((blockchainAccount, index) =>
-      blockchainAccount && index > 0
-        ? [{ index, address: blockchainAccount.getReceiveAddress?.() ?? '' }]
-        : []
+    // Null slots are holes in the derivation tree, not accounts: a wallet
+    // created at a derived path sits at that position with empty ones before it.
+    const held = (list ?? []).flatMap((blockchainAccount, index) =>
+      blockchainAccount ? [{ index, address: blockchainAccount.getReceiveAddress?.() ?? '' }] : []
     );
+    return held.length < 2 ? [] : held;
   }, [account.networksAccounts, networkId]);
-
-  const hidden = useMemo(() => hiddenIndexes ?? [], [hiddenIndexes]);
-  const shownDerived = derived.filter(({ index }) => !hidden.includes(index));
-  const hiddenDerived = derived.filter(({ index }) => hidden.includes(index));
-  const [hiddenOpen, setHiddenOpen] = useState(false);
-
-  const handleSelectDerived = useCallback(
-    async (index: number) => {
-      if (account.id !== activeId) await accountActions.changeAccount(account.id);
-      await accountActions.changePathIndex(index);
-    },
-    [account.id, activeId, accountActions]
-  );
-
-  const handleSetHidden = useCallback(
-    async (index: number, hide: boolean) => {
-      // Hiding the account in use would leave the app standing on something it
-      // no longer shows, so the wallet falls back to its own index 0 first.
-      if (hide && account.id === activeId && index === pathIndex) {
-        await accountActions.changePathIndex(0);
-      }
-      await onSetHidden(index, hide);
-    },
-    [account.id, activeId, pathIndex, accountActions, onSetHidden]
-  );
 
   return (
     // `ListRow` is the card here — its own leading/title/trailing geometry
-    // replaces what used to be hand-drawn styles duplicating it exactly. A
-    // wallet's derived accounts are rows of their own, indented one gutter
-    // under it and joined to it by a descent line, because they descend from
-    // this wallet rather than sitting beside it — which is exactly what the
-    // chips they replace could not say. Wrapped in a `View` (not a fragment)
-    // so the screen's sibling gap of 20 applies once, between wallets — not a
-    // second time between a wallet's own row and its descent, which stays at
-    // the tighter internal-anatomy step.
-    <View>
+    // replaces what used to be hand-drawn styles duplicating it exactly. The
+    // derived-account chips have no slot on `ListRow` (there is no footer),
+    // so a wallet with more than one derived path renders them as a sibling
+    // block below the row instead of inside one shared card. Wrapped in a
+    // `View` (not a fragment) so the screen's sibling gap of 20 applies once,
+    // between wallets — not a second time between a wallet's own row and its
+    // derived chips, which stay at the tighter internal-anatomy step.
+    //
+    // A wallet derived from another one is indented under it and joined to it
+    // by a hairline descent running up through the gap to the card it came
+    // from — it is a wallet of its own, and this is the only thing that says
+    // where it came from (spec 025).
+    <View style={parentName ? styles.derivedGroup : undefined}>
+      {parentName && <View testID={`wallet-descent-${account.id}`} style={styles.derivedDescent} />}
       <ListRow
         testID={`wallet-card-${account.id}`}
         padding="lg"
@@ -420,7 +407,7 @@ function WalletCard({
                 icon={TreeStructureIcon}
                 iconSize={13}
                 onPress={() => void rescan(account.id)}
-                disabled={status.scanningAccountId !== null}
+                disabled={scanningAccountId !== null}
                 accessibilityLabel={t('settings.wallets.find_derived')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               />
@@ -442,10 +429,17 @@ function WalletCard({
           </>
         }
         subtitle={
-          <Text testID={`wallet-balance-${account.id}`} style={styles.walletBalance}>
-            {hiddenBalance ? hiddenValue : formatValue(total)}
-            {shortAddress ? ` · ${shortAddress}` : ''}
-          </Text>
+          <>
+            <Text testID={`wallet-balance-${account.id}`} style={styles.walletBalance}>
+              {hiddenBalance ? hiddenValue : formatValue(total)}
+              {shortAddress ? ` · ${shortAddress}` : ''}
+            </Text>
+            {parentName && (
+              <Text testID={`wallet-derived-from-${account.id}`} style={styles.derivedFrom}>
+                {t('settings.wallets.derived_from', { name: parentName })}
+              </Text>
+            )}
+          </>
         }
         trailing={
           <IconBubble
@@ -466,176 +460,24 @@ function WalletCard({
         }
       />
 
-      {(isScanning || derived.length > 0) && (
-        <View testID={`wallet-derived-${account.id}`} style={styles.derivedBlock}>
-          {/* The descent: one hairline in `border.default` dropping from the
-              parent's leading edge past every row that came out of it. */}
-          <View style={styles.derivedDescent} />
-          {isScanning ? (
-            <>
-              <SkeletonRow
-                testID={`wallet-derived-skeleton-${account.id}`}
-                leadingSize={DERIVED_BUBBLE_SIZE}
-                trailingWidth={INCLUDE_ICON_SIZE}
-                accessibilityLabel={t('settings.wallets.finding_derived')}
-              />
-              <SkeletonRow leadingSize={DERIVED_BUBBLE_SIZE} trailingWidth={INCLUDE_ICON_SIZE} />
-            </>
-          ) : (
-            <>
-              {shownDerived.map(({ index, address: derivedAddress }) => (
-                <DerivedRow
-                  key={index}
-                  account={account}
-                  index={index}
-                  address={derivedAddress}
-                  // `pathIndex` is app state and belongs to whichever wallet is
-                  // active, so a row on any other wallet reads as unselected
-                  // until that wallet is the one in use.
-                  isCurrent={account.id === activeId && index === pathIndex}
-                  hidden={false}
-                  onSelect={() => void handleSelectDerived(index)}
-                  onSetHidden={handleSetHidden}
-                />
-              ))}
-
-              {hiddenDerived.length > 0 && (
-                <>
-                  <ListRow
-                    testID={`wallet-hidden-toggle-${account.id}`}
-                    onPress={() => setHiddenOpen((open) => !open)}
-                    leading={
-                      <IconBubble
-                        size={DERIVED_BUBBLE_SIZE}
-                        shape="circle"
-                        tone="surface"
-                        icon={EyeSlashIcon}
-                        iconSize={iconSize.sm}
-                      />
-                    }
-                    title={t('settings.wallets.hidden_derived', { count: hiddenDerived.length })}
-                    trailing={
-                      <CaretRightIcon
-                        size={INCLUDE_ICON_SIZE}
-                        color={semantic.text.tertiary}
-                        weight={hiddenOpen ? 'fill' : 'regular'}
-                      />
-                    }
-                  />
-                  {hiddenOpen &&
-                    hiddenDerived.map(({ index, address: derivedAddress }) => (
-                      <DerivedRow
-                        key={index}
-                        account={account}
-                        index={index}
-                        address={derivedAddress}
-                        isCurrent={false}
-                        hidden
-                        onSelect={() => void handleSelectDerived(index)}
-                        onSetHidden={handleSetHidden}
-                      />
-                    ))}
-                </>
-              )}
-            </>
-          )}
-        </View>
+      {derived.length > 0 && (
+        <SubAccountSelector
+          testID={`wallet-derived-${account.id}`}
+          accounts={derived}
+          // `pathIndex` is app state and belongs to whichever wallet is active,
+          // so a chip on any other wallet reads as unselected until that wallet
+          // is the one in use.
+          activeIndex={account.id === activeId ? pathIndex : -1}
+          onSelect={async (index) => {
+            if (account.id !== activeId) await accountActions.changeAccount(account.id);
+            await accountActions.changePathIndex(index);
+          }}
+          style={styles.derivedRow}
+        />
       )}
     </View>
   );
 }
-
-// ============================================================================
-// One derived account
-// ============================================================================
-
-interface DerivedRowProps {
-  account: Account;
-  index: number;
-  address: string;
-  isCurrent: boolean;
-  hidden: boolean;
-  onSelect: () => void;
-  onSetHidden: (index: number, hidden: boolean) => Promise<void>;
-}
-
-/**
- * One path index of one wallet, drawn as a descendant of its card.
- *
- * Hiding is reversible and is the only thing offered: a derived account comes
- * out of the seed, so deleting it would remove nothing and the next scan would
- * find it again. Index 0 is the wallet itself and carries no hide control —
- * `useUserConfig` refuses it too, so the rule holds even if a call site forgets.
- */
-function DerivedRow({
-  account,
-  index,
-  address,
-  isCurrent,
-  hidden,
-  onSelect,
-  onSetHidden,
-}: DerivedRowProps): React.ReactElement {
-  const { t } = useTranslation();
-  const semantic = useSemantic();
-  const label = `${account.name} · ${index}`;
-
-  return (
-    <ListRow
-      testID={`wallet-derived-${account.id}-${index}`}
-      onPress={onSelect}
-      accessibilityLabel={
-        isCurrent
-          ? t('accessibility.active_account', '{{name}}, active', { name: label })
-          : undefined
-      }
-      leading={
-        <IconBubble
-          size={DERIVED_BUBBLE_SIZE}
-          shape="circle"
-          tone={isCurrent ? 'accent-tint' : 'surface'}
-          icon={TreeStructureIcon}
-          iconSize={iconSize.sm}
-        />
-      }
-      title={label}
-      subtitle={getShortAddress(address) ?? address}
-      trailing={
-        <View style={derivedTrailing.row}>
-          {isCurrent && (
-            <CheckCircleIcon size={INCLUDE_ICON_SIZE} color={semantic.accent.ink} weight="fill" />
-          )}
-          {index !== 0 && (
-            <IconBubble
-              testID={`wallet-derived-hide-${account.id}-${index}`}
-              size={24}
-              tone="ghost"
-              icon={hidden ? EyeIcon : EyeSlashIcon}
-              iconSize={INCLUDE_ICON_SIZE}
-              iconColor={semantic.text.tertiary}
-              onPress={() => void onSetHidden(index, !hidden)}
-              accessibilityLabel={
-                hidden
-                  ? t('settings.wallets.show_derived_a11y', { name: label })
-                  : t('settings.wallets.hide_derived_a11y', { name: label })
-              }
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            />
-          )}
-        </View>
-      }
-    />
-  );
-}
-
-/** The row's two trailing controls, side by side at the internal 8 step. */
-const derivedTrailing = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-});
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
@@ -707,21 +549,30 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.bold,
       fontSize: ms(fontSize.body),
     },
-    // The descent block: indented one gutter under its wallet, its rows at the
-    // internal 12 step rather than the screen's 20 sibling gap — they are this
-    // wallet's own anatomy, not the next component.
-    derivedBlock: {
-      marginTop: vs(spacing.md),
+    // The descent: the derived card steps in one gutter, and a hairline in
+    // `border.default` runs from the card above it down its leading edge.
+    derivedGroup: {
       paddingLeft: s(spacing.screenGutter),
-      gap: vs(spacing.md),
     },
     derivedDescent: {
       position: 'absolute',
       left: s(spacing.screenGutter) / 2,
-      top: 0,
-      bottom: vs(spacing.md),
+      top: -vs(spacing.screenGutter),
+      bottom: 0,
       width: StyleSheet.hairlineWidth,
       backgroundColor: t.border.default,
+    },
+    derivedFrom: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.micro),
+    },
+    derivedRow: {
+      paddingHorizontal: 0,
+      // `ListRow`'s own card no longer contains these chips (no footer slot),
+      // so the tight internal step that used to be the card's own `gap` prop
+      // is redrawn here instead of falling to the screen's 20 sibling gap.
+      marginTop: vs(spacing.sm),
     },
     addCard: {
       backgroundColor: 'transparent',

@@ -108,6 +108,9 @@ export type { SeedPhraseEntryProps } from './SeedPhrase';
 export { DerivedAccountCard } from './DerivedAccountCard';
 export type { DerivedAccountCardProps } from './DerivedAccountCard';
 
+export { DerivedAccountsSheet } from './DerivedAccountsSheet';
+export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
+
 export { SubAccountSelector } from './SubAccountSelector';
 export type { SubAccount, SubAccountSelectorProps } from './SubAccountSelector';
 

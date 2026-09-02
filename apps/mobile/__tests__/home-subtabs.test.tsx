@@ -210,6 +210,7 @@ jest.mock('../src/components', () => {
       </View>
     ),
     NftsTab: () => <View testID="nfts-tab" />,
+    DerivedAccountsSheet: () => null,
     HomeTabOrderSheet: () => null,
     PortfolioSubTabs: ({
       tabs,

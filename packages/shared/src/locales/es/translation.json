@@ -269,11 +269,7 @@
       "include_in_total_a11y": "Incluir {{name}} en el total",
       "exclude_from_total_a11y": "Excluir {{name}} del total",
       "find_derived": "Buscar cuentas derivadas",
-      "finding_derived": "Buscando cuentas derivadas",
-      "hidden_derived_one": "Ocultas ({{count}})",
-      "hidden_derived_other": "Ocultas ({{count}})",
-      "hide_derived_a11y": "Ocultar {{name}}",
-      "show_derived_a11y": "Mostrar {{name}}"
+      "derived_from": "Derivada de {{name}}"
     },
     "profile_picture": "Foto de Perfil",
     "profile_picture_subtitle": "Elegí un preset o usá uno de tus NFTs.",
@@ -601,7 +597,17 @@
       "skip": "Omitir",
       "scan_failed_title": "No se pudieron buscar las cuentas",
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
-      "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos."
+      "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos.",
+      "found_title_one": "Encontramos {{count}} cuenta de tu frase",
+      "found_title_other": "Encontramos {{count}} cuentas de tu frase",
+      "found_body": "Se crearon con la misma frase de recuperación. Elegí cuáles agregar.",
+      "import_count_one": "Importar {{count}}",
+      "import_count_other": "Importar {{count}}",
+      "not_now": "Ahora no",
+      "none_new_title": "No hay cuentas nuevas",
+      "none_new_body": "Ya tenés todo lo que hay en tu frase.",
+      "add_a11y": "Agregar {{name}}",
+      "skip_a11y": "No agregar {{name}}"
     },
     "no_tokens_found": "No se encontraron tokens",
     "tokens_load_error": "No se pudieron cargar tus tokens en este momento.",

@@ -269,11 +269,7 @@
       "include_in_total_a11y": "Include {{name}} in the total",
       "exclude_from_total_a11y": "Exclude {{name}} from the total",
       "find_derived": "Find derived accounts",
-      "finding_derived": "Looking for derived accounts",
-      "hidden_derived_one": "Hidden ({{count}})",
-      "hidden_derived_other": "Hidden ({{count}})",
-      "hide_derived_a11y": "Hide {{name}}",
-      "show_derived_a11y": "Show {{name}}"
+      "derived_from": "Derived from {{name}}"
     },
     "profile_picture": "Profile Picture",
     "profile_picture_subtitle": "Pick a preset or use one of your NFTs.",
@@ -601,7 +597,17 @@
       "skip": "Skip",
       "scan_failed_title": "Couldn't scan for accounts",
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
-      "scan_partial": "Some networks couldn't be scanned. Results may be incomplete."
+      "scan_partial": "Some networks couldn't be scanned. Results may be incomplete.",
+      "found_title_one": "We found {{count}} account from your phrase",
+      "found_title_other": "We found {{count}} accounts from your phrase",
+      "found_body": "They were created from the same recovery phrase. Choose which to add.",
+      "import_count_one": "Import {{count}}",
+      "import_count_other": "Import {{count}}",
+      "not_now": "Not now",
+      "none_new_title": "No new accounts",
+      "none_new_body": "Everything your phrase holds is already here.",
+      "add_a11y": "Add {{name}}",
+      "skip_a11y": "Don't add {{name}}"
     },
     "no_tokens_found": "No tokens found",
     "tokens_load_error": "Your tokens couldn't be loaded right now.",

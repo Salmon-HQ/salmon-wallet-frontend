@@ -144,7 +144,7 @@ function getDefaultPathIndex(account: Account, networkId: string): number {
  * Formats an account for storage (removes non-serializable data).
  */
 function formatAccountForStorage(account: Account): StoredAccount {
-  const { id, name, avatar, networksAccounts } = account;
+  const { id, name, avatar, derivedFrom, networksAccounts } = account;
 
   const getPathIndexes = (networkAccounts: (BlockchainAccount | null)[]): (number | null)[] => {
     return Object.keys(networkAccounts).map((index) => {
@@ -157,6 +157,8 @@ function formatAccountForStorage(account: Account): StoredAccount {
     name,
     avatar,
     pathIndexes: mapValues(networksAccounts, getPathIndexes),
+    // Only descent is stored: a wallet nobody derived carries no key at all.
+    ...(derivedFrom ? { derivedFrom } : {}),
   };
 }
 
@@ -277,6 +279,7 @@ async function restoreManyAccounts(
       account.id = item.id;
       account.name = item.name;
       account.avatar = item.avatar;
+      if (item.derivedFrom) account.derivedFrom = item.derivedFrom;
 
       return account;
     })

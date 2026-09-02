@@ -138,6 +138,7 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
+    DerivedAccountsSheet: () => null,
     HomeTabOrderSheet: () => null,
     // The identity line. Its own suite covers it; here it only has to render
     // so the Home tree mounts.

@@ -7,26 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { sumIncludedTotals, walletBalanceEntries } from './useWalletTotals';
-import type { Account } from '../types/account';
-import type { BlockchainAccount, NetworkId } from '../types/blockchain';
-
-const NETWORK = 'solana-mainnet' as NetworkId;
-
-const blockchainAccount = (address: string) =>
-  ({ getReceiveAddress: () => address }) as unknown as BlockchainAccount;
-
-const wallet = (id: string, addresses: (string | null)[]): Account =>
-  ({
-    id,
-    name: id,
-    avatar: '',
-    secret: { kind: 'mnemonic', mnemonic: 'seed' },
-    pathIndexes: {},
-    networksAccounts: {
-      [NETWORK]: addresses.map((address) => (address ? blockchainAccount(address) : null)),
-    },
-  }) as unknown as Account;
+import { sumIncludedTotals } from './useWalletTotals';
 
 describe('sumIncludedTotals', () => {
   it('adds up every wallet when nothing is excluded', () => {
@@ -47,42 +28,5 @@ describe('sumIncludedTotals', () => {
 
   it('ignores exclusions for wallets that no longer exist', () => {
     expect(sumIncludedTotals(['a'], ['gone'], { a: 7 })).toBe(7);
-  });
-});
-
-describe('walletBalanceEntries', () => {
-  it('prices every derived account a wallet holds, not just the one in use', () => {
-    // The wallets screen answers "what is in this wallet"; a seed's money is
-    // spread across its paths, so all of them count (owner, 2026-09-02).
-    const entries = walletBalanceEntries([wallet('a', ['A0', 'A1', 'A2'])], NETWORK);
-
-    expect(entries.map((entry) => [entry.walletId, entry.index, entry.address])).toEqual([
-      ['a', 0, 'A0'],
-      ['a', 1, 'A1'],
-      ['a', 2, 'A2'],
-    ]);
-  });
-
-  it('skips the holes in a derivation tree', () => {
-    const entries = walletBalanceEntries([wallet('a', ['A0', null, 'A2'])], NETWORK);
-    expect(entries.map((entry) => entry.index)).toEqual([0, 2]);
-  });
-
-  it('leaves a hidden derived account out of the total', () => {
-    const entries = walletBalanceEntries([wallet('a', ['A0', 'A1', 'A2'])], NETWORK, { a: [1] });
-    expect(entries.map((entry) => entry.index)).toEqual([0, 2]);
-  });
-
-  it('hides per wallet, never across wallets', () => {
-    const entries = walletBalanceEntries(
-      [wallet('a', ['A0', 'A1']), wallet('b', ['B0', 'B1'])],
-      NETWORK,
-      { a: [1] }
-    );
-    expect(entries.map((entry) => `${entry.walletId}${entry.index}`)).toEqual(['a0', 'b0', 'b1']);
-  });
-
-  it('prices nothing until the screen knows which chain it is reading', () => {
-    expect(walletBalanceEntries([wallet('a', ['A0'])], undefined)).toEqual([]);
   });
 });
