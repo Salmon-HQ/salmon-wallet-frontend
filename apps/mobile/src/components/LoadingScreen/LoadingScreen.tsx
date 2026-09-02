@@ -67,6 +67,7 @@ import {
   CREST_FADE_FROM,
   crestStops,
   crestTrain,
+  type CrestShadow,
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
@@ -201,8 +202,18 @@ function crestBox(origin: WavefrontPoint) {
  * not the whole disc, and `userSpaceOnUse` makes a gradient offset and a
  * fraction of the front's radius the same number on both platforms.
  */
-function CrestArc({ id, alpha, color }: { id: string; alpha: number; color: string }) {
-  const stops = crestStops(alpha, color);
+function CrestArc({
+  id,
+  alpha,
+  color,
+  shadow,
+}: {
+  id: string;
+  alpha: number;
+  color: string;
+  shadow: CrestShadow;
+}) {
+  const stops = crestStops(alpha, color, shadow);
   const inner = stops[0].offset;
   const outer = stops[stops.length - 1].offset;
   return (
@@ -263,7 +274,7 @@ export function LoadingScreen({
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { depth, surface, accent } = useSemantic();
+  const { depth, surface, accent, water } = useSemantic();
 
   // Resolve tip keys through t() for i18n
   const resolvedTips = useMemo(() => tips.map((tipKey) => t(tipKey, tipKey)), [tips, t]);
@@ -729,7 +740,12 @@ export function LoadingScreen({
                   crestStyles[index],
                 ]}
               >
-                <CrestArc id={`crest-${index}`} alpha={alpha} color={accent.fill} />
+                <CrestArc
+                  id={`crest-${index}`}
+                  alpha={alpha}
+                  color={accent.fill}
+                  shadow={water.crestShadow}
+                />
               </Animated.View>
             ))}
           </>

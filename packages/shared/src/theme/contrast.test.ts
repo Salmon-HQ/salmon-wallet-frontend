@@ -19,6 +19,7 @@ import { colors, isOpaqueColor } from './colors';
 import { shadowsCSS } from './shadows';
 import { componentSizes } from './spacing';
 import { fontSize } from './typography';
+import { CREST_LIGHT_ALPHA } from '../motion/crest';
 
 /**
  * WCAG 2.1 relative luminance and contrast ratio.
@@ -885,5 +886,34 @@ describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
     expect(tokens.chain.hintInk['bitcoin-testnet']).toBe(tokens.chain.hintInk.bitcoin);
     expect(tokens.chain.hintInk['solana-devnet']).toBe(tokens.chain.hintInk.solana);
     expect(tokens.chain.hintInk['ethereum-sepolia']).toBe(tokens.chain.hintInk.ethereum);
+  });
+});
+
+/**
+ * The wait's crest — the lit crown beside its shadow flank — reads as relief
+ * only while the crown's rise (or fall, on a pale ground) outweighs the
+ * flank's by roughly three to one (DESIGN.md §The wait: crown +39, flank −14
+ * measured on the deep ground). The flank's ink was calibrated for the deep
+ * ground's 16 levels of headroom below; the pale ground has ~240, so the
+ * same alpha would drown the crown. Each mode's `water.crestShadow` is held
+ * to the band here, in 8-bit grey levels the way the frames were measured.
+ */
+describe.each(MODES)('contrast: the crest keeps its crown-to-flank split (%s)', (_mode, tokens) => {
+  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const grey = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const over = (fg: string, alpha: number, bg: string) =>
+    grey(channels(fg).map((c, i) => c * alpha + channels(bg)[i] * (1 - alpha)));
+
+  it('the crown outweighs the flank by roughly two to five times over the ground', () => {
+    const ground = tokens.depth.column;
+    const base = grey(channels(ground));
+    const crown = Math.abs(over(tokens.accent.fill, CREST_LIGHT_ALPHA, ground) - base);
+    const { color, alpha } = tokens.water.crestShadow;
+    const flank = Math.abs(over(color, alpha, ground) - base);
+    expect(flank).toBeGreaterThan(4);
+    expect(crown / flank).toBeGreaterThanOrEqual(1.5);
+    // Ink over near-black barely moves in this proxy, so dark sits at the
+    // top of the band; light at 0.04 sits near the measured 3:1.
+    expect(crown / flank).toBeLessThanOrEqual(5);
   });
 });

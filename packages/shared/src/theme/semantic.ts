@@ -475,6 +475,23 @@ export function createSemantic(mode: ThemeMode) {
      * takes the colour of the material rather than of the company.
      */
     light: '#9FE0EF',
+    /**
+     * The wait's crest shadow — the flank beside each lit crown, as a colour
+     * and an alpha the renderer composes into one gradient stop.
+     *
+     * The crest was calibrated on the deep ground (luminance 16 of 255):
+     * ink at 0.9 there falls only ~14 levels, a third of the crown's rise,
+     * which is the 3:1 crown-to-flank split the eye reads as relief. The
+     * same 0.9 on the pale ground falls ~220 levels and the flank shouts
+     * while the coral crown whispers (owner, on device, 2026-09-02). Light
+     * rebuilds the split from the rule rather than inverting the number:
+     * the mode's ink at 0.04 falls ~19 levels under a crown that sits ~54
+     * below the ground — `contrast.test.ts` holds both modes to the band.
+     */
+    crestShadow: pick({
+      dark: { color: neutral[1000], alpha: 0.9 },
+      light: { color: neutral[900], alpha: 0.04 },
+    }),
   } as const;
 
   /**

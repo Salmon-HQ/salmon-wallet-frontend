@@ -29,9 +29,10 @@ jest.mock('@salmon/shared', () => ({
   semantic: {
     text: { accent: '#FF5C45', primary: '#EDF1F7', secondary: '#A7B1C4' },
     border: { hairline: 'rgba(199,211,232,0.10)' },
-    accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
+    accent: { ink: '#FF5C45', fill: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
     depth: { abyss: '#10131C' },
     surface: { raised: '#161C2D' },
+    water: { crestShadow: { color: '#070911', alpha: 0.9 } },
   },
   componentSizes: {
     descentTrackWidth: 2,

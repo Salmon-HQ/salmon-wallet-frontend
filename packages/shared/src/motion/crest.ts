@@ -143,7 +143,7 @@ export const CREST_LIGHT_ALPHA = 0.22;
  * Near-opaque because it has to be — 16 levels is the entire budget below the
  * ground, so anything less than most of it is not a shadow, it is a gap.
  */
-export const CREST_SHADOW_ALPHA = 0.9;
+export const CREST_SHADOW_ALPHA = semantic.water.crestShadow.alpha;
 
 /**
  * Alpha of the calm lift between the lines — felt, never seen as an edge.
@@ -215,7 +215,19 @@ export const CREST_FADE_FROM = 0.85;
 export const CREST_LIGHT_COLOR = semantic.accent.fill;
 
 /** The shadow lines. */
-export const CREST_SHADOW_COLOR = '#000000';
+export const CREST_SHADOW_COLOR = semantic.water.crestShadow.color;
+
+/**
+ * The flank's colour and alpha as one value — `semantic.water.crestShadow`,
+ * per mode. The module-scope constants above are dark's; a caller under a
+ * live theme passes its own mode's token to {@link crestStops}.
+ */
+export interface CrestShadow {
+  color: string;
+  alpha: number;
+}
+
+export const CREST_SHADOW: CrestShadow = semantic.water.crestShadow;
 
 // ============================================================================
 // Derived
@@ -257,7 +269,11 @@ export interface CrestStop {
  *   (dark's `accent.ink`); a caller under a live theme passes its own
  *   resolved colour so the crest follows the mode.
  */
-export function crestStops(alpha = 1, lightColor: string = CREST_LIGHT_COLOR): CrestStop[] {
+export function crestStops(
+  alpha = 1,
+  lightColor: string = CREST_LIGHT_COLOR,
+  shadow: CrestShadow = CREST_SHADOW
+): CrestStop[] {
   const inner = 1 - CREST_BAND;
   const foot = CREST_BAND * CREST_FOOT;
   const start = inner + foot;
@@ -284,8 +300,8 @@ export function crestStops(alpha = 1, lightColor: string = CREST_LIGHT_COLOR): C
     lift(boundary - half, decay);
     stops.push({
       offset: boundary,
-      color: CREST_SHADOW_COLOR,
-      opacity: CREST_SHADOW_ALPHA * decay * alpha,
+      color: shadow.color,
+      opacity: shadow.alpha * decay * alpha,
       role: 'shadow',
     });
     lift(boundary + half, decay);
@@ -334,8 +350,12 @@ export function crestTrain(): { lag: number; alpha: number }[] {
  * gradient itself is never animated, so the layer is rasterised once and the
  * front stays on the compositor.
  */
-export function crestGradientCSS(alpha = 1, lightColor: string = CREST_LIGHT_COLOR): string {
-  const stops = crestStops(alpha, lightColor)
+export function crestGradientCSS(
+  alpha = 1,
+  lightColor: string = CREST_LIGHT_COLOR,
+  shadow: CrestShadow = CREST_SHADOW
+): string {
+  const stops = crestStops(alpha, lightColor, shadow)
     .map(({ offset, color, opacity }) => `${rgba(color, opacity)} ${(offset * 100).toFixed(2)}%`)
     .join(', ');
   // `closest-side` on a square box puts the gradient's 100% exactly on the

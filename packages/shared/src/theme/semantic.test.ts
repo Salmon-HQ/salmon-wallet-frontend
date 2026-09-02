@@ -20,6 +20,7 @@ const DARK_SNAPSHOT = {
     fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
     snow: 'rgba(199, 211, 232, 0.09)',
     light: '#9FE0EF',
+    crestShadow: { color: '#070911', alpha: 0.9 },
   },
   surface: {
     shelf: '#10131C',
@@ -254,6 +255,7 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'text.primary',
         'text.secondary',
         'text.tertiary',
+        'water.crestShadow',
         'water.fadeBottom',
         'water.fadeTop',
         'water.gradient',
@@ -348,10 +350,23 @@ describe('createSemantic: the invariants a mode switch may not touch', () => {
   it('keeps the rest of the underwater material untouched until its own pass', () => {
     expect(light.scales.refractionSweep).toEqual(dark.scales.refractionSweep);
     expect(light.flesh).toEqual(dark.flesh);
-    // The ramp and the fades derived from it are the light pass (spec 022);
-    // everything else about the water is untouched.
-    const { gradient: _lr, fadeTop: _lt, fadeBottom: _lb, ...lightWater } = light.water;
-    const { gradient: _dr, fadeTop: _dt, fadeBottom: _db, ...darkWater } = dark.water;
+    // The ramp, the fades derived from it (spec 022) and the crest's flank
+    // (calibrated per ground, 2026-09-02) are the light pass; everything
+    // else about the water is untouched.
+    const {
+      gradient: _lr,
+      fadeTop: _lt,
+      fadeBottom: _lb,
+      crestShadow: _lc,
+      ...lightWater
+    } = light.water;
+    const {
+      gradient: _dr,
+      fadeTop: _dt,
+      fadeBottom: _db,
+      crestShadow: _dc,
+      ...darkWater
+    } = dark.water;
     expect(lightWater).toEqual(darkWater);
   });
 
