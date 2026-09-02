@@ -30,6 +30,20 @@ describe('Card', () => {
     expect(screen.getByTestId('card').style.backgroundColor).toBe(asRenderedColor(light));
   });
 
+  it('stacks its children when given a gap, as the mobile View does', () => {
+    renderInMode(
+      'dark',
+      <Card testID="card" gap={12}>
+        <span>a</span>
+        <span>b</span>
+      </Card>
+    );
+
+    const card = screen.getByTestId('card');
+    expect(card.style.display).toBe('flex');
+    expect(card.style.flexDirection).toBe('column');
+  });
+
   it('becomes a button and fires when pressed', () => {
     const onPress = vi.fn();
     renderInMode(

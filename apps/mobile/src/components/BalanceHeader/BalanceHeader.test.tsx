@@ -16,6 +16,8 @@ jest.mock('@salmon/shared', () => ({
   // them, and a mocked-away `DRAG_FOLLOW` would make every travel assertion
   // below read `NaN` and pass for the wrong reason.
   ...jest.requireActual('@salmon/shared/src/motion'),
+  // The cue derivation is real: it is what the row's order and arrows are built on.
+  balanceCues: jest.requireActual('@salmon/shared/src/utils/balanceCues').balanceCues,
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
@@ -180,7 +182,7 @@ describe('BalanceHeader', () => {
     // Amount and percentage, in that order, in one tone.
     expect(view.getByText('+$61.45 · 2.8% 24h')).toBeTruthy();
     // The cue points at the chain the next swipe lands on.
-    expect(view.getByText('→ BTC')).toBeTruthy();
+    expect(view.getByText('BTC →')).toBeTruthy();
   });
 
   it('asks the screen to toggle visibility when the eye is pressed', () => {
@@ -227,18 +229,18 @@ describe('BalanceHeader', () => {
     expect(view.getByText('•••• · ••••')).toBeTruthy();
   });
 
-  it('points each chain hint in the direction the swipe goes', () => {
+  it('points each chain cue the way its page lies, both to the right of the dots', () => {
     // First chain: the next one is to the right, and there is nothing behind
     // it. Last chain: nothing ahead, and the way back reads on the left — the
     // hint used to wrap around and read "→ SOL" on the last page, an arrow
     // pointing at a swipe that does not exist.
     const first = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(first.getByText('→ BTC')).toBeTruthy();
+    expect(first.getByText('BTC →')).toBeTruthy();
     expect(first.queryByTestId('balance-prev-hint')).toBeNull();
 
     const last = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
-    expect(last.getByText('SOL ←')).toBeTruthy();
-    expect(last.queryByText('→ SOL')).toBeNull();
+    expect(last.getByText('← SOL')).toBeTruthy();
+    expect(last.queryByText('SOL →')).toBeNull();
   });
 
   it('keeps the dots and the money controls out of the value swap', () => {
@@ -506,7 +508,7 @@ describe('BalanceHeader chain hints', () => {
     expect(ink(toSolana, 'balance-prev-hint')).toBe(chainMarks.byChain.solana);
   });
 
-  it('names the chain on each side of the dots, and only the sides that exist', () => {
+  it('names the pages behind and ahead, and only the ones that exist', () => {
     const THREE = [
       ...BLOCKCHAINS,
       { network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' } },
@@ -515,16 +517,16 @@ describe('BalanceHeader chain hints', () => {
     // First page: only what a forward swipe reaches.
     const first = render(<BalanceHeader blockchains={THREE} activeIndex={0} />);
     expect(first.queryByTestId('balance-prev-hint')).toBeNull();
-    expect(first.getByText('→ BTC')).toBeTruthy();
+    expect(first.getByText('BTC →')).toBeTruthy();
 
-    // Middle page: both, each arrow pointing away from the dots.
+    // Middle page: both, to the right of the dots, each arrow pointing the way its page lies.
     const middle = render(<BalanceHeader blockchains={THREE} activeIndex={1} />);
-    expect(middle.getByText('SOL ←')).toBeTruthy();
-    expect(middle.getByText('→ SOL')).toBeTruthy();
+    expect(middle.getByText('← SOL')).toBeTruthy();
+    expect(middle.getByText('SOL →')).toBeTruthy();
 
     // Last page: only the way back.
     const last = render(<BalanceHeader blockchains={THREE} activeIndex={2} />);
-    expect(last.getByText('BTC ←')).toBeTruthy();
+    expect(last.getByText('← BTC')).toBeTruthy();
     expect(last.queryByTestId('balance-next-hint')).toBeNull();
   });
 });
@@ -678,5 +680,24 @@ describe('BalanceHeader environment chip', () => {
     );
 
     expect(view.getByText('Testnet')).toBeTruthy();
+  });
+  it('puts every cue to the right of the dots', () => {
+    const THREE = [
+      ...BLOCKCHAINS,
+      { network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' } },
+    ] as any;
+    const view = render(<BalanceHeader blockchains={THREE} activeIndex={1} />);
+    const tree = JSON.stringify(view.toJSON());
+    expect(tree.indexOf('balance-carousel-dot-2')).toBeLessThan(tree.indexOf('balance-prev-hint'));
+    expect(tree.indexOf('balance-prev-hint')).toBeLessThan(tree.indexOf('balance-next-hint'));
+  });
+
+  it('goes where the dot goes when a cue is pressed', () => {
+    const onBlockchainChange = jest.fn();
+    const view = render(
+      <BalanceHeader blockchains={BLOCKCHAINS} onBlockchainChange={onBlockchainChange} />
+    );
+    fireEvent.press(view.getByText('BTC →'));
+    expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
   });
 });

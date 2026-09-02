@@ -488,7 +488,8 @@ export default function HomeScreen() {
     return coinInfoToMarketData(bitcoinCoinInfo);
   }, [bitcoinCoinInfo]);
 
-  // Create a mock Bitcoin token for display
+  // The Bitcoin column's token: the market from CoinGecko, the holding from
+  // the same balance the header reads (`useBalance` on the active network).
   const bitcoinToken: Token | undefined = useMemo(() => {
     if (!bitcoinCoinInfo?.marketData) return undefined;
     const md = bitcoinCoinInfo.marketData;
@@ -498,14 +499,14 @@ export default function HomeScreen() {
       symbol: 'BTC',
       logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
       price: md.currentPrice,
-      uiAmount: 0, // No balance yet
-      usdBalance: 0,
+      uiAmount: nativeAmount ?? 0,
+      usdBalance: usdTotal ?? 0,
       last24HoursChange: md.priceChangePercentage24h
         ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h }
         : null,
       isVerified: true,
     };
-  }, [bitcoinCoinInfo]);
+  }, [bitcoinCoinInfo, nativeAmount, usdTotal]);
 
   // Handlers
   // Send is a flow of four screens now (spec 018), not a sheet: the first of

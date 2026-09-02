@@ -30,13 +30,13 @@ import {
   motionMs,
   ms,
   NETWORK_DISPLAY,
+  balanceCues,
   s,
   showPercentage,
   spacing,
   tabularNums,
   useCurrencyContext,
   vs,
-  type BlockchainBalance,
   type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -93,11 +93,20 @@ const DOT_SIZE = s(spacing.xs);
 const DOT_ACTIVE_WIDTH = s(componentSizes.iconSizeXxsm);
 const DOT_GAP = s(spacing.xxs + 1);
 const TOUCH_TARGET_MIN = 44;
+/** How far a long total may shrink before it is allowed to clip. */
+const BALANCE_MIN_FONT_SCALE = 0.6;
 const DOT_HIT_SLOP = {
   left: DOT_GAP,
   right: DOT_GAP,
   top: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
   bottom: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
+};
+/** A cue is `micro` text; the slop lifts it to the same 44 the dots get. */
+const HINT_HIT_SLOP = {
+  left: s(spacing.xs),
+  right: s(spacing.xs),
+  top: (TOUCH_TARGET_MIN - ms(fontSize.micro)) / 2,
+  bottom: (TOUCH_TARGET_MIN - ms(fontSize.micro)) / 2,
 };
 
 interface ChainDotProps {
@@ -333,26 +342,18 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // every mainnet, which is the whole rule.
   const networkLabel = getNetworkLabel(currentNetworkId);
 
-  // The hints point where the swipes actually go, arrow included, and both
-  // sides are shown: a middle page has a chain behind it as well as ahead of
-  // it, and naming only one of them hid half the carousel. The leading hint
-  // mirrors the trailing one — "SOL ←" to the left, "→ BTC" to the right — so
-  // each arrow points away from the dots, toward the chain it names. With one
-  // chain there is no hint at all.
-  //
-  // Each hint takes its own destination chain's hue — a second channel on a
-  // cue that already reads without it. Whether the symbol may spend the hue or
-  // only the arrow glyph may is decided per mode in the tokens, against that
-  // mode's ground; the component never asks which mode it is in.
-  const hintFor = (chainBalance: BlockchainBalance | undefined) =>
-    chainBalance
-      ? {
-          symbol: NETWORK_DISPLAY[chainBalance.network.id]?.symbol,
-          ink: chain.hintInk[chainBalance.network.blockchain],
-        }
-      : undefined;
-  const previousHint = hintFor(blockchains[activeIndex - 1]);
-  const nextHint = hintFor(blockchains[activeIndex + 1]);
+  // The cues sit to the right of the dots, both of them (owner, 2026-09-02):
+  // "← SOL" for the page behind, "BTC →" for the page ahead, each arrow
+  // pointing the way the page lies and each in its destination chain's hue.
+  // With two chains only one shows; with four (developer mode) both. A cue is
+  // a press target that goes where the dot goes. One derivation for both
+  // platforms: `balanceCues` in shared.
+  const cues = balanceCues(blockchains, activeIndex);
+  const previousHint = cues.previous && {
+    ...cues.previous,
+    ink: chain.hintInk[cues.previous.blockchain],
+  };
+  const nextHint = cues.next && { ...cues.next, ink: chain.hintInk[cues.next.blockchain] };
 
   // The value swap: everything that reports the active chain is keyed on it,
   // so a switch remounts exactly those nodes and the sink/float plays in
@@ -423,6 +424,8 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               <Text
                 style={styles.balance}
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={BALANCE_MIN_FONT_SCALE}
                 accessible
                 accessibilityRole="adjustable"
                 accessibilityLabel={current?.network.name}
@@ -483,17 +486,6 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               warning a test-network session gets (spec 026 D5/D6). */}
           {(blockchains.length > 1 || !!networkLabel) && (
             <View style={styles.cueRow}>
-              {previousHint?.symbol && (
-                <Animated.View
-                  key={`prev-hint-${currentBlockchainId}`}
-                  testID="balance-prev-hint"
-                  {...swapMotion}
-                >
-                  <Text style={[styles.nextHint, { color: previousHint.ink }]}>
-                    {`${previousHint.symbol} ←`}
-                  </Text>
-                </Animated.View>
-              )}
               {blockchains.length > 1 && (
                 <View style={styles.dotRow}>
                   {blockchains.map((chainBalance, index) => (
@@ -512,15 +504,44 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   ))}
                 </View>
               )}
-              {nextHint?.symbol && (
+              {previousHint && (
+                <Animated.View
+                  key={`prev-hint-${currentBlockchainId}`}
+                  testID="balance-prev-hint"
+                  {...swapMotion}
+                >
+                  <Pressable
+                    onPress={() => leaveFor(previousHint.index)}
+                    hitSlop={HINT_HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                      name: blockchains[previousHint.index]?.network.name,
+                    })}
+                  >
+                    <Text style={[styles.nextHint, { color: previousHint.ink }]}>
+                      {`← ${previousHint.symbol}`}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              )}
+              {nextHint && (
                 <Animated.View
                   key={`hint-${currentBlockchainId}`}
                   testID="balance-next-hint"
                   {...swapMotion}
                 >
-                  <Text style={[styles.nextHint, { color: nextHint.ink }]}>
-                    {`→ ${nextHint.symbol}`}
-                  </Text>
+                  <Pressable
+                    onPress={() => leaveFor(nextHint.index)}
+                    hitSlop={HINT_HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                      name: blockchains[nextHint.index]?.network.name,
+                    })}
+                  >
+                    <Text style={[styles.nextHint, { color: nextHint.ink }]}>
+                      {`${nextHint.symbol} →`}
+                    </Text>
+                  </Pressable>
                 </Animated.View>
               )}
               {networkLabel && (
@@ -590,9 +611,9 @@ const stylesFor = (t: Semantic) =>
       color: t.text.secondary,
     },
     balance: {
-      // `balance` is 38 now, the size the `.pen` draws: the number sits beside
-      // the Send/Receive circles rather than alone on a card, so it no longer
-      // needs `adjustsFontSizeToFit` to survive a long total.
+      // `balance` is 48 (owner, 2026-09-02: the number takes the lead). Beside
+      // the Send/Receive circles a long total no longer has the width it had
+      // alone on a card, so the Text fits itself down rather than wrapping.
       fontSize: ms(fontSize.balance),
       fontFamily: fontFamilyNative.bold,
       color: t.text.primary,

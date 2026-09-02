@@ -331,6 +331,8 @@ export {
   scanDerivedAccounts,
 } from './derived-accounts';
 export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';
+export { balanceCues } from './balanceCues';
+export type { BalanceCue, BalanceCues } from './balanceCues';
 export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
   NftBlockchain,

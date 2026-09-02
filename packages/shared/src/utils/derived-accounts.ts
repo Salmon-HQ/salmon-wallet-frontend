@@ -18,6 +18,7 @@ import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { MIRROR_NETWORK_IDS, getMainnetSibling } from './network';
 import { getAccountMnemonic } from './account-secret';
+import { NETWORK_DISPLAY } from './networkDisplay';
 import type { Account } from '../types/account';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
@@ -42,34 +43,12 @@ const SCAN_NETWORK_CANDIDATES: readonly string[] = [
   'ethereum-mainnet',
 ] as const;
 
-/**
- * Display metadata for each network used during scanning.
- * Includes the ticker symbol and human-readable name shown in the UI.
- */
-export const NETWORK_DISPLAY: Record<string, NetworkDisplayInfo> = {
-  'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
-  'solana-devnet': { symbol: 'SOL', name: 'Solana Devnet', blockchain: 'solana' },
-  'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
-  'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet', blockchain: 'bitcoin' },
-  'ethereum-mainnet': { symbol: 'ETH', name: 'Ethereum', blockchain: 'ethereum' },
-  'ethereum-sepolia': { symbol: 'ETH', name: 'Ethereum Sepolia', blockchain: 'ethereum' },
-};
+export { NETWORK_DISPLAY } from './networkDisplay';
+export type { NetworkDisplayInfo } from './networkDisplay';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-/**
- * Per-network display metadata entry in NETWORK_DISPLAY.
- */
-export interface NetworkDisplayInfo {
-  /** Native token ticker, e.g. "SOL", "BTC", "ETH". */
-  symbol: string;
-  /** Human-readable network name shown in the UI. */
-  name: string;
-  /** Underlying blockchain family. */
-  blockchain: 'solana' | 'bitcoin' | 'ethereum';
-}
 
 /**
  * All data the UI needs to render and track a single derived account row.

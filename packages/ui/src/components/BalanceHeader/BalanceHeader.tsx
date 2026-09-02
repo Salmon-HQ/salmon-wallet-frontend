@@ -4,7 +4,7 @@
  * The mobile twin is `apps/mobile/src/components/BalanceHeader/BalanceHeader.tsx`
  * and the anatomy is the same, read from the same `BalanceHeaderPropsBase`
  * contract: the label row with the eye, the amount, the 24h change beside the
- * Activity pill, the cue row (prev hint · dots · next hint · environment chip),
+ * Activity pill, the cue row (dots · ← prev · next → · environment chip),
  * and the two money circles at the right. There is no card, no gradient pane
  * and no edge light — the number sits directly on the water column.
  *
@@ -26,7 +26,7 @@
  * frame around them holds still (DESIGN.md §The balance block's motion, rule
  * four); under `prefers-reduced-motion` every page change is a cut.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   LATERAL_SWAP_TRAVEL,
   SINK_EXIT_SCALE,
@@ -45,16 +45,16 @@ import {
   motionEasing,
   motionMs,
   NETWORK_DISPLAY,
+  balanceCues,
   showPercentage,
   spacing,
   tabularNums,
   useCurrencyContext,
-  type BlockchainBalance,
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { useReducedMotion } from '../../motion';
+import { clearAnimations, useReducedMotion } from '../../motion';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
@@ -67,6 +67,23 @@ const EM_DASH = '—';
 /** Dot geometry, unchanged from mobile: the active dot is a pill that travels. */
 const DOT_SIZE = spacing.xs;
 const DOT_ACTIVE_WIDTH = componentSizes.iconSizeXxsm;
+const TOUCH_TARGET_MIN = 44;
+/**
+ * A press target in the cue row: padded to the 44px minimum and taken back by
+ * the margin, so the row measures its content and nothing else — mobile's
+ * hit slop is not layout either.
+ */
+const hitBoxStyle = (contentHeight: number): React.CSSProperties => ({
+  border: 'none',
+  background: 'transparent',
+  padding: `${(TOUCH_TARGET_MIN - contentHeight) / 2}px 0`,
+  margin: `${-(TOUCH_TARGET_MIN - contentHeight) / 2}px 0`,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+});
+/** How far a long total may shrink before it is allowed to clip. */
+const BALANCE_MIN_FONT_SCALE = 0.6;
 
 /** How far a horizontal wheel has to travel before it counts as a page. */
 const WHEEL_PAGE_THRESHOLD = 40;
@@ -100,6 +117,10 @@ export function BalanceHeader({
 
   const amountRef = useRef<HTMLDivElement>(null);
   const changeRef = useRef<HTMLDivElement>(null);
+  const balanceRef = useRef<HTMLSpanElement>(null);
+  // A long total fits itself to the width beside Send/Receive rather than
+  // wrapping — mobile's `adjustsFontSizeToFit`, measured here.
+  const [balanceFit, setBalanceFit] = useState(1);
   // The index the arrival animation has already been played for. A page change
   // is committed by the parent a beat after the exit finishes, so the arrival
   // runs from an effect — otherwise the OLD number would be the one sliding in.
@@ -174,6 +195,12 @@ export function BalanceHeader({
     enteredIndexRef.current = activeIndex;
     leavingRef.current = false;
     if (reducedMotion || !canAnimate(amountRef.current)) return;
+
+    // The exit held its last frame (`fill: forwards`); an arrival whose effect
+    // is removed when it ends would hand the element back to it, invisible.
+    // The first page change is where this showed: a blank amount on Bitcoin.
+    clearAnimations(amountRef.current);
+    clearAnimations(changeRef.current);
 
     const fromRight = activeIndex > previous;
     amountRef.current.animate(
@@ -256,18 +283,43 @@ export function BalanceHeader({
   // mainnet says nothing — which is exactly what `getNetworkLabel` returns.
   const networkLabel = getNetworkLabel(currentNetworkId);
 
-  // The hints point where the pages actually go, arrow included, and each takes
-  // its own destination chain's hue — a second channel on a cue that already
-  // reads without it.
-  const hintFor = (chainBalance: BlockchainBalance | undefined) =>
-    chainBalance
-      ? {
-          symbol: NETWORK_DISPLAY[chainBalance.network.id]?.symbol,
-          ink: chain.hintInk[chainBalance.network.blockchain],
-        }
-      : undefined;
-  const previousHint = hintFor(blockchains[activeIndex - 1]);
-  const nextHint = hintFor(blockchains[activeIndex + 1]);
+  // The cues sit to the right of the dots, both of them (owner, 2026-09-02):
+  // "← SOL" for the page behind, "BTC →" for the page ahead, each arrow
+  // pointing the way the page lies and each in its destination chain's hue.
+  // A cue is a press target that goes where the dot goes. One derivation for
+  // both platforms: `balanceCues` in shared.
+  const cues = balanceCues(blockchains, activeIndex);
+  const previousHint = cues.previous && {
+    ...cues.previous,
+    ink: chain.hintInk[cues.previous.blockchain],
+  };
+  const nextHint = cues.next && { ...cues.next, ink: chain.hintInk[cues.next.blockchain] };
+
+  const balanceText = hiddenBalance
+    ? hiddenValue
+    : isTestNetwork
+      ? nativeTotal
+      : formatValue(usdTotal);
+  useLayoutEffect(() => {
+    const span = balanceRef.current;
+    const box = amountRef.current;
+    if (!span || !box) return undefined;
+    const fit = () => {
+      const needed = span.scrollWidth / (Number(span.dataset.fit) || 1);
+      const available = box.clientWidth;
+      const next =
+        available > 0 && needed > available
+          ? Math.max(BALANCE_MIN_FONT_SCALE, available / needed)
+          : 1;
+      span.dataset.fit = String(next);
+      setBalanceFit(next);
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(fit);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [balanceText]);
 
   const hintStyle: React.CSSProperties = {
     fontFamily: fontFamily.sans,
@@ -334,17 +386,18 @@ export function BalanceHeader({
         >
           <PendingValue pending={loading}>
             <span
+              ref={balanceRef}
               style={{
                 fontFamily: fontFamily.sans,
                 fontWeight: fontWeight.bold,
-                fontSize: fontSize.balance,
+                fontSize: fontSize.balance * balanceFit,
                 color: text.primary,
                 letterSpacing: letterSpacing.balance,
                 whiteSpace: 'nowrap',
                 ...tabularNums.css,
               }}
             >
-              {hiddenBalance ? hiddenValue : isTestNetwork ? nativeTotal : formatValue(usdTotal)}
+              {balanceText}
             </span>
           </PendingValue>
         </div>
@@ -396,14 +449,6 @@ export function BalanceHeader({
             test-network session gets. */}
         {(blockchains.length > 1 || !!networkLabel) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-            {previousHint?.symbol && (
-              <span
-                data-testid="balance-prev-hint"
-                style={{ ...hintStyle, color: previousHint.ink }}
-              >
-                {`${previousHint.symbol} ←`}
-              </span>
-            )}
             {blockchains.length > 1 && (
               <div
                 role="tablist"
@@ -425,21 +470,7 @@ export function BalanceHeader({
                         name: chainBalance.network.name,
                       })}
                       onClick={() => leaveFor(index)}
-                      style={{
-                        // The hit box clears the 44px minimum without the dots
-                        // themselves growing: padding around a fixed pill,
-                        // taken back by the margin so the row measures the dot
-                        // and nothing else — mobile's hit slop is not layout,
-                        // and the Send/Receive pair sits centred on the change
-                        // row and the cue row together because of it.
-                        border: 'none',
-                        background: 'transparent',
-                        padding: `${(44 - DOT_SIZE) / 2}px 0`,
-                        margin: `${-(44 - DOT_SIZE) / 2}px 0`,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
+                      style={hitBoxStyle(DOT_SIZE)}
                     >
                       <span
                         style={{
@@ -461,10 +492,31 @@ export function BalanceHeader({
                 })}
               </div>
             )}
-            {nextHint?.symbol && (
-              <span data-testid="balance-next-hint" style={{ ...hintStyle, color: nextHint.ink }}>
-                {`→ ${nextHint.symbol}`}
-              </span>
+            {previousHint && (
+              <button
+                type="button"
+                data-testid="balance-prev-hint"
+                aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                  name: blockchains[previousHint.index]?.network.name,
+                })}
+                onClick={() => leaveFor(previousHint.index)}
+                style={{ ...hitBoxStyle(fontSize.micro), ...hintStyle, color: previousHint.ink }}
+              >
+                {`← ${previousHint.symbol}`}
+              </button>
+            )}
+            {nextHint && (
+              <button
+                type="button"
+                data-testid="balance-next-hint"
+                aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                  name: blockchains[nextHint.index]?.network.name,
+                })}
+                onClick={() => leaveFor(nextHint.index)}
+                style={{ ...hitBoxStyle(fontSize.micro), ...hintStyle, color: nextHint.ink }}
+              >
+                {`${nextHint.symbol} →`}
+              </button>
             )}
             {networkLabel && (
               <Chip

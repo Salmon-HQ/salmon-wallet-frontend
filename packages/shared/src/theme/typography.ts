@@ -95,8 +95,12 @@ export const fontSize = {
   headline: 24,
   /** 36px - the largest heading role */
   display: 36,
-  /** 38px - the total balance, and nothing else */
-  balance: 38,
+  /**
+   * 48px - the total balance, and nothing else. Owner, 2026-09-02: the number
+   * takes the lead; it was 38, the `.pen`'s size. A long total fits itself to
+   * the width beside Send/Receive rather than wrapping.
+   */
+  balance: 48,
 
   // ---------------------------------------------------------------------
   // Legacy aliases — re-pointed at the scale, kept so consumers keep working

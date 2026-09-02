@@ -87,6 +87,25 @@ describe('the sink and the float on the DOM', () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
+  it('a float cancels the sink the element is still holding, before it starts', () => {
+    // A sink holds opacity 0 (`fill: forwards`); a float drops its own effect
+    // when it ends (`fill: backwards`). Without the cancel, the float ends by
+    // handing the element back to the sink — invisible.
+    const { element, animate } = elementWithAnimate();
+    const cancel = vi.fn();
+    (element as unknown as { getAnimations: () => Animation[] }).getAnimations = () => [
+      { cancel } as unknown as Animation,
+    ];
+
+    floatEntering(element, false);
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel.mock.invocationCallOrder[0]).toBeLessThan(animate.mock.invocationCallOrder[0]);
+
+    floatEnteringLight(element, false);
+    expect(cancel).toHaveBeenCalledTimes(2);
+  });
+
   it('animates nothing where the Web Animations API is absent', () => {
     expect(floatEntering(document.createElement('div'), false)).toBeUndefined();
     expect(sinkExiting(null, false)).toBeUndefined();

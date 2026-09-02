@@ -77,7 +77,9 @@ export function Card({
     borderRadius: RADII[radius],
     padding: PADDINGS[padding],
     overflow: 'hidden',
-    ...(gap != null ? { display: 'flex', gap } : null),
+    // A gap stacks the children, as mobile's View does by default — a bare
+    // `display: flex` laid the Market data card's rows out in a row.
+    ...(gap != null ? { display: 'flex', flexDirection: 'column', gap } : null),
     ...style,
   };
 

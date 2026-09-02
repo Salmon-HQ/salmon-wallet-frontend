@@ -1003,7 +1003,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     return coinInfoToMarketData(bitcoinCoinInfo);
   }, [bitcoinCoinInfo]);
 
-  // Create Bitcoin token for display
+  // The Bitcoin column's token: the market from CoinGecko, the holding from
+  // the same balance the header reads (`useBalance` on the active network).
   const bitcoinToken: Token | undefined = useMemo(() => {
     if (!bitcoinCoinInfo?.marketData) return undefined;
     const md = bitcoinCoinInfo.marketData;
@@ -1013,14 +1014,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       symbol: 'BTC',
       logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
       price: md.currentPrice,
-      uiAmount: 0,
-      usdBalance: 0,
+      uiAmount: nativeAmount ?? 0,
+      usdBalance: usdTotal ?? 0,
       last24HoursChange: md.priceChangePercentage24h
         ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h }
         : null,
       isVerified: true,
     };
-  }, [bitcoinCoinInfo]);
+  }, [bitcoinCoinInfo, nativeAmount, usdTotal]);
 
   // Selected token chart + coin info via shared React Query hook.
   // Tokens without a coingeckoId fall back to the contract-address chart

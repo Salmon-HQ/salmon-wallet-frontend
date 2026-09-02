@@ -197,8 +197,38 @@ describe('BalanceHeader', () => {
     // A middle page has a chain behind it as well as ahead of it; here the last
     // page names only the one behind.
     const previous = screen.getByTestId('balance-prev-hint');
-    expect(previous.textContent).toContain('←');
+    expect(previous.textContent).toBe('← SOL');
     expect(previous.style.color).toBeTruthy();
     expect(screen.queryByTestId('balance-next-hint')).toBeNull();
+  });
+
+  it('puts both cues to the right of the dots on a middle page, and each goes where the dot goes', () => {
+    stubDom();
+    stubMatchMedia(true);
+    const THREE = [
+      ...CHAINS,
+      { network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' } },
+    ] as any;
+    const onBlockchainChange = vi.fn();
+
+    render(
+      'dark',
+      <BalanceHeader blockchains={THREE} activeIndex={1} onBlockchainChange={onBlockchainChange} />
+    );
+
+    const lastDot = screen.getByTestId('balance-carousel-dot-2');
+    const previous = screen.getByTestId('balance-prev-hint');
+    const next = screen.getByTestId('balance-next-hint');
+    expect(
+      lastDot.compareDocumentPosition(previous) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(previous.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(previous.textContent).toBe('← SOL');
+    expect(next.textContent).toBe('SOL →');
+
+    fireEvent.click(next);
+    expect(onBlockchainChange).toHaveBeenCalledWith('solana', 2);
+    fireEvent.click(previous);
+    expect(onBlockchainChange).toHaveBeenCalledWith('solana', 0);
   });
 });

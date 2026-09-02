@@ -48,6 +48,20 @@ function canAnimate(element: Element | null | undefined): element is Element {
 }
 
 /**
+ * Drop whatever the element is still holding from an earlier animation. A
+ * sink is `fill: 'forwards'` — it holds opacity 0 after it ends — and a float
+ * is `fill: 'backwards'` — its effect is removed when it ends — so a float
+ * played over a finished sink ends by handing the element back to the sink,
+ * invisible (the side panel's blank amount, change line and tab row after the
+ * first swap, 2026-09-02). Cancelling first is what a remount does for free on
+ * mobile.
+ */
+export function clearAnimations(element: Element | null | undefined): void {
+  if (!element || typeof element.getAnimations !== 'function') return;
+  for (const animation of element.getAnimations()) animation.cancel();
+}
+
+/**
  * Entering half: arrive from depth. Returns the running `Animation`, or
  * `undefined` under reduce motion (a cut) or where WAAPI is absent.
  */
@@ -64,6 +78,7 @@ export function floatEntering(
     scale = FLOAT_ENTER_SCALE,
   } = options;
 
+  clearAnimations(element);
   return element.animate(
     [
       { opacity: 0, transform: `translateY(${distance}px) scale(${scale})`, easing: 'linear' },
@@ -93,6 +108,7 @@ export function floatEnteringLight(
   if (isReduceMotionEnabled || !canAnimate(element)) return undefined;
   const { durationMs = FLOAT_IN_MS, delayMs = 0 } = options;
 
+  clearAnimations(element);
   return element.animate([{ opacity: 0 }, { opacity: 1 }], {
     duration: durationMs,
     delay: delayMs,
