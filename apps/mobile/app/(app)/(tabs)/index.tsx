@@ -540,6 +540,16 @@ export default function HomeScreen() {
   // arrangement being thrown away — and a key with no label here is simply
   // not rendered.
   const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
+  // A reorder swaps the row on the verb — the old arrangement sinks, the new
+  // one floats — so the change is seen happening rather than cutting (owner,
+  // 2026-09-02). Keyed by the arrangement, so a tab switch (same arrangement)
+  // never remounts the row and the underline keeps sliding. First mount owes
+  // no verb: render-time setState, the same pattern the content swap uses.
+  const subTabOrderKey = subTabOrder.join('|');
+  const [orderSwap, setOrderSwap] = useState({ key: subTabOrderKey, hasPrior: false });
+  if (orderSwap.key !== subTabOrderKey) {
+    setOrderSwap({ key: subTabOrderKey, hasPrior: true });
+  }
 
   const subTabs = useMemo(() => {
     const labels: Record<string, string> = {
@@ -722,7 +732,19 @@ export default function HomeScreen() {
               its underline if it is not remounted. */}
           <View style={styles.pinnedHeader}>
             {balanceBlock}
-            <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
+            <Reanimated.View
+              key={subTabOrderKey}
+              testID="home-subtabs-row"
+              style={styles.pinnedSubTabs}
+              entering={
+                orderSwap.hasPrior
+                  ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                  : undefined
+              }
+              exiting={orderSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+            >
+              {subTabsRow}
+            </Reanimated.View>
           </View>
 
           {/* The content region plays the verb on a sub-tab change: the

@@ -53,9 +53,12 @@ const crowns = lines.filter((stop) => stop.role === 'crown');
 const shadows = lines.filter((stop) => stop.role === 'shadow');
 
 describe('crestStops — a wave train, not one band', () => {
-  it('carries one lit ring per CREST_RINGS, with a shadow line at every boundary', () => {
+  it('carries one lit ring per CREST_RINGS, with a shadow line at every boundary but the innermost', () => {
+    // The train starts on a crown: the innermost boundary has calm water
+    // inside it and no lit line to be darker than, so its flank read as a
+    // stray grey line on the pale ground (owner, 2026-09-02).
     expect(crowns).toHaveLength(CREST_RINGS);
-    expect(shadows).toHaveLength(CREST_RINGS + 1);
+    expect(shadows).toHaveLength(CREST_RINGS);
   });
 
   it('alternates lit and shadowed along the radius', () => {
@@ -65,15 +68,15 @@ describe('crestStops — a wave train, not one band', () => {
     for (let index = 1; index < colours.length; index += 1) {
       expect(colours[index]).not.toBe(colours[index - 1]);
     }
-    expect(colours[0]).toBe(CREST_SHADOW_COLOR);
+    expect(colours[0]).toBe(CREST_LIGHT_COLOR);
     expect(colours[colours.length - 1]).toBe(CREST_SHADOW_COLOR);
   });
 
-  it('puts every lit crown strictly between two shadow lines', () => {
-    crowns.forEach((crown) => {
+  it('puts a shadow line outside every lit crown, and one inside every crown but the first', () => {
+    crowns.forEach((crown, index) => {
       const inner = shadows.filter((shadow) => shadow.offset < crown.offset);
       const outer = shadows.filter((shadow) => shadow.offset > crown.offset);
-      expect(inner.length).toBeGreaterThan(0);
+      expect(inner.length).toBe(index);
       expect(outer.length).toBeGreaterThan(0);
     });
   });
@@ -93,7 +96,7 @@ describe('crestStops — a wave train, not one band', () => {
       expect(shadows[index].opacity).toBeLessThanOrEqual(shadows[index - 1].opacity);
     }
     expect(crowns[0].opacity).toBeCloseTo(CREST_LIGHT_ALPHA, 10);
-    expect(shadows[0].opacity).toBeCloseTo(CREST_SHADOW_ALPHA, 10);
+    expect(shadows[0].opacity).toBeCloseTo(CREST_SHADOW_ALPHA * CREST_RING_DECAY, 10);
     expect(crowns[1].opacity / crowns[0].opacity).toBeCloseTo(CREST_RING_DECAY, 10);
   });
 
@@ -112,7 +115,9 @@ describe('crestStops — a wave train, not one band', () => {
     // cannot be balanced and the paint reads as a bright rope.
     const lifts = stops.filter((stop) => stop.role === 'lift');
 
-    expect(lifts).toHaveLength(2 * lines.length);
+    // Two lifts per line, plus the pair that still brackets the innermost
+    // boundary — the flank went, the calm around it stayed.
+    expect(lifts).toHaveLength(2 * (lines.length + 1));
     expect(CREST_LIFT_ALPHA).toBeLessThan(CREST_LIGHT_ALPHA);
     // And every crown outshines the calm water it sits in, at every ring — a
     // crown dimmer than its own lift would be a groove, not a crest.
@@ -193,7 +198,9 @@ describe('crestGradientCSS', () => {
     const crownAt = crowns.map((crown) => css.indexOf(`${(crown.offset * 100).toFixed(2)}%`));
 
     crownAt.forEach((index) => expect(index).toBeGreaterThan(-1));
-    expect(css.indexOf(rgbOf(CREST_SHADOW_COLOR))).toBeLessThan(crownAt[0]);
+    // The train starts on a crown: the first shadow follows the first crown.
+    expect(css.indexOf(rgbOf(CREST_SHADOW_COLOR))).toBeGreaterThan(crownAt[0]);
+    expect(css.indexOf(rgbOf(CREST_SHADOW_COLOR))).toBeLessThan(crownAt[1]);
     expect(css.lastIndexOf(rgbOf(CREST_SHADOW_COLOR))).toBeGreaterThan(crownAt[crownAt.length - 1]);
   });
 });

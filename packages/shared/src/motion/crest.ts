@@ -298,12 +298,19 @@ export function crestStops(
     const boundary = start + ring * spacing;
 
     lift(boundary - half, decay);
-    stops.push({
-      offset: boundary,
-      color: shadow.color,
-      opacity: shadow.alpha * decay * alpha,
-      role: 'shadow',
-    });
+    // The train starts on a crown. A flank is read as shadow because it sits
+    // against a lit crown; the innermost boundary has calm water inside it
+    // and nothing lit to be darker than, so on a pale ground it read as a
+    // stray grey line (owner, on device in light, 2026-09-02). Every other
+    // boundary sits between two crowns and keeps its flank.
+    if (ring > 0) {
+      stops.push({
+        offset: boundary,
+        color: shadow.color,
+        opacity: shadow.alpha * decay * alpha,
+        role: 'shadow',
+      });
+    }
     lift(boundary + half, decay);
 
     if (ring === CREST_RINGS) break;

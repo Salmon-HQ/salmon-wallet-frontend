@@ -423,4 +423,25 @@ describe('home sub-tabs', () => {
       .map((tab) => tab.props.testID as string);
     expect(labels).toEqual(['portfolio-tab-nfts', 'portfolio-tab-portfolio']);
   });
+
+  it('plays the verb on a reorder, and only then', () => {
+    // First mount owes no verb; once the arrangement changes the row sinks
+    // and floats, keyed by the arrangement so a tab switch never remounts it.
+    mockStoredTabOrder = ['portfolio', 'nfts'];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    const wrapped = () => (
+      <QueryClientProvider client={client}>
+        <HomeScreen />
+      </QueryClientProvider>
+    );
+    const view = render(wrapped());
+    expect(screen.getByTestId('home-subtabs-row').props.entering).toBeUndefined();
+
+    mockStoredTabOrder = ['nfts', 'portfolio'];
+    view.rerender(wrapped());
+
+    const row = screen.getByTestId('home-subtabs-row');
+    expect(row.props.entering).toBeDefined();
+    expect(row.props.exiting).toBeDefined();
+  });
 });
