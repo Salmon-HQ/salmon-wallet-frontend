@@ -8,6 +8,7 @@ import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useTabChrome } from '../../hooks/useTabChrome';
 import { POWERUPS_SURFACE_ENABLED } from '../../src/powerups/surface';
 import { TaskChromeProvider, useTaskChrome } from '../../src/contexts/TaskChromeContext';
+import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import type { DerivedKeyCache } from '@salmon/shared';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
 
@@ -29,6 +30,10 @@ import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
  * `TaskChromeProvider` lives here rather than in the tabs layout: the FAB is
  * app chrome now, mounted outside the tabs, and it has to leave with the Home
  * content when a task takes the screen.
+ *
+ * `DerivedAccountsProvider` sits beside it for the same reason: the automatic
+ * derived-account scan belongs to the unlocked session, not to a screen, so it
+ * starts on the first unlocked mount and is not restarted by navigation.
  */
 export default function AppLayout() {
   const router = useRouter();
@@ -154,71 +159,73 @@ export default function AppLayout() {
 
   return (
     <TaskChromeProvider surfaceKey={surfaceKey}>
-      {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
+      <DerivedAccountsProvider>
+        {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
           row the tabs layout renders, and every pushed screen draws the
           kit's own `ScreenHeader`. A native header would double up on both.
           Direction is set once, here: a pushed screen comes in from the
           right and leaves the way it came, and the horizontal gesture is the
           same motion run by hand. Configuring it per screen is how two
           screens end up arriving from different edges. */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-          gestureDirection: 'horizontal',
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="wallets" />
-        <Stack.Screen name="activity" />
-        {/* Settings is a sub-stack too (the list plus one screen per
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            gestureDirection: 'horizontal',
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="wallets" />
+          <Stack.Screen name="activity" />
+          {/* Settings is a sub-stack too (the list plus one screen per
             `SettingsScreen` key). It used to be a `href: null` tab, which is
             why it never slid: a tab switch is not a stack push. On the stack it
             takes the same right slide as everything else — and the lock overlay
             below now covers it, which an overlay above the tabs never did. */}
-        <Stack.Screen name="settings" />
-        {/* The send flow is its own sub-stack (spec 018): four screens that
+          <Stack.Screen name="settings" />
+          {/* The send flow is its own sub-stack (spec 018): four screens that
             share the flow's state, taking this stack's right slide. */}
-        <Stack.Screen name="send" />
-        {/* Token and NFT detail are screens of this stack (spec 019), pushed
+          <Stack.Screen name="send" />
+          {/* Token and NFT detail are screens of this stack (spec 019), pushed
             from the Portfolio and NFT lists with the same right slide. */}
-        <Stack.Screen name="token/[id]" />
-        <Stack.Screen name="nft/[id]" />
-        {/* Powerups rises from the bottom instead of sliding from the right,
+          <Stack.Screen name="token/[id]" />
+          <Stack.Screen name="nft/[id]" />
+          {/* Powerups rises from the bottom instead of sliding from the right,
             and swipes down to dismiss. It is a plain screen of THIS stack, not
             a modal: a modal is its own native window and nothing — not the
             lock overlay, not the FAB — can float above it. Full cover comes
             from the screen itself, which paints its own opaque water. */}
-        <Stack.Screen
-          name="powerups"
-          options={{
-            animation: 'slide_from_bottom',
-            gestureDirection: 'vertical',
-          }}
-        />
-      </Stack>
+          <Stack.Screen
+            name="powerups"
+            options={{
+              animation: 'slide_from_bottom',
+              gestureDirection: 'vertical',
+            }}
+          />
+        </Stack>
 
-      {/* One powerups control for both routes, above the stack: Home and the
+        {/* One powerups control for both routes, above the stack: Home and the
           browse screen are two screens of the same stack, so the button never
           unmounts between them and the turn plays while the screen rises. */}
-      <PowerupsLayer />
+        <PowerupsLayer />
 
-      {/* The lock screen. It covers every screen this stack can push and
+        {/* The lock screen. It covers every screen this stack can push and
           takes every touch — Powerups included, now that it is a plain
           screen of this stack. */}
-      {isLocked && (
-        <LockOverlay>
-          <LockContent
-            locked={accountState.locked}
-            onUnlock={handleLockUnlock}
-            onUnlockWithKey={handleLockUnlockWithKey}
-            onGetDerivedKey={handleGetDerivedKey}
-            onUnlockExited={handleUnlockExited}
-            onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
-            biometric={lockBiometricConfig}
-          />
-        </LockOverlay>
-      )}
+        {isLocked && (
+          <LockOverlay>
+            <LockContent
+              locked={accountState.locked}
+              onUnlock={handleLockUnlock}
+              onUnlockWithKey={handleLockUnlockWithKey}
+              onGetDerivedKey={handleGetDerivedKey}
+              onUnlockExited={handleUnlockExited}
+              onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
+              biometric={lockBiometricConfig}
+            />
+          </LockOverlay>
+        )}
+      </DerivedAccountsProvider>
     </TaskChromeProvider>
   );
 }

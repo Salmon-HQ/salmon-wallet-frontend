@@ -229,4 +229,20 @@ export interface UserConfig {
    * the norm, so only the exceptions are stored.
    */
   excludedFromTotal?: string[];
+  /**
+   * Wallet ids whose BIP-44 derived accounts have already been scanned and
+   * imported. Absent or empty means nothing has been scanned yet — the same
+   * "store only the exceptions" idiom `excludedFromTotal` uses, so a fresh
+   * install and every pre-existing config get the scan for free.
+   */
+  derivedScannedAccountIds?: string[];
+  /**
+   * Derivation indexes the user has hidden, per wallet id. Absent or empty
+   * means every derived account is shown — exceptions only, as above.
+   *
+   * Hidden, not deleted: a derived account comes out of the seed, so removing
+   * it removes nothing real and the next scan would find it again. Index 0 is
+   * the wallet itself and is never hideable.
+   */
+  hiddenDerivedAccounts?: Record<string, number[]>;
 }

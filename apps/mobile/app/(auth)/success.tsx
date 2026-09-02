@@ -6,10 +6,10 @@
  * step.
  *
  * The derived-accounts detour that used to hang off this screen — a "Check
- * derivables" button and a "What is a derivable?" helper — is switched off
- * (owner, 2026-09-02): a fresh wallet has nothing to find, and a seed brought
- * from another wallet can run the same scan from Wallets → add account. The
- * `derived-accounts` route stays registered; nothing leads to it from here.
+ * derivables" button and a "What is a derivable?" helper — is gone (owner,
+ * 2026-09-02): a fresh wallet has nothing to find, and a seed brought from
+ * another wallet has its derived accounts imported for it, automatically, on
+ * the first unlocked mount (`useDerivedAccountsAutoImport`).
  */
 
 import { onboardingIdentityGridFull } from '@salmon/shared';

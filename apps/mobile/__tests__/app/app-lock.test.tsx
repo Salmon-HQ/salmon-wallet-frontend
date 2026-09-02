@@ -31,6 +31,13 @@ jest.mock('expo-router', () => {
 
 const accountState = { locked: false };
 
+// The derived-account scan is the shared hook's job and has its own suite; the
+// shell only has to mount its provider.
+jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
+  DerivedAccountsProvider: ({ children }: { children?: React.ReactNode }) => children,
+  useDerivedAccounts: () => ({ status: { scanningAccountId: null }, rescan: jest.fn() }),
+}));
+
 jest.mock('@salmon/shared', () => ({
   useAccountsContext: () => [
     accountState,

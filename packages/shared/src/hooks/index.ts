@@ -167,8 +167,12 @@ export { useSolanaNfts } from './useSolanaNfts';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
 // Settings panel stack hook
-export { useWalletTotals, sumIncludedTotals } from './useWalletTotals';
-export type { UseWalletTotalsParams, UseWalletTotalsResult } from './useWalletTotals';
+export { useWalletTotals, sumIncludedTotals, walletBalanceEntries } from './useWalletTotals';
+export type {
+  UseWalletTotalsParams,
+  UseWalletTotalsResult,
+  WalletBalanceEntry,
+} from './useWalletTotals';
 
 export { useSettingsPanelStack } from './useSettingsPanelStack';
 export type { UseSettingsPanelStackResult } from './useSettingsPanelStack';
@@ -184,3 +188,13 @@ export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext
 // Home sub-tab order (persisted arrangement + reconciliation)
 export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
 export type { UseHomeTabOrderResult } from './useHomeTabOrder';
+
+// Derived-account auto import (the retired onboarding detour, automatic now)
+export {
+  useDerivedAccountsAutoImport,
+  importDerivedAccounts,
+} from './useDerivedAccountsAutoImport';
+export type {
+  DerivedScanStatus,
+  UseDerivedAccountsAutoImportResult,
+} from './useDerivedAccountsAutoImport';

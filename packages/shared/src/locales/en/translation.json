@@ -257,7 +257,13 @@
       "add_wallet": "Add wallet",
       "keep_one_included": "At least one wallet has to stay in the total.",
       "include_in_total_a11y": "Include {{name}} in the total",
-      "exclude_from_total_a11y": "Exclude {{name}} from the total"
+      "exclude_from_total_a11y": "Exclude {{name}} from the total",
+      "find_derived": "Find derived accounts",
+      "finding_derived": "Looking for derived accounts",
+      "hidden_derived_one": "Hidden ({{count}})",
+      "hidden_derived_other": "Hidden ({{count}})",
+      "hide_derived_a11y": "Hide {{name}}",
+      "show_derived_a11y": "Show {{name}}"
     },
     "profile_picture": "Profile Picture",
     "avatar_presets": "Avatars",
@@ -857,7 +863,6 @@
     "active_account": "{{name}}, active",
     "transaction_row": "{{type}} transaction, {{description}}",
     "nft_view_hint": "Double tap to view NFT details",
-    "loading_account_info": "Loading account information",
     "open_powerups": "Open Powerups",
     "close_powerups": "Close Powerups",
     "portfolio_order": "Arrange tabs"

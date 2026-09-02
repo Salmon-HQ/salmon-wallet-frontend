@@ -52,6 +52,14 @@ export interface UseUserConfigResult {
   excludedFromTotal: string[];
   /** Includes or excludes one wallet from the aggregated balance total */
   setIncludedInTotal: (walletId: string, included: boolean) => Promise<void>;
+  /** Wallet ids whose derived accounts have already been scanned and imported */
+  derivedScannedAccountIds: string[];
+  /** Records that one wallet's derived-account scan finished */
+  markDerivedScanned: (walletId: string) => Promise<void>;
+  /** Derivation indexes the user has hidden, per wallet id */
+  hiddenDerivedAccounts: Record<string, number[]>;
+  /** Hides or shows one derived account of one wallet */
+  setDerivedHidden: (walletId: string, index: number, hidden: boolean) => Promise<void>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -120,6 +128,8 @@ export function useUserConfig({
   const [availableExplorers, setAvailableExplorers] = useState<ExplorerWithKey[]>([]);
   const [developerNetworks, setDeveloperNetworks] = useState<boolean>(false);
   const [excludedFromTotal, setExcludedFromTotal] = useState<string[]>([]);
+  const [derivedScannedAccountIds, setDerivedScannedAccountIds] = useState<string[]>([]);
+  const [hiddenDerivedAccounts, setHiddenDerivedAccounts] = useState<Record<string, number[]>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Derived values from active account
@@ -189,6 +199,8 @@ export function useUserConfig({
 
         setDeveloperNetworks(config.developerNetworks);
         setExcludedFromTotal(config.excludedFromTotal ?? []);
+        setDerivedScannedAccountIds(config.derivedScannedAccountIds ?? []);
+        setHiddenDerivedAccounts(config.hiddenDerivedAccounts ?? {});
       } catch (error) {
         console.error('Failed to load user config:', error);
         // Set defaults on error
@@ -296,6 +308,69 @@ export function useUserConfig({
     [userConfig, excludedFromTotal]
   );
 
+  /**
+   * Records that one wallet's derived-account scan finished.
+   *
+   * Only completed scans are stored (the exceptions idiom above): a wallet
+   * that is absent from the list is scanned again on the next unlock, which is
+   * what a cancelled or failed scan must leave behind.
+   */
+  const markDerivedScanned = useCallback(
+    async (walletId: string): Promise<void> => {
+      if (!userConfig) return;
+      if (derivedScannedAccountIds.includes(walletId)) return;
+
+      const next = [...derivedScannedAccountIds, walletId];
+      const updatedConfig: UserConfig = { ...userConfig, derivedScannedAccountIds: next };
+      setUserConfig(updatedConfig);
+      setDerivedScannedAccountIds(next);
+
+      try {
+        const storage = getStorage();
+        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+      } catch (error) {
+        console.error('Failed to save derived-scan state:', error);
+      }
+    },
+    [userConfig, derivedScannedAccountIds]
+  );
+
+  /**
+   * Hides or shows one derived account.
+   *
+   * Index 0 is the wallet itself — hiding it would hide the wallet from its own
+   * total, so it is refused here rather than only in the UI that offers it.
+   */
+  const setDerivedHidden = useCallback(
+    async (walletId: string, index: number, hidden: boolean): Promise<void> => {
+      if (!userConfig) return;
+      if (index === 0) return;
+
+      const current = hiddenDerivedAccounts[walletId] ?? [];
+      if (hidden === current.includes(index)) return;
+
+      const nextForWallet = hidden
+        ? [...current, index].sort((a, b) => a - b)
+        : current.filter((hiddenIndex) => hiddenIndex !== index);
+
+      const next = { ...hiddenDerivedAccounts };
+      if (nextForWallet.length > 0) next[walletId] = nextForWallet;
+      else delete next[walletId];
+
+      const updatedConfig: UserConfig = { ...userConfig, hiddenDerivedAccounts: next };
+      setUserConfig(updatedConfig);
+      setHiddenDerivedAccounts(next);
+
+      try {
+        const storage = getStorage();
+        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+      } catch (error) {
+        console.error('Failed to save hidden derived accounts:', error);
+      }
+    },
+    [userConfig, hiddenDerivedAccounts]
+  );
+
   return {
     userConfig,
     explorer,
@@ -305,6 +380,10 @@ export function useUserConfig({
     toggleDeveloperNetworks,
     excludedFromTotal,
     setIncludedInTotal,
+    derivedScannedAccountIds,
+    markDerivedScanned,
+    hiddenDerivedAccounts,
+    setDerivedHidden,
     isLoading,
   };
 }

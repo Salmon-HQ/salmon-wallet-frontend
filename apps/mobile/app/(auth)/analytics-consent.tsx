@@ -2,9 +2,8 @@
  * AnalyticsConsentScreen - First-run, opt-in pseudonymous-analytics consent.
  *
  * Shown after the success screen — the final onboarding step before the
- * wallet home. Both of success's exits funnel through here (directly via
- * "Go to my Account", or after the derived-accounts detour), so consent is
- * asked exactly once and cannot be skipped. Either choice persists via
+ * wallet home. Success's one exit funnels through here, so consent is asked
+ * exactly once and cannot be skipped. Either choice persists via
  * `resolveConsentPrompt` and enters the app.
  *
  * Composed on the onboarding slot grid. The metrics glyph is the screen's

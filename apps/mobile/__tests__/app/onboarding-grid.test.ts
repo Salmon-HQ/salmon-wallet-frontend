@@ -28,7 +28,6 @@ describe('the (auth) screens', () => {
       'analytics-consent.tsx',
       'biometric-setup.tsx',
       'create.tsx',
-      'derived-accounts.tsx',
       'index.tsx',
       'password.tsx',
       'recover.tsx',

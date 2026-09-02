@@ -203,19 +203,13 @@ function RootLayoutNav() {
       // The lock screen overlay will be shown first, and only after
       // successful unlock should we navigate to the app.
       // Also skip redirect when user is on post-creation auth screens
-      // (password, success, derived-accounts) — they're still in the
-      // creation flow and should finish before being sent to the app.
+      // (password, success) — they're still in the creation flow and should
+      // finish before being sent to the app.
       const authScreen = segments.slice(1, 2)[0];
       const isPostCreationScreen =
         inAuthGroup &&
         typeof authScreen === 'string' &&
-        [
-          'password',
-          'biometric-setup',
-          'analytics-consent',
-          'success',
-          'derived-accounts',
-        ].includes(authScreen);
+        ['password', 'biometric-setup', 'analytics-consent', 'success'].includes(authScreen);
 
       if (!inAppGroup && !hasNavigated && !state.locked && !isPostCreationScreen) {
         // Only auto-navigate to app on initial load when not locked

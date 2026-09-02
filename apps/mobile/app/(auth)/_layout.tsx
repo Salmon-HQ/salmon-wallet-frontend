@@ -9,8 +9,7 @@
  * 5. password - Set password for wallet encryption
  * 6. biometric-setup - Optional biometric unlock setup prompt
  * 7. success - Success confirmation after wallet creation
- * 8. derived-accounts - Select derived accounts to import (optional detour)
- * 9. analytics-consent - First-run anonymous-analytics consent (final step;
+ * 8. analytics-consent - First-run anonymous-analytics consent (final step;
  *    both success exits funnel through it)
  */
 
@@ -35,7 +34,7 @@ export default function AuthLayout() {
         allows no motif behind a seed being shown. `recover` no longer opts
         out: entering an existing phrase is not the ceremonial moment of its
         birth, so it stands in the same water as every other screen here —
-        welcome, password, biometric, consent, success, derived accounts.
+        welcome, password, biometric, consent, success.
       */}
       <DepthBackground />
       <ScalesBackground variant="deepField" />
@@ -126,7 +125,7 @@ export default function AuthLayout() {
         {/*
           Everything below runs *after* the vault has been written. Going back
           would land the user on password entry for a wallet that already
-          exists, so the gesture stays off on all four.
+          exists, so the gesture stays off on all three.
         */}
 
         {/* Biometric setup prompt */}
@@ -140,14 +139,6 @@ export default function AuthLayout() {
         {/* Success confirmation */}
         <Stack.Screen
           name="success"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
-
-        {/* Derived accounts selection */}
-        <Stack.Screen
-          name="derived-accounts"
           options={{
             gestureEnabled: false,
           }}
