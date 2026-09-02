@@ -44,8 +44,13 @@ export { ActionButtonRow } from './ActionButtonRow';
 export type { ActionButton, ActionButtonRowProps } from './ActionButtonRow';
 
 // TokenList - Token list display components
-export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
-export type { TokenListItemProps, TokenListProps, TokenListSkeletonProps } from './TokenList';
+export { TokenList, TokenListItem, TokenListSkeleton, TokenLogo } from './TokenList';
+export type {
+  TokenListItemProps,
+  TokenListProps,
+  TokenListSkeletonProps,
+  TokenLogoProps,
+} from './TokenList';
 
 // LoadingScreen - Animated loading overlay
 export { LoadingScreen } from './LoadingScreen';
@@ -502,3 +507,20 @@ export type {
   ReceiptScreenProps,
   TransferReceiptScreenProps,
 } from './ReceiptScreen';
+
+// BalanceHeader - the balance block of the redesigned Home: chain pages, the
+// two money circles, the Activity pill
+export { BalanceHeader } from './BalanceHeader';
+export type { BalanceHeaderProps } from './BalanceHeader';
+
+// HomeTabOrderSheet - where the user arranges Home's sub-tabs
+export { HomeTabOrderSheet } from './HomeTabOrderSheet';
+export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
+
+// DerivedAccountsSheet - which of a seed's funded paths become wallets
+export { DerivedAccountsSheet } from './DerivedAccountsSheet';
+export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
+
+// NftsTab - the NFTs sub-tab of Home: one grid, on the active network
+export { NftsTab } from './NftsTab';
+export type { NftsTabProps } from './NftsTab';

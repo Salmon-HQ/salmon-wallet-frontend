@@ -33,7 +33,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
 import { BrandMark } from '../BrandMark';
-import { BaseSheetDialog } from '../BaseSheetDialog';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
@@ -172,6 +172,7 @@ export function ReceiveSheet({
   onClose,
   address,
   blockchain,
+  networkLabel,
   onCopy,
   className,
   style,
@@ -224,20 +225,21 @@ export function ReceiveSheet({
   }, [onCopy, address, showCopied]);
 
   return (
-    <BaseSheetDialog
+    <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      size="small"
-      colorScheme="dialog"
-      ariaLabelledBy="receive-sheet-title"
+      title={<SheetTitle>{t('token.receive.title')}</SheetTitle>}
+      testID="receive-sheet-container"
       className={className}
       style={style}
     >
-      <BaseSheetDialog.StandardHeader title={t('token.receive.title')} />
-
-      <BaseSheetDialog.Content
-        padding="xl"
-        style={{ paddingTop: spacing.xl, paddingBottom: spacing['2xl'], flex: 1 }}
+      <Box
+        style={{
+          paddingLeft: spacing.xl,
+          paddingRight: spacing.xl,
+          paddingTop: spacing.xl,
+          paddingBottom: spacing['2xl'],
+        }}
       >
         <ContentWrapper ref={contentRef} data-testid="receive-sheet">
           <QRGroup>
@@ -246,6 +248,12 @@ export function ReceiveSheet({
             <ChainBadge data-testid="receive-chain-badge">
               {t('token.send.blockchainAddress', { blockchain: chainName })}
             </ChainBadge>
+
+            {/* Off mainnet the sheet names the environment under the chain: a
+                deposit to a devnet address is not money (spec 026 D6). */}
+            {networkLabel && (
+              <ChainBadge data-testid="receive-network-badge">{networkLabel}</ChainBadge>
+            )}
 
             {/* QR Code */}
             <QRContainer data-testid="receive-qr-code">
@@ -311,7 +319,7 @@ export function ReceiveSheet({
             </OnFillContent>
           </CopyButton>
         </ContentWrapper>
-      </BaseSheetDialog.Content>
-    </BaseSheetDialog>
+      </Box>
+    </BottomSheetContainer>
   );
 }

@@ -60,27 +60,29 @@ const waitForLayout = (): Promise<void> =>
 
   // Dynamic import so styled components see real viewport dimensions
   const { default: App } = await import('../popup/App');
-  const { IconDefaults, SalmonThemeProvider } = await import('@salmon/ui');
+  const { IconDefaults, SalmonThemeProvider, TaskChromeProvider } = await import('@salmon/ui');
 
   function Root() {
     const [queryClient] = React.useState(() => createQueryClient());
     return (
       <React.StrictMode>
         <SalmonThemeProvider>
-          <CssBaseline />
-          <IconDefaults>
-            <QueryClientProvider client={queryClient}>
-              <I18nextProvider i18n={i18n}>
-                <AccountsProvider>
-                  <CurrencyProvider>
-                    <PendingActivityLayer>
-                      <App />
-                    </PendingActivityLayer>
-                  </CurrencyProvider>
-                </AccountsProvider>
-              </I18nextProvider>
-            </QueryClientProvider>
-          </IconDefaults>
+          <TaskChromeProvider>
+            <CssBaseline />
+            <IconDefaults>
+              <QueryClientProvider client={queryClient}>
+                <I18nextProvider i18n={i18n}>
+                  <AccountsProvider>
+                    <CurrencyProvider>
+                      <PendingActivityLayer>
+                        <App />
+                      </PendingActivityLayer>
+                    </CurrencyProvider>
+                  </AccountsProvider>
+                </I18nextProvider>
+              </QueryClientProvider>
+            </IconDefaults>
+          </TaskChromeProvider>
         </SalmonThemeProvider>
       </React.StrictMode>
     );

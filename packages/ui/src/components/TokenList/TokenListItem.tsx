@@ -1,234 +1,47 @@
 /**
- * TokenListItem - Individual token row component
+ * TokenListItem — one token's row, on the kit, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Uses responsive scaling (s, vs, ms) from shared to match mobile proportions.
+ * The mobile twin is `apps/mobile/src/components/TokenList/TokenListItem.tsx`
+ * and the anatomy is the same: a `ListRow` with the 44 logo as its leading
+ * mark, the token's name as the title, one secondary line — "SOL · $101.39 ·
+ * -1.1%" — under it, and the amount over the fiat value in the trailing slot.
+ *
+ * The secondary line has an explicit order of sacrifice. The price and the
+ * change are what the user opened the screen for, so neither ever gives up a
+ * character (`flexShrink: 0`); the ticker is the only shrinkable segment and
+ * it clips rather than ellipsising, so a narrow panel degrades to "$101.39 ·
+ * -1.1%" instead of "$101.…". Only once the ticker is gone does the pressure
+ * reach the name column, which `ListRow` gives `flexShrink: 1`.
+ *
+ * Bitcoin shows only the amount, not a fiat line beside it.
  */
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import React, { useCallback } from 'react';
 import {
-  colors,
-  spacing,
   borderRadius,
-  borderWidth,
-  fontSize,
   fontFamily,
+  fontSize,
   fontWeight,
-  componentSizes,
-  s,
-  vs,
-  ms,
-  formatPercentage,
-  formatFiatPrice,
-  getLabelValue,
+  formatLargeNumber,
   formatTokenAmount,
+  getLabelValue,
   hiddenValue,
+  showPercentage,
+  spacing,
   useCurrencyContext,
-  opacity,
-  duration,
-  easing,
-  tabularNums,
+  type Semantic,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
-import { TokenBadges } from './TokenBadges';
+import { useTranslation } from 'react-i18next';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ListRow } from '../ListRow';
+import { TokenLogo } from './TokenLogo';
 import type { TokenListItemProps } from './types';
 
-/**
- * Default placeholder image for tokens without a logo
- */
-const DEFAULT_TOKEN_LOGO =
-  'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png';
+/** The card's own logo size — pinned by the redesign, not the legacy token. */
+const TOKEN_LOGO_SIZE = 44;
 
-// --- Bitcoin layout styled components ---
-
-const BitcoinContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  padding: `${vs(spacing.md)}px ${s(spacing.lg)}px`,
-  cursor: 'pointer',
-  gap: s(spacing.md),
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
-});
-
-const BitcoinLogo = styled('img')({
-  width: s(componentSizes.tokenIconSm),
-  height: s(componentSizes.tokenIconSm),
-  borderRadius: '50%',
-  backgroundColor: colors.background.tertiary,
-  objectFit: 'cover',
-  flexShrink: 0,
-});
-
-const BitcoinInfoContainer = styled(Box)({
-  flex: 1,
-  minWidth: 0,
-});
-
-const BitcoinPrice = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.body),
-  fontWeight: fontWeight.bold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  marginBottom: vs(spacing.xxs),
-});
-
-const BitcoinChangeRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: s(spacing.xxs),
-});
-
-const BitcoinChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.caption),
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: $changeColor || colors.text.muted,
-}));
-
-const BitcoinAmountContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-  textAlign: 'right',
-});
-
-const BitcoinAmount = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.lg),
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  // Neutral for the same reason as `TokenAmount` above.
-  color: colors.text.primary,
-});
-
-const Container = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  padding: `${vs(spacing.md)}px ${s(spacing.lg)}px`,
-  cursor: 'pointer',
-  gap: s(spacing.md),
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
-});
-
-const TokenLogo = styled('img')({
-  width: s(componentSizes.tokenIcon),
-  height: s(componentSizes.tokenIcon),
-  borderRadius: ms(borderRadius.tokenIcon),
-  backgroundColor: colors.background.tertiary,
-  objectFit: 'cover',
-  flexShrink: 0,
-});
-
-const TokenLogoPlaceholder = styled(Box)({
-  width: s(componentSizes.tokenIcon),
-  height: s(componentSizes.tokenIcon),
-  borderRadius: ms(borderRadius.tokenIcon),
-  backgroundColor: colors.background.tertiary,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: ms(fontSize.base),
-  color: colors.text.secondary,
-  flexShrink: 0,
-});
-
-const InfoContainer = styled(Box)({
-  flex: 1,
-  minWidth: 0,
-});
-
-const NameRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: vs(spacing.xxs),
-  minWidth: 0,
-});
-
-const TokenName = styled(Typography)({
-  fontSize: ms(fontSize.body),
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  flexShrink: 1,
-  minWidth: 0,
-});
-
-const PriceRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: s(spacing.xxs),
-});
-
-const Price = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.body),
-  fontFamily: fontFamily.sans,
-  color: colors.text.muted,
-});
-
-const BulletSeparator = styled(Typography)({
-  fontSize: ms(fontSize.body),
-  color: 'rgba(255, 255, 255, 0.5)',
-});
-
-const ChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.caption),
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: $changeColor || colors.text.muted,
-}));
-
-const ValueContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-  textAlign: 'right',
-  gap: vs(spacing.xs),
-});
-
-const UsdValue = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.lg),
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  marginBottom: vs(spacing.xxs),
-});
-
-/**
- * Deliberately neutral. This was tried in salmon ink — it is the quantity you
- * actually hold, so it looked like the row's subject — and it failed on screen:
- * it lands one column away from the 24h change, which is `danger-500` rose
- * whenever the token is down, and two warm reds on one 44px row is exactly the
- * collision the ramps were hue-separated to avoid. The row already carries
- * colour, and it belongs to price movement.
- */
-const TokenAmount = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: ms(fontSize.sm),
-  fontFamily: fontFamily.sans,
-  color: colors.text.muted,
-});
+/** Card → card is a sibling-component seam: the component gap (20). */
+export const TOKEN_ROW_GAP = spacing.screenGutter;
 
 export function TokenListItem({
   token,
@@ -239,148 +52,173 @@ export function TokenListItem({
   className,
 }: TokenListItemProps) {
   const { t } = useTranslation();
-  const [{ currency, exchangeRate }, { formatValue, formatChange }] = useCurrencyContext();
-  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
+  const semantic = useSemantic();
+  const [, { formatValue }] = useCurrencyContext();
+  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange } = token;
 
-  const handlePress = useCallback(() => {
-    onPress?.(token);
-  }, [onPress, token]);
+  const handlePress = useCallback(() => onPress?.(token), [onPress, token]);
 
   const percentageChange = last24HoursChange?.perc ?? 0;
-  const absoluteChange = last24HoursChange?.abs;
-  const labelType = getLabelValue(percentageChange);
-  const changeColor = colors.change[labelType];
+  const changeColor = semantic.change[getLabelValue(percentageChange)];
 
-  // A token price, not a balance: fixed cents below one unit would render
-  // every sub-cent asset as the same zero, so this takes the price role of the
-  // ratified number contract while the balance below keeps fixed cents.
-  const displayPrice = hiddenBalance
-    ? hiddenValue
-    : price != null
-      ? formatFiatPrice(price, currency, exchangeRate)
-      : null;
-
-  const displayPercentage = last24HoursChange ? formatPercentage(percentageChange) : null;
-  const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
-
+  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
+  const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
   const displayUsdValue = hiddenBalance
     ? hiddenValue
     : usdBalance != null
       ? formatValue(usdBalance)
       : null;
 
-  // The separator follows the app's language, not the host's — see PRODUCT.md's
-  // i18n constraint. The mobile row already renders through this formatter.
-  const displayTokenAmount = hiddenBalance
-    ? hiddenValue
-    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
-  const accessibleAmount = formatTokenAmount(uiAmount);
+  // A holding of 28,896.26376 BONK printed in full pushes the ticker off the
+  // row. `formatLargeNumber` is the repo's compact renderer: K/M/B above a
+  // thousand, full precision below it, so a dust balance still reads digit for
+  // digit.
+  const numericAmount = typeof uiAmount === 'string' ? parseFloat(uiAmount) : uiAmount;
+  const compactAmount = Number.isFinite(numericAmount)
+    ? formatLargeNumber(numericAmount as number)
+    : formatTokenAmount(uiAmount);
+  const displayTokenAmount = hiddenBalance ? hiddenValue : `${compactAmount} ${symbol || ''}`;
 
-  const blurContainerStyle = {
-    borderRadius: ms(borderRadius.lg),
-    marginBottom: vs(spacing.sm),
-    overflow: 'hidden' as const,
-  };
+  // What the screen reader is told, masked exactly like the pixels are.
+  const spokenAmount = hiddenBalance ? hiddenValue : uiAmount;
+  const spokenPrice = hiddenBalance ? hiddenValue : price;
 
-  // Bitcoin layout: price on left, amount on right, no chevron
-  if (blockchain === 'bitcoin') {
-    return (
-      <BlurContainer borderWidth={borderWidth.tokenListItem} style={blurContainerStyle}>
-        <BitcoinContainer
-          style={style}
-          className={className}
-          aria-label={t(
-            'accessibility.token_balance',
-            '{{name}} token, balance {{amount}} {{symbol}}',
-            { name, amount: accessibleAmount, symbol }
-          )}
-          data-testid={`token-row-${symbol}`}
+  const hasTail = !!displayPrice || !!displayPercentage;
+  const tickerSegment = symbol ? (hasTail ? `${symbol} · ` : symbol) : null;
+  const changeSegment = displayPercentage
+    ? displayPrice
+      ? ` · ${displayPercentage}`
+      : displayPercentage
+    : null;
+
+  const subline = (tickerSegment || displayPrice || changeSegment) && (
+    <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
+      {!!tickerSegment && (
+        <span
+          data-testid={`token-row-ticker-${symbol}`}
+          style={{
+            ...sublineStyle(semantic),
+            // The one segment allowed to give up room, all the way to nothing,
+            // and it clips rather than ellipsising.
+            flexShrink: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+          }}
         >
-          {logo ? (
-            <BitcoinLogo
-              src={logo}
-              alt={name}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
-              }}
-            />
-          ) : (
-            <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
-          )}
+          {tickerSegment}
+        </span>
+      )}
+      {!!displayPrice && (
+        <span
+          data-testid={`token-row-price-${symbol}`}
+          style={{ ...sublineStyle(semantic), flexShrink: 0, whiteSpace: 'nowrap' }}
+        >
+          {displayPrice}
+        </span>
+      )}
+      {!!changeSegment && (
+        <span
+          data-testid={`token-row-change-${symbol}`}
+          style={{
+            ...sublineStyle(semantic),
+            fontWeight: fontWeight.semibold,
+            color: changeColor,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {changeSegment}
+        </span>
+      )}
+    </span>
+  );
 
-          <BitcoinInfoContainer>
-            {displayPrice && <BitcoinPrice>{displayPrice}</BitcoinPrice>}
-            <BitcoinChangeRow>
-              {displayPercentage && (
-                <BitcoinChangeText $changeColor={changeColor}>
-                  {displayPercentage}
-                </BitcoinChangeText>
-              )}
-              {displayAbsChange && (
-                <BitcoinChangeText $changeColor={changeColor}>{displayAbsChange}</BitcoinChangeText>
-              )}
-            </BitcoinChangeRow>
-          </BitcoinInfoContainer>
+  const amountLine = (
+    <span
+      style={{
+        fontFamily: fontFamily.sans,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.bodyLg,
+        color: semantic.text.primary,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {displayTokenAmount}
+    </span>
+  );
 
-          <BitcoinAmountContainer>
-            <BitcoinAmount>{displayTokenAmount}</BitcoinAmount>
-          </BitcoinAmountContainer>
-        </BitcoinContainer>
-      </BlurContainer>
-    );
-  }
+  const isBitcoin = blockchain === 'bitcoin';
 
-  // Default Solana/Ethereum layout
   return (
-    <BlurContainer borderWidth={borderWidth.tokenListItem} style={blurContainerStyle}>
-      <Container
-        onClick={handlePress}
-        style={style}
-        className={className}
-        role="button"
-        aria-label={t(
-          'accessibility.token_balance',
-          '{{name}} token, balance {{amount}} {{symbol}}',
-          { name, amount: accessibleAmount, symbol }
-        )}
-        data-testid={`token-row-${symbol}`}
-      >
-        {logo ? (
-          <TokenLogo
-            src={logo}
-            alt={name}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
-            }}
-          />
+    <ListRow
+      testID={`token-row-${symbol}`}
+      padding="lg"
+      emphasis="strong"
+      leading={
+        <TokenLogo
+          uri={logo}
+          symbol={symbol}
+          size={TOKEN_LOGO_SIZE}
+          borderRadius={borderRadius.tokenIcon}
+        />
+      }
+      title={name}
+      subtitle={subline || undefined}
+      trailing={
+        isBitcoin ? (
+          amountLine
         ) : (
-          <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
-        )}
-
-        <InfoContainer>
-          <NameRow>
-            <TokenName>{name}</TokenName>
-            <TokenBadges tags={tags} />
-          </NameRow>
-          <PriceRow>
-            {displayPrice && <Price>{displayPrice}</Price>}
-            {displayPercentage && (
-              <>
-                <BulletSeparator>{'\u2022'}</BulletSeparator>
-                <ChangeText $changeColor={changeColor}>
-                  {displayPercentage}
-                  {displayAbsChange && ` (${displayAbsChange})`}
-                </ChangeText>
-              </>
+          <span
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: spacing.xxs,
+              flexShrink: 0,
+              maxWidth: '46%',
+            }}
+          >
+            {amountLine}
+            {displayUsdValue && (
+              <span
+                style={{
+                  fontFamily: fontFamily.sans,
+                  fontWeight: fontWeight.medium,
+                  fontSize: fontSize.caption,
+                  color: semantic.text.secondary,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {displayUsdValue}
+              </span>
             )}
-          </PriceRow>
-        </InfoContainer>
-
-        <ValueContainer>
-          {displayUsdValue && <UsdValue>{displayUsdValue}</UsdValue>}
-          <TokenAmount>{displayTokenAmount}</TokenAmount>
-        </ValueContainer>
-      </Container>
-    </BlurContainer>
+          </span>
+        )
+      }
+      onPress={onPress ? handlePress : undefined}
+      accessibilityLabel={
+        isBitcoin
+          ? t(
+              'accessibility.token_price_balance',
+              '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}',
+              { name, price: spokenPrice, amount: spokenAmount, symbol }
+            )
+          : t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', {
+              name,
+              amount: spokenAmount,
+              symbol,
+            })
+      }
+      className={className}
+      style={style}
+    />
   );
 }
+
+const sublineStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  fontSize: fontSize.caption,
+  color: t.text.secondary,
+});

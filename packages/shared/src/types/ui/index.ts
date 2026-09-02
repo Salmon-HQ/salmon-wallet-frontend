@@ -61,6 +61,12 @@ export type {
   BalanceCardCarouselPropsBase,
 } from './balance-card';
 
+// Balance Header — the carousel contract plus the money controls
+export type { BalanceHeaderPropsBase } from './balance-header';
+
+// Derived Accounts Sheet — which funded paths become wallets
+export type { DerivedAccountsSheetPropsBase } from './derived-accounts-sheet';
+
 // Action Button Row
 export type { ActionButtonBase, ActionButtonRowPropsBase } from './action-button-row';
 

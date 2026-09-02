@@ -124,6 +124,7 @@ export function SinkFloat({
   holdMs = FLOAT_DELAY_MS,
   className,
   style,
+  testID,
 }: SinkFloatProps) {
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -166,6 +167,7 @@ export function SinkFloat({
       // again — the same reason FadeThrough keys its frame.
       key={`${swap.key}:${phase}`}
       $phase={phase}
+      data-testid={testID}
       className={className}
       style={
         {

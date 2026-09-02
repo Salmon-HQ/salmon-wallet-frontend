@@ -2,14 +2,9 @@ import type { ViewStyle } from 'react-native';
 import type { ReceiveSheetPropsBase } from '@salmon/shared';
 
 /**
- * Props for the ReceiveSheet component (React Native)
+ * Props for the ReceiveSheet component (React Native).
+ *
+ * `networkLabel` lives on the shared contract now (spec 028 lot 3) — the DOM
+ * sheet names the environment for the same reason mobile does.
  */
-export interface ReceiveSheetProps extends ReceiveSheetPropsBase<ViewStyle> {
-  /**
-   * The environment the address lives on ("Devnet", "Testnet", "Sepolia"), or
-   * undefined on mainnet. A deposit sent to a test-network address is not real
-   * money, so the sheet says which environment it is asking to be paid on
-   * (spec 026 D6). Mobile-only: web and extension keep the shared contract.
-   */
-  networkLabel?: string;
-}
+export type ReceiveSheetProps = ReceiveSheetPropsBase<ViewStyle>;

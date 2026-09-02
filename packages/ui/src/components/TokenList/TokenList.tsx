@@ -1,123 +1,37 @@
 /**
- * TokenList - Scrollable token list component
+ * TokenList — the Portfolio tab's list of holdings, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Uses responsive scaling (s, vs, ms) from shared to match mobile proportions.
+ * The mobile twin is `apps/mobile/src/components/TokenList/TokenList.tsx`:
+ * one `TokenListItem` per token, 20 apart — card → card is a
+ * sibling-component seam, so it takes the component gap rather than an
+ * internal-anatomy step (DESIGN.md §Layout).
+ *
+ * The skeleton is the list's own empty state, never a sibling rendered
+ * outside it: a placeholder outside the list never receives the padding the
+ * host passes, and ran edge to edge while the rows it stood in for kept the
+ * screen gutter.
+ *
+ * Mobile virtualises with a `FlatList`; the side panel scrolls a plain column,
+ * which is what the panel's own height makes cheap.
  */
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Skeleton from '@mui/material/Skeleton';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  fontSize,
-  s,
-  vs,
-  ms,
-} from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
-import { TokenListItem } from './TokenListItem';
+import React from 'react';
+import { spacing } from '@salmon/shared';
+import { useTranslation } from 'react-i18next';
+
+import { SkeletonRow } from '../SkeletonRow';
+import { TOKEN_ROW_GAP, TokenListItem } from './TokenListItem';
 import type { TokenListProps, TokenListSkeletonProps } from './types';
 
-const Container = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-});
-
-const ListContent = styled(Box)<{ $maxHeight?: number | string }>(({ $maxHeight }) => ({
-  padding: `${vs(spacing.sm)}px 0`,
-  overflowY: $maxHeight ? 'auto' : 'visible',
-  maxHeight: $maxHeight || 'none',
-  '&::-webkit-scrollbar': {
-    width: componentSizes.scrollbarWidth,
-  },
-  '&::-webkit-scrollbar-track': {
-    background: 'transparent',
-  },
-  '&::-webkit-scrollbar-thumb': {
-    background: colors.border.default,
-    borderRadius: borderRadius.scrollbar,
-  },
-  '&::-webkit-scrollbar-thumb:hover': {
-    background: colors.text.secondary,
-  },
-}));
-
-const SkeletonContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  padding: `${vs(spacing.md)}px ${s(spacing.lg)}px`,
-  gap: s(spacing.md),
-});
-
-const SkeletonLogo = styled(Skeleton)({
-  backgroundColor: colors.skeleton.base,
-  flexShrink: 0,
-});
-
-const SkeletonTextContainer = styled(Box)({
-  flex: 1,
-});
-
-const SkeletonText = styled(Skeleton)({
-  backgroundColor: colors.skeleton.base,
-});
-
-const SkeletonValueContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-});
-
-const tokenIconSize = s(componentSizes.tokenIcon);
-
-/**
- * TokenListSkeleton - Loading placeholder for token list
- */
 export function TokenListSkeleton({ count = 5 }: TokenListSkeletonProps) {
+  const { t } = useTranslation();
   return (
-    <Container>
-      <ListContent>
-        {Array.from({ length: count }).map((_, index) => (
-          <BlurContainer
-            key={index}
-            borderWidth={borderWidth.tokenListItem}
-            style={{
-              borderRadius: ms(borderRadius.lg),
-              marginBottom: vs(spacing.sm),
-              overflow: 'hidden',
-            }}
-          >
-            <SkeletonContainer>
-              <SkeletonLogo variant="circular" width={tokenIconSize} height={tokenIconSize} />
-              <SkeletonTextContainer>
-                <SkeletonText
-                  variant="text"
-                  width="60%"
-                  height={ms(fontSize.bodyLg)}
-                  sx={{ mb: `${spacing.xs}px` }}
-                />
-                <SkeletonText variant="text" width="40%" height={ms(fontSize.base)} />
-              </SkeletonTextContainer>
-              <SkeletonValueContainer>
-                <SkeletonText
-                  variant="text"
-                  width={s(spacing['5.5xl'])}
-                  height={ms(fontSize.bodyLg)}
-                  sx={{ mb: `${spacing.xs}px` }}
-                />
-                <SkeletonText variant="text" width={s(spacing['4xl'])} height={ms(fontSize.base)} />
-              </SkeletonValueContainer>
-            </SkeletonContainer>
-          </BlurContainer>
-        ))}
-      </ListContent>
-    </Container>
+    <SkeletonRow
+      padding="lg"
+      leadingSize={44}
+      trailingWidth={64}
+      count={count}
+      accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
+    />
   );
 }
 
@@ -126,19 +40,29 @@ export function TokenList({
   loading = false,
   onTokenPress,
   hiddenBalance = false,
-  blockchain,
+  blockchain = 'solana',
   maxHeight,
   style,
   className,
 }: TokenListProps) {
-  if (loading) {
-    return <TokenListSkeleton count={5} />;
-  }
-
   return (
-    <Container style={style} className={className}>
-      <ListContent $maxHeight={maxHeight}>
-        {tokens.map((token) => (
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: TOKEN_ROW_GAP,
+        ...(maxHeight != null ? { maxHeight, overflowY: 'auto' } : null),
+        // The list's own breathing room above the first card, so a row never
+        // sits flush against the seam fade above it.
+        paddingTop: spacing.sm,
+        ...style,
+      }}
+    >
+      {loading ? (
+        <TokenListSkeleton />
+      ) : (
+        tokens.map((token) => (
           <TokenListItem
             key={token.address}
             token={token}
@@ -146,8 +70,8 @@ export function TokenList({
             hiddenBalance={hiddenBalance}
             blockchain={blockchain}
           />
-        ))}
-      </ListContent>
-    </Container>
+        ))
+      )}
+    </div>
   );
 }

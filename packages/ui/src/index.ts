@@ -29,6 +29,10 @@ export { applySemanticCssVars, semanticToCssVars } from './theme/cssVars';
 export { floatEntering, floatEnteringLight, sinkExiting, useReducedMotion } from './motion';
 export type { SinkFloatOptions } from './motion';
 
+// The shell's grip on the chrome, and the surfacing count Home floats on
+export { TaskChromeProvider, useTaskChrome } from './contexts/TaskChromeContext';
+export type { TaskChromeContextValue } from './contexts/TaskChromeContext';
+
 // Utilities
 export { styled } from './utils/styled';
 export { visuallyHidden } from './utils/visuallyHidden';

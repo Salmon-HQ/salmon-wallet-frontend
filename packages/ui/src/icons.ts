@@ -50,6 +50,7 @@ export type IconSizeToken = keyof typeof iconSize;
 
 export { AddressBookIcon } from '@phosphor-icons/react/dist/csr/AddressBook';
 export { ArrowDownIcon } from '@phosphor-icons/react/dist/csr/ArrowDown';
+export { ArrowDownLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowDownLeft';
 export { ArrowElbowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowElbowUpRight';
 export { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 export { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
@@ -107,6 +108,7 @@ export { MedalIcon } from '@phosphor-icons/react/dist/csr/Medal';
 export { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus';
 export { MoneyIcon } from '@phosphor-icons/react/dist/csr/Money';
 export { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
+export { DotsSixVerticalIcon } from '@phosphor-icons/react/dist/csr/DotsSixVertical';
 export { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 export { PenNibIcon } from '@phosphor-icons/react/dist/csr/PenNib';
 export { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';

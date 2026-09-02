@@ -1,231 +1,146 @@
 /**
- * NftCard - NFT display card for grid layouts
+ * NftCard — the collectible tile, on the kit, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension
+ * The mobile twin is `apps/mobile/src/components/NftCard/NftCard.tsx`: a
+ * `Card` at the control radius with the artwork edge to edge inside it and the
+ * name band over a scrim at the bottom. The tile used to be a `BlurContainer`
+ * with a second `BlurContainer` badge inside it — two blur surfaces per cell in
+ * a grid, and a material the redesign no longer draws.
+ *
+ * The band is the scrim token, not a blur, and it carries the name over the
+ * collection line in the two on-scrim inks, so a pale artwork and a dark one
+ * both read. `Card` supplies the ground, the radius and the hairline; the
+ * press feedback is `Card`'s own, the one the whole kit presses with.
  */
-import { useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
+import React, { useCallback, useState } from 'react';
 import {
-  colors,
-  semantic,
-  fontFamily,
-  fontWeight,
-  borderRadius,
-  fontSize,
-  spacing,
-  shadowsCSS,
-  opacity,
-  duration,
-  easing,
   componentSizes,
-  blur,
-  borderWidth,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  spacing,
+  type Semantic,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
+import { useTranslation } from 'react-i18next';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { Card } from '../Card';
 import type { NftCardProps } from './types';
 
-/**
- * Fallback background for an NFT with no image.
- *
- * It used to be the salmon primary fill, which put a grid of living salmon
- * rectangles on the collectibles screen and broke the One Living Thing Rule
- * every time art failed to load. A missing image is an empty surface, not an
- * accent, so it takes the raised plane instead.
- */
-const FALLBACK_GRADIENT = semantic.surface.raised;
-
-/** Card dimensions */
-const CARD_BORDER_RADIUS = borderRadius.iconContainer;
-
-const Container = styled(Box)<{ $clickable: boolean }>(({ $clickable }) => ({
-  width: '100%',
-  aspectRatio: '1',
-  borderRadius: CARD_BORDER_RADIUS,
-  overflow: 'hidden',
-  position: 'relative',
-  // Off-screen cards skip layout and paint entirely, and the reserved size
-  // keeps the scrollbar honest while they are skipped so the page does not
-  // jump as they scroll in. Pairs with the image's `loading="lazy"`: this
-  // skips the work of painting, that one the work of decoding.
-  contentVisibility: 'auto',
-  containIntrinsicSize: `${componentSizes.nftCardHeight}px`,
-  cursor: $clickable ? 'pointer' : 'default',
-  boxShadow: shadowsCSS.md,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': $clickable
-    ? {
-        opacity: opacity.high,
-      }
-    : {},
-  '&:active': $clickable
-    ? {
-        opacity: opacity.medium,
-      }
-    : {},
-}));
-
-const NftImage = styled('img')({
+/** The artwork fills the tile; the band sits on top of its bottom edge. */
+const fillStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
   width: '100%',
   height: '100%',
-  position: 'absolute',
-  top: 0,
-  left: 0,
   objectFit: 'cover',
-});
-
-const FallbackGradient = styled(Box)({
-  width: '100%',
-  height: '100%',
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  background: FALLBACK_GRADIENT,
-});
-
-const LoadingOverlay = styled(Box)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const NameBadgeContainer = styled(Box)({
-  position: 'absolute',
-  bottom: spacing.sm,
-  left: spacing.sm,
-  right: spacing.sm,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const NameText = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.balance,
-  textAlign: 'center',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  // Position above the BlurContainer pseudo-element overlay
-  position: 'relative',
-  zIndex: 1,
-});
+};
 
 /**
- * NftCard component for displaying NFTs in a grid layout
- *
- * Features:
- * - ~194x193px card with 18px border radius
- * - NFT image covers the entire card
- * - Orange gradient fallback when no image or image fails to load
- * - Name badge at bottom with glassmorphism effect
- * - Accessible with press handling
- *
- * @example
- * ```tsx
- * <NftCard
- *   nft={{
- *     mint: 'abc123',
- *     name: 'Cool NFT #1',
- *     image: 'https://example.com/nft.png',
- *     collectionName: 'Cool Collection',
- *   }}
- *   onPress={() => console.log('NFT pressed')}
- * />
- * ```
+ * A missing image is an empty surface, not an accent: the salmon fill this
+ * used to draw put a grid of living salmon rectangles on the screen and broke
+ * the One Living Thing Rule every time art failed to load.
  */
+const fallbackStyle = (t: Semantic): React.CSSProperties => ({
+  ...fillStyle,
+  backgroundColor: t.surface.raised,
+});
+
 export function NftCard({ nft, onPress, style, className, testID }: NftCardProps) {
   const { t } = useTranslation();
-  const [imageLoading, setImageLoading] = useState(true);
+  const semantic = useSemantic();
   const [imageError, setImageError] = useState(false);
 
-  const handleImageLoad = useCallback(() => {
-    setImageLoading(false);
-  }, []);
-
-  const handleImageError = useCallback(() => {
-    setImageLoading(false);
-    setImageError(true);
-  }, []);
+  const handleImageError = useCallback(() => setImageError(true), []);
 
   const showFallback = !nft.image || imageError;
   const displayName = nft.name || t('nft.unnamed', 'Unnamed NFT');
 
   return (
-    <Container
-      $clickable={!!onPress}
-      onClick={onPress}
-      style={style}
+    <Card
+      testID={testID ?? `nft-card-${nft.mint ?? nft.name}`}
+      onPress={onPress}
+      accessibilityLabel={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: displayName })}
+      radius="lg"
+      style={{
+        // The card's own padding is zero here: the artwork is the card's
+        // ground, not something set inside it. `Card` applies `style` last, so
+        // this wins over the tone's padding without a new prop.
+        padding: 0,
+        position: 'relative',
+        aspectRatio: `${componentSizes.nftCardWidth} / ${componentSizes.nftCardHeight}`,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        // Off-screen tiles skip layout and paint entirely, and the reserved
+        // size keeps the scrollbar honest while they are skipped. Pairs with
+        // the image's `loading="lazy"`: this skips the work of painting, that
+        // one the work of decoding.
+        contentVisibility: 'auto',
+        containIntrinsicSize: `${componentSizes.nftCardHeight}px`,
+        ...style,
+      }}
       className={className}
-      role="button"
-      aria-label={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: displayName })}
-      data-testid={testID ?? `nft-card-${nft.mint ?? nft.name}`}
     >
-      {/* Background: image or gradient fallback */}
       {showFallback ? (
-        <FallbackGradient />
+        <span style={fallbackStyle(semantic)} />
       ) : (
-        <>
-          {/* A wallet with hundreds of NFTs mounts hundreds of these at once:
-              the collectibles grid renders the whole list, with no
-              virtualization. `lazy` lets the browser skip fetching and decoding
-              what is far from the viewport, which is the difference between a
-              few decoded bitmaps and all of them. The platform does this
-              natively — a virtualization library would be a dependency bought
-              to get the same thing back. */}
-          <NftImage
-            src={nft.image}
-            alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: displayName })}
-            loading="lazy"
-            decoding="async"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-          {imageLoading && (
-            <LoadingOverlay>
-              <FallbackGradient />
-              <CircularProgress
-                size={componentSizes.iconSizeSmall}
-                sx={{
-                  color: colors.text.primary,
-                  position: 'absolute',
-                }}
-              />
-            </LoadingOverlay>
-          )}
-        </>
+        <img
+          src={nft.image}
+          alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: displayName })}
+          // A wallet with hundreds of collectibles mounts hundreds of these at
+          // once. `lazy` lets the browser skip fetching and decoding what is
+          // far from the viewport, natively — a virtualization library would be
+          // a dependency bought to get the same thing back.
+          loading="lazy"
+          decoding="async"
+          onError={handleImageError}
+          style={fillStyle}
+        />
       )}
 
-      {/* Name badge at bottom */}
-      <NameBadgeContainer>
-        <BlurContainer
-          blurIntensity={blur.sm}
-          backgroundColor={colors.dialog.overlay}
-          borderColor={colors.accent.border}
-          borderWidth={borderWidth.actionButton}
-          style={{
-            borderRadius: borderRadius.md,
-            paddingTop: spacing.sm,
-            paddingBottom: spacing.sm,
-            paddingLeft: spacing.lg,
-            paddingRight: spacing.lg,
-            width: '100%',
-            overflow: 'hidden',
-          }}
-        >
-          <NameText>{displayName}</NameText>
-        </BlurContainer>
-      </NameBadgeContainer>
-    </Container>
+      <span
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.xxs,
+          backgroundColor: semantic.overlay.scrim,
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.sm,
+          paddingLeft: spacing.md,
+          paddingRight: spacing.md,
+          minWidth: 0,
+        }}
+      >
+        <span style={bandTextStyle(fontSize.body, fontWeight.semibold, semantic.text.onScrim)}>
+          {displayName}
+        </span>
+        {!!nft.collectionName && (
+          <span
+            style={bandTextStyle(
+              fontSize.caption,
+              fontWeight.regular,
+              semantic.text.onScrimSecondary
+            )}
+          >
+            {nft.collectionName}
+          </span>
+        )}
+      </span>
+    </Card>
   );
 }
+
+const bandTextStyle = (size: number, weight: string, color: string): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: weight,
+  fontSize: size,
+  lineHeight: `${size * lineHeight.snug}px`,
+  color,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  textAlign: 'left',
+});

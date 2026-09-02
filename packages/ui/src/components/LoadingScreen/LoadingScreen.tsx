@@ -91,6 +91,7 @@ import {
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import { useReducedMotion } from '../../utils/useReducedMotion';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import type { LoadingScreenProps } from './types';
 
 // ============================================================================
@@ -563,6 +564,9 @@ export const LoadingScreen = memo(function LoadingScreen({
   const shownAtRef = useRef(0);
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
+  // Every wait that ends is a surfacing: the shell floats its content back
+  // when the water clears, and no call site has to remember to say so.
+  const { surface } = useTaskChrome();
   const onExitedRef = useRef(onExited);
   useEffect(() => {
     onExitedRef.current = onExited;
@@ -622,6 +626,7 @@ export const LoadingScreen = memo(function LoadingScreen({
           () => {
             setIsVisible(false);
             setIsClosing(false);
+            surface();
             onExitedRef.current?.();
             // The hard bound, unchanged in job: a wallet may never be stranded on a
             // wait. `exitMs` is what the screen is actually doing and
@@ -638,6 +643,7 @@ export const LoadingScreen = memo(function LoadingScreen({
       exitTimer = setTimeout(() => {
         setIsVisible(false);
         setIsFadingOut(false);
+        surface();
         onExitedRef.current?.();
       }, durationMs.slow);
     };
@@ -652,7 +658,7 @@ export const LoadingScreen = memo(function LoadingScreen({
       if (floorTimer) clearTimeout(floorTimer);
       if (exitTimer) clearTimeout(exitTimer);
     };
-  }, [visible, isVisible, riding, isReduceMotionEnabled]);
+  }, [visible, isVisible, riding, isReduceMotionEnabled, surface]);
 
   /**
    * The measurement pass — one read, and the only reason the front crosses in

@@ -45,7 +45,6 @@
     "go_home": "Ir al Inicio",
     "not_supported": "No soportado",
     "network_mainnet": "Mainnet",
-    "network_devnet": "Devnet",
     "network_solana_mainnet": "Solana Mainnet",
     "not_found": {
       "title": "¡Ups!",
@@ -530,7 +529,6 @@
     "init_failed_title": "No se pudo cargar tu billetera",
     "init_failed_body": "Tus cuentas y fondos están a salvo. Intentá de nuevo.",
     "name_template": "Cuenta Nro {{number}}",
-    "my_nfts": "Mis Coleccionables",
     "copied": "¡Copiado al portapapeles!",
     "create_wallet": "Crear Cuenta",
     "recover_wallet": "Recuperar Cuenta",
@@ -897,8 +895,6 @@
   },
   "collectibles": {
     "title": "Coleccionables",
-    "empty": "No se encontraron coleccionables",
-    "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
     "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",

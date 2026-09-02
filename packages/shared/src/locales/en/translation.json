@@ -45,7 +45,6 @@
     "go_home": "Go to Home",
     "not_supported": "Not Supported",
     "network_mainnet": "Mainnet",
-    "network_devnet": "Devnet",
     "network_solana_mainnet": "Solana Mainnet",
     "not_found": {
       "title": "Oops!",
@@ -530,7 +529,6 @@
     "init_failed_title": "Couldn't load your wallet",
     "init_failed_body": "Your accounts and funds are safe. Please try again.",
     "name_template": "Account #{{number}}",
-    "my_nfts": "My Collectibles",
     "copied": "Copied to clipboard!",
     "create_wallet": "Create Account",
     "recover_wallet": "Recover Account",
@@ -897,8 +895,6 @@
   },
   "collectibles": {
     "title": "Collectibles",
-    "empty": "No collectibles found",
-    "empty_hint": "Your NFTs and collectibles will appear here",
     "no_nfts": "No collectibles found",
     "no_account_for_network": "No account available for this network.",
     "load_error": "Your collectibles couldn't be loaded right now.",
