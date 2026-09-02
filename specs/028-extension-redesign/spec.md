@@ -1,7 +1,7 @@
 # Feature Specification: The extension side panel becomes the mobile app, on the DOM
 
 **Feature Branch**: `feat/redesign-mobile-home` · spec dir `028-extension-redesign`
-**Created**: 2026-09-02 · **Status**: Draft (owner away; lot 1 started under granted autonomy, later lots wait for the answers below)
+**Created**: 2026-09-02 · **Status**: Approved by the owner 2026-09-02 (answers below); lot 1 landed, lot 2 in implementation
 
 ## Owner rulings (2026-09-02)
 
@@ -74,13 +74,13 @@ wiring one would change dark. No component was restyled; the kit still reads
 the static `semantic`, which is the dark set, until lot 2 moves it onto
 `useSemantic()`.
 
-## Open questions (owner)
+## Owner answers (2026-09-02, multiple choice)
 
-1. **MUI**: keep it as the base under the kit, or remove it as the kit replaces each usage? (Default: keep as an adapter in lot 1, remove at the end of lot 4 if nothing reads it.)
-2. **Send**: mirror mobile's 4-step stack in the panel, or keep one page with sections? (Default: mirror.)
-3. **Wallets**: screen like mobile, replacing the switcher sheet? (Default: yes.)
-4. **Balance swipe**: with no touch, is keyboard + dots + wheel enough, or add explicit arrows? (Default: keyboard + dots + wheel, arrows only if the dots are too small at 320px.)
-5. **Web app**: it shares `packages/ui`; the kit port reaches it automatically but its pages are not rebuilt in this spec. Confirm out of scope.
+1. **MUI**: adapter now; removed at the end of lot 4 if nothing reads it.
+2. **Send**: the mobile 4-step flow.
+3. **Wallets**: a screen like mobile, replacing the switcher sheet.
+4. **Balance without touch**: keyboard arrows + click on the dots + horizontal wheel; the same keyboard/wheel navigation applies to the sub-tab row when it overflows the panel and must move both ways.
+5. **Web**: out of scope — the web app is being retired and will be deleted; it only has to keep building until then.
 
 ## Verification
 
