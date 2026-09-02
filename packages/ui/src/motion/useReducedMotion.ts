@@ -7,14 +7,15 @@
  * render from this hook rather than once at module load.
  */
 import { useMemo, useSyncExternalStore } from 'react';
-
-const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
+import { reducedMotion } from '@salmon/shared';
 
 /** `true` when the platform asks for motion to be collapsed. */
 export function useReducedMotion(): boolean {
   const query = useMemo(
     () =>
-      typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(REDUCE_QUERY) : null,
+      typeof window !== 'undefined' && window.matchMedia
+        ? window.matchMedia(reducedMotion.query)
+        : null,
     []
   );
 

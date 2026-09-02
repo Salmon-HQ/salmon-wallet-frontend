@@ -17,6 +17,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  SCREEN_POP_MS,
+  SCREEN_PUSH_MS,
   fontFamily,
   fontSize,
   fontWeight,
@@ -31,8 +33,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { useReducedMotion } from '../../motion';
-import { injectKeyframes } from '../../utils/injectKeyframes';
+import { screenSlideAnimation, useReducedMotion } from '../../motion';
 import {
   AddressBookIcon,
   ArrowSquareOutIcon,
@@ -170,22 +171,12 @@ const SWITCH_THUMB_SIZE = 20;
 const SWITCH_THUMB_INSET = (SWITCH_TRACK_HEIGHT - SWITCH_THUMB_SIZE) / 2;
 
 // ============================================================================
-// Motion — a panel slides in from the right and leaves the same way
+// Motion — the screen slide (`motion/screenSlide`): a panel pushes in from the
+// right and pops out the same way, on the one clock every stack reads
 // ============================================================================
 
-const SLIDE_IN = 'sw-settings-slide-in';
-const SLIDE_OUT = 'sw-settings-slide-out';
-injectKeyframes(
-  SLIDE_IN,
-  `@keyframes ${SLIDE_IN} { from { transform: translateX(100%); } to { transform: translateX(0); } }`
-);
-injectKeyframes(
-  SLIDE_OUT,
-  `@keyframes ${SLIDE_OUT} { from { transform: translateX(0); } to { transform: translateX(100%); } }`
-);
-
-const PUSH_MS = motionMs.rise;
-const POP_MS = motionMs.ebb;
+const PUSH_MS = SCREEN_PUSH_MS;
+const POP_MS = SCREEN_POP_MS;
 
 // ============================================================================
 // Switch — the toggle row's control, role="switch" on a real button
@@ -477,7 +468,19 @@ export function SettingsPanelStack({
     ]
   );
 
-  if (!visible) return null;
+  // The surface leaves the way it came: held for the pop's length after
+  // `visible` drops, sliding out to the right over Home.
+  const [shown, setShown] = useState(visible);
+  useEffect(() => {
+    if (visible) {
+      setShown(true);
+      return undefined;
+    }
+    const timer = setTimeout(() => setShown(false), reduced ? 0 : POP_MS);
+    return () => clearTimeout(timer);
+  }, [visible, reduced]);
+
+  if (!shown) return null;
 
   const root: SettingsRootProps = {
     title: t('settings.title', 'Settings'),
@@ -506,9 +509,7 @@ export function SettingsPanelStack({
           inset: 0,
           zIndex: 10,
           overflow: 'hidden',
-          animation: reduced
-            ? undefined
-            : `${SLIDE_IN} ${PUSH_MS}ms ${motionEasing.current.css} both`,
+          animation: screenSlideAnimation(visible ? 'push' : 'pop', reduced),
         }}
       >
         {/* The root: Settings, the screen. */}
@@ -553,13 +554,11 @@ export function SettingsPanelStack({
             console.warn(`SettingsPanelStack: No panel registered for screen "${entry.screen}"`);
             return null;
           }
-          const animation = reduced
-            ? undefined
-            : isEntering
-              ? `${SLIDE_IN} ${PUSH_MS}ms ${motionEasing.current.css} both`
-              : isExiting
-                ? `${SLIDE_OUT} ${POP_MS}ms ${motionEasing.sink.css} both`
-                : undefined;
+          const animation = isEntering
+            ? screenSlideAnimation('push', reduced)
+            : isExiting
+              ? screenSlideAnimation('pop', reduced)
+              : undefined;
           return (
             <div
               key={`${entry.screen}-${idx}`}

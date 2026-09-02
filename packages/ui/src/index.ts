@@ -25,8 +25,15 @@ export {
 export { applySemanticCssVars, semanticToCssVars } from './theme/cssVars';
 
 // Motion — the DOM expression of the shared vocabulary
-export { floatEntering, floatEnteringLight, sinkExiting, useReducedMotion } from './motion';
-export type { SinkFloatOptions } from './motion';
+export {
+  floatEntering,
+  floatEnteringLight,
+  sinkExiting,
+  useReducedMotion,
+  screenSlideAnimation,
+  SlideStack,
+} from './motion';
+export type { SinkFloatOptions, ScreenSlidePhase, SlideStackProps } from './motion';
 
 // The shell's grip on the chrome, and the surfacing count Home floats on
 export { TaskChromeProvider, useTaskChrome } from './contexts/TaskChromeContext';

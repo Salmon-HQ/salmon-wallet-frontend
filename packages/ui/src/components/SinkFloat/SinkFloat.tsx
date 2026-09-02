@@ -38,7 +38,7 @@ import {
   motionEasing,
 } from '@salmon/shared';
 
-import { useReducedMotion } from '../../utils/useReducedMotion';
+import { useReducedMotion } from '../../motion/useReducedMotion';
 import type { SinkFloatProps } from './types';
 
 /**

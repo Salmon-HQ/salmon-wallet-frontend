@@ -113,6 +113,14 @@ export function BottomSheetContainer({
   // frame, so the browser paints the closed position before transitioning to
   // open — the same "start off-screen, then animate in" mobile does with
   // `translateY(SCREEN_HEIGHT)` as the shared value's initial value.
+  //
+  // `showModal()` takes the dialog out of `display: none`, and an element
+  // that has never been rendered has no before-change style for a transition
+  // to start from: if the open transform lands before the browser has
+  // recalculated style once, the sheet appears in place with no rise (the
+  // owner's Receive screenshot, 2026-09-02). Reading a layout property right
+  // after `showModal()` forces that recalculation, so the closed position
+  // exists before the frame that opens it.
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
@@ -120,6 +128,7 @@ export function BottomSheetContainer({
       if (dialog && !dialog.open) {
         if (typeof dialog.showModal === 'function') dialog.showModal();
         else dialog.setAttribute('open', '');
+        void dialog.getBoundingClientRect();
       }
       const raf = requestAnimationFrame(() => setIsOpen(true));
       return () => cancelAnimationFrame(raf);

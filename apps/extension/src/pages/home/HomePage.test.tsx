@@ -40,6 +40,9 @@ vi.mock('../../components', () => ({
   SinkFloat: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
     <div data-testid={testID}>{children}</div>
   ),
+  SlideStack: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
+    <div data-testid={testID}>{children}</div>
+  ),
   TokenDetailPage: () => null,
   NftDetailPage: () => null,
   TransactionHistoryPage: () => null,

@@ -70,6 +70,7 @@ import {
   TokenList,
   TokenDetailContent,
   SinkFloat,
+  SlideStack,
   TokenDetailPage,
   NftDetailPage,
   TransactionHistoryPage,
@@ -1344,8 +1345,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setSettingsInitialPanels(undefined);
   }, []);
 
-  // Render settings pages based on current page view
-  if (currentPage !== 'home') {
+  // Every screen over Home enters from the right and leaves to the right
+  // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
+  // reads the page swap as a push (depth 1 over Home's 0) or a pop.
+  const renderPage = (): React.ReactElement => {
     switch (currentPage) {
       case 'tokenDetail':
         if (selectedToken) {
@@ -1445,9 +1448,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       default:
         return <PlaceholderPage title={t('general.page', 'Page')} onBack={handleBack} />;
     }
-  }
+  };
 
-  return (
+  const home = (
     <div data-testid="home-screen" style={containerStyle}>
       {/* The ground, mounted once behind every screen: a depth ramp darkening
           toward the abyss, the scales over it, and the bottom fade that ends
@@ -1723,6 +1726,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         networkLabel={getNetworkLabel(currentNetworkId) ?? undefined}
       />
     </div>
+  );
+
+  return (
+    <SlideStack
+      screenKey={currentPage}
+      depth={currentPage === 'home' ? 0 : 1}
+      style={{ height: '100dvh' }}
+      testID="home-stack"
+    >
+      {currentPage === 'home' ? home : renderPage()}
+    </SlideStack>
   );
 }
 

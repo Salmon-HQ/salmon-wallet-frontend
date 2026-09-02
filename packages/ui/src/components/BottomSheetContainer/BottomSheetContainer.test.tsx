@@ -127,6 +127,27 @@ describe('BottomSheetContainer', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('rises from the closed position: 100% on the first paint, 0 one frame later', async () => {
+    stubMatchMedia(false);
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    render(
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible onClose={vi.fn()} testID="sheet">
+          <div>content</div>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+    const sheet = screen.getByTestId('sheet').querySelector('div + div') as HTMLElement;
+    // The closed position is what the browser paints first — and it is forced
+    // into the style tree before the open transform is scheduled.
+    expect(sheet.style.transform).toBe('translateY(100%)');
+    expect(rect).toHaveBeenCalled();
+
+    await waitFor(() => expect(sheet.style.transform).toBe('translateY(0)'));
+    expect(sheet.style.transition).toContain('transform');
+    rect.mockRestore();
+  });
+
   it('fires onClosed once the exit has actually left, under reduced motion', async () => {
     stubMatchMedia(true);
     const onClosed = vi.fn();

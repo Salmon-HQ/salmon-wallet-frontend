@@ -92,7 +92,7 @@ import {
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { useReducedMotion } from '../../utils/useReducedMotion';
+import { useReducedMotion } from '../../motion/useReducedMotion';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import type { LoadingScreenProps } from './types';
 

@@ -27,6 +27,7 @@ export {
   HomeTabOrderSheet,
   PortfolioSubTabs,
   SinkFloat,
+  SlideStack,
   StateBlock,
   PriceChart,
   PrimaryButton,

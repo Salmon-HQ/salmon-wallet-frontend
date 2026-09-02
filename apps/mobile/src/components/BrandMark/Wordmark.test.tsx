@@ -13,7 +13,6 @@ jest.mock('@salmon/shared', () => ({
 
 import {
   fontSize,
-  onboardingIdentityGridFull,
   onboardingMarkTitleGap,
   semantic,
   wordmarkAspectRatio,

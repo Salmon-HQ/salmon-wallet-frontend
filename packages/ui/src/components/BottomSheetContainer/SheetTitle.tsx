@@ -25,8 +25,15 @@ import type { SheetTitleProps } from './types';
 export function SheetTitle({ leading, children, style, className }: SheetTitleProps) {
   const t = useSemantic();
 
+  // A `<span>` is inline and centres nothing; mobile's `Text` is a block
+  // that spans the sheet, so the title centres on it. The gutter keeps a
+  // long title off the sheet's edges when it wraps.
   const title: React.CSSProperties = {
+    display: 'block',
     margin: 0,
+    paddingLeft: spacing.screenGutter,
+    paddingRight: spacing.screenGutter,
+    boxSizing: 'border-box',
     fontFamily: fontFamily.sans,
     fontWeight: fontWeight.semibold,
     fontSize: fontSize.headline,
@@ -56,7 +63,9 @@ export function SheetTitle({ leading, children, style, className }: SheetTitlePr
       }}
     >
       {leading}
-      <span style={title}>{children}</span>
+      <span style={{ ...title, paddingLeft: 0, paddingRight: 0, display: 'inline' }}>
+        {children}
+      </span>
     </div>
   );
 }
