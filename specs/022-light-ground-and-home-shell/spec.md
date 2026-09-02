@@ -57,8 +57,8 @@ The `mode === 'light'` rung is removed. The rung is decided by the material pref
 
 ## Coral on the wait and the lock
 
-- `CREST_LIGHT_COLOR` (`packages/shared/src/motion/crest.ts`) and the mark on `LoadingScreen` (mobile and `packages/ui`) read the accent (`accent.ink`, mode-aware salmon) instead of `water.light` / `text.primary`.
-- The lock screen's mark reads `accent.ink`.
+- `CREST_LIGHT_COLOR` (`packages/shared/src/motion/crest.ts`) and the mark on `LoadingScreen` (mobile and `packages/ui`) read the accent instead of `water.light` / `text.primary`. Token settled 2026-09-02: **`accent.fill`** — the button's own `salmon-500`, invariant across modes — not `accent.ink` (the darker step light uses for text). The fish and the waves are the colour of the buttons.
+- The lock screen's mark reads `accent.fill`, the same token, so the mark and the crest it throws are one ink.
 - `PressSpecular` keeps `water.light` (not in the ruling). If `water.light` ends up with no consumer it is deleted; otherwise it stays.
 - DESIGN.md §The wait: the "waves stay orange, not brand salmon" reasoning is replaced by the ruling.
 

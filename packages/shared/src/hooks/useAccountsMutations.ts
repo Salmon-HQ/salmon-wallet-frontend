@@ -139,7 +139,13 @@ export function useAccountsMutations({
       if (index < 0) return;
 
       const newAccounts = [...accounts];
-      const newAccount = { ...accounts[index] };
+      // Copy the nested map too: a top-level spread shares `networksAccounts`
+      // and every per-network array with the account still held in state, so
+      // the pads below would mutate it in place under whoever captured it.
+      const newAccount = {
+        ...accounts[index],
+        networksAccounts: { ...accounts[index].networksAccounts },
+      };
 
       if (name) newAccount.name = name;
       if (avatar) newAccount.avatar = avatar;
@@ -147,13 +153,12 @@ export function useAccountsMutations({
       if (newDerivedAccounts) {
         for (const derivedAccount of newDerivedAccounts) {
           const { network, index: accountIndex } = derivedAccount;
-          if (!newAccount.networksAccounts[network.id]) {
-            newAccount.networksAccounts[network.id] = [];
+          const slots = [...(newAccount.networksAccounts[network.id] ?? [])];
+          while (slots.length <= accountIndex) {
+            slots.push(null);
           }
-          while (newAccount.networksAccounts[network.id].length <= accountIndex) {
-            newAccount.networksAccounts[network.id].push(null);
-          }
-          newAccount.networksAccounts[network.id][accountIndex] = derivedAccount;
+          slots[accountIndex] = derivedAccount;
+          newAccount.networksAccounts[network.id] = slots;
         }
       }
 

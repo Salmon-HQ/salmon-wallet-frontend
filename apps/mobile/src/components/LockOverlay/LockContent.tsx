@@ -452,7 +452,8 @@ export function LockContent({
               */
               variant="lock"
               // Coral, not white (owner ruling, 2026-09-01): the lock's mark
-              // is the brand accent, mode-aware.
+              // is `accent.fill`, the button's own salmon, invariant across
+              // modes (token settled 2026-09-02) — the same ink as the crest.
               markColor={semantic.accent.fill}
               title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
               body={
