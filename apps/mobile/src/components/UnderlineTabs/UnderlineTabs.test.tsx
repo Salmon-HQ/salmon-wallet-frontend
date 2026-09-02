@@ -133,24 +133,38 @@ describe('UnderlineTabs', () => {
         />
       );
 
-    it('stays a plain row while the measured tabs fit their container', () => {
+    it('holds still while the measured tabs fit their container', () => {
       renderRow();
 
       measureContainer(200);
       measureTab('portfolio', 0, 60);
       measureTab('nfts', 80, 60);
 
-      expect(screen.queryByTestId('sub-tabs-scroll')).toBeNull();
+      // Same tree at both widths — the scroll view is there but not enabled,
+      // and no fade claims the row continues.
+      expect(screen.getByTestId('sub-tabs-scroll').props.scrollEnabled).toBe(false);
+      expect(screen.queryByTestId('sub-tabs-fade')).toBeNull();
     });
 
-    it('wraps the same row in a scroll view when the tabs overrun it', () => {
+    it('does not flip into a carousel over a rounding slack', () => {
+      renderRow();
+
+      measureContainer(140);
+      measureTab('portfolio', 0, 60);
+      measureTab('nfts', 80, 60.4);
+
+      expect(screen.getByTestId('sub-tabs-scroll').props.scrollEnabled).toBe(false);
+    });
+
+    it('enables the scroll and the fade when the tabs overrun it', () => {
       renderRow();
 
       measureContainer(100);
       measureTab('portfolio', 0, 60);
       measureTab('nfts', 80, 60);
 
-      expect(screen.getByTestId('sub-tabs-scroll')).toBeTruthy();
+      expect(screen.getByTestId('sub-tabs-scroll').props.scrollEnabled).toBe(true);
+      expect(screen.getByTestId('sub-tabs-fade')).toBeTruthy();
       // The underline travels inside the scrolled content, so the selection
       // idiom is the same one at both widths.
       expect(screen.getByTestId('sub-tab-nfts')).toBeTruthy();

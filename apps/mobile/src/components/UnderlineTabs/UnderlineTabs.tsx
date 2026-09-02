@@ -72,6 +72,9 @@ const OVERFLOW_FADE_WIDTH = spacing['2xl'];
 /** How much of the previous tab stays visible when one is scrolled into view. */
 const SCROLL_INTO_VIEW_MARGIN = spacing.md;
 
+/** Sub-pixel slack before a row counts as overrunning its container, pt. */
+const OVERFLOW_TOLERANCE = 1;
+
 type SizeMetrics = {
   font: number;
   gap: number;
@@ -225,7 +228,12 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const width =
       measured.reduce((sum, layout) => sum + (layout?.width ?? 0), 0) +
       s(metrics.gap) * Math.max(tabs.length - 1, 0);
-    return { contentWidth: width, isOverflowing: containerWidth > 0 && width > containerWidth };
+    // One point of tolerance: measured widths round, and a row that fits by
+    // a fraction must not flip into a carousel.
+    return {
+      contentWidth: width,
+      isOverflowing: containerWidth > 0 && width > containerWidth + OVERFLOW_TOLERANCE,
+    };
   }, [tabs, layouts, metrics.gap, containerWidth]);
 
   useEffect(() => {
@@ -291,20 +299,28 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     </View>
   );
 
+  // One tree at both widths: the row always sits in a horizontal scroll view
+  // that is only *enabled* once the measured tabs overrun the width the parent
+  // gave it. Switching between a bare row and a scroll view remounted the
+  // tabs (and their measurements) on every flip, and a horizontal scroll view
+  // left to its defaults grew to fill the parent's height — on Activity it
+  // swallowed the list under it (owner, on device, 2026-09-02). The scroll
+  // view takes no vertical flex and hugs its content, so a caller that
+  // aligns the row to the start gets a row exactly as wide as its tabs.
   return (
     <View style={[styles.container, style]} onLayout={handleContainerLayout} testID={testID}>
-      {isOverflowing ? (
-        <ScrollView
-          ref={scrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          testID={testID ? `${testID}-scroll` : undefined}
-        >
-          {row}
-        </ScrollView>
-      ) : (
-        row
-      )}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        scrollEnabled={isOverflowing}
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        testID={testID ? `${testID}-scroll` : undefined}
+      >
+        {row}
+      </ScrollView>
 
       {/* The cut at the trailing edge: the ground arriving from nothing, so
           the row reads as continuing rather than as ending. The row sits
@@ -313,6 +329,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
           never the flat `depth.column`. */}
       {isOverflowing && (
         <LinearGradient
+          testID={testID ? `${testID}-fade` : undefined}
           colors={[withAlpha(water.gradient[0], 0), water.gradient[0]]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
@@ -328,6 +345,13 @@ const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     container: {
       position: 'relative',
+    },
+    scroll: {
+      flexGrow: 0,
+      flexShrink: 1,
+    },
+    scrollContent: {
+      flexGrow: 0,
     },
     tabs: {
       flexDirection: 'row',
