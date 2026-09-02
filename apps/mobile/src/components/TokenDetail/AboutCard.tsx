@@ -28,16 +28,9 @@ import { ListRow } from '../ListRow';
 import { SkeletonRow } from '../Skeleton';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
+import type { AboutCardProps } from './types';
 
-export interface AboutCardProps {
-  description?: string;
-  /** Omit when the asset has no on-chain contract address to show (e.g. Bitcoin). */
-  contractAddress?: string;
-  contractAddressShort?: string;
-  website?: string;
-  loading?: boolean;
-  testID?: string;
-}
+export type { AboutCardProps };
 
 export function AboutCard({
   description,

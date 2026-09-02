@@ -1,16 +1,16 @@
 import type { CSSProperties, UIEvent } from 'react';
-import type { NftData, Testable } from '@salmon/shared';
+import type { NftData, NftsTabPropsBase } from '@salmon/shared';
 
 /**
- * Props for the NFTs sub-tab, on the DOM.
+ * The DOM half of `NftsTabPropsBase`.
  *
  * The tab owns the only scrolling region inside Home's content region;
  * everything above it — the wallet header, the balance and the sub-tab row —
- * is the Home shell's, laid out in flow and fixed. There is no cross-platform
- * contract for this shape: mobile's half carries RN scroll props and this one
- * carries a DOM scroll handler, and nothing is shared but the idea.
+ * is the Home shell's, laid out in flow and fixed. Mobile's half carries RN
+ * scroll props and reads the spam setting from its app context; this one
+ * carries a DOM scroll handler and takes the setting from the host.
  */
-export interface NftsTabProps extends Testable {
+export interface NftsTabProps extends NftsTabPropsBase {
   /** Opens the collectible. Omit and the tiles are inert. */
   onNftPress?: (nft: NftData) => void;
   /** Asks the backend to include blacklisted / spam-scored collectibles. */

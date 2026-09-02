@@ -22,8 +22,14 @@ export type {
 // Token Market Data
 export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
-// Token Info
-export type { TokenInfoPropsBase } from './token-info';
+// Token List
+export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+
+// NFT Card
+export type { NftCardPropsBase, NftCardSkeletonPropsBase } from './nft-card';
+
+// NFTs Tab
+export type { NftsTabPropsBase } from './nfts-tab';
 
 // Price Chart
 export type { PriceChartPropsBase } from './price-chart';
@@ -46,8 +52,18 @@ export type {
 // Warning Notice
 export type { WarningNoticeTone, WarningNoticePropsBase } from './warning-notice';
 
-// Transaction History
-export type { TransactionItemPropsBase } from './transaction-history';
+// Transaction History — the row and the pieces the row and the detail share
+export type {
+  TransactionItemPropsBase,
+  PriceImpactSize,
+  PriceImpactBadgePropsBase,
+  ConversionRateDisplayPropsBase,
+  AddressCopyRowPropsBase,
+  ExplorerLinkButtonPropsBase,
+} from './transaction-history';
+
+// Wallet Init Error Screen
+export type { WalletInitErrorScreenPropsBase } from './wallet-init-error-screen';
 
 // Input Address
 export type { InputAddressPropsBase } from './input-address';
@@ -79,18 +95,11 @@ export type { ReceiveSheetPropsBase } from './receive-sheet';
 // Token About
 export type { TokenAboutPropsBase } from './token-about';
 
-// Token Features
-export type { TokenFeaturesPropsBase } from './token-features';
-
 // Blur Container
 export type { BlurTint, BlurContainerPropsBase } from './blur-container';
 
 // Gradient Background
 export type { GradientBackgroundPropsBase } from './gradient-background';
-
-// Token Badges (formerly co-located with the retired TokenInformationSheet
-// contract — see AGENTS.md's ownership rules on removing shared exports)
-export type { TokenBadgesSectionPropsBase } from './token-information-sheet';
 
 // Transaction Detail Modal
 export type { TransactionDetailModalPropsBase } from './transaction-detail-modal';

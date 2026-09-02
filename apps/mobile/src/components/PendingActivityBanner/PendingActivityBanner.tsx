@@ -9,17 +9,17 @@
  */
 
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
-import type { ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, ClockIcon, WarningCircleIcon, XIcon, iconSize } from '../../icons';
 import type { IconComponent } from '../../icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontWeight, spacing, type Semantic } from '@salmon/shared';
-import type { PendingActivityBannerPropsBase, PendingActivityItem } from '@salmon/shared';
+import type { PendingActivityItem } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { PendingActivityBannerProps } from './types';
 
-export type PendingActivityBannerProps = PendingActivityBannerPropsBase<ViewStyle>;
+export type { PendingActivityBannerProps };
 
 /**
  * Ink + icon per outcome, so every row carries its state in three channels —

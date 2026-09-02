@@ -1,168 +1,141 @@
 /**
- * TokenAbout - Token description/about section
+ * TokenAbout — the "About" `Card`: description, contract address copy row,
+ * website link, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Provides a glassmorphism container with expandable description text.
+ * The mobile twin is `apps/mobile/src/components/TokenDetail/AboutCard.tsx`,
+ * on the same `TokenAboutPropsBase`. Copy feedback is the shared
+ * `useCopyFeedback` hold, drawn by `CopyTick` — the same object the wallet
+ * header copies with. The contract row has no data dependency of its own (the
+ * mint is always known), so the card renders for a token CoinGecko has
+ * nothing to say about; only a card with nothing at all in it renders nothing.
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Skeleton from '@mui/material/Skeleton';
 import {
-  colors,
-  spacing,
-  borderRadius,
   fontFamily,
-  fontWeight,
   fontSize,
+  fontWeight,
   lineHeight,
-  opacity,
+  spacing,
+  useCopyFeedback,
+  type Semantic,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon, GlobeIcon, iconSize } from '../../icons';
+import { Card } from '../Card';
+import { CopyTick } from '../CopyTick';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
+import { SkeletonRow } from '../SkeletonRow';
 import type { TokenAboutProps } from './types';
 
-const ContentContainer = styled(Box)({
-  padding: spacing.md,
-});
-
-const Title = styled(Typography)({
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  marginBottom: spacing.sm,
-});
-
-const Description = styled(Typography)<{
-  $maxLines: number;
-  $expanded: boolean;
-}>(({ $maxLines, $expanded }) => ({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.regular,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  lineHeight: lineHeight.tokenListItem,
-  ...($maxLines > 0 && !$expanded
-    ? {
-        display: '-webkit-box',
-        WebkitLineClamp: $maxLines,
-        WebkitBoxOrient: 'vertical' as const,
-        overflow: 'hidden',
-      }
-    : {}),
-}));
-
-const ReadMoreButton = styled('button')({
-  background: 'none',
-  border: 'none',
-  padding: 0,
-  cursor: 'pointer',
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: colors.accent.primary,
-  marginTop: spacing.sm,
-  '&:hover': {
-    opacity: opacity.medium,
-  },
-});
-
-/**
- * TokenAbout component for displaying token description
- *
- * Features:
- * - Glassmorphism container (BlurContainer)
- * - "About" section header
- * - Expandable text with "Read more" / "Read less"
- * - Loading skeleton state
- *
- * @example
- * ```tsx
- * <TokenAbout
- *   description="Bitcoin is a decentralized digital currency..."
- *   maxLines={4}
- * />
- * ```
- */
 export function TokenAbout({
   description,
-  title,
+  contractAddress,
+  contractAddressShort,
+  website,
   loading = false,
-  maxLines = 0, // 0 = no limit, container adapts to content
+  testID = 'token-detail-about',
   style,
   className,
 }: TokenAboutProps) {
   const { t } = useTranslation();
-  const displayTitle = title ?? t('token.info.about', 'About');
-  const [expanded, setExpanded] = useState(false);
-  const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
-  const descriptionRef = useRef<HTMLElement>(null);
+  const semantic = useSemantic();
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
-  // Detect whether text is clamped (overflows) to show the "Read more" button
-  useEffect(() => {
-    if (maxLines > 0 && descriptionRef.current) {
-      const el = descriptionRef.current;
-      setShouldShowReadMore(el.scrollHeight > el.clientHeight);
+  const handleCopyAddress = useCallback(async () => {
+    if (!contractAddress) return;
+    try {
+      await navigator.clipboard.writeText(contractAddress);
+      showCopied();
+    } catch (error) {
+      console.warn('[TokenAbout] Failed to copy contract address:', error);
     }
-  }, [description, maxLines]);
+  }, [contractAddress, showCopied]);
 
-  const toggleExpanded = useCallback(() => {
-    setExpanded((prev) => !prev);
-  }, []);
+  const handleOpenWebsite = useCallback(() => {
+    if (!website) return;
+    window.open(website, '_blank', 'noopener,noreferrer');
+  }, [website]);
 
   if (loading) {
     return (
-      <BlurContainer
-        style={{ borderRadius: borderRadius.lg, overflow: 'hidden', ...style }}
+      <SkeletonRow
+        testID={testID}
+        lines={2}
+        count={2}
+        accessibilityLabel={t('token.info.about', 'About')}
+        style={style}
         className={className}
-      >
-        <ContentContainer>
-          <Skeleton variant="text" width={60} height={24} sx={{ bgcolor: colors.skeleton.base }} />
-          <Skeleton
-            variant="text"
-            width="100%"
-            height={18}
-            sx={{ bgcolor: colors.skeleton.base }}
-          />
-          <Skeleton variant="text" width="95%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
-          <Skeleton variant="text" width="90%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
-          <Skeleton variant="text" width="70%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
-        </ContentContainer>
-      </BlurContainer>
+      />
     );
   }
 
-  if (!description) {
-    return null;
-  }
+  if (!description && !contractAddress && !website) return null;
 
   return (
-    <BlurContainer
-      style={{ borderRadius: borderRadius.lg, overflow: 'hidden', ...style }}
-      className={className}
-    >
-      <ContentContainer>
-        <Title>{displayTitle}</Title>
-        <Description ref={descriptionRef} $maxLines={maxLines} $expanded={expanded}>
-          {description}
-        </Description>
-        {shouldShowReadMore && (
-          <ReadMoreButton
-            onClick={toggleExpanded}
-            aria-label={
-              expanded
-                ? t('token.about.readLess', 'Read less')
-                : t('token.about.readMore', 'Read more')
-            }
-          >
-            {expanded
-              ? t('token.about.readLess', 'Read less')
-              : t('token.about.readMore', 'Read more')}
-          </ReadMoreButton>
-        )}
-      </ContentContainer>
-    </BlurContainer>
+    <Card padding="lg" gap={spacing.md} testID={testID} style={style} className={className}>
+      {description && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+          <span style={titleStyle(semantic)}>{t('token.info.about', 'About')}</span>
+          <span style={descriptionStyle(semantic)}>{description}</span>
+        </div>
+      )}
+
+      {contractAddress && (
+        <ListRow
+          testID="token-detail-contract-address"
+          onPress={handleCopyAddress}
+          accessibilityLabel={
+            copied
+              ? t('actions.copied')
+              : t('accessibility.copy_contract_address', 'Copy contract address')
+          }
+          leading={<IconBubble size={36} tone="surface" icon={CopyIcon} iconSize={iconSize.sm} />}
+          title={t('token.info.contractAddress', 'Contract Address')}
+          subtitle={contractAddressShort ?? contractAddress}
+          trailing={
+            <CopyTick
+              copied={copied}
+              copy={null}
+              tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
+            />
+          }
+        />
+      )}
+
+      {website && (
+        <ListRow
+          testID="token-detail-website"
+          onPress={handleOpenWebsite}
+          accessibilityRole="link"
+          accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', {
+            url: website,
+          })}
+          leading={<IconBubble size={36} tone="surface" icon={GlobeIcon} iconSize={iconSize.sm} />}
+          title={t('token.info.visitWebsite', 'Visit Website')}
+          trailing={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />}
+        />
+      )}
+    </Card>
   );
 }
+
+const titleStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${fontSize.bodyLg * lineHeight.snug}px`,
+  color: t.text.primary,
+});
+
+const descriptionStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontSize: fontSize.body,
+  lineHeight: `${fontSize.body * lineHeight.relaxed}px`,
+  color: t.text.secondary,
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'anywhere',
+});

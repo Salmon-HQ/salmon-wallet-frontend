@@ -1,46 +1,36 @@
 /**
- * TokenDetailPage - Full-page token detail view
+ * TokenDetailPage — the pushed form of the token detail screen, on the DOM.
  *
- * The pushed form of the token detail screen: a back-navigable page shell
- * around `TokenDetailContent`. Everything inside the shell — order, rhythm,
- * titles, skeletons — belongs to that component, which the Bitcoin home tab
- * renders too. This file owns the page chrome and nothing else.
+ * Mobile's `app/(app)/token/[id].tsx`: the screen mounts its own water, the
+ * kit header names the token (name over symbol), and the body is
+ * `TokenDetailContent` at the screen gutter. This file owns the chrome and
+ * nothing else; order, rhythm, titles and skeletons belong to the body,
+ * which the Bitcoin home tab renders too.
  */
-
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-
 import { spacing } from '@salmon/shared';
 
-import { PageShell } from '../PageShell';
+import { SettingsPanelContent } from '../SettingsPanelContent';
 import { TokenDetailContent } from './TokenDetailContent';
 import type { TokenDetailPageProps } from './types';
 
-const ContentContainer = styled(Box)({
-  padding: `${spacing.lg}px ${spacing.xl}px`,
-  paddingBottom: spacing['2xl'],
-});
-
 export function TokenDetailPage({
   onBack,
+  token,
   style,
   className,
   ...content
 }: TokenDetailPageProps): React.ReactElement {
-  const { t } = useTranslation();
-
   return (
-    <PageShell
-      title={t('token.detail.title', 'Token Information')}
+    <SettingsPanelContent
+      testID="token-detail-screen"
+      title={token.name}
+      subtitle={token.symbol}
       onBack={onBack}
       style={style}
       className={className}
     >
-      <ContentContainer>
-        <TokenDetailContent {...content} bleed={spacing.xl} />
-      </ContentContainer>
-    </PageShell>
+      <TokenDetailContent {...content} token={token} bleed={spacing.screenGutter} />
+    </SettingsPanelContent>
   );
 }

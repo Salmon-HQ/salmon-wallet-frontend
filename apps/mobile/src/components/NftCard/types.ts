@@ -1,4 +1,5 @@
 import type { StyleProp, ViewStyle } from 'react-native';
+import type { NftCardPropsBase, NftCardSkeletonPropsBase } from '@salmon/shared';
 
 // Import NFT types from shared package
 export type {
@@ -11,29 +12,14 @@ export type {
   BitcoinNftData,
 } from '@salmon/shared';
 
-// Re-import for local use
-import type { NftData } from '@salmon/shared';
-
-/**
- * Props for the NftCard component
- */
-export interface NftCardProps {
-  /** NFT data to display */
-  nft: NftData;
-  /** Callback when the card is pressed */
-  onPress?: () => void;
+/** The mobile half of `NftCardPropsBase`: the contract plus a style. */
+export interface NftCardProps extends NftCardPropsBase {
   /** Optional custom styles for the container */
   style?: StyleProp<ViewStyle>;
-  /** Test ID for testing */
-  testID?: string;
 }
 
-/**
- * Props for the NftCardSkeleton component
- */
-export interface NftCardSkeletonProps {
+/** The mobile half of `NftCardSkeletonPropsBase`: the contract plus a style. */
+export interface NftCardSkeletonProps extends NftCardSkeletonPropsBase {
   /** Optional custom styles for the container */
   style?: StyleProp<ViewStyle>;
-  /** Test ID for testing */
-  testID?: string;
 }

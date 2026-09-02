@@ -23,13 +23,8 @@ export type {
 } from '@salmon/shared';
 
 /**
- * Props for TransactionItem component (React Native)
+ * Props for TransactionItem component (React Native). The contract — the
+ * transaction, the press, the hidden balance and the address book — is the
+ * shared one; nothing is added on this side.
  */
-export interface TransactionItemProps extends TransactionItemPropsBase<ViewStyle> {
-  /**
-   * Address book names by address. The row shows the contact's name in place
-   * of the counterparty's short address when the book knows it — a name is
-   * the thing the user recognises; the address is only the fallback.
-   */
-  contacts?: Record<string, string>;
-}
+export type TransactionItemProps = TransactionItemPropsBase<ViewStyle>;

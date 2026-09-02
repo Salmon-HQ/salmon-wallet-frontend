@@ -24,14 +24,9 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SkeletonRow } from '../Skeleton';
 import { useThemedStyles } from '../../theme/useThemedStyles';
-import type { MarketData } from './types';
+import type { MarketDataCardProps } from './types';
 
-export interface MarketDataCardProps {
-  data: MarketData | undefined;
-  symbol?: string;
-  loading?: boolean;
-  testID?: string;
-}
+export type { MarketDataCardProps };
 
 export function MarketDataCard({
   data,

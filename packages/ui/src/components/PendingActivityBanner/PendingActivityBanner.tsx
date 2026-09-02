@@ -1,129 +1,160 @@
-import type { ReactNode } from 'react';
+/**
+ * PendingActivityBanner (DOM) — the visible half of the global pending
+ * transaction state.
+ *
+ * Mounted above the router rather than inside a screen: the whole point is
+ * that leaving the screen a transaction was signed on no longer costs the
+ * user the outcome. The mobile twin is
+ * `apps/mobile/src/components/PendingActivityBanner`.
+ */
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import HistoryToggleOffIcon from '@mui/icons-material/HistoryToggleOff';
-import CloseIcon from '@mui/icons-material/Close';
-import { borderRadius, fontSize, fontWeight, semantic, spacing } from '@salmon/shared';
-import type { PendingActivityItem } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  spacing,
+  type PendingActivityItem,
+  type Semantic,
+} from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  WarningCircleIcon,
+  XIcon,
+  iconSize,
+  type IconComponent,
+} from '../../icons';
+import { ButtonSpinner } from '../Button/ButtonSpinner';
 import type { PendingActivityBannerProps } from './types';
 
-/**
- * Ink + icon for each outcome. Every row therefore carries its state in three
- * channels — opaque color, icon, and label — per DESIGN.md's Three-Channel
- * State Rule; none of them is the hue alone. Nothing here uses a salmon fill:
- * this banner floats over whatever screen owns the one fill on it.
- */
-const TONE = {
-  pending: { color: semantic.text.secondary, Icon: null },
-  confirmed: { color: semantic.status.success, Icon: CheckCircleOutlineIcon },
-  failed: { color: semantic.status.danger, Icon: ErrorOutlineIcon },
-  expired: { color: semantic.status.warning, Icon: HistoryToggleOffIcon },
-} as const;
+/** The banner sits over every screen. */
+const BANNER_Z_INDEX = 1000;
 
 /**
- * The one surface that reports work still in the air — a signed send or swap
- * waiting on the cluster. It is mounted above the router rather than inside a
- * screen so that leaving the screen the transaction was signed on never costs
- * the user the outcome.
- *
- * Opaque by rule: it overlaps scrolling content, so it gets a hard surface, not
- * glass.
+ * Ink + icon per outcome, so every row carries its state in three channels —
+ * opaque color, icon, and label — never hue alone (DESIGN.md, Three-Channel
+ * State Rule). No salmon fill: the screen underneath owns the one fill.
  */
-export function PendingActivityBanner({
-  items,
-  onDismiss,
-  style,
-}: PendingActivityBannerProps): ReactNode {
-  const { t } = useTranslation();
+const toneFor = (
+  t: Semantic
+): Record<PendingActivityItem['status'], { color: string; icon: IconComponent | null }> => ({
+  pending: { color: t.text.secondary, icon: null },
+  confirmed: { color: t.status.success, icon: CheckCircleIcon },
+  failed: { color: t.status.danger, icon: WarningCircleIcon },
+  expired: { color: t.status.warning, icon: ClockIcon },
+});
+
+export function PendingActivityBanner({ items, onDismiss, style }: PendingActivityBannerProps) {
+  const { t: translate } = useTranslation();
+  const t = useSemantic();
+  const TONE = toneFor(t);
 
   if (items.length === 0) return null;
 
+  const detailStyle: React.CSSProperties = {
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.xs,
+    color: t.text.secondary,
+    overflowWrap: 'anywhere',
+  };
+
   return (
-    <Box
+    <div
       role="status"
       aria-live="polite"
       data-testid="pending-activity-banner"
-      sx={{
+      style={{
         position: 'fixed',
-        top: `${spacing.sm}px`,
-        left: `${spacing.sm}px`,
-        right: `${spacing.sm}px`,
-        zIndex: 1400,
+        top: spacing.sm,
+        left: spacing.md,
+        right: spacing.md,
+        zIndex: BANNER_Z_INDEX,
         display: 'flex',
         flexDirection: 'column',
-        gap: `${spacing.xs}px`,
+        gap: spacing.xs,
         pointerEvents: 'none',
         ...style,
       }}
     >
-      {items.map((item: PendingActivityItem) => {
+      {items.map((item) => {
         const tone = TONE[item.status];
-        const title = t(`pending.${item.kind}.${item.status}`);
+        const Icon = tone.icon;
         return (
-          <Box
+          <div
             key={item.id}
             data-testid={`pending-activity-row-${item.status}`}
-            sx={{
+            style={{
               pointerEvents: 'auto',
               display: 'flex',
               alignItems: 'center',
-              gap: `${spacing.sm}px`,
-              padding: `${spacing.sm}px`,
-              borderRadius: `${borderRadius.lg}px`,
-              backgroundColor: semantic.surface.crest,
-              border: `1px solid ${semantic.border.raised}`,
+              gap: spacing.sm,
+              padding: spacing.sm,
+              borderRadius: borderRadius.lg,
+              // Opaque by rule: this overlaps scrolling content, so it is a hard surface.
+              backgroundColor: t.surface.crest,
+              border: `${borderWidth.thin}px solid ${t.border.raised}`,
             }}
           >
-            {tone.Icon ? (
-              <tone.Icon sx={{ fontSize: 20, color: tone.color, flexShrink: 0 }} />
+            {Icon ? (
+              <Icon size={iconSize.md} color={tone.color} />
             ) : (
-              <CircularProgress size={16} sx={{ color: tone.color, flexShrink: 0 }} />
+              <ButtonSpinner color={tone.color} size={iconSize.sm} />
             )}
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                sx={{
-                  color: tone.color,
-                  fontSize: `${fontSize.sm}px`,
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: fontFamily.sans,
+                  fontSize: fontSize.sm,
                   fontWeight: fontWeight.semibold,
+                  color: tone.color,
                 }}
               >
-                {title}
-              </Typography>
+                {translate(`pending.${item.kind}.${item.status}`)}
+              </div>
               {item.detail ? (
-                <Typography
-                  sx={{
-                    color: semantic.text.secondary,
-                    fontSize: `${fontSize.xs}px`,
-                    overflowWrap: 'anywhere',
+                <div
+                  style={{
+                    ...detailStyle,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {item.detail}
-                </Typography>
+                </div>
               ) : null}
               {item.status === 'expired' ? (
-                <Typography sx={{ color: semantic.text.secondary, fontSize: `${fontSize.xs}px` }}>
-                  {t('pending.expiredHint')}
-                </Typography>
+                <div style={detailStyle}>{translate('pending.expiredHint')}</div>
               ) : null}
-            </Box>
+            </div>
             {item.dismissible && item.status !== 'pending' ? (
-              <IconButton
-                size="small"
-                aria-label={t('pending.dismiss')}
+              <button
+                type="button"
+                aria-label={translate('pending.dismiss')}
+                data-testid={`pending-activity-dismiss-${item.id}`}
                 onClick={() => onDismiss(item.id)}
-                sx={{ color: semantic.text.tertiary, flexShrink: 0 }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: spacing.xs,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: t.text.tertiary,
+                }}
               >
-                <CloseIcon sx={{ fontSize: 16 }} />
-              </IconButton>
+                <XIcon size={iconSize.sm} color={t.text.tertiary} />
+              </button>
             ) : null}
-          </Box>
+          </div>
         );
       })}
-    </Box>
+    </div>
   );
 }

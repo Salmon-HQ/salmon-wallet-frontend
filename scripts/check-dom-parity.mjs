@@ -67,7 +67,7 @@ const MAP = {
     'LanguageSelector',
   ],
   Skeleton: ['SkeletonRow'],
-  TokenDetail: ['TokenDetailPage', 'TokenAbout', 'TokenInfo', 'TokenMarketData', 'TokenFeatures'],
+  TokenDetail: ['TokenAbout', 'TokenMarketData'],
   PressSpecular: ['Button'],
 };
 
@@ -93,6 +93,8 @@ const DOM_ONLY = {
   CopyTick: 'DOM copy affordance; mobile uses haptics + toast',
   TextInput: 'DOM input primitive; mobile uses RN TextInput directly',
   NftDetailPage: 'mobile has it as a route (app/(app)/nft/[id]); the DOM keeps a component',
+  TokenDetailPage:
+    "mobile's token detail is the route app/(app)/token/[id].tsx; the DOM keeps a component whose cards (TokenAbout, TokenMarketData) are the twins",
   NftSendDialog:
     'mobile sends NFTs through the Send route; the DOM keeps the dialog until lot 4D folds it into SendPage',
   TokenSelector: 'twin exists on mobile (TokenSelector) — listed for the folder shape only',

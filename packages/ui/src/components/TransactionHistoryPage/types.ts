@@ -1,12 +1,19 @@
 /**
- * Type definitions for TransactionHistoryPage (Web/Extension)
+ * Type definitions for the Activity components (DOM)
  *
- * Core transaction types are imported from @salmon/shared
- * This file only contains platform-specific component props for web
+ * The contracts are the shared ones (`packages/shared/src/types/ui`); this
+ * file adds the DOM's style and class to each.
  */
 
-import type React from 'react';
-import type { Blockchain, NetworkEnvironment, Transaction } from '@salmon/shared';
+import type { CSSProperties } from 'react';
+import type {
+  AddressCopyRowPropsBase,
+  ConversionRateDisplayPropsBase,
+  ExplorerLinkButtonPropsBase,
+  PriceImpactBadgePropsBase,
+  Transaction,
+  TransactionItemPropsBase,
+} from '@salmon/shared';
 
 // Re-export shared types for convenience
 export type {
@@ -22,24 +29,17 @@ export type {
   Transaction,
 } from '@salmon/shared';
 
-/**
- * Props for TransactionItem component (Web/Extension)
- */
-export interface TransactionItemProps {
-  /** The transaction to display */
-  transaction: Transaction;
-  /** Callback when the transaction is pressed */
-  onPress?: (transaction: Transaction) => void;
-  /** Whether balance values should be hidden */
-  hiddenBalance?: boolean;
-  /** Optional custom styles */
-  style?: React.CSSProperties;
-  /** Additional CSS class */
+/** Props for TransactionItem (DOM): the shared contract plus a class. */
+export interface TransactionItemProps extends TransactionItemPropsBase<CSSProperties> {
   className?: string;
 }
 
 /**
- * Props for TransactionHistoryPage component (Web/Extension)
+ * Props for TransactionHistoryPage (DOM).
+ *
+ * Mobile's Activity is a route that reads its data from the hooks directly;
+ * the DOM page is fed by the side panel's Home, which already holds the
+ * transactions, so the page stays presentational.
  */
 export interface TransactionHistoryPageProps {
   /** Callback to navigate back */
@@ -56,92 +56,43 @@ export interface TransactionHistoryPageProps {
   hasMore?: boolean;
   /** Whether balance values should be hidden */
   hiddenBalance?: boolean;
-  /** Callback when a transaction is pressed, before the detail step opens */
+  /** Address book names by address — a row says who, not where, when known. */
+  contacts?: Record<string, string>;
+  /** Callback when a transaction is pressed, before the detail opens */
   onTransactionPress?: (transaction: Transaction) => void;
-  /** Callback when the detail step's explorer action is used */
+  /** Callback when the detail's explorer action is used */
   onViewExplorer?: (transaction: Transaction) => void;
-  /** Callback when the detail step's hash is copied */
+  /** Callback when the detail's hash is copied */
   onCopyHash?: (hash: string) => void;
-  /** Callback when the detail step's share action is used */
+  /** Callback when the detail's share action is used */
   onShare?: (transaction: Transaction) => void;
-  /** Whether the detail step shows chain internals */
+  /** Whether the detail shows chain internals */
   developerMode?: boolean;
-  /** Active network ID, used by the detail step to pick a block explorer */
+  /** Active network ID, used by the detail to pick a block explorer */
   networkId?: string | null;
   /** Error message to display */
   error?: string | null;
   /** Callback to retry loading after an error */
   onRetry?: () => void;
   /** Optional custom styles */
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   /** Additional CSS class for the container */
   className?: string;
 }
 
-/**
- * Props for PriceImpactBadge component
- */
-export interface PriceImpactBadgeProps {
-  /** Price impact as a string percentage (e.g., "0.5", "1.2") */
-  value: string;
-  /** Size variant */
-  size?: 'small' | 'medium' | 'large';
-  /** Whether to show the warning/check icon */
-  showIcon?: boolean;
-}
-
-/**
- * Props for ConversionRateDisplay component
- */
-export interface ConversionRateDisplayProps {
-  /** Input token symbol */
-  fromSymbol: string;
-  /** Output token symbol */
-  toSymbol: string;
-  /**
-   * The conversion rate (how many toTokens per 1 fromToken).
-   *
-   * A number wherever the caller computed one. The string form is only for
-   * the backend's raw numeric strings — never an already-formatted figure,
-   * whose separator would parse back wrong under a non-English language.
-   */
-  rate: number | string;
-  /** Optional size variant */
-  size?: 'small' | 'medium';
-  /** Additional CSS class */
+export interface PriceImpactBadgeProps extends PriceImpactBadgePropsBase {
+  style?: CSSProperties;
   className?: string;
 }
 
-/**
- * Props for AddressCopyRow component
- */
-export interface AddressCopyRowProps {
-  /** Label for the address (e.g., "From", "To", "Contract") */
-  label: string;
-  /** The full address to display and copy */
-  address: string;
-  /** How to truncate the address */
-  truncate?: 'short' | 'medium' | 'long' | false;
-  /** Additional CSS class */
+export interface ConversionRateDisplayProps extends ConversionRateDisplayPropsBase<CSSProperties> {
   className?: string;
 }
 
-/**
- * Props for ExplorerLinkButton component
- */
-export interface ExplorerLinkButtonProps {
-  /** Transaction hash/signature */
-  txHash: string;
-  /** Blockchain type */
-  blockchain?: Blockchain;
-  /** Network environment */
-  environment?: NetworkEnvironment;
-  /** Which explorer to use (if single button mode) */
-  explorerKey?: string;
-  /** Whether to show as menu with multiple options */
-  showMenu?: boolean;
-  /** Callback when explorer is opened */
-  onPress?: (url: string, explorerName: string) => void;
-  /** Additional CSS class */
+export interface AddressCopyRowProps extends AddressCopyRowPropsBase<CSSProperties> {
+  className?: string;
+}
+
+export interface ExplorerLinkButtonProps extends ExplorerLinkButtonPropsBase<CSSProperties> {
   className?: string;
 }

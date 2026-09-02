@@ -1,245 +1,53 @@
 /**
- * NftDetailPage - Full-page NFT detail view
+ * NftDetailPage — a collectible's detail, on the DOM.
  *
- * Replaces the former NftDetailSheet dialog.
- * Renders as a full page with back navigation, matching the
- * page-navigation pattern used by TokenDetailPage.
+ * The mobile twin is the route stack `apps/mobile/app/(app)/nft/[id]`:
+ * `index.tsx` (the detail), `burn.tsx` (the review) and `success.tsx` (the
+ * receipt). The host drives which of the three shows through `burnStep`, and
+ * each one keeps its mobile anatomy — CORE 02's skeleton applied to a
+ * collectible: the kit header with the description as its subtitle, the hero,
+ * a stack of cards 20 apart, the actions on the bottom band.
  *
- * Content: NFT image, blockchain badge, description, attributes,
- * blockchain-specific details, and Send/Burn action buttons.
+ * The two actions keep the sheet's rules exactly. A watch-only wallet can
+ * never sign, so both are **gone, not greyed** — a disabled control would be a
+ * promise the wallet cannot keep.
  */
-
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import ButtonBase from '@mui/material/ButtonBase';
-import { ArrowUpRightIcon, FireIcon, iconSize } from '../../icons';
-
 import {
-  colors,
-  semantic,
-  spacing,
-  gradients,
-  fontFamily,
-  fontWeight,
   borderRadius,
+  fontFamily,
   fontSize,
-  isSolanaNft,
-  isBitcoinNft,
-  getSatRarityColor,
-  shadowsCSS,
+  fontWeight,
   formatRawAmount,
-  letterSpacing,
+  getSatRarityColor,
+  getShortAddress,
+  isBitcoinNft,
+  isSolanaNft,
   lineHeight,
-  opacity,
-  componentSizes,
-  duration,
-  easing,
-  blur,
-  borderWidth,
+  spacing,
   trackEvent,
-  tabularNums,
+  useCopyFeedback,
+  type NftAttribute,
+  type Semantic,
 } from '@salmon/shared';
 
-import { BlurContainer } from '../BlurContainer';
-import { FleshBackground } from '../FleshBackground';
-import { PageShell } from '../PageShell';
-import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
-import type { NftDetailPageProps, NftAttribute } from './types';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckIcon, CopyIcon, FireIcon, iconSize } from '../../icons';
+import { PrimaryButton, SecondaryButton } from '../Button';
+import { Card } from '../Card';
+import { CopyTick } from '../CopyTick';
+import { DepthBackground } from '../DepthBackground';
+import { KeyValueRow } from '../KeyValueRow';
+import { ReceiptScreen } from '../ReceiptScreen';
+import { ScalesBackground } from '../ScalesBackground';
+import { SectionLabel } from '../SectionLabel';
+import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
+import type { NftDetailPageProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const ContentContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.lg,
-  paddingLeft: spacing.headerPadding,
-  paddingRight: spacing.headerPadding,
-  paddingTop: spacing.lg,
-  paddingBottom: spacing['4xl'],
-});
-
-const ImageContainer = styled(Box)({
-  display: 'flex',
-  justifyContent: 'center',
-  marginBottom: spacing.sm,
-});
-
-const NftImage = styled('img')({
-  width: '100%',
-  maxWidth: componentSizes.nftImageMaxWidth,
-  aspectRatio: '1 / 1',
-  borderRadius: borderRadius.iconContainer,
-  objectFit: 'cover',
-  boxShadow: shadowsCSS.header,
-});
-
-const SectionContent = styled(Box)({
-  padding: spacing.sm,
-  position: 'relative',
-  zIndex: 1,
-});
-
-const SectionTitle = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.bold,
-  color: colors.text.primary,
-  marginBottom: spacing.sm,
-});
-
-const DescriptionText = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.regular,
-  color: colors.text.secondary,
-  lineHeight: lineHeight.normal,
-});
-
-const AttributesGrid = styled(Box)({
-  display: 'flex',
-  flexWrap: 'wrap',
-  marginLeft: -spacing.sm,
-  marginRight: -spacing.sm,
-});
-
-const AttributeItem = styled(Box)({
-  width: '50%',
-  paddingLeft: spacing.sm,
-  paddingRight: spacing.sm,
-  paddingTop: spacing.sm,
-  paddingBottom: spacing.sm,
-  boxSizing: 'border-box',
-});
-
-const AttributeName = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.black,
-  color: colors.text.primary,
-  marginBottom: spacing.xs,
-  textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
-});
-
-const AttributeValue = styled(Typography)({
-  ...tabularNums.css,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.regular,
-  color: colors.text.secondary,
-});
-
-const DetailRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingTop: spacing.sm,
-  paddingBottom: spacing.sm,
-  borderBottom: `${borderWidth.actionButton}px solid ${colors.border.default}`,
-  '&:last-child': {
-    borderBottom: 'none',
-  },
-});
-
-const DetailLabel = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  color: colors.text.secondary,
-});
-
-const DetailValue = styled(Typography)({
-  ...tabularNums.css,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  color: colors.text.primary,
-});
-
-const RarityBadge = styled(Box)({
-  paddingLeft: spacing.sm,
-  paddingRight: spacing.sm,
-  paddingTop: spacing.xs,
-  paddingBottom: spacing.xs,
-  borderRadius: borderRadius.sm,
-});
-
-const RarityText = styled(Typography)({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.xs,
-  fontWeight: fontWeight.bold,
-  color: colors.text.primary,
-  textTransform: 'capitalize',
-});
-
-const ActionButtonsContainer = styled(Box)({
-  display: 'flex',
-  justifyContent: 'center',
-  gap: spacing.lg,
-  marginTop: spacing.lg,
-});
-
-/** Sits above the flesh, never under it. Decoration is never a hit target. */
-const OnFillContent = styled('span')({
-  position: 'relative',
-  zIndex: 1,
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: spacing.base,
-});
-
-const PrimaryButtonBase = styled(ButtonBase)({
-  flex: 1,
-  maxWidth: componentSizes.buttonMinWidthLg,
-  borderRadius: borderRadius.button,
-  overflow: 'hidden',
-  background: gradients.primaryButtonCSS,
-  border: `${borderWidth.actionButton}px solid ${colors.accent.border}`,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: componentSizes.iconSize4XL,
-  gap: spacing.base,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': { opacity: opacity.high },
-  '&:active': { opacity: opacity.medium },
-});
-
-const SecondaryButtonInner = styled(ButtonBase)({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: componentSizes.iconSize4XL,
-  gap: spacing.base,
-  position: 'relative',
-  zIndex: 1,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': { opacity: opacity.high },
-  '&:active': { opacity: opacity.medium },
-});
-
-const ButtonText = styled(Typography)<{ $onAccent?: boolean }>(({ $onAccent }) => ({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.medium,
-  // On the salmon fill the only legal ink is `neutral-1000` (6.50:1). The
-  // outlined sibling keeps the light label it already had.
-  color: $onAccent ? colors.button.primaryText : colors.text.balance,
-  lineHeight: lineHeight.normal,
-}));
-
-// ============================================================================
-// NftDetailPage Component
-// ============================================================================
+/** SOL's decimals — what the lookup table's rent estimate is denominated in. */
+const LAMPORT_DECIMALS = 9;
 
 export function NftDetailPage({
   nft,
@@ -248,9 +56,9 @@ export function NftDetailPage({
   onBurnPress,
   actionsUnavailable = false,
   burnStep = 'idle',
-  burnSettling = false,
   burnPreview,
   burnPreparing = false,
+  burnSettling = false,
   burnError,
   onBurnBack,
   onBurnConfirm,
@@ -260,378 +68,392 @@ export function NftDetailPage({
   className,
 }: NftDetailPageProps): React.ReactElement {
   const { t } = useTranslation();
+  const semantic = useSemantic();
+  const [imageError, setImageError] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   // Anonymous funnel event: an NFT detail view was opened. Only the coarse
   // chain family — never the mint, name or media. No-op without consent.
+  const chain = nft.blockchain;
   useEffect(() => {
-    trackEvent('nft_viewed', { chain: nft.blockchain });
-  }, [nft.blockchain]);
+    if (chain) trackEvent('nft_viewed', { chain });
+  }, [chain]);
 
-  const handleSendPress = useCallback(() => {
-    onSendPress?.();
-  }, [onSendPress]);
-
-  const handleBurnPress = useCallback(() => {
-    onBurnPress?.();
-  }, [onBurnPress]);
-
-  const handleBurnBack = useCallback(() => {
-    onBurnBack?.();
-  }, [onBurnBack]);
-
-  const handleBurnConfirm = useCallback(() => {
-    onBurnConfirm?.();
-  }, [onBurnConfirm]);
-
-  const handleBurnSuccessContinue = useCallback(() => {
-    onBurnSuccessContinue?.();
-  }, [onBurnSuccessContinue]);
-
-  const lutInfo = burnPreview?.lookupTable;
-  const isBurnReviewStep = burnStep === 'review';
-  const isBurnSuccessStep = burnStep === 'success';
-  const burnBusyLabel = burnPreview
-    ? t('nft.burn.submitting', 'Burning NFT...')
-    : t('nft.burn.preparing', 'Preparing burn...');
-
-  const renderBlockchainDetails = useCallback(() => {
-    if (isSolanaNft(nft)) {
-      return (
-        <>
-          {nft.tokenStandard && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.tokenStandard', 'Token Standard')}</DetailLabel>
-              <DetailValue>{nft.tokenStandard}</DetailValue>
-            </DetailRow>
-          )}
-          {nft.compressed !== undefined && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.compressed', 'Compressed')}</DetailLabel>
-              <DetailValue>
-                {nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}
-              </DetailValue>
-            </DetailRow>
-          )}
-          {nft.collectionVerified !== undefined && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.collectionVerified', 'Collection Verified')}</DetailLabel>
-              <DetailValue>{nft.collectionVerified ? '\u2713' : '\u2717'}</DetailValue>
-            </DetailRow>
-          )}
-          {nft.royaltyBps !== undefined && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.royalties', 'Royalties')}</DetailLabel>
-              <DetailValue>{(nft.royaltyBps / 100).toFixed(2)}%</DetailValue>
-            </DetailRow>
-          )}
-        </>
-      );
+  const mint = nft.mint;
+  const handleCopyMint = useCallback(async () => {
+    if (!mint) return;
+    try {
+      await navigator.clipboard.writeText(mint);
+      showCopied();
+    } catch (error) {
+      console.warn('[NftDetail] Failed to copy mint address:', error);
     }
+  }, [mint, showCopied]);
 
-    if (isBitcoinNft(nft)) {
-      return (
-        <>
-          <DetailRow>
-            <DetailLabel>{t('nft.detail.inscriptionNumber', 'Inscription #')}</DetailLabel>
-            <DetailValue>{nft.inscriptionNumber}</DetailValue>
-          </DetailRow>
-          {nft.satRarity && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.rarity', 'Rarity')}</DetailLabel>
-              <RarityBadge sx={{ backgroundColor: getSatRarityColor(nft.satRarity) }}>
-                <RarityText>{nft.satRarity}</RarityText>
-              </RarityBadge>
-            </DetailRow>
-          )}
-          <DetailRow>
-            <DetailLabel>{t('nft.detail.contentType', 'Content Type')}</DetailLabel>
-            <DetailValue>{nft.contentType}</DetailValue>
-          </DetailRow>
-          {nft.genesisHeight && (
-            <DetailRow>
-              <DetailLabel>{t('nft.detail.genesisBlock', 'Genesis Block')}</DetailLabel>
-              <DetailValue>{nft.genesisHeight}</DetailValue>
-            </DetailRow>
-          )}
-        </>
-      );
-    }
-
-    return null;
-  }, [nft, t]);
-
-  const renderAttribute = useCallback((attribute: NftAttribute, index: number) => {
+  // ── The receipt ─────────────────────────────────────────────────────────
+  if (burnStep === 'success') {
     return (
-      <AttributeItem key={`${attribute.trait_type}-${index}`}>
-        <AttributeName>{attribute.trait_type}</AttributeName>
-        <AttributeValue>{attribute.value}</AttributeValue>
-      </AttributeItem>
+      <div style={{ ...screenStyle(semantic), ...style }} className={className}>
+        <DepthBackground style={{ zIndex: 0 }} />
+        <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, minHeight: 0, display: 'flex' }}>
+          <ReceiptScreen
+            tone="transfer"
+            title={t('nft.burn.successTitle', 'NFT burned')}
+            body={t('nft.burn.successSummary', '"{{name}}" has been burned.', { name: nft.name })}
+            rows={[
+              {
+                label: t('send.screens.status', 'Status'),
+                value: t('transactions.detail.confirmed', 'Confirmed'),
+                valueTone: 'success',
+              },
+            ]}
+            explorerUrl={burnSuccessExplorerUrl ?? undefined}
+            settling={burnSettling}
+            primary={{
+              label: t('transaction.continue', 'Back to wallet'),
+              onPress: () => onBurnSuccessContinue?.(),
+              testID: 'tx-success-continue-button',
+            }}
+          />
+        </div>
+      </div>
     );
-  }, []);
+  }
 
-  const blurStyle = {
-    borderRadius: borderRadius.md,
-    overflow: 'hidden' as const,
-  };
+  // ── The review ──────────────────────────────────────────────────────────
+  if (burnStep === 'review') {
+    const canConfirm = !burnPreparing && !burnError && !!burnPreview;
+    const busyLabel = burnPreview
+      ? t('nft.burn.submitting', 'Burning NFT...')
+      : t('nft.burn.preparing', 'Preparing burn...');
+    const lutInfo = burnPreview?.lookupTable;
+
+    return (
+      <SettingsPanelContent
+        testID="nft-burn-screen"
+        title={t('nft.burn.reviewTitle', 'Burn NFT')}
+        subtitle={nft.name}
+        onBack={() => onBurnBack?.()}
+        style={style}
+        className={className}
+        footer={
+          <PrimaryButton
+            testID="nft-burn-confirm-button"
+            onPress={() => onBurnConfirm?.()}
+            disabled={!canConfirm}
+            loading={burnPreparing}
+          >
+            {burnPreparing ? busyLabel : t('nft.burn.confirm', 'Confirm burn')}
+          </PrimaryButton>
+        }
+      >
+        <div data-testid="nft-burn-irreversible-notice">
+          <WarningNotice
+            tone="error"
+            title={t(
+              'nft.burn.reviewBody',
+              'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
+            )}
+          />
+        </div>
+
+        {lutInfo && (
+          <div data-testid="nft-burn-lut" style={groupStyle}>
+            <SectionLabel variant="title">
+              {t('nft.burn.lutTitle', 'Temporary lookup table required')}
+            </SectionLabel>
+            <Card padding="lg" gap={spacing.md}>
+              <span style={bodyTextStyle(semantic)}>
+                {t(
+                  'nft.burn.lutBody',
+                  'To fit this burn on Solana, Salmon needs to create a temporary address lookup table before submitting the burn transaction.'
+                )}
+              </span>
+              <KeyValueRow
+                label={t('nft.burn.lutRent', 'Approximate rent lock')}
+                value={`${formatRawAmount(lutInfo.estimatedRentLamports, LAMPORT_DECIMALS)} SOL`}
+              />
+              <KeyValueRow
+                label={t('nft.burn.lutAddressCount', 'Addresses stored')}
+                value={String(lutInfo.addressCount)}
+              />
+              <KeyValueRow
+                label={t('nft.burn.lutSteps', 'Additional setup transactions')}
+                value={String(lutInfo.extendTransactionCount + 1)}
+              />
+              <span style={footnoteStyle(semantic)}>
+                {t(
+                  'nft.burn.lutFootnote',
+                  'The rent stays locked in the lookup table account until it is later deactivated and closed.'
+                )}
+              </span>
+            </Card>
+          </div>
+        )}
+
+        {!!burnError && (
+          <div data-testid="nft-burn-error">
+            <WarningNotice tone="error" title={t(burnError)} />
+          </div>
+        )}
+      </SettingsPanelContent>
+    );
+  }
+
+  // ── The detail ──────────────────────────────────────────────────────────
+  const showFallback = !nft.image || imageError;
+  const renderAttribute = (attribute: NftAttribute, index: number) => (
+    <KeyValueRow
+      key={`${attribute.trait_type}-${index}`}
+      label={attribute.trait_type}
+      value={String(attribute.value)}
+    />
+  );
 
   return (
-    <PageShell
-      title={
-        isBurnReviewStep
-          ? t('nft.burn.reviewTitle', 'Burn NFT')
-          : isBurnSuccessStep
-            ? t('nft.burn.successTitle', 'NFT burned')
-            : nft.name
-      }
-      onBack={
-        isBurnReviewStep ? handleBurnBack : isBurnSuccessStep ? handleBurnSuccessContinue : onBack
-      }
+    <SettingsPanelContent
+      testID="nft-detail-screen"
+      title={nft.name || t('nft.detail.title', 'NFT Detail')}
+      // The description is the header's subtitle (owner, 2026-09-02): it reads
+      // as the caption of the name, not as a section of its own. A piece with
+      // no description keeps its collection there.
+      subtitle={nft.description || nft.collectionName}
+      onBack={onBack}
       style={style}
       className={className}
+      footer={
+        // Gone, not greyed: see the module comment.
+        actionsUnavailable ? undefined : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+            <PrimaryButton testID="nft-detail-send-button" onPress={() => onSendPress?.()}>
+              {t('nft.send.title', 'Send NFT')}
+            </PrimaryButton>
+            {/* Burn destroys the thing on screen and nothing brings it back,
+                so the trigger says so before the confirm step does — on three
+                channels: the danger edge and ink, the flame glyph, and the
+                announced irreversibility. */}
+            <SecondaryButton
+              testID="nft-detail-burn-button"
+              tone="danger"
+              icon={<FireIcon weight="fill" size={iconSize.md} color={semantic.status.danger} />}
+              onPress={() => onBurnPress?.()}
+              accessibilityHint={t(
+                'nft.burn.reviewBody',
+                'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
+              )}
+            >
+              {t('nft.burn_nft', 'Burn')}
+            </SecondaryButton>
+          </div>
+        )
+      }
     >
-      <ContentContainer>
-        {isBurnSuccessStep ? (
-          <TransactionSuccessScreen
-            title={t('nft.burn.successTitle', 'NFT burned')}
-            pendingTitle={t('nft.burn.submitting', 'Burning NFT...')}
-            summary={t('nft.burn.successSummary', {
-              name: nft.name,
-              defaultValue: `"${nft.name}" has been burned.`,
-            })}
-            explorerUrl={burnSuccessExplorerUrl ?? null}
-            onContinue={handleBurnSuccessContinue}
-            settling={burnSettling}
-          />
+      <div style={heroStyle}>
+        {showFallback ? (
+          <span style={{ ...fillStyle, backgroundColor: semantic.surface.raised }} />
         ) : (
-          <>
-            {nft.image && (
-              <ImageContainer>
-                <NftImage
-                  src={nft.image}
-                  alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
-                />
-              </ImageContainer>
-            )}
-
-            {nft.description && (
-              <BlurContainer
-                blurIntensity={blur.md}
-                blurTint="dark"
-                backgroundColor={colors.background.tokenItem}
-                borderColor={colors.border.default}
-                borderWidth={borderWidth.thin}
-                style={blurStyle}
-              >
-                <SectionContent>
-                  <SectionTitle>{t('nft.detail.description', 'Description')}</SectionTitle>
-                  <DescriptionText>{nft.description}</DescriptionText>
-                </SectionContent>
-              </BlurContainer>
-            )}
-
-            {nft.attributes && nft.attributes.length > 0 && (
-              <BlurContainer
-                blurIntensity={blur.md}
-                blurTint="dark"
-                backgroundColor={colors.background.tokenItem}
-                borderColor={colors.border.default}
-                borderWidth={borderWidth.thin}
-                style={blurStyle}
-              >
-                <SectionContent>
-                  <SectionTitle>{t('nft.detail.attributes', 'Attributes')}</SectionTitle>
-                  <AttributesGrid>{nft.attributes.map(renderAttribute)}</AttributesGrid>
-                </SectionContent>
-              </BlurContainer>
-            )}
-
-            {renderBlockchainDetails() && (
-              <BlurContainer
-                blurIntensity={blur.md}
-                blurTint="dark"
-                backgroundColor={colors.background.tokenItem}
-                borderColor={colors.border.default}
-                borderWidth={borderWidth.thin}
-                style={blurStyle}
-              >
-                <SectionContent>
-                  <SectionTitle>{t('nft.detail.details', 'Details')}</SectionTitle>
-                  {renderBlockchainDetails()}
-                </SectionContent>
-              </BlurContainer>
-            )}
-
-            {isBurnReviewStep ? (
-              <>
-                <BlurContainer
-                  blurIntensity={blur.md}
-                  blurTint="dark"
-                  backgroundColor={colors.background.tokenItem}
-                  borderColor={colors.border.default}
-                  borderWidth={borderWidth.thin}
-                  style={blurStyle}
-                >
-                  <SectionContent>
-                    <SectionTitle>{t('nft.burn.reviewTitle', 'Burn NFT')}</SectionTitle>
-                    <DescriptionText>
-                      {t(
-                        'nft.burn.reviewBody',
-                        'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
-                      )}
-                    </DescriptionText>
-                  </SectionContent>
-                </BlurContainer>
-
-                {lutInfo && (
-                  <BlurContainer
-                    blurIntensity={blur.md}
-                    blurTint="dark"
-                    backgroundColor={colors.background.tokenItem}
-                    borderColor={colors.border.default}
-                    borderWidth={borderWidth.thin}
-                    style={blurStyle}
-                  >
-                    <SectionContent>
-                      <SectionTitle>
-                        {t('nft.burn.lutTitle', 'Temporary lookup table required')}
-                      </SectionTitle>
-                      <DescriptionText>
-                        {t(
-                          'nft.burn.lutBody',
-                          'To fit this burn on Solana, Salmon needs to create a temporary address lookup table before submitting the burn transaction.'
-                        )}
-                      </DescriptionText>
-                      <DetailRow>
-                        <DetailLabel>{t('nft.burn.lutRent', 'Approximate rent lock')}</DetailLabel>
-                        <DetailValue>
-                          {formatRawAmount(lutInfo.estimatedRentLamports, 9)} SOL
-                        </DetailValue>
-                      </DetailRow>
-                      <DetailRow>
-                        <DetailLabel>
-                          {t('nft.burn.lutAddressCount', 'Addresses stored')}
-                        </DetailLabel>
-                        <DetailValue>{lutInfo.addressCount}</DetailValue>
-                      </DetailRow>
-                      <DetailRow>
-                        <DetailLabel>
-                          {t('nft.burn.lutSteps', 'Additional setup transactions')}
-                        </DetailLabel>
-                        <DetailValue>{lutInfo.extendTransactionCount + 1}</DetailValue>
-                      </DetailRow>
-                      <DescriptionText sx={{ marginTop: spacing.md }}>
-                        {t(
-                          'nft.burn.lutFootnote',
-                          'The rent stays locked in the lookup table account until it is later deactivated and closed.'
-                        )}
-                      </DescriptionText>
-                    </SectionContent>
-                  </BlurContainer>
-                )}
-
-                {burnPreparing && <DescriptionText>{burnBusyLabel}</DescriptionText>}
-
-                {burnError && (
-                  <DescriptionText sx={{ color: semantic.status.danger }}>
-                    {t(burnError)}
-                  </DescriptionText>
-                )}
-
-                <ActionButtonsContainer>
-                  <BlurContainer
-                    blurIntensity={blur.xs}
-                    backgroundColor={colors.interactive.surface}
-                    borderColor={colors.accent.border}
-                    borderWidth={borderWidth.actionButton}
-                    style={{
-                      borderRadius: borderRadius.button,
-                      overflow: 'hidden',
-                      flex: 1,
-                      maxWidth: componentSizes.buttonMinWidthLg,
-                    }}
-                  >
-                    <SecondaryButtonInner
-                      onClick={handleBurnBack}
-                      aria-label={t('nft.detail.backToDetails', 'Back to NFT details')}
-                      data-testid="nft-burn-back-button"
-                    >
-                      <ButtonText>{t('actions.back', 'Back')}</ButtonText>
-                    </SecondaryButtonInner>
-                  </BlurContainer>
-
-                  <PrimaryButtonBase
-                    onClick={handleBurnConfirm}
-                    aria-label={t('nft.burn.confirm', 'Confirm burn')}
-                    data-testid="nft-burn-confirm-button"
-                    disabled={burnPreparing || !burnPreview || !!burnError}
-                    sx={{
-                      opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1,
-                    }}
-                  >
-                    {/* The flesh: the myosepta of a cut fillet, pressed into the
-                        salmon fill. Every band is paler than the fill, so it
-                        can only raise the luminance under the label. */}
-                    <FleshBackground />
-                    <OnFillContent>
-                      {/* Bold, like the label: everything on a flesh fill is bold. */}
-                      <FireIcon weight="bold" size={iconSize.sm} color={colors.text.balance} />
-                      <ButtonText sx={{ fontWeight: fontWeight.bold }}>
-                        {t('nft.burn_nft', 'Burn')}
-                      </ButtonText>
-                    </OnFillContent>
-                  </PrimaryButtonBase>
-                </ActionButtonsContainer>
-              </>
-            ) : actionsUnavailable ? null : (
-              <ActionButtonsContainer>
-                <PrimaryButtonBase
-                  onClick={handleSendPress}
-                  aria-label={t('nft.send.title', 'Send NFT')}
-                  data-testid="nft-detail-send-button"
-                >
-                  {/* The flesh: the myosepta of a cut fillet, pressed into the
-                      salmon fill. Every band is paler than the fill, so it can
-                      only raise the luminance under the label. */}
-                  <FleshBackground />
-                  <OnFillContent>
-                    {/* Bold, like the label: everything on a flesh fill is bold. */}
-                    <ArrowUpRightIcon
-                      weight="bold"
-                      size={iconSize.sm}
-                      color={colors.button.primaryText}
-                    />
-                    <ButtonText $onAccent sx={{ fontWeight: fontWeight.bold }}>
-                      {t('actions.send', 'Send')}
-                    </ButtonText>
-                  </OnFillContent>
-                </PrimaryButtonBase>
-
-                <BlurContainer
-                  blurIntensity={blur.xs}
-                  backgroundColor={colors.interactive.surface}
-                  borderColor={colors.accent.border}
-                  borderWidth={borderWidth.actionButton}
-                  style={{
-                    borderRadius: borderRadius.button,
-                    overflow: 'hidden',
-                    flex: 1,
-                    maxWidth: componentSizes.buttonMinWidthLg,
-                  }}
-                >
-                  <SecondaryButtonInner
-                    onClick={handleBurnPress}
-                    aria-label={t('nft.burn.reviewTitle', 'Burn NFT')}
-                    data-testid="nft-detail-burn-button"
-                  >
-                    <FireIcon size={iconSize.sm} color={colors.text.balance} />
-                    <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
-                  </SecondaryButtonInner>
-                </BlurContainer>
-              </ActionButtonsContainer>
-            )}
-          </>
+          <img
+            data-testid="nft-detail-image"
+            src={nft.image}
+            alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
+            decoding="async"
+            onError={() => setImageError(true)}
+            style={fillStyle}
+          />
         )}
-      </ContentContainer>
-    </PageShell>
+      </div>
+
+      {!!nft.attributes && nft.attributes.length > 0 && (
+        <div style={groupStyle}>
+          <SectionLabel variant="title">{t('nft.detail.attributes', 'Attributes')}</SectionLabel>
+          <Card padding="lg" gap={spacing.md} testID="nft-detail-attributes">
+            {nft.attributes.map(renderAttribute)}
+          </Card>
+        </div>
+      )}
+
+      <div style={groupStyle}>
+        <SectionLabel variant="title">{t('nft.detail.details', 'Details')}</SectionLabel>
+        <Card padding="lg" gap={spacing.md} testID="nft-detail-blockchain">
+          {isSolanaNft(nft) && (
+            <>
+              {!!nft.tokenStandard && (
+                <KeyValueRow
+                  label={t('nft.detail.tokenStandard', 'Token Standard')}
+                  value={nft.tokenStandard}
+                />
+              )}
+              {nft.compressed !== undefined && (
+                <KeyValueRow
+                  label={t('nft.detail.compressed', 'Compressed')}
+                  value={nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}
+                />
+              )}
+              {nft.collectionVerified !== undefined && (
+                <KeyValueRow
+                  label={t('nft.detail.collectionVerified', 'Collection Verified')}
+                  value={nft.collectionVerified ? t('general.yes', 'Yes') : t('general.no', 'No')}
+                  valueTone={nft.collectionVerified ? 'success' : 'secondary'}
+                />
+              )}
+              {nft.royaltyBps !== undefined && (
+                <KeyValueRow
+                  label={t('nft.detail.royalties', 'Royalties')}
+                  value={`${(nft.royaltyBps / 100).toFixed(2)}%`}
+                />
+              )}
+              {/* The mint is the only thing on this card a user copies, so
+                  the row carries the affordance and the tick reports back in
+                  the same slot. */}
+              <KeyValueRow
+                label={t('nft.detail.mintAddress', 'Mint address')}
+                value={getShortAddress(nft.mint) ?? nft.mint}
+                action={
+                  <button
+                    type="button"
+                    data-testid="nft-detail-copy-mint"
+                    onClick={handleCopyMint}
+                    aria-label={
+                      copied
+                        ? t('actions.copied')
+                        : t('accessibility.copy_contract_address', 'Copy contract address')
+                    }
+                    style={copyButtonStyle}
+                  >
+                    <CopyTick
+                      copied={copied}
+                      copy={<CopyIcon size={iconSize.sm} color={semantic.text.accent} />}
+                      tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
+                    />
+                  </button>
+                }
+              />
+            </>
+          )}
+
+          {isBitcoinNft(nft) && (
+            <>
+              <KeyValueRow
+                label={t('nft.detail.inscriptionNumber', 'Inscription #')}
+                value={String(nft.inscriptionNumber)}
+              />
+              {!!nft.satRarity && (
+                <div style={rarityRowStyle}>
+                  <span style={rarityLabelStyle(semantic)}>{t('nft.detail.rarity', 'Rarity')}</span>
+                  <span
+                    style={{
+                      ...rarityBadgeStyle(semantic),
+                      backgroundColor: getSatRarityColor(nft.satRarity),
+                    }}
+                  >
+                    {nft.satRarity}
+                  </span>
+                </div>
+              )}
+              <KeyValueRow
+                label={t('nft.detail.contentType', 'Content Type')}
+                value={nft.contentType}
+              />
+              {!!nft.genesisHeight && (
+                <KeyValueRow
+                  label={t('nft.detail.genesisBlock', 'Genesis Block')}
+                  value={String(nft.genesisHeight)}
+                />
+              )}
+            </>
+          )}
+        </Card>
+      </div>
+    </SettingsPanelContent>
   );
 }
+
+const screenStyle = (t: Semantic): React.CSSProperties => ({
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  minHeight: 0,
+  overflow: 'hidden',
+  backgroundColor: t.water.gradient[1],
+});
+
+/** A heading and the card it introduces are one composed block (8 apart). */
+const groupStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: spacing.sm,
+};
+
+const heroStyle: React.CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  aspectRatio: '1 / 1',
+  borderRadius: borderRadius.r4,
+  overflow: 'hidden',
+  flexShrink: 0,
+};
+
+const fillStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  display: 'block',
+};
+
+const copyButtonStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: 0,
+  margin: 0,
+  border: 'none',
+  background: 'transparent',
+  cursor: 'pointer',
+  lineHeight: 0,
+};
+
+const rarityRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: spacing.md,
+};
+
+const bodyTextStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontSize: fontSize.body,
+  lineHeight: `${fontSize.body * lineHeight.normal}px`,
+  color: t.text.secondary,
+});
+
+const footnoteStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontSize: fontSize.caption,
+  lineHeight: `${fontSize.caption * lineHeight.normal}px`,
+  color: t.text.tertiary,
+});
+
+const rarityLabelStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  fontSize: fontSize.caption,
+  color: t.text.secondary,
+});
+
+const rarityBadgeStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize.label,
+  color: t.accent.onFill,
+  textTransform: 'uppercase',
+  paddingLeft: spacing.sm,
+  paddingRight: spacing.sm,
+  paddingTop: spacing.xs,
+  paddingBottom: spacing.xs,
+  borderRadius: borderRadius.r1,
+});

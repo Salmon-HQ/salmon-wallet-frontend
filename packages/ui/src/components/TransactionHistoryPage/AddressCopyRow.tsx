@@ -1,152 +1,115 @@
 /**
- * AddressCopyRow - Displays an address with a copy button
+ * AddressCopyRow — a label, a truncated address, and the copy control beside
+ * it, on the DOM.
  *
- * Migrated from packages/ui (React Native) to MUI styled components.
- * Uses navigator.clipboard API instead of expo-clipboard.
- *
- * Features:
- * - Label on the left
- * - Truncated address display
- * - Copy button on the right
- * - Visual feedback (checkmark) after copying
+ * The mobile twin is `apps/mobile/src/components/Activity/AddressCopyRow.tsx`:
+ * the kit's `KeyValueRow` with the address as a monospace value and the copy
+ * well (`IconBubble`) as its action — accent for the affordance, success for
+ * the confirmation. The clipboard is the platform's; the "copied" hold is the
+ * shared `useCopyFeedback`.
  */
-
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import {
-  colors,
-  borderRadius,
-  componentSizes,
-  fontFamily,
-  getShortAddress,
   copyToClipboard,
-  semantic,
-  spacing,
+  fontFamily,
   fontSize,
-  fontWeight,
+  getShortAddress,
   useCopyFeedback,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
+import { CopyTick } from '../CopyTick';
+import { IconBubble } from '../IconBubble';
+import { KeyValueRow } from '../KeyValueRow';
 import type { AddressCopyRowProps } from './types';
 
-import { CopyTick } from '../CopyTick';
-// ============================================================================
-// Constants
-// ============================================================================
+// The copy control is the kit's 32-ish well; `IconBubble`'s closed union has
+// no 32, so this takes the nearest step (36) rather than growing a tenth size
+// for one caller.
+const COPY_BUBBLE_SIZE = 36;
 
+/** Character counts for each truncation mode */
 const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
   short: 4,
   medium: 6,
   long: 8,
 };
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const Container = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-});
-
-const Label = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  color: colors.text.secondary,
-  flexShrink: 0,
-});
-
-const RightSection = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  flex: 1,
-  justifyContent: 'flex-end',
-  marginLeft: spacing.md,
-  minWidth: 0,
-});
-
-const AddressText = styled(Typography)({
-  fontSize: fontSize.sm,
-  color: colors.text.primary,
-  marginRight: spacing.sm,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  fontFamily: fontFamily.mono,
-});
-
-const CopyButton = styled(IconButton)({
-  width: componentSizes.iconSizeMButton,
-  height: componentSizes.iconSizeMButton,
-  padding: spacing.xs,
-  backgroundColor: `${colors.background.card}80`,
-  '&:hover': {
-    backgroundColor: `${colors.background.card}`,
-  },
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+function getTruncatedAddress(
+  address: string,
+  truncate: 'short' | 'medium' | 'long' | false
+): string {
+  if (truncate === false) return address;
+  return getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address;
+}
 
 export function AddressCopyRow({
   label,
   address,
   truncate = 'medium',
   className,
+  style,
 }: AddressCopyRowProps) {
   const { t } = useTranslation();
+  const { status, text } = useSemantic();
   const { copied, trigger: showCopied } = useCopyFeedback();
 
-  const displayAddress =
-    truncate === false ? address : (getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address);
+  const displayAddress = getTruncatedAddress(address, truncate);
 
   const handleCopy = useCallback(async () => {
     try {
       await copyToClipboard(address);
       showCopied();
     } catch (error) {
+      // Silently fail - clipboard might not be available in some environments
       console.warn('Failed to copy address:', error);
     }
   }, [address, showCopied]);
 
   return (
-    <BlurContainer
-      style={{ borderRadius: borderRadius.md, padding: `${spacing.sm}px ${spacing.md}px` }}
-    >
-      <Container className={className}>
-        <Label>{label}</Label>
-        <RightSection>
-          <AddressText>{displayAddress}</AddressText>
-          <CopyButton
-            onClick={handleCopy}
-            size="small"
-            aria-label={
-              copied
-                ? t('actions.copied')
-                : t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
-                    label,
-                  })
-            }
-            data-testid={`tx-detail-copy-address-${label}`}
-            sx={copied ? { backgroundColor: `${semantic.status.success}20` } : undefined}
-          >
-            <CopyTick
-              copied={copied}
-              copy={<CopyIcon size={iconSize.sm} color={colors.text.secondary} />}
-              tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
-            />
-          </CopyButton>
-        </RightSection>
-      </Container>
-    </BlurContainer>
+    <KeyValueRow
+      className={className}
+      style={style}
+      label={label}
+      // Monospace-Is-For-Scanning Rule: an address is read positionally,
+      // prefix against suffix, so its characters must hold a fixed width —
+      // Geist Mono at the address size. `KeyValueRow`'s own value style is
+      // bold body, so the address arrives as a node rather than a string.
+      value={
+        <span
+          data-testid="tx-detail-address-value"
+          style={{
+            fontFamily: fontFamily.mono,
+            fontSize: fontSize.mono,
+            color: text.primary,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {displayAddress}
+        </span>
+      }
+      action={
+        <IconBubble
+          testID={`tx-detail-copy-address-${label}`}
+          size={COPY_BUBBLE_SIZE}
+          tone={copied ? 'success-tint' : 'surface'}
+          onPress={() => void handleCopy()}
+          accessibilityLabel={
+            copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
+          }
+          accessibilityHint={t('transactions.detail.copyAddressHint')}
+        >
+          <CopyTick
+            copied={copied}
+            copy={<CopyIcon size={iconSize.sm} color={text.accent} />}
+            tick={<CheckIcon size={iconSize.sm} color={status.success} />}
+          />
+        </IconBubble>
+      }
+    />
   );
 }

@@ -1,88 +1,50 @@
 /**
- * TokenDetailContent — the token detail screen itself.
+ * TokenDetailContent — the token detail screen's body, on the DOM.
  *
- * One composition, one rhythm, one set of titles, for every asset that has a
- * detail view: the Solana token pushed from the token list and the Bitcoin
- * home tab, which is the same screen without the push. Both used to be written
- * out by hand in their own file, which is how they drifted into two different
- * chart bleeds, two different gaps, two different section titles and a magic
- * 180px chart.
+ * The mobile twin is the body of `apps/mobile/app/(app)/token/[id].tsx`
+ * (CORE 02, spec 019): the balance block (bubble + name, amount, fiat), the
+ * performance block (current price, the chart with its own period selector,
+ * the selected period's own change), the market data card and the about
+ * card — every top-level child the component gap (20) from the next, the
+ * blocks' own rows at the in-component step (12).
  *
- * Sections omit themselves when the asset has no data for them (Bitcoin has no
- * tags, so no badges block appears) — that is a difference in *data*, and it is
- * the only kind of difference allowed here. Spacing, typography, titles and
- * order are not the caller's business.
+ * One composition for every asset that has a detail view: the Solana token
+ * pushed from the token list and the Bitcoin home tab, which is the same
+ * screen without the push. A section omits itself when the asset has no data
+ * for it — that is a difference in *data*, and the only kind allowed here.
  *
- * The container it sits in *is* the caller's business: a pushed page pads its
- * content differently from the home tab, and the chart has to bleed to whatever
- * that padding is. Hence `bleed`, and nothing else.
+ * The container it sits in *is* the caller's business: the chart bleeds off
+ * the left edge of whatever padding that container has, hence `bleed`.
  */
-
-import React, { useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import Box from '@mui/material/Box';
-import Skeleton from '@mui/material/Skeleton';
+import {
+  borderRadius,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  formatLargeNumber,
+  formatPercentage,
+  getShortAddress,
+  hiddenValue,
+  lineHeight,
+  spacing,
+  tabularNums,
+  useCurrencyContext,
+  type Semantic,
+} from '@salmon/shared';
 
-import { colors, spacing, borderRadius, componentSizes } from '@salmon/shared';
-
+import { useSemantic } from '../../theme/ThemeProvider';
+import { KeyValueRow } from '../KeyValueRow';
 import { PriceChart } from '../PriceChart';
-import { TokenListItem } from '../TokenList';
-import { TokenMarketData } from '../TokenMarketData';
+import { SkeletonRow } from '../SkeletonRow';
 import { TokenAbout } from '../TokenAbout';
-import { styled } from '../../utils/styled';
-import { TokenBadgesSection } from './TokenBadgesSection';
+import { TokenLogo } from '../TokenList';
+import { TokenMarketData } from '../TokenMarketData';
 import type { TokenDetailContentProps } from './types';
 
-const SectionStack = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.lg,
-});
-
-const TokenItemSkeletonContainer = styled(Box)({
-  backgroundColor: colors.background.tokenItem,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  padding: `${spacing.md}px`,
-  display: 'flex',
-  alignItems: 'center',
-  gap: spacing.md,
-});
-
-const SkeletonTextColumn = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.xs,
-});
-
-const SkeletonValueColumn = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-  gap: spacing.xs,
-});
-
-function TokenListItemSkeleton(): React.ReactElement {
-  return (
-    <TokenItemSkeletonContainer>
-      <Skeleton
-        variant="circular"
-        width={componentSizes.tokenIcon}
-        height={componentSizes.tokenIcon}
-        sx={{ bgcolor: colors.skeleton.base, flexShrink: 0 }}
-      />
-      <SkeletonTextColumn>
-        <Skeleton variant="text" width={100} height={14} sx={{ bgcolor: colors.skeleton.base }} />
-        <Skeleton variant="text" width={80} height={12} sx={{ bgcolor: colors.skeleton.base }} />
-      </SkeletonTextColumn>
-      <SkeletonValueColumn>
-        <Skeleton variant="text" width={60} height={16} sx={{ bgcolor: colors.skeleton.base }} />
-        <Skeleton variant="text" width={40} height={12} sx={{ bgcolor: colors.skeleton.base }} />
-      </SkeletonValueColumn>
-    </TokenItemSkeletonContainer>
-  );
-}
+/** The balance block's own logo size — mobile's `TOKEN_LOGO_SIZE`. */
+const TOKEN_LOGO_SIZE = 42;
 
 export function TokenDetailContent({
   token,
@@ -97,50 +59,160 @@ export function TokenDetailContent({
   coinInfo,
   marketData,
   infoLoading = false,
-  bleed = spacing.xl,
+  bleed = spacing.screenGutter,
   style,
   className,
 }: TokenDetailContentProps): React.ReactElement {
   const { t } = useTranslation();
-  const handleTokenPress = useCallback(() => {
-    // The token is already the subject of this screen — pressing it is a no-op.
-  }, []);
+  const semantic = useSemantic();
+  const [, { formatValue }] = useCurrencyContext();
+
+  // The chart's own first/last point, not the wallet's 24h figure — the
+  // period selector redraws the chart, and the row under it answers "what did
+  // THIS window do", the same question the chart itself is answering.
+  const periodChangePercent = useMemo(() => {
+    if (chartData.length < 2) return null;
+    const first = chartData[0].price;
+    const last = chartData[chartData.length - 1].price;
+    if (!first) return null;
+    return ((last - first) / first) * 100;
+  }, [chartData]);
+
+  const numericAmount =
+    typeof token?.uiAmount === 'string' ? parseFloat(token.uiAmount) : token?.uiAmount;
+  const displayAmount = token
+    ? hiddenBalance
+      ? hiddenValue
+      : `${formatLargeNumber(numericAmount ?? 0)} ${token.symbol}`
+    : null;
+  const displayFiat = token
+    ? hiddenBalance
+      ? hiddenValue
+      : token.usdBalance != null
+        ? formatValue(token.usdBalance)
+        : null
+    : null;
+
+  // Bitcoin has no on-chain contract to copy; its "address" is the chain id.
+  const contractAddress = blockchain === 'bitcoin' ? undefined : token?.address;
 
   return (
-    <SectionStack style={style} className={className}>
-      {(chartLoading || chartData.length > 0 || chartError) && (
-        <PriceChart
-          data={chartData}
-          selectedPeriod={chartPeriod}
-          onPeriodChange={onChartPeriodChange}
-          loading={chartLoading}
-          pending={chartPending}
-          error={chartError}
-          style={{ margin: `0 -${bleed}px` }}
-        />
-      )}
-
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: spacing.screenGutter, ...style }}
+      className={className}
+    >
+      {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
       {token ? (
-        <TokenListItem
-          token={token}
-          onPress={handleTokenPress}
-          hiddenBalance={hiddenBalance}
-          blockchain={blockchain}
-        />
+        <div
+          data-testid="token-detail-balance"
+          style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0 }}>
+            <TokenLogo
+              uri={token.logo}
+              symbol={token.symbol}
+              size={TOKEN_LOGO_SIZE}
+              borderRadius={borderRadius.tokenIcon}
+            />
+            <span style={nameStyle(semantic)}>{token.name}</span>
+          </div>
+          <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
+            {displayAmount}
+          </span>
+          {displayFiat != null && (
+            <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
+              {displayFiat}
+            </span>
+          )}
+        </div>
       ) : (
-        <TokenListItemSkeleton />
+        <SkeletonRow
+          testID="token-detail-balance"
+          lines={2}
+          leadingSize={TOKEN_LOGO_SIZE}
+          count={1}
+          accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
+        />
       )}
 
-      <TokenMarketData
-        data={marketData}
-        symbol={token?.symbol ?? ''}
-        title={t('token.marketData.title', 'Market data')}
+      {/* Performance — current price, the chart with its own period selector,
+          and the selected period's own change. No card around it (owner,
+          2026-09-01): the curve runs off the left edge and stops a gutter
+          short of the right; a card would clip both. */}
+      <div
+        data-testid="token-detail-performance"
+        style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}
+      >
+        <KeyValueRow
+          label={t('token.detail.currentPrice', 'Current price')}
+          value={token?.price != null ? formatValue(token.price) : '—'}
+        />
+        {(chartLoading || chartData.length > 0 || chartError) && (
+          <PriceChart
+            data={chartData}
+            selectedPeriod={chartPeriod}
+            onPeriodChange={onChartPeriodChange}
+            loading={chartLoading}
+            pending={chartPending}
+            error={chartError}
+            style={{ marginLeft: -bleed, width: `calc(100% + ${bleed}px)` }}
+          />
+        )}
+        {periodChangePercent != null && (
+          <KeyValueRow
+            testID="token-detail-period-change"
+            label={t('token.detail.periodChange', '{{period}} change', { period: chartPeriod })}
+            value={formatPercentage(periodChangePercent)}
+            valueTone={periodChangePercent >= 0 ? 'success' : 'danger'}
+          />
+        )}
+      </div>
+
+      {/* Market data — spec 019 D2: a Card of KeyValueRows. */}
+      <TokenMarketData data={marketData} symbol={token?.symbol} loading={infoLoading} />
+
+      {/* About — spec 019 D3: description, contract address copy row and
+          website link. The contract row has no data dependency of its own, so
+          the card renders even for a token CoinGecko has nothing to say about. */}
+      <TokenAbout
+        description={coinInfo?.description}
+        contractAddress={contractAddress}
+        contractAddressShort={
+          contractAddress ? (getShortAddress(contractAddress, 6) ?? contractAddress) : undefined
+        }
+        website={coinInfo?.links?.homepage}
         loading={infoLoading}
       />
-
-      <TokenBadgesSection tags={token?.tags} loading={infoLoading && !token} />
-
-      <TokenAbout description={coinInfo?.description} loading={infoLoading} />
-    </SectionStack>
+    </div>
   );
 }
+
+const nameStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize.heading,
+  lineHeight: `${fontSize.heading * lineHeight.snug}px`,
+  color: t.text.primary,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const amountStyle = (t: Semantic): React.CSSProperties => ({
+  ...tabularNums.css,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize.display,
+  lineHeight: `${fontSize.display * lineHeight.snug}px`,
+  color: t.text.primary,
+});
+
+const fiatStyle = (t: Semantic): React.CSSProperties => ({
+  ...tabularNums.css,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  fontSize: fontSize.body,
+  lineHeight: `${fontSize.body * lineHeight.snug}px`,
+  color: t.text.secondary,
+});

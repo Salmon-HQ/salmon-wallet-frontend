@@ -1,7 +1,5 @@
-import type { SxProps, Theme } from '@mui/material/styles';
+import type { CSSProperties } from 'react';
 import type { PendingActivityBannerPropsBase } from '@salmon/shared';
 
-/**
- * Props for the PendingActivityBanner component (Web/Extension).
- */
-export type PendingActivityBannerProps = PendingActivityBannerPropsBase<SxProps<Theme>>;
+/** Props for the PendingActivityBanner (DOM): the shared contract plus a style. */
+export type PendingActivityBannerProps = PendingActivityBannerPropsBase<CSSProperties>;

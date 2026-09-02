@@ -398,36 +398,16 @@
     },
     "marketData": {
       "marketCap": "Capitalización",
-      "rank": "Ranking",
       "volume24h": "Volumen 24h",
-      "high24h": "Máximo 24h",
-      "low24h": "Mínimo 24h",
       "circulatingSupply": "Suministro Circulante",
       "totalSupply": "Suministro Total",
-      "maxSupply": "Suministro Máximo",
       "allTimeHigh": "Máximo Histórico",
-      "fromATH": "Desde ATH",
-      "athDate": "Fecha ATH",
-      "allTimeLow": "Mínimo Histórico",
-      "fromATL": "Desde ATL",
-      "atlDate": "Fecha ATL",
       "title": "Datos de mercado"
     },
     "info": {
       "about": "Acerca de",
-      "marketStats": "Estadísticas de Mercado",
-      "marketCap": "Capitalización",
-      "volume24h": "Volumen 24h",
-      "circulating": "Circulante",
-      "totalSupply": "Suministro Total",
-      "maxSupply": "Suministro Máximo",
       "contractAddress": "Dirección del Contrato",
-      "visitWebsite": "Visitar Sitio Web",
-      "contractAddressCopied": "Dirección del contrato copiada"
-    },
-    "about": {
-      "readMore": "Leer más",
-      "readLess": "Leer menos"
+      "visitWebsite": "Visitar Sitio Web"
     },
     "detail": {
       "title": "Información del Token",
@@ -437,27 +417,6 @@
     "chart": {
       "noData": "No hay datos disponibles",
       "loadError": "No se pudieron cargar los datos del gráfico"
-    },
-    "badges": {
-      "title": "Insignias",
-      "verified": "Verificado",
-      "strict": "Estricto",
-      "major": "Principal",
-      "moonshot": "Moonshot",
-      "community": "Comunidad",
-      "communityAssist": "Apoyo Comunitario",
-      "originalLst": "LST Original",
-      "stablecoin": "Stablecoin",
-      "yieldBearing": "Con Rendimiento",
-      "launchpad": "Launchpad",
-      "trending": "En Tendencia",
-      "preStocks": "Pre-stocks",
-      "xStocks": "X-stocks",
-      "legacyRegistry": "Registro Antiguo",
-      "deduplicated": "Deduplicado",
-      "duplicate": "Duplicado",
-      "deprecated": "Obsoleto",
-      "internal": "Interno"
     }
   },
   "lock": {
@@ -632,7 +591,6 @@
       "block": "Bloque",
       "conversion": "Conversión",
       "swapRoute": "Ruta del Swap",
-      "addresses": "Direcciones",
       "networkFee": "Comisión de Red",
       "swapFee": "Comisión de Swap",
       "transactionHash": "Hash de Transacción",
@@ -679,7 +637,6 @@
     "send_nft": "Enviar",
     "burn_nft": "Quemar",
     "detail": {
-      "description": "Descripción",
       "attributes": "Atributos",
       "details": "Detalles",
       "tokenStandard": "Estándar del Token",
@@ -691,7 +648,6 @@
       "contentType": "Tipo de Contenido",
       "genesisBlock": "Bloque Génesis",
       "title": "Detalle del NFT",
-      "backToDetails": "Volver al detalle del NFT",
       "imageAlt": "Imagen del NFT {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Colección",
@@ -829,7 +785,6 @@
     "select_token_on_network": "Seleccionar {{name}} en {{network}}",
     "copy_contract_address": "Copiar dirección del contrato",
     "open_website": "Abrir sitio web: {{url}}",
-    "select_period": "Seleccionar período {{period}}",
     "active_account": "{{name}}, activa",
     "transaction_row": "Transacción: {{type}}, {{description}}",
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",

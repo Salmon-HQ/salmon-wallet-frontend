@@ -10,21 +10,8 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-// The real `@salmon/shared` barrel reaches React Native modules that Vite
-// cannot parse; only design tokens are needed here.
-vi.mock('@salmon/shared', () => ({
-  borderRadius: { lg: 16 },
-  fontSize: { xs: 10, sm: 12 },
-  fontWeight: { semibold: 600 },
-  spacing: { xs: 4, sm: 8 },
-  semantic: {
-    surface: { crest: '#12161f' },
-    border: { raised: '#6b7793' },
-    text: { secondary: '#c7d3e8', tertiary: '#98a4bd' },
-    status: { success: '#33D6A6', danger: '#ef4444', warning: '#ffab00' },
-  },
-}));
-
+import { createSemantic } from '@salmon/shared';
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { PendingActivityBanner } from './PendingActivityBanner';
 import type { PendingActivityBannerProps } from './types';
 
@@ -88,5 +75,17 @@ describe('PendingActivityBanner', () => {
     );
     fireEvent.click(screen.getByLabelText('pending.dismiss'));
     expect(onDismiss).toHaveBeenCalledWith('done');
+  });
+
+  it('reads the live mode: in light a row sits on the light crest', () => {
+    const light = createSemantic('light');
+    renderInMode(
+      'light',
+      <PendingActivityBanner items={[item({ id: 'a', status: 'confirmed' })]} onDismiss={vi.fn()} />
+    );
+
+    expect(screen.getByTestId('pending-activity-row-confirmed').style.backgroundColor).toBe(
+      asRenderedColor(light.surface.crest)
+    );
   });
 });

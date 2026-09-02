@@ -52,21 +52,13 @@ export type { LoadingScreenProps } from './LoadingScreen';
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';
 
-// TokenInfo - Token information display (description, market stats, contract)
-export { TokenInfo } from './TokenInfo';
-export type { TokenInfoProps } from './TokenInfo';
-
-// TokenAbout - Token description/about section with glassmorphism
+// TokenAbout - the "About" card: description, contract copy row, website link
 export { TokenAbout } from './TokenAbout';
 export type { TokenAboutProps } from './TokenAbout';
 
-// TokenMarketData - Token market statistics with glassmorphism
+// TokenMarketData - the "Market data" card of KeyValueRows
 export { TokenMarketData } from './TokenMarketData';
 export type { MarketData, TokenMarketDataProps } from './TokenMarketData';
-
-// TokenFeatures - Token characteristics/features badges
-export { TokenFeatures } from './TokenFeatures';
-export type { TokenFeaturesProps } from './TokenFeatures';
 
 // SettingsPanelStack - Stacking panel system for settings navigation
 export { SettingsPanelStack } from './SettingsPanelStack';
@@ -201,13 +193,9 @@ export type {
   UseTokenSearchResult,
 } from './TokenSelector';
 
-// TokenDetailPage - Full-page token detail view with chart, market data, badges
-export { TokenBadgesSection, TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
-export type {
-  TokenBadgesSectionProps,
-  TokenDetailContentProps,
-  TokenDetailPageProps,
-} from './TokenDetailPage';
+// TokenDetailPage - the token detail screen: balance, chart, market data, about
+export { TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
+export type { TokenDetailContentProps, TokenDetailPageProps } from './TokenDetailPage';
 
 // ReceiveSheet - Receive address dialog with QR code
 export { ReceiveSheet } from './ReceiveSheet';

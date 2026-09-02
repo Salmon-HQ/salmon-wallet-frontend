@@ -58,6 +58,9 @@ jest.mock('@salmon/shared', () => ({
   // The components barrel is imported whole, so a handful of exports that
   // have nothing to do with this screen still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+  // The list's pure decisions live in shared now (the DOM page draws the
+  // same list); the real ones, so a filter change shows up here.
+  ...jest.requireActual('../../../../packages/shared/src/utils/activityRows'),
   useAccountsContext: () => [mockAccountState, {}],
   useBalance: () => ({ hiddenBalance: false, toggleHidden: jest.fn() }),
   useSendContacts: () => ({ contacts: [], ownWallets: [], isLoading: false }),

@@ -330,6 +330,8 @@ export {
   getMirrorNetworkId,
   scanDerivedAccounts,
 } from './derived-accounts';
+export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';
+export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
   NftBlockchain,
   // NftAttribute is exported from blockchain/solana/nft

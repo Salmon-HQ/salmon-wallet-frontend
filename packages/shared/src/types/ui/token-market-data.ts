@@ -1,3 +1,5 @@
+import type { Testable } from './testable';
+
 /**
  * Market data for a token
  */
@@ -35,17 +37,14 @@ export interface MarketData {
 }
 
 /**
- * Props for the TokenMarketData component (base - platform-agnostic)
+ * The "Market data" card of a token's detail screen — a `Card` of
+ * `KeyValueRow`s. Mobile's `MarketDataCard` and the DOM's `TokenMarketData`
+ * read this one shape; no `data` renders nothing, `loading` renders the
+ * skeleton.
  */
-export interface TokenMarketDataPropsBase<TStyle> {
-  /** Market data object */
-  data?: MarketData;
-  /** Token symbol for display (e.g., "BTC", "SOL") */
+export interface TokenMarketDataPropsBase extends Testable {
+  data: MarketData | undefined;
+  /** Token symbol appended to the supply rows (e.g. "BTC", "SOL") */
   symbol?: string;
-  /** Title text (default varies by platform) */
-  title?: string;
-  /** Whether the component is in loading state */
   loading?: boolean;
-  /** Optional custom styles for the container */
-  style?: TStyle;
 }

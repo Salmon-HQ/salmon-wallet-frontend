@@ -1,2 +1,10 @@
 export { TransactionDetail } from './TransactionDetail';
+export { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
+export { TransactionDetailReceipt } from './TransactionDetailReceipt';
+export { TransactionDetailSwap } from './TransactionDetailSwap';
+export { TransactionDetailTransfer } from './TransactionDetailTransfer';
 export type { TransactionDetailProps } from './types';
+export type { TransactionDetailDeveloperProps } from './TransactionDetailDeveloper';
+export type { TransactionDetailReceiptProps } from './TransactionDetailReceipt';
+export type { TransactionDetailSwapProps } from './TransactionDetailSwap';
+export type { TransactionDetailTransferProps } from './TransactionDetailTransfer';

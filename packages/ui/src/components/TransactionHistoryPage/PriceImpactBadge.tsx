@@ -1,136 +1,93 @@
 /**
- * PriceImpactBadge - Displays price impact with color coding based on severity
+ * PriceImpactBadge — price impact with colour coding by severity, on the DOM.
  *
- * Migrated from packages/ui (React Native) to MUI styled components.
- *
- * Severity levels:
- * - Safe (< 0.5%): Green with checkmark icon
- * - Warning (0.5% - 1%): Yellow/Orange with warning icon
- * - High (> 1%): Red with alert icon
+ * The mobile twin is `apps/mobile/src/components/Activity/PriceImpactBadge.tsx`:
+ * safe (< 0.5%) in success ink with a check, warning (0.5–1%) in warning ink,
+ * high (> 1%) in danger ink — each on its own tint, never the hue alone.
  */
-
 import React from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { CheckCircleIcon, WarningCircleIcon, WarningIcon, iconSize } from '../../icons';
 import {
-  semantic,
-  spacing,
   borderRadius,
-  getPriceImpactSeverity,
-  formatPercent,
-  type PriceImpactSeverity,
+  fontFamily,
   fontSize,
   fontWeight,
-  lineHeight,
-  componentSizes,
-  tabularNums,
+  getPriceImpactSeverity,
+  spacing,
+  withAlpha,
+  type PriceImpactSeverity,
+  type PriceImpactSize,
+  type Semantic,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckCircleIcon, WarningCircleIcon, WarningIcon, type IconComponent } from '../../icons';
 import type { PriceImpactBadgeProps } from './types';
 
-// ============================================================================
-// Constants
-// ============================================================================
-
-const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: semantic.status.success,
-  warning: semantic.status.warning,
-  high: semantic.status.danger,
+const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
+  safe: CheckCircleIcon,
+  warning: WarningIcon,
+  high: WarningCircleIcon,
 };
 
-const SIZE_CONFIG = {
-  small: {
-    iconSize: componentSizes.iconSizeXxs,
-    fontSize: fontSize.xs,
-    paddingH: spacing.xs,
-    paddingV: spacing.xxs,
-  },
-  medium: {
-    iconSize: componentSizes.iconSizeXxsm,
-    fontSize: fontSize.sm,
-    paddingH: spacing.sm,
-    paddingV: spacing.xs,
-  },
-  large: {
-    iconSize: componentSizes.iconSizeXs,
-    fontSize: fontSize.base,
-    paddingH: spacing.md,
-    paddingV: spacing.sm,
-  },
-} as const;
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function getSeverityIcon(severity: PriceImpactSeverity, size: number) {
-  const glyphSize = Math.max(iconSize.sm, size);
-  switch (severity) {
-    // The only filled glyph on this badge: a success state, which the design
-    // system lets fill so "safe" reads before the label does.
-    case 'safe':
-      return <CheckCircleIcon size={glyphSize} weight="fill" />;
-    case 'warning':
-      return <WarningIcon size={glyphSize} />;
-    case 'high':
-      return <WarningCircleIcon size={glyphSize} />;
-  }
-}
-
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const Container = styled(Box)({
-  display: 'inline-flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderRadius: borderRadius.sm,
+const severityColorsFor = (t: Semantic): Record<PriceImpactSeverity, string> => ({
+  safe: t.status.success,
+  warning: t.status.warning,
+  high: t.status.danger,
 });
 
-// ============================================================================
-// Component
-// ============================================================================
+/** The badge's ground: its own ink, faint (mobile's `${color}15`). */
+const TINT_ALPHA = 0.08;
+
+const SIZE_CONFIG: Record<
+  PriceImpactSize,
+  { iconSize: number; fontSize: number; paddingH: number; paddingV: number }
+> = {
+  small: { iconSize: 12, fontSize: fontSize.micro, paddingH: spacing.xs, paddingV: 2 },
+  medium: { iconSize: 14, fontSize: fontSize.caption, paddingH: spacing.sm, paddingV: 4 },
+  large: { iconSize: 16, fontSize: fontSize.bodyLg, paddingH: spacing.md, paddingV: 6 },
+};
 
 export function PriceImpactBadge({
   value,
   size = 'medium',
   showIcon = false,
+  className,
+  style,
 }: PriceImpactBadgeProps) {
+  const t = useSemantic();
   const severity = getPriceImpactSeverity(value);
-  const color = SEVERITY_COLORS[severity];
-  // A price impact has no direction to report, so it renders unsigned — but
-  // through the same percentage renderer as every other figure, rather than
-  // pasting a '%' onto the backend's raw string.
-  const displayValue = formatPercent(parseFloat(value));
+  const color = severityColorsFor(t)[severity];
+  const SeverityIcon = SEVERITY_ICONS[severity];
   const sizeConfig = SIZE_CONFIG[size];
 
   return (
-    <Container
-      sx={{
-        backgroundColor: `${color}15`,
+    <span
+      data-testid="price-impact-badge"
+      data-severity={severity}
+      className={className}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: spacing.xs,
+        borderRadius: borderRadius.sm,
+        backgroundColor: withAlpha(color, TINT_ALPHA),
         padding: `${sizeConfig.paddingV}px ${sizeConfig.paddingH}px`,
         color,
+        fontFamily: fontFamily.sans,
+        fontWeight: fontWeight.medium,
+        fontSize: sizeConfig.fontSize,
+        lineHeight: 1,
+        ...style,
       }}
     >
       {showIcon && (
-        <Box sx={{ display: 'flex', mr: `${spacing.xs}px` }}>
-          {getSeverityIcon(severity, sizeConfig.iconSize)}
-        </Box>
+        <SeverityIcon
+          size={sizeConfig.iconSize}
+          color={color}
+          weight={severity === 'safe' ? 'fill' : 'regular'}
+        />
       )}
-      <Typography
-        component="span"
-        sx={{
-          ...tabularNums.css,
-          fontSize: sizeConfig.fontSize,
-          fontWeight: fontWeight.medium,
-          color: 'inherit',
-          lineHeight: lineHeight.tight,
-        }}
-      >
-        {displayValue}
-      </Typography>
-    </Container>
+      {value}%
+    </span>
   );
 }

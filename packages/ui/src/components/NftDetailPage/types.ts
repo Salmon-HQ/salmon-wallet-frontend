@@ -1,18 +1,21 @@
 import type { CSSProperties } from 'react';
-import type { PreparedNftTransactionResponse } from '@salmon/shared';
-import type { NftData } from '../NftCard/types';
+import type { NftData, PreparedNftTransactionResponse } from '@salmon/shared';
 
 // Re-export for convenience
-export type { NftAttribute, NftData } from '../NftCard/types';
+export type { NftAttribute, NftData } from '@salmon/shared';
 
 /**
- * NFT detail data is the full NftData type (same as ui)
+ * NFT detail data is the full NftData type
  */
 export type NftDetailData = NftData;
 
 /**
- * Props for the NftDetailPage component (Web/Extension)
- * Full-page view for displaying NFT details in browser extension
+ * Props for the NftDetailPage component (extension).
+ *
+ * Mobile's NFT detail is the route stack `app/(app)/nft/[id]` — index,
+ * burn, success — so the DOM keeps one component and the host drives the
+ * burn step through it (`burnStep`), with the same anatomy each step has on
+ * mobile.
  */
 export interface NftDetailPageProps {
   /** NFT data to display */

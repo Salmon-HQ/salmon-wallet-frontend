@@ -55,6 +55,7 @@ import {
   useSettleAfterTx,
   usePrefetchBalances,
   useNftBurn,
+  useSendContacts,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 import {
@@ -529,6 +530,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Fetch transaction history (only when on activity page)
   const accountAddress = activeBlockchainAccount?.getReceiveAddress() || '';
+  // Address-book names for the activity rows ("To Alice"), as mobile's Activity.
+  const { contacts: activityContacts } = useSendContacts(accountAddress);
+  const contactsByAddress = useMemo(
+    () => Object.fromEntries(activityContacts.map((contact) => [contact.address, contact.name])),
+    [activityContacts]
+  );
   const {
     transactions,
     loading: transactionsLoading,
@@ -1430,6 +1437,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onRetry={transactionsRefresh}
             networkId={networkId}
             developerMode={developerNetworks}
+            contacts={contactsByAddress}
           />
         );
       default:

@@ -24,11 +24,9 @@ import {
 } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { useThemedStyles } from '../../theme/useThemedStyles';
+import type { WalletInitErrorScreenProps } from './types';
 
-export interface WalletInitErrorScreenProps {
-  /** Re-runs wallet initialization. The gate stays up until it succeeds. */
-  onRetry: () => Promise<void> | void;
-}
+export type { WalletInitErrorScreenProps };
 
 export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): React.ReactElement {
   const { t } = useTranslation();

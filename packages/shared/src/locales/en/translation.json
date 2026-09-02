@@ -398,36 +398,16 @@
     },
     "marketData": {
       "marketCap": "Market Cap",
-      "rank": "Rank",
       "volume24h": "24h Volume",
-      "high24h": "24h High",
-      "low24h": "24h Low",
       "circulatingSupply": "Circulating Supply",
       "totalSupply": "Total Supply",
-      "maxSupply": "Max Supply",
       "allTimeHigh": "All-Time High",
-      "fromATH": "From ATH",
-      "athDate": "ATH Date",
-      "allTimeLow": "All-Time Low",
-      "fromATL": "From ATL",
-      "atlDate": "ATL Date",
       "title": "Market data"
     },
     "info": {
       "about": "About",
-      "marketStats": "Market Stats",
-      "marketCap": "Market Cap",
-      "volume24h": "24h Volume",
-      "circulating": "Circulating",
-      "totalSupply": "Total Supply",
-      "maxSupply": "Max Supply",
       "contractAddress": "Contract Address",
-      "visitWebsite": "Visit Website",
-      "contractAddressCopied": "Contract address copied"
-    },
-    "about": {
-      "readMore": "Read more",
-      "readLess": "Read less"
+      "visitWebsite": "Visit Website"
     },
     "detail": {
       "title": "Token Information",
@@ -437,27 +417,6 @@
     "chart": {
       "noData": "No data available",
       "loadError": "Couldn't load chart data"
-    },
-    "badges": {
-      "title": "Badges",
-      "verified": "Verified",
-      "strict": "Strict",
-      "major": "Major",
-      "moonshot": "Moonshot",
-      "community": "Community",
-      "communityAssist": "Community Assist",
-      "originalLst": "Original LST",
-      "stablecoin": "Stablecoin",
-      "yieldBearing": "Yield Bearing",
-      "launchpad": "Launchpad",
-      "trending": "Trending",
-      "preStocks": "Pre-stocks",
-      "xStocks": "X-stocks",
-      "legacyRegistry": "Legacy Registry",
-      "deduplicated": "Deduplicated",
-      "duplicate": "Duplicate",
-      "deprecated": "Deprecated",
-      "internal": "Internal"
     }
   },
   "lock": {
@@ -632,7 +591,6 @@
       "block": "Block",
       "conversion": "Conversion",
       "swapRoute": "Swap Route",
-      "addresses": "Addresses",
       "networkFee": "Network Fee",
       "swapFee": "Swap Fee",
       "transactionHash": "Transaction Hash",
@@ -679,7 +637,6 @@
     "send_nft": "Send",
     "burn_nft": "Burn",
     "detail": {
-      "description": "Description",
       "attributes": "Attributes",
       "details": "Details",
       "tokenStandard": "Token Standard",
@@ -691,7 +648,6 @@
       "contentType": "Content Type",
       "genesisBlock": "Genesis Block",
       "title": "NFT Detail",
-      "backToDetails": "Back to NFT details",
       "imageAlt": "NFT image for {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Collection",
@@ -829,7 +785,6 @@
     "select_token_on_network": "Select {{name}} on {{network}}",
     "copy_contract_address": "Copy contract address",
     "open_website": "Open website: {{url}}",
-    "select_period": "Select {{period}} time period",
     "active_account": "{{name}}, active",
     "transaction_row": "{{type}} transaction, {{description}}",
     "nft_view_hint": "Double tap to view NFT details",
