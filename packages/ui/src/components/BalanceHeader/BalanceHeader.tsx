@@ -427,10 +427,15 @@ export function BalanceHeader({
                       onClick={() => leaveFor(index)}
                       style={{
                         // The hit box clears the 44px minimum without the dots
-                        // themselves growing: padding around a fixed pill.
+                        // themselves growing: padding around a fixed pill,
+                        // taken back by the margin so the row measures the dot
+                        // and nothing else — mobile's hit slop is not layout,
+                        // and the Send/Receive pair sits centred on the change
+                        // row and the cue row together because of it.
                         border: 'none',
                         background: 'transparent',
                         padding: `${(44 - DOT_SIZE) / 2}px 0`,
+                        margin: `${-(44 - DOT_SIZE) / 2}px 0`,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
