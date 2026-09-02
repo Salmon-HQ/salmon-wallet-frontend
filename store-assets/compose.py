@@ -31,7 +31,7 @@ DECK = [
     # (captura, eyebrow, headline, fondo, stores)
     ("01-home",         "OPEN-SOURCE. SELF-CUSTODIAL.", "Your keys.\nYour coins.",         "coral", None),
     ("02-send",         None, "Send to any wallet\nor .sol name",                          "navy",  None),
-    ("07-swap",         None, "Swap and bridge,\nbuilt in.",                               "coral", None),
+    ("07-swap",         None, "Swap,\nbuilt in.",                               "coral", None),
     ("08-swap-review",  None, "See every fee\nbefore you sign",                            "navy",  None),
     ("03-transactions", None, "Your assets and activity,\none view.",                      "coral", None),
     ("04-collectibles", None, "Your NFTs,\nfront and center",                              "navy",  None),

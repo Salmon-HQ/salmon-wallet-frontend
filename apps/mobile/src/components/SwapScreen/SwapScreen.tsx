@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Modal, View, StyleSheet } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -9,15 +9,12 @@ import {
   getDefaultExplorer,
   formatEffectiveRate,
   formatPercent,
-  useBridgeSettlement,
   useAccountsContext,
   isWatchOnlyAccount,
-  fontFamilyNative,
-  fontSize,
   semantic,
   spacing,
 } from '@salmon/shared';
-import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
+import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { SwapReviewScreen } from './SwapReviewScreen';
@@ -26,26 +23,19 @@ import { ScalesBackground } from '../ScalesBackground';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import { LoadingScreen } from '../LoadingScreen';
 import { TokenSelectorModal } from '../TokenSelector';
-import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
-import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { WarningNotice } from '../WarningNotice';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import type { SwapScreenProps } from './types';
 
 /**
- * SwapScreen - Unified swap/bridge interface (React Native)
- *
- * Automatically detects whether to use:
- * - Jupiter: for same-chain Solana swaps
- * - StealthEX: for cross-chain bridges
+ * SwapScreen - Swap interface (React Native), via Jupiter for same-chain
+ * Solana swaps.
  */
 export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const { style } = props;
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-
-  const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
 
   // A watch-only wallet holds no key, so nothing here can be signed. The swap
   // route's `href` gate is unconditional now (swap became a powerup), so the
@@ -56,19 +46,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
 
   const isReduceMotionEnabled = useReducedMotion();
 
-  const logic = useSwapScreenLogic({
-    ...props,
-    onBridgeExchangeCreated: (exchange, context) => {
-      // Hand the cross-chain exchange to the background poller; its destination
-      // settles in minutes, so the success screen must not block on it.
-      trackBridgeExchange({
-        id: exchange.id,
-        sourceNetworkId: context.sourceNetworkId as NetworkId | undefined,
-        destNetworkId: context.destNetworkId as NetworkId | undefined,
-        destAccountId: context.destinationAddress,
-      });
-    },
-  });
+  const logic = useSwapScreenLogic(props);
 
   // Success renders from the confirm-time snapshot: post-swap balance
   // refreshes can drop the spent input token from the list and mutate the
@@ -89,31 +67,19 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // showed, built only from data the flow already captured at confirm time.
   const successInSymbol = summary ? summary.inSymbol : (logic.inToken?.symbol ?? '');
   const successInAmount = summary ? summary.inAmount : logic.inAmount;
-  const successOutAmount = logic.successExchange
-    ? String(logic.successExchange.amountOut)
-    : summary
-      ? summary.outAmount
-      : logic.outAmount;
+  const successOutAmount = summary ? summary.outAmount : logic.outAmount;
   const successExchangeBlock = {
     send: {
-      // A bridge's payout is still travelling, so its labels keep the review's
-      // present tense; a settled swap earns the past tense.
-      label: logic.successExchange
-        ? t('swap.you_send', 'You Send')
-        : t('transactions.detail.sentLabel', 'Sent'),
+      label: t('transactions.detail.sentLabel', 'Sent'),
       logo: summary?.inLogo ?? logic.inToken?.logo ?? undefined,
       symbol: successInSymbol,
       amount: successInLabel,
     },
     receive: {
-      label: logic.successExchange
-        ? t('swap.you_receive', 'You Receive')
-        : t('transactions.detail.receivedLabel', 'Received'),
+      label: t('transactions.detail.receivedLabel', 'Received'),
       logo: summary?.outLogo ?? logic.outToken?.logo ?? undefined,
       symbol: successOutSymbol,
-      amount: logic.successExchange
-        ? `${logic.successExchange.amountOut} ${successOutSymbol}`
-        : successOutLabel,
+      amount: successOutLabel,
     },
   };
   const successRate =
@@ -134,10 +100,10 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // The wait between the decision and the receipt. At the confirm tap the
   // review sinks immediately — no button loader — and the canonical wave wait
   // (LoadingScreen, the app's waiting language) holds while sign/submit/
-  // confirm runs and, for a Jupiter swap, while the indexer settles. The wait
-  // then exits on its last wave (useWaitExit), and only once the water is
-  // calm does the receipt mount, so the receipt arrives exactly once — never
-  // over an unconfirmed transaction, and never twice.
+  // confirm runs and while the indexer settles. The wait then exits on its
+  // last wave (useWaitExit), and only once the water is calm does the receipt
+  // mount, so the receipt arrives exactly once — never over an unconfirmed
+  // transaction, and never twice.
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
   // Render the wave while the outcome is pending, and keep it through its own
   // exit on the way to the receipt. A failure is the exception: the flow cuts
@@ -176,10 +142,10 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const stepEntering = floatEntering(isReduceMotionEnabled, { delayMs: stepDelayMs });
   const stepExiting = sinkExiting(isReduceMotionEnabled);
   // Inside the task window the wait already happened while the window stayed
-  // hidden (below) — a second delay there would read as lag. The Jupiter
-  // review does not use this: its entrance lives inside SwapReviewScreen,
-  // banded (title → exchange → details → warning → buttons on the
-  // Surfacing's stagger), so the wrapper there only carries the exit.
+  // hidden (below) — a second delay there would read as lag. The review does
+  // not use this: its entrance lives inside SwapReviewScreen, banded (title →
+  // exchange → details → warning → buttons on the Surfacing's stagger), so the
+  // wrapper there only carries the exit.
   const taskStepEntering = floatEntering(isReduceMotionEnabled);
 
   // The task window and the verb: review lives in an RN Modal — its own
@@ -231,25 +197,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // Inside the task window there is no tab bar, only the home indicator.
   const taskScreenStyle = { paddingBottom: insets.bottom + spacing.lg };
 
-  const stalledBanner = isStalled ? (
-    <View style={styles.stalledBanner} testID="bridge-stalled-banner">
-      <WarningNotice
-        tone="warning"
-        title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
-        action={
-          <TouchableOpacity onPress={retryNow} testID="bridge-stalled-retry">
-            <Text style={styles.stalledRetryText}>{t('bridge.settlement_retry', 'Check now')}</Text>
-          </TouchableOpacity>
-        }
-      >
-        {t(
-          'bridge.settlement_stalled_body',
-          "Your funds are on the way, but we can't reach the status service. We'll keep trying."
-        )}
-      </WarningNotice>
-    </View>
-  ) : null;
-
   // Same refusal the home screen shows beside its disabled Send: one
   // explanation, not a tooltip per control.
   if (isWatchOnly) {
@@ -271,7 +218,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
 
   return (
     <View style={[styles.container, style]}>
-      {!isTaskStep && stalledBanner}
       {logic.step === 'input' && (
         <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
           <SwapInputScreen
@@ -283,33 +229,11 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             onInTokenPress={() => logic.setShowInTokenModal(true)}
             onOutTokenPress={() => logic.setShowOutTokenModal(true)}
             inUsdValue={logic.inUsdValue}
-            isLoadingQuote={logic.isLoadingQuote || logic.isLoadingEstimate}
+            isLoadingQuote={logic.isLoadingQuote}
             canReview={logic.canReview}
             reviewWarning={logic.reviewWarning}
             swapError={logic.swapError}
-            bridgeReference={
-              logic.lastBridgeExchange
-                ? {
-                    id: logic.lastBridgeExchange.id,
-                    depositAddress: logic.lastBridgeExchange.depositAddress,
-                  }
-                : null
-            }
             onReview={logic.handleReview}
-          />
-        </Animated.View>
-      )}
-
-      {logic.step === 'recipient' && logic.swapMode === 'stealthex' && (
-        <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
-          <BridgeRecipientScreen
-            recipientAddress={logic.recipientAddress}
-            onAddressChange={logic.setRecipientAddress}
-            targetChain={logic.bridgeTargetChain}
-            onBack={logic.handleBackFromRecipient}
-            onContinue={logic.handleContinueToReview}
-            isValidAddress={logic.addressValidation.valid}
-            addressError={logic.addressError}
           />
         </Animated.View>
       )}
@@ -329,7 +253,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               not a wall; it arrives over the same water as everything else. */}
           <DepthBackground />
           <ScalesBackground variant="deepField" />
-          {stalledBanner}
 
           {logic.step === 'review' &&
             !logic.isConfirming &&
@@ -348,29 +271,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
                   onConfirm={logic.handleConfirmOrRefresh}
                   isConfirming={logic.isConfirming}
                   isRefreshing={logic.isLoadingQuote}
-                  confirmLabel={logic.swapConfirmLabel}
-                  style={taskScreenStyle}
-                />
-              </Animated.View>
-            )}
-
-          {logic.step === 'review' &&
-            !logic.isConfirming &&
-            logic.swapMode === 'stealthex' &&
-            logic.bridgeInToken &&
-            logic.bridgeOutToken && (
-              <Animated.View style={styles.step} entering={taskStepEntering} exiting={stepExiting}>
-                <BridgeReviewScreen
-                  inToken={logic.bridgeInToken}
-                  outToken={logic.bridgeOutToken}
-                  inAmount={logic.inAmount}
-                  outAmount={logic.outAmount}
-                  recipientAddress={logic.recipientAddress}
-                  estimate={logic.bridgeEstimateForReview}
-                  onBack={logic.handleBackFromReview}
-                  onConfirm={logic.handleConfirmOrRefresh}
-                  isConfirming={logic.isConfirming}
-                  isRefreshing={logic.isLoadingEstimate}
                   confirmLabel={logic.swapConfirmLabel}
                   style={taskScreenStyle}
                 />
@@ -398,11 +298,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
 
           {logic.step === 'success' && !isWaveHeld && (
             <TransactionSuccessScreen
-              title={
-                logic.successExchange
-                  ? t('bridge.initiated', 'Bridge Initiated')
-                  : t('transaction.swapComplete')
-              }
+              title={t('transaction.swapComplete')}
               summary={`${successInLabel} → ${successOutLabel}`}
               explorerUrl={
                 logic.successTxId && successChain
@@ -418,15 +314,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               exchange={successExchangeBlock}
               exchangeRate={successRate}
               exchangeFee={successFee}
-              bridgeDepositAddress={logic.successExchange?.depositAddress}
-              bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
-              bridgeAmountOut={
-                logic.successExchange
-                  ? `${logic.successExchange.amountOut} ${successOutSymbol}`
-                  : undefined
-              }
-              bridgeExchangeId={logic.successExchange?.id}
-              bridgeDepositTxId={logic.depositTxId ?? undefined}
             />
           )}
         </View>
@@ -451,8 +338,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         showNetworkChip={true}
         // You Receive: what you already hold is noise when choosing what to get.
         showBalances={false}
-        hiddenBalance={logic.swapMode === 'stealthex'}
-        loading={logic.tokensLoading || logic.isLoadingBridgeTokens}
+        loading={logic.tokensLoading}
       />
     </View>
   );
@@ -480,16 +366,6 @@ const styles = StyleSheet.create({
   },
   watchOnlyNotice: {
     marginBottom: spacing.lg,
-  },
-  stalledBanner: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  stalledRetryText: {
-    color: semantic.status.warning,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.sm,
-    textDecorationLine: 'underline',
   },
 });
 

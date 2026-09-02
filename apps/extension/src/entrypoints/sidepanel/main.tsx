@@ -25,7 +25,6 @@ import {
   CurrencyProvider,
   createQueryClient,
   QueryClientProvider,
-  BridgeSettlementProvider,
 } from '@salmon/shared';
 
 initStorage({ platform: 'extension' });
@@ -70,17 +69,15 @@ const waitForLayout = (): Promise<void> =>
           <CssBaseline />
           <IconDefaults>
             <QueryClientProvider client={queryClient}>
-              <BridgeSettlementProvider>
-                <I18nextProvider i18n={i18n}>
-                  <AccountsProvider>
-                    <CurrencyProvider>
-                      <PendingActivityLayer>
-                        <App />
-                      </PendingActivityLayer>
-                    </CurrencyProvider>
-                  </AccountsProvider>
-                </I18nextProvider>
-              </BridgeSettlementProvider>
+              <I18nextProvider i18n={i18n}>
+                <AccountsProvider>
+                  <CurrencyProvider>
+                    <PendingActivityLayer>
+                      <App />
+                    </PendingActivityLayer>
+                  </CurrencyProvider>
+                </AccountsProvider>
+              </I18nextProvider>
             </QueryClientProvider>
           </IconDefaults>
         </ThemeProvider>

@@ -7,8 +7,8 @@ import type { SwapReviewExchangeSide } from '../swap';
  */
 export interface TransactionSuccessScreenProps {
   /**
-   * Exchange graphic for swap/bridge receipts: sent logo → arrow → received
-   * logo with amounts, the received side one rank up. When present it replaces
+   * Exchange graphic for swap receipts: sent logo → arrow → received logo
+   * with amounts, the received side one rank up. When present it replaces
    * the plain `summary` line as the hero; `summary` still feeds the pending
    * loader's subtitle.
    */
@@ -32,7 +32,6 @@ export interface TransactionSuccessScreenProps {
    * True while the same-chain settlement is still waiting for the indexer to
    * reflect the new balance. When set, the success screen is replaced by the
    * full-screen loader so the user cannot return home to a stale balance.
-   * Always false for the bridge, whose destination settles in the background.
    */
   settling?: boolean;
   /**
@@ -42,18 +41,4 @@ export interface TransactionSuccessScreenProps {
    * transaction has settled.
    */
   pendingTitle?: string;
-  /** Bridge deposit address (where user must send funds) */
-  bridgeDepositAddress?: string;
-  /** Bridge input amount with symbol (e.g., "33 USDC") */
-  bridgeAmountIn?: string;
-  /** Bridge estimated output with symbol (e.g., "0.00041798 BTC") */
-  bridgeAmountOut?: string;
-  /** Bridge exchange ID for tracking */
-  bridgeExchangeId?: string;
-  /** Bridge deposit transaction ID (on-chain tx signature) */
-  bridgeDepositTxId?: string;
-  /** Bridge status from provider */
-  bridgeStatus?: string;
-  /** Bridge payout transaction hash */
-  bridgePayoutTxId?: string;
 }

@@ -54,12 +54,4 @@ export {
   visuallyHidden,
 } from '@salmon/ui';
 
-export type {
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
-  BridgeTokenSimple,
-  PanelRegistry,
-  ReceiveSheetProps,
-  SwapQuote,
-  SwapToken,
-} from '@salmon/ui';
+export type { PanelRegistry, ReceiveSheetProps, SwapQuote, SwapToken } from '@salmon/ui';

@@ -136,7 +136,7 @@ export const componentSizes = {
   buttonHeight: 56,
   buttonHeightMedium: 48,
   buttonHeightSmall: 44,
-  /** 42px - Compact action buttons (swap, bridge, receive, success) */
+  /** 42px - Compact action buttons (swap, receive, success) */
   buttonHeightCompact: 42,
   /**
    * The control radius. It was 28, which on a 56px control is a pill, and the

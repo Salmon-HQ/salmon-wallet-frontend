@@ -40,7 +40,7 @@ const ButtonsContainer = styled(Box)({
 
 /**
  * SwapReviewButtons - Shared Back/Confirm buttons for review screens
- * Used by SwapReviewScreen and BridgeReviewScreen
+ * Used by SwapReviewScreen
  */
 export function SwapReviewButtons({
   onBack,

@@ -6,7 +6,6 @@ Salmon Wallet is a community-owned, open-source crypto wallet built for real dec
 
 KEY FEATURES
 • Multi-chain support: Solana and Bitcoin
-• Swap & Bridge: Exchange and transfer tokens across networks seamlessly
 • Wallet Cleanup: Remove unwanted tokens and reduce clutter
 • dApp Integration: Connect directly to decentralized applications
 • Scalable Design: Starts simple, grows more powerful as your needs increase

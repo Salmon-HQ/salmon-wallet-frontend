@@ -16,17 +16,11 @@ export type {
   SwapQuote,
   // UI types
   SwapToken,
-  SwapTab,
-  SwapStepBase,
   SwapScreenStep,
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from '@salmon/shared';
 
 // Import generic prop types from shared
 import type {
-  SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
   SwapDetailsCardProps as SwapDetailsCardPropsBase,
@@ -42,11 +36,6 @@ import type {
  * @deprecated Use SwapScreenStep from @salmon/shared instead
  */
 export type SwapStep = SwapScreenStep;
-
-/**
- * Props for SwapTabSelector component (Web)
- */
-export interface SwapTabSelectorProps extends SwapTabSelectorPropsBase<CSSProperties> {}
 
 /**
  * Props for SwapAmountInput component (Web)
@@ -97,7 +86,7 @@ export interface SwapInputScreenProps extends SwapInputScreenPropsBase<CSSProper
 export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {
   /**
    * Reports whether the flow currently owns the screen: true from the moment
-   * the swap or bridge is signed until its outcome has been acknowledged.
+   * the swap is signed until its outcome has been acknowledged.
    * Hosts use it to disable navigation that would discard that report.
    */
   onFlowLockChange?: (locked: boolean) => void;

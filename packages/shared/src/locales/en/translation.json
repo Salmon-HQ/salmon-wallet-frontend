@@ -618,7 +618,6 @@
     }
   },
   "transactions": {
-    "unknown": "Unknown",
     "from": "From",
     "to": "To",
     "groupToday": "Today",
@@ -750,7 +749,6 @@
     "noCollectionData": "No collection data available. Please navigate from your collection."
   },
   "swap": {
-    "swap": "Swap",
     "you_send": "You Send",
     "enter_amount": "Enter an amount",
     "you_receive": "You Receive",
@@ -783,12 +781,6 @@
       "minimumAmount": "Minimum swap amount is ${{amount}} USD",
       "highPriceImpact": "High price impact! You may receive significantly less than expected.",
       "quoteFailed": "Failed to fetch quote",
-      "estimateFailed": "Failed to get swap estimate",
-      "invalidAddress": "Invalid address",
-      "invalidSolanaAddress": "Invalid Solana address",
-      "invalidEthereumAddress": "Invalid Ethereum address",
-      "invalidBitcoinAddress": "Invalid Bitcoin address",
-      "addressTooShort": "Address too short",
       "noActiveAccount": "No active account",
       "invalidAmount": "Invalid amount",
       "noQuote": "No quote available. Please get a quote first.",
@@ -796,63 +788,9 @@
     }
   },
   "bridge": {
-    "errors": {
-      "belowMinimum": "The amount is below the minimum for this pair. Increase it and try again.",
-      "belowMinimumWithAmount": "The minimum for this pair is {{min}}. Increase the amount and try again.",
-      "unavailable": "The exchange service is temporarily unavailable. Try again in a few minutes.",
-      "generic": "The exchange could not be created. Please try again.",
-      "pairUnavailable": "This token pair isn't available for bridging yet. Try a different token.",
-      "aboveMaximum": "Amount exceeds the maximum for this pair",
-      "aboveMaximumWithAmount": "Maximum for this pair is {{max}}",
-      "networkError": "Network error: Unable to reach the server",
-      "estimateFailed": "Failed to get bridge estimate"
-    },
-    "bridge": "Bridge",
     "recipient": {
-      "title": "Recipient Address",
-      "description": "Enter the address where you want to receive your bridged tokens",
-      "destinationAddress": "Destination Address",
-      "enterRecipientAddress": "Enter recipient address",
-      "important": "Important",
-      "importantText": "Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.",
-      "review": "Review",
-      "descriptionWithChain": "Enter the address where you want to receive your bridged tokens on {{chain}}.",
-      "enterDestinationAddress": "Enter destination address",
-      "chainAddressHint": "({{chain}} address)",
-      "helper": "Enter the {{chain}} address where you want to receive your {{symbol}}"
-    },
-    "review": {
-      "title": "Bridge Review",
-      "youReceiveEstimated": "You Receive (estimated)",
-      "recipient": "Recipient",
-      "fromNetwork": "From Network",
-      "toNetwork": "To Network",
-      "minimumAmount": "Minimum Amount",
-      "estimatedOutput": "Estimated Output",
-      "salmonFee": "Salmon fee",
-      "provider": "Provider",
-      "pleaseNote": "Please Note",
-      "pleaseNoteText": "Cross-chain transfers typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.",
-      "irreversible": "This cannot be undone",
-      "irreversibleText": "Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.",
-      "confirmSwap": "Confirm Bridge",
-      "confirmCountdown": "Confirm Bridge ({{seconds}})",
-      "refreshEstimate": "Refresh Estimate"
-    },
-    "amountToSend": "Amount to send",
-    "currentStatus": "Current status",
-    "depositAddress": "Send funds to",
-    "depositTxId": "Deposit Transaction",
-    "estimatedReceive": "You will receive approximately",
-    "exchangeId": "Exchange ID",
-    "depositAddressLabel": "Deposit address",
-    "reference_title": "Keep this reference",
-    "reference_body": "This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.",
-    "initiated": "Bridge Initiated",
-    "payoutTxId": "Payout Transaction",
-    "settlement_stalled_title": "Can't check your bridge status",
-    "settlement_stalled_body": "Your funds are on the way, but we can't reach the status service. We'll keep trying.",
-    "settlement_retry": "Check now"
+      "title": "Recipient Address"
+    }
   },
   "transaction": {
     "sendComplete": "Send Complete",
@@ -918,8 +856,6 @@
     "transaction_row": "{{type}} transaction, {{description}}",
     "nft_view_hint": "Double tap to view NFT details",
     "loading_account_info": "Loading account information",
-    "swap_tab": "Swap tab",
-    "bridge_tab": "Bridge tab",
     "portfolio_visibility": "Portfolio visibility settings",
     "open_powerups": "Open Powerups",
     "close_powerups": "Close Powerups"
@@ -1012,9 +948,6 @@
       "failed": "Swap failed",
       "expired": "Swap expired"
     },
-    "bridge": {
-      "pending": "Bridge in progress"
-    },
     "expiredHint": "It never reached the network. Nothing left your wallet.",
     "dismiss": "Dismiss"
   },
@@ -1050,7 +983,7 @@
     "catalog": {
       "swap": {
         "name": "Swap",
-        "description": "Swap tokens and bridge across chains"
+        "description": "Swap tokens on Solana"
       },
       "wallet_guard": {
         "name": "Wallet Guard",

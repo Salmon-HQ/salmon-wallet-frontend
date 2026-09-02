@@ -29,18 +29,6 @@ export type {
   ThemeProviderProps,
 } from './ThemeContext';
 
-// Bridge settlement context (background cross-chain settlement)
-export {
-  BridgeSettlementContext,
-  BridgeSettlementProvider,
-  useBridgeSettlement,
-} from './BridgeSettlementContext';
-
-export type {
-  PendingBridgeExchange,
-  BridgeSettlementProviderProps,
-} from './BridgeSettlementContext';
-
 // Pending transactions context (global in-flight state for signed on-chain txs)
 export {
   PendingTransactionsContext,

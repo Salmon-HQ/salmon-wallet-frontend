@@ -11,7 +11,6 @@ export { SwapReviewScreen } from './SwapReviewScreen';
 export type {
   SwapToken,
   SwapQuote,
-  SwapTab,
   SwapStep,
   SwapChainType,
   SwapScreenProps,
@@ -21,9 +20,5 @@ export type {
   SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
-  // Bridge types used in SwapScreen
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from './types';
 export type { SwapReviewButtonsProps } from './SwapReviewButtons';

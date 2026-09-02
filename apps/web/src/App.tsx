@@ -6,7 +6,6 @@ import {
   useInactivityTimeout,
   createQueryClient,
   QueryClientProvider,
-  BridgeSettlementProvider,
   PendingTransactionsProvider,
   usePendingActivity,
 } from '@salmon/shared';
@@ -68,17 +67,15 @@ export function App(): React.ReactElement {
   const [queryClient] = useState(() => createQueryClient());
   return (
     <QueryClientProvider client={queryClient}>
-      <BridgeSettlementProvider>
-        <PendingTransactionsProvider>
-          <DAppSettlementBridge />
-          <WalletLayout>
-            <PendingActivity />
-            <InactivityGuard>
-              <RouterProvider router={router} />
-            </InactivityGuard>
-          </WalletLayout>
-        </PendingTransactionsProvider>
-      </BridgeSettlementProvider>
+      <PendingTransactionsProvider>
+        <DAppSettlementBridge />
+        <WalletLayout>
+          <PendingActivity />
+          <InactivityGuard>
+            <RouterProvider router={router} />
+          </InactivityGuard>
+        </WalletLayout>
+      </PendingTransactionsProvider>
     </QueryClientProvider>
   );
 }

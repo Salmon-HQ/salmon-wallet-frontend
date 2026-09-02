@@ -85,20 +85,6 @@ export type { BlurTint, BlurContainerPropsBase } from './blur-container';
 // Gradient Background
 export type { GradientBackgroundPropsBase } from './gradient-background';
 
-// Bridge Screen
-// Note: BridgeChain, BridgeToken, BridgeEstimate, BridgeExchange are UI-specific
-// data shapes that differ from the API/domain types in types/bridge.ts.
-// Export them under explicit aliases so consumers can stay on the public barrel.
-export type {
-  BridgeChain as BridgeScreenChain,
-  BridgeToken as BridgeScreenToken,
-  BridgeEstimate as BridgeScreenEstimate,
-  BridgeExchange as BridgeScreenExchange,
-  RecipientAddressInputPropsBase,
-  BridgeRecipientScreenPropsBase,
-  BridgeReviewScreenPropsBase,
-} from './bridge-screen';
-
 // Token Badges (formerly co-located with the retired TokenInformationSheet
 // contract — see AGENTS.md's ownership rules on removing shared exports)
 export type { TokenBadgesSectionPropsBase } from './token-information-sheet';

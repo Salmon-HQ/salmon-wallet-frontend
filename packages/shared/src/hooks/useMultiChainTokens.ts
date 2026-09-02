@@ -2,13 +2,12 @@
  * useMultiChainTokens Hook
  *
  * Combines tokens from all blockchain accounts (Solana, Bitcoin, Ethereum)
- * into a unified array for multi-chain swap/bridge operations.
+ * into a unified array.
  *
  * Features:
  * - Fetches balances from all chains the user has accounts for
  * - Normalizes token data into a unified format
  * - Identifies chain type for each token
- * - Supports automatic swap vs bridge detection
  *
  * Internally each chain's balance flows through `useBalance`, which is now
  * a `react-query` query under the hood. The `refresh()` method fans out to
@@ -109,11 +108,11 @@ function toUnifiedTokens(
  * - Gets blockchain accounts for Solana, Bitcoin, and Ethereum
  * - Fetches balances for each chain via `useBalance` (react-query under the hood)
  * - Combines all tokens into a unified format
- * - Provides helpers for chain filtering and swap-type detection
+ * - Provides helpers for chain filtering
  *
  * @example
  * ```tsx
- * const { tokens, loading, getSwapType } = useMultiChainTokens({ activeAccount });
+ * const { tokens, loading } = useMultiChainTokens({ activeAccount });
  * ```
  */
 export function useMultiChainTokens(params: UseMultiChainTokensParams): UseMultiChainTokensResult {

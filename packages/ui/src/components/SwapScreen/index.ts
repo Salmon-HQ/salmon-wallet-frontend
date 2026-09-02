@@ -1,6 +1,5 @@
 // SwapScreen - Complete swap interface (web version)
 export { SwapScreen } from './SwapScreen';
-export { SwapTabSelector } from './SwapTabSelector';
 export { SwapAmountInput } from './SwapAmountInput';
 export { SwapDetailRow } from './SwapDetailRow';
 export { SwapDetailsCard } from './SwapDetailsCard';
@@ -13,11 +12,9 @@ export { SwapReviewScreen } from './SwapReviewScreen';
 export type {
   SwapToken,
   SwapQuote,
-  SwapTab,
   SwapStep,
   SwapChainType,
   SwapScreenProps,
-  SwapTabSelectorProps,
   SwapAmountInputProps,
   SwapDetailRowProps,
   SwapDetailsCardProps,
@@ -25,8 +22,4 @@ export type {
   SwapReviewButtonsProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
-  // Bridge types used in SwapScreen
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from './types';

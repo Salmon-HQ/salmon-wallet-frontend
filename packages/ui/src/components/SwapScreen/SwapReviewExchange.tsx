@@ -1,6 +1,6 @@
 /**
- * SwapReviewExchange - the single graphic block on the swap and bridge
- * review screens: sent token logo, arrow, received token logo, with amounts
+ * SwapReviewExchange - the single graphic block on the swap review screen:
+ * sent token logo, arrow, received token logo, with amounts
  * and USD values underneath. Replaces the two stacked You Send / You Receive
  * cards.
  *

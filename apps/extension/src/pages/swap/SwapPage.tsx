@@ -1,10 +1,9 @@
 /**
- * SwapPage - Token swap and bridge interface for extension
+ * SwapPage - Token swap interface for extension
  *
  * Wrapper around SwapScreen from extension components.
- * Wires useSwap, useBridge, useMultiChainTokens hooks.
+ * Wires useSwap, useMultiChainTokens hooks.
  */
-import { isSignableAccount } from '@salmon/shared/utils/account';
 import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -18,7 +17,6 @@ import {
   mapToSwapToken,
   searchTokens,
   useAccountsContext,
-  useBridge,
   useJupiterTokenList,
   useMultiChainTokens,
   useSwap,
@@ -27,14 +25,7 @@ import {
   type SwapNetworkId,
   unifiedToSwapToken,
 } from '@salmon/shared';
-import {
-  SwapScreen,
-  type BridgeEstimateSimple,
-  type BridgeExchangeSimple,
-  type BridgeTokenSimple,
-  type SwapQuote,
-  type SwapToken,
-} from '../../components';
+import { SwapScreen, type SwapQuote, type SwapToken } from '../../components';
 
 // ============================================================================
 // Styled Components
@@ -97,14 +88,6 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
   });
 
   const {
-    getAvailableTokens: getBridgeAvailableTokens,
-    getEstimate: getBridgeEstimate,
-    createExchange: createBridgeExchange,
-    getTransactionStatus: getBridgeTransactionStatus,
-    reset: resetBridge,
-  } = useBridge();
-
-  const {
     tokens: multiChainTokens,
     featuredTokens: topTokens,
     loading,
@@ -113,21 +96,14 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
     skip: !ready || !activeAccount,
   });
 
+  // Jupiter only swaps within Solana, so the selectable list is Solana-only.
   const swapTokens: SwapToken[] = useMemo(() => {
-    return multiChainTokens.map(unifiedToSwapToken);
+    return multiChainTokens.filter((t) => t.chain === 'solana').map(unifiedToSwapToken);
   }, [multiChainTokens]);
 
   const featuredTokens: SwapToken[] = useMemo(() => {
-    return topTokens.map(unifiedToSwapToken);
+    return topTokens.filter((t) => t.chain === 'solana').map(unifiedToSwapToken);
   }, [topTokens]);
-
-  // Resolve user's BTC address for bridge recipient pre-fill
-  const defaultRecipientAddress = useMemo(() => {
-    const btcAccounts = activeAccount?.networksAccounts?.['bitcoin-mainnet'];
-    const btcAccount = btcAccounts?.find((a: unknown) => a !== null) as
-      { getReceiveAddress(): string } | undefined;
-    return btcAccount?.getReceiveAddress() ?? '';
-  }, [activeAccount]);
 
   // Full Jupiter verified token catalog (shared React Query hook)
   const { tokens: jupiterTokens } = useJupiterTokenList({ networkId: swapNetworkId });
@@ -202,150 +178,6 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
     [networkId]
   );
 
-  // Bridge handlers
-  const bridgeTokens: BridgeTokenSimple[] = useMemo(() => {
-    return multiChainTokens.map((token) => ({
-      symbol: token.symbol,
-      name: token.name,
-      logo: token.logo,
-      network: token.chain,
-      balance: token.balance,
-      usdPrice: token.usdPrice,
-    }));
-  }, [multiChainTokens]);
-
-  const bridgeFeaturedTokens: BridgeTokenSimple[] = useMemo(() => {
-    return topTokens.map((token) => ({
-      symbol: token.symbol,
-      name: token.name,
-      logo: token.logo,
-      network: token.chain,
-      balance: token.balance,
-      usdPrice: token.usdPrice,
-    }));
-  }, [topTokens]);
-
-  const handleGetAvailableTokens = useCallback(
-    async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-      // No try/catch: failures must propagate to useSwapScreenLogic, which
-      // classifies them into the form's reviewWarning slot.
-      const tokens = await getBridgeAvailableTokens(sourceSymbol);
-      if (!tokens) return [];
-      return tokens.map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        logo: t.logo,
-        network: t.network,
-      }));
-    },
-    [getBridgeAvailableTokens]
-  );
-
-  const handleGetBridgeEstimate = useCallback(
-    async (
-      symbolIn: string,
-      symbolOut: string,
-      amount: number,
-      networkIn?: string,
-      networkOut?: string
-    ): Promise<BridgeEstimateSimple | null> => {
-      const estimate = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
-      if (!estimate) return null;
-      return {
-        estimatedAmount: estimate.estimatedAmount,
-        minAmount: estimate.minAmount,
-        maxAmount: estimate.maxAmount ?? null,
-        symbolIn: estimate.symbolIn,
-        symbolOut: estimate.symbolOut,
-      };
-    },
-    [getBridgeEstimate]
-  );
-
-  const handleCreateBridgeExchange = useCallback(
-    async (
-      symbolIn: string,
-      symbolOut: string,
-      amount: number,
-      addressTo: string,
-      networkIn?: string,
-      networkOut?: string
-    ): Promise<BridgeExchangeSimple | null> => {
-      const exchange = await createBridgeExchange(
-        symbolIn,
-        symbolOut,
-        amount,
-        addressTo,
-        networkIn,
-        networkOut,
-        // Refund address: the deposit is sent from the active account
-        // (see onSendDeposit), so a failed exchange must come back there.
-        activeBlockchainAccount?.getReceiveAddress()
-      );
-      if (!exchange) return null;
-      return {
-        id: exchange.id,
-        depositAddress: exchange.payinAddress,
-        amountIn: exchange.amountExpectedFrom,
-        amountOut: exchange.amountExpectedTo,
-        symbolIn: exchange.currencyFrom,
-        symbolOut: exchange.currencyTo,
-        addressTo: exchange.payoutAddress,
-        status: exchange.status,
-      };
-    },
-    [createBridgeExchange, activeBlockchainAccount]
-  );
-
-  const handleGetBridgeTransactionStatus = useCallback(
-    async (id: string) => {
-      try {
-        const transaction = await getBridgeTransactionStatus(id);
-        if (!transaction) return null;
-        return {
-          status: transaction.status,
-          payoutTxId: transaction.payoutHash,
-        };
-      } catch {
-        return null;
-      }
-    },
-    [getBridgeTransactionStatus]
-  );
-
-  const handleSendDeposit = useCallback(
-    async (
-      depositAddress: string,
-      tokenAddress: string,
-      amount: number
-    ): Promise<{ txId: string }> => {
-      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
-      // The bridge deposit is an ordinary transfer, so it needs a key like any
-      // send does. A watch-only wallet never reaches the swap tab, but this is
-      // the last thing before the chain.
-      if (!isSignableAccount(activeBlockchainAccount)) {
-        throw new Error('transaction.errors.watchOnlyAccount');
-      }
-      return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
-    },
-    [activeBlockchainAccount]
-  );
-
-  const handleBridgeSuccess = useCallback(
-    (_exchange: BridgeExchangeSimple) => {
-      resetBridge();
-    },
-    [resetBridge]
-  );
-
-  const handleBridgeError = useCallback(
-    (error: Error) => {
-      resetBridge();
-      console.error('Bridge Failed:', error.message);
-    },
-    [resetBridge]
-  );
-
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
       <LoadingContainer>
@@ -360,7 +192,6 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
         tokens={swapTokens}
         featuredTokens={featuredTokens}
         jupiterTokens={jupiterTokens}
-        defaultRecipientAddress={defaultRecipientAddress}
         loading={loading}
         onGetQuote={handleGetQuote}
         onSwap={handleSwap}
@@ -368,15 +199,6 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
         onError={handleSwapError}
         onSearchTokens={handleSearchTokens}
         initialInToken={swapTokens[0]}
-        bridgeTokens={bridgeTokens}
-        bridgeFeaturedTokens={bridgeFeaturedTokens}
-        onGetAvailableTokens={handleGetAvailableTokens}
-        onGetBridgeEstimate={handleGetBridgeEstimate}
-        onCreateBridgeExchange={handleCreateBridgeExchange}
-        onGetBridgeTransactionStatus={handleGetBridgeTransactionStatus}
-        onSendDeposit={handleSendDeposit}
-        onBridgeSuccess={handleBridgeSuccess}
-        onBridgeError={handleBridgeError}
         onNavigateHome={onNavigateHome}
         onFlowLockChange={onFlowLockChange}
         onTaskChange={onTaskChange}

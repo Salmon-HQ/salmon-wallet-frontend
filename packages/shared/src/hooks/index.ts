@@ -84,10 +84,6 @@ export type { UseImportWatchOnlyParams, UseImportWatchOnlyResult } from './useIm
 export { useSwap } from './useSwap';
 export type { UseSwapParams, UseSwapResult } from './useSwap';
 
-// Bridge hook
-export { useBridge } from './useBridge';
-export type { UseBridgeParams, UseBridgeResult } from './useBridge';
-
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
 
@@ -109,7 +105,7 @@ export type {
 export { useJupiterTokenList } from './useJupiterTokenList';
 export type { UseJupiterTokenListParams, UseJupiterTokenListResult } from './useJupiterTokenList';
 
-// Multi-chain tokens hook (for unified swap/bridge)
+// Multi-chain tokens hook
 export { useMultiChainTokens } from './useMultiChainTokens';
 export type {
   ChainType,

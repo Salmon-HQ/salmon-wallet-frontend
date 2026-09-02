@@ -11,7 +11,6 @@
  * - Bitcoin Service (./bitcoin)
  * - Solana Service (./solana)
  * - DApp Service (./dapp)
- * - Bridge Service (./bridge)
  * - Ethereum Service (./ethereum)
  * - Solana NFT Service (./solana-nft)
  * - Network Service (./network)
@@ -111,21 +110,6 @@ export {
   // Functions
   getMetadata as getDappMetadata,
 } from './dapp';
-
-// ============================================================================
-// Bridge Service
-// ============================================================================
-
-export {
-  // Constants
-  BRIDGE_PARTNER_FEE_PERCENT,
-  // Functions
-  getBridgeAvailableTokens,
-  getBridgeEstimatedAmount,
-  getBridgeMinimalAmount,
-  createBridgeExchange,
-  getBridgeTransaction,
-} from './bridge';
 
 // ============================================================================
 // Ethereum Service (ERC-20 Token Detection)

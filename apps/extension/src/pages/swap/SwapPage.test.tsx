@@ -8,18 +8,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockUseAccountsContext = vi.fn();
 const mockUseSwap = vi.fn();
-const mockUseBridge = vi.fn();
 const mockUseMultiChainTokens = vi.fn();
 const mockGetTokenList = vi.fn();
 const mockSearchTokens = vi.fn();
 
-const mockBridgeAvailableTokens = vi.fn();
-const mockBridgeEstimate = vi.fn();
-const mockCreateBridgeExchange = vi.fn();
-const mockBridgeStatus = vi.fn();
-const mockResetBridge = vi.fn();
 const mockResetSwap = vi.fn();
-const mockTransfer = vi.fn();
+const mockExecuteSwap = vi.fn();
+const mockGetQuote = vi.fn();
 
 const mockSwapScreen = vi.fn((_props: Record<string, unknown>) => (
   <div data-testid="swap-screen" />
@@ -49,7 +44,6 @@ vi.mock('@salmon/shared', () => ({
   fontSize: { bodyLg: 14 },
   fontFamily: { sans: 'sans-serif' },
   useAccountsContext: () => mockUseAccountsContext(),
-  useBridge: () => mockUseBridge(),
   useSwap: () => mockUseSwap(),
   useMultiChainTokens: () => mockUseMultiChainTokens(),
   getTokenList: (network: string) => mockGetTokenList(network),
@@ -63,18 +57,12 @@ import { SwapPage } from './SwapPage';
 
 function buildAccountState(overrides: Record<string, unknown> = {}) {
   const blockchainAccount = {
-    transfer: mockTransfer,
-    getReceiveAddress: () => 'BtcRecv1111111111111111111111111111111111',
+    transfer: vi.fn(),
+    getReceiveAddress: () => 'Sol1111111111111111111111111111111111111',
   };
   return {
     ready: true,
-    activeAccount: {
-      networksAccounts: {
-        'bitcoin-mainnet': [
-          { getReceiveAddress: () => 'BtcRecv1111111111111111111111111111111111' },
-        ],
-      },
-    },
+    activeAccount: { networksAccounts: {} },
     activeBlockchainAccount: blockchainAccount,
     networkId: 'solana-mainnet',
     ...overrides,
@@ -86,22 +74,18 @@ describe('SwapPage', () => {
     vi.clearAllMocks();
     mockGetTokenList.mockResolvedValue([]);
     mockUseSwap.mockReturnValue({
-      getQuote: vi.fn(),
-      executeSwap: vi.fn(),
+      getQuote: mockGetQuote,
+      executeSwap: mockExecuteSwap,
       quote: null,
       error: null,
       reset: mockResetSwap,
     });
-    mockUseBridge.mockReturnValue({
-      getAvailableTokens: mockBridgeAvailableTokens,
-      getEstimate: mockBridgeEstimate,
-      createExchange: mockCreateBridgeExchange,
-      getTransactionStatus: mockBridgeStatus,
-      reset: mockResetBridge,
-    });
     mockUseMultiChainTokens.mockReturnValue({
-      tokens: [],
-      featuredTokens: [],
+      tokens: [
+        { symbol: 'SOL', chain: 'solana', address: 'sol-mint', decimals: 9 },
+        { symbol: 'BTC', chain: 'bitcoin', address: 'btc', decimals: 8 },
+      ],
+      featuredTokens: [{ symbol: 'SOL', chain: 'solana', address: 'sol-mint', decimals: 9 }],
       loading: false,
       refresh: vi.fn(),
     });
@@ -118,44 +102,61 @@ describe('SwapPage', () => {
     expect(queryByTestId('swap-screen')).toBeNull();
   });
 
-  it('wires bridge transaction status, success, and error handlers into SwapScreen', async () => {
+  it('filters the multi-chain token list down to Solana for the swap screen', async () => {
     mockUseAccountsContext.mockReturnValue([buildAccountState()]);
-    mockBridgeStatus.mockResolvedValue({ status: 'finished', payoutHash: 'tx-hash' });
 
     const { getByTestId } = render(<SwapPage onNavigateHome={vi.fn()} />);
 
     expect(getByTestId('swap-screen')).toBeTruthy();
 
     await waitFor(() => {
-      expect(typeof lastSwapScreenProps().onGetBridgeTransactionStatus).toBe('function');
+      expect(lastSwapScreenProps().tokens).toBeTruthy();
     });
 
-    const onGetBridgeTransactionStatus = lastSwapScreenProps().onGetBridgeTransactionStatus as (
-      id: string
-    ) => Promise<{ status: string; payoutTxId: string | undefined } | null>;
-    const result = await onGetBridgeTransactionStatus('exchange-1');
-    expect(mockBridgeStatus).toHaveBeenCalledWith('exchange-1');
-    expect(result).toEqual({ status: 'finished', payoutTxId: 'tx-hash' });
-
-    const onBridgeSuccess = lastSwapScreenProps().onBridgeSuccess as (exchange: unknown) => void;
-    onBridgeSuccess({ id: 'x' });
-    expect(mockResetBridge).toHaveBeenCalledTimes(1);
+    const tokens = lastSwapScreenProps().tokens as Array<{ chain: string }>;
+    const featuredTokens = lastSwapScreenProps().featuredTokens as Array<{ chain: string }>;
+    expect(tokens.every((t) => t.chain === 'solana')).toBe(true);
+    expect(featuredTokens.every((t) => t.chain === 'solana')).toBe(true);
+    expect(tokens).toHaveLength(1);
   });
 
-  it('returns null when getTransactionStatus rejects', async () => {
+  it('wires quote and swap handlers into SwapScreen', async () => {
     mockUseAccountsContext.mockReturnValue([buildAccountState()]);
-    mockBridgeStatus.mockRejectedValue(new Error('network down'));
+    mockGetQuote.mockResolvedValue({
+      custom: { requestId: 'req-1' },
+      output: { amount: '2000000', decimals: 6 },
+    });
+    mockUseSwap.mockReturnValue({
+      getQuote: mockGetQuote,
+      executeSwap: mockExecuteSwap,
+      quote: { custom: { requestId: 'req-1' } },
+      error: null,
+      reset: mockResetSwap,
+    });
+    mockExecuteSwap.mockResolvedValue({ status: 'success', txId: 'sig-1' });
 
     render(<SwapPage />);
 
     await waitFor(() => {
-      expect(typeof lastSwapScreenProps().onGetBridgeTransactionStatus).toBe('function');
+      expect(typeof lastSwapScreenProps().onGetQuote).toBe('function');
     });
 
-    const onGetBridgeTransactionStatus = lastSwapScreenProps().onGetBridgeTransactionStatus as (
-      id: string
+    const onGetQuote = lastSwapScreenProps().onGetQuote as (
+      inToken: { address: string; decimals: number },
+      outToken: { address: string },
+      amount: string
     ) => Promise<unknown>;
-    const result = await onGetBridgeTransactionStatus('exchange-2');
-    expect(result).toBeNull();
+    const quote = await onGetQuote({ address: 'sol-mint', decimals: 9 }, { address: 'usdc' }, '1');
+    expect(mockGetQuote).toHaveBeenCalled();
+    expect(quote).toBeTruthy();
+
+    const onSwap = lastSwapScreenProps().onSwap as (quote: unknown) => Promise<{ txId: string }>;
+    const result = await onSwap(quote);
+    expect(mockExecuteSwap).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ txId: 'sig-1' });
+
+    const onSuccess = lastSwapScreenProps().onSuccess as () => void;
+    onSuccess();
+    expect(mockResetSwap).toHaveBeenCalledTimes(1);
   });
 });

@@ -106,17 +106,14 @@ test.beforeAll(async () => {
  * Pick a token in the selector modal, from the loaded LIST — never the featured
  * strip.
  *
- * Web's swap defaults to BTC (the first multi-chain token), so it opens in bridge
- * mode, and the token list is fetched asynchronously. Two things follow, both of
- * which the list row handles and the featured row does not:
+ * The token list is fetched asynchronously. Two things follow, both of which
+ * the list row handles and the featured row does not:
  *
- *  1. The featured entry for a symbol can carry a different identity (native vs
- *     bridge address/chain) than the same symbol in the wallet's loaded `tokens`.
- *     Selecting it fails useSwapScreenLogic's reconciliation match, which then
- *     silently reverts the field to the default token (BTC) and clears the
- *     amount — exactly the "from = BTC, amount empty, Review disabled" state a
- *     naive featured click produced here. The list row's token comes straight
- *     from `tokens`, so it matches and sticks.
+ *  1. The featured entry for a symbol can carry a different identity than the
+ *     same symbol in the wallet's loaded `tokens`. Selecting it fails
+ *     useSwapScreenLogic's reconciliation match, which then silently reverts
+ *     the field to the default token and clears the amount. The list row's
+ *     token comes straight from `tokens`, so it matches and sticks.
  *  2. The list rows are skeletons until the fetch settles, so waiting for one
  *     also guarantees the reconciliation has already run and will not clobber
  *     the selection afterwards.

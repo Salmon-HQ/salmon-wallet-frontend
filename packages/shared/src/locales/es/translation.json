@@ -618,7 +618,6 @@
     }
   },
   "transactions": {
-    "unknown": "Desconocido",
     "from": "De",
     "to": "Para",
     "groupToday": "Hoy",
@@ -750,7 +749,6 @@
     "noCollectionData": "No hay datos de la colección. Volvé a entrar desde tu colección."
   },
   "swap": {
-    "swap": "Swap",
     "you_send": "Enviás",
     "enter_amount": "Ingresá un monto",
     "you_receive": "Recibís",
@@ -783,12 +781,6 @@
       "minimumAmount": "El monto mínimo para swap es ${{amount}} USD",
       "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
       "quoteFailed": "No se pudo obtener la cotización",
-      "estimateFailed": "No se pudo obtener la estimación del swap",
-      "invalidAddress": "Dirección inválida",
-      "invalidSolanaAddress": "Dirección de Solana inválida",
-      "invalidEthereumAddress": "Dirección de Ethereum inválida",
-      "invalidBitcoinAddress": "Dirección de Bitcoin inválida",
-      "addressTooShort": "La dirección es demasiado corta",
       "noActiveAccount": "No hay una cuenta activa",
       "invalidAmount": "Monto inválido",
       "noQuote": "No hay cotización disponible. Obtené una cotización primero.",
@@ -796,63 +788,9 @@
     }
   },
   "bridge": {
-    "errors": {
-      "belowMinimum": "El monto es menor al mínimo para este par. Aumentalo y volvé a intentarlo.",
-      "belowMinimumWithAmount": "El mínimo para este par es {{min}}. Aumentá el monto y volvé a intentarlo.",
-      "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
-      "generic": "No se pudo crear el intercambio. Volvé a intentarlo.",
-      "pairUnavailable": "Este par de tokens todavía no está disponible para el bridge. Probá con otro token.",
-      "aboveMaximum": "El monto supera el máximo para este par",
-      "aboveMaximumWithAmount": "El máximo para este par es {{max}}",
-      "networkError": "Error de red: no se pudo conectar con el servidor",
-      "estimateFailed": "No se pudo obtener la estimación del bridge"
-    },
-    "bridge": "Bridge",
     "recipient": {
-      "title": "Dirección del Destinatario",
-      "description": "Ingresá la dirección donde querés recibir tus tokens transferidos",
-      "destinationAddress": "Dirección de Destino",
-      "enterRecipientAddress": "Ingresá la dirección del destinatario",
-      "important": "Importante",
-      "importantText": "Asegurate de que la dirección sea correcta. Las transacciones entre cadenas no se pueden revertir una vez iniciadas.",
-      "review": "Revisar",
-      "descriptionWithChain": "Ingresá la dirección donde querés recibir tus tokens transferidos en {{chain}}.",
-      "enterDestinationAddress": "Ingresá la dirección de destino",
-      "chainAddressHint": "(dirección de {{chain}})",
-      "helper": "Ingresá la dirección de {{chain}} donde querés recibir tus {{symbol}}"
-    },
-    "review": {
-      "title": "Revisión del Bridge",
-      "youReceiveEstimated": "Recibís (estimado)",
-      "recipient": "Destinatario",
-      "fromNetwork": "Red de Origen",
-      "toNetwork": "Red de Destino",
-      "minimumAmount": "Monto Mínimo",
-      "estimatedOutput": "Salida Estimada",
-      "salmonFee": "Comisión Salmon",
-      "provider": "Proveedor",
-      "pleaseNote": "Nota Importante",
-      "pleaseNoteText": "Las transferencias entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación. El monto estimado de arriba ya tiene descontada la comisión de Salmon.",
-      "irreversible": "Esto no se puede deshacer",
-      "irreversibleText": "Al confirmar, tus fondos van a StealthEX, que los retiene hasta que se complete la transferencia entre cadenas. Una vez confirmada no hay cancelación ni forma de revertirla o recuperarla: ni por parte de Salmon ni por la tuya.",
-      "confirmSwap": "Confirmar Bridge",
-      "confirmCountdown": "Confirmar Bridge ({{seconds}})",
-      "refreshEstimate": "Actualizar estimación"
-    },
-    "amountToSend": "Monto a enviar",
-    "currentStatus": "Estado actual",
-    "depositAddress": "Enviá los fondos a",
-    "depositTxId": "Transacción de depósito",
-    "estimatedReceive": "Vas a recibir aproximadamente",
-    "exchangeId": "ID de intercambio",
-    "depositAddressLabel": "Dirección de depósito",
-    "reference_title": "Guardá esta referencia",
-    "reference_body": "Este bridge no se completó, pero el intercambio ya fue creado. Guardá estos datos: son los que soporte necesita para encontrarlo.",
-    "initiated": "Bridge iniciado",
-    "payoutTxId": "Transacción de pago",
-    "settlement_stalled_title": "No se puede verificar el estado de tu bridge",
-    "settlement_stalled_body": "Tus fondos están en camino, pero no se puede consultar el servicio de estado. Vamos a seguir intentando.",
-    "settlement_retry": "Verificar ahora"
+      "title": "Dirección del Destinatario"
+    }
   },
   "transaction": {
     "sendComplete": "Envio Completado",
@@ -918,8 +856,6 @@
     "transaction_row": "Transacción: {{type}}, {{description}}",
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
     "loading_account_info": "Cargando información de la cuenta",
-    "swap_tab": "Pestaña de Swap",
-    "bridge_tab": "Pestaña de Bridge",
     "portfolio_visibility": "Configuracion de visibilidad del portfolio",
     "open_powerups": "Abrir Powerups",
     "close_powerups": "Cerrar Powerups"
@@ -1012,9 +948,6 @@
       "failed": "El swap falló",
       "expired": "El swap venció"
     },
-    "bridge": {
-      "pending": "Bridge en curso"
-    },
     "expiredHint": "Nunca llegó a la red. No salió nada de tu billetera.",
     "dismiss": "Descartar"
   },
@@ -1050,7 +983,7 @@
     "catalog": {
       "swap": {
         "name": "Swap",
-        "description": "Intercambia tokens y transfiere entre redes"
+        "description": "Intercambia tokens en Solana"
       },
       "wallet_guard": {
         "name": "Wallet Guard",

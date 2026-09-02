@@ -368,7 +368,7 @@ export function HomePage(): React.ReactElement {
   // restores the user's tab when returning from /nft/:mint or /token/:address.
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => tabFromHash(location.hash));
 
-  // True from the moment a swap or bridge is signed until its outcome has been
+  // True from the moment a swap is signed until its outcome has been
   // acknowledged. Before signing this stays false — leaving a review is free.
   const [flowLocked, setFlowLocked] = useState(false);
   // True while swap is a *task* (review onward). The chrome around it offers
@@ -969,7 +969,7 @@ export function HomePage(): React.ReactElement {
           >
             {t('tabs.collectibles', 'Collectibles')}
           </TabButton>
-          {/* Gone, not greyed: a watch-only wallet can never swap or bridge,
+          {/* Gone, not greyed: a watch-only wallet can never swap,
               so the tab is not a door that happens to be locked. */}
           {!isWatchOnly && (
             <TabButton

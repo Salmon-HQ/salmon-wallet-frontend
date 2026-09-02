@@ -1,16 +1,15 @@
 /**
  * ExchangeReceipt — the graphic receipt: token-mark hero, arrow, rate/fee
- * block, bridge instructions, the settling wait. Moved here byte-for-byte
- * from `TransactionSuccessScreen`, which is now a thin alias over
+ * block, the settling wait. Moved here byte-for-byte from
+ * `TransactionSuccessScreen`, which is now a thin alias over
  * `ReceiptScreen tone="exchange"` so `SwapScreen` needs no change.
  */
 import React, { useEffect, useState } from 'react';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -85,25 +84,16 @@ export function ExchangeReceipt({
   onContinue,
   settling = false,
   pendingTitle,
-  bridgeDepositAddress,
-  bridgeAmountIn,
-  bridgeAmountOut,
-  bridgeExchangeId,
-  bridgeDepositTxId,
   exchange,
   exchangeRate,
   exchangeFee,
 }: TransactionSuccessScreenProps) {
-  const isBridge = !!bridgeDepositAddress;
-
   // Every receipt reveals itself top to bottom, one stagger step per element.
   // The two shapes are one rhythm at different lengths: an exchange reads
   // sent -> arrow -> received -> rows, a send or NFT reads status -> amount,
-  // and on both, the bridge instructions when there are any and then the
-  // actions close it. Only what renders takes a beat, so nothing waits on a
-  // gap left by a band this receipt does not have.
-  const bridgeStep = exchange ? 4 : 2;
-  const actionStep = isBridge ? bridgeStep + 1 : bridgeStep;
+  // and then the actions close it. Only what renders takes a beat, so
+  // nothing waits on a gap left by a band this receipt does not have.
+  const actionStep = exchange ? 4 : 2;
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();
@@ -168,10 +158,10 @@ export function ExchangeReceipt({
       style={[styles.container, styles.receipt, { paddingBottom: insets.bottom }]}
       testID="tx-success-screen"
     >
-      {/* The cluster — status, amount, and the bridge details when there are
-          any — is centred in the corridor between the top chrome and the
-          actions. It owns the leftover height (flex: 1), so the actions stay
-          on the bottom edge and the report sits in the middle of the water
+      {/* The cluster — status and amount — is centred in the corridor between
+          the top chrome and the actions. It owns the leftover height
+          (flex: 1), so the actions stay on the bottom edge and the report
+          sits in the middle of the water
           rather than leaving a void under it. */}
       <View style={styles.cluster} testID="tx-success-cluster">
         {exchange ? (
@@ -306,55 +296,6 @@ export function ExchangeReceipt({
             </View>
           </Animated.View>
         ) : null}
-
-        {isBridge ? (
-          <Animated.View
-            style={styles.bridgeInfoBox}
-            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(bridgeStep) })}
-          >
-            <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
-            <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
-            {bridgeAmountIn && (
-              <>
-                <Text style={styles.bridgeLabel}>{t('bridge.amountToSend', 'Amount to send')}</Text>
-                <Text style={styles.bridgeValue}>{bridgeAmountIn}</Text>
-              </>
-            )}
-            {bridgeAmountOut && (
-              <>
-                <Text style={styles.bridgeLabel}>
-                  {t('bridge.estimatedReceive', 'You will receive approximately')}
-                </Text>
-                <Text style={styles.bridgeValue}>{bridgeAmountOut}</Text>
-              </>
-            )}
-            {bridgeDepositTxId && (
-              <>
-                <Text style={styles.bridgeLabel}>
-                  {t('bridge.depositTxId', 'Deposit Transaction')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(`https://solscan.io/tx/${bridgeDepositTxId}`)}
-                >
-                  <Text
-                    style={[
-                      styles.bridgeValue,
-                      { color: text.accent, textDecorationLine: 'underline' },
-                    ]}
-                  >
-                    {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-            {bridgeExchangeId && (
-              <>
-                <Text style={styles.bridgeLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
-                <Text style={[styles.bridgeValue, { marginBottom: 0 }]}>{bridgeExchangeId}</Text>
-              </>
-            )}
-          </Animated.View>
-        ) : null}
       </View>
 
       {/* The ending composes like the onboarding ending: a quiet text-button
@@ -369,7 +310,7 @@ export function ExchangeReceipt({
         entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(actionStep) })}
       >
         <View style={styles.assistBand} testID="tx-success-assist">
-          {!isBridge && explorerUrl ? (
+          {explorerUrl ? (
             <TextButton
               onPress={handleExplorerPress}
               color={text.secondary}
@@ -499,7 +440,7 @@ const stylesFor = (t: Semantic) =>
       lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
     },
     // The quiet receipt: label left, value right, no card — secondary rank
-    // under the amount, above the bridge details when there are any.
+    // under the amount.
     receiptRows: {
       alignSelf: 'stretch',
       gap: vs(spacing.sm),
@@ -523,26 +464,6 @@ const stylesFor = (t: Semantic) =>
       color: t.text.secondary,
       textAlign: 'right',
       flexShrink: 1,
-    },
-    bridgeInfoBox: {
-      width: '100%',
-      backgroundColor: t.surface.raised,
-      borderRadius: borderRadius.card,
-      padding: s(spacing.lg),
-      marginBottom: vs(spacing.xl),
-    },
-    bridgeLabel: {
-      fontSize: ms(fontSize.sm),
-      fontFamily: fontFamilyNative.regular,
-      color: t.text.tertiary,
-      marginBottom: vs(spacing.xs),
-    },
-    bridgeValue: {
-      ...TABULAR,
-      fontSize: ms(fontSize.base),
-      fontFamily: fontFamilyNative.medium,
-      color: t.text.primary,
-      marginBottom: vs(spacing.md),
     },
     // The bottom of the column, on the onboarding ending's bands: the assist
     // band (a quiet text button) directly over the action band's primary, with

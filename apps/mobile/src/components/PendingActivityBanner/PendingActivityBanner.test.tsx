@@ -79,25 +79,4 @@ describe('PendingActivityBanner', () => {
     fireEvent.press(screen.getByTestId('pending-activity-dismiss-x'));
     expect(onDismiss).toHaveBeenCalledWith('x');
   });
-
-  it('shows a bridge with its exchange id and no dismissal', () => {
-    render(
-      <PendingActivityBanner
-        items={[
-          item({
-            id: 'ex-9',
-            kind: 'bridge',
-            status: 'pending',
-            detail: 'ex-9',
-            dismissible: false,
-          }),
-        ]}
-        onDismiss={jest.fn()}
-      />
-    );
-
-    expect(screen.getByText('pending.bridge.pending')).toBeTruthy();
-    expect(screen.getByText('ex-9')).toBeTruthy();
-    expect(screen.queryByTestId('pending-activity-dismiss-ex-9')).toBeNull();
-  });
 });

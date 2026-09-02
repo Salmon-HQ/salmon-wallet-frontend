@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Link from '@mui/material/Link';
 import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -413,44 +412,6 @@ const ActionBand = styled(Box)({
   boxSizing: 'border-box',
 });
 
-/**
- * The transaction ids inside the bridge's deposit instructions, each a link
- * out to a block explorer. It is body copy that happens to be clickable, not
- * a control, so it stays a link rather than borrowing the assist band's
- * button.
- */
-const BridgeTxLink = styled(Link)({
-  fontSize: fontSize.body,
-  fontFamily: fontFamily.sans,
-  color: colors.accent.primary,
-  textAlign: 'center',
-  cursor: 'pointer',
-});
-
-const BridgeInfoBox = styled(Rise)({
-  width: '100%',
-  backgroundColor: colors.background.tertiary,
-  borderRadius: borderRadius.card,
-  padding: spacing.lg,
-  marginBottom: spacing.xl,
-});
-
-const BridgeLabel = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontFamily: fontFamily.sans,
-  color: colors.text.tertiary,
-  marginBottom: spacing.xs,
-});
-
-const BridgeValue = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: fontSize.base,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  wordBreak: 'break-all' as const,
-  marginBottom: spacing.md,
-});
-
 // ============================================================================
 // Component
 // ============================================================================
@@ -462,26 +423,17 @@ export function TransactionSuccessScreen({
   onContinue,
   settling = false,
   pendingTitle,
-  bridgeDepositAddress,
-  bridgeAmountIn,
-  bridgeAmountOut,
-  bridgeExchangeId,
-  bridgeDepositTxId,
-  bridgeStatus,
-  bridgePayoutTxId,
   exchange,
   exchangeRate,
   exchangeFee,
 }: TransactionSuccessScreenProps): React.ReactElement {
   const { t } = useTranslation();
-  const isBridge = !!bridgeDepositAddress;
 
   // Every receipt reveals itself top to bottom, one stagger step per element.
   // The two shapes are one rhythm at different lengths: an exchange reads
   // sent → arrow → received → rows, a send or NFT reads status → amount, and
-  // on both the bridge instructions and then the actions close the sequence.
-  const bridgeStep = exchange ? 4 : 2;
-  const actionStep = isBridge ? bridgeStep + 1 : bridgeStep;
+  // then the actions close the sequence.
+  const actionStep = exchange ? 4 : 2;
 
   // The receipt's clock: local time, captured once when the receipt mounts —
   // the moment the transaction came back — so re-renders never move it.
@@ -605,58 +557,6 @@ export function TransactionSuccessScreen({
             </ReceiptRow>
           </ReceiptRows>
         ) : null}
-        {isBridge ? (
-          <BridgeInfoBox $step={bridgeStep}>
-            <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
-            <BridgeValue>{bridgeDepositAddress}</BridgeValue>
-            {bridgeAmountIn && (
-              <>
-                <BridgeLabel>{t('bridge.amountToSend', 'Amount to send')}</BridgeLabel>
-                <BridgeValue>{bridgeAmountIn}</BridgeValue>
-              </>
-            )}
-            {bridgeAmountOut && (
-              <>
-                <BridgeLabel>
-                  {t('bridge.estimatedReceive', 'You will receive approximately')}
-                </BridgeLabel>
-                <BridgeValue>{bridgeAmountOut}</BridgeValue>
-              </>
-            )}
-            {bridgeDepositTxId && (
-              <>
-                <BridgeLabel>{t('bridge.depositTxId', 'Deposit Transaction')}</BridgeLabel>
-                <BridgeValue>
-                  <BridgeTxLink
-                    href={`https://solscan.io/tx/${bridgeDepositTxId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
-                  </BridgeTxLink>
-                </BridgeValue>
-              </>
-            )}
-            {bridgeStatus && (
-              <>
-                <BridgeLabel>{t('bridge.currentStatus', 'Current status')}</BridgeLabel>
-                <BridgeValue>{bridgeStatus}</BridgeValue>
-              </>
-            )}
-            {bridgePayoutTxId && (
-              <>
-                <BridgeLabel>{t('bridge.payoutTxId', 'Payout Transaction')}</BridgeLabel>
-                <BridgeValue>{bridgePayoutTxId}</BridgeValue>
-              </>
-            )}
-            {bridgeExchangeId && (
-              <>
-                <BridgeLabel>{t('bridge.exchangeId', 'Exchange ID')}</BridgeLabel>
-                <BridgeValue style={{ marginBottom: 0 }}>{bridgeExchangeId}</BridgeValue>
-              </>
-            )}
-          </BridgeInfoBox>
-        ) : null}
       </Cluster>
       {/* The ending composes like the onboarding ending: a quiet text-button
           assist band over the bottom-most full-width primary. The wallet's own
@@ -665,7 +565,7 @@ export function TransactionSuccessScreen({
           no link in it, so the primary lands at one Y on every ending. */}
       <ActionGroup $step={actionStep}>
         <AssistBand data-testid="tx-success-assist">
-          {!isBridge && explorerUrl ? (
+          {explorerUrl ? (
             <TextButton
               onClick={handleExplorerClick}
               color={semantic.text.secondary}

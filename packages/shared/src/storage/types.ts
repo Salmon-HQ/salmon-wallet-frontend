@@ -223,9 +223,6 @@ export const STORAGE_KEYS = {
   /** Device-only onboarding event ('wallet_created' | 'wallet_recovered') parked until the consent prompt is answered */
   ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
 
-  // -- Cross-chain settlement --
-  /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */
-  PENDING_BRIDGES: 'salmon_pending_bridges',
   /** Submitted on-chain signatures still awaiting a verdict (PendingTransactions) */
   PENDING_TRANSACTIONS: 'salmon_pending_transactions',
 

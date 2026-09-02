@@ -31,7 +31,6 @@ import {
   useInactivityTimeout,
   createQueryClient,
   QueryClientProvider,
-  BridgeSettlementProvider,
   PendingTransactionsProvider,
   usePendingActivity,
   ThemeProvider,
@@ -86,17 +85,15 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BridgeSettlementProvider>
-        <PendingTransactionsProvider>
-          <AccountsProvider>
-            <CurrencyProvider>
-              <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
-                <RootLayoutNav />
-              </ThemeProvider>
-            </CurrencyProvider>
-          </AccountsProvider>
-        </PendingTransactionsProvider>
-      </BridgeSettlementProvider>
+      <PendingTransactionsProvider>
+        <AccountsProvider>
+          <CurrencyProvider>
+            <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
+              <RootLayoutNav />
+            </ThemeProvider>
+          </CurrencyProvider>
+        </AccountsProvider>
+      </PendingTransactionsProvider>
     </QueryClientProvider>
   );
 }

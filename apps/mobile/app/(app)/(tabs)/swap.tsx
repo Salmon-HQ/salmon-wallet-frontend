@@ -1,19 +1,16 @@
 /**
- * SwapScreen - Unified token swap and bridge interface
+ * SwapScreen - Token swap interface
  *
  * Displays:
  * - WalletHeader row: Account name, address, settings navigation
- * - SwapInputScreen: Multi-chain token selection and amount input
+ * - SwapInputScreen: Solana token selection and amount input
  * - SwapReviewScreen: Quote review and confirmation
  *
  * Features:
- * - Multi-chain support: tokens from Solana, Bitcoin, Ethereum
- * - Automatic mode detection:
- *   - Jupiter: Same-chain Solana swaps
- *   - StealthEX: Cross-chain bridges
+ * - Jupiter same-chain Solana swaps
  * - Real-time quote fetching
  * - Token selection with search and pagination
- * - Multi-step flow (input -> [recipient for bridge] -> review -> confirm)
+ * - Multi-step flow (input -> review -> confirm)
  * - Transaction signing and execution
  */
 
@@ -28,25 +25,16 @@ import {
   searchTokens,
   spacing,
   useAccountsContext,
-  useBridge,
   useJupiterTokenList,
   useMultiChainTokens,
   useSwap,
-  isSignableAccount,
   type SwapQuote as SharedSwapQuote,
   type SolanaAccount,
   type SwapNetworkId,
   unifiedToSwapToken,
   type Semantic,
 } from '@salmon/shared';
-import {
-  SwapScreen,
-  type BridgeEstimateSimple,
-  type BridgeExchangeSimple,
-  type BridgeTokenSimple,
-  type SwapQuote,
-  type SwapToken,
-} from '../../../src/components';
+import { SwapScreen, type SwapQuote, type SwapToken } from '../../../src/components';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 
@@ -95,16 +83,8 @@ export default function SwapScreenPage() {
     networkId: swapNetworkId,
   });
 
-  // Initialize useBridge hook
-  const {
-    getAvailableTokens: getBridgeAvailableTokens,
-    getEstimate: getBridgeEstimate,
-    createExchange: createBridgeExchange,
-    getTransactionStatus: getBridgeTransactionStatus,
-    reset: resetBridge,
-  } = useBridge();
-
-  // Get multi-chain tokens (SOL, BTC, ETH) from all user accounts
+  // Multi-chain balances (kept for the future Ethereum surface); the swap
+  // input/output tokens are Solana-only now that Jupiter is the only route.
   const {
     tokens: multiChainTokens,
     featuredTokens: topTokens,
@@ -114,22 +94,13 @@ export default function SwapScreenPage() {
     skip: !ready || !activeAccount,
   });
 
-  // Convert unified tokens to SwapToken format (with chain info for auto-detection)
   const swapTokens: SwapToken[] = useMemo(() => {
-    return multiChainTokens.map(unifiedToSwapToken);
+    return multiChainTokens.filter((t) => t.chain === 'solana').map(unifiedToSwapToken);
   }, [multiChainTokens]);
 
-  // Featured tokens (top 5 by USD value across all chains)
   const featuredTokens: SwapToken[] = useMemo(() => {
-    return topTokens.map(unifiedToSwapToken);
+    return topTokens.filter((t) => t.chain === 'solana').map(unifiedToSwapToken);
   }, [topTokens]);
-
-  // Resolve user's BTC address for bridge recipient pre-fill
-  const defaultRecipientAddress = useMemo(() => {
-    const btcAccounts = activeAccount?.networksAccounts?.['bitcoin-mainnet'];
-    const btcAccount = btcAccounts?.find((a) => a !== null);
-    return btcAccount?.getReceiveAddress() ?? '';
-  }, [activeAccount]);
 
   // Full Jupiter verified token catalog (shared React Query hook)
   const { tokens: jupiterTokens } = useJupiterTokenList({ networkId: swapNetworkId });
@@ -235,153 +206,6 @@ export default function SwapScreenPage() {
     [networkId]
   );
 
-  // Bridge handlers - convert multi-chain tokens to bridge format
-  const bridgeTokens: BridgeTokenSimple[] = useMemo(() => {
-    return multiChainTokens.map((token) => ({
-      symbol: token.symbol,
-      name: token.name,
-      logo: token.logo,
-      network: token.chain, // Now includes actual chain (solana, bitcoin, ethereum)
-      balance: token.balance,
-      usdPrice: token.usdPrice,
-    }));
-  }, [multiChainTokens]);
-
-  const bridgeFeaturedTokens: BridgeTokenSimple[] = useMemo(() => {
-    return topTokens.map((token) => ({
-      symbol: token.symbol,
-      name: token.name,
-      logo: token.logo,
-      network: token.chain,
-      balance: token.balance,
-      usdPrice: token.usdPrice,
-    }));
-  }, [topTokens]);
-
-  const handleGetAvailableTokens = useCallback(
-    async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-      // No try/catch: failures must propagate to useSwapScreenLogic, which
-      // classifies them into the form's reviewWarning slot.
-      const tokens = await getBridgeAvailableTokens(sourceSymbol);
-      if (!tokens) return [];
-      return tokens.map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        logo: t.logo,
-        network: t.network,
-      }));
-    },
-    [getBridgeAvailableTokens]
-  );
-
-  const handleGetBridgeEstimate = useCallback(
-    async (
-      symbolIn: string,
-      symbolOut: string,
-      amount: number,
-      networkIn?: string,
-      networkOut?: string
-    ): Promise<BridgeEstimateSimple | null> => {
-      const estimate = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
-      if (!estimate) return null;
-      return {
-        estimatedAmount: estimate.estimatedAmount,
-        minAmount: estimate.minAmount,
-        maxAmount: estimate.maxAmount ?? null,
-        symbolIn: estimate.symbolIn,
-        symbolOut: estimate.symbolOut,
-      };
-    },
-    [getBridgeEstimate]
-  );
-
-  const handleCreateBridgeExchange = useCallback(
-    async (
-      symbolIn: string,
-      symbolOut: string,
-      amount: number,
-      addressTo: string,
-      networkIn?: string,
-      networkOut?: string
-    ): Promise<BridgeExchangeSimple | null> => {
-      // No try/catch: failures must propagate to useSwapScreenLogic's
-      // classifyBridgeError so users see the classified message (e.g. minimum).
-      const exchange = await createBridgeExchange(
-        symbolIn,
-        symbolOut,
-        amount,
-        addressTo,
-        networkIn,
-        networkOut,
-        // Refund address: the deposit is sent from the active account
-        // (see onSendDeposit), so a failed exchange must come back there.
-        activeBlockchainAccount?.getReceiveAddress()
-      );
-      if (!exchange) return null;
-      return {
-        id: exchange.id,
-        depositAddress: exchange.payinAddress,
-        amountIn: exchange.amountExpectedFrom,
-        amountOut: exchange.amountExpectedTo,
-        symbolIn: exchange.currencyFrom,
-        symbolOut: exchange.currencyTo,
-        addressTo: exchange.payoutAddress,
-        status: exchange.status,
-      };
-    },
-    [createBridgeExchange, activeBlockchainAccount]
-  );
-
-  const handleGetBridgeTransactionStatus = useCallback(
-    async (id: string) => {
-      try {
-        const transaction = await getBridgeTransactionStatus(id);
-        if (!transaction) return null;
-        return {
-          status: transaction.status,
-          payoutTxId: transaction.payoutHash,
-        };
-      } catch (error) {
-        console.error('Failed to get bridge transaction status:', error);
-        return null;
-      }
-    },
-    [getBridgeTransactionStatus]
-  );
-
-  const handleSendDeposit = useCallback(
-    async (
-      depositAddress: string,
-      tokenAddress: string,
-      amount: number
-    ): Promise<{ txId: string }> => {
-      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
-      // The bridge deposit is an ordinary transfer, so it needs a key like any
-      // send does. A watch-only wallet never reaches the swap tab, but this is
-      // the last thing before the chain.
-      if (!isSignableAccount(activeBlockchainAccount)) {
-        throw new Error('swap.errors.noActiveAccount');
-      }
-      return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
-    },
-    [activeBlockchainAccount]
-  );
-
-  const handleBridgeSuccess = useCallback(
-    (_exchange: BridgeExchangeSimple) => {
-      resetBridge();
-    },
-    [resetBridge]
-  );
-
-  const handleBridgeError = useCallback(
-    (error: Error) => {
-      resetBridge();
-      console.error('Bridge Failed:', error.message);
-    },
-    [resetBridge]
-  );
-
   // No account state
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
@@ -399,7 +223,6 @@ export default function SwapScreenPage() {
           tokens={swapTokens}
           featuredTokens={featuredTokens}
           jupiterTokens={jupiterTokens}
-          defaultRecipientAddress={defaultRecipientAddress}
           loading={loading}
           onGetQuote={handleGetQuote}
           onSwap={handleSwap}
@@ -407,16 +230,6 @@ export default function SwapScreenPage() {
           onError={handleSwapError}
           onSearchTokens={handleSearchTokens}
           initialInToken={swapTokens[0]}
-          // Bridge props
-          bridgeTokens={bridgeTokens}
-          bridgeFeaturedTokens={bridgeFeaturedTokens}
-          onGetAvailableTokens={handleGetAvailableTokens}
-          onGetBridgeEstimate={handleGetBridgeEstimate}
-          onCreateBridgeExchange={handleCreateBridgeExchange}
-          onGetBridgeTransactionStatus={handleGetBridgeTransactionStatus}
-          onSendDeposit={handleSendDeposit}
-          onBridgeSuccess={handleBridgeSuccess}
-          onBridgeError={handleBridgeError}
           onNavigateHome={handleNavigateHome}
         />
       </View>

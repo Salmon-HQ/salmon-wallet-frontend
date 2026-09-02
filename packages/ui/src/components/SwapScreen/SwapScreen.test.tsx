@@ -30,11 +30,6 @@ vi.mock('@salmon/shared', async () => ({
   // leaves and the receipt is allowed in.
   ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/hooks/useWaitExit')),
   useSwapScreenLogic: () => mockLogic,
-  useBridgeSettlement: () => ({
-    trackBridgeExchange: vi.fn(),
-    isStalled: false,
-    retryNow: vi.fn(),
-  }),
   getTransactionUrl: () => 'https://explorer.test/tx',
   getDefaultExplorer: () => 'solscan',
   formatEffectiveRate: () => '1 SOL = 2 USDC',
@@ -54,12 +49,6 @@ vi.mock('./SwapInputScreen', () => ({
 }));
 vi.mock('./SwapReviewScreen', () => ({
   SwapReviewScreen: () => <div data-testid="swap-review-screen" />,
-}));
-vi.mock('../BridgeScreen/BridgeRecipientScreen', () => ({
-  BridgeRecipientScreen: () => <div data-testid="bridge-recipient-screen" />,
-}));
-vi.mock('../BridgeScreen/BridgeReviewScreen', () => ({
-  BridgeReviewScreen: () => <div data-testid="bridge-review-screen" />,
 }));
 vi.mock('../TokenSelector', () => ({ TokenSelectorModal: () => null }));
 vi.mock('../WarningNotice', () => ({

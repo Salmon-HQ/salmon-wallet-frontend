@@ -110,27 +110,6 @@ export function createERC1155Token(address: string, symbol?: string): TransferTo
 }
 
 // ============================================================================
-// Known Token Decimals (fallback for bridge tokens without API metadata)
-// ============================================================================
-
-export const KNOWN_DECIMALS: Record<string, number> = {
-  btc: 8,
-  eth: 18,
-  sol: 9,
-  usdc: 6,
-  usdt: 6,
-};
-
-/** Fallback logos for native/popular tokens when APIs don't return images */
-export const NATIVE_TOKEN_LOGOS: Record<string, string> = {
-  btc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  eth: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-  sol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  usdc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-  usdt: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-};
-
-// ============================================================================
 // Token Search / Filtering
 // ============================================================================
 

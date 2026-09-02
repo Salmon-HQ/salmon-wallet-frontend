@@ -1,17 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 const mockReplace = jest.fn();
-const mockAlert = jest.fn();
 const mockGetQuote = jest.fn();
 const mockExecuteSwapHook = jest.fn();
 const mockResetSwap = jest.fn();
-const mockResetBridge = jest.fn();
-const mockGetBridgeAvailableTokens = jest.fn();
-const mockGetBridgeEstimate = jest.fn();
-const mockCreateBridgeExchange = jest.fn();
-const mockTransfer = jest.fn();
 const mockRefreshBalances = jest.fn();
 
 jest.mock('react-i18next', () => ({
@@ -60,12 +53,6 @@ jest.mock('@salmon/shared', () => ({
     .mockResolvedValue([{ address: 'mint-search', symbol: 'SEARCH', decimals: 6 }]),
   spacing: { lg: 16 },
   useAccountsContext: jest.fn(),
-  useBridge: () => ({
-    getAvailableTokens: (...args: unknown[]) => mockGetBridgeAvailableTokens(...args),
-    getEstimate: (...args: unknown[]) => mockGetBridgeEstimate(...args),
-    createExchange: (...args: unknown[]) => mockCreateBridgeExchange(...args),
-    reset: mockResetBridge,
-  }),
   useMultiChainTokens: () => ({
     tokens: [
       {
@@ -78,6 +65,8 @@ jest.mock('@salmon/shared', () => ({
         usdPrice: 100,
       },
     ],
+    // Bridge is gone: a non-Solana featured token must be filtered out of
+    // the swap screen's token lists rather than offered as unswappable.
     featuredTokens: [
       {
         symbol: 'BTC',
@@ -111,7 +100,11 @@ jest.mock('../../src/components', () => ({
       React.Fragment,
       null,
       React.createElement(Text, null, `initial:${props.initialInToken?.symbol}`),
-      React.createElement(Text, null, `recipient:${props.defaultRecipientAddress}`),
+      React.createElement(
+        Text,
+        null,
+        `featured:${props.featuredTokens.map((t: any) => t.symbol).join(',')}`
+      ),
       React.createElement(
         TouchableOpacity,
         { onPress: () => props.onNavigateHome() },
@@ -143,11 +136,6 @@ jest.mock('../../src/components', () => ({
         TouchableOpacity,
         { onPress: () => props.onSuccess('tx-1') },
         React.createElement(Text, null, 'Swap success')
-      ),
-      React.createElement(
-        TouchableOpacity,
-        { onPress: () => props.onBridgeError(new Error('bridge broke')) },
-        React.createElement(Text, null, 'Bridge error')
       )
     );
   },
@@ -162,15 +150,8 @@ import SwapScreenPage from '../../app/(app)/(tabs)/swap';
 describe('SwapScreenPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, 'alert').mockImplementation((...args: any[]) => {
-      mockAlert(...args);
-    });
     mockGetQuote.mockResolvedValue({ custom: { requestId: 'req-1' }, route: 'ok' });
     mockExecuteSwapHook.mockResolvedValue({ status: 'success', txId: 'tx-123' });
-    mockGetBridgeAvailableTokens.mockResolvedValue([]);
-    mockGetBridgeEstimate.mockResolvedValue(null);
-    mockCreateBridgeExchange.mockResolvedValue(null);
-    mockTransfer.mockResolvedValue({ txId: 'deposit-1' });
   });
 
   it('renders fallback when there is no active account', async () => {
@@ -194,13 +175,9 @@ describe('SwapScreenPage', () => {
       {
         ready: true,
         activeAccount: {
-          networksAccounts: {
-            'bitcoin-mainnet': [{ getReceiveAddress: () => 'btc-receive-addr' }],
-          },
+          networksAccounts: {},
         },
-        activeBlockchainAccount: {
-          transfer: (...args: unknown[]) => mockTransfer(...args),
-        },
+        activeBlockchainAccount: {},
         networkId: 'solana-mainnet',
       },
     ]);
@@ -211,7 +188,9 @@ describe('SwapScreenPage', () => {
       expect(screen.getByText('initial:SOL')).toBeTruthy();
     });
 
-    expect(screen.getByText('recipient:btc-receive-addr')).toBeTruthy();
+    // The BTC featured token has no swap route without bridge, so it never
+    // reaches the token list.
+    expect(screen.getByText('featured:')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Get quote'));
     await waitFor(() => {
@@ -231,11 +210,6 @@ describe('SwapScreenPage', () => {
 
     fireEvent.press(screen.getByText('Swap success'));
     expect(mockResetSwap).toHaveBeenCalledTimes(1);
-
-    fireEvent.press(screen.getByText('Bridge error'));
-    expect(mockResetBridge).toHaveBeenCalledTimes(1);
-    // The swap form renders the classified message; no second surface.
-    expect(mockAlert).not.toHaveBeenCalled();
 
     fireEvent.press(screen.getByText('Navigate home'));
     expect(mockReplace).toHaveBeenCalledWith('/');

@@ -89,18 +89,4 @@ describe('PendingActivityBanner', () => {
     fireEvent.click(screen.getByLabelText('pending.dismiss'));
     expect(onDismiss).toHaveBeenCalledWith('done');
   });
-
-  it('never offers dismissal for a bridge, which resolves on its own', () => {
-    render(
-      <PendingActivityBanner
-        items={[item({ id: 'ex-1', kind: 'bridge', status: 'pending', dismissible: false })]}
-        onDismiss={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText('pending.bridge.pending')).toBeTruthy();
-    // The exchange id is the only reference a user could quote to support.
-    expect(screen.getByText('1 SOL → 210 USDC')).toBeTruthy();
-    expect(screen.queryByLabelText('pending.dismiss')).toBeNull();
-  });
 });

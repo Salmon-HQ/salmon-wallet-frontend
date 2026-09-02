@@ -27,9 +27,9 @@ const TONE = {
 
 /**
  * The one surface that reports work still in the air — a signed send or swap
- * waiting on the cluster, or a bridge order waiting on StealthEX. It is mounted
- * above the router rather than inside a screen so that leaving the screen the
- * transaction was signed on never costs the user the outcome.
+ * waiting on the cluster. It is mounted above the router rather than inside a
+ * screen so that leaving the screen the transaction was signed on never costs
+ * the user the outcome.
  *
  * Opaque by rule: it overlaps scrolling content, so it gets a hard surface, not
  * glass.

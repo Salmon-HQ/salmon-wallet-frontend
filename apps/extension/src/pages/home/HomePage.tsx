@@ -405,7 +405,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // not silently snap the user back to Home.
   const [activeTab, setActiveTabState] = useState<ActiveTab>('home');
 
-  // True from the moment a send/swap/bridge is signed until its outcome has
+  // True from the moment a send/swap is signed until its outcome has
   // been acknowledged. Before signing this stays false — backing out of a
   // review costs nothing and must stay easy.
   const [flowLocked, setFlowLocked] = useState(false);
@@ -1434,7 +1434,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           >
             {t('tabs.collectibles', 'Collectibles')}
           </TabButton>
-          {/* Gone, not greyed: a watch-only wallet can never swap or bridge,
+          {/* Gone, not greyed: a watch-only wallet can never swap,
               so the tab is not a door that happens to be locked. */}
           {!isWatchOnly && (
             <TabButton

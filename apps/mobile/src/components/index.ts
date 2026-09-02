@@ -263,7 +263,7 @@ export type {
 } from './ReceiptScreen';
 
 // ---------------------------------------------------------------------------
-// Send / Swap / Bridge
+// Send / Swap
 // ---------------------------------------------------------------------------
 
 // The send flow is four screens under `app/(app)/send` (spec 018); what is
@@ -281,7 +281,6 @@ export {
 export type {
   SwapToken,
   SwapQuote,
-  SwapTab,
   SwapStep,
   SwapChainType,
   SwapScreenProps,
@@ -289,21 +288,7 @@ export type {
   SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from './SwapScreen';
-
-export { BridgeRecipientScreen, BridgeReviewScreen, RecipientAddressInput } from './BridgeScreen';
-export type {
-  BridgeChain,
-  BridgeToken,
-  BridgeEstimate,
-  BridgeExchange,
-  BridgeRecipientScreenProps,
-  BridgeReviewScreenProps,
-  RecipientAddressInputProps,
-} from './BridgeScreen';
 
 // ---------------------------------------------------------------------------
 // Settings

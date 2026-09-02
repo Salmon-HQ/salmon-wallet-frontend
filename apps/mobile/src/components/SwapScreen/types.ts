@@ -16,18 +16,12 @@ export type {
   SwapQuote,
   // UI types
   SwapToken,
-  SwapTab,
   SwapDetailItem,
-  SwapStepBase,
   SwapScreenStep,
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from '@salmon/shared';
 
 // Import generic prop types from shared
 import type {
-  SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
   SwapDetailsCardProps as SwapDetailsCardPropsBase,
@@ -43,11 +37,6 @@ import type {
  * @deprecated Use SwapScreenStep from @salmon/shared instead
  */
 export type SwapStep = SwapScreenStep;
-
-/**
- * Props for SwapTabSelector component (React Native)
- */
-export interface SwapTabSelectorProps extends SwapTabSelectorPropsBase<ViewStyle> {}
 
 /**
  * Props for SwapAmountInput component (React Native)
@@ -77,16 +66,7 @@ export interface SwapReviewScreenProps extends SwapReviewScreenPropsBase<ViewSty
 /**
  * Props for SwapInputScreen sub-component (React Native)
  */
-export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {
-  /**
-   * The exchange a failed bridge left behind. The shared layer now registers
-   * the exchange the moment it is created, before the deposit that can fail,
-   * so a failure has an id and a deposit address the user can quote to
-   * support. Rendering it is the app's job; it belongs beside the error the
-   * failure produced, because that is where the user is looking.
-   */
-  bridgeReference?: { id: string; depositAddress: string } | null;
-}
+export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {}
 
 /**
  * Props for main SwapScreen component (React Native)

@@ -39,11 +39,6 @@ jest.mock('@salmon/shared', () => ({
   useSwapScreenLogic: () => mockLogic,
   useAccountsContext: () => [{ activeAccount: mockAccount }],
   isWatchOnlyAccount: (account: { watchOnly?: boolean } | undefined) => !!account?.watchOnly,
-  useBridgeSettlement: () => ({
-    trackBridgeExchange: jest.fn(),
-    isStalled: false,
-    retryNow: jest.fn(),
-  }),
   getTransactionUrl: () => 'https://solscan.io/tx/abc',
   // The derivations are unit-tested in packages/shared; here they only need
   // to produce a stable string for the receipt props.
@@ -97,14 +92,6 @@ jest.mock('../TokenSelector', () => {
     ),
   };
 });
-jest.mock('../BridgeScreen/BridgeRecipientScreen', () => {
-  const { View } = require('react-native');
-  return { BridgeRecipientScreen: () => <View /> };
-});
-jest.mock('../BridgeScreen/BridgeReviewScreen', () => {
-  const { View } = require('react-native');
-  return { BridgeReviewScreen: () => <View /> };
-});
 jest.mock('../WarningNotice', () => {
   const { View } = require('react-native');
   return { WarningNotice: () => <View /> };
@@ -139,7 +126,6 @@ const setLogic = (overrides: Record<string, unknown>) => {
       inAmount: '',
       outAmount: '',
       successSummary: null,
-      successExchange: null,
       successTxId: null,
       settling: false,
       isConfirming: false,
@@ -149,13 +135,10 @@ const setLogic = (overrides: Record<string, unknown>) => {
       modalOutTokens: [],
       modalFeaturedTokens: [],
       tokensLoading: false,
-      isLoadingBridgeTokens: false,
       isLoadingQuote: false,
-      isLoadingEstimate: false,
       canReview: false,
       reviewWarning: null,
       swapError: null,
-      lastBridgeExchange: null,
       setInAmount: jest.fn(),
       setShowInTokenModal: jest.fn(),
       setShowOutTokenModal: jest.fn(),

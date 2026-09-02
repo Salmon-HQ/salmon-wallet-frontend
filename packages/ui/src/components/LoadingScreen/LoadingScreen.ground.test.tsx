@@ -8,7 +8,7 @@
  *
  * The ground is asserted here rather than at each call site because every
  * full-screen wait in web and extension — boot, unlock, wallet creation,
- * add-account, and the pending state of swap, bridge and send — is this one
+ * add-account, and the pending state of swap and send — is this one
  * component. The exception is asserted with it: `bedrock` is the dApp approval
  * flow's opt-out, and it is a security rule rather than a preference.
  */

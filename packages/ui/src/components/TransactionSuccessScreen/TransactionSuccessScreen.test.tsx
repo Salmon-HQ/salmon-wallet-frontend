@@ -325,20 +325,6 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.queryByText('Salmon fee')).toBeNull();
       expect(screen.getByText('Time')).toBeTruthy();
     });
-
-    it('keeps the bridge deposit instructions', () => {
-      render(
-        <TransactionSuccessScreen
-          {...baseProps}
-          title="Bridge Initiated"
-          bridgeDepositAddress="bc1qdeposit"
-          bridgeAmountIn="33 USDC"
-        />
-      );
-
-      expect(screen.getByText('bc1qdeposit')).toBeTruthy();
-      expect(screen.getByText('33 USDC')).toBeTruthy();
-    });
   });
 
   describe('the arrival', () => {

@@ -76,7 +76,6 @@ export {
 // Address utilities
 export { chunkAddress, getShortAddress, truncateHash } from './address';
 export { classifyTransactionError } from './transaction-errors';
-export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
 
 // How a pasted recovery phrase lays out across one-word boxes. Shared so the
@@ -169,10 +168,6 @@ export {
 
 // Token utilities
 export {
-  // Known decimals (bridge token fallback)
-  KNOWN_DECIMALS,
-  // Fallback logos for native tokens
-  NATIVE_TOKEN_LOGOS,
   // Token search
   filterTokensLocally,
   // CoinGecko
@@ -260,16 +255,7 @@ export {
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
 
 // Swap utilities
-export {
-  isSameChain,
-  getSwapType,
-  getSwapMode,
-  getChainFromNetwork,
-  toStealthExNetwork,
-  validateAddress,
-  mapToSwapToken,
-  unifiedToSwapToken,
-} from './swap';
+export { isSameChain, mapToSwapToken, unifiedToSwapToken } from './swap';
 
 // Transaction transform utilities
 export {

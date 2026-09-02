@@ -20,7 +20,7 @@ You can expect an acknowledgement within a few business days. Please give us a r
 
 In scope: everything shipped from this repository — the mobile app (`apps/mobile`), web app (`apps/web`), browser extension (`apps/extension`), and the shared packages (`packages/shared`, `packages/ui`), with special priority for key material and seed handling (`packages/shared/src/crypto`, `packages/shared/src/storage`), transaction building and signing (`packages/shared/src/blockchain`), and the dApp approval flows.
 
-Out of scope: the backend API (separate repository — report there), third-party providers the wallet consumes (Jupiter, CoinGecko, Helius, Triton, StealthEX), and social engineering.
+Out of scope: the backend API (separate repository — report there), third-party providers the wallet consumes (Jupiter, CoinGecko, Helius, Triton), and social engineering.
 
 ## Notes for maintainers
 

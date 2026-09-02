@@ -1427,7 +1427,7 @@ describe('retry policy', () => {
     });
 
     it.each(['post', 'put', 'delete'])('never retries a %s request', (method) => {
-      // Retrying a mutation is how one bridge order becomes two.
+      // Retrying a mutation is how one order becomes two.
       expect(resolveRetryDelay({ ...base, method, status: 503 })).toBeNull();
     });
 

@@ -271,7 +271,7 @@ export type {
   StepTokenSelectProps,
 } from './SendPage';
 
-// SwapScreen - Swap and Bridge interface
+// SwapScreen - Swap interface
 export {
   SwapAmountInput,
   SwapDetailRow,
@@ -279,12 +279,8 @@ export {
   SwapReviewExchange,
   SwapReviewScreen,
   SwapScreen,
-  SwapTabSelector,
 } from './SwapScreen';
 export type {
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
-  BridgeTokenSimple,
   SwapAmountInputProps,
   SwapChainType,
   SwapDetailRowProps,
@@ -294,20 +290,8 @@ export type {
   SwapReviewScreenProps,
   SwapScreenProps,
   SwapStep,
-  SwapTab,
-  SwapTabSelectorProps,
   SwapToken,
 } from './SwapScreen';
-
-// BridgeScreen - Bridge interface
-export { BridgeRecipientScreen, BridgeReviewScreen } from './BridgeScreen';
-export type {
-  BridgeChain,
-  BridgeToken,
-  BridgeEstimate,
-  BridgeRecipientScreenProps,
-  BridgeReviewScreenProps,
-} from './BridgeScreen';
 
 // DAppApproval - Shared approval views for web and extension
 export {

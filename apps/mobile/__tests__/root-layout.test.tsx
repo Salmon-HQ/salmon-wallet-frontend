@@ -98,7 +98,6 @@ jest.mock('@salmon/shared', () => {
     useInactivityTimeout: jest.fn(),
     createQueryClient: () => ({}),
     QueryClientProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-    BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     PendingTransactionsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     usePendingActivity: () => ({ items: [], dismiss: jest.fn() }),
     semantic: MOCK_SEMANTIC,
