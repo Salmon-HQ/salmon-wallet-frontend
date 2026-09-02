@@ -15,17 +15,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-
-interface PasswordInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  error?: string;
-  editable?: boolean;
-  autoFocus?: boolean;
-  onSubmitEditing?: () => void;
-  testID?: string;
-}
+import type { PasswordInputProps } from './types';
 
 export function PasswordInput({
   value,

@@ -3,14 +3,10 @@
  */
 import { View, Text, StyleSheet } from 'react-native';
 import { spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
-import { PasswordStrength, getPasswordStrengthLabel } from '@salmon/shared';
+import { getPasswordStrengthLabel } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
-
-interface PasswordStrengthBarProps {
-  strength: PasswordStrength;
-  t?: (key: string) => string;
-}
+import type { PasswordStrengthBarProps } from './types';
 
 export function PasswordStrengthBar({ strength, t }: PasswordStrengthBarProps) {
   const { status, step } = useSemantic();

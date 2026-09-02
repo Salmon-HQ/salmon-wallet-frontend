@@ -11,9 +11,9 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-export interface LockOverlayProps {
-  children: React.ReactNode;
-}
+import type { LockOverlayProps } from './types';
+
+export type { LockOverlayProps };
 
 export function LockOverlay({ children }: LockOverlayProps): React.ReactElement {
   return (

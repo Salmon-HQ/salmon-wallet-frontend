@@ -2,15 +2,7 @@
  * SeedWordInput - Input for validating a specific mnemonic word
  */
 import { useTranslation } from 'react-i18next';
-import type { Ref } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  type NativeSyntheticEvent,
-  type TextInputKeyPressEventData,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import {
   spacing,
   componentSizes,
@@ -19,43 +11,11 @@ import {
   fontFamilyNative,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { SeedWordInputProps } from './types';
 
-type ValidationState = 'idle' | 'correct' | 'incorrect';
-
-export interface SeedWordInputProps extends Testable {
-  /** Word position (1-indexed) */
-  position: number;
-  /** Current input value */
-  value: string;
-  /** Change handler */
-  onChangeText: (text: string) => void;
-  /** Validation state */
-  validationState?: ValidationState;
-  /** Auto focus this input */
-  autoFocus?: boolean;
-  /** Called when user submits */
-  onSubmitEditing?: () => void;
-  /** Handle to focus this box from a grid that owns the focus order. */
-  inputRef?: Ref<TextInput>;
-  /** Raw key events — a grid uses this to move back on backspace. */
-  onKeyPress?: (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void;
-  /**
-   * Compact: the number sits inside the box instead of on a line above it, so
-   * twelve of these fit in a grid rather than a column.
-   */
-  compact?: boolean;
-  /**
-   * Denser box, for the 24-word grid. Twenty-four boxes have to occupy the
-   * band twelve did — the grid gets tighter rather than taller, because a grid
-   * that grows would shove the layout the slot grid exists to hold still.
-   */
-  dense?: boolean;
-  /** Keyboard's return key. `next` by default. */
-  returnKeyType?: 'next' | 'done';
-}
+export type { SeedWordInputProps };
 
 export function SeedWordInput({
   position,

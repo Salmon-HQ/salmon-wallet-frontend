@@ -45,35 +45,9 @@ import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingLayout, OnboardingTitle, ReservedSlot } from '../OnboardingLayout';
 import { ScalesBackground } from '../ScalesBackground';
-import type { BiometricConfig } from './types';
+import type { LockContentProps } from './types';
 
-// ============================================================================
-// Props
-// ============================================================================
-
-export interface LockContentProps {
-  /** Whether the lock screen is active */
-  locked: boolean;
-  /** Callback to attempt unlock with password */
-  onUnlock: (password: string) => Promise<boolean>;
-  /** Callback to unlock with cached derived key (biometric) */
-  onUnlockWithKey?: (keyJson: string) => Promise<boolean>;
-  /** Callback to get derived key after password unlock */
-  onGetDerivedKey?: () => Promise<string | null>;
-  /** Callback to remove all accounts (reset wallet) */
-  onRemoveAllAccounts: () => Promise<void>;
-  /**
-   * Called once the unlock wait's closing wave has fully left the screen after
-   * a successful unlock. The owner holds the gate in its locked state until
-   * this fires — releasing it earlier unmounts this component (and the wave)
-   * mid-crossing, the same hard cut the password screen's parked route exists
-   * to prevent. LoadingScreen's own watchdog guarantees the exit callback, so
-   * the gate cannot be stranded.
-   */
-  onUnlockExited?: () => void;
-  /** Biometric configuration */
-  biometric?: BiometricConfig;
-}
+export type { LockContentProps };
 
 // ============================================================================
 // Component

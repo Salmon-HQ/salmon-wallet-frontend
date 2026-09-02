@@ -29,18 +29,9 @@ import { StyleSheet, View, type TextInput } from 'react-native';
 import { distributePhrase, LONG_PHRASE, SHORT_PHRASE, spacing } from '@salmon/shared';
 
 import { SeedWordInput } from './SeedWordInput';
+import type { SeedPhraseEntryProps } from './types';
 
-export interface SeedPhraseEntryProps {
-  /** One entry per box. Its length is the number of boxes drawn. */
-  words: string[];
-  onChange: (words: string[]) => void;
-  /** Number of boxes to draw. The grid grows to 24 when a paste needs it. */
-  onLengthChange: (length: number) => void;
-  /** Reported when a paste does not divide into a usable phrase length. */
-  onPasteRejected?: (count: number) => void;
-  /** Prefix for the cell/input testIDs, mirroring the DOM twin. */
-  testID?: string;
-}
+export type { SeedPhraseEntryProps };
 
 export function SeedPhraseEntry({
   words,

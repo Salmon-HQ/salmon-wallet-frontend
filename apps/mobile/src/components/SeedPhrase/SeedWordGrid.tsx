@@ -13,13 +13,7 @@ import {
 } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useThemedStyles } from '../../theme/useThemedStyles';
-
-interface SeedWordGridProps {
-  /** Array of mnemonic words */
-  words: string[];
-  /** Number of columns (default: 3) */
-  columns?: number;
-}
+import type { SeedWordGridProps } from './types';
 
 export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
   // Rendering a mnemonic is by definition a secret surface, so protection

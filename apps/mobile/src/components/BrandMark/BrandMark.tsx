@@ -16,23 +16,10 @@
 import { markAspectRatio, markPaths, markViewBoxAttr } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
-import type { Testable } from '@salmon/shared';
 import Svg, { Path } from 'react-native-svg';
+import type { BrandMarkProps } from './types';
 
-export interface BrandMarkProps extends Testable {
-  /** Drawn width. Height follows the aspect ratio. */
-  size: number;
-  /**
-   * Ink. Defaults to the mode's `text.primary` — white at depth, dark in light.
-   *
-   * It drew in the accent until the product owner asked for white
-   * (2026-08-18). `text.primary` rather than a pure `#FFF`: it is the same ink
-   * the title above it already uses on this ground, it follows the theme, and
-   * it keeps the mark's colour a token rather than the literal the raster used
-   * to bake in — which is the whole reason the mark became a vector.
-   */
-  color?: string;
-}
+export type { BrandMarkProps };
 
 export function BrandMark({ size, color, testID }: BrandMarkProps) {
   // The default ink is the mode's, resolved at render: a default parameter
