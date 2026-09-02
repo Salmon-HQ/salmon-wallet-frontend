@@ -66,7 +66,11 @@ export function AddressAddPanel({
   }, [form, onSave]);
 
   return (
-    <SettingsScreenLayout title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.addressbook.add', 'Add Address')}
+      subtitle={t('settings.addressbook.add_subtitle', 'Save a label and address for later.')}
+      onBack={onBack}
+    >
       <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
         <TextInput
           testID="address-book-label-input"

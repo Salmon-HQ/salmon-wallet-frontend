@@ -60,7 +60,11 @@ export function AppearanceSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.appearance', 'Appearance')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.appearance', 'Appearance')}
+      subtitle={t('settings.appearance_subtitle', 'Choose light, dark, or system.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={options}
         getKey={(item) => item.preference}

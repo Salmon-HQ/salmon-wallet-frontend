@@ -163,14 +163,19 @@
   "settings": {
     "title": "Configuración",
     "address_book": "Contactos",
+    "address_book_subtitle": "Guardá direcciones a las que enviás seguido.",
     "display_language": "Idioma",
     "change_network": "Cambiar Network",
+    "change_network_subtitle": "Cambiá la red que usa tu billetera.",
     "select_explorer": "Seleccionar Explorador",
     "explorer": "Explorador de Bloques",
+    "explorer_subtitle": "Elegí dónde se abren los links de transacciones.",
     "trusted_apps": "Apps Autorizadas",
+    "trusted_apps_subtitle": "Apps que conectaste a tu billetera.",
     "no_trusted_apps": "No hay apps conectadas",
     "no_trusted_apps_hint": "Las apps que conectes aparecerán aquí",
     "help_support": "Ayuda & Soporte",
+    "help_support_subtitle": "Conseguí ayuda o contactá al equipo.",
     "support": {
       "faq": {
         "title": "Preguntas Frecuentes",
@@ -192,7 +197,9 @@
     "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
     "security_notice_title": "Nunca compartas tus claves",
     "currency": "Moneda de visualización",
+    "currency_subtitle": "Elegí en qué moneda se muestran tus saldos.",
     "appearance": "Apariencia",
+    "appearance_subtitle": "Elegí modo claro, oscuro o automático.",
     "appearance_options": {
       "system": "Sistema",
       "light": "Claro",
@@ -200,7 +207,9 @@
     },
     "appearance_system_hint": "Sigue a tu dispositivo",
     "backup": "Respaldar Seed Phrase",
+    "backup_subtitle": "Mirá o respaldá tu frase de recuperación.",
     "private_key": "Clave Privada",
+    "private_key_subtitle": "Mirá las claves privadas de esta red.",
     "select_network": "Seleccionar Red",
     "select_network_description": "Elegí una red para ver sus claves privadas",
     "derivation_path": "Ruta de Derivación",
@@ -208,6 +217,7 @@
     "authenticate_to_reveal": "Autenticar para revelar",
     "no_accounts_for_network": "No se encontraron cuentas para esta red",
     "about": "Acerca de",
+    "about_subtitle": "Versión de la app e información legal.",
     "about_website": "Sitio Web",
     "about_terms": "Términos de Servicio",
     "about_privacy": "Política de Privacidad",
@@ -266,13 +276,16 @@
       "show_derived_a11y": "Mostrar {{name}}"
     },
     "profile_picture": "Foto de Perfil",
+    "profile_picture_subtitle": "Elegí un preset o usá uno de tus NFTs.",
     "avatar_presets": "Avatares",
     "avatar_nfts": "NFTs",
     "avatar_empty_nfts": "No se encontraron coleccionables",
     "addressbook": {
       "add": "Agregar dirección",
+      "add_subtitle": "Guardá una etiqueta y dirección para después.",
       "addnew": "Agregar nueva dirección",
       "edit": "Editar dirección",
+      "edit_subtitle": "Actualizá la etiqueta o dirección de este contacto.",
       "save": "Guardar dirección",
       "label": "Etiqueta",
       "empty": "Parece vacío aquí.\nAgregá tu primer contacto haciendo clic en el botón.",
@@ -285,26 +298,31 @@
     },
     "languages": {
       "title": "Idioma",
+      "subtitle": "Elegí el idioma de la app.",
       "en": "Inglés",
       "es": "Español"
     },
     "accounts": {
-      "title": "Cuentas"
+      "title": "Cuentas",
+      "subtitle": "Cambiá entre tus cuentas o administralas."
     },
     "account_edit": {
       "title": "Editar Cuenta",
       "name_section": "Nombre de la Cuenta",
+      "name_section_subtitle": "Elegí un nombre para esta cuenta.",
       "avatar_section": "Foto de Perfil",
       "backup_section": "Respaldar Seed Phrase",
       "private_key_section": "Exportar Clave Privada"
     },
     "account_add": {
       "title": "Agregar Cuenta",
+      "select_method_subtitle": "Elegí cómo agregar esta cuenta.",
       "create_new": "Crear Nueva Cuenta",
       "create_new_description": "Derivar una nueva cuenta desde tu seed phrase existente",
       "import_seed": "Importar Seed Phrase",
       "import_seed_description": "Importar una cuenta usando una seed phrase diferente",
       "set_name": "Nombre de la Cuenta",
+      "set_name_subtitle": "Ponele un nombre que vayas a reconocer",
       "set_name_placeholder": "Ingresá el nombre de la cuenta",
       "default_name": "Cuenta {{number}}",
       "scanning": "Buscando cuentas...",
@@ -315,10 +333,12 @@
       "import_private_key": "Importar clave privada",
       "import_private_key_description": "Agregá una billetera que ya tenés usando su clave privada",
       "reauth_title": "Confirmá tu contraseña",
+      "reauth_subtitle": "Ingresá tu contraseña para continuar.",
       "reauth_body": "La billetera estuvo inactiva unos minutos, así que la clave que la cifra ya no está en memoria. Ingresá tu contraseña para terminar de agregar esta cuenta — no se pierde nada de lo que cargaste.",
       "reauth_confirm": "Confirmar y agregar",
       "import_watch_only": "Seguir una billetera",
-      "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos"
+      "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos",
+      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos"
     },
     "security": {
       "title": "Seguridad",

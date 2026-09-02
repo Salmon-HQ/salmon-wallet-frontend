@@ -65,7 +65,11 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.help_support')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.help_support')}
+      subtitle={t('settings.help_support_subtitle', 'Get help or contact the team.')}
+      onBack={onBack}
+    >
       {options.map(renderOption)}
 
       <WarningNotice tone="warning" title={t('settings.security_notice_title')}>

@@ -83,7 +83,11 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.trusted_apps', 'Trusted Apps')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.trusted_apps', 'Trusted Apps')}
+      subtitle={t('settings.trusted_apps_subtitle', "Apps you've connected to your wallet.")}
+      onBack={onBack}
+    >
       {apps.length > 0 ? (
         apps.map(renderAppRow)
       ) : (

@@ -32,7 +32,11 @@ export function NetworkSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.change_network', 'Network')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.change_network', 'Network')}
+      subtitle={t('settings.change_network_subtitle', 'Switch the network your wallet uses.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={networks}
         getKey={(network) => network.id}

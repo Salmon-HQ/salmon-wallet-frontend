@@ -30,7 +30,11 @@ export function LanguageSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.languages.title', 'Language')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.languages.title', 'Language')}
+      subtitle={t('settings.languages.subtitle', "Choose the app's display language.")}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={languages}
         getKey={(lang) => lang.code}

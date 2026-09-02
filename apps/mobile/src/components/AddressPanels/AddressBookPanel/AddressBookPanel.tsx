@@ -120,7 +120,11 @@ export function AddressBookPanel({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.address_book', 'Address Book')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.address_book', 'Address Book')}
+      subtitle={t('settings.address_book_subtitle', 'Save addresses you send to often.')}
+      onBack={onBack}
+    >
       {error ? (
         <View testID="address-book-error">
           <WarningNotice

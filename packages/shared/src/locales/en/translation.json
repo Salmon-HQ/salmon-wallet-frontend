@@ -163,14 +163,19 @@
   "settings": {
     "title": "Settings",
     "address_book": "Address Book",
+    "address_book_subtitle": "Save addresses you send to often.",
     "display_language": "Display Language",
     "change_network": "Change Network",
+    "change_network_subtitle": "Switch the network your wallet uses.",
     "select_explorer": "Select Explorer",
     "explorer": "Block Explorer",
+    "explorer_subtitle": "Pick where transaction links open.",
     "trusted_apps": "Trusted Apps",
+    "trusted_apps_subtitle": "Apps you've connected to your wallet.",
     "no_trusted_apps": "No connected apps",
     "no_trusted_apps_hint": "Apps you connect to will appear here",
     "help_support": "Help & Support",
+    "help_support_subtitle": "Get help or contact the team.",
     "support": {
       "faq": {
         "title": "Frequently Asked Questions",
@@ -192,7 +197,9 @@
     "security_notice": "Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.",
     "security_notice_title": "Never share your keys",
     "currency": "Display Currency",
+    "currency_subtitle": "Choose the currency balances show in.",
     "appearance": "Appearance",
+    "appearance_subtitle": "Choose light, dark, or system.",
     "appearance_options": {
       "system": "System",
       "light": "Light",
@@ -200,7 +207,9 @@
     },
     "appearance_system_hint": "Follows your device",
     "backup": "Backup Seed Phrase",
+    "backup_subtitle": "View or back up your recovery phrase.",
     "private_key": "Private Key",
+    "private_key_subtitle": "View the private keys for this network.",
     "select_network": "Select Network",
     "select_network_description": "Choose a network to view its private keys",
     "derivation_path": "Derivation Path",
@@ -208,6 +217,7 @@
     "authenticate_to_reveal": "Authenticate to reveal",
     "no_accounts_for_network": "No accounts found for this network",
     "about": "About",
+    "about_subtitle": "App version and legal information.",
     "about_website": "Website",
     "about_terms": "Terms of Service",
     "about_privacy": "Privacy Policy",
@@ -266,13 +276,16 @@
       "show_derived_a11y": "Show {{name}}"
     },
     "profile_picture": "Profile Picture",
+    "profile_picture_subtitle": "Pick a preset or use one of your NFTs.",
     "avatar_presets": "Avatars",
     "avatar_nfts": "NFTs",
     "avatar_empty_nfts": "No collectibles found",
     "addressbook": {
       "add": "Add Address",
+      "add_subtitle": "Save a label and address for later.",
       "addnew": "Add New Address",
       "edit": "Edit Address",
+      "edit_subtitle": "Update this contact's label or address.",
       "save": "Save Address",
       "label": "Label",
       "empty": "Looks empty in here.\nAdd your first contact clicking the button.",
@@ -285,26 +298,31 @@
     },
     "languages": {
       "title": "Language",
+      "subtitle": "Choose the app's display language.",
       "en": "English",
       "es": "Spanish"
     },
     "accounts": {
-      "title": "Accounts"
+      "title": "Accounts",
+      "subtitle": "Switch between or manage your accounts."
     },
     "account_edit": {
       "title": "Edit Account",
       "name_section": "Account Name",
+      "name_section_subtitle": "Choose a name for this account.",
       "avatar_section": "Profile Picture",
       "backup_section": "Backup Seed Phrase",
       "private_key_section": "Export Private Key"
     },
     "account_add": {
       "title": "Add Account",
+      "select_method_subtitle": "Choose how you want to add this account.",
       "create_new": "Create New Account",
       "create_new_description": "Derive a new account from your existing seed phrase",
       "import_seed": "Import Seed Phrase",
       "import_seed_description": "Import an account using a different seed phrase",
       "set_name": "Account Name",
+      "set_name_subtitle": "Give this account a name you'll recognize",
       "set_name_placeholder": "Enter account name",
       "default_name": "Account {{number}}",
       "scanning": "Scanning for accounts...",
@@ -315,10 +333,12 @@
       "import_private_key": "Import private key",
       "import_private_key_description": "Add a wallet you already own using its private key",
       "reauth_title": "Confirm your password",
+      "reauth_subtitle": "Enter your password to keep going.",
       "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
       "reauth_confirm": "Confirm and add",
       "import_watch_only": "Watch a wallet",
-      "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds"
+      "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds",
+      "watch_only_subtitle": "Follow a wallet's address without moving its funds"
     },
     "security": {
       "title": "Security",

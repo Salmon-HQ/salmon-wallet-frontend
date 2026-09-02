@@ -74,7 +74,11 @@ export function AddressEditPanel({
     contact.networkId.split('-')[0].slice(1);
 
   return (
-    <SettingsScreenLayout title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.addressbook.edit', 'Edit Address')}
+      subtitle={t('settings.addressbook.edit_subtitle', "Update this contact's label or address.")}
+      onBack={onBack}
+    >
       <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
         <TextInput
           testID="address-book-label-input"

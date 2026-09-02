@@ -183,7 +183,12 @@ export function AccountAvatarPanel({
   const nftKeyExtractor = useCallback((item: NftAvatarItem) => item.mint, []);
 
   return (
-    <SettingsScreenLayout title={t('settings.profile_picture')} onBack={onBack} scrollable={false}>
+    <SettingsScreenLayout
+      title={t('settings.profile_picture')}
+      subtitle={t('settings.profile_picture_subtitle', 'Pick a preset or use one of your NFTs.')}
+      onBack={onBack}
+      scrollable={false}
+    >
       <View style={styles.container}>
         {/* Lateral choice takes the travelling underline, never a boxed or
             filled container — DESIGN.md §Navigation. */}

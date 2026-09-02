@@ -40,7 +40,11 @@ export function CurrencySelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.currency', 'Display Currency')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.currency', 'Display Currency')}
+      subtitle={t('settings.currency_subtitle', 'Choose the currency balances show in.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={currencies}
         getKey={(item) => item.code}

@@ -690,6 +690,36 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   };
   const currentTitle = stepTitles[step];
 
+  const stepSubtitles: Record<AccountAddStep, string> = {
+    'select-method': t(
+      'settings.account_add.select_method_subtitle',
+      'Choose how you want to add this account.'
+    ),
+    'derive-scan': t(
+      'settings.account_add.create_new_description',
+      'Derive a new account from your existing seed phrase'
+    ),
+    'import-seed': t(
+      'settings.account_add.import_seed_description',
+      'Import an account using a different seed phrase'
+    ),
+    'import-private-key': t(
+      'settings.account_add.import_private_key_description',
+      'Add a wallet you already own using its private key'
+    ),
+    'import-watch-only': t(
+      'settings.account_add.watch_only_subtitle',
+      "Follow a wallet's address without moving its funds"
+    ),
+    'set-name': t(
+      'settings.account_add.set_name_subtitle',
+      "Give this account a name you'll recognize"
+    ),
+    reauth: t('settings.account_add.reauth_subtitle', 'Enter your password to keep going.'),
+    complete: t('settings.account_add.title'),
+  };
+  const currentSubtitle = stepSubtitles[step];
+
   return (
     <>
       <LoadingScreen
@@ -705,7 +735,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         subtitle={t('general.loading')}
         onExited={handleWaitExited}
       />
-      <SettingsScreenLayout title={currentTitle} onBack={handleStepBack}>
+      <SettingsScreenLayout title={currentTitle} subtitle={currentSubtitle} onBack={handleStepBack}>
         {step === 'select-method' && renderSelectMethod()}
         {step === 'derive-scan' && renderDeriveScan()}
         {step === 'import-seed' && renderImportSeed()}

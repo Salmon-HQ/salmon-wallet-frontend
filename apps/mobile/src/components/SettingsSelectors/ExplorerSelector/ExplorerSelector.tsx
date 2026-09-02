@@ -31,7 +31,11 @@ export function ExplorerSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.explorer', 'Block Explorer')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.explorer', 'Block Explorer')}
+      subtitle={t('settings.explorer_subtitle', 'Pick where transaction links open.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={explorers}
         getKey={(item) => item.key}

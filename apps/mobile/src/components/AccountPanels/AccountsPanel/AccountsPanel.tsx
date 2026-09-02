@@ -185,7 +185,11 @@ export function AccountsPanel({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.accounts.title')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.accounts.title')}
+      subtitle={t('settings.accounts.subtitle', 'Switch between or manage your accounts.')}
+      onBack={onBack}
+    >
       {rows}
 
       {/* The one action that is not an account: outlined, so it reads as an

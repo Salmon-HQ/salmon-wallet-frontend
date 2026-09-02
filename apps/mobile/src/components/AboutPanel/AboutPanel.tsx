@@ -99,7 +99,11 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.about')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.about')}
+      subtitle={t('settings.about_subtitle', 'App version and legal information.')}
+      onBack={onBack}
+    >
       {/* The drawn mark and name — BrandMark's own docs retired the raster
           Logo.png, and the Wordmark keeps the product's name a graphic at
           the same mark→name air the welcome and success screens use. */}

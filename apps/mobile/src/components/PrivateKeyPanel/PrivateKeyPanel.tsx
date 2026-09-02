@@ -265,7 +265,11 @@ export function PrivateKeyPanel({
   // ========================================================================
 
   return (
-    <SettingsScreenLayout title={t('settings.private_key')} onBack={currentBackAction}>
+    <SettingsScreenLayout
+      title={t('settings.private_key')}
+      subtitle={t('settings.private_key_subtitle', 'View the private keys for this network.')}
+      onBack={currentBackAction}
+    >
       <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
         {t('settings.private_key_warning')}
       </WarningNotice>

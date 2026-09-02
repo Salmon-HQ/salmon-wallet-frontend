@@ -47,7 +47,11 @@ export function AccountNamePanel({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.account_edit.name_section')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.account_edit.name_section')}
+      subtitle={t('settings.account_edit.name_section_subtitle', 'Choose a name for this account.')}
+      onBack={onBack}
+    >
       <Card
         padding="lg"
         style={error ? styles.fieldError : undefined}

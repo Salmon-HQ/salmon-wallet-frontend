@@ -117,7 +117,11 @@ export function BackupPanel({
   }, [showSeedPhrase, mnemonic, showCopied]);
 
   return (
-    <SettingsScreenLayout title={t('general.seed_phrase')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('general.seed_phrase')}
+      subtitle={t('settings.backup_subtitle', 'View or back up your recovery phrase.')}
+      onBack={onBack}
+    >
       <WarningNotice tone="warning" title={t('wallet.create.messageTitle')}>
         {t('wallet.create.messageBody')}
       </WarningNotice>
