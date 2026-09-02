@@ -170,7 +170,8 @@ describe('the NFT detail screen', () => {
     render(<NftDetailScreen />);
 
     expect(screen.getByTestId('nft-detail-image')).toBeTruthy();
-    expect(screen.getByTestId('nft-detail-description')).toBeTruthy();
+    // The description is the header's subtitle now, not a card.
+    expect(screen.queryByTestId('nft-detail-description')).toBeNull();
     expect(screen.getByTestId('nft-detail-attributes')).toBeTruthy();
     expect(screen.getByTestId('nft-detail-blockchain')).toBeTruthy();
     expect(screen.getByText('Mood')).toBeTruthy();

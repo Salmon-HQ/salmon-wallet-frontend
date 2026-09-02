@@ -37,7 +37,6 @@ import {
   isBitcoinNft,
   isSignableAccount,
   isSolanaNft,
-  lineHeight,
   s,
   spacing,
   trackEvent,
@@ -146,7 +145,10 @@ export default function NftDetailScreen() {
       <ScreenHeader
         onBack={() => router.back()}
         title={nft?.name ?? t('nft.detail.title')}
-        subtitle={nft?.collectionName}
+        // The description is the header's subtitle (owner, 2026-09-02): it
+        // reads as the caption of the name, not as a section of its own. A
+        // piece with no description keeps its collection there.
+        subtitle={nft?.description || nft?.collectionName}
       />
 
       <ScrollView
@@ -200,15 +202,6 @@ export default function NftDetailScreen() {
                 </>
               )}
             </View>
-
-            {!!nft.description && (
-              <View style={styles.group}>
-                <SectionLabel variant="title">{t('nft.detail.description')}</SectionLabel>
-                <Card padding="lg" testID="nft-detail-description">
-                  <Text style={styles.description}>{nft.description}</Text>
-                </Card>
-              </View>
-            )}
 
             {!!nft.attributes && nft.attributes.length > 0 && (
               <View style={styles.group}>
@@ -375,12 +368,6 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
-    },
-    description: {
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.normal,
-      color: t.text.secondary,
     },
     copyRow: {
       flexDirection: 'row',
