@@ -16,7 +16,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import {
   ArrowSquareOutIcon,
-  ChatsCircleIcon,
   EnvelopeIcon,
   FileTextIcon,
   QuestionIcon,
@@ -47,7 +46,6 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   faq: <QuestionIcon />,
   docs: <FileTextIcon />,
   twitter: <XLogoIcon />,
-  discord: <ChatsCircleIcon />,
   email: <EnvelopeIcon />,
 };
 

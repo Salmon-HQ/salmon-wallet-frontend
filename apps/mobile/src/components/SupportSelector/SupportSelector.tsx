@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowSquareOutIcon,
   BookOpenIcon,
-  DiscordLogoIcon,
   EnvelopeIcon,
   QuestionIcon,
   XLogoIcon,
@@ -33,7 +32,6 @@ const ICON_MAP: Record<string, IconComponent> = {
   faq: QuestionIcon,
   docs: BookOpenIcon,
   twitter: XLogoIcon,
-  discord: DiscordLogoIcon,
   email: EnvelopeIcon,
 };
 

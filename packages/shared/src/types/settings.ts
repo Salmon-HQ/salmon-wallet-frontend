@@ -279,12 +279,6 @@ export const SUPPORT_OPTIONS: SupportOptionItem[] = [
     url: 'https://twitter.com/salmonwallet',
   },
   {
-    id: 'discord',
-    title: 'settings.support.discord.title',
-    description: 'settings.support.discord.description',
-    url: 'https://discord.gg/salmonwallet',
-  },
-  {
     id: 'email',
     title: 'settings.support.email.title',
     description: 'settings.support.email.description',
