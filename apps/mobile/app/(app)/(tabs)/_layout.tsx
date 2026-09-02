@@ -10,6 +10,7 @@ import { useAccountsContext, useUserConfig, type Semantic } from '@salmon/shared
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
 import { useSemantic, useThemedStyles, useThemeMode } from '../../../src/theme/useThemedStyles';
+import { useDeveloperNetworksOff } from '../../../hooks/useDeveloperNetworksOff';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -55,7 +56,12 @@ export default function TabLayout() {
           blockchain: 'solana',
         },
       };
-  const { developerNetworks } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
+  const { developerNetworks, toggleDeveloperNetworks } = useUserConfig({
+    activeBlockchainAccount: userConfigAccount,
+  });
+
+  // The feature is switched off; a stale `true` in storage is flipped back.
+  useDeveloperNetworksOff(developerNetworks, toggleDeveloperNetworks);
 
   return (
     <View style={styles.container}>
