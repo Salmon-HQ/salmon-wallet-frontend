@@ -1,25 +1,12 @@
 /**
  * @vitest-environment jsdom
  */
-
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// `@salmon/shared` pulls React Native through its barrel, which Vitest cannot
-// parse. Same treatment as the other component suites here: mock the tokens
-// the material reads.
-vi.mock('@salmon/shared', () => ({
-  semantic: {
-    surface: {
-      raised: '#161C2D',
-      crest: '#111624',
-      membraneThin: 'rgba(11, 15, 25, 0.48)',
-      membraneThick: 'rgba(11, 15, 25, 0.66)',
-    },
-  },
-}));
-
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { Thermocline } from './Thermocline';
 
 let reducedTransparency = false;
@@ -48,23 +35,37 @@ describe('Thermocline (DOM)', () => {
   });
 
   it('renders the tint — the translucent ink alone, scrim always painted', () => {
-    render(<Thermocline tier="thin" />);
+    renderInMode('dark', <Thermocline tier="thin" />);
 
     expect(screen.getByTestId('thermocline').dataset.rung).toBe('tint');
-    expect(screen.getByTestId('thermocline-scrim')).toBeTruthy();
+    expect(screen.getByTestId('thermocline-scrim').style.background).toContain(
+      asRenderedColor(createSemantic('dark').surface.membraneThin)
+    );
+  });
+
+  it('takes the light scrim when the mode is light', () => {
+    const light = createSemantic('light').surface.membraneThin;
+    expect(light).not.toBe(createSemantic('dark').surface.membraneThin);
+
+    renderInMode('light', <Thermocline tier="thin" />);
+    expect(screen.getByTestId('thermocline-scrim').style.background).toContain(
+      asRenderedColor(light)
+    );
   });
 
   it('the thick tier is the same material, tinted thicker', () => {
-    render(<Thermocline tier="thick" />);
+    renderInMode('dark', <Thermocline tier="thick" />);
 
     expect(screen.getByTestId('thermocline').dataset.rung).toBe('tint');
-    expect(screen.getByTestId('thermocline-scrim')).toBeTruthy();
+    expect(screen.getByTestId('thermocline-scrim').style.background).toContain(
+      asRenderedColor(createSemantic('dark').surface.membraneThick)
+    );
   });
 
   it('prefers-reduced-transparency collapses to the opaque plane', () => {
     reducedTransparency = true;
 
-    render(<Thermocline tier="thick" />);
+    renderInMode('dark', <Thermocline tier="thick" />);
 
     expect(screen.getByTestId('thermocline').dataset.rung).toBe('opaque');
     expect(screen.getByTestId('thermocline-opaque')).toBeTruthy();
@@ -72,15 +73,8 @@ describe('Thermocline (DOM)', () => {
   });
 
   it('the membrane field is retired — no field layer renders (2026-09-01)', () => {
-    render(<Thermocline />);
+    renderInMode('dark', <Thermocline />);
 
     expect(screen.queryByTestId('thermocline-field')).toBeNull();
-  });
-
-  it('ignores the deprecated refraction prop', () => {
-    render(<Thermocline refraction={false} />);
-
-    expect(screen.getByTestId('thermocline').dataset.rung).toBe('tint');
-    expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
   });
 });

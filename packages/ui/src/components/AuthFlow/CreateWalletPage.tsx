@@ -147,7 +147,7 @@ function MessageStep({
       }
       action={
         <PrimaryButton
-          onClick={onNext}
+          onPress={onNext}
           disabled={!read}
           fullWidth
           testID="seed-warning-continue-button"
@@ -220,7 +220,7 @@ function SeedPhraseStep({
           </HoldToApproveButton>
         }
         action={
-          <PrimaryButton onClick={onNext} fullWidth testID="create-backed-up-button">
+          <PrimaryButton onPress={onNext} fullWidth testID="create-backed-up-button">
             {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
         }
@@ -324,7 +324,7 @@ function ValidateStep({
       }
       action={
         <PrimaryButton
-          onClick={onComplete}
+          onPress={onComplete}
           disabled={!validationResult.isValid}
           fullWidth
           testID="create-next-button"

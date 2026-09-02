@@ -567,7 +567,7 @@ export function TransactionSuccessScreen({
         <AssistBand data-testid="tx-success-assist">
           {explorerUrl ? (
             <TextButton
-              onClick={handleExplorerClick}
+              onPress={handleExplorerClick}
               color={semantic.text.secondary}
               testID="tx-success-explorer-link"
             >
@@ -576,7 +576,7 @@ export function TransactionSuccessScreen({
           ) : null}
         </AssistBand>
         <ActionBand data-testid="tx-success-action">
-          <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
+          <PrimaryButton onPress={onContinue} testID="tx-success-continue-button">
             {t('transaction.continue')}
           </PrimaryButton>
         </ActionBand>

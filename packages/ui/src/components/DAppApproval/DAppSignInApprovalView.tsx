@@ -311,10 +311,10 @@ export function DAppSignInApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton onClick={onApprove} loading={loading} disabled={!canApprove}>
+          <PrimaryButton onPress={onApprove} loading={loading} disabled={!canApprove}>
             {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
           </PrimaryButton>
-          <SecondaryButton onClick={onReject} disabled={loading}>
+          <SecondaryButton onPress={onReject} disabled={loading}>
             {t('dapp.reject', 'Reject').toUpperCase()}
           </SecondaryButton>
         </ButtonsContainer>

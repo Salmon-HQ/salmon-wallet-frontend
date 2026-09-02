@@ -722,7 +722,7 @@ export function StepAddressAmount({
       <BottomButtons>
         <ButtonSlot>
           <SecondaryButton
-            onClick={onCancel}
+            onPress={onCancel}
             testID="send-cancel-button"
             // Height is the only legal override; the rest belongs to the button.
             style={{ height: componentSizes.buttonHeightMedium }}
@@ -733,7 +733,7 @@ export function StepAddressAmount({
 
         <ButtonSlot>
           <PrimaryButton
-            onClick={handleReview}
+            onPress={handleReview}
             disabled={!isValid}
             testID="send-review-button"
             style={{ height: componentSizes.buttonHeightMedium, whiteSpace: 'nowrap' }}

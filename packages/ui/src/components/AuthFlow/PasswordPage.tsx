@@ -353,7 +353,7 @@ export function PasswordPage({
         }
         action={
           <PrimaryButton
-            onClick={handleSubmit}
+            onPress={handleSubmit}
             disabled={!isFormValid() || wrongPassword}
             loading={isLoading || isChecking}
             fullWidth

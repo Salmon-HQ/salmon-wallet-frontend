@@ -5,26 +5,39 @@
  * drawing — every fill in `fleshFills`, as pattern paths.
  */
 import React from 'react';
-import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { createSemantic, fleshFills } from '@salmon/shared';
 
-// The @salmon/shared barrel pulls react-native into the jsdom bundle; the
-// theme modules this component draws from are runtime-agnostic, so they are
-// loaded directly.
-vi.mock('@salmon/shared', async () => {
-  const flesh = await import('../../../../shared/src/theme/flesh');
-  const { semantic } = await import('../../../../shared/src/theme/semantic');
-  return { ...flesh, semantic };
-});
-
-import { fleshFills } from '@salmon/shared';
+import { renderInMode } from '../../test/renderInMode';
 import { FleshBackground } from './FleshBackground';
 
 afterEach(cleanup);
 
 describe('FleshBackground (DOM)', () => {
   it('renders the marbled drawing', () => {
-    const { container } = render(<FleshBackground />);
+    const { container } = renderInMode('dark', <FleshBackground />);
     expect(container.querySelectorAll('pattern path').length).toBe(fleshFills.length);
+  });
+
+  it('draws the dark band from the active tokens by default', () => {
+    const { container } = renderInMode('dark', <FleshBackground />);
+    const paths = container.querySelectorAll('pattern path');
+    expect(paths[0].getAttribute('fill')).toBe(createSemantic('dark').flesh.band);
+  });
+
+  it('the band is theme-invariant by ruling — same ink in both modes', () => {
+    const light = createSemantic('light').flesh.band;
+    expect(light).toBe(createSemantic('dark').flesh.band);
+
+    const { container } = renderInMode('light', <FleshBackground />);
+    const paths = container.querySelectorAll('pattern path');
+    expect(paths[0].getAttribute('fill')).toBe(light);
+  });
+
+  it('an explicit color prop overrides the theme-active band', () => {
+    const { container } = renderInMode('dark', <FleshBackground color="#ABCDEF" />);
+    const paths = container.querySelectorAll('pattern path');
+    expect(paths[0].getAttribute('fill')).toBe('#ABCDEF');
   });
 });

@@ -1086,7 +1086,7 @@ export function HomePage(): React.ReactElement {
                               "Your tokens couldn't be loaded right now."
                             )}
                           </EmptyStateText>
-                          <TextButton onClick={() => refresh()} testID="token-list-retry-button">
+                          <TextButton onPress={() => refresh()} testID="token-list-retry-button">
                             {t('actions.retry', 'Retry')}
                           </TextButton>
                         </EmptyState>

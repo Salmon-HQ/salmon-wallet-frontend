@@ -12,13 +12,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', async () => ({
-  // The ending's bands and the verb's constants are the real ones: this screen
-  // reads the onboarding grid rather than restating it, so a test that mocked
-  // the table would be asserting its own numbers.
-  ...(await vi.importActual('../../../../shared/src/theme/onboardingGrid')),
-  ...(await vi.importActual('../../../../shared/src/motion/sinkFloat')),
-  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   // The real gate is `useWaitGate` and it is tested where it lives
   // (packages/shared). Here it is transparent, so these cases stay about what
   // the screen renders in each state rather than about timing.
@@ -27,97 +22,6 @@ vi.mock('@salmon/shared', async () => ({
   // left. Transparent here: `useWaitExit` is tested in packages/shared, and
   // these cases are about what the screen renders in each state.
   useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
-  semantic: {
-    status: { success: '#0f0' },
-    surface: {
-      shelf: '#10131C',
-      raised: '#161C2D',
-      crest: '#1B2233',
-      bedrock: '#0B0F19',
-      membraneThick: 'rgba(11, 15, 25, 0.80)',
-    },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    scales: {
-      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
-      deepFieldScale: 3.2,
-      deepFieldHeight: 180,
-      deepFieldFloor: 0.35,
-      fishStroke: 'rgba(7, 9, 17, 0.10)',
-      fishScale: 1,
-      refractionScale: 0.5,
-    },
-    flesh: { band: '#FFF1EE' },
-    water: { light: '#9FE0EF' },
-  },
-  // The scales tile and the motion vocabulary are read by the ground the
-  // receipt sits on; the shared PrimaryButton carries the press specular.
-  seigaihaTile: { width: 120, height: 60 },
-  seigaihaTiledPaths: ['M0 0h1v1H0z'],
-  motionMs: {
-    flick: 90,
-    swell: 180,
-    ebb: 180,
-    drift: 280,
-    rise: 420,
-    tide: 720,
-    stagger: 24,
-  },
-  motionDuration: { flick: '90ms' },
-  motionEasing: {
-    current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-    settle: { css: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-    sink: { css: 'cubic-bezier(0.4, 0, 1, 1)' },
-  },
-  reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
-  fleshTile: { width: 380, height: 40 },
-  fleshFills: [],
-  palette: {
-    salmon: { 500: '#FF5C45', 600: '#E64A34' },
-    neutral: { 0: '#FFFFFF', 1000: '#070911' },
-  },
-  colors: {
-    button: { primaryBackground: '#FF5C45', primaryText: '#070911', disabledOpacity: 0.5 },
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-    accent: { primary: '#0f0', border: '#0c0' },
-    background: { tertiary: '#111' },
-  },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
-  borderRadius: { lg: 16, full: '50%', card: 12 },
-  borderWidth: { accent: 1 },
-  fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { sm: 12, base: 14, body: 14, bodyLg: 16, title: 20, headline: 24, '4xl': 36 },
-  fontWeight: { medium: 500, semibold: 600, bold: 700 },
-  letterSpacing: { snug: -0.12, wide: 0.5, widest: 1 },
-  // The assist band's control is the shared TextButton.
-  opacity: { low: 0.6 },
-  lineHeight: { none: 1, tight: 1.25 },
-  // The continue action is the shared PrimaryButton now, so this mock has to
-  // cover the tokens that button reads too.
-  componentSizes: {
-    logoSizeSmall: 80,
-    // The assist band reserves exactly the assist control's own height.
-    buttonHeightSmall: 44,
-    buttonHeightCompact: 48,
-    buttonMinWidthLg: 200,
-    buttonMinWidth: 120,
-    buttonHeight: 56,
-    buttonRadius: 12,
-    buttonFleshScale: 1,
-    // The token marks are the graphic's subject, drawn at the ramp's top step.
-    iconSize3XL: 48,
-  },
-  shadowsCSS: { bezel: 'none' },
-  gradients: { primaryCSS: 'linear-gradient(#0f0, #0c0)' },
-  duration: {
-    normal: '200ms',
-    slow: '300ms',
-    slower: '500ms',
-    stagger1: '100ms',
-    stagger2: '200ms',
-    stagger3: '300ms',
-  },
-  easing: { ease: 'ease', easeOut: 'ease-out', bounce: 'ease-out' },
 }));
 
 vi.mock('../LoadingScreen', () => ({

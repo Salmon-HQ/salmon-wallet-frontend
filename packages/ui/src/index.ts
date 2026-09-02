@@ -25,6 +25,12 @@ export {
 } from './theme/ThemeProvider';
 export { applySemanticCssVars, semanticToCssVars } from './theme/cssVars';
 
+// Motion — the DOM expression of the shared vocabulary
+export { floatEntering, floatEnteringLight, sinkExiting, useReducedMotion } from './motion';
+export type { SinkFloatOptions } from './motion';
+
 // Utilities
 export { styled } from './utils/styled';
 export { visuallyHidden } from './utils/visuallyHidden';
+export { injectKeyframes } from './utils/injectKeyframes';
+export { usePressed } from './utils/usePressed';

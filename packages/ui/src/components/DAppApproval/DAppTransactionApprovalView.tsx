@@ -196,14 +196,14 @@ export function DAppTransactionApprovalView({
             </>
           ) : (
             <PrimaryButton
-              onClick={onApprove}
+              onPress={onApprove}
               loading={loading}
               disabled={disabled || loading || !!parsingError}
             >
               {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
             </PrimaryButton>
           )}
-          <SecondaryButton onClick={onReject} disabled={loading}>
+          <SecondaryButton onPress={onReject} disabled={loading}>
             {t('dapp.reject', 'Reject').toUpperCase()}
           </SecondaryButton>
         </ButtonsContainer>

@@ -61,22 +61,6 @@ vi.mock('../BaseDialog/styles', async () => {
   };
 });
 
-// The barrel reaches react-native, which jsdom cannot parse. Outside the
-// mocked styles module the dialog reads `spacing`, and the material it grounds
-// on reads its own surface tokens.
-vi.mock('@salmon/shared', () => ({
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
-  semantic: {
-    surface: {
-      raised: '#161C2D',
-      crest: '#1B2233',
-      membraneThin: 'rgba(11, 15, 25, 0.62)',
-      membraneThick: 'rgba(11, 15, 25, 0.80)',
-    },
-    scales: { membraneFieldStroke: 'rgba(7, 9, 17, 0.45)' },
-  },
-}));
-
 // The seigaiha drawing is pinned by its own suite; the dialog's ground only
 // needs it to render.
 vi.mock('../ScalesBackground', () => ({

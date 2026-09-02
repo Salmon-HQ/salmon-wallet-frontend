@@ -22,23 +22,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real theme tables plus the one hook this screen reads. The root
-// `@salmon/shared` barrel cannot be imported here — it reaches React Native,
-// which Vite cannot parse.
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  // The passage's own numbers and the hook that holds the wait mounted: both
-  // are runtime-agnostic, and faking them would let this screen's sink drift
-  // from the verb every other surface speaks.
-  const sinkFloat = await import('../../../../shared/src/motion/sinkFloat');
-  const waitExit = await import('../../../../shared/src/hooks/useWaitExit');
-  return {
-    ...theme,
-    ...sinkFloat,
-    ...waitExit,
-    useUnlockThrottle: () => mockThrottle,
-  };
-});
+// The real barrel, with only the throttle hook overridden so a test can put
+// the screen into its throttled state.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useUnlockThrottle: () => mockThrottle,
+}));
 
 // The loading overlay reads wavefront constants that live outside the theme
 // subtree, and it draws nothing this file asserts. What it does carry is the

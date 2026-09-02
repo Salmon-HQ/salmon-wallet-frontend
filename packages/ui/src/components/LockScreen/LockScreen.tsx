@@ -264,7 +264,7 @@ export function LockScreen({
               sits directly under it rather than in a band of its own. */}
             <ForgotRow>
               <TextButton
-                onClick={() => setShowResetDialog(true)}
+                onPress={() => setShowResetDialog(true)}
                 disabled={isUnlocking}
                 testID="lock-forgot-password-button"
               >
@@ -294,7 +294,7 @@ export function LockScreen({
         action={
           <Box ref={unlockRef} tabIndex={-1}>
             <PrimaryButton
-              onClick={() => void handleSubmit()}
+              onPress={() => void handleSubmit()}
               disabled={!password.trim() || throttled}
               loading={isUnlocking}
               fullWidth

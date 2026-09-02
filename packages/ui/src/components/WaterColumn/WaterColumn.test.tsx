@@ -16,29 +16,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// The real barrel pulls `react-native` into the resolver, which Vite cannot
-// parse. Only the tokens the two layers read matter here; their values are
-// pinned by `contrast.test.ts` and `depthField.test.ts` in @salmon/shared.
-vi.mock('@salmon/shared', () => ({
-  marineSnowSvg: () => '<svg xmlns="http://www.w3.org/2000/svg"/>',
-  blizzardSnowSvg: () => '<svg xmlns="http://www.w3.org/2000/svg"/>',
-  // The seigaiha geometry is data, not a token: stubbing it would assert that
-  // a stub tiles. Its own invariants live in `scales.test.ts` in @salmon/shared.
-  seigaihaTile: { width: 805.589, height: 25.0918 },
-  seigaihaTiledPaths: ['M0 0C1 1 2 2 3 3'],
-  semantic: {
-    water: { gradient: ['#10131C', '#070911'], snow: 'rgba(199, 211, 232, 0.12)' },
-    scales: {
-      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
-      deepFieldScale: 3.2,
-      deepFieldFloor: 0.35,
-      fishStroke: 'rgba(7, 9, 17, 0.10)',
-      fishScale: 1,
-    },
-  },
-}));
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { WaterColumn, waterColumnHost } from './WaterColumn';
 

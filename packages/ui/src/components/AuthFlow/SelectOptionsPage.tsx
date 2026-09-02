@@ -76,18 +76,18 @@ export function SelectOptionsPage({
       }
       assist={
         hasAccounts && onAccessExisting ? (
-          <TextButton onClick={onAccessExisting} testID="select-access-existing-button">
+          <TextButton onPress={onAccessExisting} testID="select-access-existing-button">
             {t('wallet.access_existing_account')}
           </TextButton>
         ) : undefined
       }
       secondary={
-        <SecondaryButton onClick={onRecoverWallet} fullWidth testID="select-recover-button">
+        <SecondaryButton onPress={onRecoverWallet} fullWidth testID="select-recover-button">
           {t('wallet.recover_wallet')}
         </SecondaryButton>
       }
       action={
-        <PrimaryButton onClick={onCreateWallet} fullWidth testID="select-create-button">
+        <PrimaryButton onPress={onCreateWallet} fullWidth testID="select-create-button">
           {t('wallet.create_wallet')}
         </PrimaryButton>
       }

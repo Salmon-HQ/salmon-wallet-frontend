@@ -12,15 +12,15 @@ vi.mock('@salmon/shared', () => ({
 
 vi.mock('../Button', () => ({
   PrimaryButton: ({
-    onClick,
+    onPress,
     disabled,
     children,
   }: {
-    onClick?: () => void;
+    onPress?: () => void;
     disabled?: boolean;
     children: React.ReactNode;
   }) => (
-    <button type="button" onClick={onClick} disabled={disabled}>
+    <button type="button" onClick={onPress} disabled={disabled}>
       {children}
     </button>
   ),

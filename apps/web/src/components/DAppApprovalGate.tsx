@@ -106,8 +106,8 @@ export function DAppApprovalGate(): React.ReactElement {
   const [unlocking, setUnlocking] = useState(false);
 
   const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
+    async (e?: FormEvent) => {
+      e?.preventDefault();
       if (!password.trim()) return;
 
       setUnlocking(true);
@@ -186,10 +186,9 @@ export function DAppApprovalGate(): React.ReactElement {
             />
             {error && <ErrorText>{error}</ErrorText>}
             <PrimaryButton
-              type="submit"
+              onPress={() => void handleSubmit()}
               disabled={!password.trim()}
               loading={unlocking}
-              fullWidth
               testID="dapp-unlock-button"
             >
               {t('lock.unlock', 'Unlock')}

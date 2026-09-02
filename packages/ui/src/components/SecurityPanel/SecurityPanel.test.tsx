@@ -18,11 +18,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens (the
-// primary button reads a good part of them) plus the accounts context.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
+// The real barrel, with only the accounts context and validator overridden
+// so the password-change flow is deterministic under test.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useAccountsContext: () => [null, { changePassword: mockChangePassword }],
   validatePassword: () => ({ isValid: true, strength: 'strong' }),
 }));

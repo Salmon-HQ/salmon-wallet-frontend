@@ -134,7 +134,7 @@ export function AddressEditPanel({
 
         {/* Save */}
         <PrimaryButton
-          onClick={handleSave}
+          onPress={handleSave}
           disabled={!form.canSave}
           testID="address-book-save-button"
           style={{ marginTop: spacing['2xl'] }}

@@ -109,7 +109,7 @@ export function AccountNamePanel({ accountId, onBack }: AccountNamePanelProps): 
         {/* The system's own primary button, not a hand-rolled salmon fill —
             the settings surface joined the system (DESIGN.md §Motion). */}
         <PrimaryButton
-          onClick={handleSave}
+          onPress={handleSave}
           disabled={!name.trim()}
           testID="account-name-save-button"
         >

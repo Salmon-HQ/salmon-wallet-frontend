@@ -20,13 +20,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real barrel pulls in react-native; the panel only needs theme tokens,
-// the two identity helpers and the accounts context.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/types/settings')),
-  getShortAddress: (address: string) => address.slice(0, 6),
-  getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
+// The panel needs a deterministic accounts context; that context isn't
+// wired up in this render, so it's stubbed with fixed accounts here.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  // The real implementation assumes `account.secret` is always present;
+  // these fixtures don't carry one.
   isWatchOnlyAccount: (account: { secret?: { kind?: string } }) =>
     account?.secret?.kind === 'watchOnly',
   useAccountsContext: () => [

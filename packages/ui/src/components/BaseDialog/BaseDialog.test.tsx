@@ -22,19 +22,6 @@ vi.mock('./styles', async () => {
   return { StyledDialog: Dialog, DIALOG_GROUND_STYLE: {} };
 });
 
-// The material reads its tokens straight from the barrel, which pulls react
-// native into the jsdom bundle. Only the values it paints with are needed.
-vi.mock('@salmon/shared', () => ({
-  semantic: {
-    surface: {
-      raised: '#161C2D',
-      crest: '#1B2233',
-      membraneThin: 'rgba(11, 15, 25, 0.48)',
-      membraneThick: 'rgba(11, 15, 25, 0.66)',
-    },
-  },
-}));
-
 const { BaseDialog } = await import('./BaseDialog');
 
 afterEach(cleanup);

@@ -1,132 +1,198 @@
 /**
- * ScreenHeader - Common header for onboarding/auth screens
+ * ScreenHeader — the header every onboarding/auth screen and pushed settings
+ * screen composes, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Includes back button, optional step indicator, and spacer for alignment.
+ * The mobile twin is `apps/mobile/src/components/ScreenHeader/ScreenHeader.tsx`.
+ * Two anatomies, same as mobile:
+ * - **Titled**: the back well (an `IconBubble`) and the title share ONE row,
+ *   the subtitle on its own line under it. No `onBack` means no well at all —
+ *   an empty touch target still spent the row's gap for nothing.
+ * - **Untitled**: the back well, a centred `StepIndicator`, and a trailing
+ *   spacer of the same width, so the indicator sits on the row's true centre
+ *   whether or not a back well is drawn.
+ *
+ * Only the drawing differs from mobile: the leading affordance is the DOM
+ * `IconBubble` itself acting as the pressable (it already renders a real
+ * `<button>` when given `onPress`), rather than mobile's `TouchableOpacity`
+ * wrapping a decorative `IconBubble` — nesting a `<button>` inside a
+ * `<button>` is invalid HTML, and `IconBubble`'s own disabled tone already
+ * draws "disabled is a different object", the same DESIGN.md rule mobile's
+ * manual opacity dimming was reaching for.
  */
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import { ArrowLeftIcon, XIcon, iconSize } from '../../icons';
-import { colors, componentSizes, contentPadding, opacity } from '@salmon/shared';
-import { StepIndicator } from '../StepIndicator';
-import type { ScreenHeaderProps } from './types';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  componentSizes,
+  contentPadding,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  lineHeight,
+  spacing,
+} from '@salmon/shared';
 
-const Container = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingLeft: contentPadding.screen,
-  paddingRight: contentPadding.screen,
-  height: componentSizes.headerHeight,
-});
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CaretLeftIcon, XIcon } from '../../icons';
+import { StepIndicator } from '../StepIndicator';
+import { IconBubble } from '../IconBubble';
+import type { ScreenHeaderProps } from './types';
 
-const BackButton = styled(IconButton)({
-  width: componentSizes.backButtonSize,
-  height: componentSizes.backButtonSize,
-  padding: 0,
-  position: 'relative',
-  // 40px visual box + 2px per side of invisible slop = the 44px minimum
-  // click target (DESIGN.md: hit-slop, never inflated visual size).
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    bottom: -2,
-    left: -2,
-  },
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  '&:hover': {
-    backgroundColor: 'transparent',
-  },
-  '&.Mui-disabled': {
-    opacity: opacity.full,
-  },
-});
+/** The affordance's well — the redesign's 38pt surface circle, mobile's own constant. */
+const BACK_BUBBLE_SIZE = 38;
 
-const CenterContainer = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const Spacer = styled(Box)({
-  width: componentSizes.backButtonSize,
-});
-
-/**
- * ScreenHeader component for onboarding/auth screens
- *
- * Displays:
- * - Back button on the left (optional, controlled by onBack prop)
- * - Optional step indicator in the center
- * - Spacer on the right for visual balance
- *
- * The back button is only visible when onBack is provided, and can be
- * disabled via the backDisabled prop.
- *
- * @example
- * ```tsx
- * // With back button and step indicator
- * <ScreenHeader
- *   onBack={() => navigate(-1)}
- *   stepIndicator={{ totalSteps: 3, currentStep: 1 }}
- * />
- *
- * // With just back button
- * <ScreenHeader onBack={() => navigate(-1)} />
- *
- * // With disabled back button
- * <ScreenHeader onBack={() => {}} backDisabled />
- * ```
- */
 export function ScreenHeader({
   onBack,
   glyph = 'back',
   backLabel,
   stepIndicator,
   backDisabled,
-  className,
+  title,
+  titleGlyph,
+  subtitle,
   style,
+  className,
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
-  const Glyph = glyph === 'close' ? XIcon : ArrowLeftIcon;
+  const tokens = useSemantic();
+  const Glyph = glyph === 'close' ? XIcon : CaretLeftIcon;
+  const accessibilityLabel = backLabel ?? t('accessibility.go_back', 'Go back');
+
+  // `.pen` CORE 04 "Send header": the back well and the title on ONE row,
+  // the subtitle on its own line under it.
+  if (title) {
+    return (
+      <div
+        data-testid={testID}
+        className={className}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          paddingTop: spacing.screenTop,
+          paddingBottom: spacing.xl,
+          paddingLeft: spacing.screenGutter,
+          paddingRight: spacing.screenGutter,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing.md,
+          ...style,
+        }}
+      >
+        <div
+          data-testid="screen-header-title-row"
+          style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: spacing.md }}
+        >
+          {onBack && (
+            <IconBubble
+              testID="screen-header-back-button"
+              size={BACK_BUBBLE_SIZE}
+              shape="circle"
+              tone="surface"
+              icon={Glyph}
+              iconSize={componentSizes.iconSizeSmall}
+              onPress={onBack}
+              disabled={backDisabled}
+              accessibilityLabel={accessibilityLabel}
+            />
+          )}
+          {titleGlyph as ReactNode}
+          <div
+            data-testid="screen-header-title-box"
+            style={{
+              flexShrink: 1,
+              height: BACK_BUBBLE_SIZE,
+              display: 'flex',
+              alignItems: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: fontFamily.sans,
+                fontWeight: fontWeight.bold,
+                fontSize: fontSize.headline,
+                letterSpacing: letterSpacing.snug,
+                color: tokens.text.primary,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {title}
+            </h1>
+          </div>
+        </div>
+        {subtitle ? (
+          <p
+            style={{
+              margin: 0,
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.medium,
+              fontSize: fontSize.body,
+              lineHeight: fontSize.body * lineHeight.snug,
+              color: tokens.text.secondary,
+            }}
+          >
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
-    <Container style={style} className={className}>
-      {/* Leading affordance: back, or close where declining advances */}
-      <BackButton
-        onClick={onBack}
-        disabled={!onBack || backDisabled}
-        aria-label={backLabel ?? t('accessibility.go_back', 'Go back')}
-        data-testid={testID ?? 'screen-header-back-button'}
+    <div
+      data-testid={testID}
+      className={className}
+      style={{
+        width: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingLeft: contentPadding.screen,
+        paddingRight: contentPadding.screen,
+        height: componentSizes.headerHeight,
+        ...style,
+      }}
+    >
+      <div
+        style={{
+          width: BACK_BUBBLE_SIZE,
+          height: BACK_BUBBLE_SIZE,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+        }}
       >
         {onBack && (
-          <Glyph
-            size={iconSize.lg}
-            color={backDisabled ? colors.text.muted : colors.text.primary}
+          <IconBubble
+            testID="screen-header-back-button"
+            size={BACK_BUBBLE_SIZE}
+            shape="circle"
+            tone="surface"
+            icon={Glyph}
+            iconSize={componentSizes.iconSizeSmall}
+            onPress={onBack}
+            disabled={backDisabled}
+            accessibilityLabel={accessibilityLabel}
           />
         )}
-      </BackButton>
+      </div>
 
-      {/* Step indicator (centered) */}
-      <CenterContainer>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {stepIndicator && (
           <StepIndicator
             totalSteps={stepIndicator.totalSteps}
             currentStep={stepIndicator.currentStep}
           />
         )}
-      </CenterContainer>
+      </div>
 
-      {/* Spacer for alignment */}
-      <Spacer />
-    </Container>
+      <div style={{ width: BACK_BUBBLE_SIZE }} />
+    </div>
   );
 }

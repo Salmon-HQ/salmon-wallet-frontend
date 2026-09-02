@@ -24,14 +24,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens plus
-// the accounts context the panel reads the mnemonic from.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/scaling')),
-  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
-  ...(await vi.importActual('../../../../shared/src/utils/account-secret')),
+// The real barrel loads fine under vitest now; only the accounts context the
+// panel reads the mnemonic from needs to be stubbed for a deterministic seed.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useAccountsContext: () => [
     {
       activeAccount: {

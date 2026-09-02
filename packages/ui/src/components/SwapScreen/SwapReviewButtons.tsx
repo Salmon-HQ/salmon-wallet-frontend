@@ -60,7 +60,7 @@ export function SwapReviewButtons({
   return (
     <ButtonsContainer style={style}>
       <SecondaryButton
-        onClick={onBack}
+        onPress={onBack}
         disabled={isBusy}
         testID="swap-back-button"
         // Height is the only legal override: the compact pair is shorter than
@@ -74,7 +74,7 @@ export function SwapReviewButtons({
         {t('general.back')}
       </SecondaryButton>
       <PrimaryButton
-        onClick={onConfirm}
+        onPress={onConfirm}
         loading={isRefreshing}
         disabled={isBusy}
         testID="swap-confirm-button"

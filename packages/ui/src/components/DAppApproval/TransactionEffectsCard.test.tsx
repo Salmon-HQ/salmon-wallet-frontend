@@ -20,41 +20,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
-  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
-  borderRadius: { full: 999, md: 8, lg: 12, xl: 16 },
-  semantic: {
-    status: {
-      danger: '#f00',
-      dangerTint: '#500',
-      warning: '#fa0',
-      warningTint: '#540',
-      success: '#0f0',
-    },
-  },
-  colors: {
-    background: { primary: '#000', secondary: '#111', card: '#050505' },
-    border: { subtle: '#222', default: '#333' },
-    text: { primary: '#fff', secondary: '#ccc' },
-    interactive: { surface: '#444' },
-  },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
-  fontFamily: { sans: 'sans-serif', mono: 'monospace' },
-  fontSize: { xs: 10, sm: 12, base: 14, bodyLg: 16, title: 20 },
-  fontWeight: { medium: 500, semibold: 600, bold: 700 },
-  // Mirrors the real exact formatter closely enough for rendering assertions;
-  // its own edge cases are covered in `packages/shared/src/utils/formatting.test.ts`.
-  formatBaseUnits: (amount: bigint, decimals: number) => {
-    const magnitude = amount < 0n ? -amount : amount;
-    if (decimals <= 0) return magnitude.toString();
-    const digits = magnitude.toString().padStart(decimals + 1, '0');
-    const whole = digits.slice(0, digits.length - decimals);
-    const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '');
-    return fraction ? `${whole}.${fraction}` : whole;
-  },
-  getShortAddress: (address: string) => address,
-}));
-
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 
 const ACCOUNT = 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' as never;
@@ -123,7 +88,8 @@ describe('TransactionEffectsCard', () => {
     expect(screen.getByText('Spending permission')).toBeInTheDocument();
     expect(
       screen.getByText(
-        `${SPENDER} would be able to move an unlimited amount of USDC out of your wallet, now and in the future, until you revoke it.`
+        // getShortAddress truncates a 44-char base58 address to its first/last 4 chars.
+        '9WzD...AWWM would be able to move an unlimited amount of USDC out of your wallet, now and in the future, until you revoke it.'
       )
     ).toBeInTheDocument();
   });

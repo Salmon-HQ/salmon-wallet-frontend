@@ -12,10 +12,10 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-// The real barrel pulls in react-native; the panel needs theme tokens, the
-// preset list, and the two account hooks.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
+// The panel needs a deterministic active account and NFT list; both come
+// from context/hooks that aren't wired up in this render.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   PRESET_AVATAR_URLS: ['https://example.test/a.png', 'https://example.test/b.png'],
   useAccountsContext: () => [
     { activeAccount: { id: 'account-1', name: 'Main', avatar: 'https://example.test/a.png' } },

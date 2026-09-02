@@ -26,11 +26,11 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real `@salmon/shared` barrel pulls react-native into the jsdom bundle,
-// which Rollup cannot parse. Everything under test here is which identity a row
-// draws, so plain token stand-ins are faithful; the token values themselves are
-// asserted in `packages/shared/src/theme/contrast.test.ts`.
-vi.mock('@salmon/shared', () => ({
+// useTokenSearch's real implementation debounces/filters async, which would
+// make the assertions here order- and timing-dependent. Stub it so the rows
+// under test are exactly the tokens the test passes in.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useTokenSearch: (tokens: unknown[]) => ({
     searchQuery: '',
     setSearchQuery: vi.fn(),
@@ -43,57 +43,6 @@ vi.mock('@salmon/shared', () => ({
     error: null,
     isError: false,
   }),
-  colors: {
-    text: { primary: '#EDF1F7', secondary: '#B4BCCC', tertiary: '#8B96AD' },
-    accent: { primary: '#F5674F' },
-    background: { primary: '#10131C', secondary: '#0B0F19', card: '#151A24', tertiary: '#1B2130' },
-    input: { background: '#151A24', border: '#3A4356' },
-    card: { border: '#3A4356' },
-    border: { default: '#3A4356' },
-    skeleton: { base: '#1B2130', highlight: '#3A4356' },
-    button: { dangerHover: '#C7503C' },
-  },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 32 },
-  borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, iconLg: 20 },
-  borderWidth: { thin: 1 },
-  componentSizes: {
-    sheetWidthSm: 360,
-    sheetWidthLg: 480,
-    iconSizeXxsm: 14,
-    iconSizeXs: 16,
-    iconSize2XL: 40,
-    iconSize3XL: 48,
-  },
-  fontFamily: { sans: 'DM Sans', mono: 'Geist Mono' },
-  fontWeight: { medium: 500, semibold: 600 },
-  fontSize: { xs: 12, sm: 14, base: 16, bodyLg: 18, lg: 20, xl: 24 },
-  opacity: { full: 1 },
-  duration: { normal: '180ms' },
-  easing: { ease: 'ease' },
-  tabularNums: { css: {} },
-  getIconSize: (size?: number) => size ?? 24,
-  getShortAddress: (value?: string) => (value ? value.slice(0, 8) : ''),
-  // Mirrors the real derivation; the formatting itself is asserted in
-  // `packages/shared/src/utils/network.test.ts`.
-  getNetworkName: (network: string) =>
-    network
-      .split(/[-_\s]+/)
-      .filter(Boolean)
-      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-      .join(' ') || network,
-  getTokenKey: (token: { mint?: string; address?: string; symbol?: string }) =>
-    token.mint || token.address || token.symbol || '',
-  ContentLoader: () => null,
-  Rect: () => null,
-  Circle: () => null,
-  semantic: {
-    surface: {
-      raised: '#161C2D',
-      crest: '#1B2233',
-      membraneThin: 'rgba(11, 15, 25, 0.48)',
-      membraneThick: 'rgba(11, 15, 25, 0.66)',
-    },
-  },
 }));
 
 import { TokenSelectorModal } from './TokenSelectorModal';

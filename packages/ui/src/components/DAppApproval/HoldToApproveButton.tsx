@@ -35,7 +35,7 @@ export interface HoldToApproveButtonProps {
   onApprove: () => void | Promise<void>;
   disabled?: boolean;
   loading?: boolean;
-  children: React.ReactNode;
+  children: string;
   testID?: string;
   /**
    * Which control the hold wraps. `secondary` for a held action that is not
@@ -124,7 +124,7 @@ export function HoldToApproveButton({
       onClickCapture={swallowPointerClick}
     >
       <ButtonControl
-        onClick={() => void onApprove()}
+        onPress={() => void onApprove()}
         disabled={disabled}
         loading={loading}
         testID={testID}

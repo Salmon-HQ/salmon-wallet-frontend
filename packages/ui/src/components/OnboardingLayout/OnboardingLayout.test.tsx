@@ -19,19 +19,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// The real token tables, not a stand-in — the point of these assertions is
-// that the layout reads that one table rather than re-deriving anything. The
-// root `@salmon/shared` barrel cannot be imported here (it reaches React
-// Native, which Vite cannot parse), so the theme subtree is imported directly
-// and stands in for the barrel.
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  // The sink's own numbers live outside the theme subtree, and the column
-  // reads them to give way to a wait.
-  const sinkFloat = await import('../../../../shared/src/motion/sinkFloat');
-  return { ...theme, ...sinkFloat };
-});
-
 import {
   onboardingContentGridFull,
   onboardingIdentityGridFull,

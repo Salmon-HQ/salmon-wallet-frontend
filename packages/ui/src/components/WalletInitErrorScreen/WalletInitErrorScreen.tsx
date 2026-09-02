@@ -73,7 +73,7 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
           button here the only button in the app without the flesh in it.
           Height is the only override. */}
       <PrimaryButton
-        onClick={handleRetry}
+        onPress={handleRetry}
         loading={retrying}
         disabled={retrying}
         fullWidth={false}

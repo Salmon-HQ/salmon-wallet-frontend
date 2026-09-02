@@ -105,7 +105,7 @@ export function AnalyticsConsentPage({
         </Footnote>
       }
       action={
-        <PrimaryButton onClick={onAccept} fullWidth testID="analytics-consent-accept">
+        <PrimaryButton onPress={onAccept} fullWidth testID="analytics-consent-accept">
           {t('settings.analytics_prompt_accept')}
         </PrimaryButton>
       }

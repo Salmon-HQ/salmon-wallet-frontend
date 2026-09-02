@@ -136,3 +136,67 @@ export type { OnboardingLayoutPropsBase } from './onboarding-layout';
 
 // Home Tab Order Sheet
 export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';
+
+// ---------------------------------------------------------------------------
+// The kit — the contracts mobile and the DOM both implement (spec 028, lot 2)
+// ---------------------------------------------------------------------------
+
+// Card
+export type { CardTone, CardPadding, CardRadius, CardPropsBase } from './card';
+
+// List Row
+export type { ListRowPadding, ListRowEmphasis, ListRowPropsBase } from './list-row';
+
+// Icon Bubble
+export type {
+  IconBubbleSize,
+  IconBubbleShape,
+  IconBubbleRadius,
+  IconBubbleTone,
+  IconGlyphProps,
+  IconBubblePropsBase,
+} from './icon-bubble';
+
+// Key Value Row
+export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
+
+// Section Label
+export type { SectionLabelVariant, SectionLabelPropsBase } from './section-label';
+
+// Chip
+export type { ChipSize, ChipVariant, ChipPropsBase, ChipOption, ChipGroupPropsBase } from './chip';
+
+// Underline Tabs
+export type { UnderlineTab, UnderlineTabsSize, UnderlineTabsPropsBase } from './underline-tabs';
+
+// Search Field
+export type { SearchFieldPropsBase } from './search-field';
+
+// State Block
+export type { StateBlockTone, StateBlockPropsBase } from './state-block';
+
+// Button
+export type { ButtonPropsBase, TextButtonPropsBase } from './button';
+
+// Screen Header
+export type { ScreenHeaderPropsBase } from './screen-header';
+
+// Sheet
+export type { SheetTitlePropsBase, BottomSheetContainerPropsBase } from './sheet';
+
+// Thermocline
+export type { ThermoclineTier, ThermoclinePropsBase } from './thermocline';
+
+// Portfolio Sub Tabs
+export type { PortfolioSubTab, PortfolioSubTabsPropsBase } from './portfolio-sub-tabs';
+
+// Skeleton
+export type { ShimmerRectPropsBase, SkeletonRowPropsBase } from './skeleton';
+
+// Receipt Screen
+export type {
+  ReceiptScreenAction,
+  TransferReceiptScreenPropsBase,
+  ExchangeReceiptScreenPropsBase,
+  ReceiptScreenPropsBase,
+} from './receipt-screen';

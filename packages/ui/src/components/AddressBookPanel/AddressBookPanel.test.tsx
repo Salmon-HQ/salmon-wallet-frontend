@@ -20,16 +20,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens plus
-// the real formatting and network utilities the row renders through.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/address')),
-  ...(await vi.importActual('../../../../shared/src/utils/network')),
-  AddressbookError: class AddressbookError extends Error {},
-}));
-
 vi.mock('../../utils/styled', async () => {
   const emotion = await import('@emotion/styled');
   return { styled: emotion.default };

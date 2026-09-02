@@ -170,7 +170,7 @@ export function CollectiblesTab({
             tone="warning"
             title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
             action={
-              <TextButton onClick={handleRetry} testID="collectibles-retry-button">
+              <TextButton onPress={handleRetry} testID="collectibles-retry-button">
                 {t('actions.retry', 'Retry')}
               </TextButton>
             }
@@ -188,7 +188,7 @@ export function CollectiblesTab({
               'Some of your collectibles could not be loaded. Pull to refresh to try again.'
             )}
             action={
-              <TextButton onClick={handleRetry} testID="collectibles-partial-retry-button">
+              <TextButton onPress={handleRetry} testID="collectibles-partial-retry-button">
                 {t('actions.retry', 'Retry')}
               </TextButton>
             }

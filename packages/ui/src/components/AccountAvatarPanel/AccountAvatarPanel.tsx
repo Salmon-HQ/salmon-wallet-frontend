@@ -283,7 +283,7 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
 
       {/* Save Button */}
       <SaveSlot>
-        <PrimaryButton disabled={!hasChanged} onClick={handleSave} testID="avatar-save-button">
+        <PrimaryButton disabled={!hasChanged} onPress={handleSave} testID="avatar-save-button">
           {t('actions.save')}
         </PrimaryButton>
       </SaveSlot>

@@ -1,36 +1,43 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type { Testable } from '@salmon/shared';
+import type { ButtonPropsBase, TextButtonPropsBase } from '@salmon/shared';
+
+export interface PrimaryButtonProps extends ButtonPropsBase {
+  /** DOM-only: renders at `width: auto` instead of the default 100%. */
+  fullWidth?: boolean;
+  style?: CSSProperties;
+  className?: string;
+}
 
 /**
- * Base button props interface
+ * `danger` is the destructive variant: the same outlined control, drawn in
+ * danger ink with a danger edge. `danger-fill` is the filled destructive
+ * control — a `danger-700` plane, not an outline. Mirrors mobile's
+ * `SecondaryButtonTone`.
  */
-export interface ButtonBaseProps extends Testable {
-  /** Click handler */
-  onClick?: () => void;
-  /** Button content */
-  children: ReactNode;
-  /** Whether button is disabled */
-  disabled?: boolean;
-  /** Whether button is in loading state */
-  loading?: boolean;
-  /** Optional custom styles */
-  style?: CSSProperties;
-  /** Optional CSS class name */
-  className?: string;
-  /** Full width button */
+export type SecondaryButtonTone = 'default' | 'danger' | 'danger-fill';
+
+export interface SecondaryButtonProps extends ButtonPropsBase {
+  tone?: SecondaryButtonTone;
+  /** DOM-only: renders at `width: auto` instead of the default 100%. */
   fullWidth?: boolean;
-  /** Button type attribute */
-  type?: 'button' | 'submit' | 'reset';
+  style?: CSSProperties;
+  className?: string;
+  /** Announced consequence — the third channel a destructive control needs. */
+  accessibilityHint?: string;
+  /** Optional glyph before the label. The label stays the accessible name. */
+  icon?: ReactNode;
+  /**
+   * Optional glyph after the label — a caret when the control opens a picker
+   * rather than acting directly.
+   */
+  trailingIcon?: ReactNode;
 }
 
-export interface PrimaryButtonProps extends ButtonBaseProps {}
-
-export interface SecondaryButtonProps extends ButtonBaseProps {
-  /** Variant style */
-  variant?: 'filled' | 'outline';
-}
-
-export interface TextButtonProps extends Omit<ButtonBaseProps, 'fullWidth'> {
-  /** Custom text color */
-  color?: string;
+export interface TextButtonProps extends TextButtonPropsBase {
+  /** DOM-only: renders at `width: 100%` instead of the default auto. */
+  fullWidth?: boolean;
+  style?: CSSProperties;
+  className?: string;
+  /** Optional glyph rendered before the label. The label stays the accessible name. */
+  icon?: ReactNode;
 }

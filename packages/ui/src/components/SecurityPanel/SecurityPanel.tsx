@@ -200,7 +200,7 @@ export function SecurityPanel({
               `surface.crest`. */}
           <PrimaryButton
             fullWidth
-            onClick={handleChangePassword}
+            onPress={handleChangePassword}
             disabled={loading || !currentPassword || !newPassword || !confirmPassword}
             testID="security-change-password-button"
             style={{ marginTop: spacing.md }}

@@ -227,7 +227,7 @@ export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): R
           <EmptyContainer data-testid="derived-scan-error">
             <EmptyTitle>{t('wallet.derived.scan_failed_title')}</EmptyTitle>
             <EmptySubtitle>{t('wallet.derived.scan_failed_body')}</EmptySubtitle>
-            <SecondaryButton onClick={handleRetryScan} testID="derived-scan-retry-button">
+            <SecondaryButton onPress={handleRetryScan} testID="derived-scan-retry-button">
               {t('transactions.tapToRetry')}
             </SecondaryButton>
           </EmptyContainer>
@@ -287,7 +287,7 @@ export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): R
       body={renderContent()}
       secondary={
         <SecondaryButton
-          onClick={handleSkip}
+          onPress={handleSkip}
           disabled={importing}
           fullWidth
           testID="derived-skip-button"
@@ -301,7 +301,7 @@ export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): R
         // holds its reserved band from the first frame now.
         <ReservedSlot visible={accounts.length > 0}>
           <PrimaryButton
-            onClick={handleImport}
+            onPress={handleImport}
             disabled={loading || importing}
             loading={importing}
             fullWidth

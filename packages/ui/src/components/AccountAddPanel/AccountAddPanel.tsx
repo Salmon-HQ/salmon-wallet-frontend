@@ -599,7 +599,7 @@ export function AccountAddPanel({
               )}
               <PrimaryButton
                 style={CONFIRM_SLOT_STYLE}
-                onClick={handlePrivateKeySubmit}
+                onPress={handlePrivateKeySubmit}
                 disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
                 testID="account-add-private-key-continue-button"
               >
@@ -653,7 +653,7 @@ export function AccountAddPanel({
               )}
               <PrimaryButton
                 style={CONFIRM_SLOT_STYLE}
-                onClick={handleWatchOnlySubmit}
+                onPress={handleWatchOnlySubmit}
                 disabled={!watchOnlyImport.hasInput}
                 testID="account-add-watch-only-continue-button"
               >
@@ -704,7 +704,7 @@ export function AccountAddPanel({
                   </Typography>
                   <PrimaryButton
                     fullWidth={false}
-                    onClick={handleSelectDerive}
+                    onPress={handleSelectDerive}
                     testID="derived-scan-retry-button"
                   >
                     {t('transactions.tapToRetry')}
@@ -733,7 +733,7 @@ export function AccountAddPanel({
                   ))}
                   <PrimaryButton
                     style={CONFIRM_SLOT_STYLE}
-                    onClick={handleDerivedContinue}
+                    onPress={handleDerivedContinue}
                     disabled={!selectedDerived}
                     testID="account-add-derive-continue-button"
                   >
@@ -770,7 +770,7 @@ export function AccountAddPanel({
               )}
               <PrimaryButton
                 style={CONFIRM_SLOT_STYLE}
-                onClick={handleSeedSubmit}
+                onPress={handleSeedSubmit}
                 testID="account-add-seed-continue-button"
               >
                 {t('actions.continue')}
@@ -799,7 +799,7 @@ export function AccountAddPanel({
               </Box>
               <PrimaryButton
                 style={CONFIRM_SLOT_STYLE}
-                onClick={handleReauthConfirm}
+                onPress={handleReauthConfirm}
                 disabled={!reauthPassword || reauthChecking}
                 testID="account-add-reauth-confirm-button"
               >
@@ -840,7 +840,7 @@ export function AccountAddPanel({
               )}
               <PrimaryButton
                 style={CONFIRM_SLOT_STYLE}
-                onClick={handleConfirm}
+                onPress={handleConfirm}
                 testID="account-add-confirm-button"
               >
                 {selectedDerived

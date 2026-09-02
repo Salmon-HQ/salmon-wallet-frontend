@@ -373,7 +373,7 @@ export function StepConfirmation({
       <BottomButtons>
         <ButtonSlot>
           <SecondaryButton
-            onClick={isFailed ? onBack : onCancel}
+            onPress={isFailed ? onBack : onCancel}
             disabled={isSending}
             testID="send-confirm-cancel-button"
             // Height is the only legal override: this row is shorter than a
@@ -387,7 +387,7 @@ export function StepConfirmation({
 
         <ButtonSlot>
           <PrimaryButton
-            onClick={isFailed ? handleRetry : handleConfirm}
+            onPress={isFailed ? handleRetry : handleConfirm}
             loading={isSending}
             disabled={isSending}
             testID="send-confirm-button"

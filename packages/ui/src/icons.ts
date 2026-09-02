@@ -124,6 +124,7 @@ export { SealCheckIcon } from '@phosphor-icons/react/dist/csr/SealCheck';
 export { ShareNetworkIcon } from '@phosphor-icons/react/dist/csr/ShareNetwork';
 export { ShieldIcon } from '@phosphor-icons/react/dist/csr/Shield';
 export { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
+export { SlidersIcon } from '@phosphor-icons/react/dist/csr/Sliders';
 export { SparkleIcon } from '@phosphor-icons/react/dist/csr/Sparkle';
 export { SquaresFourIcon } from '@phosphor-icons/react/dist/csr/SquaresFour';
 export { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';

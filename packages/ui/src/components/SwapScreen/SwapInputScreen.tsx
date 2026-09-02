@@ -167,7 +167,7 @@ export function SwapInputScreen({
       <ButtonContainer>
         <ReviewButtonWrapper>
           <PrimaryButton
-            onClick={onReview}
+            onPress={onReview}
             disabled={!canReview}
             testID="swap-review-button"
             style={{ height: componentSizes.buttonHeightCompact }}

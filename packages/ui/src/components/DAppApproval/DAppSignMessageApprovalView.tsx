@@ -190,7 +190,7 @@ export function DAppSignMessageApprovalView({
 
         <ButtonsContainer>
           <PrimaryButton
-            onClick={onApprove}
+            onPress={onApprove}
             loading={loading}
             disabled={
               disabled ||
@@ -203,7 +203,7 @@ export function DAppSignMessageApprovalView({
           >
             {t('dapp.sign', 'Sign').toUpperCase()}
           </PrimaryButton>
-          <SecondaryButton onClick={onReject} disabled={loading}>
+          <SecondaryButton onPress={onReject} disabled={loading}>
             {t('dapp.reject', 'Reject').toUpperCase()}
           </SecondaryButton>
         </ButtonsContainer>

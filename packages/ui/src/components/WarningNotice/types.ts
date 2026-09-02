@@ -1,9 +1,13 @@
-import type { WarningNoticePropsBase } from '@salmon/shared';
+import type { CSSProperties } from 'react';
+import type { Testable, WarningNoticePropsBase } from '@salmon/shared';
 
-// Re-export the tone union for consumers
 export type { WarningNoticeTone } from '@salmon/shared';
 
 /**
- * Props for the WarningNotice component (Web/Extension).
+ * Props for the WarningNotice component (DOM/Web/Extension).
  */
-export type WarningNoticeProps = WarningNoticePropsBase;
+export interface WarningNoticeProps extends WarningNoticePropsBase, Testable {
+  /** Optional container style override (e.g. margins from the parent). */
+  style?: CSSProperties;
+  className?: string;
+}

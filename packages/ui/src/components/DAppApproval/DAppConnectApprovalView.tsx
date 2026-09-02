@@ -110,10 +110,10 @@ export function DAppConnectApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton onClick={onApprove} loading={loading} disabled={disabled || loading}>
+          <PrimaryButton onPress={onApprove} loading={loading} disabled={disabled || loading}>
             {t('dapp.approve', 'Approve').toUpperCase()}
           </PrimaryButton>
-          <SecondaryButton onClick={onReject} disabled={loading}>
+          <SecondaryButton onPress={onReject} disabled={loading}>
             {t('dapp.deny', 'Deny').toUpperCase()}
           </SecondaryButton>
         </ButtonsContainer>

@@ -56,29 +56,31 @@ export function SuccessPage({
         }
         assist={
           <TextButton
-            onClick={toggleDialog}
+            onPress={toggleDialog}
             color={colors.text.secondary}
             testID="success-info-button"
-          >
-            {/*
+            /*
               The glyph belongs to the component, not the string — it used to
               ride inside the translation as a literal "ⓘ".
-            */}
-            <InfoIcon
-              size={iconSize.sm}
-              color={colors.text.secondary}
-              style={{ marginRight: spacing.xs, flexShrink: 0 }}
-            />
+            */
+            icon={
+              <InfoIcon
+                size={iconSize.sm}
+                color={colors.text.secondary}
+                style={{ marginRight: spacing.xs, flexShrink: 0 }}
+              />
+            }
+          >
             {t('wallet.create.derivable_info_icon')}
           </TextButton>
         }
         secondary={
-          <SecondaryButton onClick={onCheckDerived} fullWidth testID="success-check-derived-button">
+          <SecondaryButton onPress={onCheckDerived} fullWidth testID="success-check-derived-button">
             {t('wallet.create.check_derivables')}
           </SecondaryButton>
         }
         action={
-          <PrimaryButton onClick={onGoToWallet} fullWidth testID="success-go-to-wallet-button">
+          <PrimaryButton onPress={onGoToWallet} fullWidth testID="success-go-to-wallet-button">
             {t('wallet.create.go_to_my_wallet')}
           </PrimaryButton>
         }

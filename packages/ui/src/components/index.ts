@@ -7,12 +7,7 @@
 
 // Button components - Primary, Secondary, and Text action buttons
 export { PrimaryButton, SecondaryButton, TextButton } from './Button';
-export type {
-  ButtonBaseProps,
-  PrimaryButtonProps,
-  SecondaryButtonProps,
-  TextButtonProps,
-} from './Button';
+export type { PrimaryButtonProps, SecondaryButtonProps, TextButtonProps } from './Button';
 
 // Icon components - Common SVG icons
 export {
@@ -437,3 +432,73 @@ export { AddressEditPanel } from './AddressEditPanel';
 // AboutPanel - App info and external links
 export { AboutPanel } from './AboutPanel';
 export type { AboutPanelProps } from './AboutPanel';
+
+// ---------------------------------------------------------------------------
+// The kit on the DOM — the mobile kit's twins (spec 028, lot 2)
+// ---------------------------------------------------------------------------
+
+// Card - the one content container the redesign composes everything from
+export { Card } from './Card';
+export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
+
+// ListRow - a Card laid out as leading mark / title stack / trailing slot
+export { ListRow } from './ListRow';
+export type { ListRowEmphasis, ListRowPadding, ListRowProps } from './ListRow';
+
+// SectionLabel - the three sizes of heading that sit above a block
+export { SectionLabel } from './SectionLabel';
+export type { SectionLabelProps, SectionLabelVariant } from './SectionLabel';
+
+// KeyValueRow - a label and its value, with an optional trailing action
+export { KeyValueRow } from './KeyValueRow';
+export type { KeyValueRowProps, KeyValueTone } from './KeyValueRow';
+
+// Chip - the pill: a badge, an action, or a filter with a selected state
+export { Chip, ChipGroup } from './Chip';
+export type { ChipGroupProps, ChipOption, ChipProps, ChipSize, ChipVariant } from './Chip';
+
+// UnderlineTabs - mutually exclusive options under a travelling underline
+export { UnderlineTabs } from './UnderlineTabs';
+export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './UnderlineTabs';
+
+// SearchField - the one search input the kit draws
+export { SearchField } from './SearchField';
+export type { SearchFieldProps } from './SearchField';
+
+// IconBubble - the well every glyph in the redesign sits inside
+export { IconBubble } from './IconBubble';
+export type {
+  IconBubbleProps,
+  IconBubbleRadius,
+  IconBubbleShape,
+  IconBubbleSize,
+  IconBubbleTone,
+  IconGlyphProps,
+} from './IconBubble';
+
+// ShimmerRect / SkeletonRow - the placeholder atoms, and the row they compose
+export { ShimmerRect } from './ShimmerRect';
+export type { ShimmerRectProps } from './ShimmerRect';
+export { SkeletonRow } from './SkeletonRow';
+export type { SkeletonRowProps } from './SkeletonRow';
+
+// StateBlock - the empty and failed answer for a list or section, one shape
+export { StateBlock } from './StateBlock';
+export type { StateBlockProps, StateBlockTone } from './StateBlock';
+
+// PortfolioSubTabs - the Home sub-tab row plus its order button
+export { PortfolioSubTabs } from './PortfolioSubTabs';
+export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs';
+
+// BottomSheetContainer - the sheet, on <dialog>: Escape and backdrop close it
+export { BottomSheetContainer, SheetTitle, SHEET_EXIT_MS } from './BottomSheetContainer';
+export type { BottomSheetContainerProps, SheetTitleProps } from './BottomSheetContainer';
+
+// ReceiptScreen - the transfer and exchange receipts, one entry point
+export { ReceiptScreen } from './ReceiptScreen';
+export type {
+  ExchangeReceiptScreenProps,
+  ReceiptScreenAction,
+  ReceiptScreenProps,
+  TransferReceiptScreenProps,
+} from './ReceiptScreen';

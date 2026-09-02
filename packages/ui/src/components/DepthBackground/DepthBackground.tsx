@@ -39,8 +39,7 @@
  * composited once rather than repainted as a full-viewport SVG, and this keeps
  * that true *while moving* — an animated `transform` re-composites a layer the
  * browser already rasterised, where a `background-position` animation would
- * have repainted it every frame. The geometry is a constant, so the data URI
- * is computed once at module scope.
+ * have repainted it every frame.
  *
  * The drift's phase is **one module-level clock shared by every field on the
  * page**, not each animation's own birth — see `driftOrigin`. The field is
@@ -63,30 +62,17 @@
  * </Main>
  * ```
  */
-import { useEffect, useRef } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import {
   blizzardSnowSvg,
   depthDrift,
   depthFieldCycleMs,
   depthFieldTileHeight,
-  semantic,
   wrapDepthOffset,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import type { DepthBackgroundProps } from './types';
-
-const { water } = semantic;
-
-/**
- * The field, serialised once. `#` has to be escaped inside a data URI even
- * when the rest is left readable, and the token is an `rgba()` so there is
- * none — `encodeURIComponent` is used anyway because the colour is a token
- * and a future hex value must not silently truncate the document. The heroes
- * ride the same document, so the existing WAAPI drift moves them with the
- * field — no second layer.
- */
-const SNOW_URL = `url("data:image/svg+xml,${encodeURIComponent(blizzardSnowSvg(water.snow))}")`;
 
 /**
  * Tiles of field hanging above the column. Two, because the drift and the
@@ -179,16 +165,16 @@ function leaveDriftClock(animation: Animation): void {
   animation.cancel();
 }
 
-const Ground = styled(Box)({
+const groundStyle = (gradient: readonly string[]): CSSProperties => ({
   position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
   overflow: 'hidden',
-  backgroundColor: water.gradient[0],
-  backgroundImage: `linear-gradient(to bottom, ${water.gradient.join(', ')})`,
+  backgroundColor: gradient[0],
+  backgroundImage: `linear-gradient(to bottom, ${gradient.join(', ')})`,
 });
 
-const Snow = styled('div')({
+const snowStyle = (snowUrl: string): CSSProperties => ({
   position: 'absolute',
   left: 0,
   right: 0,
@@ -196,7 +182,7 @@ const Snow = styled('div')({
   // `top` is set from the measured tile height; until then the layer is
   // simply flush with the column, which is where the static field sat.
   top: 0,
-  backgroundImage: SNOW_URL,
+  backgroundImage: snowUrl,
   backgroundRepeat: 'repeat-y',
   // Width-driven, so one uniform scale keeps the flocs round on any column;
   // `repeat-y` is what now guarantees the field reaches the bottom.
@@ -206,7 +192,17 @@ const Snow = styled('div')({
 });
 
 export function DepthBackground({ snow = true, style, className }: DepthBackgroundProps) {
+  const { water } = useSemantic();
   const snowRef = useRef<HTMLDivElement>(null);
+
+  // The field, serialised per mode. `#` has to be escaped inside a data URI
+  // even when the rest is left readable, and the token is an `rgba()` so
+  // there is none — `encodeURIComponent` is used anyway because the colour is
+  // a token and a future hex value must not silently truncate the document.
+  const snowUrl = useMemo(
+    () => `url("data:image/svg+xml,${encodeURIComponent(blizzardSnowSvg(water.snow))}")`,
+    [water.snow]
+  );
 
   useEffect(() => {
     const el = snowRef.current;
@@ -284,8 +280,12 @@ export function DepthBackground({ snow = true, style, className }: DepthBackgrou
   }, [snow]);
 
   return (
-    <Ground aria-hidden="true" style={style} className={className}>
-      {snow && <Snow ref={snowRef} />}
-    </Ground>
+    <div
+      aria-hidden="true"
+      style={{ ...groundStyle(water.gradient), ...style }}
+      className={className}
+    >
+      {snow && <div ref={snowRef} style={snowStyle(snowUrl)} />}
+    </div>
   );
 }

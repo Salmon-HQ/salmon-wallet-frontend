@@ -12,33 +12,6 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// `@salmon/shared` pulls React Native through its barrel, which Vitest cannot
-// parse. Same treatment as the other component suites here: mock the tokens
-// the dialog and the material read.
-vi.mock('@salmon/shared', () => ({
-  colors: {
-    background: { primary: '#0B0F19', secondary: '#111624' },
-    border: { default: '#58637B' },
-  },
-  borderRadius: { xl: 20 },
-  spacing: { none: 0, sm: 8, md: 12, xl: 16, '2xl': 24 },
-  componentSizes: {
-    sheetWidthSm: 360,
-    sheetWidthBase: 400,
-    sheetWidthMd: 440,
-    sheetWidthXl: 520,
-    sheetMaxHeight: 720,
-  },
-  semantic: {
-    surface: {
-      raised: '#161C2D',
-      crest: '#111624',
-      membraneThin: 'rgba(11, 15, 25, 0.48)',
-      membraneThick: 'rgba(11, 15, 25, 0.66)',
-    },
-  },
-}));
-
 import { BaseSheetDialog } from './BaseSheetDialog';
 
 afterEach(() => {

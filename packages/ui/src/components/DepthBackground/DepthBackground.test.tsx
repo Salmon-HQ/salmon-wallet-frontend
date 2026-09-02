@@ -14,24 +14,17 @@
  * behaviour worth keeping: without them it must fall back to the static field
  * rather than to a half-animated one.
  */
-import { render, cleanup } from '@testing-library/react';
+import React from 'react';
+import { cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createSemantic,
   depthDrift,
   depthFieldCycleMs,
   depthFieldTileHeight,
-} from '../../../../shared/src/theme/depthField';
+} from '@salmon/shared';
 
-// The root `@salmon/shared` barrel drags React Native into a DOM test run, so
-// it is replaced by the two real modules the component actually reads. Real,
-// not fabricated: the point of the assertions below is that the drift comes
-// out of the shipped tokens.
-vi.mock('@salmon/shared', async () => ({
-  ...(await import('../../../../shared/src/theme/depthField')),
-  ...(await import('../../../../shared/src/theme/depthFieldBlizzard')),
-  ...(await import('../../../../shared/src/theme/semantic')),
-}));
-
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { DepthBackground } from './DepthBackground';
 
 const COLUMN_WIDTH = 440;
@@ -92,7 +85,7 @@ afterEach(() => {
 describe('DepthBackground: the drift', () => {
   it('sinks — downward, one tile per loop, forever', () => {
     const { animate } = stubDom(false);
-    render(<DepthBackground />);
+    renderInMode('dark', <DepthBackground />);
 
     expect(animate).toHaveBeenCalledTimes(1);
     const [frames, options] = animate.mock.calls[0] as [
@@ -115,7 +108,7 @@ describe('DepthBackground: the drift', () => {
 
   it('rides transform, so the layer is composited and not repainted', () => {
     const { animate } = stubDom(false);
-    render(<DepthBackground />);
+    renderInMode('dark', <DepthBackground />);
 
     const [frames] = animate.mock.calls[0] as [Keyframe[]];
     for (const frame of frames) {
@@ -125,7 +118,7 @@ describe('DepthBackground: the drift', () => {
 
   it('stops for prefers-reduced-motion, leaving the field exactly as it shipped', () => {
     const { animate } = stubDom(true);
-    const { container } = render(<DepthBackground />);
+    const { container } = renderInMode('dark', <DepthBackground />);
 
     expect(animate).not.toHaveBeenCalled();
     // No parallax offset either — reduced motion reduces both.
@@ -133,17 +126,24 @@ describe('DepthBackground: the drift', () => {
     expect(snow.style.translate).toBe('');
   });
 
-  it('draws the blizzard field, heroes riding the same drifting layer', () => {
+  it('draws the gradient ramp from the mode-active tokens', () => {
     stubDom(false);
-    render(<DepthBackground />);
-    // The heroes' soft radial fill is serialised into the one background
-    // image — same data URI, same WAAPI drift, no second layer. The image
-    // rides the styled component's class, so it is read from the injected
-    // stylesheet rather than from an inline style.
-    const css = Array.from(document.querySelectorAll('style'))
-      .map((tag) => tag.textContent)
-      .join('');
-    expect(css).toContain('radialGradient');
+    const { container } = renderInMode('dark', <DepthBackground />);
+    const ground = container.firstElementChild as HTMLElement;
+    const gradient = createSemantic('dark').water.gradient;
+    expect(ground.style.backgroundImage).toContain('linear-gradient');
+    expect(ground.style.backgroundColor).toBeTruthy();
+    expect(ground.style.backgroundImage).toContain(asRenderedColor(gradient[gradient.length - 1]));
+  });
+
+  it('draws the light ramp when the mode is light', () => {
+    stubDom(false);
+    const { container } = renderInMode('light', <DepthBackground />);
+    const ground = container.firstElementChild as HTMLElement;
+    const darkGradient = createSemantic('dark').water.gradient;
+    expect(ground.style.backgroundImage).not.toContain(
+      asRenderedColor(darkGradient[darkGradient.length - 1])
+    );
   });
 
   it('gives every field one clock, so a wait over the app is not an event', () => {
@@ -155,8 +155,8 @@ describe('DepthBackground: the drift', () => {
     // jumping. The phase is `timeline.currentTime − startTime`, so one shared
     // `startTime` is the whole fix.
     const { animations } = stubDom(false);
-    render(<DepthBackground />);
-    render(<DepthBackground />);
+    renderInMode('dark', <DepthBackground />);
+    renderInMode('dark', <DepthBackground />);
 
     expect(animations).toHaveLength(2);
     expect(animations[0].startTime).not.toBeNull();
@@ -166,14 +166,14 @@ describe('DepthBackground: the drift', () => {
     // so the app's ground coming back after a wait picks the phase up where
     // the water left it.
     cleanup();
-    render(<DepthBackground />);
+    renderInMode('dark', <DepthBackground />);
     expect(animations).toHaveLength(3);
     expect(animations[2].startTime).toBe(animations[0].startTime);
   });
 
   it('draws nothing to move when the snow is turned off', () => {
     const { animate } = stubDom(false);
-    render(<DepthBackground snow={false} />);
+    renderInMode('dark', <DepthBackground snow={false} />);
     expect(animate).not.toHaveBeenCalled();
   });
 });

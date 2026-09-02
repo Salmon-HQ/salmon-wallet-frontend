@@ -145,13 +145,13 @@ export function RecoverWalletPage({
         ) : undefined
       }
       secondary={
-        <SecondaryButton onClick={handlePaste} fullWidth testID="recover-paste-button">
+        <SecondaryButton onPress={handlePaste} fullWidth testID="recover-paste-button">
           {t('wallet.recover.pasteSeed')}
         </SecondaryButton>
       }
       action={
         <ReservedSlot visible={isValidSeedPhrase}>
-          <PrimaryButton onClick={handleNext} fullWidth testID="recover-next-button">
+          <PrimaryButton onPress={handleNext} fullWidth testID="recover-next-button">
             {t('actions.next')}
           </PrimaryButton>
         </ReservedSlot>
