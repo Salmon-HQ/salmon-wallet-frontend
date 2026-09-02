@@ -35,6 +35,7 @@ import {
   useWalletTotals,
   type Account,
   type NetworkId,
+  orderWalletCards,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -122,28 +123,7 @@ export function WalletsScreen({
 
   const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
 
-  // The cards of one seed sit together: a wallet, then the wallets derived
-  // from it, then the next wallet. A derived wallet whose parent is gone has
-  // nothing to sit under, so it stands on its own rather than disappearing.
-  const ordered = useMemo(() => {
-    const derivedByParent = new Map<string, Account[]>();
-    const roots: Account[] = [];
-    for (const account of accounts) {
-      const parent = account.derivedFrom
-        ? accounts.find(({ id }) => id === account.derivedFrom)
-        : undefined;
-      if (parent)
-        derivedByParent.set(parent.id, [...(derivedByParent.get(parent.id) ?? []), account]);
-      else roots.push(account);
-    }
-    return roots.flatMap((root) => [
-      { account: root, parentName: undefined as string | undefined },
-      ...(derivedByParent.get(root.id) ?? []).map((child) => ({
-        account: child,
-        parentName: root.name,
-      })),
-    ]);
-  }, [accounts]);
+  const ordered = useMemo(() => orderWalletCards(accounts), [accounts]);
 
   const aggregated = useMemo(
     () =>

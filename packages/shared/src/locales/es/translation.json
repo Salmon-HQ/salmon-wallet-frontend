@@ -284,9 +284,7 @@
     },
     "languages": {
       "title": "Idioma",
-      "subtitle": "Elegí el idioma de la app.",
-      "en": "Inglés",
-      "es": "Español"
+      "subtitle": "Elegí el idioma de la app."
     },
     "accounts": {
       "title": "Cuentas",

@@ -19,9 +19,11 @@ import {
   opacity,
   s,
   type Semantic,
+  getDataBounds,
+  resampleYs,
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
-import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
+import type { PriceChartPeriod } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { ShimmerRect } from '../ShimmerRect';
 import { UnderlineTabs } from '../UnderlineTabs';
@@ -49,65 +51,10 @@ const chartColorsFor = (t: Semantic) => ({
 });
 
 /**
- * Calculate min and max values from data
- */
-const getDataBounds = (data: PriceDataPoint[]): { min: number; max: number } => {
-  if (data.length === 0) return { min: 0, max: 0 };
-
-  let min = data[0].price;
-  let max = data[0].price;
-
-  for (const point of data) {
-    if (point.price < min) min = point.price;
-    if (point.price > max) max = point.price;
-  }
-
-  // Add padding to bounds
-  const padding = (max - min) * 0.1;
-  return {
-    min: min - padding,
-    max: max + padding,
-  };
-};
-
-/**
- * Fixed sample count for the animated curve. Every period's series is
- * resampled to this many points so two periods always yield same-length
- * arrays — which is what makes the curve *interpolable* when the range
- * changes, instead of a hard swap.
- */
-const RESAMPLE_POINTS = 64;
-
-/**
- * Resample a series to `RESAMPLE_POINTS` y-pixel values (linear interpolation
- * over the index space, already scaled into chart coordinates).
- */
-export const resampleYs = (
-  data: PriceDataPoint[],
-  height: number,
-  bounds: { min: number; max: number }
-): number[] => {
-  if (data.length === 0) return [];
-
-  const { min, max } = bounds;
-  const range = max - min || 1;
-  const ys: number[] = [];
-
-  for (let i = 0; i < RESAMPLE_POINTS; i++) {
-    const pos = data.length === 1 ? 0 : (i / (RESAMPLE_POINTS - 1)) * (data.length - 1);
-    const lo = Math.floor(pos);
-    const hi = Math.min(lo + 1, data.length - 1);
-    const frac = pos - lo;
-    const price = data[lo].price + (data[hi].price - data[lo].price) * frac;
-    ys.push(height - ((price - min) / range) * height);
-  }
-
-  return ys;
-};
-
-/**
- * Build the smooth quadratic-bezier line path from resampled y values.
- * Runs on the UI thread during the period transition, hence the worklet.
+ * The smooth quadratic-bezier line path from resampled y values — the twin
+ * of `buildLinePath` in `@salmon/shared`, kept here because it runs on the UI
+ * thread inside a derived value every frame of the period morph, and a
+ * worklet may not call into ordinary JS. Pinned identical by both tests.
  */
 export const buildLinePath = (ys: number[], width: number): string => {
   'worklet';

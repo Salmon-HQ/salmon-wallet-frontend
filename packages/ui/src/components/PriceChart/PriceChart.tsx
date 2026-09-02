@@ -29,8 +29,10 @@ import {
   resolveMotionDuration,
   spacing,
   type PriceChartPeriod,
-  type PriceDataPoint,
   type Semantic,
+  buildLinePath,
+  getDataBounds,
+  resampleYs,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -47,13 +49,6 @@ const ENDPOINT_HALO_RADIUS = 9;
 /** The chart's default height — mobile's. */
 const DEFAULT_HEIGHT = 200;
 
-/**
- * Fixed sample count for the morphing curve. Every period's series is
- * resampled to this many points so two periods always yield same-length
- * paths — which is what makes the curve interpolable when the range changes.
- */
-const RESAMPLE_POINTS = 64;
-
 /** Width assumed until the container has been measured — a side panel's floor. */
 const UNMEASURED_WIDTH = 320;
 
@@ -63,53 +58,6 @@ const chartColorsFor = (t: Semantic) => ({
   positive: t.status.success,
   negative: t.status.danger,
 });
-
-const getDataBounds = (data: PriceDataPoint[]): { min: number; max: number } => {
-  if (data.length === 0) return { min: 0, max: 0 };
-  let min = data[0].price;
-  let max = data[0].price;
-  for (const point of data) {
-    if (point.price < min) min = point.price;
-    if (point.price > max) max = point.price;
-  }
-  const padding = (max - min) * 0.1;
-  return { min: min - padding, max: max + padding };
-};
-
-/** Resample a series to `RESAMPLE_POINTS` y-pixel values (linear over the index space). */
-export const resampleYs = (
-  data: PriceDataPoint[],
-  height: number,
-  bounds: { min: number; max: number }
-): number[] => {
-  if (data.length === 0) return [];
-  const { min, max } = bounds;
-  const range = max - min || 1;
-  const ys: number[] = [];
-  for (let i = 0; i < RESAMPLE_POINTS; i++) {
-    const pos = data.length === 1 ? 0 : (i / (RESAMPLE_POINTS - 1)) * (data.length - 1);
-    const lo = Math.floor(pos);
-    const hi = Math.min(lo + 1, data.length - 1);
-    const frac = pos - lo;
-    const price = data[lo].price + (data[hi].price - data[lo].price) * frac;
-    ys.push(height - ((price - min) / range) * height);
-  }
-  return ys;
-};
-
-/** The smooth quadratic-bezier line path from resampled y values. */
-export const buildLinePath = (ys: number[], width: number): string => {
-  if (ys.length === 0) return '';
-  const step = width / (ys.length - 1);
-  let path = `M 0 ${ys[0]}`;
-  for (let i = 1; i < ys.length; i++) {
-    const prevX = (i - 1) * step;
-    const midX = prevX + step / 2;
-    path += ` Q ${prevX} ${ys[i - 1]} ${midX} ${(ys[i - 1] + ys[i]) / 2}`;
-  }
-  path += ` L ${width} ${ys[ys.length - 1]}`;
-  return path;
-};
 
 /** The container's width, live — the chart is edge to edge in whatever holds it. */
 function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number {

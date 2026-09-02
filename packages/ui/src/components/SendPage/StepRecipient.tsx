@@ -22,7 +22,8 @@ import {
   type NftData,
   type SendRecipient,
   type SendToken,
-  type Transaction,
+  recipientOptions,
+  type RecipientOption,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -38,16 +39,10 @@ import { SendScreen } from './SendScreen';
 import { TokenPickerSheet } from './TokenPickerSheet';
 
 /** How many past counterparties the "Recent" section offers. */
-const MAX_RECENTS = 3;
 /** The validator's debounce, mobile's number. */
 const VALIDATION_DEBOUNCE_MS = 500;
 
 /** A row the user can tap to fill the field. */
-interface RecipientOption {
-  key: string;
-  name: string;
-  address: string;
-}
 
 /** The initial the avatar bubble carries — a name's, or the address's. */
 function initialOf(option: RecipientOption): string {
@@ -137,42 +132,9 @@ export function StepRecipient({
     [contacts]
   );
 
-  const recents = useMemo<RecipientOption[]>(() => {
-    const seen = new Set<string>();
-    const rows: RecipientOption[] = [];
-    for (const tx of transactions as Transaction[]) {
-      if (tx.type !== 'send') continue;
-      const destination = tx.outputs[0]?.destination;
-      if (!destination || destination === senderAddress || seen.has(destination)) continue;
-      seen.add(destination);
-      rows.push({
-        key: `recent-${destination}`,
-        name: contactsByAddress[destination] ?? getShortAddress(destination) ?? destination,
-        address: destination,
-      });
-      if (rows.length === MAX_RECENTS) break;
-    }
-    return rows;
-  }, [transactions, senderAddress, contactsByAddress]);
-
-  const contactRows = useMemo<RecipientOption[]>(
-    () =>
-      contacts.map((contact) => ({
-        key: `contact-${contact.address}`,
-        name: contact.name,
-        address: contact.address,
-      })),
-    [contacts]
-  );
-
-  const walletRows = useMemo<RecipientOption[]>(
-    () =>
-      ownWallets.map((wallet) => ({
-        key: `wallet-${wallet.address}`,
-        name: wallet.accountName,
-        address: wallet.address,
-      })),
-    [ownWallets]
+  const { recents, contactRows, walletRows } = useMemo(
+    () => recipientOptions({ transactions, senderAddress, contacts, ownWallets }),
+    [transactions, senderAddress, contacts, ownWallets]
   );
 
   // Ordinals have no transfer path yet, and a watch-only account no key.

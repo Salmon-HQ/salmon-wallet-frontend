@@ -109,7 +109,12 @@ jest.mock('@salmon/shared', () => {
   const actualSecret = jest.requireActual('../../../../packages/shared/src/utils/account-secret');
   return {
     ...jest.requireActual('../../test-utils/themeTokens'),
+    // Developer mode lives in shared now; the screen reads it through the barrel.
+    useUnverifiedTokens: () => false,
+    useDeveloperMode: () => false,
     ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+    // The card order is real: parent, then its derived wallets, is what this suite reads.
+    ...jest.requireActual('../../../../packages/shared/src/utils/walletCards'),
     getAccountMnemonic: actualSecret.getAccountMnemonic,
     isWatchOnlyAccount: actualSecret.isWatchOnlyAccount,
     getAccountAddress: (account: {

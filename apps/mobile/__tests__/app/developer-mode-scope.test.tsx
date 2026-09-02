@@ -55,14 +55,25 @@ const accountState = {
   networkId: 'solana-devnet',
 };
 
+// The stored config, read once by the provider. The provider is the real
+// shared module, which reads the hook by its own path — so the same fake is
+// served on the barrel and on that path.
+const userConfig = () => ({
+  developerNetworks: storedConfig.developerNetworks,
+  toggleDeveloperNetworks: jest.fn(),
+  showUnverifiedTokens: storedConfig.showUnverifiedTokens,
+  setShowUnverifiedTokens: jest.fn(),
+});
+jest.mock('@salmon/shared/src/hooks/useUserConfig', () => ({ useUserConfig: userConfig }));
+jest.mock('@salmon/shared/src/hooks/useEnsureMirrorNetworks', () => ({
+  useEnsureMirrorNetworks: () => {},
+}));
+jest.mock('@salmon/shared/src/contexts/AccountsContext', () => ({
+  useAccountsContext: () => [accountState, {}],
+}));
+
 jest.mock('@salmon/shared', () => ({
-  // The stored config, read once by the provider — the context itself is real.
-  useUserConfig: () => ({
-    developerNetworks: storedConfig.developerNetworks,
-    toggleDeveloperNetworks: jest.fn(),
-    showUnverifiedTokens: storedConfig.showUnverifiedTokens,
-    setShowUnverifiedTokens: jest.fn(),
-  }),
+  useUserConfig: userConfig,
   MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
   ensureMirrorNetworks: jest.fn(async () => []),
   useAccountsContext: () => [
@@ -75,6 +86,17 @@ jest.mock('@salmon/shared', () => ({
     },
   ],
   getStashItem: jest.fn(),
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  ...jest.requireActual('@salmon/shared/src/contexts/DeveloperModeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
+}));
+
+jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
+  useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
 jest.mock('../../hooks/useBiometricAuth', () => ({

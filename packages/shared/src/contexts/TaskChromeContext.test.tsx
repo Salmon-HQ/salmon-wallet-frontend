@@ -1,12 +1,19 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The task-chrome contract both platforms mount: claims are counted, a
+ * publisher torn down mid-task releases its claim, and the surface count adds
+ * the provider's own `surface()` calls to the external bump.
+ */
 import React from 'react';
-import { Text } from 'react-native';
-import { render, screen, act } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { TaskChromeProvider, useTaskChrome, useTaskChromeClaim } from './TaskChromeContext';
 
 function ChromeState() {
   const { isTaskEngaged } = useTaskChrome();
-  return <Text testID="chrome">{isTaskEngaged ? 'engaged' : 'free'}</Text>;
+  return <span data-testid="chrome">{isTaskEngaged ? 'engaged' : 'free'}</span>;
 }
 
 function Publisher({ engaged }: { engaged: boolean }) {
@@ -19,7 +26,7 @@ function Publisher({ engaged }: { engaged: boolean }) {
 
 function SurfaceState() {
   const { surfaceKey } = useTaskChrome();
-  return <Text testID="surface">{String(surfaceKey)}</Text>;
+  return <span data-testid="surface">{String(surfaceKey)}</span>;
 }
 
 function Surfacer() {
@@ -28,8 +35,8 @@ function Surfacer() {
   return null;
 }
 
-const chrome = () => screen.getByTestId('chrome').props.children;
-const surfaceKey = () => screen.getByTestId('surface').props.children;
+const chrome = () => screen.getByTestId('chrome').textContent;
+const surfaceKey = () => screen.getByTestId('surface').textContent;
 
 describe('TaskChromeContext', () => {
   it('engages the chrome while a flow holds a claim', () => {
@@ -39,13 +46,12 @@ describe('TaskChromeContext', () => {
         <Publisher engaged />
       </TaskChromeProvider>
     );
-
     expect(chrome()).toBe('engaged');
   });
 
   it('keeps the chrome engaged while any other claim is open', () => {
-    // The regression this guards: as a bare boolean, whichever flow released
-    // first pulled the chrome back under a flow that was still running.
+    // As a bare boolean, whichever flow released first pulled the chrome back
+    // under a flow that was still running.
     const { rerender } = render(
       <TaskChromeProvider>
         <ChromeState />
@@ -53,7 +59,6 @@ describe('TaskChromeContext', () => {
         <Publisher engaged />
       </TaskChromeProvider>
     );
-
     rerender(
       <TaskChromeProvider>
         <ChromeState />
@@ -61,7 +66,6 @@ describe('TaskChromeContext', () => {
         <Publisher engaged />
       </TaskChromeProvider>
     );
-
     expect(chrome()).toBe('engaged');
   });
 
@@ -73,7 +77,6 @@ describe('TaskChromeContext', () => {
         <Publisher engaged />
       </TaskChromeProvider>
     );
-
     rerender(
       <TaskChromeProvider>
         <ChromeState />
@@ -81,12 +84,10 @@ describe('TaskChromeContext', () => {
         <Publisher engaged={false} />
       </TaskChromeProvider>
     );
-
     expect(chrome()).toBe('free');
   });
 
   it('releases a claim whose publisher unmounted mid-task', () => {
-    // A flow torn down while engaged used to leave the shell headless.
     function Host({ mounted }: { mounted: boolean }) {
       return (
         <TaskChromeProvider>
@@ -95,12 +96,9 @@ describe('TaskChromeContext', () => {
         </TaskChromeProvider>
       );
     }
-
     const { rerender } = render(<Host mounted />);
     expect(chrome()).toBe('engaged');
-
     act(() => rerender(<Host mounted={false} />));
-
     expect(chrome()).toBe('free');
   });
 
@@ -112,27 +110,22 @@ describe('TaskChromeContext', () => {
           <Surfacer />
         </TaskChromeProvider>
       );
-
       expect(surfaceKey()).toBe('1');
     });
 
     it('counts the external bump too — a biometric unlock shows no wait', () => {
-      // One count, two channels: the prop the app layout owns and the
-      // `surface()` calls every wait makes.
       const { rerender } = render(
         <TaskChromeProvider surfaceKey={1}>
           <SurfaceState />
         </TaskChromeProvider>
       );
       expect(surfaceKey()).toBe('1');
-
       rerender(
         <TaskChromeProvider surfaceKey={2}>
           <SurfaceState />
           <Surfacer />
         </TaskChromeProvider>
       );
-
       expect(surfaceKey()).toBe('3');
     });
   });

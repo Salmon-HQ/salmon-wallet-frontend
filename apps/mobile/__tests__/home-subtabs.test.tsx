@@ -196,6 +196,21 @@ jest.mock('@salmon/shared', () => ({
     order: mockStoredTabOrder ?? defaults,
     setOrder: mockSetTabOrder,
   }),
+  // The task chrome and the Home shell are the real modules: their own suites
+  // cover the logic, and Home is rendered here with what they hand back.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
+}));
+
+// The real shell reads the tab order through its own module path, not the
+// barrel, so the arrangement is pinned there too.
+jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
+  useHomeTabOrder: (defaults: string[]) => ({
+    order: mockStoredTabOrder ?? defaults,
+    setOrder: mockSetTabOrder,
+  }),
 }));
 
 jest.mock('../src/components', () => {

@@ -25,7 +25,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
@@ -49,10 +49,12 @@ import {
   useCoinMarketData,
   usePrefetchBalances,
   useCurrencyContext,
-  useHomeTabOrder,
+  useHomeShell,
+  mapBalanceToToken,
+  buildBitcoinToken,
+  type HomeSubTabKey,
   isWatchOnlyAccount,
   vs,
-  getBlockchainFromNetworkId,
   getNetworkLabel,
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
@@ -79,7 +81,6 @@ import {
   TokenListItem,
   WalletHeader,
   WarningNotice,
-  type BlockchainBalance,
   type BlockchainId,
   type MarketData,
 } from '../../../src/components';
@@ -90,60 +91,11 @@ import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
-/**
- * Convert TokenBalanceWithPrice to Token for TokenList
- */
-function mapBalanceToToken(item: {
-  address: string;
-  symbol: string;
-  name: string;
-  logo?: string;
-  uiAmount: number;
-  usdBalance?: number;
-  price?: number;
-  priceChange24h?: number;
-  tags?: string[];
-  coingeckoId?: string;
-}): Token {
-  // Check if token has 'verified' tag
-  const isVerified = item.tags?.includes('verified') ?? false;
-
-  // Calculate absolute USD change based on percentage and current balance
-  let absoluteChange: number | undefined;
-  if (item.priceChange24h !== undefined && item.usdBalance !== undefined && item.usdBalance > 0) {
-    // Calculate previous balance: current / (1 + percentage/100)
-    const previousBalance = item.usdBalance / (1 + item.priceChange24h / 100);
-    absoluteChange = item.usdBalance - previousBalance;
-  }
-
-  return {
-    address: item.address,
-    symbol: item.symbol,
-    name: item.name,
-    logo: item.logo || undefined,
-    price: item.price,
-    uiAmount: item.uiAmount,
-    usdBalance: item.usdBalance ?? null,
-    last24HoursChange:
-      item.priceChange24h !== undefined ? { perc: item.priceChange24h, abs: absoluteChange } : null,
-    tags: item.tags,
-    isVerified,
-    coingeckoId: item.coingeckoId,
-  };
-}
-
 /** Scroll distance over which the top fade gradient reaches full opacity. */
 const TOP_FADE_SCROLL_RANGE = 30;
 
-/** The two in-page sub-tabs. NFTs only exist on Solana — see `handleSubTabChange`. */
-type SubTabKey = 'portfolio' | 'nfts';
-
-/**
- * The sub-tabs Home offers, in the order it draws them before the user has
- * arranged anything. A powerup that adds a surface to Home adds its key here;
- * `useHomeTabOrder` reconciles the stored arrangement against this list.
- */
-const HOME_TAB_KEYS: SubTabKey[] = ['portfolio', 'nfts'];
+/** The two in-page sub-tabs — the shell's key, kept under its old local name. */
+type SubTabKey = HomeSubTabKey;
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -163,12 +115,6 @@ export default function HomeScreen() {
   // `.current` in the render body, and a memo with no deps is the same
   // one-instance guarantee.
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
-
-  // Active blockchain index for carousel
-  const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
-
-  // In-page sub-tab (replaces the removed bottom tab bar)
-  const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('portfolio');
 
   // Bitcoin chart period — the fetch itself is `useCoinMarketData` below.
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
@@ -240,33 +186,6 @@ export default function HomeScreen() {
     activeNetworkId: networkId,
   });
 
-  // Sync the carousel index with the persisted networkId — but only when that
-  // id actually changes.
-  //
-  // `changeNetwork` is async, so a chain switch sets the index optimistically
-  // and the persisted id catches up a beat later. This effect also re-runs
-  // whenever `allNetworks` changes identity, and it does on nearly every
-  // render (the accounts context hands back a fresh `activeAccount`, so the
-  // filter memo above recomputes). Re-running it inside that beat re-derived
-  // the index from the OLD networkId and pulled the balance straight back to
-  // the chain the user had just left — which is why opening NFTs from Bitcoin
-  // called `changeNetwork('solana-mainnet')` and still showed Bitcoin (owner,
-  // device run). Guarding on the id makes it a sync, not a continuous
-  // assertion.
-  // Keyed on account AND network: two accounts can sit on the same network id,
-  // so keying on the network alone made a wallet switch look like "already
-  // synced" and left the balance on the previous account's chain index.
-  const syncedNetworkIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!networkId || allNetworks.length === 0) return;
-    const syncKey = `${activeAccount?.id ?? ''}:${networkId}`;
-    if (syncedNetworkIdRef.current === syncKey) return;
-    const idx = allNetworks.findIndex((n) => n.id === networkId);
-    if (idx < 0) return;
-    syncedNetworkIdRef.current = syncKey;
-    setActiveBlockchainIndex(idx);
-  }, [networkId, allNetworks, activeAccount?.id]);
-
   // Get balance data for current network (active)
   const {
     tokens,
@@ -312,145 +231,34 @@ export default function HomeScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
 
-  // Create blockchain balances array for carousel
-  // Maps available networks from useAvailableNetworks to BlockchainBalance objects
-  const blockchainBalances: BlockchainBalance[] = useMemo(() => {
-    return allNetworks.map((network) => {
-      const blockchain = network.id.replace('-mainnet', '') as BlockchainId;
-      const isActiveNetwork = network.id === networkId;
-
-      let balanceData: {
-        usdTotal: number | undefined;
-        nativeAmount: number | undefined;
-        changePercent: number | undefined;
-        changeAmount: number | undefined;
-        loading: boolean;
-      };
-
-      if (isActiveNetwork) {
-        // A skeleton means "there is nothing to show", never "a request is in
-        // flight". `hasData` is true for cached data too, so returning to a
-        // chain visited earlier in the session paints its last-known balance
-        // immediately; `refreshing` gets the quiet affordance instead.
-        const showSkeleton = !hasData;
-        balanceData = {
-          usdTotal: showSkeleton ? undefined : usdTotal,
-          // Off mainnet there is no USD figure at all, so this is what the
-          // block prints as the total.
-          nativeAmount: showSkeleton ? undefined : nativeAmount,
-          changePercent: showSkeleton ? undefined : changePercent,
-          changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton,
-        };
-      } else {
-        balanceData = {
-          usdTotal: undefined,
-          nativeAmount: undefined,
-          changePercent: undefined,
-          changeAmount: undefined,
-          loading: false,
-        };
-      }
-
-      return {
-        network: {
-          id: network.id,
-          name: network.name,
-          blockchain,
-        },
-        ...balanceData,
-      };
-    });
-  }, [allNetworks, networkId, usdTotal, nativeAmount, changePercent, changeAmount, hasData]);
-
-  // The network the screen stands on, and its chain family. Every surface
-  // below follows the NETWORK — `network.blockchain` is the id minus
-  // `-mainnet`, so it reads `solana-devnet` off mainnet and an equality test
-  // against `'bitcoin'` silently missed `bitcoin-testnet` (spec 026).
-  const currentNetworkId = useMemo(
-    () => blockchainBalances[activeBlockchainIndex]?.network.id ?? networkId ?? 'solana-mainnet',
-    [activeBlockchainIndex, blockchainBalances, networkId]
-  );
-  const currentChain = getBlockchainFromNetworkId(currentNetworkId);
-
-  // NFTs are a Solana surface. On Bitcoin the tab is not offered at all — it
-  // sinks out of the row — and a session sitting on it falls back to Portfolio
-  // (owner ruling 3, spec 026). The stored arrangement is untouched, so the
-  // tab returns to its own place when the carousel comes back to Solana.
-  const nftsOffered = currentChain === 'solana';
-  const effectiveSubTab: SubTabKey =
-    activeSubTab === 'nfts' && !nftsOffered ? 'portfolio' : activeSubTab;
-
-  // The beat between sink and float (owner, on-device): the incoming content's
-  // float waits out the outgoing content's sink plus a short pause — but only
-  // once something has actually swapped. On the screen's first mount nothing
-  // sinks, so a delay there would read as lag. Tracked with the render-time
-  // setState pattern (not a ref: refs cannot be read during render).
-  //
-  // Three causes can swap content here and they must never speak at once
-  // (the verb never nests — DESIGN.md §The balance block's motion, rule 5): a
-  // task taking or releasing the screen owns `home-content`, a sub-tab change
-  // owns `home-subtab-content`, and a chain change owns `chainContent`. One
-  // flag for all used to hand the beat to every wrapper, so a task hand-back
-  // sank the screen *and* the list inside it — one gesture at two depths. The
-  // cause of the current swap is recorded, and only the wrapper that owns
-  // that cause animates. Opening NFTs can also snap the chain to Solana in
-  // the same render; that is still one gesture, and the sub-tab is the one
-  // the user touched.
-  //
-  // A SURFACING is not a swap. Home is never unmounted while the wait is up,
-  // so the user's last gesture — a sub-tab switch, a task leaving — is still
-  // recorded when the water clears; without this reset the `surfaceKey`-keyed
-  // remount replayed it *nested* inside the screen's own float, one gesture at
-  // two depths again (owner, 2026-09-02). The surfacing wins over anything
-  // else that changed in the same render: the cause goes back to 'none', so
-  // only `home-content` speaks, and it speaks with no beat — nothing sank
-  // before it.
-  const [contentSwap, setContentSwap] = useState<{
-    chain: string;
-    subTab: SubTabKey;
-    engaged: boolean;
-    surface: number;
-    cause: 'none' | 'chain' | 'subtab' | 'task';
-  }>({
-    chain: currentNetworkId,
-    subTab: effectiveSubTab,
-    engaged: isTaskEngaged,
-    surface: surfaceKey,
-    cause: 'none',
+  // The shell's state — page index, per-page balances, the network the screen
+  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // in shared; this screen renders it (`useHomeShell`).
+  const {
+    activeBlockchainIndex,
+    blockchainBalances,
+    currentNetworkId,
+    currentChain,
+    effectiveSubTab,
+    setActiveSubTab,
+    setSubTabOrder,
+    subTabs,
+    subTabsKey,
+    tabsHasPrior,
+    taskHasPrior,
+    subTabHasPrior,
+    chainHasPrior,
+    selectBlockchain,
+  } = useHomeShell({
+    allNetworks,
+    networkId,
+    activeAccountId: activeAccount?.id,
+    networksAccounts,
+    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    isTaskEngaged,
+    surfaceKey,
+    changeNetwork: accountActions.changeNetwork,
   });
-  if (contentSwap.surface !== surfaceKey) {
-    setContentSwap({
-      chain: currentNetworkId,
-      subTab: effectiveSubTab,
-      engaged: isTaskEngaged,
-      surface: surfaceKey,
-      cause: 'none',
-    });
-  } else if (
-    contentSwap.chain !== currentNetworkId ||
-    contentSwap.subTab !== effectiveSubTab ||
-    contentSwap.engaged !== isTaskEngaged
-  ) {
-    setContentSwap({
-      chain: currentNetworkId,
-      subTab: effectiveSubTab,
-      engaged: isTaskEngaged,
-      surface: surfaceKey,
-      // Leaving Solana can change the chain AND drop NFTs in the same render.
-      // The sub-tab wins: the content region is the one wrapper that speaks,
-      // and the chain-keyed wrapper inside it stays silent (rule five).
-      cause:
-        contentSwap.engaged !== isTaskEngaged
-          ? 'task'
-          : contentSwap.subTab !== effectiveSubTab
-            ? 'subtab'
-            : 'chain',
-    });
-  }
-  const taskHasPrior = contentSwap.cause === 'task';
-  const subTabHasPrior = contentSwap.cause === 'subtab';
-  const chainHasPrior = contentSwap.cause === 'chain';
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -488,25 +296,10 @@ export default function HomeScreen() {
     return coinInfoToMarketData(bitcoinCoinInfo);
   }, [bitcoinCoinInfo]);
 
-  // The Bitcoin column's token: the market from CoinGecko, the holding from
-  // the same balance the header reads (`useBalance` on the active network).
-  const bitcoinToken: Token | undefined = useMemo(() => {
-    if (!bitcoinCoinInfo?.marketData) return undefined;
-    const md = bitcoinCoinInfo.marketData;
-    return {
-      address: 'bitcoin',
-      name: 'Bitcoin',
-      symbol: 'BTC',
-      logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-      price: md.currentPrice,
-      uiAmount: nativeAmount ?? 0,
-      usdBalance: usdTotal ?? 0,
-      last24HoursChange: md.priceChangePercentage24h
-        ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h }
-        : null,
-      isVerified: true,
-    };
-  }, [bitcoinCoinInfo, nativeAmount, usdTotal]);
+  const bitcoinToken = useMemo(
+    () => buildBitcoinToken(bitcoinCoinInfo, nativeAmount, usdTotal),
+    [bitcoinCoinInfo, nativeAmount, usdTotal]
+  );
 
   // Handlers
   // Send is a flow of four screens now (spec 018), not a sheet: the first of
@@ -562,24 +355,14 @@ export default function HomeScreen() {
 
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
-      const selectedBalance = blockchainBalances[index];
-      if (!selectedBalance) return;
-      const newNetworkId = selectedBalance.network.id;
-      // `changeNetwork` returns silently when the account has no derivation for
-      // the target. Writing the index optimistically regardless left the dots
-      // and the amount pointing at a chain the wallet never switched to.
-      if (!activeAccount?.networksAccounts?.[newNetworkId]) return;
-      setActiveBlockchainIndex(index);
+      if (!selectBlockchain(index)) return;
       // The incoming chain's list starts at the top, so the offset the fade
       // reads must start over with it — the same reset the sub-tab switch
       // does. Without it a chain switched while scrolled kept a top fade over
       // content that was no longer scrolled.
       topFadeOpacity.setValue(0);
-      void accountActions
-        .changeNetwork(newNetworkId)
-        .catch((error) => console.warn('[home] changeNetwork failed:', error));
     },
-    [blockchainBalances, accountActions, activeAccount, topFadeOpacity]
+    [selectBlockchain, topFadeOpacity]
   );
 
   // Handle scroll to show/hide top fade gradient dynamically
@@ -593,45 +376,6 @@ export default function HomeScreen() {
     [topFadeOpacity]
   );
 
-  // The keys Home offers; the user's arrangement of them is what gets
-  // rendered. A key the app no longer offers is dropped and a key it gained
-  // is appended by the hook, so a powerup tab can arrive later without the
-  // arrangement being thrown away — and a key with no label here is simply
-  // not rendered.
-  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
-
-  const subTabs = useMemo(() => {
-    const labels: Record<string, string> = {
-      portfolio: t('tabs.portfolio', 'Portfolio'),
-      nfts: t('tabs.nfts', 'NFTs'),
-    };
-    return subTabOrder.flatMap((key) => {
-      if (key === 'nfts' && !nftsOffered) return [];
-      const label = labels[key];
-      return label ? [{ key, label }] : [];
-    });
-  }, [subTabOrder, nftsOffered, t]);
-
-  // The row plays the verb whenever the SET of tabs changes — a reorder, and
-  // now also NFTs leaving on Bitcoin and floating back on Solana. Keyed by the
-  // rendered keys, so a tab switch (same set) never remounts the row and the
-  // underline keeps sliding. First mount owes no verb: render-time setState,
-  // the same pattern the content swap uses.
-  const subTabsKey = subTabs.map((tab) => tab.key).join('|');
-  // A surfacing silences this row for the same reason it silences the content
-  // wrappers: `home-content` is the only wrapper that speaks when the screen
-  // comes back.
-  const [tabsSwap, setTabsSwap] = useState({
-    key: subTabsKey,
-    surface: surfaceKey,
-    hasPrior: false,
-  });
-  if (tabsSwap.surface !== surfaceKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
-  } else if (tabsSwap.key !== subTabsKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
-  }
-
   // The tab is only offered where it means something, so there is nothing to
   // snap: opening NFTs used to drag the balance carousel back to Solana, which
   // moved the chain the user was standing on without being asked (owner ruling
@@ -643,7 +387,7 @@ export default function HomeScreen() {
       topFadeOpacity.setValue(0);
       setActiveSubTab(key as SubTabKey);
     },
-    [topFadeOpacity]
+    [topFadeOpacity, setActiveSubTab]
   );
 
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
@@ -733,11 +477,9 @@ export default function HomeScreen() {
       // arrangement, so a tab switch never remounts them.
       tabsKey={subTabsKey}
       tabsEntering={
-        tabsSwap.hasPrior
-          ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-          : undefined
+        tabsHasPrior ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS }) : undefined
       }
-      tabsExiting={tabsSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+      tabsExiting={tabsHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
     />
   );
 

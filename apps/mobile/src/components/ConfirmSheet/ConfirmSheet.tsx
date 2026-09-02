@@ -5,7 +5,7 @@
  * optional password verification, and loading states.
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
@@ -17,6 +17,7 @@ import {
   vs,
   type ConfirmSheetPropsBase,
   type Semantic,
+  usePasswordConfirm,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
@@ -53,66 +54,15 @@ export function ConfirmSheet({
   const styles = useThemedStyles(stylesFor);
   const { status } = useSemantic();
   const { compactContentBottomPadding } = useBottomSheetChrome();
-  const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | undefined>();
-  const [loading, setLoading] = useState(false);
-
-  // Reset state when sheet opens
-  useEffect(() => {
-    if (visible) {
-      setPassword('');
-      setPasswordError(undefined);
-      setLoading(false);
-    }
-  }, [visible]);
-
-  const handleConfirm = useCallback(async () => {
-    if (loading) return;
-
-    // Validate password if required
-    if (requirePassword && validatePassword) {
-      if (!password) {
-        setPasswordError(t('errors.password_required', 'Password is required'));
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const isValid = await validatePassword(password);
-        if (!isValid) {
-          setPasswordError(t('errors.invalid_password', 'Invalid password'));
-          setLoading(false);
-          return;
-        }
-      } catch {
-        setPasswordError(t('errors.password_check_failed', 'Failed to verify password'));
-        setLoading(false);
-        return;
-      }
-    }
-
-    setLoading(true);
-    try {
-      await onConfirm(requirePassword ? password : undefined);
-      onClose();
-    } catch (err) {
-      console.error('Confirm action failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, requirePassword, validatePassword, password, t, onConfirm, onClose]);
-
-  const handlePasswordChange = useCallback(
-    (value: string) => {
-      setPassword(value);
-      if (passwordError) {
-        setPasswordError(undefined);
-      }
-    },
-    [passwordError]
-  );
-
-  const canConfirm = !requirePassword || password.length > 0;
+  // The gate's state lives once, in shared; this sheet only renders it.
+  const {
+    password,
+    passwordError,
+    loading,
+    canConfirm,
+    setPassword: handlePasswordChange,
+    confirm: handleConfirm,
+  } = usePasswordConfirm({ visible, requirePassword, validatePassword, onConfirm, onClose, t });
 
   return (
     <BottomSheetContainer

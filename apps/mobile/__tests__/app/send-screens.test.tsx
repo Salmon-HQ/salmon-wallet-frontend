@@ -116,6 +116,8 @@ jest.mock('@salmon/shared', () => ({
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+  // The recipient groups are real: recents, address book and own wallets.
+  ...jest.requireActual('../../../../packages/shared/src/utils/recipientOptions'),
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
   sanitizeDecimalInput: (value: string) => value,

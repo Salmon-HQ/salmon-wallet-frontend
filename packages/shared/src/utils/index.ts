@@ -333,6 +333,35 @@ export {
 export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';
 export { balanceCues } from './balanceCues';
 export type { BalanceCue, BalanceCues } from './balanceCues';
+export {
+  CONFIRMATION_CONFIG,
+  CONFIRMATION_LABEL_KEYS,
+  COUNTERPARTY_ADDRESS_CHARS,
+  STATUS_LABEL_KEYS,
+  TYPE_LABEL_KEYS,
+  conversionRateFor,
+  describeTransactionRow,
+  transactionCounterparty,
+  transactionStatusDisplayFor,
+  transactionTypeDisplayFor,
+} from './transactionDisplay';
+export type {
+  ConfirmationTone,
+  ConversionRate,
+  TransactionSentence,
+  TransactionStatusDisplay,
+  TransactionStatusGlyph,
+  TransactionTypeDisplay,
+  TransactionTypeGlyph,
+} from './transactionDisplay';
+export { orderWalletCards } from './walletCards';
+export type { WalletCard } from './walletCards';
+export { MAX_RECENTS, recipientOptions } from './recipientOptions';
+export type { RecipientOption, RecipientOptions } from './recipientOptions';
+export { RESAMPLE_POINTS, buildLinePath, getDataBounds, resampleYs } from './priceChartPath';
+export type { ChartBounds } from './priceChartPath';
+export { APPEARANCE_OPTIONS } from './appearanceOptions';
+export type { AppearanceOption } from './appearanceOptions';
 export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
   NftBlockchain,

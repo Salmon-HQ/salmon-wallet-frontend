@@ -16,8 +16,7 @@ import {
   fontWeight,
   formatRawAmount,
   formatRelativeTimeCompact,
-  getShortAddress,
-  getTransactionDescription,
+  describeTransactionRow,
   lineHeight,
   spacing,
   tabularNums,
@@ -34,9 +33,6 @@ const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
 const MAX_VISIBLE_AMOUNTS = 2;
-
-/** How much of the counterparty address the row keeps at each end. */
-const ADDRESS_CHARS = 4;
 
 /** The amount column reserves this width, so the chip can never reach it */
 const AMOUNT_COLUMN_MIN_WIDTH = 104;
@@ -90,7 +86,7 @@ export function TransactionItem({
   const { t } = useTranslation();
   const semantic = useSemantic();
   const { status: statusTokens, text } = semantic;
-  const { type, timestamp, status, inputs, outputs, description, source } = transaction;
+  const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semantic);
   const config = typeConfig[type] || typeConfig.unknown;
 
@@ -101,27 +97,13 @@ export function TransactionItem({
     onPress?.(transaction);
   }, [onPress, transaction]);
 
-  // The other side of the transfer, when there is one: who it went to, or who
-  // it came from.
-  const counterparty =
-    type === 'send' ? outputs[0]?.destination : type === 'receive' ? inputs[0]?.source : undefined;
-
-  // A transfer with a counterparty always says "To/From <someone>", even when
-  // the indexer sent prose of its own: the address book's name outranks it,
-  // and the short address is the same form the wallet header uses.
+  // What the row says under the verb — one derivation for both platforms
+  // (`describeTransactionRow`): "To/From <name>" for a transfer, the shared
+  // description for everything else.
   const descriptionText = useMemo(() => {
-    if (counterparty) {
-      const name = contacts?.[counterparty] ?? getShortAddress(counterparty, ADDRESS_CHARS) ?? '';
-      return t(
-        type === 'send'
-          ? 'transactions.description.sendTo'
-          : 'transactions.description.receiveFrom',
-        { address: name }
-      );
-    }
-    const described = getTransactionDescription(type, inputs, outputs, source, description);
-    return t(described.key, described.values);
-  }, [counterparty, contacts, type, inputs, outputs, source, description, t]);
+    const said = describeTransactionRow(transaction, contacts);
+    return t(said.key, said.values);
+  }, [transaction, contacts, t]);
 
   const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 

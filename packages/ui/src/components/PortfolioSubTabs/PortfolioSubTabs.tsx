@@ -16,7 +16,7 @@
  * underline just slides, `UnderlineTabs`' own job.
  */
 import { useEffect, useRef, useState } from 'react';
-import { spacing } from '@salmon/shared';
+import { spacing, componentSizes } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -26,8 +26,8 @@ import { IconBubble } from '../IconBubble';
 import { UnderlineTabs } from '../UnderlineTabs';
 import type { PortfolioSubTab, PortfolioSubTabsProps } from './types';
 
-const ORDER_BUTTON_SIZE = 36;
-const ORDER_GLYPH_SIZE = 18;
+const ORDER_BUTTON_SIZE = componentSizes.iconBubbleSm;
+const ORDER_GLYPH_SIZE = componentSizes.iconSizeXSmall;
 
 export function PortfolioSubTabs({
   tabs,

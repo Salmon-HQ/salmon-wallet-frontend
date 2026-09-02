@@ -124,6 +124,12 @@ jest.mock('@salmon/shared', () => ({
   // are `IconBubble`s now, and the bubble reads every tone's ground at module
   // load, so a hand-listed subset breaks on a tone this file never renders.
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
 
 import { WalletHeader } from './WalletHeader';

@@ -43,6 +43,9 @@ jest.mock('@salmon/shared', () => ({
   // tokens by hand is how this mock used to break on an unrelated change.
   ...jest.requireActual('../../../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The display tables and derivations are real: the verb, the status ink
+  // and the swap rate are what this detail is built from.
+  ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
   formatRawAmount: (amount: string | number, decimals: number) =>

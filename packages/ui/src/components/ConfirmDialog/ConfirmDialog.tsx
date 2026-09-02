@@ -11,9 +11,9 @@
  * nothing; the destructive action keeps the secondary shell with the danger
  * fill painted into it.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { fontFamily, fontSize, lineHeight, spacing } from '@salmon/shared';
+import { fontFamily, fontSize, lineHeight, spacing, usePasswordConfirm } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { WarningIcon } from '../../icons';
@@ -38,63 +38,15 @@ export function ConfirmDialog({
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
   const { status, text } = useSemantic();
-  const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | undefined>();
-  const [loading, setLoading] = useState(false);
-
-  // Reset state when the sheet opens
-  useEffect(() => {
-    if (visible) {
-      setPassword('');
-      setPasswordError(undefined);
-      setLoading(false);
-    }
-  }, [visible]);
-
-  const handleConfirm = useCallback(async () => {
-    if (loading) return;
-
-    if (requirePassword && validatePassword) {
-      if (!password) {
-        setPasswordError(t('errors.password_required', 'Password is required'));
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const isValid = await validatePassword(password);
-        if (!isValid) {
-          setPasswordError(t('errors.invalid_password', 'Invalid password'));
-          setLoading(false);
-          return;
-        }
-      } catch {
-        setPasswordError(t('errors.password_check_failed', 'Failed to verify password'));
-        setLoading(false);
-        return;
-      }
-    }
-
-    setLoading(true);
-    try {
-      await onConfirm(requirePassword ? password : undefined);
-      onClose();
-    } catch (err) {
-      console.error('Confirm action failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, requirePassword, validatePassword, password, t, onConfirm, onClose]);
-
-  const handlePasswordChange = useCallback(
-    (value: string) => {
-      setPassword(value);
-      if (passwordError) setPasswordError(undefined);
-    },
-    [passwordError]
-  );
-
-  const canConfirm = !requirePassword || password.length > 0;
+  // The gate's state lives once, in shared; this sheet only renders it.
+  const {
+    password,
+    passwordError,
+    loading,
+    canConfirm,
+    setPassword: handlePasswordChange,
+    confirm: handleConfirm,
+  } = usePasswordConfirm({ visible, requirePassword, validatePassword, onConfirm, onClose, t });
 
   return (
     <BottomSheetContainer

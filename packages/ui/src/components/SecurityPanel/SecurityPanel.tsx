@@ -7,17 +7,15 @@
  * then the lock, then the password form. A browser has no biometrics, so
  * the score counts the password alone and the biometric row is absent.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
   fontSize,
-  getPasswordIssue,
   lineHeight,
-  PASSWORD_CONSTRAINTS,
   spacing,
   useAccountsContext,
-  validatePassword,
+  useChangePassword,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -45,62 +43,24 @@ export function SecurityPanel({
   const { status } = useSemantic();
   const [accountState, accountActions] = useAccountsContext();
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const passwordValidation = validatePassword(newPassword);
-
-  const handleChangePassword = useCallback(async () => {
-    setError('');
-    setSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setError(t('settings.security.password_mismatch'));
-      return;
-    }
-
-    const passwordIssue = getPasswordIssue(passwordValidation);
-    if (passwordIssue) {
-      setError(
-        passwordIssue === 'too_short'
-          ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
-          : passwordIssue === 'too_long'
-            ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
-            : t('wallet.create.password_too_weak')
-      );
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const changed = await accountActions.changePassword(currentPassword, newPassword);
-      if (changed) {
-        await onPasswordChanged?.();
-        setSuccess(true);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setError(t('settings.security.wrong_password'));
-      }
-    } catch {
-      setError(t('settings.security.wrong_password'));
-    } finally {
-      setLoading(false);
-    }
-  }, [
+  // The form's state lives once, in shared; the vault call is the context's.
+  const {
     currentPassword,
     newPassword,
     confirmPassword,
+    setCurrentPassword,
+    setNewPassword,
+    setConfirmPassword,
     passwordValidation,
-    accountActions,
+    error,
+    success,
+    canSubmit,
+    submit: handleChangePassword,
+  } = useChangePassword({
+    changePassword: accountActions.changePassword,
     onPasswordChanged,
     t,
-  ]);
+  });
 
   const handleLockNow = useCallback(() => {
     void accountActions.lockAccounts();
@@ -191,11 +151,7 @@ export function SecurityPanel({
 
         <PasswordInput
           value={currentPassword}
-          onChangeText={(value: string) => {
-            setCurrentPassword(value);
-            if (error) setError('');
-            if (success) setSuccess(false);
-          }}
+          onChangeText={setCurrentPassword}
           placeholder={t('settings.security.current_password')}
           testID="security-current-password-input"
         />
@@ -203,10 +159,7 @@ export function SecurityPanel({
         <div>
           <PasswordInput
             value={newPassword}
-            onChangeText={(value: string) => {
-              setNewPassword(value);
-              if (success) setSuccess(false);
-            }}
+            onChangeText={setNewPassword}
             placeholder={t('settings.security.new_password')}
             testID="security-new-password-input"
           />
@@ -219,11 +172,7 @@ export function SecurityPanel({
 
         <PasswordInput
           value={confirmPassword}
-          onChangeText={(value: string) => {
-            setConfirmPassword(value);
-            if (error) setError('');
-            if (success) setSuccess(false);
-          }}
+          onChangeText={setConfirmPassword}
           placeholder={t('settings.security.confirm_password')}
           testID="security-confirm-password-input"
         />
@@ -241,7 +190,7 @@ export function SecurityPanel({
 
         <PrimaryButton
           onPress={() => void handleChangePassword()}
-          disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+          disabled={!canSubmit}
           testID="security-change-password-button"
         >
           {t('settings.security.change_password_button')}

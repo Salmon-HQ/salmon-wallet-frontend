@@ -53,6 +53,12 @@ jest.mock('@salmon/shared', () => ({
     status: { warning: '#FFB020' },
   },
   spacing: { md: 12, lg: 16 },
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
 
 jest.mock('./SwapInputScreen', () => {

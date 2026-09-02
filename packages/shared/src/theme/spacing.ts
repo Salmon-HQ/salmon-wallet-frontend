@@ -246,6 +246,8 @@ export const componentSizes = {
   iconSizeLarge: 32,
   /** 36px - Token card logos, address book rows */
   iconSizeXL: 36,
+  /** 36px - A secondary control drawn as an IconBubble beside a row (the sub-tabs' order button) */
+  iconBubbleSm: 36,
   /** 40px - Avatars, type icon containers */
   iconSize2XL: 40,
   /** 48px - Featured tokens, add account icons */

@@ -1,161 +1,83 @@
 /**
- * Language hook for managing user language preferences.
+ * The language setting — one hook for every platform.
  *
- * This hook provides functionality for:
- * - Getting the current language
- * - Changing the language
- * - Persisting language preference to storage
+ * i18next is the source of truth for what the app is showing right now; this
+ * hook subscribes to it, so the value is live wherever it is read, and it
+ * persists the user's choice under `STORAGE_KEYS.LANGUAGE` and restores it on
+ * the first mount after the app boots with the device's language.
  *
  * @module hooks/useLanguage
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import i18n from 'i18next';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import {
   AVAILABLE_LANGUAGES,
   DEFAULT_LANGUAGE,
   LANGUAGE_NAMES,
+  isLanguageSupported,
   type LanguageCode,
 } from '../locales';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Return type for the useLanguage hook.
- */
 export interface UseLanguageResult {
-  /** The currently selected language code */
-  language: LanguageCode;
-  /** Display name for the current language */
-  languageName: string;
-  /** List of all available languages */
-  availableLanguages: LanguageCode[];
-  /** Map of language codes to display names */
+  /** The language the app is showing. */
+  currentLanguage: LanguageCode;
+  /** Every language the app ships. */
+  availableLanguages: readonly LanguageCode[];
+  /** Native display name per code. */
   languageNames: Record<LanguageCode, string>;
-  /** Changes the current language */
-  changeLanguage: (languageCode: LanguageCode) => Promise<void>;
-  /** Whether the language preference is still loading */
-  isLoading: boolean;
+  /** Switch the app and persist the choice. */
+  changeLanguage: (code: LanguageCode) => Promise<void>;
 }
 
-// ============================================================================
-// Hook Implementation
-// ============================================================================
+const subscribe = (onChange: () => void) => {
+  i18n.on('languageChanged', onChange);
+  return () => i18n.off('languageChanged', onChange);
+};
 
-/**
- * Hook for managing user language preferences.
- *
- * This hook handles:
- * - Loading the saved language preference from storage
- * - Changing and persisting the language preference
- * - Providing available languages for UI selection
- *
- * @returns Language state and actions
- *
- * @example
- * ```typescript
- * import { useLanguage } from '@salmon/shared/hooks';
- * import { useTranslation } from 'react-i18next';
- *
- * function LanguageSelector() {
- *   const { i18n } = useTranslation();
- *   const {
- *     language,
- *     languageName,
- *     availableLanguages,
- *     languageNames,
- *     changeLanguage,
- *     isLoading,
- *   } = useLanguage();
- *
- *   const handleLanguageChange = async (lang: LanguageCode) => {
- *     await changeLanguage(lang);
- *     await i18n.changeLanguage(lang);
- *   };
- *
- *   if (isLoading) return <Loading />;
- *
- *   return (
- *     <View>
- *       <Text>Current: {languageName}</Text>
- *       {availableLanguages.map(lang => (
- *         <TouchableOpacity
- *           key={lang}
- *           onPress={() => handleLanguageChange(lang)}
- *         >
- *           <Text>{languageNames[lang]}</Text>
- *         </TouchableOpacity>
- *       ))}
- *     </View>
- *   );
- * }
- * ```
- */
+/** i18next may report a region tag (`es-AR`); the setting is the base code. */
+const current = (): LanguageCode => {
+  const lang = (i18n.language ?? '').split('-')[0];
+  return isLanguageSupported(lang) ? lang : DEFAULT_LANGUAGE;
+};
+
 export function useLanguage(): UseLanguageResult {
-  // State
-  const [language, setLanguage] = useState<LanguageCode>(DEFAULT_LANGUAGE);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const currentLanguage = useSyncExternalStore(subscribe, current, () => DEFAULT_LANGUAGE);
 
-  // Load language preference on mount
+  // Restore the persisted choice once. The boot config picks the device's
+  // language; a user who chose otherwise gets their choice back here.
   useEffect(() => {
-    const loadLanguage = async () => {
-      setIsLoading(true);
-
-      try {
-        const storage = getStorage();
-        const savedLanguage = await storage.getItem<LanguageCode>(STORAGE_KEYS.LANGUAGE);
-
-        if (savedLanguage && AVAILABLE_LANGUAGES.includes(savedLanguage)) {
-          setLanguage(savedLanguage);
-          await i18n.changeLanguage(savedLanguage);
-        } else {
-          // Set default language if no valid preference exists
-          setLanguage(DEFAULT_LANGUAGE);
-          await i18n.changeLanguage(DEFAULT_LANGUAGE);
-          await storage.setItem(STORAGE_KEYS.LANGUAGE, DEFAULT_LANGUAGE);
-        }
-      } catch (error) {
-        console.error('Failed to load language preference:', error);
-        setLanguage(DEFAULT_LANGUAGE);
-      } finally {
-        setIsLoading(false);
-      }
+    let cancelled = false;
+    getStorage()
+      .getItem<string>(STORAGE_KEYS.LANGUAGE)
+      .then((saved) => {
+        if (cancelled || !saved || !isLanguageSupported(saved) || saved === current()) return;
+        return i18n.changeLanguage(saved);
+      })
+      .catch((error) => console.error('Failed to load language preference:', error));
+    return () => {
+      cancelled = true;
     };
-
-    loadLanguage();
   }, []);
 
-  /**
-   * Changes the current language and persists to storage.
-   */
-  const changeLanguage = useCallback(async (languageCode: LanguageCode): Promise<void> => {
-    if (!AVAILABLE_LANGUAGES.includes(languageCode)) {
-      console.error(`Invalid language code: ${languageCode}`);
+  const changeLanguage = useCallback(async (code: LanguageCode): Promise<void> => {
+    if (!AVAILABLE_LANGUAGES.includes(code)) {
+      console.error(`Invalid language code: ${code}`);
       return;
     }
-
-    // Update local state + i18next
-    setLanguage(languageCode);
-    await i18n.changeLanguage(languageCode);
-
-    // Persist to storage
+    await i18n.changeLanguage(code);
     try {
-      const storage = getStorage();
-      await storage.setItem(STORAGE_KEYS.LANGUAGE, languageCode);
+      await getStorage().setItem(STORAGE_KEYS.LANGUAGE, code);
     } catch (error) {
       console.error('Failed to save language preference:', error);
     }
   }, []);
 
   return {
-    language,
-    languageName: LANGUAGE_NAMES[language],
+    currentLanguage,
     availableLanguages: AVAILABLE_LANGUAGES,
     languageNames: LANGUAGE_NAMES,
     changeLanguage,
-    isLoading,
   };
 }

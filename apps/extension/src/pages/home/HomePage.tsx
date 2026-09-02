@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAccountsContext,
@@ -12,7 +12,10 @@ import {
   AddressbookError,
   useCoinMarketData,
   useDerivedAccountsScan,
-  useHomeTabOrder,
+  useHomeShell,
+  mapBalanceToToken,
+  buildBitcoinToken,
+  type HomeSubTabKey,
   getNetworkLabel,
   spacing,
   componentSizes,
@@ -20,9 +23,9 @@ import {
   useTheme,
   type AppearancePreference,
   type SettingsPanelEntry,
-  type BlockchainBalance,
   type BlockchainId,
   type NetworkId,
+  type SolanaNetworkId,
   type PriceChartPeriod,
   type PriceDataPoint,
   type MarketData,
@@ -34,28 +37,25 @@ import {
   type AddressBookNetwork,
   type AddressInput,
   type BlockchainType,
-  isSolanaNft,
-  createBurnTransaction,
-  classifyTransactionError,
   useCurrencyContext,
-  LANGUAGE_NAMES,
   type LanguageCode,
-  type ExplorerSelectorItem,
-  type LanguageSelectorItem,
-  type TrustedAppItem,
   SUPPORT_OPTIONS,
-  SUPPORTED_CURRENCIES,
-  CURRENCY_MAP,
   type CurrencyCode,
-  type CurrencySelectorItem,
   getBlockchainFromNetworkId,
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
   coinInfoToMarketData,
-  useSettleAfterTx,
   usePrefetchBalances,
-  useNftBurn,
+  useNftFlowState,
+  useDeveloperModeSettings,
   useSendContacts,
+  useLanguage,
+  CURRENCY_ITEMS,
+  settingsRowValues,
+  toAddressBookItems,
+  toExplorerItems,
+  toLanguageItems,
+  toTrustedAppItems,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 import {
@@ -105,21 +105,10 @@ import {
   type PanelRegistry,
 } from '../../components';
 
-// i18n
-import { useLanguage } from '../../i18n';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 
-/**
- * The two in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered`.
- */
-type SubTabKey = 'portfolio' | 'nfts';
-
-/**
- * The sub-tabs Home offers, in the order it draws them before the user has
- * arranged anything. A powerup that adds a surface to Home adds its key here;
- * `useHomeTabOrder` reconciles the stored arrangement against this list.
- */
-const HOME_TAB_KEYS: SubTabKey[] = ['portfolio', 'nfts'];
+/** The two in-page sub-tabs — the shell's key, kept under its old local name. */
+type SubTabKey = HomeSubTabKey;
 
 /** Scroll distance over which the top seam fade reaches full opacity. */
 const TOP_FADE_SCROLL_RANGE = 30;
@@ -128,16 +117,6 @@ const TOP_FADE_SCROLL_RANGE = 30;
  * Available page views within HomePage
  */
 type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets';
-
-// Network ID → BlockchainId mapping for carousel theming
-const NETWORK_TO_BLOCKCHAIN: Record<string, BlockchainId> = {
-  'solana-mainnet': 'solana',
-  'solana-devnet': 'solana-devnet',
-  'bitcoin-mainnet': 'bitcoin',
-  'bitcoin-testnet': 'bitcoin-testnet',
-  'ethereum-mainnet': 'ethereum',
-  'ethereum-sepolia': 'ethereum-sepolia',
-};
 
 /**
  * The panel shell.
@@ -294,33 +273,33 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       },
     },
   });
+  const { explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
+  // The two "show me more" flags come from the provider the side panel root
+  // mounts (the same one mobile's `(app)` stack mounts), so every screen
+  // reads one value and an older wallet gets its mirror addresses derived.
   const {
     developerNetworks,
     toggleDeveloperNetworks,
     showUnverifiedTokens,
     setShowUnverifiedTokens,
-    explorer,
-    explorers,
-    changeExplorer,
-    isLoading: explorerLoading,
-  } = userConfig;
+  } = useDeveloperModeSettings();
 
   // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
   // in onboarding (analytics-consent step); here we only bind the Settings toggle.
   const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
 
   // Language selection
-  const { currentLanguage, supportedLanguages, setLanguage } = useLanguage();
+  const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
 
   // The offer: the enabled networks this wallet actually holds an account on.
   // The filtering used to happen here, after the hook had already dropped the
   // non-mainnet half; the hook owns the whole rule now, so the active network
   // stays offered even with the flag off and the session is never stranded on
   // a page the balance block cannot reach (spec 026).
+  const heldNetworksAccounts = activeAccount?.networksAccounts;
   const heldNetworkIds = useMemo(
-    () =>
-      activeAccount?.networksAccounts ? Object.keys(activeAccount.networksAccounts) : undefined,
-    [activeAccount?.networksAccounts]
+    () => (heldNetworksAccounts ? Object.keys(heldNetworksAccounts) : undefined),
+    [heldNetworksAccounts]
   );
   const { allNetworks, networksReady } = useAvailableNetworks({
     activeBlockchainAccount: {
@@ -336,11 +315,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     heldNetworkIds,
     activeNetworkId: networkId,
   });
-
-  // The in-page sub-tab. It replaces the old Home / Collectibles / Swap tab
-  // bar: Home is one screen with a Portfolio and an NFTs surface inside it,
-  // and Swap is a powerup, not a tab (spec 028, DESIGN.md §Navigation).
-  const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('portfolio');
 
   // The sheet where the sub-tabs are arranged.
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
@@ -359,8 +333,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // scan belongs to the unlocked session, so its answer is taken on the first
   // screen the session lands on.
   const derivedAccounts = useDerivedAccountsScan();
-
-  const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
 
   // Current page view state for navigation
   const [currentPage, setCurrentPage] = useState<PageView>('home');
@@ -414,26 +386,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
 
   const addressBookItems: AddressBookItem[] = useMemo(
-    () =>
-      addressBookContacts.map((c) => ({
-        name: c.name,
-        address: c.address,
-        networkId: c.network.id,
-        networkName: c.network.name,
-        domain: c.domain,
-      })),
+    () => toAddressBookItems(addressBookContacts),
     [addressBookContacts]
   );
 
   // The collectible being sent, when Send was opened from an NFT's detail:
   // the send flow becomes mobile's `nft/[id]/send` (spec 028 lot 4).
   const [sendNft, setSendNft] = useState<NftData | null>(null);
-  const [burnStep, setBurnStep] = useState<'idle' | 'review' | 'success'>('idle');
-  const [burnPreview, setBurnPreview] = useState<Awaited<
-    ReturnType<typeof createBurnTransaction>
-  > | null>(null);
-  const [burnLoading, setBurnLoading] = useState(false);
-  const [burnError, setBurnError] = useState<string | null>(null);
+  // Mobile's `nft/[id]/burn` is a route; the DOM keeps the review inside the
+  // detail page, so which step shows is the one local bit of state here.
+  const [burnReviewOpen, setBurnReviewOpen] = useState(false);
 
   // Token detail page state
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -468,31 +430,25 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     return undefined;
   }, [activeAccount]);
 
-  const settleAfterTx = useSettleAfterTx();
-  const nftBurn = useNftBurn({
-    account: collectibleSolanaAccount ?? null,
+  // The NFT flow's state — the same hook mobile's `NftFlowProvider` wraps:
+  // the burn preview and its confirmation, the receipt, the settle after a
+  // transfer. The signing account and the network are the collectible's own.
+  const nftFlow = useNftFlowState({
+    nft: selectedNft,
+    account: collectibleSolanaAccount,
+    networkId: (collectibleSolanaAccount?.getNetworkId() ?? 'solana-mainnet') as SolanaNetworkId,
     activeAccountId: activeAccount?.id,
+    flowKey: selectedNft?.mint,
   });
+  const {
+    prepareBurn: prepareNftBurn,
+    resetBurn: resetNftBurn,
+    acknowledgeSuccess: acknowledgeNftSuccess,
+    settleAfterSend: settleAfterNftSend,
+  } = nftFlow;
 
   // Bitcoin-specific state
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
-
-  // Sync the balance block's index with the persisted networkId — but only
-  // when that id actually changes. `changeNetwork` is async, so a chain switch
-  // sets the index optimistically and the persisted id catches up a beat
-  // later; re-running this inside that beat would re-derive the index from the
-  // OLD id and pull the balance straight back to the chain just left. Keyed on
-  // account AND network: two accounts can sit on the same network id.
-  const syncedNetworkIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!networkId || allNetworks.length === 0) return;
-    const syncKey = `${activeAccount?.id ?? ''}:${networkId}`;
-    if (syncedNetworkIdRef.current === syncKey) return;
-    const idx = allNetworks.findIndex((n) => n.id === networkId);
-    if (idx < 0) return;
-    syncedNetworkIdRef.current = syncKey;
-    setActiveBlockchainIndex(idx);
-  }, [networkId, allNetworks, activeAccount?.id]);
 
   // Fetch balance data for current network
   const {
@@ -644,24 +600,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, []);
 
   const handleSendSuccess = useCallback(() => {
-    // The sheet's `handleSendSuccess`, as mobile's `acknowledgeSuccess`: a
-    // collectible's transfer settles the grid and the avatar too.
+    // As mobile's `acknowledgeSuccess`: a collectible's transfer settles the
+    // grid and the avatar too.
     if (sendNft) {
-      settleAfterTx({
-        accountId: collectibleSolanaAccount?.getReceiveAddress(),
-        avatarAccountId: activeAccount?.id,
-        networkId: collectibleSolanaAccount?.getNetworkId(),
-        kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
-        removedNftMintAddresses: sendNft.mint ? [sendNft.mint] : undefined,
-      }).catch((err) => {
-        console.warn('[HomePage] settleAfterTx failed:', err);
-      });
+      settleAfterNftSend();
       setSendNft(null);
       setSelectedNft(null);
     }
     setCurrentPage('home');
     refresh();
-  }, [refresh, sendNft, settleAfterTx, collectibleSolanaAccount, activeAccount?.id]);
+  }, [refresh, sendNft, settleAfterNftSend]);
 
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
@@ -695,13 +643,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, []);
 
   const handleNftDetailBack = useCallback(() => {
-    setBurnStep('idle');
-    setBurnPreview(null);
-    setBurnError(null);
-    setBurnLoading(false);
+    setBurnReviewOpen(false);
+    resetNftBurn();
     setCurrentPage('home');
     setSelectedNft(null);
-  }, []);
+  }, [resetNftBurn]);
 
   // NFT action handlers
   const handleNftSendPress = useCallback(() => {
@@ -711,65 +657,21 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, [selectedNft]);
 
   const handleNftBurnPress = useCallback(() => {
-    if (!selectedNft || !isSolanaNft(selectedNft) || !collectibleSolanaAccount) return;
-
-    setBurnStep('review');
-    setBurnLoading(true);
-    setBurnPreview(null);
-    setBurnError(null);
-
-    const ownerAddress = collectibleSolanaAccount.getReceiveAddress();
-    const solAccount = collectibleSolanaAccount;
-    createBurnTransaction({
-      mintAddress: selectedNft.mint,
-      ownerAddress,
-    })
-      .then(async (txResponse) => {
-        setBurnPreview(txResponse);
-        if (txResponse.lookupTable) {
-          const balance = await solAccount.getCredit();
-          if (balance < txResponse.lookupTable.estimatedRentLamports) {
-            setBurnError('nft.burn.insufficientFeeSol');
-          }
-        }
-      })
-      .catch((error) => {
-        setBurnError(classifyTransactionError(error));
-      })
-      .finally(() => {
-        setBurnLoading(false);
-      });
-    // Other chains: burn is not supported (button won't be wired)
-  }, [selectedNft, collectibleSolanaAccount]);
+    setBurnReviewOpen(true);
+    void prepareNftBurn();
+  }, [prepareNftBurn]);
 
   const handleNftBurnBack = useCallback(() => {
-    setBurnStep('idle');
-    setBurnPreview(null);
-    setBurnError(null);
-    setBurnLoading(false);
-  }, []);
-
-  const confirmBurnNft = useCallback(async () => {
-    if (!selectedNft || !isSolanaNft(selectedNft) || !collectibleSolanaAccount || !burnPreview)
-      return;
-
-    setBurnLoading(true);
-    try {
-      await nftBurn.burnNft(burnPreview, selectedNft.mint ?? undefined);
-      setBurnStep('success');
-    } catch (error) {
-      console.error('[HomePage] NFT burn failed:', error);
-      setBurnError(classifyTransactionError(error));
-    } finally {
-      setBurnLoading(false);
-    }
-  }, [selectedNft, collectibleSolanaAccount, burnPreview, nftBurn]);
+    setBurnReviewOpen(false);
+    resetNftBurn();
+  }, [resetNftBurn]);
 
   const handleNftBurnSuccessContinue = useCallback(() => {
-    handleNftBurnBack();
+    acknowledgeNftSuccess();
+    setBurnReviewOpen(false);
     setCurrentPage('home');
     setSelectedNft(null);
-  }, [handleNftBurnBack]);
+  }, [acknowledgeNftSuccess]);
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);
@@ -792,162 +694,41 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     }
   }, []);
 
-  // Build blockchain balances array for carousel
-  const blockchainBalances: BlockchainBalance[] = useMemo(() => {
-    return allNetworks.map((network) => {
-      const blockchain = NETWORK_TO_BLOCKCHAIN[network.id] || 'solana';
-      const isActiveNetwork = network.id === networkId;
+  // The shell's state — page index, per-page balances, the network the screen
+  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // in shared; this page renders it (`useHomeShell`).
+  const {
+    activeBlockchainIndex,
+    blockchainBalances,
+    currentNetworkId,
+    currentChain,
+    effectiveSubTab,
+    setActiveSubTab,
+    setSubTabOrder,
+    subTabs,
+    subTabsKey,
+    subTabHasPrior,
+    chainHasPrior,
+    selectBlockchain,
+  } = useHomeShell({
+    allNetworks,
+    networkId,
+    activeAccountId: activeAccount?.id,
+    networksAccounts: activeAccount?.networksAccounts,
+    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    isTaskEngaged,
+    surfaceKey,
+    changeNetwork: actions.changeNetwork,
+  });
 
-      if (!isActiveNetwork) {
-        return {
-          network: { id: network.id, name: network.name, blockchain },
-          usdTotal: undefined,
-          nativeAmount: undefined,
-          changePercent: undefined,
-          changeAmount: undefined,
-          loading: false,
-        };
-      }
-
-      // A skeleton means "there is nothing to show", never "a request is in
-      // flight". `hasData` is true for cached data too, so returning to a chain
-      // visited earlier in the session paints its last-known balance
-      // immediately.
-      const showSkeleton = !hasData;
-      return {
-        network: { id: network.id, name: network.name, blockchain },
-        usdTotal: showSkeleton ? undefined : usdTotal,
-        // Off mainnet there is no USD figure at all, so this is what the block
-        // prints as the total.
-        nativeAmount: showSkeleton ? undefined : nativeAmount,
-        changePercent: showSkeleton ? undefined : changePercent,
-        changeAmount: showSkeleton ? undefined : changeAmount,
-        loading: showSkeleton,
-      };
-    });
-  }, [allNetworks, networkId, hasData, usdTotal, nativeAmount, changePercent, changeAmount]);
-
-  // A page change on the balance block. `changeNetwork` returns silently when
-  // the account has no derivation for the target, so writing the index
-  // optimistically regardless would leave the dots and the amount pointing at a
-  // chain the wallet never switched to.
+  // A page change on the balance block. The incoming chain's list starts at
+  // the top, so the offset the seam fade reads must start over with it.
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
-      const selectedBalance = blockchainBalances[index];
-      if (!selectedBalance) return;
-      const newNetworkId = selectedBalance.network.id;
-      if (!activeAccount?.networksAccounts?.[newNetworkId]) return;
-      setActiveBlockchainIndex(index);
-      // The incoming chain's list starts at the top, so the offset the seam
-      // fade reads must start over with it.
-      resetSeamFade();
-      void Promise.resolve(actions.changeNetwork(newNetworkId)).catch((error) =>
-        console.warn('[home] changeNetwork failed:', error)
-      );
+      if (selectBlockchain(index)) resetSeamFade();
     },
-    [blockchainBalances, actions, activeAccount, resetSeamFade]
+    [selectBlockchain, resetSeamFade]
   );
-
-  // The network the screen stands on, and its chain family. Every surface below
-  // follows the NETWORK: `network.blockchain` is the id minus `-mainnet`, so it
-  // reads `solana-devnet` off mainnet and an equality test against `'bitcoin'`
-  // silently missed `bitcoin-testnet` (spec 026).
-  const currentNetworkId = useMemo(
-    () => blockchainBalances[activeBlockchainIndex]?.network.id ?? networkId ?? 'solana-mainnet',
-    [activeBlockchainIndex, blockchainBalances, networkId]
-  );
-  const currentChain = getBlockchainFromNetworkId(currentNetworkId);
-  // Kept for the surfaces still keyed on the carousel's blockchain id.
-  const currentBlockchain = useMemo(
-    () => blockchainBalances[activeBlockchainIndex]?.network.blockchain || 'solana',
-    [activeBlockchainIndex, blockchainBalances]
-  );
-
-  // NFTs are a Solana surface. On Bitcoin the tab is not offered at all — it
-  // sinks out of the row — and a session sitting on it falls back to Portfolio
-  // (spec 026, owner ruling 3). The stored arrangement is untouched, so the tab
-  // returns to its own place when the block comes back to Solana.
-  const nftsOffered = currentChain === 'solana';
-  const effectiveSubTab: SubTabKey =
-    activeSubTab === 'nfts' && !nftsOffered ? 'portfolio' : activeSubTab;
-
-  // The keys Home offers; the user's arrangement of them is what gets rendered.
-  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
-
-  const subTabs = useMemo(() => {
-    const labels: Record<string, string> = {
-      portfolio: t('tabs.portfolio', 'Portfolio'),
-      nfts: t('tabs.nfts', 'NFTs'),
-    };
-    return subTabOrder.flatMap((key) => {
-      if (key === 'nfts' && !nftsOffered) return [];
-      const label = labels[key];
-      return label ? [{ key, label }] : [];
-    });
-  }, [subTabOrder, nftsOffered, t]);
-
-  // The row plays the verb whenever the SET of tabs changes — a reorder, and
-  // also NFTs leaving on Bitcoin and floating back on Solana. `PortfolioSubTabs`
-  // remembers the key it last drew, so first mount owes no verb and a tab
-  // switch (same set) never remounts the row: the underline keeps sliding.
-  const subTabsKey = subTabs.map((tab) => tab.key).join('|');
-
-  // The beat between sink and float. Three causes can swap content here and
-  // they must never speak at once (the verb never nests — DESIGN.md §The
-  // balance block's motion, rule five): a task taking or releasing the screen
-  // owns the screen wrapper, a sub-tab change owns the content region, and a
-  // chain change owns the chain wrapper inside it. The cause of the current
-  // swap is recorded, and only the wrapper that owns that cause animates.
-  //
-  // A SURFACING is not a swap: Home is never unmounted while the wait is up, so
-  // the user's last gesture is still recorded when the water clears. The
-  // surfacing wins over anything else that changed in the same render — the
-  // cause goes back to 'none', so only the screen wrapper speaks, with no beat.
-  const [contentSwap, setContentSwap] = useState<{
-    chain: string;
-    subTab: SubTabKey;
-    engaged: boolean;
-    surface: number;
-    cause: 'none' | 'chain' | 'subtab' | 'task';
-  }>({
-    chain: currentNetworkId,
-    subTab: effectiveSubTab,
-    engaged: isTaskEngaged,
-    surface: surfaceKey,
-    cause: 'none',
-  });
-  if (contentSwap.surface !== surfaceKey) {
-    setContentSwap({
-      chain: currentNetworkId,
-      subTab: effectiveSubTab,
-      engaged: isTaskEngaged,
-      surface: surfaceKey,
-      cause: 'none',
-    });
-  } else if (
-    contentSwap.chain !== currentNetworkId ||
-    contentSwap.subTab !== effectiveSubTab ||
-    contentSwap.engaged !== isTaskEngaged
-  ) {
-    setContentSwap({
-      chain: currentNetworkId,
-      subTab: effectiveSubTab,
-      engaged: isTaskEngaged,
-      surface: surfaceKey,
-      // Leaving Solana can change the chain AND drop NFTs in the same render.
-      // The sub-tab wins: the content region is the one wrapper that speaks,
-      // and the chain-keyed wrapper inside it stays silent (rule five).
-      cause:
-        contentSwap.engaged !== isTaskEngaged
-          ? 'task'
-          : contentSwap.subTab !== effectiveSubTab
-            ? 'subtab'
-            : 'chain',
-    });
-  }
-
-  const subTabHasPrior = contentSwap.cause === 'subtab';
-  const chainHasPrior = contentSwap.cause === 'chain';
 
   // Each sub-tab has its own scroller, so the offset the seam fade reads must
   // start over with it.
@@ -956,32 +737,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       resetSeamFade();
       setActiveSubTab(key as SubTabKey);
     },
-    [resetSeamFade]
+    [resetSeamFade, setActiveSubTab]
   );
 
-  // Transform tokens to match TokenList expected format, filtering spam in non-dev mode
-  // BE handles spam/unknown filtering via the `includeSpam` query passed
-  // to useBalance above. The FE just maps to the TokenList shape.
-  const formattedTokens = useMemo(() => {
-    return tokens.map((token) => ({
-      address: token.address,
-      name: token.name,
-      symbol: token.symbol,
-      logo: token.logo ?? undefined,
-      price: token.price,
-      uiAmount: token.uiAmount,
-      usdBalance: token.usdBalance,
-      last24HoursChange:
-        token.priceChange24h !== undefined ? { perc: token.priceChange24h } : undefined,
-      tags: token.tags,
-      coingeckoId: token.coingeckoId,
-      decimals: token.decimals,
-    }));
-  }, [tokens]);
+  // BE handles spam/unknown filtering via `includeSpam` above; the rows are
+  // mobile's mapping, from shared.
+  const formattedTokens = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
 
   // Bitcoin coin info + chart via shared React Query hook
-  const bitcoinCoinId =
-    currentBlockchain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain] : undefined;
+  const bitcoinCoinId = currentChain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO.bitcoin : undefined;
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
@@ -993,7 +757,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     coinId: bitcoinCoinId,
     currency,
     days: PERIOD_TO_DAYS[bitcoinChartPeriod],
-    enabled: currentBlockchain === 'bitcoin',
+    enabled: currentChain === 'bitcoin',
   });
   const bitcoinChartData: PriceDataPoint[] = bitcoinChartDataRaw ?? [];
 
@@ -1003,25 +767,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     return coinInfoToMarketData(bitcoinCoinInfo);
   }, [bitcoinCoinInfo]);
 
-  // The Bitcoin column's token: the market from CoinGecko, the holding from
-  // the same balance the header reads (`useBalance` on the active network).
-  const bitcoinToken: Token | undefined = useMemo(() => {
-    if (!bitcoinCoinInfo?.marketData) return undefined;
-    const md = bitcoinCoinInfo.marketData;
-    return {
-      address: 'bitcoin',
-      name: 'Bitcoin',
-      symbol: 'BTC',
-      logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-      price: md.currentPrice,
-      uiAmount: nativeAmount ?? 0,
-      usdBalance: usdTotal ?? 0,
-      last24HoursChange: md.priceChangePercentage24h
-        ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h }
-        : null,
-      isVerified: true,
-    };
-  }, [bitcoinCoinInfo, nativeAmount, usdTotal]);
+  const bitcoinToken = useMemo(
+    () => buildBitcoinToken(bitcoinCoinInfo, nativeAmount, usdTotal),
+    [bitcoinCoinInfo, nativeAmount, usdTotal]
+  );
 
   // Selected token chart + coin info via shared React Query hook.
   // Tokens without a coingeckoId fall back to the contract-address chart
@@ -1069,14 +818,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
       privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
       currency: ({ onBack }) => {
-        const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((code) => ({
-          code,
-          name: CURRENCY_MAP[code].name,
-          symbol: CURRENCY_MAP[code].symbol,
-        }));
         return (
           <CurrencySelector
-            currencies={currencyItems}
+            currencies={CURRENCY_ITEMS}
             activeCurrencyCode={currency}
             onSelectCurrency={(code) => {
               changeCurrency(code as CurrencyCode);
@@ -1103,29 +847,21 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         />
       ),
       language: ({ onBack }) => {
-        const languageItems: LanguageSelectorItem[] = supportedLanguages.map((lang) => ({
-          code: lang,
-          nativeName: LANGUAGE_NAMES[lang as LanguageCode] || lang,
-        }));
         return (
           <LanguageSelector
-            languages={languageItems}
+            languages={toLanguageItems(availableLanguages)}
             activeLanguageCode={currentLanguage}
             onSelectLanguage={(code) => {
-              setLanguage(code as LanguageCode);
+              void changeLanguage(code as LanguageCode);
             }}
             onBack={onBack}
           />
         );
       },
       explorer: ({ onBack }) => {
-        const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
-          key: e.key,
-          name: e.name,
-        }));
         return (
           <ExplorerSelector
-            explorers={explorerItems}
+            explorers={toExplorerItems(explorers)}
             activeExplorerName={explorer?.name || ''}
             onSelectExplorer={(key) => {
               changeExplorer(key);
@@ -1207,16 +943,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       },
       trustedApps: ({ onBack }) => {
-        const trustedAppItems: TrustedAppItem[] = Object.entries(activeTrustedApps || {}).map(
-          ([domain, app]) => ({
-            domain,
-            name: app.name,
-            icon: app.icon,
-          })
-        );
         return (
           <TrustedAppsSelector
-            apps={trustedAppItems}
+            apps={toTrustedAppItems(activeTrustedApps)}
             onRevokeApp={(domain) => {
               actions.removeTrustedApp(domain);
             }}
@@ -1296,9 +1025,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       changeCurrency,
       appearancePreference,
       setAppearancePreference,
-      supportedLanguages,
+      availableLanguages,
       currentLanguage,
-      setLanguage,
+      changeLanguage,
       explorers,
       explorer,
       changeExplorer,
@@ -1326,17 +1055,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // What the four choosable rows currently read. Proper nouns and a currency
   // code — identical in both languages, so the list states the user's own
   // choice without inventing copy (mobile's `settings/index.tsx`).
-  const settingsRowValues = useMemo(
-    () => ({
-      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
-      currency: currency?.toUpperCase(),
-      explorer: explorer?.name,
-      appearance: {
-        system: t('settings.appearance_options.system', 'System'),
-        light: t('settings.appearance_options.light', 'Light'),
-        dark: t('settings.appearance_options.dark', 'Dark'),
-      }[appearancePreference],
-    }),
+  const rowValues = useMemo(
+    () =>
+      settingsRowValues({
+        language: currentLanguage,
+        currency,
+        explorerName: explorer?.name,
+        appearance: appearancePreference,
+        appearanceLabels: {
+          system: t('settings.appearance_options.system', 'System'),
+          light: t('settings.appearance_options.light', 'Light'),
+          dark: t('settings.appearance_options.dark', 'Dark'),
+        },
+      }),
     [currentLanguage, currency, explorer, appearancePreference, t]
   );
 
@@ -1356,7 +1087,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           return (
             <TokenDetailPage
               token={selectedToken}
-              blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+              blockchain={currentChain}
               chartData={selectedTokenChartData}
               chartPeriod={selectedTokenChartPeriod}
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}
@@ -1385,13 +1116,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               onSendPress={handleNftSendPress}
               onBurnPress={handleNftBurnPress}
               actionsUnavailable={isWatchOnly}
-              burnStep={burnStep}
-              burnPreview={burnPreview}
-              burnPreparing={burnLoading}
-              burnSettling={nftBurn.settling}
-              burnError={burnError}
+              burnStep={
+                nftFlow.successKind === 'burn' ? 'success' : burnReviewOpen ? 'review' : 'idle'
+              }
+              burnPreview={nftFlow.burnPreview}
+              burnPreparing={nftFlow.burnPreparing}
+              burnSettling={nftFlow.successSettling}
+              burnError={nftFlow.burnError}
               onBurnBack={handleNftBurnBack}
-              onBurnConfirm={confirmBurnNft}
+              onBurnConfirm={() => void nftFlow.confirmBurn()}
+              burnSuccessExplorerUrl={nftFlow.explorerUrl}
               onBurnSuccessContinue={handleNftBurnSuccessContinue}
             />
           );
@@ -1406,7 +1140,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         return (
           <SendPage
             tokens={formattedTokens as SendToken[]}
-            blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+            blockchain={currentChain}
             networkId={networkId as NetworkId | null}
             account={sendAccount}
             nft={sendNft}
@@ -1683,7 +1417,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}
         onRemoveAllWallets={handleRemoveAllWallets}
-        rowValues={settingsRowValues}
+        rowValues={rowValues}
       />
 
       {/* Remove Current Wallet Confirmation Dialog */}

@@ -28,11 +28,11 @@ jest.mock('@salmon/shared', () => ({
   // The real tokens: the row is a `ListRow` now, and the kit primitives it
   // composes read far more of the theme than the row itself does.
   ...jest.requireActual('../../../test-utils/themeTokens'),
+  // The row's verb table and its sentence are real — they are the row.
+  ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   formatRelativeTimeCompact: () => '2h',
-  getShortAddress: (address: string, chars: number) =>
-    `${address.slice(0, chars)}…${address.slice(-chars)}`,
   getTransactionDescription: () => ({
     key: 'transactions.description.swap',
     values: { from: 'SOL', to: 'USDC' },
@@ -148,13 +148,13 @@ describe('TransactionItem — the counterparty, not the program', () => {
   it("says who it came from, in the header's short form", () => {
     render(<TransactionItem transaction={RECEIVE_TRANSACTION} />);
 
-    expect(screen.getByText('From 9mpJ…SAd3')).toBeTruthy();
+    expect(screen.getByText('From 9mpJ...SAd3')).toBeTruthy();
   });
 
   it("says who it went to, in the header's short form", () => {
     render(<TransactionItem transaction={SEND_TRANSACTION} />);
 
-    expect(screen.getByText('To 9mpJ…SAd3')).toBeTruthy();
+    expect(screen.getByText('To 9mpJ...SAd3')).toBeTruthy();
   });
 
   it('prefers the address book name over the address', () => {

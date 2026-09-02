@@ -25,15 +25,27 @@ import {
   type Blockchain,
   type NetworkEnvironment,
   type Semantic,
+  CONFIRMATION_CONFIG,
+  CONFIRMATION_LABEL_KEYS,
+  STATUS_LABEL_KEYS,
+  conversionRateFor,
+  transactionStatusDisplayFor,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { CheckCircleIcon, ClockIcon, ShareNetworkIcon, XCircleIcon, iconSize } from '../../icons';
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  ShareNetworkIcon,
+  XCircleIcon,
+  iconSize,
+  type IconComponent,
+} from '../../icons';
 import { TextButton } from '../Button';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
-import { KeyValueRow, type KeyValueTone } from '../KeyValueRow';
+import { KeyValueRow } from '../KeyValueRow';
 import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
 import {
   TYPE_LABEL_KEYS,
@@ -45,33 +57,20 @@ import { TransactionDetailSwap } from './TransactionDetailSwap';
 import { TransactionDetailTransfer } from './TransactionDetailTransfer';
 import type { TransactionDetailProps } from './types';
 
-const statusConfigFor = (t: Semantic) => ({
-  completed: { label: 'Completed', color: t.status.success, icon: CheckCircleIcon },
-  failed: { label: 'Failed', color: t.status.danger, icon: XCircleIcon },
-  pending: { label: 'Pending', color: t.status.warning, icon: ClockIcon },
-});
+/** The platform's glyph for each shared status name. */
+const STATUS_GLYPHS = { checkCircle: CheckCircleIcon, xCircle: XCircleIcon, clock: ClockIcon };
 
-/**
- * Confirmation depth, said in the row's value ink. The kit gives a value four
- * tones and this fact is one of them.
- */
-const CONFIRMATION_CONFIG: Record<string, { label: string; tone: KeyValueTone }> = {
-  processed: { label: 'Processed', tone: 'secondary' },
-  confirmed: { label: 'Confirmed', tone: 'primary' },
-  finalized: { label: 'Finalized', tone: 'success' },
-};
-
-const STATUS_LABEL_KEYS: Record<string, string> = {
-  completed: 'transactions.detail.completed',
-  failed: 'transactions.detail.failed',
-  pending: 'transactions.detail.pending',
-};
-
-const CONFIRMATION_LABEL_KEYS: Record<string, string> = {
-  processed: 'transactions.detail.processed',
-  confirmed: 'transactions.detail.confirmed',
-  finalized: 'transactions.detail.finalized',
-};
+/** The shared status table with this platform's icons. */
+const statusConfigFor = (t: Semantic) =>
+  Object.fromEntries(
+    Object.entries(transactionStatusDisplayFor(t)).map(([status, display]) => [
+      status,
+      { label: display.label, color: display.color, icon: STATUS_GLYPHS[display.glyph] },
+    ])
+  ) as Record<
+    'completed' | 'failed' | 'pending',
+    { label: string; color: string; icon: IconComponent }
+  >;
 
 /** The status mark at the head of the detail (CORE 09). */
 const STATUS_MARK_SIZE = 48;
@@ -105,23 +104,7 @@ export function TransactionDetail({
     return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
   }, [transaction, STATUS_CONFIG]);
 
-  // A swap with no route data still has a rate: one token in, one token out.
-  const conversionRate = useMemo(() => {
-    if (!transaction) return null;
-    const { swapRoute, inputs, outputs } = transaction;
-    if (swapRoute?.conversionRate) return swapRoute.conversionRate;
-    if (inputs.length !== 1 || outputs.length !== 1) return null;
-    const fromToken = outputs[0];
-    const toToken = inputs[0];
-    const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
-    const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
-    if (!(fromAmount > 0)) return null;
-    return {
-      fromSymbol: fromToken.symbol,
-      toSymbol: toToken.symbol,
-      rate: (toAmount / fromAmount).toFixed(6),
-    };
-  }, [transaction]);
+  const conversionRate = useMemo(() => conversionRateFor(transaction), [transaction]);
 
   if (!transaction) return null;
 

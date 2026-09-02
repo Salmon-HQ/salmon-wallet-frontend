@@ -43,3 +43,18 @@ export type {
   PendingTransactionStatus,
   PendingTransactionsProviderProps,
 } from './PendingTransactionsContext';
+
+// Task chrome (a task flow's grip on the shell; the surface count Home keys on)
+export { TaskChromeProvider, useTaskChrome, useTaskChromeClaim } from './TaskChromeContext';
+
+export type { TaskChromeContextValue } from './TaskChromeContext';
+
+// Developer mode (which networks are offered; whether unverified tokens show)
+export {
+  DeveloperModeProvider,
+  useDeveloperMode,
+  useUnverifiedTokens,
+  useDeveloperModeSettings,
+} from './DeveloperModeContext';
+
+export type { DeveloperModeContextValue } from './DeveloperModeContext';

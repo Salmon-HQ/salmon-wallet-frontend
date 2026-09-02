@@ -1,14 +1,13 @@
 import type {
+  SettingsRowValues,
   SettingsScreen,
   SettingsPanelEntry,
   SettingsScreenLayoutPropsBase,
   SettingsSheetBaseProps,
 } from '@salmon/shared';
 
-/** What the four choosable rows currently read — proper nouns and a code. */
-export type SettingsRowValues = Partial<
-  Record<'language' | 'currency' | 'explorer' | 'appearance', string | undefined>
->;
+/** What the four choosable rows currently read — `settingsRowValues` builds it. */
+export type { SettingsRowValues };
 
 /**
  * Props for the SettingsPanelStack component.

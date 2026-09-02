@@ -284,9 +284,7 @@
     },
     "languages": {
       "title": "Language",
-      "subtitle": "Choose the app's display language.",
-      "en": "English",
-      "es": "Spanish"
+      "subtitle": "Choose the app's display language."
     },
     "accounts": {
       "title": "Accounts",

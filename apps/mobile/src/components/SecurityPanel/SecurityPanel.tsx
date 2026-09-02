@@ -8,7 +8,7 @@
  * which spaces them 20 (DESIGN.md §Layout, the component gap).
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -19,10 +19,8 @@ import {
   s,
   spacing,
   useAccountsContext,
-  validatePassword,
-  getPasswordIssue,
-  PASSWORD_CONSTRAINTS,
   type Semantic,
+  useChangePassword,
 } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FingerprintIcon, KeyIcon, ShieldCheckIcon, SquaresFourIcon, iconSize } from '../../icons';
@@ -60,14 +58,24 @@ export function SecurityPanel({
   const [accountState, accountActions] = useAccountsContext();
 
   // Password state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const passwordValidation = validatePassword(newPassword);
+  // The form's state lives once, in shared; the vault call is the context's.
+  const {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    setCurrentPassword,
+    setNewPassword,
+    setConfirmPassword,
+    passwordValidation,
+    error,
+    success,
+    canSubmit,
+    submit: handleChangePassword,
+  } = useChangePassword({
+    changePassword: accountActions.changePassword,
+    onPasswordChanged,
+    t,
+  });
 
   // The score counts safeguards this wallet really has, not a target list: a
   // password always exists, and biometric unlock only counts on a device that
@@ -86,56 +94,6 @@ export function SecurityPanel({
         ? 'settings.security.biometric_touch_id'
         : 'settings.security.biometric_generic'
   );
-
-  const handleChangePassword = useCallback(async () => {
-    setError('');
-    setSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setError(t('settings.security.password_mismatch'));
-      return;
-    }
-
-    const passwordIssue = getPasswordIssue(passwordValidation);
-    if (passwordIssue) {
-      setError(
-        passwordIssue === 'too_short'
-          ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
-          : passwordIssue === 'too_long'
-            ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
-            : t('wallet.create.password_too_weak')
-      );
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const changed = await accountActions.changePassword(currentPassword, newPassword);
-      if (changed) {
-        await onPasswordChanged?.();
-        // Quiet confirmation: an inline announced line in the feedback slot,
-        // matching how errors surface here, instead of a modal alert.
-        setSuccess(true);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setError(t('settings.security.wrong_password'));
-      }
-    } catch {
-      setError(t('settings.security.wrong_password'));
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    currentPassword,
-    newPassword,
-    confirmPassword,
-    passwordValidation,
-    accountActions,
-    onPasswordChanged,
-    t,
-  ]);
 
   // Locking is the context's own action; the global LockOverlay is mounted on
   // `state.locked`, so there is nothing to navigate to afterwards.
@@ -262,11 +220,7 @@ export function SecurityPanel({
 
         <PasswordInput
           value={currentPassword}
-          onChangeText={(text: string) => {
-            setCurrentPassword(text);
-            if (error) setError('');
-            if (success) setSuccess(false);
-          }}
+          onChangeText={setCurrentPassword}
           placeholder={t('settings.security.current_password')}
           testID="security-current-password-input"
         />
@@ -274,10 +228,7 @@ export function SecurityPanel({
         <View>
           <PasswordInput
             value={newPassword}
-            onChangeText={(text: string) => {
-              setNewPassword(text);
-              if (success) setSuccess(false);
-            }}
+            onChangeText={setNewPassword}
             placeholder={t('settings.security.new_password')}
             testID="security-new-password-input"
           />
@@ -290,11 +241,7 @@ export function SecurityPanel({
 
         <PasswordInput
           value={confirmPassword}
-          onChangeText={(text: string) => {
-            setConfirmPassword(text);
-            if (error) setError('');
-            if (success) setSuccess(false);
-          }}
+          onChangeText={setConfirmPassword}
           placeholder={t('settings.security.confirm_password')}
           testID="security-confirm-password-input"
         />
@@ -311,7 +258,7 @@ export function SecurityPanel({
 
         <PrimaryButton
           onPress={handleChangePassword}
-          disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+          disabled={!canSubmit}
           testID="security-change-password-button"
         >
           {t('settings.security.change_password_button')}

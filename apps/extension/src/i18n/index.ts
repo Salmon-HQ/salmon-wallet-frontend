@@ -1,4 +1,3 @@
-export { default as i18n, changeLanguage, getCurrentLanguage } from './config';
-
-export { useLanguage } from './useLanguage';
-export type { UseLanguageReturn } from './useLanguage';
+export { default as i18n } from './config';
+// The language setting is the shared hook — one implementation for both platforms.
+export { useLanguage } from '@salmon/shared';

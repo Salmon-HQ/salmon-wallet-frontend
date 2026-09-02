@@ -23,6 +23,13 @@ jest.mock('react-native-safe-area-context', () => {
 let mockThemePreference: 'system' | 'light' | 'dark' = 'system';
 
 jest.mock('@salmon/shared', () => ({
+  // Developer mode lives in shared now; the screen reads it through the barrel.
+  useDeveloperModeSettings: () => ({
+    developerNetworks: false,
+    showUnverifiedTokens: false,
+    toggleDeveloperNetworks: jest.fn(),
+    setShowUnverifiedTokens: jest.fn(),
+  }),
   fontFamilyNative: { regular: 'System', bold: 'System' },
   fontSize: { body: 15 },
   s: (value: number) => value,
@@ -35,7 +42,9 @@ jest.mock('@salmon/shared', () => ({
     accent: { ink: '#FF5C45' },
   },
   getSettingsItemTestId: (id: string) => `settings-item-${id}`,
-  LANGUAGE_NAMES: { en: 'English' },
+  // The real table: the screen is one rendering of it, so the rows under test
+  // are the rows that ship.
+  ...jest.requireActual('../../../../packages/shared/src/settings/registry'),
   useAccountsContext: () => [
     {
       activeAccount: null,

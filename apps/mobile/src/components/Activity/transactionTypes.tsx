@@ -21,13 +21,15 @@ import {
 } from '../../icons';
 import type { IconComponent } from '../../icons';
 import {
+  TYPE_LABEL_KEYS,
   borderRadius,
   borderWidth,
-  chainMarks,
   componentSizes,
   s,
   spacing,
+  transactionTypeDisplayFor,
   type Semantic,
+  type TransactionTypeGlyph,
 } from '@salmon/shared';
 
 import { IconBubble } from '../IconBubble';
@@ -44,37 +46,34 @@ const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 /** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
 const SWAP_LOGO_SIZE = 30;
 
+/** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
+const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
+  arrowUp: ArrowUpIcon,
+  arrowDown: ArrowDownIcon,
+  arrowsLeftRight: ArrowsLeftRightIcon,
+  plusCircle: PlusCircleIcon,
+  fire: FireIcon,
+  lock: LockIcon,
+  money: MoneyIcon,
+  cube: CubeIcon,
+  question: QuestionIcon,
+};
+
 /**
- * Was a module-scope constant; now a function of the active tokens because
- * `send`/`receive`/`unknown` read theme colour. Call with `useSemantic()`'s
- * result at render — see `TransactionMark` and `TransactionItem` below.
+ * The shared table (`transactionTypeDisplayFor`) with the glyph names resolved
+ * to this platform's icons. Call with `useSemantic()`'s result at render.
  */
 export const transactionTypeConfigFor = (
   t: Semantic
-): Record<TransactionType, { label: string; icon: IconComponent; color: string }> => ({
-  send: { label: 'Sent', icon: ArrowUpIcon, color: t.change.negative },
-  receive: { label: 'Received', icon: ArrowDownIcon, color: t.change.positive },
-  swap: { label: 'Swapped', icon: ArrowsLeftRightIcon, color: chainMarks.purple },
-  mint: { label: 'Minted', icon: PlusCircleIcon, color: chainMarks.cyan },
-  burn: { label: 'Burned', icon: FireIcon, color: chainMarks.orange },
-  stake: { label: 'Staked', icon: LockIcon, color: chainMarks.green },
-  loan: { label: 'Loan', icon: MoneyIcon, color: chainMarks.amber },
-  interaction: { label: 'Interaction', icon: CubeIcon, color: chainMarks.blue },
-  unknown: { label: 'Unknown', icon: QuestionIcon, color: t.text.secondary },
-});
+): Record<TransactionType, { label: string; icon: IconComponent; color: string }> =>
+  Object.fromEntries(
+    Object.entries(transactionTypeDisplayFor(t)).map(([type, display]) => [
+      type,
+      { label: display.label, color: display.color, icon: GLYPHS[display.glyph] },
+    ])
+  ) as Record<TransactionType, { label: string; icon: IconComponent; color: string }>;
 
-/** Translation keys for the verbs above — resolved via `t()` at the call site. */
-export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
-  send: 'transactions.detail.sent',
-  receive: 'transactions.detail.received',
-  swap: 'transactions.detail.swapped',
-  mint: 'transactions.detail.minted',
-  burn: 'transactions.detail.burned',
-  stake: 'transactions.detail.staked',
-  loan: 'transactions.detail.loan',
-  interaction: 'transactions.detail.interaction',
-  unknown: 'transactions.detail.unknown',
-};
+export { TYPE_LABEL_KEYS };
 
 /** The type badge that rides the leading mark's corner. */
 const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean }> = ({

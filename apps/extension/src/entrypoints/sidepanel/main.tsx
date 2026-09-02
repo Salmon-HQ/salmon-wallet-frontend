@@ -22,6 +22,7 @@ import {
   initStash,
   initAnalytics,
   AccountsProvider,
+  DeveloperModeProvider,
   CurrencyProvider,
   createQueryClient,
   QueryClientProvider,
@@ -71,11 +72,17 @@ const waitForLayout = (): Promise<void> =>
               <QueryClientProvider client={queryClient}>
                 <I18nextProvider i18n={i18n}>
                   <AccountsProvider>
-                    <CurrencyProvider>
-                      <PendingActivityLayer>
-                        <App />
-                      </PendingActivityLayer>
-                    </CurrencyProvider>
+                    {/* The developer-mode flags belong to the unlocked session,
+                        as on mobile's (app) stack: one provider above every
+                        screen, and an older wallet's mirror addresses derived
+                        the first time the flag asks (spec 026 D2). */}
+                    <DeveloperModeProvider>
+                      <CurrencyProvider>
+                        <PendingActivityLayer>
+                          <App />
+                        </PendingActivityLayer>
+                      </CurrencyProvider>
+                    </DeveloperModeProvider>
                   </AccountsProvider>
                 </I18nextProvider>
               </QueryClientProvider>

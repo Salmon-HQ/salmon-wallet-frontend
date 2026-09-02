@@ -46,9 +46,11 @@ import {
   s,
   spacing,
   vs,
-  LANGUAGE_NAMES,
-  type LanguageCode,
-  type SettingsScreen,
+  SETTINGS_GROUPS,
+  settingsRowValues,
+  type SettingsIconName,
+  type SettingsRowDef,
+  type SettingsToggleKey,
   type Semantic,
 } from '@salmon/shared';
 import {
@@ -67,93 +69,30 @@ import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
-type RowId = SettingsScreen | 'analytics' | 'developerNetworks' | 'unverifiedTokens';
-
-interface SettingsRow {
-  id: RowId;
-  icon: React.ComponentType<{ size?: number; color?: string }>;
-  labelKey: string;
-  /** A row that flips a switch in place rather than pushing a screen. */
-  isToggle?: boolean;
-  /** A row that runs a destructive action rather than pushing a screen. */
-  isAction?: boolean;
-  isDanger?: boolean;
-}
-
-interface SettingsGroup {
-  titleKey: string;
-  isDanger?: boolean;
-  rows: SettingsRow[];
-}
-
-const SETTINGS_GROUPS: SettingsGroup[] = [
-  {
-    titleKey: 'settings.sections.account',
-    rows: [
-      { id: 'accounts', icon: UsersIcon, labelKey: 'settings.accounts.title' },
-      { id: 'avatar', icon: UserCircleIcon, labelKey: 'settings.profile_picture' },
-      { id: 'security', icon: ShieldCheckIcon, labelKey: 'settings.security.title' },
-      { id: 'backup', icon: KeyIcon, labelKey: 'settings.backup' },
-      { id: 'privateKey', icon: LockIcon, labelKey: 'settings.private_key' },
-    ],
-  },
-  {
-    titleKey: 'settings.sections.preferences',
-    rows: [
-      { id: 'language', icon: TranslateIcon, labelKey: 'settings.display_language' },
-      { id: 'currency', icon: MoneyIcon, labelKey: 'settings.currency' },
-      { id: 'explorer', icon: ArrowSquareOutIcon, labelKey: 'settings.select_explorer' },
-      { id: 'appearance', icon: CircleHalfIcon, labelKey: 'settings.appearance' },
-    ],
-  },
-  {
-    titleKey: 'settings.sections.advanced',
-    rows: [
-      { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
-      { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
-      { id: 'analytics', icon: ChartBarIcon, labelKey: 'settings.analytics', isToggle: true },
-      {
-        id: 'developerNetworks',
-        icon: CodeIcon,
-        labelKey: 'settings.developer_networks',
-        isToggle: true,
-      },
-      {
-        id: 'unverifiedTokens',
-        icon: EyeIcon,
-        labelKey: 'settings.unverified_tokens',
-        isToggle: true,
-      },
-    ],
-  },
-  {
-    titleKey: 'settings.sections.support',
-    rows: [
-      { id: 'support', icon: QuestionIcon, labelKey: 'settings.help_support' },
-      { id: 'about', icon: InfoIcon, labelKey: 'settings.about' },
-    ],
-  },
-  {
-    titleKey: 'settings.sections.danger_zone',
-    isDanger: true,
-    rows: [
-      {
-        id: 'removeWallet',
-        icon: TrashIcon,
-        labelKey: 'settings.wallets.remove_wallet',
-        isAction: true,
-        isDanger: true,
-      },
-      {
-        id: 'removeAll',
-        icon: SignOutIcon,
-        labelKey: 'settings.wallets.remove_all_wallets',
-        isAction: true,
-        isDanger: true,
-      },
-    ],
-  },
-];
+/** The table is shared (`SETTINGS_GROUPS`); the glyphs are this platform's. */
+const SETTINGS_ICONS: Record<
+  SettingsIconName,
+  React.ComponentType<{ size?: number; color?: string }>
+> = {
+  users: UsersIcon,
+  userCircle: UserCircleIcon,
+  shieldCheck: ShieldCheckIcon,
+  key: KeyIcon,
+  lock: LockIcon,
+  translate: TranslateIcon,
+  money: MoneyIcon,
+  arrowSquareOut: ArrowSquareOutIcon,
+  circleHalf: CircleHalfIcon,
+  addressBook: AddressBookIcon,
+  squaresFour: SquaresFourIcon,
+  chartBar: ChartBarIcon,
+  code: CodeIcon,
+  eye: EyeIcon,
+  question: QuestionIcon,
+  info: InfoIcon,
+  trash: TrashIcon,
+  signOut: SignOutIcon,
+};
 
 export default function SettingsScreenIndex() {
   const { t } = useTranslation();
@@ -205,6 +144,23 @@ export default function SettingsScreenIndex() {
     },
     [setShowUnverifiedTokens]
   );
+  const toggles = useMemo<
+    Record<SettingsToggleKey, { checked: boolean; onChange: (next: boolean) => void }>
+  >(
+    () => ({
+      analytics: { checked: analyticsConsent, onChange: setAnalyticsConsent },
+      developerNetworks: { checked: developerNetworks, onChange: handleToggleDeveloperNetworks },
+      unverifiedTokens: { checked: showUnverifiedTokens, onChange: handleToggleUnverifiedTokens },
+    }),
+    [
+      analyticsConsent,
+      setAnalyticsConsent,
+      developerNetworks,
+      handleToggleDeveloperNetworks,
+      showUnverifiedTokens,
+      handleToggleUnverifiedTokens,
+    ]
+  );
   const { currentLanguage } = useLanguage();
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
@@ -222,13 +178,15 @@ export default function SettingsScreenIndex() {
   // What the four choosable rows currently read. Proper nouns and a currency
   // code — identical in both languages, so the list states the user's own
   // choice without inventing copy.
-  const rowValues: Partial<Record<RowId, string | undefined>> = useMemo(
-    () => ({
-      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
-      currency: currency?.toUpperCase(),
-      explorer: explorer?.name,
-      appearance: appearanceLabels[appearancePreference],
-    }),
+  const rowValues = useMemo(
+    () =>
+      settingsRowValues({
+        language: currentLanguage,
+        currency,
+        explorerName: explorer?.name,
+        appearance: appearancePreference,
+        appearanceLabels,
+      }),
     [currentLanguage, currency, explorer, appearanceLabels, appearancePreference]
   );
 
@@ -299,8 +257,8 @@ export default function SettingsScreenIndex() {
   ]);
 
   const handleRowPress = useCallback(
-    (row: SettingsRow) => {
-      if (row.isAction) {
+    (row: SettingsRowDef) => {
+      if (row.kind === 'action') {
         if (row.id === 'removeWallet') handleRemoveWallet();
         else if (row.id === 'removeAll') handleRemoveAllWallets();
         return;
@@ -311,37 +269,18 @@ export default function SettingsScreenIndex() {
   );
 
   const renderRow = useCallback(
-    (row: SettingsRow) => {
+    (row: SettingsRowDef) => {
       const label = t(row.labelKey);
       const testID = getSettingsItemTestId(row.id);
+      const icon = SETTINGS_ICONS[row.icon];
 
-      // Three toggles, one row shape. Developer Networks decides which
-      // networks the carousel offers; unverified tokens decide what the lists
-      // show — the two used to be the same boolean (spec 026 D4).
-      if (row.isToggle) {
-        const toggle =
-          row.id === 'developerNetworks'
-            ? {
-                checked: developerNetworks,
-                onChange: handleToggleDeveloperNetworks,
-                descriptionKey: 'settings.developer_networks_description',
-                testId: 'settings-developer-networks-toggle',
-              }
-            : row.id === 'unverifiedTokens'
-              ? {
-                  checked: showUnverifiedTokens,
-                  onChange: handleToggleUnverifiedTokens,
-                  descriptionKey: 'settings.unverified_tokens_description',
-                  testId: 'settings-unverified-tokens-toggle',
-                }
-              : {
-                  checked: analyticsConsent,
-                  onChange: setAnalyticsConsent,
-                  descriptionKey: 'settings.analytics_description',
-                  testId: 'settings-analytics-toggle',
-                };
-        const { checked, descriptionKey } = toggle;
-        const toggleTestId = toggle.testId;
+      // Three toggles, one row shape; which setting each flips is this
+      // platform's wiring, the row itself is the shared table's.
+      if (row.kind === 'toggle') {
+        const toggle = toggles[row.id];
+        const { checked } = toggle;
+        const descriptionKey = row.descriptionKey;
+        const toggleTestId = row.testId;
         return (
           <ListRow
             key={row.id}
@@ -351,7 +290,7 @@ export default function SettingsScreenIndex() {
                 size={ROW_BUBBLE_SIZE}
                 shape="rounded"
                 tone="surface"
-                icon={row.icon}
+                icon={icon}
                 iconSize={iconSize.md}
               />
             }
@@ -374,7 +313,7 @@ export default function SettingsScreenIndex() {
         );
       }
 
-      const value = rowValues[row.id];
+      const value = row.kind === 'panel' ? rowValues[row.id as keyof typeof rowValues] : undefined;
       return (
         <ListRow
           key={row.id}
@@ -384,7 +323,7 @@ export default function SettingsScreenIndex() {
               size={ROW_BUBBLE_SIZE}
               shape="rounded"
               tone="surface"
-              icon={row.icon}
+              icon={icon}
               iconSize={iconSize.md}
               iconColor={row.isDanger ? semantic.status.danger : undefined}
             />
@@ -412,19 +351,7 @@ export default function SettingsScreenIndex() {
         />
       );
     },
-    [
-      analyticsConsent,
-      developerNetworks,
-      handleRowPress,
-      handleToggleDeveloperNetworks,
-      handleToggleUnverifiedTokens,
-      rowValues,
-      semantic,
-      setAnalyticsConsent,
-      showUnverifiedTokens,
-      styles,
-      t,
-    ]
+    [handleRowPress, rowValues, semantic, styles, t, toggles]
   );
 
   return (

@@ -55,7 +55,9 @@ jest.mock('@salmon/shared', () => ({
     accent: { ink: '#FF5C45' },
   },
   getSettingsItemTestId: (id: string) => `settings-item-${id}`,
-  LANGUAGE_NAMES: { en: 'English' },
+  // The real table: the screen is one rendering of it, so the rows under test
+  // are the rows that ship.
+  ...jest.requireActual('../../../../packages/shared/src/settings/registry'),
   useAccountsContext: () => [
     {
       activeAccount: null,

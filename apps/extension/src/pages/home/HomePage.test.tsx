@@ -81,10 +81,6 @@ vi.mock('../../components', () => ({
   PriceChart: () => null,
 }));
 
-vi.mock('../../i18n', () => ({
-  useLanguage: () => ({ currentLanguage: 'en', supportedLanguages: ['en'], setLanguage: vi.fn() }),
-}));
-
 vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
 
 const NETWORKS = [
@@ -110,7 +106,12 @@ const accountsState = {
 // The real barrel pulls React Native through, which Vitest cannot parse — the
 // same treatment every other page suite here gives it: name what the page
 // actually reads.
-vi.mock('@salmon/shared', () => {
+vi.mock('@salmon/shared', async () => {
+  const homeShell = await vi.importActual<typeof import('@salmon/shared/hooks/useHomeShell')>(
+    '@salmon/shared/hooks/useHomeShell'
+  );
+  const settings =
+    await vi.importActual<typeof import('@salmon/shared/settings')>('@salmon/shared/settings');
   return {
     colors: {
       background: { primary: '#000', card: '#111', tertiary: '#222' },
@@ -141,9 +142,7 @@ vi.mock('@salmon/shared', () => {
     PERIOD_TO_DAYS: { '1M': 30 },
     coinInfoToMarketData: () => undefined,
     isSolanaNft: () => false,
-    createBurnTransaction: vi.fn(),
     classifyTransactionError: () => 'error',
-    LANGUAGE_NAMES: { en: 'English' },
     SUPPORT_OPTIONS: [],
     SUPPORTED_CURRENCIES: ['usd'],
     CURRENCY_MAP: { usd: { name: 'US Dollar', symbol: '$' } },
@@ -201,8 +200,27 @@ vi.mock('@salmon/shared', () => {
       refresh: vi.fn(),
     }),
     useCoinMarketData: () => ({ coinInfo: undefined, chartData: [], error: null }),
-    useSettleAfterTx: () => vi.fn(),
-    useNftBurn: () => ({ burnNft: vi.fn(), settling: false }),
+    useDeveloperModeSettings: () => ({
+      developerNetworks: false,
+      toggleDeveloperNetworks: vi.fn(),
+      showUnverifiedTokens: false,
+      setShowUnverifiedTokens: vi.fn(),
+    }),
+    useNftFlowState: () => ({
+      burnPreview: null,
+      burnPreparing: false,
+      burnError: null,
+      prepareBurn: vi.fn(),
+      confirmBurn: vi.fn(),
+      resetBurn: vi.fn(),
+      successKind: null,
+      successTxId: null,
+      successSettling: false,
+      explorerUrl: null,
+      settleAfterSend: vi.fn(),
+      acknowledgeSuccess: vi.fn(),
+      reset: vi.fn(),
+    }),
     useDerivedAccountsScan: () => ({
       scanningAccountId: null,
       sheetVisible: false,
@@ -212,8 +230,26 @@ vi.mock('@salmon/shared', () => {
       dismiss: vi.fn(),
     }),
     useHomeTabOrder: () => ({ order: ['portfolio', 'nfts'], setOrder: vi.fn() }),
+    // The shell's state is the real hook — its own suite covers the logic;
+    // this file asserts what the page draws with it.
+    useLanguage: () => ({
+      currentLanguage: 'en',
+      availableLanguages: ['en'],
+      languageNames: { en: 'English' },
+      changeLanguage: vi.fn(),
+    }),
+    ...settings,
+    useHomeShell: homeShell.useHomeShell,
+    mapBalanceToToken: homeShell.mapBalanceToToken,
+    buildBitcoinToken: homeShell.buildBitcoinToken,
   };
 });
+
+// The real shell reads the tab order through its own module path, not the
+// barrel, so the arrangement is pinned there too.
+vi.mock('@salmon/shared/hooks/useHomeTabOrder', () => ({
+  useHomeTabOrder: () => ({ order: ['portfolio', 'nfts'], setOrder: vi.fn() }),
+}));
 
 vi.mock('@salmon/shared/utils/account', () => ({
   isSignableSolanaAccount: () => false,

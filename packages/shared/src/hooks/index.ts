@@ -83,6 +83,14 @@ export type { UseSendTransactionParams, UseSendTransactionResult } from './useSe
 export { useSendFlowState } from './useSendFlowState';
 export type { UseSendFlowStateParams, SendFlowState } from './useSendFlowState';
 
+// The NFT flow's state (recipient, transfer, burn preview, receipt) — the
+// transaction hooks are the same ones both platforms always called
+export { useNftFlowState } from './useNftFlowState';
+export type { UseNftFlowStateParams, NftFlowState, NftSuccessKind } from './useNftFlowState';
+
+// Completes an older wallet's mirror addresses when Developer Networks asks
+export { useEnsureMirrorNetworks } from './useEnsureMirrorNetworks';
+
 // Private-key import hook
 export { useImportPrivateKey } from './useImportPrivateKey';
 export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';
@@ -197,3 +205,24 @@ export type { UseHomeTabOrderResult } from './useHomeTabOrder';
 // Derived-account scan (finds a seed's funded paths; the user picks)
 export { useDerivedAccountsScan, findDerivedAccounts } from './useDerivedAccountsScan';
 export type { DerivedAccountFind, UseDerivedAccountsScanResult } from './useDerivedAccountsScan';
+
+// Form state the kit renders on both platforms; the vault calls are injected
+export { usePasswordConfirm } from './usePasswordConfirm';
+export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
+export { useChangePassword } from './useChangePassword';
+export type { UseChangePasswordParams } from './useChangePassword';
+
+// Home shell (page index, per-page balances, offered sub-tabs, the swap's owner)
+export {
+  useHomeShell,
+  HOME_TAB_KEYS,
+  blockchainIdOf,
+  mapBalanceToToken,
+  buildBitcoinToken,
+} from './useHomeShell';
+export type {
+  HomeSubTabKey,
+  HomeSwapCause,
+  UseHomeShellParams,
+  UseHomeShellResult,
+} from './useHomeShell';

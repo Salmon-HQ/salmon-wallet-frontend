@@ -1,25 +1,33 @@
 /**
+ * @vitest-environment jsdom
+ *
  * A wallet made before mirrors were derived at creation holds only the mainnet
  * half. With Developer Networks on, the carousel would offer it a devnet page
  * it has no address for — and drop that page silently. The addresses are
- * completed on demand, from the seed already in memory, once per wallet.
+ * completed on demand, from the seed already in memory, once per wallet — on
+ * every platform that mounts the developer-mode provider.
  */
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockEnsureMirrorNetworks = jest.fn();
-const mockEditAccount = jest.fn(async () => {});
+const mockEnsureMirrorNetworks = vi.fn();
+const mockEditAccount = vi.fn(async () => {});
 const accountState = {
   ready: true,
   locked: false,
   activeAccount: null as Record<string, unknown> | null,
 };
 
-jest.mock('@salmon/shared', () => ({
+vi.mock('../utils/network', () => ({
   MIRROR_NETWORK_IDS: {
     'solana-mainnet': 'solana-devnet',
     'bitcoin-mainnet': 'bitcoin-testnet',
   },
+}));
+vi.mock('../utils/derived-accounts', () => ({
   ensureMirrorNetworks: (...args: unknown[]) => mockEnsureMirrorNetworks(...args),
+}));
+vi.mock('../contexts/AccountsContext', () => ({
   useAccountsContext: () => [accountState, { editAccount: mockEditAccount }],
 }));
 
@@ -32,7 +40,7 @@ const walletHolding = (networksAccounts: Record<string, unknown[]>) => ({
 
 describe('useEnsureMirrorNetworks', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     accountState.ready = true;
     accountState.locked = false;
     mockEnsureMirrorNetworks.mockResolvedValue([{ id: 'devnet-account' }]);
@@ -53,24 +61,20 @@ describe('useEnsureMirrorNetworks', () => {
 
     // A re-render is not a second derivation: the wallet is attempted once per
     // session, so a failure cannot loop on every render elsewhere in the app.
-    rerender(undefined);
+    rerender();
     expect(mockEnsureMirrorNetworks).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing while the flag is off', () => {
     accountState.activeAccount = walletHolding({ 'solana-mainnet': [{}] });
-
     renderHook(() => useEnsureMirrorNetworks(false));
-
     expect(mockEnsureMirrorNetworks).not.toHaveBeenCalled();
   });
 
   it('does nothing while the wallet is locked — the seed is not in memory', () => {
     accountState.locked = true;
     accountState.activeAccount = walletHolding({ 'solana-mainnet': [{}] });
-
     renderHook(() => useEnsureMirrorNetworks(true));
-
     expect(mockEnsureMirrorNetworks).not.toHaveBeenCalled();
   });
 
@@ -79,14 +83,11 @@ describe('useEnsureMirrorNetworks', () => {
       'solana-mainnet': [{}],
       'solana-devnet': [{}],
     });
-
     renderHook(() => useEnsureMirrorNetworks(true));
-
     expect(mockEnsureMirrorNetworks).not.toHaveBeenCalled();
   });
 
   it('writes nothing when there is nothing to derive — watch-only and private-key wallets', async () => {
-    // `ensureMirrorNetworks` returns empty for a wallet with no seed.
     mockEnsureMirrorNetworks.mockResolvedValue([]);
     accountState.activeAccount = walletHolding({ 'solana-mainnet': [{}] });
 

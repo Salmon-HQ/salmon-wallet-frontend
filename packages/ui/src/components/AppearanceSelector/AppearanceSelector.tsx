@@ -9,7 +9,7 @@
  */
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AppearancePreference, type IconGlyphProps } from '@salmon/shared';
+import { APPEARANCE_OPTIONS, type AppearancePreference, type IconGlyphProps } from '@salmon/shared';
 
 import { CircleHalfIcon, MoonIcon, SunIcon, iconSize } from '../../icons';
 import { IconBubble } from '../IconBubble';
@@ -24,6 +24,13 @@ interface AppearanceOption {
   icon: React.ComponentType<IconGlyphProps>;
 }
 
+/** The platform's glyph for each shared option name. */
+const GLYPHS: Record<'circleHalf' | 'sun' | 'moon', React.ComponentType<IconGlyphProps>> = {
+  circleHalf: CircleHalfIcon,
+  sun: SunIcon,
+  moon: MoonIcon,
+};
+
 /** The leading well every option row carries — the same size as mobile's. */
 const ROW_BUBBLE_SIZE = 40;
 
@@ -35,20 +42,16 @@ export function AppearanceSelector({
   const { t } = useTranslation();
 
   const options: AppearanceOption[] = useMemo(
-    () => [
-      {
-        preference: 'system',
-        icon: CircleHalfIcon,
-        label: t('settings.appearance_options.system', 'System'),
-        hint: t('settings.appearance_system_hint', 'Follows your device'),
-      },
-      {
-        preference: 'light',
-        icon: SunIcon,
-        label: t('settings.appearance_options.light', 'Light'),
-      },
-      { preference: 'dark', icon: MoonIcon, label: t('settings.appearance_options.dark', 'Dark') },
-    ],
+    () =>
+      APPEARANCE_OPTIONS.map((option) => ({
+        preference: option.preference,
+        icon: GLYPHS[option.glyph],
+        label: t(option.labelKey, option.fallback),
+        hint:
+          option.preference === 'system'
+            ? t('settings.appearance_system_hint', 'Follows your device')
+            : undefined,
+      })),
     [t]
   );
 

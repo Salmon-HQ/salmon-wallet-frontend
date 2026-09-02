@@ -80,6 +80,12 @@ jest.mock('@salmon/shared', () => ({
   // tokens with nothing under it to transform, and a fake here would let the
   // two platforms draw two different waves without a test noticing.
   ...jest.requireActual('@salmon/shared/src/motion/crest'),
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
 
 jest.mock('expo-linear-gradient', () => {

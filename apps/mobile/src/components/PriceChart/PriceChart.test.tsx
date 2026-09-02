@@ -26,6 +26,8 @@ jest.mock('@salmon/shared', () => ({
     swellIn: { native: [0.34, 1.14, 0.64, 1] },
   },
   resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
+  // The curve math is real: bounds and resampling are what the path is made of.
+  ...jest.requireActual('@salmon/shared/src/utils/priceChartPath'),
 }));
 
 // The period selector is the kit's UnderlineTabs, whose own tokens the partial
@@ -47,7 +49,8 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-import { resampleYs, buildLinePath } from './PriceChart';
+import { resampleYs } from '@salmon/shared';
+import { buildLinePath } from './PriceChart';
 
 const HEIGHT = 200;
 const WIDTH = 300;

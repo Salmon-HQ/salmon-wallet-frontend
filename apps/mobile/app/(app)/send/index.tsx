@@ -34,7 +34,8 @@ import {
   useTransactions,
   vs,
   type NetworkId,
-  type Transaction,
+  recipientOptions,
+  type RecipientOption,
 } from '@salmon/shared';
 
 import {
@@ -59,14 +60,8 @@ import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 
 /** How many past counterparties the "Recent" section offers. */
-const MAX_RECENTS = 3;
 
 /** A row the user can tap to fill the field. */
-interface RecipientOption {
-  key: string;
-  name: string;
-  address: string;
-}
 
 /** The initial the avatar bubble carries — a name's, or the address's. */
 function initialOf(option: RecipientOption): string {
@@ -130,42 +125,9 @@ export default function SendRecipientScreen() {
     [contacts]
   );
 
-  const recents = useMemo<RecipientOption[]>(() => {
-    const seen = new Set<string>();
-    const rows: RecipientOption[] = [];
-    for (const tx of transactions as Transaction[]) {
-      if (tx.type !== 'send') continue;
-      const destination = tx.outputs[0]?.destination;
-      if (!destination || destination === senderAddress || seen.has(destination)) continue;
-      seen.add(destination);
-      rows.push({
-        key: `recent-${destination}`,
-        name: contactsByAddress[destination] ?? getShortAddress(destination) ?? destination,
-        address: destination,
-      });
-      if (rows.length === MAX_RECENTS) break;
-    }
-    return rows;
-  }, [transactions, senderAddress, contactsByAddress]);
-
-  const contactRows = useMemo<RecipientOption[]>(
-    () =>
-      contacts.map((contact) => ({
-        key: `contact-${contact.address}`,
-        name: contact.name,
-        address: contact.address,
-      })),
-    [contacts]
-  );
-
-  const walletRows = useMemo<RecipientOption[]>(
-    () =>
-      ownWallets.map((wallet) => ({
-        key: `wallet-${wallet.address}`,
-        name: wallet.accountName,
-        address: wallet.address,
-      })),
-    [ownWallets]
+  const { recents, contactRows, walletRows } = useMemo(
+    () => recipientOptions({ transactions, senderAddress, contacts, ownWallets }),
+    [transactions, senderAddress, contacts, ownWallets]
   );
 
   const handleScan = useCallback((result: QRScanResult) => {

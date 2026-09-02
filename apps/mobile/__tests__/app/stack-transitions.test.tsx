@@ -41,6 +41,10 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The providers the layout mounts live in shared now; the task chrome is the
+  // real one, developer mode is pass-through (its flags are mocked below).
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => children,
   useUserConfig: () => ({
     developerNetworks: false,
     toggleDeveloperNetworks: jest.fn(),

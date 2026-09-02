@@ -34,6 +34,9 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The provider the layout mounts lives in shared now; its flags are faked below.
+  DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => children,
+  useDeveloperMode: () => false,
   useUserConfig: () => ({
     developerNetworks: false,
     toggleDeveloperNetworks: jest.fn(),

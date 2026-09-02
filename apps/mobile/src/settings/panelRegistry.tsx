@@ -24,20 +24,18 @@ import {
   AddressbookError,
   useOpenLink,
   buildNetworkListFromAccount,
-  SUPPORTED_CURRENCIES,
-  CURRENCY_MAP,
+  CURRENCY_ITEMS,
   SUPPORT_OPTIONS,
-  LANGUAGE_NAMES,
+  toAddressBookItems,
+  toExplorerItems,
+  toLanguageItems,
+  toTrustedAppItems,
   type AddressBookItem,
   type AddressInput,
   type CurrencyCode,
   type LanguageCode,
   type AppearancePreference,
-  type ExplorerSelectorItem,
   type NetworkSelectorItem,
-  type TrustedAppItem,
-  type LanguageSelectorItem,
-  type CurrencySelectorItem,
   type NetworkAdapter,
   type BlockchainType,
 } from '@salmon/shared';
@@ -163,17 +161,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
     clearBiometricKey,
   } = useBiometricAuth();
 
-  const addressBookItems: AddressBookItem[] = useMemo(
-    () =>
-      contacts.map((c) => ({
-        name: c.name,
-        address: c.address,
-        networkId: c.network.id,
-        networkName: c.network.name,
-        domain: c.domain,
-      })),
-    [contacts]
-  );
+  const addressBookItems = useMemo(() => toAddressBookItems(contacts), [contacts]);
 
   return useMemo<MobilePanelRegistry>(
     () => ({
@@ -218,13 +206,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         );
       },
       language: ({ onBack }) => {
-        const languageItems: LanguageSelectorItem[] = availableLanguages.map((item) => ({
-          code: item.code,
-          nativeName: LANGUAGE_NAMES[item.code as LanguageCode] || item.code,
-        }));
         return (
           <LanguageSelector
-            languages={languageItems}
+            languages={toLanguageItems(availableLanguages.map((item) => item.code))}
             activeLanguageCode={currentLanguage}
             onSelectLanguage={async (code: string) => {
               await changeLanguage(code as LanguageCode);
@@ -235,14 +219,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         );
       },
       currency: ({ onBack }) => {
-        const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((code) => ({
-          code,
-          name: CURRENCY_MAP[code].name,
-          symbol: CURRENCY_MAP[code].symbol,
-        }));
         return (
           <CurrencySelector
-            currencies={currencyItems}
+            currencies={CURRENCY_ITEMS}
             activeCurrencyCode={currency}
             onSelectCurrency={async (code: string) => {
               await changeCurrency(code as CurrencyCode);
@@ -263,13 +242,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         />
       ),
       explorer: ({ onBack }) => {
-        const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
-          key: e.key,
-          name: e.name,
-        }));
         return (
           <ExplorerSelector
-            explorers={explorerItems}
+            explorers={toExplorerItems(explorers)}
             activeExplorerName={explorer?.name || ''}
             onSelectExplorer={async (key: string) => {
               await changeExplorer(key);
@@ -372,16 +347,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         );
       },
       trustedApps: ({ onBack }) => {
-        const trustedAppItems: TrustedAppItem[] = Object.entries(activeTrustedApps || {}).map(
-          ([domain, app]) => ({
-            domain,
-            name: app.name,
-            icon: app.icon,
-          })
-        );
         return (
           <TrustedAppsSelector
-            apps={trustedAppItems}
+            apps={toTrustedAppItems(activeTrustedApps)}
             onRevokeApp={async (domain: string) => {
               await accountActions.removeTrustedApp(domain);
             }}

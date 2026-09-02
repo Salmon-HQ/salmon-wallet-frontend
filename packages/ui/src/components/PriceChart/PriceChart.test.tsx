@@ -7,7 +7,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createSemantic } from '@salmon/shared';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
-import { PriceChart, buildLinePath, resampleYs } from './PriceChart';
+import { buildLinePath, resampleYs } from '@salmon/shared';
+import { PriceChart } from './PriceChart';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
