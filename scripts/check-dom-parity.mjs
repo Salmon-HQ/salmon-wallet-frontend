@@ -16,14 +16,24 @@
  *  4. dead    — every contract under packages/shared/src/types/ui has a
  *               reader on at least one platform.
  *
- * Usage: node scripts/check-dom-parity.mjs [--report]
- *   --report prints every finding but always exits 0 (for reading progress).
+ * Usage: node scripts/check-dom-parity.mjs [--report | --ratchet | --update-baseline]
+ *   (none)            strict: exit 1 on any finding — the end state, CI once lot 4 closes.
+ *   --report          print every finding, always exit 0 (reading progress).
+ *   --ratchet         the CI mode while lot 4 is open: compare each check's count
+ *                     against scripts/dom-parity.baseline.json and exit 1 only when
+ *                     a count went UP. Counts may only fall (Notion's "ratchet",
+ *                     eslint-seatbelt's model, without the dependency).
+ *   --update-baseline rewrite the baseline with the current counts — run after a
+ *                     lot lands and lowers a number; CI refuses a raise.
  */
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync, writeFileSync } from 'node:fs';
 import { join, relative, basename } from 'node:path';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 const REPORT_ONLY = process.argv.includes('--report');
+const RATCHET = process.argv.includes('--ratchet');
+const UPDATE_BASELINE = process.argv.includes('--update-baseline');
+const BASELINE = join(ROOT, 'scripts/dom-parity.baseline.json');
 
 const MOBILE_COMPONENTS = join(ROOT, 'apps/mobile/src/components');
 const UI_COMPONENTS = join(ROOT, 'packages/ui/src/components');
@@ -86,6 +96,7 @@ const DOM_ONLY = {
   NftSendDialog:
     'mobile sends NFTs through the Send route; the DOM keeps the dialog until lot 4D folds it into SendPage',
   TokenSelector: 'twin exists on mobile (TokenSelector) — listed for the folder shape only',
+  WalletsScreen: "mobile's Wallets is the route app/(app)/wallets.tsx; the DOM keeps a component",
 };
 
 const fail = [];
@@ -238,7 +249,29 @@ for (const [k, lines] of Object.entries(byCheck)) {
   console.log(`\n${k} — ${lines.length}`);
   for (const l of lines) console.log('  ' + l.slice(l.indexOf(']') + 2));
 }
+const counts = Object.fromEntries(
+  ['theme', 'twins', 'contract', 'dead'].map((k) => [k, byCheck[k]?.length ?? 0])
+);
 console.log(
   `\ndom-parity: ${pairs.length} twin pairs, ${fail.length} findings${REPORT_ONLY ? ' (report only)' : ''}`
 );
+
+if (UPDATE_BASELINE) {
+  writeFileSync(BASELINE, JSON.stringify(counts, null, 2) + '\n');
+  console.log(`baseline written: ${JSON.stringify(counts)}`);
+  process.exit(0);
+}
+
+if (RATCHET) {
+  const baseline = JSON.parse(readFileSync(BASELINE, 'utf8'));
+  const raised = Object.entries(counts).filter(([k, n]) => n > (baseline[k] ?? 0));
+  const lowered = Object.entries(counts).filter(([k, n]) => n < (baseline[k] ?? 0));
+  for (const [k, n] of raised) console.log(`ratchet: ${k} went UP ${baseline[k]} → ${n}`);
+  for (const [k, n] of lowered)
+    console.log(
+      `ratchet: ${k} fell ${baseline[k]} → ${n} — run --update-baseline so it cannot climb back`
+    );
+  process.exit(raised.length > 0 || lowered.length > 0 ? 1 : 0);
+}
+
 if (fail.length > 0 && !REPORT_ONLY) process.exit(1);

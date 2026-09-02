@@ -48,6 +48,11 @@ jobs:
       - name: i18n parity (en/es keys, orphans)
         run: node scripts/check-i18n.mjs
 
+      # Ratchet while spec 028 lot 4 is open: counts may only fall. Drop the
+      # flag when the baseline reaches zero and the check becomes strict.
+      - name: DOM parity (extension = mobile on the DOM)
+        run: node scripts/check-dom-parity.mjs --ratchet
+
   pr-title:
     name: conventional PR title
     if: github.event_name == 'pull_request'
