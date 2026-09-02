@@ -214,11 +214,21 @@ jest.mock('../src/components', () => {
     PortfolioSubTabs: ({
       tabs,
       onChange,
+      tabsKey,
+      tabsEntering,
+      tabsExiting,
     }: {
       tabs: Array<{ key: string; label: string }>;
       onChange: (key: string) => void;
+      tabsKey?: string;
+      tabsEntering?: unknown;
+      tabsExiting?: unknown;
     }) => (
-      <View>
+      <View
+        key={tabsKey}
+        testID="portfolio-tabs-region"
+        {...({ entering: tabsEntering, exiting: tabsExiting } as object)}
+      >
         {tabs.map((tab) => (
           <Text key={tab.key} testID={`portfolio-tab-${tab.key}`} onPress={() => onChange(tab.key)}>
             {tab.label}
@@ -435,12 +445,12 @@ describe('home sub-tabs', () => {
       </QueryClientProvider>
     );
     const view = render(wrapped());
-    expect(screen.getByTestId('home-subtabs-row').props.entering).toBeUndefined();
+    expect(screen.getByTestId('portfolio-tabs-region').props.entering).toBeUndefined();
 
     mockStoredTabOrder = ['nfts', 'portfolio'];
     view.rerender(wrapped());
 
-    const row = screen.getByTestId('home-subtabs-row');
+    const row = screen.getByTestId('portfolio-tabs-region');
     expect(row.props.entering).toBeDefined();
     expect(row.props.exiting).toBeDefined();
   });

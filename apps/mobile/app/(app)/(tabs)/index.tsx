@@ -676,6 +676,16 @@ export default function HomeScreen() {
       activeKey={activeSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
+      // A reorder swaps the tabs on the verb — old arrangement sinks, new one
+      // floats — while the order button beside them holds still. Keyed by the
+      // arrangement, so a tab switch never remounts them.
+      tabsKey={subTabOrderKey}
+      tabsEntering={
+        orderSwap.hasPrior
+          ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+          : undefined
+      }
+      tabsExiting={orderSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
     />
   );
 
@@ -741,19 +751,7 @@ export default function HomeScreen() {
               its underline if it is not remounted. */}
           <View style={styles.pinnedHeader}>
             {balanceBlock}
-            <Reanimated.View
-              key={subTabOrderKey}
-              testID="home-subtabs-row"
-              style={styles.pinnedSubTabs}
-              entering={
-                orderSwap.hasPrior
-                  ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                  : undefined
-              }
-              exiting={orderSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-            >
-              {subTabsRow}
-            </Reanimated.View>
+            <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
           </View>
 
           {/* The content region plays the verb on a sub-tab change: the
