@@ -90,20 +90,20 @@ describe('PortfolioSubTabs', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('calls onVisibilityPress when the visibility button is pressed', () => {
-    const onVisibilityPress = jest.fn();
+  it('calls onOrderPress when the order button is pressed', () => {
+    const onOrderPress = jest.fn();
     const { getByTestId } = render(
       <PortfolioSubTabs
         tabs={TABS}
         activeKey="portfolio"
         onChange={jest.fn()}
-        onVisibilityPress={onVisibilityPress}
+        onOrderPress={onOrderPress}
       />
     );
 
-    fireEvent.press(getByTestId('portfolio-visibility-button'));
+    fireEvent.press(getByTestId('portfolio-order-button'));
 
-    expect(onVisibilityPress).toHaveBeenCalledTimes(1);
+    expect(onOrderPress).toHaveBeenCalledTimes(1);
   });
 
   it('lands the underline on the first measured tab with no travel', () => {

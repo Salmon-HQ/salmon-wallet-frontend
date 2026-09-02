@@ -171,6 +171,9 @@ export type { BlockchainId, BlockchainBalance, BlockchainNetworkInfo } from '@sa
 
 export { PortfolioSubTabs } from './PortfolioSubTabs';
 export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs';
+
+export { HomeTabOrderSheet } from './HomeTabOrderSheet';
+export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
 export { UnderlineTabs } from './UnderlineTabs';
 export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './UnderlineTabs';
 

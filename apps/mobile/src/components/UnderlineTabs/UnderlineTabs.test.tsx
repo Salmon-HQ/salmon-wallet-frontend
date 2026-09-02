@@ -12,6 +12,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/typography'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
+  withAlpha: jest.requireActual('@salmon/shared/src/theme/withAlpha').withAlpha,
   s: (value: number) => value,
   vs: (value: number) => value,
 }));
@@ -40,6 +41,8 @@ jest.mock('react-native-reanimated', () => {
     Easing: { bezier: (...coefficients: number[]) => coefficients },
   };
 });
+
+import { ScrollView } from 'react-native';
 
 import { fontSize } from '@salmon/shared';
 import { UnderlineTabs } from './UnderlineTabs';
@@ -96,5 +99,86 @@ describe('UnderlineTabs', () => {
 
     fireEvent.press(screen.getByTestId('activity-filters-send'));
     expect(onChange).toHaveBeenCalledWith('send');
+  });
+
+  /**
+   * The row is static while it fits and a carousel when it does not — measured
+   * per device, never a breakpoint. `md` gaps are 20, so two 60pt labels need
+   * 140: a 200pt container holds them and a 100pt one does not.
+   */
+  describe('overflow', () => {
+    const SUB_TABS = [
+      { key: 'portfolio', label: 'Portfolio' },
+      { key: 'nfts', label: 'NFTs' },
+    ];
+
+    const measureTab = (key: string, x: number, width: number) =>
+      fireEvent(screen.getByTestId(`sub-tab-${key}`), 'layout', {
+        nativeEvent: { layout: { x, y: 0, width, height: 20 } },
+      });
+
+    const measureContainer = (width: number) =>
+      fireEvent(screen.getByTestId('sub-tabs'), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width, height: 24 } },
+      });
+
+    const renderRow = (activeKey = 'portfolio') =>
+      render(
+        <UnderlineTabs
+          testID="sub-tabs"
+          tabs={SUB_TABS}
+          activeKey={activeKey}
+          onChange={jest.fn()}
+          tabTestIDPrefix="sub-tab"
+        />
+      );
+
+    it('stays a plain row while the measured tabs fit their container', () => {
+      renderRow();
+
+      measureContainer(200);
+      measureTab('portfolio', 0, 60);
+      measureTab('nfts', 80, 60);
+
+      expect(screen.queryByTestId('sub-tabs-scroll')).toBeNull();
+    });
+
+    it('wraps the same row in a scroll view when the tabs overrun it', () => {
+      renderRow();
+
+      measureContainer(100);
+      measureTab('portfolio', 0, 60);
+      measureTab('nfts', 80, 60);
+
+      expect(screen.getByTestId('sub-tabs-scroll')).toBeTruthy();
+      // The underline travels inside the scrolled content, so the selection
+      // idiom is the same one at both widths.
+      expect(screen.getByTestId('sub-tab-nfts')).toBeTruthy();
+    });
+
+    it('scrolls the newly active tab into view in overflow mode', () => {
+      const scrollTo = jest
+        .spyOn(ScrollView.prototype, 'scrollTo')
+        .mockImplementation(() => undefined);
+
+      const { rerender } = renderRow();
+      measureContainer(100);
+      measureTab('portfolio', 0, 60);
+      measureTab('nfts', 80, 60);
+      scrollTo.mockClear();
+
+      rerender(
+        <UnderlineTabs
+          testID="sub-tabs"
+          tabs={SUB_TABS}
+          activeKey="nfts"
+          onChange={jest.fn()}
+          tabTestIDPrefix="sub-tab"
+        />
+      );
+
+      expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ animated: true }));
+      scrollTo.mockRestore();
+    });
   });
 });

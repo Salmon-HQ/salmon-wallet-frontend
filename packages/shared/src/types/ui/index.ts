@@ -133,3 +133,6 @@ export type { PendingActivityBannerPropsBase } from './pending-activity-banner';
 
 // Onboarding Layout
 export type { OnboardingLayoutPropsBase } from './onboarding-layout';
+
+// Home Tab Order Sheet
+export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';

@@ -12,9 +12,27 @@
  * Two sizes, one behaviour: `md` for in-page sub-tabs (16pt labels), `sm` for
  * a filter row (11/700 uppercase). Nothing here fills or boxes the selected
  * option — see DESIGN.md §Navigation.
+ *
+ * **Static while it fits, a carousel when it does not.** The row measures its
+ * own container alongside its tabs; when the labels plus their gaps overrun
+ * the width they are given, the same row is handed to a horizontal
+ * `ScrollView` — underline included, so the selection idiom is unchanged —
+ * and the active tab is scrolled into view on every change. This is measured,
+ * not a breakpoint: a wide phone holds still, a narrow one scrolls, and a
+ * rotation or a font-scale change re-measures and flips either way. A row
+ * whose parent does not constrain it (`alignSelf` rather than `flex: 1`)
+ * measures its container as exactly its content and therefore never scrolls,
+ * which is the correct answer for the filter rows.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  type LayoutChangeEvent,
+} from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -22,6 +40,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   borderRadius,
   fontFamilyNative,
@@ -33,6 +52,7 @@ import {
   s,
   spacing,
   vs,
+  withAlpha,
   type Semantic,
 } from '@salmon/shared';
 
@@ -42,6 +62,15 @@ import type { UnderlineTabsProps, UnderlineTabsSize } from './types';
 
 const UNDERLINE_WIDTH = 48;
 const UNDERLINE_HEIGHT = 2;
+
+/**
+ * The trailing cut in overflow mode. A hard edge reads as the end of the set;
+ * a fade of at most one section step reads as "there is more this way".
+ */
+const OVERFLOW_FADE_WIDTH = spacing['2xl'];
+
+/** How much of the previous tab stays visible when one is scrolled into view. */
+const SCROLL_INTO_VIEW_MARGIN = spacing.md;
 
 type SizeMetrics = {
   font: number;
@@ -158,10 +187,13 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   testID,
 }) => {
   const styles = useThemedStyles(stylesFor);
+  const { water } = useSemantic();
   const isReduceMotionEnabled = useReducedMotion();
   const metrics = SIZES[size];
 
   const [layouts, setLayouts] = useState<Record<string, TabLayoutMeasure>>({});
+  const [containerWidth, setContainerWidth] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
   const hasMeasuredActive = useRef(false);
   const underlineX = useSharedValue(0);
   const underlineWidth = useSharedValue(UNDERLINE_WIDTH);
@@ -175,6 +207,26 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
       return { ...prev, [key]: layout };
     });
   }, []);
+
+  const handleContainerLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setContainerWidth((prev) => (prev === width ? prev : width));
+  }, []);
+
+  // RN's default `flexShrink` is 0, so a row that does not fit its parent
+  // overflows rather than squeezing: every tab's measured width is its
+  // natural one whether or not the set fits, which is what makes this
+  // comparison stable in both modes instead of oscillating between them.
+  const { contentWidth, isOverflowing } = useMemo(() => {
+    const measured = tabs.map(({ key }) => layouts[key]);
+    if (measured.some((layout) => !layout)) {
+      return { contentWidth: 0, isOverflowing: false };
+    }
+    const width =
+      measured.reduce((sum, layout) => sum + (layout?.width ?? 0), 0) +
+      s(metrics.gap) * Math.max(tabs.length - 1, 0);
+    return { contentWidth: width, isOverflowing: containerWidth > 0 && width > containerWidth };
+  }, [tabs, layouts, metrics.gap, containerWidth]);
 
   useEffect(() => {
     const activeLayout = layouts[activeKey];
@@ -193,6 +245,19 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     underlineWidth.value = withTiming(activeLayout.width, config);
   }, [activeKey, layouts, isReduceMotionEnabled, underlineX, underlineWidth]);
 
+  // In overflow mode the newly active tab may be off-screen — including the
+  // one restored at mount — so the row brings it in rather than leaving the
+  // underline to travel somewhere the user cannot see.
+  useEffect(() => {
+    if (!isOverflowing) return;
+    const activeLayout = layouts[activeKey];
+    if (!activeLayout) return;
+
+    const maxOffset = Math.max(contentWidth - containerWidth, 0);
+    const target = Math.min(Math.max(activeLayout.x - s(SCROLL_INTO_VIEW_MARGIN), 0), maxOffset);
+    scrollRef.current?.scrollTo({ x: target, animated: !isReduceMotionEnabled });
+  }, [activeKey, layouts, isOverflowing, contentWidth, containerWidth, isReduceMotionEnabled]);
+
   const handlePress = useCallback(
     (key: string) => {
       if (key !== activeKey) {
@@ -207,8 +272,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     width: underlineWidth.value,
   }));
 
-  return (
-    <View style={[styles.tabs, { gap: s(metrics.gap) }, style]} testID={testID}>
+  const row = (
+    <View style={[styles.tabs, { gap: s(metrics.gap) }]}>
       {tabs.map(({ key, label }) => (
         <UnderlineTab
           key={key}
@@ -225,10 +290,45 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
       <Animated.View testID={underlineTestID} style={[styles.underline, underlineStyle]} />
     </View>
   );
+
+  return (
+    <View style={[styles.container, style]} onLayout={handleContainerLayout} testID={testID}>
+      {isOverflowing ? (
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          testID={testID ? `${testID}-scroll` : undefined}
+        >
+          {row}
+        </ScrollView>
+      ) : (
+        row
+      )}
+
+      {/* The cut at the trailing edge: the ground arriving from nothing, so
+          the row reads as continuing rather than as ending. The row sits
+          near the top of the water ramp, so the ground it fades into is the
+          ramp's top stop (spec 022: what tops the ground reads stop 0),
+          never the flat `depth.column`. */}
+      {isOverflowing && (
+        <LinearGradient
+          colors={[withAlpha(water.gradient[0], 0), water.gradient[0]]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.trailingFade}
+          pointerEvents="none"
+        />
+      )}
+    </View>
+  );
 };
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
+    container: {
+      position: 'relative',
+    },
     tabs: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -248,6 +348,13 @@ const stylesFor = (t: Semantic) =>
       height: vs(UNDERLINE_HEIGHT),
       borderRadius: borderRadius.r1,
       backgroundColor: t.accent.fill,
+    },
+    trailingFade: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      right: 0,
+      width: s(OVERFLOW_FADE_WIDTH),
     },
   });
 

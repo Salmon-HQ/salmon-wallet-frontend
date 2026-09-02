@@ -140,6 +140,7 @@ jest.mock('@salmon/shared', () => ({
     refresh: jest.fn(),
   }),
   isWatchOnlyAccount: () => false,
+  useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
 jest.mock('../src/components', () => {
@@ -147,6 +148,7 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
+    HomeTabOrderSheet: () => null,
     // The identity line. Its own suite covers it; here it only has to render
     // so the Home tree mounts.
     WalletHeader: () => <View testID="wallet-header" />,

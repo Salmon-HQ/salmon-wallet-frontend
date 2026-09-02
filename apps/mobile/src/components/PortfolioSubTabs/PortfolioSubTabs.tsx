@@ -7,11 +7,13 @@
  * filters use the same component at `sm`; there is one selection language
  * for lateral choices, not two (DESIGN.md §Navigation).
  *
- * Right: a 36x36 outline circle button for the (stubbed, CORE 16) portfolio
- * visibility sheet.
+ * Right: a 36x36 outline circle button that opens the sheet where the tabs are
+ * arranged. It sits OUTSIDE the tab row, pinned to the right edge, so it holds
+ * still when the row itself becomes a carousel on a narrow phone.
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { s, spacing } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/useThemedStyles';
@@ -20,14 +22,14 @@ import { IconBubble } from '../IconBubble';
 import { UnderlineTabs } from '../UnderlineTabs';
 import type { PortfolioSubTabsProps } from './types';
 
-const VISIBILITY_BUTTON_SIZE = 36;
-const VISIBILITY_GLYPH_SIZE = 18;
+const ORDER_BUTTON_SIZE = 36;
+const ORDER_GLYPH_SIZE = 18;
 
 export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
   tabs,
   activeKey,
   onChange,
-  onVisibilityPress,
+  onOrderPress,
   style,
   testID,
 }) => {
@@ -43,23 +45,23 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
         size="md"
         tabTestIDPrefix="portfolio-tab"
         underlineTestID="portfolio-tabs-underline"
+        // The row takes the width the button leaves it — that constraint is
+        // what lets `UnderlineTabs` know whether its labels fit.
+        style={styles.tabsRegion}
       />
 
       <IconBubble
-        testID="portfolio-visibility-button"
-        size={VISIBILITY_BUTTON_SIZE}
+        testID="portfolio-order-button"
+        size={ORDER_BUTTON_SIZE}
         tone="outline"
         icon={SlidersIcon}
-        iconSize={VISIBILITY_GLYPH_SIZE}
+        iconSize={ORDER_GLYPH_SIZE}
         // `.pen`: this glyph is secondary ink while the Receive circle beside
         // it — the same `outline` tone — carries primary. The button is an
         // adjustment, not an action.
         iconColor={text.secondary}
-        onPress={onVisibilityPress}
-        accessibilityLabel={t(
-          'accessibility.portfolio_visibility',
-          'Portfolio visibility settings'
-        )}
+        onPress={onOrderPress}
+        accessibilityLabel={t('accessibility.portfolio_order', 'Arrange tabs')}
       />
     </View>
   );
@@ -70,6 +72,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    // Row anatomy, not a component seam: the tabs keep clear of the button
+    // rather than running into it once the row is scrollable.
+    gap: s(spacing.md),
+  },
+  tabsRegion: {
+    flex: 1,
   },
 });
 

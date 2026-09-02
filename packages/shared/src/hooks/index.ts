@@ -180,3 +180,7 @@ export type { UseAnalyticsConsentResult } from './useAnalyticsConsent';
 // Currency context (re-export for discoverability)
 export { useCurrencyContext } from '../contexts/CurrencyContext';
 export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext';
+
+// Home sub-tab order (persisted arrangement + reconciliation)
+export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
+export type { UseHomeTabOrderResult } from './useHomeTabOrder';

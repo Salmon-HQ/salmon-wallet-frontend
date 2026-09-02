@@ -70,6 +70,7 @@ export { CubeIcon } from 'phosphor-react-native/src/icons/Cube';
 export { CurrencyCircleDollarIcon } from 'phosphor-react-native/src/icons/CurrencyCircleDollar';
 export { CurrencyDollarIcon } from 'phosphor-react-native/src/icons/CurrencyDollar';
 export { DiamondIcon } from 'phosphor-react-native/src/icons/Diamond';
+export { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVertical';
 export { DropIcon } from 'phosphor-react-native/src/icons/Drop';
 export { EnvelopeIcon } from 'phosphor-react-native/src/icons/Envelope';
 export { EyeIcon } from 'phosphor-react-native/src/icons/Eye';

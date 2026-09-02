@@ -10,6 +10,7 @@ export interface PortfolioSubTabsProps extends Testable {
   tabs: PortfolioSubTab[];
   activeKey: string;
   onChange: (key: string) => void;
-  onVisibilityPress?: () => void;
+  /** Opens the sheet where the user arranges the tabs. */
+  onOrderPress?: () => void;
   style?: ViewStyle;
 }

@@ -16,6 +16,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockChangeNetwork = jest.fn(() => Promise.resolve());
+const mockSetTabOrder = jest.fn();
+let mockStoredTabOrder: string[] | null = null;
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 
 // Mock the data source (`useCoinMarketData`'s own dependency), not the hook
@@ -157,6 +159,12 @@ jest.mock('@salmon/shared', () => ({
     refresh: jest.fn(),
   }),
   isWatchOnlyAccount: () => false,
+  // The arrangement is the shared hook's business (its own suite covers the
+  // reconciliation); Home only has to render whatever order it hands back.
+  useHomeTabOrder: (defaults: string[]) => ({
+    order: mockStoredTabOrder ?? defaults,
+    setOrder: mockSetTabOrder,
+  }),
 }));
 
 jest.mock('../src/components', () => {
@@ -202,6 +210,7 @@ jest.mock('../src/components', () => {
       </View>
     ),
     NftsTab: () => <View testID="nfts-tab" />,
+    HomeTabOrderSheet: () => null,
     PortfolioSubTabs: ({
       tabs,
       onChange,
@@ -236,6 +245,7 @@ function renderScreen(ui: React.ReactElement) {
 describe('home sub-tabs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStoredTabOrder = null;
     networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
   });
@@ -401,5 +411,16 @@ describe('home sub-tabs', () => {
 
     fireEvent.press(screen.getByTestId('portfolio-tab-portfolio'));
     expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();
+  });
+
+  it('renders the row in the stored order', () => {
+    mockStoredTabOrder = ['nfts', 'portfolio'];
+
+    renderScreen(<HomeScreen />);
+
+    const labels = screen
+      .getAllByTestId(/^portfolio-tab-/)
+      .map((tab) => tab.props.testID as string);
+    expect(labels).toEqual(['portfolio-tab-nfts', 'portfolio-tab-portfolio']);
   });
 });

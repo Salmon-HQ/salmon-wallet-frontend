@@ -49,6 +49,7 @@ import {
   useCoinMarketData,
   usePrefetchBalances,
   useCurrencyContext,
+  useHomeTabOrder,
   isWatchOnlyAccount,
   vs,
   getBlockchainFromNetworkId,
@@ -64,6 +65,7 @@ import {
 import {
   AboutCard,
   BalanceHeader,
+  HomeTabOrderSheet,
   MarketDataCard,
   NftsTab,
   PortfolioSubTabs,
@@ -133,6 +135,13 @@ const TOP_FADE_SCROLL_RANGE = 30;
 /** The two in-page sub-tabs. NFTs only exist on Solana — see `handleSubTabChange`. */
 type SubTabKey = 'portfolio' | 'nfts';
 
+/**
+ * The sub-tabs Home offers, in the order it draws them before the user has
+ * arranged anything. A powerup that adds a surface to Home adds its key here;
+ * `useHomeTabOrder` reconciles the stored arrangement against this list.
+ */
+const HOME_TAB_KEYS: SubTabKey[] = ['portfolio', 'nfts'];
+
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -162,6 +171,9 @@ export default function HomeScreen() {
 
   // ReceiveSheet visibility
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
+
+  // The sheet where the sub-tabs are arranged
+  const [orderSheetVisible, setOrderSheetVisible] = useState(false);
 
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
@@ -522,13 +534,23 @@ export default function HomeScreen() {
     [topFadeOpacity]
   );
 
-  const subTabs = useMemo(
-    () => [
-      { key: 'portfolio', label: t('tabs.portfolio', 'Portfolio') },
-      { key: 'nfts', label: t('tabs.nfts', 'NFTs') },
-    ],
-    [t]
-  );
+  // The keys Home offers; the user's arrangement of them is what gets
+  // rendered. A key the app no longer offers is dropped and a key it gained
+  // is appended by the hook, so a powerup tab can arrive later without the
+  // arrangement being thrown away — and a key with no label here is simply
+  // not rendered.
+  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
+
+  const subTabs = useMemo(() => {
+    const labels: Record<string, string> = {
+      portfolio: t('tabs.portfolio', 'Portfolio'),
+      nfts: t('tabs.nfts', 'NFTs'),
+    };
+    return subTabOrder.flatMap((key) => {
+      const label = labels[key];
+      return label ? [{ key, label }] : [];
+    });
+  }, [subTabOrder, t]);
 
   // NFTs live on Solana only. Rather than hiding the tab on other chains, the
   // tap takes the balance home first — through the very same handler the page
@@ -561,9 +583,8 @@ export default function HomeScreen() {
     [activeBlockchainIndex, blockchainBalances, handleBlockchainChange, topFadeOpacity]
   );
 
-  // CORE 16 lands in a later lote; the control renders and does nothing until
-  // then, so the row's geometry is already the final one.
-  const handlePortfolioVisibilityPress = useCallback(() => {}, []);
+  const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
+  const handleOrderSheetClose = useCallback(() => setOrderSheetVisible(false), []);
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -644,7 +665,7 @@ export default function HomeScreen() {
       tabs={subTabs}
       activeKey={activeSubTab}
       onChange={handleSubTabChange}
-      onVisibilityPress={handlePortfolioVisibilityPress}
+      onOrderPress={handleOrderPress}
     />
   );
 
@@ -863,6 +884,15 @@ export default function HomeScreen() {
           </Reanimated.View>
         </Reanimated.View>
       )}
+
+      {/* The sub-tab arrangement. It applies live: the row above re-flows as
+          rows are dropped, and there is nothing to save. */}
+      <HomeTabOrderSheet
+        visible={orderSheetVisible}
+        onClose={handleOrderSheetClose}
+        tabs={subTabs}
+        onOrderChange={setSubTabOrder}
+      />
 
       {/* Receive Sheet */}
       <ReceiveSheet

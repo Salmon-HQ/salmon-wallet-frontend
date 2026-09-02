@@ -858,9 +858,9 @@
     "transaction_row": "Transacción: {{type}}, {{description}}",
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
     "loading_account_info": "Cargando información de la cuenta",
-    "portfolio_visibility": "Configuracion de visibilidad del portfolio",
     "open_powerups": "Abrir Powerups",
-    "close_powerups": "Cerrar Powerups"
+    "close_powerups": "Cerrar Powerups",
+    "portfolio_order": "Ordenar las pestañas"
   },
   "collectibles": {
     "title": "Coleccionables",
@@ -897,7 +897,14 @@
     "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
     "unnamed_account": "Cuenta",
     "total_balance": "Balance total",
-    "change_period_24h": "24h"
+    "change_period_24h": "24h",
+    "tabs": {
+      "order": {
+        "title": "Ordená las pestañas",
+        "hint": "Arrastrá para cambiar el orden.",
+        "handle": "Reordenar {{tab}}"
+      }
+    }
   },
   "send": {
     "fee_estimate_failed": "No se pudo estimar la comisión",
