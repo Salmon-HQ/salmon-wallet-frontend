@@ -18,7 +18,6 @@ import {
   CaretRightIcon,
   ChartBarIcon,
   CircleHalfIcon,
-  CodeIcon,
   InfoIcon,
   KeyIcon,
   LockIcon,
@@ -65,7 +64,7 @@ import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
-type RowId = SettingsScreen | 'developerNetworks' | 'analytics';
+type RowId = SettingsScreen | 'analytics';
 
 interface SettingsRow {
   id: RowId;
@@ -109,7 +108,6 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
     rows: [
       { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
       { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
-      { id: 'network', icon: CodeIcon, labelKey: 'settings.developer_networks', isToggle: true },
       { id: 'analytics', icon: ChartBarIcon, labelKey: 'settings.analytics', isToggle: true },
     ],
   },
@@ -163,7 +161,7 @@ export default function SettingsScreenIndex() {
     }),
     [activeBlockchainAccount, networkId]
   );
-  const { developerNetworks, toggleDeveloperNetworks, explorer } = useUserConfig({
+  const { explorer } = useUserConfig({
     activeBlockchainAccount: userConfigAccount,
   });
   const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
@@ -277,15 +275,14 @@ export default function SettingsScreenIndex() {
       const label = t(row.labelKey);
       const testID = getSettingsItemTestId(row.id);
 
+      // The one toggle left is analytics consent. Developer Networks was
+      // switched off (owner, 2026-09-02): its readers outside the tab shell
+      // never saw the flag, and nothing in the product needs it yet. The
+      // config field and the hook stay; the row comes back when it does.
       if (row.isToggle) {
-        const isAnalytics = row.id === 'analytics';
-        const checked = isAnalytics ? analyticsConsent : developerNetworks;
-        const descriptionKey = isAnalytics
-          ? 'settings.analytics_description'
-          : 'settings.developer_networks_description';
-        const toggleTestId = isAnalytics
-          ? 'settings-analytics-toggle'
-          : 'settings-developer-networks-toggle';
+        const checked = analyticsConsent;
+        const descriptionKey = 'settings.analytics_description';
+        const toggleTestId = 'settings-analytics-toggle';
         return (
           <ListRow
             key={row.id}
@@ -309,9 +306,7 @@ export default function SettingsScreenIndex() {
                 accessibilityLabel={label}
                 accessibilityHint={t(descriptionKey)}
                 value={checked}
-                onValueChange={(value) =>
-                  isAnalytics ? setAnalyticsConsent(value) : toggleDeveloperNetworks()
-                }
+                onValueChange={setAnalyticsConsent}
                 trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
                 thumbColor={semantic.text.primary}
               />
@@ -358,17 +353,7 @@ export default function SettingsScreenIndex() {
         />
       );
     },
-    [
-      analyticsConsent,
-      developerNetworks,
-      handleRowPress,
-      rowValues,
-      semantic,
-      setAnalyticsConsent,
-      styles,
-      t,
-      toggleDeveloperNetworks,
-    ]
+    [analyticsConsent, handleRowPress, rowValues, semantic, setAnalyticsConsent, styles, t]
   );
 
   return (

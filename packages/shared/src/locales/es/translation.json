@@ -215,7 +215,6 @@
     "about_build_label": "Compilación",
     "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
     "developer_networks": "Redes de Desarrollo",
-    "developer_networks_description": "Mostrar redes testnet y devnet",
     "developer_networks_desc": "Mostrar redes testnet y devnet",
     "analytics": "Datos de Uso",
     "analytics_description": "Compartí estadísticas de uso pseudónimas para ayudar a mejorar Salmon. Nunca incluye direcciones, balances ni montos. Desactivado por defecto.",
