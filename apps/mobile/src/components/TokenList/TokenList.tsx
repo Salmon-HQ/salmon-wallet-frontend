@@ -94,22 +94,6 @@ const TokenList: React.FC<TokenListProps> = ({
     });
   }, [onRefresh]);
 
-  // Show skeleton while loading (only when no header component is provided)
-  // When header is provided, the skeleton should be shown inline
-  if (loading && !ListHeaderComponent) {
-    return (
-      <View style={styles.container}>
-        <SkeletonRow
-          padding="lg"
-          leadingSize={44}
-          trailingWidth={64}
-          count={5}
-          accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
-        />
-      </View>
-    );
-  }
-
   // Create refresh control if onRefresh is provided.
   //
   // The control answers the pull and nothing else. It used to be driven by the
@@ -129,7 +113,10 @@ const TokenList: React.FC<TokenListProps> = ({
     />
   ) : undefined;
 
-  // Determine empty component - show skeleton if loading with header, otherwise use provided component
+  // The skeleton is the list's own empty state, never a sibling rendered
+  // outside it: a skeleton outside the FlatList never receives the
+  // `contentContainerStyle` the host passes, so it ran edge to edge while the
+  // rows it stood in for kept the screen gutter (owner, on device).
   const emptyComponent = loading ? (
     <SkeletonRow
       padding="lg"
