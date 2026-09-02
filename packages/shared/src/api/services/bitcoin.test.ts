@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AccountTransaction,
   AccountTransactionListResponse,
@@ -85,14 +85,95 @@ describe('bitcoin service', () => {
     expect(result).toEqual(MOCK_UTXO_ITEMS);
   });
 
-  it('broadcasts transactions for DI adapters', async () => {
-    mockApiClientPost.mockResolvedValueOnce({
-      data: { txId: 'tx-3', success: true },
+  describe('broadcastTransaction', () => {
+    const TXID = 'a'.repeat(64);
+    const HEX = '0200000001deadbeef';
+    const MAINNET_PRIMARY = 'https://mempool.space/api/tx';
+    const MAINNET_FALLBACK = 'https://blockstream.info/api/tx';
+
+    const relayResponse = (status: number, body: string) =>
+      ({ ok: status >= 200 && status < 300, status, text: async () => body }) as Response;
+
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockFetch = vi.fn();
+      vi.stubGlobal('fetch', mockFetch);
     });
 
-    const result = await broadcastTransaction('bitcoin-mainnet', 'bc1-address', 'serialized-tx');
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
 
-    expect(result).toEqual({ txId: 'tx-3', success: true });
+    it('posts nothing but the raw hex to the primary relay and returns its txid', async () => {
+      mockFetch.mockResolvedValueOnce(relayResponse(200, `${TXID}\n`));
+
+      const result = await broadcastTransaction('bitcoin-mainnet', 'bc1-address', HEX);
+
+      expect(result).toEqual({ txId: TXID, success: true });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(url).toBe(MAINNET_PRIMARY);
+      expect(init.method).toBe('POST');
+      expect(init.body).toBe(HEX);
+      expect(init.headers).toEqual({ 'Content-Type': 'text/plain' });
+      // The signed transaction never carries the address, auth or anything else.
+      expect(JSON.stringify(init)).not.toContain('bc1-address');
+      // ...and it never reaches our own backend.
+      expect(mockApiClientPost).not.toHaveBeenCalled();
+    });
+
+    it('uses the testnet relay for the testnet network id', async () => {
+      mockFetch.mockResolvedValueOnce(relayResponse(200, TXID));
+
+      await broadcastTransaction('bitcoin-testnet', 'tb1-address', HEX);
+
+      expect(mockFetch.mock.calls[0][0]).toBe('https://mempool.space/testnet/api/tx');
+    });
+
+    it('treats a 4xx as a definitive rejection and does not try the fallback', async () => {
+      mockFetch.mockResolvedValueOnce(relayResponse(400, 'bad-txns-inputs-missingorspent'));
+
+      await expect(broadcastTransaction('bitcoin-mainnet', 'bc1-address', HEX)).rejects.toThrow(
+        'bad-txns-inputs-missingorspent'
+      );
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the second relay when the primary cannot be reached', async () => {
+      mockFetch
+        .mockRejectedValueOnce(new Error('Network request failed'))
+        .mockResolvedValueOnce(relayResponse(200, TXID));
+
+      const result = await broadcastTransaction('bitcoin-mainnet', 'bc1-address', HEX);
+
+      expect(result).toEqual({ txId: TXID, success: true });
+      expect(mockFetch.mock.calls[1][0]).toBe(MAINNET_FALLBACK);
+    });
+
+    it('reports an unknown outcome when both relays fail without rejecting', async () => {
+      mockFetch
+        .mockResolvedValueOnce(relayResponse(503, 'upstream unavailable'))
+        .mockRejectedValueOnce(new Error('Network request failed'));
+
+      await expect(
+        broadcastTransaction('bitcoin-mainnet', 'bc1-address', HEX)
+      ).rejects.toMatchObject({
+        code: 'BROADCAST_OUTCOME_UNKNOWN',
+        message: 'transaction.errors.broadcastUnknown',
+      });
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not treat a 2xx body that is not a txid as success', async () => {
+      mockFetch
+        .mockResolvedValueOnce(relayResponse(200, '<html>proxy error</html>'))
+        .mockResolvedValueOnce(relayResponse(200, 'still not a txid'));
+
+      await expect(
+        broadcastTransaction('bitcoin-mainnet', 'bc1-address', HEX)
+      ).rejects.toMatchObject({ code: 'BROADCAST_OUTCOME_UNKNOWN' });
+    });
   });
 
   it('maps bitcoin account balance items to ui amounts and coingecko ids', async () => {

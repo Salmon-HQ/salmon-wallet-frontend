@@ -69,6 +69,11 @@ function SendPassage() {
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const sendFailed = sendHook.status === 'failed';
 
+  // A broadcast whose outcome we could not establish is not a failure: the
+  // transaction may already be relayed. Same surface, a heading that does not
+  // claim the money stayed put.
+  const outcomeUnknown = sendHook.error === 'transaction.errors.broadcastUnknown';
+
   // One wait spans the whole commit, signature through settle, exactly as the
   // sheet spanned it: gated on `isSending` alone it ended at the signature and
   // the receipt raised a second wait of its own for the indexer.
@@ -136,7 +141,7 @@ function SendPassage() {
             entering={floatEntering(isReduceMotionEnabled)}
           >
             <SendFailure
-              title={t('transaction.sendFailed')}
+              title={t(outcomeUnknown ? 'transaction.sendUnconfirmed' : 'transaction.sendFailed')}
               // The hook hands back a translation key, never a raw chain error.
               message={t(sendHook.error ?? 'transaction.errors.generic')}
               retryLabel={t('actions.retry')}

@@ -795,6 +795,7 @@
   "transaction": {
     "sendComplete": "Send Complete",
     "sendFailed": "Send failed",
+    "sendUnconfirmed": "Send unconfirmed",
     "swapComplete": "Swap Complete",
     "pendingSend": "Sending funds",
     "sendSummary": "{{amount}} {{symbol}} to {{recipient}}",
@@ -803,6 +804,7 @@
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
       "insufficientFunds": "Insufficient balance for this transaction.",
       "expired": "The network took too long to confirm. Try again.",
+      "broadcastUnknown": "We could not confirm the broadcast. Your transaction may already be on its way — check your activity before sending again.",
       "quoteExpired": "The quote changed before it could execute. Review and confirm again.",
       "slippage": "The price moved beyond your slippage tolerance. Try again or adjust the amount.",
       "noRoute": "No swap route is available for this pair right now. Try a different amount or token.",
