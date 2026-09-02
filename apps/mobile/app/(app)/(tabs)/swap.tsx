@@ -66,10 +66,13 @@ export default function SwapScreenPage() {
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
 
-  // Convert networkId to SwapNetworkId format
-  const swapNetworkId: SwapNetworkId = useMemo(() => {
-    return networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
-  }, [networkId]);
+  // Swap is Solana-only. The active network used to be coerced to
+  // `solana-mainnet` here, so standing on Bitcoin quoted a chain the user was
+  // not on (spec 026); off Solana the screen renders its own empty state
+  // instead and nothing is quoted.
+  const isSolana = networkId === 'solana-mainnet' || networkId === 'solana-devnet';
+  const swapNetworkId: SwapNetworkId =
+    networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
 
   // Initialize useSwap hook with proper typing
   const {
@@ -207,7 +210,7 @@ export default function SwapScreenPage() {
   );
 
   // No account state
-  if (!ready || !activeAccount || !activeBlockchainAccount) {
+  if (!ready || !activeAccount || !activeBlockchainAccount || !isSolana) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>{t('swap.errors.noAccount')}</Text>

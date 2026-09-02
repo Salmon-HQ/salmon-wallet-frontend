@@ -1,21 +1,4 @@
 import type { NativeScrollEvent, NativeSyntheticEvent, StyleProp, ViewStyle } from 'react-native';
-import type { Nft } from '@salmon/shared';
-import type { NftBlockchain, NftData } from '../NftCard';
-
-/**
- * Extended blockchain key that includes network suffix for devnet/testnet
- */
-export type NftSectionKey = 'solana' | 'solana-devnet';
-
-export interface NftSection {
-  nfts: NftData[];
-  raw: Nft[];
-  loading: boolean;
-  blockchain: NftBlockchain;
-  networkLabel?: string; // e.g., "Devnet", "Sepolia"
-  isTestnet: boolean;
-}
-
 /**
  * Props for the NFTs sub-tab.
  *

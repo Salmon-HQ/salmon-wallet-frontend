@@ -1,10 +1,11 @@
 /**
- * A chain section announces itself.
+ * The grid follows the network the wallet is standing on.
  *
- * Mainnet and devnet are two sections of the same chain holding different,
- * non-interchangeable assets, so once both paint each one carries its own
- * heading. With only mainnet on screen the heading is suppressed — a lone
- * "Solana" over the only grid there is labels nothing.
+ * Mainnet and devnet hold different, non-interchangeable assets, and the
+ * screen shows exactly one of them: the one the carousel is on (spec 026 D1).
+ * There is no second section and no developer-mode gate — a devnet session
+ * queries devnet, a mainnet session queries mainnet, and neither ever sees
+ * the other's collectibles.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -13,7 +14,7 @@ import { NftsTab } from '../src/components/NftsTab';
 const mockUseSolanaNfts = jest.fn();
 const mockRefresh = jest.fn();
 const mockUseAccountsContext = jest.fn();
-let mockDeveloperMode = false;
+let mockNetworkId = 'solana-mainnet';
 
 jest.mock('@salmon/shared', () => ({
   // The kit primitives the tab composes evaluate their stylesheets at module
@@ -21,13 +22,8 @@ jest.mock('@salmon/shared', () => ({
   // happens to read is what used to break this suite every time the tab
   // reached for one more.
   ...jest.requireActual('../test-utils/themeTokens'),
-  SECTION_TO_NETWORK: {
-    solana: 'solana-mainnet',
-    'solana-devnet': 'solana-devnet',
-  },
   canonicalNftToSolanaNftData: (nft: unknown) => nft,
-  getNftSectionTitle: (key: string) => (key === 'solana' ? 'Solana' : 'Solana Devnet'),
-  getShortAddress: () => 'Owne...r111',
+  getShortAddress: (value: string) => value,
   useAccountsContext: () => mockUseAccountsContext(),
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),
 }));
@@ -89,7 +85,7 @@ jest.mock('../src/components/WarningNotice', () => {
 });
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => mockDeveloperMode,
+  useUnverifiedTokens: () => false,
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
@@ -99,25 +95,23 @@ jest.mock('../hooks/useTabChrome', () => ({
   }),
 }));
 
-describe('Collectibles chain section headers', () => {
+describe('the collectibles grid and the active network', () => {
   const nftsFor = (prefix: string) => [
     { mint: `${prefix}-1`, name: `${prefix} #1`, image: null, blockchain: 'solana' },
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAccountsContext.mockReturnValue([
+    mockNetworkId = 'solana-mainnet';
+    mockUseAccountsContext.mockImplementation(() => [
       {
         ready: true,
+        networkId: mockNetworkId,
         activeAccount: {
           id: 'account-1',
           networksAccounts: {
-            'solana-mainnet': [
-              { getReceiveAddress: () => 'Owner111', getNetworkId: () => 'solana-mainnet' },
-            ],
-            'solana-devnet': [
-              { getReceiveAddress: () => 'Owner222', getNetworkId: () => 'solana-devnet' },
-            ],
+            'solana-mainnet': [{ getReceiveAddress: () => 'Owner111' }],
+            'solana-devnet': [{ getReceiveAddress: () => 'Owner222' }],
           },
         },
       },
@@ -126,25 +120,34 @@ describe('Collectibles chain section headers', () => {
       nfts: nftsFor(networkId),
       loading: false,
       error: null,
-      isError: false,
+      partial: false,
       refresh: mockRefresh,
     }));
   });
 
-  it('renders one heading per chain section once devnet joins mainnet', () => {
-    mockDeveloperMode = true;
+  it('queries the active network, and only it', () => {
+    mockNetworkId = 'solana-devnet';
 
     render(<NftsTab />);
 
-    expect(screen.getByText('Solana')).toBeTruthy();
-    expect(screen.getByText('Solana Devnet')).toBeTruthy();
+    expect(mockUseSolanaNfts).toHaveBeenCalledTimes(1);
+    expect(mockUseSolanaNfts).toHaveBeenCalledWith(
+      expect.objectContaining({ networkId: 'solana-devnet', publicKey: 'Owner222' })
+    );
   });
 
-  it('suppresses the heading when mainnet is the only section', () => {
-    mockDeveloperMode = false;
-
+  it('reads mainnet when the session stands on mainnet', () => {
     render(<NftsTab />);
 
-    expect(screen.queryByText('Solana')).toBeNull();
+    expect(mockUseSolanaNfts).toHaveBeenCalledTimes(1);
+    expect(mockUseSolanaNfts).toHaveBeenCalledWith(
+      expect.objectContaining({ networkId: 'solana-mainnet', publicKey: 'Owner111' })
+    );
+  });
+
+  it('leaves spam to its own setting, never to developer mode', () => {
+    render(<NftsTab />);
+
+    expect(mockUseSolanaNfts).toHaveBeenCalledWith(expect.objectContaining({ includeSpam: false }));
   });
 });

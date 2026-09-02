@@ -104,6 +104,7 @@ jest.mock('../src/components/WarningNotice', () => {
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
   useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({

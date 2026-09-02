@@ -39,6 +39,14 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  useUserConfig: () => ({
+    developerNetworks: false,
+    toggleDeveloperNetworks: jest.fn(),
+    showUnverifiedTokens: false,
+    setShowUnverifiedTokens: jest.fn(),
+  }),
+  MIRROR_NETWORK_IDS: { 'solana-mainnet': 'solana-devnet' },
+  ensureMirrorNetworks: jest.fn(async () => []),
   useAccountsContext: () => [
     accountState,
     { unlockAccounts: jest.fn(), unlockWithCachedKey: jest.fn(), removeAllAccounts: jest.fn() },

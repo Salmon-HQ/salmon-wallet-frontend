@@ -61,6 +61,7 @@ import {
   iconSize,
 } from '../../src/icons';
 import { useDerivedAccounts } from '../../src/contexts/DerivedAccountsContext';
+import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 
 /** The wallet thumb, per `.pen` CORE 10. */
@@ -102,6 +103,8 @@ export default function WalletsScreen() {
   // The eye is the app's one balance-visibility preference, not a second one
   // for this screen: `useBalance` owns it and persists it. Skipped, so mounting
   // this screen costs no request — only the preference comes back.
+  const showUnverifiedTokens = useUnverifiedTokens();
+
   const { hiddenBalance, toggleHidden } = useBalance({
     account: activeBlockchainAccount,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
@@ -111,6 +114,9 @@ export default function WalletsScreen() {
   const { totals } = useWalletTotals({
     accounts,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
+    // The same list Home totals: a wallet whose balance is mostly unverified
+    // tokens must not read differently here than on the screen it came from.
+    includeSpam: showUnverifiedTokens,
   });
 
   const isIncluded = useCallback(

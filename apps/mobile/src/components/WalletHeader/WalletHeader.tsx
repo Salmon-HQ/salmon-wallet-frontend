@@ -25,6 +25,7 @@ import {
   s,
   spacing,
   vs,
+  getNetworkLabel,
   getShortAddress,
   motionMs,
   type Semantic,
@@ -38,6 +39,7 @@ import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import { CheckIcon } from '../../icons';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BrandMark } from '../BrandMark';
+import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { ContentCopySvgIcon, SettingsSvgIcon } from '../Icon';
 import {
@@ -64,6 +66,12 @@ const SETTINGS_GLYPH_SIZE = 18;
 export interface WalletHeaderProps {
   accountName: string;
   address: string;
+  /**
+   * The network the address belongs to. A non-mainnet one puts an environment
+   * chip on the address line — the same rule the balance block follows, and
+   * independent of Developer Networks (spec 026 D5).
+   */
+  networkId?: string;
   onCopyAddress?: () => void;
   onSettingsPress?: () => void;
   onWalletPress?: () => void;
@@ -79,6 +87,7 @@ export interface WalletHeaderProps {
 export function WalletHeader({
   accountName,
   address,
+  networkId,
   onCopyAddress,
   onSettingsPress,
   onWalletPress,
@@ -125,6 +134,7 @@ export function WalletHeader({
   }, [onWalletPress]);
 
   const truncatedAddress = getShortAddress(address, developerMode ? 8 : 4) ?? address;
+  const networkLabel = getNetworkLabel(networkId ?? 'solana-mainnet');
 
   return (
     <View pointerEvents="box-none" style={{ height: slotHeight }}>
@@ -215,14 +225,24 @@ export function WalletHeader({
                   >
                     {accountName}
                   </Text>
-                  <Text
-                    style={styles.accountAddress}
-                    numberOfLines={1}
-                    ellipsizeMode="middle"
-                    maxFontSizeMultiplier={fontScaleCap.chrome}
-                  >
-                    {truncatedAddress}
-                  </Text>
+                  <View style={styles.addressLine}>
+                    <Text
+                      style={styles.accountAddress}
+                      numberOfLines={1}
+                      ellipsizeMode="middle"
+                      maxFontSizeMultiplier={fontScaleCap.chrome}
+                    >
+                      {truncatedAddress}
+                    </Text>
+                    {networkLabel && (
+                      <Chip
+                        testID="wallet-header-network-chip"
+                        size="sm"
+                        variant="outline"
+                        label={networkLabel}
+                      />
+                    )}
+                  </View>
                 </TouchableOpacity>
               </Reanimated.View>
               <TouchableOpacity
@@ -334,6 +354,12 @@ const stylesFor = (t: Semantic) =>
       color: t.text.primary,
       letterSpacing: letterSpacing.normal,
       lineHeight: vs(18),
+    },
+    /** Row anatomy: the address and the environment chip read as one line. */
+    addressLine: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
     },
     accountAddress: {
       fontSize: ms(fontSize.caption),

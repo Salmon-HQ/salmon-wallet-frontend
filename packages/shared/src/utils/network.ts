@@ -7,7 +7,6 @@
  */
 
 import type { BlockchainType } from '../types/blockchain';
-import type { BlockchainId } from '../types/ui/balance-card';
 
 /**
  * Mainnet network IDs for each blockchain.
@@ -30,10 +29,16 @@ export const MAINNET_NETWORK_ID: Record<BlockchainType, string> = {
 };
 
 /**
- * Returns a human-readable label for non-mainnet blockchain IDs.
- * Returns null for mainnet networks.
+ * Returns a human-readable label for a non-mainnet network, and null for every
+ * mainnet — which is the whole rule the environment chip keys off (spec 026
+ * D5): a surface shows the chip exactly when this returns something.
+ *
+ * Takes a plain string rather than `BlockchainId` because both a carousel
+ * blockchain key (`solana-devnet`) and a full network id (`solana-mainnet`)
+ * reach it, and an id it does not know is a mainnet as far as the chip is
+ * concerned.
  */
-export function getNetworkLabel(blockchain: BlockchainId): string | null {
+export function getNetworkLabel(blockchain: string): string | null {
   switch (blockchain) {
     case 'solana-devnet':
       return 'Devnet';

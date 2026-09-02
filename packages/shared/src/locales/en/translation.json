@@ -225,7 +225,9 @@
     "about_build_label": "Build",
     "about_copyright": "© {{year}} Salmon Wallet.\nAll rights reserved.",
     "developer_networks": "Developer Networks",
-    "developer_networks_desc": "Show testnet and devnet networks",
+    "developer_networks_description": "Show testnet and devnet networks",
+    "unverified_tokens": "Show unverified tokens",
+    "unverified_tokens_description": "Show tokens and collectibles that have not been verified, spam included. Off by default.",
     "analytics": "Usage Data",
     "analytics_description": "Share pseudonymous usage stats to help improve Salmon. Never includes addresses, balances, or amounts. Off by default.",
     "analytics_prompt_title": "Help improve Salmon",
@@ -899,7 +901,6 @@
     "empty_hint": "Your NFTs and collectibles will appear here",
     "no_nfts": "No collectibles found",
     "no_account_for_network": "No account available for this network.",
-    "developer_banner": "Developer Mode - Showing testnet NFTs",
     "load_error": "Your collectibles couldn't be loaded right now.",
     "partial_error": "Some of your collectibles could not be loaded. Pull to refresh to try again."
   },

@@ -18,6 +18,7 @@ import {
   CaretRightIcon,
   ChartBarIcon,
   CircleHalfIcon,
+  CodeIcon,
   InfoIcon,
   KeyIcon,
   LockIcon,
@@ -26,6 +27,7 @@ import {
   ShieldCheckIcon,
   SignOutIcon,
   SquaresFourIcon,
+  EyeIcon,
   TranslateIcon,
   TrashIcon,
   UserCircleIcon,
@@ -57,6 +59,7 @@ import {
   ScreenHeader,
   SectionLabel,
 } from '../../../src/components';
+import { useDeveloperModeSettings } from '../../../src/contexts/DeveloperModeContext';
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
@@ -64,7 +67,7 @@ import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
-type RowId = SettingsScreen | 'analytics';
+type RowId = SettingsScreen | 'analytics' | 'developerNetworks' | 'unverifiedTokens';
 
 interface SettingsRow {
   id: RowId;
@@ -109,6 +112,18 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
       { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
       { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
       { id: 'analytics', icon: ChartBarIcon, labelKey: 'settings.analytics', isToggle: true },
+      {
+        id: 'developerNetworks',
+        icon: CodeIcon,
+        labelKey: 'settings.developer_networks',
+        isToggle: true,
+      },
+      {
+        id: 'unverifiedTokens',
+        icon: EyeIcon,
+        labelKey: 'settings.unverified_tokens',
+        isToggle: true,
+      },
     ],
   },
   {
@@ -165,6 +180,31 @@ export default function SettingsScreenIndex() {
     activeBlockchainAccount: userConfigAccount,
   });
   const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
+  // The two "show me more" settings come from the `(app)` provider, so this
+  // screen reads the same instance the carousel and the network panel do.
+  const {
+    developerNetworks,
+    showUnverifiedTokens,
+    toggleDeveloperNetworks,
+    setShowUnverifiedTokens,
+  } = useDeveloperModeSettings();
+
+  // Turning the flag off while the session stands on devnet moves it to the
+  // mainnet sibling first — the shared toggle owns that passage, it only needs
+  // the session's network and the switch to make it with.
+  const handleToggleDeveloperNetworks = useCallback(() => {
+    void toggleDeveloperNetworks({
+      activeNetworkId: networkId,
+      changeNetwork: accountActions.changeNetwork,
+    });
+  }, [toggleDeveloperNetworks, networkId, accountActions]);
+
+  const handleToggleUnverifiedTokens = useCallback(
+    (show: boolean) => {
+      void setShowUnverifiedTokens(show);
+    },
+    [setShowUnverifiedTokens]
+  );
   const { currentLanguage } = useLanguage();
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
@@ -275,14 +315,33 @@ export default function SettingsScreenIndex() {
       const label = t(row.labelKey);
       const testID = getSettingsItemTestId(row.id);
 
-      // The one toggle left is analytics consent. Developer Networks was
-      // switched off (owner, 2026-09-02): its readers outside the tab shell
-      // never saw the flag, and nothing in the product needs it yet. The
-      // config field and the hook stay; the row comes back when it does.
+      // Three toggles, one row shape. Developer Networks decides which
+      // networks the carousel offers; unverified tokens decide what the lists
+      // show — the two used to be the same boolean (spec 026 D4).
       if (row.isToggle) {
-        const checked = analyticsConsent;
-        const descriptionKey = 'settings.analytics_description';
-        const toggleTestId = 'settings-analytics-toggle';
+        const toggle =
+          row.id === 'developerNetworks'
+            ? {
+                checked: developerNetworks,
+                onChange: handleToggleDeveloperNetworks,
+                descriptionKey: 'settings.developer_networks_description',
+                testId: 'settings-developer-networks-toggle',
+              }
+            : row.id === 'unverifiedTokens'
+              ? {
+                  checked: showUnverifiedTokens,
+                  onChange: handleToggleUnverifiedTokens,
+                  descriptionKey: 'settings.unverified_tokens_description',
+                  testId: 'settings-unverified-tokens-toggle',
+                }
+              : {
+                  checked: analyticsConsent,
+                  onChange: setAnalyticsConsent,
+                  descriptionKey: 'settings.analytics_description',
+                  testId: 'settings-analytics-toggle',
+                };
+        const { checked, descriptionKey } = toggle;
+        const toggleTestId = toggle.testId;
         return (
           <ListRow
             key={row.id}
@@ -306,7 +365,7 @@ export default function SettingsScreenIndex() {
                 accessibilityLabel={label}
                 accessibilityHint={t(descriptionKey)}
                 value={checked}
-                onValueChange={setAnalyticsConsent}
+                onValueChange={toggle.onChange}
                 trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
                 thumbColor={semantic.text.primary}
               />
@@ -353,7 +412,19 @@ export default function SettingsScreenIndex() {
         />
       );
     },
-    [analyticsConsent, handleRowPress, rowValues, semantic, setAnalyticsConsent, styles, t]
+    [
+      analyticsConsent,
+      developerNetworks,
+      handleRowPress,
+      handleToggleDeveloperNetworks,
+      handleToggleUnverifiedTokens,
+      rowValues,
+      semantic,
+      setAnalyticsConsent,
+      showUnverifiedTokens,
+      styles,
+      t,
+    ]
   );
 
   return (

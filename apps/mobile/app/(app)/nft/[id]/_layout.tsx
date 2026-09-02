@@ -19,15 +19,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
-import {
-  NftFlowProvider,
-  useNftFlow,
-  type NftSectionKey,
-} from '../../../../src/contexts/NftFlowContext';
-import { useDeveloperMode } from '../../../../src/contexts/DeveloperModeContext';
+import { useAccountsContext, type SolanaNetworkId } from '@salmon/shared';
 
-/** The section a mint that arrives without one is looked up in. */
-const DEFAULT_SECTION: NftSectionKey = 'solana';
+import { NftFlowProvider, useNftFlow } from '../../../../src/contexts/NftFlowContext';
 
 /**
  * The passage: whichever step committed, the receipt takes its place.
@@ -51,19 +45,19 @@ function NftPassage({ mint, query }: { mint: string; query: string }) {
 }
 
 export default function NftLayout() {
-  const params = useLocalSearchParams<{ id: string; section?: string; sub?: string }>();
-  const developerNetworks = useDeveloperMode();
+  const params = useLocalSearchParams<{ id: string; sub?: string }>();
+  const [accountState] = useAccountsContext();
 
-  // Devnet only exists for a wallet that has opted into Developer Networks. A
-  // deep link naming it while the flag is off falls back to mainnet, the same
-  // as an unknown section — fail closed, so a crafted link cannot point the
-  // flow at a network the user never enabled.
-  const sectionKey: NftSectionKey =
-    params.section === 'solana-devnet' && developerNetworks ? 'solana-devnet' : DEFAULT_SECTION;
+  // The screen follows the network the session stands on (spec 026 D2), so the
+  // network is derived here rather than carried in the link: a `section` param
+  // from an older link is ignored outright, so a crafted link can never point
+  // the flow — and the key that would sign a send or a burn — at a network the
+  // session is not standing on.
+  const networkId = (accountState.networkId ?? 'solana-mainnet') as SolanaNetworkId;
   const subAccountIndex = Number.parseInt(params.sub ?? '0', 10) || 0;
 
   return (
-    <NftFlowProvider mint={params.id} sectionKey={sectionKey} subAccountIndex={subAccountIndex}>
+    <NftFlowProvider mint={params.id} networkId={networkId} subAccountIndex={subAccountIndex}>
       {/* Headers stay hidden: every screen draws the kit's own `ScreenHeader`.
           The right slide is inherited from the app stack — an NFT screen is a
           pushed screen like any other and must not arrive from a different
@@ -77,7 +71,7 @@ export default function NftLayout() {
             out is "Return home", so the back gesture is taken off it. */}
         <Stack.Screen name="success" options={{ gestureEnabled: false }} />
       </Stack>
-      <NftPassage mint={params.id} query={`?section=${sectionKey}&sub=${subAccountIndex}`} />
+      <NftPassage mint={params.id} query={`?sub=${subAccountIndex}`} />
     </NftFlowProvider>
   );
 }

@@ -53,6 +53,7 @@ import {
   isWatchOnlyAccount,
   vs,
   getBlockchainFromNetworkId,
+  getNetworkLabel,
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
   coinInfoToMarketData,
@@ -83,7 +84,7 @@ import {
   type MarketData,
 } from '../../../src/components';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
-import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
+import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
@@ -193,7 +194,11 @@ export default function HomeScreen() {
     // detail is a route too (spec 019) — same story, it closes itself.
   }, [accountState.locked]);
 
-  // Developer mode — shared via context from _layout.tsx (single source of truth)
+  // Unverified tokens — its own setting now (spec 026 D4). Developer Networks
+  // decides what the carousel OFFERS; this decides what the lists SHOW.
+  const showUnverifiedTokens = useUnverifiedTokens();
+  // The header's long-form address is the one thing still keyed on the
+  // developer flag — it reads the hoisted context like every other consumer.
   const developerNetworks = useDeveloperMode();
 
   // User config account for available networks
@@ -211,22 +216,21 @@ export default function HomeScreen() {
         },
       };
 
-  // Get available networks filtered by developer mode
-  const { allNetworks: availableNetworks } = useAvailableNetworks({
-    activeBlockchainAccount: userConfigAccount,
-    developerNetworks,
-  });
-
-  // Filter networks to only include those the user has accounts for
-  // This prevents showing networks in the carousel that the user can't switch to
-  // (e.g., accounts created before multi-chain derivation won't have BTC/ETH)
+  // The offer: the enabled networks this wallet actually holds an account on.
+  // The filtering used to happen here, after the hook had already dropped the
+  // non-mainnet half; the hook owns the whole rule now, so the active network
+  // stays offered even with the flag off and the session is never stranded on
+  // a page the carousel cannot reach (spec 026).
   const networksAccounts = activeAccount?.networksAccounts;
-  const allNetworks = useMemo(() => {
-    if (!networksAccounts) return availableNetworks;
-
-    const userNetworkIds = Object.keys(networksAccounts);
-    return availableNetworks.filter((network) => userNetworkIds.includes(network.id));
-  }, [availableNetworks, networksAccounts]);
+  const heldNetworkIds = useMemo(
+    () => (networksAccounts ? Object.keys(networksAccounts) : undefined),
+    [networksAccounts]
+  );
+  const { allNetworks } = useAvailableNetworks({
+    activeBlockchainAccount: userConfigAccount,
+    heldNetworkIds,
+    activeNetworkId: networkId,
+  });
 
   // Sync the carousel index with the persisted networkId — but only when that
   // id actually changes.
@@ -272,9 +276,9 @@ export default function HomeScreen() {
     account: activeBlockchainAccount,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
     skip: !ready || !activeBlockchainAccount,
-    // Surface unverified tokens only in developer mode; BE filters
-    // unknown-only-tagged SPL entries by default.
-    includeSpam: developerNetworks,
+    // BE filters unknown-only-tagged SPL entries by default; the setting opts
+    // back in.
+    includeSpam: showUnverifiedTokens,
   });
 
   // Warm the chains the user is not looking at, so the first swipe of the
@@ -285,7 +289,7 @@ export default function HomeScreen() {
     networkIds: allNetworks.map((network) => network.id as NetworkId),
     activeNetworkId: (networkId ?? undefined) as NetworkId | undefined,
     pathIndex,
-    includeSpam: developerNetworks,
+    includeSpam: showUnverifiedTokens,
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
@@ -345,11 +349,23 @@ export default function HomeScreen() {
     });
   }, [allNetworks, networkId, usdTotal, changePercent, changeAmount, hasData]);
 
-  // Get current blockchain type for TokenList styling
-  const currentBlockchain = useMemo(() => {
-    const activeBalance = blockchainBalances[activeBlockchainIndex];
-    return activeBalance?.network.blockchain || 'solana';
-  }, [activeBlockchainIndex, blockchainBalances]);
+  // The network the screen stands on, and its chain family. Every surface
+  // below follows the NETWORK — `network.blockchain` is the id minus
+  // `-mainnet`, so it reads `solana-devnet` off mainnet and an equality test
+  // against `'bitcoin'` silently missed `bitcoin-testnet` (spec 026).
+  const currentNetworkId = useMemo(
+    () => blockchainBalances[activeBlockchainIndex]?.network.id ?? networkId ?? 'solana-mainnet',
+    [activeBlockchainIndex, blockchainBalances, networkId]
+  );
+  const currentChain = getBlockchainFromNetworkId(currentNetworkId);
+
+  // NFTs are a Solana surface. On Bitcoin the tab is not offered at all — it
+  // sinks out of the row — and a session sitting on it falls back to Portfolio
+  // (owner ruling 3, spec 026). The stored arrangement is untouched, so the
+  // tab returns to its own place when the carousel comes back to Solana.
+  const nftsOffered = currentChain === 'solana';
+  const effectiveSubTab: SubTabKey =
+    activeSubTab === 'nfts' && !nftsOffered ? 'portfolio' : activeSubTab;
 
   // The beat between sink and float (owner, on-device): the incoming content's
   // float waits out the outgoing content's sink plus a short pause — but only
@@ -373,24 +389,27 @@ export default function HomeScreen() {
     engaged: boolean;
     cause: 'none' | 'chain' | 'subtab' | 'task';
   }>({
-    chain: currentBlockchain,
-    subTab: activeSubTab,
+    chain: currentNetworkId,
+    subTab: effectiveSubTab,
     engaged: isTaskEngaged,
     cause: 'none',
   });
   if (
-    contentSwap.chain !== currentBlockchain ||
-    contentSwap.subTab !== activeSubTab ||
+    contentSwap.chain !== currentNetworkId ||
+    contentSwap.subTab !== effectiveSubTab ||
     contentSwap.engaged !== isTaskEngaged
   ) {
     setContentSwap({
-      chain: currentBlockchain,
-      subTab: activeSubTab,
+      chain: currentNetworkId,
+      subTab: effectiveSubTab,
       engaged: isTaskEngaged,
+      // Leaving Solana can change the chain AND drop NFTs in the same render.
+      // The sub-tab wins: the content region is the one wrapper that speaks,
+      // and the chain-keyed wrapper inside it stays silent (rule five).
       cause:
         contentSwap.engaged !== isTaskEngaged
           ? 'task'
-          : contentSwap.subTab !== activeSubTab
+          : contentSwap.subTab !== effectiveSubTab
             ? 'subtab'
             : 'chain',
     });
@@ -406,8 +425,7 @@ export default function HomeScreen() {
   // Bitcoin coin info + chart data via the shared React Query hook (WP4) —
   // same hook web/extension's HomePage and this app's token detail screen
   // use, replacing this column's own useState+useEffect fetch pair.
-  const bitcoinCoinId =
-    currentBlockchain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain] : undefined;
+  const bitcoinCoinId = currentChain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO.bitcoin : undefined;
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
@@ -417,7 +435,10 @@ export default function HomeScreen() {
     coinId: bitcoinCoinId,
     currency,
     days: PERIOD_TO_DAYS[bitcoinChartPeriod],
-    enabled: currentBlockchain === 'bitcoin',
+    enabled: currentChain === 'bitcoin',
+    // A test network's coin has no market: the hook returns nothing off
+    // mainnet rather than quoting the mainnet asset's price (spec 026).
+    networkId: currentNetworkId,
   });
   const bitcoinChartData: PriceDataPoint[] = bitcoinChartDataRaw ?? [];
   const bitcoinChartError = !!bitcoinDataError && bitcoinChartData.length === 0;
@@ -543,16 +564,6 @@ export default function HomeScreen() {
   // arrangement being thrown away — and a key with no label here is simply
   // not rendered.
   const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
-  // A reorder swaps the row on the verb — the old arrangement sinks, the new
-  // one floats — so the change is seen happening rather than cutting (owner,
-  // 2026-09-02). Keyed by the arrangement, so a tab switch (same arrangement)
-  // never remounts the row and the underline keeps sliding. First mount owes
-  // no verb: render-time setState, the same pattern the content swap uses.
-  const subTabOrderKey = subTabOrder.join('|');
-  const [orderSwap, setOrderSwap] = useState({ key: subTabOrderKey, hasPrior: false });
-  if (orderSwap.key !== subTabOrderKey) {
-    setOrderSwap({ key: subTabOrderKey, hasPrior: true });
-  }
 
   const subTabs = useMemo(() => {
     const labels: Record<string, string> = {
@@ -560,40 +571,35 @@ export default function HomeScreen() {
       nfts: t('tabs.nfts', 'NFTs'),
     };
     return subTabOrder.flatMap((key) => {
+      if (key === 'nfts' && !nftsOffered) return [];
       const label = labels[key];
       return label ? [{ key, label }] : [];
     });
-  }, [subTabOrder, t]);
+  }, [subTabOrder, nftsOffered, t]);
 
-  // NFTs live on Solana only. Rather than hiding the tab on other chains, the
-  // tap takes the balance home first — through the very same handler the page
-  // dots use, so the chain-switch animation and the network change are the
-  // ones the user already knows.
+  // The row plays the verb whenever the SET of tabs changes — a reorder, and
+  // now also NFTs leaving on Bitcoin and floating back on Solana. Keyed by the
+  // rendered keys, so a tab switch (same set) never remounts the row and the
+  // underline keeps sliding. First mount owes no verb: render-time setState,
+  // the same pattern the content swap uses.
+  const subTabsKey = subTabs.map((tab) => tab.key).join('|');
+  const [tabsSwap, setTabsSwap] = useState({ key: subTabsKey, hasPrior: false });
+  if (tabsSwap.key !== subTabsKey) {
+    setTabsSwap({ key: subTabsKey, hasPrior: true });
+  }
+
+  // The tab is only offered where it means something, so there is nothing to
+  // snap: opening NFTs used to drag the balance carousel back to Solana, which
+  // moved the chain the user was standing on without being asked (owner ruling
+  // 3, spec 026).
   const handleSubTabChange = useCallback(
     (key: string) => {
-      if (key === 'nfts') {
-        // `blockchain` is the network id minus `-mainnet`, so devnet reads as
-        // `solana-devnet`: an equality test against `'solana'` sent a
-        // developer-mode user on devnet back to mainnet every time they opened
-        // NFTs. The whole Solana family counts, and the snap stays one-way —
-        // if the active chain is already Solana, nothing moves.
-        const activeBlockchain =
-          blockchainBalances[activeBlockchainIndex]?.network.blockchain ?? '';
-        if (!activeBlockchain.startsWith('solana')) {
-          const solanaIndex = blockchainBalances.findIndex((balance) =>
-            balance.network.blockchain.startsWith('solana')
-          );
-          if (solanaIndex >= 0) {
-            handleBlockchainChange('solana', solanaIndex);
-          }
-        }
-      }
       // Each sub-tab has its own scroll view, so the offset the fade reads
       // must start over with it.
       topFadeOpacity.setValue(0);
       setActiveSubTab(key as SubTabKey);
     },
-    [activeBlockchainIndex, blockchainBalances, handleBlockchainChange, topFadeOpacity]
+    [topFadeOpacity]
   );
 
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
@@ -665,7 +671,6 @@ export default function HomeScreen() {
       onToggleVisibility={toggleHidden}
       onBlockchainChange={handleBlockchainChange}
       activeIndex={activeBlockchainIndex}
-      showNetworkLabel={developerNetworks}
       onSendPress={handleSendPress}
       onReceivePress={handleReceivePress}
       onActivityPress={handleActivityPress}
@@ -676,19 +681,19 @@ export default function HomeScreen() {
   const subTabsRow = (
     <PortfolioSubTabs
       tabs={subTabs}
-      activeKey={activeSubTab}
+      activeKey={effectiveSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
       // A reorder swaps the tabs on the verb — old arrangement sinks, new one
       // floats — while the order button beside them holds still. Keyed by the
       // arrangement, so a tab switch never remounts them.
-      tabsKey={subTabOrderKey}
+      tabsKey={subTabsKey}
       tabsEntering={
-        orderSwap.hasPrior
+        tabsSwap.hasPrior
           ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
           : undefined
       }
-      tabsExiting={orderSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+      tabsExiting={tabsSwap.hasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
     />
   );
 
@@ -720,6 +725,7 @@ export default function HomeScreen() {
         onSettingsPress={() => router.push('/settings')}
         onWalletPress={() => router.push('/wallets')}
         developerMode={developerNetworks}
+        networkId={currentNetworkId}
         avatarUrl={activeAccount?.avatar}
         accountId={activeAccount?.id}
       />
@@ -763,7 +769,7 @@ export default function HomeScreen() {
               swap is a remount, the same mechanism the chain swap uses; the
               block above it holds still (rule four). */}
           <Reanimated.View
-            key={activeSubTab}
+            key={effectiveSubTab}
             testID="home-subtab-content"
             style={styles.chainContent}
             entering={
@@ -773,7 +779,7 @@ export default function HomeScreen() {
             }
             exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
           >
-            {activeSubTab === 'portfolio' ? (
+            {effectiveSubTab === 'portfolio' ? (
               <>
                 {/* Partial-load failure: keep whatever data loaded visible;
                   retry is pull-to-refresh on the token list. Only 'ready'
@@ -800,7 +806,7 @@ export default function HomeScreen() {
                   stays instant. */}
                 <View style={styles.listContainer}>
                   <Reanimated.View
-                    key={currentBlockchain}
+                    key={currentNetworkId}
                     testID="home-chain-content"
                     style={styles.chainContent}
                     // Only a chain change moves this wrapper. It remounts on a
@@ -814,7 +820,7 @@ export default function HomeScreen() {
                     }
                     exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
                   >
-                    {currentBlockchain === 'bitcoin' ? (
+                    {currentChain === 'bitcoin' ? (
                       // Bitcoin lives inside Portfolio with chart, market data
                       // and about — it has no asset-detail screen of its own.
                       <ScrollView
@@ -893,7 +899,7 @@ export default function HomeScreen() {
                           styles.tabGutter,
                           { paddingBottom: floatingBottomOffset },
                         ]}
-                        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                        blockchain={currentChain}
                       />
                     )}
                   </Reanimated.View>
@@ -933,7 +939,10 @@ export default function HomeScreen() {
         address={address}
         // networkId is the single chain source for sheet props — `address`
         // already derives from it.
-        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
+        blockchain={currentChain}
+        // Off mainnet the sheet names the environment under the code: a
+        // deposit to a devnet address is not money (spec 026 D6).
+        networkLabel={getNetworkLabel(currentNetworkId) ?? undefined}
         onCopy={handleReceiveSheetCopy}
       />
 

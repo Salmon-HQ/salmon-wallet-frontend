@@ -19,7 +19,6 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  SECTION_TO_NETWORK,
   canonicalNftToSolanaNftData,
   classifyTransactionError,
   createBurnTransaction,
@@ -40,10 +39,7 @@ import {
   type SolanaNetworkId,
 } from '@salmon/shared';
 
-import { useDeveloperMode } from './DeveloperModeContext';
-
-/** Which of the collectibles sections the NFT was opened from. */
-export type NftSectionKey = keyof typeof SECTION_TO_NETWORK;
+import { useUnverifiedTokens } from './DeveloperModeContext';
 
 /** What the receipt is a receipt for. */
 export type NftSuccessKind = 'send' | 'burn';
@@ -101,25 +97,23 @@ const NftFlowContext = createContext<NftFlowValue | null>(null);
 export interface NftFlowProviderProps {
   /** The NFT's mint address — the `[id]` route segment. */
   mint: string;
-  /** Which collectibles section it was opened from. */
-  sectionKey: NftSectionKey;
-  /** Index of the sub-account inside that section's network. */
+  /** The Solana network the NFT lives on — the one the session stands on. */
+  networkId: SolanaNetworkId;
+  /** Index of the sub-account inside that network. */
   subAccountIndex: number;
   children: React.ReactNode;
 }
 
 export function NftFlowProvider({
   mint,
-  sectionKey,
+  networkId,
   subAccountIndex,
   children,
 }: NftFlowProviderProps) {
   const { t } = useTranslation();
   const [accountState] = useAccountsContext();
   const { ready, activeAccount } = accountState;
-  const developerNetworks = useDeveloperMode();
-
-  const networkId = SECTION_TO_NETWORK[sectionKey] as SolanaNetworkId;
+  const showUnverifiedTokens = useUnverifiedTokens();
 
   const account: BlockchainAccount | undefined =
     activeAccount?.networksAccounts?.[networkId]?.[subAccountIndex] ?? undefined;
@@ -131,7 +125,7 @@ export function NftFlowProvider({
   const { nfts, loading } = useSolanaNfts({
     publicKey: ready ? account?.getReceiveAddress() : undefined,
     networkId,
-    includeSpam: !!developerNetworks,
+    includeSpam: showUnverifiedTokens,
   });
 
   const nft = useMemo<NftData | null>(() => {

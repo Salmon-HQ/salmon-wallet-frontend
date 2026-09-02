@@ -118,6 +118,7 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
   // The real palette rather than a four-key stub: the thumb and the avatar
   // are `IconBubble`s now, and the bubble reads every tone's ground at module
   // load, so a hand-listed subset breaks on a tone this file never renders.

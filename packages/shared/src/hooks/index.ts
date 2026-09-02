@@ -14,7 +14,11 @@ export type { UseAccountsState, UseAccountsActions } from './useAccounts';
 
 // User configuration hook
 export { useUserConfig } from './useUserConfig';
-export type { UseUserConfigParams, UseUserConfigResult } from './useUserConfig';
+export type {
+  ToggleDeveloperNetworksOptions,
+  UseUserConfigParams,
+  UseUserConfigResult,
+} from './useUserConfig';
 
 // Runtime detection hook
 export { useRuntime } from './useRuntime';

@@ -6,11 +6,9 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-import { useAccountsContext, useUserConfig, type Semantic } from '@salmon/shared';
+import { type Semantic } from '@salmon/shared';
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
-import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
 import { useSemantic, useThemedStyles, useThemeMode } from '../../../src/theme/useThemedStyles';
-import { useDeveloperNetworksOff } from '../../../hooks/useDeveloperNetworksOff';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -39,29 +37,6 @@ export default function TabLayout() {
   const styles = useThemedStyles(stylesFor);
   const { water } = useSemantic();
   const blurTargetRef = useRef<View>(null);
-
-  const [accountState] = useAccountsContext();
-  const { activeBlockchainAccount, networkId } = accountState;
-
-  const userConfigAccount = activeBlockchainAccount
-    ? {
-        network: {
-          environment: (networkId || 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-          blockchain: 'solana',
-        },
-      }
-    : {
-        network: {
-          environment: 'solana-mainnet' as const,
-          blockchain: 'solana',
-        },
-      };
-  const { developerNetworks, toggleDeveloperNetworks } = useUserConfig({
-    activeBlockchainAccount: userConfigAccount,
-  });
-
-  // The feature is switched off; a stale `true` in storage is flipped back.
-  useDeveloperNetworksOff(developerNetworks, toggleDeveloperNetworks);
 
   return (
     <View style={styles.container}>
@@ -95,26 +70,24 @@ export default function TabLayout() {
       </BlurTargetView>
 
       {/* Tab screens fill the remaining space */}
-      <DeveloperModeProvider value={{ developerNetworks }}>
-        <BlurTargetProvider value={blurTargetRef}>
-          <Tabs
-            tabBar={() => null}
-            screenOptions={{
-              headerShown: false,
-              tabBarStyle: { display: 'none' },
+      <BlurTargetProvider value={blurTargetRef}>
+        <Tabs
+          tabBar={() => null}
+          screenOptions={{
+            headerShown: false,
+            tabBarStyle: { display: 'none' },
+          }}
+        >
+          <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
+          <Tabs.Screen
+            name="swap"
+            options={{
+              title: t('tabs.swap', 'Swap'),
+              href: null,
             }}
-          >
-            <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
-            <Tabs.Screen
-              name="swap"
-              options={{
-                title: t('tabs.swap', 'Swap'),
-                href: null,
-              }}
-            />
-          </Tabs>
-        </BlurTargetProvider>
-      </DeveloperModeProvider>
+          />
+        </Tabs>
+      </BlurTargetProvider>
     </View>
   );
 }

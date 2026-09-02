@@ -229,7 +229,7 @@ export type {
 } from './NftCard';
 
 export { NftsTab } from './NftsTab';
-export type { NftSectionKey, NftSection, NftsTabProps } from './NftsTab';
+export type { NftsTabProps } from './NftsTab';
 
 // ---------------------------------------------------------------------------
 // Transaction

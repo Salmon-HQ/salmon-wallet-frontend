@@ -225,7 +225,9 @@
     "about_build_label": "Compilación",
     "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
     "developer_networks": "Redes de Desarrollo",
-    "developer_networks_desc": "Mostrar redes testnet y devnet",
+    "developer_networks_description": "Mostrar redes testnet y devnet",
+    "unverified_tokens": "Mostrar tokens no verificados",
+    "unverified_tokens_description": "Mostrá los tokens y coleccionables que no fueron verificados, spam incluido. Desactivado por defecto.",
     "analytics": "Datos de Uso",
     "analytics_description": "Compartí estadísticas de uso pseudónimas para ayudar a mejorar Salmon. Nunca incluye direcciones, balances ni montos. Desactivado por defecto.",
     "analytics_prompt_title": "Ayudá a mejorar Salmon",
@@ -899,7 +901,6 @@
     "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
     "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
-    "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
     "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
   },

@@ -35,7 +35,7 @@ import {
   type SendToken,
 } from '@salmon/shared';
 
-import { useDeveloperMode } from './DeveloperModeContext';
+import { useUnverifiedTokens } from './DeveloperModeContext';
 
 /** Who the transfer pays, and what the screens call them. */
 export interface SendRecipient {
@@ -103,7 +103,7 @@ function toNumber(value: number | string | undefined): number | undefined {
 export function SendFlowProvider({ children }: { children: React.ReactNode }) {
   const [accountState] = useAccountsContext();
   const { ready, activeBlockchainAccount, networkId } = accountState;
-  const showUnverifiedTokens = useDeveloperMode();
+  const showUnverifiedTokens = useUnverifiedTokens();
 
   const blockchain = getBlockchainFromNetworkId(networkId ?? 'solana-mainnet');
 

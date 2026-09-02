@@ -49,6 +49,7 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
   useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 jest.mock('../hooks/useTabChrome', () => ({
   useTabChrome: () => ({
@@ -98,6 +99,7 @@ jest.mock('@salmon/shared', () => ({
     .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: () => 'solana',
+  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana' },
   PERIOD_TO_DAYS: { '1D': 1 },
   useAccountsContext: () => [

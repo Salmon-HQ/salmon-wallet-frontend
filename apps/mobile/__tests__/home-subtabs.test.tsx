@@ -2,9 +2,10 @@
  * The in-page sub-tabs replaced the bottom tab bar, and they carry two rules
  * that are not visible from the component itself:
  *
- * 1. NFTs only exist on Solana, so tapping the tab from another chain has to
- *    take the balance home first — through the same handler the page dots use,
- *    not a silent network write.
+ * 1. NFTs only exist on Solana, so the tab is only OFFERED there: leaving
+ *    Solana sinks it out of the row and drops a session sitting on it back to
+ *    Portfolio; returning floats it back in its stored place. Opening NFTs
+ *    never moves the chain the user is standing on (owner ruling 3, spec 026).
  * 2. Nothing above the sub-tab row scrolls, on either tab: the balance is a
  *    fixed sibling of the content region on Portfolio AND on NFTs, and the
  *    row is one instance under one parent so its underline can slide.
@@ -60,6 +61,7 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
   useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 jest.mock('../hooks/useTabChrome', () => ({
   useTabChrome: () => ({
@@ -113,7 +115,8 @@ jest.mock('@salmon/shared', () => ({
   useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
     .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
-  getBlockchainFromNetworkId: () => 'solana',
+  getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
+  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
   PERIOD_TO_DAYS: { '1D': 1, '1M': 30 },
   useAccountsContext: () => [
@@ -261,7 +264,7 @@ describe('home sub-tabs', () => {
     networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
   });
 
-  it('takes the balance back to Solana when NFTs is opened from Bitcoin', () => {
+  it('does not offer the NFTs tab on Bitcoin', () => {
     networksState.networkId = 'bitcoin-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
@@ -270,11 +273,10 @@ describe('home sub-tabs', () => {
 
     renderScreen(<HomeScreen />);
 
-    // The tab is offered on every chain — it never hides per chain.
-    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
-
-    expect(mockChangeNetwork).toHaveBeenCalledWith('solana-mainnet');
-    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+    expect(screen.queryByTestId('portfolio-tab-nfts')).toBeNull();
+    expect(screen.getByTestId('portfolio-tab-portfolio')).toBeTruthy();
+    // And the chain the user is standing on is left exactly where it was.
+    expect(mockChangeNetwork).not.toHaveBeenCalled();
   });
 
   it('keeps the balance out of the scrolling view on both sub-tabs', () => {
@@ -316,10 +318,37 @@ describe('home sub-tabs', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/activity');
   });
 
-  it('moves the balance to Solana when NFTs is opened from Bitcoin, before the network write lands', () => {
-    // On device `changeNetwork` is async: the persisted `networkId` is still
-    // bitcoin for a beat after the tap. The block must already be on Solana —
-    // the owner saw it stay on Bitcoin.
+  it('sinks the NFTs tab out of the row on Bitcoin and falls back to Portfolio', () => {
+    // Leaving Solana while standing on NFTs: the tabs region plays the verb
+    // (it is keyed on the SET of tabs) and the content region switches to
+    // Portfolio on its own verb. The chain-keyed wrapper inside it stays
+    // silent — one wrapper speaks per gesture (DESIGN.md rule five).
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    renderScreen(<HomeScreen />);
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+    const tabsRegion = screen.getByTestId('portfolio-tabs-region');
+
+    fireEvent.press(screen.getByTestId('swipe-to-bitcoin'));
+
+    expect(screen.queryByTestId('portfolio-tab-nfts')).toBeNull();
+    expect(screen.queryByTestId('nfts-tab')).toBeNull();
+    // Portfolio's own content region is what took the screen back.
+    expect(screen.getByTestId('home-chain-content')).toBeTruthy();
+    // The row swapped, so it is a different instance carrying the verb.
+    expect(screen.getByTestId('portfolio-tabs-region')).not.toBe(tabsRegion);
+    // The content region owns the swap; the chain wrapper inside it does not.
+    expect(screen.getByTestId('home-subtab-content').props.entering).toBeTruthy();
+    expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();
+  });
+
+  it('floats the NFTs tab back in its stored place on the way home to Solana', () => {
+    mockStoredTabOrder = ['nfts', 'portfolio'];
     networksState.networkId = 'bitcoin-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
@@ -327,13 +356,16 @@ describe('home sub-tabs', () => {
     ];
 
     renderScreen(<HomeScreen />);
-    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
+    expect(screen.queryByTestId('portfolio-tab-nfts')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    fireEvent.press(screen.getByTestId('swipe-to-solana'));
 
-    expect(mockChangeNetwork).toHaveBeenCalledTimes(1);
-    expect(mockChangeNetwork).toHaveBeenCalledWith('solana-mainnet');
-    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('solana');
+    // Back, and in the arrangement the user saved — first, not appended.
+    const tabs = screen.getAllByTestId(/^portfolio-tab-/);
+    expect(tabs.map((tab) => tab.props.testID)).toEqual([
+      'portfolio-tab-nfts',
+      'portfolio-tab-portfolio',
+    ]);
   });
 
   it('leaves the chain alone when NFTs is opened from Solana', () => {
@@ -348,10 +380,10 @@ describe('home sub-tabs', () => {
     expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('solana');
   });
 
-  it('counts devnet as Solana in developer mode', () => {
-    // `blockchain` is the network id minus `-mainnet`, so devnet reads as
-    // `solana-devnet`: the old equality test against `'solana'` bounced a
-    // developer-mode user back to mainnet every time they opened NFTs.
+  it('counts devnet as Solana, so the tab is offered there', () => {
+    // `network.blockchain` is the network id minus `-mainnet`, so devnet reads
+    // as `solana-devnet` — the chain FAMILY is what decides, and it comes from
+    // `getBlockchainFromNetworkId` rather than a string comparison.
     networksState.networkId = 'solana-devnet';
     networksState.allNetworks = [
       { id: 'solana-devnet', name: 'Solana Devnet' },
@@ -365,8 +397,8 @@ describe('home sub-tabs', () => {
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
   });
 
-  it('lets the user swipe back to Bitcoin on NFTs without losing the tab', () => {
-    // Tab drives chain, never the other way round (owner decision).
+  it('lets the user swipe back to Bitcoin from NFTs; the chain leads', () => {
+    // The chain drives the tab now, never the other way round (owner ruling 3).
     networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
@@ -379,7 +411,7 @@ describe('home sub-tabs', () => {
 
     fireEvent.press(screen.getByTestId('swipe-to-bitcoin'));
 
-    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+    expect(screen.queryByTestId('nfts-tab')).toBeNull();
     expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
   });
 

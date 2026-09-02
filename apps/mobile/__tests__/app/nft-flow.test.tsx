@@ -49,7 +49,6 @@ jest.mock('@salmon/shared', () => ({
   // The components barrel the flow imports evaluates kit stylesheets at module
   // scope, so the theme has to be real here even though nothing renders it.
   ...jest.requireActual('../../test-utils/themeTokens'),
-  SECTION_TO_NETWORK: { solana: 'solana-mainnet', 'solana-devnet': 'solana-devnet' },
   canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
   classifyTransactionError: () => 'transaction.errors.generic',
   createBurnTransaction: (...args: unknown[]) => mockCreateBurnTransaction(...args),
@@ -63,7 +62,7 @@ jest.mock('@salmon/shared', () => ({
 }));
 
 jest.mock('../../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 
 import { NftFlowProvider, useNftFlow } from '../../src/contexts/NftFlowContext';
@@ -111,7 +110,7 @@ function Probe() {
 
 const renderFlow = () =>
   render(
-    <NftFlowProvider mint="Mint111" sectionKey="solana" subAccountIndex={0}>
+    <NftFlowProvider mint="Mint111" networkId="solana-mainnet" subAccountIndex={0}>
       <Probe />
     </NftFlowProvider>
   );

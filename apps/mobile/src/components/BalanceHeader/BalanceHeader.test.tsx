@@ -22,7 +22,8 @@ jest.mock('@salmon/shared', () => ({
   hiddenValue: '••••',
   getLabelValue: (value: number) => (value >= 0 ? 'positive' : 'negative'),
   showPercentage: (value: number) => `${value}%`,
-  getNetworkLabel: () => null,
+  getNetworkLabel: (id: string) =>
+    id === 'solana-devnet' ? 'Devnet' : id === 'bitcoin-testnet' ? 'Testnet' : null,
   NETWORK_DISPLAY: {
     'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
     'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
@@ -574,5 +575,37 @@ describe('BalanceHeader swipe', () => {
 
     expect(panConfig.activeOffsetX).toEqual([-10, 10]);
     expect(panConfig.failOffsetY).toEqual([-10, 10]);
+  });
+});
+
+describe('BalanceHeader environment chip', () => {
+  // The active network decides, not a setting: a devnet session is told it is
+  // on devnet whether or not Developer Networks is on (spec 026 D5,
+  // DESIGN.md §Chain identity). Mainnet says nothing — there is no "Mainnet"
+  // chip to read past.
+  const withNetwork = (id: string, blockchain: string) =>
+    [{ network: { id, name: id, blockchain }, usdTotal: 1 }] as any;
+
+  it('says nothing on mainnet', () => {
+    const view = render(<BalanceHeader blockchains={withNetwork('solana-mainnet', 'solana')} />);
+
+    expect(view.queryByTestId('balance-network-chip')).toBeNull();
+  });
+
+  it('names the environment on devnet, with no developer flag in sight', () => {
+    const view = render(
+      <BalanceHeader blockchains={withNetwork('solana-devnet', 'solana-devnet')} />
+    );
+
+    expect(view.getByTestId('balance-network-chip')).toBeTruthy();
+    expect(view.getByText('Devnet')).toBeTruthy();
+  });
+
+  it('names it on a single-chain wallet too, where there are no dots to sit beside', () => {
+    const view = render(
+      <BalanceHeader blockchains={withNetwork('bitcoin-testnet', 'bitcoin-testnet')} />
+    );
+
+    expect(view.getByText('Testnet')).toBeTruthy();
   });
 });

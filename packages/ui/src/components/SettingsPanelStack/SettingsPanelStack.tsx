@@ -124,7 +124,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
       {
         id: 'developerNetworks',
         labelKey: 'settings.developer_networks',
-        descriptionKey: 'settings.developer_networks_desc',
+        descriptionKey: 'settings.developer_networks_description',
         type: 'toggle',
       },
       {

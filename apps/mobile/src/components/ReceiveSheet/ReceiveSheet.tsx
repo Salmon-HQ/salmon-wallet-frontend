@@ -69,6 +69,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   onClose,
   address,
   blockchain,
+  networkLabel,
   onCopy,
   style,
 }) => {
@@ -172,6 +173,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           </View>
         </View>
 
+        {/* Off mainnet the environment is named under the code: the chain
+            badge above says "Solana" on devnet too, and a deposit made to a
+            test address is not money (spec 026 D6). */}
+        {!!networkLabel && (
+          <Text style={styles.networkLabel} testID="receive-network-label">
+            {networkLabel}
+          </Text>
+        )}
+
         {/* Wrong-network deposits are unrecoverable, so say so here rather
             than leaving the chain to be inferred from the address format. */}
         <WarningNotice
@@ -274,6 +284,13 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.semiBold,
       color: t.text.primary,
       letterSpacing: letterSpacing.label,
+    },
+    networkLabel: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.tertiary,
+      letterSpacing: letterSpacing.label,
+      textAlign: 'center',
     },
     copyButton: {
       flexDirection: 'row',

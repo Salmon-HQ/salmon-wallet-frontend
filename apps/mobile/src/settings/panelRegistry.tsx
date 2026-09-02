@@ -63,6 +63,7 @@ import {
   BackupPanel,
   AboutPanel,
 } from '../components';
+import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import type { MobilePanelRegistry } from './types';
@@ -90,19 +91,31 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
   );
 
   const {
-    developerNetworks,
     explorer,
     explorers,
     changeExplorer,
     isLoading: explorerLoading,
   } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
+  // The flag comes from the `(app)` provider — a second `useUserConfig`
+  // instance here read its own copy and drifted from the carousel's.
+  const developerNetworks = useDeveloperMode();
 
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
   const [{ currency }, { changeCurrency }] = useCurrencyContext();
   const { preference: appearancePreference, setPreference: setAppearancePreference } = useTheme();
+  // The offer is the enabled networks this wallet actually holds; the active
+  // network stays offered even with the flag off, so the panel can always
+  // reach the page the session is standing on (spec 026).
+  const heldNetworkIds = useMemo(
+    () =>
+      activeAccount?.networksAccounts ? Object.keys(activeAccount.networksAccounts) : undefined,
+    [activeAccount]
+  );
   const { allNetworks } = useAvailableNetworks({
     activeBlockchainAccount: userConfigAccount,
     developerNetworks,
+    heldNetworkIds,
+    activeNetworkId: networkId,
   });
 
   const networkAdapter: NetworkAdapter = useMemo(

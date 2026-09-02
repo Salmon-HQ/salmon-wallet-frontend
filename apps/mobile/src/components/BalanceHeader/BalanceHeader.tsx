@@ -151,7 +151,6 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   onToggleVisibility,
   onBlockchainChange,
   activeIndex: controlledIndex,
-  showNetworkLabel = false,
   onSendPress,
   onReceivePress,
   onActivityPress,
@@ -312,9 +311,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
   const changeColor = hasChange ? change[getLabelValue(changePercent)] : text.secondary;
 
-  const networkLabel = showNetworkLabel
-    ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet'))
-    : null;
+  // The environment chip. It is the active network that decides, not a
+  // setting: a devnet session says "Devnet" whether or not Developer Networks
+  // is on, and mainnet says nothing (DESIGN.md §Chain identity — a non-mainnet
+  // environment always keeps a text chip). `getNetworkLabel` returns null on
+  // every mainnet, which is the whole rule.
+  const networkLabel = getNetworkLabel(current?.network.id ?? 'solana-mainnet');
 
   // The hint points where the next swipe actually goes, arrow included: the
   // next chain is to the RIGHT, the previous one to the LEFT. It used to wrap
@@ -378,7 +380,6 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
             <Text style={styles.label} maxFontSizeMultiplier={fontScaleCap.chrome}>
               {t('home.total_balance', 'Total balance')}
             </Text>
-            {networkLabel && <Text style={styles.networkLabel}>{networkLabel}</Text>}
             <IconBubble
               testID="balance-eye-toggle"
               size={componentSizes.iconSizeMedium}
@@ -448,20 +449,32 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
             />
           </View>
 
-          {blockchains.length > 1 && (
+          {/* The cue row also carries the environment chip, so it paints for a
+              single-chain wallet standing off mainnet — the chip is the
+              warning a test-network session gets (spec 026 D5/D6). */}
+          {(blockchains.length > 1 || !!networkLabel) && (
             <View style={styles.cueRow}>
-              {blockchains.map((chain, index) => (
-                <ChainDot
-                  key={chain.network.id}
-                  index={index}
-                  isActive={index === activeIndex}
-                  isReduceMotionEnabled={isReduceMotionEnabled}
-                  accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                    name: chain.network.name,
-                  })}
-                  onPress={() => index !== activeIndex && leaveFor(index)}
+              {blockchains.length > 1 &&
+                blockchains.map((chain, index) => (
+                  <ChainDot
+                    key={chain.network.id}
+                    index={index}
+                    isActive={index === activeIndex}
+                    isReduceMotionEnabled={isReduceMotionEnabled}
+                    accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                      name: chain.network.name,
+                    })}
+                    onPress={() => index !== activeIndex && leaveFor(index)}
+                  />
+                ))}
+              {networkLabel && (
+                <Chip
+                  testID="balance-network-chip"
+                  size="sm"
+                  variant="outline"
+                  label={networkLabel}
                 />
-              ))}
+              )}
               {hintSymbol && (
                 <Animated.View
                   key={`hint-${currentBlockchainId}`}
@@ -530,13 +543,6 @@ const stylesFor = (t: Semantic) =>
       fontSize: ms(fontSize.caption),
       fontFamily: fontFamilyNative.medium,
       color: t.text.secondary,
-    },
-    networkLabel: {
-      fontSize: ms(fontSize.label),
-      fontFamily: fontFamilyNative.semiBold,
-      color: t.text.tertiary,
-      textTransform: 'uppercase',
-      letterSpacing: letterSpacing.label,
     },
     balance: {
       // `balance` is 38 now, the size the `.pen` draws: the number sits beside
