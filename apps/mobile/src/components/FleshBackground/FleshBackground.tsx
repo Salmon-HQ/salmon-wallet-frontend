@@ -35,33 +35,14 @@
  * ```
  */
 import React, { useId } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, Pattern, Path, Rect } from 'react-native-svg';
 import { fleshFills, fleshTile } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
+import type { FleshBackgroundProps } from './types';
 
-export interface FleshBackgroundProps {
-  /**
-   * The band colour. Must be a *pale* tint of the fill it sits on — a darker
-   * band would let the texture cut label contrast instead of only raising it.
-   * @default the active theme's `flesh.band`
-   */
-  color?: string;
-  /**
-   * Tile scale. 1 is tuned for a 44-64px pill; below ~0.7 the bands crowd and
-   * start to read as stripes rather than as material.
-   * @default 1
-   */
-  scale?: number;
-  /**
-   * Overall strength. The default is deliberately near the visibility floor.
-   * @default 1
-   */
-  opacity?: number;
-  /** Additional styles for the container, which otherwise fills its parent. */
-  style?: ViewStyle;
-}
+export type { FleshBackgroundProps };
 
 export const FleshBackground: React.FC<FleshBackgroundProps> = ({
   color,

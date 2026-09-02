@@ -18,4 +18,13 @@ export interface KeyValueRowPropsBase extends Testable {
   labelWeight?: 500 | 600;
   /** A control drawn after the value — the one place a row carries an action. */
   action?: ReactNode;
+  /**
+   * `inline` (default) sets the value beside the label on one line, clipped.
+   * `stacked` sets the label over the value and lets the value wrap — the
+   * row a full address, a hash or a URI needs, where clipping would hide the
+   * very thing the user is asked to check.
+   */
+  layout?: 'inline' | 'stacked';
+  /** `mono` draws a string value in the scanning face (Geist Mono). */
+  valueFont?: 'sans' | 'mono';
 }

@@ -1,11 +1,11 @@
 import type { SwapReviewExchangeSide } from '../swap';
 
 /**
- * Props for the unified TransactionSuccessScreen component.
- *
- * Used by both send and swap flows on mobile and extension.
+ * Props for the unified TransactionSuccessScreen component — the exchange
+ * receipt swap renders, a thin alias over `ReceiptScreen tone="exchange"` on
+ * both platforms.
  */
-export interface TransactionSuccessScreenProps {
+export interface TransactionSuccessScreenPropsBase {
   /**
    * Exchange graphic for swap receipts: sent logo → arrow → received logo
    * with amounts, the received side one rank up. When present it replaces
@@ -42,3 +42,6 @@ export interface TransactionSuccessScreenProps {
    */
   pendingTitle?: string;
 }
+
+/** The contract under the name every consumer reads. */
+export type TransactionSuccessScreenProps = TransactionSuccessScreenPropsBase;

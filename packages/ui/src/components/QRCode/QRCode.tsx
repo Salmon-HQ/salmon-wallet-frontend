@@ -1,49 +1,40 @@
 /**
- * QRCode - QR code display component
+ * QRCode — a value encoded as a code, on the DOM.
  *
- * Web version using qrcode.react for browser extension.
- * Renders a QR code SVG for the given value (e.g., wallet address).
+ * The mobile twin is `apps/mobile/src/components/QRCode/QRCode.tsx`
+ * (`react-native-qrcode-svg`); here `qrcode.react` draws the same SVG. The
+ * inks default to the pair the receive sheet passes on both platforms —
+ * `text.primary` as the code's ground, `depth.abyss` as the module ink — so
+ * a code drawn without explicit colours still reads the live mode.
  */
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import type { QRCodeProps } from './types';
 
-const Container = styled(Box)({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-/**
- * QRCode component for displaying encoded data as a QR code
- *
- * @example
- * ```tsx
- * <QRCode
- *   value="solana:7xKXtg..."
- *   size={200}
- * />
- * ```
- */
 export function QRCode({
   value,
   size,
-  backgroundColor = '#FFFFFF',
-  color = '#000000',
+  backgroundColor,
+  color,
   ecLevel = 'M',
   className,
   style,
 }: QRCodeProps) {
+  const t = useSemantic();
   return (
-    <Container className={className} style={style}>
+    <span
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...style }}
+    >
       <QRCodeSVG
         value={value}
         size={size}
-        bgColor={backgroundColor}
-        fgColor={color}
+        bgColor={backgroundColor ?? t.text.primary}
+        fgColor={color ?? t.depth.abyss}
         level={ecLevel}
       />
-    </Container>
+    </span>
   );
 }

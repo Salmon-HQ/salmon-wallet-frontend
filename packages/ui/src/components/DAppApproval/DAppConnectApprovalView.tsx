@@ -1,37 +1,16 @@
 import React from 'react';
-import Box from '@mui/material/Box';
-import LanguageIcon from '@mui/icons-material/Language';
-import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useTranslation } from 'react-i18next';
-import { formatOrigin, getShortAddress } from '@salmon/shared';
+import { formatOrigin, getShortAddress, spacing } from '@salmon/shared';
+
+import { GlobeIcon, WalletIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
-import {
-  ButtonsContainer,
-  AppIdentityIcon,
-  AppIdentityName,
-  AppIdentityRow,
-  AppIdentityText,
-  Card,
-  Container,
-  Content,
-  FooterNote,
-  Header,
-  HintRow,
-  hintIconSx,
-  Label,
-  LogoWrap,
-  MARK_SIZE,
-  MonoValue,
-  ScrollArea,
-  SectionHeader,
-  sectionIconSx,
-  Subtitle,
-  Title,
-  Value,
-  WarningNotice,
-} from './common';
-import { BrandMark } from '../BrandMark';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { WarningNotice } from '../WarningNotice';
+import { AppIdentity } from './AppIdentity';
+import { CardHead, bodyText, cardColumn } from './common';
 import type { DAppConnectApprovalViewProps } from './types';
 
 export function DAppConnectApprovalView({
@@ -46,78 +25,72 @@ export function DAppConnectApprovalView({
   onReject,
 }: DAppConnectApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
   const shortAddress = address ? (getShortAddress(address, 4) ?? '') : '';
-  const hasIdentity = !!appName || !!appIcon;
 
   return (
-    <Container>
-      <Content>
-        <Header>
-          <LogoWrap>
-            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
-          </LogoWrap>
-          <Title>{t('dapp.connect_title', 'Connect to dApp')}</Title>
-          <Subtitle>
-            {t('dapp.connect_subtitle', 'This site wants to connect to your Salmon Wallet')}
-          </Subtitle>
-        </Header>
-
-        <ScrollArea>
-          <Card>
-            <SectionHeader>
-              <LanguageIcon sx={sectionIconSx} />
-              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
-            </SectionHeader>
-            {hasIdentity ? (
-              <AppIdentityRow>
-                {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
-                <AppIdentityText>
-                  {appName ? <AppIdentityName>{appName}</AppIdentityName> : null}
-                  <MonoValue sx={{ marginTop: 0 }}>{displayOrigin}</MonoValue>
-                </AppIdentityText>
-              </AppIdentityRow>
-            ) : (
-              <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
-            )}
-            <HintRow>
-              <InfoOutlinedIcon sx={hintIconSx} />
-              <FooterNote>
-                {t(
-                  'dapp.connect_permissions_hint',
-                  'The site will be able to view your public address and request signatures.'
-                )}
-              </FooterNote>
-            </HintRow>
+    <OnboardingLayout
+      testID="dapp-connect-approval"
+      variant="content"
+      backgroundColor={tokens.surface.bedrock}
+      markColor={tokens.accent.fill}
+      scrollBody
+      title={
+        <OnboardingTitle testID="approval-title">
+          {t('dapp.connect_title', 'Connect to dApp')}
+        </OnboardingTitle>
+      }
+      description={
+        <OnboardingDescription>
+          {t('dapp.connect_subtitle', 'This site wants to connect to your Salmon Wallet')}
+        </OnboardingDescription>
+      }
+      body={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead icon={GlobeIcon} label={t('dapp.requesting_site', 'Requesting site')} />
+            <AppIdentity appName={appName} appIcon={appIcon} displayOrigin={displayOrigin} />
+            <p style={bodyText(tokens)}>
+              {t(
+                'dapp.connect_permissions_hint',
+                'The site will be able to view your public address and request signatures.'
+              )}
+            </p>
           </Card>
 
-          <Card>
-            <SectionHeader>
-              <AccountBalanceWalletOutlinedIcon sx={sectionIconSx} />
-              <Label sx={{ margin: 0 }}>{t('dapp.wallet_address', 'Wallet')}</Label>
-            </SectionHeader>
-            <Value>{shortAddress || t('dapp.current_wallet', 'Current wallet')}</Value>
-            {address && <MonoValue>{address}</MonoValue>}
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead icon={WalletIcon} label={t('dapp.wallet_address', 'Wallet')} />
+            <KeyValueRow
+              layout="stacked"
+              label={shortAddress || t('dapp.current_wallet', 'Current wallet')}
+              value={address ?? ''}
+              valueFont="mono"
+            />
             {showOriginWarning && (
-              <Box sx={{ marginTop: 2 }}>
-                <WarningNotice
-                  tone="warning"
-                  title={t('dapp.insecure_origin_warning', 'This origin does not use HTTPS.')}
-                />
-              </Box>
+              <WarningNotice
+                tone="warning"
+                title={t('dapp.insecure_origin_warning', 'This origin does not use HTTPS.')}
+              />
             )}
           </Card>
-        </ScrollArea>
-
-        <ButtonsContainer>
-          <PrimaryButton onPress={onApprove} loading={loading} disabled={disabled || loading}>
-            {t('dapp.approve', 'Approve').toUpperCase()}
-          </PrimaryButton>
-          <SecondaryButton onPress={onReject} disabled={loading}>
-            {t('dapp.deny', 'Deny').toUpperCase()}
-          </SecondaryButton>
-        </ButtonsContainer>
-      </Content>
-    </Container>
+        </div>
+      }
+      secondary={
+        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+          {t('dapp.deny', 'Deny').toUpperCase()}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton
+          onPress={onApprove}
+          loading={loading}
+          disabled={disabled || loading}
+          fullWidth
+        >
+          {t('dapp.approve', 'Approve').toUpperCase()}
+        </PrimaryButton>
+      }
+    />
   );
 }

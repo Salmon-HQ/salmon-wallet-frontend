@@ -10,7 +10,11 @@ import type { Testable } from './testable';
  * `ink` the inverse well used for a featured block that must read as a
  * different object rather than a louder one.
  */
-export type CardTone = 'surface' | 'accent' | 'warning' | 'ink';
+/**
+ * `shelf` is the opaque step above the bedrock — the one tone with no
+ * translucency, for a card under the Bedrock Rule (the signing gate).
+ */
+export type CardTone = 'surface' | 'accent' | 'warning' | 'ink' | 'shelf';
 
 /** 12 / 14 / 16 / 24 — the four internal paddings the redesign draws. */
 export type CardPadding = 'sm' | 'md' | 'lg' | 'xl';

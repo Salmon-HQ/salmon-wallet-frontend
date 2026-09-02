@@ -1,67 +1,34 @@
 import React, { useMemo, useState } from 'react';
-import Box from '@mui/material/Box';
-import LanguageIcon from '@mui/icons-material/Language';
-import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
-import GppGoodOutlinedIcon from '@mui/icons-material/GppGoodOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
-import CheckIcon from '@mui/icons-material/Check';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   copyToClipboard,
   formatDateTime,
   formatOrigin,
-  fontFamily,
-  fontSize,
   getShortAddress,
-  semantic,
   spacing,
   useCopyFeedback,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../Button';
-import {
-  ButtonsContainer,
-  AppIdentityIcon,
-  AppIdentityName,
-  AppIdentityRow,
-  AppIdentityText,
-  Card,
-  Container,
-  Content,
-  FooterNote,
-  Header,
-  HintRow,
-  hintIconSx,
-  Label,
-  LogoWrap,
-  MARK_SIZE,
-  MessageSurface,
-  MessageText,
-  MonoValue,
-  ScrollArea,
-  SectionHeader,
-  sectionIconSx,
-  Subtitle,
-  SummaryGrid,
-  SummaryItem,
-  SummaryLabel,
-  SummaryValue,
-  Title,
-  Value,
-  WarningNotice,
-} from './common';
-import { BrandMark } from '../BrandMark';
-import type { DAppSignInApprovalViewProps } from './types';
 
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  CheckIcon,
+  CopyIcon,
+  GlobeIcon,
+  PenNibIcon,
+  iconSize,
+} from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
+import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
-const monoValueSx = {
-  fontFamily: fontFamily.mono,
-  fontSize: fontSize.xs,
-  wordBreak: 'break-all',
-} as const;
+import { IconBubble } from '../IconBubble';
+import { KeyValueRow } from '../KeyValueRow';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { WarningNotice } from '../WarningNotice';
+import { AppIdentity } from './AppIdentity';
+import { CardHead, bodyText, cardColumn, monoText } from './common';
+import type { DAppSignInApprovalViewProps } from './types';
 
 function formatTimestamp(value: string | undefined): string | null {
   if (!value) return null;
@@ -92,8 +59,8 @@ export function DAppSignInApprovalView({
   onReject,
 }: DAppSignInApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
-  const hasIdentity = !!appName || !!appIcon;
 
   const [showRaw, setShowRaw] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
@@ -110,215 +77,186 @@ export function DAppSignInApprovalView({
   const canApprove = !disabled && !loading && !domainMismatch && !!siws;
 
   return (
-    <Container>
-      <Content>
-        <Header>
-          <LogoWrap>
-            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
-          </LogoWrap>
-          <Title>{t('dapp.sign_in_title', 'Sign In')}</Title>
-          <Subtitle>
-            {t(
-              'dapp.sign_in_subtitle',
-              'This app is requesting you to sign in with your Solana account. This will not submit a transaction.'
-            )}
-          </Subtitle>
-        </Header>
-
-        <ScrollArea>
-          <Card>
-            <SectionHeader>
-              <LanguageIcon sx={sectionIconSx} />
-              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
-            </SectionHeader>
-            {hasIdentity ? (
-              <AppIdentityRow>
-                {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
-                <AppIdentityText>
-                  {appName ? <AppIdentityName>{appName}</AppIdentityName> : null}
-                  <MonoValue sx={{ marginTop: 0 }}>{displayOrigin}</MonoValue>
-                </AppIdentityText>
-              </AppIdentityRow>
-            ) : (
-              <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
-            )}
-            <HintRow>
-              <GppGoodOutlinedIcon sx={hintIconSx} />
-              <FooterNote>
-                {t(
-                  'dapp.sign_in_hint',
-                  'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.'
-                )}
-              </FooterNote>
-            </HintRow>
+    <OnboardingLayout
+      testID="dapp-sign-in-approval"
+      variant="content"
+      backgroundColor={tokens.surface.bedrock}
+      markColor={tokens.accent.fill}
+      scrollBody
+      title={
+        <OnboardingTitle testID="approval-title">
+          {t('dapp.sign_in_title', 'Sign In')}
+        </OnboardingTitle>
+      }
+      description={
+        <OnboardingDescription>
+          {t(
+            'dapp.sign_in_subtitle',
+            'This app is requesting you to sign in with your Solana account. This will not submit a transaction.'
+          )}
+        </OnboardingDescription>
+      }
+      body={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead icon={GlobeIcon} label={t('dapp.requesting_site', 'Requesting site')} />
+            <AppIdentity appName={appName} appIcon={appIcon} displayOrigin={displayOrigin} />
+            <p style={bodyText(tokens)}>
+              {t(
+                'dapp.sign_in_hint',
+                'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.'
+              )}
+            </p>
           </Card>
 
-          <Card>
-            <SectionHeader>
-              <DrawOutlinedIcon sx={sectionIconSx} />
-              <Label sx={{ margin: 0 }}>{t('dapp.sign_in_message_label', 'Sign-in message')}</Label>
-            </SectionHeader>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead
+              icon={PenNibIcon}
+              label={t('dapp.sign_in_message_label', 'Sign-in message')}
+            />
 
             {domainMismatch && (
-              <Box sx={{ marginBottom: `${spacing.md}px` }}>
-                <WarningNotice title={t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}>
-                  {t('dapp.sign_in_domain_mismatch', {
-                    defaultValue:
-                      'This app asked to sign in for "{{requested}}" but the request came from this site. Salmon has refused to sign it.',
-                    requested: requestedDomain ?? '',
-                  })}
-                </WarningNotice>
-              </Box>
+              <WarningNotice title={t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}>
+                {t('dapp.sign_in_domain_mismatch', {
+                  defaultValue:
+                    'This app asked to sign in for "{{requested}}" but the request came from this site. Salmon has refused to sign it.',
+                  requested: requestedDomain ?? '',
+                })}
+              </WarningNotice>
             )}
 
             {siws ? (
               <>
                 {siws.statement && (
-                  <Value
-                    sx={{
-                      fontWeight: 400,
-                      marginBottom: `${spacing.md}px`,
+                  <p
+                    style={{
+                      ...bodyText(tokens),
+                      color: tokens.text.primary,
                       whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
                     }}
                   >
                     {siws.statement}
-                  </Value>
+                  </p>
                 )}
 
-                <SummaryGrid>
-                  <SummaryItem>
-                    <SummaryLabel>{t('dapp.siws_domain', 'Domain')}</SummaryLabel>
-                    <SummaryValue sx={{ wordBreak: 'break-all' }}>{siws.domain}</SummaryValue>
-                  </SummaryItem>
+                <KeyValueRow
+                  layout="stacked"
+                  label={t('dapp.siws_domain', 'Domain')}
+                  value={siws.domain}
+                  valueFont="mono"
+                />
 
-                  <SummaryItem
-                    onClick={handleCopyAccount}
-                    title={siws.address}
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'background-color 150ms ease',
-                      '&:hover': { backgroundColor: colors.interactive.hoverSubtle },
-                    }}
-                  >
-                    <SummaryLabel>
-                      {copied ? t('dapp.siws_copied', 'Copied') : t('dapp.siws_account', 'Account')}
-                    </SummaryLabel>
-                    <SummaryValue
-                      sx={{ ...monoValueSx, display: 'flex', alignItems: 'center', gap: '6px' }}
+                <KeyValueRow
+                  layout="stacked"
+                  label={
+                    copied ? t('dapp.siws_copied', 'Copied') : t('dapp.siws_account', 'Account')
+                  }
+                  value={getShortAddress(siws.address)}
+                  valueFont="mono"
+                  testID="siws-account"
+                  action={
+                    <IconBubble
+                      size={24}
+                      tone="ghost"
+                      onPress={handleCopyAccount}
+                      accessibilityLabel={siws.address}
                     >
-                      {getShortAddress(siws.address)}
                       <CopyTick
                         copied={copied}
-                        style={{ flexShrink: 0 }}
-                        copy={
-                          <ContentCopyOutlinedIcon
-                            sx={{ fontSize: 14, color: colors.text.secondary }}
-                          />
-                        }
-                        tick={<CheckIcon sx={{ fontSize: 14, color: semantic.status.success }} />}
+                        copy={<CopyIcon size={iconSize.sm} color={tokens.text.secondary} />}
+                        tick={<CheckIcon size={iconSize.sm} color={tokens.status.success} />}
                       />
-                    </SummaryValue>
-                  </SummaryItem>
+                    </IconBubble>
+                  }
+                />
 
-                  {siws.uri && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_uri', 'URI')}</SummaryLabel>
-                      <SummaryValue sx={{ wordBreak: 'break-all' }}>{siws.uri}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {siws.nonce && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_nonce', 'Nonce')}</SummaryLabel>
-                      <SummaryValue sx={monoValueSx}>{siws.nonce}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {issuedAtDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_issued_at', 'Issued at')}</SummaryLabel>
-                      <SummaryValue>{issuedAtDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {expiresDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_expires', 'Expires')}</SummaryLabel>
-                      <SummaryValue>{expiresDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
-                </SummaryGrid>
-
-                {isOffchainMessage && (
-                  <HintRow>
-                    <LockOutlinedIcon sx={hintIconSx} />
-                    <FooterNote>
-                      {t(
-                        'dapp.sign_in_offchain_note',
-                        'This message will be signed as a Solana off-chain message (OCMS).'
-                      )}
-                    </FooterNote>
-                  </HintRow>
+                {siws.uri && (
+                  <KeyValueRow
+                    layout="stacked"
+                    label={t('dapp.siws_uri', 'URI')}
+                    value={siws.uri}
+                    valueFont="mono"
+                  />
                 )}
 
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => setShowRaw((value) => !value)}
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginTop: `${spacing.lg}px`,
-                    padding: 0,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: colors.text.secondary,
-                    fontFamily: fontFamily.sans,
-                    fontSize: fontSize.sm,
-                    textAlign: 'left',
-                    transition: 'color 150ms ease',
-                    '&:hover': { color: colors.text.primary },
-                  }}
+                {siws.nonce && (
+                  <KeyValueRow
+                    layout="stacked"
+                    label={t('dapp.siws_nonce', 'Nonce')}
+                    value={siws.nonce}
+                    valueFont="mono"
+                  />
+                )}
+
+                {issuedAtDisplay && (
+                  <KeyValueRow
+                    layout="stacked"
+                    label={t('dapp.siws_issued_at', 'Issued at')}
+                    value={issuedAtDisplay}
+                  />
+                )}
+
+                {expiresDisplay && (
+                  <KeyValueRow
+                    layout="stacked"
+                    label={t('dapp.siws_expires', 'Expires')}
+                    value={expiresDisplay}
+                  />
+                )}
+
+                {isOffchainMessage && (
+                  <p style={bodyText(tokens)}>
+                    {t(
+                      'dapp.sign_in_offchain_note',
+                      'This message will be signed as a Solana off-chain message (OCMS).'
+                    )}
+                  </p>
+                )}
+
+                <TextButton
+                  onPress={() => setShowRaw((value) => !value)}
+                  color={tokens.text.secondary}
+                  icon={
+                    showRaw ? (
+                      <CaretUpIcon size={iconSize.sm} />
+                    ) : (
+                      <CaretDownIcon size={iconSize.sm} />
+                    )
+                  }
+                  testID="siws-raw-toggle"
                 >
                   {showRaw
                     ? t('dapp.siws_hide_raw', 'Hide raw message')
                     : t('dapp.siws_view_raw', 'View raw message')}
-                  {showRaw ? (
-                    <ExpandLessIcon sx={{ fontSize: 16 }} />
-                  ) : (
-                    <ExpandMoreIcon sx={{ fontSize: 16 }} />
-                  )}
-                </Box>
+                </TextButton>
 
                 {showRaw && (
-                  <MessageSurface sx={{ marginTop: `${spacing.sm}px` }}>
-                    <MessageText>{messageText}</MessageText>
-                  </MessageSurface>
+                  <Card tone="shelf" padding="sm" radius="lg" testID="siws-raw">
+                    <pre style={monoText(tokens)}>{messageText}</pre>
+                  </Card>
                 )}
               </>
             ) : (
-              <Value sx={{ fontWeight: 400 }}>
+              <p style={{ ...bodyText(tokens), color: tokens.text.primary }}>
                 {t(
                   'dapp.sign_in_invalid_request',
                   'This sign-in request is invalid and cannot be signed.'
                 )}
-              </Value>
+              </p>
             )}
           </Card>
-        </ScrollArea>
-
-        <ButtonsContainer>
-          <PrimaryButton onPress={onApprove} loading={loading} disabled={!canApprove}>
-            {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
-          </PrimaryButton>
-          <SecondaryButton onPress={onReject} disabled={loading}>
-            {t('dapp.reject', 'Reject').toUpperCase()}
-          </SecondaryButton>
-        </ButtonsContainer>
-      </Content>
-    </Container>
+        </div>
+      }
+      secondary={
+        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+          {t('dapp.reject', 'Reject').toUpperCase()}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton onPress={onApprove} loading={loading} disabled={!canApprove} fullWidth>
+          {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
+        </PrimaryButton>
+      }
+    />
   );
 }

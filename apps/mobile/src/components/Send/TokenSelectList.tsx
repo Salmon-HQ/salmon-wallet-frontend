@@ -20,7 +20,7 @@ import {
   vs,
   type Semantic,
 } from '@salmon/shared';
-import type { SendToken, StepTokenSelectProps } from '@salmon/shared';
+import type { SendToken } from '@salmon/shared';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -28,6 +28,7 @@ import { ListRow } from '../ListRow';
 import { SearchField } from '../SearchField';
 import { ShimmerRect } from '../ShimmerRect';
 import { TokenLogo } from '../TokenLogo';
+import type { TokenSelectListProps } from './types';
 
 /** The row's identity mark — the 40 every list row in the kit carries. */
 const LOGO_SIZE = 40;
@@ -45,7 +46,7 @@ function balanceLabel(token: SendToken): string {
   return `${formatTokenAmount(amount)} ${token.symbol}`;
 }
 
-export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
+export const TokenSelectList: React.FC<TokenSelectListProps> = ({
   tokens,
   onSelectToken,
   showUnverifiedTokens,

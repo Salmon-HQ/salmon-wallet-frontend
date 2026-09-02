@@ -1,35 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Box from '@mui/material/Box';
-import { styled } from '@mui/material/styles';
-import { semantic } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
 
 /** How long the control must be held before it commits. */
 const HOLD_MS = 500;
 
-const Wrapper = styled(Box)({
-  position: 'relative',
-  width: '100%',
-  // The progress line is painted over the button's own fill, so the button must
-  // not clip it away.
-  isolation: 'isolate',
-});
-
-/**
- * The hold's progress, drawn along the bottom edge of the fill.
- *
- * `neutral-1000` rather than the salmon the design note names: the line sits on
- * a `salmon-500` fill, where salmon-on-salmon is invisible and `neutral-1000`
- * is the ink this system already guarantees at 6.50:1.
- */
-const Progress = styled('span')({
-  position: 'absolute',
-  left: 0,
-  bottom: 0,
-  height: 2,
-  pointerEvents: 'none',
-  zIndex: 2,
-});
+/** The progress line's height, drawn along the bottom edge of the fill. */
+const PROGRESS_HEIGHT = 2;
 
 export interface HoldToApproveButtonProps {
   onApprove: () => void | Promise<void>;
@@ -58,6 +36,10 @@ export interface HoldToApproveButtonProps {
  * keyboard path does not require it: WCAG asks that nothing be gated behind
  * holding a key down, so Enter and Space commit immediately. A pointer click
  * that never became a hold does nothing at all.
+ *
+ * The progress line is `neutral-1000` on the salmon fill rather than the salmon
+ * the design note names: salmon-on-salmon is invisible, and `text.onAccent` is
+ * the ink this system already guarantees at 6.50:1 there.
  */
 export function HoldToApproveButton({
   onApprove,
@@ -67,6 +49,7 @@ export function HoldToApproveButton({
   testID,
   variant = 'primary',
 }: HoldToApproveButtonProps): React.ReactElement {
+  const { text } = useSemantic();
   const [progress, setProgress] = useState(0);
   const frame = useRef<number | null>(null);
   const startedAt = useRef<number | null>(null);
@@ -116,12 +99,19 @@ export function HoldToApproveButton({
   const ButtonControl = variant === 'secondary' ? SecondaryButton : PrimaryButton;
 
   return (
-    <Wrapper
+    <div
       onPointerDown={start}
       onPointerUp={stop}
       onPointerLeave={stop}
       onPointerCancel={stop}
       onClickCapture={swallowPointerClick}
+      style={{
+        position: 'relative',
+        width: '100%',
+        // The progress line is painted over the button's own fill, so the
+        // button must not clip it away.
+        isolation: 'isolate',
+      }}
     >
       <ButtonControl
         onPress={() => void onApprove()}
@@ -132,15 +122,20 @@ export function HoldToApproveButton({
         {children}
       </ButtonControl>
       {progress > 0 ? (
-        <Progress
-          style={{
-            width: `${Math.min(progress, 1) * 100}%`,
-            backgroundColor:
-              variant === 'secondary' ? semantic.text.primary : semantic.text.onAccent,
-          }}
+        <span
           data-testid="hold-progress"
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: 0,
+            height: PROGRESS_HEIGHT,
+            pointerEvents: 'none',
+            zIndex: 2,
+            width: `${Math.min(progress, 1) * 100}%`,
+            backgroundColor: variant === 'secondary' ? text.primary : text.onAccent,
+          }}
         />
       ) : null}
-    </Wrapper>
+    </div>
   );
 }

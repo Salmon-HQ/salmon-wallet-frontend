@@ -50,6 +50,7 @@ import {
 } from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
+import type { WalletHeaderProps } from './types';
 
 /** Left thumb — the account's own face, a 38pt circle; opens the wallet switcher. */
 const WALLET_THUMB_SIZE = 38;
@@ -63,22 +64,7 @@ const SETTINGS_GLYPH_SIZE = 18;
 // Props
 // ============================================================================
 
-export interface WalletHeaderProps {
-  accountName: string;
-  address: string;
-  /**
-   * The network the address belongs to. A non-mainnet one puts an environment
-   * chip on the address line — the same rule the balance block follows, and
-   * independent of Developer Networks (spec 026 D5).
-   */
-  networkId?: string;
-  onCopyAddress?: () => void;
-  onSettingsPress?: () => void;
-  onWalletPress?: () => void;
-  developerMode?: boolean;
-  avatarUrl?: string;
-  accountId?: string;
-}
+export type { WalletHeaderProps };
 
 // ============================================================================
 // Component

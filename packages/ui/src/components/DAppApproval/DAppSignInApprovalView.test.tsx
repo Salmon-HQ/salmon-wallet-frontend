@@ -21,7 +21,14 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
   markPaths: ['M0 0H1V1H0Z'],
 }));
 
+import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
+import type { ThemeContextValue } from '@salmon/shared';
 import { DAppSignInApprovalView } from './DAppSignInApprovalView';
+
+function hexToRgb(hex: string): string {
+  const value = hex.replace('#', '');
+  return `rgb(${parseInt(value.slice(0, 2), 16)}, ${parseInt(value.slice(2, 4), 16)}, ${parseInt(value.slice(4, 6), 16)})`;
+}
 
 const siws = {
   domain: 'app.example.com',
@@ -73,6 +80,32 @@ describe('DAppSignInApprovalView', () => {
       screen.getByText('This sign-in request is invalid and cannot be signed.')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'SIGN IN' })).toBeDisabled();
+  });
+
+  it('stands on bedrock and reads the live mode — light inks in light', () => {
+    const light = createSemantic('light');
+    const value = {
+      mode: 'light',
+      preference: 'light',
+      setPreference: async () => undefined,
+      semantic: light,
+      shadows,
+      ready: true,
+    } as unknown as ThemeContextValue;
+
+    render(
+      <ThemeContext.Provider value={value}>
+        <DAppSignInApprovalView {...baseProps} />
+      </ThemeContext.Provider>
+    );
+
+    // Bedrock rule: the gate is an opaque plane, never water or glass.
+    expect(screen.getByTestId('dapp-sign-in-approval').style.backgroundColor).toBe(
+      hexToRgb(light.surface.bedrock)
+    );
+    expect(screen.getByTestId('approval-title').style.color).toBe(hexToRgb(light.text.primary));
+    // The mark is the brand accent in both modes.
+    expect(screen.getByTestId('brand-mark').getAttribute('fill')).toBe(light.accent.fill);
   });
 
   it('notes the OCMS-envelope path when isOffchainMessage is set', () => {

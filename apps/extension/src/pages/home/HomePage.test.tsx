@@ -78,7 +78,6 @@ vi.mock('../../components', () => ({
   DepthBackground: stub('depth-background'),
   ScalesBackground: stub('scales-background'),
   SendPage: () => null,
-  NftSendDialog: () => null,
   ExplorerSelector: () => null,
   LanguageSelector: () => null,
   TrustedAppsSelector: () => null,

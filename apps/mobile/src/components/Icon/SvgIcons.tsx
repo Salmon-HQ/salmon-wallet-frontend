@@ -1,11 +1,7 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 import { useSemantic } from '../../theme/useThemedStyles';
-
-interface SvgIconProps {
-  size?: number;
-  color?: string;
-}
+import type { SvgIconProps } from './types';
 
 /**
  * Content copy icon from Figma assets

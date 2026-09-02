@@ -25,13 +25,12 @@
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useSemantic } from '../../theme/useThemedStyles';
+import type { DepthBackgroundProps } from './types';
 
-export interface DepthBackgroundProps {
-  style?: ViewStyle;
-}
+export type { DepthBackgroundProps };
 
 /**
  * The field, and it does not repaint.

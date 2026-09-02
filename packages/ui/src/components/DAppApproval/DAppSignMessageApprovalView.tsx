@@ -1,58 +1,23 @@
 import React, { useMemo } from 'react';
-import Box from '@mui/material/Box';
-import LanguageIcon from '@mui/icons-material/Language';
-import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import {
   formatOrigin,
-  fontFamily,
-  fontSize,
   getShortAddress,
   isTransactionLookalike,
   parseOffchainMessageForApproval,
   spacing,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../Button';
-import {
-  ButtonsContainer,
-  AppIdentityIcon,
-  AppIdentityName,
-  AppIdentityRow,
-  AppIdentityText,
-  Card,
-  Container,
-  Content,
-  FooterNote,
-  Header,
-  HintRow,
-  hintIconSx,
-  Label,
-  LogoWrap,
-  MARK_SIZE,
-  MessageSurface,
-  MessageText,
-  MonoValue,
-  ScrollArea,
-  SectionHeader,
-  sectionIconSx,
-  Subtitle,
-  SummaryGrid,
-  SummaryItem,
-  SummaryLabel,
-  SummaryValue,
-  Title,
-  Value,
-  WarningNotice,
-} from './common';
-import { BrandMark } from '../BrandMark';
-import type { DAppSignMessageApprovalViewProps } from './types';
 
-const monoValueSx = {
-  fontFamily: fontFamily.mono,
-  fontSize: fontSize.xs,
-  wordBreak: 'break-all',
-} as const;
+import { GlobeIcon, LockIcon, PenNibIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { PrimaryButton, SecondaryButton } from '../Button';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { WarningNotice } from '../WarningNotice';
+import { AppIdentity } from './AppIdentity';
+import { CardHead, bodyText, cardColumn, monoText } from './common';
+import type { DAppSignMessageApprovalViewProps } from './types';
 
 export function DAppSignMessageApprovalView({
   origin,
@@ -67,8 +32,8 @@ export function DAppSignMessageApprovalView({
   onReject,
 }: DAppSignMessageApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
-  const hasIdentity = !!appName || !!appIcon;
 
   const isOffchainMessage = requiredSigners !== undefined;
 
@@ -88,126 +53,103 @@ export function DAppSignMessageApprovalView({
     return isTransactionLookalike(Uint8Array.from(data));
   }, [isOffchainMessage, data]);
 
-  const rawMessageBox = (
-    <MessageSurface>
-      <MessageText>{messageText}</MessageText>
-    </MessageSurface>
-  );
-
   return (
-    <Container>
-      <Content>
-        <Header>
-          <LogoWrap>
-            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
-          </LogoWrap>
-          <Title>{t('dapp.sign_message_title', 'Sign Message')}</Title>
-          <Subtitle>
-            {t(
-              'dapp.sign_message_subtitle',
-              'This app is requesting you to sign a message. This will not submit a transaction.'
-            )}
-          </Subtitle>
-        </Header>
-
-        <ScrollArea>
-          <Card>
-            <SectionHeader>
-              <LanguageIcon sx={sectionIconSx} />
-              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
-            </SectionHeader>
-            {hasIdentity ? (
-              <AppIdentityRow>
-                {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
-                <AppIdentityText>
-                  {appName ? <AppIdentityName>{appName}</AppIdentityName> : null}
-                  <MonoValue sx={{ marginTop: 0 }}>{displayOrigin}</MonoValue>
-                </AppIdentityText>
-              </AppIdentityRow>
-            ) : (
-              <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
-            )}
-            <HintRow>
-              <LockOutlinedIcon sx={hintIconSx} />
-              <FooterNote>
-                {t(
-                  'dapp.sign_message_hint',
-                  'Read the message carefully. Message signatures can still authorize actions off-chain.'
-                )}
-              </FooterNote>
-            </HintRow>
+    <OnboardingLayout
+      testID="dapp-sign-message-approval"
+      variant="content"
+      backgroundColor={tokens.surface.bedrock}
+      markColor={tokens.accent.fill}
+      scrollBody
+      title={
+        <OnboardingTitle testID="approval-title">
+          {t('dapp.sign_message_title', 'Sign Message')}
+        </OnboardingTitle>
+      }
+      description={
+        <OnboardingDescription>
+          {t(
+            'dapp.sign_message_subtitle',
+            'This app is requesting you to sign a message. This will not submit a transaction.'
+          )}
+        </OnboardingDescription>
+      }
+      body={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead icon={GlobeIcon} label={t('dapp.requesting_site', 'Requesting site')} />
+            <AppIdentity appName={appName} appIcon={appIcon} displayOrigin={displayOrigin} />
+            <p style={bodyText(tokens)}>
+              {t(
+                'dapp.sign_message_hint',
+                'Read the message carefully. Message signatures can still authorize actions off-chain.'
+              )}
+            </p>
           </Card>
 
-          <Card>
-            <SectionHeader>
-              {isOffchainMessage ? (
-                <LockOutlinedIcon sx={sectionIconSx} />
-              ) : (
-                <DrawOutlinedIcon sx={sectionIconSx} />
-              )}
-              <Label sx={{ margin: 0 }}>
-                {isOffchainMessage
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead
+              icon={isOffchainMessage ? LockIcon : PenNibIcon}
+              label={
+                isOffchainMessage
                   ? t('dapp.offchain_message_label', 'Off-chain message (OCMS)')
-                  : t('dapp.message', 'Message')}
-              </Label>
-            </SectionHeader>
+                  : t('dapp.message', 'Message')
+              }
+            />
 
             {isLookalikeTransaction && (
-              <Box sx={{ marginBottom: `${spacing.md}px` }}>
-                <WarningNotice title={t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}>
-                  {t(
-                    'dapp.sign_message_tx_lookalike_warning',
-                    'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.'
-                  )}
-                </WarningNotice>
-              </Box>
+              <WarningNotice title={t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}>
+                {t(
+                  'dapp.sign_message_tx_lookalike_warning',
+                  'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.'
+                )}
+              </WarningNotice>
             )}
 
             {isOffchainMessage && offchainParsed ? (
               <>
-                <MessageSurface>
-                  <MessageText>{offchainParsed.content}</MessageText>
-                </MessageSurface>
-
-                <SummaryGrid sx={{ marginTop: `${spacing.md}px` }}>
-                  {offchainParsed.requiredSignatories.map((signatory) => (
-                    <SummaryItem key={signatory.address}>
-                      <SummaryLabel>
-                        {t('dapp.offchain_required_signer', 'Required signer')}
-                      </SummaryLabel>
-                      <SummaryValue sx={monoValueSx}>
-                        {getShortAddress(signatory.address)}
-                      </SummaryValue>
-                    </SummaryItem>
-                  ))}
-                </SummaryGrid>
+                <Card tone="shelf" padding="sm" radius="lg" testID="ocms-content">
+                  <pre style={monoText(tokens)}>{offchainParsed.content}</pre>
+                </Card>
+                {offchainParsed.requiredSignatories.map((signatory) => (
+                  <KeyValueRow
+                    key={signatory.address}
+                    layout="stacked"
+                    label={t('dapp.offchain_required_signer', 'Required signer')}
+                    value={getShortAddress(signatory.address) ?? signatory.address}
+                    valueFont="mono"
+                  />
+                ))}
               </>
             ) : (
-              rawMessageBox
+              <Card tone="shelf" padding="sm" radius="lg" testID="raw-message">
+                <pre style={monoText(tokens)}>{messageText}</pre>
+              </Card>
             )}
           </Card>
-        </ScrollArea>
-
-        <ButtonsContainer>
-          <PrimaryButton
-            onPress={onApprove}
-            loading={loading}
-            disabled={
-              disabled ||
-              loading ||
-              isLookalikeTransaction ||
-              // Never offer to sign an OCMS request whose exact signing bytes could
-              // not be built and rendered — the user must see what they sign.
-              (isOffchainMessage && !offchainParsed)
-            }
-          >
-            {t('dapp.sign', 'Sign').toUpperCase()}
-          </PrimaryButton>
-          <SecondaryButton onPress={onReject} disabled={loading}>
-            {t('dapp.reject', 'Reject').toUpperCase()}
-          </SecondaryButton>
-        </ButtonsContainer>
-      </Content>
-    </Container>
+        </div>
+      }
+      secondary={
+        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+          {t('dapp.reject', 'Reject').toUpperCase()}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton
+          onPress={onApprove}
+          loading={loading}
+          disabled={
+            disabled ||
+            loading ||
+            isLookalikeTransaction ||
+            // Never offer to sign an OCMS request whose exact signing bytes could
+            // not be built and rendered — the user must see what they sign.
+            (isOffchainMessage && !offchainParsed)
+          }
+          fullWidth
+        >
+          {t('dapp.sign', 'Sign').toUpperCase()}
+        </PrimaryButton>
+      }
+    />
   );
 }

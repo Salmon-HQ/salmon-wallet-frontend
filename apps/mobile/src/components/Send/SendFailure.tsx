@@ -18,23 +18,9 @@ import { fontFamilyNative, fontSize, ms, s, spacing, vs, type Semantic } from '@
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import type { SendFailureProps } from './types';
 
-export interface SendFailureProps {
-  /** Heading: what did not happen. */
-  title: string;
-  /** Why, in the user's language. */
-  message: string;
-  /** Re-run the same transfer, without leaving this screen. */
-  onRetry: () => void;
-  /** Label for the way out of the failure. */
-  dismissLabel: string;
-  /** Retry's label. */
-  retryLabel: string;
-  /** Leave the flow: the claim is released and the home floats back. */
-  onDismiss: () => void;
-  /** Bottom safe-area inset — the actions sit on the bottom edge. */
-  bottomInset: number;
-}
+export type { SendFailureProps };
 
 export const SendFailure: React.FC<SendFailureProps> = ({
   title,

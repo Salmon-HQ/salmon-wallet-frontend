@@ -57,7 +57,7 @@ const MAP = {
   AddressPanels: ['AddressAddPanel', 'AddressBookPanel', 'AddressEditPanel'],
   ConfirmSheet: ['ConfirmDialog'],
   LockOverlay: ['LockScreen'],
-  Send: ['SendPage'],
+  Send: ['SendPage', 'InputAddress'],
   SettingsScreenLayout: ['SettingsPanelStack', 'SettingsPanelContent'],
   SettingsSelectors: [
     'SettingsSelectorList',
@@ -77,9 +77,13 @@ const MOBILE_ONLY = {
   PowerupsFab: 'POWERUPS_SURFACE_ENABLED=false for the submission; spec 027 rebuilds it',
   PowerupBadge: 'same — powerups surface closed',
   SwapScreen: 'swap retired until spec 027; deleted from both when it lands',
+  TokenSelector:
+    'swap-only picker; the DOM twin left with SwapScreen (lot 4F), mobile follows when swap does',
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',
+  InputAddress:
+    'hook re-exports only; the field is Send/RecipientInput, twinned by the DOM InputAddress folder',
 };
 
 /** DOM-only, with the reason (spec 028 "DOM alternatives" or extension runtime). */
@@ -95,9 +99,6 @@ const DOM_ONLY = {
   NftDetailPage: 'mobile has it as a route (app/(app)/nft/[id]); the DOM keeps a component',
   TokenDetailPage:
     "mobile's token detail is the route app/(app)/token/[id].tsx; the DOM keeps a component whose cards (TokenAbout, TokenMarketData) are the twins",
-  NftSendDialog:
-    'mobile sends NFTs through the Send route; the DOM keeps the dialog until lot 4D folds it into SendPage',
-  TokenSelector: 'twin exists on mobile (TokenSelector) — listed for the folder shape only',
   WalletsScreen: "mobile's Wallets is the route app/(app)/wallets.tsx; the DOM keeps a component",
 };
 

@@ -18,7 +18,8 @@
  * add the DOM exit half only if the bare removal reads harsh in practice.
  */
 import React from 'react';
-import { keyframes, styled } from '@mui/material/styles';
+import { keyframes } from '@emotion/react';
+import styled from '@emotion/styled';
 import { motionDuration, motionEasing } from '@salmon/shared';
 
 import { useReducedMotion } from '../../utils/useReducedMotion';

@@ -30,13 +30,19 @@ export function WarningNotice({
   testID,
 }: WarningNoticeProps): React.ReactElement {
   const t = useSemantic();
-  const accent = tone === 'warning' ? t.status.warning : t.status.danger;
-  const background = tone === 'warning' ? t.status.warningTint : t.status.dangerTint;
+  const accent =
+    tone === 'warning' ? t.status.warning : tone === 'info' ? t.text.secondary : t.status.danger;
+  const background =
+    tone === 'warning'
+      ? t.status.warningTint
+      : tone === 'info'
+        ? t.surface.shelf
+        : t.status.dangerTint;
 
   return (
     <div
       data-testid={testID}
-      role="alert"
+      role={tone === 'info' ? 'status' : 'alert'}
       className={className}
       style={{
         display: 'flex',

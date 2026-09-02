@@ -518,9 +518,6 @@ importers:
       i18next:
         specifier: '>=23.0.0'
         version: 25.8.17(typescript@5.9.3)
-      keen-slider:
-        specifier: ^6.8.6
-        version: 6.8.6
       qrcode.react:
         specifier: ^4.2.0
         version: 4.2.0(react@19.2.0)
@@ -533,9 +530,6 @@ importers:
       react-i18next:
         specifier: '>=15.0.0'
         version: 16.5.6(i18next@25.8.17(typescript@5.9.3))(react-dom@19.2.0(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7)(bufferutil@4.1.0)(utf-8-validate@6.0.6))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.0)(utf-8-validate@6.0.6))(react@19.2.0)(typescript@5.9.3)
-      recharts:
-        specifier: ^3.10.1
-        version: 3.10.1(@types/react@19.2.18)(react-dom@19.2.0(react@19.2.0))(react-is@19.2.8)(react@19.2.0)(redux@5.0.1)
     devDependencies:
       '@types/react':
         specifier: ~19.2.18
@@ -6246,9 +6240,6 @@ packages:
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
-
-  keen-slider@6.8.6:
-    resolution: {integrity: sha512-dcEQ7GDBpCjUQA8XZeWh3oBBLLmyn8aoeIQFGL/NTVkoEOsmlnXqA4QykUm/SncolAZYGsEk/PfUhLZ7mwMM2w==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -15607,8 +15598,6 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  keen-slider@6.8.6: {}
-
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -16960,7 +16949,7 @@ snapshots:
 
   react-native-web@0.21.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.7
       '@react-native/normalize-colors': 0.74.89
       fbjs: 3.0.5
       inline-style-prefixer: 7.0.1

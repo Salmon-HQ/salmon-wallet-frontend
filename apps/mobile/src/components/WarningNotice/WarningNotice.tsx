@@ -30,9 +30,11 @@ export function WarningNotice({
   testID,
 }: WarningNoticeProps): React.ReactElement {
   const styles = useThemedStyles(stylesFor);
-  const { status } = useSemantic();
-  const accent = tone === 'warning' ? status.warning : status.danger;
-  const background = tone === 'warning' ? status.warningTint : status.dangerTint;
+  const { status, surface, text } = useSemantic();
+  const accent =
+    tone === 'warning' ? status.warning : tone === 'info' ? text.secondary : status.danger;
+  const background =
+    tone === 'warning' ? status.warningTint : tone === 'info' ? surface.shelf : status.dangerTint;
 
   return (
     <View

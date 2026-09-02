@@ -9,27 +9,9 @@
 export { PrimaryButton, SecondaryButton, TextButton } from './Button';
 export type { PrimaryButtonProps, SecondaryButtonProps, TextButtonProps } from './Button';
 
-// Icon components - Common SVG icons
-export {
-  ActivityIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  ReceiveIcon,
-  RefreshIcon,
-  SendIcon,
-  SettingsIcon,
-  SolanaSvgIcon,
-  WalletIcon,
-} from './Icon';
-export type { IconProps } from './Icon';
-
-// Icon - Unified icon component
-export { Icon } from './Icon';
-export type { UnifiedIconProps } from './Icon';
+// The blockchain marks — brand assets, hand-drawn on both platforms
+export { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from './Icon';
+export type { BlockchainMarkProps } from './Icon';
 
 // WalletHeader - Account info and settings navigation
 export { WalletHeader } from './WalletHeader';
@@ -107,10 +89,6 @@ export type { ScreenHeaderProps } from './ScreenHeader';
 export { StepIndicator } from './StepIndicator';
 export type { StepIndicatorProps } from './StepIndicator';
 
-// GradientBackground - Linear gradient container component
-export { GradientBackground } from './GradientBackground';
-export type { GradientBackgroundProps } from './GradientBackground';
-
 // BlurContainer - Blur effect container with backdrop-filter
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
@@ -165,11 +143,12 @@ export type { PasswordInputProps, PasswordStrengthBarProps } from './PasswordInp
 export { QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
 
-// InputAddress - Address input with validation
-export { InputAddress, useAddressValidation } from './InputAddress';
+// InputAddress - the recipient field (mobile's RecipientInput) and the connected InputAddress
+export { InputAddress, RecipientInput, useAddressValidation } from './InputAddress';
 export type {
   BlockchainType,
   InputAddressProps,
+  RecipientInputProps,
   UseAddressValidationParams,
   UseAddressValidationResult,
   ValidationCallbackResult,
@@ -183,15 +162,6 @@ export type { NftCardProps, NftCardSkeletonProps, NftData } from './NftCard';
 // NftDetailPage - Full-page NFT detail view with image, attributes, and actions
 export { NftDetailPage } from './NftDetailPage';
 export type { NftAttribute, NftDetailData, NftDetailPageProps } from './NftDetailPage';
-
-// TokenSelector - Token selection with search and pagination
-export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
-export type {
-  TokenSelectorModalProps,
-  TokenSelectorProps,
-  TokenSelectorToken,
-  UseTokenSearchResult,
-} from './TokenSelector';
 
 // TokenDetailPage - the token detail screen: balance, chart, market data, about
 export { TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
@@ -230,38 +200,16 @@ export type {
   TransactionType as TxType,
 } from './TransactionHistoryPage';
 
-// SendPage - Full-page multi-step send flow
-export { SendPage } from './SendPage';
+// SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
+export { SendFailure, SendPage, TokenPickerSheet, TokenSelectList } from './SendPage';
 export type {
+  SendFailureProps,
   SendPageProps,
   SendStep,
   SendToken,
-  StepAddressAmountProps,
-  StepConfirmationProps,
-  StepTokenSelectProps,
+  TokenPickerSheetProps,
+  TokenSelectListProps,
 } from './SendPage';
-
-// SwapScreen - Swap interface
-export {
-  SwapAmountInput,
-  SwapDetailRow,
-  SwapInputScreen,
-  SwapReviewExchange,
-  SwapReviewScreen,
-  SwapScreen,
-} from './SwapScreen';
-export type {
-  SwapAmountInputProps,
-  SwapChainType,
-  SwapDetailRowProps,
-  SwapInputScreenProps,
-  SwapQuote,
-  SwapReviewExchangeProps,
-  SwapReviewScreenProps,
-  SwapScreenProps,
-  SwapStep,
-  SwapToken,
-} from './SwapScreen';
 
 // DAppApproval - Shared approval views for web and extension
 export {
@@ -295,22 +243,6 @@ export type {
   SuccessPageProps,
 } from './AuthFlow';
 
-// BaseDialog - Base compound component for MUI dialogs
-export { BaseDialog, MessageText } from './BaseDialog';
-export type {
-  ActionButtonProps,
-  ActionsProps,
-  BaseDialogProps,
-  TextFieldProps as BaseDialogTextFieldProps,
-  CancelButtonProps,
-  ContentProps,
-  HeaderProps,
-} from './BaseDialog';
-
-// PageShell - Shared page layout wrapper for full-page views
-export { PageShell } from './PageShell';
-export type { PageShellProps } from './PageShell';
-
 // ConfirmDialog - the confirmation sheet for destructive actions (mobile's ConfirmSheet)
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
@@ -318,10 +250,6 @@ export type { ConfirmDialogProps } from './ConfirmDialog';
 // TextInput - a Card holding an input, the settings screens' plain field
 export { TextInput } from './TextInput';
 export type { TextInputProps } from './TextInput';
-
-// NftSendDialog - Dialog for sending NFTs to another address
-export { NftSendDialog } from './NftSendDialog';
-export type { NftSendDialogProps } from './NftSendDialog';
 
 // SeedPhrase - Seed word display grid and validation input
 export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
@@ -359,8 +287,9 @@ export type {
   DerivedAccountCardSkeletonProps,
 } from './DerivedAccountCard';
 
-// TransactionSuccessScreen - Success screen after transaction
+// TransactionSuccessScreen - the exchange receipt, an alias over ReceiptScreen
 export { TransactionSuccessScreen } from './TransactionSuccessScreen';
+export type { TransactionSuccessScreenProps } from './TransactionSuccessScreen';
 
 // AccountsPanel - Account list management
 export { AccountsPanel } from './AccountsPanel';

@@ -50,13 +50,4 @@ describe('ScalesBackground (DOM)', () => {
     expect(el.style.backgroundImage).toContain('linear-gradient(to right');
     expect(el.style.maskImage).toContain('data:image/svg+xml');
   });
-
-  it('an explicit strokeColor overrides the variant default', () => {
-    const { container } = renderInMode(
-      'dark',
-      <ScalesBackground variant="fish" strokeColor="#123456" />
-    );
-    const el = container.firstElementChild as HTMLElement;
-    expect(el.style.backgroundImage).toContain(encodeURIComponent('#123456'));
-  });
 });

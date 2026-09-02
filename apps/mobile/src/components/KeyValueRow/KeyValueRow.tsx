@@ -4,7 +4,8 @@
  * The receipt, the fee block, the price block and the transaction detail are
  * all stacks of this row, so the pair's typography and its space-between
  * geometry live here once. Values are tabular per the Tabular Rule: a row
- * that repolls must not reflow.
+ * that repolls must not reflow. `layout="stacked"` sets the label over a
+ * value that wraps — a full address or hash is shown whole, never clipped.
  */
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -39,14 +40,17 @@ export function KeyValueRow({
   valueTone = 'primary',
   labelWeight = 500,
   action,
+  layout = 'inline',
+  valueFont = 'sans',
   style,
   testID,
 }: KeyValueRowProps) {
   const styles = useThemedStyles(stylesFor);
   const valueInk = valueInkFor(useSemantic());
+  const stacked = layout === 'stacked';
 
   return (
-    <View style={[styles.row, style]} testID={testID}>
+    <View style={[stacked ? styles.stack : styles.row, style]} testID={testID}>
       <Text
         style={[styles.label, labelWeight === 600 && styles.labelEmphasised]}
         maxFontSizeMultiplier={fontScaleCap.dense}
@@ -56,9 +60,14 @@ export function KeyValueRow({
       <View style={styles.valueGroup}>
         {typeof value === 'string' ? (
           <Text
-            style={[styles.value, { color: valueInk[valueTone] }]}
+            style={[
+              styles.value,
+              valueFont === 'mono' && styles.valueMono,
+              stacked && styles.valueStacked,
+              { color: valueInk[valueTone] },
+            ]}
             maxFontSizeMultiplier={fontScaleCap.dense}
-            numberOfLines={1}
+            numberOfLines={stacked ? undefined : 1}
           >
             {value}
           </Text>
@@ -78,6 +87,11 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: s(spacing.md),
+    },
+    stack: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: s(spacing.xs),
     },
     label: {
       fontFamily: fontFamilyNative.medium,
@@ -101,5 +115,13 @@ const stylesFor = (t: Semantic) =>
       lineHeight: s(fontSize.body) * lineHeight.snug,
       textAlign: 'right',
       ...TABULAR,
+    },
+    valueMono: {
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.mono),
+      lineHeight: s(fontSize.mono) * lineHeight.snug,
+    },
+    valueStacked: {
+      textAlign: 'left',
     },
   });

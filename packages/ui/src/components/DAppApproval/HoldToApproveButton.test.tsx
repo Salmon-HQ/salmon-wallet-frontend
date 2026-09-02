@@ -6,8 +6,10 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
-vi.mock('@salmon/shared', () => ({
-  semantic: { text: { onAccent: '#070911' } },
+// The real barrel: the progress ink now comes off `useSemantic()`, which falls
+// back to the shared dark set when no provider is mounted.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
 }));
 
 vi.mock('../Button', () => ({

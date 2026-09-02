@@ -1,37 +1,9 @@
 import type { CSSProperties } from 'react';
+import type { ScalesBackgroundPropsBase } from '@salmon/shared';
 
-/**
- * The sanctioned appearances of the scales motif — these and no others.
- *
- * The motif is the water column's texture and its density is a depth cue, so
- * each appearance is a different distance from the eye rather than a different
- * decoration. A fourth use is a bug; see `The Scales Exclusion Rule`.
- */
-export type ScalesVariant =
-  /** On `depth.column`, the full height of its parent. 3.2x, thinning. */
-  | 'deepField'
-  /**
-   * @deprecated No call site remains. Salmon fills carry `FleshBackground`
-   * instead — a filled button is mass, not surface, and the seigaiha tile is
-   * taller than a pill, so it read as a stamp applied on top rather than as
-   * the button's own material. Kept because this union is a public export
-   * with three apps behind it.
-   */
-  | 'fish'
-  /**
-   * @deprecated No call site remains — the refraction strip was retired
-   * into the (now also retired) membrane field. Kept because this union is
-   * a public export with three apps behind it.
-   */
-  | 'refraction';
+export type { ScalesVariant } from '@salmon/shared';
 
-export interface ScalesBackgroundProps {
-  /** Which of the sanctioned appearances to draw. Defaults to `deepField`. */
-  variant?: ScalesVariant;
-  strokeColor?: string;
-  strokeWidth?: number;
-  patternHeight?: number;
-  topOffset?: number;
-  style?: CSSProperties;
+/** Props for the ScalesBackground component (DOM) */
+export interface ScalesBackgroundProps extends ScalesBackgroundPropsBase<CSSProperties> {
   className?: string;
 }

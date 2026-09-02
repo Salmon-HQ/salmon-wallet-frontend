@@ -1,49 +1,39 @@
 /**
- * ReceiveSheet - Dialog for receiving tokens (web/extension version)
+ * ReceiveSheet — the wallet's receive address as a code, on the DOM.
  *
- * Migrated from packages/ui (React Native) to use MUI Dialog.
- * Features:
- * - QR code for wallet address
- * - Copy address button (the only path to the address string)
- * - Responsive QR code sizing
+ * The mobile twin is `apps/mobile/src/components/ReceiveSheet/ReceiveSheet.tsx`:
+ * a sheet on the thermocline holding the chain badge over the code, the
+ * environment under it off mainnet, the wrong-network warning and the one
+ * control that hands the address over — the copy button on the salmon fill.
+ * The written address is gone from the sheet; the code is the address.
  */
-
-import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import ButtonBase from '@mui/material/ButtonBase';
-import { CheckIcon, CopyIcon, iconSize } from '../../icons';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  getChainDisplayName,
-  palette,
-  spacing,
   borderRadius,
   componentSizes,
   copyToClipboard,
+  fontFamily,
   fontSize,
   fontWeight,
+  getChainDisplayName,
   letterSpacing,
-  opacity,
-  duration,
-  easing,
+  spacing,
   useCopyFeedback,
 } from '@salmon/shared';
-import { useTranslation } from 'react-i18next';
-import { QRCode } from '../QRCode';
-import { BrandMark } from '../BrandMark';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { BrandMark } from '../BrandMark';
+import { CopyTick } from '../CopyTick';
 import { FleshBackground } from '../FleshBackground';
+import { QRCode } from '../QRCode';
 import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
 
-import { CopyTick } from '../CopyTick';
-// ============================================================================
-// Constants
-// ============================================================================
-
-const QR_SIZE_DEFAULT = componentSizes.qrCodeSize;
+/** Mobile's content padding: the code fills the width inside it. */
+const CONTENT_PADDING_HORIZONTAL = 24;
 
 // Brand mark inside the QR: the knockout (quiet zone behind the mark) covers
 // 24% of the code's width — under the ~30% of modules a level-H code can lose
@@ -51,122 +41,6 @@ const QR_SIZE_DEFAULT = componentSizes.qrCodeSize;
 const QR_LOGO_KNOCKOUT_RATIO = 0.24;
 const QR_LOGO_MARK_RATIO = 0.66; // of the knockout, so the mark never touches modules
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const ContentWrapper = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: componentSizes.receiveContentGap,
-  flex: 1,
-});
-
-/**
- * The badge labels the QR, not the sheet, so the two travel as one group: a
- * tight gap inside it, the content gap outside it.
- */
-const QRGroup = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: spacing.md,
-});
-
-const QRContainer = styled(Box)({
-  position: 'relative',
-  borderRadius: borderRadius.xl,
-  border: `${componentSizes.qrBorderWidth}px solid ${palette.neutral[0]}`,
-  overflow: 'hidden',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-});
-
-/** The salmon mark's knockout, centered so no module collides with it. */
-const QRLogoKnockout = styled(Box)({
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: palette.neutral[0],
-  pointerEvents: 'none',
-});
-
-const ChainBadge = styled(Typography)({
-  backgroundColor: colors.background.card,
-  border: `1px solid ${colors.border.default}`,
-  borderRadius: borderRadius.full,
-  padding: `${spacing.xs}px ${spacing.md}px`,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.primary,
-  letterSpacing: letterSpacing.wide,
-});
-
-const CopyButton = styled(ButtonBase)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: colors.button.primaryBackground,
-  borderRadius: borderRadius.lg,
-  // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
-  overflow: 'hidden',
-  width: componentSizes.copyButtonWidth,
-  height: componentSizes.buttonHeightCompact,
-  gap: spacing.xs,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
-  '&:active': {
-    opacity: opacity.medium,
-  },
-});
-
-/** Sits above the flesh, never under it. Decoration is never a hit target. */
-const OnFillContent = styled('span')({
-  position: 'relative',
-  zIndex: 1,
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: spacing.xs,
-});
-
-const CopyButtonText = styled(Typography)({
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.extraBold,
-  color: colors.button.primaryText,
-  textAlign: 'center',
-  textTransform: 'capitalize',
-});
-
-// ============================================================================
-// ReceiveSheet Component
-// ============================================================================
-
-/**
- * ReceiveSheet - Dialog for displaying a wallet's receive address with QR code.
- *
- * @example
- * ```tsx
- * <ReceiveSheet
- *   visible={isVisible}
- *   onClose={() => setIsVisible(false)}
- *   address="3NE4QmUT15PGZTPpqHjGH6VKUdXrpTKb82NGqYuQdXdL"
- *   onCopy={() => copyToClipboard(address)}
- * />
- * ```
- */
 export function ReceiveSheet({
   visible,
   onClose,
@@ -177,52 +51,59 @@ export function ReceiveSheet({
   className,
   style,
 }: ReceiveSheetProps) {
-  const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
-  const [qrSize, setQrSize] = useState<number>(QR_SIZE_DEFAULT);
-  const qrLogoKnockoutSize = Math.round(qrSize * QR_LOGO_KNOCKOUT_RATIO);
-  const contentRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const semantic = useSemantic();
+  const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [qrSize, setQrSize] = useState<number>(componentSizes.qrCodeSize);
+  const qrLogoKnockoutSize = Math.round(qrSize * QR_LOGO_KNOCKOUT_RATIO);
 
   // A deposit made on the wrong chain is gone for good, so the chain is named
-  // twice: an opaque badge with a label (never a tint — DESIGN.md) and a
-  // warning that says what "wrong network" costs.
+  // twice: an opaque badge with a label and a warning that says what "wrong
+  // network" costs.
   const chainName = getChainDisplayName(blockchain);
 
-  // Reset copied state when dialog closes
   useEffect(() => {
-    if (!visible) {
-      resetCopied();
-    }
+    if (!visible) resetCopied();
   }, [visible, resetCopied]);
 
-  // Measure container width for responsive QR sizing
+  // The code fills the sheet's width minus the padding and its own border —
+  // measured, because the panel is user-resizable.
   useEffect(() => {
-    if (!visible || !contentRef.current) return;
-
+    if (!visible || !contentRef.current) return undefined;
+    const element = contentRef.current;
     const measure = () => {
-      if (contentRef.current) {
-        const width = contentRef.current.clientWidth;
-        if (width > 0) {
-          const padding = spacing.xl * 2;
-          const border = componentSizes.qrBorderWidth * 2;
-          setQrSize(Math.floor(width - padding - border));
-        }
-      }
+      const width = element.clientWidth;
+      if (width > 0) setQrSize(Math.floor(width - componentSizes.qrBorderWidth * 2));
     };
-
-    // Measure after dialog animation settles
-    const timer = setTimeout(measure, 50);
-    return () => clearTimeout(timer);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
   }, [visible]);
 
   const handleCopy = useCallback(async () => {
-    if (onCopy) {
-      onCopy();
-    } else {
-      await copyToClipboard(address);
+    try {
+      const succeeded = onCopy ? await onCopy() : await copyToClipboard(address);
+      if (succeeded) showCopied();
+    } catch {
+      // Copy failed — keep showing the copy icon so the feedback stays honest.
     }
-    showCopied();
   }, [onCopy, address, showCopied]);
+
+  const badgeStyle: React.CSSProperties = {
+    backgroundColor: semantic.surface.raised,
+    // A text chip takes the chip step, not a pill.
+    borderRadius: borderRadius.r1,
+    border: `1px solid ${semantic.border.raised}`,
+    padding: `${spacing.xs}px ${spacing.md}px`,
+    fontFamily: fontFamily.sans,
+    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.caption,
+    letterSpacing: letterSpacing.label,
+    color: semantic.text.primary,
+  };
 
   return (
     <BottomSheetContainer
@@ -231,95 +112,166 @@ export function ReceiveSheet({
       title={<SheetTitle>{t('token.receive.title')}</SheetTitle>}
       testID="receive-sheet-container"
       className={className}
-      style={style}
+      style={{ maxHeight: '92vh', overflow: 'hidden', ...style }}
     >
-      <Box
+      <div
+        ref={contentRef}
+        data-testid="receive-sheet"
         style={{
-          paddingLeft: spacing.xl,
-          paddingRight: spacing.xl,
-          paddingTop: spacing.xl,
-          paddingBottom: spacing['2xl'],
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: `0 ${CONTENT_PADDING_HORIZONTAL}px ${spacing['2xl']}px`,
+          gap: componentSizes.receiveContentGap,
         }}
       >
-        <ContentWrapper ref={contentRef} data-testid="receive-sheet">
-          <QRGroup>
-            {/* Chain badge — opaque fill and a written label, so it survives a
-                colorblind reader, a narrow column and a screenshot. */}
-            <ChainBadge data-testid="receive-chain-badge">
-              {t('token.send.blockchainAddress', { blockchain: chainName })}
-            </ChainBadge>
+        {/* The badge labels the QR, not the sheet, so the two travel as one
+            group: a tight gap inside it, the content gap outside it. */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: spacing.md,
+            marginTop: spacing.headerPadding,
+          }}
+        >
+          <span data-testid="receive-chain-badge" style={badgeStyle}>
+            {t('token.send.blockchainAddress', { blockchain: chainName })}
+          </span>
 
-            {/* Off mainnet the sheet names the environment under the chain: a
-                deposit to a devnet address is not money (spec 026 D6). */}
-            {networkLabel && (
-              <ChainBadge data-testid="receive-network-badge">{networkLabel}</ChainBadge>
-            )}
-
-            {/* QR Code */}
-            <QRContainer data-testid="receive-qr-code">
-              <QRCode
-                value={address}
-                size={qrSize}
-                backgroundColor={palette.neutral[0]}
-                color={palette.neutral[1000]}
-                // The centered mark hides modules, so the code carries level-H
-                // redundancy — a wallet QR must stay scannable before it looks good.
-                ecLevel="H"
-              />
-              {/* The salmon mark on its own knockout: same inks as the code —
-                knockout is the code's ground, mark is the module ink. */}
-              <QRLogoKnockout
-                data-testid="receive-qr-logo"
-                style={{
-                  width: qrLogoKnockoutSize,
-                  height: qrLogoKnockoutSize,
-                  borderRadius: qrLogoKnockoutSize / 4,
-                }}
-              >
-                <BrandMark
-                  size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                  color={palette.neutral[1000]}
-                />
-              </QRLogoKnockout>
-            </QRContainer>
-          </QRGroup>
-
-          {/* Wrong-network deposits are unrecoverable, so say so here rather
-              than leaving the chain to be inferred from the address format. */}
-          <WarningNotice
-            tone="warning"
-            title={t('token.receive.networkOnlyTitle', { chain: chainName })}
+          <div
+            data-testid="receive-qr-code"
+            style={{
+              position: 'relative',
+              borderRadius: borderRadius.xl,
+              border: `${componentSizes.qrBorderWidth}px solid ${semantic.text.primary}`,
+              overflow: 'hidden',
+              display: 'inline-flex',
+              lineHeight: 0,
+            }}
           >
-            {t('token.receive.networkOnlyBody', { chain: chainName })}
-          </WarningNotice>
-
-          {/* Copy Button */}
-          <CopyButton
-            onClick={handleCopy}
-            aria-label={copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
-            data-testid="receive-copy-button"
-          >
-            {/* The flesh: the myosepta of a cut fillet, pressed into the
-                salmon fill. Every band is paler than the fill, so it can only
-                raise the luminance under the label. */}
-            <FleshBackground />
-            <OnFillContent>
-              <CopyTick
-                copied={copied}
-                copy={
-                  <CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
-                }
-                tick={
-                  <CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
-                }
+            {/* The QR is data, not an accent: neutral inks maximise module
+                contrast for a scanner. */}
+            <QRCode
+              value={address}
+              size={qrSize}
+              backgroundColor={semantic.text.primary}
+              color={semantic.depth.abyss}
+              // The centered mark hides modules, so the code carries level-H
+              // redundancy — a wallet QR must stay scannable before it looks good.
+              ecLevel="H"
+            />
+            {/* The salmon mark, centered on its own knockout so no module
+                collides with it. Same inks as the code. */}
+            <div
+              data-testid="receive-qr-logo"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: qrLogoKnockoutSize,
+                height: qrLogoKnockoutSize,
+                borderRadius: qrLogoKnockoutSize / 4,
+                backgroundColor: semantic.text.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              <BrandMark
+                size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
+                color={semantic.depth.abyss}
               />
-              <CopyButtonText aria-live="polite">
-                {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
-              </CopyButtonText>
-            </OnFillContent>
-          </CopyButton>
-        </ContentWrapper>
-      </Box>
+            </div>
+          </div>
+        </div>
+
+        {/* Off mainnet the environment is named under the code: a deposit made
+            to a test address is not money (spec 026 D6). */}
+        {!!networkLabel && (
+          <span
+            data-testid="receive-network-label"
+            style={{
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.semibold,
+              fontSize: fontSize.caption,
+              letterSpacing: letterSpacing.label,
+              color: semantic.text.tertiary,
+              textAlign: 'center',
+            }}
+          >
+            {networkLabel}
+          </span>
+        )}
+
+        {/* Wrong-network deposits are unrecoverable, so say so here. */}
+        <WarningNotice
+          tone="warning"
+          title={t('token.receive.networkOnlyTitle', { chain: chainName })}
+        >
+          {t('token.receive.networkOnlyBody', { chain: chainName })}
+        </WarningNotice>
+
+        {/* The one path to the address string: the copied state is announced,
+            not only painted. */}
+        <button
+          type="button"
+          data-testid="receive-copy-button"
+          onClick={() => void handleCopy()}
+          aria-label={copied ? t('actions.copied') : t('token.receive.copyAddress')}
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: spacing.xs,
+            overflow: 'hidden',
+            border: 'none',
+            cursor: 'pointer',
+            backgroundColor: semantic.accent.fill,
+            borderRadius: borderRadius.lg,
+            minWidth: componentSizes.copyButtonWidth,
+            maxWidth: '100%',
+            minHeight: componentSizes.buttonHeightCompact,
+            padding: `${spacing.xs}px ${spacing.lg}px`,
+          }}
+        >
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill. */}
+          <FleshBackground />
+          <span
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing.xs,
+            }}
+          >
+            <CopyTick
+              copied={copied}
+              copy={<CopyIcon weight="bold" size={iconSize.md} color={semantic.accent.onFill} />}
+              tick={<CheckIcon weight="bold" size={iconSize.md} color={semantic.accent.onFill} />}
+            />
+            <span
+              aria-live="polite"
+              style={{
+                fontFamily: fontFamily.sans,
+                fontWeight: fontWeight.bold,
+                fontSize: fontSize.bodyLg,
+                color: semantic.accent.onFill,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
+            </span>
+          </span>
+        </button>
+      </div>
     </BottomSheetContainer>
   );
 }

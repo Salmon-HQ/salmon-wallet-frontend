@@ -4,7 +4,9 @@
  * The mobile twin is `apps/mobile/src/components/KeyValueRow/KeyValueRow.tsx`;
  * the pair's typography and space-between geometry are the same, read from
  * the same `KeyValueRowPropsBase` contract. Values are tabular per the
- * Tabular Rule: a row that repolls must not reflow.
+ * Tabular Rule: a row that repolls must not reflow. `layout="stacked"` sets
+ * the label over a value that wraps — a full address or hash is shown whole,
+ * never clipped, because clipping hides the thing the user is asked to check.
  */
 import React from 'react';
 import {
@@ -33,20 +35,25 @@ export function KeyValueRow({
   valueTone = 'primary',
   labelWeight = 500,
   action,
+  layout = 'inline',
+  valueFont = 'sans',
   style,
   className,
   testID,
 }: KeyValueRowProps) {
   const t = useSemantic();
   const valueInk = valueInkFor(t);
+  const stacked = layout === 'stacked';
 
-  const row: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    ...style,
-  };
+  const row: React.CSSProperties = stacked
+    ? { display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: spacing.xs, ...style }
+    : {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.md,
+        ...style,
+      };
 
   const labelStyle: React.CSSProperties = {
     fontFamily: fontFamily.sans,
@@ -63,18 +70,29 @@ export function KeyValueRow({
     gap: spacing.sm,
   };
 
+  const face: React.CSSProperties =
+    valueFont === 'mono'
+      ? {
+          fontFamily: fontFamily.mono,
+          fontWeight: fontWeight.regular,
+          fontSize: fontSize.mono,
+          lineHeight: `${fontSize.mono * lineHeight.snug}px`,
+        }
+      : {
+          fontFamily: fontFamily.sans,
+          fontWeight: fontWeight.bold,
+          fontSize: fontSize.body,
+          lineHeight: `${fontSize.body * lineHeight.snug}px`,
+        };
+
   const valueStyle: React.CSSProperties = {
     minWidth: 0,
-    fontFamily: fontFamily.sans,
-    fontWeight: fontWeight.bold,
-    fontSize: fontSize.body,
-    lineHeight: `${fontSize.body * lineHeight.snug}px`,
-    textAlign: 'right',
+    ...face,
     color: valueInk[valueTone],
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
     ...tabularNums.css,
+    ...(stacked
+      ? { textAlign: 'left', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }
+      : { textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
   };
 
   return (

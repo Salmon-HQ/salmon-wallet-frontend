@@ -10,21 +10,13 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { SendToken } from '@salmon/shared';
 
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { Thermocline } from '../Thermocline';
 import { TokenSelectList } from './TokenSelectList';
+import type { TokenPickerSheetProps } from './types';
 
-export interface TokenPickerSheetProps {
-  visible: boolean;
-  onClose: () => void;
-  tokens: SendToken[];
-  loading: boolean;
-  showUnverifiedTokens: boolean;
-  onSelectToken: (token: SendToken) => void;
-  testID?: string;
-}
+export type { TokenPickerSheetProps };
 
 export function TokenPickerSheet({
   visible,

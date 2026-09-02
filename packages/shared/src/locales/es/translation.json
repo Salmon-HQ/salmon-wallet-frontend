@@ -16,7 +16,6 @@
     "name_or_address": "Nombre o Dirección \"{{token}}\"",
     "seed_phrase": "Seed-phrase",
     "loading": "Cargando...",
-    "close": "Cerrar",
     "max": "Máx",
     "back": "Volver",
     "confirm": "Confirmar",
@@ -53,6 +52,7 @@
     "next": "Siguiente",
     "start": "Comenzar",
     "copy": "Copiar",
+    "paste": "Pegar",
     "close": "Cerrar",
     "save": "Guardar",
     "remove": "Eliminar",
@@ -69,12 +69,10 @@
     "retry": "Reintentar",
     "searching": "Buscando...",
     "activity": "Actividad",
-    "back": "Volver",
     "copied": "¡Copiado!",
     "edit": "Editar",
     "reveal": "Revelar",
-    "select": "Seleccionar",
-    "sending": "Enviando..."
+    "select": "Seleccionar"
   },
   "dapp": {
     "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
@@ -386,13 +384,8 @@
       "addressBook": "Libreta de Direcciones",
       "recipient": "Destinatario",
       "amountLabel": "Monto",
-      "reviewAndSend": "Revisar",
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
-      "confirmAgain": "Confirmar de nuevo",
-      "copyRecipientAddress": "Copiar la dirección del destinatario",
-      "networkFeeAmount": "Comisión de Red: ~{{fee}}",
-      "resolvedFrom": "Resuelta desde {{domain}}",
       "no_sol_title": "Necesitás SOL para enviar",
       "no_sol_body": "Cada transacción en Solana cuesta una pequeña comisión en SOL, sin importar qué estés enviando. Agregá al menos {{amount}} SOL a esta billetera primero."
     },
@@ -634,7 +627,6 @@
     }
   },
   "nft": {
-    "send_nft": "Enviar",
     "burn_nft": "Quemar",
     "detail": {
       "attributes": "Atributos",
@@ -656,7 +648,6 @@
     "send": {
       "title": "Enviar NFT",
       "reviewTitle": "Revisar envío",
-      "sending": "Enviando NFT...",
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
       "ordinalsNotSupported": "Las transferencias de Ordinals aún no están soportadas.",
       "successTitle": "NFT enviado",
@@ -679,7 +670,6 @@
       "confirm": "Confirmar quema",
       "notSupported": "La quema de NFTs de {{blockchain}} todavía no está soportada."
     },
-    "ordinal_send_unsupported": "Las transferencias de Ordinals aún no están soportadas.",
     "unnamed": "NFT sin nombre",
     "emptyTitle": "Sin Coleccionables",
     "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
@@ -724,13 +714,7 @@
       "noAccount": "No se encontró una cuenta"
     }
   },
-  "bridge": {
-    "recipient": {
-      "title": "Dirección del Destinatario"
-    }
-  },
   "transaction": {
-    "sendComplete": "Envio Completado",
     "sendFailed": "No se pudo enviar",
     "sendUnconfirmed": "Envío sin confirmar",
     "swapComplete": "Swap Completado",
@@ -767,7 +751,6 @@
     "edit_account": "Editar cuenta",
     "delete_account": "Eliminar cuenta",
     "refresh_balance": "Actualizar balance",
-    "selected_token": "Token seleccionado: {{name}}",
     "loading_token_list": "Cargando lista de tokens",
     "go_back": "Volver",
     "step_progress": "Paso {{current}} de {{total}}",
@@ -781,8 +764,6 @@
     "loading_token_info": "Cargando información del token",
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
-    "select_token": "Seleccionar {{name}}",
-    "select_token_on_network": "Seleccionar {{name}} en {{network}}",
     "copy_contract_address": "Copiar dirección del contrato",
     "open_website": "Abrir sitio web: {{url}}",
     "active_account": "{{name}}, activa",
@@ -829,10 +810,8 @@
   },
   "send": {
     "fee_estimate_failed": "No se pudo estimar la comisión",
-    "enter_address": "Ingresá la dirección del destinatario",
     "recipient": "Destinatario",
     "enter_address_or_domain": "Ingresá una dirección o dominio",
-    "resolved_address": "Dirección resuelta:",
     "screens": {
       "recipientSubtitle": "Elegí quién va a recibir tus activos.",
       "amountSubtitle": "Ingresá el monto a enviar.",

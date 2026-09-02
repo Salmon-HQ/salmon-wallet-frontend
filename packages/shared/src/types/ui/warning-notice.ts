@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
 /** `error` blocks an action (red); `warning` is advisory (amber). */
-export type WarningNoticeTone = 'error' | 'warning';
+/** `info` states a neutral fact in the same anatomy — "no balance changes". */
+export type WarningNoticeTone = 'error' | 'warning' | 'info';
 
 /**
  * Props for the WarningNotice component (base - platform-agnostic).

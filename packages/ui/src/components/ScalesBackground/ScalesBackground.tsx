@@ -46,12 +46,16 @@ const variantsFor = (
    * and used as a mask over one full-width horizontal gradient.
    */
   refraction: {
-    stroke: '#FFFFFF',
+    // Unused: the sweep's stroke is decided at render (see below).
+    stroke: '',
     scale: scales.refractionScale,
     fade: false,
     fadeFloor: 1,
   },
 });
+
+/** 1px is the only stroke weight for a boundary in this system. */
+const STROKE_WIDTH = 1;
 
 /** `background-image` for the refraction band: the horizontal sweep. */
 function refractionSweep(scales: Semantic['scales']): string {
@@ -106,27 +110,23 @@ function tileUrl(stroke: string, strokeWidth: number, scale: number, tile: numbe
  */
 export function ScalesBackground({
   variant = 'deepField',
-  strokeColor,
-  strokeWidth = 1,
-  patternHeight,
-  topOffset = 0,
   style,
   className,
 }: ScalesBackgroundProps) {
-  const { scales } = useSemantic();
+  const { scales, text } = useSemantic();
   const config = variantsFor(scales)[variant];
-  const stroke = strokeColor ?? config.stroke;
-  // `patternHeight` stays supported for callers that set the tile height.
-  const tile = patternHeight ?? seigaihaTile.height;
-  const image = useMemo(
-    () => tileUrl(stroke, strokeWidth, config.scale, tile),
-    [stroke, strokeWidth, config.scale, tile]
-  );
   const isSweep = variant === 'refraction';
+  // The sweep's tile is an alpha mask, so any opaque ink draws it; the
+  // primary text ink is the one opaque token every mode carries.
+  const stroke = isSweep ? text.primary : config.stroke;
+  const image = useMemo(
+    () => tileUrl(stroke, STROKE_WIDTH, config.scale, seigaihaTile.height),
+    [stroke, config.scale]
+  );
 
   const containerStyle: CSSProperties = {
     position: 'absolute',
-    top: topOffset,
+    top: 0,
     left: 0,
     right: 0,
     bottom: 0,

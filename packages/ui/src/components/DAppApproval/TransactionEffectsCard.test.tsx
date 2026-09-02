@@ -20,7 +20,14 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
+import type { ThemeContextValue } from '@salmon/shared';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
+
+function hexToRgb(hex: string): string {
+  const value = hex.replace('#', '');
+  return `rgb(${parseInt(value.slice(0, 2), 16)}, ${parseInt(value.slice(2, 4), 16)}, ${parseInt(value.slice(4, 6), 16)})`;
+}
 
 const ACCOUNT = 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' as never;
 const MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as never;
@@ -136,6 +143,36 @@ describe('TransactionEffectsCard', () => {
 
     expect(screen.getByText('No balance changes')).toBeInTheDocument();
     expect(screen.queryByText('This transaction would fail')).not.toBeInTheDocument();
+  });
+
+  it('edges a failing transaction in the danger ink of the live mode', () => {
+    const light = createSemantic('light');
+    const value = {
+      mode: 'light',
+      preference: 'light',
+      setPreference: async () => undefined,
+      semantic: light,
+      shadows,
+      ready: true,
+    } as unknown as ThemeContextValue;
+
+    render(
+      <ThemeContext.Provider value={value}>
+        <TransactionEffectsCard
+          loading={false}
+          effects={{
+            kind: 'transaction-would-fail',
+            account: ACCOUNT,
+            error: 'InsufficientFundsForRent' as never,
+            logs: [],
+          }}
+        />
+      </ThemeContext.Provider>
+    );
+
+    expect(screen.getByTestId('effects-would-fail').style.borderColor).toBe(
+      hexToRgb(light.status.danger)
+    );
   });
 
   it('says it is still simulating rather than showing nothing', () => {

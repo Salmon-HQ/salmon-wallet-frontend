@@ -1,21 +1,22 @@
-/**
- * InputAddress types for web version
- *
- * Adapted from the React Native InputAddress types for use in
- * browser extension with standard HTML input elements.
- *
- * Hook-related types (BlockchainType, ValidationState, ValidationCallbackResult,
- * UseAddressValidationResult, UseAddressValidationParams) are now defined in
- * @salmon/shared and re-exported from the barrel index.ts for backwards compat.
- */
-
 import type { CSSProperties } from 'react';
-import type { InputAddressPropsBase } from '@salmon/shared';
+import type { InputAddressPropsBase, RecipientInputPropsBase } from '@salmon/shared';
 
 /**
- * Props for the InputAddress component (Web/Extension)
+ * The DOM half of `RecipientInputPropsBase`: the contract plus a style. The
+ * mobile twin adds the QR scan affordance; here the same slot pastes from
+ * the clipboard — the side panel has no camera.
+ */
+export interface RecipientInputProps extends RecipientInputPropsBase {
+  style?: CSSProperties;
+  className?: string;
+}
+
+/**
+ * InputAddress — `RecipientInput` with the validation attached, for callers
+ * that hand in an address and read back a verdict (the address-book panels).
+ * The send flow composes `RecipientInput` directly, as mobile does, and keeps
+ * the verdict on the screen.
  */
 export interface InputAddressProps extends InputAddressPropsBase<CSSProperties> {
-  /** Additional CSS class */
   className?: string;
 }

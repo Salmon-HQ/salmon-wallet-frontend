@@ -1,9 +1,12 @@
 import { seigaihaTile, seigaihaTiledPaths, type Semantic } from '@salmon/shared';
 import React, { useId } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, G, LinearGradient, Mask, Pattern, Path, Rect, Stop } from 'react-native-svg';
 
 import { useSemantic } from '../../theme/useThemedStyles';
+import type { ScalesBackgroundProps, ScalesVariant } from './types';
+
+export type { ScalesBackgroundProps, ScalesVariant };
 
 /**
  * The motif's three sanctioned appearances, two of which this platform draws.
@@ -14,7 +17,6 @@ import { useSemantic } from '../../theme/useThemedStyles';
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'refraction';
 
 const variantsFor = (
   t: Semantic
@@ -33,20 +35,6 @@ const variantsFor = (
    */
   refraction: { stroke: '#FFFFFF', scale: t.scales.refractionScale, fade: false },
 });
-
-export interface ScalesBackgroundProps {
-  /**
-   * Which of the sanctioned appearances to draw.
-   * @default "deepField"
-   */
-  variant?: ScalesVariant;
-  /**
-   * Additional styles for the container. The container fills its parent, so
-   * *where* the motif may appear is decided by which parent you mount it in —
-   * that is deliberate, see the exclusion rule below.
-   */
-  style?: ViewStyle;
-}
 
 /**
  * ScalesBackground — the seigaiha fish-scale motif, at one of its scales.

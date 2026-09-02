@@ -5,9 +5,9 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../assets/fonts.css';
 
-// Theme — the provider owns the mode (stored preference + system scheme),
-// writes the `--sw-*` tokens on the root and supplies MUI's theme from inside.
-import { CssBaseline } from '@mui/material';
+// Theme — the provider owns the mode (stored preference + system scheme) and
+// writes the `--sw-*` tokens on the root; the html entry's own reset paints
+// the ground from those tokens, so no MUI baseline is needed.
 import { IconDefaults, SalmonThemeProvider, TaskChromeProvider } from '@salmon/ui';
 
 // Initialize i18n configuration - must be imported before App
@@ -42,7 +42,6 @@ function Root() {
     <React.StrictMode>
       <SalmonThemeProvider>
         <TaskChromeProvider>
-          <CssBaseline />
           <IconDefaults>
             <QueryClientProvider client={queryClient}>
               <I18nextProvider i18n={i18n}>

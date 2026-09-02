@@ -16,7 +16,6 @@
     "name_or_address": "Name or \"{{token}}\" Address",
     "seed_phrase": "Seed Phrase",
     "loading": "Loading...",
-    "close": "Close",
     "max": "Max",
     "back": "Back",
     "confirm": "Confirm",
@@ -53,6 +52,7 @@
     "next": "Next",
     "start": "Start",
     "copy": "Copy",
+    "paste": "Paste",
     "close": "Close",
     "save": "Save",
     "remove": "Yes, remove",
@@ -69,12 +69,10 @@
     "retry": "Retry",
     "searching": "Searching...",
     "activity": "Activity",
-    "back": "Back",
     "copied": "Copied!",
     "edit": "Edit",
     "reveal": "Reveal",
-    "select": "Select",
-    "sending": "Sending..."
+    "select": "Select"
   },
   "dapp": {
     "decode_error": "This transaction could not be decoded. Do not approve unless you trust this site.",
@@ -386,13 +384,8 @@
       "addressBook": "Address Book",
       "recipient": "Recipient",
       "amountLabel": "Amount",
-      "reviewAndSend": "Review",
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
-      "confirmAgain": "Confirm Again",
-      "copyRecipientAddress": "Copy recipient address",
-      "networkFeeAmount": "Network Fee: ~{{fee}}",
-      "resolvedFrom": "Resolved from {{domain}}",
       "no_sol_title": "You need SOL to send",
       "no_sol_body": "Every transaction on Solana costs a small SOL fee, whatever you are sending. Add at least {{amount}} SOL to this wallet first."
     },
@@ -634,7 +627,6 @@
     }
   },
   "nft": {
-    "send_nft": "Send",
     "burn_nft": "Burn",
     "detail": {
       "attributes": "Attributes",
@@ -656,7 +648,6 @@
     "send": {
       "title": "Send NFT",
       "reviewTitle": "Review Send",
-      "sending": "Sending NFT...",
       "enterRecipientAddress": "Enter recipient address",
       "ordinalsNotSupported": "Ordinal transfers are not yet supported.",
       "successTitle": "NFT sent",
@@ -679,7 +670,6 @@
       "confirm": "Confirm burn",
       "notSupported": "Burning {{blockchain}} NFTs is not yet supported."
     },
-    "ordinal_send_unsupported": "Ordinal transfers are not yet supported.",
     "unnamed": "Unnamed NFT",
     "emptyTitle": "No Collectibles",
     "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
@@ -724,13 +714,7 @@
       "noAccount": "No account found"
     }
   },
-  "bridge": {
-    "recipient": {
-      "title": "Recipient Address"
-    }
-  },
   "transaction": {
-    "sendComplete": "Send Complete",
     "sendFailed": "Send failed",
     "sendUnconfirmed": "Send unconfirmed",
     "swapComplete": "Swap Complete",
@@ -767,7 +751,6 @@
     "edit_account": "Edit account",
     "delete_account": "Delete account",
     "refresh_balance": "Refresh balance",
-    "selected_token": "Selected token: {{name}}",
     "loading_token_list": "Loading token list",
     "go_back": "Go back",
     "step_progress": "Step {{current}} of {{total}}",
@@ -781,8 +764,6 @@
     "loading_token_info": "Loading token information",
     "token_balance": "{{name}} token, balance {{amount}} {{symbol}}",
     "token_price_balance": "{{name}} token, price {{price}}, balance {{amount}} {{symbol}}",
-    "select_token": "Select {{name}}",
-    "select_token_on_network": "Select {{name}} on {{network}}",
     "copy_contract_address": "Copy contract address",
     "open_website": "Open website: {{url}}",
     "active_account": "{{name}}, active",
@@ -829,10 +810,8 @@
   },
   "send": {
     "fee_estimate_failed": "Fee could not be estimated",
-    "enter_address": "Enter recipient address",
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",
-    "resolved_address": "Resolved Address:",
     "screens": {
       "recipientSubtitle": "Choose who will receive your assets.",
       "amountSubtitle": "Enter the amount to send.",

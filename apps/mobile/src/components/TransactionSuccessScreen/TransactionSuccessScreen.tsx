@@ -5,9 +5,11 @@
  * `ReceiptScreen` (`tone="exchange"`) now; this is a thin alias over it.
  */
 import React from 'react';
-import type { TransactionSuccessScreenProps } from '@salmon/shared';
 
 import { ReceiptScreen } from '../ReceiptScreen';
+import type { TransactionSuccessScreenProps } from './types';
+
+export type { TransactionSuccessScreenProps };
 
 export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> = (props) => (
   <ReceiptScreen tone="exchange" {...props} />

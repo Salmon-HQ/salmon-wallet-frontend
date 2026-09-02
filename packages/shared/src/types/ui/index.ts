@@ -41,9 +41,12 @@ export type { PendingValuePropsBase } from './pending-value';
 export type {
   SendStep,
   SendToken,
+  SendRecipient,
+  RecipientInputPropsBase,
+  TokenSelectListPropsBase,
   StepTokenSelectProps,
-  StepAddressAmountPropsBase,
-  StepConfirmationProps,
+  TokenPickerSheetPropsBase,
+  SendFailurePropsBase,
   SendContact,
   SendOwnWallet,
   UseSendContactsResult,
@@ -98,9 +101,6 @@ export type { TokenAboutPropsBase } from './token-about';
 // Blur Container
 export type { BlurTint, BlurContainerPropsBase } from './blur-container';
 
-// Gradient Background
-export type { GradientBackgroundPropsBase } from './gradient-background';
-
 // Transaction Detail Modal
 export type { TransactionDetailModalPropsBase } from './transaction-detail-modal';
 
@@ -123,7 +123,10 @@ export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
 export type { SecurityPanelPropsBase } from './security-panel';
 
 // Transaction Success Screen
-export type { TransactionSuccessScreenProps } from './transaction-success-screen';
+export type {
+  TransactionSuccessScreenProps,
+  TransactionSuccessScreenPropsBase,
+} from './transaction-success-screen';
 
 // Backup Panel
 export type { BackupPanelPropsBase } from './backup-panel';
@@ -247,3 +250,21 @@ export type {
 // Press Specular
 export { SPECULAR_RADIUS, SPECULAR_OPACITY } from './press-specular';
 export type { PressSpecularPropsBase } from './press-specular';
+
+// dApp approval (the signing gate)
+export type {
+  DAppConnectApprovalViewPropsBase,
+  DAppSignInApprovalViewPropsBase,
+  DAppSignMessageApprovalViewPropsBase,
+  DAppTransactionApprovalViewPropsBase,
+  SiwsFields,
+  TransactionEffectsCardPropsBase,
+} from './dapp-approval';
+
+// The ground
+export type { DepthBackgroundPropsBase } from './depth-background';
+export type { ScalesBackgroundPropsBase, ScalesVariant } from './scales-background';
+export type { FleshBackgroundPropsBase } from './flesh-background';
+
+// Blockchain marks
+export type { BlockchainMarkPropsBase } from './blockchain-mark';

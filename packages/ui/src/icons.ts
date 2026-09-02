@@ -73,6 +73,7 @@ export { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 export { CheckCircleIcon } from '@phosphor-icons/react/dist/csr/CheckCircle';
 export { CircleIcon } from '@phosphor-icons/react/dist/csr/Circle';
 export { CircleHalfIcon } from '@phosphor-icons/react/dist/csr/CircleHalf';
+export { ClipboardIcon } from '@phosphor-icons/react/dist/csr/Clipboard';
 export { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
 export { ClockCountdownIcon } from '@phosphor-icons/react/dist/csr/ClockCountdown';
 export { CloudIcon } from '@phosphor-icons/react/dist/csr/Cloud';

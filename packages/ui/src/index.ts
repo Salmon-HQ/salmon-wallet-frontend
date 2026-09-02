@@ -8,7 +8,6 @@
 export * from './components';
 
 // Layouts
-export * from './layouts';
 
 // Icons
 export { IconDefaults, iconSize } from './icons';

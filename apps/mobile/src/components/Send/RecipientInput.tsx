@@ -27,23 +27,9 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { QrCodeIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
+import type { RecipientInputProps } from './types';
 
-export interface RecipientInputProps {
-  value: string;
-  onChangeText: (value: string) => void;
-  onScanPress: () => void;
-  scanLabel: string;
-  placeholder: string;
-  validationState: ValidationState;
-  isValidating: boolean;
-  testID?: string;
-  /**
-   * Prefix for the field's own testIDs (`${prefix}-recipient-input`,
-   * `${prefix}-scan-button`). Defaults to `'send'` so the send flow and its
-   * tests keep their existing ids; the address-book panels pass their own.
-   */
-  testIDPrefix?: string;
-}
+export type { RecipientInputProps };
 
 /** The edge each validation state paints. `idle`/`loading` keep the hairline. */
 const edgeFor = (t: Semantic): Partial<Record<ValidationState, string>> => ({

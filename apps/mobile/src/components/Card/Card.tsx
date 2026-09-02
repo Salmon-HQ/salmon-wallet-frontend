@@ -27,6 +27,7 @@ const tonesFor = (t: Semantic): Record<CardTone, { background: string; border: s
   accent: { background: t.accent.tint, border: t.border.hairline },
   warning: { background: t.status.warningTint, border: t.status.warningTintBorder },
   ink: { background: t.depth.abyss, border: t.border.hairline },
+  shelf: { background: t.surface.shelf, border: t.border.hairline },
 });
 
 /**

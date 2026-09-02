@@ -1,22 +1,22 @@
 /**
  * BlurContainer - A reusable blur effect component
  *
- * Web version using CSS backdrop-filter for browser extension and web app.
- * Renders a radial gradient border (Figma "Glassy_BORDER") by default
- * via an inline SVG overlay with <radialGradient> stroke.
- * When a custom borderColor is provided, the gradient uses that color.
+ * DOM version using CSS backdrop-filter. Renders a radial gradient border
+ * (Figma "Glassy_BORDER") by default via an inline SVG overlay with
+ * <radialGradient> stroke. When a custom borderColor is provided, the
+ * gradient uses that color.
  *
  * The blur is conditional on the fill being translucent. The default fill is
- * `colors.background.tokenItem`, which is opaque — a list row is content, and
- * DESIGN.md gives translucency only to floating chrome — so the common case
- * is now an opaque surface with a glassy edge and no backdrop filter at all.
- * Pass a translucent `backgroundColor` and the blur comes back.
+ * `surface.raised`, which is opaque — a list row is content, and DESIGN.md
+ * gives translucency only to floating chrome — so the common case is an
+ * opaque surface with a glassy edge and no backdrop filter at all. Pass a
+ * translucent `backgroundColor` and the blur comes back. The mobile twin
+ * (`apps/mobile/.../BlurContainer`) makes the same call on the same tokens.
  */
-import { useEffect, useId, useRef, useState } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import { colors, isOpaqueColor } from '@salmon/shared';
-import { focusRingNone, focusRingOnWrapper } from '../../theme';
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { isOpaqueColor } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import type { BlurContainerProps } from './types';
 
 /** Radial gradient stops for glassy border effect (Figma "Glassy_BORDER") */
@@ -89,55 +89,20 @@ function GradientBorderOverlay({
   );
 }
 
-const BlurBox = styled(Box)<{
-  $blurIntensity: number;
-  $backgroundColor: string;
-  $borderColor: string;
-  $borderWidth: number;
-  $useGradientBorder: boolean;
-}>(({ $blurIntensity, $backgroundColor, $borderColor, $borderWidth, $useGradientBorder }) => ({
-  // A backdrop blur behind an opaque fill blurs nothing and still costs a
-  // compositor layer, and DESIGN.md's degradation ladder bans `backdrop-filter`
-  // on a list row in the extension outright. Now that the default fill is
-  // opaque, most of these containers are rows and skip it.
-  ...(isOpaqueColor($backgroundColor)
-    ? {}
-    : {
-        backdropFilter: `blur(${$blurIntensity}px)`,
-        WebkitBackdropFilter: `blur(${$blurIntensity}px)`,
-      }),
-  backgroundColor: $backgroundColor,
-  overflow: 'hidden',
-  position: 'relative',
-  // When a text field inside this container takes focus, *this* is the
-  // field's visible boundary — the `InputBase` in Send, Swap and the token
-  // search is a bare flex child with no border, fill or radius of its own.
-  // Ring the container so the ring follows the rounded blurred surface the
-  // user actually sees, and stand the theme's input ring down inside it so
-  // the field is never outlined twice. The ring is inset, so the
-  // `overflow: hidden` above cannot clip it.
-  '&:has(.MuiInputBase-root:focus-within)': {
-    ...focusRingOnWrapper,
-    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
-  },
-  ...(!$useGradientBorder && {
-    borderColor: $borderColor,
-    borderWidth: $borderWidth,
-    borderStyle: 'solid',
-  }),
-}));
-
 export function BlurContainer({
   children,
   style,
   blurIntensity = 2,
   blurTint: _blurTint = 'dark',
-  backgroundColor = colors.background.tokenItem,
-  borderColor = colors.border.default,
+  backgroundColor,
+  borderColor,
   borderWidth = 1,
   useGradientBorder = true,
   className,
 }: BlurContainerProps) {
+  const { surface, border } = useSemantic();
+  const fill = backgroundColor ?? surface.raised;
+  const edge = borderColor ?? border.default;
   const ref = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState({ width: 0, height: 0 });
 
@@ -158,27 +123,36 @@ export function BlurContainer({
 
   const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : 0;
 
+  const boxStyle: CSSProperties = {
+    // A backdrop blur behind an opaque fill blurs nothing and still costs a
+    // compositor layer, and DESIGN.md's degradation ladder bans
+    // `backdrop-filter` on a list row in the extension outright. Now that the
+    // default fill is opaque, most of these containers are rows and skip it.
+    ...(isOpaqueColor(fill)
+      ? {}
+      : {
+          backdropFilter: `blur(${blurIntensity}px)`,
+          WebkitBackdropFilter: `blur(${blurIntensity}px)`,
+        }),
+    backgroundColor: fill,
+    overflow: 'hidden',
+    position: 'relative',
+    ...(useGradientBorder ? {} : { border: `${borderWidth}px solid ${edge}` }),
+    ...style,
+  };
+
   return (
-    <BlurBox
-      ref={ref}
-      $blurIntensity={blurIntensity}
-      $backgroundColor={backgroundColor}
-      $borderColor={borderColor}
-      $borderWidth={borderWidth}
-      $useGradientBorder={useGradientBorder}
-      style={style}
-      className={className}
-    >
+    <div ref={ref} style={boxStyle} className={className}>
       {children}
       {useGradientBorder && (
         <GradientBorderOverlay
           width={layout.width}
           height={layout.height}
           borderRadius={borderRadius}
-          color={borderColor}
+          color={edge}
           strokeWidth={GLASSY_BORDER_WIDTH}
         />
       )}
-    </BlurBox>
+    </div>
   );
 }

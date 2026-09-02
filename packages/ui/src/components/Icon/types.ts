@@ -1,20 +1,8 @@
-import type { IconName, IconSize } from '@salmon/shared';
+import type { CSSProperties } from 'react';
+import type { BlockchainMarkPropsBase } from '@salmon/shared';
 
-/**
- * Props for the unified Icon component
- */
-export interface UnifiedIconProps {
-  /** Icon name from the unified icon set */
-  name: IconName;
-  /** Icon size (preset or number in pixels) */
-  size?: IconSize;
-  /** Icon color (defaults to current text color) */
-  color?: string;
-  /** Additional CSS class */
+/** Props of the hand-drawn marks (DOM). */
+export interface BlockchainMarkProps extends BlockchainMarkPropsBase {
   className?: string;
-  /** Additional styles */
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
-
-// Props accepted by the individual glyph components exported alongside `Icon`.
-export type { IconProps } from '../../icons';

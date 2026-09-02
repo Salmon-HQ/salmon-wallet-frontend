@@ -81,7 +81,6 @@ import {
   DepthBackground,
   ScalesBackground,
   SendPage,
-  NftSendDialog,
   ExplorerSelector,
   AppearanceSelector,
   LanguageSelector,
@@ -425,8 +424,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [addressBookContacts]
   );
 
-  // NFT action dialog state
-  const [nftSendDialogVisible, setNftSendDialogVisible] = useState(false);
+  // The collectible being sent, when Send was opened from an NFT's detail:
+  // the send flow becomes mobile's `nft/[id]/send` (spec 028 lot 4).
+  const [sendNft, setSendNft] = useState<NftData | null>(null);
   const [burnStep, setBurnStep] = useState<'idle' | 'review' | 'success'>('idle');
   const [burnPreview, setBurnPreview] = useState<Awaited<
     ReturnType<typeof createBurnTransaction>
@@ -638,13 +638,29 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, []);
 
   const handleSendBack = useCallback(() => {
+    setSendNft(null);
     setCurrentPage('home');
   }, []);
 
   const handleSendSuccess = useCallback(() => {
+    // The sheet's `handleSendSuccess`, as mobile's `acknowledgeSuccess`: a
+    // collectible's transfer settles the grid and the avatar too.
+    if (sendNft) {
+      settleAfterTx({
+        accountId: collectibleSolanaAccount?.getReceiveAddress(),
+        avatarAccountId: activeAccount?.id,
+        networkId: collectibleSolanaAccount?.getNetworkId(),
+        kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
+        removedNftMintAddresses: sendNft.mint ? [sendNft.mint] : undefined,
+      }).catch((err) => {
+        console.warn('[HomePage] settleAfterTx failed:', err);
+      });
+      setSendNft(null);
+      setSelectedNft(null);
+    }
     setCurrentPage('home');
     refresh();
-  }, [refresh]);
+  }, [refresh, sendNft, settleAfterTx, collectibleSolanaAccount, activeAccount?.id]);
 
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
@@ -688,8 +704,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // NFT action handlers
   const handleNftSendPress = useCallback(() => {
-    setNftSendDialogVisible(true);
-  }, []);
+    if (!selectedNft) return;
+    setSendNft(selectedNft);
+    setCurrentPage('send');
+  }, [selectedNft]);
 
   const handleNftBurnPress = useCallback(() => {
     if (!selectedNft || !isSolanaNft(selectedNft) || !collectibleSolanaAccount) return;
@@ -1357,61 +1375,45 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       case 'nftDetail':
         if (selectedNft) {
           return (
-            <>
-              <NftDetailPage
-                nft={selectedNft}
-                onBack={handleNftDetailBack}
-                onSendPress={handleNftSendPress}
-                onBurnPress={handleNftBurnPress}
-                actionsUnavailable={isWatchOnly}
-                burnStep={burnStep}
-                burnPreview={burnPreview}
-                burnPreparing={burnLoading}
-                burnSettling={nftBurn.settling}
-                burnError={burnError}
-                onBurnBack={handleNftBurnBack}
-                onBurnConfirm={confirmBurnNft}
-                onBurnSuccessContinue={handleNftBurnSuccessContinue}
-              />
-
-              {/* NFT Send Dialog */}
-              <NftSendDialog
-                visible={nftSendDialogVisible}
-                onClose={() => setNftSendDialogVisible(false)}
-                nft={selectedNft}
-                account={collectibleSolanaAccount}
-                onSuccess={() => {
-                  setNftSendDialogVisible(false);
-                  setCurrentPage('home');
-                  setSelectedNft(null);
-                  settleAfterTx({
-                    accountId: collectibleSolanaAccount?.getReceiveAddress(),
-                    avatarAccountId: activeAccount?.id,
-                    networkId: collectibleSolanaAccount?.getNetworkId(),
-                    kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
-                  }).catch((err) => {
-                    console.warn('[HomePage] settleAfterTx failed:', err);
-                  });
-                }}
-              />
-            </>
+            <NftDetailPage
+              nft={selectedNft}
+              onBack={handleNftDetailBack}
+              onSendPress={handleNftSendPress}
+              onBurnPress={handleNftBurnPress}
+              actionsUnavailable={isWatchOnly}
+              burnStep={burnStep}
+              burnPreview={burnPreview}
+              burnPreparing={burnLoading}
+              burnSettling={nftBurn.settling}
+              burnError={burnError}
+              onBurnBack={handleNftBurnBack}
+              onBurnConfirm={confirmBurnNft}
+              onBurnSuccessContinue={handleNftBurnSuccessContinue}
+            />
           );
         }
         return <PlaceholderPage title={t('nft.detail.title', 'NFT Detail')} onBack={handleBack} />;
-      case 'send':
-        if (!activeBlockchainAccount) {
+      case 'send': {
+        // A collectible is signed by the account that owns it.
+        const sendAccount = sendNft ? collectibleSolanaAccount : activeBlockchainAccount;
+        if (!sendAccount) {
           return <PlaceholderPage title={t('token.action.send', 'Send')} onBack={handleSendBack} />;
         }
         return (
           <SendPage
             tokens={formattedTokens as SendToken[]}
             blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-            account={activeBlockchainAccount}
+            networkId={networkId as NetworkId | null}
+            account={sendAccount}
+            nft={sendNft}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
+            showUnverifiedTokens={showUnverifiedTokens}
+            loading={balanceState === 'loading'}
             onFlowLockChange={setFlowLocked}
           />
         );
+      }
       case 'wallets':
         return (
           <WalletsScreen

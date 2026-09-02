@@ -18,9 +18,7 @@
     "@mui/material": "^7.3.5",
     "@phosphor-icons/react": "^2.1.10",
     "@salmon/shared": "workspace:*",
-    "keen-slider": "^6.8.6",
-    "qrcode.react": "^4.2.0",
-    "recharts": "^3.10.1"
+    "qrcode.react": "^4.2.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.18",

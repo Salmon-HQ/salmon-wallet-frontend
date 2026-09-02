@@ -4,8 +4,9 @@
 
 import React from 'react';
 import { cleanup, screen } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 
-import { renderInMode } from '../../test/renderInMode';
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({
@@ -79,6 +80,32 @@ describe('ReceiveSheet chain identity', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('token.receive.networkOnlyTitle:Bitcoin');
     expect(alert.textContent).toContain('token.receive.networkOnlyBody:Bitcoin');
+  });
+});
+
+describe('ReceiveSheet environment and mode', () => {
+  it('names the environment under the code off mainnet', () => {
+    renderInMode(
+      'dark',
+      <ReceiveSheet
+        visible
+        onClose={() => {}}
+        address={ADDRESS}
+        blockchain="solana"
+        networkLabel="Devnet"
+      />
+    );
+    expect(screen.getByTestId('receive-network-label').textContent).toBe('Devnet');
+  });
+
+  it('frames the code in the live primary ink — dark in light mode', () => {
+    renderInMode(
+      'light',
+      <ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />
+    );
+    expect(screen.getByTestId('receive-qr-logo').style.backgroundColor).toBe(
+      asRenderedColor(createSemantic('light').text.primary)
+    );
   });
 });
 
