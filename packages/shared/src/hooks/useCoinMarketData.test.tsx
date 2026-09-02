@@ -223,3 +223,50 @@ describe('useCoinMarketData', () => {
     });
   });
 });
+
+describe('useCoinMarketData off mainnet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fetches no price for a token on a non-mainnet network', () => {
+    const { result } = renderWithClient(
+      () =>
+        useCoinMarketData({
+          coinId: 'solana',
+          currency: 'usd',
+          days: 7,
+          networkId: 'solana-devnet',
+        }),
+      undefined as void
+    );
+
+    expect(mockGetTokenCoinInfo).not.toHaveBeenCalled();
+    expect(mockGetTokenMarketChart).not.toHaveBeenCalled();
+    expect(result.current.coinInfo).toBeNull();
+    expect(result.current.chartData).toBeNull();
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('still fetches on a mainnet network', async () => {
+    mockGetTokenCoinInfo.mockResolvedValue({ id: 'solana' } as any);
+    mockGetTokenMarketChart.mockResolvedValue({
+      prices: [[1, 100] as [number, number]],
+      marketCaps: [],
+      totalVolumes: [],
+    });
+
+    renderWithClient(
+      () =>
+        useCoinMarketData({
+          coinId: 'solana',
+          currency: 'usd',
+          days: 7,
+          networkId: 'solana-mainnet',
+        }),
+      undefined as void
+    );
+
+    await waitFor(() => expect(mockGetTokenCoinInfo).toHaveBeenCalled());
+  });
+});

@@ -16,6 +16,9 @@ import { EthereumAccount } from '../blockchain/ethereum';
 import { LAMPORTS_PER_SOL } from './balance';
 import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
+import { MIRROR_NETWORK_IDS, getMainnetSibling } from './network';
+import { getAccountMnemonic } from './account-secret';
+import type { Account } from '../types/account';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
 // ============================================================================
@@ -38,19 +41,6 @@ const SCAN_NETWORK_CANDIDATES: readonly string[] = [
   'bitcoin-mainnet',
   'ethereum-mainnet',
 ] as const;
-
-/**
- * Networks that share keypairs with a mainnet (devnets / testnets).
- * When importing a mainnet account, also derive and import its mirror.
- * Backend catalog decides which pairs are actually available.
- */
-const MIRROR_NETWORK_CANDIDATES: Record<string, string> = Object.fromEntries(
-  Object.entries({
-    'solana-mainnet': 'solana-devnet',
-    'bitcoin-mainnet': 'bitcoin-testnet',
-    'ethereum-mainnet': 'ethereum-sepolia',
-  } as Record<string, string>)
-);
 
 /**
  * Display metadata for each network used during scanning.
@@ -187,7 +177,7 @@ export async function getMirrorNetworks(): Promise<Record<string, string>> {
   const enabledNetworkIds = new Set(await getEnabledNetworkIds());
 
   return Object.fromEntries(
-    Object.entries(MIRROR_NETWORK_CANDIDATES).filter(
+    Object.entries(MIRROR_NETWORK_IDS).filter(
       ([source, target]) => enabledNetworkIds.has(source) && enabledNetworkIds.has(target)
     )
   );
@@ -196,6 +186,68 @@ export async function getMirrorNetworks(): Promise<Record<string, string>> {
 export async function getMirrorNetworkId(networkId: string): Promise<string | undefined> {
   const mirrors = await getMirrorNetworks();
   return mirrors[networkId];
+}
+
+/**
+ * Every network a freshly created wallet should hold: the mainnets the scan
+ * covers plus each of their mirrors.
+ *
+ * Onboarding has always derived both halves so a later flip of the developer
+ * flag finds the addresses already there; this is that same list, named once
+ * so the add-account panel and the derived-account import cannot drift from
+ * it.
+ */
+export async function getScanNetworksWithMirrors(): Promise<string[]> {
+  const [scanNetworks, mirrors] = await Promise.all([getScanNetworks(), getMirrorNetworks()]);
+  return [...scanNetworks, ...scanNetworks.map((id) => mirrors[id]).filter(Boolean)];
+}
+
+/**
+ * Derives the mirror accounts an existing wallet is missing.
+ *
+ * Wallets created before mirrors were derived at creation hold only the
+ * mainnet half, so the first time a mirror network is offered to them the
+ * addresses have to be produced from the seed already in memory. Each mirror
+ * lands at the same position as the mainnet sibling it copies — position is
+ * the derivation index everywhere in this codebase, so a wallet derived at
+ * index 3 keeps index 3 on its devnet page, holes and all.
+ *
+ * The mnemonic is read from the unlocked account and never logged, persisted
+ * or sent anywhere; the caller persists the returned accounts through
+ * `editAccount({ newDerivedAccounts })`.
+ *
+ * @param account    - The wallet to complete; must be unlocked.
+ * @param networkIds - Mirror networks to ensure. Ids that are not mirrors, or
+ *                     whose mainnet sibling the wallet does not hold, are skipped.
+ * @returns The newly derived accounts, empty when there is nothing to do.
+ */
+export async function ensureMirrorNetworks(
+  account: Account,
+  networkIds: string[]
+): Promise<BlockchainAccount[]> {
+  const mnemonic = getAccountMnemonic(account);
+  // A watch-only or private-key wallet has no derivation tree to complete.
+  if (!mnemonic) return [];
+
+  const derived: BlockchainAccount[] = [];
+
+  for (const networkId of networkIds) {
+    const existing = account.networksAccounts[networkId];
+    if (existing?.some(Boolean)) continue;
+
+    const mainnetId = getMainnetSibling(networkId);
+    if (!mainnetId) continue;
+
+    const siblings = account.networksAccounts[mainnetId];
+    if (!siblings) continue;
+
+    for (let index = 0; index < siblings.length; index++) {
+      if (!siblings[index]) continue;
+      derived.push(await deriveBlockchainAccount(mnemonic, networkId, index));
+    }
+  }
+
+  return derived;
 }
 
 // ============================================================================

@@ -1138,7 +1138,7 @@ export function HomePage(): React.ReactElement {
         panelRegistry={panelRegistry}
         initialPanels={settingsInitialPanels}
         developerNetworksEnabled={developerNetworks}
-        onDeveloperNetworksToggle={toggleDeveloperNetworks}
+        onDeveloperNetworksToggle={() => void toggleDeveloperNetworks()}
         analyticsEnabled={analyticsConsent}
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={() => {

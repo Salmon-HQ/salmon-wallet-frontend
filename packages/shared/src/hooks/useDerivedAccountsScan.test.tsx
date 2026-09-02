@@ -13,7 +13,11 @@ import { useDerivedAccountsScan } from './useDerivedAccountsScan';
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { useUserConfig } from './useUserConfig';
 import { createAccount } from '../factories/account-factory';
-import { getScanNetworks, scanDerivedAccounts } from '../utils/derived-accounts';
+import {
+  getScanNetworks,
+  getScanNetworksWithMirrors,
+  scanDerivedAccounts,
+} from '../utils/derived-accounts';
 import type { Account, AccountSecret } from '../types/account';
 import type { BlockchainAccount } from '../types/blockchain';
 
@@ -22,6 +26,7 @@ vi.mock('./useUserConfig', () => ({ useUserConfig: vi.fn() }));
 vi.mock('../factories/account-factory', () => ({ createAccount: vi.fn() }));
 vi.mock('../utils/derived-accounts', () => ({
   getScanNetworks: vi.fn(),
+  getScanNetworksWithMirrors: vi.fn(),
   scanDerivedAccounts: vi.fn(),
 }));
 
@@ -29,6 +34,7 @@ const accountsMock = vi.mocked(useAccountsContext);
 const configMock = vi.mocked(useUserConfig);
 const scanMock = vi.mocked(scanDerivedAccounts);
 const networksMock = vi.mocked(getScanNetworks);
+const networksWithMirrorsMock = vi.mocked(getScanNetworksWithMirrors);
 const createMock = vi.mocked(createAccount);
 
 const MNEMONIC: AccountSecret = { kind: 'mnemonic', mnemonic: 'twelve words go here' };
@@ -88,6 +94,7 @@ function arrange({
 beforeEach(() => {
   vi.clearAllMocks();
   networksMock.mockResolvedValue(['solana-mainnet']);
+  networksWithMirrorsMock.mockResolvedValue(['solana-mainnet', 'solana-devnet']);
   scanMock.mockResolvedValue({ accounts: [], failedNetworks: [] });
   createMock.mockImplementation(
     async ({ name, startIndex, derivedFrom }) =>

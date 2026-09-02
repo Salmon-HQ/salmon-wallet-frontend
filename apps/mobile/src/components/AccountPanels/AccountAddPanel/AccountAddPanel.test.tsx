@@ -83,6 +83,7 @@ jest.mock('@salmon/shared', () => ({
     { addAccount: mockAddAccount, checkPassword: mockCheckPassword },
   ],
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+  getScanNetworksWithMirrors: jest.fn().mockResolvedValue(['solana-mainnet', 'solana-devnet']),
   SHORT_PHRASE: 12,
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
   validateMnemonic: (value: string) => value === 'valid seed phrase',

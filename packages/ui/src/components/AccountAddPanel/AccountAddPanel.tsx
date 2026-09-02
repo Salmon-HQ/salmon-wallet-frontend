@@ -45,6 +45,7 @@ import {
   getAccountMnemonic,
   NETWORK_DISPLAY,
   getScanNetworks,
+  getScanNetworksWithMirrors,
   SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
@@ -300,7 +301,7 @@ export function AccountAddPanel({
     return createAccount({
       name,
       mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-      networkIds: await getScanNetworks(),
+      networkIds: await getScanNetworksWithMirrors(),
       startIndex: selectedDerived ? selectedDerived.index : 0,
     });
   }, [

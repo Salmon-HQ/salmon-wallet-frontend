@@ -99,23 +99,75 @@ export function sortNetworks<T extends { id: string }>(networks: T[], order: str
 }
 
 /**
- * Filters networks based on whether developer mode is enabled.
- * When developer mode is off, only mainnet networks are included.
+ * Mainnet network id → the network that mirrors it (devnet / testnet).
+ *
+ * A mirror shares its keypair with its mainnet counterpart, so the pair is
+ * derived together at account creation. The map lives here rather than beside
+ * the scan because both the scan and `useUserConfig` need it, and this module
+ * has no imports of its own to drag into either.
  */
-export function filterNetworks<T extends { id: string }>(
-  networks: Record<string, T>,
-  mainnetIds: string[],
-  developerNetworks: boolean,
-  order: string[]
-): T[] {
-  const filtered = Object.entries(networks)
-    .filter(([key, network]) => {
-      if (developerNetworks) {
-        return true;
-      }
-      return mainnetIds.includes(key) || mainnetIds.includes(network.id);
-    })
-    .map(([, network]) => network);
+export const MIRROR_NETWORK_IDS: Record<string, string> = {
+  'solana-mainnet': 'solana-devnet',
+  'bitcoin-mainnet': 'bitcoin-testnet',
+  'ethereum-mainnet': 'ethereum-sepolia',
+};
 
-  return sortNetworks(filtered, order);
+const MAINNET_BY_MIRROR: Record<string, string> = Object.fromEntries(
+  Object.entries(MIRROR_NETWORK_IDS).map(([mainnet, mirror]) => [mirror, mainnet])
+);
+
+/**
+ * Whether a network id names a mainnet.
+ */
+export function isMainnetNetworkId(networkId: string): boolean {
+  return networkId in MIRROR_NETWORK_IDS;
+}
+
+/**
+ * The mainnet a non-mainnet network mirrors, or undefined for a mainnet (or an
+ * unknown id). The inverse of {@link MIRROR_NETWORK_IDS}.
+ */
+export function getMainnetSibling(networkId: string): string | undefined {
+  return MAINNET_BY_MIRROR[networkId];
+}
+
+/**
+ * Arguments for {@link visibleNetworkIds}.
+ */
+export interface VisibleNetworkIdsParams {
+  /** Network ids the backend catalog has enabled, in the order to offer them. */
+  enabled: string[];
+  /**
+   * Network ids the wallet actually holds an account on. `undefined` means the
+   * caller cannot say — nothing is filtered out on that basis.
+   */
+  held?: string[];
+  /** Whether the developer-networks setting is on. */
+  developerNetworks: boolean;
+  /** The persisted active network, if any. */
+  activeNetworkId?: string | null;
+}
+
+/**
+ * The networks to offer in the carousel and the network panel.
+ *
+ * The rule, in one place because the carousel, the panel and the tests must
+ * not drift: an enabled network the wallet holds is offered when it is a
+ * mainnet, when developer mode is on, **or** when it is the network the
+ * session is standing on. That last clause is what keeps a devnet session from
+ * being stranded on a page nobody can see once the flag goes off.
+ */
+export function visibleNetworkIds({
+  enabled,
+  held,
+  developerNetworks,
+  activeNetworkId,
+}: VisibleNetworkIdsParams): string[] {
+  const heldSet = held ? new Set(held) : null;
+
+  return enabled.filter((networkId) => {
+    if (heldSet && !heldSet.has(networkId)) return false;
+    if (isMainnetNetworkId(networkId)) return true;
+    return developerNetworks || networkId === activeNetworkId;
+  });
 }

@@ -1605,7 +1605,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         panelRegistry={panelRegistry}
         initialPanels={settingsInitialPanels}
         developerNetworksEnabled={developerNetworks}
-        onDeveloperNetworksToggle={toggleDeveloperNetworks}
+        onDeveloperNetworksToggle={() => void toggleDeveloperNetworks()}
         analyticsEnabled={analyticsConsent}
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}

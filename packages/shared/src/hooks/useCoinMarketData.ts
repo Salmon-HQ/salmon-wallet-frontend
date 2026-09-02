@@ -11,6 +11,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { queryKeys } from '../query/keys';
 import { getTokenCoinInfo, getTokenMarketChart } from '../api/services';
 import type { CoinInfo } from '../types/price';
+import { isMainnetNetworkId } from '../utils/network';
 
 export interface MarketChartPoint {
   timestamp: number;
@@ -27,6 +28,14 @@ export interface UseCoinMarketDataParams {
   currency: string;
   days: 1 | 7 | 30 | 90 | 365;
   enabled?: boolean;
+  /**
+   * The network the token lives on. A devnet or testnet token is not the
+   * mainnet token that shares its symbol, so no price is fetched for it and
+   * the screen shows USD as unknown rather than a number that belongs to a
+   * different asset. Omitted means mainnet, which is what every caller that
+   * predates this parameter is.
+   */
+  networkId?: string;
 }
 
 export interface UseCoinMarketDataResult {
@@ -54,11 +63,12 @@ export interface UseCoinMarketDataResult {
 }
 
 export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarketDataResult {
-  const { coinId, contractAddress, currency, days, enabled = true } = params;
+  const { coinId, contractAddress, currency, days, enabled = true, networkId } = params;
   // Token identity: CoinGecko coin ID when available, otherwise the mint
   // (contract-address fallback for both chart and coin info).
   const tokenId = coinId ?? (contractAddress ? `contract:solana:${contractAddress}` : undefined);
-  const isEnabled = enabled && !!tokenId;
+  const onMainnet = networkId === undefined || isMainnetNetworkId(networkId);
+  const isEnabled = enabled && !!tokenId && onMainnet;
   const queryClient = useQueryClient();
 
   // Two separate `useQuery` calls rather than one `useQueries`: only the chart

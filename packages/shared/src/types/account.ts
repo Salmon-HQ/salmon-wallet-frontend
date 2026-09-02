@@ -235,6 +235,12 @@ export interface UserConfig {
   /** Whether to show developer/test networks */
   developerNetworks: boolean;
   /**
+   * Whether unverified (spam-flagged) tokens are shown. Absent means off —
+   * its own setting, deliberately independent of `developerNetworks`, which
+   * only decides which networks are offered.
+   */
+  showUnverifiedTokens?: boolean;
+  /**
    * Wallet ids the user has taken out of the aggregated total on the wallets
    * screen. Absent or empty means every wallet counts, which is the default a
    * fresh install and every pre-existing config get for free — inclusion is

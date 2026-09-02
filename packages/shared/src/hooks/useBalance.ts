@@ -29,6 +29,7 @@ import type { EthereumAccount } from '../blockchain/ethereum';
 import type { BlockchainAccount, NetworkId } from '../types/blockchain';
 import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/account';
 import { removeDecimals } from '../utils/decimals';
+import { isMainnetNetworkId } from '../utils/network';
 import { queryKeys } from '../query/keys';
 
 import { type WalletBalance, type TokenBalanceWithPrice, SOL_CONSTANTS } from '../utils/balance';
@@ -244,22 +245,40 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
  * Top-level fetcher used by the React Query queryFn. Routes to the per-chain
  * fetcher based on account type.
  */
+/**
+ * Drops every USD figure from a balance.
+ *
+ * A devnet SOL is not SOL, and a testnet token that happens to carry a
+ * mainnet symbol is worth nothing at all — showing the mainnet asset's price
+ * beside it is the one wrong answer. Unknown is the honest one, and the rows
+ * already render an em-dash for it.
+ */
+function withoutUsd(balance: WalletBalance): WalletBalance {
+  return {
+    items: balance.items.map(({ price, usdBalance, priceChange24h, ...item }) => item),
+  };
+}
+
 export async function fetchBalanceForAccount(
   account: BlockchainAccount,
-  _networkId: NetworkId,
+  networkId: NetworkId,
   includeSpam: boolean
 ): Promise<WalletBalance> {
-  if (isSolanaAccount(account)) {
-    return fetchSolanaBalance(account, includeSpam);
-  }
-  if (isBitcoinAccount(account)) {
-    return fetchBitcoinBalance(account);
-  }
-  if (isEthereumAccount(account)) {
-    return fetchEthereumBalance(account);
-  }
-  // Fallback: treat as Solana for backwards compatibility
-  return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
+  const balance = await (async () => {
+    if (isSolanaAccount(account)) {
+      return fetchSolanaBalance(account, includeSpam);
+    }
+    if (isBitcoinAccount(account)) {
+      return fetchBitcoinBalance(account);
+    }
+    if (isEthereumAccount(account)) {
+      return fetchEthereumBalance(account);
+    }
+    // Fallback: treat as Solana for backwards compatibility
+    return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
+  })();
+
+  return isMainnetNetworkId(networkId) ? balance : withoutUsd(balance);
 }
 
 // ============================================================================

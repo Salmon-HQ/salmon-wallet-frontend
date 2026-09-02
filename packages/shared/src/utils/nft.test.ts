@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   getNftBlockchainLabel,
   getNftSectionTitle,
-  getVisibleNftSectionKeys,
   INITIAL_NFT_SECTIONS,
   SECTION_TO_NETWORK,
   type BitcoinNftData,
@@ -12,8 +11,6 @@ import {
 
 describe('NFT shared section contract', () => {
   it('exposes only active Solana NFT sections', () => {
-    expect(getVisibleNftSectionKeys(false)).toEqual(['solana']);
-    expect(getVisibleNftSectionKeys(true)).toEqual(['solana', 'solana-devnet']);
     expect(Object.keys(INITIAL_NFT_SECTIONS)).toEqual(['solana', 'solana-devnet']);
     expect(SECTION_TO_NETWORK).toEqual({
       solana: 'solana-mainnet',

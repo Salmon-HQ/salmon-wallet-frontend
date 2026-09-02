@@ -363,13 +363,3 @@ export function getNftSectionTitle(_sectionKey: NftSectionKey, section: NftSecti
   const baseName = baseNames[section.blockchain];
   return section.networkLabel ? `${baseName} ${section.networkLabel}` : baseName;
 }
-
-/**
- * Get visible section keys based on developer mode.
- */
-export function getVisibleNftSectionKeys(developerNetworks: boolean): NftSectionKey[] {
-  if (developerNetworks) {
-    return ['solana', 'solana-devnet'];
-  }
-  return ['solana'];
-}

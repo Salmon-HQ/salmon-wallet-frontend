@@ -26,7 +26,11 @@ import { useAccountsContext } from '../contexts/AccountsContext';
 import { useUserConfig } from './useUserConfig';
 import { createAccount } from '../factories/account-factory';
 import { getAccountMnemonic } from '../utils/account-secret';
-import { getScanNetworks, scanDerivedAccounts } from '../utils/derived-accounts';
+import {
+  getScanNetworks,
+  getScanNetworksWithMirrors,
+  scanDerivedAccounts,
+} from '../utils/derived-accounts';
 import type { Account } from '../types/account';
 
 // ============================================================================
@@ -290,7 +294,7 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
       // The name a new account gets by hand today; the user renames it later.
       name: i18n.t('settings.account_add.default_name', { number: accounts.length + 1 }),
       mnemonic,
-      networkIds: await getScanNetworks(),
+      networkIds: await getScanNetworksWithMirrors(),
       startIndex: index,
       derivedFrom: parent.id,
     });

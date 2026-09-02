@@ -6,6 +6,7 @@ import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 import type { Account, AccountSecret, StoredAccount } from '../types/account';
 import type { TrustedApps } from '../types/trusted-app';
 import type { CustomTokens } from '../types/token';
+import { isMainnetNetworkId } from '../utils/network';
 
 interface UseAccountsLoaderParams {
   setLoaded: Dispatch<SetStateAction<boolean>>;
@@ -104,11 +105,14 @@ export function useAccountsLoader({
 
       let defaultNetworkId = storedNetworkId;
       if (!defaultNetworkId && loadedAccounts.length > 0) {
-        const firstAccount = loadedAccounts[0];
-        const availableNetworks = Object.keys(firstAccount.networksAccounts);
-        defaultNetworkId = availableNetworks.includes('solana-mainnet')
-          ? 'solana-mainnet'
-          : availableNetworks[0];
+        // The first network the wallet actually holds, mainnet preferred. A
+        // network whose slots are all empty is not held: landing on it would
+        // open the app with no account to read, which is what hardcoding
+        // 'solana-mainnet' used to risk for a Bitcoin-only import.
+        const held = Object.entries(loadedAccounts[0].networksAccounts)
+          .filter(([, accounts]) => accounts?.some(Boolean))
+          .map(([id]) => id);
+        defaultNetworkId = held.find(isMainnetNetworkId) ?? held[0];
       }
 
       setAccountId(storedAccountId ?? null);

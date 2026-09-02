@@ -40,6 +40,7 @@ import {
   getAccountMnemonic,
   getShortAddress,
   getScanNetworks,
+  getScanNetworksWithMirrors,
   NETWORK_DISPLAY,
   SHORT_PHRASE,
   EncryptionMaterialMissingError,
@@ -288,7 +289,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     return createAccount({
       name,
       mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-      networkIds: await getScanNetworks(),
+      networkIds: await getScanNetworksWithMirrors(),
       startIndex: selectedDerived ? selectedDerived.index : 0,
       // A derived account is a wallet of its own that happens to share this
       // wallet's seed; recording which one lets Wallets draw the descent

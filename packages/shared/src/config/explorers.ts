@@ -21,6 +21,7 @@ export type Blockchain = 'SOLANA' | 'BITCOIN' | 'ETHEREUM';
  */
 export type NetworkEnvironment =
   | 'mainnet'
+  | 'devnet'
   | 'testnet'
   | 'sepolia'
   | 'solana-mainnet'
@@ -91,6 +92,29 @@ const SOLANA_EXPLORERS: NetworkExplorers = {
   },
 };
 
+/**
+ * Devnet explorers.
+ *
+ * Only the explorers that actually serve devnet are listed, each with the
+ * cluster query its own URL scheme uses — Solana Beach is absent because it
+ * has no devnet view, and reusing a mainnet URL here would quietly open some
+ * other wallet's transaction.
+ */
+const SOLANA_DEVNET_EXPLORERS: NetworkExplorers = {
+  SOLSCAN: {
+    name: 'Solscan',
+    url: 'https://solscan.io/tx/{txId}?cluster=devnet',
+  },
+  SOLANA_FM: {
+    name: 'Solana FM',
+    url: 'https://solana.fm/tx/{txId}?cluster=devnet-solana',
+  },
+  SOLANA_EXPLORER: {
+    name: 'Solana Explorer',
+    url: 'https://explorer.solana.com/tx/{txId}?cluster=devnet',
+  },
+};
+
 // ============================================================================
 // Bitcoin Explorers
 // ============================================================================
@@ -144,7 +168,8 @@ export const EXPLORERS: ExplorersConfig = {
   SOLANA: {
     mainnet: SOLANA_EXPLORERS,
     'solana-mainnet': SOLANA_EXPLORERS,
-    'solana-devnet': SOLANA_EXPLORERS,
+    devnet: SOLANA_DEVNET_EXPLORERS,
+    'solana-devnet': SOLANA_DEVNET_EXPLORERS,
   },
   BITCOIN: {
     mainnet: BITCOIN_MAINNET_EXPLORERS,

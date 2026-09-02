@@ -22,7 +22,7 @@ import type {
   NetworksByBlockchain,
   SolanaNetwork,
 } from '../types/blockchain';
-import { MAINNET_NETWORK_IDS, sortNetworks } from '../utils/network';
+import { sortNetworks, visibleNetworkIds } from '../utils/network';
 import { getNetworks } from '../api/services/network';
 
 /**
@@ -100,17 +100,33 @@ export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
   }
 }
 
+/**
+ * Narrows one chain's enabled networks to the ones to offer.
+ *
+ * The rule itself lives in `visibleNetworkIds` so the carousel, the network
+ * panel and the tests all read one implementation; this only carries the
+ * network objects across it and applies the display order.
+ */
 const filterVisibleNetworks = <T extends { id: string }>(
   networks: T[],
   developerNetworks: boolean,
-  mainnetIds: string[],
-  order: string[]
+  order: string[],
+  heldNetworkIds: string[] | undefined,
+  activeNetworkId: string | null | undefined
 ): T[] => {
-  const visible = developerNetworks
-    ? networks
-    : networks.filter((network) => mainnetIds.includes(network.id));
+  const offered = new Set(
+    visibleNetworkIds({
+      enabled: networks.map(({ id }) => id),
+      held: heldNetworkIds,
+      developerNetworks,
+      activeNetworkId,
+    })
+  );
 
-  return sortNetworks(visible, order);
+  return sortNetworks(
+    networks.filter(({ id }) => offered.has(id)),
+    order
+  );
 };
 
 const mergeSolanaNetwork = (net: NetworkCatalogEntry): SolanaNetwork | null => {
@@ -176,6 +192,18 @@ const mergeEthereumNetwork = (net: NetworkCatalogEntry): EthereumNetwork | null 
 export interface UseAvailableNetworksParams extends UseUserConfigParams {
   /** Override developerNetworks value (bypasses internal useUserConfig read) */
   developerNetworks?: boolean;
+  /**
+   * Network ids the active wallet actually holds an account on. When omitted
+   * nothing is filtered on that basis — an older wallet missing a mirror is
+   * still offered it, which is the behaviour every caller had before.
+   */
+  heldNetworkIds?: string[];
+  /**
+   * The persisted active network. A non-mainnet network the session is
+   * standing on stays offered even with the developer flag off, so turning the
+   * flag off never strands the session on a page nobody can reach.
+   */
+  activeNetworkId?: string | null;
 }
 
 /**
@@ -192,6 +220,7 @@ export function useAvailableNetworks(
 ): UseAvailableNetworksResult {
   const { developerNetworks: configDeveloperNetworks, isLoading } = useUserConfig(params);
   const developerNetworks = params.developerNetworks ?? configDeveloperNetworks;
+  const { heldNetworkIds, activeNetworkId } = params;
   const [apiMerged, setApiMerged] = useState(false);
   const [apiNetworks, setApiNetworks] = useState<NetworkCatalogEntry[]>([]);
 
@@ -224,8 +253,9 @@ export function useAvailableNetworks(
             .map(mergeSolanaNetwork)
             .filter((network): network is SolanaNetwork => !!network),
           developerNetworks,
-          MAINNET_NETWORK_IDS.solana,
-          NETWORK_ORDER.solana
+          NETWORK_ORDER.solana,
+          heldNetworkIds,
+          activeNetworkId
         ),
         bitcoin: filterVisibleNetworks(
           enabledApiNetworks
@@ -233,8 +263,9 @@ export function useAvailableNetworks(
             .map(mergeBitcoinNetwork)
             .filter((network): network is BitcoinNetwork => !!network),
           developerNetworks,
-          MAINNET_NETWORK_IDS.bitcoin,
-          NETWORK_ORDER.bitcoin
+          NETWORK_ORDER.bitcoin,
+          heldNetworkIds,
+          activeNetworkId
         ),
         ethereum: filterVisibleNetworks(
           enabledApiNetworks
@@ -242,8 +273,9 @@ export function useAvailableNetworks(
             .map(mergeEthereumNetwork)
             .filter((network): network is EthereumNetwork => !!network),
           developerNetworks,
-          MAINNET_NETWORK_IDS.ethereum,
-          NETWORK_ORDER.ethereum
+          NETWORK_ORDER.ethereum,
+          heldNetworkIds,
+          activeNetworkId
         ),
       };
     }
@@ -254,7 +286,7 @@ export function useAvailableNetworks(
       ethereum: [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- apiMerged is an intentional cache-invalidation signal after fetchAndMergeNetworkConfigs completes
-  }, [developerNetworks, apiMerged, apiNetworks]);
+  }, [developerNetworks, apiMerged, apiNetworks, heldNetworkIds, activeNetworkId]);
 
   const allNetworks = useMemo<AnyNetwork[]>(() => {
     return [...networks.solana, ...networks.bitcoin, ...networks.ethereum];

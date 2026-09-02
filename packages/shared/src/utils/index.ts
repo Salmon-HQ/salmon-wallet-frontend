@@ -245,11 +245,15 @@ export { isReactNative, isWebEnvironment, isExtension } from './platform';
 export {
   MAINNET_NETWORK_IDS,
   MAINNET_NETWORK_ID,
+  MIRROR_NETWORK_IDS,
   sortNetworks,
-  filterNetworks,
   getNetworkLabel,
   getNetworkName,
+  isMainnetNetworkId,
+  getMainnetSibling,
+  visibleNetworkIds,
 } from './network';
+export type { VisibleNetworkIdsParams } from './network';
 
 // Validation utilities
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
@@ -281,7 +285,6 @@ export {
   getNftBlockchainLabel,
   getSatRarityColor,
   getNftSectionTitle,
-  getVisibleNftSectionKeys,
   SECTION_TO_NETWORK,
   INITIAL_NFT_SECTIONS,
 } from './nft';
@@ -321,6 +324,8 @@ export {
   getAccountBalance,
   getScanNetworks,
   getMirrorNetworks,
+  getScanNetworksWithMirrors,
+  ensureMirrorNetworks,
   formatDerivedAccountBalance,
   getMirrorNetworkId,
   scanDerivedAccounts,
