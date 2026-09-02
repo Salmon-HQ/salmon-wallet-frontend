@@ -35,6 +35,7 @@
     "extension:build:firefox:prod": "pnpm --filter @salmon/extension build:firefox:prod",
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:parity": "node scripts/check-dom-parity.mjs",
     "pack:sources": "git archive --format=zip -o salmon-wallet-source.zip HEAD",
     "check:duplicates": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters console",
     "check:duplicates:report": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report",
