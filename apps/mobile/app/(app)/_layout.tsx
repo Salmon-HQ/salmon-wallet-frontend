@@ -6,6 +6,7 @@ import { useAccountsContext, getStashItem } from '@salmon/shared';
 import { LockOverlay, LockContent, PowerupsFab } from '../../src/components';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { useTabChrome } from '../../hooks/useTabChrome';
+import { POWERUPS_SURFACE_ENABLED } from '../../src/powerups/surface';
 import { TaskChromeProvider, useTaskChrome } from '../../src/contexts/TaskChromeContext';
 import type { DerivedKeyCache } from '@salmon/shared';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
@@ -242,7 +243,9 @@ function PowerupsLayer() {
     else router.push('/powerups');
   }, [open, router]);
 
-  if (isTaskEngaged || !POWERUPS_FAB_ROUTES.includes(pathname)) return null;
+  if (!POWERUPS_SURFACE_ENABLED || isTaskEngaged || !POWERUPS_FAB_ROUTES.includes(pathname)) {
+    return null;
+  }
 
   return <PowerupsFab open={open} onPress={handlePress} bottomOffset={floatingBottomOffset} />;
 }

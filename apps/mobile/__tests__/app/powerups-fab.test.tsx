@@ -86,6 +86,13 @@ jest.mock('../../src/components', () => {
   };
 });
 
+// The surface is closed for the submission build; these tests describe the
+// control as it behaves when the door is open, so the flag is raised here.
+jest.mock('../../src/powerups/surface', () => ({ POWERUPS_SURFACE_ENABLED: true }));
+const surface = jest.requireMock('../../src/powerups/surface') as {
+  POWERUPS_SURFACE_ENABLED: boolean;
+};
+
 import AppLayout from '../../app/(app)/_layout';
 
 describe('the powerups control', () => {
@@ -127,6 +134,16 @@ describe('the powerups control', () => {
       expect(queryByTestId('powerups-fab')).toBeNull();
     }
   );
+
+  it('is not mounted at all while the surface is closed', () => {
+    surface.POWERUPS_SURFACE_ENABLED = false;
+    try {
+      const { queryByTestId } = render(<AppLayout />);
+      expect(queryByTestId('powerups-fab')).toBeNull();
+    } finally {
+      surface.POWERUPS_SURFACE_ENABLED = true;
+    }
+  });
 
   it('leaves with the Home content when a task owns the screen', () => {
     taskChrome.isTaskEngaged = true;

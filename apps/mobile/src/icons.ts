@@ -93,6 +93,7 @@ export { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingG
 export { MedalIcon } from 'phosphor-react-native/src/icons/Medal';
 export { MoneyIcon } from 'phosphor-react-native/src/icons/Money';
 export { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
+export { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 export { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
 export { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 export { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
