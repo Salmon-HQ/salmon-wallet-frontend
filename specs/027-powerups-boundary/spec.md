@@ -69,9 +69,9 @@ The backend chooses the routing provider per request (Jupiter by default; 0x or 
 
 ## Contract the backend mirrors
 
-- `GET /v1/networks`: `sections` (existing) + `powerups: { [powerupId]: { enabled: boolean; networks: string[]; stages: string[] } }` (allowlist shape to be pinned with the backend spec).
+- `GET /v1/networks`: `sections` (existing) + `powerups: { [powerupId]: { enabled: boolean; networks: string[] } }`. No `stages` (the response is already stage-derived server-side) and **no per-region field**: `/v1/networks` is cached at CloudFront and region-agnostic by design; region is decided per request at quote time, so the client learns it when it tries, not from the catalog. The early hide is the store/device signal only.
 - Errors: `403 region_restricted`, `403 wallet_restricted` (JSON `{ error, error_description }` as today's `ApiError` shape).
-- Quote payload: `provider`, `providerDisplayName`, `attribution`, fee lines (`salmonFee`, `routeFee`) as separate fields.
+- Quote payload: `provider`, `providerDisplayName`, `attribution`, and fee lines `salmonFee` / `routeFee` as **objects** `{ amount: string /* base units */, mint: string, bps?: number }` — the router picks the fee token (Jupiter: SOL → stables → …), so the client renders the mint; amounts stay strings to avoid float loss.
 
 ## Out of scope
 
