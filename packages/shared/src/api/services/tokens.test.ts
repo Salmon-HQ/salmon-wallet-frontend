@@ -93,6 +93,19 @@ describe('Token Service - Pure Functions', () => {
   // ==========================================================================
 
   describe('normalizeIpfsUrl', () => {
+    it('moves a path-style ipfs.io / dweb.link URL to a gateway a browser may hotlink from', () => {
+      // The side panel's NFT tiles came up blank: ipfs.io answers a cross-site
+      // <img> request with a 403 carrying CORP same-origin (2026-09-02).
+      const cid = 'bafybeiae6fuzkgt5i3xl5rckpm2fh4mvehvt4575hhvhkjjgpzzmy4cequ/6287.png';
+      expect(normalizeIpfsUrl(`https://ipfs.io/ipfs/${cid}`)).toBe(
+        `https://ipfs.filebase.io/ipfs/${cid}`
+      );
+      expect(normalizeIpfsUrl(`https://dweb.link/ipfs/${cid}`)).toBe(
+        `https://ipfs.filebase.io/ipfs/${cid}`
+      );
+      expect(normalizeIpfsUrl('https://arweave.net/abc')).toBe('https://arweave.net/abc');
+    });
+
     it('should handle null input', () => {
       expect(normalizeIpfsUrl(null)).toBeUndefined();
     });
@@ -105,9 +118,10 @@ describe('Token Service - Pure Functions', () => {
       expect(normalizeIpfsUrl('')).toBeUndefined();
     });
 
-    it('should convert IPFS protocol URL to ipfs.io gateway', () => {
+    it('should convert IPFS protocol URL to the default gateway', () => {
       const input = 'ipfs://QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
-      const expected = 'https://ipfs.io/ipfs/QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
+      const expected =
+        'https://ipfs.filebase.io/ipfs/QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
       expect(normalizeIpfsUrl(input)).toBe(expected);
     });
 
@@ -129,7 +143,7 @@ describe('Token Service - Pure Functions', () => {
 
     it('should handle IPFS URLs with short hashes', () => {
       const input = 'ipfs://Qm123';
-      const expected = 'https://ipfs.io/ipfs/Qm123';
+      const expected = 'https://ipfs.filebase.io/ipfs/Qm123';
       expect(normalizeIpfsUrl(input)).toBe(expected);
     });
 

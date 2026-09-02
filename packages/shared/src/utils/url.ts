@@ -27,6 +27,13 @@ export const DEAD_DOMAINS = [
  * Patterns for broken/unreliable IPFS gateways that should be redirected
  */
 const BROKEN_GATEWAY_PATTERNS = [
+  // ipfs.io and dweb.link answer a browser's cross-site image request with a
+  // 403 page carrying `Cross-Origin-Resource-Policy: same-origin` (a hotlink
+  // guard keyed on Sec-Fetch headers), which Chrome reports as
+  // ERR_BLOCKED_BY_RESPONSE — the side panel's NFT tiles came up blank while
+  // expo-image, fetching natively, loaded the same PNG (2026-09-02).
+  /https?:\/\/(?:www\.)?ipfs\.io\/ipfs\/(.+)/,
+  /https?:\/\/(?:www\.)?dweb\.link\/ipfs\/(.+)/,
   /https?:\/\/(?:www\.)?cf-ipfs\.com\/ipfs\/(.+)/,
   /https?:\/\/(?:www\.)?cloudflare-ipfs\.com\/ipfs\/(.+)/,
   /https?:\/\/(?:www\.)?ipfs\.infura\.io\/ipfs\/(.+)/,
@@ -46,9 +53,12 @@ const PINATA_PRIVATE_PATTERN = /https?:\/\/[^/]+\.mypinata\.cloud\/ipfs\/(.+)/;
 const SUBDOMAIN_IPFS_PATTERN = /https?:\/\/([a-zA-Z0-9]+)\.ipfs\.([^/]+)\/?(.*)$/;
 
 /**
- * Default IPFS gateway for normalized URLs
+ * Default IPFS gateway for normalized URLs — one that serves a browser's
+ * cross-site `<img>` request (see BROKEN_GATEWAY_PATTERNS for the ones that
+ * refuse it).
+ * ponytail: one gateway; rotate through a second if filebase starts failing.
  */
-const DEFAULT_IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
+const DEFAULT_IPFS_GATEWAY = 'https://ipfs.filebase.io/ipfs/';
 
 /**
  * Default Arweave gateway for normalized URLs
@@ -100,13 +110,13 @@ function isDeadDomain(url: string): boolean {
  *
  * @example
  * // IPFS protocol
- * normalizeIpfsUrl('ipfs://QmXXX') // 'https://ipfs.io/ipfs/QmXXX'
+ * normalizeIpfsUrl('ipfs://QmXXX') // 'https://ipfs.filebase.io/ipfs/QmXXX'
  *
  * // Arweave protocol
  * normalizeIpfsUrl('ar://xxx') // 'https://arweave.net/xxx'
  *
  * // Broken gateway
- * normalizeIpfsUrl('https://cf-ipfs.com/ipfs/QmXXX') // 'https://ipfs.io/ipfs/QmXXX'
+ * normalizeIpfsUrl('https://cf-ipfs.com/ipfs/QmXXX') // 'https://ipfs.filebase.io/ipfs/QmXXX'
  *
  * // Dead domain
  * normalizeIpfsUrl('https://shdw-drive.genesysgo.net/xxx') // undefined
@@ -143,7 +153,7 @@ export function normalizeIpfsUrl(url: string | undefined | null): string | undef
     return `${DEFAULT_IPFS_GATEWAY}${hash}`;
   }
 
-  // Handle broken/unreliable IPFS gateways - redirect to ipfs.io
+  // Handle broken/unreliable IPFS gateways - redirect to the default gateway
   for (const pattern of BROKEN_GATEWAY_PATTERNS) {
     const match = url.match(pattern);
     if (match) {

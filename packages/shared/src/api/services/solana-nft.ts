@@ -10,6 +10,7 @@
 
 import { apiClient } from '../client';
 import type { Nft } from '../../types/nft';
+import { normalizeIpfsUrl } from '../../utils/url';
 
 // ============================================================================
 // Backend response normalization
@@ -64,7 +65,9 @@ function normalizeBackendNft(raw: BackendNft, owner: string): Nft {
       : null,
     edition: null,
     tokenStandard: null,
-    media: raw.media ?? null,
+    // Rewritten to a gateway a browser may hotlink from; a dead host is dropped
+    // here (undefined → null), so the media filter below removes the tile.
+    media: normalizeIpfsUrl(raw.media) ?? null,
     description: raw.description ?? '',
     compressed: false,
     extras: {

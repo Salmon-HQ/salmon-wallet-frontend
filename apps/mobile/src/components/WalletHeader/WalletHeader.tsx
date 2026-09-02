@@ -29,6 +29,7 @@ import {
   getShortAddress,
   motionMs,
   type Semantic,
+  normalizeIpfsUrl,
 } from '@salmon/shared';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -84,6 +85,8 @@ export function WalletHeader({
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();
   const [imgError, setImgError] = useState(false);
+  // The stored avatar may point at a gateway a browser cannot hotlink from.
+  const avatarSrc = normalizeIpfsUrl(avatarUrl);
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
   const isReduceMotionEnabled = useReducedMotion();
   const insets = useSafeAreaInsets();
@@ -159,9 +162,9 @@ export function WalletHeader({
               accessibilityLabel={t('accessibility.switch_wallet')}
               hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
             >
-              {avatarUrl && !imgError ? (
+              {avatarSrc && !imgError ? (
                 <Image
-                  source={{ uri: avatarUrl }}
+                  source={{ uri: avatarSrc }}
                   style={styles.avatarImage}
                   contentFit="cover"
                   onError={() => setImgError(true)}

@@ -20,17 +20,34 @@
  *  5. screens  — every mobile route (apps/mobile/app) has the DOM screen
  *                SCREENS names, and that file exists; platform-only routes
  *                are listed with a reason.
+ *  6. clones   — lines jscpd finds duplicated between apps/mobile and the DOM
+ *                (packages/ui + apps/extension), tests excluded, stay under
+ *                CROSS_PLATFORM_CLONE_LINES_MAX. Two renderings of one design
+ *                legitimately share shape, so the ceiling is not zero — it is
+ *                a ratchet: lower it when a lot hoists logic into shared, and
+ *                the number can never climb back.
  *
- * Usage: node scripts/check-dom-parity.mjs [--report]
+ * Usage: node scripts/check-dom-parity.mjs [--report] [--no-clones]
  *   --report prints every finding and exits 0; otherwise any finding exits 1.
+ *   --no-clones skips the jscpd pass (~1 min) for a quick local run.
  *
  * The maps below are the one place a platform difference is allowed to live.
  * A new mobile component or route with no DOM twin fails here until it has
  * one, or until it is listed with the reason it never will.
  */
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, relative, basename } from 'node:path';
+import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * The cross-platform clone ceiling, in lines (jscpd, min 5 lines / 50 tokens,
+ * tests and e2e suites excluded). 3559 measured on 2026-09-02 before lot 6;
+ * every lot that hoists logic into packages/shared lowers it to the new
+ * measurement. It may only go down.
+ */
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 3559;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -135,7 +152,7 @@ const THEME_EXEMPT = [/packages\/ui\/src\/theme\//, /packages\/ui\/src\/icons\.t
  * Run every check against a repo root. Returns the findings as
  * `{ check, message }` objects plus the twin pairs it matched.
  */
-export function run(root) {
+export function run(root, { clones = false } = {}) {
   const MOBILE_COMPONENTS = join(root, 'apps/mobile/src/components');
   const MOBILE_APP = join(root, 'apps/mobile/app');
   const UI_COMPONENTS = join(root, 'packages/ui/src/components');
@@ -282,15 +299,71 @@ export function run(root) {
     if (!routes.includes(r))
       note('screens', `MOBILE_ONLY_SCREENS lists ${r} but apps/mobile/app has no such route`);
 
+  // 6. clones -----------------------------------------------------------------
+  if (clones) {
+    const lines = crossPlatformCloneLines(root);
+    if (lines > CROSS_PLATFORM_CLONE_LINES_MAX)
+      note(
+        'clones',
+        `${lines} lines duplicated between mobile and the DOM — above the ${CROSS_PLATFORM_CLONE_LINES_MAX} ceiling; hoist the logic into packages/shared`
+      );
+    else if (lines < CROSS_PLATFORM_CLONE_LINES_MAX * 0.95)
+      note(
+        'clones',
+        `${lines} lines duplicated — well under the ${CROSS_PLATFORM_CLONE_LINES_MAX} ceiling; lower CROSS_PLATFORM_CLONE_LINES_MAX to ${lines} so it cannot climb back`
+      );
+  }
+
   return { findings, pairs };
 }
 
-const CHECKS = ['theme', 'twins', 'contract', 'dead', 'screens'];
+/** Lines jscpd reports as duplicated with one side on mobile and one on the DOM. */
+export function crossPlatformCloneLines(root) {
+  const out = mkdtempSync(join(tmpdir(), 'dom-parity-jscpd-'));
+  try {
+    execFileSync(
+      'npx',
+      [
+        'jscpd',
+        'packages/',
+        'apps/',
+        '--min-lines',
+        '5',
+        '--min-tokens',
+        '50',
+        '--format',
+        'typescript,javascript,tsx,jsx',
+        '--ignore',
+        '**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/.expo/**,**/.playwright/**,**/.maestro/**',
+        '--reporters',
+        'json',
+        '--output',
+        out,
+        '--silent',
+      ],
+      { cwd: root, stdio: 'ignore' }
+    );
+    const report = JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8'));
+    const side = (name) =>
+      name.startsWith('mobile/') ? 'mobile' : /^(ui|extension)\//.test(name) ? 'dom' : 'other';
+    return report.duplicates
+      .filter((d) => {
+        const a = side(d.firstFile.name);
+        const b = side(d.secondFile.name);
+        return (a === 'mobile' && b === 'dom') || (a === 'dom' && b === 'mobile');
+      })
+      .reduce((sum, d) => sum + d.lines, 0);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+}
+
+const CHECKS = ['theme', 'twins', 'contract', 'dead', 'screens', 'clones'];
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
   const reportOnly = process.argv.includes('--report');
-  const { findings, pairs } = run(root);
+  const { findings, pairs } = run(root, { clones: !process.argv.includes('--no-clones') });
 
   for (const check of CHECKS) {
     const lines = findings.filter((f) => f.check === check);
