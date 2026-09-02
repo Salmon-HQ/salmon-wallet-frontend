@@ -1,27 +1,19 @@
-import type { TransactionSuccessScreenProps } from '@salmon/shared';
+import type {
+  ExchangeReceiptScreenPropsBase,
+  ReceiptScreenAction as ReceiptScreenActionBase,
+  TransferReceiptScreenPropsBase,
+} from '@salmon/shared';
 
 import type { KeyValueRowProps } from '../KeyValueRow';
 
-export interface ReceiptScreenAction {
-  label: string;
-  onPress: () => void;
-  testID?: string;
-}
+export type ReceiptScreenAction = ReceiptScreenActionBase;
 
-export interface TransferReceiptScreenProps {
-  tone: 'transfer';
-  title: string;
-  body?: string;
+/** The mobile half of `TransferReceiptScreenPropsBase`: the contract, with
+ * the RN `KeyValueRowProps` row shape. */
+export interface TransferReceiptScreenProps extends Omit<TransferReceiptScreenPropsBase, 'rows'> {
   rows: KeyValueRowProps[];
-  primary: ReceiptScreenAction;
-  secondary?: ReceiptScreenAction;
-  explorerUrl?: string;
-  settling?: boolean;
-  testID?: string;
 }
 
-export interface ExchangeReceiptScreenProps extends TransactionSuccessScreenProps {
-  tone: 'exchange';
-}
+export interface ExchangeReceiptScreenProps extends ExchangeReceiptScreenPropsBase {}
 
 export type ReceiptScreenProps = TransferReceiptScreenProps | ExchangeReceiptScreenProps;

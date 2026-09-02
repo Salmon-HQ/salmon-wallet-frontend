@@ -1,26 +1,14 @@
 import type { ViewStyle } from 'react-native';
+import type { ButtonPropsBase, TextButtonPropsBase } from '@salmon/shared';
 
-export interface PrimaryButtonProps {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
+export interface PrimaryButtonProps extends ButtonPropsBase {
   style?: ViewStyle;
 }
 
-export interface SecondaryButtonProps {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
+export interface SecondaryButtonProps extends ButtonPropsBase {
   style?: ViewStyle;
 }
 
-export interface TextButtonProps {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
+export interface TextButtonProps extends TextButtonPropsBase {
   style?: ViewStyle;
-  color?: string;
 }

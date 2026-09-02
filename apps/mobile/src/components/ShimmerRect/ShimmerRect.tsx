@@ -1,4 +1,5 @@
 import { borderRadius, componentSizes, motionMs, ms } from '@salmon/shared';
+import type { ShimmerRectPropsBase } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,11 +14,7 @@ import Animated, {
 import { curve } from '../../utils/motion';
 import { useSemantic } from '../../theme/useThemedStyles';
 
-interface ShimmerRectProps {
-  width: number;
-  height: number;
-  borderRadius?: number;
-}
+type ShimmerRectProps = ShimmerRectPropsBase;
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 

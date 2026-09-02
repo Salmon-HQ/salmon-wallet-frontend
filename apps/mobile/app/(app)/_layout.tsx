@@ -68,6 +68,11 @@ export default function AppLayout() {
   // The screen surfaces each time the overlay leaves — after the unlock wave
   // has exited — and once on an unlocked mount. Home keys its content on the
   // count so its float plays when the water is actually clear.
+  //
+  // This is the channel for a surfacing NO wait reports: a biometric unlock
+  // flips `locked` with nothing on screen to report. Every wait that ends
+  // calls `surface()` on the provider itself (`LoadingScreen`), and the two
+  // add up to one count — see `TaskChromeProvider`.
   const [surfaceKey, setSurfaceKey] = useState(0);
   useEffect(() => {
     if (!isLocked) setSurfaceKey((key) => key + 1);

@@ -17,7 +17,19 @@ function Publisher({ engaged }: { engaged: boolean }) {
   return null;
 }
 
+function SurfaceState() {
+  const { surfaceKey } = useTaskChrome();
+  return <Text testID="surface">{String(surfaceKey)}</Text>;
+}
+
+function Surfacer() {
+  const { surface } = useTaskChrome();
+  React.useEffect(() => surface(), [surface]);
+  return null;
+}
+
 const chrome = () => screen.getByTestId('chrome').props.children;
+const surfaceKey = () => screen.getByTestId('surface').props.children;
 
 describe('TaskChromeContext', () => {
   it('engages the chrome while a flow holds a claim', () => {
@@ -90,5 +102,38 @@ describe('TaskChromeContext', () => {
     act(() => rerender(<Host mounted={false} />));
 
     expect(chrome()).toBe('free');
+  });
+
+  describe('the surfacing', () => {
+    it('bumps the key when a wait reports it has left', () => {
+      render(
+        <TaskChromeProvider>
+          <SurfaceState />
+          <Surfacer />
+        </TaskChromeProvider>
+      );
+
+      expect(surfaceKey()).toBe('1');
+    });
+
+    it('counts the external bump too — a biometric unlock shows no wait', () => {
+      // One count, two channels: the prop the app layout owns and the
+      // `surface()` calls every wait makes.
+      const { rerender } = render(
+        <TaskChromeProvider surfaceKey={1}>
+          <SurfaceState />
+        </TaskChromeProvider>
+      );
+      expect(surfaceKey()).toBe('1');
+
+      rerender(
+        <TaskChromeProvider surfaceKey={2}>
+          <SurfaceState />
+          <Surfacer />
+        </TaskChromeProvider>
+      );
+
+      expect(surfaceKey()).toBe('3');
+    });
   });
 });

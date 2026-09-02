@@ -397,18 +397,37 @@ export default function HomeScreen() {
   // that cause animates. Opening NFTs can also snap the chain to Solana in
   // the same render; that is still one gesture, and the sub-tab is the one
   // the user touched.
+  //
+  // A SURFACING is not a swap. Home is never unmounted while the wait is up,
+  // so the user's last gesture — a sub-tab switch, a task leaving — is still
+  // recorded when the water clears; without this reset the `surfaceKey`-keyed
+  // remount replayed it *nested* inside the screen's own float, one gesture at
+  // two depths again (owner, 2026-09-02). The surfacing wins over anything
+  // else that changed in the same render: the cause goes back to 'none', so
+  // only `home-content` speaks, and it speaks with no beat — nothing sank
+  // before it.
   const [contentSwap, setContentSwap] = useState<{
     chain: string;
     subTab: SubTabKey;
     engaged: boolean;
+    surface: number;
     cause: 'none' | 'chain' | 'subtab' | 'task';
   }>({
     chain: currentNetworkId,
     subTab: effectiveSubTab,
     engaged: isTaskEngaged,
+    surface: surfaceKey,
     cause: 'none',
   });
-  if (
+  if (contentSwap.surface !== surfaceKey) {
+    setContentSwap({
+      chain: currentNetworkId,
+      subTab: effectiveSubTab,
+      engaged: isTaskEngaged,
+      surface: surfaceKey,
+      cause: 'none',
+    });
+  } else if (
     contentSwap.chain !== currentNetworkId ||
     contentSwap.subTab !== effectiveSubTab ||
     contentSwap.engaged !== isTaskEngaged
@@ -417,6 +436,7 @@ export default function HomeScreen() {
       chain: currentNetworkId,
       subTab: effectiveSubTab,
       engaged: isTaskEngaged,
+      surface: surfaceKey,
       // Leaving Solana can change the chain AND drop NFTs in the same render.
       // The sub-tab wins: the content region is the one wrapper that speaks,
       // and the chain-keyed wrapper inside it stays silent (rule five).
@@ -597,9 +617,18 @@ export default function HomeScreen() {
   // underline keeps sliding. First mount owes no verb: render-time setState,
   // the same pattern the content swap uses.
   const subTabsKey = subTabs.map((tab) => tab.key).join('|');
-  const [tabsSwap, setTabsSwap] = useState({ key: subTabsKey, hasPrior: false });
-  if (tabsSwap.key !== subTabsKey) {
-    setTabsSwap({ key: subTabsKey, hasPrior: true });
+  // A surfacing silences this row for the same reason it silences the content
+  // wrappers: `home-content` is the only wrapper that speaks when the screen
+  // comes back.
+  const [tabsSwap, setTabsSwap] = useState({
+    key: subTabsKey,
+    surface: surfaceKey,
+    hasPrior: false,
+  });
+  if (tabsSwap.surface !== surfaceKey) {
+    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
+  } else if (tabsSwap.key !== subTabsKey) {
+    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
   }
 
   // The tab is only offered where it means something, so there is nothing to
@@ -733,6 +762,11 @@ export default function HomeScreen() {
           It is the screen's first child in flow — it owns its top padding
           (safe area + `screenTop`) and nothing scrolls behind it. */}
       <WalletHeader
+        // Surfaces WITH the content, as its sibling: the header's own
+        // chrome-scale float plays at the same moment as `home-content`'s,
+        // never nested inside it (owner, 2026-09-02 — the header used to hold
+        // still while the screen came back).
+        key={surfaceKey}
         accountName={activeAccount?.name || t('wallet.unnamed_account', 'Account')}
         address={activeBlockchainAccount?.getReceiveAddress() || ''}
         onCopyAddress={handleHeaderCopyAddress}

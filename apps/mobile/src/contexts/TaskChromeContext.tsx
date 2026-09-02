@@ -30,18 +30,28 @@ interface TaskChromeContextValue {
    */
   setTaskEngaged: (owner: symbol, engaged: boolean) => void;
   /**
-   * Bumped each time the screen surfaces — the lock overlay leaving after the
-   * unlock wave, or the first unlocked mount. Home keys its content on it so
-   * the float plays when the water clears, not hidden under the overlay
-   * (owner, 2026-09-02: entering Home showed the content already there).
+   * Bumped each time the screen surfaces — a wait ending, the lock overlay
+   * leaving, or the first unlocked mount. Home keys its content on it so the
+   * float plays when the water clears, not hidden under the overlay (owner,
+   * 2026-09-02: entering Home showed the content already there).
    */
   surfaceKey: number;
+  /**
+   * Publisher side of {@link surfaceKey}: every wait that ends calls this, so
+   * Home comes back with the float after ANY interaction that showed the wait
+   * — unlock, wallet switch, a send (owner, 2026-09-02). `LoadingScreen` calls
+   * it from its own exit, which is why no call site has to remember to.
+   */
+  surface: () => void;
 }
 
 const TaskChromeContext = createContext<TaskChromeContextValue>({
   isTaskEngaged: false,
   setTaskEngaged: () => {},
   surfaceKey: 0,
+  // No-op outside a provider — onboarding shows the wait too, and it has no
+  // shell to surface.
+  surface: () => {},
 });
 
 export function TaskChromeProvider({
@@ -49,11 +59,22 @@ export function TaskChromeProvider({
   surfaceKey = 0,
 }: {
   children: React.ReactNode;
-  /** See `TaskChromeContextValue.surfaceKey`; the owner of the overlay counts. */
+  /**
+   * An EXTERNAL bump, added to the count this provider owns. The app layout
+   * uses it for the surfacing no wait reports: a biometric unlock flips
+   * `locked` with no wait on screen, so nothing would call `surface()`.
+   *
+   * One count, two channels. A password unlock crosses both — the wait's
+   * `surface()` first, the overlay's prop bump one beat later — which costs
+   * one discarded remount under the still-opaque overlay and leaves the
+   * visible float where it belongs, on the overlay leaving.
+   */
   surfaceKey?: number;
 }) {
   const claimsRef = useRef<Set<symbol>>(new Set());
   const [isTaskEngaged, setIsTaskEngaged] = useState(false);
+  const [surfacedCount, setSurfacedCount] = useState(0);
+  const surface = useCallback(() => setSurfacedCount((count) => count + 1), []);
 
   const setTaskEngaged = useCallback((owner: symbol, engaged: boolean) => {
     const claims = claimsRef.current;
@@ -65,8 +86,8 @@ export function TaskChromeProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ isTaskEngaged, setTaskEngaged, surfaceKey }),
-    [isTaskEngaged, setTaskEngaged, surfaceKey]
+    () => ({ isTaskEngaged, setTaskEngaged, surfaceKey: surfaceKey + surfacedCount, surface }),
+    [isTaskEngaged, setTaskEngaged, surfaceKey, surfacedCount, surface]
   );
   return <TaskChromeContext.Provider value={value}>{children}</TaskChromeContext.Provider>;
 }

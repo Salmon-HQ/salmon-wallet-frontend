@@ -34,6 +34,7 @@ import {
   spacing,
   withAlpha,
   type Semantic,
+  type BottomSheetContainerPropsBase,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
@@ -80,34 +81,7 @@ export const SHEET_EXIT_MS = motionMs.ebb;
 /** Slack before the watchdog decides the exit callback is not coming. */
 const EXIT_WATCHDOG_GRACE_MS = 120;
 
-export interface BottomSheetContainerProps {
-  /** Controls sheet visibility */
-  visible: boolean;
-  /** Close callback — the request to leave, fired the moment it is asked for. */
-  onClose: () => void;
-  /**
-   * Fired once the sheet has actually left the screen.
-   *
-   * `onClose` is the request; this is the arrival. A caller sequencing
-   * anything after the sheet — chrome that should not move while a backdrop
-   * still covers it — needs the second, not the first. Also fires when a
-   * swipe dismiss ends, where `onClose` runs while the sheet is still
-   * travelling.
-   */
-  onClosed?: () => void;
-  /** Content to render inside the sheet */
-  children: React.ReactNode;
-  /**
-   * Optional title rendered below the handle, inside the drag area.
-   * Mutually exclusive with headerContent – if both are provided,
-   * headerContent takes precedence.
-   */
-  title?: React.ReactNode;
-  /**
-   * Optional custom header content that replaces the title.
-   * The full row rendered inside the drag area (below the handle).
-   */
-  headerContent?: React.ReactNode;
+export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
   showFadeGradient?: boolean;
   /**
@@ -135,20 +109,6 @@ export interface BottomSheetContainerProps {
   background?: React.ReactNode;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
-  /**
-   * Whether the sheet may be dismissed by backdrop tap, swipe-down, or the
-   * Android hardware back button. Defaults to `true`.
-   *
-   * Set it to `false` while an irreversible operation is in flight. The
-   * sheet's own Cancel/Confirm controls already disable themselves, but the
-   * three dismissal paths live here and knew nothing about that state — so a
-   * backdrop tap during signing unmounted the only screen that would ever
-   * report whether the money moved. One guard here covers every sheet in the
-   * app instead of each caller re-deriving it.
-   */
-  dismissible?: boolean;
-  /** For testing */
-  testID?: string;
 }
 
 // ============================================================================

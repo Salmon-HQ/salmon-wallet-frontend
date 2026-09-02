@@ -309,6 +309,29 @@ describe('home content vs an engaged task', () => {
     expect(chainWrapper.props.exiting).toBeUndefined();
   });
 
+  it('drops the beat when a task hand-back is followed by a surfacing', () => {
+    // Leaving a task records 'task', which buys the screen a beat of empty
+    // water. A surfacing that follows is not that swap: the wait already held
+    // the screen, so the float owes no pause (owner, 2026-09-02).
+    mockTaskChrome.isTaskEngaged = true;
+    const { rerender } = renderScreen(<HomeScreen />);
+
+    mockTaskChrome.isTaskEngaged = false;
+    rerender(<HomeScreen />);
+    expect(screen.getByTestId('home-content').props.entering).toEqual({
+      verb: 'float',
+      delayMs: 120,
+    });
+
+    mockTaskChrome.surfaceKey = 1;
+    rerender(<HomeScreen />);
+    expect(screen.getByTestId('home-content').props.entering).toEqual({
+      verb: 'float',
+      delayMs: 0,
+    });
+    mockTaskChrome.surfaceKey = 0;
+  });
+
   it('floats again when the screen surfaces from under the lock overlay', () => {
     // The overlay leaving bumps the surface count; the content remounts on it
     // and floats with no beat — the water is clear, nothing sank before it.

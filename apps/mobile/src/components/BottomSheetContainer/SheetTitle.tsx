@@ -8,14 +8,11 @@ import {
   ms,
   spacing,
   type Semantic,
+  type SheetTitlePropsBase,
 } from '@salmon/shared';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 
-export interface SheetTitleProps {
-  /** Optional element rendered before the title text, inline (e.g. a warning icon). */
-  leading?: React.ReactNode;
-  children: string;
-}
+export interface SheetTitleProps extends SheetTitlePropsBase {}
 
 /**
  * SheetTitle — the one hand-drawn title style every sheet used to redraw

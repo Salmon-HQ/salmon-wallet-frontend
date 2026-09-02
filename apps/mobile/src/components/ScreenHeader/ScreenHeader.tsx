@@ -8,7 +8,6 @@
  * corner gave the eye no target, and the redesign draws every affordance as a
  * well the glyph sits inside.
  */
-import type { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CaretLeftIcon, XIcon } from '../../icons';
@@ -24,7 +23,7 @@ import {
   vs,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
+import type { ScreenHeaderPropsBase } from '@salmon/shared';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { StepIndicator } from '../StepIndicator';
@@ -33,34 +32,8 @@ import { IconBubble } from '../IconBubble';
 /** The affordance's well — the redesign's 38pt surface circle. */
 const BACK_BUBBLE_SIZE = 38;
 
-export interface ScreenHeaderProps extends Testable {
-  /** Callback when back button is pressed */
-  onBack?: () => void;
-  /**
-   * Glyph for the leading affordance. `close` for screens the affordance
-   * exits rather than backs out of — declining advances, so a back chevron
-   * would describe the wrong direction.
-   */
-  glyph?: 'back' | 'close';
-  /** Accessible name for the affordance. Defaults to "Go back". */
-  backLabel?: string;
-  /** Show step indicator */
-  stepIndicator?: {
-    totalSteps: number;
-    currentStep: number;
-  };
-  /** Disable back button */
-  backDisabled?: boolean;
-  /** Screen title, rendered below the affordance row. */
-  title?: string;
-  /**
-   * A mark drawn immediately before the title — the Powerups lightning. Only
-   * meaningful alongside `title`.
-   */
-  titleGlyph?: ReactNode;
-  /** Supporting line under the title. Only meaningful alongside `title`. */
-  subtitle?: string;
-}
+/** The mobile half of `ScreenHeaderPropsBase` — fully platform-agnostic, no extension needed. */
+export type ScreenHeaderProps = ScreenHeaderPropsBase;
 
 export function ScreenHeader({
   onBack,

@@ -1,15 +1,9 @@
 import type { StyleProp, TextStyle } from 'react-native';
-import type { Testable } from '@salmon/shared';
+import type { SectionLabelPropsBase } from '@salmon/shared';
 
-/**
- * `caps` is the tracked uppercase marker ("INSTALLED"), `group` the date or
- * bucket heading inside a list ("Today"), `title` the section heading a block
- * of content hangs under ("Recent activity").
- */
-export type SectionLabelVariant = 'caps' | 'group' | 'title';
+export type { SectionLabelVariant } from '@salmon/shared';
 
-export interface SectionLabelProps extends Testable {
-  children: string;
-  variant: SectionLabelVariant;
+/** The RN half of `SectionLabelPropsBase`: the cross-platform contract plus RN style. */
+export interface SectionLabelProps extends SectionLabelPropsBase {
   style?: StyleProp<TextStyle>;
 }

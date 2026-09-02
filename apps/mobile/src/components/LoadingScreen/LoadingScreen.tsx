@@ -98,6 +98,7 @@ import {
   SINK_FLOAT_TRAVEL,
   floatEntering,
 } from '../../utils/sinkAndFloat';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
@@ -327,6 +328,18 @@ export function LoadingScreen({
    */
   const exitedRef = useRef(false);
   /**
+   * The shell surfaces when the wait leaves. Every wait — unlock, wallet
+   * switch, a send — hands Home its float back through this, so no call site
+   * has to remember (owner, 2026-09-02). Outside a provider (onboarding) the
+   * context default makes it a no-op. Held in a ref for the same reason
+   * `onExited` is.
+   */
+  const { surface: surfaceShell } = useTaskChrome();
+  const surfaceRef = useRef(surfaceShell);
+  useEffect(() => {
+    surfaceRef.current = surfaceShell;
+  }, [surfaceShell]);
+  /**
    * When the loop started, so the exit can ask where the front is without
    * reading an animation. The phase is `(now − startedAt) % period`, which is
    * all `planWavefrontExit` needs to keep the handoff pure and testable.
@@ -350,6 +363,7 @@ export function LoadingScreen({
     if (exitedRef.current) return;
     exitedRef.current = true;
     setIsVisible(false);
+    surfaceRef.current();
     onExitedRef.current?.();
   }, []);
 

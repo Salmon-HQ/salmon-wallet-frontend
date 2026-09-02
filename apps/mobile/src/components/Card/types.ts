@@ -1,38 +1,13 @@
-import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import type { Testable } from '@salmon/shared';
+import type { CardPropsBase } from '@salmon/shared';
 
 /**
- * The four grounds a card can take.
- *
- * `surface` is the default membrane every list item, receipt and content box
- * sits on; `accent` is the salmon tint; `warning` the amber notice wash;
- * `ink` the inverse well used for a featured block that must read as a
- * different object rather than a louder one.
+ * The four tones, the four paddings and the two radii are the cross-platform
+ * contract (`packages/shared/src/types/ui/card.ts`) — the DOM twin in
+ * `packages/ui` implements the same one. Only the style prop is platform code.
  */
-export type CardTone = 'surface' | 'accent' | 'warning' | 'ink';
+export type { CardPadding, CardRadius, CardTone } from '@salmon/shared';
 
-/** 12 / 14 / 16 / 24 — the four internal paddings the redesign draws. */
-export type CardPadding = 'sm' | 'md' | 'lg' | 'xl';
-
-/** `lg` is the 12px control radius, `xl` the 16px card radius. */
-export type CardRadius = 'lg' | 'xl';
-
-export interface CardProps extends Testable {
-  tone?: CardTone;
-  padding?: CardPadding;
-  /** Gap between children, in px. Use a `spacing` token at the call site. */
-  gap?: number;
-  radius?: CardRadius;
-  /** When present the card becomes a button and takes the pressed feedback. */
-  onPress?: () => void;
-  /**
-   * Announced role when pressable. Defaults to `button`; pass `link` for a
-   * row whose press opens an external URL, so it announces as a link rather
-   * than an action.
-   */
-  accessibilityRole?: 'button' | 'link';
-  accessibilityLabel?: string;
+export interface CardProps extends CardPropsBase {
   style?: StyleProp<ViewStyle>;
-  children?: ReactNode;
 }

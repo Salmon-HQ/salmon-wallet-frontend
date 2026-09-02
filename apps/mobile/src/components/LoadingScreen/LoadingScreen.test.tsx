@@ -12,7 +12,7 @@
  * time.
  */
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
@@ -117,6 +117,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 import { LoadingScreen } from './LoadingScreen';
+import { TaskChromeProvider, useTaskChrome } from '../../contexts/TaskChromeContext';
 
 describe('LoadingScreen', () => {
   afterEach(() => {
@@ -295,6 +296,29 @@ describe('LoadingScreen', () => {
         jest.advanceTimersByTime(1 + 180);
       });
       expect(onExited).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces the shell when the wait leaves — once, whatever ends it', () => {
+      // Every wait that ends hands Home its float back, so no call site has to
+      // remember to (owner, 2026-09-02).
+      function SurfaceProbe() {
+        return <Text testID="surface-key">{String(useTaskChrome().surfaceKey)}</Text>;
+      }
+      const wait = (visible: boolean) => (
+        <TaskChromeProvider>
+          <SurfaceProbe />
+          <LoadingScreen visible={visible} title="Processing swap" waves />
+        </TaskChromeProvider>
+      );
+      const { rerender } = render(wait(true));
+      expect(screen.getByTestId('surface-key').props.children).toBe('0');
+
+      rerender(wait(false));
+      act(() => {
+        jest.advanceTimersByTime(5000 + 5000);
+      });
+
+      expect(screen.getByTestId('surface-key').props.children).toBe('1');
     });
 
     it('hands off exactly once, however many clocks reach the end first', () => {

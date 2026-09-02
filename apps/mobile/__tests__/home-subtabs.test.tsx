@@ -15,6 +15,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import HomeScreen from '../app/(app)/(tabs)/index';
+import { TaskChromeProvider } from '../src/contexts/TaskChromeContext';
 
 const mockChangeNetwork = jest.fn(() => Promise.resolve());
 const mockSetTabOrder = jest.fn();
@@ -569,5 +570,64 @@ describe('home developer networks', () => {
     );
 
     expect(screen.queryByText('solana-devnet')).toBeNull();
+  });
+});
+
+/**
+ * The screen surfacing — a wait ending, the lock overlay leaving — is not a
+ * swap. Home is never unmounted while the wait is up, so the user's last
+ * gesture is still recorded when the water clears; replaying it inside the
+ * screen's own float is one gesture at two depths, which the verb never does
+ * (DESIGN.md §The balance block's motion, rule five).
+ *
+ * Reduce motion is not re-tested here: `floatEntering`/`sinkExiting` return
+ * `undefined` for it, which is covered where they live.
+ */
+describe('home surfacing', () => {
+  function renderAtSurface(surfaceKey: number) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    const tree = (key: number) => (
+      <QueryClientProvider client={client}>
+        <TaskChromeProvider surfaceKey={key}>
+          <HomeScreen />
+        </TaskChromeProvider>
+      </QueryClientProvider>
+    );
+    const view = render(tree(surfaceKey));
+    return { ...view, surfaceTo: (key: number) => view.rerender(tree(key)) };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockStoredTabOrder = null;
+    mockDeveloperNetworks.on = false;
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
+  });
+
+  it('lets only the screen speak when it comes back, however it was left', () => {
+    const { surfaceTo } = renderAtSurface(1);
+
+    // The last gesture before the wait: a sub-tab switch, which the content
+    // region owns.
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    expect(screen.getByTestId('home-subtab-content').props.entering).toEqual({
+      verb: 'float',
+      delayMs: 120,
+    });
+    const headerBefore = screen.getByTestId('wallet-header');
+
+    surfaceTo(2);
+
+    // One clean verb: the screen floats with no beat — nothing sank before it
+    // — and every wrapper inside it holds still.
+    expect(screen.getByTestId('home-content').props.entering).toEqual({
+      verb: 'float',
+      delayMs: 0,
+    });
+    expect(screen.getByTestId('home-subtab-content').props.entering).toBeUndefined();
+    expect(screen.getByTestId('portfolio-tabs-region').props.entering).toBeUndefined();
+    // The identity line surfaces WITH the content, as its sibling.
+    expect(screen.getByTestId('wallet-header')).not.toBe(headerBefore);
   });
 });
