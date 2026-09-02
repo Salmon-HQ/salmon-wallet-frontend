@@ -42,8 +42,17 @@ export function NftSectionHeader({
 }: NftSectionHeaderProps) {
   const styles = useThemedStyles(stylesFor);
 
+  // On the ordinary run there is no title (one chain), no choice of derived
+  // account and no skeleton — the block draws nothing, and a block that draws
+  // nothing must take no height: with the seam still applied the grid's first
+  // row started a component gap lower than the token list's first card under
+  // the same sub-tab row (owner, on device).
+  // `subAccounts.length > 1` is `SubAccountSelector`'s own guard: one derived
+  // account is not a choice, so the row renders nothing.
+  const paints = !!title || subAccounts.length > 1 || loading;
+
   return (
-    <View style={styles.block}>
+    <View style={paints ? styles.block : undefined}>
       {!!title && (
         <View style={styles.heading}>
           <SectionLabel variant="group">{title}</SectionLabel>
@@ -81,7 +90,8 @@ export function NftSectionHeader({
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     /** The heading, the selector and the skeletons are one composed block; the
-        component gap separates it from the grid below. */
+        component gap separates it from the grid below. Applied only when the
+        block has something in it — see `paints`. */
     block: {
       gap: vs(spacing.md),
       marginBottom: vs(spacing.screenGutter),

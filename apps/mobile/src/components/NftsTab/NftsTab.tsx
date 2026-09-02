@@ -83,7 +83,6 @@ const SKELETON_ROWS = ['a', 'b', 'c'] as const;
 // ============================================================================
 
 export function NftsTab({
-  listHeader,
   contentContainerStyle,
   onScroll,
   scrollEventThrottle,
@@ -304,13 +303,10 @@ export function NftsTab({
         style={styles.scrollView}
         contentContainerStyle={[
           { paddingBottom: scrollBottomPadding },
-          // The top padding is the host screen's to give (Home passes the same
-          // `contentTopOffset` the Portfolio tab uses). Computing a second one
-          // here shifted the balance by ~12dp when the user switched sub-tabs.
-          // The Home shell's gutter arrives the same way, applied last so it
-          // wins: the grid rows rendered flush to the left edge because every
-          // block inside drew its own padding and the rows drew none (owner,
-          // first device run).
+          // The Home shell's gutter arrives here, applied last so it wins: the
+          // grid rows rendered flush to the left edge because every block
+          // inside drew its own padding and the rows drew none (owner, first
+          // device run).
           contentContainerStyle,
         ]}
         showsVerticalScrollIndicator={false}
@@ -333,7 +329,6 @@ export function NftsTab({
         }
         ListHeaderComponent={
           <NftsTabHeader
-            listHeader={listHeader}
             developerMode={!!developerNetworks}
             loadError={!!loadError}
             partialLoad={!!partialLoad}

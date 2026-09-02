@@ -28,8 +28,6 @@ describe('useTabChrome header metrics', () => {
     expect(result.current.headerChromeHeight).toBe(
       insets.top + spacing.screenTop + componentSizes.walletHeaderRowHeight
     );
-    // Content starts where the row ends; the gap below it is the consumer's.
-    expect(result.current.headerContentOffset).toBe(result.current.headerChromeHeight);
   });
 
   it('reserves the row, not the 56px header slot', () => {

@@ -8,10 +8,11 @@ const STICKY_CTA_SCROLL_GAP = spacing['2xl'];
 /**
  * Shared chrome metrics for the tab shell.
  *
- * Screens inside the tabs render under an absolute header, so they must all
- * reserve the same top space to avoid overlapping system UI. Bottom spacing
- * for floating CTAs and scrollable content now derives from the safe-area
- * bottom inset alone — there is no bottom tab bar to clear.
+ * `headerChromeHeight` is the top space a screen without its own header row
+ * has to reserve so its content clears the system UI — Swap's, today. Home no
+ * longer reads it: its `WalletHeader` is laid out in flow and owns that space
+ * itself. Bottom spacing for floating CTAs and scrollable content derives from
+ * the safe-area bottom inset alone — there is no bottom tab bar to clear.
  */
 export function useTabChrome() {
   const insets = useSafeAreaInsets();
@@ -22,17 +23,12 @@ export function useTabChrome() {
     // The header no longer paints a band: it is the screen's top padding
     // (safe area + `screenTop`) followed by the header row, on the same plane
     // as the balance below it. `WalletHeader` computes the same three terms
-    // for its collapse math — keep them in step or the header and the content
-    // overlap. Unscaled, like every other expression defining this slot.
+    // for its own slot. Unscaled, like every other expression defining it.
     // The last term is the row's own height (its 38px thumb), never the 56px
     // `headerHeight` slot: a slot centres the row and drops it 9px below the
     // screen's top padding while stealing 18px from the content underneath.
     const headerChromeHeight =
       headerTopInset + spacing.screenTop + componentSizes.walletHeaderRowHeight;
-    // Content starts exactly where the header row ends; the gap between them
-    // is the consumer's (`index.tsx` adds the `.pen`'s 20).
-    const headerContentOffset = headerChromeHeight;
-
     // The balance hero intentionally underlaps the Android status bar area while
     // keeping the wallet header itself below the system UI.
     const heroCardTopInset = Platform.OS === 'ios' ? topInset : 0;
@@ -44,7 +40,6 @@ export function useTabChrome() {
       topInset,
       headerTopInset,
       headerChromeHeight,
-      headerContentOffset,
       heroCardTopInset,
       floatingBottomOffset,
       stickyCtaScrollPadding:

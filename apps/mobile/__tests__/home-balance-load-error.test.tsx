@@ -81,6 +81,11 @@ jest.mock('@salmon/shared', () => ({
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
     depth: { abyss: '#10131C' },
+    water: {
+      gradient: ['#10131C', '#070911'],
+      fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
+      fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
+    },
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
@@ -136,9 +141,7 @@ jest.mock('../src/components', () => {
     // so the Home tree mounts.
     WalletHeader: () => <View testID="wallet-header" />,
     BalanceHeader: () => <View testID="balance-header" />,
-    NftsTab: ({ listHeader }: { listHeader?: React.ReactNode }) => (
-      <View testID="nfts-tab">{listHeader}</View>
-    ),
+    NftsTab: () => <View testID="nfts-tab" />,
     PortfolioSubTabs: ({
       tabs,
       onChange,

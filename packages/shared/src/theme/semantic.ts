@@ -27,6 +27,7 @@
  */
 
 import { danger, neutral, salmon, success, warning } from './palette';
+import { withAlpha } from './withAlpha';
 
 export type ThemeMode = 'dark' | 'light';
 
@@ -63,11 +64,21 @@ export function createSemantic(mode: ThemeMode) {
     column: pick({ dark: neutral[975], light: neutral[25] }),
   } as const;
 
+  const surfaceRaised = pick({ dark: neutral[900], light: neutral[0] });
+
   const surface = {
     /** Default opaque card */
     shelf: pick({ dark: neutral[950], light: neutral[0] }),
     /** Opaque card above a card */
-    raised: pick({ dark: neutral[900], light: neutral[0] }),
+    raised: surfaceRaised,
+    /**
+     * The sheet's own top fade, over content scrolling under its lip.
+     *
+     * Ends on `raised` at alpha 0 rather than on `'transparent'`: the latter
+     * is black at alpha 0 in every renderer, which is a dirty band on a pale
+     * sheet and invisible on a deep one.
+     */
+    raisedFade: [surfaceRaised, withAlpha(surfaceRaised, 0)] as readonly [string, string],
     /**
      * Opaque top elevation — menus, opaque sheets.
      *
@@ -412,21 +423,33 @@ export function createSemantic(mode: ThemeMode) {
    * obeys The Scales Exclusion Rule: no numbers, rows, addresses, inputs, seed
    * phrases, or approval surfaces behind it.
    *
-   * Mode-invariant, same ruling as `scales`: light grounds render flat until
-   * the material's light pass.
+   * The ramp is real in both modes (spec 022). Light is rebuilt on light's own
+   * headroom rather than inverted: `neutral-25` down to `neutral-50`, the same
+   * rule as dark — nearer water above, deeper below — on the two steps a pale
+   * ground can spare before the column stops reading as water.
    *
    * What this deliberately does *not* include: no sand, no seabed, no ambient
    * light shafts. The reasons are in DESIGN.md §The water column.
    */
+  const waterGradient = pick({
+    dark: [neutral[950], neutral[1000]],
+    light: [neutral[25], neutral[50]],
+  }) as readonly [string, string];
+
   const water = {
     /** Ground ramp, top → bottom. Nearer water above, abyss below. */
-    // Light has no depth ramp yet (spec 021: the material's own pass comes
-    // later), so its column is flat: the fade that ends on this token ends on
-    // the ground itself.
-    gradient: pick({
-      dark: [neutral[950], neutral[1000]] as const,
-      light: [neutral[25], neutral[25]] as const,
-    }),
+    gradient: waterGradient,
+    /**
+     * The seam under a fixed block, over content scrolling beneath it.
+     *
+     * Stop 0 is what tops the ground, so the fade starts there and ends on the
+     * same colour at alpha 0 — never on `'transparent'`, which every renderer
+     * reads as black at alpha 0 and which smudged a grey band across the pale
+     * ground on its way to nothing.
+     */
+    fadeTop: [waterGradient[0], withAlpha(waterGradient[0], 0)] as readonly [string, string],
+    /** The floor fade over the end of a list. Stop 1 is what floors the ground. */
+    fadeBottom: [withAlpha(waterGradient[1], 0), waterGradient[1]] as readonly [string, string],
     /**
      * Marine snow, brightest floc. Particle opacities scale this down.
      *

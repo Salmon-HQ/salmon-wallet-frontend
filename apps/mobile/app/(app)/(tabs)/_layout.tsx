@@ -6,10 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-import { useAccountsContext, useUserConfig, semantic } from '@salmon/shared';
+import { useAccountsContext, useUserConfig, type Semantic } from '@salmon/shared';
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
-import { useThemeMode } from '../../../src/theme/useThemedStyles';
+import { useSemantic, useThemedStyles, useThemeMode } from '../../../src/theme/useThemedStyles';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -21,6 +21,10 @@ import { useThemeMode } from '../../../src/theme/useThemedStyles';
  * Settings included: it lived here as a hidden tab and got no push
  * transition, and it now sits on the `(app)` stack next to Wallets.
  *
+ * Its own colour follows the mode: the ground is the water ramp's floor and
+ * the bottom fade ends on that same floor, so the shell can never paint a
+ * dark band across a pale screen the way the static dark tokens did.
+ *
  * The lock overlay is NOT mounted here — it lives in `(app)/_layout.tsx`, a
  * level up, because a screen pushed on the `(app)` stack (Wallets, Activity,
  * Settings) sits above this layout and an overlay mounted here would sit
@@ -31,6 +35,8 @@ import { useThemeMode } from '../../../src/theme/useThemedStyles';
 export default function TabLayout() {
   const { t } = useTranslation();
   const mode = useThemeMode();
+  const styles = useThemedStyles(stylesFor);
+  const { water } = useSemantic();
   const blurTargetRef = useRef<View>(null);
 
   const [accountState] = useAccountsContext();
@@ -56,7 +62,7 @@ export default function TabLayout() {
       {/* The tab shell mounts its own bar because it is the screen the status
           bar sits directly on the water for. The style follows the mode: a
           hardcoded `light` left the clock white on the pale ground (owner, on
-          device). The rest of this file's colour is step 3's to migrate. */}
+          device). */}
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
 
       {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
@@ -72,10 +78,11 @@ export default function TabLayout() {
             ground, in the same plane as the ramp. */}
         <ScalesBackground variant="deepField" />
 
-        {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
-            than the old flat ground, which would have lightened the abyss. */}
+        {/* Layer 3: Bottom fade gradient. It starts and ends on the ramp's own
+            floor — `'transparent'` is black at alpha 0, which smudged the fade
+            grey on its way to nothing. */}
         <LinearGradient
-          colors={['transparent', semantic.water.gradient[1]]}
+          colors={water.fadeBottom}
           style={styles.bottomFadeGradient}
           pointerEvents="none"
         />
@@ -106,17 +113,20 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.depth.abyss,
-  },
-  bottomFadeGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    // No componentSizes token fits this fade's height (research-mobile.md §3d).
-    height: 180,
-    bottom: 0,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      // The ramp's floor: what the shell shows anywhere the column does not
+      // reach is the deepest water, not a separate ground.
+      backgroundColor: t.water.gradient[1],
+    },
+    bottomFadeGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      // No componentSizes token fits this fade's height (research-mobile.md §3d).
+      height: 180,
+      bottom: 0,
+    },
+  });

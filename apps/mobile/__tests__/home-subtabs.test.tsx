@@ -5,8 +5,9 @@
  * 1. NFTs only exist on Solana, so tapping the tab from another chain has to
  *    take the balance home first — through the same handler the page dots use,
  *    not a silent network write.
- * 2. Portfolio pins the balance above its list; NFTs hand it to the grid as a
- *    list header so it scrolls away. One scroll view either way.
+ * 2. Nothing above the sub-tab row scrolls, on either tab: the balance is a
+ *    fixed sibling of the content region on Portfolio AND on NFTs, and the
+ *    row is one instance under one parent so its underline can slide.
  */
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
@@ -94,6 +95,11 @@ jest.mock('@salmon/shared', () => ({
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
     depth: { abyss: '#10131C' },
+    water: {
+      gradient: ['#10131C', '#070911'],
+      fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
+      fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
+    },
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
@@ -195,9 +201,7 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    NftsTab: ({ listHeader }: { listHeader?: React.ReactNode }) => (
-      <View testID="nfts-tab">{listHeader}</View>
-    ),
+    NftsTab: () => <View testID="nfts-tab" />,
     PortfolioSubTabs: ({
       tabs,
       onChange,
@@ -252,7 +256,7 @@ describe('home sub-tabs', () => {
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
   });
 
-  it('pins the balance above the list on Portfolio and hands it to the grid on NFTs', () => {
+  it('keeps the balance out of the scrolling view on both sub-tabs', () => {
     renderScreen(<HomeScreen />);
 
     // Portfolio: the balance is a sibling of the list, not part of it.
@@ -262,10 +266,23 @@ describe('home sub-tabs', () => {
 
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
 
-    // NFTs: the balance rides inside the grid's list header, so it scrolls away.
+    // NFTs: same block, same place — it is not handed to the grid, so nothing
+    // above the sub-tab row scrolls away (owner, 2026-09-01).
     const grid = screen.getByTestId('nfts-tab');
-    expect(within(grid).getByTestId('balance-header')).toBeTruthy();
+    expect(within(grid).queryByTestId('balance-header')).toBeNull();
+    expect(screen.getByTestId('balance-header')).toBeTruthy();
     expect(screen.queryByTestId('token-list')).toBeNull();
+  });
+
+  it('mounts one sub-tab row for both tabs, so the underline can slide', () => {
+    // The row used to live under a different parent per tab, which remounted
+    // `UnderlineTabs` on every switch and threw away its underline travel.
+    renderScreen(<HomeScreen />);
+    const row = screen.getByTestId('portfolio-tab-nfts');
+
+    fireEvent.press(row);
+
+    expect(screen.getByTestId('portfolio-tab-nfts')).toBe(row);
   });
 
   it('sends the balance pill to the Activity screen, not to a sheet', () => {

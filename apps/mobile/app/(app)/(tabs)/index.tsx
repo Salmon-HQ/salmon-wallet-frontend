@@ -1,12 +1,18 @@
 /**
  * HomeScreen - Main wallet overview screen
  *
- * Displays:
- * - WalletHeader row: Account name, address, settings navigation
+ * One layout, both sub-tabs. Top to bottom, all of it in flow:
+ * - WalletHeader row: account name, address, settings navigation
  * - BalanceHeader: swipeable per-chain balance + Send / Receive / History
- * - PortfolioSubTabs: in-page "Portfolio | NFTs" row (the bottom tab bar is gone)
- * - Portfolio content: TokenList, or the Bitcoin chart/market/about column
- * - NFTs content: NftsTab
+ * - PortfolioSubTabs: the in-page "Portfolio | NFTs" row — ONE instance under
+ *   ONE parent, so `UnderlineTabs` never remounts and its underline slides
+ * - the content region (`flex: 1`), which holds the active tab's own scroll
+ *   view: TokenList, the Bitcoin column, or the NFT grid
+ *
+ * Nothing above the sub-tabs scrolls, on either tab (owner, 2026-09-01;
+ * DESIGN.md §Navigation). The only mask is one fade at the seam between the
+ * row and the content region, opacity driven by the active list's offset —
+ * no measurement, no overlay, no scrim.
  *
  * Features:
  * - Pull-to-refresh for balance updates
@@ -23,7 +29,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
-  LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -125,9 +130,6 @@ function mapBalanceToToken(item: {
 /** Scroll distance over which the top fade gradient reaches full opacity. */
 const TOP_FADE_SCROLL_RANGE = 30;
 
-/** Fraction of the balance block's travel after which the sticky row grounds. */
-const STICKY_SCRIM_START = 0.6;
-
 /** The two in-page sub-tabs. NFTs only exist on Solana — see `handleSubTabChange`. */
 type SubTabKey = 'portfolio' | 'nfts';
 
@@ -136,38 +138,24 @@ export default function HomeScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
-  const { headerChromeHeight, headerContentOffset, floatingBottomOffset } = useTabChrome();
+  const { floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
   const { isTaskEngaged } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
-  // Everything the screen owns starts below the absolute wallet header, one
-  // `.pen` vertical gap under it. The header's own top padding (safe area +
-  // `screenTop`) is already inside `headerContentOffset`.
-  const contentTopOffset = headerContentOffset + vs(spacing.xl);
-
   // Top fade gradient opacity - animated based on scroll position
   // `useMemo`, not a ref read during render: the hooks lint (v7) forbids
   // `.current` in the render body, and a memo with no deps is the same
   // one-instance guarantee.
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
-  // Raw scroll offset of whichever sub-tab owns the screen. On NFTs it also
-  // drives the sticky sub-tab row (see `subTabsTranslateY`).
-  const scrollY = useMemo(() => new Animated.Value(0), []);
 
   // Active blockchain index for carousel
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
 
   // In-page sub-tab (replaces the removed bottom tab bar)
   const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('portfolio');
-
-  // Measured once per layout so the sticky sub-tab row knows how far the
-  // balance block has to travel before it pins, and how much room to reserve
-  // for itself inside the NFT list header.
-  const [balanceBlockHeight, setBalanceBlockHeight] = useState(0);
-  const [subTabsHeight, setSubTabsHeight] = useState(0);
 
   // Bitcoin chart period — the fetch itself is `useCoinMarketData` below.
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
@@ -497,17 +485,16 @@ export default function HomeScreen() {
       // and the amount pointing at a chain the wallet never switched to.
       if (!activeAccount?.networksAccounts?.[newNetworkId]) return;
       setActiveBlockchainIndex(index);
-      // The incoming chain's list starts at the top, so the offsets the fade
-      // and the sticky row read must start over with it — the same reset the
-      // sub-tab switch does. Without it a chain switched while scrolled kept a
-      // top fade over content that was no longer scrolled.
-      scrollY.setValue(0);
+      // The incoming chain's list starts at the top, so the offset the fade
+      // reads must start over with it — the same reset the sub-tab switch
+      // does. Without it a chain switched while scrolled kept a top fade over
+      // content that was no longer scrolled.
       topFadeOpacity.setValue(0);
       void accountActions
         .changeNetwork(newNetworkId)
         .catch((error) => console.warn('[home] changeNetwork failed:', error));
     },
-    [blockchainBalances, accountActions, activeAccount, scrollY, topFadeOpacity]
+    [blockchainBalances, accountActions, activeAccount, topFadeOpacity]
   );
 
   // Handle scroll to show/hide top fade gradient dynamically
@@ -517,18 +504,9 @@ export default function HomeScreen() {
       // Fade in when scrolled down, fade out when at top
       const opacity = Math.min(offsetY / TOP_FADE_SCROLL_RANGE, 1);
       topFadeOpacity.setValue(opacity);
-      scrollY.setValue(offsetY);
     },
-    [topFadeOpacity, scrollY]
+    [topFadeOpacity]
   );
-
-  const handleBalanceBlockLayout = useCallback((event: LayoutChangeEvent) => {
-    setBalanceBlockHeight(event.nativeEvent.layout.height);
-  }, []);
-
-  const handleSubTabsLayout = useCallback((event: LayoutChangeEvent) => {
-    setSubTabsHeight(event.nativeEvent.layout.height);
-  }, []);
 
   const subTabs = useMemo(
     () => [
@@ -561,48 +539,17 @@ export default function HomeScreen() {
           }
         }
       }
-      // Each sub-tab has its own scroll view, so the offsets the fade and the
-      // sticky row read must start over with it.
-      scrollY.setValue(0);
+      // Each sub-tab has its own scroll view, so the offset the fade reads
+      // must start over with it.
       topFadeOpacity.setValue(0);
       setActiveSubTab(key as SubTabKey);
     },
-    [activeBlockchainIndex, blockchainBalances, handleBlockchainChange, scrollY, topFadeOpacity]
+    [activeBlockchainIndex, blockchainBalances, handleBlockchainChange, topFadeOpacity]
   );
 
   // CORE 16 lands in a later lote; the control renders and does nothing until
   // then, so the row's geometry is already the final one.
   const handlePortfolioVisibilityPress = useCallback(() => {}, []);
-
-  // The sticky sub-tab row rides the NFT grid's own scroll offset: it starts
-  // directly under the balance block and stops once it reaches the chrome, so
-  // the user can switch back without scrolling to the top. One scroll view,
-  // no nesting.
-  const subTabsTranslateY = useMemo(
-    () =>
-      balanceBlockHeight > 0
-        ? scrollY.interpolate({
-            inputRange: [0, balanceBlockHeight],
-            outputRange: [balanceBlockHeight, 0],
-            extrapolate: 'clamp',
-          })
-        : 0,
-    [balanceBlockHeight, scrollY]
-  );
-
-  // The row only earns an opaque ground once it actually covers the grid;
-  // before that it sits over open water and must not paint a band.
-  const subTabsScrimOpacity = useMemo(
-    () =>
-      balanceBlockHeight > 0
-        ? scrollY.interpolate({
-            inputRange: [balanceBlockHeight * STICKY_SCRIM_START, balanceBlockHeight],
-            outputRange: [0, 1],
-            extrapolate: 'clamp',
-          })
-        : 0,
-    [balanceBlockHeight, scrollY]
-  );
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -661,8 +608,8 @@ export default function HomeScreen() {
 
   // `address` is defined above, next to the account state it comes from.
 
-  // The block above the content, shared by both sub-tabs. On Portfolio it is
-  // pinned; on NFTs it is the grid's list header, so it scrolls away.
+  // The block above the content. It is fixed on both sub-tabs — nothing above
+  // the sub-tab row scrolls (owner, 2026-09-01).
   const balanceBlock = (
     <BalanceHeader
       blockchains={blockchainBalances}
@@ -687,28 +634,17 @@ export default function HomeScreen() {
     />
   );
 
+  // The one mask on this screen: the seam between the fixed row above and the
+  // list scrolling under it. It starts on the ramp's own top stop and ends on
+  // that same colour at alpha 0, so it clears without smudging on either
+  // ground. There is no opaque band any more — nothing scrolls under the
+  // header for a band to hide.
   const topFade = (
     <Animated.View
-      style={[
-        styles.topFadeGradient,
-        {
-          height: headerChromeHeight + componentSizes.sheetFadeGradientHeight,
-          opacity: topFadeOpacity,
-        },
-      ]}
+      style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
       pointerEvents="none"
     >
-      {/* The header band is opaque ground, then the fade: content that
-          scrolls under the wallet header must not show through it. */}
-      <LinearGradient
-        colors={[semantic.depth.column, semantic.depth.column, 'transparent']}
-        locations={[
-          0,
-          headerChromeHeight / (headerChromeHeight + componentSizes.sheetFadeGradientHeight),
-          1,
-        ]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={semantic.water.fadeTop} style={StyleSheet.absoluteFill} />
     </Animated.View>
   );
 
@@ -717,9 +653,8 @@ export default function HomeScreen() {
       {/* The identity line. It belongs to Home and is mounted here rather than
           in the tab shell: the shell renders under every pushed screen, so a
           header mounted there painted over the title of Settings and Wallets.
-          It sits on the same plane as the balance below it — no lift, no panel
-          behind it — and sinks and floats with the content when a task takes
-          the screen. */}
+          It is the screen's first child in flow — it owns its top padding
+          (safe area + `screenTop`) and nothing scrolls behind it. */}
       <WalletHeader
         accountName={activeAccount?.name || t('wallet.unnamed_account', 'Account')}
         address={activeBlockchainAccount?.getReceiveAddress() || ''}
@@ -747,15 +682,16 @@ export default function HomeScreen() {
           })}
           exiting={sinkExiting(isReduceMotionEnabled)}
         >
+          {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
+              is the same instance across a switch: `UnderlineTabs` only slides
+              its underline if it is not remounted. */}
+          <View style={styles.pinnedHeader}>
+            {balanceBlock}
+            <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
+          </View>
+
           {activeSubTab === 'portfolio' ? (
             <>
-              {/* Portfolio pins the balance and the sub-tabs: only the assets
-                  travel under them. */}
-              <View style={[styles.pinnedHeader, { paddingTop: contentTopOffset }]}>
-                {balanceBlock}
-                <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
-              </View>
-
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is pull-to-refresh on the token list. Only 'ready'
                   carries data, so a total failure is left to the list's own
@@ -883,46 +819,14 @@ export default function HomeScreen() {
               </View>
             </>
           ) : (
-            // NFTs: the grid owns the only scroll view. The balance rides
-            // inside its list header and scrolls away; the sub-tab row is an
-            // overlay driven by the same offset, so it pins under the chrome
-            // instead of leaving with the balance.
+            // NFTs: the grid owns the only scroll view in the content region,
+            // and everything above it is the same fixed block Portfolio shows.
             <View style={styles.listContainer}>
               <NftsTab
-                // One top offset for both sub-tabs: NftsTab used to compute its
-                // own and the balance jumped ~12dp on every switch.
-                contentContainerStyle={[styles.tabGutter, { paddingTop: contentTopOffset }]}
-                listHeader={
-                  <View>
-                    <View style={styles.nftBalanceBlock} onLayout={handleBalanceBlockLayout}>
-                      {balanceBlock}
-                    </View>
-                    {/* Room the pinned sub-tab row occupies above the grid. */}
-                    <View style={{ height: subTabsHeight }} />
-                  </View>
-                }
+                contentContainerStyle={styles.tabGutter}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
               />
-              {/* Until the balance block has reported its height the row has
-                  no offset to ride, so it would paint its first frame directly
-                  over the balance. It measures invisibly, then appears. */}
-              <Animated.View
-                testID="home-subtabs-sticky"
-                pointerEvents={balanceBlockHeight > 0 ? 'auto' : 'none'}
-                style={[
-                  styles.stickySubTabs,
-                  { top: contentTopOffset, transform: [{ translateY: subTabsTranslateY }] },
-                  balanceBlockHeight === 0 && styles.stickySubTabsUnmeasured,
-                ]}
-                onLayout={handleSubTabsLayout}
-              >
-                <Animated.View
-                  pointerEvents="none"
-                  style={[styles.stickySubTabsScrim, { opacity: subTabsScrimOpacity }]}
-                />
-                {subTabsRow}
-              </Animated.View>
               {topFade}
             </View>
           )}
@@ -969,36 +873,17 @@ const stylesFor = (t: Semantic) =>
     tabGutter: {
       paddingHorizontal: s(spacing.screenGutter),
     },
-    // Block seams are the component gap (20): balance block → sub-tabs row is
-    // `pinnedSubTabs`' marginTop, sub-tabs row → list is this padding. The
-    // anatomy inside each block keeps the finer 4/8/12 steps.
+    // Block seams are the component gap (20), on both sub-tabs: header row →
+    // balance block is this padding, balance block → sub-tabs row is
+    // `pinnedSubTabs`' marginTop, sub-tabs row → content region is the bottom
+    // padding. The anatomy inside each block keeps the finer 4/8/12 steps.
     pinnedHeader: {
       paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.xl),
       paddingBottom: vs(spacing.xl),
     },
     pinnedSubTabs: {
       marginTop: vs(spacing.xl),
-    },
-    nftBalanceBlock: {
-      paddingBottom: vs(spacing.xl),
-    },
-    // On NFTs the row is an overlay, so its own bottom padding IS the seam to
-    // the grid (it is also the height the list header reserves) — same 20.
-    stickySubTabs: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingBottom: vs(spacing.xl),
-      zIndex: 2,
-    },
-    // Measuring, not yet placed: the row must not paint over the balance.
-    stickySubTabsUnmeasured: {
-      opacity: 0,
-    },
-    stickySubTabsScrim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: t.depth.abyss,
     },
     listContainer: {
       flex: 1,
@@ -1019,6 +904,7 @@ const stylesFor = (t: Semantic) =>
       left: 0,
       right: 0,
       top: 0,
+      height: componentSizes.sheetFadeGradientHeight,
       zIndex: 1,
     },
     // Bitcoin view styles

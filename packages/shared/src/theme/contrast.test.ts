@@ -156,27 +156,61 @@ describe('contrast: the membrane tiers over the water column', () => {
  * The card material on a light ground.
  *
  * The dark block above measures a deep-neutral membrane against the water
- * column; the light one is the same test with the ink inverted — white at high
- * alpha over `depth.column`, which is the only ground a light card ever sits
- * on (the water ramp is dark-only until the material's own pass). Body text
- * has to clear AA on both tiers, and the tiers have to stay distinguishable
- * from the ground they float over, or a card stops reading as an object.
+ * column; this is the same test with the ink inverted — white at high alpha
+ * over the light ramp, which is real now (spec 022), so the card is measured
+ * at both stops exactly as the dark one is. Body text has to clear AA on both
+ * tiers anywhere on the ramp, or a card stops reading as an object.
  */
-describe('contrast: the membrane tiers on a light ground', () => {
+describe('contrast: the membrane tiers over the light water column', () => {
   const light = createSemantic('light');
 
   for (const [tier, tierValue] of [
     ['membraneThin', light.surface.membraneThin],
     ['membraneThick', light.surface.membraneThick],
   ] as const) {
-    const ground = compositeOver(tierValue, light.depth.column);
+    for (const groundStop of light.water.gradient) {
+      const ground = compositeOver(tierValue, groundStop);
 
-    it(`text.primary meets AA on ${tier}`, () => {
-      expect(contrast(light.text.primary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
-    });
+      it(`text.primary meets AA on ${tier} over ${groundStop}`, () => {
+        expect(contrast(light.text.primary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      });
 
-    it(`text.secondary meets AA on ${tier}`, () => {
-      expect(contrast(light.text.secondary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      it(`text.secondary meets AA on ${tier} over ${groundStop}`, () => {
+        expect(contrast(light.text.secondary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+    }
+  }
+});
+
+/**
+ * The light ramp itself (spec 022). Same two guarantees the dark ramp is held
+ * to: it only ever deepens, and every text role clears AA at both stops — a
+ * ground that darkens downward can only raise contrast, but "only" is an
+ * assumption until someone wants a deeper floor.
+ */
+describe('contrast: the light water column', () => {
+  const light = createSemantic('light');
+  const [rampTop, rampFloor] = light.water.gradient;
+
+  it('the ramp only ever deepens', () => {
+    expect(luminance(rampFloor)).toBeLessThan(luminance(rampTop));
+  });
+
+  it('the ramp starts on the ground the light mode paints', () => {
+    expect(rampTop).toBe(light.depth.column);
+  });
+
+  const readableRoles = [
+    ['primary', light.text.primary],
+    ['secondary', light.text.secondary],
+    ['tertiary', light.text.tertiary],
+    ['accent', light.text.accent],
+  ] as const;
+
+  for (const [roleName, roleValue] of readableRoles) {
+    it(`text.${roleName} clears AA at every point on the ramp`, () => {
+      expect(contrast(roleValue, rampTop)).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(contrast(roleValue, rampFloor)).toBeGreaterThanOrEqual(AA_TEXT);
     });
   }
 });

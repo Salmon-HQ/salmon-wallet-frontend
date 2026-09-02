@@ -1,12 +1,15 @@
 /**
- * NftsTabHeader — everything above the grid, in one stack.
+ * NftsTabHeader — the notices that can appear above the grid.
  *
- * The host's balance block, the developer-mode banner, a load failure, a
- * partial load, an empty answer: siblings on the same surface, so they sit
- * the component gap (20) apart (DESIGN.md §Layout). It is the `SectionList`'s
- * `ListHeaderComponent`, which is why the balance scrolls away with the grid.
+ * There is no stack and no wrapper: the developer-mode banner, a load failure,
+ * a partial load and an empty answer are plain siblings of the grid's first
+ * row, each carrying the component gap (20) only when it paints. A gapped
+ * container around them (and the hidden heading that used to live in it) gave
+ * the ordinary run — no banner, no error, no empty state — a reserved height,
+ * so the first NFT row started a component gap lower than Portfolio's first
+ * token card under the same sub-tab row (owner, on device).
  */
-import React, { type ReactNode } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { fontFamilyNative, fontSize, s, spacing, vs, type Semantic } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
@@ -19,8 +22,6 @@ import { WarningNotice } from '../WarningNotice';
 import { CodeIcon, iconSize } from '../../icons';
 
 export interface NftsTabHeaderProps {
-  /** The host's own block (Home's balance), first in the stack. */
-  listHeader?: ReactNode;
   developerMode: boolean;
   loadError: boolean;
   partialLoad: boolean;
@@ -29,7 +30,6 @@ export interface NftsTabHeaderProps {
 }
 
 export function NftsTabHeader({
-  listHeader,
   developerMode,
   loadError,
   partialLoad,
@@ -40,56 +40,37 @@ export function NftsTabHeader({
   const styles = useThemedStyles(stylesFor);
 
   return (
-    <View style={styles.blocks}>
-      {/* Home's balance block on the NFTs sub-tab. It is the list's header
-          rather than a pinned sibling, so it scrolls away with the grid while
-          the sub-tab row above stays reachable — and the grid keeps being the
-          screen's only scroll view. */}
-      {listHeader}
-
-      {/* The visible "My Collectibles" heading sat directly under the
-          Collectibles tab, repeating a label the user had just tapped. It is
-          not deleted, only unpainted: React Native has no DOM and therefore no
-          `visuallyHidden` clip rectangle, so the platform equivalent is a 1x1
-          transparent node that stays in the accessibility tree with
-          `accessibilityRole="header"`. Screen-reader users keep a heading to
-          orient by; the eye gets ~78px of vertical chrome back. Zero width or
-          `display: none` would drop it from the tree on Android, which is why
-          the box is 1x1 rather than 0x0. */}
-      <Text
-        style={styles.assistiveHeading}
-        accessibilityRole="header"
-        importantForAccessibility="yes"
-      >
-        {t('wallet.my_nfts', 'My Collectibles')}
-      </Text>
-
+    <>
       {developerMode && (
-        <Card tone="accent" padding="md" radius="lg" style={styles.devBanner}>
-          <IconBubble
-            size={36}
-            shape="rounded"
-            radius="lg"
-            tone="accent-tint"
-            icon={CodeIcon}
-            iconSize={iconSize.md}
-          />
-          <Text style={styles.devBannerText}>
-            {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
-          </Text>
-        </Card>
+        <View style={styles.seam}>
+          <Card tone="accent" padding="md" radius="lg" style={styles.devBanner}>
+            <IconBubble
+              size={36}
+              shape="rounded"
+              radius="lg"
+              tone="accent-tint"
+              icon={CodeIcon}
+              iconSize={iconSize.md}
+            />
+            <Text style={styles.devBannerText}>
+              {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
+            </Text>
+          </Card>
+        </View>
       )}
 
       {/* Load failure — explicit retry (pull-to-refresh also works). */}
       {loadError && (
-        <StateBlock
-          tone="error"
-          title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
-          onRetry={onRetry}
-          retryLabel={t('actions.retry', 'Retry')}
-          testID="collectibles-load-error"
-          retryTestID="collectibles-retry-button"
-        />
+        <View style={styles.seam}>
+          <StateBlock
+            tone="error"
+            title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+            onRetry={onRetry}
+            retryLabel={t('actions.retry', 'Retry')}
+            testID="collectibles-load-error"
+            retryTestID="collectibles-retry-button"
+          />
+        </View>
       )}
 
       {/* A short list, not a failed one: the grid below is real, it is just
@@ -99,6 +80,7 @@ export function NftsTabHeader({
         <WarningNotice
           tone="warning"
           testID="collectibles-partial-load"
+          style={styles.seam}
           title={t(
             'collectibles.partial_error',
             'Some of your collectibles could not be loaded. Pull to refresh to try again.'
@@ -117,32 +99,27 @@ export function NftsTabHeader({
       )}
 
       {isEmpty && (
-        <StateBlock
-          tone="empty"
-          title={t('nft.emptyTitle', 'No Collectibles')}
-          body={t(
-            'nft.emptySubtitle',
-            'Your NFTs and Ordinals will appear here once you receive some'
-          )}
-          testID="collectibles-empty"
-        />
+        <View style={styles.seam}>
+          <StateBlock
+            tone="empty"
+            title={t('nft.emptyTitle', 'No Collectibles')}
+            body={t(
+              'nft.emptySubtitle',
+              'Your NFTs and Ordinals will appear here once you receive some'
+            )}
+            testID="collectibles-empty"
+          />
+        </View>
       )}
-    </View>
+    </>
   );
 }
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    blocks: {
-      gap: vs(spacing.screenGutter),
+    /** The component gap (20) to whatever follows — carried by the block itself. */
+    seam: {
       marginBottom: vs(spacing.screenGutter),
-    },
-    /** Present to assistive tech, absent to the eye. See the render comment. */
-    assistiveHeading: {
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      opacity: 0,
     },
     devBanner: {
       flexDirection: 'row',

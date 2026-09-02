@@ -16,22 +16,18 @@
  * column). The ramp is what remains, and it is static: no clock, no
  * parallax, nothing for `useReducedMotion` to have to stop.
  *
- * ## Light mode: the ground is flat, and that is a deferral
+ * ## One drawing, both modes
  *
- * `water.gradient` is a pair of deep neutrals, mode-invariant on purpose —
- * the underwater material's light values are a dedicated pass (spec 021,
- * "flesh/scales/water"; DESIGN.md:307 says the material is rebuilt from its
- * rules, never inverted). Until that pass lands, light mode paints
- * `depth.column` flat: a ramp made of two dark stops on a `#F6F8FB` app would
- * be a black rectangle, and a ramp made of two barely-different light stops
- * is a gradient nobody can see. Flat is the honest placeholder, not the
- * intended end state.
+ * There is no light branch. `water.gradient` carries a real ramp per mode
+ * (spec 022) — deep neutrals in dark, `neutral-25` down to `neutral-50` in
+ * light — so the component asks for the ramp and the token knows which water
+ * it is. A `mode === 'light'` fork here is what made light a flat rectangle.
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
-import { useSemantic, useThemeMode } from '../../theme/useThemedStyles';
+import { useSemantic } from '../../theme/useThemedStyles';
 
 export interface DepthBackgroundProps {
   style?: ViewStyle;
@@ -47,16 +43,11 @@ export interface DepthBackgroundProps {
 export const DepthBackground: React.FC<DepthBackgroundProps> = React.memo(function DepthBackground({
   style,
 }: DepthBackgroundProps) {
-  const mode = useThemeMode();
-  const { water, depth } = useSemantic();
+  const { water } = useSemantic();
 
   return (
     <View style={[styles.container, style]} pointerEvents="none">
-      {mode === 'light' ? (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: depth.column }]} />
-      ) : (
-        <LinearGradient colors={water.gradient} style={StyleSheet.absoluteFill} />
-      )}
+      <LinearGradient colors={water.gradient} style={StyleSheet.absoluteFill} />
     </View>
   );
 });

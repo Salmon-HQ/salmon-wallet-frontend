@@ -8,9 +8,10 @@
  * verb at chrome scale — a conditional mount, the same mechanism the Home
  * content uses.
  *
- * The slot is absolutely positioned at the top of the tab shell; `useTabChrome`
- * computes the identical three terms as `headerChromeHeight`, so the Home
- * content starts exactly where this row ends. Keep the two in step.
+ * It is laid out in flow as Home's first child, not in an absolute slot: it
+ * owns the screen's top padding (safe area + `spacing.screenTop`) and the row
+ * height under it, and nothing scrolls behind it — so it needs no band, no
+ * mask and no reserved offset from its host.
  */
 
 import {
@@ -95,8 +96,7 @@ export function WalletHeader({
   const { isTaskEngaged } = useTaskChrome();
 
   // The redesign's screen top: safe area, then `screenTop`, then the row
-  // itself. Deliberately unscaled — `useTabChrome` computes the same three
-  // terms as `headerChromeHeight` so the Home content starts where this ends.
+  // itself. Deliberately unscaled.
   const headerTopPadding = insets.top + spacing.screenTop;
   const slotHeight = headerTopPadding + componentSizes.walletHeaderRowHeight;
 
@@ -127,7 +127,7 @@ export function WalletHeader({
   const truncatedAddress = getShortAddress(address, developerMode ? 8 : 4) ?? address;
 
   return (
-    <View pointerEvents="box-none" style={[styles.slot, { height: slotHeight }]}>
+    <View pointerEvents="box-none" style={{ height: slotHeight }}>
       <View style={{ height: headerTopPadding }} />
       {isTaskEngaged ? null : (
         <Reanimated.View
@@ -296,15 +296,6 @@ export function WalletHeader({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    // The header's slot in the tab shell. Absolute, so the content below scrolls
-    // under it exactly as it always has; `useTabChrome` reserves the same height.
-    slot: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 10,
-    },
     container: {
       // The row is exactly as tall as its own content — the 38pt account thumb.
       height: componentSizes.walletHeaderRowHeight,

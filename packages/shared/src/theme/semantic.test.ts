@@ -16,12 +16,15 @@ const DARK_SNAPSHOT = {
   depth: { abyss: '#070911', column: '#0B0F19' },
   water: {
     gradient: ['#10131C', '#070911'],
+    fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
+    fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
     snow: 'rgba(199, 211, 232, 0.09)',
     light: '#9FE0EF',
   },
   surface: {
     shelf: '#10131C',
     raised: '#161C2D',
+    raisedFade: ['#161C2D', 'rgba(22, 28, 45, 0)'],
     crest: '#1B2233',
     membraneThin: 'rgba(11, 15, 25, 0.48)',
     membraneThick: 'rgba(11, 15, 25, 0.66)',
@@ -123,6 +126,56 @@ describe('createSemantic: the dark mode is unmoved', () => {
   });
 });
 
+/**
+ * The fades (spec 022). A fade that ends on `'transparent'` passes through
+ * black on its way to nothing — invisible on deep water, a dirty band on a
+ * pale ground. Every fade here ends on *its own colour* at alpha 0, and the
+ * ramp it derives from is real in both modes.
+ */
+describe('createSemantic: the fades end on their own colour', () => {
+  /** `rgba(r, g, b, 0)` for the hex the stop beside it carries. */
+  const zeroOf = (hex: string): string => {
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.replace('#', '').slice(i, i + 2), 16));
+    return `rgba(${r}, ${g}, ${b}, 0)`;
+  };
+
+  for (const [modeName, tokens] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    it(`resolves every fade in ${modeName} mode`, () => {
+      const [top, topEnd] = tokens.water.fadeTop;
+      expect(top).toBe(tokens.water.gradient[0]);
+      expect(topEnd).toBe(zeroOf(tokens.water.gradient[0]));
+
+      const [floorStart, floor] = tokens.water.fadeBottom;
+      expect(floor).toBe(tokens.water.gradient[1]);
+      expect(floorStart).toBe(zeroOf(tokens.water.gradient[1]));
+
+      const [sheet, sheetEnd] = tokens.surface.raisedFade;
+      expect(sheet).toBe(tokens.surface.raised);
+      expect(sheetEnd).toBe(zeroOf(tokens.surface.raised));
+    });
+
+    it(`never lets a fade end on 'transparent' in ${modeName} mode`, () => {
+      for (const fade of [
+        tokens.water.fadeTop,
+        tokens.water.fadeBottom,
+        tokens.surface.raisedFade,
+      ]) {
+        expect(fade).toHaveLength(2);
+        expect(fade).not.toContain('transparent');
+      }
+    });
+  }
+
+  it('builds a real light ramp rather than two identical stops', () => {
+    expect(light.water.gradient[0]).toBe(neutral[25]);
+    expect(light.water.gradient[1]).toBe(neutral[50]);
+    expect(light.water.gradient[0]).not.toBe(light.water.gradient[1]);
+  });
+});
+
 describe('createSemantic: what the light mode is allowed to change', () => {
   it('has exactly the same token paths as the dark mode', () => {
     expect(Object.keys(flatten(light))).toEqual(Object.keys(flatten(dark)));
@@ -179,12 +232,15 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'surface.membraneThick',
         'surface.membraneThin',
         'surface.raised',
+        'surface.raisedFade',
         'surface.shelf',
         'text.accent',
         'text.disabled',
         'text.primary',
         'text.secondary',
         'text.tertiary',
+        'water.fadeBottom',
+        'water.fadeTop',
         'water.gradient',
       ].sort()
     );
@@ -277,10 +333,10 @@ describe('createSemantic: the invariants a mode switch may not touch', () => {
   it('keeps the rest of the underwater material untouched until its own pass', () => {
     expect(light.scales.refractionSweep).toEqual(dark.scales.refractionSweep);
     expect(light.flesh).toEqual(dark.flesh);
-    // The ramp itself is flat in light (spec 021: no depth ramp until the
-    // material's own pass); everything else about the water is untouched.
-    const { gradient: _lightRamp, ...lightWater } = light.water;
-    const { gradient: _darkRamp, ...darkWater } = dark.water;
+    // The ramp and the fades derived from it are the light pass (spec 022);
+    // everything else about the water is untouched.
+    const { gradient: _lr, fadeTop: _lt, fadeBottom: _lb, ...lightWater } = light.water;
+    const { gradient: _dr, fadeTop: _dt, fadeBottom: _db, ...darkWater } = dark.water;
     expect(lightWater).toEqual(darkWater);
   });
 
