@@ -6,14 +6,28 @@
  * the three variants and their sizes are the same, read from the same
  * `SectionLabelPropsBase` contract. `caps` is announced as a heading exactly
  * as mobile's `accessibilityRole="header"` does, via `role="heading"` — a
- * bare `<span>` carries no heading semantics, and the redesign does not pin a
- * document heading level per variant.
+ * bare `<span>` carries no heading semantics.
+ *
+ * `aria-level` is not optional the way this note once assumed: ARIA makes it a
+ * *required* attribute of `role="heading"`, so a heading without one is a
+ * critical `aria-required-attr` violation on every screen this label appears
+ * on. The three variants already rank themselves by size, so the level is read
+ * off the variant rather than pinned per call site. Mobile needs no
+ * equivalent — `accessibilityRole="header"` carries no level on either native
+ * platform.
  */
 import React from 'react';
 import { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import type { SectionLabelProps, SectionLabelVariant } from './types';
+
+/** The heading level each variant announces. See the note above. */
+const LEVELS: Record<SectionLabelVariant, number> = {
+  title: 2,
+  group: 3,
+  caps: 3,
+};
 
 const VARIANTS: Record<SectionLabelVariant, React.CSSProperties> = {
   caps: {
@@ -45,6 +59,7 @@ export function SectionLabel({ children, variant, style, className, testID }: Se
     <span
       data-testid={testID}
       role="heading"
+      aria-level={LEVELS[variant]}
       className={className}
       style={{ ...VARIANTS[variant], color: ink, margin: 0, ...style }}
     >

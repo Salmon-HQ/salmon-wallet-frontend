@@ -49,21 +49,19 @@ test('home, receive and settings have no critical a11y violations', async ({ pop
 
   // Receive sheet
   await popup.getByTestId('home-receive-button').click();
-  await popup
-    .getByTestId('receive-sheet')
-    .waitFor({ state: 'visible', timeout: 15_000 })
-    .catch(() => {});
+  await popup.getByTestId('receive-sheet').waitFor({ state: 'visible', timeout: 15_000 });
   await scan(popup, 'receive');
-  await popup
-    .getByTestId('sheet-close-button')
-    .click()
-    .catch(() => {});
 
-  // Settings drawer (menu only — no secret panels)
+  // A sheet has no close button of its own: Escape and a backdrop click are
+  // its two dismissals (`BottomSheetContainer`, spec 028's DOM-alternative
+  // table). This used to click a `sheet-close-button` that has never existed
+  // in the app, which spent the whole action timeout and then swallowed the
+  // failure — the test ran out of budget before it ever reached settings.
+  await popup.keyboard.press('Escape');
+  await popup.getByTestId('receive-sheet').waitFor({ state: 'hidden', timeout: 10_000 });
+
+  // Settings (the menu only — no secret panels)
   await popup.getByTestId('wallet-header-settings-button').click();
-  await popup
-    .getByTestId('settings-item-accounts')
-    .waitFor({ state: 'visible', timeout: 10_000 })
-    .catch(() => {});
+  await popup.getByTestId('settings-item-accounts').waitFor({ state: 'visible', timeout: 10_000 });
   await scan(popup, 'settings');
 });

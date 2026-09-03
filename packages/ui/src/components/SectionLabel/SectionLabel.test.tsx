@@ -49,4 +49,18 @@ describe('SectionLabel', () => {
     renderInMode('dark', <SectionLabel variant="title">Recent activity</SectionLabel>);
     expect(screen.getByRole('heading', { name: 'Recent activity' })).toBeTruthy();
   });
+
+  // `aria-level` is a *required* attribute of `role="heading"`, so a label
+  // without one is a critical `aria-required-attr` violation — on every screen
+  // this component appears on, which is most of them. The suite asserted the
+  // role and not the level, so the whole app shipped the violation until the
+  // extension's axe scan reached a settings screen.
+  it.each([
+    ['title', 2],
+    ['group', 3],
+    ['caps', 3],
+  ] as const)('gives the %s variant a heading level', (variant, level) => {
+    renderInMode('dark', <SectionLabel variant={variant}>Danger zone</SectionLabel>);
+    expect(screen.getByRole('heading', { level })).toBeTruthy();
+  });
 });
