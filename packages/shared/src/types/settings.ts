@@ -42,16 +42,14 @@ export interface SettingsPanelEntry {
 }
 
 /**
- * Base props shared between mobile and extension SettingsSheet
+ * Base props shared between mobile and extension Settings.
+ *
+ * Settings is a screen on both platforms — a route on mobile, a page of the
+ * DOM stack — so there is no `visible` here: it is mounted or it is not.
  */
-export interface SettingsSheetBaseProps {
+export interface SettingsScreenBaseProps {
   /**
-   * Whether the settings sheet is visible.
-   */
-  visible: boolean;
-
-  /**
-   * Callback when the sheet should close.
+   * Leave Settings and return to the screen that opened it.
    */
   onClose: () => void;
 

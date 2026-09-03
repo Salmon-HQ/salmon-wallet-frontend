@@ -271,3 +271,6 @@ export type { FleshBackgroundPropsBase } from './flesh-background';
 
 // Blockchain marks
 export type { BlockchainMarkPropsBase } from './blockchain-mark';
+
+// The plain text field
+export type { TextInputPropsBase } from './text-input';

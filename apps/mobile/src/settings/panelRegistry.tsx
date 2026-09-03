@@ -16,17 +16,14 @@ import { useRouter } from 'expo-router';
 
 import {
   useAccountsContext,
-  useUserConfig,
-  useAvailableNetworks,
   useCurrencyContext,
-  useAddressbook,
+  useSettingsPanelData,
   useTheme,
   AddressbookError,
   useOpenLink,
   buildNetworkListFromAccount,
   CURRENCY_ITEMS,
   SUPPORT_OPTIONS,
-  toAddressBookItems,
   toExplorerItems,
   toLanguageItems,
   toTrustedAppItems,
@@ -36,8 +33,6 @@ import {
   type LanguageCode,
   type AppearancePreference,
   type NetworkSelectorItem,
-  type NetworkAdapter,
-  type BlockchainType,
 } from '@salmon/shared';
 
 import {
@@ -76,71 +71,33 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
   const { accounts, accountId, activeAccount, activeBlockchainAccount, networkId } = accountState;
   const activeTrustedApps = accountState.activeTrustedApps;
 
-  const userConfigAccount = useMemo(
-    () => ({
-      network: {
-        environment: (activeBlockchainAccount
-          ? networkId || 'solana-mainnet'
-          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-        blockchain: 'solana',
-      },
-    }),
-    [activeBlockchainAccount, networkId]
-  );
+  // The flag comes from the `(app)` provider — a second `useUserConfig`
+  // instance here read its own copy and drifted from the carousel's.
+  const developerNetworks = useDeveloperMode();
 
   const {
     explorer,
     explorers,
     changeExplorer,
-    isLoading: explorerLoading,
-  } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
-  // The flag comes from the `(app)` provider — a second `useUserConfig`
-  // instance here read its own copy and drifted from the carousel's.
-  const developerNetworks = useDeveloperMode();
+    explorerLoading,
+    allNetworks,
+    addressBookItems,
+    addressBookLoading,
+    addressBookError,
+    addContact,
+    editAddressBookContact,
+    removeContact,
+    reloadAddressBook,
+  } = useSettingsPanelData({
+    activeAccount,
+    hasBlockchainAccount: !!activeBlockchainAccount,
+    networkId,
+    developerNetworks,
+  });
 
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
   const [{ currency }, { changeCurrency }] = useCurrencyContext();
   const { preference: appearancePreference, setPreference: setAppearancePreference } = useTheme();
-  // The offer is the enabled networks this wallet actually holds; the active
-  // network stays offered even with the flag off, so the panel can always
-  // reach the page the session is standing on (spec 026).
-  const heldNetworkIds = useMemo(
-    () =>
-      activeAccount?.networksAccounts ? Object.keys(activeAccount.networksAccounts) : undefined,
-    [activeAccount]
-  );
-  const { allNetworks } = useAvailableNetworks({
-    activeBlockchainAccount: userConfigAccount,
-    developerNetworks,
-    heldNetworkIds,
-    activeNetworkId: networkId,
-  });
-
-  const networkAdapter: NetworkAdapter = useMemo(
-    () => ({
-      getNetwork: async (id: string) => {
-        const found = allNetworks.find((n) => n.id === id);
-        if (!found) return undefined;
-        return {
-          id: found.id,
-          name: found.name,
-          blockchain: found.id.split('-')[0] as BlockchainType,
-        };
-      },
-      getNetworks: async () =>
-        allNetworks.map((n) => ({
-          id: n.id,
-          name: n.name,
-          blockchain: n.id.split('-')[0] as BlockchainType,
-        })),
-    }),
-    [allNetworks]
-  );
-
-  const [
-    { contacts, isLoading: addressBookLoading, error: addressBookError },
-    { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook },
-  ] = useAddressbook({ networkAdapter });
 
   const showAddressBookWriteError = useCallback(
     (err: unknown, fallbackKey = 'settings.addressbook.save_failed') => {
@@ -160,8 +117,6 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
     authenticateWithBiometric,
     clearBiometricKey,
   } = useBiometricAuth();
-
-  const addressBookItems = useMemo(() => toAddressBookItems(contacts), [contacts]);
 
   return useMemo<MobilePanelRegistry>(
     () => ({

@@ -27,6 +27,7 @@ import { ClipboardIcon, iconSize } from '../../icons';
 import { ButtonSpinner } from '../Button/ButtonSpinner';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
 import type { RecipientInputProps } from './types';
 
 /** The edge each validation state paints. `idle`/`loading` keep the hairline. */
@@ -74,7 +75,11 @@ export function RecipientInput({
     <Card
       testID={testID}
       padding="md"
-      className={className}
+      // The card owns the field's shape, so focus is the shared rule's to
+      // answer. A judged address keeps the edge its verdict painted.
+      className={[FIELD_SHELL_CLASS, edge ? FIELD_SHELL_ERROR_CLASS : null, className]
+        .filter(Boolean)
+        .join(' ')}
       style={{
         display: 'flex',
         flexDirection: 'row',
@@ -97,7 +102,7 @@ export function RecipientInput({
           flex: 1,
           minWidth: 0,
           border: 'none',
-          outline: 'none',
+          ...focusRingNone,
           background: 'transparent',
           padding: 0,
           fontFamily: fontFamily.mono,

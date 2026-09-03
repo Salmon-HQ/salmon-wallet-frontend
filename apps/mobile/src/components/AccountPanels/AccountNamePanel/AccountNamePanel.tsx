@@ -6,15 +6,15 @@
  * a disclaimer, and the save button.
  */
 
-import React, { useState, useCallback } from 'react';
-import { Text, TextInput, StyleSheet } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { borderWidth, fontFamilyNative, fontSize, type Semantic } from '@salmon/shared';
+import { fontFamilyNative, fontSize, useAccountNameDraft, type Semantic } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { Card } from '../../Card';
+import { TextField } from '../../TextInput';
 import { PrimaryButton } from '../../Button';
-import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import { useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountNamePanelProps } from './types';
 
 export function AccountNamePanel({
@@ -24,27 +24,11 @@ export function AccountNamePanel({
 }: AccountNamePanelProps): React.ReactElement {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
-  const [name, setName] = useState(currentName);
-  const [error, setError] = useState('');
-
-  const handleSave = useCallback(() => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError(t('settings.wallets.edit_name_empty'));
-      return;
-    }
-    setError('');
-    onSave(trimmed);
-  }, [name, onSave, t]);
-
-  const handleChangeText = useCallback(
-    (text: string) => {
-      setName(text);
-      if (error) setError('');
-    },
-    [error]
-  );
+  const { name, error, changeName, save } = useAccountNameDraft({
+    currentName,
+    onSave,
+    emptyMessage: t('settings.wallets.edit_name_empty'),
+  });
 
   return (
     <SettingsScreenLayout
@@ -52,29 +36,21 @@ export function AccountNamePanel({
       subtitle={t('settings.account_edit.name_section_subtitle', 'Choose a name for this account.')}
       onBack={onBack}
     >
-      <Card
-        padding="lg"
-        style={error ? styles.fieldError : undefined}
+      <TextField
+        testID="account-name-input"
+        value={name}
+        onChangeText={changeName}
+        placeholder={t('settings.account_add.set_name_placeholder')}
         accessibilityLabel={t('settings.account_edit.name_section')}
-      >
-        <TextInput
-          testID="account-name-input"
-          style={styles.input}
-          value={name}
-          onChangeText={handleChangeText}
-          placeholder={t('settings.account_add.set_name_placeholder')}
-          placeholderTextColor={text.tertiary}
-          autoFocus
-          maxLength={32}
-          returnKeyType="done"
-          onSubmitEditing={handleSave}
-        />
-      </Card>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        error={error || undefined}
+        autoFocus
+        maxLength={32}
+        onSubmitEditing={save}
+      />
 
       <Text style={styles.disclaimer}>{t('settings.wallets.edit_name_disclaimer')}</Text>
 
-      <PrimaryButton testID="account-name-save-button" onPress={handleSave}>
+      <PrimaryButton testID="account-name-save-button" onPress={save}>
         {t('actions.save')}
       </PrimaryButton>
     </SettingsScreenLayout>
@@ -83,21 +59,6 @@ export function AccountNamePanel({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    fieldError: {
-      borderColor: t.status.danger,
-      borderWidth: borderWidth.thin,
-    },
-    input: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: fontSize.bodyLg,
-      padding: 0,
-    },
-    errorText: {
-      color: t.status.danger,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: fontSize.caption,
-    },
     disclaimer: {
       color: t.text.secondary,
       fontFamily: fontFamilyNative.regular,

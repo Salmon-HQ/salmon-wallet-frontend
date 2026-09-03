@@ -74,6 +74,7 @@ import {
   easing,
   CREST_FADE_FROM,
   crestGradientCSS,
+  type CrestShadow,
   crestTrain,
   markPaths,
   markViewBoxAttr,
@@ -386,8 +387,13 @@ const Emitter = styled('div')<{ $waves: boolean; $ink: string }>(({ $waves, $ink
  * to be), alive only while the wait is, travelling outward and down, and gone
  * before the receipt mounts.
  */
-const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $ink: string }>(
-  ({ $alpha, $lagMs, $waves, $ink }) => ({
+const Crest = styled('div')<{
+  $alpha: number;
+  $lagMs: number;
+  $waves: boolean;
+  $ink: string;
+  $shadow: CrestShadow;
+}>(({ $alpha, $lagMs, $waves, $ink, $shadow }) => ({
     position: 'absolute',
     top: '50%',
     left: '50%',
@@ -398,7 +404,12 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $
     width: 'var(--wave-ring, 0px)',
     height: 'var(--wave-ring, 0px)',
     borderRadius: '50%',
-    background: crestGradientCSS($alpha, $ink),
+    // Both inks come from the live mode. The crown was already passed; the
+    // flank was left to the function's default, which is the *static* token —
+    // dark's near-black at 0.9. On the pale ground that painted a dark ring
+    // around a coral crown, so light mode read as the dark wait with only its
+    // orange kept (owner, 2026-09-03).
+    background: crestGradientCSS($alpha, $ink, $shadow),
     opacity: 0,
     pointerEvents: 'none',
     transform: 'translate(-50%, -50%) scale(0)',
@@ -766,6 +777,7 @@ export const LoadingScreen = memo(function LoadingScreen({
             $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
             $waves={riding}
             $ink={accent.fill}
+            $shadow={water.crestShadow}
             aria-hidden="true"
           />
         ))}

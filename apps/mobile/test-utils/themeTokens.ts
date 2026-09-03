@@ -52,3 +52,15 @@ export type {
   ThemePreference,
   SystemScheme,
 } from '../../../packages/shared/src/contexts/ThemeContext';
+
+/**
+ * The platform-free field hooks.
+ *
+ * They are plain React state with no dependencies of their own, and every
+ * field that mocks this barrel reaches for them — a mock without them dies at
+ * "useFieldFocus is not a function", which says nothing about the component
+ * under test. Imported by path for the same reason the tokens are: the barrel
+ * drags `@solana/kit` in with it.
+ */
+export { useFieldFocus } from '../../../packages/shared/src/hooks/useFieldFocus';
+export { useAccountNameDraft } from '../../../packages/shared/src/hooks/useAccountNameDraft';

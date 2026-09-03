@@ -6,10 +6,16 @@
  * `settings/[panel].tsx`: sections are `SectionLabel` caps over `ListRow`s,
  * each row a leading `IconBubble` and a trailing value, chevron or switch,
  * and every entry pushes its own sub-screen. The side panel has no
- * navigator, so the push is this stack: the root is one full-height surface
- * over Home, each pushed panel another one over it, sliding in from the
- * right and out the same way — the DOM alternative to the stack's own
- * transition.
+ * navigator, so the push is this stack: the root is the screen, each pushed
+ * panel a full-height surface over it, sliding in from the right and out the
+ * same way — the DOM alternative to the stack's own transition.
+ *
+ * Settings is a *page*, not an overlay: the app's `SlideStack` mounts it and
+ * animates its entrance and exit like any other screen, exactly as mobile's
+ * navigator does with the route. So this component owns only the stack it
+ * pushes inside itself — never whether Settings is on screen at all. That is
+ * the router's business, and keeping it there is what lets any screen (Home,
+ * Wallets) open Settings.
  *
  * Every panel paints its own water through `SettingsPanelContent`, so the
  * ground never ghosts through a panel sliding in over the list.
@@ -186,7 +192,6 @@ function Switch({ checked, onChange, label, hint, testID }: SwitchProps) {
 // ============================================================================
 
 export function SettingsPanelStack({
-  visible,
   onClose,
   panelRegistry,
   initialPanels,
@@ -231,19 +236,16 @@ export function SettingsPanelStack({
   const animationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialPanelsPushedRef = useRef(false);
 
-  // Seed the stack when the surface opens onto a panel — before the first
-  // paint, so the root never flashes past.
+  // Seed the stack when Settings is mounted onto a panel — before the first
+  // paint, so the root never flashes past. Mounting is the whole lifecycle
+  // now: leaving Settings unmounts this component, which is what clears the
+  // stack, so there is nothing to reset on the way out.
   useEffect(() => {
-    if (visible && initialPanels && initialPanels.length > 0 && !initialPanelsPushedRef.current) {
+    if (initialPanels && initialPanels.length > 0 && !initialPanelsPushedRef.current) {
       initialPanelsPushedRef.current = true;
       reset(initialPanels);
     }
-    if (!visible) {
-      initialPanelsPushedRef.current = false;
-      reset();
-      setAnimating(false);
-    }
-  }, [visible, initialPanels, reset]);
+  }, [initialPanels, reset]);
 
   useEffect(() => {
     return () => {
@@ -420,20 +422,6 @@ export function SettingsPanelStack({
     ]
   );
 
-  // The surface leaves the way it came: held for the pop's length after
-  // `visible` drops, sliding out to the right over Home.
-  const [shown, setShown] = useState(visible);
-  useEffect(() => {
-    if (visible) {
-      setShown(true);
-      return undefined;
-    }
-    const timer = setTimeout(() => setShown(false), reduced ? 0 : POP_MS);
-    return () => clearTimeout(timer);
-  }, [visible, reduced]);
-
-  if (!shown) return null;
-
   const root: SettingsRootProps = {
     title: t('settings.title', 'Settings'),
     subtitle: t('settings.subtitle'),
@@ -451,17 +439,16 @@ export function SettingsPanelStack({
         />
       )}
 
+      {/* The screen fills the pane the router gives it; the panels it pushes
+          are absolute over that pane, so `relative` is the frame they take. */}
       <div
         data-testid="settings-surface"
-        role="dialog"
-        aria-modal="true"
         aria-label={root.title}
         style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 10,
+          position: 'relative',
+          flex: 1,
+          minHeight: 0,
           overflow: 'hidden',
-          animation: screenSlideAnimation(visible ? 'push' : 'pop', reduced),
         }}
       >
         {/* The root: Settings, the screen. */}

@@ -32,9 +32,6 @@ import { QRCode } from '../QRCode';
 import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
 
-/** Mobile's content padding: the code fills the width inside it. */
-const CONTENT_PADDING_HORIZONTAL = 24;
-
 // Brand mark inside the QR: the knockout (quiet zone behind the mark) covers
 // 24% of the code's width — under the ~30% of modules a level-H code can lose
 // and still scan — and the mark sits inside it with breathing room.
@@ -121,7 +118,7 @@ export function ReceiveSheet({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: `0 ${CONTENT_PADDING_HORIZONTAL}px ${spacing['2xl']}px`,
+          paddingBottom: spacing['2xl'],
           gap: componentSizes.receiveContentGap,
         }}
       >

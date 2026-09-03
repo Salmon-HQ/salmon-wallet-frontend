@@ -23,6 +23,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
 import type { SeedWordInputProps, ValidationState } from './types';
 
 /**
@@ -36,7 +37,7 @@ const Field = styled('input')<{ $ink: string; $placeholder: string; $size: numbe
     minWidth: 0,
     height: '100%',
     border: 'none',
-    outline: 'none',
+    ...focusRingNone,
     background: 'transparent',
     padding: 0,
     color: $ink,
@@ -90,6 +91,11 @@ export function SeedWordInput({
   const edgeFor = (state: ValidationState): string =>
     state === 'correct' ? status.success : state === 'incorrect' ? status.danger : input.edge;
   const edge = edgeFor(validationState);
+  // The box owns the field's shape, so focus is the shared rule's to answer;
+  // a word already judged keeps the edge its verdict painted.
+  const shellClass = [FIELD_SHELL_CLASS, validationState !== 'idle' ? FIELD_SHELL_ERROR_CLASS : null]
+    .filter(Boolean)
+    .join(' ');
 
   /**
    * BIP-39 words are lowercase, and a capitalised one is an invalid mnemonic
@@ -139,6 +145,7 @@ export function SeedWordInput({
     return (
       <div
         data-testid={`${testID}-box`}
+        className={shellClass}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -214,6 +221,7 @@ export function SeedWordInput({
         {t('wallet.create.word_number', { position })}
       </span>
       <div
+        className={shellClass}
         style={{
           display: 'flex',
           alignItems: 'center',

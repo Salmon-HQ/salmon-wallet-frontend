@@ -27,6 +27,8 @@ export function TokenPickerSheet({
       visible={visible}
       onClose={onClose}
       testID={testID}
+      // The list draws its own row padding and its rows bleed to the edge.
+      contentGutter={false}
       title={<SheetTitle>{t('wallet.select_token', 'Select Token')}</SheetTitle>}
       // A sheet hugs its content, and a scrolling list has none to hug — it
       // fills whatever it is given. So this one sheet is given a height.

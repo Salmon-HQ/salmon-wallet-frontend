@@ -28,6 +28,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, focusRingNone } from '../../theme';
 import { PrimaryButton } from '../Button';
 import { Card } from '../Card';
 import { ChipGroup } from '../Chip';
@@ -180,7 +181,14 @@ export function StepAmount({
       />
 
       {/* The amount. Tabular, so a repoll never reflows the digits. */}
-      <Card padding="lg" gap={spacing.base} style={{ alignItems: 'center' }}>
+      {/* The card owns the field's shape, so it wears the shared focus shell
+          like every other field. */}
+      <Card
+        padding="lg"
+        gap={spacing.base}
+        className={FIELD_SHELL_CLASS}
+        style={{ alignItems: 'center' }}
+      >
         <div
           style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}
         >
@@ -198,7 +206,7 @@ export function StepAmount({
               width: `${Math.max(1, amount.length)}ch`,
               maxWidth: '100%',
               border: 'none',
-              outline: 'none',
+              ...focusRingNone,
               background: 'transparent',
               padding: 0,
               fontSize: AMOUNT_ENTRY_FONT,

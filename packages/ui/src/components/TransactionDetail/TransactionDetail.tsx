@@ -44,7 +44,6 @@ import {
 } from '../../icons';
 import { TextButton } from '../Button';
 import { Card } from '../Card';
-import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
@@ -184,14 +183,6 @@ export function TransactionDetail({
                 typeConfig.label
               )}
             </h2>
-            {transaction.source && (
-              <Chip
-                testID="tx-detail-source"
-                label={transaction.source}
-                size="sm"
-                variant="outline"
-              />
-            )}
           </div>
           <div
             data-testid="tx-detail-status"
@@ -260,6 +251,9 @@ export function TransactionDetail({
           gap: spacing.sm,
           marginTop: spacing.md,
           paddingTop: spacing.md,
+          // The sheet gives the sides; the last block gives the floor, as the
+          // mobile twin's actions row does with its own bottom padding.
+          paddingBottom: spacing.lg,
           borderTop: `${borderWidth.thin}px solid ${t.border.hairline}`,
         }}
       >

@@ -75,6 +75,7 @@ export function BottomSheetContainer({
   headerContent,
   background,
   dismissible = true,
+  contentGutter = true,
   style,
   className,
   testID,
@@ -248,7 +249,21 @@ export function BottomSheetContainer({
           {headerContent ?? title ?? null}
         </div>
 
-        <div style={{ position: 'relative', overflow: 'auto' }}>{children}</div>
+        {/* The gutter every sheet shares, held once here rather than
+            re-declared by each body: a sheet's content starts one screen
+            gutter in from its edge, as mobile's sheet bodies each do with
+            `spacing.screenGutter`. A body that must bleed to the edge opts
+            out with `contentGutter={false}`. */}
+        <div
+          style={{
+            position: 'relative',
+            overflow: 'auto',
+            paddingLeft: contentGutter ? spacing.screenGutter : 0,
+            paddingRight: contentGutter ? spacing.screenGutter : 0,
+          }}
+        >
+          {children}
+        </div>
       </div>
     </dialog>
   );

@@ -10,6 +10,7 @@
 import React from 'react';
 import {
   borderRadius,
+  borderWidth,
   fontFamily,
   fontSize,
   fontWeight,
@@ -18,6 +19,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, focusRingNone } from '../../theme';
 import { MagnifyingGlassIcon } from '../../icons';
 import type { SearchFieldProps } from './types';
 
@@ -47,11 +49,17 @@ export function SearchField({
     height: PILL_HEIGHT,
     borderRadius: borderRadius.full,
     backgroundColor: t.surface.raised,
+    // The pill has no resting stroke, so the shared shell rule has nothing to
+    // recolour; it is given one in the ground's own ink, which reads as no
+    // edge until focus turns it accent.
+    borderStyle: 'solid',
+    borderWidth: borderWidth.thin,
+    borderColor: t.surface.raised,
     ...style,
   };
 
   return (
-    <div className={className} style={pill}>
+    <div className={[FIELD_SHELL_CLASS, className].filter(Boolean).join(' ')} style={pill}>
       <MagnifyingGlassIcon size={GLYPH_SIZE} color={t.text.secondary} />
       <input
         type="search"
@@ -60,7 +68,7 @@ export function SearchField({
           flex: 1,
           minWidth: 0,
           border: 'none',
-          outline: 'none',
+          ...focusRingNone,
           background: 'transparent',
           padding: 0,
           fontFamily: fontFamily.sans,

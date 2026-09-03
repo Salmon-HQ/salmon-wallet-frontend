@@ -56,6 +56,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS } from '../../theme';
 import { PrimaryButton, TextButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
@@ -88,12 +89,10 @@ const Field = styled('input')<{
   borderRadius: componentSizes.inputRadius,
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
-  outline: 'none',
   color: $ink,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
   fontSize: fontSize.bodyLg,
-  transition: 'border-color 0.15s ease',
   '&::placeholder': {
     color: $placeholder,
     opacity: opacity.full,
@@ -110,7 +109,6 @@ export function LockScreen({
   const { accent, input, status, text } = useSemantic();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -206,7 +204,10 @@ export function LockScreen({
     }
   }, [onRemoveAllAccounts, t]);
 
-  const edge = error ? status.danger : isFocused ? accent.ink : input.edge;
+  // The field is its own shape owner, so it wears the shell class directly:
+  // the accent edge on focus and the keyboard ring are the shared rule's, and
+  // only the error edge is decided here.
+  const edge = error ? status.danger : input.edge;
 
   /**
    * The feedback band's two inks. The throttle notice is the warning ink — a
@@ -251,6 +252,9 @@ export function LockScreen({
         body={
           <div style={{ width: '100%' }}>
             <Field
+              className={[FIELD_SHELL_CLASS, error ? FIELD_SHELL_ERROR_CLASS : null]
+                .filter(Boolean)
+                .join(' ')}
               $edge={edge}
               $ground={input.ground}
               $ink={text.primary}
@@ -264,8 +268,6 @@ export function LockScreen({
               onKeyDown={(event: KeyboardEvent) => {
                 if (event.key === 'Enter') void handleSubmit();
               }}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
               placeholder={t('lock.enter_password')}
               disabled={isUnlocking || throttled}
               autoFocus

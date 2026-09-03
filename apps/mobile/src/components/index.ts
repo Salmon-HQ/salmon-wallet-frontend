@@ -9,6 +9,10 @@
 // --- Primitive kit (redesign) ---------------------------------------------
 
 export { Card } from './Card';
+
+// TextField - the plain text field: a Card holding a TextInput
+export { TextField } from './TextInput';
+export type { TextFieldProps } from './TextInput';
 export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
 
 export { KeyValueRow } from './KeyValueRow';

@@ -364,10 +364,6 @@ describe('TransactionDetail', () => {
     expect(mark.borderRadius).toBe(borderRadius.full);
     expect(mark.backgroundColor).toBe(semantic.accent.tint);
 
-    // The provider rides in a `Chip`: a pill, not a rectangle.
-    const chip = StyleSheet.flatten(screen.getByTestId('tx-detail-source').props.style);
-    expect(chip.borderRadius).toBe(borderRadius.full);
-
     // Each block below is a `Card` on the kit's ground and radius.
     const meta = StyleSheet.flatten(screen.getByTestId('tx-detail-meta').props.style);
     expect(meta.borderRadius).toBe(borderRadius.r4);

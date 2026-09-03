@@ -15,6 +15,12 @@ export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase
    * everything else in the sheet.
    */
   background?: ReactNode;
+  /**
+   * Whether the content area carries the shared screen gutter. On by
+   * default — every sheet reads the same margin; a body that draws its own
+   * edge-to-edge rows (a scrolling list) turns it off.
+   */
+  contentGutter?: boolean;
   /** Layout the parent owns. */
   style?: CSSProperties;
   className?: string;

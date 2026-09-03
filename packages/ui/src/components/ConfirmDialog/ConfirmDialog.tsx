@@ -70,7 +70,7 @@ export function ConfirmDialog({
           display: 'flex',
           flexDirection: 'column',
           gap: spacing.screenGutter,
-          padding: `0 ${spacing.lg}px ${spacing.lg}px`,
+          paddingBottom: spacing.lg,
         }}
       >
         <p

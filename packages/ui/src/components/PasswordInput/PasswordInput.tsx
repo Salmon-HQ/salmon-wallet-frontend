@@ -8,15 +8,15 @@
  * the field in `status.danger`. Every ink is read off the live mode.
  *
  * The wrapper — not the `<input>` inside it — is the field's visual boundary,
- * so it is what carries the keyboard focus ring; ringing the bare input drew a
- * hard-cornered rectangle inside the rounded wrapper.
+ * so it is what wears `FIELD_SHELL_CLASS`: the accent edge on focus and the
+ * keyboard ring come from that one rule, shared with every other field.
+ * Ringing the bare input drew a hard-cornered rectangle inside the rounded
+ * wrapper.
  */
 import styled from '@emotion/styled';
 import {
   borderWidth,
   componentSizes,
-  duration,
-  easing,
   fontFamily,
   fontSize,
   opacity,
@@ -27,7 +27,7 @@ import { useTranslation } from 'react-i18next';
 
 import { EyeIcon, EyeSlashIcon, iconSize } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { focusRingOnWrapper } from '../../theme';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
 import type { PasswordInputProps } from './types';
 
 const Wrapper = styled('div')<{ $edge: string; $ground: string }>(({ $edge, $ground }) => ({
@@ -41,15 +41,13 @@ const Wrapper = styled('div')<{ $edge: string; $ground: string }>(({ $edge, $gro
   borderRadius: componentSizes.inputRadius,
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
-  transition: `border-color ${duration.normal} ${easing.ease}`,
-  '&:has(:focus-visible)': focusRingOnWrapper,
 }));
 
 const Field = styled('input')<{ $ink: string; $placeholder: string }>(({ $ink, $placeholder }) => ({
   flex: 1,
   minWidth: 0,
   border: 'none',
-  outline: 'none',
+  ...focusRingNone,
   background: 'transparent',
   padding: 0,
   color: $ink,
@@ -74,11 +72,13 @@ export function PasswordInput({
   testID,
 }: PasswordInputProps) {
   const { t } = useTranslation();
-  const { accent, input, status, text } = useSemantic();
+  const { input, status, text } = useSemantic();
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
-  const edge = error ? status.danger : isFocused ? accent.ink : input.edge;
+  // Focus is the shell's business (`FIELD_SHELL_CLASS`), not this component's:
+  // the border it draws is the resting one, and error is the only state that
+  // overrides it here.
+  const edge = error ? status.danger : input.edge;
 
   const handleToggle = useCallback(() => {
     setShowPassword((prev) => !prev);
@@ -95,7 +95,13 @@ export function PasswordInput({
 
   return (
     <div className={className} style={{ width: '100%', ...style }}>
-      <Wrapper $edge={edge} $ground={input.ground}>
+      <Wrapper
+        className={[FIELD_SHELL_CLASS, error ? FIELD_SHELL_ERROR_CLASS : null]
+          .filter(Boolean)
+          .join(' ')}
+        $edge={edge}
+        $ground={input.ground}
+      >
         <Field
           $ink={text.primary}
           $placeholder={input.placeholder}
@@ -105,8 +111,6 @@ export function PasswordInput({
           placeholder={placeholder ?? t('lock.password_placeholder')}
           disabled={!editable}
           autoFocus={autoFocus}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
           data-testid={testID}

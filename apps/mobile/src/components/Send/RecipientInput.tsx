@@ -15,6 +15,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput } from 'react-native';
 import {
   borderWidth,
+  useFieldFocus,
   fontFamilyNative,
   fontSize,
   s,
@@ -60,7 +61,10 @@ export function RecipientInput({
 }: RecipientInputProps) {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
-  const edge = edgeFor(semantic)[validationState];
+  const { focused, onFocus, onBlur } = useFieldFocus();
+  // A verdict outranks focus: an address already judged keeps saying so while
+  // it is being corrected.
+  const edge = edgeFor(semantic)[validationState] ?? (focused ? semantic.accent.ink : undefined);
   const mark = value.length > 0 && !isValidating ? markFor(semantic)[validationState] : undefined;
 
   return (
@@ -83,6 +87,8 @@ export function RecipientInput({
         autoCorrect={false}
         autoComplete="off"
         spellCheck={false}
+        onFocus={onFocus}
+        onBlur={onBlur}
       />
       {value.length > 0 && isValidating && (
         <ActivityIndicator size="small" color={semantic.text.secondary} />

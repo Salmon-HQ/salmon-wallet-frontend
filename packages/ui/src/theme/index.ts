@@ -39,3 +39,29 @@ export const focusRingNone = {
 
 /** The ring, for a wrapper that owns a field's shape. See `focusRingNone`. */
 export const focusRingOnWrapper = focusRing;
+
+/**
+ * The class every text field's *shape owner* wears — the wrapper that draws
+ * the ground, the border and the radius (a `Card`, a pill, or the bare input
+ * when it is its own box).
+ *
+ * It exists because each field used to answer focus its own way: the lock
+ * screen's field turned its border accent from local React state, the
+ * password field ringed its wrapper, and the plain `TextInput`, the search
+ * pill and the recipient box answered nothing at all. The rule is one
+ * declaration in the global baseline (`ThemeProvider`) instead — so a field
+ * is focusable-looking by wearing the class, not by re-deciding what focus
+ * looks like:
+ *
+ * - focus anywhere inside turns the border `accent.ink`,
+ * - keyboard focus adds the shared ring,
+ * - a field in error keeps its danger border through both — add
+ *   `FIELD_SHELL_ERROR_CLASS` and the accent step stands down.
+ *
+ * The inner `<input>` keeps `focusRingNone`: the box around it is the ring's
+ * subject, and ringing the input drew a hard-cornered rectangle inside it.
+ */
+export const FIELD_SHELL_CLASS = 'sw-field';
+
+/** Held with `FIELD_SHELL_CLASS` while the field is in error. */
+export const FIELD_SHELL_ERROR_CLASS = 'sw-field--error';

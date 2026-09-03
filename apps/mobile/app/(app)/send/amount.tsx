@@ -35,6 +35,7 @@ import {
   fontSize,
   getShortAddress,
   getSolShortfall,
+  useFieldFocus,
   lineHeight,
   s,
   sanitizeDecimalInput,
@@ -95,6 +96,7 @@ export default function SendAmountScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
+  const amountFocus = useFieldFocus();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
@@ -220,13 +222,22 @@ export default function SendAmountScreen() {
         />
 
         {/* The amount. Tabular, so a repoll never reflows the digits. */}
-        <Card padding="lg" gap={spacing.base} style={styles.amountCard}>
+        <Card
+          padding="lg"
+          gap={spacing.base}
+          style={[
+            styles.amountCard,
+            amountFocus.focused && { borderColor: semantic.accent.ink },
+          ]}
+        >
           <View style={styles.amountRow}>
             <TextInput
               testID="send-amount-input"
               style={styles.amountInput}
               placeholder="0"
               placeholderTextColor={semantic.text.tertiary}
+              onFocus={amountFocus.onFocus}
+              onBlur={amountFocus.onBlur}
               value={amount}
               onChangeText={(text) => setAmount(sanitizeDecimalInput(text))}
               keyboardType="decimal-pad"

@@ -48,7 +48,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
@@ -276,7 +275,7 @@ export function LoadingScreen({
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { depth, surface, accent, water } = useSemantic();
+  const { accent, water } = useSemantic();
 
   // Resolve tip keys through t() for i18n
   const resolvedTips = useMemo(() => tips.map((tipKey) => t(tipKey, tipKey)), [tips, t]);
@@ -724,17 +723,14 @@ export function LoadingScreen({
 
   const wait = (
     <Animated.View style={[styles.overlay, overlayStyle]}>
-      <LinearGradient
-        colors={[depth.abyss, surface.raised]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        onLayout={measureFrame}
-      >
+      <View style={styles.container} onLayout={measureFrame}>
         {/* A wait is a screen, and a screen is water — the same pair the tab
-            ground and the auth stack mount, over this overlay's own flat
-            gradient rather than instead of it, so the wait keeps the exact
-            enter and exit it had. Nothing below is redrawn. */}
+            ground and the auth stack mount. It used to sit over a second,
+            flat `[depth.abyss, surface.raised]` gradient of this screen's own,
+            which `DepthBackground` covered entirely and which ran the opposite
+            way to `water.gradient` in both modes. Dead paint, and a ground the
+            DOM twin never had: the wait now takes its ground where every other
+            screen takes it. */}
         <DepthBackground />
         <ScalesBackground variant="deepField" />
 
@@ -833,7 +829,7 @@ export function LoadingScreen({
             )}
           </Animated.View>
         </View>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 

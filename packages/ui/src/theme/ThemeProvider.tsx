@@ -28,7 +28,12 @@ import {
 } from '@salmon/shared';
 
 import { applySemanticCssVars } from './cssVars';
-import { focusRing, focusRingNone } from './index';
+import {
+  FIELD_SHELL_CLASS,
+  FIELD_SHELL_ERROR_CLASS,
+  focusRing,
+  focusRingNone,
+} from './index';
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -53,6 +58,33 @@ const baseline = css`
   /* Pointer focus keeps no visible outline, which is only acceptable because
      the keyboard ring above is unconditional. */
   :focus:not(:focus-visible) {
+    outline: ${focusRingNone.outline};
+    box-shadow: ${focusRingNone.boxShadow};
+  }
+  /* Every text field answers focus the same way, wherever it is drawn: the
+     box that owns the field's shape wears \`FIELD_SHELL_CLASS\`, focus inside
+     it turns its border accent, and keyboard focus adds the ring above. A
+     field in error keeps its danger border through both. */
+  .${FIELD_SHELL_CLASS} {
+    transition: border-color 0.15s ease;
+  }
+  /* \`!important\` because the boxes that own a field's shape paint their
+     resting border from an inline style (a \`Card\`, the seed-word box), and
+     an inline declaration outranks any selector. The shell is the authority
+     on what focus looks like, so it has to be able to say so. */
+  .${FIELD_SHELL_CLASS}:focus-within:not(.${FIELD_SHELL_ERROR_CLASS}) {
+    border-color: var(--sw-accent-ink) !important;
+  }
+  .${FIELD_SHELL_CLASS}:has(:focus-visible),
+  .${FIELD_SHELL_CLASS}:focus-visible {
+    outline: ${focusRing.outline};
+    outline-offset: ${focusRing.outlineOffset};
+    box-shadow: ${focusRing.boxShadow};
+  }
+  /* The ring belongs to the box, which is the shape the user sees; the input
+     inside it is a bare text run. Ringing it too drew a second, hard-cornered
+     rectangle inset from the rounded border (owner's screenshot). */
+  .${FIELD_SHELL_CLASS} input:focus-visible {
     outline: ${focusRingNone.outline};
     box-shadow: ${focusRingNone.boxShadow};
   }

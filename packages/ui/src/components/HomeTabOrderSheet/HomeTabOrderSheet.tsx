@@ -153,8 +153,6 @@ export function HomeTabOrderSheet({
     >
       <div
         style={{
-          paddingLeft: spacing.screenGutter,
-          paddingRight: spacing.screenGutter,
           paddingTop: spacing.md,
           paddingBottom: spacing['2xl'],
           display: 'flex',

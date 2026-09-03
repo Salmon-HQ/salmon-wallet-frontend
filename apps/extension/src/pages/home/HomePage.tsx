@@ -5,11 +5,7 @@ import {
   isWatchOnlyAccount,
   useAvailableNetworks,
   useBalance,
-  useUserConfig,
-  useAnalyticsConsent,
   useTransactions,
-  useAddressbook,
-  AddressbookError,
   useCoinMarketData,
   useDerivedAccountsScan,
   useHomeShell,
@@ -20,8 +16,6 @@ import {
   spacing,
   componentSizes,
   fontSize,
-  useTheme,
-  type AppearancePreference,
   type SettingsPanelEntry,
   type BlockchainId,
   type NetworkId,
@@ -32,15 +26,7 @@ import {
   type Token,
   type NftData,
   type SendToken,
-  type AddressBookItem,
-  type NetworkAdapter,
-  type AddressBookNetwork,
-  type AddressInput,
-  type BlockchainType,
   useCurrencyContext,
-  type LanguageCode,
-  SUPPORT_OPTIONS,
-  type CurrencyCode,
   getBlockchainFromNetworkId,
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
@@ -49,13 +35,6 @@ import {
   useNftFlowState,
   useDeveloperModeSettings,
   useSendContacts,
-  useLanguage,
-  CURRENCY_ITEMS,
-  settingsRowValues,
-  toAddressBookItems,
-  toExplorerItems,
-  toLanguageItems,
-  toTrustedAppItems,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 import {
@@ -76,36 +55,15 @@ import {
   TransactionHistoryPage,
   ReceiveSheet,
   useTaskChrome,
-  SettingsPanelStack,
   WalletsScreen,
-  ConfirmDialog,
   DepthBackground,
   ScalesBackground,
   SendPage,
-  ExplorerSelector,
-  AppearanceSelector,
-  LanguageSelector,
-  TrustedAppsSelector,
-  SupportSelector,
-  CurrencySelector,
-  AccountsPanel,
-  AccountEditPanel,
-  AccountNamePanel,
-  AccountAvatarPanel,
-  AccountAddPanel,
-  SecurityPanel,
-  BackupPanel,
-  PrivateKeyPanel,
-  AddressBookPanel,
-  AddressAddPanel,
-  AddressEditPanel,
-  AboutPanel,
   SettingsPanelContent,
   useSemantic,
-  type PanelRegistry,
 } from '../../components';
 
-import { clearSessionKey } from '../../utils/sessionKeyCache';
+import { SettingsPage } from '../settings';
 
 /** The two in-page sub-tabs — the shell's key, kept under its old local name. */
 type SubTabKey = HomeSubTabKey;
@@ -116,7 +74,29 @@ const TOP_FADE_SCROLL_RANGE = 30;
 /**
  * Available page views within HomePage
  */
-type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets';
+type PageView =
+  | 'home'
+  | 'tokenDetail'
+  | 'nftDetail'
+  | 'activity'
+  | 'send'
+  | 'wallets'
+  | 'settings';
+
+/**
+ * How deep each page sits in the stack — what `SlideStack` reads to tell a
+ * push from a pop. Settings sits above the rest because it is reached *from*
+ * them (Home, and Wallets), and returns to whichever one opened it.
+ */
+const PAGE_DEPTH: Record<PageView, number> = {
+  home: 0,
+  tokenDetail: 1,
+  nftDetail: 1,
+  activity: 1,
+  send: 1,
+  wallets: 1,
+  settings: 2,
+};
 
 /**
  * The panel shell.
@@ -249,42 +229,13 @@ interface HomePageProps {
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const [{ currency }, { changeCurrency }] = useCurrencyContext();
-  // The stored appearance preference — the same context the provider reads,
-  // so a pick here re-themes the panel at once (mobile's `panelRegistry`).
-  const { preference: appearancePreference, setPreference: setAppearancePreference } = useTheme();
-  const {
-    ready,
-    activeAccount,
-    activeBlockchainAccount,
-    networkId,
-    accounts,
-    accountId,
-    activeTrustedApps,
-  } = state;
+  const [{ currency }] = useCurrencyContext();
+  const { ready, activeAccount, activeBlockchainAccount, networkId } = state;
 
-  // User configuration (developer networks toggle, explorer selection)
-  // Note: useUserConfig requires activeBlockchainAccount parameter with specific structure
-  const userConfig = useUserConfig({
-    activeBlockchainAccount: {
-      network: {
-        environment: (networkId || 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-        blockchain: networkId?.split('-')[0] || 'solana',
-      },
-    },
-  });
-  const { explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
   // The two "show me more" flags come from the provider the side panel root
   // mounts (the same one mobile's `(app)` stack mounts), so every screen
   // reads one value and an older wallet gets its mirror addresses derived.
   const { developerNetworks, showUnverifiedTokens } = useDeveloperModeSettings();
-
-  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
-  // in onboarding (analytics-consent step); here we only bind the Settings toggle.
-  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
-
-  // Language selection
-  const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
 
   // The offer: the enabled networks this wallet actually holds an account on.
   // The filtering used to happen here, after the hook had already dropped the
@@ -303,9 +254,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         blockchain: 'solana',
       },
     },
-    // The flag comes from the hoisted `useUserConfig` above, not from the
-    // hook's own instance, which reloads only when the network it is keyed on
-    // changes and would otherwise stay stale after a settings toggle.
+    // The flag comes from the provider, not from this hook's own instance,
+    // which reloads only when the network it is keyed on changes and would
+    // otherwise stay stale after a settings toggle.
     developerNetworks,
     heldNetworkIds,
     activeNetworkId: networkId,
@@ -333,57 +284,29 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [currentPage, setCurrentPage] = useState<PageView>('home');
 
   // Sheet visibility state
-  const [settingsVisible, setSettingsVisible] = useState(false);
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
-  // Settings panel stack state (for deep-linking from Wallets)
+  // Which panels Settings opens onto (Wallets opens it already deep), and the
+  // screen leaving Settings returns to — the page that pushed it.
   const [settingsInitialPanels, setSettingsInitialPanels] = useState<
     SettingsPanelEntry[] | undefined
   >(undefined);
+  const [settingsReturnTo, setSettingsReturnTo] = useState<PageView>('home');
 
-  // Edit account navigation state
-  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
-
-  // Remove wallet dialog state
-  const [removeWalletDialogVisible, setRemoveWalletDialogVisible] = useState(false);
-  const [removeAllWalletsDialogVisible, setRemoveAllWalletsDialogVisible] = useState(false);
-
-  // Address book state
-  const [editingContact, setEditingContact] = useState<AddressBookItem | null>(null);
-
-  // Build NetworkAdapter from available networks for address book
-  const addressBookNetworkAdapter: NetworkAdapter = useMemo(
-    () => ({
-      getNetwork: async (id: string): Promise<AddressBookNetwork | undefined> => {
-        const found = allNetworks.find((n) => n.id === id);
-        if (!found) return undefined;
-        return {
-          id: found.id,
-          name: found.name,
-          blockchain: found.id.split('-')[0] as BlockchainType,
-        };
-      },
-      getNetworks: async (): Promise<AddressBookNetwork[]> =>
-        allNetworks.map((n) => ({
-          id: n.id,
-          name: n.name,
-          blockchain: n.id.split('-')[0] as BlockchainType,
-        })),
-    }),
-    [allNetworks]
+  /** Push Settings from the page the user is on, optionally onto a panel. */
+  const openSettings = useCallback(
+    (panels?: SettingsPanelEntry[]) => {
+      setSettingsInitialPanels(panels);
+      setSettingsReturnTo(currentPage);
+      setCurrentPage('settings');
+    },
+    [currentPage]
   );
 
-  const [
-    { contacts: addressBookContacts, error: addressBookError },
-    { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook },
-  ] = useAddressbook({ networkAdapter: addressBookNetworkAdapter });
-  // Inline error for address-book writes (translation key, rendered by the open panel)
-  const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
-
-  const addressBookItems: AddressBookItem[] = useMemo(
-    () => toAddressBookItems(addressBookContacts),
-    [addressBookContacts]
-  );
+  const handleSettingsClose = useCallback(() => {
+    setCurrentPage(settingsReturnTo);
+    setSettingsInitialPanels(undefined);
+  }, [settingsReturnTo]);
 
   // The collectible being sent, when Send was opened from an NFT's detail:
   // the send flow becomes mobile's `nft/[id]/send` (spec 028 lot 4).
@@ -517,9 +440,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, [activeBlockchainAccount]);
 
   const handleSettingsPress = useCallback(() => {
-    setSettingsInitialPanels(undefined);
-    setSettingsVisible(true);
-  }, []);
+    openSettings();
+  }, [openSettings]);
 
   // Wallets is a screen, not a sheet (spec 028 ruling 3): the second tap
   // inside it changes what it is.
@@ -527,63 +449,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setCurrentPage('wallets');
   }, []);
 
-  /**
-   * Handle remove current wallet action
-   */
-  const handleRemoveWallet = useCallback(() => {
-    setSettingsVisible(false);
-    setRemoveWalletDialogVisible(true);
-  }, []);
-
-  /**
-   * Handle remove all wallets action
-   */
-  const handleRemoveAllWallets = useCallback(() => {
-    setSettingsVisible(false);
-    setRemoveAllWalletsDialogVisible(true);
-  }, []);
-
-  /**
-   * Confirm removal of current wallet
-   */
-  const confirmRemoveWallet = useCallback(async () => {
-    if (activeAccount?.id) {
-      await actions.removeAccount(activeAccount.id);
-    }
-  }, [actions, activeAccount]);
-
-  /**
-   * Confirm removal of all wallets
-   */
-  const confirmRemoveAllWallets = useCallback(async () => {
-    await clearSessionKey();
-    await actions.removeAllAccounts();
-  }, [actions]);
-
-  /**
-   * Validate password for secure actions
-   */
-  const validatePassword = useCallback(
-    async (password: string): Promise<boolean> => {
-      return actions.checkPassword(password);
-    },
-    [actions]
-  );
-
-  // One add-wallet screen, two entry points. `returnTo` says which one
-  // opened it, so completing lands on the surface the user came from with
-  // the new wallet already active — Home by default, as it always did.
+  // One add-wallet screen, two entry points. Settings returns to the page
+  // that pushed it, so completing lands on the surface the user came from
+  // with the new wallet already active.
   const handleAddAccount = useCallback(() => {
-    setSettingsInitialPanels([{ screen: 'account-add', props: { returnTo: 'wallets' } }]);
-    setSettingsVisible(true);
-  }, []);
+    openSettings([{ screen: 'account-add' }]);
+  }, [openSettings]);
 
   // The same rename screen Settings → Accounts → Edit reaches.
-  const handleRenameAccount = useCallback((targetAccountId: string) => {
-    setEditingAccountId(targetAccountId);
-    setSettingsInitialPanels([{ screen: 'account-name', props: { accountId: targetAccountId } }]);
-    setSettingsVisible(true);
-  }, []);
+  const handleRenameAccount = useCallback(
+    (targetAccountId: string) => {
+      openSettings([{ screen: 'account-name', props: { accountId: targetAccountId } }]);
+    },
+    [openSettings]
+  );
 
   const handleSendPress = useCallback(() => {
     setCurrentPage('send');
@@ -793,285 +672,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   const accountName = activeAccount?.name || t('home.unnamed_account', 'Account');
 
-  // Build panel registry for SettingsPanelStack
-  const panelRegistry: PanelRegistry = useMemo(
-    () => ({
-      avatar: ({ onBack }) => {
-        if (!activeAccount) return null;
-        return (
-          <AccountAvatarPanel
-            currentAvatarUrl={activeAccount.avatar}
-            account={activeAccount}
-            onSave={async (avatarUrl: string) => {
-              await actions.editAccount(activeAccount.id, { avatar: avatarUrl });
-              onBack();
-            }}
-            onBack={onBack}
-          />
-        );
-      },
-      backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
-      privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
-      currency: ({ onBack }) => {
-        return (
-          <CurrencySelector
-            currencies={CURRENCY_ITEMS}
-            activeCurrencyCode={currency}
-            onSelectCurrency={(code) => {
-              changeCurrency(code as CurrencyCode);
-            }}
-            onBack={onBack}
-          />
-        );
-      },
-      appearance: ({ onBack }) => (
-        <AppearanceSelector
-          activePreference={appearancePreference}
-          onSelectPreference={(pref: AppearancePreference) => {
-            void setAppearancePreference(pref);
-          }}
-          onBack={onBack}
-        />
-      ),
-      about: ({ onBack }) => <AboutPanel onBack={onBack} />,
-      support: ({ onBack }) => (
-        <SupportSelector
-          options={SUPPORT_OPTIONS}
-          onOpenLink={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-          onBack={onBack}
-        />
-      ),
-      language: ({ onBack }) => {
-        return (
-          <LanguageSelector
-            languages={toLanguageItems(availableLanguages)}
-            activeLanguageCode={currentLanguage}
-            onSelectLanguage={(code) => {
-              void changeLanguage(code as LanguageCode);
-            }}
-            onBack={onBack}
-          />
-        );
-      },
-      explorer: ({ onBack }) => {
-        return (
-          <ExplorerSelector
-            explorers={toExplorerItems(explorers)}
-            activeExplorerName={explorer?.name || ''}
-            onSelectExplorer={(key) => {
-              changeExplorer(key);
-            }}
-            onBack={onBack}
-            loading={explorerLoading}
-          />
-        );
-      },
-      addressBook: ({ onBack, onNavigate }) => (
-        <AddressBookPanel
-          contacts={addressBookItems}
-          activeNetworkId={networkId || 'solana-mainnet'}
-          onAddContact={() => {
-            setAddressBookWriteErrorKey(null);
-            onNavigate('address-book-add');
-          }}
-          onEditContact={(contact) => {
-            setAddressBookWriteErrorKey(null);
-            setEditingContact(contact);
-            onNavigate('address-book-edit');
-          }}
-          onRemoveContact={async (address) => {
-            await removeContact(address);
-          }}
-          onBack={onBack}
-          error={addressBookError}
-          onRetry={reloadAddressBook}
-        />
-      ),
-      'address-book-add': ({ onBack }) => {
-        const activeNet = allNetworks.find((n) => n.id === networkId) || allNetworks[0];
-        const blockchain = (networkId || 'solana-mainnet').split('-')[0];
-        return (
-          <AddressAddPanel
-            activeNetworkId={activeNet?.id || 'solana-mainnet'}
-            activeNetworkName={activeNet?.name || 'Solana Mainnet'}
-            activeBlockchain={blockchain}
-            onSave={async (input: AddressInput) => {
-              setAddressBookWriteErrorKey(null);
-              try {
-                await addContact(input);
-              } catch (err) {
-                setAddressBookWriteErrorKey(
-                  err instanceof AddressbookError && err.kind === 'resolve'
-                    ? 'settings.addressbook.resolve_failed'
-                    : 'settings.addressbook.save_failed'
-                );
-              }
-            }}
-            onBack={onBack}
-            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
-          />
-        );
-      },
-      'address-book-edit': ({ onBack }) => {
-        if (!editingContact) return null;
-        const blockchain = (editingContact.networkId || 'solana-mainnet').split('-')[0];
-        return (
-          <AddressEditPanel
-            contact={editingContact}
-            activeBlockchain={blockchain}
-            onSave={async (originalAddress: string, input: AddressInput) => {
-              setAddressBookWriteErrorKey(null);
-              try {
-                await editAddressBookContact(originalAddress, input);
-                setEditingContact(null);
-              } catch (err) {
-                setAddressBookWriteErrorKey(
-                  err instanceof AddressbookError && err.kind === 'resolve'
-                    ? 'settings.addressbook.resolve_failed'
-                    : 'settings.addressbook.save_failed'
-                );
-              }
-            }}
-            onBack={onBack}
-            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
-          />
-        );
-      },
-      trustedApps: ({ onBack }) => {
-        return (
-          <TrustedAppsSelector
-            apps={toTrustedAppItems(activeTrustedApps)}
-            onRevokeApp={(domain) => {
-              actions.removeTrustedApp(domain);
-            }}
-            onBack={onBack}
-          />
-        );
-      },
-      security: ({ onBack, onNavigate }) => (
-        <SecurityPanel
-          onBack={onBack}
-          onNavigate={onNavigate}
-          onPasswordChanged={clearSessionKey}
-        />
-      ),
-      accounts: ({ onBack, onNavigate }) => (
-        <AccountsPanel
-          accounts={accounts}
-          activeAccountId={accountId || ''}
-          onSelectAccount={(id) => actions.changeAccount(id)}
-          onEditAccount={(id) => {
-            setEditingAccountId(id);
-            onNavigate('account-edit', { accountId: id });
-          }}
-          onDeleteAccount={(id) => actions.removeAccount(id)}
-          onAddAccount={() => onNavigate('account-add')}
-          onBack={onBack}
-        />
-      ),
-      'account-edit': ({ onBack, onNavigate, ...props }) => {
-        const targetId = (props.accountId as string) || editingAccountId || accountId || '';
-        const account = accounts.find((a) => a.id === targetId) || activeAccount;
-        if (!account) return null;
-        return (
-          <AccountEditPanel
-            account={account}
-            onEditName={() => {
-              setEditingAccountId(account.id);
-              onNavigate('account-name', { accountId: account.id });
-            }}
-            onEditAvatar={() => onNavigate('avatar')}
-            onBackupSeed={() => onNavigate('backup')}
-            onExportPrivateKey={() => onNavigate('privateKey')}
-            onBack={onBack}
-          />
-        );
-      },
-      'account-name': ({ onBack, ...props }) => {
-        const targetId = (props.accountId as string) || editingAccountId || accountId || '';
-        const account = accounts.find((a) => a.id === targetId) || activeAccount;
-        if (!account) return null;
-        return (
-          <AccountNamePanel
-            currentName={account.name}
-            onSave={async (name: string) => {
-              await actions.editAccount(account.id, { name });
-              onBack();
-            }}
-            onBack={onBack}
-          />
-        );
-      },
-      'account-add': ({ onBack, onWait, onClose, ...props }) => (
-        <AccountAddPanel
-          // `returnTo` lands the finished flow back on Wallets with the new
-          // wallet already active; the panel closes settings itself.
-          onComplete={() => {
-            if (props.returnTo === 'wallets') setCurrentPage('wallets');
-          }}
-          onBack={onBack}
-          onWait={onWait}
-          onCloseSettings={onClose}
-        />
-      ),
-    }),
-    [
-      currency,
-      changeCurrency,
-      appearancePreference,
-      setAppearancePreference,
-      availableLanguages,
-      currentLanguage,
-      changeLanguage,
-      explorers,
-      explorer,
-      changeExplorer,
-      explorerLoading,
-      addressBookItems,
-      networkId,
-      allNetworks,
-      addContact,
-      editAddressBookContact,
-      removeContact,
-      addressBookError,
-      reloadAddressBook,
-      addressBookWriteErrorKey,
-      t,
-      editingContact,
-      activeTrustedApps,
-      actions,
-      editingAccountId,
-      accountId,
-      accounts,
-      activeAccount,
-    ]
-  );
-
-  // What the four choosable rows currently read. Proper nouns and a currency
-  // code — identical in both languages, so the list states the user's own
-  // choice without inventing copy (mobile's `settings/index.tsx`).
-  const rowValues = useMemo(
-    () =>
-      settingsRowValues({
-        language: currentLanguage,
-        currency,
-        explorerName: explorer?.name,
-        appearance: appearancePreference,
-        appearanceLabels: {
-          system: t('settings.appearance_options.system', 'System'),
-          light: t('settings.appearance_options.light', 'Light'),
-          dark: t('settings.appearance_options.dark', 'Dark'),
-        },
-      }),
-    [currentLanguage, currency, explorer, appearancePreference, t]
-  );
-
-  // Reset initialPanels after settings closes
-  const handleSettingsClose = useCallback(() => {
-    setSettingsVisible(false);
-    setSettingsInitialPanels(undefined);
-  }, []);
-
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
   // reads the page swap as a push (depth 1 over Home's 0) or a pop.
@@ -1157,6 +757,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             showUnverifiedTokens={showUnverifiedTokens}
           />
         );
+      case 'settings':
+        return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
       case 'activity':
         return (
           <TransactionHistoryPage
@@ -1388,49 +990,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onDismiss={() => void derivedAccounts.dismiss()}
       />
 
-      {/* Settings Panel Stack */}
-      <SettingsPanelStack
-        visible={settingsVisible}
-        onClose={handleSettingsClose}
-        panelRegistry={panelRegistry}
-        initialPanels={settingsInitialPanels}
-        analyticsEnabled={analyticsConsent}
-        onAnalyticsToggle={setAnalyticsConsent}
-        onRemoveWallet={handleRemoveWallet}
-        onRemoveAllWallets={handleRemoveAllWallets}
-        rowValues={rowValues}
-      />
-
-      {/* Remove Current Wallet Confirmation Dialog */}
-      <ConfirmDialog
-        visible={removeWalletDialogVisible}
-        onClose={() => setRemoveWalletDialogVisible(false)}
-        title={t('settings.remove_wallet', 'Remove Wallet')}
-        message={t(
-          'settings.remove_wallet_description',
-          'Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.'
-        )}
-        confirmText={t('actions.remove', 'Remove')}
-        isDanger
-        requirePassword
-        validatePassword={validatePassword}
-        onConfirm={confirmRemoveWallet}
-      />
-
-      {/* Remove All Wallets Confirmation Dialog */}
-      <ConfirmDialog
-        visible={removeAllWalletsDialogVisible}
-        onClose={() => setRemoveAllWalletsDialogVisible(false)}
-        title={t('settings.remove_all_wallets', 'Remove All Wallets')}
-        message={t(
-          'settings.remove_all_wallets_description',
-          'This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.'
-        )}
-        confirmText={t('actions.remove_all', 'Remove All')}
-        isDanger
-        onConfirm={confirmRemoveAllWallets}
-      />
-
       {/* Receive Sheet */}
       <ReceiveSheet
         visible={receiveSheetVisible}
@@ -1447,7 +1006,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   return (
     <SlideStack
       screenKey={currentPage}
-      depth={currentPage === 'home' ? 0 : 1}
+      depth={PAGE_DEPTH[currentPage]}
       style={{ height: '100dvh' }}
       testID="home-stack"
     >

@@ -17,6 +17,7 @@ import {
   borderWidth,
   componentSizes,
   s,
+  useFieldFocus,
   useUnlockThrottle,
   FLOAT_DELAY_MS,
   FLOAT_IN_MS,
@@ -86,7 +87,7 @@ export function LockContent({
    */
   const [submerged, setSubmerged] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
+  const { focused, onFocus, onBlur } = useFieldFocus();
 
   // Whether to show the password fallback UI
   const [showPasswordFallback, setShowPasswordFallback] = useState(false);
@@ -387,11 +388,11 @@ export function LockContent({
     ]);
   }, [onRemoveAllAccounts, t]);
 
-  const getInputBorderColor = () => {
-    if (error) return semantic.status.danger;
-    if (isFocused) return semantic.accent.ink;
-    return semantic.input.edge;
-  };
+  const inputBorderColor = error
+    ? semantic.status.danger
+    : focused
+      ? semantic.accent.ink
+      : semantic.input.edge;
 
   return (
     <>
@@ -445,7 +446,7 @@ export function LockContent({
                     <TextInput
                       testID="lock-password-input"
                       accessibilityLabel={t('lock.enter_password')}
-                      style={[styles.input, { borderColor: getInputBorderColor() }]}
+                      style={[styles.input, { borderColor: inputBorderColor }]}
                       placeholder={t('lock.enter_password')}
                       placeholderTextColor={semantic.text.secondary}
                       secureTextEntry
@@ -454,8 +455,8 @@ export function LockContent({
                         setPassword(text);
                         if (error) setError(null);
                       }}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setIsFocused(false)}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
                       onSubmitEditing={handleUnlock}
                       editable={!isLoading && !throttled}
                       autoCapitalize="none"

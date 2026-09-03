@@ -148,6 +148,30 @@ describe('BottomSheetContainer', () => {
     rect.mockRestore();
   });
 
+  it('rises the same way when it was already mounted closed — the path every sheet takes', async () => {
+    // The case above mounts with `visible` already true, which only the very
+    // first sheet of a session does. Every real sheet is mounted closed by the
+    // screen that owns it and flipped open later, and that path runs the effect
+    // twice — once before the dialog exists. The rise has to survive that.
+    stubMatchMedia(false);
+    const Host = ({ open }: { open: boolean }) => (
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible={open} onClose={vi.fn()} testID="sheet">
+          <div>content</div>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+    const { rerender } = render(<Host open={false} />);
+    expect(screen.queryByTestId('sheet')).toBeNull();
+
+    rerender(<Host open />);
+    const sheet = screen.getByTestId('sheet').querySelector('div + div') as HTMLElement;
+    expect(sheet.style.transform).toBe('translateY(100%)');
+
+    await waitFor(() => expect(sheet.style.transform).toBe('translateY(0)'));
+    expect(sheet.style.transition).toContain('transform');
+  });
+
   it('fires onClosed once the exit has actually left, under reduced motion', async () => {
     stubMatchMedia(true);
     const onClosed = vi.fn();

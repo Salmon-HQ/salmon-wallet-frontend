@@ -9,6 +9,7 @@ import {
   fontSize,
   borderWidth,
   fontFamilyNative,
+  useFieldFocus,
   type Semantic,
 } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
@@ -33,7 +34,7 @@ export function SeedWordInput({
 }: SeedWordInputProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { status, input, text } = useSemantic();
+  const { accent, status, input, text } = useSemantic();
 
   /**
    * BIP-39 words are lowercase, and a capitalised one is an invalid mnemonic
@@ -48,6 +49,10 @@ export function SeedWordInput({
   // A typed recovery word is worth as much as a displayed one.
   useSecretScreen('seed-word-input');
 
+  const { focused, onFocus, onBlur } = useFieldFocus();
+
+  // A verdict outranks focus: a word already judged wrong must keep saying so
+  // while it is being fixed.
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct':
@@ -55,7 +60,7 @@ export function SeedWordInput({
       case 'incorrect':
         return status.danger;
       default:
-        return input.edge;
+        return focused ? accent.ink : input.edge;
     }
   };
 
@@ -77,6 +82,8 @@ export function SeedWordInput({
           onChangeText={onChangeText}
           placeholderTextColor={text.tertiary}
           onKeyPress={onKeyPress}
+          onFocus={onFocus}
+          onBlur={onBlur}
           autoFocus={autoFocus}
           onSubmitEditing={onSubmitEditing}
           returnKeyType={returnKeyType}
@@ -100,6 +107,8 @@ export function SeedWordInput({
         placeholder={t('wallet.create.enter_word_number', { position })}
         placeholderTextColor={text.tertiary}
         onKeyPress={onKeyPress}
+        onFocus={onFocus}
+        onBlur={onBlur}
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
         returnKeyType={returnKeyType}

@@ -3,7 +3,7 @@ import type {
   SettingsScreen,
   SettingsPanelEntry,
   SettingsScreenLayoutPropsBase,
-  SettingsSheetBaseProps,
+  SettingsScreenBaseProps,
 } from '@salmon/shared';
 
 /** What the four choosable rows currently read — `settingsRowValues` builds it. */
@@ -11,9 +11,9 @@ export type { SettingsRowValues };
 
 /**
  * Props for the SettingsPanelStack component.
- * Extends SettingsSheetBaseProps (visible, onClose, the toggles, remove wallet).
+ * Extends SettingsScreenBaseProps (onClose, the toggles, remove wallet).
  */
-export interface SettingsPanelStackProps extends SettingsSheetBaseProps {
+export interface SettingsPanelStackProps extends SettingsScreenBaseProps {
   /**
    * Registry mapping SettingsScreen to a React component that renders
    * the content for that screen. Each component receives `onBack` and

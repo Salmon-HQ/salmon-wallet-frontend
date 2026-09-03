@@ -40,7 +40,6 @@ import {
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../Card';
-import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { TextButton } from '../Button';
@@ -144,15 +143,6 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
             <Text style={styles.title} maxFontSizeMultiplier={fontScaleCap.dense}>
               {t(TYPE_LABEL_KEYS[transaction.type] ?? TYPE_LABEL_KEYS.unknown, typeConfig.label)}
             </Text>
-            {transaction.source && (
-              <Chip
-                testID="tx-detail-source"
-                label={transaction.source}
-                size="sm"
-                variant="outline"
-                style={styles.sourceChip}
-              />
-            )}
           </View>
           <View style={styles.statusRow}>
             <StatusIcon size={iconSize.sm} color={statusConfig.color} />
@@ -263,9 +253,6 @@ const stylesFor = (t: Semantic) =>
       lineHeight: s(fontSize.title) * lineHeight.snug,
       fontFamily: fontFamilyNative.bold,
       color: t.text.primary,
-      flexShrink: 1,
-    },
-    sourceChip: {
       flexShrink: 1,
     },
     statusRow: {

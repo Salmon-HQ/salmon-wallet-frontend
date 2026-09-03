@@ -9,6 +9,8 @@ import React from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import {
   borderRadius,
+  borderWidth,
+  useFieldFocus,
   fontFamilyNative,
   fontSize,
   ms,
@@ -34,10 +36,13 @@ export function SearchField({
   testID,
 }: SearchFieldProps) {
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
+  const { accent, surface, text } = useSemantic();
+  const { focused, onFocus, onBlur } = useFieldFocus();
 
   return (
-    <View style={[styles.pill, style]}>
+    <View
+      style={[styles.pill, { borderColor: focused ? accent.ink : surface.raised }, style]}
+    >
       <MagnifyingGlassIcon size={ms(GLYPH_SIZE)} color={text.secondary} />
       <TextInput
         testID={testID}
@@ -49,6 +54,8 @@ export function SearchField({
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
+        onFocus={onFocus}
+        onBlur={onBlur}
         accessibilityLabel={accessibilityLabel ?? placeholder}
       />
     </View>
@@ -65,6 +72,10 @@ const stylesFor = (t: Semantic) =>
       height: vs(44),
       borderRadius: borderRadius.full,
       backgroundColor: t.surface.raised,
+      // The pill has no resting stroke; it is given one in its own ground's
+      // ink, which reads as no edge until focus turns it accent.
+      borderWidth: borderWidth.thin,
+      borderColor: t.surface.raised,
     },
     input: {
       flex: 1,

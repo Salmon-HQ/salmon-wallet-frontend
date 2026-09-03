@@ -7,9 +7,10 @@
  * once, so no DOM panel hand-draws a box around a field.
  */
 import React, { useId } from 'react';
-import { borderWidth, fontFamily, fontSize, lineHeight, spacing } from '@salmon/shared';
+import { fontFamily, fontSize, lineHeight, spacing } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
 import { Card } from '../Card';
 import type { TextInputProps } from './types';
 
@@ -36,11 +37,17 @@ export function TextInput({
       className={className}
       style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, ...style }}
     >
+      {/* The card is the field's shape owner, so it wears the shell class:
+          focus turns its border accent and keyboard focus rings it, from the
+          one rule every field shares. Error is a border here rather than an
+          inset shadow — the ring is drawn with the same shadow, and the two
+          used to fight over it. */}
       <Card
         padding="lg"
-        style={
-          error ? { boxShadow: `inset 0 0 0 ${borderWidth.thin}px ${t.status.danger}` } : undefined
-        }
+        className={[FIELD_SHELL_CLASS, error ? FIELD_SHELL_ERROR_CLASS : null]
+          .filter(Boolean)
+          .join(' ')}
+        style={error ? { borderColor: t.status.danger } : undefined}
       >
         <input
           data-testid={testID}
@@ -68,7 +75,7 @@ export function TextInput({
             margin: 0,
             padding: 0,
             border: 'none',
-            outline: 'none',
+            ...focusRingNone,
             background: 'transparent',
             color: t.text.primary,
             fontFamily: mono ? fontFamily.mono : fontFamily.sans,

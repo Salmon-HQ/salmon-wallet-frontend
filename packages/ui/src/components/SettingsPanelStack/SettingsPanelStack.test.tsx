@@ -78,7 +78,6 @@ const renderStack = (
   return renderInMode(
     mode,
     <SettingsPanelStack
-      visible
       onClose={vi.fn()}
       panelRegistry={makeRegistry()}
       onRemoveWallet={vi.fn()}
@@ -201,7 +200,6 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
       <>
         <button type="button" data-testid="rerender" onClick={() => force((n) => n + 1)} />
         <SettingsPanelStack
-          visible
           onClose={vi.fn()}
           panelRegistry={registry}
           onRemoveWallet={vi.fn()}

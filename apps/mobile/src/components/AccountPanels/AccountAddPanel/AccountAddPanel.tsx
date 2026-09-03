@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -53,6 +53,7 @@ import {
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
 import { Card } from '../../Card';
+import { TextField } from '../../TextInput';
 import { ConfirmSheet } from '../../ConfirmSheet';
 import { IconBubble } from '../../IconBubble';
 import { ListRow } from '../../ListRow';
@@ -591,21 +592,16 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       {/* No warning notice and no masked field: an address is public. The
           private-key step's PasswordInput would imply otherwise. */}
       <SectionLabel variant="caps">{t('wallet.watchOnly.label')}</SectionLabel>
-      <Card padding="md">
-        <TextInput
-          testID="account-add-watch-only-input"
-          style={styles.addressInput}
-          value={watchOnlyImport.value}
-          onChangeText={watchOnlyImport.setValue}
-          placeholder={t('wallet.watchOnly.placeholder')}
-          placeholderTextColor={text.tertiary}
-          autoFocus
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="done"
-          onSubmitEditing={handleWatchOnlySubmit}
-        />
-      </Card>
+      <TextField
+        testID="account-add-watch-only-input"
+        value={watchOnlyImport.value}
+        onChangeText={watchOnlyImport.setValue}
+        placeholder={t('wallet.watchOnly.placeholder')}
+        accessibilityLabel={t('wallet.watchOnly.label')}
+        autoFocus
+        mono
+        onSubmitEditing={handleWatchOnlySubmit}
+      />
       {/* One slot under the field: the hint stands where the error will
           stand, so the layout does not shift when a message replaces it. */}
       <Text
@@ -659,20 +655,16 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const renderSetName = () => (
     <View style={styles.stack}>
       <SectionLabel variant="caps">{t('settings.account_add.set_name')}</SectionLabel>
-      <Card padding="md">
-        <TextInput
-          testID="account-add-name-input"
-          style={styles.nameInput}
-          value={accountName}
-          onChangeText={setAccountName}
-          placeholder={t('settings.account_add.set_name_placeholder')}
-          placeholderTextColor={text.tertiary}
-          autoFocus
-          maxLength={32}
-          returnKeyType="done"
-          onSubmitEditing={handleConfirm}
-        />
-      </Card>
+      <TextField
+        testID="account-add-name-input"
+        value={accountName}
+        onChangeText={setAccountName}
+        placeholder={t('settings.account_add.set_name_placeholder')}
+        accessibilityLabel={t('settings.account_add.set_name')}
+        autoFocus
+        maxLength={32}
+        onSubmitEditing={handleConfirm}
+      />
       <PrimaryButton onPress={handleConfirm} testID="account-add-confirm-button">
         {t('settings.account_add.confirm')}
       </PrimaryButton>
@@ -814,17 +806,5 @@ const stylesFor = (t: Semantic) =>
       color: t.text.primary,
       fontFamily: fontFamilyNative.mono,
       fontSize: s(fontSize.mono),
-    },
-    // An address is read character by character, so the field it is typed into
-    // is mono like every other address surface in the app.
-    addressInput: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.mono,
-      fontSize: s(fontSize.mono),
-    },
-    nameInput: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.bodyLg),
     },
   });

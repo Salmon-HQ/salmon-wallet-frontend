@@ -5,9 +5,9 @@
  * a `Card` field, an error line, a disclaimer, and the save button, on the
  * same `AccountNamePanelPropsBase` contract — the caller owns the write.
  */
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { fontFamily, fontSize } from '@salmon/shared';
+import { fontFamily, fontSize, useAccountNameDraft } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
@@ -22,26 +22,11 @@ export function AccountNamePanel({
 }: AccountNamePanelProps): React.ReactElement {
   const { t } = useTranslation();
   const { text } = useSemantic();
-  const [name, setName] = useState(currentName);
-  const [error, setError] = useState('');
-
-  const handleSave = useCallback(() => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError(t('settings.wallets.edit_name_empty'));
-      return;
-    }
-    setError('');
-    void onSave(trimmed);
-  }, [name, onSave, t]);
-
-  const handleChangeText = useCallback(
-    (value: string) => {
-      setName(value);
-      if (error) setError('');
-    },
-    [error]
-  );
+  const { name, error, changeName, save } = useAccountNameDraft({
+    currentName,
+    onSave,
+    emptyMessage: t('settings.wallets.edit_name_empty'),
+  });
 
   return (
     <SettingsPanelContent
@@ -52,13 +37,13 @@ export function AccountNamePanel({
       <TextInput
         testID="account-name-input"
         value={name}
-        onChangeText={handleChangeText}
+        onChangeText={changeName}
         placeholder={t('settings.account_add.set_name_placeholder')}
         accessibilityLabel={t('settings.account_edit.name_section')}
         error={error || undefined}
         autoFocus
         maxLength={32}
-        onSubmitEditing={handleSave}
+        onSubmitEditing={save}
       />
 
       <p
@@ -72,7 +57,7 @@ export function AccountNamePanel({
         {t('settings.wallets.edit_name_disclaimer')}
       </p>
 
-      <PrimaryButton onPress={handleSave} disabled={!name.trim()} testID="account-name-save-button">
+      <PrimaryButton onPress={save} disabled={!name.trim()} testID="account-name-save-button">
         {t('actions.save')}
       </PrimaryButton>
     </SettingsPanelContent>

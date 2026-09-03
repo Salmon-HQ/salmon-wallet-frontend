@@ -7,7 +7,7 @@
  * affordance; the panels differ only in their words and in what saving does.
  */
 import React, { useCallback, useState } from 'react';
-import { Text, TextInput, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -18,12 +18,13 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import { Card } from '../Card';
+import { TextField } from '../TextInput';
 import { PrimaryButton } from '../Button';
 import { QRScanner } from '../QRScanner';
 import type { QRScanResult } from '../QRScanner';
 import { RecipientInput } from '../Send';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { AddressFormProps } from './types';
 
 export function AddressForm({
@@ -39,7 +40,6 @@ export function AddressForm({
 }: AddressFormProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
   const [accountState] = useAccountsContext();
   const [showScanner, setShowScanner] = useState(false);
 
@@ -59,18 +59,13 @@ export function AddressForm({
 
   return (
     <SettingsScreenLayout title={title} subtitle={subtitle} onBack={onBack} testID={testID}>
-      <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
-        <TextInput
-          testID="address-book-label-input"
-          style={styles.input}
-          value={form.label}
-          onChangeText={form.setLabel}
-          placeholder={t('settings.addressbook.label', 'Label')}
-          placeholderTextColor={text.tertiary}
-          autoCapitalize="words"
-          autoCorrect={false}
-        />
-      </Card>
+      <TextField
+        testID="address-book-label-input"
+        value={form.label}
+        onChangeText={form.setLabel}
+        placeholder={t('settings.addressbook.label', 'Label')}
+        accessibilityLabel={t('settings.addressbook.label', 'Label')}
+      />
 
       <RecipientInput
         testID="address-book-address"
@@ -103,12 +98,6 @@ export function AddressForm({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    input: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: fontSize.bodyLg,
-      padding: 0,
-    },
     networkText: {
       color: t.text.secondary,
       fontFamily: fontFamilyNative.regular,

@@ -11,6 +11,7 @@ import {
   borderWidth,
   fontSize,
   fontFamilyNative,
+  useFieldFocus,
   type Semantic,
 } from '@salmon/shared';
 
@@ -31,17 +32,13 @@ export function PasswordInput({
   const styles = useThemedStyles(stylesFor);
   const { status, accent, input, text } = useSemantic();
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const { focused, onFocus, onBlur } = useFieldFocus();
 
-  const getBorderColor = () => {
-    if (error) return status.danger;
-    if (isFocused) return accent.ink;
-    return input.edge;
-  };
+  const borderColor = error ? status.danger : focused ? accent.ink : input.edge;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.inputWrapper, { borderColor: getBorderColor() }]}>
+      <View style={[styles.inputWrapper, { borderColor }]}>
         <TextInput
           testID={testID}
           style={styles.input}
@@ -54,8 +51,8 @@ export function PasswordInput({
           autoCorrect={false}
           editable={editable}
           autoFocus={autoFocus}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={onFocus}
+          onBlur={onBlur}
           onSubmitEditing={onSubmitEditing}
           returnKeyType="done"
         />
