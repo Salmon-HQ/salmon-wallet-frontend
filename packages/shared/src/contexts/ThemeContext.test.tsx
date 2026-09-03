@@ -38,7 +38,7 @@ function setup(initialScheme: SystemScheme = null) {
 describe('ThemeProvider', () => {
   beforeEach(() => {
     if (!isStorageInitialized()) {
-      initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+      initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
     }
     window.localStorage.clear();
   });

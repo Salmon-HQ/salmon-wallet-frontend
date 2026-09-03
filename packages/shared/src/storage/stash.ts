@@ -280,7 +280,7 @@ let currentStash: Stash | null = null;
  * This must be called once at app startup before any stash operations.
  * The platform determines which implementation to use.
  *
- * @param platform - The platform to use ('mobile', 'extension', or 'web')
+ * @param platform - The platform to use ('mobile' or 'extension')
  *
  * @example
  * ```typescript
@@ -289,15 +289,11 @@ let currentStash: Stash | null = null;
  *
  * // Browser extension popup
  * initStash('extension');
- *
- * // Web app
- * initStash('web');
  * ```
  */
 export function initStash(platform: Platform): void {
   switch (platform) {
     case 'mobile':
-    case 'web':
       currentStash = createMemoryStash();
       break;
     case 'extension':

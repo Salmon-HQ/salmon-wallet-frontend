@@ -66,7 +66,7 @@ describe('CurrencyProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     if (!isStorageInitialized()) {
-      initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+      initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
     }
   });
 

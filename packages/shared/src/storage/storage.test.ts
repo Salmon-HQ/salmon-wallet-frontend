@@ -142,14 +142,14 @@ describe('storage', () => {
     });
 
     it('resetStorage de-initializes everything', () => {
-      initStorage({ platform: 'web', adapter: createMapAdapter() });
+      initStorage({ platform: 'extension', adapter: createMapAdapter() });
       resetStorage();
       expect(isStorageInitialized()).toBe(false);
       expect(getCurrentPlatform()).toBeNull();
     });
 
     it('convenience functions round-trip and clear', async () => {
-      initStorage({ platform: 'web', adapter: createMapAdapter() });
+      initStorage({ platform: 'extension', adapter: createMapAdapter() });
 
       await setStorageItem('a', 'x');
       await setStorageItem('b', 'y');

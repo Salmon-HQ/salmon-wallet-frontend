@@ -35,7 +35,7 @@ const STORED: StoredAddress = { address: 'addr-0', name: 'Bob', networkId: 'sola
 
 describe('useAddressbook', () => {
   beforeEach(() => {
-    initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+    initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 

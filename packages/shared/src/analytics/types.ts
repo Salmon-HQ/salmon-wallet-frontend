@@ -5,7 +5,7 @@
 import type { AnalyticsEventName } from './events';
 
 /** Platform the wallet is running on. Part of the batch context, not per-event. */
-export type AnalyticsPlatform = 'web' | 'extension' | 'mobile';
+export type AnalyticsPlatform = 'extension' | 'mobile';
 
 /** Prop values are deliberately restricted to strings and booleans — no numbers. */
 export type AnalyticsPropValue = string | boolean;

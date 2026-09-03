@@ -275,7 +275,7 @@ export type StashKey = (typeof STASH_KEYS)[keyof typeof STASH_KEYS];
 /**
  * Supported platform types for storage implementation selection.
  */
-export type Platform = 'mobile' | 'extension' | 'web';
+export type Platform = 'mobile' | 'extension';
 
 /**
  * Configuration for storage initialization.
