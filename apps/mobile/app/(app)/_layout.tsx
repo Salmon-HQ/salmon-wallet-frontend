@@ -206,7 +206,11 @@ export default function AppLayout() {
             and swipes down to dismiss. It is a plain screen of THIS stack, not
             a modal: a modal is its own native window and nothing — not the
             lock overlay, not the FAB — can float above it. Full cover comes
-            from the screen itself, which paints its own opaque water. */}
+            from the screen itself, which paints its own opaque water.
+
+            The route is registered and its choreography kept, but the screen
+            behind it is closed for this release: `powerups.tsx` redirects Home
+            and the body is parked in `src/screens/PowerupsRoute.tsx`. */}
             <Stack.Screen
               name="powerups"
               options={{

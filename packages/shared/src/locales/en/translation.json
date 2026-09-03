@@ -6,7 +6,6 @@
     "daysAgo": "{{count}}d ago"
   },
   "tabs": {
-    "swap": "Swap",
     "home": "Home",
     "portfolio": "Portfolio",
     "nfts": "NFTs"

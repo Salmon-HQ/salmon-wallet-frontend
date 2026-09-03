@@ -145,7 +145,7 @@ const { useAccountsContext } = jest.requireMock('@salmon/shared') as {
   useAccountsContext: jest.Mock;
 };
 
-import SwapScreenPage from '../../app/(app)/(tabs)/swap';
+import SwapScreenPage from '../../src/screens/SwapRoute';
 
 describe('SwapScreenPage', () => {
   beforeEach(() => {

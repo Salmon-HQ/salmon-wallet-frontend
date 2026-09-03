@@ -32,7 +32,7 @@ export interface Powerup {
   route?: string;
 }
 
-/** What the wallet can actually open today. */
+/** What the wallet ships a screen for. None is openable in this release. */
 export const REAL_POWERUPS: Powerup[] = [
   {
     id: 'swap',
@@ -40,8 +40,11 @@ export const REAL_POWERUPS: Powerup[] = [
     description: 'powerups.catalog.swap.description',
     tier: 'official',
     installed: true,
+    // No `route`, so the tile draws but does not open: the swap surface is
+    // closed for this release and its screen is parked off the router
+    // (`src/screens/SwapRoute.tsx`). A route here would push a path nothing
+    // answers. Spec 027 restores both.
     icon: ArrowsLeftRightIcon,
-    route: '/swap',
   },
 ];
 

@@ -1,5 +1,19 @@
 /**
- * SwapScreen - Token swap interface
+ * SwapRoute — the swap screen's wiring, parked off the router.
+ *
+ * Swap is not reachable in this version. It is not deleted either: the surface
+ * comes back with the Powerups boundary work (spec 027), and this is the whole
+ * quote/token/signing wiring the route had, kept intact so bringing it back is
+ * mounting a file rather than rewriting one.
+ *
+ * It lives under `src/` on purpose. Expo Router turns every file under `app/`
+ * into a navigable route, and `href: null` only hides a tab from the bar — the
+ * router still answered `salmonwallet://swap`, which is a way in for a surface
+ * this release does not ship. Off `app/`, there is no route to answer.
+ *
+ * To bring it back: re-add `app/(app)/(tabs)/swap.tsx` re-exporting this, the
+ * `Tabs.Screen` entry, and the `MOBILE_ONLY_SCREENS` line in
+ * `scripts/check-dom-parity.mjs`.
  *
  * Displays:
  * - WalletHeader row: Account name, address, settings navigation
@@ -34,9 +48,9 @@ import {
   unifiedToSwapToken,
   type Semantic,
 } from '@salmon/shared';
-import { SwapScreen, type SwapQuote, type SwapToken } from '../../../src/components';
-import { useTabChrome } from '../../../hooks/useTabChrome';
-import { useThemedStyles } from '../../../src/theme/useThemedStyles';
+import { SwapScreen, type SwapQuote, type SwapToken } from '../components';
+import { useTabChrome } from '../../hooks/useTabChrome';
+import { useThemedStyles } from '../theme/useThemedStyles';
 
 /**
  * Since SwapQuote now uses the backend structure directly,

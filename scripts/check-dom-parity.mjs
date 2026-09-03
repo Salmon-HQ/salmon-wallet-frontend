@@ -139,8 +139,8 @@ export const SCREENS = {
 
 /** Mobile-only routes, with the reason. */
 export const MOBILE_ONLY_SCREENS = {
-  '(app)/(tabs)/swap': 'swap retired until spec 027',
-  '(app)/powerups': 'powerups surface closed for the submission; spec 027',
+  '(app)/powerups':
+    'powerups surface closed for the submission; the route redirects Home, spec 027',
   '(auth)/biometric-setup': 'biometrics are native; the extension has none',
   '+html': 'Expo scaffolding',
   '+not-found': 'Expo scaffolding',

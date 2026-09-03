@@ -161,7 +161,7 @@ jest.mock('../src/components', () => {
   };
 });
 
-import PowerupsScreen from '../app/(app)/powerups';
+import PowerupsScreen from '../src/screens/PowerupsRoute';
 
 const NAMES = en.powerups.catalog;
 
@@ -236,12 +236,17 @@ describe('powerups browse', () => {
     expect(screen.queryByTestId('powerups-fab')).toBeNull();
   });
 
-  it('dismisses itself before opening swap — the tab shell is behind it', () => {
+  // Swap is listed and inert: the surface is closed for this release and its
+  // screen is parked off the router, so the catalogue entry carries no route
+  // and the tile opens nothing. This test used to assert the opposite — that
+  // pressing it dismissed the catalogue and pushed `/swap` — which is exactly
+  // the path being closed. It stays as the guard that it *is* closed.
+  it('draws swap but opens nothing — the surface is closed until spec 027', () => {
     render(<PowerupsScreen />);
 
     fireEvent.press(screen.getByTestId('powerups-tile-swap'));
 
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
-    expect(mockRouter.push).toHaveBeenCalledWith('/swap');
+    expect(mockRouter.back).not.toHaveBeenCalled();
+    expect(mockRouter.push).not.toHaveBeenCalled();
   });
 });

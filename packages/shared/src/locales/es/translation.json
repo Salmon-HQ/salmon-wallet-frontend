@@ -6,7 +6,6 @@
     "daysAgo": "hace {{count}}d"
   },
   "tabs": {
-    "swap": "Intercambiar",
     "home": "Inicio",
     "portfolio": "Portfolio",
     "nfts": "NFTs"
