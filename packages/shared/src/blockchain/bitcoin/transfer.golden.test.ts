@@ -250,3 +250,46 @@ describe('a UTXO that arrives without its raw hex', () => {
     ).rejects.toThrow(/missing rawTx/);
   });
 });
+
+/**
+ * The lookups go out a few at a time.
+ *
+ * The first version of this opened one request per input in the same instant.
+ * A public relay answers a burst with 429, and this code reads a rejection as
+ * "input unavailable" — so a wallet with many small inputs would have failed
+ * at the last step before signing, which is the same shape as the 429 the
+ * backend's own provider hits walking a large UTXO set.
+ */
+describe('reading the previous transactions', () => {
+  it('keeps at most four lookups in flight', async () => {
+    const keyPair = await testSigningKeyPair();
+    const { address } = keyPair;
+    // Ten inputs: more than the window, so the window is observable.
+    const withHex = Array.from({ length: 10 }, (_, i) => fundingUtxo(20_000, i + 1, address));
+    const byTxid = new Map(withHex.map((u) => [u.txid, u.rawTx as string]));
+    const asBackendSendsThem = withHex.map(({ rawTx: _d, ...utxo }) => utxo);
+
+    let inFlight = 0;
+    let peak = 0;
+    const fetchTransactionHex = async (_networkId: string, txid: string) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight -= 1;
+      return byTxid.get(txid) as string;
+    };
+
+    const { serializedTx } = await createTransferTransaction(
+      NETWORK,
+      keyPair,
+      RECEIVER_ADDRESS,
+      0.001,
+      async () => asBackendSendsThem,
+      fetchTransactionHex
+    );
+
+    expect(peak).toBeLessThanOrEqual(4);
+    // And every input still made it in, in order.
+    expect(serializedTx).toMatch(/^[0-9a-f]+$/);
+  });
+});

@@ -4,6 +4,10 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## Unreleased
 
+## extension 0.13.1 — 2026-09-03
+
+- Sending Bitcoin from a wallet with many inputs no longer fails at the last step: the previous-transaction lookups go out a few at a time instead of all at once, which a public relay answers with a rate limit.
+
 ## extension 0.13.0 — 2026-09-03 — the extension becomes the mobile app, on the DOM
 
 - The browser extension's side panel now draws the same screens as the mobile app — Home, Wallets, Activity, Send in four steps, token and NFT detail, Settings, onboarding and lock — with the same layout, copy and motion. Screens slide in from the right; sheets rise from the bottom.
