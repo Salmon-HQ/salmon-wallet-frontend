@@ -77,6 +77,11 @@ export function Card({
     borderRadius: RADII[radius],
     padding: PADDINGS[padding],
     overflow: 'hidden',
+    // `overflow: hidden` turns a flex item's automatic minimum size to zero,
+    // so a card in a column that is shorter than its rows (Activity's scroll
+    // list) would be squeezed below its own content. A card never shrinks:
+    // the list scrolls instead.
+    flexShrink: 0,
     // A gap stacks the children, as mobile's View does by default — a bare
     // `display: flex` laid the Market data card's rows out in a row.
     ...(gap != null ? { display: 'flex', flexDirection: 'column', gap } : null),

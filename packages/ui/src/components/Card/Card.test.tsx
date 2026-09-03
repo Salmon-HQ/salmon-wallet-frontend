@@ -44,6 +44,22 @@ describe('Card', () => {
     expect(card.style.flexDirection).toBe('column');
   });
 
+  it('never shrinks below its content inside a flex column', () => {
+    // `overflow: hidden` zeroes a flex item's automatic minimum height, so
+    // without `flex-shrink: 0` a scroll list shorter than its rows squeezed
+    // every Activity card to ~30px under 49px of content.
+    renderInMode(
+      'dark',
+      <Card testID="card" onPress={() => {}}>
+        content
+      </Card>
+    );
+
+    const card = screen.getByTestId('card');
+    expect(card.style.overflow).toBe('hidden');
+    expect(card.style.flexShrink).toBe('0');
+  });
+
   it('becomes a button and fires when pressed', () => {
     const onPress = vi.fn();
     renderInMode(

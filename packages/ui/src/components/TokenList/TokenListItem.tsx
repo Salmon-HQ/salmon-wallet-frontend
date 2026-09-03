@@ -6,12 +6,9 @@
  * mark, the token's name as the title, one secondary line — "SOL · $101.39 ·
  * -1.1%" — under it, and the amount over the fiat value in the trailing slot.
  *
- * The secondary line has an explicit order of sacrifice. The price and the
- * change are what the user opened the screen for, so neither ever gives up a
- * character (`flexShrink: 0`); the ticker is the only shrinkable segment and
- * it clips rather than ellipsising, so a narrow panel degrades to "$101.39 ·
- * -1.1%" instead of "$101.…". Only once the ticker is gone does the pressure
- * reach the name column, which `ListRow` gives `flexShrink: 1`.
+ * The secondary line is one text run that ellipsises at its end, like
+ * mobile's single `numberOfLines={1}` Text — a narrow panel reads "SOL ·
+ * $101.…", never a ticker clipped mid-glyph.
  *
  * Bitcoin shows only the amount, not a fiat line beside it.
  */
@@ -91,45 +88,26 @@ export function TokenListItem({
       : displayPercentage
     : null;
 
+  // One text run, ellipsised at its end — as mobile's single-line Text. Three
+  // flex segments with the ticker as the shrinkable one rendered "S$104.48"
+  // at the side panel's 400: the ticker was clipped mid-glyph and the
+  // separator vanished before the name column gave up anything.
   const subline = (tickerSegment || displayPrice || changeSegment) && (
-    <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
-      {!!tickerSegment && (
-        <span
-          data-testid={`token-row-ticker-${symbol}`}
-          style={{
-            ...sublineStyle(semantic),
-            // The one segment allowed to give up room, all the way to nothing,
-            // and it clips rather than ellipsising.
-            flexShrink: 1,
-            minWidth: 0,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {tickerSegment}
-        </span>
-      )}
-      {!!displayPrice && (
-        <span
-          data-testid={`token-row-price-${symbol}`}
-          style={{ ...sublineStyle(semantic), flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-          {displayPrice}
-        </span>
-      )}
+    <span
+      data-testid={`token-row-subline-${symbol}`}
+      style={{
+        ...sublineStyle(semantic),
+        display: 'block',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {tickerSegment}
+      {displayPrice}
       {!!changeSegment && (
-        <span
-          data-testid={`token-row-change-${symbol}`}
-          style={{
-            ...sublineStyle(semantic),
-            fontWeight: fontWeight.semibold,
-            color: changeColor,
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {changeSegment}
-        </span>
+        <span style={{ fontWeight: fontWeight.semibold, color: changeColor }}>{changeSegment}</span>
       )}
     </span>
   );
