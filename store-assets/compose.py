@@ -38,7 +38,6 @@ DECK = [
     ("06-token-info",   None, "Live prices\nfor every token",                              "navy",  None),
     # About is the most dispensable frame: version and links, not the product
     # in use, which is what Play asks the captures to show. App Store only.
-    ("07-about",        None, "If you can\u2019t verify it,\nyou don\u2019t own it.",     "coral", ("app-store",)),
 ]
 
 CWS_DECK = [

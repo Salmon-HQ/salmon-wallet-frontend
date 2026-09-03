@@ -12,6 +12,15 @@ appId: io.salmonwallet.app
     id: 'wallet-header-account-switcher'
 - tapOn:
     id: 'wallet-header-settings-button'
+# On iOS the overlay's gear can also catch this very tap and open the dev
+# menu instead of Settings; close it and tap once more.
+- runFlow:
+    when:
+      visible: 'Fast refresh'
+    commands:
+      - tapOn: 'Close'
+      - tapOn:
+          id: 'wallet-header-settings-button'
 - extendedWaitUntil:
     visible:
       id: 'settings-screen'

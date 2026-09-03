@@ -6,18 +6,34 @@ appId: io.salmonwallet.app
     id: 'select-recover-button'
 - tapOn:
     id: 'select-recover-button'
-# The phrase is typed one word per box now. Typing the whole phrase into the
-# first box is a paste as far as the grid is concerned: it splits on
-# whitespace and fills every box at once.
 - extendedWaitUntil:
     visible:
       id: 'recover-word-input-1'
     timeout: 30000
-- tapOn:
-    id: 'recover-word-input-1'
-- inputText: ${SALMON_TEST_SEED_A}
-# Dismiss keyboard by tapping the title.
-- tapOn: 'Recover Existing Account'
+# iOS: the simulator keyboard drops characters when the grid splits the typed
+# phrase across boxes and moves focus mid-word, so the phrase goes through the
+# app's own paste button — run.sh puts the seed on the simulator pasteboard.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'recover-paste-button'
+      # iOS asks before an app reads the pasteboard; a fresh install always does.
+      - tapOn:
+          text: 'Allow Paste'
+          optional: true
+# Android: typing the whole phrase into the first box is a paste as far as the
+# grid is concerned — it splits on whitespace and fills every box at once.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: 'recover-word-input-1'
+      - inputText: ${SALMON_TEST_SEED_A}
+      # Dismiss keyboard by tapping the title.
+      - tapOn: 'Recover Existing Account'
 - extendedWaitUntil:
     visible:
       id: 'recover-next-button'

@@ -7,11 +7,21 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 | Store | What goes here | Required | Status |
 |---|---|---|---|
 | `play/` | `feature-graphic.png` 1024×500 (required), `icon-512.png` 512×512 32-bit with alpha (required), `phone/` 2–8 screenshots 9:16 (1080×1920 ✓), `listing.txt` copy | yes | **complete** — 6 frames on the redesign (2026-09-03, dark mode, Pixel 9 Pro emulator via `flows/store/capture.yaml`); no swap frame |
-| `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **STALE** — the 9 frames are the previous design (incl. two swap frames); re-capture needs the iOS dev build installed on a simulator (`pnpm --filter mobile ios`), then `run.sh --device <udid> -e OUT=… flows/store/capture.yaml` and `compose.py app-store` |
+| `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **complete** — 6 frames 1320×2868 (Home, Send amount, Activity, NFTs, NFT detail, Token detail) from the iPhone 16 simulator (2026-09-03, redesign, no swap, no About): `run.sh --device <udid> -e OUT=… flows/store/capture.yaml` then `compose.py app-store`; the dev-client gear is hidden before capturing (see below) |
 | `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots from the extension side panel (400×800 captures via `apps/extension/.playwright/scripts/store-shots.mjs`), composed by `compose.py chrome-web-store` |
 | `amo/screenshots/` | 1280×800 recommended (1.6:1) | recommended | empty — can reuse the CWS captures, but prefer un-captioned crops: AMO advises against text on the image |
 | `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px, 9:16 or 16:9 | no, but see below | **missing** — never captured |
-| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/` (7, redesign), `ios-staged/` (9, previous design — stale), `extension-staged/` (side panel 400×800) |
+| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/` (7, redesign), `ios-staged/` (6, redesign), `extension-staged/` (side panel 400×800) |
+
+## iOS captures: the dev-client gear (2026-09-03)
+
+The simulator shots come from the Expo dev client, whose floating gear sits
+bottom-right (and over the header on the auth screens). It is not part of the
+app; Apple will reject a screenshot that shows it. Before submission either
+crop/paint it out in `compose.py` or capture from a release build
+(`expo run:ios --configuration Release`), which has no overlay. Same gear made
+the Settings header untappable through Maestro on iOS; `open-settings.yaml`
+closes the dev menu and retries.
 
 ## Staging (2026-09-03)
 

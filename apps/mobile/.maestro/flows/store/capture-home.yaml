@@ -1,0 +1,7 @@
+appId: io.salmonwallet.app
+---
+# Store shots from a wallet the owner already logged into: no clearState, no
+# onboarding, the app is brought to the front as it is.
+- launchApp:
+    stopApp: false
+- runFlow: capture-shots.yaml
