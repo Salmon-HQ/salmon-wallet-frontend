@@ -64,6 +64,7 @@ export { createNftTransferTransaction, type TransferNftParams } from './nft-tran
 export {
   // DI adapters (transfer)
   fetchUtxos,
+  fetchTransactionHex,
   broadcastTransaction,
   // DI adapters (account)
   fetchBitcoinAccountBalance,

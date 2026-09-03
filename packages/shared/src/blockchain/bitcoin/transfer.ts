@@ -22,6 +22,7 @@ import type {
   BroadcastResult,
   SigningKeyPair,
   FetchUtxosFn,
+  FetchTransactionHexFn,
   BroadcastTransactionFn,
 } from '../../types/transfer';
 
@@ -114,13 +115,27 @@ export async function getUtxos(
 async function resolveInputs(
   network: BitcoinNetwork,
   sourceAddress: string,
-  fetchUtxos: FetchUtxosFn
+  fetchUtxos: FetchUtxosFn,
+  fetchTransactionHex?: FetchTransactionHexFn
 ): Promise<ResolvedInputs> {
   const utxos = await getUtxos(network, sourceAddress, fetchUtxos);
 
-  const totalAmountAvailable = utxos.reduce((total, utxo) => total + utxo.satoshis, 0);
+  // Every input this wallet spends is P2PKH, so each one has to carry the
+  // whole transaction it spends. The UTXO listing does not include it, so it
+  // is read here — once per input, in parallel — and only for the ones that
+  // arrived without it, so a provider that ever starts sending `rawTx` costs
+  // nothing.
+  const inputs = fetchTransactionHex
+    ? await Promise.all(
+        utxos.map(async (utxo) =>
+          utxo.rawTx ? utxo : { ...utxo, rawTx: await fetchTransactionHex(network.id, utxo.txid) }
+        )
+      )
+    : utxos;
 
-  return { inputs: utxos, totalAmountAvailable };
+  const totalAmountAvailable = inputs.reduce((total, utxo) => total + utxo.satoshis, 0);
+
+  return { inputs, totalAmountAvailable };
 }
 
 // ============================================================================
@@ -254,13 +269,19 @@ export async function createTransferTransaction(
   keyPair: SigningKeyPair,
   receiverAddress: string,
   amountBtc: number,
-  fetchUtxos: FetchUtxosFn = () => Promise.resolve([])
+  fetchUtxos: FetchUtxosFn = () => Promise.resolve([]),
+  fetchTransactionHex?: FetchTransactionHexFn
 ): Promise<TransferTransactionResult> {
   const sourceAddress = keyPair.address;
   const satoshiToSend = Math.round(amountBtc * SATOSHIS_PER_BTC);
 
   // Fetch UTXOs and calculate available balance
-  const { inputs, totalAmountAvailable } = await resolveInputs(network, sourceAddress, fetchUtxos);
+  const { inputs, totalAmountAvailable } = await resolveInputs(
+    network,
+    sourceAddress,
+    fetchUtxos,
+    fetchTransactionHex
+  );
 
   // Estimate fee (2 outputs: receiver + change)
   const outputCount = 2;
@@ -386,14 +407,16 @@ export async function sendBitcoin(
   amountBtc: number,
   fetchUtxos: FetchUtxosFn = () => Promise.resolve([]),
   broadcast: BroadcastTransactionFn = () =>
-    Promise.resolve({ success: false, error: 'No broadcast function provided' })
+    Promise.resolve({ success: false, error: 'No broadcast function provided' }),
+  fetchTransactionHex?: FetchTransactionHexFn
 ): Promise<BroadcastResult> {
   const { txId, serializedTx } = await createTransferTransaction(
     network,
     keyPair,
     receiverAddress,
     amountBtc,
-    fetchUtxos
+    fetchUtxos,
+    fetchTransactionHex
   );
 
   const result = await confirmTransferTransaction(

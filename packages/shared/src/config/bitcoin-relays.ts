@@ -27,3 +27,14 @@ export function getBitcoinBroadcastRelays(networkId: string): readonly string[] 
     ? BITCOIN_BROADCAST_RELAYS.testnet
     : BITCOIN_BROADCAST_RELAYS.mainnet;
 }
+
+/**
+ * The same relays, as the base a transaction lookup hangs off.
+ *
+ * Both serve `GET {base}/{txid}/hex` beside the `POST {base}` they take a
+ * broadcast on, so one constant answers both needs and the two can never
+ * drift to different hosts.
+ */
+export function getBitcoinTxHexUrls(networkId: string, txid: string): string[] {
+  return getBitcoinBroadcastRelays(networkId).map((relay) => `${relay}/${txid}/hex`);
+}
