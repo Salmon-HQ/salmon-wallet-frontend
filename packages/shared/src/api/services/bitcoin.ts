@@ -17,13 +17,14 @@ import type {
   BitcoinAccountApiFunctions,
   BitcoinBalanceItem,
   BroadcastTransactionFn,
+  FetchTransactionHexFn,
   FetchBitcoinBalanceFn,
   FetchBitcoinRecentTransactionsFn,
   FetchUtxosFn,
   TransactionPaging,
   UTXO,
 } from '../../types/transfer';
-import { getBitcoinBroadcastRelays } from '../../config/bitcoin-relays';
+import { getBitcoinBroadcastRelays, getBitcoinTxHexUrls } from '../../config/bitcoin-relays';
 import { removeDecimals } from '../../utils/decimals';
 import { ApiError, apiClient, get } from '../client';
 
@@ -56,10 +57,49 @@ const TXID_PATTERN = /^[0-9a-f]{64}$/i;
  */
 export const BROADCAST_OUTCOME_UNKNOWN = 'BROADCAST_OUTCOME_UNKNOWN';
 
+/** Error code for an input whose previous transaction no relay would give us. */
+export const TX_HEX_UNAVAILABLE = 'TX_HEX_UNAVAILABLE';
+
+const TX_HEX_UNAVAILABLE_MESSAGE = 'transaction.errors.inputUnavailable';
+
 /** i18n key the send flow renders for an unknown outcome. */
 const OUTCOME_UNKNOWN_MESSAGE = 'transaction.errors.broadcastUnknown';
 
 const outcomeUnknown = () => new ApiError(OUTCOME_UNKNOWN_MESSAGE, 0, BROADCAST_OUTCOME_UNKNOWN);
+
+const TX_HEX_PATTERN = /^[0-9a-fA-F]+$/;
+
+/**
+ * Reads a previous transaction's raw hex from the public relays.
+ *
+ * A P2PKH input has to carry the whole transaction it spends, and the UTXO
+ * listing cannot supply it: the backend's provider does not expose raw hex on
+ * this plan, so `rawTx` never arrives and every Bitcoin send died at
+ * "missing rawTx" before it could be signed. It is read here instead, from the
+ * same relays the signed transaction goes out to — which keeps the whole
+ * Bitcoin send off our backend rather than putting a second dependency on it.
+ *
+ * The relays are tried in order. A body that is not hex is treated as a miss,
+ * because an error page is a 200 on some proxies.
+ */
+export const fetchTransactionHex: FetchTransactionHexFn = async (networkId, txid) => {
+  for (const url of getBitcoinTxHexUrls(networkId, txid)) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), BROADCAST_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) continue;
+      const body = (await response.text()).trim();
+      if (TX_HEX_PATTERN.test(body) && body.length > 0) return body;
+    } catch {
+      // Unreachable relay: fall through to the next one.
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw new ApiError(TX_HEX_UNAVAILABLE_MESSAGE, 0, TX_HEX_UNAVAILABLE);
+};
 
 /**
  * POSTs the raw hex to one relay.
@@ -191,5 +231,6 @@ export const bitcoinApiFunctions: BitcoinAccountApiFunctions = {
   fetchBalance: fetchBitcoinAccountBalance,
   fetchRecentTransactions: fetchBitcoinAccountRecentTransactions,
   fetchUtxos,
+  fetchTransactionHex,
   broadcastTransaction,
 };

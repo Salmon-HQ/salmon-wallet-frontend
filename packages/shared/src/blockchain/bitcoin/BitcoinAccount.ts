@@ -15,6 +15,7 @@ import type {
   FetchBitcoinRecentTransactionsFn,
   FetchUtxosFn,
   BroadcastTransactionFn,
+  FetchTransactionHexFn,
 } from '../../types/transfer';
 
 /**
@@ -61,6 +62,8 @@ export interface BitcoinAccountOptions {
   fetchUtxos: FetchUtxosFn;
   /** Function to broadcast signed transactions */
   broadcastTransaction: BroadcastTransactionFn;
+  /** Function to read a previous transaction's raw hex, for P2PKH inputs */
+  fetchTransactionHex: FetchTransactionHexFn;
 }
 
 // Re-export for backwards compatibility
@@ -107,6 +110,7 @@ export class BitcoinAccount {
   private readonly fetchRecentTransactionsFn: FetchBitcoinRecentTransactionsFn;
   private readonly fetchUtxosFn: FetchUtxosFn;
   private readonly broadcastTransactionFn: BroadcastTransactionFn;
+  private readonly fetchTransactionHexFn: FetchTransactionHexFn;
 
   /**
    * Creates a new BitcoinAccount instance
@@ -124,6 +128,7 @@ export class BitcoinAccount {
     this.fetchRecentTransactionsFn = options.fetchRecentTransactions;
     this.fetchUtxosFn = options.fetchUtxos;
     this.broadcastTransactionFn = options.broadcastTransaction;
+    this.fetchTransactionHexFn = options.fetchTransactionHex;
   }
 
   /**
@@ -432,7 +437,8 @@ export class BitcoinAccount {
       to,
       amount,
       () => this.getUtxos(),
-      (_networkId, _address, serializedTx) => this.broadcast(serializedTx)
+      (_networkId, _address, serializedTx) => this.broadcast(serializedTx),
+      this.fetchTransactionHexFn
     );
 
     if (!result.success) {

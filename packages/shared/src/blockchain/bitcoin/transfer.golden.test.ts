@@ -190,3 +190,63 @@ describe('sendBitcoin broadcast seam', () => {
     expect(result).toEqual({ txId: 'api-tx-id', success: true });
   });
 });
+
+/**
+ * The gap this suite had, and the bug it hid.
+ *
+ * Every case above hands `buildTransaction` a UTXO that already carries its
+ * `rawTx`, because the fixture builds one. Production never did: the UTXO
+ * listing comes from the backend, whose provider does not expose raw hex, so
+ * `rawTx` was always `undefined` and every real Bitcoin send died at
+ * "missing rawTx" before it could be signed — in every build ever shipped.
+ * The suite was green throughout.
+ *
+ * So the case is stated the way production sees it: UTXOs *without* the hex,
+ * and the adapter that reads it from the public relays. If the wiring is ever
+ * dropped again, this fails where the fixture cannot paper over it.
+ */
+describe('a UTXO that arrives without its raw hex', () => {
+  it('reads it through the adapter, and signs', async () => {
+    const keyPair = await testSigningKeyPair();
+    const withHex = await fundedUtxos();
+    // What the backend actually returns: no `rawTx`.
+    const asBackendSendsThem = withHex.map(({ rawTx: _dropped, ...utxo }) => utxo);
+    const byTxid = new Map(withHex.map((utxo) => [utxo.txid, utxo.rawTx as string]));
+
+    const fetchTransactionHex = vi.fn(async (_networkId: string, txid: string) => {
+      const hex = byTxid.get(txid);
+      if (!hex) throw new Error(`no fixture for ${txid}`);
+      return hex;
+    });
+
+    const { serializedTx, txId } = await createTransferTransaction(
+      NETWORK,
+      keyPair,
+      RECEIVER_ADDRESS,
+      0.0005,
+      async () => asBackendSendsThem,
+      fetchTransactionHex
+    );
+
+    expect(txId).toMatch(/^[0-9a-f]{64}$/);
+    expect(serializedTx).toMatch(/^[0-9a-f]+$/);
+    // One lookup per input, and the network id is carried through.
+    expect(fetchTransactionHex).toHaveBeenCalledTimes(asBackendSendsThem.length);
+    expect(fetchTransactionHex).toHaveBeenCalledWith(NETWORK.id, asBackendSendsThem[0].txid);
+  });
+
+  it('still throws when no adapter is wired — the input cannot be built blind', async () => {
+    const keyPair = await testSigningKeyPair();
+    const asBackendSendsThem = (await fundedUtxos()).map(({ rawTx: _d, ...utxo }) => utxo);
+
+    await expect(
+      createTransferTransaction(
+        NETWORK,
+        keyPair,
+        RECEIVER_ADDRESS,
+        0.0005,
+        async () => asBackendSendsThem
+      )
+    ).rejects.toThrow(/missing rawTx/);
+  });
+});

@@ -44,6 +44,7 @@ const mockApiFunctions: BitcoinAccountApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
   fetchRecentTransactions: vi.fn().mockResolvedValue({ items: [] }),
   fetchUtxos: vi.fn().mockResolvedValue([]),
+  fetchTransactionHex: vi.fn(),
   broadcastTransaction: vi.fn().mockResolvedValue({ success: true }),
 };
 

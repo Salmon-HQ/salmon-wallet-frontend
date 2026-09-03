@@ -74,6 +74,17 @@ export interface SigningKeyPair {
 
 export type FetchUtxosFn = (networkId: string, address: string) => Promise<UTXO[]>;
 
+/**
+ * Fetches a previous transaction's raw hex.
+ *
+ * A P2PKH input must carry the whole transaction it spends (`nonWitnessUtxo`),
+ * and the UTXO listing does not include it — the backend's provider does not
+ * expose raw hex on this plan. It is read from the same public relays the
+ * signed transaction is broadcast to, so no part of a Bitcoin send depends on
+ * our backend.
+ */
+export type FetchTransactionHexFn = (networkId: string, txid: string) => Promise<string>;
+
 export type BroadcastTransactionFn = (
   networkId: string,
   address: string,
@@ -207,6 +218,7 @@ export interface BitcoinAccountApiFunctions {
   fetchBalance: FetchBitcoinBalanceFn;
   fetchRecentTransactions: FetchBitcoinRecentTransactionsFn;
   fetchUtxos: FetchUtxosFn;
+  fetchTransactionHex: FetchTransactionHexFn;
   broadcastTransaction: BroadcastTransactionFn;
 }
 

@@ -723,6 +723,7 @@
       "insufficientFunds": "Saldo insuficiente para esta transacción.",
       "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",
       "broadcastUnknown": "No pudimos confirmar el envío a la red. Es posible que tu transacción ya esté en camino — revisá tu actividad antes de volver a enviar.",
+      "inputUnavailable": "No pudimos leer uno de tus fondos de Bitcoin en este momento. No se envió nada — probá de nuevo en un rato.",
       "quoteExpired": "La cotización cambió antes de ejecutarse. Revisá y confirmá de nuevo.",
       "slippage": "El precio se movió más allá de tu tolerancia de slippage. Volvé a intentarlo o ajustá el monto.",
       "noRoute": "No hay ninguna ruta disponible para este par en este momento. Probá con otro monto u otro token.",
