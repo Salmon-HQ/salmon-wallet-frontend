@@ -149,16 +149,3 @@ export function formatRelativeTimeCompact(
   }
   return format(date, 'MMM d, yyyy');
 }
-
-/**
- * Format an ISO date string to readable format (e.g., "Jan 15, 2024")
- */
-export function formatDateString(dateString: string | undefined): string {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy');
-  } catch {
-    return '-';
-  }
-}

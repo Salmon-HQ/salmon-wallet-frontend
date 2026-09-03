@@ -30,12 +30,15 @@ vi.mock('../client', () => {
 });
 
 // Now import the functions AFTER mocking
-import { normalizeBackendTokens, getTokenList, searchTokens, clearTokenListCache } from './tokens';
+import { normalizeBackendTokens } from './tokens';
+import type { getTokenList as getTokenListType, searchTokens as searchTokensType } from './tokens';
 import { normalizeIpfsUrl } from '../../utils/url';
-import { apiClient } from '../client';
+import type { apiClient as apiClientType } from '../client';
 
-// Get access to the mocked function
-const mockApiClientGet = vi.mocked(apiClient.get);
+let apiClient: typeof apiClientType;
+let getTokenList: typeof getTokenListType;
+let searchTokens: typeof searchTokensType;
+let mockApiClientGet: ReturnType<typeof vi.mocked<typeof apiClientType.get>>;
 
 // ============================================================================
 // Test Data
@@ -281,10 +284,14 @@ describe('Token Service - Pure Functions', () => {
   // ==========================================================================
 
   describe('Async Service Functions', () => {
-    beforeEach(() => {
-      // Clear cache and all mocks before each test
-      clearTokenListCache();
+    beforeEach(async () => {
+      // Fresh module instances before each test so the in-memory token list
+      // cache starts empty — resetModules re-evaluates the SmartCache instance.
       vi.clearAllMocks();
+      vi.resetModules();
+      ({ apiClient } = await import('../client'));
+      ({ getTokenList, searchTokens } = await import('./tokens'));
+      mockApiClientGet = vi.mocked(apiClient.get);
     });
 
     // ========================================================================
@@ -443,16 +450,6 @@ describe('Token Service - Pure Functions', () => {
     // Cache Management Tests
     // ========================================================================
     describe('Cache Management', () => {
-      it('clearTokenListCache forces the next call to refetch from the backend', async () => {
-        mockApiClientGet.mockResolvedValue({ data: mockBackendTokens });
-
-        await getTokenList('solana-mainnet');
-        clearTokenListCache();
-        await getTokenList('solana-mainnet');
-
-        expect(mockApiClientGet).toHaveBeenCalledTimes(2);
-      });
-
       it('should cache results for 5 minutes', async () => {
         mockApiClientGet.mockResolvedValueOnce({ data: mockBackendTokens });
 

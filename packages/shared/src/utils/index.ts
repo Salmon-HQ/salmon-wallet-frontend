@@ -8,13 +8,11 @@ export {
   buildTransactionFromEncodedMessage,
   decodeDAppMessage,
   getDAppTransactionRequestSummary,
-  isSecureOrigin,
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
   previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
-  serializeSignedTransactionsFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
 export type { SolanaTransactionApprovalDetails } from './dapp-approval';
@@ -48,7 +46,6 @@ export {
   toStoredSecret,
   buildSecretVault,
   getAccountMnemonic,
-  isImportedAccount,
   isWatchOnlyAccount,
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
@@ -70,7 +67,6 @@ export {
   AVATAR_BASE_URL,
   PRESET_AVATAR_COUNT,
   PRESET_AVATAR_URLS,
-  isPresetAvatar,
 } from './avatar';
 
 // Address utilities
@@ -138,7 +134,6 @@ export {
   formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
-  formatUsdValue,
   formatPercentChange,
   // Price impact
   type PriceImpactSeverity,
@@ -194,7 +189,6 @@ export {
   createERC1155Token,
   // Feature badge colors
   DEFAULT_FEATURE_COLORS,
-  getFeatureColor,
 } from './tokens';
 
 // Currency formatting utilities
@@ -217,7 +211,6 @@ export {
   formatDateTime,
   formatBlockNumber,
   formatRelativeTimeCompact,
-  formatDateString,
 } from './date';
 
 // Balance decoration & calculation utilities
@@ -243,7 +236,6 @@ export { isReactNative, isWebEnvironment, isExtension } from './platform';
 
 // Network utilities
 export {
-  MAINNET_NETWORK_IDS,
   MAINNET_NETWORK_ID,
   MIRROR_NETWORK_IDS,
   sortNetworks,
@@ -259,7 +251,7 @@ export type { VisibleNetworkIdsParams } from './network';
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
 
 // Swap utilities
-export { isSameChain, mapToSwapToken, unifiedToSwapToken } from './swap';
+export { mapToSwapToken, unifiedToSwapToken } from './swap';
 
 // Transaction transform utilities
 export {
@@ -276,17 +268,11 @@ export {
   isImageContent,
   isSvgImage,
   isAnimatedImage,
-  getNftImageType,
-  bitcoinOrdinalToNftData,
   solanaNftToNftData,
   canonicalNftToSolanaNftData,
   isSolanaNft,
   isBitcoinNft,
-  getNftBlockchainLabel,
   getSatRarityColor,
-  getNftSectionTitle,
-  SECTION_TO_NETWORK,
-  INITIAL_NFT_SECTIONS,
 } from './nft';
 
 // Unlock throttling (failed-password backoff)
@@ -327,7 +313,6 @@ export {
   getScanNetworksWithMirrors,
   ensureMirrorNetworks,
   formatDerivedAccountBalance,
-  getMirrorNetworkId,
   scanDerivedAccounts,
 } from './derived-accounts';
 export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';

@@ -1,4 +1,4 @@
-import type { BitcoinOrdinal, NftAttribute, Nft } from '../types/nft';
+import type { NftAttribute, Nft } from '../types/nft';
 
 export type { NftAttribute };
 
@@ -117,57 +117,6 @@ export function isAnimatedImage(url: string | undefined): boolean {
 }
 
 /**
- * Determine the image type for an NFT.
- * For Bitcoin ordinals, uses the contentType field.
- * For other chains, infers from the URL.
- */
-export function getNftImageType(nft: NftData): 'svg' | 'gif' | 'static' | null {
-  if (!nft.image) return null;
-
-  // Bitcoin ordinals carry an explicit contentType
-  if (nft.blockchain === 'bitcoin' && 'contentType' in nft) {
-    const ct = (nft as BitcoinNftData).contentType.toLowerCase();
-    if (ct === 'image/svg+xml') return 'svg';
-    if (ct === 'image/gif') return 'gif';
-    if (isImageContent(ct)) return 'static';
-    return null;
-  }
-
-  if (isSvgImage(nft.image)) return 'svg';
-  if (isAnimatedImage(nft.image)) return 'gif';
-  return 'static';
-}
-
-/**
- * Convert Bitcoin Ordinal to NftData format for UI components
- * Includes all Bitcoin-specific fields
- *
- * @param ordinal - Bitcoin Ordinal from API
- * @returns BitcoinNftData for UI components
- */
-export function bitcoinOrdinalToNftData(ordinal: BitcoinOrdinal): BitcoinNftData {
-  return {
-    blockchain: 'bitcoin',
-    // Use inscription ID as unique identifier
-    mint: ordinal.inscriptionId,
-    name: ordinal.name,
-    image: ordinal.media,
-    description: ordinal.description,
-    collectionName: ordinal.collection?.name,
-    attributes: ordinal.extras?.attributes as NftAttribute[],
-    blacklisted: ordinal.blacklisted ?? false,
-    // Bitcoin-specific fields
-    inscriptionId: ordinal.inscriptionId,
-    inscriptionNumber: ordinal.inscriptionNumber,
-    contentType: ordinal.contentType,
-    satRarity: ordinal.satRarity,
-    sat: ordinal.extras?.sat,
-    genesisTransaction: ordinal.extras?.genesisTransaction,
-    genesisHeight: ordinal.extras?.genesisHeight,
-  };
-}
-
-/**
  * Solana NFT structure from Helius DAS API (internal format)
  */
 export interface SolanaNftFromHelius {
@@ -270,20 +219,6 @@ export function isBitcoinNft(nft: NftData): nft is BitcoinNftData {
 }
 
 /**
- * Get display label for NFT blockchain
- */
-export function getNftBlockchainLabel(nft: NftData): string {
-  switch (nft.blockchain) {
-    case 'solana':
-      return 'Solana';
-    case 'bitcoin':
-      return 'Bitcoin Ordinal';
-    default:
-      return 'Unknown';
-  }
-}
-
-/**
  * Get rarity display color for Bitcoin ordinals
  */
 export function getSatRarityColor(rarity?: string): string {
@@ -329,37 +264,3 @@ export interface NftSection {
  * All NFT sections grouped by section key.
  */
 export type NftsBySection = Record<NftSectionKey, NftSection>;
-
-/**
- * Maps each section key to its network account key in networksAccounts.
- */
-export const SECTION_TO_NETWORK: Record<NftSectionKey, string> = {
-  solana: 'solana-mainnet',
-  'solana-devnet': 'solana-devnet',
-};
-
-/**
- * Initial empty sections state.
- */
-export const INITIAL_NFT_SECTIONS: NftsBySection = {
-  solana: { nfts: [], loading: true, blockchain: 'solana', isTestnet: false },
-  'solana-devnet': {
-    nfts: [],
-    loading: false,
-    blockchain: 'solana',
-    networkLabel: 'Devnet',
-    isTestnet: true,
-  },
-};
-
-/**
- * Get display title for an NFT section.
- */
-export function getNftSectionTitle(_sectionKey: NftSectionKey, section: NftSection): string {
-  const baseNames: Record<NftBlockchain, string> = {
-    solana: 'Solana',
-    bitcoin: 'Bitcoin Ordinals',
-  };
-  const baseName = baseNames[section.blockchain];
-  return section.networkLabel ? `${baseName} ${section.networkLabel}` : baseName;
-}

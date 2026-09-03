@@ -695,38 +695,6 @@ export function formatBalance(amount: number, decimals: number = 4): string {
 }
 
 /**
- * Format USD value for display
- *
- * @deprecated Use `formatFiatValue` from `currencyFormatting` for multi-currency support.
- *
- * @param amount - USD amount
- * @returns Formatted USD string
- */
-export function formatUsdValue(amount: number | undefined): string {
-  if (amount === undefined || amount === null) {
-    return '-';
-  }
-
-  if (amount === 0) {
-    return '$0.00';
-  }
-
-  if (amount < 0.01) {
-    return '<$0.01';
-  }
-
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(2)}M`;
-  }
-
-  if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(2)}K`;
-  }
-
-  return `$${amount.toFixed(2)}`;
-}
-
-/**
  * The percentage renderer for a value with no direction — a fee, a slippage
  * tolerance, a price impact. Same digits as `formatPercentage`, without the
  * sign: prefixing a fee with `+` would read it as a gain.

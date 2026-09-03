@@ -1,6 +1,5 @@
 import type { DetectedERC20Token } from '../api/services/ethereum';
 import type { TokenSelectorToken } from '../types/ui/token-selector';
-import type { TokenFeature } from '../types/ui';
 import { SOL_CONSTANTS } from './balance';
 
 // ============================================================================
@@ -301,12 +300,3 @@ export const DEFAULT_FEATURE_COLORS = [
   '#3B82F6',
   '#EC4899',
 ];
-
-/**
- * Returns the color for a token feature badge.
- * Uses the feature's own color if set, otherwise cycles through defaults.
- */
-export function getFeatureColor(feature: TokenFeature, index: number): string {
-  if (feature.color) return feature.color;
-  return DEFAULT_FEATURE_COLORS[index % DEFAULT_FEATURE_COLORS.length];
-}

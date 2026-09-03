@@ -34,7 +34,7 @@ export {
 // Exchange Rates Service
 // ============================================================================
 
-export { getExchangeRates, clearExchangeRateCache } from './exchangeRates';
+export { getExchangeRates } from './exchangeRates';
 
 // ============================================================================
 // Token Service
@@ -44,7 +44,6 @@ export {
   // Functions
   getTokenList,
   searchTokens,
-  clearTokenListCache,
 } from './tokens';
 
 // ============================================================================
@@ -146,5 +145,4 @@ export {
   getNetwork,
   getEnabledNetworkIds,
   isBackendNetworkEnabled,
-  clearNetworksCache,
 } from './network';

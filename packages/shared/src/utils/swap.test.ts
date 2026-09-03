@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TokenMetadata, UnifiedToken } from '../types/token';
-import { isSameChain, mapToSwapToken, unifiedToSwapToken } from './swap';
-
-const SOL_TOKEN: UnifiedToken = {
-  address: 'So11111111111111111111111111111111111111112',
-  symbol: 'SOL',
-  name: 'Solana',
-  decimals: 9,
-  logo: 'https://example.com/sol.png',
-  balance: 3.5,
-  usdPrice: 150,
-  chain: 'solana',
-  networkId: 'solana-mainnet',
-};
+import { mapToSwapToken, unifiedToSwapToken } from './swap';
 
 const ETH_TOKEN: UnifiedToken = {
   address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -36,13 +24,6 @@ const USDC_METADATA: TokenMetadata = {
 };
 
 describe('swap utils', () => {
-  describe('chain helpers', () => {
-    it('detects whether tokens belong to the same chain', () => {
-      expect(isSameChain(SOL_TOKEN, { ...SOL_TOKEN, symbol: 'JUP' })).toBe(true);
-      expect(isSameChain(SOL_TOKEN, ETH_TOKEN)).toBe(false);
-    });
-  });
-
   describe('token mapping', () => {
     it('maps token metadata to a Solana swap token with sensible defaults', () => {
       expect(mapToSwapToken(USDC_METADATA)).toEqual({

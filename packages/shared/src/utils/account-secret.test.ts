@@ -5,7 +5,6 @@ import {
   toStoredSecret,
   buildSecretVault,
   getAccountMnemonic,
-  isImportedAccount,
 } from './account-secret';
 import type { Account, AccountSecret } from '../types/account';
 
@@ -70,13 +69,11 @@ describe('account secret vault serialization', () => {
     // Null, not '': backup surfaces must decide what to show instead of
     // rendering a blank seed phrase.
     expect(getAccountMnemonic(imported)).toBeNull();
-    expect(isImportedAccount(imported)).toBe(true);
   });
 
   it('reports the mnemonic for a seed account', () => {
     const seeded = makeAccount('a', { kind: 'mnemonic', mnemonic: MNEMONIC });
 
     expect(getAccountMnemonic(seeded)).toBe(MNEMONIC);
-    expect(isImportedAccount(seeded)).toBe(false);
   });
 });

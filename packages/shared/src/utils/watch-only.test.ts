@@ -5,7 +5,6 @@ import {
   toStoredSecret,
   buildSecretVault,
   getAccountMnemonic,
-  isImportedAccount,
   isWatchOnlyAccount,
 } from './account-secret';
 import { getActiveSolanaApprovalAccount } from './account';
@@ -78,7 +77,6 @@ describe('watch-only accounts in the secret vault', () => {
   it('has no mnemonic and is not an imported-key account', () => {
     const account = makeAccount('a1', WATCH_ONLY_SECRET, []);
     expect(getAccountMnemonic(account)).toBeNull();
-    expect(isImportedAccount(account)).toBe(false);
     expect(isWatchOnlyAccount(account)).toBe(true);
   });
 });

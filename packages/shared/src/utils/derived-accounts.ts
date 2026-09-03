@@ -162,11 +162,6 @@ export async function getMirrorNetworks(): Promise<Record<string, string>> {
   );
 }
 
-export async function getMirrorNetworkId(networkId: string): Promise<string | undefined> {
-  const mirrors = await getMirrorNetworks();
-  return mirrors[networkId];
-}
-
 /**
  * Every network a freshly created wallet should hold: the mainnets the scan
  * covers plus each of their mirrors.

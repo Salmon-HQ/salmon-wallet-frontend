@@ -9,16 +9,6 @@
 import type { BlockchainType } from '../types/blockchain';
 
 /**
- * Mainnet network IDs for each blockchain.
- * Single source of truth used by useMultiChainTokens and useAvailableNetworks.
- */
-export const MAINNET_NETWORK_IDS: Record<BlockchainType, string[]> = {
-  solana: ['solana-mainnet'],
-  bitcoin: ['bitcoin-mainnet'],
-  ethereum: ['ethereum-mainnet'],
-};
-
-/**
  * Flat record mapping chain to its mainnet network ID.
  * Convenience alias for hooks that need a single ID per chain.
  */

@@ -21,12 +21,7 @@ jest.mock('@salmon/shared', () => ({
   // happens to read is what used to break this suite every time the tab
   // reached for one more.
   ...jest.requireActual('../test-utils/themeTokens'),
-  SECTION_TO_NETWORK: {
-    solana: 'solana-mainnet',
-    'solana-devnet': 'solana-devnet',
-  },
   canonicalNftToSolanaNftData: (nft: unknown) => nft,
-  getNftSectionTitle: (key: string) => (key === 'solana' ? 'Solana' : 'Solana Devnet'),
   getShortAddress: () => 'Owne...r111',
   useAccountsContext: () => mockUseAccountsContext(),
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),

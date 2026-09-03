@@ -148,10 +148,3 @@ export async function searchTokens(
     return [];
   }
 }
-
-/**
- * Clear the in-memory token list cache.
- */
-export function clearTokenListCache(): void {
-  tokenListCache.clear();
-}

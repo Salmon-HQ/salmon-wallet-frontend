@@ -10,13 +10,6 @@ import type { TokenMetadata, UnifiedToken } from '../types/token';
 import type { SwapToken, SwapChainType } from '../types/swap';
 
 /**
- * Determines if two tokens are on the same chain.
- */
-export function isSameChain(tokenA: UnifiedToken, tokenB: UnifiedToken): boolean {
-  return tokenA.chain === tokenB.chain;
-}
-
-/**
  * Converts a TokenMetadata to a SwapToken.
  * Defaults to solana-mainnet since search results are Solana tokens.
  */

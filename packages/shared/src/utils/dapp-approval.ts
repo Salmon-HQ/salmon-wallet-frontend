@@ -118,17 +118,6 @@ function toHex(bytes: Uint8Array): string {
     .join('')}`;
 }
 
-export function isSecureOrigin(origin: string): boolean {
-  try {
-    const url = new URL(origin);
-    return (
-      url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-    );
-  } catch {
-    return false;
-  }
-}
-
 export function decodeDAppMessage(data: number[]): DecodedDAppMessage {
   const bytes = Uint8Array.from(data);
   try {
@@ -514,19 +503,5 @@ export function serializeSignedTransactionFromApproval(
       messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
       signatures,
     })
-  );
-}
-
-export function serializeSignedTransactionsFromApproval(
-  encodedMessages: string[],
-  publicKey: string,
-  signatures: string[]
-): Uint8Array[] {
-  if (encodedMessages.length !== signatures.length) {
-    throw new Error('Mismatched messages and signatures');
-  }
-
-  return encodedMessages.map((encodedMessage, index) =>
-    serializeSignedTransactionFromApproval(encodedMessage, publicKey, signatures[index])
   );
 }
