@@ -304,7 +304,7 @@ export function resolveMotionDuration(cssDuration: string, isReduceMotionEnabled
  * Legacy CSS duration tokens, re-pointed at the vocabulary above.
  *
  * Every key still works and every value is still a valid CSS duration; they are
- * kept because three apps consume this file. Number-named keys say nothing
+ * kept because both apps consume this file. Number-named keys say nothing
  * about what a duration is for, which is the problem the vocabulary fixes — use
  * the replacement named in each tag.
  *

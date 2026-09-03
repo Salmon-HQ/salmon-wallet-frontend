@@ -7,7 +7,7 @@
  * store artwork.
  *
  * Path data rather than an `.svg` import on purpose — an import would depend on
- * each app configuring an SVG transformer, and the three apps do not agree on
+ * each app configuring an SVG transformer, and the two apps do not agree on
  * one. Strings need no bundler support and cannot drift between platforms.
  *
  * The paths carry no fill. Callers supply the color, which is what makes the

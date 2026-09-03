@@ -114,7 +114,7 @@ export const borderRadius = {
   /** 12px — the control radius. @deprecated use `r3` */
   lg: radiusScale.r3,
   /**
-   * 12px — alias of `r3`, kept because ~15 call sites across three apps import
+   * 12px — alias of `r3`, kept because ~15 call sites across both apps import
    * it by this name. It used to be 14; it was never a distinct step, only the
    * legacy scale's separate value for "button". Pinned by
    * `controlRadius.test.ts`.

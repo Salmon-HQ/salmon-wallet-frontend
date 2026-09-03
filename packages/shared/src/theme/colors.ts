@@ -146,7 +146,7 @@ export const colors = {
  * — channels that survive a colorblind user, a narrow column, and a
  * screenshot, which a background hue does not.
  *
- * The keys are preserved because three apps read them.
+ * The keys are preserved because both apps read them.
  */
 const DEEP_PANE = [neutral[850], neutral[900], neutral[950]] as const;
 const SHALLOW_PANE = [neutral[800], neutral[850], neutral[900]] as const;
@@ -211,7 +211,7 @@ export type Gradients = typeof gradients;
  * Chain tinting is removed: a 6%-opacity pattern cannot be a data channel —
  * it survives neither a colorblind user nor a screenshot, and it was the last
  * place a chain's brand hue leaked into the water. The signature is kept
- * because three apps call it; only what it returns changed.
+ * because both apps call it; only what it returns changed.
  */
 export const getScalesColorForBlockchain = (_blockchain: BlockchainId): string =>
   scales.deepFieldStroke;

@@ -41,8 +41,15 @@ test('walks send entry → token → address-amount and cancels (no on-chain tx)
   await expect(popup.getByTestId('send-shortcuts')).toBeVisible();
 
   // Back out — never reaches the review, let alone the confirm.
-  await popup.getByTestId('send-amount-screen').getByTestId('screen-header-back-button').click();
+  //
+  // The back control is not *inside* the step's testID: `send-amount-screen`
+  // names the scrolling body, and the header is its sibling — on both
+  // platforms (mobile's `send/amount.tsx` puts it on the `ScrollView` too), so
+  // this is the spec's assumption to fix and not the component's placement.
+  // Unscoped is unambiguous here: `SinkFloat` mounts one step at a time, so
+  // exactly one back control exists at rest.
+  await popup.getByTestId('screen-header-back-button').click();
   await expect(popup.getByTestId('send-recipient-screen')).toBeVisible();
-  await popup.getByTestId('send-recipient-screen').getByTestId('screen-header-back-button').click();
+  await popup.getByTestId('screen-header-back-button').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible();
 });

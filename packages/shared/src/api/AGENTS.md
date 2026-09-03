@@ -13,7 +13,7 @@ response assumptions.
 ## Rules
 
 - Centralize backend-facing contracts here when they are consumed by
-  multiple apps — one contract keeps the three apps in sync with the
+  multiple apps — one contract keeps both apps in sync with the
   backend.
 - Keep endpoint wrappers and shared client behavior here instead of
   reimplementing them in apps — app-local copies drift when the backend

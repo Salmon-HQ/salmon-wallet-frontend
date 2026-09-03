@@ -9,7 +9,7 @@ amended to match.
 
 ### I. Ownership boundaries are the architecture
 
-The same business logic powers three apps, so where code lives is the primary
+The same business logic powers both apps, so where code lives is the primary
 design decision, not a filing preference.
 
 - Cross-platform logic, contracts, hooks, blockchain code, storage, config and

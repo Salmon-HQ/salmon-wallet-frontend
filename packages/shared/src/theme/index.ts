@@ -49,7 +49,7 @@ export {
   chainMarks,
 } from './brand';
 
-// The onboarding slot grid — five reserved-height tables, read by all three apps.
+// The onboarding slot grid — five reserved-height tables, read by both apps.
 export {
   onboardingSlots,
   onboardingIdentityGridFull,

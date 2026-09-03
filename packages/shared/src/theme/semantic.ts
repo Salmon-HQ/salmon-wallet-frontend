@@ -365,7 +365,7 @@ export function createSemantic(mode: ThemeMode) {
      * carry the flesh texture (`FleshBackground`, `theme/flesh.ts`), because a
      * filled button is mass rather than surface and because the seigaiha tile is
      * taller than a pill, so it reads as a stamp applied on top. Kept because
-     * `ScalesVariant` is a public export of `@salmon/ui` with three apps behind
+     * `ScalesVariant` is a public export of `@salmon/ui` with both apps behind
      * it; removing it is a contract change that needs a human's sign-off.
      */
     fishStroke: 'rgba(7, 9, 17, 0.10)',
@@ -408,7 +408,7 @@ export function createSemantic(mode: ThemeMode) {
    * property of the space, not of the object.
    *
    * `gradient` runs top to bottom and darkens. Its top stop is the ground the
-   * three apps actually paint today (`colors.background.primary`, `neutral-950`)
+   * both apps actually paint today (`colors.background.primary`, `neutral-950`)
    * rather than the `depth.column` the spec names, so nothing sitting above or
    * beside the ground — a safe-area overlay, a page header, a sheet's backdrop —
    * grows a seam against it. The ramp deepens *from* the shipped ground; moving
@@ -669,7 +669,7 @@ export function createSemantic(mode: ThemeMode) {
 /**
  * The deep-water token set, resolved once at module load.
  *
- * This is the export three apps read as a static object. It is byte-for-byte
+ * This is the export both apps read as a static object. It is byte-for-byte
  * what the hand-written layer shipped before the resolver landed —
  * `semantic.test.ts` asserts that against a frozen snapshot.
  */

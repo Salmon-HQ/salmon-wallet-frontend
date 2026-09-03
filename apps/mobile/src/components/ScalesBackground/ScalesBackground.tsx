@@ -31,7 +31,7 @@ const variantsFor = (
   /**
    * @deprecated No call site remains — the refraction strip was retired into
    * the (now also retired) membrane field. Kept because `ScalesVariant` is a
-   * shared union with three apps behind it.
+   * shared union with both apps behind it.
    */
   refraction: { stroke: '#FFFFFF', scale: t.scales.refractionScale, fade: false },
 });

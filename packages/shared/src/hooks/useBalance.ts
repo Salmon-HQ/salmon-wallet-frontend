@@ -74,7 +74,7 @@ export interface UseBalanceResult {
    * It exists because off mainnet there is no USD figure to report at all
    * (`withoutUsd` below), so the surfaces that print a total have nothing to
    * print. The native unit is the honest answer there, and deriving it here
-   * means the three apps read one implementation of "which item is native"
+   * means both apps read one implementation of "which item is native"
    * instead of each re-deriving it from the mint.
    */
   nativeAmount: number | undefined;

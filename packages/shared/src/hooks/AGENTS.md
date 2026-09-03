@@ -23,4 +23,4 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this folder.
 ## Testing
 
 - Add or update hook tests when shared behavior, branching, or contracts
-  change — hook regressions surface in all three apps at once.
+  change — hook regressions surface in both apps at once.
