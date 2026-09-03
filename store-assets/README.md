@@ -11,7 +11,7 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 | `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots captured with the Playwright harness at a 1280×800 viewport |
 | `amo/screenshots/` | 1280×800 recommended (1.6:1) | recommended | empty — can reuse the CWS captures, but prefer un-captioned crops: AMO advises against text on the image |
 | `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px, 9:16 or 16:9 | no, but see below | **missing** — never captured |
-| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/`, `ios-staged/`, `web-staged/` |
+| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/`, `ios-staged/`, `web-staged/` (web app retired 2026-09-02 — Chrome Web Store set must be re-captured from the extension side panel; pending) |
 
 ## Tablets: deliberately deferred (2026-08-07)
 

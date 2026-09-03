@@ -1,7 +1,8 @@
 /**
  * Anonymous usage-analytics e2e (extension popup).
  *
- * The extension side of apps/web/.playwright/tests/analytics.spec.ts. Proves the
+ * The web app (and its equivalent analytics spec) was retired on 2026-09-02;
+ * this is now the only analytics e2e suite. Proves the
  * opt-in contract inside the popup:
  *  1. With consent OFF, a tracked action (switching network) emits NO
  *     `/v1/events` request.

@@ -36,15 +36,13 @@ Settings → General → Pull Requests:
 
 ## 3. Deploy environment gate
 
-Today anyone with write access can deploy to production by pushing a
-`web/v*` tag. To require a human approval step:
-
-1. Settings → Environments → New environment: `production`, add yourself as
-   **Required reviewer**.
-2. In `.github/workflows/deploy-web.yml`, add `environment: production` to
-   the deploy job.
-
-Step 2 is a workflow change — do it in a PR when enabling the environment.
+The web wallet and its `deploy-web.yml` (triggered by `web/v*` tags) were
+retired on 2026-09-02, so no workflow deploys to production any more.
+`build-extension.yml` (`extension/v*` tags or dispatch) only produces
+artifacts; a human uploads them to the stores. If a deploying workflow
+returns, gate it: Settings → Environments → New environment `production`
+with yourself as **Required reviewer**, and `environment: production` on the
+deploy job.
 
 ## 4. Advanced Security toggles (one screen, three switches)
 

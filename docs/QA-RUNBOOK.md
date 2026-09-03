@@ -39,8 +39,8 @@ Docker backend, funded test wallets, an iOS simulator).
 **1. PR checks already green** — every merged PR passed
 `typecheck + lint + test + check:i18n` (ci.yml). Nothing to re-run.
 
-**2. E2E workflow** — `.github/workflows/e2e.yml` runs the web and extension
-Playwright suites headless every night and on demand
+**2. E2E workflow** — `.github/workflows/e2e.yml` runs the extension
+Playwright suite headless every night and on demand
 (`gh workflow run e2e.yml`). Check the latest run is green:
 `gh run list --workflow E2E --limit 1`. In CI these suites run **without**
 backend or seeded wallets, so backend/seed-gated specs skip — full depth
@@ -213,8 +213,8 @@ any release that touches copy.
 
 ## Deploy & rollback (summary)
 
-- **Web**: pushed to S3 + CloudFront via the `deploy-web.yml` workflow (OIDC).
-  Rollback = redeploy the previous build; the bucket has versioning on.
+- **Web**: retired 2026-09-02; `v2.salmonwallet.io` keeps serving the last
+  build from its bucket (versioning on), nothing deploys there.
 - **Extension**: `build-extension.yml` (manual `workflow_dispatch`) produces
   chrome/firefox artifacts + a source bundle; no auto-publish.
 - **Mobile**: EAS build (`pnpm build:aab` / `build:apk` from `apps/mobile`) —
