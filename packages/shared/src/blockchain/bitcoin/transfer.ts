@@ -105,6 +105,16 @@ export async function getUtxos(
 }
 
 /**
+ * How many previous-transaction lookups may be in flight at once.
+ *
+ * Four is a compromise, not a measurement: enough that a handful of inputs
+ * resolve in one round trip's time, few enough that a wallet with dozens does
+ * not look like a burst to a public relay. Raise it only with evidence from a
+ * relay that tolerates more.
+ */
+const TX_HEX_CONCURRENCY = 4;
+
+/**
  * Resolves inputs by fetching UTXOs and calculating total available amount.
  *
  * @param network - Bitcoin network configuration
@@ -122,16 +132,26 @@ async function resolveInputs(
 
   // Every input this wallet spends is P2PKH, so each one has to carry the
   // whole transaction it spends. The UTXO listing does not include it, so it
-  // is read here — once per input, in parallel — and only for the ones that
-  // arrived without it, so a provider that ever starts sending `rawTx` costs
-  // nothing.
-  const inputs = fetchTransactionHex
-    ? await Promise.all(
-        utxos.map(async (utxo) =>
+  // is read here — only for the inputs that arrived without it, so a provider
+  // that ever starts sending `rawTx` costs nothing.
+  //
+  // A few at a time, not all at once. A public relay rate-limits, and a wallet
+  // with many small inputs would open one request per input in the same
+  // instant and be told to go away — which is the shape of the 429 the
+  // backend's own provider already hits walking a large UTXO set. Spending a
+  // little wall-clock here is cheaper than a send that dies at the last step.
+  const inputs = fetchTransactionHex ? [] : utxos;
+  if (fetchTransactionHex) {
+    for (let i = 0; i < utxos.length; i += TX_HEX_CONCURRENCY) {
+      const window = utxos.slice(i, i + TX_HEX_CONCURRENCY);
+      const resolved = await Promise.all(
+        window.map(async (utxo) =>
           utxo.rawTx ? utxo : { ...utxo, rawTx: await fetchTransactionHex(network.id, utxo.txid) }
         )
-      )
-    : utxos;
+      );
+      inputs.push(...resolved);
+    }
+  }
 
   const totalAmountAvailable = inputs.reduce((total, utxo) => total + utxo.satoshis, 0);
 
