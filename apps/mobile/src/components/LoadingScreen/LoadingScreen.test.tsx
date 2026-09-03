@@ -58,7 +58,7 @@ jest.mock('@salmon/shared', () => ({
     waitFloor: 5000,
   },
   markPaths: ['M0 0h1v1H0z'],
-  markViewBoxAttr: '0 0 253 236',
+  markViewBoxAttr: '0 0 253 237',
   WAVEFRONT_CROSS_MS: 1400,
   WAVEFRONT_EBB_MS: 360,
   WAVEFRONT_PERIOD_MS: 2000,

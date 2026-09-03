@@ -8,7 +8,7 @@
  * never a design decision, it was the raster.
  *
  * This draws `markPaths` instead, so the mark is crisp at any size and takes
- * its ink from a token. Geometry is the authored master at 253x236: the slot
+ * its ink from a token. Geometry is the authored master at 253x237: the slot
  * drives the width and the height follows `markAspectRatio`, so it is never
  * squashed into a square.
  *

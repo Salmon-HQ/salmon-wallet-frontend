@@ -55,7 +55,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
   },
   // The mark that emits the wave. One path is enough to assert it is drawn.
   markPaths: ['M0 0h1v1H0z'],
-  markViewBoxAttr: '0 0 253 236',
+  markViewBoxAttr: '0 0 253 237',
   // The wave's arithmetic is `@salmon/shared`'s own and is tested there
   // (`src/motion/wavefront.test.ts`); this file only needs it to answer.
   WAVEFRONT_CROSS_MS: 1400,

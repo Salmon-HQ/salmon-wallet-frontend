@@ -10,7 +10,7 @@
  * This draws `markPaths` instead, so the mark is crisp at any size and takes
  * its colour from a token like any other ink — `text.primary` of the mode, which
  * is white at 16.89:1 on `surface.bedrock`. Geometry is the authored master
- * at 253x236: the slot drives the width and the height follows
+ * at 253x237: the slot drives the width and the height follows
  * `markAspectRatio`, so it is never squashed into a square.
  */
 import { markAspectRatio, markPaths, markViewBoxAttr } from '@salmon/shared';

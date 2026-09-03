@@ -56,11 +56,11 @@ PATHS = mark_paths()
 BODY = PATHS[:1]  # body with both eyes as counters; fins excluded
 
 # Tight bounds of the ink, measured by rendering at 10x and reading the alpha
-# bbox (`make-icons.py measure`). The authored viewBox is 253x236 but the ink
+# bbox (`make-icons.py measure`). The authored viewBox is 253x237 but the ink
 # does not fill it, and centring on the viewBox rather than on the ink leaves
 # the mark visibly off-centre in the tile.
-VB_FULL = (0.0, 0.0, 252.4, 235.4)   # all three paths
-VB_BODY = (35.5, 0.0, 182.1, 235.4)  # body alone
+VB_FULL = (0.3, 0.0, 252.4, 237.0)   # all three paths
+VB_BODY = (35.4, 0.0, 182.2, 237.0)  # body alone
 
 
 def render_mark(paths, viewbox, w, h) -> Image.Image:
@@ -245,7 +245,7 @@ def build_feature_graphic():
 def _measure():
     """Re-derive VB_FULL / VB_BODY from the paths. Run after a brand.ts edit."""
     for name, ps in [("VB_FULL", PATHS), ("VB_BODY", BODY)]:
-        im = render_mark(ps, (0, 0, 253, 236), 2530, 2360)
+        im = render_mark(ps, (0, 0, 253, 237), 2530, 2370)
         x0, y0, x1, y1 = (v / 10 for v in im.getchannel("A").getbbox())
         # printed as a viewBox — (min-x, min-y, width, height), not corners
         print(f"{name} = {(round(x0, 1), round(y0, 1), round(x1 - x0, 1), round(y1 - y0, 1))}")
