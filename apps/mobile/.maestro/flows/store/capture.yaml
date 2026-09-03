@@ -1,7 +1,10 @@
 appId: io.salmonwallet.app
 ---
-# TEMPORARY store-screenshot capture flow (not part of the test suite).
-# Runs against the staged mock backend; ${OUT} is an absolute output dir.
+# Store-screenshot capture flow (not part of the test suite). Runs against the
+# backend `apps/mobile/.env` names; ${OUT} is an absolute output dir. One flow,
+# seven captures: home, send, transactions, collectibles, nft detail, token
+# detail, about. Swap left the deck on 2026-09-03 (the powerups surface is
+# closed for the submission).
 - runFlow: ../../subflows/onboard-walletA.yaml
 
 # ----------------------------------------------------------------- 01 home --
@@ -9,6 +12,11 @@ appId: io.salmonwallet.app
     visible:
       id: 'token-row-SOL'
     timeout: 60000
+# The dev client's "Refreshing..." banner rides over the header for a few
+# seconds after launch; the shot waits it out.
+- extendedWaitUntil:
+    notVisible: 'Refreshing...'
+    timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
 - takeScreenshot: ${OUT}/01-home
@@ -37,7 +45,8 @@ appId: io.salmonwallet.app
     timeout: 20000
 - tapOn:
     id: 'send-amount-input'
-- inputText: '2.5'
+# Within the test wallet's balance, so "Review send" is enabled in the shot.
+- inputText: '0.01'
 - waitForAnimationToEnd:
     timeout: 5000
 # Dismiss the keyboard without leaving the screen. `hideKeyboard` is wrong
@@ -64,7 +73,7 @@ appId: io.salmonwallet.app
       id: 'activity-screen'
     timeout: 30000
 - waitForAnimationToEnd:
-    timeout: 8000
+    timeout: 20000
 - takeScreenshot: ${OUT}/03-transactions
 - runFlow: ../../subflows/settings-back.yaml
 - extendedWaitUntil:
@@ -73,43 +82,38 @@ appId: io.salmonwallet.app
     timeout: 20000
 
 # --------------------------------------------------------- 04 collectibles --
+# Mindfolk Founder #5154 is the one NFT the test wallet genuinely holds.
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
-    visible: 'My Collectibles'
-    timeout: 30000
-- extendedWaitUntil:
     visible:
-      id: 'nft-card-J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w'
+      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
     timeout: 40000
-# Artwork is fetched from public CDNs; give every tile time to decode. The Mad
-# Lads source PNG is ~9 MB, and on a cold emulator 20s is not enough — the tile
-# renders as a flat placeholder colour and the shot is silently wrong.
+# Artwork is a public-CDN fetch; a cold emulator needs the long wait or the
+# tile ships as a flat placeholder with no error.
 - waitForAnimationToEnd:
     timeout: 45000
 - takeScreenshot: ${OUT}/04-collectibles
 
 # ----------------------------------------------------------- 05 nft detail --
 - tapOn:
-    id: 'nft-card-J1S9H3QjnRtBbbuD4HjPV6RpRhwuk4zKbxsnCHuTgh9w'
+    id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
 - extendedWaitUntil:
-    visible: 'Mad Lads #8420'
+    visible: 'Mindfolk Founder #5154'
     timeout: 30000
 - waitForAnimationToEnd:
-    timeout: 15000
+    timeout: 45000
 - takeScreenshot: ${OUT}/05-nft-detail
-# The NFT detail is a pushed screen now (spec 019 D7), not a bottom sheet:
-# it leaves by the platform back, not by dragging a handle.
+# The NFT detail is a pushed screen: it leaves by the platform back.
 - back
 - extendedWaitUntil:
-    visible: 'My Collectibles'
+    visible:
+      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
     timeout: 20000
 - tapOn:
     id: 'portfolio-tab-portfolio'
 
-# ------------------------------------------------ 06 token detail (screen) --
-# Was a sheet; the row now pushes `/token/[id]` (spec 019), so this capture is
-# a screen, not a modal — nothing to dismiss afterward.
+# ---------------------------------------------------------- 06 token detail --
 - extendedWaitUntil:
     visible:
       id: 'token-row-SOL'
@@ -119,3 +123,24 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 15000
 - takeScreenshot: ${OUT}/06-token-info
+- runFlow: ../../subflows/settings-back.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'wallet-header-account-switcher'
+    timeout: 20000
+
+# ---------------------------------------------------------------- 07 about --
+- runFlow: ../../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element:
+      text: 'About'
+    direction: DOWN
+    timeout: 20000
+- tapOn: 'About'
+- extendedWaitUntil:
+    visible:
+      id: 'about-link-github'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 6000
+- takeScreenshot: ${OUT}/07-about

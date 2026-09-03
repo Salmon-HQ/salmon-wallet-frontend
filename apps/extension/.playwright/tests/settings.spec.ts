@@ -33,7 +33,10 @@ test('opens settings, visits read-only panels, and closes via the data-testid co
   await expect(popup.getByTestId('security-change-password-button')).toBeVisible({
     timeout: 10_000,
   });
-  await popup.getByTestId('screen-header-back-button').click();
+  await popup
+    .getByTestId('settings-panel-security')
+    .getByTestId('screen-header-back-button')
+    .click();
   // The panel-only control disappears once we pop back to the menu.
   await expect(popup.getByTestId('security-change-password-button')).toHaveCount(0, {
     timeout: 10_000,
@@ -42,10 +45,10 @@ test('opens settings, visits read-only panels, and closes via the data-testid co
   // About panel (static links only).
   await popup.getByTestId('settings-item-about').click();
   await expect(popup.getByTestId('about-link-website')).toBeVisible({ timeout: 10_000 });
-  await popup.getByTestId('screen-header-back-button').click();
+  await popup.getByTestId('settings-panel-about').getByTestId('screen-header-back-button').click();
   await expect(popup.getByTestId('about-link-website')).toHaveCount(0, { timeout: 10_000 });
 
-  // Close the drawer and land back on home.
-  await popup.getByTestId('settings-close-button').click();
+  // Settings is a screen (spec 028): its own header's back pops it to Home.
+  await popup.getByTestId('settings-screen').getByTestId('screen-header-back-button').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 10_000 });
 });

@@ -13,5 +13,6 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'wallet-header-settings-button'
 - extendedWaitUntil:
-    id: 'settings-screen'
+    visible:
+      id: 'settings-screen'
     timeout: 5000

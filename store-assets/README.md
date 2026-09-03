@@ -6,12 +6,24 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 
 | Store | What goes here | Required | Status |
 |---|---|---|---|
-| `play/` | `feature-graphic.png` 1024×500 (required), `icon-512.png` 512×512 32-bit with alpha (required), `phone/` 2–8 screenshots 9:16 (1080×1920 ✓), `listing.txt` copy | yes | **complete** |
-| `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **complete** — 9 frames at 1320×2868, captured via Maestro on an iPhone 16 Pro Max simulator |
-| `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots captured with the Playwright harness at a 1280×800 viewport |
+| `play/` | `feature-graphic.png` 1024×500 (required), `icon-512.png` 512×512 32-bit with alpha (required), `phone/` 2–8 screenshots 9:16 (1080×1920 ✓), `listing.txt` copy | yes | **complete** — 6 frames on the redesign (2026-09-03, dark mode, Pixel 9 Pro emulator via `flows/store/capture.yaml`); no swap frame |
+| `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **STALE** — the 9 frames are the previous design (incl. two swap frames); re-capture needs the iOS dev build installed on a simulator (`pnpm --filter mobile ios`), then `run.sh --device <udid> -e OUT=… flows/store/capture.yaml` and `compose.py app-store` |
+| `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots from the extension side panel (400×800 captures via `apps/extension/.playwright/scripts/store-shots.mjs`), composed by `compose.py chrome-web-store` |
 | `amo/screenshots/` | 1280×800 recommended (1.6:1) | recommended | empty — can reuse the CWS captures, but prefer un-captioned crops: AMO advises against text on the image |
 | `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px, 9:16 or 16:9 | no, but see below | **missing** — never captured |
-| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/`, `ios-staged/`, `web-staged/` (web app retired 2026-09-02 — Chrome Web Store set must be re-captured from the extension side panel; pending) |
+| `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/` (7, redesign), `ios-staged/` (9, previous design — stale), `extension-staged/` (side panel 400×800) |
+
+## Staging (2026-09-03)
+
+The 2026-08 deck was captured against a mock backend that staged a $13,046.12
+portfolio; that mock server was never committed. The 2026-09-03 captures run
+against the **live** local backend with Wallet A from `.env.test` (the same
+fixture wallet the e2e suites use) — real, small balances. Apple §2.3.9 wants
+fictional data, so before the next submission either commit a mock (a Node
+proxy in front of `salmon-api` that stages the balance, history and NFT
+endpoints and passes everything else through; `EXPO_PUBLIC_API_HOST/PORT` for
+mobile, `context.route()` in the Playwright script for the side panel) or
+accept the live figures. The capture flows do not care which.
 
 ## Tablets: deliberately deferred (2026-08-07)
 
