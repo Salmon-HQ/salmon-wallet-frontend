@@ -1,207 +1,78 @@
-# Arquitectura de Salmon Wallet V3
+# Arquitectura de Salmon Wallet
 
-Este documento describe la arquitectura del monorepo por responsabilidades de carpetas. El objetivo es dejar claro dónde vive cada tipo de código y cómo decidir ownership cuando se agregan features nuevas.
+Este documento describe el monorepo por responsabilidades. El objetivo es que quede claro dónde vive cada tipo de código y cómo decidir ownership cuando se agrega algo nuevo. Las reglas canónicas están en el `AGENTS.md` de la raíz; acá está el porqué y la forma general.
 
-## Idea General
+## Idea general
 
-El repo sigue una estructura de monorepo con separación por ownership y plataforma:
+Una wallet, dos aplicaciones, una lógica:
 
-- `packages/shared`
-  - lógica compartida entre mobile y extension
-- `packages/ui`
-  - componentes React DOM de la extension (la app web se retiró el 2026-09-02)
-- `apps/mobile`
-  - app React Native y UI mobile-only
-- `apps/extension`
-  - browser extension
+- `apps/mobile` — React Native / Expo (iOS y Android).
+- `apps/extension` — extensión de navegador (WXT, MV3): el side panel es la app; el popup queda para las aprobaciones de dApps.
+- `packages/shared` — todo lo que no dibuja: servicios, blockchain, hooks, contextos, contratos, storage, crypto, tokens de diseño, i18n. Corre en React Native y en el DOM.
+- `packages/ui` — el kit React DOM de la extensión. Cada pieza es la gemela de una de `apps/mobile`.
+- `packages/assets` — fuentes e imágenes.
 
-Regla central:
+La app web se retiró el 2026-09-02; la extensión es la única superficie DOM.
 
-- si algo tiene que funcionar en las tres plataformas, tiende a `packages/shared`
-- si algo es UI DOM compartida solo entre web y extension, tiende a `packages/ui`
-- si depende de APIs nativas, navegación mobile o concerns específicos de una app, se queda en su app
+## Gemelas: la extensión es la app móvil sobre el DOM
 
-## Responsabilidades por Carpeta
+Cada componente del kit y cada pantalla existen dos veces — una en React Native, otra en el DOM — sobre **un solo contrato** en `packages/shared/src/types/ui` (`XPropsBase`). El `types.ts` de cada plataforma lo extiende y el componente importa sus props de ahí. Un cambio en una gemela es un cambio en las dos; un tamaño, color o espaciado que comparten es un token en `packages/shared/src/theme`, nunca un literal repetido.
 
-### Raíz del repo
+Lo que difiere por plataforma se elige a propósito y queda escrito (spec 028, "DOM alternatives"): Reanimated ↔ Web Animations API sobre las mismas constantes de `packages/shared/src/motion`; gestos ↔ teclado/rueda; safe areas ↔ `spacing.panelTop`.
 
-- `apps/`
-  - entrypoints y superficies de cada aplicación
-- `packages/`
-  - código compartido y reusable dentro del monorepo
-- `docs/`
-  - documentación viva del repo
-- `.agent/` y `.claude/`
-  - workflow y skills de proyecto ya existentes
-- `.codex/`
-  - skills repo-locales para Codex
+`scripts/check-dom-parity.mjs` hace cumplir esto en CI (estricto):
 
-### `packages/shared/`
+| Check      | Garantiza                                                                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| `theme`    | el DOM lee el modo vivo por `useSemantic()` — sin tokens estáticos, sin MUI, sin hex, sin `mode ===` |
+| `twins`    | cada carpeta de `apps/mobile/src/components` tiene gemela en `packages/ui` y viceversa               |
+| `contract` | las dos gemelas construyen sobre el mismo `*Base` (`extends`, no sólo import)                        |
+| `dead`     | cada contrato de `types/ui` tiene lector                                                             |
+| `screens`  | cada ruta de `apps/mobile/app` tiene su pantalla DOM                                                 |
+| `clones`   | las líneas duplicadas mobile ↔ DOM (jscpd) no superan un techo que sólo baja                         |
 
-Es el núcleo lógico del monorepo.
+Los mapas dentro del script (`MAP`, `MOBILE_ONLY`, `DOM_ONLY`, `SCREENS`, `MOBILE_ONLY_SCREENS`) son el único lugar donde puede vivir una diferencia de plataforma, cada una con su motivo. `pnpm check:parity` lo corre; `check:parity:report` muestra hallazgos sin fallar; `check:parity:test` corre sus fixtures.
 
-Responsabilidad:
+## `packages/shared`
 
-- servicios de API compartidos
-- lógica blockchain
-- hooks reutilizables
-- tipos semánticos
-- storage y configuración
-- utilidades y crypto compartidos
-- design tokens
+Es el núcleo. Capas, de abajo hacia arriba:
 
-Subcarpetas importantes:
+- `api/` — el contrato con el backend (`../salmon-wallet-backend`): cliente, configuración de entorno, servicios.
+- `blockchain/` — lógica por cadena (`solana` sobre `@solana/kit`, `bitcoin`, `ethereum` como andamiaje futuro). Firma en el cliente. Solana envía al RPC que el backend nombra en `/v1/networks`; Bitcoin publica el hex firmado directamente a los relays públicos (`config/bitcoin-relays.ts`), nunca a nuestro backend.
+- `crypto/`, `storage/` — material de claves, cifrado del vault, persistencia. Área sensible: no se cambia sin firma humana.
+- `theme/` — la única fuente de tokens (`createSemantic(mode)` para claro y oscuro, spacing, tipografía, sombras, geometría de la marca).
+- `motion/` — las constantes de movimiento que ambas plataformas leen.
+- `types/` — tipos de dominio; `types/ui/` los contratos de las gemelas.
+- `hooks/`, `contexts/`, `utils/`, `settings/` — **la lógica de pantalla, una sola vez.** El estado de un flujo (Home, Send, NFT, Wallets, Settings, confirmación con contraseña, cambio de contraseña, derivación de redes espejo, idioma) vive acá como hook o contexto que recibe inyectados la cuenta y las acciones; las plataformas son un proveedor delgado más el render. Las derivaciones puras (filas de actividad, cues del balance, orden de wallets, opciones de destinatario, geometría del gráfico de precio) son utilidades con test propio.
+- `locales/` — EN y ES; toda cadena visible pasa por `t()`.
 
-- `packages/shared/src/api/`
-  - clientes HTTP, configuración y servicios compartidos contra backend
-- `packages/shared/src/blockchain/`
-  - lógica blockchain por dominio
-- `packages/shared/src/hooks/`
-  - hooks cross-platform
-- `packages/shared/src/theme/`
-  - tokens visuales base
-- `packages/shared/src/types/`
-  - tipos semánticos compartidos
-- `packages/shared/src/storage/`
-  - contratos y helpers de persistencia
-- `packages/shared/src/utils/`
-  - utilidades realmente compartidas
+No contiene componentes DOM ni React Native.
 
-No debería contener:
+## `packages/ui`
 
-- componentes DOM específicos
-- componentes React Native
-- lógica dependiente de una sola app sin reutilización real
+El kit DOM de la extensión: un componente por carpeta (`Component.tsx`, `types.ts`, `index.ts`), gemelo del de mobile, estilizado con emotion e inline styles sobre `useSemantic()`. El modo (sistema / claro / oscuro) lo da `SalmonThemeProvider`, que además expone los tokens como variables CSS `--sw-<grupo>-<token>`. No hay MUI ni librerías de gráficos: el `PriceChart` es SVG propio.
 
-### `packages/ui/`
+No contiene lógica de negocio: si un componente empieza a decidir comportamiento, eso sube a `packages/shared`.
 
-Responsabilidad:
+## `apps/mobile`
 
-- componentes React DOM compartidos entre web y extension
-- layouts DOM compartidos
-- utilidades visuales específicas de esa capa
+Rutas de `expo-router` (`app/`), componentes React Native (`src/components`), integraciones nativas (biometría, captura de pantalla, teclado, haptics, safe areas) y el render de los contratos compartidos con `StyleSheet` y tokens. Nunca importa `packages/ui`.
 
-No debería contener:
+## `apps/extension`
 
-- lógica de negocio pesada
-- hooks que pertenecen a `packages/shared`
-- código React Native
+Entrypoints (`background`, `content`, `injected`, `sidepanel`, `popup`), las páginas que componen el kit, el Wallet Standard y la mensajería con el background. Las aprobaciones de dApps van sobre `surface.bedrock`: opacas, sin agua ni escamas.
 
-### `apps/mobile/`
+Para desarrollar contra el backend local en Docker: `pnpm --filter @salmon/extension dev` y cargar `apps/extension/dist/chrome-mv3-dev` (lee `.env`); `wxt build` hornea `.env.production` y apunta a producción.
 
-Responsabilidad:
+## Dónde va cada cosa
 
-- implementación React Native
-- componentes mobile-only
-- adaptaciones de contratos compartidos a UI nativa
-- navegación y concerns del runtime mobile
+- Lógica que las dos apps necesitan → `packages/shared` (servicio, hook, contexto o utilidad según su forma).
+- Componente visual → contrato en `packages/shared/src/types/ui` y una gemela por plataforma.
+- Depende de una API nativa o de una API de extensión → se queda en su app, detrás de una interfaz que la otra plataforma también pueda cumplir.
+- Un valor visual → token en `packages/shared/src/theme`.
 
-No debería contener:
+Señales de mala ubicación: un componente RN o DOM en `shared`; lógica de producto dentro de `packages/ui`; un hook compartido que usa una API de plataforma; una app que reimplementa algo que `shared` ya tiene; un literal de diseño fuera de `theme`.
 
-- lógica que debería reutilizarse en la extension
-- componentes DOM
+## Verificación
 
-### `apps/extension/`
-
-Responsabilidad:
-
-- shell de browser extension
-- entrypoints de background/content/injected
-- páginas y sheets propias de extension
-- compatibilidad con browser APIs
-
-## Ownership por tipo de cambio
-
-### Nuevo endpoint o integración de backend
-
-- si el consumo es compartido, entra por `packages/shared/src/api/services`
-- si el contrato afecta hooks o tipos, se actualizan en `packages/shared`
-- las apps consumen ese contrato, pero no deberían reinventarlo
-
-### Nueva lógica blockchain
-
-- si aplica a más de una plataforma, vive en `packages/shared/src/blockchain/<chain>`
-- si es solo wiring visual o interacción de una app, se queda en la app
-
-### Nuevo hook
-
-- si es cross-platform y semántico, va a `packages/shared/src/hooks`
-- si depende de browser APIs o React Native APIs, debe vivir en la app correspondiente
-
-### Nuevo componente
-
-- si es DOM compartido entre web y extension, va a `packages/ui`
-- si es React Native, va a `apps/mobile`
-- si es específico de una app web/extension, se queda en esa app
-
-## Capas importantes dentro de `packages/shared`
-
-### `api`
-
-- contrato compartido con backend
-- servicios reutilizables por varias apps
-
-### `blockchain`
-
-- lógica por cadena
-- adapters y helpers semánticos del dominio crypto
-
-Hoy las carpetas activas visibles son:
-
-- `bitcoin`
-- `ethereum`
-- `solana`
-
-La intención es mantener la lógica por chain aislada, sin mezclar concerns entre dominios.
-
-Stack Solana: la lógica de Solana usa `@solana/kit` v7 y los clientes de programa de
-`@solana-program/*`. `@solana/web3.js` v1 no está en ninguna dependencia de producción; sobrevive
-sólo como devDependency, usado como oráculo independiente en los tests. Ver
-`docs/SOLANA_KIT_MIGRATION.md`.
-
-### `hooks`
-
-- orquestan estado y comportamiento reutilizable
-- conectan servicios, blockchain logic, storage y tipos
-
-### `theme`
-
-- fuente única de tokens compartidos
-- colores, spacing, typography, sombras y duraciones
-
-## Testing
-
-Regla práctica:
-
-- lógica compartida: test en `packages/shared`
-- componentes DOM compartidos: test en `packages/ui`
-- UI o integración React Native: test en `apps/mobile`
-- wiring específico web/extension: test en su app cuando realmente agregue valor
-
-Prioridad:
-
-- unit e integration tests para lógica compartida
-- UI tests solo cuando el comportamiento visible sea importante
-- E2E contra backend solo si no hay cobertura suficiente en `../salmon-wallet-backend`
-
-## Señales de mala ubicación
-
-- un componente React Native aparece en `packages/shared` o `packages/ui`
-- un componente DOM compartido empieza a contener lógica de negocio grande
-- un hook compartido usa APIs browser-only o native-only
-- una app duplica contratos que ya existen en `packages/shared`
-- tipos visuales específicos terminan en tipos semánticos compartidos
-
-## Estado actual de diseño
-
-La separación principal del monorepo está bien:
-
-- `packages/shared` como núcleo compartido
-- `packages/ui` como capa DOM compartida
-- apps separadas por runtime
-
-La disciplina importante a preservar es de ownership:
-
-- shared para contratos y lógica multiplataforma
-- ui para DOM compartido
-- app-local para runtime/platform specifics
+Desde la raíz, lo mismo que corre CI: `pnpm format:check`, `pnpm turbo run typecheck lint test`, `pnpm check:i18n`, `pnpm check:parity`. Para un paquete: `pnpm turbo run test --filter=@salmon/<pkg>` (`shared` y `ui` con Vitest, `mobile` con Jest). E2E: `apps/extension/.playwright`, `apps/mobile/.maestro`.

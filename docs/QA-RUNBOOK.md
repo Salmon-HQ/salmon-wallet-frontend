@@ -5,7 +5,7 @@ each one, and what is and isn't covered today. This is a **state-of-reality**
 document: it marks what is automated, what is manual, and the known debt — it
 does not promise coverage that isn't there.
 
-Scope: the monorepo's two runtimes — `apps/extension` (wxt + MUI) and
+Scope: the monorepo's two runtimes — `apps/extension` (WXT + the DOM kit) and
 `apps/mobile` (React Native / Expo) — plus the shared packages
 (`packages/shared`, `packages/ui`). The backend lives in the sibling repo
 `../salmon-wallet-backend` and runs in Docker.
@@ -176,9 +176,8 @@ One canonical kebab-case id per logical element, identical across platforms
 once flows depend on them — renaming is a breaking change to the suites. Full
 rules: `.agent/skills/e2e-test-labels/SKILL.md`.
 
-MUI v7 caveat: `Switch` ignores `inputProps`; pass `data-testid`/`aria-label`
-via `slotProps={{ input: {...} }}`. `InputBase`/`TextField` still take
-`inputProps={{ 'data-testid': ... }}`.
+The kit's inputs and switches are plain elements (`<input>`, `role="switch"`);
+pass `testID` and it lands as `data-testid` on the element itself.
 
 ---
 

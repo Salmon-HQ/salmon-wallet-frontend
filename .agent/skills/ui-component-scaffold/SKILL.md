@@ -1,6 +1,6 @@
 ---
 name: ui-component-scaffold
-description: "Create or modify shared React DOM components in packages/ui. Use this skill when a task adds a new web-and-extension component, changes an existing packages/ui component, or needs the DOM implementation of a cross-platform semantic contract from packages/shared/src/types/ui. This skill must decide between two valid branches: DOM-only packages/ui components and cross-platform contract + DOM implementation. Use together with salmon-repo-rules whenever placement, ownership, or export paths are unclear."
+description: "Create or modify shared React DOM components in packages/ui. Use this skill when a task adds a new extension component, changes an existing packages/ui component, or needs the DOM implementation of a cross-platform semantic contract from packages/shared/src/types/ui. This skill must decide between two valid branches: DOM-only packages/ui components and cross-platform contract + DOM implementation. Use together with salmon-repo-rules whenever placement, ownership, or export paths are unclear."
 ---
 
 Creating a shared DOM component in this monorepo can follow two different workflows. Pick the right branch first so you do not create the wrong shared contract.
@@ -11,7 +11,7 @@ Creating a shared DOM component in this monorepo can follow two different workfl
 2. Search existing components, contracts, and app-local equivalents before creating anything new.
 3. Read [references/scaffold-patterns.md](references/scaffold-patterns.md).
 4. Choose the branch:
-   - DOM-only branch: the component is shared by `web` and `extension`, but no shared semantic contract is needed outside `packages/ui`.
+   - DOM-only branch: the component has no mobile twin (listed in `scripts/check-dom-parity.mjs` `DOM_ONLY` with a reason), so no shared contract is needed.
    - Cross-platform branch: mobile also needs the component, or the semantic contract should live in `packages/shared/src/types/ui`.
 5. Create or extend the component files for the chosen branch.
 6. Update folder and package barrels.
@@ -21,7 +21,7 @@ Creating a shared DOM component in this monorepo can follow two different workfl
 
 Ask 1-3 focused questions if any of these are unclear:
 
-- Is this component shared by both web and extension, or only one?
+- Does mobile draw this too? Then it is a twin and needs the shared contract.
 - Does mobile need a parallel implementation? If so, a `PropsBase<TStyle>` contract in shared is essential.
 - Does a similar component or contract already exist in the repo?
 - Is part of this logic actually business logic that belongs in a shared hook or util, not in the component?

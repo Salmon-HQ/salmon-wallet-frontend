@@ -16,7 +16,7 @@ Detailed placement and ownership workflow for the Salmon Wallet monorepo. The ca
 
 Before making a change, stop and ask 1-3 focused questions if any of these are unclear:
 
-- Is this code truly shared across `mobile`, `web`, and `extension`?
+- Is this code truly shared across `mobile` and `extension`?
 - Does it belong in `packages/ui` or in an app-specific directory?
 - Is the type semantic and cross-platform, or only visual/platform-specific?
 - Does a dependency (browser API, React Native API, biometrics, navigation) make it platform-only?

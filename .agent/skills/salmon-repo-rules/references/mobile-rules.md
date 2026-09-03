@@ -15,7 +15,7 @@
 ## Required structure
 
 - Public mobile components usually use `Component.tsx`, `types.ts`, and `index.ts`
-- Platform splits may add `.native.tsx` / `.web.tsx` files when behavior truly differs
+- The RN file is the only file; there is no web target for mobile any more
 - Export public components from `apps/mobile/src/components/index.ts`
 
 ## Styling

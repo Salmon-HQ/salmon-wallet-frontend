@@ -12,8 +12,7 @@
 - `ViewStyle`
 - DOM-only event shapes
 - React Native-only props
-- Contracts for components that exist only in `web` and `extension`
-- Contracts for components that exist only in one app
+- Contracts for components that exist on one platform only (list those in `scripts/check-dom-parity.mjs`'s `MOBILE_ONLY` / `DOM_ONLY` instead)
 
 ## Canonical pattern
 

@@ -23,10 +23,10 @@ Creating a React Native component in this repo can follow two valid paths: app-l
 
 Ask 1-3 focused questions if any of these are unclear:
 
-- Is this UI truly mobile-only, or should web/extension share the same semantic contract?
+- Is this UI truly mobile-only, or does the extension draw it too (then it is a twin on a shared contract)?
 - Does a shared `PropsBase<TStyle>` contract already exist in `packages/shared/src/types/ui`?
 - Is this component tied to Expo, React Native APIs, navigation, biometrics, camera, or another native capability?
-- Does the behavior require `.native.tsx` / `.web.tsx` or another platform split?
+- Does the behavior need a platform split inside mobile (iOS/Android), or is one RN file enough?
 - Is the component public enough to belong in `apps/mobile/src/components/index.ts`?
 
 If the answer changes the branch, the contract location, or the public export path, ask first.

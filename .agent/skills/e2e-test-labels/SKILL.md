@@ -21,7 +21,7 @@ Maestro (mobile) and Playwright (web/extension) become reliable only when the UI
 4. **Identity AND semantics — set both:**
    - Mobile: `testID` (primary selector) + `accessibilityRole` + `accessibilityLabel` (defaults to the visible text) + `accessibilityState` for `disabled`/`loading`/`busy`.
    - DOM: `data-testid` (primary selector) + correct implicit role (`<button>`, `<input>`) + `aria-label` on icon-only / text-less controls.
-5. **Inputs: id on the `<input>`, not the wrapper.** MUI `InputBase` → `inputProps={{ 'data-testid': '...' }}`. Otherwise Playwright matches the container and `.fill()` fails.
+5. **Inputs: id on the `<input>`, not the wrapper.** The kit's `TextInput`/`PasswordInput` forward `testID` to the element itself; a bespoke wrapper must do the same, or Playwright matches the container and `.fill()` fails.
 6. **Keep copy coherent as a secondary net** — Maestro `text` is regex and a readable fallback, but never the primary selector.
 
 ## Priority for new work

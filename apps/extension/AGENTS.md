@@ -15,8 +15,7 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
 - Reuse `packages/shared` for logic and `packages/ui` for shared DOM
   components when applicable — local copies drift from the shared contract.
 - Keep browser-extension specifics out of shared packages unless there is
-  an explicit compatibility layer — extension APIs do not exist on mobile
-  or the plain web runtime.
+  an explicit compatibility layer — extension APIs do not exist on mobile.
 - Verify entrypoint and page consumers before simplifying shared
   assumptions — background/content/injected contexts consume code
   differently than the popup does.

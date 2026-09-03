@@ -5,7 +5,7 @@ description: "Add and maintain stable test/accessibility labels (testID, data-te
 
 # E2E Test Labels
 
-Maestro (mobile) and Playwright (web/extension) become reliable only when the UI tree exposes stable, semantic identifiers. Text-based selection breaks on copy changes and i18n. This skill defines the labeling convention so every new or modified interactive element is targetable from both harnesses without brittle CSS/text matching.
+Maestro (mobile) and Playwright (extension) become reliable only when the UI tree exposes stable, semantic identifiers. Text-based selection breaks on copy changes and i18n. This skill defines the labeling convention so every new or modified interactive element is targetable from both harnesses without brittle CSS/text matching.
 
 ## How each harness selects
 
