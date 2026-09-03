@@ -105,14 +105,11 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   const spokenAmount = hiddenBalance ? hiddenValue : uiAmount;
   const spokenPrice = hiddenBalance ? hiddenValue : price;
 
-  // Both branches share one secondary line — "SOL · $101.39 · -1.1%" — in
-  // three Texts with an explicit order of sacrifice. The price and the change
-  // are what the user opened the screen for, so they never give up a
-  // character: both are `flexShrink: 0`. The ticker is the only shrinkable
-  // segment, and it clips rather than ellipsising, so a narrow row degrades to
-  // "$101.39 · -1.1%" instead of the "$101.…" the old shrinking-lead layout
-  // produced. Only once the ticker is gone does the pressure reach the name
-  // column (`ListRow` gives the title `flexShrink: 1`).
+  // One text run that ellipsises at its end, like the DOM twin
+  // (`packages/ui/src/components/TokenList/TokenListItem.tsx`). Three
+  // fixed-width Texts fighting for space beside a non-shrinking name column
+  // squeezed the ticker to "mSC$145.52"; a single `numberOfLines={1}` Text
+  // degrades to "mSOL · $145.…" instead.
   const hasTail = !!displayPrice || !!displayPercentage;
   const tickerSegment = symbol ? (hasTail ? `${symbol} · ` : symbol) : null;
   const changeSegment = displayPercentage
@@ -121,39 +118,19 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       : displayPercentage
     : null;
   const subline = (tickerSegment || displayPrice || changeSegment) && (
-    <View style={styles.sublineRow}>
-      {!!tickerSegment && (
-        <Text
-          testID={`token-row-ticker-${symbol}`}
-          style={[styles.subline, styles.sublineTicker]}
-          numberOfLines={1}
-          ellipsizeMode="clip"
-          maxFontSizeMultiplier={fontScaleCap.dense}
-        >
-          {tickerSegment}
-        </Text>
-      )}
-      {!!displayPrice && (
-        <Text
-          testID={`token-row-price-${symbol}`}
-          style={[styles.subline, styles.sublineFixed]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={fontScaleCap.dense}
-        >
-          {displayPrice}
-        </Text>
-      )}
+    <Text
+      testID={`token-row-subline-${symbol}`}
+      style={styles.subline}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+      maxFontSizeMultiplier={fontScaleCap.dense}
+    >
+      {tickerSegment}
+      {displayPrice}
       {!!changeSegment && (
-        <Text
-          testID={`token-row-change-${symbol}`}
-          style={[styles.subline, styles.change, styles.sublineFixed, { color: changeColor }]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={fontScaleCap.dense}
-        >
-          {changeSegment}
-        </Text>
+        <Text style={[styles.change, { color: changeColor }]}>{changeSegment}</Text>
       )}
-    </View>
+    </Text>
   );
 
   const logoNode = (
@@ -246,27 +223,12 @@ const stylesFor = (t: Semantic) =>
       marginBottom: vs(spacing.screenGutter),
     },
 
-    // Secondary line: "SOL · $159.58 · +4.2%", drawn as one shrinking segment
-    // (the ticker) and two fixed ones, so neither the price nor the change is
-    // ever the part that gets cut.
-    sublineRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      minWidth: 0,
-    },
+    // Secondary line: "SOL · $159.58 · +4.2%" as one text run that
+    // ellipsises at its end — matches the DOM twin.
     subline: {
       fontSize: ms(fontSize.caption),
       fontFamily: fontFamilyNative.medium,
       color: t.text.secondary,
-    },
-    // The one segment allowed to give up room, all the way to nothing.
-    sublineTicker: {
-      flexShrink: 1,
-      minWidth: 0,
-    },
-    // Price and change: never truncated, never shrunk.
-    sublineFixed: {
-      flexShrink: 0,
     },
     change: {
       fontSize: ms(fontSize.caption),

@@ -1,10 +1,13 @@
 /**
- * The card's secondary line: "SOL · $159.58 · +4.2%". Price and change are
- * kept (owner call, redesign follow-up) — this pins the row string and that
- * `hiddenBalance` masks the price but not the percentage, same as before.
+ * The card's secondary line: "SOL · $159.58 · +4.2%", as one text run that
+ * ellipsises at its end — matches the DOM twin
+ * (`packages/ui/src/components/TokenList/TokenListItem.tsx`). This pins the
+ * row string and that `hiddenBalance` masks the price but not the
+ * percentage, same as before.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { View } from 'react-native';
 import type { Token } from '@salmon/shared';
 
 jest.mock('@salmon/shared', () => ({
@@ -62,46 +65,50 @@ const TOKEN: Token = {
   last24HoursChange: { perc: 4.2, abs: 6.4 },
 } as Token;
 
-const flat = (node: { props: { style: unknown } }) =>
-  Object.assign({}, ...[node.props.style].flat(Infinity).filter(Boolean));
+// Text nodes only — the nested change `<Text>` is its own element, so
+// `props.children` on the outer Text is `[ticker, price, <Text>change</Text>]`.
+// Joining just the leaf strings gives the row's full text run.
+const textOf = (node: { props: { children: unknown } }): string =>
+  [node.props.children]
+    .flat(Infinity)
+    .map((child) =>
+      typeof child === 'string'
+        ? child
+        : child && typeof child === 'object' && 'props' in (child as never)
+          ? textOf(child as { props: { children: unknown } })
+          : ''
+    )
+    .join('');
 
 describe('TokenListItem secondary line', () => {
-  it('renders the ticker, the price and the change as three runs', () => {
-    const { getByTestId } = render(<TokenListItem token={TOKEN} />);
+  it('renders the ticker, the price and the change as one text run, long name included', () => {
+    // A wide name column ("Marinade Staked SOL") used to squeeze three
+    // flex segments to "mSC$145.52". One Text with numberOfLines={1} keeps
+    // the full string and lets it ellipsise instead of clipping mid-glyph.
+    const mSol: Token = { ...TOKEN, name: 'Marinade Staked SOL', symbol: 'mSOL' } as Token;
+    const { getByTestId } = render(
+      <View style={{ width: 100 }}>
+        <TokenListItem token={mSol} />
+      </View>
+    );
 
-    expect(getByTestId('token-row-ticker-SOL').props.children).toBe('SOL · ');
-    expect(getByTestId('token-row-price-SOL').props.children).toBe('$159.58');
-    expect(getByTestId('token-row-change-SOL').props.children).toBe(' · +4.2%');
+    const subline = getByTestId('token-row-subline-mSOL');
+    expect(textOf(subline)).toBe('mSOL · $159.58 · +4.2%');
+    expect(subline.props.numberOfLines).toBe(1);
+    expect(subline.props.ellipsizeMode).toBe('tail');
   });
 
   it('masks the price but keeps the ticker and change when hiddenBalance is set', () => {
     const { getByTestId } = render(<TokenListItem token={TOKEN} hiddenBalance />);
 
-    expect(getByTestId('token-row-ticker-SOL').props.children).toBe('SOL · ');
-    expect(getByTestId('token-row-price-SOL').props.children).toBe('••••');
-    expect(getByTestId('token-row-change-SOL').props.children).toBe(' · +4.2%');
+    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe('SOL · •••• · +4.2%');
   });
 
   it('drops a missing segment without stray separators', () => {
     const noChange: Token = { ...TOKEN, last24HoursChange: undefined };
-    const { getByTestId, queryByTestId } = render(<TokenListItem token={noChange} />);
+    const { getByTestId } = render(<TokenListItem token={noChange} />);
 
-    expect(getByTestId('token-row-ticker-SOL').props.children).toBe('SOL · ');
-    expect(getByTestId('token-row-price-SOL').props.children).toBe('$159.58');
-    expect(queryByTestId('token-row-change-SOL')).toBeNull();
-  });
-
-  it('gives up the ticker before the price or the change', () => {
-    // The order of sacrifice, as layout: only the ticker may shrink, and it
-    // clips instead of ellipsising, so a narrow row reads "$159.58 · +4.2%"
-    // rather than "SOL · $159.…".
-    const { getByTestId } = render(<TokenListItem token={TOKEN} />);
-
-    const ticker = getByTestId('token-row-ticker-SOL');
-    expect(flat(ticker).flexShrink).toBe(1);
-    expect(ticker.props.ellipsizeMode).toBe('clip');
-    expect(flat(getByTestId('token-row-price-SOL')).flexShrink).toBe(0);
-    expect(flat(getByTestId('token-row-change-SOL')).flexShrink).toBe(0);
+    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe('SOL · $159.58');
   });
 });
 
@@ -133,7 +140,7 @@ describe('TokenListItem hidden balance', () => {
     );
 
     expect(queryByText(/\+\$6.4/)).toBeNull();
-    expect(getByTestId('token-row-change-SOL').props.children).toBe(' · +4.2%');
+    expect(textOf(getByTestId('token-row-subline-SOL'))).toBe('SOL · •••• · +4.2%');
   });
 });
 
