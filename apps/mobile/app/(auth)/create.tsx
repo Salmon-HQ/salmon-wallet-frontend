@@ -99,11 +99,16 @@ interface SeedPhraseStepProps {
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   const semantic = useSemantic();
   const [showToast, setShowToast] = useState(false);
+  // Gates "Guardé mi seed-phrase": the owner wants the commit disabled until
+  // the hold-to-copy has actually fired once, so advancing costs having seen
+  // the phrase land somewhere durable, not just having scrolled past it.
+  const [copied, setCopied] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
       await Clipboard.setStringAsync(mnemonic);
+      setCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
@@ -135,7 +140,16 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
         description={
           <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
         }
-        body={<SeedWordGrid words={words} columns={3} />}
+        body={
+          // The component gap (`spacing.xl`) between the description and the
+          // grid — the "content" variant's compact rung reserves only one
+          // description line plus its own buffer, and this screen's copy can
+          // wrap to two lines at a short viewport, eating that buffer and
+          // leaving the grid flush under the text. Mirrors the DOM twin.
+          <View style={{ paddingTop: spacing.xl }}>
+            <SeedWordGrid words={words} columns={3} />
+          </View>
+        }
         secondary={
           /*
             Held, not tapped: the phrase lands on the clipboard, where anything
@@ -147,7 +161,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           </HoldToCopyButton>
         }
         action={
-          <PrimaryButton onPress={onNext} testID="create-backed-up-button">
+          <PrimaryButton onPress={onNext} disabled={!copied} testID="create-backed-up-button">
             {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
         }
