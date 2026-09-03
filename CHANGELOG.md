@@ -4,6 +4,15 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## Unreleased
 
+## mobile 1.1.0 — 2026-09-03 — the redesign
+
+- The whole app is redrawn: Home, Wallets, Activity, Send in four steps, token and NFT detail, Settings, onboarding and lock.
+- Light and dark mode: Settings → Appearance (System / Light / Dark), persisted and applied live.
+- Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
+- Derived accounts are wallets of their own, and you choose which to import.
+- Developer mode returns: the screen follows the network you are standing on.
+- The swap surface and the Powerups browser are closed for this release.
+
 ## extension 0.13.1 — 2026-09-03
 
 - Sending Bitcoin from a wallet with many inputs no longer fails at the last step: the previous-transaction lookups go out a few at a time instead of all at once, which a public relay answers with a rate limit.
