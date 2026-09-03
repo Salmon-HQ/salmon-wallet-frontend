@@ -4,7 +4,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## Unreleased
 
-### 2026-09-02 — the extension becomes the mobile app, on the DOM
+## extension 0.13.0 — 2026-09-03 — the extension becomes the mobile app, on the DOM
 
 - The browser extension's side panel now draws the same screens as the mobile app — Home, Wallets, Activity, Send in four steps, token and NFT detail, Settings, onboarding and lock — with the same layout, copy and motion. Screens slide in from the right; sheets rise from the bottom.
 - Light and dark mode on the extension: Settings → Appearance (System / Light / Dark), persisted and applied live.
@@ -12,6 +12,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - The balance number is larger; the page cues sit to the right of the dots and turn the page when tapped; the Bitcoin page shows the wallet's actual BTC holding.
 - NFT images that live on hotlink-guarded IPFS gateways now load on the extension.
 - Send on Bitcoin broadcasts the signed transaction from the device to public relays (mempool.space, blockstream.info); an unknown outcome reads "Send unconfirmed", never "failed".
+- Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
 - The web wallet is retired. The StealthEX bridge and the swap surface are removed from every app pending the Powerups boundary work.
 - Under the hood: MUI left the codebase; the extension kit is emotion on the shared tokens; screen logic lives once in `packages/shared` for both platforms; a parity gate in CI keeps the two apps in step.
 
