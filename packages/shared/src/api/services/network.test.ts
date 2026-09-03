@@ -3,7 +3,7 @@
  * Migrated from api/client.test.ts
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock axios BEFORE importing the service module
 vi.mock('axios', () => {
@@ -37,18 +37,23 @@ vi.mock('axios', () => {
   };
 });
 
-import { apiClient } from '../client';
+import type { apiClient as apiClientType } from '../client';
 import { getReachableBackendBaseUrl } from '../test-backend';
-import {
-  getNetworks,
-  getNetwork,
-  getEnabledNetworkIds,
-  isBackendNetworkEnabled,
-  clearNetworksCache,
+import type {
+  getNetworks as getNetworksType,
+  getNetwork as getNetworkType,
+  getEnabledNetworkIds as getEnabledNetworkIdsType,
+  isBackendNetworkEnabled as isBackendNetworkEnabledType,
 } from './network';
 import type { NetworkCatalogEntry } from '../../types/blockchain';
 
 const backendBaseUrl = await getReachableBackendBaseUrl();
+
+let apiClient: typeof apiClientType;
+let getNetworks: typeof getNetworksType;
+let getNetwork: typeof getNetworkType;
+let getEnabledNetworkIds: typeof getEnabledNetworkIdsType;
+let isBackendNetworkEnabled: typeof isBackendNetworkEnabledType;
 
 async function fetchWithRetry(url: string, attempts = 2): Promise<Response> {
   let lastError: unknown;
@@ -75,16 +80,19 @@ async function fetchWithRetry(url: string, attempts = 2): Promise<Response> {
   throw lastError ?? new Error(`Unable to fetch ${url}`);
 }
 
+async function reloadNetworkModule() {
+  vi.resetModules();
+  ({ apiClient } = await import('../client'));
+  ({ getNetworks, getNetwork, getEnabledNetworkIds, isBackendNetworkEnabled } =
+    await import('./network'));
+}
+
+beforeEach(async () => {
+  vi.clearAllMocks();
+  await reloadNetworkModule();
+});
+
 describe('Network Service', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    clearNetworksCache();
-  });
-
-  afterEach(() => {
-    clearNetworksCache();
-  });
-
   describe('getNetworks()', () => {
     it('should return array of networks', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
@@ -326,70 +334,6 @@ describe('Network Service', () => {
       await expect(isBackendNetworkEnabled('solana-mainnet')).resolves.toBe(true);
       await expect(isBackendNetworkEnabled('ethereum-mainnet')).resolves.toBe(false);
       await expect(isBackendNetworkEnabled('missing-network')).resolves.toBe(false);
-    });
-  });
-
-  describe('clearNetworksCache()', () => {
-    it('should clear the networks cache', async () => {
-      const mockNetworks: NetworkCatalogEntry[] = [
-        {
-          id: 'bitcoin-testnet',
-          name: 'Test',
-          blockchain: 'bitcoin',
-          environment: 'testnet',
-          config: {},
-          enabled: false,
-          sections: {} as never,
-        },
-      ];
-
-      apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
-
-      await getNetworks();
-      expect(apiClient.get).toHaveBeenCalledTimes(1);
-
-      clearNetworksCache();
-
-      await getNetworks();
-      expect(apiClient.get).toHaveBeenCalledTimes(2);
-    });
-
-    it('should allow fresh fetch after cache clear', async () => {
-      const mockNetworks1: NetworkCatalogEntry[] = [
-        {
-          id: 'solana-mainnet',
-          name: 'Network 1',
-          blockchain: 'solana',
-          environment: 'mainnet',
-          config: { nodeUrl: 'https://rpc.solana.example' },
-          enabled: true,
-          sections: {} as never,
-        },
-      ];
-      const mockNetworks2: NetworkCatalogEntry[] = [
-        {
-          id: 'bitcoin-mainnet',
-          name: 'Network 2',
-          blockchain: 'bitcoin',
-          environment: 'mainnet',
-          config: {},
-          enabled: true,
-          sections: {} as never,
-        },
-      ];
-
-      apiClient.get = vi
-        .fn()
-        .mockResolvedValueOnce({ data: mockNetworks1 })
-        .mockResolvedValueOnce({ data: mockNetworks2 });
-
-      const networks1 = await getNetworks();
-      expect(networks1[0]?.id).toBe('solana-mainnet');
-
-      clearNetworksCache();
-
-      const networks2 = await getNetworks();
-      expect(networks2[0]?.id).toBe('bitcoin-mainnet');
     });
   });
 });

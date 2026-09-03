@@ -1,20 +1,7 @@
 import type { ViewStyle } from 'react-native';
+import type { DerivedAccountCardPropsBase } from '@salmon/shared';
 
-export interface DerivedAccountCardProps {
-  address: string;
-  networkName: string;
-  path: string;
-  balanceFormatted: string;
-  selected: boolean;
-  dimmed: boolean;
-  onToggle: () => void;
-  blockchain?: 'solana' | 'bitcoin' | 'ethereum';
+/** The RN half of `DerivedAccountCardPropsBase`: the contract plus a style. */
+export interface DerivedAccountCardProps extends DerivedAccountCardPropsBase {
   style?: ViewStyle;
-  testID?: string;
-}
-
-export interface DerivedAccountCardSkeletonProps {
-  style?: ViewStyle;
-  testID?: string;
-  animated?: boolean;
 }

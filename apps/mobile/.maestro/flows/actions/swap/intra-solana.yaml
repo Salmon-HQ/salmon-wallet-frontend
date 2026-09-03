@@ -8,8 +8,10 @@ appId: io.salmonwallet.app
 # to be USDC → BONK, which could never work — the wallet holds no USDC, so the
 # form never got past token selection.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-- tapOn:
-    id: 'tab-swap'
+# TODO(redesign): swap leaves the tab bar and becomes a powerup — re-point at
+# the powerups FAB once the launcher lists it.
+# - tapOn:
+#     id: 'tab-swap'
 - waitForAnimationToEnd:
     timeout: 8000
 # The tappable ids are swap-from-token / swap-to-token; the swap-from / swap-to

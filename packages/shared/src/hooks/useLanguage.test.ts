@@ -1,316 +1,118 @@
 /**
  * @vitest-environment jsdom
- * Tests for useLanguage hook
+ *
+ * useLanguage — i18next is the source of truth, storage keeps the choice.
+ * i18next is stubbed as the smallest thing that has a language and emits
+ * `languageChanged`, which is all the hook subscribes to.
  */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useLanguage } from './useLanguage';
-import * as storage from '../storage';
 
-// ============================================================================
-// Mocks
-// ============================================================================
+const i18nStub = vi.hoisted(() => {
+  const listeners = new Set<() => void>();
+  return {
+    language: 'en',
+    on: (_event: string, cb: () => void) => listeners.add(cb),
+    off: (_event: string, cb: () => void) => listeners.delete(cb),
+    changeLanguage: vi.fn(async (lang: string) => {
+      i18nStub.language = lang;
+      listeners.forEach((cb) => cb());
+    }),
+  };
+});
+
+vi.mock('i18next', () => ({ default: i18nStub }));
 
 vi.mock('../storage', () => ({
   getStorage: vi.fn(),
-  STORAGE_KEYS: {
-    SETTINGS: 'salmon_settings',
-    LANGUAGE: 'salmon_language',
-    CONTACTS: 'salmon_contacts',
-  },
+  STORAGE_KEYS: { LANGUAGE: 'salmon_language' },
 }));
 
 vi.mock('../locales', () => ({
   AVAILABLE_LANGUAGES: ['en', 'es'],
   DEFAULT_LANGUAGE: 'en',
-  LANGUAGE_NAMES: {
-    en: 'English',
-    es: 'Español',
-  },
+  LANGUAGE_NAMES: { en: 'English', es: 'Español' },
+  isLanguageSupported: (lang: string) => lang === 'en' || lang === 'es',
 }));
 
-vi.mock('i18next', () => ({
-  default: {
-    changeLanguage: vi.fn().mockResolvedValue(undefined),
-  },
-}));
+import { useLanguage } from './useLanguage';
+import * as storage from '../storage';
 
-// ============================================================================
-// Test Data
-// ============================================================================
+const mockStorage = { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() };
 
-const mockStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-};
-
-// ============================================================================
-// Tests
-// ============================================================================
-
-describe('useLanguage Hook', () => {
+describe('useLanguage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (storage.getStorage as any).mockReturnValue(mockStorage);
+    i18nStub.language = 'en';
+    (storage.getStorage as ReturnType<typeof vi.fn>).mockReturnValue(mockStorage);
     mockStorage.getItem.mockResolvedValue(null);
+    mockStorage.setItem.mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+  it('reads what i18next is showing, base code only', () => {
+    i18nStub.language = 'es-AR';
+    const { result } = renderHook(() => useLanguage());
+    expect(result.current.currentLanguage).toBe('es');
+    expect(result.current.availableLanguages).toEqual(['en', 'es']);
+    expect(result.current.languageNames.es).toBe('Español');
   });
 
-  describe('Initialization', () => {
-    it('should initialize with default language when no stored preference', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.language).toBe('en');
-      expect(result.current.languageName).toBe('English');
-    });
-
-    it('should load saved language from storage', async () => {
-      mockStorage.getItem.mockResolvedValue('es');
-
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.language).toBe('es');
-      expect(result.current.languageName).toBe('Español');
-    });
-
-    it('should fallback to default for invalid saved language', async () => {
-      mockStorage.getItem.mockResolvedValue('invalid-lang');
-
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.language).toBe('en');
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'en');
-    });
-
-    it('should handle storage errors gracefully', async () => {
-      mockStorage.getItem.mockRejectedValue(new Error('Storage error'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.language).toBe('en');
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
+  it('restores the persisted choice once on mount', async () => {
+    mockStorage.getItem.mockResolvedValue('es');
+    const { result } = renderHook(() => useLanguage());
+    await waitFor(() => expect(result.current.currentLanguage).toBe('es'));
+    expect(i18nStub.changeLanguage).toHaveBeenCalledTimes(1);
   });
 
-  describe('Language Management', () => {
-    it('should change language successfully', async () => {
-      const { result } = renderHook(() => useLanguage());
+  it('ignores a persisted value it does not ship, and a storage failure', async () => {
+    mockStorage.getItem.mockResolvedValue('xx');
+    const { result, unmount } = renderHook(() => useLanguage());
+    await act(async () => {});
+    expect(result.current.currentLanguage).toBe('en');
+    expect(i18nStub.changeLanguage).not.toHaveBeenCalled();
+    unmount();
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-      });
-
-      expect(result.current.language).toBe('es');
-      expect(result.current.languageName).toBe('Español');
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'es');
-    });
-
-    it('should persist language change to storage', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-      });
-
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'es');
-    });
-
-    it('should reject invalid language codes', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('invalid' as any);
-      });
-
-      expect(result.current.language).toBe('en');
-      expect(mockStorage.setItem).not.toHaveBeenCalledWith('salmon_language', 'invalid');
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
-
-    it('should handle storage errors during change', async () => {
-      mockStorage.setItem.mockRejectedValue(new Error('Storage error'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-      });
-
-      expect(result.current.language).toBe('es');
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockStorage.getItem.mockRejectedValue(new Error('Storage error'));
+    const second = renderHook(() => useLanguage());
+    await act(async () => {});
+    expect(second.result.current.currentLanguage).toBe('en');
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 
-  describe('Available Languages', () => {
-    it('should provide list of available languages', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.availableLanguages).toEqual(['en', 'es']);
+  it('changes the language and persists it', async () => {
+    const { result } = renderHook(() => useLanguage());
+    await act(async () => {
+      await result.current.changeLanguage('es');
     });
-
-    it('should provide language names map', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.languageNames).toHaveProperty('en', 'English');
-      expect(result.current.languageNames).toHaveProperty('es', 'Español');
-    });
+    expect(result.current.currentLanguage).toBe('es');
+    expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'es');
   });
 
-  describe('Loading State', () => {
-    it('should set isLoading to true during initialization', () => {
-      mockStorage.getItem.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(null), 100))
-      );
-
-      const { result } = renderHook(() => useLanguage());
-
-      expect(result.current.isLoading).toBe(true);
+  it('follows a change made elsewhere', async () => {
+    const { result } = renderHook(() => useLanguage());
+    await act(async () => {
+      await i18nStub.changeLanguage('es');
     });
-
-    it('should set isLoading to false after initialization', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-    });
-
-    it('should set isLoading to false even on error', async () => {
-      mockStorage.getItem.mockRejectedValue(new Error('Storage error'));
-
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-    });
+    expect(result.current.currentLanguage).toBe('es');
   });
 
-  describe('Multiple Language Changes', () => {
-    it('should handle rapid language changes', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-        await result.current.changeLanguage('en');
-        await result.current.changeLanguage('es');
-      });
-
-      expect(result.current.language).toBe('es');
+  it('refuses a code it does not ship, and survives a persist failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useLanguage());
+    await act(async () => {
+      await result.current.changeLanguage('invalid' as never);
     });
+    expect(result.current.currentLanguage).toBe('en');
+    expect(mockStorage.setItem).not.toHaveBeenCalled();
 
-    it('should persist each language change', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-      });
-
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'es');
-
-      await act(async () => {
-        await result.current.changeLanguage('en');
-      });
-
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_language', 'en');
+    mockStorage.setItem.mockRejectedValue(new Error('Storage error'));
+    await act(async () => {
+      await result.current.changeLanguage('es');
     });
-  });
-
-  describe('Language Name Display', () => {
-    it('should update languageName when language changes', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.languageName).toBe('English');
-
-      await act(async () => {
-        await result.current.changeLanguage('es');
-      });
-
-      expect(result.current.languageName).toBe('Español');
-    });
-
-    it('should provide correct language names for all supported languages', async () => {
-      const { result } = renderHook(() => useLanguage());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      const testCases = [
-        { code: 'en', name: 'English' },
-        { code: 'es', name: 'Español' },
-      ];
-
-      for (const { code, name } of testCases) {
-        await act(async () => {
-          await result.current.changeLanguage(code as 'en' | 'es');
-        });
-
-        expect(result.current.languageName).toBe(name);
-      }
-    });
+    expect(result.current.currentLanguage).toBe('es');
+    expect(consoleSpy).toHaveBeenCalledTimes(2);
+    consoleSpy.mockRestore();
   });
 });

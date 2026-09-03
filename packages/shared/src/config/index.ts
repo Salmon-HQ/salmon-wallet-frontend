@@ -28,3 +28,6 @@ export {
 // Legacy local blockchain config helpers.
 // Backend `/v1/networks` is the runtime source of truth for enablement.
 export { ENABLED_BLOCKCHAINS, isBlockchainEnabled } from './blockchains';
+
+// Public Bitcoin relays — the client broadcasts signed transactions directly.
+export { BITCOIN_BROADCAST_RELAYS, getBitcoinBroadcastRelays } from './bitcoin-relays';

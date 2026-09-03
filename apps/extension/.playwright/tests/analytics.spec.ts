@@ -1,7 +1,8 @@
 /**
  * Anonymous usage-analytics e2e (extension popup).
  *
- * The extension side of apps/web/.playwright/tests/analytics.spec.ts. Proves the
+ * The web app (and its equivalent analytics spec) was retired on 2026-09-02;
+ * this is now the only analytics e2e suite. Proves the
  * opt-in contract inside the popup:
  *  1. With consent OFF, a tracked action (switching network) emits NO
  *     `/v1/events` request.
@@ -63,24 +64,28 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
 
   const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
-  // Wait for the drawer to actually unmount, not just to start closing: its
-  // backdrop lingers over the viewport through the close animation and would eat
-  // the next click (e.g. the carousel).
+  // Settings is a screen, and a screen is left by its header's back control —
+  // it stopped being a drawer with a close button when lot 4A+4B made it one
+  // (586a82f1). This waited on a `settings-close-button` the app no longer
+  // has, spending the whole action timeout on every call.
+  //
+  // Wait for it to actually leave, not just to start leaving: the outgoing
+  // screen is held for the length of the pop and would eat the next click.
   const closeSettings = async () => {
-    await popup.getByTestId('settings-close-button').click();
-    await expect(popup.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+    await popup.getByTestId('settings-screen').getByTestId('screen-header-back-button').click();
+    await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 15_000 });
   };
-  // Move the balance carousel one step, whichever direction is available. The
-  // carousel hides (opacity 0, but still in the DOM) the arrow at its current
-  // end, and there are only two networks — so a fixed "next" click lands on the
-  // hidden arrow once we reach the last one and gets eaten by the card. Click
-  // whichever arrow is actually showing; either direction fires network_switched.
+  // Move the balance carousel one step, whichever direction is available.
+  //
+  // The carousel is a row of dots with a hint on each side; the `next`/`prev`
+  // arrows this used to click were replaced by them in the redesign and no
+  // longer exist, so every call spent its action timeout on a locator that
+  // could not resolve. Either hint fires `network_switched`, and exactly one
+  // is showing at each end of a two-network carousel.
   const switchNetwork = async () => {
-    const next = popup.getByTestId('balance-carousel-next');
-    const nextActive = await next
-      .evaluate((el) => getComputedStyle(el).opacity !== '0')
-      .catch(() => false);
-    await (nextActive ? next : popup.getByTestId('balance-carousel-prev')).click();
+    const next = popup.getByTestId('balance-next-hint');
+    const useNext = (await next.count()) > 0;
+    await (useNext ? next : popup.getByTestId('balance-prev-hint')).click();
   };
 
   // The suite shares one persistent profile, so a previous run may have left

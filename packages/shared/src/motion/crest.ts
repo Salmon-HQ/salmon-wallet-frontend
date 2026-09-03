@@ -67,7 +67,7 @@
  * @module motion/crest
  */
 
-import { water } from '../theme/semantic';
+import { semantic } from '../theme/semantic';
 
 // ============================================================================
 // Shape
@@ -143,7 +143,7 @@ export const CREST_LIGHT_ALPHA = 0.22;
  * Near-opaque because it has to be — 16 levels is the entire budget below the
  * ground, so anything less than most of it is not a shadow, it is a gap.
  */
-export const CREST_SHADOW_ALPHA = 0.9;
+export const CREST_SHADOW_ALPHA = semantic.water.crestShadow.alpha;
 
 /**
  * Alpha of the calm lift between the lines — felt, never seen as an edge.
@@ -202,18 +202,32 @@ export const CREST_DECAY = 0.45;
 export const CREST_FADE_FROM = 0.85;
 
 /**
- * The lit crowns.
+ * The lit crowns' default colour.
  *
- * `water.light`, the cold caustic ink — **not** the brand salmon it was.
- * Product, 2026-08: *"las ondas siguen siendo naranjas."* A salmon ring crossing
- * the screen reads as a brand element travelling; this is light returning off
- * water, so it takes the colour of the material. It is the same ink the press
- * specular uses, which is where DESIGN.md licenses cold light (§The wait).
+ * Owner ruling, 2026-09-01, supersedes the cold-ink argument this constant
+ * used to carry: the crest and the marks on the wait and the lock are the
+ * brand accent in both modes, not `water.light` — see DESIGN.md §The wait.
+ * `accent.fill` is the button's own salmon, invariant across modes (owner,
+ * 2026-09-02: the fish and the waves are the colour of the buttons, not the
+ * darker text ink light uses for AA). A caller under a live theme may still
+ * pass its own colour to {@link crestStops} / {@link crestGradientCSS}.
  */
-export const CREST_LIGHT_COLOR = water.light;
+export const CREST_LIGHT_COLOR = semantic.accent.fill;
 
 /** The shadow lines. */
-export const CREST_SHADOW_COLOR = '#000000';
+export const CREST_SHADOW_COLOR = semantic.water.crestShadow.color;
+
+/**
+ * The flank's colour and alpha as one value — `semantic.water.crestShadow`,
+ * per mode. The module-scope constants above are dark's; a caller under a
+ * live theme passes its own mode's token to {@link crestStops}.
+ */
+export interface CrestShadow {
+  color: string;
+  alpha: number;
+}
+
+export const CREST_SHADOW: CrestShadow = semantic.water.crestShadow;
 
 // ============================================================================
 // Derived
@@ -251,24 +265,29 @@ export interface CrestStop {
  *
  * @param alpha Overall multiplier — how alive this crest node is (1 for the
  *   leading one, less for any trailing it).
+ * @param lightColor The lit crowns' colour. Defaults to {@link CREST_LIGHT_COLOR}
+ *   (dark's `accent.ink`); a caller under a live theme passes its own
+ *   resolved colour so the crest follows the mode.
  */
-export function crestStops(alpha = 1): CrestStop[] {
+export function crestStops(
+  alpha = 1,
+  lightColor: string = CREST_LIGHT_COLOR,
+  shadow: CrestShadow = CREST_SHADOW
+): CrestStop[] {
   const inner = 1 - CREST_BAND;
   const foot = CREST_BAND * CREST_FOOT;
   const start = inner + foot;
   const spacing = (CREST_BAND - 2 * foot) / CREST_RINGS;
   const half = spacing * CREST_FALLOFF;
 
-  const stops: CrestStop[] = [
-    { offset: inner, color: CREST_LIGHT_COLOR, opacity: 0, role: 'foot' },
-  ];
+  const stops: CrestStop[] = [{ offset: inner, color: lightColor, opacity: 0, role: 'foot' }];
   // The lift decays with its ring like everything else: a calm level that stayed
   // put while the crowns faded would eventually sit *above* the outer crowns,
   // and a ring dimmer than the water around it is a groove, not a crest.
   const lift = (offset: number, decay: number) => {
     stops.push({
       offset,
-      color: CREST_LIGHT_COLOR,
+      color: lightColor,
       opacity: CREST_LIFT_ALPHA * decay * alpha,
       role: 'lift',
     });
@@ -279,12 +298,19 @@ export function crestStops(alpha = 1): CrestStop[] {
     const boundary = start + ring * spacing;
 
     lift(boundary - half, decay);
-    stops.push({
-      offset: boundary,
-      color: CREST_SHADOW_COLOR,
-      opacity: CREST_SHADOW_ALPHA * decay * alpha,
-      role: 'shadow',
-    });
+    // The train starts on a crown. A flank is read as shadow because it sits
+    // against a lit crown; the innermost boundary has calm water inside it
+    // and nothing lit to be darker than, so on a pale ground it read as a
+    // stray grey line (owner, on device in light, 2026-09-02). Every other
+    // boundary sits between two crowns and keeps its flank.
+    if (ring > 0) {
+      stops.push({
+        offset: boundary,
+        color: shadow.color,
+        opacity: shadow.alpha * decay * alpha,
+        role: 'shadow',
+      });
+    }
     lift(boundary + half, decay);
 
     if (ring === CREST_RINGS) break;
@@ -293,14 +319,14 @@ export function crestStops(alpha = 1): CrestStop[] {
     lift(crown - half, decay);
     stops.push({
       offset: crown,
-      color: CREST_LIGHT_COLOR,
+      color: lightColor,
       opacity: CREST_LIGHT_ALPHA * decay * alpha,
       role: 'crown',
     });
     lift(crown + half, decay);
   }
 
-  stops.push({ offset: 1, color: CREST_LIGHT_COLOR, opacity: 0, role: 'foot' });
+  stops.push({ offset: 1, color: lightColor, opacity: 0, role: 'foot' });
   return stops;
 }
 
@@ -331,8 +357,12 @@ export function crestTrain(): { lag: number; alpha: number }[] {
  * gradient itself is never animated, so the layer is rasterised once and the
  * front stays on the compositor.
  */
-export function crestGradientCSS(alpha = 1): string {
-  const stops = crestStops(alpha)
+export function crestGradientCSS(
+  alpha = 1,
+  lightColor: string = CREST_LIGHT_COLOR,
+  shadow: CrestShadow = CREST_SHADOW
+): string {
+  const stops = crestStops(alpha, lightColor, shadow)
     .map(({ offset, color, opacity }) => `${rgba(color, opacity)} ${(offset * 100).toFixed(2)}%`)
     .join(', ');
   // `closest-side` on a square box puts the gradient's 100% exactly on the

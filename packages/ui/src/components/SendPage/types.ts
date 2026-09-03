@@ -1,39 +1,40 @@
-/**
- * SendPage types for web/extension version
- *
- * Page-based send flow (replaces the former SendSheet dialog).
- * Uses CSSProperties instead of ViewStyle for web compatibility.
- */
-
 import type {
+  BlockchainAccount,
+  BlockchainType,
+  NetworkId,
+  NftData,
+  SendFailurePropsBase,
   SendStep,
   SendToken,
-  StepTokenSelectProps,
-  StepAddressAmountPropsBase,
-  StepConfirmationProps,
-  BlockchainType,
-  BlockchainAccount,
+  TokenPickerSheetPropsBase,
+  TokenSelectListPropsBase,
 } from '@salmon/shared';
 
-// Re-export shared types for convenience
-export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps, StepConfirmationProps };
+export type { SendStep, SendToken, BlockchainType };
 
 /**
- * Props for the SendPage component (Web/Extension)
+ * SendPage — the four send screens as one component (the DOM has no route
+ * stack). The host hands it what mobile's `SendFlowProvider` reads from the
+ * accounts context; the flow's state lives inside.
  */
 export interface SendPageProps {
   /** Available tokens from useBalance */
   tokens: SendToken[];
   /** Blockchain type for address validation and transfer routing */
   blockchain: BlockchainType;
-  /** The active blockchain account */
+  /** The active network, for the queries a step runs of its own. */
+  networkId: NetworkId | null;
+  /** The account that signs — the active one, or the NFT's owner. */
   account: BlockchainAccount;
-  /** Navigate back to home */
+  /**
+   * A collectible instead of a token: the flow becomes mobile's
+   * `nft/[id]/send` — recipient, review, receipt — with no amount step.
+   */
+  nft?: NftData | null;
+  /** Leave the flow */
   onBack: () => void;
-  /** Callback when transaction completes successfully */
+  /** Callback when the transfer completes and the receipt is acknowledged */
   onSuccess?: (txId: string) => void;
-  /** Show unverified/unknown tokens (developer mode) */
-  showUnverifiedTokens?: boolean;
   /** Whether token data is still loading */
   loading?: boolean;
   /**
@@ -44,7 +45,9 @@ export interface SendPageProps {
   onFlowLockChange?: (locked: boolean) => void;
 }
 
-/**
- * Props for the address and amount step (Web/Extension)
- */
-export interface StepAddressAmountProps extends StepAddressAmountPropsBase {}
+/** The DOM half of `SendFailurePropsBase`: nothing platform-specific to add. */
+export type SendFailureProps = SendFailurePropsBase;
+
+export type TokenPickerSheetProps = TokenPickerSheetPropsBase;
+
+export type TokenSelectListProps = TokenSelectListPropsBase;

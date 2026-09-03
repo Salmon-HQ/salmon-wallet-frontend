@@ -3,17 +3,12 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { PrivateKeyPanel } from './PrivateKeyPanel';
-import { semantic } from '../../../../shared/src/theme';
-
-/** jsdom reports computed colors as `rgb(...)`; the tokens are authored as hex. */
-function rgbOf(hex: string): string {
-  const value = parseInt(hex.slice(1), 16);
-  return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
-}
 
 /** Obviously fake — no real credential belongs in a test. */
 const CORRECT_PASSWORD = 'test-password-000';
@@ -26,14 +21,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens plus
-// the accounts context the panel reads the keys from.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/scaling')),
-  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
-  getShortAddress: (address: string) => address.slice(0, 8),
+// The real barrel, with only the accounts context overridden so the panel's
+// reveal/reauth flow is deterministic under test.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useAccountsContext: () => [
     {
       activeAccount: {
@@ -55,32 +46,47 @@ vi.mock('@salmon/shared', async () => ({
   ],
 }));
 
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
+function stubMatchMedia() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+}
+
+function renderPanel(mode: 'dark' | 'light' = 'dark') {
+  stubMatchMedia();
+  renderInMode(mode, <PrivateKeyPanel onBack={vi.fn()} />);
+}
 
 /** The reveal is gated on the password, so every test has to pay it. */
 function reauthenticate(password: string = CORRECT_PASSWORD) {
-  fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } });
+  fireEvent.change(screen.getByTestId('confirm-dialog-password'), { target: { value: password } });
   fireEvent.click(screen.getByTestId('private-key-reauth-confirm'));
 }
 
-describe('PrivateKeyPanel reveal', () => {
-  afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
+describe('PrivateKeyPanel reveal', () => {
   it('does not hand over the private key to whoever is holding an unlocked session', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('private-key-reveal-button-0'));
+    renderPanel();
+    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
 
     // Asking is not enough — the password has to be re-entered.
     expect(screen.queryByText(FAKE_PRIVATE_KEY)).toBeNull();
-    expect(screen.getByLabelText('Password')).toBeTruthy();
+    expect(screen.getByTestId('confirm-dialog-password')).toBeTruthy();
   });
 
   it('keeps the key hidden when the password is wrong', async () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('private-key-reveal-button-0'));
+    renderPanel();
+    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
     reauthenticate('wrong-password-000');
 
     await waitFor(() => {
@@ -90,8 +96,8 @@ describe('PrivateKeyPanel reveal', () => {
   });
 
   it('shows the key once the password is re-entered', async () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('private-key-reveal-button-0'));
+    renderPanel();
+    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
     reauthenticate();
 
     await waitFor(() => {
@@ -99,17 +105,9 @@ describe('PrivateKeyPanel reveal', () => {
     });
   });
 
-  it('gates the blur overlay on the password too, not only the reveal button', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
-
-    expect(screen.queryByText(FAKE_PRIVATE_KEY)).toBeNull();
-    expect(screen.getByLabelText('Password')).toBeTruthy();
-  });
-
   it('says the clipboard is readable by other apps before the key goes into it', async () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('private-key-reveal-button-0'));
+    renderPanel();
+    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
     reauthenticate();
 
     await waitFor(() => {
@@ -119,45 +117,24 @@ describe('PrivateKeyPanel reveal', () => {
 });
 
 describe('PrivateKeyPanel key exhibition surface', () => {
-  afterEach(cleanup);
-
-  it('exhibits the key on bedrock, not on a translucent card', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
+  it('exhibits the key on bedrock, not on a translucent card, in both modes', () => {
+    renderPanel('light');
 
     const card = screen.getByTestId('private-key-card-0');
-    const background = window.getComputedStyle(card).backgroundColor;
+    const cover = screen.getByTestId('private-key-reveal-overlay-0');
+    const bedrock = asRenderedColor(createSemantic('light').surface.bedrock);
 
     // A secret shown through a translucent surface is the failure this pins.
-    expect(background).toBe(rgbOf(semantic.surface.bedrock));
-    expect(background).not.toContain('rgba');
+    expect(card.style.backgroundColor).toBe(bedrock);
+    expect(cover.style.backgroundColor).toBe(bedrock);
+    expect(card.style.backgroundColor).not.toContain('rgba');
   });
-});
 
-describe('PrivateKeyPanel reveal overlay keyboard access', () => {
-  afterEach(cleanup);
-
-  it('exposes the overlay as a focusable button with a name', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
+  it('exposes the cover as a real button with a name that promises the gate', () => {
+    renderPanel();
 
     const overlay = screen.getByTestId('private-key-reveal-overlay-0');
-    expect(overlay.getAttribute('role')).toBe('button');
-    expect(overlay.getAttribute('tabindex')).toBe('0');
-    expect(overlay.getAttribute('aria-label')).toBe('Tap to reveal');
-  });
-
-  it('opens the same password gate from the keyboard as from a click', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.keyDown(screen.getByTestId('private-key-reveal-overlay-0'), { key: ' ' });
-
-    // Keyboard reaches the gate, and the gate still holds.
-    expect(screen.getByLabelText('Password')).toBeTruthy();
-    expect(screen.queryByText(FAKE_PRIVATE_KEY)).toBeNull();
-  });
-
-  it('ignores keys that are not activation keys', () => {
-    render(<PrivateKeyPanel onBack={vi.fn()} />);
-    fireEvent.keyDown(screen.getByTestId('private-key-reveal-overlay-0'), { key: 'a' });
-
-    expect(screen.queryByLabelText('Password')).toBeNull();
+    expect(overlay.tagName).toBe('BUTTON');
+    expect(overlay.getAttribute('aria-label')).toBe('settings.authenticate_to_reveal');
   });
 });

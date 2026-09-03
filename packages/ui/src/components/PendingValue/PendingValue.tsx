@@ -1,9 +1,10 @@
 /**
  * PendingValue - a value that is being recalculated, in place.
  *
- * Web/extension expression of the shared `PendingValuePropsBase` contract.
+ * DOM expression of the shared `PendingValuePropsBase` contract; the mobile
+ * twin is `apps/mobile/src/components/PendingValue`.
  *
- * The row or card around the value is not touched: it keeps its blur, its
+ * The row or card around the value is not touched: it keeps its ground, its
  * border and its label, because none of that is loading. Only the number
  * breathes, and only for as long as the request that can change it is in
  * flight. Nothing is keyed on the value itself, so a refresh that comes back
@@ -16,39 +17,45 @@
  * readable without the travel.
  */
 import React from 'react';
-import { keyframes, styled } from '@mui/material/styles';
-import { motionDuration, motionEasing, motionMs, opacity, reducedMotion } from '@salmon/shared';
+import { motionDuration, motionEasing, motionMs, opacity } from '@salmon/shared';
+
+import { useReducedMotion } from '../../motion/useReducedMotion';
+import { injectKeyframes } from '../../utils/injectKeyframes';
 import type { PendingValueProps } from './types';
 
-const breathe = keyframes`
-  from { opacity: ${opacity.full}; }
-  to { opacity: ${opacity.disabled}; }
-`;
-
-const Slot = styled('span', {
-  shouldForwardProp: (prop: string) => prop !== 'pending',
-})<{ pending: boolean }>(({ pending }) => ({
-  display: 'inline-block',
-  transition: `opacity ${motionDuration.swell} ${motionEasing.settle.css}`,
-  ...(pending
-    ? {
-        animation: `${breathe} ${motionMs.pulseCycle / 2}ms ${motionEasing.current.css} infinite alternate`,
-        [`@media ${reducedMotion.query}`]: {
-          animation: 'none',
-          opacity: opacity.disabled,
-        },
-      }
-    : { opacity: opacity.full }),
-}));
+const BREATHE = 'sw-pending-value-breathe';
+injectKeyframes(
+  BREATHE,
+  `@keyframes ${BREATHE} { from { opacity: ${opacity.full}; } to { opacity: ${opacity.disabled}; } }`
+);
 
 export function PendingValue({
   pending = false,
   children,
   style,
 }: PendingValueProps): React.ReactElement {
+  const reduced = useReducedMotion();
+
+  const motion: React.CSSProperties = !pending
+    ? { opacity: opacity.full }
+    : reduced
+      ? { opacity: opacity.disabled }
+      : {
+          animation: `${BREATHE} ${motionMs.pulseCycle / 2}ms ${motionEasing.current.css} infinite alternate`,
+        };
+
   return (
-    <Slot pending={pending} style={style}>
+    <span
+      data-testid="pending-value"
+      data-pending={pending || undefined}
+      style={{
+        display: 'inline-block',
+        transition: `opacity ${motionDuration.swell} ${motionEasing.settle.css}`,
+        ...motion,
+        ...style,
+      }}
+    >
       {children}
-    </Slot>
+    </span>
   );
 }

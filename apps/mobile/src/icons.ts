@@ -15,7 +15,7 @@
  *   success checkmark. `duotone` is never used.
  * - Size comes from `iconSize` below (or `componentSizes` for legacy steps).
  *   16 is the floor — a thinner box loses the stroke.
- * - Color comes from a text token (`colors.text.*`), never a literal:
+ * - Color comes from a text token (`semantic.text.*`), never a literal:
  *   decorative reads `text.tertiary`, actionable `text.primary`, destructive
  *   `danger-500` (`semantic.status.danger`).
  *
@@ -39,6 +39,7 @@ export type IconSizeToken = keyof typeof iconSize;
 
 export { AddressBookIcon } from 'phosphor-react-native/src/icons/AddressBook';
 export { ArrowDownIcon } from 'phosphor-react-native/src/icons/ArrowDown';
+export { ArrowDownLeftIcon } from 'phosphor-react-native/src/icons/ArrowDownLeft';
 export { ArrowElbowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowElbowUpRight';
 export { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight';
 export { ArrowSquareOutIcon } from 'phosphor-react-native/src/icons/ArrowSquareOut';
@@ -57,6 +58,8 @@ export { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
 export { ChatsCircleIcon } from 'phosphor-react-native/src/icons/ChatsCircle';
 export { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 export { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
+export { CircleIcon } from 'phosphor-react-native/src/icons/Circle';
+export { CircleHalfIcon } from 'phosphor-react-native/src/icons/CircleHalf';
 export { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
 export { CloudIcon } from 'phosphor-react-native/src/icons/Cloud';
 export { CloudSlashIcon } from 'phosphor-react-native/src/icons/CloudSlash';
@@ -67,7 +70,7 @@ export { CubeIcon } from 'phosphor-react-native/src/icons/Cube';
 export { CurrencyCircleDollarIcon } from 'phosphor-react-native/src/icons/CurrencyCircleDollar';
 export { CurrencyDollarIcon } from 'phosphor-react-native/src/icons/CurrencyDollar';
 export { DiamondIcon } from 'phosphor-react-native/src/icons/Diamond';
-export { DiscordLogoIcon } from 'phosphor-react-native/src/icons/DiscordLogo';
+export { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVertical';
 export { DropIcon } from 'phosphor-react-native/src/icons/Drop';
 export { EnvelopeIcon } from 'phosphor-react-native/src/icons/Envelope';
 export { EyeIcon } from 'phosphor-react-native/src/icons/Eye';
@@ -84,12 +87,14 @@ export { HandPalmIcon } from 'phosphor-react-native/src/icons/HandPalm';
 export { ImageIcon } from 'phosphor-react-native/src/icons/Image';
 export { InfoIcon } from 'phosphor-react-native/src/icons/Info';
 export { KeyIcon } from 'phosphor-react-native/src/icons/Key';
+export { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
 export { LinkIcon } from 'phosphor-react-native/src/icons/Link';
 export { LockIcon } from 'phosphor-react-native/src/icons/Lock';
 export { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
 export { MedalIcon } from 'phosphor-react-native/src/icons/Medal';
 export { MoneyIcon } from 'phosphor-react-native/src/icons/Money';
 export { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
+export { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 export { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
 export { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 export { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
@@ -102,10 +107,12 @@ export { ShareNetworkIcon } from 'phosphor-react-native/src/icons/ShareNetwork';
 export { ShieldIcon } from 'phosphor-react-native/src/icons/Shield';
 export { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 export { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
+export { SlidersIcon } from 'phosphor-react-native/src/icons/Sliders';
 export { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley';
 export { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle';
 export { SquaresFourIcon } from 'phosphor-react-native/src/icons/SquaresFour';
 export { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+export { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront';
 export { TagIcon } from 'phosphor-react-native/src/icons/Tag';
 export { TextTIcon } from 'phosphor-react-native/src/icons/TextT';
 export { TranslateIcon } from 'phosphor-react-native/src/icons/Translate';

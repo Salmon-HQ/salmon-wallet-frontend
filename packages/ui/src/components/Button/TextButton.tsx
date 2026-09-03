@@ -1,97 +1,80 @@
 /**
- * TextButton - Text-only button without background
+ * TextButton - text-only button without background, on the DOM.
  *
- * Used for tertiary actions or links.
- * Web version using @emotion/styled for browser extension.
+ * The mobile twin is `apps/mobile/src/components/Button/TextButton.tsx`.
+ * Used for tertiary actions or links. `text.accent` ink per DESIGN.md
+ * §Buttons — a ghost control that reads as body copy is not a control.
  */
-import { styled } from '../../utils/styled';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import {
-  colors,
   componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
-  letterSpacing,
+  motionMs,
   spacing,
-  shadowsCSS,
-  opacity,
-  duration,
-  easing,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ButtonSpinner } from './ButtonSpinner';
 import type { TextButtonProps } from './types';
 
-const StyledButton = styled(Button)<{ $customColor?: string }>(({ $customColor }) => ({
-  minWidth: 'auto',
-  height: componentSizes.buttonHeightSmall,
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-  background: 'transparent',
-  // The control radius. Nothing is filled here, but the focus ring is drawn
-  // inset and inherits this, so a square ring on a text button was the one
-  // place a control did not look like a control.
-  borderRadius: componentSizes.buttonRadius,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  letterSpacing: letterSpacing.wide,
-  color: $customColor || colors.text.primary,
-  textTransform: 'none',
-  boxShadow: shadowsCSS.none,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    background: 'transparent',
-    opacity: opacity.low,
-    boxShadow: shadowsCSS.none,
-  },
-  '&:active': {
-    background: 'transparent',
-  },
-  '&.Mui-disabled': {
-    background: 'transparent',
-    opacity: colors.button.disabledOpacity,
-    color: $customColor || colors.text.primary,
-  },
-}));
-
-const LoaderWrapper = styled('span')({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
 export function TextButton({
-  onClick,
+  onPress,
   children,
   disabled,
   loading,
+  fullWidth,
   style,
   className,
   color,
-  type = 'button',
+  icon,
   testID,
 }: TextButtonProps) {
   const isDisabled = disabled || loading;
+  const { text, state } = useSemantic();
+  const ink = color || text.accent;
 
   return (
-    <StyledButton
-      onClick={onClick}
-      disabled={isDisabled}
-      type={type}
-      style={style}
-      className={className}
-      $customColor={color}
-      disableRipple={false}
+    <button
+      type="button"
       data-testid={testID}
+      aria-label={children}
+      aria-disabled={isDisabled || undefined}
+      aria-busy={loading || undefined}
+      onClick={onPress}
+      disabled={isDisabled}
+      className={className}
+      style={{
+        boxSizing: 'border-box',
+        width: fullWidth ? '100%' : undefined,
+        height: componentSizes.buttonHeightSmall,
+        background: 'transparent',
+        border: 'none',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.xs,
+        paddingLeft: spacing.lg,
+        paddingRight: spacing.lg,
+        cursor: isDisabled ? 'default' : 'pointer',
+        fontFamily: fontFamily.sans,
+        fontSize: fontSize.body,
+        fontWeight: fontWeight.semibold,
+        color: ink,
+        opacity: isDisabled ? state.disabledOpacity : 1,
+        transition: `opacity ${motionMs.flick}ms`,
+        ...style,
+      }}
     >
       {loading ? (
-        <LoaderWrapper>
-          <CircularProgress size={20} sx={{ color: color || colors.text.primary }} />
-        </LoaderWrapper>
+        <ButtonSpinner color={ink} size={16} />
       ) : (
-        children
+        <>
+          {icon}
+          <span>{children}</span>
+        </>
       )}
-    </StyledButton>
+    </button>
   );
 }

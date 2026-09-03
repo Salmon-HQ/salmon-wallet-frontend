@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
+import { chainMarks } from './brand';
 import { neutral, salmon } from './palette';
 import { AVATAR_COLORS } from '../types/settings';
-import { accent, border, depth, scales, state, status, surface, text, water } from './semantic';
+import {
+  accent,
+  border,
+  createSemantic,
+  depth,
+  scales,
+  state,
+  status,
+  surface,
+  text,
+  water,
+} from './semantic';
 import { colors, isOpaqueColor } from './colors';
 import { shadowsCSS } from './shadows';
 import { componentSizes } from './spacing';
 import { fontSize } from './typography';
+import { CREST_LIGHT_ALPHA } from '../motion/crest';
 
 /**
  * WCAG 2.1 relative luminance and contrast ratio.
@@ -28,6 +41,22 @@ const contrast = (a: string, b: string): number => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
+/** Straight-alpha composite of an `rgba()` token over an opaque hex. */
+const compositeOver = (translucent: string, backdrop: string): string => {
+  const [r, g, b, alpha] = translucent
+    .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+    .slice(1)
+    .map(Number);
+  const base = [0, 2, 4].map((i) => parseInt(backdrop.replace('#', '').slice(i, i + 2), 16));
+  return `#${[r, g, b]
+    .map((channel, i) =>
+      Math.round(channel * alpha + base[i] * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0')
+    )
+    .join('')}`;
+};
+
 /** WCAG 1.4.3 — normal-size body text */
 const AA_TEXT = 4.5;
 /** WCAG 1.4.11 — non-text boundaries that carry meaning */
@@ -35,19 +64,35 @@ const AA_NON_TEXT = 3;
 /** DESIGN.md — the ceiling for any stroke that carries no meaning at all */
 const MOTIF_CEILING = 1.4;
 
-describe('contrast: text on opaque surfaces', () => {
+/**
+ * The two modes, for the blocks whose guarantee is a property of the *system*
+ * rather than of the deep water: a text role has to clear AA on the surface it
+ * sits on whichever end of the ramp the app is reading (spec 021).
+ *
+ * The blocks that stay dark-only below are the ones whose subject is the dark
+ * material itself — the membrane tiers, the water column, the
+ * two-band focus ring, the bezel. Those are re-tuned in the light material
+ * pass; asserting them against light tokens today would assert a mode that
+ * does not render.
+ */
+const MODES = [
+  ['dark', createSemantic('dark')],
+  ['light', createSemantic('light')],
+] as const;
+
+describe.each(MODES)('contrast: text on opaque surfaces (%s)', (_mode, tokens) => {
   const surfaces = [
-    ['shelf', surface.shelf],
-    ['raised', surface.raised],
-    ['crest', surface.crest],
-    ['bedrock', surface.bedrock],
+    ['shelf', tokens.surface.shelf],
+    ['raised', tokens.surface.raised],
+    ['crest', tokens.surface.crest],
+    ['bedrock', tokens.surface.bedrock],
   ] as const;
 
   const readableRoles = [
-    ['primary', text.primary],
-    ['secondary', text.secondary],
-    ['tertiary', text.tertiary],
-    ['accent', text.accent],
+    ['primary', tokens.text.primary],
+    ['secondary', tokens.text.secondary],
+    ['tertiary', tokens.text.tertiary],
+    ['accent', tokens.text.accent],
   ] as const;
 
   for (const [surfaceName, surfaceValue] of surfaces) {
@@ -57,15 +102,168 @@ describe('contrast: text on opaque surfaces', () => {
       });
     }
   }
+
+  it('every readable role clears AA on the app ground too', () => {
+    for (const [, roleValue] of readableRoles) {
+      expect(contrast(roleValue, tokens.depth.column)).toBeGreaterThanOrEqual(AA_TEXT);
+    }
+  });
 });
 
-describe('contrast: the salmon fill rule', () => {
+/**
+ * The card material. `Card`'s `surface` tone (and everything built on it —
+ * `ListRow`, `TokenListItem`) grounds on `membraneThin` instead of the
+ * opaque `surface.raised` (2026-09-01, owner: what lies under a card must
+ * show through a little). A card's real backdrop is the app's own ground,
+ * not an arbitrary bright image the way a floating sheet's can be, so the
+ * worst case that governs the card material's alpha is `water.gradient`'s
+ * own lighter stop — the brightest the column ever paints behind a card.
+ *
+ * This is what let `membraneThin` and `membraneThick` drop from 0.62/0.80
+ * to 0.48/0.66: body text stays comfortably above AA against the ground a
+ * card actually sits on, at either gradient stop.
+ */
+describe('contrast: the membrane tiers over the water column', () => {
+  /** A straight-alpha composite of a translucent token over an opaque one. */
+  const composite = (translucent: string, backdrop: string): string => {
+    const [r, g, b, alpha] = translucent
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const base = [0, 2, 4].map((i) => parseInt(backdrop.replace('#', '').slice(i, i + 2), 16));
+    return `#${[r, g, b]
+      .map((channel, i) =>
+        Math.round(channel * alpha + base[i] * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  };
+
+  for (const [tier, tierValue] of [
+    ['membraneThin', surface.membraneThin],
+    ['membraneThick', surface.membraneThick],
+  ] as const) {
+    for (const groundStop of water.gradient) {
+      it(`text.primary meets AA on ${tier} over the water column`, () => {
+        expect(contrast(text.primary, composite(tierValue, groundStop))).toBeGreaterThanOrEqual(
+          AA_TEXT
+        );
+      });
+    }
+  }
+});
+
+/**
+ * The card material on a light ground.
+ *
+ * The dark block above measures a deep-neutral membrane against the water
+ * column; this is the same test with the ink inverted — white at high alpha
+ * over the light ramp, which is real now (spec 022), so the card is measured
+ * at both stops exactly as the dark one is. Body text has to clear AA on both
+ * tiers anywhere on the ramp, or a card stops reading as an object.
+ */
+describe('contrast: the membrane tiers over the light water column', () => {
+  const light = createSemantic('light');
+
+  for (const [tier, tierValue] of [
+    ['membraneThin', light.surface.membraneThin],
+    ['membraneThick', light.surface.membraneThick],
+  ] as const) {
+    for (const groundStop of light.water.gradient) {
+      const ground = compositeOver(tierValue, groundStop);
+
+      it(`text.primary meets AA on ${tier} over ${groundStop}`, () => {
+        expect(contrast(light.text.primary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+
+      it(`text.secondary meets AA on ${tier} over ${groundStop}`, () => {
+        expect(contrast(light.text.secondary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+      });
+    }
+  }
+});
+
+/**
+ * The light ramp itself (spec 022). Same two guarantees the dark ramp is held
+ * to: it only ever deepens, and every text role clears AA at both stops — a
+ * ground that darkens downward can only raise contrast, but "only" is an
+ * assumption until someone wants a deeper floor.
+ */
+describe('contrast: the light water column', () => {
+  const light = createSemantic('light');
+  const [rampTop, rampFloor] = light.water.gradient;
+
+  it('the ramp only ever deepens', () => {
+    expect(luminance(rampFloor)).toBeLessThan(luminance(rampTop));
+  });
+
+  it('the ramp starts on the ground the light mode paints', () => {
+    expect(rampTop).toBe(light.depth.column);
+  });
+
+  const readableRoles = [
+    ['primary', light.text.primary],
+    ['secondary', light.text.secondary],
+    ['tertiary', light.text.tertiary],
+    ['accent', light.text.accent],
+  ] as const;
+
+  for (const [roleName, roleValue] of readableRoles) {
+    it(`text.${roleName} clears AA at every point on the ramp`, () => {
+      expect(contrast(roleValue, rampTop)).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(contrast(roleValue, rampFloor)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  }
+});
+
+/**
+ * The coral deep field — the one part of the underwater material that crosses
+ * into light (owner, 2026-09-01).
+ *
+ * Same two bounds the dark field is held to, on the other ground: visible on a
+ * real display, and under the decorative ceiling so it can be painted behind
+ * type without becoming a data channel. The alpha is doubled because light
+ * neutrals sit at the compressed end of the luminance curve — 0.03 coral on
+ * `neutral-25` lands on the floor rather than above it.
+ */
+describe('contrast: the coral deep field on a light ground', () => {
+  const light = createSemantic('light');
+  const field = compositeOver(light.scales.deepFieldStroke, light.depth.column);
+
+  it('stays under the decorative ceiling', () => {
+    expect(contrast(field, light.depth.column)).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('clears the visibility floor', () => {
+    expect(contrast(field, light.depth.column)).toBeGreaterThanOrEqual(1.03);
+  });
+
+  it('is still under the ceiling at the floor it fades to', () => {
+    const [r, g, b, alpha] = light.scales.deepFieldStroke
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const faded = `rgba(${r}, ${g}, ${b}, ${alpha * light.scales.deepFieldFloor})`;
+    expect(contrast(compositeOver(faded, light.depth.column), light.depth.column)).toBeLessThan(
+      MOTIF_CEILING
+    );
+  });
+});
+
+describe.each(MODES)('contrast: the salmon fill rule (%s)', (_mode, tokens) => {
   it('allows text.onAccent on a salmon fill', () => {
-    expect(contrast(text.onAccent, salmon[500])).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrast(tokens.text.onAccent, tokens.accent.fill)).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
   it('rejects white on a salmon fill, which is why text.onAccent exists', () => {
-    expect(contrast(neutral[0], salmon[500])).toBeLessThan(AA_TEXT);
+    expect(contrast(neutral[0], tokens.accent.fill)).toBeLessThan(AA_TEXT);
+  });
+
+  it('keeps the fill and its ink identical in both modes', () => {
+    // DESIGN.md §Two modes: the CTA is the same object in daylight and at depth.
+    expect(tokens.accent.fill).toBe(salmon[500]);
+    expect(tokens.text.onAccent).toBe(neutral[1000]);
   });
 });
 
@@ -80,19 +278,39 @@ describe('contrast: the salmon fill rule', () => {
  *
  * The fills are the `*-700` steps, and `text.primary` is what they carry.
  */
-describe('contrast: the status fill rule', () => {
+describe.each(MODES)('contrast: the status fill rule (%s)', (_mode, tokens) => {
   const fills = [
-    ['success', status.successFill],
-    ['danger', status.dangerFill],
-    ['warning', status.warningFill],
+    ['success', tokens.status.successFill],
+    ['danger', tokens.status.dangerFill],
+    ['warning', tokens.status.warningFill],
   ] as const;
 
+  /**
+   * The ink a status fill carries. The fills are invariant `700` steps, so in
+   * both modes the label on one is *light* ink — in light mode that is **not**
+   * `text.primary`, which is `neutral-850` there and measures 2.69:1 on the
+   * success fill. `status.onFill` is that ink, invariant like the fills, and
+   * this is the assertion that keeps the pair legible in both modes.
+   */
+  const fillInk = tokens.status.onFill;
+
   for (const [name, fill] of fills) {
-    it(`text.primary meets AA on the ${name} fill`, () => {
-      expect(contrast(text.primary, fill)).toBeGreaterThanOrEqual(AA_TEXT);
+    it(`the destructive label meets AA on the ${name} fill`, () => {
+      expect(contrast(fillInk, fill)).toBeGreaterThanOrEqual(AA_TEXT);
     });
   }
 
+  it('the destructive fill is at least as legible as the primary CTA', () => {
+    // The safe path wears the salmon fill on a danger dialog, so the two labels
+    // are read side by side. The destructive one must not be the fainter of the
+    // pair — quieter in weight is the point, quieter in legibility is a bug.
+    expect(contrast(fillInk, tokens.status.dangerFill)).toBeGreaterThanOrEqual(
+      contrast(tokens.text.onAccent, tokens.accent.fill)
+    );
+  });
+});
+
+describe('contrast: a status ink is never a fill', () => {
   for (const [name, ink] of [
     ['success', status.success],
     ['danger', status.danger],
@@ -105,18 +323,9 @@ describe('contrast: the status fill rule', () => {
       expect(contrast(neutral[0], ink)).toBeLessThan(AA_TEXT);
     });
   }
-
-  it('the destructive fill is at least as legible as the primary CTA', () => {
-    // The safe path wears the salmon fill on a danger dialog, so the two labels
-    // are read side by side. The destructive one must not be the fainter of the
-    // pair — quieter in weight is the point, quieter in legibility is a bug.
-    expect(contrast(text.primary, status.dangerFill)).toBeGreaterThanOrEqual(
-      contrast(text.onAccent, salmon[500])
-    );
-  });
 });
 
-describe('contrast: borders are per-plane', () => {
+describe('contrast: borders are per-plane (dark)', () => {
   it('border.default carries meaning on surface.shelf', () => {
     expect(contrast(border.default, surface.shelf)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
@@ -131,20 +340,74 @@ describe('contrast: borders are per-plane', () => {
   });
 });
 
-describe('contrast: status and state', () => {
+/**
+ * The light mode's boundaries — the asymmetry DESIGN.md:312 predicted, now
+ * measured. On a white card the mirrored neutral steps are worthless: the
+ * `.pen`'s card hairline (`neutral-100`) measures 1.19:1, which is fine
+ * because a card edge is decoration, and useless for anything a user has to
+ * find. Every boundary that carries meaning — a field's edge, a step dot, an
+ * emphasis border, a selected edge — steps to `neutral-500` or deeper, and
+ * that is what this block pins.
+ */
+describe('contrast: the light mode boundaries', () => {
+  const light = createSemantic('light');
+  const grounds = [
+    ['surface.shelf', light.surface.shelf],
+    ['surface.raised', light.surface.raised],
+    ['surface.crest', light.surface.crest],
+    ['depth.column', light.depth.column],
+  ] as const;
+
+  const boundaries = [
+    ['border.raised', light.border.raised],
+    ['border.strong', light.border.strong],
+    ['input.edge', light.input.edge],
+    ['step.inactive', light.step.inactive],
+    ['step.active', light.step.active],
+    ['state.selectedEdge', light.state.selectedEdge],
+    ['state.focusVisible', light.state.focusVisible],
+  ] as const;
+
+  for (const [boundaryName, boundary] of boundaries) {
+    for (const [groundName, ground] of grounds) {
+      it(`${boundaryName} clears 3:1 on ${groundName}`, () => {
+        expect(contrast(boundary, ground)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+      });
+    }
+  }
+
+  it('border.default stays the decorative hairline it is drawn as', () => {
+    // Not a failure: 1.4.11 exempts decoration. It is recorded so nobody
+    // "fixes" a card edge by promoting the token every card in the app reads.
+    expect(contrast(light.border.default, light.surface.shelf)).toBeLessThan(AA_NON_TEXT);
+  });
+});
+
+describe.each(MODES)('contrast: status and state (%s)', (_mode, tokens) => {
   for (const [name, value] of Object.entries({
-    success: status.success,
-    danger: status.danger,
-    warning: status.warning,
+    success: tokens.status.success,
+    danger: tokens.status.danger,
+    warning: tokens.status.warning,
   })) {
     it(`status.${name} is readable as ink on surface.shelf`, () => {
-      expect(contrast(value, surface.shelf)).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(contrast(value, tokens.surface.shelf)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+
+    it(`status.${name} is readable as ink on its own tint`, () => {
+      const tint = tokens.status[`${name}Tint` as 'successTint' | 'dangerTint' | 'warningTint'];
+      const ground = tint.startsWith('rgba') ? compositeOver(tint, tokens.surface.shelf) : tint;
+      expect(contrast(value, ground)).toBeGreaterThanOrEqual(AA_TEXT);
     });
   }
 
   it('the focus ring is visible on every opaque surface', () => {
-    for (const plane of [surface.shelf, surface.raised, surface.crest, surface.bedrock]) {
-      expect(contrast(state.focusVisible, plane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    for (const plane of [
+      tokens.surface.shelf,
+      tokens.surface.raised,
+      tokens.surface.crest,
+      tokens.surface.bedrock,
+    ]) {
+      expect(contrast(tokens.state.focusVisible, plane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     }
   });
 });
@@ -206,8 +469,8 @@ describe('contrast: component-owned focus borders', () => {
 });
 
 /**
- * The water column: the ground's depth ramp and the marine snow suspended in
- * it. Two separate guarantees, and they fail in opposite directions.
+ * The water column: the ground's depth ramp, and the deep field of scales read
+ * against it.
  *
  * The **ramp** is a background colour, so the danger is that it drops text
  * below AA somewhere along its length. It cannot: both stops are neutrals and
@@ -215,11 +478,9 @@ describe('contrast: component-owned focus borders', () => {
  * the top clears it by more at the bottom. Asserted rather than assumed,
  * because someone will eventually want a lighter floor.
  *
- * The **snow** is a motif, so the danger is the opposite — that it climbs
- * until it reads as content. DESIGN.md caps any non-informational stroke at
- * 1.4:1, and every floc in `depthField.ts` is a multiplier ≤ 1 on this one
- * token (asserted in `depthField.test.ts`), so pinning the token pins the
- * whole field.
+ * The **scales** are a motif, so the danger is the opposite — that they climb
+ * until they read as content. DESIGN.md caps any non-informational stroke at
+ * 1.4:1.
  */
 describe('contrast: the water column', () => {
   /** Straight alpha in sRGB — what both renderers actually do. */
@@ -237,13 +498,6 @@ describe('contrast: the water column', () => {
   };
 
   const [rampTop, rampFloor] = water.gradient;
-  /**
-   * Read out of `water.snow` rather than restated. A copy of the alpha here
-   * goes stale silently the first time the token is tuned, and then this
-   * suite is asserting the ceiling against a value nothing renders.
-   */
-  const SNOW_HEX = '#C7D3E8';
-  const SNOW_ALPHA = Number(/,\s*([\d.]+)\s*\)/.exec(water.snow)?.[1]);
 
   it('the ramp starts on the ground the apps already paint', () => {
     // A different top stop would seam against every header, overlay and sheet
@@ -269,32 +523,27 @@ describe('contrast: the water column', () => {
     });
   }
 
-  it('the brightest floc stays decoration on the lightest ground it can land on', () => {
-    const over = composite(SNOW_HEX, rampTop, SNOW_ALPHA);
-    expect(contrast(over, rampTop)).toBeLessThan(MOTIF_CEILING);
-  });
-
-  it('and on the darkest, where the ratio is highest', () => {
-    const over = composite(SNOW_HEX, rampFloor, SNOW_ALPHA);
-    expect(contrast(over, rampFloor)).toBeLessThan(MOTIF_CEILING);
-  });
-
-  it('the deep field it frames is under the same ceiling', () => {
-    // Sanity: the snow is meant to sit beside the scales, not out-read them.
-    const scalesOver = composite('#C7D3E8', depth.column, 0.06);
-    const snowOver = composite(SNOW_HEX, depth.column, SNOW_ALPHA);
+  it('the deep field is under the motif ceiling', () => {
+    const scalesOver = composite('#C7D3E8', depth.column, 0.03);
     expect(contrast(scalesOver, depth.column)).toBeLessThan(MOTIF_CEILING);
-    expect(contrast(snowOver, depth.column)).toBeLessThan(MOTIF_CEILING);
   });
 
   it('the deep field stays under the ceiling at the floor it fades to', () => {
     // The scales no longer fade to nothing, they fade to `deepFieldFloor`, so
     // the bottom of the column carries a real stroke and it has to be measured
     // rather than assumed harmless because it is faint.
-    const alpha = 0.06 * scales.deepFieldFloor;
+    const alpha = 0.03 * scales.deepFieldFloor;
     for (const ground of [rampTop, rampFloor]) {
       expect(contrast(composite('#C7D3E8', ground, alpha), ground)).toBeLessThan(MOTIF_CEILING);
     }
+  });
+
+  it('the deep field still clears the visibility floor on an OLED at full brightness', () => {
+    // Halved 2026-09-01 (owner: the field should read as farther away). The
+    // floor is ~1.03:1 on `depth.column` — below that the stroke is
+    // indistinguishable from the ground on the darkest real display.
+    const scalesOver = composite('#C7D3E8', depth.column, 0.03);
+    expect(contrast(scalesOver, depth.column)).toBeGreaterThanOrEqual(1.03);
   });
 });
 
@@ -411,16 +660,22 @@ describe('contrast: why the warning notice is not a membrane', () => {
 });
 
 /**
- * The tab bar on the thermocline. The membrane tiers only guarantee contrast
- * over their documented scrim, so every ink the tab bar wears is measured
- * against `membraneThick`'s worst-case composite — the tint over pure white,
- * the brightest backdrop a scrolling NFT thumbnail can put behind it.
+ * The tab bar on the thermocline — retired (§Navigation, 2026-09-01), and
+ * this block with it in spirit: the tab bar is gone, so nothing composites
+ * ink over `membraneThick` against an arbitrary bright backdrop any more.
+ * `accent.inkOnMembrane` and the numbers below stay in `semantic.ts` and
+ * here as a contract surface with no live consumer, same standing as the
+ * refraction tokens — removing them outright needs a human's sign-off.
  *
- * Icons are graphics (1.4.11, 3:1) and may keep the brand step; labels are
- * small text (1.4.3, 4.5:1) and need the lighter salmon — which is why
- * `accent.inkOnMembrane` exists at all.
+ * What changed under this block (2026-09-01): `membraneThick` dropped from
+ * 0.80 to 0.66 so cards show the water column through them (§Cards,
+ * `contrast: the membrane tiers over the water column` above). That alpha
+ * is chosen for the tier's live consumer — a card over its own dark ground
+ * — not for a pure-white worst case, so the old pure-white guarantee this
+ * block used to assert no longer holds. The assertions below now record
+ * that honestly instead of pinning a guarantee nothing ships any more.
  */
-describe('contrast: the tab bar on the thermocline', () => {
+describe('contrast: the tab bar on the thermocline (retired)', () => {
   /** `surface.membraneThick` composited over white, straight alpha in sRGB. */
   const membrane = (() => {
     const [r, g, b, alpha] = surface.membraneThick
@@ -436,21 +691,14 @@ describe('contrast: the tab bar on the thermocline', () => {
       .join('')}`;
   })();
 
-  it('the active label ink clears AA text on the worst-case composite', () => {
-    expect(contrast(accent.inkOnMembrane, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
+  it('no longer clears AA text on the old pure-white worst case, thin as the tier now is', () => {
+    expect(contrast(accent.inkOnMembrane, membrane)).toBeLessThan(AA_TEXT);
+    expect(contrast(text.secondary, membrane)).toBeLessThan(AA_TEXT);
   });
 
-  it('the inactive label ink clears AA text on the worst-case composite', () => {
-    expect(contrast(text.secondary, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('both icon inks clear the graphics threshold', () => {
-    expect(contrast(accent.ink, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrast(text.tertiary, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-  });
-
-  it('brand salmon really is below AA text here, which is why the label steps up', () => {
-    expect(contrast(accent.ink, membrane)).toBeLessThan(AA_TEXT);
+  it('no longer clears the graphics threshold either, at 0.66', () => {
+    expect(contrast(accent.ink, membrane)).toBeLessThan(AA_NON_TEXT);
+    expect(contrast(text.tertiary, membrane)).toBeLessThan(AA_NON_TEXT);
   });
 });
 
@@ -473,6 +721,34 @@ describe('contrast: avatar initials on the depth ramp', () => {
       expect(fill.toLowerCase()).not.toBe(surface.shelf.toLowerCase());
       expect(fill.toLowerCase()).not.toBe(surface.raised.toLowerCase());
     }
+  });
+});
+
+/**
+ * The eight `colors.*` groups migrated to `semantic.ts` in the 2026-09-01
+ * cleanup (`specs/020-codebase-cleanup`). Each pairing below is the one an
+ * ink actually sits on at a live call site.
+ */
+describe.each(MODES)('contrast: the migrated colors.* groups (%s)', (_mode, tokens) => {
+  it('input.placeholder meets AA on input.ground', () => {
+    expect(contrast(tokens.input.placeholder, tokens.input.ground)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('scanner.hint meets AA on scanner.ground', () => {
+    expect(contrast(tokens.scanner.hint, tokens.scanner.ground)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('step.active clears the 3:1 UI-boundary floor on depth.column', () => {
+    expect(contrast(tokens.step.active, tokens.depth.column)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('skeleton.highlight is visibly distinct from skeleton.base', () => {
+    // Not a WCAG ratio — a shimmer that doesn't move isn't a shimmer. 1.3:1 is
+    // the smallest step that reads as motion rather than a rounding error, and
+    // it is the floor in both modes: light neutrals sit at the compressed end
+    // of the luminance curve, so the light pair is two ramp steps apart rather
+    // than one to buy the same visible movement.
+    expect(contrast(tokens.skeleton.highlight, tokens.skeleton.base)).toBeGreaterThanOrEqual(1.3);
   });
 });
 
@@ -544,5 +820,78 @@ describe('contrast: the bezel', () => {
     // the glyph box, and the shade is `Math.abs(offsetY)` pixels tall.
     const clearance = (componentSizes.buttonHeight - fontSize.bodyLg) / 2;
     expect(clearance).toBeGreaterThan(Math.abs(insets[1].offsetY));
+  });
+});
+
+/**
+ * The next-chain hint's hue — the balance block's "→ BTC" / "← SOL".
+ *
+ * §Chain identity allows a chain's own hue here because the cue is already
+ * saying the whole thing in text; the hue is a second channel, never the
+ * channel. What that costs is measured, per mode, against every ground the
+ * hint can sit on: the app's `depth.column` and both stops of the water ramp
+ * it is painted over, and held to 1.4.11's 3:1 as a cue, not body copy.
+ *
+ * The measured worst cases: amber 8.64 dark / 1.89 light, purple 4.38 / 3.74,
+ * indigo 4.15 / 3.94. Owner ruling (2026-09-02): the whole hint — symbol and
+ * arrow — takes the chain's hue in both modes, floor or no floor; amber in
+ * light is faint by that decision. The numbers are asserted so the record
+ * stays measured, and the hue is asserted so no fallback creeps back in.
+ */
+describe.each(MODES)('contrast: the next-chain hint (%s)', (_mode, tokens) => {
+  const grounds = [
+    ['depth.column', tokens.depth.column],
+    ['water.gradient top', tokens.water.gradient[0]],
+    ['water.gradient bottom', tokens.water.gradient[1]],
+  ] as const;
+
+  /** The hue only earns a ground if it earns the worst of them. */
+  const worst = (hue: string) => Math.min(...grounds.map(([, ground]) => contrast(hue, ground)));
+
+  for (const [chainName, hue] of Object.entries(chainMarks.byChain) as [
+    keyof typeof chainMarks.byChain,
+    string,
+  ][]) {
+    it(`${chainName}: the hint takes the hue in this mode, whatever it measures`, () => {
+      expect(tokens.chain.hintInk[chainName]).toBe(hue);
+      // The record: every hue but amber-on-light clears the glyph floor.
+      const clears = worst(hue) >= AA_NON_TEXT;
+      expect(clears).toBe(!(chainName === 'bitcoin' && _mode === 'light'));
+    });
+  }
+
+  it('a test network reads as its mainnet', () => {
+    expect(tokens.chain.hintInk['bitcoin-testnet']).toBe(tokens.chain.hintInk.bitcoin);
+    expect(tokens.chain.hintInk['solana-devnet']).toBe(tokens.chain.hintInk.solana);
+    expect(tokens.chain.hintInk['ethereum-sepolia']).toBe(tokens.chain.hintInk.ethereum);
+  });
+});
+
+/**
+ * The wait's crest — the lit crown beside its shadow flank — reads as relief
+ * only while the crown's rise (or fall, on a pale ground) outweighs the
+ * flank's by roughly three to one (DESIGN.md §The wait: crown +39, flank −14
+ * measured on the deep ground). The flank's ink was calibrated for the deep
+ * ground's 16 levels of headroom below; the pale ground has ~240, so the
+ * same alpha would drown the crown. Each mode's `water.crestShadow` is held
+ * to the band here, in 8-bit grey levels the way the frames were measured.
+ */
+describe.each(MODES)('contrast: the crest keeps its crown-to-flank split (%s)', (_mode, tokens) => {
+  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const grey = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const over = (fg: string, alpha: number, bg: string) =>
+    grey(channels(fg).map((c, i) => c * alpha + channels(bg)[i] * (1 - alpha)));
+
+  it('the crown outweighs the flank by roughly two to five times over the ground', () => {
+    const ground = tokens.depth.column;
+    const base = grey(channels(ground));
+    const crown = Math.abs(over(tokens.accent.fill, CREST_LIGHT_ALPHA, ground) - base);
+    const { color, alpha } = tokens.water.crestShadow;
+    const flank = Math.abs(over(color, alpha, ground) - base);
+    expect(flank).toBeGreaterThan(4);
+    expect(crown / flank).toBeGreaterThanOrEqual(1.5);
+    // Ink over near-black barely moves in this proxy, so dark sits at the
+    // top of the band; light at 0.04 sits near the measured 3:1.
+    expect(crown / flank).toBeLessThanOrEqual(5);
   });
 });

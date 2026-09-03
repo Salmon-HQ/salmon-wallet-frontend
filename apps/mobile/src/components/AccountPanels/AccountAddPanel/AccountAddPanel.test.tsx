@@ -53,7 +53,6 @@ const mockWatchOnlyImport: {
   reset: jest.fn(),
   networkId: 'solana-mainnet',
 };
-const mockHeaderOverride = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -84,6 +83,7 @@ jest.mock('@salmon/shared', () => ({
     { addAccount: mockAddAccount, checkPassword: mockCheckPassword },
   ],
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+  getScanNetworksWithMirrors: jest.fn().mockResolvedValue(['solana-mainnet', 'solana-devnet']),
   SHORT_PHRASE: 12,
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
   validateMnemonic: (value: string) => value === 'valid seed phrase',
@@ -110,12 +110,43 @@ jest.mock('@salmon/shared', () => ({
   },
 }));
 
-jest.mock('../../SettingsScreenLayout', () => ({
-  SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+// No worklets runtime in Jest: the kit's animated blocks (IconBubble, the
+// pressable Card under every method row) need plain-JS stand-ins.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
 }));
 
-jest.mock('../../SettingsHeaderContext', () => ({
-  useSettingsHeaderOverride: (...args: unknown[]) => mockHeaderOverride(...args),
+jest.mock('../../PressSpecular', () => ({
+  PressSpecular: () => null,
+  SPECULAR_OPACITY: 0.12,
+}));
+
+jest.mock('../../SettingsScreenLayout', () => ({
+  SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
 jest.mock('../../Button', () => ({

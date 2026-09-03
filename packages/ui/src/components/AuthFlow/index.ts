@@ -13,8 +13,5 @@ export type { PasswordPageProps } from './types';
 export { SuccessPage } from './SuccessPage';
 export type { SuccessPageProps } from './types';
 
-export { DerivedAccountsPage } from './DerivedAccountsPage';
-export type { DerivedAccountsPageProps } from './types';
-
 export { AnalyticsConsentPage } from './AnalyticsConsentPage';
 export type { AnalyticsConsentPageProps } from './types';

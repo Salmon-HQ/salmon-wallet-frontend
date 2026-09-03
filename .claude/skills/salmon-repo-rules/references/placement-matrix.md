@@ -2,8 +2,8 @@
 
 ## Decide by platform scope
 
-- Used by `mobile`, `web`, and `extension` -> `packages/shared`
-- Used by `web` and `extension` only, and is a DOM component -> `packages/ui`
+- Logic, contract or token both apps read -> `packages/shared`
+- A DOM component -> `packages/ui`, as the twin of the mobile one on a shared contract
 - Used by `mobile` only, or depends on React Native / Expo / native OS APIs -> `apps/mobile`
 - Used by only one platform -> that app
 
@@ -29,7 +29,7 @@
 
 ## Anti-patterns
 
-- Putting web/extension-only UI contracts into `packages/shared/src/types/ui`
+- Putting DOM-only concerns (`CSSProperties`, DOM events) into `packages/shared/src/types/ui`
 - Putting business logic in `packages/ui/src/components`
 - Putting React Native-only component code into `packages/ui`
 - Creating app-local duplicates of shared hooks, types, or utils

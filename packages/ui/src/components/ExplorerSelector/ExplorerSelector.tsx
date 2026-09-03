@@ -1,6 +1,11 @@
+/**
+ * ExplorerSelector — the block explorer panel, on the DOM. The mobile twin
+ * is `apps/mobile/src/components/SettingsSelectors/ExplorerSelector`.
+ */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ExplorerSelectorItem } from '@salmon/shared';
+
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { ExplorerSelectorProps } from './types';
@@ -20,7 +25,11 @@ export function ExplorerSelector({
   );
 
   return (
-    <SettingsPanelContent title={t('settings.explorer', 'Block Explorer')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.explorer', 'Block Explorer')}
+      subtitle={t('settings.explorer_subtitle', 'Pick where transaction links open.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={explorers}
         getKey={(item) => item.key}

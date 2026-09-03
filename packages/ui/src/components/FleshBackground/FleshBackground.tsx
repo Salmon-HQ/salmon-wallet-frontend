@@ -21,16 +21,21 @@
  * ```
  */
 import { useId } from 'react';
-import { fleshFills, fleshTile, semantic } from '@salmon/shared';
+import { fleshFills, fleshTile } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import type { FleshBackgroundProps } from './types';
 
 export function FleshBackground({
-  color = semantic.flesh.band,
+  color,
   scale = 1,
   opacity = 1,
   style,
   className,
 }: FleshBackgroundProps) {
+  const { flesh } = useSemantic();
+  const band = color ?? flesh.band;
+
   // Unique per instance: two FleshBackgrounds in one document sharing a
   // hardcoded `id` would both resolve to whichever pattern rendered first —
   // the same collision `ScalesBackground` fixes with `useId`. The colons in a
@@ -58,7 +63,7 @@ export function FleshBackground({
           patternTransform={`scale(${scale})`}
         >
           {fleshFills.map(([d, fillOpacity], i) => (
-            <path key={i} d={d} fill={color} fillOpacity={fillOpacity * opacity} />
+            <path key={i} d={d} fill={band} fillOpacity={fillOpacity * opacity} />
           ))}
         </pattern>
       </defs>

@@ -3,22 +3,17 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { renderInMode } from '../../test/renderInMode';
+import { SettingsSelectorList } from './SettingsSelectorList';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string) => fallback ?? key,
   }),
 }));
-
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-}));
-
-import { SettingsSelectorList } from './SettingsSelectorList';
 
 afterEach(cleanup);
 
@@ -30,7 +25,8 @@ const OPTIONS: Option[] = [
 ];
 
 function renderList(selectedId: string, onSelect = vi.fn()) {
-  render(
+  renderInMode(
+    'dark',
     <SettingsSelectorList<Option>
       items={OPTIONS}
       getKey={(item) => item.id}
@@ -43,31 +39,32 @@ function renderList(selectedId: string, onSelect = vi.fn()) {
   return onSelect;
 }
 
-describe('SettingsSelectorList — selected state is announced', () => {
-  it('exposes the rows as options of a listbox', () => {
+describe('SettingsSelectorList — a row per choice, the chosen one marked', () => {
+  it('draws one pressable row per option, named by its label', () => {
     renderList('en');
 
-    expect(screen.getByRole('listbox')).toBeTruthy();
-    expect(screen.getAllByRole('option')).toHaveLength(OPTIONS.length);
+    expect(screen.getByRole('button', { name: 'English' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Spanish' })).toBeTruthy();
   });
 
-  it('marks only the active option as selected', () => {
+  it('marks only the active option with the check', () => {
     renderList('es');
 
-    expect(screen.getByRole('option', { name: 'Spanish', selected: true })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'English', selected: false })).toBeTruthy();
+    expect(screen.getByTestId('language-option-es-selected')).toBeTruthy();
+    expect(screen.queryByTestId('language-option-en-selected')).toBeNull();
   });
 
-  it('still selects an option when it is activated', () => {
+  it('selects an option when it is activated', () => {
     const onSelect = renderList('en');
 
-    fireEvent.click(screen.getByRole('option', { name: 'Spanish' }));
+    fireEvent.click(screen.getByTestId('language-option-es'));
 
     expect(onSelect).toHaveBeenCalledWith(OPTIONS[1]);
   });
 
-  it('names the loading indicator', () => {
-    render(
+  it('stands in for the rows while loading, and names the wait', () => {
+    renderInMode(
+      'dark',
       <SettingsSelectorList<Option>
         items={[]}
         getKey={(item) => item.id}
@@ -78,6 +75,6 @@ describe('SettingsSelectorList — selected state is announced', () => {
       />
     );
 
-    expect(screen.getByRole('progressbar', { name: 'general.loading' })).toBeTruthy();
+    expect(screen.getByLabelText('general.loading')).toBeTruthy();
   });
 });

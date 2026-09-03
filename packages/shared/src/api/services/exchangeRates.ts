@@ -67,10 +67,3 @@ export async function getExchangeRates(): Promise<ExchangeRates> {
     return FALLBACK_RATES;
   }
 }
-
-/**
- * Clear the exchange rate cache, forcing a fresh fetch on next call.
- */
-export function clearExchangeRateCache(): void {
-  rateCache.clear();
-}

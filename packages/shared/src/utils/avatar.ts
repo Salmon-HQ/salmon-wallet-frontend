@@ -65,16 +65,6 @@ export function getRandomAvatar(): string {
 }
 
 /**
- * Checks whether a URL is one of the preset avatar URLs.
- *
- * @param url - The URL to check
- * @returns true if the URL matches a preset avatar
- */
-export function isPresetAvatar(url: string): boolean {
-  return url.startsWith(AVATAR_BASE_URL) && url.endsWith('.png');
-}
-
-/**
  * Gets the initials from a name for avatar fallback display.
  *
  * - Single word: returns first 2 characters uppercased

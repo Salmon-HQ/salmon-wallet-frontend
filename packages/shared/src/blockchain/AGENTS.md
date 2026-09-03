@@ -23,4 +23,4 @@ see the root `AGENTS.md` Security-sensitive areas section.
 ## Testing
 
 - Add or update chain-focused tests when shared blockchain behavior
-  changes — a signing or parsing bug here ships to all three apps.
+  changes — a signing or parsing bug here ships to both apps.

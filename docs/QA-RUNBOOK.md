@@ -5,8 +5,8 @@ each one, and what is and isn't covered today. This is a **state-of-reality**
 document: it marks what is automated, what is manual, and the known debt — it
 does not promise coverage that isn't there.
 
-Scope: the monorepo's three runtimes — `apps/web` (React + MUI), `apps/extension`
-(wxt + MUI), `apps/mobile` (React Native / Expo) — plus the shared packages
+Scope: the monorepo's two runtimes — `apps/extension` (WXT + the DOM kit) and
+`apps/mobile` (React Native / Expo) — plus the shared packages
 (`packages/shared`, `packages/ui`). The backend lives in the sibling repo
 `../salmon-wallet-backend` and runs in Docker.
 
@@ -39,8 +39,8 @@ Docker backend, funded test wallets, an iOS simulator).
 **1. PR checks already green** — every merged PR passed
 `typecheck + lint + test + check:i18n` (ci.yml). Nothing to re-run.
 
-**2. E2E workflow** — `.github/workflows/e2e.yml` runs the web and extension
-Playwright suites headless every night and on demand
+**2. E2E workflow** — `.github/workflows/e2e.yml` runs the extension
+Playwright suite headless every night and on demand
 (`gh workflow run e2e.yml`). Check the latest run is green:
 `gh run list --workflow E2E --limit 1`. In CI these suites run **without**
 backend or seeded wallets, so backend/seed-gated specs skip — full depth
@@ -51,7 +51,6 @@ in Docker and real `.env.test` files (copied from `.env.test.example`, filled
 with the funded test seeds):
 
 ```bash
-pnpm --filter @salmon/web e2e          # all 3 browser projects
 pnpm --filter @salmon/extension e2e    # headed by default
 ```
 
@@ -122,17 +121,6 @@ a stop.
 
 ## Running each check
 
-### Web e2e (functional + a11y + responsive, all browsers)
-
-```bash
-pnpm --filter @salmon/web e2e          # starts the vite dev server itself
-```
-
-Specs in `apps/web/.playwright/tests/`: `smoke` (boot + lock contract), `a11y`
-(axe on the boot screen), `responsive` (no horizontal overflow at
-375/768/1024/1440, chromium only). Every spec runs on chromium, firefox and
-webkit via the `projects` in `playwright.config.ts`.
-
 ### Extension e2e (functional + a11y)
 
 ```bash
@@ -157,34 +145,9 @@ Flows select by `id:` (React Native `testID`) — immune to copy/i18n. Secret /
 destructive flows (`flows/actions/reveal/*`, `flows/actions/reset/*`) exist for
 id coverage; do not run them casually.
 
-### Lighthouse (performance + a11y + SEO + best-practices budgets)
+### Lighthouse
 
-```bash
-pnpm --filter @salmon/web build
-pnpm --filter @salmon/web lh
-```
-
-`lighthouserc.cjs` serves the **production build** through `vite preview` (SPA
-fallback) and runs Lighthouse 3× against the welcome screen, asserting:
-
-| Category / metric | Threshold      | Current  |
-| ----------------- | -------------- | -------- |
-| Accessibility     | ≥ 0.95         | **1.00** |
-| Best Practices    | ≥ 0.95         | **1.00** |
-| SEO               | ≥ 0.95         | **1.00** |
-| Performance       | ≥ 0.80         | 0.84     |
-| LCP               | ≤ 2.5 s        | ~1.8 s   |
-| CLS               | ≤ 0.1          | ok       |
-| TBT               | ≤ 300 ms       | ok       |
-| FCP               | ≤ 1.5 s (warn) | ~1.8 s   |
-
-> Note: serve via `vite preview`, **not** a bare static dir — a static dir 404s
-> client routes and Lighthouse ends up scoring the React Router error page.
-
-Thresholds are ratcheted to the current build with variance headroom. Tighten
-as the app improves; never loosen silently.
-
----
+Retired with the web app (2026-09-02).
 
 ## Accessibility
 
@@ -213,9 +176,8 @@ One canonical kebab-case id per logical element, identical across platforms
 once flows depend on them — renaming is a breaking change to the suites. Full
 rules: `.agent/skills/e2e-test-labels/SKILL.md`.
 
-MUI v7 caveat: `Switch` ignores `inputProps`; pass `data-testid`/`aria-label`
-via `slotProps={{ input: {...} }}`. `InputBase`/`TextField` still take
-`inputProps={{ 'data-testid': ... }}`.
+The kit's inputs and switches are plain elements (`<input>`, `role="switch"`);
+pass `testID` and it lands as `data-testid` on the element itself.
 
 ---
 
@@ -251,8 +213,8 @@ any release that touches copy.
 
 ## Deploy & rollback (summary)
 
-- **Web**: pushed to S3 + CloudFront via the `deploy-web.yml` workflow (OIDC).
-  Rollback = redeploy the previous build; the bucket has versioning on.
+- **Web**: retired 2026-09-02; `v2.salmonwallet.io` keeps serving the last
+  build from its bucket (versioning on), nothing deploys there.
 - **Extension**: `build-extension.yml` (manual `workflow_dispatch`) produces
   chrome/firefox artifacts + a source bundle; no auto-publish.
 - **Mobile**: EAS build (`pnpm build:aab` / `build:apk` from `apps/mobile`) —

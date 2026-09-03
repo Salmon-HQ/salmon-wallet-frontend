@@ -1,247 +1,83 @@
 /**
- * PriceChart - Token price history chart component
+ * PriceChart — a token's price history, on the DOM.
  *
- * Web version using recharts and MUI for browser extension
+ * The mobile twin is `apps/mobile/src/components/PriceChart/PriceChart.tsx`,
+ * on the same `PriceChartPropsBase`: a full-width line over a gradient fill,
+ * the current-price point at the right tip with a breathing halo, and the
+ * period selector under it as `UnderlineTabs` — an underline, never a pill
+ * (DESIGN.md §Selection). Colour follows the period's performance:
+ * `status.success` up, `status.danger` down.
+ *
+ * Every period's series is resampled to a fixed point count so two periods
+ * yield same-length paths; the line morphs between them on the `drift` beat
+ * (CSS transitions the `d` property where the engine supports it, and snaps
+ * elsewhere), which is mobile's Reanimated morph on the DOM. A period whose
+ * series is still in flight attenuates the drawn one (`pending`) rather than
+ * collapsing it to a skeleton. Reduce motion collapses both to a step.
  */
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Skeleton from '@mui/material/Skeleton';
-import Typography from '@mui/material/Typography';
-import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
-  borderWidth,
-  colors,
-  componentSizes,
   fontFamily,
-  fontWeight,
-  formatFiatIntl,
-  isPositivePerformance,
-  PRICE_CHART_PERIODS,
-  spacing,
-  useCurrencyContext,
   fontSize,
-  shadowsCSS,
-  durationMs,
-  tabularNums,
-  semantic,
-  opacity,
+  isPositivePerformance,
   motionDuration,
   motionEasing,
+  motionMs,
+  opacity,
+  PRICE_CHART_PERIODS,
   resolveMotionDuration,
+  spacing,
+  type PriceChartPeriod,
+  type Semantic,
+  buildLinePath,
+  getDataBounds,
+  resampleYs,
 } from '@salmon/shared';
-import { useCallback, useId, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { styled } from '../../utils/styled';
-import { useReducedMotion } from '../../utils/useReducedMotion';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { useReducedMotion } from '../../motion';
+import { injectKeyframes } from '../../utils/injectKeyframes';
+import { ShimmerRect } from '../ShimmerRect';
+import { UnderlineTabs } from '../UnderlineTabs';
 import type { PriceChartProps } from './types';
 
-/**
- * Default colors for positive/negative performance
- */
-const CHART_COLORS = {
-  positive: semantic.status.success,
-  negative: semantic.status.danger,
-} as const;
+/** The current-price point at the right tip — the `.pen`'s dot and its halo. */
+const ENDPOINT_DOT_RADIUS = 3.5;
+const ENDPOINT_HALO_RADIUS = 9;
 
-// formatPrice is defined inside the component to use currency context
+/** The chart's default height — mobile's. */
+const DEFAULT_HEIGHT = 200;
 
-/**
- * Format timestamp for tooltip display
- */
-const formatTimestamp = (timestamp: number, locale?: string): string => {
-  const date = new Date(timestamp);
-  return date.toLocaleString(locale, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
+/** Width assumed until the container has been measured — a side panel's floor. */
+const UNMEASURED_WIDTH = 320;
 
-const Container = styled(Box)({
-  backgroundColor: 'transparent',
+const PULSE_KEYFRAMES = 'sw-price-chart-pulse';
+
+const chartColorsFor = (t: Semantic) => ({
+  positive: t.status.success,
+  negative: t.status.danger,
 });
 
-const ChartContainer = styled(Box)<{ $height: number; $pending: boolean; $motion: string }>(
-  ({ $height, $pending, $motion }) => ({
-    width: '100%',
-    height: $height,
-    marginBottom: spacing.lg,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    // A period press is a state change in place, so the old series attenuates
-    // over `swell` and the new one comes back up — it is never taken away.
-    opacity: $pending ? opacity.faint : opacity.full,
-    transition: `opacity ${$motion} ${motionEasing.current.css}`,
-  })
-);
-
-const PeriodContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: spacing.xs,
-});
-
-const PeriodButton = styled(Button)<{ $selected?: boolean }>(({ $selected }) => ({
-  ...tabularNums.css,
-  minWidth: componentSizes.backButtonSize,
-  padding: `${spacing.sm}px ${spacing.md}px`,
-  borderRadius: borderRadius.full,
-  // The selected period is a *state*, so it takes warm ink on the accent tint
-  // rather than a hard white puck. `accent.tint` is a tinted ground that sits
-  // under salmon ink (5.29:1 composite), not a salmon fill — the one-fill rule
-  // is untouched and the chart keeps its own fill budget free.
-  backgroundColor: $selected ? semantic.accent.tint : 'transparent',
-  color: $selected ? semantic.text.accent : colors.text.secondary,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  textTransform: 'none',
-  '&:hover': {
-    backgroundColor: $selected ? semantic.accent.tintHover : colors.card.border,
-  },
-}));
-
-const SkeletonContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: spacing.xs,
-});
-
-const EmptyState = styled(Box)<{ $height: number }>(({ $height }) => ({
-  height: $height,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-}));
-
-const EmptyStateText = styled(Typography)({
-  fontSize: fontSize.base,
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-});
-
-const TooltipContainer = styled(Box)({
-  backgroundColor: colors.background.primary,
-  borderRadius: borderRadius.md,
-  padding: spacing.sm,
-  border: `${borderWidth.thin}px solid ${colors.border.default}`,
-  boxShadow: shadowsCSS.lg,
-});
-
-const TooltipPrice = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  marginBottom: spacing.xxs,
-});
-
-const TooltipDate = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: fontSize.sm,
-  fontFamily: fontFamily.sans,
-  color: colors.text.secondary,
-});
-
-/**
- * Custom tooltip component for the chart
- */
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    payload: PriceDataPoint;
-    value: number;
-  }>;
+/** The container's width, live — the chart is edge to edge in whatever holds it. */
+function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number {
+  const [width, setWidth] = useState(UNMEASURED_WIDTH);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const measure = () => {
+      const next = node.getBoundingClientRect().width;
+      if (next > 0) setWidth(next);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
 }
 
-function CustomTooltip({ active, payload }: CustomTooltipProps) {
-  const [{ currency }] = useCurrencyContext();
-  const { i18n } = useTranslation();
-
-  if (!active || !payload || payload.length === 0) {
-    return null;
-  }
-
-  const data = payload[0].payload;
-
-  return (
-    <TooltipContainer>
-      <TooltipPrice>{formatFiatIntl(data.price, currency)}</TooltipPrice>
-      <TooltipDate>{formatTimestamp(data.timestamp, i18n.language)}</TooltipDate>
-    </TooltipContainer>
-  );
-}
-
-/**
- * ChartSkeleton - Loading placeholder for the chart
- */
-function ChartSkeleton({ height }: { height: number }) {
-  return (
-    <Skeleton
-      variant="rounded"
-      width="100%"
-      height={height}
-      sx={{ backgroundColor: colors.skeleton.base }}
-    />
-  );
-}
-
-/**
- * PeriodSelectorSkeleton - Loading placeholder for period buttons
- */
-function PeriodSelectorSkeleton() {
-  return (
-    <SkeletonContainer>
-      {PRICE_CHART_PERIODS.map((_, index) => (
-        <Skeleton
-          key={index}
-          variant="rounded"
-          width={42}
-          height={28}
-          sx={{
-            backgroundColor: colors.skeleton.base,
-            borderRadius: borderRadius.full,
-          }}
-        />
-      ))}
-    </SkeletonContainer>
-  );
-}
-
-/**
- * PriceChart component for displaying token price history
- *
- * Features:
- * - Line chart with gradient fill using recharts
- * - Time period selector (1H, 1D, 1W, 1M, 3M, 1Y, All)
- * - Color changes based on period performance
- * - Loading state with skeleton
- * - Custom tooltip with price and timestamp
- *
- * @example
- * ```tsx
- * const priceData = [
- *   { timestamp: 1704067200000, price: 100.50 },
- *   { timestamp: 1704153600000, price: 102.30 },
- *   // ... more data points
- * ];
- *
- * <PriceChart
- *   data={priceData}
- *   selectedPeriod="1D"
- *   onPeriodChange={(period) => setPeriod(period)}
- *   loading={false}
- * />
- * ```
- */
 export function PriceChart({
   data,
   selectedPeriod,
@@ -250,103 +86,177 @@ export function PriceChart({
   pending = false,
   error = false,
   color,
-  height = componentSizes.chartHeight,
+  height = DEFAULT_HEIGHT,
   style,
   className,
 }: PriceChartProps) {
   const { t } = useTranslation();
+  const semantic = useSemantic();
   const reduceMotion = useReducedMotion();
-  // Determine chart color based on performance
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const chartWidth = useMeasuredWidth(wrapperRef);
+  const gradientId = `${useId().replace(/:/g, '')}-price-chart-fill`;
+
+  // The line stops a halo short of the box so the endpoint's glow is not
+  // clipped by the container (which hides overflow to keep the fill inside).
+  const lineWidth = Math.max(chartWidth - ENDPOINT_HALO_RADIUS, 0);
+
   const chartColor = useMemo(() => {
     if (color) return color;
-    return isPositivePerformance(data) ? CHART_COLORS.positive : CHART_COLORS.negative;
-  }, [data, color]);
+    const palette = chartColorsFor(semantic);
+    return isPositivePerformance(data) ? palette.positive : palette.negative;
+  }, [data, color, semantic]);
 
-  // Generate gradient ID unique to this instance (useId for stable IDs)
-  const gradientId = useId().replace(/:/g, '') + 'priceChartGradient';
+  const bounds = useMemo(() => getDataBounds(data), [data]);
+  const ys = useMemo(() => resampleYs(data, height, bounds), [data, height, bounds]);
+  const lineD = useMemo(() => buildLinePath(ys, lineWidth), [ys, lineWidth]);
+  const areaD = lineD === '' ? '' : `${lineD} L ${lineWidth} ${height} L 0 ${height} Z`;
+  const endpointY = ys.length > 0 ? ys[ys.length - 1] : 0;
 
-  // Handle period selection
-  const handlePeriodPress = useCallback(
-    (period: PriceChartPeriod) => {
-      onPeriodChange(period);
-    },
+  useEffect(() => {
+    injectKeyframes(
+      PULSE_KEYFRAMES,
+      `@keyframes ${PULSE_KEYFRAMES} {
+        from { r: ${ENDPOINT_HALO_RADIUS}px; opacity: 0; }
+        to { r: ${ENDPOINT_DOT_RADIUS}px; opacity: ${opacity.faint}; }
+      }`
+    );
+  }, []);
+
+  // A period change is an in-place layout change of the same element, so it
+  // takes `drift` on the default curve; reduce motion resolves it to a step.
+  const morph = `${resolveMotionDuration(motionDuration.drift, reduceMotion)} ${motionEasing.current.css}`;
+  const attenuate = `opacity ${resolveMotionDuration(motionDuration.swell, reduceMotion)} ${motionEasing.current.css}`;
+
+  const periodTabs = useMemo(
+    () => PRICE_CHART_PERIODS.map((period) => ({ key: period, label: period })),
+    []
+  );
+  const handlePeriodChange = useCallback(
+    (key: string) => onPeriodChange(key as PriceChartPeriod),
     [onPeriodChange]
   );
 
   return (
-    <Container style={style} className={className}>
-      {/* Chart area */}
-      <ChartContainer
-        $height={height}
-        $pending={pending && !loading}
-        $motion={resolveMotionDuration(motionDuration.swell, reduceMotion)}
+    <div
+      ref={wrapperRef}
+      data-testid="price-chart"
+      style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, ...style }}
+      className={className}
+    >
+      <div
         aria-busy={pending || loading}
+        style={{
+          width: '100%',
+          height,
+          overflow: 'hidden',
+          // The old series attenuates while the new one is in flight — it is
+          // never taken away.
+          opacity: pending && !loading ? opacity.faint : opacity.full,
+          transition: attenuate,
+        }}
       >
         {loading ? (
-          <ChartSkeleton height={height} />
+          <ShimmerRect width={chartWidth} height={height} borderRadius={0} />
         ) : data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={height}>
-            <AreaChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="timestamp" hide />
-              <YAxis domain={['dataMin', 'dataMax']} hide />
-              <Tooltip
-                content={<CustomTooltip />}
-                cursor={{
-                  stroke: colors.text.secondary,
-                  strokeWidth: 1,
-                  strokeDasharray: '4 4',
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke={chartColor}
-                strokeWidth={2}
-                fill={`url(#${gradientId})`}
-                animationDuration={durationMs.debounce}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <svg
+            data-testid="price-chart-line"
+            width={chartWidth}
+            height={height}
+            viewBox={`0 0 ${chartWidth} ${height}`}
+            role="img"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={chartColor} stopOpacity={0.3} />
+                <stop offset="1" stopColor={chartColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            {/* Area fill — morphs with the line so the gradient never flickers */}
+            <path
+              d={areaD}
+              fill={`url(#${gradientId})`}
+              style={{ transition: `d ${morph}`, d: `path("${areaD}")` } as React.CSSProperties}
+            />
+            <path
+              d={lineD}
+              stroke={chartColor}
+              strokeWidth={2}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ transition: `d ${morph}`, d: `path("${lineD}")` } as React.CSSProperties}
+            />
+            {/* Current price point: the halo breathes, the dot holds. Reduce
+                motion rests the halo at its visible end — the point still
+                reads as "now". */}
+            <circle
+              cx={lineWidth}
+              cy={endpointY}
+              r={ENDPOINT_DOT_RADIUS}
+              fill={chartColor}
+              opacity={opacity.faint}
+              style={{
+                transition: `cy ${morph}`,
+                animation: reduceMotion
+                  ? 'none'
+                  : `${PULSE_KEYFRAMES} ${motionMs.tide}ms ${motionEasing.settle.css} infinite alternate`,
+              }}
+            />
+            <circle
+              cx={lineWidth}
+              cy={endpointY}
+              r={ENDPOINT_DOT_RADIUS}
+              fill={chartColor}
+              style={{ transition: `cy ${morph}` }}
+            />
+          </svg>
         ) : (
-          <EmptyState $height={height}>
-            <EmptyStateText data-testid={error ? 'price-chart-error' : undefined}>
-              {error
-                ? t('token.chart.loadError', "Couldn't load chart data")
-                : t('token.chart.noData', 'No data available')}
-            </EmptyStateText>
-          </EmptyState>
+          <div
+            data-testid={error ? 'price-chart-error' : 'price-chart-empty'}
+            style={{
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.body,
+              color: semantic.text.secondary,
+            }}
+          >
+            {error
+              ? t('token.chart.loadError', "Couldn't load chart data")
+              : t('token.chart.noData', 'No data available')}
+          </div>
         )}
-      </ChartContainer>
+      </div>
 
-      {/* Period selector */}
+      {/* Period selector — centred under the chart. */}
       {loading ? (
-        <PeriodSelectorSkeleton />
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: spacing.xs,
+          }}
+        >
+          {PRICE_CHART_PERIODS.map((period) => (
+            <ShimmerRect key={period} width={36} height={24} borderRadius={12} />
+          ))}
+        </div>
       ) : (
-        <PeriodContainer>
-          {PRICE_CHART_PERIODS.map((period) => {
-            const isSelected = period === selectedPeriod;
-            return (
-              <PeriodButton
-                key={period}
-                $selected={isSelected}
-                onClick={() => handlePeriodPress(period)}
-                aria-label={t('accessibility.select_period', 'Select {{period}} time period', {
-                  period,
-                })}
-                aria-pressed={isSelected}
-              >
-                {period}
-              </PeriodButton>
-            );
-          })}
-        </PeriodContainer>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <UnderlineTabs
+            size="sm"
+            tabs={periodTabs}
+            activeKey={selectedPeriod}
+            onChange={handlePeriodChange}
+            tabTestIDPrefix="price-chart-period"
+          />
+        </div>
       )}
-    </Container>
+    </div>
   );
 }

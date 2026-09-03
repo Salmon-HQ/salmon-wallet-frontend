@@ -2,29 +2,31 @@ import { CheckIcon, iconSize } from '../../icons';
 import {
   borderRadius,
   borderWidth,
-  colors,
   componentSizes,
   spacing,
   fontSize,
   fontFamilyNative,
   opacity,
-  semantic,
+  s,
+  type Semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon/SvgIcons';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { DerivedAccountCardProps } from './types';
 
 const ICON_SIZE = 16;
 
 const BlockchainIcon: React.FC<{ blockchain?: string }> = ({ blockchain }) => {
+  const { text } = useSemantic();
   switch (blockchain) {
     case 'solana':
-      return <SolanaSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <SolanaSvgIcon size={ICON_SIZE} color={text.tertiary} />;
     case 'bitcoin':
-      return <BitcoinSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <BitcoinSvgIcon size={ICON_SIZE} color={text.tertiary} />;
     case 'ethereum':
-      return <EthereumSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <EthereumSvgIcon size={ICON_SIZE} color={text.tertiary} />;
     default:
       return null;
   }
@@ -42,6 +44,8 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
   style,
   testID,
 }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   return (
     <TouchableOpacity
       style={[styles.card, selected && styles.cardSelected, style]}
@@ -51,7 +55,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
     >
       {/* Checkbox */}
       <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-        {selected && <CheckIcon size={iconSize.sm} color={semantic.accent.onFill} />}
+        {selected && <CheckIcon size={iconSize.sm} color={accent.onFill} />}
       </View>
 
       {/* Account Info */}
@@ -75,60 +79,61 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
 
 export const DerivedAccountCard = React.memo(DerivedAccountCardComponent);
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card.background,
-    borderRadius: borderRadius.xl,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.card.border,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  cardSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  checkbox: {
-    width: componentSizes.checkboxSize,
-    height: componentSizes.checkboxSize,
-    borderRadius: 6,
-    backgroundColor: colors.interactive.highlight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.lg,
-  },
-  checkboxSelected: {
-    backgroundColor: colors.accent.primary,
-  },
-  info: {
-    flex: 1,
-  },
-  address: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  networkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xxs,
-  },
-  path: {
-    color: colors.text.tertiary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
-  },
-  balanceContainer: {
-    alignItems: 'flex-end',
-  },
-  balance: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-  },
-  dimmed: {
-    opacity: opacity.faint,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.surface.raised,
+      borderRadius: borderRadius.xl,
+      borderWidth: borderWidth.thin,
+      borderColor: t.border.raised,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    cardSelected: {
+      borderColor: t.state.selectedEdge,
+    },
+    checkbox: {
+      width: componentSizes.checkboxSize,
+      height: componentSizes.checkboxSize,
+      borderRadius: 6,
+      backgroundColor: t.overlay.highlight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.lg,
+    },
+    checkboxSelected: {
+      backgroundColor: t.accent.ink,
+    },
+    info: {
+      flex: 1,
+    },
+    address: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+    },
+    networkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.xxs,
+    },
+    path: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.caption),
+    },
+    balanceContainer: {
+      alignItems: 'flex-end',
+    },
+    balance: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+    },
+    dimmed: {
+      opacity: opacity.faint,
+    },
+  });

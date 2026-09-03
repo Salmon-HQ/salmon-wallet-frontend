@@ -1,33 +1,15 @@
 import React from 'react';
-import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { colors, formatOrigin, fontFamily, fontSize, semantic } from '@salmon/shared';
+import { formatOrigin, spacing } from '@salmon/shared';
+
+import { GlobeIcon, ReceiptIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
-import {
-  AppIdentityIcon,
-  AppIdentityName,
-  AppIdentityRow,
-  AppIdentityText,
-  ButtonsContainer,
-  Card,
-  Container,
-  Content,
-  FooterNote,
-  Header,
-  Label,
-  LogoWrap,
-  MARK_SIZE,
-  MonoValue,
-  ScrollArea,
-  Subtitle,
-  SummaryGrid,
-  SummaryItem,
-  SummaryLabel,
-  SummaryValue,
-  Title,
-  Value,
-} from './common';
-import { BrandMark } from '../BrandMark';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { AppIdentity } from './AppIdentity';
+import { CardHead, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from './HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
@@ -50,8 +32,8 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
-  const hasIdentity = !!appName || !!appIcon;
 
   // A delegation, a failing transaction and an unreadable one are the three
   // things a reflex tap should not be able to sign. A plain send that the
@@ -63,151 +45,115 @@ export function DAppTransactionApprovalView({
       effects.kind === 'transaction-would-fail' ||
       (effects.kind === 'effects' && effects.approvals.length > 0));
 
-  return (
-    <Container>
-      <Content>
-        <Header>
-          <LogoWrap>
-            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
-          </LogoWrap>
-          <Title>{t('dapp.transaction_title', 'Approve Transaction')}</Title>
-          <Subtitle>
-            {t(
-              'dapp.transaction_subtitle',
-              'Review the transaction details before approving this request.'
-            )}
-          </Subtitle>
-        </Header>
+  const cannotApprove = disabled || loading || !!parsingError;
 
-        <ScrollArea>
-          <Card>
-            <Label>{t('dapp.requesting_site', 'Requesting site')}</Label>
-            {hasIdentity ? (
-              <AppIdentityRow>
-                {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
-                <AppIdentityText>
-                  {appName ? <AppIdentityName>{appName}</AppIdentityName> : null}
-                  <MonoValue sx={{ marginTop: 0 }}>{displayOrigin}</MonoValue>
-                </AppIdentityText>
-              </AppIdentityRow>
-            ) : (
-              <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
-            )}
-            <FooterNote sx={{ marginTop: 1.5 }}>
+  return (
+    <OnboardingLayout
+      testID="dapp-transaction-approval"
+      variant="content"
+      backgroundColor={tokens.surface.bedrock}
+      markColor={tokens.accent.fill}
+      scrollBody
+      title={
+        <OnboardingTitle testID="approval-title">
+          {t('dapp.transaction_title', 'Approve Transaction')}
+        </OnboardingTitle>
+      }
+      description={
+        <OnboardingDescription>
+          {t(
+            'dapp.transaction_subtitle',
+            'Review the transaction details before approving this request.'
+          )}
+        </OnboardingDescription>
+      }
+      body={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead icon={GlobeIcon} label={t('dapp.requesting_site', 'Requesting site')} />
+            <AppIdentity appName={appName} appIcon={appIcon} displayOrigin={displayOrigin} />
+            <p style={bodyText(tokens)}>
               {t(
                 'dapp.transaction_risk_hint',
                 'Only approve if you trust the app and recognize the action being requested.'
               )}
-            </FooterNote>
+            </p>
           </Card>
 
           <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 
-          <Card>
-            <Label>{t('dapp.transaction_overview', 'Transaction overview')}</Label>
-            <SummaryGrid>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.method', 'Method')}</SummaryLabel>
-                <SummaryValue>{requestSummary}</SummaryValue>
-              </SummaryItem>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.transaction_fee', 'Estimated fee')}</SummaryLabel>
-                <SummaryValue>{feeSol ? `${feeSol} SOL` : '-'}</SummaryValue>
-              </SummaryItem>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.instructions', 'Instructions')}</SummaryLabel>
-                <SummaryValue>
-                  {instructionCount != null ? String(instructionCount) : '-'}
-                </SummaryValue>
-              </SummaryItem>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.transaction_status', 'Approval')}</SummaryLabel>
-                <SummaryValue>
-                  {parsingError
-                    ? t('dapp.transaction_unavailable', 'Review unavailable')
-                    : t('dapp.transaction_ready', 'Ready to sign')}
-                </SummaryValue>
-              </SummaryItem>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.fee_payer', 'Fee payer')}</SummaryLabel>
-                <SummaryValue
-                  sx={{
-                    fontFamily: fontFamily.mono,
-                    fontSize: fontSize.xs,
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {feePayer || '-'}
-                </SummaryValue>
-              </SummaryItem>
-              <SummaryItem>
-                <SummaryLabel>{t('dapp.blockhash', 'Recent blockhash')}</SummaryLabel>
-                <SummaryValue
-                  sx={{
-                    fontFamily: fontFamily.mono,
-                    fontSize: fontSize.xs,
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {recentBlockhash || '-'}
-                </SummaryValue>
-              </SummaryItem>
-              {parsingError && (
-                <SummaryItem
-                  sx={{
-                    backgroundColor: semantic.status.dangerTint,
-                    borderColor: semantic.status.danger,
-                  }}
-                >
-                  <SummaryLabel sx={{ color: semantic.status.danger }}>
-                    {t('dapp.error', 'Error')}
-                  </SummaryLabel>
-                  <Typography
-                    sx={{
-                      color: colors.text.primary,
-                      fontSize: fontSize.sm,
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {t(
-                      'dapp.decode_error',
-                      'This transaction could not be decoded. Do not approve unless you trust this site.'
-                    )}
-                  </Typography>
-                </SummaryItem>
-              )}
-            </SummaryGrid>
+          <Card padding="lg" gap={spacing.md} style={cardColumn}>
+            <CardHead
+              icon={ReceiptIcon}
+              label={t('dapp.transaction_overview', 'Transaction overview')}
+            />
+            <KeyValueRow label={t('dapp.method', 'Method')} value={requestSummary} />
+            <KeyValueRow
+              label={t('dapp.transaction_fee', 'Estimated fee')}
+              value={feeSol ? `${feeSol} SOL` : '-'}
+            />
+            <KeyValueRow
+              label={t('dapp.instructions', 'Instructions')}
+              value={instructionCount != null ? String(instructionCount) : '-'}
+            />
+            <KeyValueRow
+              label={t('dapp.transaction_status', 'Approval')}
+              value={
+                parsingError
+                  ? t('dapp.transaction_unavailable', 'Review unavailable')
+                  : t('dapp.transaction_ready', 'Ready to sign')
+              }
+            />
+            <KeyValueRow
+              layout="stacked"
+              label={t('dapp.fee_payer', 'Fee payer')}
+              value={feePayer || '-'}
+              valueFont="mono"
+            />
+            <KeyValueRow
+              layout="stacked"
+              label={t('dapp.blockhash', 'Recent blockhash')}
+              value={recentBlockhash || '-'}
+              valueFont="mono"
+            />
+            {parsingError && (
+              <KeyValueRow
+                layout="stacked"
+                label={t('dapp.error', 'Error')}
+                value={t(
+                  'dapp.decode_error',
+                  'This transaction could not be decoded. Do not approve unless you trust this site.'
+                )}
+                valueTone="danger"
+                testID="decode-error"
+              />
+            )}
           </Card>
-        </ScrollArea>
-
-        <ButtonsContainer>
-          {requiresHold ? (
-            <>
-              <FooterNote sx={{ marginBottom: 1 }}>
-                {t('dapp.hold_to_approve_hint', 'Hold the button to approve this request.')}
-              </FooterNote>
-              <HoldToApproveButton
-                onApprove={onApprove}
-                loading={loading}
-                disabled={disabled || loading || !!parsingError}
-              >
-                {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
-              </HoldToApproveButton>
-            </>
-          ) : (
-            <PrimaryButton
-              onClick={onApprove}
-              loading={loading}
-              disabled={disabled || loading || !!parsingError}
-            >
-              {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
-            </PrimaryButton>
-          )}
-          <SecondaryButton onClick={onReject} disabled={loading}>
-            {t('dapp.reject', 'Reject').toUpperCase()}
-          </SecondaryButton>
-        </ButtonsContainer>
-      </Content>
-    </Container>
+        </div>
+      }
+      assist={
+        requiresHold ? (
+          <p style={{ ...bodyText(tokens), textAlign: 'center' }}>
+            {t('dapp.hold_to_approve_hint', 'Hold the button to approve this request.')}
+          </p>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+          {t('dapp.reject', 'Reject').toUpperCase()}
+        </SecondaryButton>
+      }
+      action={
+        requiresHold ? (
+          <HoldToApproveButton onApprove={onApprove} loading={loading} disabled={cannotApprove}>
+            {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
+          </HoldToApproveButton>
+        ) : (
+          <PrimaryButton onPress={onApprove} loading={loading} disabled={cannotApprove} fullWidth>
+            {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
+          </PrimaryButton>
+        )
+      }
+    />
   );
 }

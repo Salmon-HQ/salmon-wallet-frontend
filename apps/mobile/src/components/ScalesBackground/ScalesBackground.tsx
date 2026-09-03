@@ -1,9 +1,12 @@
-import { seigaihaTile, seigaihaTiledPaths, semantic } from '@salmon/shared';
+import { seigaihaTile, seigaihaTiledPaths, type Semantic } from '@salmon/shared';
 import React, { useId } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, G, LinearGradient, Mask, Pattern, Path, Rect, Stop } from 'react-native-svg';
 
-const { scales } = semantic;
+import { useSemantic } from '../../theme/useThemedStyles';
+import type { ScalesBackgroundProps, ScalesVariant } from './types';
+
+export type { ScalesBackgroundProps, ScalesVariant };
 
 /**
  * The motif's three sanctioned appearances, two of which this platform draws.
@@ -14,48 +17,24 @@ const { scales } = semantic;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'refraction' | 'membrane';
 
-const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
+const variantsFor = (
+  t: Semantic
+): Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> => ({
   /** The far water, in the balance card's upper region. Dissolves downward. */
-  deepField: { stroke: scales.deepFieldStroke, scale: scales.deepFieldScale, fade: true },
+  deepField: { stroke: t.scales.deepFieldStroke, scale: t.scales.deepFieldScale, fade: true },
   /**
    * @deprecated No call site remains. Salmon fills carry `FleshBackground`
    * instead; see `packages/shared/src/theme/flesh.ts`.
    */
-  fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
+  fish: { stroke: t.scales.fishStroke, scale: t.scales.fishScale, fade: false },
   /**
-   * The refraction strip — the top edge of every thermocline surface. Same
-   * 0.5× geometry as the membrane field, but the stroke is the horizontal
-   * sweep (`scales.refractionSweep`) rather than a flat ink; the white here
-   * is the mask ink the component paints the sweep through. The band's 0.08
-   * opacity is applied by the mounting container (`scales.refractionOpacity`),
-   * keeping this file about geometry and ink.
+   * @deprecated No call site remains — the refraction strip was retired into
+   * the (now also retired) membrane field. Kept because `ScalesVariant` is a
+   * shared union with both apps behind it.
    */
-  refraction: { stroke: '#FFFFFF', scale: scales.refractionScale, fade: false },
-  /**
-   * The membrane field — the thermocline's own texture, edge to edge. Same
-   * 0.5× geometry as the refraction strip but drawn as a flat *dark* ink
-   * (owner, 2026-08-19: dark scales, one continuous field, no brighter
-   * band). No sweep, no fade — any per-region difference reads as a seam in
-   * the material.
-   */
-  membrane: { stroke: scales.membraneFieldStroke, scale: scales.refractionScale, fade: false },
-};
-
-export interface ScalesBackgroundProps {
-  /**
-   * Which of the sanctioned appearances to draw.
-   * @default "deepField"
-   */
-  variant?: ScalesVariant;
-  /**
-   * Additional styles for the container. The container fills its parent, so
-   * *where* the motif may appear is decided by which parent you mount it in —
-   * that is deliberate, see the exclusion rule below.
-   */
-  style?: ViewStyle;
-}
+  refraction: { stroke: '#FFFFFF', scale: t.scales.refractionScale, fade: false },
+});
 
 /**
  * ScalesBackground — the seigaiha fish-scale motif, at one of its scales.
@@ -90,6 +69,16 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   // resolve to whichever pattern mounted first, so a `fish` inside a button
   // would silently inherit the deep field. `useId` yields ":r1:"-style values;
   // the colons are stripped because they are not valid in an SVG fragment id.
+  // The field crosses into light as **coral** (owner, 2026-09-01): the stroke
+  // is `salmon-500` at 0.06 rather than the cold near-white at 0.03, because a
+  // pale ink on a pale ground is nothing at all. The swap lives in
+  // `scales.deepFieldStroke` — this component only ever asks for the token, so
+  // it draws the same geometry in both modes over whatever ground
+  // `DepthBackground` painted (flat `depth.column` in light, the ramp in
+  // dark). The rest of the material — the water ramp, the snow, the membrane
+  // tiers — still waits for its own light pass.
+  const semantic = useSemantic();
+
   const rawId = useId();
   const uid = rawId.replace(/[^a-zA-Z0-9]/g, '');
   const patternId = `scales-${uid}`;
@@ -97,7 +86,7 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   const maskId = `scalesMask-${uid}`;
   const sweepId = `scalesSweep-${uid}`;
 
-  const config = VARIANTS[variant];
+  const config = variantsFor(semantic)[variant];
   const isRefraction = variant === 'refraction';
   // The paths are drawn at the native tile size and the whole drawing is
   // scaled — stretching the tile height alone would shear it instead of
@@ -110,7 +99,7 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   // over one full-width gradient rect.
   const strokeColor = isRefraction ? '#FFFFFF' : config.stroke;
   const strokeWidth = 1 / config.scale;
-  const sweep = scales.refractionSweep;
+  const sweep = semantic.scales.refractionSweep;
 
   return (
     <View style={[styles.container, style]} pointerEvents="none">
@@ -168,7 +157,7 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
                   column is what made the field read as cropped. */}
               <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#fff" stopOpacity="1" />
-                <Stop offset="1" stopColor="#fff" stopOpacity={scales.deepFieldFloor} />
+                <Stop offset="1" stopColor="#fff" stopOpacity={semantic.scales.deepFieldFloor} />
               </LinearGradient>
               <Mask id={maskId}>
                 <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${fadeId})`} />

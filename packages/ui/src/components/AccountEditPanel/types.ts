@@ -1,8 +1,3 @@
-export interface AccountEditPanelProps {
-  accountId: string;
-  onEditName: (accountId: string) => void;
-  onEditAvatar: () => void;
-  onBackupSeed: () => void;
-  onExportPrivateKey: () => void;
-  onBack: () => void;
-}
+import type { AccountEditPanelPropsBase } from '@salmon/shared';
+
+export interface AccountEditPanelProps extends AccountEditPanelPropsBase {}

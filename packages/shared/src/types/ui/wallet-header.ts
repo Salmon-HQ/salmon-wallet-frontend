@@ -6,14 +6,18 @@ export interface WalletHeaderPropsBase<TStyle> {
   accountName: string;
   /** Full wallet address */
   address: string;
+  /**
+   * The network the address belongs to. A non-mainnet one puts an environment
+   * chip on the address line — the same rule the balance block follows, and
+   * independent of Developer Networks (spec 026 D5).
+   */
+  networkId?: string;
   /** Callback when copy button is pressed */
   onCopyAddress?: () => void;
   /** Callback when settings button is pressed */
   onSettingsPress?: () => void;
   /** Callback when wallet/account switcher button is pressed */
   onWalletPress?: () => void;
-  /** Developer mode - shows more address characters (8+8 instead of 4+4) */
-  developerMode?: boolean;
   /** Avatar image URL for the active account */
   avatarUrl?: string;
   /** Account ID (used for deterministic fallback color) */

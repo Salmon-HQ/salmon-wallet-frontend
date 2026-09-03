@@ -7,10 +7,10 @@ const mockBlurView = jest.fn(({ children }: { children?: React.ReactNode }) => <
 const mockUseBlurTarget = jest.fn();
 
 jest.mock('@salmon/shared', () => ({
-  colors: {
+  semantic: {
     // Opaque, as the shipped token is: a list row is content, and DESIGN.md
     // gives translucency only to floating chrome.
-    background: { tokenItem: '#161C2D' },
+    surface: { raised: '#161C2D' },
     border: { default: '#404962' },
   },
   isOpaqueColor: (color: string) => color.startsWith('#'),

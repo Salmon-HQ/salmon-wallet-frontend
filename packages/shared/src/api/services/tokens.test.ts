@@ -30,12 +30,15 @@ vi.mock('../client', () => {
 });
 
 // Now import the functions AFTER mocking
-import { normalizeBackendTokens, getTokenList, searchTokens, clearTokenListCache } from './tokens';
+import { normalizeBackendTokens } from './tokens';
+import type { getTokenList as getTokenListType, searchTokens as searchTokensType } from './tokens';
 import { normalizeIpfsUrl } from '../../utils/url';
-import { apiClient } from '../client';
+import type { apiClient as apiClientType } from '../client';
 
-// Get access to the mocked function
-const mockApiClientGet = vi.mocked(apiClient.get);
+let apiClient: typeof apiClientType;
+let getTokenList: typeof getTokenListType;
+let searchTokens: typeof searchTokensType;
+let mockApiClientGet: ReturnType<typeof vi.mocked<typeof apiClientType.get>>;
 
 // ============================================================================
 // Test Data
@@ -93,6 +96,19 @@ describe('Token Service - Pure Functions', () => {
   // ==========================================================================
 
   describe('normalizeIpfsUrl', () => {
+    it('moves a path-style ipfs.io / dweb.link URL to a gateway a browser may hotlink from', () => {
+      // The side panel's NFT tiles came up blank: ipfs.io answers a cross-site
+      // <img> request with a 403 carrying CORP same-origin (2026-09-02).
+      const cid = 'bafybeiae6fuzkgt5i3xl5rckpm2fh4mvehvt4575hhvhkjjgpzzmy4cequ/6287.png';
+      expect(normalizeIpfsUrl(`https://ipfs.io/ipfs/${cid}`)).toBe(
+        `https://ipfs.filebase.io/ipfs/${cid}`
+      );
+      expect(normalizeIpfsUrl(`https://dweb.link/ipfs/${cid}`)).toBe(
+        `https://ipfs.filebase.io/ipfs/${cid}`
+      );
+      expect(normalizeIpfsUrl('https://arweave.net/abc')).toBe('https://arweave.net/abc');
+    });
+
     it('should handle null input', () => {
       expect(normalizeIpfsUrl(null)).toBeUndefined();
     });
@@ -105,9 +121,10 @@ describe('Token Service - Pure Functions', () => {
       expect(normalizeIpfsUrl('')).toBeUndefined();
     });
 
-    it('should convert IPFS protocol URL to ipfs.io gateway', () => {
+    it('should convert IPFS protocol URL to the default gateway', () => {
       const input = 'ipfs://QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
-      const expected = 'https://ipfs.io/ipfs/QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
+      const expected =
+        'https://ipfs.filebase.io/ipfs/QmXfzKRvjZz3u5JRgC4v5mGVbm9ahrUiB4DgzHBsnWbTMM';
       expect(normalizeIpfsUrl(input)).toBe(expected);
     });
 
@@ -129,7 +146,7 @@ describe('Token Service - Pure Functions', () => {
 
     it('should handle IPFS URLs with short hashes', () => {
       const input = 'ipfs://Qm123';
-      const expected = 'https://ipfs.io/ipfs/Qm123';
+      const expected = 'https://ipfs.filebase.io/ipfs/Qm123';
       expect(normalizeIpfsUrl(input)).toBe(expected);
     });
 
@@ -267,10 +284,14 @@ describe('Token Service - Pure Functions', () => {
   // ==========================================================================
 
   describe('Async Service Functions', () => {
-    beforeEach(() => {
-      // Clear cache and all mocks before each test
-      clearTokenListCache();
+    beforeEach(async () => {
+      // Fresh module instances before each test so the in-memory token list
+      // cache starts empty — resetModules re-evaluates the SmartCache instance.
       vi.clearAllMocks();
+      vi.resetModules();
+      ({ apiClient } = await import('../client'));
+      ({ getTokenList, searchTokens } = await import('./tokens'));
+      mockApiClientGet = vi.mocked(apiClient.get);
     });
 
     // ========================================================================
@@ -429,16 +450,6 @@ describe('Token Service - Pure Functions', () => {
     // Cache Management Tests
     // ========================================================================
     describe('Cache Management', () => {
-      it('clearTokenListCache forces the next call to refetch from the backend', async () => {
-        mockApiClientGet.mockResolvedValue({ data: mockBackendTokens });
-
-        await getTokenList('solana-mainnet');
-        clearTokenListCache();
-        await getTokenList('solana-mainnet');
-
-        expect(mockApiClientGet).toHaveBeenCalledTimes(2);
-      });
-
       it('should cache results for 5 minutes', async () => {
         mockApiClientGet.mockResolvedValueOnce({ data: mockBackendTokens });
 

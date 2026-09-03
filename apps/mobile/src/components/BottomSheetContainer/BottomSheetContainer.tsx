@@ -24,7 +24,6 @@ import Reanimated, {
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  colors,
   shadows,
   borderRadius,
   borderWidth,
@@ -33,10 +32,14 @@ import {
   vs,
   s,
   spacing,
+  withAlpha,
+  type Semantic,
+  type BottomSheetContainerPropsBase,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
 import { curve, timing } from '../../utils/motion';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Constants
@@ -45,6 +48,16 @@ import { curve, timing } from '../../utils/motion';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const BACKDROP_OPACITY = 0.8;
+
+/**
+ * The drag handle, redrawn: 44x5 rather than 70x6.
+ *
+ * A handle is a grip, not a rule across the sheet — the wide bar read as a
+ * divider and pushed the sheet's first line down. 44 is also the minimum
+ * touch target, so the grip is exactly as wide as it needs to be grabbable.
+ */
+const HANDLE_WIDTH = 44;
+const HANDLE_HEIGHT = 5;
 const DRAG_THRESHOLD = 150;
 const SPRING_CONFIG = {
   damping: 20,
@@ -68,34 +81,7 @@ export const SHEET_EXIT_MS = motionMs.ebb;
 /** Slack before the watchdog decides the exit callback is not coming. */
 const EXIT_WATCHDOG_GRACE_MS = 120;
 
-export interface BottomSheetContainerProps {
-  /** Controls sheet visibility */
-  visible: boolean;
-  /** Close callback — the request to leave, fired the moment it is asked for. */
-  onClose: () => void;
-  /**
-   * Fired once the sheet has actually left the screen.
-   *
-   * `onClose` is the request; this is the arrival. A caller sequencing
-   * anything after the sheet — chrome that should not move while a backdrop
-   * still covers it — needs the second, not the first. Also fires when a
-   * swipe dismiss ends, where `onClose` runs while the sheet is still
-   * travelling.
-   */
-  onClosed?: () => void;
-  /** Content to render inside the sheet */
-  children: React.ReactNode;
-  /**
-   * Optional title rendered below the handle, inside the drag area.
-   * Mutually exclusive with headerContent – if both are provided,
-   * headerContent takes precedence.
-   */
-  title?: React.ReactNode;
-  /**
-   * Optional custom header content that replaces the title.
-   * The full row rendered inside the drag area (below the handle).
-   */
-  headerContent?: React.ReactNode;
+export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
   showFadeGradient?: boolean;
   /**
@@ -123,20 +109,6 @@ export interface BottomSheetContainerProps {
   background?: React.ReactNode;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
-  /**
-   * Whether the sheet may be dismissed by backdrop tap, swipe-down, or the
-   * Android hardware back button. Defaults to `true`.
-   *
-   * Set it to `false` while an irreversible operation is in flight. The
-   * sheet's own Cancel/Confirm controls already disable themselves, but the
-   * three dismissal paths live here and knew nothing about that state — so a
-   * backdrop tap during signing unmounted the only screen that would ever
-   * report whether the money moved. One guard here covers every sheet in the
-   * app instead of each caller re-deriving it.
-   */
-  dismissible?: boolean;
-  /** For testing */
-  testID?: string;
 }
 
 // ============================================================================
@@ -186,6 +158,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   dismissible = true,
   testID,
 }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { surface } = useSemantic();
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
@@ -385,7 +359,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                 pointerEvents="none"
               >
                 <LinearGradient
-                  colors={[colors.background.secondary, 'transparent']}
+                  colors={[surface.raised, withAlpha(surface.raised, 0)]}
                   style={StyleSheet.absoluteFill}
                 />
               </Animated.View>
@@ -401,64 +375,66 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  gestureRoot: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.sheet.backdrop,
-  },
-  sheetContainer: {
-    // The background element (thermocline by default) carries the material;
-    // the container itself stays transparent.
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
-    borderTopWidth: borderWidth.sheet,
-    borderTopColor: colors.border.default,
-    minHeight: '70%',
-    maxHeight: '92%',
-    ...shadows.sheet,
-  },
-  // The material fills the sheet and clips itself to the sheet's own top
-  // corners.
-  thermocline: {
-    ...StyleSheet.absoluteFillObject,
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
-  },
-  dragArea: {
-    // Gesture is attached here; keep it empty so consumers can add dragAreaStyle
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: vs(spacing.md),
-    paddingBottom: vs(spacing.sm),
-  },
-  handle: {
-    width: s(componentSizes.sheetHandleWidth),
-    height: vs(componentSizes.sheetHandleHeight),
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.sheet.handle,
-    opacity: componentSizes.sheetHandleOpacity,
-  },
-  topFadeGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    // Positioned by caller via absolute placement; default sits just below handle
-    top: vs(spacing.md) + vs(8),
-    height: componentSizes.sheetFadeGradientHeight,
-    zIndex: 1,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    gestureRoot: {
+      flex: 1,
+    },
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: t.overlay.backdrop,
+    },
+    sheetContainer: {
+      // The background element (thermocline by default) carries the material;
+      // the container itself stays transparent.
+      borderTopLeftRadius: borderRadius.header,
+      borderTopRightRadius: borderRadius.header,
+      borderTopWidth: borderWidth.sheet,
+      borderTopColor: t.border.default,
+      // No minHeight: a sheet hugs its content (a short receipt ends where it
+      // ends); tall content is bounded by maxHeight and scrolls inside.
+      maxHeight: '92%',
+      ...shadows.sheet,
+    },
+    // The material fills the sheet and clips itself to the sheet's own top
+    // corners.
+    thermocline: {
+      ...StyleSheet.absoluteFillObject,
+      borderTopLeftRadius: borderRadius.header,
+      borderTopRightRadius: borderRadius.header,
+    },
+    dragArea: {
+      // Gesture is attached here; keep it empty so consumers can add dragAreaStyle
+    },
+    handleContainer: {
+      alignItems: 'center',
+      paddingTop: vs(spacing.md),
+      paddingBottom: vs(spacing.sm),
+    },
+    handle: {
+      width: s(HANDLE_WIDTH),
+      height: vs(HANDLE_HEIGHT),
+      borderRadius: borderRadius.full,
+      backgroundColor: t.sheet.handle,
+      opacity: componentSizes.sheetHandleOpacity,
+    },
+    topFadeGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      // Positioned by caller via absolute placement; default sits just below handle
+      top: vs(spacing.md) + vs(8),
+      height: componentSizes.sheetFadeGradientHeight,
+      zIndex: 1,
+    },
+  });
 
 export default BottomSheetContainer;

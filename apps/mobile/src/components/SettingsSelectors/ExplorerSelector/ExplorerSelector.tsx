@@ -8,9 +8,10 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type ExplorerSelectorBaseProps, type ExplorerSelectorItem } from '@salmon/shared';
+import { type ExplorerSelectorItem } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import type { ExplorerSelectorProps } from './types';
 
 // ============================================================================
 // Component
@@ -22,7 +23,7 @@ export function ExplorerSelector({
   onSelectExplorer,
   onBack,
   loading,
-}: ExplorerSelectorBaseProps) {
+}: ExplorerSelectorProps) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(
@@ -31,7 +32,11 @@ export function ExplorerSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.explorer', 'Block Explorer')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.explorer', 'Block Explorer')}
+      subtitle={t('settings.explorer_subtitle', 'Pick where transaction links open.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={explorers}
         getKey={(item) => item.key}

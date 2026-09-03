@@ -66,15 +66,17 @@ describe('AuthLayout', () => {
     expect(screenOptions.animation).toBe('none');
   });
 
-  it.each([
-    'index',
-    'password',
-    'biometric-setup',
-    'analytics-consent',
-    'success',
-    'derived-accounts',
-  ])('disables the swipe-back gesture on "%s"', (name) => {
-    expect(optionsFor(name).gestureEnabled).toBe(false);
+  it.each(['index', 'password', 'biometric-setup', 'analytics-consent', 'success'])(
+    'disables the swipe-back gesture on "%s"',
+    (name) => {
+      expect(optionsFor(name).gestureEnabled).toBe(false);
+    }
+  );
+
+  it('no longer registers the derived-accounts detour', () => {
+    // Derived accounts import themselves now (spec 024); the screen the user
+    // could decline is gone, route and all.
+    expect(() => optionsFor('derived-accounts')).toThrow();
   });
 
   it('keeps the swipe-back gesture on the screens the user can return from', () => {

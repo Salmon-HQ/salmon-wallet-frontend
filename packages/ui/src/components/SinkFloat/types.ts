@@ -34,4 +34,6 @@ export interface SinkFloatProps {
   holdMs?: number;
   className?: string;
   style?: CSSProperties;
+  /** Stable identifier for Playwright/Maestro selection — `data-testid`. */
+  testID?: string;
 }

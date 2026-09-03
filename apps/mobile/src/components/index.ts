@@ -6,6 +6,42 @@
 // Foundation
 // ---------------------------------------------------------------------------
 
+// --- Primitive kit (redesign) ---------------------------------------------
+
+export { Card } from './Card';
+
+// TextField - the plain text field: a Card holding a TextInput
+export { TextField } from './TextInput';
+export type { TextFieldProps } from './TextInput';
+export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
+
+export { KeyValueRow } from './KeyValueRow';
+export type { KeyValueRowProps, KeyValueTone } from './KeyValueRow';
+
+export { ListRow } from './ListRow';
+export type { ListRowPadding, ListRowProps } from './ListRow';
+
+export { IconBubble } from './IconBubble';
+export type {
+  IconBubbleProps,
+  IconBubbleShape,
+  IconBubbleSize,
+  IconBubbleTone,
+  IconGlyphProps,
+} from './IconBubble';
+
+export { Chip, ChipGroup } from './Chip';
+export type { ChipGroupProps, ChipOption, ChipProps, ChipSize, ChipVariant } from './Chip';
+
+export { SectionLabel } from './SectionLabel';
+export type { SectionLabelProps, SectionLabelVariant } from './SectionLabel';
+
+export { StateBlock } from './StateBlock';
+export type { StateBlockProps, StateBlockTone } from './StateBlock';
+
+export { PowerupBadge } from './PowerupBadge';
+export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
+
 export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';
 export type {
   HoldToCopyButtonProps,
@@ -15,15 +51,11 @@ export type {
 } from './Button';
 
 export {
-  WalletSvgIcon,
   ContentCopySvgIcon,
   SettingsSvgIcon,
   SolanaSvgIcon,
   BitcoinSvgIcon,
   EthereumSvgIcon,
-  GridViewSvgIcon,
-  HomeSvgIcon,
-  SwapSvgIcon,
 } from './Icon';
 
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
@@ -50,19 +82,23 @@ export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
 
+export { SkeletonRow } from './Skeleton';
+export type { SkeletonRowProps } from './Skeleton';
+
+export { SearchField } from './SearchField';
+export type { SearchFieldProps } from './SearchField';
+
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
 
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
 
-export { QRScanner, default as QRScannerDefault } from './QRScanner';
+export { QRScanner } from './QRScanner';
 export type { QRScannerProps, QRScanResult } from './QRScanner';
 
 export {
-  InputAddress,
   useAddressValidation,
-  type InputAddressProps,
   type BlockchainType,
   type ValidationState,
   type ValidationCallbackResult,
@@ -73,11 +109,11 @@ export {
 export { SeedWordGrid, SeedWordInput, SeedPhraseEntry } from './SeedPhrase';
 export type { SeedPhraseEntryProps } from './SeedPhrase';
 
-export { DerivedAccountCard, DerivedAccountCardSkeleton } from './DerivedAccountCard';
-export type {
-  DerivedAccountCardProps,
-  DerivedAccountCardSkeletonProps,
-} from './DerivedAccountCard';
+export { DerivedAccountCard } from './DerivedAccountCard';
+export type { DerivedAccountCardProps } from './DerivedAccountCard';
+
+export { DerivedAccountsSheet } from './DerivedAccountsSheet';
+export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
 
 export { SubAccountSelector } from './SubAccountSelector';
 export type { SubAccount, SubAccountSelectorProps } from './SubAccountSelector';
@@ -92,17 +128,10 @@ export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';
 // Layout & Background
 // ---------------------------------------------------------------------------
 
-export { GradientBackground } from './GradientBackground';
-export type { GradientBackgroundProps } from './GradientBackground';
-
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
-export {
-  DepthBackground,
-  depthParallaxScroll,
-  useDepthParallaxScrollHandler,
-} from './DepthBackground';
+export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';
 
 export { FleshBackground } from './FleshBackground';
@@ -114,8 +143,8 @@ export type { BlurContainerProps, BlurTint } from './BlurContainer';
 export { BottomSheetTitleHeader } from './BottomSheetTitleHeader';
 export type { BottomSheetTitleHeaderProps } from './BottomSheetTitleHeader';
 
-export { GlassTabBar } from './GlassTabBar';
-export type { GlassTabBarProps, TabConfig } from './GlassTabBar';
+export { BottomSheetContainer, SheetTitle } from './BottomSheetContainer';
+export type { BottomSheetContainerProps, SheetTitleProps } from './BottomSheetContainer';
 
 export { Thermocline } from './Thermocline';
 export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
@@ -124,8 +153,15 @@ export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 // Sheets & Modals
 // ---------------------------------------------------------------------------
 
-export { WalletSwitcherSheet } from './WalletSwitcherSheet';
-export type { WalletSwitcherSheetProps, AccountListItemProps } from './WalletSwitcherSheet';
+// ---------------------------------------------------------------------------
+// Wallet shell chrome
+// ---------------------------------------------------------------------------
+
+export { WalletHeader } from './WalletHeader';
+export type { WalletHeaderProps } from './WalletHeader';
+
+export { LockOverlay, LockContent } from './LockOverlay';
+export type { LockOverlayProps, LockContentProps } from './LockOverlay';
 
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
@@ -134,30 +170,29 @@ export type { ReceiveSheetProps } from './ReceiveSheet';
 // Home
 // ---------------------------------------------------------------------------
 
-export { BalanceCard, BalanceCardCarousel } from './BalanceCard';
-export type {
-  BalanceCardProps,
-  BalanceCardCarouselProps,
-  BlockchainId,
-  BlockchainBalance,
-  BlockchainNetworkInfo,
-} from './BalanceCard';
+export { BalanceHeader } from './BalanceHeader';
+export type { BalanceHeaderProps } from './BalanceHeader';
+// The chain shapes the balance block speaks are shared contracts; they used to
+// reach consumers through `./BalanceCard`, which the redesign deleted.
+export type { BlockchainId, BlockchainBalance, BlockchainNetworkInfo } from '@salmon/shared';
 
-export { ActionButtonRow } from './ActionButtonRow';
-export type { ActionButtonRowProps, ActionButton } from './ActionButtonRow';
+export { PortfolioSubTabs } from './PortfolioSubTabs';
+export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs';
 
-export { TokenList, TokenListItem, TokenListSkeleton, TokenBadges } from './TokenList';
-export type {
-  TokenListProps,
-  TokenListItemProps,
-  TokenListSkeletonProps,
-  TokenBadgesProps,
-} from './TokenList';
+export { HomeTabOrderSheet } from './HomeTabOrderSheet';
+export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
+export { UnderlineTabs } from './UnderlineTabs';
+export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './UnderlineTabs';
 
-export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
+export { PowerupsFab } from './PowerupsFab';
+export type { PowerupsFabProps } from './PowerupsFab';
+
+export { TokenList, TokenListItem } from './TokenList';
+export type { TokenListProps, TokenListItemProps } from './TokenList';
+
+export { TokenSelectorModal, useTokenSearch } from './TokenSelector';
 export type {
   TokenSelectorToken,
-  TokenSelectorProps,
   TokenSelectorModalProps,
   UseTokenSearchResult,
 } from './TokenSelector';
@@ -165,23 +200,17 @@ export type {
 export { TokenLogo } from './TokenLogo';
 
 // ---------------------------------------------------------------------------
-// Token Detail (TokenInformationSheet + sub-components)
+// Token Detail
+//
+// TokenInformationSheet is gone (spec 019 — token detail is a screen,
+// `app/(app)/token/[id].tsx`, not a sheet, DESIGN.md §Sheets' state rule).
+// MarketDataCard/AboutCard are kit-composed and shared with Home's Bitcoin
+// column (spec 019 D2/D3, research-mobile.md §2 D2) — the legacy
+// BlurContainer-based TokenMarketData/TokenAbout pair is gone.
 // ---------------------------------------------------------------------------
 
-export { TokenInformationSheet } from './TokenInformationSheet';
-export type { TokenInformationSheetProps, CoinInfo } from './TokenInformationSheet';
-
-export { TokenAbout } from './TokenInformationSheet/TokenAbout';
-export type { TokenAboutProps } from './TokenInformationSheet/TokenAbout';
-
-export { TokenMarketData } from './TokenInformationSheet/TokenMarketData';
-export type { TokenMarketDataProps, MarketData } from './TokenInformationSheet/TokenMarketData';
-
-export { TokenFeatures } from './TokenInformationSheet/TokenFeatures';
-export type { TokenFeaturesProps } from './TokenInformationSheet/TokenFeatures';
-
-export { TokenInfo } from './TokenInformationSheet/TokenInfo';
-export type { TokenInfoProps } from './TokenInformationSheet/TokenInfo';
+export { MarketDataCard, AboutCard } from './TokenDetail';
+export type { MarketDataCardProps, AboutCardProps, MarketData } from './TokenDetail';
 
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';
@@ -203,55 +232,58 @@ export type {
   BitcoinNftData,
 } from './NftCard';
 
-export { NftDetailSheet } from './NftDetailSheet';
-export type { NftDetailSheetProps, NftDetailData } from './NftDetailSheet';
-
-export { NftCarouselSection, NftCarouselSectionSkeleton } from './NftCarouselSection';
-export type {
-  NftCarouselSectionProps,
-  NftCarouselSectionSkeletonProps,
-} from './NftCarouselSection';
-
-export { NftSeeAllSheet } from './NftSeeAllSheet';
-export type { NftSeeAllSheetProps } from './NftSeeAllSheet';
+export { NftsTab } from './NftsTab';
+export type { NftsTabProps } from './NftsTab';
 
 // ---------------------------------------------------------------------------
 // Transaction
 // ---------------------------------------------------------------------------
 
-export { TransactionHistorySheet, TransactionItem } from './TransactionHistorySheet';
+export {
+  ACTIVITY_FILTER_KEYS,
+  GROUP_LABEL_KEYS,
+  groupByDay,
+  matchesFilter,
+  TransactionItem,
+  EmptyState as ActivityEmptyState,
+  ErrorState as ActivityErrorState,
+  TransactionListSkeleton,
+} from './Activity';
+export type { ActivityFilter, ActivityGroup, ActivityRow } from './Activity';
 export type {
-  TransactionHistorySheetProps,
   TransactionItemProps,
   Transaction,
   TransactionType,
   TransactionStatus,
   TransactionTokenAmount,
   TransactionFee,
-} from './TransactionHistorySheet';
+} from './Activity';
 
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 
 export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 
+export { ReceiptScreen } from './ReceiptScreen';
+export type {
+  ExchangeReceiptScreenProps,
+  ReceiptScreenAction,
+  ReceiptScreenProps,
+  TransferReceiptScreenProps,
+} from './ReceiptScreen';
+
 // ---------------------------------------------------------------------------
-// Send / Swap / Bridge
+// Send / Swap
 // ---------------------------------------------------------------------------
 
-export { SendSheet } from './SendSheet';
-export type {
-  SendSheetProps,
-  SendToken,
-  SendStep,
-  BlockchainType as SendSheetBlockchainType,
-} from './SendSheet';
+// The send flow is four screens under `app/(app)/send` (spec 018); what is
+// left here are the pieces those screens share.
+export { RecipientInput, SendFailure, TokenPickerSheet, TokenSelectList } from './Send';
+export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } from './Send';
 
 export {
   SwapScreen,
-  SwapTabSelector,
   SwapAmountInput,
-  SwapDetailRow,
   SwapReviewExchange,
   SwapInputScreen,
   SwapReviewScreen,
@@ -259,59 +291,25 @@ export {
 export type {
   SwapToken,
   SwapQuote,
-  SwapTab,
   SwapStep,
   SwapChainType,
   SwapScreenProps,
-  SwapTabSelectorProps,
   SwapAmountInputProps,
-  SwapDetailRowProps,
   SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
-  BridgeTokenSimple,
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
 } from './SwapScreen';
-
-export { BridgeRecipientScreen, BridgeReviewScreen, RecipientAddressInput } from './BridgeScreen';
-export type {
-  BridgeChain,
-  BridgeToken,
-  BridgeEstimate,
-  BridgeExchange,
-  BridgeRecipientScreenProps,
-  BridgeReviewScreenProps,
-  RecipientAddressInputProps,
-} from './BridgeScreen';
 
 // ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
 
-export { SettingsSheet } from './SettingsSheet';
-export type { SettingsSheetProps, SettingsOption, SettingsSection } from './SettingsSheet';
-
-export { SettingsPanelStack } from './SettingsPanelStack';
-export type {
-  MobilePanelContentProps,
-  MobilePanelRenderer,
-  MobilePanelRegistry,
-  MobileSettingsPanelStackProps,
-} from './SettingsPanelStack';
-
 export { SettingsScreenLayout } from './SettingsScreenLayout';
 export type { SettingsScreenLayoutProps } from './SettingsScreenLayout';
 
-export {
-  SettingsHeaderContext,
-  useSettingsHeader,
-  useSettingsHeaderOverride,
-} from './SettingsHeaderContext';
-export type { SettingsHeaderState } from './SettingsHeaderContext';
-
 // Settings Selectors
 export { LanguageSelector } from './SettingsSelectors/LanguageSelector';
+export { AppearanceSelector } from './SettingsSelectors/AppearanceSelector';
 export { NetworkSelector } from './SettingsSelectors/NetworkSelector';
 export { CurrencySelector } from './SettingsSelectors/CurrencySelector';
 export { ExplorerSelector } from './SettingsSelectors/ExplorerSelector';
@@ -348,6 +346,7 @@ export type { AccountAvatarPanelProps } from './AccountPanels/AccountAvatarPanel
 // ---------------------------------------------------------------------------
 
 export { AddressBookPanel } from './AddressPanels/AddressBookPanel';
+export { AddressForm } from './AddressForm';
 export { AddressAddPanel } from './AddressPanels/AddressAddPanel';
 export { AddressEditPanel } from './AddressPanels/AddressEditPanel';
 
@@ -366,3 +365,5 @@ export { AboutPanel } from './AboutPanel';
 
 export { PendingActivityBanner } from './PendingActivityBanner';
 export type { PendingActivityBannerProps } from './PendingActivityBanner';
+export { RevealCover } from './RevealCover';
+export { AccountAvatar } from './AccountAvatar';

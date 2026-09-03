@@ -100,7 +100,8 @@ export function useAccountsMutations({
       setAccounts(newAccounts);
       setAccountId(newAccountId);
       setNetworkId(newNetworkId);
-      setPathIndex(getDefaultPathIndex(account, newNetworkId));
+      const newPathIndex = getDefaultPathIndex(account, newNetworkId);
+      setPathIndex(newPathIndex);
 
       await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
       if (password) {
@@ -109,7 +110,10 @@ export function useAccountsMutations({
 
       await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
       await persistAccounts(newAccounts, formatAccountForStorage);
-      await persistActiveSelection(newAccountId, 0, newNetworkId);
+      // The same index the runtime was just put on: a wallet whose only
+      // address sits at a derived path would otherwise come back on an empty
+      // index 0 after the next launch.
+      await persistActiveSelection(newAccountId, newPathIndex, newNetworkId);
     },
     [
       accounts,
@@ -135,7 +139,13 @@ export function useAccountsMutations({
       if (index < 0) return;
 
       const newAccounts = [...accounts];
-      const newAccount = { ...accounts[index] };
+      // Copy the nested map too: a top-level spread shares `networksAccounts`
+      // and every per-network array with the account still held in state, so
+      // the pads below would mutate it in place under whoever captured it.
+      const newAccount = {
+        ...accounts[index],
+        networksAccounts: { ...accounts[index].networksAccounts },
+      };
 
       if (name) newAccount.name = name;
       if (avatar) newAccount.avatar = avatar;
@@ -143,13 +153,12 @@ export function useAccountsMutations({
       if (newDerivedAccounts) {
         for (const derivedAccount of newDerivedAccounts) {
           const { network, index: accountIndex } = derivedAccount;
-          if (!newAccount.networksAccounts[network.id]) {
-            newAccount.networksAccounts[network.id] = [];
+          const slots = [...(newAccount.networksAccounts[network.id] ?? [])];
+          while (slots.length <= accountIndex) {
+            slots.push(null);
           }
-          while (newAccount.networksAccounts[network.id].length <= accountIndex) {
-            newAccount.networksAccounts[network.id].push(null);
-          }
-          newAccount.networksAccounts[network.id][accountIndex] = derivedAccount;
+          slots[accountIndex] = derivedAccount;
+          newAccount.networksAccounts[network.id] = slots;
         }
       }
 

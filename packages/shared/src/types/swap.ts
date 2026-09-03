@@ -17,7 +17,7 @@ import type { SolanaNetworkId, BlockchainType } from './blockchain';
 export type SwapNetworkId = SolanaNetworkId;
 
 /**
- * Chain type for unified swap/bridge.
+ * Chain type for swap.
  * Alias of the canonical BlockchainType.
  */
 export type SwapChainType = BlockchainType;
@@ -302,49 +302,19 @@ export interface SwapToken {
   balance?: number;
   /** USD price per token */
   usdPrice?: number;
-  /** Chain this token belongs to (for unified swap/bridge) */
+  /** Chain this token belongs to */
   chain?: SwapChainType;
   /** Network ID (e.g., 'solana-mainnet', 'bitcoin-mainnet', 'ethereum-mainnet') */
   networkId?: string;
 }
 
 /**
- * Active tab in swap screen
+ * Current step in swap flow
  */
-export type SwapTab = 'swap' | 'bridge';
+export type SwapScreenStep = 'input' | 'review' | 'processing' | 'success' | 'error';
 
 /**
- * Current step in swap flow (base type)
- */
-export type SwapStepBase = 'input' | 'review' | 'processing' | 'success' | 'error';
-
-/**
- * Full step type for SwapScreen (includes bridge recipient step)
- */
-export type SwapScreenStep = SwapStepBase | 'recipient';
-
-/**
- * Bridge token type (simplified for SwapScreen integration)
- */
-export interface BridgeTokenSimple {
-  /** Token symbol (e.g., "SOL", "ETH", "USDC") */
-  symbol: string;
-  /** Token name */
-  name: string;
-  /** Token logo URL */
-  logo?: string;
-  /** Network/chain this token is on (may be null for native cross-chain tokens) */
-  network?: string | null;
-  /** Canonical chain (e.g. "bitcoin", "ethereum") provided by the backend resource */
-  chain?: SwapChainType;
-  /** User's balance of this token */
-  balance?: number;
-  /** USD price per token */
-  usdPrice?: number;
-}
-
-/**
- * A swap/bridge failure to render: a bare translation key, or a key plus the
+ * A swap failure to render: a bare translation key, or a key plus the
  * interpolation params it needs (e.g. the pair minimum).
  */
 export type SwapErrorMessage = string | { key: string; params: Record<string, string> };
@@ -377,69 +347,9 @@ export interface SwapSuccessSummary {
   feePercent?: number;
 }
 
-/**
- * Bridge estimate type (simplified)
- */
-export interface BridgeEstimateSimple {
-  /** Estimated output amount */
-  estimatedAmount: number;
-  /** Minimum required input amount */
-  minAmount: number;
-  /** Maximum allowed input amount; null/undefined when the pair has no cap */
-  maxAmount?: number | null;
-  /** Input token symbol */
-  symbolIn: string;
-  /** Output token symbol */
-  symbolOut: string;
-}
-
-/**
- * Bridge exchange result type (simplified)
- */
-export interface BridgeExchangeSimple {
-  /** Exchange ID for tracking */
-  id: string;
-  /** Deposit address (where user sends funds) */
-  depositAddress: string;
-  /** Input amount */
-  amountIn: number;
-  /** Expected output amount */
-  amountOut: number;
-  /** Input token symbol */
-  symbolIn: string;
-  /** Output token symbol */
-  symbolOut: string;
-  /** Destination address */
-  addressTo: string;
-  /** Exchange status */
-  status: string;
-}
-
-/**
- * Bridge transaction status (simplified)
- */
-export interface BridgeTransactionSimple {
-  /** Current exchange status */
-  status: string;
-  /** Optional payout transaction hash */
-  payoutTxId?: string;
-}
-
 // ============================================================================
 // Component Props (Generic - use with platform-specific style types)
 // ============================================================================
-
-/**
- * Props for SwapTabSelector component
- */
-export interface SwapTabSelectorProps<StyleType> {
-  /** Currently active tab */
-  activeTab: SwapTab;
-  /** Callback when tab changes */
-  onTabChange: (tab: SwapTab) => void;
-  /** Custom style */
-  style?: StyleType;
-}
 
 /**
  * Props for SwapAmountInput component
@@ -513,7 +423,7 @@ export interface SwapDetailsCardProps<StyleType> {
   rows: SwapDetailItem[];
   /**
    * Rows folded behind the "Details" disclosure. Omit (or pass empty) to
-   * render a plain grouped card with no disclosure — the bridge review does.
+   * render a plain grouped card with no disclosure.
    */
   advancedRows?: SwapDetailItem[];
   /** Custom style */
@@ -547,7 +457,7 @@ export interface SwapReviewExchangeSide {
 
 /**
  * Props for SwapReviewExchange component - the single graphic block on the
- * swap and bridge review screens: sent token logo, arrow, received token
+ * swap review screen: sent token logo, arrow, received token
  * logo, with amounts and USD values underneath. Replaces the two stacked
  * You Send / You Receive cards.
  */
@@ -618,7 +528,7 @@ export interface SwapInputScreenProps<StyleType> {
   canReview: boolean;
   /** Warning message when review is not possible */
   reviewWarning?: SwapErrorMessage | null;
-  /** Translation key for the last swap or bridge failure */
+  /** Translation key for the last swap failure */
   swapError?: SwapErrorMessage | null;
   /** Callback for Review button */
   onReview: () => void;
@@ -654,54 +564,6 @@ export interface SwapScreenProps<StyleType> {
   loading?: boolean;
   /** Custom style */
   style?: StyleType;
-  /** Default recipient address for bridge (e.g., user's own BTC address) */
-  defaultRecipientAddress?: string;
-  /**
-   * Resolves the wallet's own receive address for a given chain. Used by the
-   * bridge flow to auto-fill the destination address based on the selected
-   * output token's chain. Must be memoised by the caller (e.g. `useCallback`)
-   * to avoid re-firing the auto-fill effect on every render.
-   */
-  getReceiveAddressForChain?: (chain: SwapChainType) => string;
-
-  // Bridge-related props (optional - if provided, bridge tab becomes functional)
-  /** Bridge source tokens (user's tokens available for bridging) */
-  bridgeTokens?: BridgeTokenSimple[];
-  /** Featured bridge tokens */
-  bridgeFeaturedTokens?: BridgeTokenSimple[];
-  /** Callback to get available destination tokens for a source token */
-  onGetAvailableTokens?: (sourceSymbol: string) => Promise<BridgeTokenSimple[]>;
-  /** Callback to get bridge estimate */
-  onGetBridgeEstimate?: (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    networkIn?: string,
-    networkOut?: string
-  ) => Promise<BridgeEstimateSimple | null>;
-  /** Callback to create bridge exchange */
-  onCreateBridgeExchange?: (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    addressTo: string,
-    networkIn?: string,
-    networkOut?: string
-  ) => Promise<BridgeExchangeSimple | null>;
-  /** Callback to get bridge transaction status */
-  onGetBridgeTransactionStatus?: (id: string) => Promise<BridgeTransactionSimple | null>;
-  /** Callback when bridge succeeds */
-  onBridgeSuccess?: (exchange: BridgeExchangeSimple) => void;
-  /** Callback when bridge fails */
-  onBridgeError?: (error: Error) => void;
-  /** Callback to send deposit to bridge exchange address */
-  onSendDeposit?: (
-    depositAddress: string,
-    tokenAddress: string,
-    amount: number
-  ) => Promise<{ txId: string }>;
-  /** Callback to search bridge source tokens */
-  onSearchBridgeTokens?: (query: string) => Promise<BridgeTokenSimple[]>;
   /** Callback to navigate to home after success */
   onNavigateHome?: () => void;
 }

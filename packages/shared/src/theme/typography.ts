@@ -95,8 +95,12 @@ export const fontSize = {
   headline: 24,
   /** 36px - the largest heading role */
   display: 36,
-  /** 60px - the total balance, and nothing else (off-ramp hero size) */
-  balance: 60,
+  /**
+   * 48px - the total balance, and nothing else. Owner, 2026-09-02: the number
+   * takes the lead; it was 38, the `.pen`'s size. A long total fits itself to
+   * the width beside Send/Receive rather than wrapping.
+   */
+  balance: 48,
 
   // ---------------------------------------------------------------------
   // Legacy aliases — re-pointed at the scale, kept so consumers keep working
@@ -123,8 +127,6 @@ export const fontSize = {
   // ---------------------------------------------------------------------
   // Icon glyph sizes — not text, deliberately off the type scale
   // ---------------------------------------------------------------------
-  /** 28px - medium icon glyph size (MUI `fontSize` on an icon) */
-  iconMd: 28,
   /** 40px - large icon glyph size (MUI `fontSize` on an icon) */
   iconLg: 40,
 } as const;
@@ -187,25 +189,19 @@ export const fontWeight = {
  * sub-perceptual at 12-16px and only made the token set unchoosable.
  */
 export const letterSpacing = {
-  /** -0.25px - display sizes and the balance; the only genuinely tight step */
-  tight: -0.25,
   /** -0.12px - titles and headlines (20-24px) */
   snug: -0.12,
   /** 0px - body-sized text; the default */
   normal: 0,
   /** 0.3px - uppercase labels, badges, micro copy */
   label: 0.3,
-  /** 0.5px - wide uppercase chrome */
-  loose: 0.5,
   /** 1px - maximum tracking; letter-spaced display lockups */
   widest: 1,
 
-  /** -0.25px @deprecated component-named; use `tight` (was -0.245) */
+  /** -0.25px @deprecated component-named; use `snug` (was -0.245) */
   balance: -0.25,
   /** 0px @deprecated sub-perceptual; use `normal` (was -0.07) */
   slight: 0,
-  /** 0px @deprecated sub-perceptual; use `normal` (was 0.12) */
-  header: 0,
   /** 0px @deprecated sub-perceptual; use `normal` (was 0.13) */
   change: 0,
   /** 0.3px @deprecated use `label` (was 0.25) */

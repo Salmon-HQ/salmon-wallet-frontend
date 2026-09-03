@@ -1,0 +1,549 @@
+/**
+ * Wallets — CORE 10.
+ *
+ * The switcher was a panel behind the gate; it is a screen now, because the
+ * second tap inside it changes what it is (rename, include, add, pick a
+ * derived account). Aggregated balance on top, one card per wallet under an
+ * "Include in total" heading, and an outlined "Add wallet" that routes to the
+ * same add screen Settings → Accounts → Add opens.
+ */
+import React, { useCallback, useMemo } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {
+  useAccountsContext,
+  useBalance,
+  useCurrencyContext,
+  useUserConfig,
+  useWalletTotals,
+  sumIncludedTotals,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+  getAccountAddress,
+  getAccountMnemonic,
+  getShortAddress,
+  isWatchOnlyAccount,
+  letterSpacing,
+  ms,
+  s,
+  spacing,
+  tabularNums,
+  vs,
+  type Account,
+  type NetworkId,
+  type Semantic,
+  orderWalletCards,
+} from '@salmon/shared';
+import {
+  Card,
+  DepthBackground,
+  AccountAvatar,
+  IconBubble,
+  ListRow,
+  ScalesBackground,
+  ScreenHeader,
+  SectionLabel,
+  SubAccountSelector,
+  WatchOnlyBadge,
+} from '../../src/components';
+import {
+  CheckCircleIcon,
+  CircleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  PencilSimpleIcon,
+  PlusIcon,
+  TreeStructureIcon,
+  iconSize,
+} from '../../src/icons';
+import { useDerivedAccounts } from '../../src/contexts/DerivedAccountsContext';
+import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
+
+/** The inline rename affordance beside the name. */
+const RENAME_BUBBLE_SIZE = 24;
+/** The include control at the end of a wallet card. */
+const INCLUDE_ICON_SIZE = 22;
+
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one, so this copy is what satisfies the style typing.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
+
+export default function WalletsScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+
+  const [accountState, accountActions] = useAccountsContext();
+  const { accounts, accountId, activeBlockchainAccount, networkId } = accountState;
+  const [, { formatValue }] = useCurrencyContext();
+
+  const userConfigAccount = useMemo(
+    () => ({
+      network: {
+        environment: (activeBlockchainAccount
+          ? networkId || 'solana-mainnet'
+          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
+        blockchain: 'solana',
+      },
+    }),
+    [activeBlockchainAccount, networkId]
+  );
+  const { excludedFromTotal, setIncludedInTotal } = useUserConfig({
+    activeBlockchainAccount: userConfigAccount,
+  });
+
+  // The eye is the app's one balance-visibility preference, not a second one
+  // for this screen: `useBalance` owns it and persists it. Skipped, so mounting
+  // this screen costs no request — only the preference comes back.
+  const showUnverifiedTokens = useUnverifiedTokens();
+
+  const { hiddenBalance, toggleHidden } = useBalance({
+    account: activeBlockchainAccount,
+    networkId: (networkId ?? undefined) as NetworkId | undefined,
+    skip: true,
+  });
+
+  const { totals } = useWalletTotals({
+    accounts,
+    networkId: (networkId ?? undefined) as NetworkId | undefined,
+    // The same list Home totals: a wallet whose balance is mostly unverified
+    // tokens must not read differently here than on the screen it came from.
+    includeSpam: showUnverifiedTokens,
+  });
+
+  const isIncluded = useCallback(
+    (walletId: string) => !excludedFromTotal.includes(walletId),
+    [excludedFromTotal]
+  );
+
+  const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
+
+  const ordered = useMemo(() => orderWalletCards(accounts), [accounts]);
+
+  const aggregated = useMemo(
+    () =>
+      sumIncludedTotals(
+        accounts.map((a) => a.id),
+        excludedFromTotal,
+        totals
+      ),
+    [accounts, excludedFromTotal, totals]
+  );
+
+  const hiddenValue = '••••';
+
+  const handleSelect = useCallback(
+    async (id: string) => {
+      if (id !== accountId) await accountActions.changeAccount(id);
+      router.back();
+    },
+    [accountId, accountActions, router]
+  );
+
+  const handleRename = useCallback(
+    (id: string) => {
+      // The same rename screen Settings → Accounts → Edit reaches.
+      router.push({
+        pathname: '/settings/[panel]',
+        params: { panel: 'account-name', accountId: id },
+      });
+    },
+    [router]
+  );
+
+  const handleAddWallet = useCallback(() => {
+    // One add-wallet screen; `returnTo` lands the finished flow back here with
+    // the new wallet already active.
+    router.push({
+      pathname: '/settings/[panel]',
+      params: { panel: 'account-add', returnTo: 'wallets' },
+    });
+  }, [router]);
+
+  const handleToggleInclude = useCallback(
+    (walletId: string) => {
+      const included = isIncluded(walletId);
+      // The total can never be empty: excluding the last included wallet would
+      // leave the card reading a number that belongs to nothing.
+      if (included && includedCount <= 1) {
+        Alert.alert(
+          t('settings.wallets.total_title', 'Total balance'),
+          t('settings.wallets.keep_one_included')
+        );
+        return;
+      }
+      void setIncludedInTotal(walletId, !included);
+    },
+    [includedCount, isIncluded, setIncludedInTotal, t]
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Wallets is pushed over the tab shell, so it does not inherit the
+          shell's water — it mounts the same two layers, edge to edge to the
+          physical top, exactly as `LockContent` and `LoadingScreen` do. */}
+      <DepthBackground />
+      <ScalesBackground variant="deepField" />
+      <ScreenHeader
+        onBack={() => router.back()}
+        title={t('settings.wallets.screen_title')}
+        subtitle={t('settings.wallets.screen_subtitle')}
+      />
+      <ScrollView
+        testID="wallets-screen"
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: vs(spacing.screenGutter) }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* The aggregated total. Ink, because it is a different object from the
+            wallet cards under it, not a louder one. */}
+        <Card testID="wallets-total-card" tone="ink" padding="lg" gap={spacing.xs}>
+          <View style={styles.totalLabelRow}>
+            <Text style={styles.totalLabel}>{t('settings.wallets.total_title')}</Text>
+            <IconBubble
+              testID="wallets-balance-eye"
+              size={24}
+              tone="ghost"
+              icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
+              iconSize={iconSize.sm}
+              onPress={toggleHidden}
+              accessibilityLabel={
+                hiddenBalance
+                  ? t('accessibility.show_balance', 'Show balance')
+                  : t('accessibility.hide_balance', 'Hide balance')
+              }
+            />
+          </View>
+          <Text testID="wallets-total-value" style={styles.totalValue} numberOfLines={1}>
+            {hiddenBalance ? hiddenValue : formatValue(aggregated)}
+          </Text>
+          <Text testID="wallets-included-count" style={styles.totalCaption}>
+            {t('settings.wallets.included_count', {
+              included: includedCount,
+              total: accounts.length,
+            })}
+          </Text>
+        </Card>
+
+        <View style={styles.headingRow}>
+          <SectionLabel variant="caps">{t('settings.wallets.include_in_total')}</SectionLabel>
+          <Text style={styles.headingHint}>{t('settings.wallets.include_hint')}</Text>
+        </View>
+
+        {ordered.map(({ account, parentName }) => (
+          <WalletCard
+            key={account.id}
+            account={account}
+            parentName={parentName}
+            isActive={account.id === accountId}
+            included={isIncluded(account.id)}
+            total={totals[account.id]}
+            hiddenBalance={hiddenBalance}
+            hiddenValue={hiddenValue}
+            formatValue={formatValue}
+            networkId={(networkId ?? undefined) as NetworkId | undefined}
+            onSelect={() => handleSelect(account.id)}
+            onRename={() => handleRename(account.id)}
+            onToggleInclude={() => handleToggleInclude(account.id)}
+          />
+        ))}
+
+        {/* The one action that is not a wallet: outlined, so it reads as an
+            empty slot rather than a card with nothing in it. */}
+        <Card
+          testID="wallets-add-wallet"
+          padding="lg"
+          onPress={handleAddWallet}
+          accessibilityLabel={t('settings.wallets.add_wallet')}
+          style={styles.addCard}
+        >
+          <View style={styles.addRow}>
+            <PlusIcon size={iconSize.md} color={semantic.accent.ink} />
+            <Text style={styles.addLabel}>{t('settings.wallets.add_wallet')}</Text>
+          </View>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ============================================================================
+// One wallet
+// ============================================================================
+
+interface WalletCardProps {
+  account: Account;
+  /** The wallet this one was derived from, when it descends from one. */
+  parentName: string | undefined;
+  isActive: boolean;
+  included: boolean;
+  total: number | undefined;
+  hiddenBalance: boolean;
+  hiddenValue: string;
+  formatValue: (value: number | undefined) => string;
+  networkId: NetworkId | undefined;
+  onSelect: () => void;
+  onRename: () => void;
+  onToggleInclude: () => void;
+}
+
+function WalletCard({
+  account,
+  parentName,
+  isActive,
+  included,
+  total,
+  hiddenBalance,
+  hiddenValue,
+  formatValue,
+  networkId,
+  onSelect,
+  onRename,
+  onToggleInclude,
+}: WalletCardProps): React.ReactElement {
+  const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const [{ accountId: activeId, pathIndex }, accountActions] = useAccountsContext();
+  const { scanningAccountId, rescan } = useDerivedAccounts();
+  const address = getAccountAddress(account);
+  const shortAddress = getShortAddress(address) ?? '';
+  // Only a seed has a derivation tree to look through — an imported key or a
+  // watched address has nothing to find, so the action is absent rather than
+  // present and inert.
+  const canRescan = !!getAccountMnemonic(account);
+
+  // The derived accounts this wallet holds on the chain being read. Removed
+  // from Home in 015; this is where a wallet's path indexes live now.
+  const derived = useMemo(() => {
+    const list = networkId ? account.networksAccounts?.[networkId] : undefined;
+    // Null slots are holes in the derivation tree, not accounts: a wallet
+    // created at a derived path sits at that position with empty ones before it.
+    const held = (list ?? []).flatMap((blockchainAccount, index) =>
+      blockchainAccount ? [{ index, address: blockchainAccount.getReceiveAddress?.() ?? '' }] : []
+    );
+    return held.length < 2 ? [] : held;
+  }, [account.networksAccounts, networkId]);
+
+  return (
+    // `ListRow` is the card here — its own leading/title/trailing geometry
+    // replaces what used to be hand-drawn styles duplicating it exactly. The
+    // derived-account chips have no slot on `ListRow` (there is no footer),
+    // so a wallet with more than one derived path renders them as a sibling
+    // block below the row instead of inside one shared card. Wrapped in a
+    // `View` (not a fragment) so the screen's sibling gap of 20 applies once,
+    // between wallets — not a second time between a wallet's own row and its
+    // derived chips, which stay at the tighter internal-anatomy step.
+    //
+    // A wallet derived from another one is indented under it and joined to it
+    // by a hairline descent running up through the gap to the card it came
+    // from — it is a wallet of its own, and this is the only thing that says
+    // where it came from (spec 025).
+    <View style={parentName ? styles.derivedGroup : undefined}>
+      {parentName && <View testID={`wallet-descent-${account.id}`} style={styles.derivedDescent} />}
+      <ListRow
+        testID={`wallet-card-${account.id}`}
+        padding="lg"
+        onPress={onSelect}
+        accessibilityLabel={
+          isActive
+            ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
+            : account.name
+        }
+        style={isActive ? styles.activeCard : undefined}
+        leading={<AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />}
+        title={account.name}
+        titleAccessory={
+          <>
+            {canRescan && (
+              <IconBubble
+                testID={`wallet-rescan-${account.id}`}
+                size={RENAME_BUBBLE_SIZE}
+                shape="circle"
+                tone="surface"
+                icon={TreeStructureIcon}
+                iconSize={13}
+                onPress={() => void rescan(account.id)}
+                disabled={scanningAccountId !== null}
+                accessibilityLabel={t('settings.wallets.find_derived')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              />
+            )}
+            <IconBubble
+              testID={`wallet-rename-${account.id}`}
+              size={RENAME_BUBBLE_SIZE}
+              shape="circle"
+              tone="surface"
+              icon={PencilSimpleIcon}
+              iconSize={13}
+              onPress={onRename}
+              accessibilityLabel={t('accessibility.edit_account')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            />
+            {isWatchOnlyAccount(account) && (
+              <WatchOnlyBadge testID={`wallet-watch-only-${account.id}`} />
+            )}
+          </>
+        }
+        subtitle={
+          <>
+            <Text testID={`wallet-balance-${account.id}`} style={styles.walletBalance}>
+              {hiddenBalance ? hiddenValue : formatValue(total)}
+              {shortAddress ? ` · ${shortAddress}` : ''}
+            </Text>
+            {parentName && (
+              <Text testID={`wallet-derived-from-${account.id}`} style={styles.derivedFrom}>
+                {t('settings.wallets.derived_from', { name: parentName })}
+              </Text>
+            )}
+          </>
+        }
+        trailing={
+          <IconBubble
+            testID={`wallet-include-${account.id}`}
+            size={24}
+            tone="ghost"
+            icon={included ? CheckCircleIcon : CircleIcon}
+            iconSize={INCLUDE_ICON_SIZE}
+            iconColor={included ? semantic.accent.ink : semantic.text.tertiary}
+            onPress={onToggleInclude}
+            accessibilityLabel={
+              included
+                ? t('settings.wallets.exclude_from_total_a11y', { name: account.name })
+                : t('settings.wallets.include_in_total_a11y', { name: account.name })
+            }
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          />
+        }
+      />
+
+      {derived.length > 0 && (
+        <SubAccountSelector
+          testID={`wallet-derived-${account.id}`}
+          accounts={derived}
+          // `pathIndex` is app state and belongs to whichever wallet is active,
+          // so a chip on any other wallet reads as unselected until that wallet
+          // is the one in use.
+          activeIndex={account.id === activeId ? pathIndex : -1}
+          onSelect={async (index) => {
+            if (account.id !== activeId) await accountActions.changeAccount(account.id);
+            await accountActions.changePathIndex(index);
+          }}
+          style={styles.derivedRow}
+        />
+      )}
+    </View>
+  );
+}
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: s(spacing.screenGutter),
+      // No top padding: the header block already ends 20 above the content.
+      // The component gap (DESIGN.md §Layout): 20 between sibling blocks.
+      gap: vs(spacing.screenGutter),
+    },
+    totalLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    totalLabel: {
+      flex: 1,
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: ms(fontSize.caption),
+    },
+    totalValue: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: ms(fontSize.display),
+      letterSpacing: letterSpacing.balance,
+      ...TABULAR,
+    },
+    totalCaption: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.micro),
+    },
+    headingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    headingHint: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: ms(fontSize.micro),
+    },
+    activeCard: {
+      borderWidth: 1,
+      borderColor: t.accent.ink,
+    },
+    // The kept-custom `ListRow` subtitle node: `ListRow` draws a string
+    // subtitle in this same body/secondary style, but the balance needs the
+    // Tabular Rule, which the row's own subtitle text doesn't carry.
+    walletBalance: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.body),
+      ...TABULAR,
+    },
+    // The descent: the derived card steps in one gutter, and a hairline in
+    // `border.default` runs from the card above it down its leading edge.
+    derivedGroup: {
+      paddingLeft: s(spacing.screenGutter),
+    },
+    derivedDescent: {
+      position: 'absolute',
+      left: s(spacing.screenGutter) / 2,
+      top: -vs(spacing.screenGutter),
+      bottom: 0,
+      width: StyleSheet.hairlineWidth,
+      backgroundColor: t.border.default,
+    },
+    derivedFrom: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: ms(fontSize.micro),
+    },
+    derivedRow: {
+      paddingHorizontal: 0,
+      // `ListRow`'s own card no longer contains these chips (no footer slot),
+      // so the tight internal step that used to be the card's own `gap` prop
+      // is redrawn here instead of falling to the screen's 20 sibling gap.
+      marginTop: vs(spacing.sm),
+    },
+    addCard: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.border.raised,
+    },
+    addRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    addLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: ms(fontSize.body),
+    },
+  });

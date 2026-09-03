@@ -3,12 +3,8 @@
  */
 
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const mockBlurContainer = vi.fn(({ children }: { children?: React.ReactNode }) => (
-  <div data-testid="blur-container">{children}</div>
-));
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -17,24 +13,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('../../utils/styled', () => ({
-  styled: (Component: React.ElementType) => () => Component,
-}));
-
-vi.mock('@salmon/shared', () => ({
-  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
-  semantic: {
-    text: { accent: '#FF5C45' },
-    accent: { ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)', tintHover: 'rgba(255,92,69,0.15)' },
-  },
-  colors: {
-    palette: { amber: '#fc0' },
-    border: { default: '#333' },
-    background: { card: '#111' },
-    text: { primary: '#fff', tertiary: '#aaa' },
-  },
-  borderRadius: { md: 12, lg: 16 },
-  borderWidth: { thin: 1 },
+// The real barrel, with the explorer catalogue pinned so the picker has two
+// choices whatever the config says.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   getTransactionUrl: (_b: string, _e: string, explorer: string, txHash: string) =>
     `https://explorer/${explorer}/${txHash}`,
   getAvailableExplorers: () => [
@@ -42,30 +24,57 @@ vi.mock('@salmon/shared', () => ({
     { key: 'explorer', name: 'Explorer' },
   ],
   getDefaultExplorer: () => 'solscan',
-  fontSize: { sm: 14, bodyLg: 16, base: 14, lg: 18 },
-  fontWeight: { medium: 500 },
-  opacity: { high: 0.9 },
-  spacing: { sm: 8, md: 12, lg: 16 },
-  duration: { normal: '200ms' },
-  easing: { ease: 'ease' },
-}));
-
-vi.mock('../BlurContainer', () => ({
-  BlurContainer: (props: { children?: React.ReactNode }) => mockBlurContainer(props),
 }));
 
 import { ExplorerLinkButton } from './ExplorerLinkButton';
 
+function stubMatchMedia() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+  );
+}
+
 describe('ExplorerLinkButton', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    stubMatchMedia();
+    vi.stubGlobal('open', vi.fn());
   });
 
-  it('uses BlurContainer for both the trigger and the menu surface', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    cleanup();
+  });
+
+  it('opens the default explorer in a new tab when there is no menu', () => {
+    const onPress = vi.fn();
+    render(<ExplorerLinkButton txHash="tx-123" onPress={onPress} />);
+
+    fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
+
+    expect(window.open).toHaveBeenCalledWith(
+      'https://explorer/solscan/tx-123',
+      '_blank',
+      'noopener,noreferrer'
+    );
+    expect(onPress).toHaveBeenCalledWith('https://explorer/solscan/tx-123', 'Solscan');
+  });
+
+  it('opens a sheet of explorers to pick from, and the pick opens that one', () => {
     render(<ExplorerLinkButton txHash="tx-123" showMenu />);
 
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
+    expect(screen.getByTestId('tx-detail-explorer-menu').getAttribute('open')).not.toBeNull();
 
-    expect(screen.getAllByTestId('blur-container')).toHaveLength(2);
+    fireEvent.click(screen.getByTestId('tx-detail-explorer-explorer'));
+    expect(window.open).toHaveBeenCalledWith(
+      'https://explorer/explorer/tx-123',
+      '_blank',
+      'noopener,noreferrer'
+    );
   });
 });

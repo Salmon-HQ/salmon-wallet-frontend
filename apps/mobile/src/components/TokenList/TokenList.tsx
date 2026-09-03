@@ -1,10 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, FlatList, StyleSheet, ListRenderItem, RefreshControl } from 'react-native';
 import TokenListItem from './TokenListItem';
-import TokenListSkeleton from './TokenListSkeleton';
-import { colors, spacing } from '@salmon/shared';
+import { SkeletonRow } from '../Skeleton';
+import { spacing } from '@salmon/shared';
 import type { Token } from '@salmon/shared';
 import type { TokenListProps } from './types';
+import { useSemantic } from '../../theme/useThemedStyles';
 
 /**
  * Key extractor for FlatList
@@ -54,6 +56,9 @@ const TokenList: React.FC<TokenListProps> = ({
   onScroll,
   scrollEventThrottle = 16,
 }) => {
+  const { t } = useTranslation();
+  const { accent } = useSemantic();
+
   // Render item callback - memoized for performance
   // Must be defined before any conditional returns to comply with Rules of Hooks
   const renderItem: ListRenderItem<Token> = React.useCallback(
@@ -89,12 +94,6 @@ const TokenList: React.FC<TokenListProps> = ({
     });
   }, [onRefresh]);
 
-  // Show skeleton while loading (only when no header component is provided)
-  // When header is provided, the skeleton should be shown inline
-  if (loading && !ListHeaderComponent) {
-    return <TokenListSkeleton count={5} />;
-  }
-
   // Create refresh control if onRefresh is provided.
   //
   // The control answers the pull and nothing else. It used to be driven by the
@@ -109,13 +108,26 @@ const TokenList: React.FC<TokenListProps> = ({
     <RefreshControl
       refreshing={pulling}
       onRefresh={handlePull}
-      tintColor={colors.accent.primary}
-      colors={[colors.accent.primary]}
+      tintColor={accent.ink}
+      colors={[accent.ink]}
     />
   ) : undefined;
 
-  // Determine empty component - show skeleton if loading with header, otherwise use provided component
-  const emptyComponent = loading ? <TokenListSkeleton count={5} /> : ListEmptyComponent;
+  // The skeleton is the list's own empty state, never a sibling rendered
+  // outside it: a skeleton outside the FlatList never receives the
+  // `contentContainerStyle` the host passes, so it ran edge to edge while the
+  // rows it stood in for kept the screen gutter (owner, on device).
+  const emptyComponent = loading ? (
+    <SkeletonRow
+      padding="lg"
+      leadingSize={44}
+      trailingWidth={64}
+      count={5}
+      accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
+    />
+  ) : (
+    ListEmptyComponent
+  );
 
   return (
     <View style={styles.container}>

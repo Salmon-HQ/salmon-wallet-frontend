@@ -1,222 +1,75 @@
 /**
- * BackupPanel - Backup options page
+ * BackupPanel — the settings surface that re-shows a wallet's seed phrase,
+ * on the DOM.
  *
- * This page provides backup functionality for the wallet, including:
- * - Viewing the seed phrase (mnemonic)
- * - Security warnings about protecting backup data
+ * The mobile twin is `apps/mobile/src/components/BackupPanel`. The phrase is
+ * exhibited on `SeedWordGrid`, the same primitive the onboarding grid uses
+ * (DESIGN.md §The Seed Phrase Rule): bedrock cells, mono words, tertiary
+ * numbers, one implementation. Around it: a `WarningNotice` for the standing
+ * warning, a bedrock cover for the reveal gate, kit buttons.
  *
- * The seed phrase is revealed only after user confirmation
- * to prevent accidental exposure.
+ * The gate itself is unchanged: an unlocked session is not proof of
+ * identity, so the password is asked again before the phrase comes into view.
  */
-
-import React, { useCallback, useState, useMemo } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import Alert from '@mui/material/Alert';
-import Tooltip from '@mui/material/Tooltip';
-import { CheckIcon, CopyIcon, EyeIcon, EyeSlashIcon, KeyIcon, WarningIcon } from '../../icons';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  semantic,
-  spacing,
-  borderRadius,
-  borderWidth,
-  useAccountsContext,
-  getAccountMnemonic,
   fontFamily,
   fontSize,
-  fontWeight,
-  letterSpacing,
-  opacity,
-  componentSizes,
-  duration,
+  getAccountMnemonic,
+  lineHeight,
+  spacing,
+  useAccountsContext,
   useCopyFeedback,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { RevealCover } from '../RevealCover';
+import { SeedWordGrid } from '../SeedPhrase';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
 
-import { CopyTick } from '../CopyTick';
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const PageContent = styled(Box)({
-  padding: spacing.lg,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.lg,
-});
-
-const WarningAlert = styled(Alert)({
-  backgroundColor: semantic.status.warningTint,
-  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
-  '& .MuiAlert-icon': {
-    color: semantic.status.warning,
-  },
-  '& .MuiAlert-message': {
-    color: colors.text.primary,
-  },
-});
-
-// The phrase is exhibited here, so this panel is bedrock at full alpha — no
-// translucent card, no motif (DESIGN.md §The Bedrock Rule).
-const SeedPhraseCard = styled(Paper)({
-  backgroundColor: semantic.surface.bedrock,
-  padding: spacing.lg,
-  borderRadius: borderRadius.r3,
-  border: `${borderWidth.thin}px solid ${colors.border.default}`,
-  position: 'relative',
-});
-
-const SeedPhraseGrid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: spacing.sm,
-});
-
-const WordChip = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  gap: spacing.xs,
-  padding: `${spacing.sm}px ${spacing.md}px`,
-  backgroundColor: colors.background.primary,
-  borderRadius: borderRadius.md,
-  border: `${borderWidth.thin}px solid ${colors.border.default}`,
-});
-
-// The cell index is a label, not part of the phrase — DESIGN.md §The Seed
-// Phrase Rule puts it in the label treatment so it can never be read as a word.
-const WordNumber = styled(Typography)({
-  fontSize: fontSize.label,
-  fontWeight: fontWeight.medium,
-  color: colors.text.tertiary,
-  minWidth: componentSizes.iconSizeXs,
-});
-
-// Exhibited seed words: Geist Mono at the larger mono size, weight 500
-// (DESIGN.md §The Seed Phrase Rule).
-const WordText = styled(Typography)({
-  fontSize: fontSize.monoLg,
-  fontWeight: fontWeight.medium,
-  color: colors.text.primary,
-  fontFamily: fontFamily.mono,
-});
-
-const BlurOverlay = styled(Box)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: colors.overlay.dark,
-  borderRadius: borderRadius.r3,
-  gap: spacing.md,
-  cursor: 'pointer',
-  transition: `background-color ${duration.normal}`,
-  '&:hover': {
-    backgroundColor: colors.overlay.darkHover,
-  },
-});
-
-const RevealText = styled(Typography)({
-  fontSize: fontSize.body,
-  fontWeight: fontWeight.medium,
-  color: colors.text.secondary,
-});
-
-const ActionRow = styled(Box)({
-  display: 'flex',
-  gap: spacing.sm,
-  marginTop: spacing.md,
-});
-
-const ActionButton = styled(Button)({
-  flex: 1,
-  textTransform: 'none',
-  fontWeight: fontWeight.medium,
-  borderRadius: borderRadius.r3,
-});
-
-const CopyButton = styled(ActionButton)({
-  backgroundColor: colors.background.card,
-  color: colors.text.primary,
-  border: `${borderWidth.thin}px solid ${colors.border.default}`,
-  '&:hover': {
-    backgroundColor: colors.card.border,
-    borderColor: colors.border.light,
-  },
-});
-
-const SectionLabel = styled(Typography)({
-  fontSize: fontSize.label,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.secondary,
-  textTransform: 'uppercase',
-  letterSpacing: letterSpacing.label,
-  marginBottom: spacing.sm,
-});
-
-/**
- * A styled div carrying only an onClick is invisible to the keyboard. The
- * reveal gate is an interactive control, so it answers to Enter and Space.
- */
-function activateOnKey(activate: () => void) {
-  return (event: React.KeyboardEvent<HTMLElement>): void => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    activate();
-  };
-}
-
-// ============================================================================
-// Component
-// ============================================================================
+/** What a covered cell shows. Same character count for every word, so the
+ *  covered grid gives away nothing about the phrase's shape. */
+const MASK = '••••••';
 
 export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const { text } = useSemantic();
   const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
-  const [seedPhraseVisible, setSeedPhraseVisible] = useState(false);
+  const [showSeedPhrase, setShowSeedPhrase] = useState(false);
   const [reauthOpen, setReauthOpen] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
 
-  // Get the mnemonic from the active account. An account imported from a
-  // private key has none — there is no seed phrase behind it to back up.
+  // An account imported from a private key has no seed phrase to back up.
   const mnemonic = useMemo(() => getAccountMnemonic(activeAccount) ?? '', [activeAccount]);
+  const words = useMemo(() => mnemonic.split(' ').filter(Boolean), [mnemonic]);
+  const hasNoMnemonic = words.length === 0;
+  const shownWords = useMemo(
+    () => (showSeedPhrase ? words : words.map(() => MASK)),
+    [showSeedPhrase, words]
+  );
 
-  const words = useMemo(() => {
-    return mnemonic.split(' ').filter((w) => w.length > 0);
-  }, [mnemonic]);
-
-  // An unlocked session is not proof of identity — it only proves the phone or
-  // laptop was left open. The password is asked again before the phrase, the
-  // one secret that hands over every account forever, comes into view.
   const handleReveal = useCallback(() => {
+    if (showSeedPhrase) {
+      setShowSeedPhrase(false);
+      return;
+    }
     setReauthOpen(true);
-  }, []);
+  }, [showSeedPhrase]);
 
   const handleReauthenticated = useCallback(async () => {
-    setSeedPhraseVisible(true);
-  }, []);
-
-  const handleHide = useCallback(() => {
-    setSeedPhraseVisible(false);
+    setShowSeedPhrase(true);
   }, []);
 
   const handleCopy = useCallback(async () => {
-    if (!mnemonic) return;
+    if (!showSeedPhrase || !mnemonic) return;
     try {
       await navigator.clipboard.writeText(mnemonic);
       setCopyFailed(false);
@@ -225,124 +78,70 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
       // A silent copy failure here means the user thinks the seed is saved.
       setCopyFailed(true);
     }
-  }, [mnemonic, showCopied]);
-
-  // If no mnemonic (imported via private key), show message
-  const hasNoMnemonic = !mnemonic || words.length === 0;
+  }, [showSeedPhrase, mnemonic, showCopied]);
 
   return (
-    <SettingsPanelContent title={t('settings.backup', 'Backup Wallet')} onBack={onBack}>
-      <PageContent>
-        <WarningAlert severity="warning" icon={<WarningIcon />}>
-          <Typography variant="body2" sx={{ fontWeight: fontWeight.medium }}>
-            {t('settings.backup_warning_title', 'Never share your recovery phrase')}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: `${spacing.xs}px`, opacity: opacity.soft }}>
-            {t(
-              'settings.backup_warning_description',
-              'Anyone with your recovery phrase can access your funds. Keep it stored securely and never enter it on websites.'
-            )}
-          </Typography>
-        </WarningAlert>
+    <SettingsPanelContent
+      title={t('general.seed_phrase')}
+      subtitle={t('settings.backup_subtitle', 'View or back up your recovery phrase.')}
+      onBack={onBack}
+    >
+      <WarningNotice tone="warning" title={t('wallet.create.messageTitle')}>
+        {t('wallet.create.messageBody')}
+      </WarningNotice>
 
-        {hasNoMnemonic ? (
-          <Alert severity="info" sx={{ backgroundColor: colors.background.card }}>
-            <Typography variant="body2" color="text.primary">
-              {t(
-                'settings.no_seed_phrase',
-                'This account was imported using a private key and does not have a recovery phrase.'
-              )}
-            </Typography>
-          </Alert>
-        ) : (
-          <>
-            <Box>
-              <SectionLabel>{t('settings.recovery_phrase', 'Recovery Phrase')}</SectionLabel>
-              <SeedPhraseCard data-testid="backup-seed-phrase">
-                <SeedPhraseGrid>
-                  {words.map((word, index) => (
-                    <WordChip key={index}>
-                      <WordNumber>{index + 1}.</WordNumber>
-                      <WordText>{seedPhraseVisible ? word : '****'}</WordText>
-                    </WordChip>
-                  ))}
-                </SeedPhraseGrid>
+      {hasNoMnemonic ? (
+        <p
+          data-testid="backup-no-seed-phrase"
+          style={{
+            margin: 0,
+            color: text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.body,
+            lineHeight: `${fontSize.body * lineHeight.snug}px`,
+          }}
+        >
+          {t('settings.no_seed_phrase')}
+        </p>
+      ) : (
+        <div style={{ position: 'relative' }} data-testid="backup-seed-phrase">
+          <SeedWordGrid words={shownWords} columns={3} />
+          {!showSeedPhrase && (
+            <RevealCover
+              testID="backup-seed-reveal-overlay"
+              label={t('settings.wallets.tap_to_reveal')}
+              onPress={handleReveal}
+            />
+          )}
+        </div>
+      )}
 
-                {!seedPhraseVisible && (
-                  <BlurOverlay
-                    role="button"
-                    tabIndex={0}
-                    aria-label={t('settings.tap_to_reveal', 'Tap to reveal')}
-                    onClick={handleReveal}
-                    onKeyDown={activateOnKey(handleReveal)}
-                    data-testid="backup-seed-reveal-overlay"
-                  >
-                    <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
-                    <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
-                  </BlurOverlay>
-                )}
-              </SeedPhraseCard>
+      {showSeedPhrase && !hasNoMnemonic && (
+        <div data-testid="backup-seed-clipboard-warning">
+          <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+            {t('settings.clipboard_warning_description')}
+          </WarningNotice>
+        </div>
+      )}
 
-              <ActionRow>
-                <Tooltip title={copied ? t('actions.copied', 'Copied!') : ''} open={copied}>
-                  <CopyButton
-                    variant="outlined"
-                    startIcon={
-                      <CopyTick
-                        copied={copied}
-                        copy={<CopyIcon />}
-                        tick={<CheckIcon color={semantic.status.success} />}
-                      />
-                    }
-                    onClick={handleCopy}
-                    disabled={!seedPhraseVisible}
-                    data-testid="backup-seed-copy-button"
-                  >
-                    {copied ? t('actions.copied', 'Copied!') : t('actions.copy', 'Copy')}
-                  </CopyButton>
-                </Tooltip>
-                <ActionButton
-                  variant="outlined"
-                  startIcon={seedPhraseVisible ? <EyeSlashIcon /> : <EyeIcon />}
-                  onClick={seedPhraseVisible ? handleHide : handleReveal}
-                  data-testid="backup-seed-reveal-button"
-                  sx={{
-                    backgroundColor: seedPhraseVisible
-                      ? colors.accent.primary
-                      : colors.background.card,
-                    color: seedPhraseVisible ? colors.text.primary : colors.text.primary,
-                    border: `${borderWidth.thin}px solid ${
-                      seedPhraseVisible ? colors.accent.primary : colors.border.default
-                    }`,
-                    '&:hover': {
-                      backgroundColor: seedPhraseVisible
-                        ? colors.button.dangerHover
-                        : colors.card.border,
-                    },
-                  }}
-                >
-                  {seedPhraseVisible ? t('actions.hide', 'Hide') : t('actions.reveal', 'Reveal')}
-                </ActionButton>
-              </ActionRow>
-              {seedPhraseVisible && (
-                <Box
-                  sx={{ marginTop: `${spacing.md}px` }}
-                  data-testid="backup-seed-clipboard-warning"
-                >
-                  <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
-                    {t('settings.clipboard_warning_description')}
-                  </WarningNotice>
-                </Box>
-              )}
-              {copyFailed && (
-                <Box sx={{ marginTop: `${spacing.md}px` }} data-testid="backup-seed-copy-error">
-                  <WarningNotice tone="error" title={t('settings.copy_failed')} />
-                </Box>
-              )}
-            </Box>
-          </>
-        )}
-      </PageContent>
+      {copyFailed && (
+        <div data-testid="backup-seed-copy-error">
+          <WarningNotice tone="error" title={t('settings.copy_failed')} />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+        <SecondaryButton
+          onPress={() => void handleCopy()}
+          disabled={!showSeedPhrase}
+          testID="backup-seed-copy-button"
+        >
+          {copied ? t('wallet.copied') : t('actions.copy')}
+        </SecondaryButton>
+        <PrimaryButton onPress={onBack} testID="backup-seed-done-button">
+          {t('actions.done')}
+        </PrimaryButton>
+      </div>
 
       <ConfirmDialog
         visible={reauthOpen}

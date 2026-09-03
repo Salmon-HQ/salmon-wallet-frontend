@@ -3,17 +3,16 @@ import { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const TAB_BAR_CONTENT_HEIGHT = componentSizes.tabBarItemHeight + 8;
-const TAB_BAR_TOP_PADDING = spacing.lg;
-const TAB_BAR_EXTRA_BOTTOM_GAP = spacing.sm;
-const FLOATING_CTA_GAP = spacing.sm;
 const STICKY_CTA_SCROLL_GAP = spacing['2xl'];
 
 /**
  * Shared chrome metrics for the tab shell.
  *
- * Screens inside the tabs render under an absolute header and tab bar, so they
- * must all reserve the same top and bottom space to avoid overlapping system UI.
+ * `headerChromeHeight` is the top space a screen without its own header row
+ * has to reserve so its content clears the system UI — Swap's, today. Home no
+ * longer reads it: its `WalletHeader` is laid out in flow and owns that space
+ * itself. Bottom spacing for floating CTAs and scrollable content derives from
+ * the safe-area bottom inset alone — there is no bottom tab bar to clear.
  */
 export function useTabChrome() {
   const insets = useSafeAreaInsets();
@@ -21,37 +20,33 @@ export function useTabChrome() {
 
   return useMemo(() => {
     const headerTopInset = topInset;
-    const headerChromeHeight = headerTopInset + componentSizes.headerHeight;
-    const headerContentOffset = headerTopInset + componentSizes.headerInnerHeight;
-
+    // The header no longer paints a band: it is the screen's top padding
+    // (safe area + `screenTop`) followed by the header row, on the same plane
+    // as the balance below it. `WalletHeader` computes the same three terms
+    // for its own slot. Unscaled, like every other expression defining it.
+    // The last term is the row's own height (its 38px thumb), never the 56px
+    // `headerHeight` slot: a slot centres the row and drops it 9px below the
+    // screen's top padding while stealing 18px from the content underneath.
+    const headerChromeHeight =
+      headerTopInset + spacing.screenTop + componentSizes.walletHeaderRowHeight;
     // The balance hero intentionally underlaps the Android status bar area while
     // keeping the wallet header itself below the system UI.
     const heroCardTopInset = Platform.OS === 'ios' ? topInset : 0;
 
-    const tabBarBottomPadding =
-      Math.max(bottomInset, componentSizes.tabBarMinBottomPadding) + vs(TAB_BAR_EXTRA_BOTTOM_GAP);
-    const tabBarTotalHeight =
-      vs(TAB_BAR_TOP_PADDING) + vs(TAB_BAR_CONTENT_HEIGHT) + tabBarBottomPadding;
-    const floatingBottomOffset = tabBarTotalHeight + vs(FLOATING_CTA_GAP);
+    const floatingBottomOffset = bottomInset + vs(spacing.screenBottom);
 
     return {
       insets,
       topInset,
       headerTopInset,
       headerChromeHeight,
-      headerContentOffset,
       heroCardTopInset,
-      tabBarBottomPadding,
-      tabBarTotalHeight,
       floatingBottomOffset,
       stickyCtaScrollPadding:
         floatingBottomOffset + vs(componentSizes.buttonHeightCompact + STICKY_CTA_SCROLL_GAP),
-      scrollBottomPadding: Math.max(
-        vs(componentSizes.tabBarScrollPadding),
-        tabBarTotalHeight + vs(spacing['3xl'])
-      ),
+      scrollBottomPadding: floatingBottomOffset + vs(spacing['3xl']),
     };
-  }, [bottomInset, insets, topInset]);
+  }, [bottomInset, topInset, insets]);
 }
 
 export default useTabChrome;

@@ -8,11 +8,21 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockUseBalance = jest.fn();
 const mockRefresh = jest.fn();
+
+// Mock the data source (`useCoinMarketData`'s own dependency), not the hook
+// itself — this screen never leaves Solana in this suite, so the hook stays
+// disabled and these never resolve, but the real hook still needs its real
+// import to exist.
+jest.mock('@salmon/shared/src/api/services', () => ({
+  getTokenCoinInfo: jest.fn(),
+  getTokenMarketChart: jest.fn(),
+}));
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-haptics', () => ({
@@ -38,13 +48,19 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => ({ developerNetworks: false }),
+  useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 jest.mock('../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ scrollBottomPadding: 0, onScroll: jest.fn() }),
+  useTabChrome: () => ({
+    headerContentOffset: 0,
+    floatingBottomOffset: 0,
+    scrollBottomPadding: 0,
+    onScroll: jest.fn(),
+  }),
 }));
 jest.mock('../src/utils/sinkAndFloat', () => ({
-  FLOAT_DELAY_MS: { base: 0, step: 0 },
+  FLOAT_DELAY_MS: 0,
   floatEntering: () => undefined,
   sinkExiting: () => undefined,
 }));
@@ -65,19 +81,25 @@ jest.mock('@salmon/shared', () => ({
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+    depth: { abyss: '#10131C' },
+    water: {
+      gradient: ['#10131C', '#070911'],
+      fadeTop: ['#10131C', 'rgba(16, 19, 28, 0)'],
+      fadeBottom: ['rgba(7, 9, 17, 0)', '#070911'],
+    },
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
   fontSize: { xs: 11, sm: 13, base: 15, md: 16, bodyLg: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, headerPadding: 16 },
+  s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
-  getCoinInfo: jest.fn().mockResolvedValue(null),
-  getMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenMarketChart: jest.fn().mockResolvedValue([]),
-  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  useCoinMarketData: jest.requireActual('@salmon/shared/src/hooks/useCoinMarketData')
+    .useCoinMarketData,
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: () => 'solana',
+  getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana' },
   PERIOD_TO_DAYS: { '1D': 1 },
   useAccountsContext: () => [
@@ -110,6 +132,19 @@ jest.mock('@salmon/shared', () => ({
     refresh: jest.fn(),
   }),
   isWatchOnlyAccount: () => false,
+  useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
+  // The task chrome and the Home shell are the real modules: their own suites
+  // cover the logic, and Home is rendered here with what they hand back.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
+}));
+
+// The real shell reads the tab order through its own module path, not the
+// barrel, so the arrangement is pinned there too.
+jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
+  useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
 jest.mock('../src/components', () => {
@@ -117,14 +152,32 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
-    ActionButtonRow: () => <View />,
-    BalanceCardCarousel: () => <View />,
+    DerivedAccountsSheet: () => null,
+    HomeTabOrderSheet: () => null,
+    // The identity line. Its own suite covers it; here it only has to render
+    // so the Home tree mounts.
+    WalletHeader: () => <View testID="wallet-header" />,
+    BalanceHeader: () => <View testID="balance-header" />,
+    NftsTab: () => <View testID="nfts-tab" />,
+    PortfolioSubTabs: ({
+      tabs,
+      onChange,
+    }: {
+      tabs: Array<{ key: string; label: string }>;
+      onChange: (key: string) => void;
+    }) => (
+      <View>
+        {tabs.map((tab) => (
+          <Text key={tab.key} testID={`portfolio-tab-${tab.key}`} onPress={() => onChange(tab.key)}>
+            {tab.label}
+          </Text>
+        ))}
+      </View>
+    ),
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
-    SendSheet: () => null,
-    SubAccountSelector: () => <View />,
-    TokenAbout: () => <View />,
-    TokenInformationSheet: () => null,
+    SkeletonRow: () => <View />,
+    AboutCard: () => <View />,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
     // provided empty component once the load settled with no rows.
     TokenList: ({
@@ -147,12 +200,36 @@ jest.mock('../src/components', () => {
       </View>
     ),
     TokenListItem: () => <View />,
-    TokenListSkeleton: () => <Text testID="token-list-skeleton">skeleton</Text>,
-    TokenMarketData: () => <View />,
+    MarketDataCard: () => <View />,
     TransactionDetailModal: () => null,
-    TransactionHistorySheet: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
-    depthParallaxScroll: { value: 0 },
+    // Mirrors the real StateBlock contract closely enough for this suite:
+    // a labelled wrapper, and a pressable retry when one is offered.
+    StateBlock: ({
+      title,
+      body,
+      onRetry,
+      retryLabel,
+      retryTestID,
+      testID,
+    }: {
+      title: string;
+      body?: string;
+      onRetry?: () => void;
+      retryLabel?: string;
+      retryTestID?: string;
+      testID?: string;
+    }) => (
+      <View testID={testID}>
+        <Text>{title}</Text>
+        {body && <Text>{body}</Text>}
+        {onRetry && (
+          <Text testID={retryTestID ?? testID} onPress={onRetry}>
+            {retryLabel}
+          </Text>
+        )}
+      </View>
+    ),
   };
 });
 
@@ -184,6 +261,11 @@ const solToken = {
   usdBalance: 10,
 };
 
+function renderScreen(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
 describe('home token list — load failure vs empty wallet', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -197,7 +279,7 @@ describe('home token list — load failure vs empty wallet', () => {
       error: 'rpc down',
     });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByTestId('token-list-error')).toBeTruthy();
     expect(screen.getByTestId('token-list-retry-button')).toBeTruthy();
@@ -217,7 +299,7 @@ describe('home token list — load failure vs empty wallet', () => {
       error: 'rpc down',
     });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByText('SOL')).toBeTruthy();
     expect(screen.queryByTestId('token-list-error')).toBeNull();
@@ -227,7 +309,7 @@ describe('home token list — load failure vs empty wallet', () => {
   it('reads an empty wallet as empty, never as an error', () => {
     mockUseBalance.mockReturnValue({ ...baseBalance, hasData: true, state: 'ready' });
 
-    render(<HomeScreen />);
+    renderScreen(<HomeScreen />);
 
     expect(screen.getByText('No tokens found')).toBeTruthy();
     expect(screen.queryByTestId('token-list-error')).toBeNull();

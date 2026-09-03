@@ -141,7 +141,7 @@ function inferTransactionType(
 /**
  * What a transaction row should say, ready for the render layer to translate.
  *
- * This module has no `t` and must not grow one: it runs in three apps and in
+ * This module has no `t` and must not grow one: it runs in both apps and in
  * tests, and a description built here would be frozen in whatever language it
  * was built in — including in a list that re-renders after the user switches
  * language. So it names the sentence and supplies the parts; the component

@@ -7,11 +7,14 @@ appId: io.salmonwallet.app
 # The distinction matters beyond UI: a derived account is a "create", an
 # imported seed is a "recover", and the two emit different analytics events.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-- tapOn: 'Switch wallet account'
+- tapOn:
+    id: 'wallet-header-account-switcher'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: 'Your Wallets'
-- tapOn: 'Add New Account'
+- assertVisible:
+    id: 'wallets-screen'
+- tapOn:
+    id: 'wallets-add-wallet'
 - extendedWaitUntil:
     visible:
       id: 'account-add-method-import'
@@ -44,8 +47,9 @@ appId: io.salmonwallet.app
 - tapOn: 'Confirm'
 - waitForAnimationToEnd:
     timeout: 30000
-# The panel pops back to Settings once the account is added.
+# `returnTo=wallets` lands the finished flow back on the Wallets screen.
 - extendedWaitUntil:
-    visible: 'Settings'
+    visible:
+      id: 'wallets-screen'
     timeout: 30000
 - takeScreenshot: screenshots/actions/account/import-seed-added

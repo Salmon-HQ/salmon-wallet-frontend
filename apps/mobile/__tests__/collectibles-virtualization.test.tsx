@@ -12,73 +12,71 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import CollectiblesScreen from '../app/(app)/(tabs)/collectibles';
+import { NftsTab } from '../src/components/NftsTab';
 
 const mockUseSolanaNfts = jest.fn();
 const mockRefresh = jest.fn();
 const mockUseAccountsContext = jest.fn();
 
 jest.mock('@salmon/shared', () => ({
-  semantic: {
-    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
-    text: {
-      primary: '#F6F8FB',
-      secondary: '#A7B1C4',
-      tertiary: '#8B96AD',
-      disabled: '#6F7B95',
-      accent: '#FF5C45',
-      onAccent: '#070911',
-    },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
-  },
-  SECTION_TO_NETWORK: {
-    solana: 'solana-mainnet',
-    'solana-devnet': 'solana-devnet',
-  },
-  SolanaAccount: class {},
+  // The kit primitives the tab composes evaluate their stylesheets at module
+  // scope, so the theme has to be real: hand-listing the tokens a component
+  // happens to read is what used to break this suite every time the tab
+  // reached for one more.
+  ...jest.requireActual('../test-utils/themeTokens'),
   canonicalNftToSolanaNftData: (nft: unknown) => nft,
-  borderRadius: { md: 12 },
-  colors: {
-    accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
-    text: { primary: '#fff', secondary: '#aaa', disabled: '#666' },
-  },
-  createBurnTransaction: jest.fn(),
-  classifyTransactionError: (err: unknown) => String(err),
-  fontFamilyNative: { semiBold: 'System', medium: 'System', regular: 'System' },
-  fontSize: { bodyLg: 16, sm: 14, base: 15, lg: 18, xl: 20 },
-  letterSpacing: { wide: 0, wider: 0 },
-  spacing: { sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, headerPadding: 16 },
-  getNftSectionTitle: () => 'Solana',
   getShortAddress: () => 'Owne...r111',
-  ms: (value: number) => value,
-  s: (value: number) => value,
   useAccountsContext: () => mockUseAccountsContext(),
-  useSettleAfterTx: () => jest.fn(),
-  useNftBurn: () => ({
-    burnNft: jest.fn(),
-    status: 'idle',
-    settling: false,
-    error: null,
-    isError: false,
-    reset: () => {},
-  }),
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),
-  vs: (value: number) => value,
 }));
 
-jest.mock('../src/components', () => {
+jest.mock('../src/components/NftCard', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { NftCard: () => <View testID="nft-card" />, NftCardSkeleton: () => <View /> };
+});
+
+// The kit primitives press with Reanimated; this suite is about the tab's
+// states, not its motion.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    View,
+    Easing: { bezier: () => (value: unknown) => value, linear: (value: unknown) => value },
+    useReducedMotion: () => true,
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: () => ({}),
+    withTiming: (value: unknown) => value,
+    withDelay: (_delay: number, value: unknown) => value,
+    withRepeat: (value: unknown) => value,
+    withSpring: (value: unknown) => value,
+    runOnJS: (fn: unknown) => fn,
+  };
+});
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
+}));
+
+jest.mock('../src/components/SubAccountSelector', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { SubAccountSelector: () => <View /> };
+});
+
+jest.mock('../src/components/WarningNotice', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
-
   return {
-    NftCard: () => <View testID="nft-card" />,
-    NftCardSkeleton: () => <View />,
-    NftDetailSheet: () => null,
-    SolanaSvgIcon: () => <View />,
-    SubAccountSelector: () => <View />,
     WarningNotice: ({ title, action }: { title: string; action?: React.ReactNode }) => (
       <View>
         <Text>{title}</Text>
@@ -90,6 +88,7 @@ jest.mock('../src/components', () => {
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
   useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
@@ -137,7 +136,7 @@ describe('Collectibles grid virtualization', () => {
   });
 
   it('mounts a bounded window of cards, not the whole collection', () => {
-    render(<CollectiblesScreen />);
+    render(<NftsTab />);
 
     const mounted = screen.queryAllByTestId('nft-card').length;
 
@@ -147,7 +146,7 @@ describe('Collectibles grid virtualization', () => {
   });
 
   it('still renders neither the empty nor the error state with a full collection', () => {
-    render(<CollectiblesScreen />);
+    render(<NftsTab />);
 
     expect(screen.queryByTestId('collectibles-empty')).toBeNull();
     expect(screen.queryByTestId('collectibles-load-error')).toBeNull();

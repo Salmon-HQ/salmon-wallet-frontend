@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "setup": "set -e\nln -sfn \"$CONDUCTOR_ROOT_PATH/apps/mobile/.env\" apps/mobile/.env\nln -sfn \"$CONDUCTOR_ROOT_PATH/apps/extension/.env\" apps/extension/.env\nln -sfn \"$CONDUCTOR_ROOT_PATH/apps/web/.env\" apps/web/.env\npnpm install",
-    "run": "export FORCE_COLOR=1 && pnpm --filter @salmon/extension dev & pnpm --filter @salmon/web dev & pnpm --filter @salmon/mobile ios & wait",
+    "setup": "set -e\nln -sfn \"$CONDUCTOR_ROOT_PATH/apps/mobile/.env\" apps/mobile/.env\nln -sfn \"$CONDUCTOR_ROOT_PATH/apps/extension/.env\" apps/extension/.env\npnpm install",
+    "run": "export FORCE_COLOR=1 && pnpm --filter @salmon/extension dev & pnpm --filter @salmon/mobile ios & wait",
     "archive": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .turbo"
   }
 }

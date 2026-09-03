@@ -4,14 +4,12 @@ import { useTranslation } from 'react-i18next';
 import {
   colors,
   spacing,
-  borderRadius,
   componentSizes,
   fontFamilyNative,
   vs,
   s,
   fontSize,
   lineHeight,
-  borderWidth,
   semantic,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
@@ -37,7 +35,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   canReview,
   reviewWarning,
   swapError,
-  bridgeReference,
   onReview,
   style,
 }) => {
@@ -115,36 +112,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
         <Text style={styles.disclaimerText}>
           {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
         </Text>
-
-        {/* A bridge that failed after its exchange was created leaves the user
-            with an order they cannot see and no way to name it. This is the
-            only reference that exists — a reference number, not debug output.
-            It sits below the amounts rather than between them: it is far too
-            tall to reserve a slot for, so the only way it can never displace
-            the "You Receive" block is to live underneath it. */}
-        {bridgeReference && (swapError || reviewWarning) ? (
-          <View style={styles.referenceBox} testID="bridge-failure-reference">
-            <Text style={styles.referenceTitle}>
-              {t('bridge.reference_title', 'Keep this reference')}
-            </Text>
-            <Text style={styles.referenceBody}>
-              {t(
-                'bridge.reference_body',
-                'This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.'
-              )}
-            </Text>
-            <Text style={styles.referenceLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
-            <Text style={styles.referenceValue} selectable>
-              {bridgeReference.id}
-            </Text>
-            <Text style={styles.referenceLabel}>
-              {t('bridge.depositAddressLabel', 'Deposit address')}
-            </Text>
-            <Text style={styles.referenceValue} selectable>
-              {bridgeReference.depositAddress}
-            </Text>
-          </View>
-        ) : null}
       </View>
 
       {/* Review Button */}
@@ -198,38 +165,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: semantic.status.warning,
     textAlign: 'center',
-  },
-  referenceBox: {
-    backgroundColor: semantic.surface.raised,
-    borderRadius: borderRadius.md,
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-    padding: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  referenceTitle: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.status.warning,
-    marginBottom: spacing.xs,
-  },
-  referenceBody: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamilyNative.regular,
-    color: semantic.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  referenceLabel: {
-    fontSize: fontSize.micro,
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.tertiary,
-    textTransform: 'uppercase',
-  },
-  referenceValue: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.primary,
-    marginBottom: spacing.xs,
   },
   disclaimerText: {
     fontSize: 11,

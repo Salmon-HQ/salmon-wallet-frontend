@@ -10,15 +10,16 @@
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
   letterSpacing,
-  semantic,
   shadowsCSS,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FleshBackground } from '../FleshBackground';
 import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
@@ -42,6 +43,8 @@ export function PrimaryButton({
   testID,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
+  const styles = useThemedStyles(stylesFor);
+  const { text, accent } = useSemantic();
   const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
@@ -63,9 +66,7 @@ export function PrimaryButton({
           budget. Absent when the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ActivityIndicator
-          color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
-        />
+        <ActivityIndicator color={isDisabled ? text.disabled : accent.onFill} />
       ) : (
         <Text
           style={[styles.text, isDisabled && styles.textDisabled]}
@@ -82,37 +83,38 @@ export function PrimaryButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    width: '100%',
-    height: componentSizes.buttonHeight,
-    backgroundColor: colors.button.primaryBackground,
-    borderRadius: componentSizes.buttonRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
-    overflow: 'hidden',
-    // The same bezel string the DOM half uses. React Native parses CSS
-    // box-shadow syntax since the new renderer and clips inset shadows to the
-    // view's border radius, so no 1px overlay views are needed and the two
-    // platforms cannot drift. Android draws inset shadows from API 29 up; below
-    // that the bezel is simply absent.
-    boxShadow: shadowsCSS.bezel,
-  },
-  disabled: {
-    backgroundColor: semantic.surface.crest,
-  },
-  textDisabled: {
-    color: semantic.text.disabled,
-  },
-  text: {
-    color: colors.button.primaryText,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.bodyLg,
-    letterSpacing: letterSpacing.widest,
-    // `adjustsFontSizeToFit` stretches the Text to the full button width, so
-    // without an explicit center the label left-aligns (visible on short labels
-    // like the swap "Confirm (13)" countdown).
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    button: {
+      width: '100%',
+      height: componentSizes.buttonHeight,
+      backgroundColor: t.accent.fill,
+      borderRadius: componentSizes.buttonRadius,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+      overflow: 'hidden',
+      // The same bezel string the DOM half uses. React Native parses CSS
+      // box-shadow syntax since the new renderer and clips inset shadows to the
+      // view's border radius, so no 1px overlay views are needed and the two
+      // platforms cannot drift. Android draws inset shadows from API 29 up; below
+      // that the bezel is simply absent.
+      boxShadow: shadowsCSS.bezel,
+    },
+    disabled: {
+      backgroundColor: t.surface.crest,
+    },
+    textDisabled: {
+      color: t.text.disabled,
+    },
+    text: {
+      color: t.accent.onFill,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: fontSize.bodyLg,
+      letterSpacing: letterSpacing.normal,
+      // `adjustsFontSizeToFit` stretches the Text to the full button width, so
+      // without an explicit center the label left-aligns (visible on short labels
+      // like the swap "Confirm (13)" countdown).
+      textAlign: 'center',
+    },
+  });

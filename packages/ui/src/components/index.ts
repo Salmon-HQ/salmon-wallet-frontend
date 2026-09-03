@@ -1,56 +1,30 @@
 /**
  * @salmon/ui - Shared web UI components
  *
- * React DOM + MUI components shared between apps/extension and apps/web.
+ * React DOM + MUI components for apps/extension.
  * All components use design tokens from @salmon/shared for consistent styling.
  */
 
 // Button components - Primary, Secondary, and Text action buttons
 export { PrimaryButton, SecondaryButton, TextButton } from './Button';
-export type {
-  ButtonBaseProps,
-  PrimaryButtonProps,
-  SecondaryButtonProps,
-  TextButtonProps,
-} from './Button';
+export type { PrimaryButtonProps, SecondaryButtonProps, TextButtonProps } from './Button';
 
-// Icon components - Common SVG icons
-export {
-  ActivityIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  CopyIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  ReceiveIcon,
-  RefreshIcon,
-  SendIcon,
-  SettingsIcon,
-  SolanaSvgIcon,
-  WalletIcon,
-} from './Icon';
-export type { IconProps } from './Icon';
-
-// Icon - Unified icon component
-export { Icon } from './Icon';
-export type { UnifiedIconProps } from './Icon';
+// The blockchain marks — brand assets, hand-drawn on both platforms
+export { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from './Icon';
+export type { BlockchainMarkProps } from './Icon';
 
 // WalletHeader - Account info and settings navigation
 export { WalletHeader } from './WalletHeader';
 export type { WalletHeaderProps } from './WalletHeader';
 
-// BalanceCard - Portfolio balance display with gradient
-export { BalanceCard, BalanceCardCarousel } from './BalanceCard';
-export type { BalanceCardCarouselProps, BalanceCardProps } from './BalanceCard';
-
-// ActionButtonRow - Send/Receive/Activity action buttons
-export { ActionButtonRow } from './ActionButtonRow';
-export type { ActionButton, ActionButtonRowProps } from './ActionButtonRow';
-
 // TokenList - Token list display components
-export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
-export type { TokenListItemProps, TokenListProps, TokenListSkeletonProps } from './TokenList';
+export { TokenList, TokenListItem, TokenListSkeleton, TokenLogo } from './TokenList';
+export type {
+  TokenListItemProps,
+  TokenListProps,
+  TokenListSkeletonProps,
+  TokenLogoProps,
+} from './TokenList';
 
 // LoadingScreen - Animated loading overlay
 export { LoadingScreen } from './LoadingScreen';
@@ -60,26 +34,19 @@ export type { LoadingScreenProps } from './LoadingScreen';
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';
 
-// TokenInfo - Token information display (description, market stats, contract)
-export { TokenInfo } from './TokenInfo';
-export type { TokenInfoProps } from './TokenInfo';
-
-// TokenAbout - Token description/about section with glassmorphism
+// TokenAbout - the "About" card: description, contract copy row, website link
 export { TokenAbout } from './TokenAbout';
 export type { TokenAboutProps } from './TokenAbout';
 
-// TokenMarketData - Token market statistics with glassmorphism
+// TokenMarketData - the "Market data" card of KeyValueRows
 export { TokenMarketData } from './TokenMarketData';
 export type { MarketData, TokenMarketDataProps } from './TokenMarketData';
-
-// TokenFeatures - Token characteristics/features badges
-export { TokenFeatures } from './TokenFeatures';
-export type { TokenFeaturesProps } from './TokenFeatures';
 
 // SettingsPanelStack - Stacking panel system for settings navigation
 export { SettingsPanelStack } from './SettingsPanelStack';
 export type {
   SettingsPanelStackProps,
+  SettingsRowValues,
   PanelContentProps,
   PanelRenderer,
   PanelRegistry,
@@ -89,9 +56,9 @@ export type {
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 
-// WalletSwitcherSheet - Account selection dialog
-export { WalletSwitcherSheet } from './WalletSwitcherSheet';
-export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';
+// WalletsScreen - CORE 10: the wallets, a screen (spec 028 ruling 3)
+export { WalletsScreen } from './WalletsScreen';
+export type { WalletsScreenProps } from './WalletsScreen';
 
 // BrandMark - the salmon mark, drawn from the vector rather than Logo.png
 export { BrandMark, Wordmark } from './BrandMark';
@@ -121,10 +88,6 @@ export type { ScreenHeaderProps } from './ScreenHeader';
 // StepIndicator - Progress indicator for multi-step flows
 export { StepIndicator } from './StepIndicator';
 export type { StepIndicatorProps } from './StepIndicator';
-
-// GradientBackground - Linear gradient container component
-export { GradientBackground } from './GradientBackground';
-export type { GradientBackgroundProps } from './GradientBackground';
 
 // BlurContainer - Blur effect container with backdrop-filter
 export { BlurContainer } from './BlurContainer';
@@ -161,11 +124,11 @@ export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 export { Thermocline } from './Thermocline';
 export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 
-// DepthBackground - the water column's ground: depth ramp plus marine snow
+// DepthBackground - the water column's ground: the depth ramp
 export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';
 
-// WaterColumn - the ground the whole app stands in: ramp, snow, deep field
+// WaterColumn - the ground the whole app stands in: ramp, deep field
 export { WaterColumn, waterColumnHost } from './WaterColumn';
 
 // FleshBackground - the myoseptal texture inside a salmon fill
@@ -180,11 +143,12 @@ export type { PasswordInputProps, PasswordStrengthBarProps } from './PasswordInp
 export { QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
 
-// InputAddress - Address input with validation
-export { InputAddress, useAddressValidation } from './InputAddress';
+// InputAddress - the recipient field (mobile's RecipientInput) and the connected InputAddress
+export { InputAddress, RecipientInput, useAddressValidation } from './InputAddress';
 export type {
   BlockchainType,
   InputAddressProps,
+  RecipientInputProps,
   UseAddressValidationParams,
   UseAddressValidationResult,
   ValidationCallbackResult,
@@ -199,33 +163,9 @@ export type { NftCardProps, NftCardSkeletonProps, NftData } from './NftCard';
 export { NftDetailPage } from './NftDetailPage';
 export type { NftAttribute, NftDetailData, NftDetailPageProps } from './NftDetailPage';
 
-// NftCarouselSection - Horizontal NFT carousel with arrow navigation
-export { NftCarouselSection, NftCarouselSectionSkeleton } from './NftCarouselSection';
-export type {
-  NftCarouselSectionProps,
-  NftCarouselSectionSkeletonProps,
-} from './NftCarouselSection';
-
-// NftSeeAllPage - Full-page grid view of all NFTs for a blockchain section
-export { NftSeeAllPage } from './NftSeeAllPage';
-export type { NftSeeAllPageProps } from './NftSeeAllPage';
-
-// TokenSelector - Token selection with search and pagination
-export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
-export type {
-  TokenSelectorModalProps,
-  TokenSelectorProps,
-  TokenSelectorToken,
-  UseTokenSearchResult,
-} from './TokenSelector';
-
-// TokenDetailPage - Full-page token detail view with chart, market data, badges
-export { TokenBadgesSection, TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
-export type {
-  TokenBadgesSectionProps,
-  TokenDetailContentProps,
-  TokenDetailPageProps,
-} from './TokenDetailPage';
+// TokenDetailPage - the token detail screen: balance, chart, market data, about
+export { TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
+export type { TokenDetailContentProps, TokenDetailPageProps } from './TokenDetailPage';
 
 // ReceiveSheet - Receive address dialog with QR code
 export { ReceiveSheet } from './ReceiveSheet';
@@ -260,54 +200,16 @@ export type {
   TransactionType as TxType,
 } from './TransactionHistoryPage';
 
-// SendPage - Full-page multi-step send flow
-export { SendPage } from './SendPage';
+// SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
+export { SendFailure, SendPage, TokenPickerSheet, TokenSelectList } from './SendPage';
 export type {
+  SendFailureProps,
   SendPageProps,
   SendStep,
   SendToken,
-  StepAddressAmountProps,
-  StepConfirmationProps,
-  StepTokenSelectProps,
+  TokenPickerSheetProps,
+  TokenSelectListProps,
 } from './SendPage';
-
-// SwapScreen - Swap and Bridge interface
-export {
-  SwapAmountInput,
-  SwapDetailRow,
-  SwapInputScreen,
-  SwapReviewExchange,
-  SwapReviewScreen,
-  SwapScreen,
-  SwapTabSelector,
-} from './SwapScreen';
-export type {
-  BridgeEstimateSimple,
-  BridgeExchangeSimple,
-  BridgeTokenSimple,
-  SwapAmountInputProps,
-  SwapChainType,
-  SwapDetailRowProps,
-  SwapInputScreenProps,
-  SwapQuote,
-  SwapReviewExchangeProps,
-  SwapReviewScreenProps,
-  SwapScreenProps,
-  SwapStep,
-  SwapTab,
-  SwapTabSelectorProps,
-  SwapToken,
-} from './SwapScreen';
-
-// BridgeScreen - Bridge interface
-export { BridgeRecipientScreen, BridgeReviewScreen } from './BridgeScreen';
-export type {
-  BridgeChain,
-  BridgeToken,
-  BridgeEstimate,
-  BridgeRecipientScreenProps,
-  BridgeReviewScreenProps,
-} from './BridgeScreen';
 
 // DAppApproval - Shared approval views for web and extension
 export {
@@ -323,11 +225,10 @@ export type {
   DAppTransactionApprovalViewProps,
 } from './DAppApproval';
 
-// AuthFlow - Shared auth screens for web and extension
+// AuthFlow - the onboarding screens, on the slot grid
 export {
   AnalyticsConsentPage,
   CreateWalletPage,
-  DerivedAccountsPage,
   PasswordPage,
   RecoverWalletPage,
   SelectOptionsPage,
@@ -336,52 +237,32 @@ export {
 export type {
   AnalyticsConsentPageProps,
   CreateWalletPageProps,
-  DerivedAccountsPageProps,
   PasswordPageProps,
   RecoverWalletPageProps,
   SelectOptionsPageProps,
   SuccessPageProps,
 } from './AuthFlow';
 
-// BaseDialog - Base compound component for MUI dialogs
-export { BaseDialog, MessageText } from './BaseDialog';
-export type {
-  ActionButtonProps,
-  ActionsProps,
-  BaseDialogProps,
-  TextFieldProps as BaseDialogTextFieldProps,
-  CancelButtonProps,
-  ContentProps,
-  HeaderProps,
-} from './BaseDialog';
-
-// BaseSheetDialog - Base compound component for sheet-style dialogs
-export { BaseSheetDialog } from './BaseSheetDialog';
-
-// PageShell - Shared page layout wrapper for full-page views
-export { PageShell } from './PageShell';
-export type { PageShellProps } from './PageShell';
-
-// ConfirmDialog - Reusable confirmation dialog for destructive actions
+// ConfirmDialog - the confirmation sheet for destructive actions (mobile's ConfirmSheet)
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 
-// NftSendDialog - Dialog for sending NFTs to another address
-export { NftSendDialog } from './NftSendDialog';
-export type { NftSendDialogProps } from './NftSendDialog';
+// TextInput - a Card holding an input, the settings screens' plain field
+export { TextInput } from './TextInput';
+export type { TextInputProps } from './TextInput';
 
 // SeedPhrase - Seed word display grid and validation input
 export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
 export type { SeedPhraseEntryProps, SeedWordGridProps, SeedWordInputProps } from './SeedPhrase';
-
-// NetworkSelector - Network selection for settings
-export { NetworkSelector } from './NetworkSelector';
 
 // ExplorerSelector - Block explorer selection for settings
 export { ExplorerSelector } from './ExplorerSelector';
 
 // LanguageSelector - Language selection for settings
 export { LanguageSelector } from './LanguageSelector';
+
+// AppearanceSelector - System / Light / Dark for settings
+export { AppearanceSelector } from './AppearanceSelector';
 
 // TrustedAppsSelector - Connected dApps management for settings
 export { TrustedAppsSelector } from './TrustedAppsSelector';
@@ -406,8 +287,9 @@ export type {
   DerivedAccountCardSkeletonProps,
 } from './DerivedAccountCard';
 
-// TransactionSuccessScreen - Success screen after transaction
+// TransactionSuccessScreen - the exchange receipt, an alias over ReceiptScreen
 export { TransactionSuccessScreen } from './TransactionSuccessScreen';
+export type { TransactionSuccessScreenProps } from './TransactionSuccessScreen';
 
 // AccountsPanel - Account list management
 export { AccountsPanel } from './AccountsPanel';
@@ -444,6 +326,9 @@ export type { PrivateKeyPanelProps } from './PrivateKeyPanel';
 // AddressBookPanel - Contact list management
 export { AddressBookPanel } from './AddressBookPanel';
 
+// AddressForm - the fields both address-book panels draw
+export { AddressForm } from './AddressForm';
+
 // AddressAddPanel - Add new contact
 export { AddressAddPanel } from './AddressAddPanel';
 
@@ -453,3 +338,96 @@ export { AddressEditPanel } from './AddressEditPanel';
 // AboutPanel - App info and external links
 export { AboutPanel } from './AboutPanel';
 export type { AboutPanelProps } from './AboutPanel';
+
+// ---------------------------------------------------------------------------
+// The kit on the DOM — the mobile kit's twins (spec 028, lot 2)
+// ---------------------------------------------------------------------------
+
+// Card - the one content container the redesign composes everything from
+export { Card } from './Card';
+export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
+
+// ListRow - a Card laid out as leading mark / title stack / trailing slot
+export { ListRow, RowPress, StopPress } from './ListRow';
+export type { ListRowEmphasis, ListRowPadding, ListRowProps } from './ListRow';
+
+// SectionLabel - the three sizes of heading that sit above a block
+export { SectionLabel } from './SectionLabel';
+export type { SectionLabelProps, SectionLabelVariant } from './SectionLabel';
+
+// KeyValueRow - a label and its value, with an optional trailing action
+export { KeyValueRow } from './KeyValueRow';
+export type { KeyValueRowProps, KeyValueTone } from './KeyValueRow';
+
+// Chip - the pill: a badge, an action, or a filter with a selected state
+export { Chip, ChipGroup } from './Chip';
+export type { ChipGroupProps, ChipOption, ChipProps, ChipSize, ChipVariant } from './Chip';
+
+// UnderlineTabs - mutually exclusive options under a travelling underline
+export { UnderlineTabs } from './UnderlineTabs';
+export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './UnderlineTabs';
+
+// SearchField - the one search input the kit draws
+export { SearchField } from './SearchField';
+export type { SearchFieldProps } from './SearchField';
+
+// IconBubble - the well every glyph in the redesign sits inside
+export { IconBubble } from './IconBubble';
+export type {
+  IconBubbleProps,
+  IconBubbleRadius,
+  IconBubbleShape,
+  IconBubbleSize,
+  IconBubbleTone,
+  IconGlyphProps,
+} from './IconBubble';
+
+// ShimmerRect / SkeletonRow - the placeholder atoms, and the row they compose
+export { ShimmerRect } from './ShimmerRect';
+export type { ShimmerRectProps } from './ShimmerRect';
+export { SkeletonRow } from './SkeletonRow';
+export type { SkeletonRowProps } from './SkeletonRow';
+
+// StateBlock - the empty and failed answer for a list or section, one shape
+export { StateBlock } from './StateBlock';
+export type { StateBlockProps, StateBlockTone } from './StateBlock';
+
+// PortfolioSubTabs - the Home sub-tab row plus its order button
+export { PortfolioSubTabs } from './PortfolioSubTabs';
+export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs';
+
+// BottomSheetContainer - the sheet, on <dialog>: Escape and backdrop close it
+export { BottomSheetContainer, SheetTitle, SHEET_EXIT_MS } from './BottomSheetContainer';
+export type { BottomSheetContainerProps, SheetTitleProps } from './BottomSheetContainer';
+
+// ReceiptScreen - the transfer and exchange receipts, one entry point
+export { ReceiptScreen } from './ReceiptScreen';
+export type {
+  ExchangeReceiptScreenProps,
+  ReceiptScreenAction,
+  ReceiptScreenProps,
+  TransferReceiptScreenProps,
+} from './ReceiptScreen';
+
+// BalanceHeader - the balance block of the redesigned Home: chain pages, the
+// two money circles, the Activity pill
+export { BalanceHeader } from './BalanceHeader';
+export type { BalanceHeaderProps } from './BalanceHeader';
+
+// HomeTabOrderSheet - where the user arranges Home's sub-tabs
+export { HomeTabOrderSheet } from './HomeTabOrderSheet';
+export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
+
+// DerivedAccountsSheet - which of a seed's funded paths become wallets
+export { DerivedAccountsSheet } from './DerivedAccountsSheet';
+export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
+
+// NftsTab - the NFTs sub-tab of Home: one grid, on the active network
+export { NftsTab } from './NftsTab';
+export type { NftsTabProps } from './NftsTab';
+
+// RevealCover - the bedrock gate over an unrevealed secret
+export { RevealCover } from './RevealCover';
+
+// AccountAvatar - the identity well a wallet row carries
+export { AccountAvatar } from './AccountAvatar';

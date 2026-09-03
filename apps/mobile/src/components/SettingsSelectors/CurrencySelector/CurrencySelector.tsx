@@ -6,22 +6,13 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import {
-  colors,
-  componentSizes,
-  spacing,
-  borderRadius,
-  fontFamilyNative,
-  type CurrencySelectorBaseProps,
-  type CurrencySelectorItem,
-  fontSize,
-  semantic,
-} from '@salmon/shared';
+import { type CurrencySelectorItem } from '@salmon/shared';
+import { IconBubble } from '../../IconBubble';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import type { CurrencySelectorProps } from './types';
 
 // ============================================================================
 // Component
@@ -32,7 +23,7 @@ export function CurrencySelector({
   activeCurrencyCode,
   onSelectCurrency,
   onBack,
-}: CurrencySelectorBaseProps) {
+}: CurrencySelectorProps) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(
@@ -42,15 +33,19 @@ export function CurrencySelector({
 
   const renderSymbol = useCallback(
     (item: CurrencySelectorItem) => (
-      <View style={styles.symbolContainer}>
-        <Text style={styles.symbolText}>{item.symbol}</Text>
-      </View>
+      <IconBubble size={40} tone="surface">
+        {item.symbol}
+      </IconBubble>
     ),
     []
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.currency', 'Display Currency')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.currency', 'Display Currency')}
+      subtitle={t('settings.currency_subtitle', 'Choose the currency balances show in.')}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={currencies}
         getKey={(item) => item.code}
@@ -66,24 +61,3 @@ export function CurrencySelector({
 }
 
 export default CurrencySelector;
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  symbolContainer: {
-    width: componentSizes.iconSize2XL,
-    height: componentSizes.iconSize2XL,
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.tertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  symbolText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.heading,
-  },
-});

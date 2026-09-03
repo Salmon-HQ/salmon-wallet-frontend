@@ -4,6 +4,6 @@ export { TextButton } from './TextButton';
 export type {
   PrimaryButtonProps,
   SecondaryButtonProps,
+  SecondaryButtonTone,
   TextButtonProps,
-  ButtonBaseProps,
 } from './types';

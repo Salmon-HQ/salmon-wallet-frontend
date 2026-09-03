@@ -11,7 +11,6 @@
  * - Bitcoin Service (./bitcoin)
  * - Solana Service (./solana)
  * - DApp Service (./dapp)
- * - Bridge Service (./bridge)
  * - Ethereum Service (./ethereum)
  * - Solana NFT Service (./solana-nft)
  * - Network Service (./network)
@@ -35,7 +34,7 @@ export {
 // Exchange Rates Service
 // ============================================================================
 
-export { getExchangeRates, clearExchangeRateCache } from './exchangeRates';
+export { getExchangeRates } from './exchangeRates';
 
 // ============================================================================
 // Token Service
@@ -45,7 +44,6 @@ export {
   // Functions
   getTokenList,
   searchTokens,
-  clearTokenListCache,
 } from './tokens';
 
 // ============================================================================
@@ -113,21 +111,6 @@ export {
 } from './dapp';
 
 // ============================================================================
-// Bridge Service
-// ============================================================================
-
-export {
-  // Constants
-  BRIDGE_PARTNER_FEE_PERCENT,
-  // Functions
-  getBridgeAvailableTokens,
-  getBridgeEstimatedAmount,
-  getBridgeMinimalAmount,
-  createBridgeExchange,
-  getBridgeTransaction,
-} from './bridge';
-
-// ============================================================================
 // Ethereum Service (ERC-20 Token Detection)
 // ============================================================================
 
@@ -162,5 +145,4 @@ export {
   getNetwork,
   getEnabledNetworkIds,
   isBackendNetworkEnabled,
-  clearNetworksCache,
 } from './network';

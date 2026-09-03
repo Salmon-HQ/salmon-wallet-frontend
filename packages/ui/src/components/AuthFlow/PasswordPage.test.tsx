@@ -47,21 +47,10 @@ vi.mock('@salmon/shared/utils/account', () => ({
   generateAccountName: () => 'Account #1',
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed. Pull the design tokens from the theme and
-// scaling modules directly — they are runtime-agnostic — instead of hand-
-// writing the long tail LoadingScreen and the inputs read.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/scaling')),
-  ...(await vi.importActual('../../../../shared/src/types/ui')),
-  // The wave's arithmetic, pulled in whole for the same reason as the tokens:
-  // it is runtime-agnostic and the LoadingScreen this page mounts reads it.
-  ...(await vi.importActual('../../../../shared/src/motion')),
-  // The hook that keeps the wait mounted until its closing wave has left: the
-  // page parks its handoff behind that report, so a stub here would test a
-  // passage the product does not have.
-  ...(await vi.importActual('../../../../shared/src/hooks/useWaitExit')),
+// The real barrel now loads fine under vitest (react-native is aliased to a
+// stub); only the account-setup surface below needs deterministic control.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
@@ -76,11 +65,6 @@ vi.mock('@salmon/shared', async () => ({
   getPasswordIssue: () => null,
   getPasswordStrengthLabel: (strength: string) => `strength-${strength}`,
 }));
-
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
 
 function renderPage() {
   return render(

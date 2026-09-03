@@ -71,10 +71,3 @@ export async function isBackendNetworkEnabled(networkId: string): Promise<boolea
   const network = await getNetwork(networkId);
   return network?.enabled ?? false;
 }
-
-/**
- * Clear the networks cache to force a refresh on next request
- */
-export function clearNetworksCache(): void {
-  networksPromise = null;
-}

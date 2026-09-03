@@ -1,15 +1,8 @@
 import type { CSSProperties } from 'react';
-import type { Testable } from '@salmon/shared';
+import type { DerivedAccountCardPropsBase } from '@salmon/shared';
 
-export interface DerivedAccountCardProps extends Testable {
-  address: string;
-  networkName: string;
-  path: string;
-  balanceFormatted: string;
-  selected: boolean;
-  dimmed: boolean;
-  onToggle: () => void;
-  blockchain?: 'solana' | 'bitcoin' | 'ethereum';
+/** The DOM half of `DerivedAccountCardPropsBase`: the contract plus a style. */
+export interface DerivedAccountCardProps extends DerivedAccountCardPropsBase {
   style?: CSSProperties;
   className?: string;
 }

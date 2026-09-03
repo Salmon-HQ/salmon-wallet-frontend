@@ -1,6 +1,6 @@
 /**
  * Activity flow: open the Activity surface from home and return, via the
- * data-testid contract (home-activity-button, activity-list/activity-empty,
+ * data-testid contract (home-activity-button, activity-list/activity-empty, activity-detail-sheet,
  * screen-header-back-button). If the test wallet has history, also steps into
  * the first row's detail — which replaces the list inside the same surface
  * rather than stacking a dialog on it — and steps back out to the list.
@@ -31,12 +31,11 @@ test('opens the activity list and returns home via the data-testid contract', as
   const row = popup.getByTestId('activity-tx-row').first();
   if (await row.count()) {
     await row.click();
-    await expect(popup.getByTestId('activity-detail-step')).toBeVisible();
-    await expect(popup.getByTestId('activity-list')).toHaveCount(0);
-
-    // Back is the mirror of the step: it returns to the list, and the surface
-    // stays open.
-    await popup.getByTestId('screen-header-back-button').click();
+    // The detail is a sheet over the list (spec 028): Escape drops it and the
+    // list is still there underneath, the surface still open.
+    await expect(popup.getByTestId('activity-detail-sheet')).toBeVisible();
+    await popup.keyboard.press('Escape');
+    await expect(popup.getByTestId('activity-detail-sheet')).toHaveCount(0, { timeout: 10_000 });
     await expect(popup.getByTestId('activity-list')).toBeVisible();
     await expect(popup.getByTestId('home-screen')).toHaveCount(0);
   }

@@ -1,110 +1,64 @@
 /**
- * PasswordInput - Secure text input with visibility toggle
+ * PasswordInput — a secure field with a visibility toggle, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Provides a password field with show/hide toggle and optional error message.
+ * The mobile twin is `apps/mobile/src/components/PasswordInput/PasswordInput.tsx`:
+ * `input.ground` fill, `input.edge` stroke that turns `accent.ink` on focus
+ * and `status.danger` on error, `text.primary` value, `input.placeholder`
+ * placeholder, the eye glyph in `text.secondary`, and the error line under
+ * the field in `status.danger`. Every ink is read off the live mode.
+ *
+ * The wrapper — not the `<input>` inside it — is the field's visual boundary,
+ * so it is what wears `FIELD_SHELL_CLASS`: the accent edge on focus and the
+ * keyboard ring come from that one rule, shared with every other field.
+ * Ringing the bare input drew a hard-cornered rectangle inside the rounded
+ * wrapper.
  */
-import { iconSize } from '../../icons';
-import { useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
+import styled from '@emotion/styled';
 import {
-  colors,
-  componentSizes,
-  semantic,
-  spacing,
-  fontFamily,
-  fontSize as fontSizeTokens,
-  opacity,
   borderWidth,
-  duration,
-  easing,
+  componentSizes,
+  fontFamily,
+  fontSize,
+  opacity,
+  spacing,
 } from '@salmon/shared';
-import { focusRingNone, focusRingOnWrapper } from '../../theme';
-import { EyeIcon, EyeOffIcon } from '../Icon';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { EyeIcon, EyeSlashIcon, iconSize } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
 import type { PasswordInputProps } from './types';
 
-const Container = styled(Box)({
-  width: '100%',
-});
-
-// This wrapper — not the InputBase inside it — is the field's visual
-// boundary, so it is what carries the keyboard focus ring.
-const InputWrapper = styled(Box)<{
-  $borderColor: string;
-}>(({ $borderColor }) => ({
+const Wrapper = styled('div')<{ $edge: string; $ground: string }>(({ $edge, $ground }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
+  boxSizing: 'border-box',
   height: componentSizes.inputHeight,
-  backgroundColor: colors.input.background,
-  border: `${borderWidth.thin}px solid ${$borderColor}`,
+  backgroundColor: $ground,
+  border: `${borderWidth.thin}px solid ${$edge}`,
   borderRadius: componentSizes.inputRadius,
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
-  transition: `border-color ${duration.normal} ${easing.ease}`,
-  '&:has(:focus-visible)': {
-    ...focusRingOnWrapper,
-    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+}));
+
+const Field = styled('input')<{ $ink: string; $placeholder: string }>(({ $ink, $placeholder }) => ({
+  flex: 1,
+  minWidth: 0,
+  border: 'none',
+  ...focusRingNone,
+  background: 'transparent',
+  padding: 0,
+  color: $ink,
+  fontFamily: fontFamily.sans,
+  fontSize: fontSize.bodyLg,
+  '&::placeholder': {
+    color: $placeholder,
+    opacity: opacity.full,
   },
 }));
 
-// Bare flex child: no border, no radius. Ringing it is what drew the
-// hard-cornered rectangle inside the rounded wrapper. InputWrapper rings it.
-const StyledInput = styled(InputBase)({
-  flex: 1,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSizeTokens.bodyLg,
-  '& .MuiInputBase-input': {
-    padding: 0,
-    '&::placeholder': {
-      color: colors.text.tertiary,
-      opacity: opacity.full,
-    },
-  },
-});
-
-const ToggleButton = styled(IconButton)({
-  padding: spacing.xs,
-  '&:hover': {
-    backgroundColor: 'transparent',
-  },
-});
-
-const ErrorText = styled(Typography)({
-  color: semantic.status.danger,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSizeTokens.xs,
-  marginTop: spacing.sm,
-  paddingLeft: spacing.xs,
-  paddingRight: spacing.xs,
-});
-
-/**
- * PasswordInput component for secure text entry
- *
- * Features:
- * - Password visibility toggle (eye icon)
- * - Focus state with accent border color
- * - Error state with error border color and message
- * - Consistent styling with design tokens
- *
- * @example
- * ```tsx
- * <PasswordInput
- *   value={password}
- *   onChangeText={setPassword}
- *   placeholder="Enter your password"
- *   error={passwordError}
- *   autoFocus
- * />
- * ```
- */
 export function PasswordInput({
   value,
   onChangeText,
@@ -118,14 +72,13 @@ export function PasswordInput({
   testID,
 }: PasswordInputProps) {
   const { t } = useTranslation();
+  const { input, status, text } = useSemantic();
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
-  const getBorderColor = () => {
-    if (error) return semantic.status.danger;
-    if (isFocused) return colors.accent.primary;
-    return colors.input.border;
-  };
+  // Focus is the shell's business (`FIELD_SHELL_CLASS`), not this component's:
+  // the border it draws is the resting one, and error is the only state that
+  // overrides it here.
+  const edge = error ? status.danger : input.edge;
 
   const handleToggle = useCallback(() => {
     setShowPassword((prev) => !prev);
@@ -141,36 +94,65 @@ export function PasswordInput({
   );
 
   return (
-    <Container className={className} style={style}>
-      <InputWrapper $borderColor={getBorderColor()}>
-        <StyledInput
+    <div className={className} style={{ width: '100%', ...style }}>
+      <Wrapper
+        className={[FIELD_SHELL_CLASS, error ? FIELD_SHELL_ERROR_CLASS : null]
+          .filter(Boolean)
+          .join(' ')}
+        $edge={edge}
+        $ground={input.ground}
+      >
+        <Field
+          $ink={text.primary}
+          $placeholder={input.placeholder}
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChangeText(e.target.value)}
           placeholder={placeholder ?? t('lock.password_placeholder')}
           disabled={!editable}
           autoFocus={autoFocus}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
-          fullWidth
-          inputProps={{ 'data-testid': testID }}
+          data-testid={testID}
         />
-        <ToggleButton
+        <button
+          type="button"
           onClick={handleToggle}
           aria-label={showPassword ? t('general.hide_password') : t('general.show_password')}
           data-testid={testID ? `${testID}-toggle` : undefined}
           tabIndex={-1}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: spacing.xs,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+          }}
         >
           {showPassword ? (
-            <EyeOffIcon size={iconSize.lg} color={colors.text.secondary} />
+            <EyeSlashIcon size={iconSize.lg} color={text.secondary} />
           ) : (
-            <EyeIcon size={iconSize.lg} color={colors.text.secondary} />
+            <EyeIcon size={iconSize.lg} color={text.secondary} />
           )}
-        </ToggleButton>
-      </InputWrapper>
-      {error && <ErrorText>{error}</ErrorText>}
-    </Container>
+        </button>
+      </Wrapper>
+      {error && (
+        <p
+          style={{
+            color: status.danger,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.xs,
+            margin: 0,
+            marginTop: spacing.sm,
+            paddingLeft: spacing.xs,
+            paddingRight: spacing.xs,
+          }}
+        >
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

@@ -19,7 +19,8 @@ import {
   getStashItem,
   lineHeight,
   type DerivedKeyCache,
-  semantic,
+  s,
+  type Semantic,
 } from '@salmon/shared';
 import {
   OnboardingDescription,
@@ -31,6 +32,7 @@ import {
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { EyeIcon, FingerprintIcon, ScanIcon } from '../../src/icons';
 import type { IconComponent } from '../../src/icons';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -64,6 +66,8 @@ function getBiometricIcon(type: 'fingerprint' | 'facial' | 'iris' | null): IconC
 
 export default function BiometricSetupScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { state, storeKeyForBiometric, setEnableBiometric } = useBiometricAuth();
   const [isStoring, setIsStoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,12 +165,13 @@ export default function BiometricSetupScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  error: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.snug,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    error: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+      textAlign: 'center',
+    },
+  });

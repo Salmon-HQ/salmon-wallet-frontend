@@ -1,30 +1,23 @@
 /**
  * usePendingActivity — the one list the pending banner renders.
  *
- * Two background workers keep money-moving work alive after the user leaves the
- * screen: `PendingTransactionsContext` (on-chain signatures) and
- * `BridgeSettlementContext` (StealthEX orders). They stay separate because
- * their lifecycles are unrelated (see the module doc on either one), but the
- * user does not care which worker owns their transaction — they care that
- * something of theirs is in flight. Merging here means every app renders one
- * component instead of composing two hooks three times, and it is what finally
- * makes the bridge poller visible: it has survived navigation and restarts
- * since it was written, with no surface anywhere that said so.
+ * `PendingTransactionsContext` keeps on-chain signatures alive in the
+ * background after the user leaves the screen. This hook exists so every app
+ * renders one component instead of composing that context three times.
  *
  * @module hooks/usePendingActivity
  */
 
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   usePendingTransactionsOptional,
   type PendingTransactionStatus,
 } from '../contexts/PendingTransactionsContext';
-import { BridgeSettlementContext } from '../contexts/BridgeSettlementContext';
 
-export type PendingActivityKind = 'send' | 'swap' | 'bridge';
+export type PendingActivityKind = 'send' | 'swap';
 
 export interface PendingActivityItem {
-  /** Stable identity: a signature, or a StealthEX exchange id. */
+  /** Stable identity: a signature. */
   id: string;
   kind: PendingActivityKind;
   status: PendingTransactionStatus;
@@ -33,7 +26,7 @@ export interface PendingActivityItem {
    * translated copy without needing translation itself.
    */
   detail?: string;
-  /** Whether the user may clear this row. Bridges resolve on their own. */
+  /** Whether the user may clear this row. */
   dismissible: boolean;
 }
 
@@ -44,11 +37,9 @@ export interface UsePendingActivityResult {
 
 export function usePendingActivity(): UsePendingActivityResult {
   const pendingTx = usePendingTransactionsOptional();
-  const bridge = useContext(BridgeSettlementContext);
 
   const transactions = pendingTx?.pendingTransactions;
   const foregroundReported = pendingTx?.foregroundReported;
-  const exchanges = bridge?.pendingExchanges;
   const dismissPendingTransaction = pendingTx?.dismissPendingTransaction;
 
   return useMemo(() => {
@@ -69,24 +60,11 @@ export function usePendingActivity(): UsePendingActivityResult {
           detail: tx.summary,
           dismissible: true,
         })),
-      // A bridge is only ever listed while it is unresolved: the settlement
-      // provider removes it the moment StealthEX reports an outcome, and drops
-      // it once it has gone a day without reaching one — an order whose deposit
-      // never left must not sit here claiming to be in flight. The exchange id
-      // is the detail on purpose — it is the only reference number a user could
-      // ever quote to support.
-      ...(exchanges ?? []).map((ex) => ({
-        id: ex.id,
-        kind: 'bridge' as const,
-        status: 'pending' as const,
-        detail: ex.id,
-        dismissible: false,
-      })),
     ];
 
     return {
       items,
       dismiss: (id: string) => dismissPendingTransaction?.(id),
     };
-  }, [transactions, exchanges, foregroundReported, dismissPendingTransaction]);
+  }, [transactions, foregroundReported, dismissPendingTransaction]);
 }

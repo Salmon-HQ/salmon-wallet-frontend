@@ -1,5 +1,7 @@
 # Migration from `@solana/web3.js` v1 to `@solana/kit`
 
+apps/web was retired on 2026-09-02; its rows below are history.
+
 Salmon Wallet's Solana stack runs on [`@solana/kit`](https://github.com/anza-xyz/kit) v7 and the generated
 program clients under `@solana-program/*`. `@solana/web3.js` v1 is not a production dependency of any
 package in this monorepo. It survives only as a devDependency, used as an independent oracle in tests.

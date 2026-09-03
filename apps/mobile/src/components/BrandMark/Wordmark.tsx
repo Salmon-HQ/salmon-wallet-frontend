@@ -43,31 +43,24 @@
 import {
   fontSize,
   onboardingMarkTitleGap,
-  semantic,
   wordmarkAspectRatio,
   wordmarkPaths,
   wordmarkText,
   wordmarkViewBoxAttr,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useSemantic } from '../../theme/useThemedStyles';
+import type { WordmarkProps } from './types';
+
+export type { WordmarkProps };
 
 /** The token the `Text` this replaced set its size from. */
 const DEFAULT_HEIGHT = fontSize.headline;
 
-export interface WordmarkProps extends Testable {
-  /** Drawn height. Width follows the aspect ratio. */
-  height?: number;
-  /** Ink. White, like the mark it sits under. */
-  color?: string;
-}
-
-export function Wordmark({
-  height = DEFAULT_HEIGHT,
-  color = semantic.text.primary,
-  testID,
-}: WordmarkProps) {
+export function Wordmark({ height = DEFAULT_HEIGHT, color, testID }: WordmarkProps) {
+  const { text } = useSemantic();
+  const resolvedColor = color ?? text.primary;
   return (
     <Svg
       testID={testID ?? 'wordmark'}
@@ -81,7 +74,7 @@ export function Wordmark({
       accessibilityLabel={wordmarkText}
     >
       {wordmarkPaths.map((d) => (
-        <Path key={d.slice(0, 24)} d={d} fill={color} />
+        <Path key={d.slice(0, 24)} d={d} fill={resolvedColor} />
       ))}
     </Svg>
   );

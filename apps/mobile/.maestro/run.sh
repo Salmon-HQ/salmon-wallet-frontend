@@ -88,6 +88,13 @@ if [[ $IS_ANDROID -eq 1 ]] && command -v adb >/dev/null 2>&1; then
   fi
 fi
 
+# The iOS simulator keyboard drops characters when the recover grid re-focuses
+# mid-phrase, so recover-walletA.yaml pastes on iOS: put the seed on the
+# simulator's pasteboard (never printed, never left in a file).
+if [[ $IS_ANDROID -eq 0 ]]; then
+  printf %s "$SALMON_TEST_SEED_A" | xcrun simctl pbcopy "${DEVICE:-booted}" && ok "seed on the simulator pasteboard"
+fi
+
 # ---------------------------------------------------------------- backend ----
 # Account creation and recovery call the API, so every flow needs it — including
 # the ones that need no funds. Without it the app burns the axios timeout on

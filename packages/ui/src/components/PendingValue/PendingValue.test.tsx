@@ -10,20 +10,23 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@salmon/shared', () => ({
-  motionDuration: { swell: '180ms' },
-  motionEasing: {
-    current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-    settle: { css: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-  },
-  motionMs: { pulseCycle: 1200 },
-  opacity: { disabled: 0.5, full: 1 },
-  reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
-}));
+import { PendingValue } from './PendingValue';
 
-const { PendingValue } = await import('./PendingValue');
+function stubMatchMedia(matches: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+  );
+}
 
-afterEach(cleanup);
+afterEach(() => {
+  vi.unstubAllGlobals();
+  cleanup();
+});
 
 describe('PendingValue', () => {
   it('keeps the value on screen while it is being recalculated', () => {
@@ -43,15 +46,25 @@ describe('PendingValue', () => {
     expect(screen.getByText('1.23 USDC')).toBe(before);
   });
 
-  it('styles the value differently while pending than at rest', () => {
+  it('breathes while pending and rests at full opacity afterwards', () => {
     const { rerender } = render(<PendingValue pending>1.23 USDC</PendingValue>);
     const node = screen.getByText('1.23 USDC');
-    const breathing = node.className;
-
-    rerender(<PendingValue pending={false}>1.23 USDC</PendingValue>);
 
     // The breath is the whole signal; at rest the value carries none of it.
-    expect(node.className).not.toBe(breathing);
-    expect(document.head.innerHTML).toContain('animation');
+    expect(node.style.animation).toContain('sw-pending-value-breathe');
+    expect(document.head.innerHTML).toContain('sw-pending-value-breathe');
+
+    rerender(<PendingValue pending={false}>1.23 USDC</PendingValue>);
+    expect(node.style.animation).toBe('');
+    expect(node.style.opacity).toBe('1');
+  });
+
+  it('sits at the dimmed end of the breath under reduce motion', () => {
+    stubMatchMedia(true);
+    render(<PendingValue pending>1.23 USDC</PendingValue>);
+    const node = screen.getByText('1.23 USDC');
+
+    expect(node.style.animation).toBe('');
+    expect(Number(node.style.opacity)).toBeLessThan(1);
   });
 });

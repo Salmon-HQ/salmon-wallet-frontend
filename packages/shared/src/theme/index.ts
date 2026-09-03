@@ -11,35 +11,6 @@
  * ```
  */
 
-import { colors, gradients } from './colors';
-import {
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  contentPadding,
-  opacity,
-  blur,
-} from './spacing';
-import {
-  fontFamily,
-  fontFamilyNative,
-  fontSize,
-  lineHeight,
-  fontWeight,
-  letterSpacing,
-} from './typography';
-import { shadows, shadowsCSS } from './shadows';
-import {
-  duration,
-  durationMs,
-  easing,
-  motionDuration,
-  motionEasing,
-  motionMs,
-  reducedMotion,
-} from './durations';
-
 // Re-export all tokens from colors
 export { colors, gradients, getScalesColorForBlockchain, isOpaqueColor } from './colors';
 export type { Colors, Gradients } from './colors';
@@ -53,8 +24,13 @@ export type { Colors, Gradients } from './colors';
 // services and hooks.
 export { palette } from './palette';
 export type { Neutral, Salmon, Palette } from './palette';
-export { semantic } from './semantic';
-export type { Semantic } from './semantic';
+// `semantic` is the deep-water set resolved at module load; `createSemantic`
+// is the resolver behind it, for the provider that follows the active mode.
+export { semantic, createSemantic } from './semantic';
+// A token at another alpha — the only sanctioned end of a fade (never
+// `'transparent'`, which is black at alpha 0 and tints the ramp on its way out).
+export { withAlpha } from './withAlpha';
+export type { Semantic, ThemeMode } from './semantic';
 
 // Brand geometry — the mark as path data every platform can draw.
 export {
@@ -70,9 +46,10 @@ export {
   wordmarkText,
   wordmarkTypeface,
   wordmarkToSvg,
+  chainMarks,
 } from './brand';
 
-// The onboarding slot grid — five reserved-height tables, read by all three apps.
+// The onboarding slot grid — five reserved-height tables, read by both apps.
 export {
   onboardingSlots,
   onboardingIdentityGridFull,
@@ -97,33 +74,6 @@ export type {
   OnboardingGrid,
   OnboardingVariant,
 } from './onboardingGrid';
-
-// Marine snow geometry — the water column's suspended matter, as data both
-// platforms draw. The DOM serialises it; mobile draws the array directly.
-export {
-  depthDrift,
-  depthFieldCycleMs,
-  depthFieldTile,
-  depthFieldTileHeight,
-  marineSnow,
-  marineSnowTiled,
-  marineSnowSvg,
-  wrapDepthOffset,
-} from './depthField';
-export type { SnowFloc } from './depthField';
-
-// Blizzard variant — the same field with heroes, a mid-field lift, and
-// clustering. Renderers pick a variant through their debug switches.
-export {
-  blizzard,
-  blizzardClusterCenters,
-  blizzardHeroes,
-  blizzardMidFlocs,
-  blizzardSnow,
-  blizzardSnowSvg,
-  blizzardSnowTiled,
-} from './depthFieldBlizzard';
-export type { HeroFloc } from './depthFieldBlizzard';
 
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
 export { fleshTile, fleshFills } from './flesh';
@@ -175,8 +125,8 @@ export type {
 } from './typography';
 
 // Re-export all tokens from shadows
-export { shadows, shadowsCSS } from './shadows';
-export type { Shadows, ShadowsCSS } from './shadows';
+export { shadows, shadowsCSS, createShadows } from './shadows';
+export type { Shadows, ShadowsCSS, ShadowStyle, ShadowTable } from './shadows';
 
 // Re-export all tokens from durations.
 // `motionMs` / `motionDuration` / `motionEasing` are the vocabulary; the
@@ -202,36 +152,3 @@ export type {
   DurationMs,
   Easing,
 } from './durations';
-
-/**
- * Complete theme object combining all tokens
- * Useful for theme providers
- */
-export const theme = {
-  colors,
-  gradients,
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  contentPadding,
-  fontFamily,
-  fontFamilyNative,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  letterSpacing,
-  opacity,
-  blur,
-  shadows,
-  shadowsCSS,
-  motionMs,
-  motionDuration,
-  motionEasing,
-  reducedMotion,
-  duration,
-  durationMs,
-  easing,
-} as const;
-
-export type Theme = typeof theme;

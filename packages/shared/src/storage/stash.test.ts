@@ -70,12 +70,20 @@ describe('stash', () => {
       expect(() => getStash()).toThrow(StashNotInitializedError);
     });
 
-    it('initStash("mobile") and initStash("web") install a memory stash', () => {
-      for (const platform of ['mobile', 'web'] as const) {
-        resetStash();
-        initStash(platform);
-        expect(isStashInitialized()).toBe(true);
-        expect(getStash()).toBeDefined();
+    it('initStash("mobile") and initStash("extension") install their stash', () => {
+      const glob = globalThis as unknown as { chrome: unknown };
+      const originalChrome = glob.chrome;
+      glob.chrome = { runtime: { sendMessage: vi.fn(), lastError: undefined } };
+
+      try {
+        for (const platform of ['mobile', 'extension'] as const) {
+          resetStash();
+          initStash(platform);
+          expect(isStashInitialized()).toBe(true);
+          expect(getStash()).toBeDefined();
+        }
+      } finally {
+        glob.chrome = originalChrome;
       }
     });
 
@@ -93,7 +101,7 @@ describe('stash', () => {
     });
 
     it('resetStash de-initializes the stash', () => {
-      initStash('web');
+      initStash('mobile');
       resetStash();
       expect(isStashInitialized()).toBe(false);
     });
@@ -105,7 +113,7 @@ describe('stash', () => {
 
   describe('convenience functions', () => {
     beforeEach(() => {
-      initStash('web');
+      initStash('mobile');
     });
 
     it('setStashItem / getStashItem / removeStashItem round-trip', async () => {
@@ -141,7 +149,7 @@ describe('stash', () => {
     beforeEach(() => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-08-12T12:00:00Z'));
-      initStash('web');
+      initStash('mobile');
     });
 
     it('reports timed out when no activity was ever recorded', async () => {

@@ -95,6 +95,8 @@ appId: io.salmonwallet.app
       - tapOn: 'Close'
       - waitForAnimationToEnd:
           timeout: 3000
+# The door shows the wordmark, not a "Welcome" heading (spec 013/022).
 - extendedWaitUntil:
-    visible: 'Welcome'
+    visible:
+      id: 'welcome-screen'
     timeout: 60000

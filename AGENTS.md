@@ -9,24 +9,24 @@ wins. Read `docs/ARCHITECTURE.md` before structural changes.
 ## What this repo is
 
 An open-source, self-custodial crypto wallet (Solana-first, with Bitcoin
-and a future-facing Ethereum surface) shipped as three apps from one
-pnpm + turbo monorepo. The same business logic powers all three apps, so
+and a future-facing Ethereum surface) shipped as two apps from one
+pnpm + turbo monorepo (the web app was retired on 2026-09-02; the extension
+is the only DOM app). The same business logic powers both apps, so
 ownership boundaries are the core discipline of this codebase.
 
 ## Ownership model
 
 | Location          | Owns                                                                                                                                                  | Why                                                                                               |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `packages/shared` | Cross-platform logic and contracts: API services, blockchain logic, hooks, semantic types, storage, config, crypto, utils, i18n locales, theme tokens | One implementation serves mobile, web, and extension; a bug fixed here is fixed everywhere        |
-| `packages/ui`     | Shared React DOM components used by web and extension                                                                                                 | DOM code cannot run in React Native, so it must not live in `packages/shared`                     |
+| `packages/shared` | Cross-platform logic and contracts: API services, blockchain logic, hooks, semantic types, storage, config, crypto, utils, i18n locales, theme tokens | One implementation serves mobile and extension; a bug fixed here is fixed everywhere              |
+| `packages/ui`     | Shared React DOM components used by the extension                                                                                                     | DOM code cannot run in React Native, so it must not live in `packages/shared`                     |
 | `apps/mobile`     | React Native / Expo app, mobile-only flows, native integrations                                                                                       | RN code cannot run in browsers; keeping it app-local prevents platform leaks into shared packages |
-| `apps/web`        | Web app shell, routing, providers, browser-specific wiring                                                                                            | App-shell concerns are not reusable; keeping them local keeps shared packages runtime-agnostic    |
 | `apps/extension`  | Extension entrypoints (background/content/injected), pages, sheets, browser-extension APIs                                                            | Extension runtime constraints (MV3, WXT) must not constrain the other apps                        |
 
 ## Placement rules
 
 - Cross-platform services, hooks, blockchain logic, semantic types, storage,
-  and shared config go in `packages/shared` — so all three apps consume one
+  and shared config go in `packages/shared` — so both apps consume one
   contract instead of drifting copies.
 - Shared DOM components go in `packages/ui`, never in `packages/shared` —
   `packages/shared` must stay importable from React Native.
@@ -49,14 +49,14 @@ live in `.agent/skills/salmon-repo-rules/references/`.
 
 ## Changing or removing existing code
 
-Shared code has three consumers. Before modifying or deleting anything in
+Shared code has two consumers. Before modifying or deleting anything in
 `packages/shared` or `packages/ui`:
 
 1. Find the actual consumers (all apps and packages) of the export you are
    touching — an export that looks dead in one app may be load-bearing in
    another.
 2. Preserve stable export paths and barrels unless the task explicitly
-   allows breakage — renames ripple through three apps at once.
+   allows breakage — renames ripple through both apps at once.
 3. If backend-facing behavior changes, check the sibling backend repo
    `../salmon-wallet-backend` (clone it next to this repo if needed) —
    `packages/shared/src/api` is the canonical frontend contract with it.
@@ -129,7 +129,33 @@ full-repo run):
 - Lint: `pnpm turbo run lint --filter=@salmon/<pkg>`
 
 Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
-`@salmon/web`, `@salmon/extension`.
+`@salmon/extension`.
+
+- DOM parity: `pnpm check:parity` (strict in CI) after any change under
+  `apps/mobile/src/components`, `apps/mobile/app`, `packages/ui` or
+  `packages/shared/src/types/ui`; `pnpm check:parity:report` to read
+  findings without failing.
+
+## Twins — the extension is the mobile app on the DOM
+
+Every kit component and every screen exists twice — once in React Native
+(`apps/mobile`), once on the DOM (`packages/ui`, `apps/extension`) — on one
+contract. A change to one twin is a change to both; a visual decision taken
+on one platform is taken on both, from the same token. Rules a change must
+keep, and `scripts/check-dom-parity.mjs` enforces:
+
+- One contract per pair in `packages/shared/src/types/ui` (`XPropsBase`);
+  each platform's `types.ts` **extends** it and the component imports its
+  props from `./types`. Importing the base without building on it does not
+  count.
+- A new mobile component or route with no DOM twin fails CI until it has one,
+  or until it is listed in the script's `MOBILE_ONLY` / `MOBILE_ONLY_SCREENS`
+  with the reason it never will; `DOM_ONLY` the other way round. Those maps
+  are the only place a platform difference may live.
+- DOM code reads the live mode through `useSemantic()` — no static
+  `semantic` / `colors` import, no MUI, no hex, no `mode ===` in a component.
+- A size, colour or spacing both twins share is a token in
+  `packages/shared/src/theme`, never a literal repeated in two files.
 
 ## Testing rules
 
@@ -152,11 +178,10 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 E2E suites live next to the app they exercise. Do not create a top-level
 `.playwright/` or `.maestro/`.
 
-| App              | Suite                         | Tool                                             |
-| ---------------- | ----------------------------- | ------------------------------------------------ |
-| `apps/extension` | `apps/extension/.playwright/` | Playwright (chromium + extension load)           |
-| `apps/web`       | `apps/web/.playwright/`       | Playwright (chromium against the web dev server) |
-| `apps/mobile`    | `apps/mobile/.maestro/`       | Maestro (iOS Simulator / Android emulator)       |
+| App              | Suite                         | Tool                                       |
+| ---------------- | ----------------------------- | ------------------------------------------ |
+| `apps/extension` | `apps/extension/.playwright/` | Playwright (chromium + extension load)     |
+| `apps/mobile`    | `apps/mobile/.maestro/`       | Maestro (iOS Simulator / Android emulator) |
 
 Each suite has its own `README.md` (setup) and `AGENTS.md` (conventions,
 known failure modes) — read those before extending a suite. Secrets stay in

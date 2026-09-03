@@ -73,19 +73,19 @@ Events are wired **in the shared hook when one exists**, so a single call covers
 
 These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first swap _before_ opting in is still counted on their first swap _after_ opting in.
 
-| Event                  | Props | Fires on                                | Wired in                                              |
-| ---------------------- | ----- | --------------------------------------- | ----------------------------------------------------- |
-| `first_send_completed` | —     | 1st successful send                     | `packages/shared/src/hooks/useSendTransaction.ts`     |
-| `first_swap_completed` | —     | 1st successful swap (Jupiter or bridge) | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
+| Event                  | Props | Fires on            | Wired in                                          |
+| ---------------------- | ----- | ------------------- | ------------------------------------------------- |
+| `first_send_completed` | —     | 1st successful send | `packages/shared/src/hooks/useSendTransaction.ts` |
+| `first_swap_completed` | —     | 1st successful swap | `useSwap.ts`                                      |
 
 ### Recurring use
 
-| Event            | Props                               | Fires on                                                                                                                                                                      | Wired in                                                                   |
-| ---------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                                                                                                                                     | `packages/shared/src/hooks/useSendTransaction.ts`                          |
-| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome. Jupiter (Solana↔Solana) fires immediately in `useSwap`; a cross-chain **bridge** fires on its real settlement, with the real chains, from the background poller | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx`                      |
-| `nft_viewed`     | `chain`                             | Open NFT detail                                                                                                                                                               | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
-| `nft_sent`       | `chain`                             | Successful NFT transfer                                                                                                                                                       | `packages/shared/src/hooks/useNftTransfer.ts`                              |
+| Event            | Props                               | Fires on                                                                  | Wired in                                                                   |
+| ---------------- | ----------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                                 | `packages/shared/src/hooks/useSendTransaction.ts`                          |
+| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome (Solana↔Solana, via Jupiter), fires immediately in `useSwap` | `useSwap.ts`                                                               |
+| `nft_viewed`     | `chain`                             | Open NFT detail                                                           | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
+| `nft_sent`       | `chain`                             | Successful NFT transfer                                                   | `packages/shared/src/hooks/useNftTransfer.ts`                              |
 
 ### Feature adoption
 
@@ -159,7 +159,7 @@ This is correct by design (real opt-in: you cannot measure someone who has not y
 
 ### 2. Outcome rate yes, attempt funnel no
 
-`send_completed` and `swap_completed` now fire on **both** paths — `success: true` on completion and `success: false` on failure (send/swap error path; bridge `fail`/`refunded` settlement). So a completion-vs-failure rate **is** computable.
+`send_completed` and `swap_completed` now fire on **both** paths — `success: true` on completion and `success: false` on failure (send/swap error path). So a completion-vs-failure rate **is** computable.
 
 What is still missing is an _attempt_ event: a user who abandons before submitting the operation is never counted. So `success` gives you the outcome rate among **submitted** operations, not a full funnel conversion rate. Add attempt events to the catalog if you need the latter.
 

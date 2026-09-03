@@ -1,20 +1,49 @@
 /**
- * AccountAddPanel - Multi-step account creation flow
+ * AccountAddPanel — the multi-step add-account flow, on the DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/AccountPanels/AccountAddPanel`:
+ * the method list as `ListRow`s, the derived scan on `DerivedAccountCard`,
+ * the seed grid, the private-key and watch-only fields, the name step and
+ * the re-auth step, each a stack of kit blocks under a title and a subtitle.
  *
  * Steps:
- * 1. select-method: Choose between deriving or importing
- * 2. derive-scan: Scan for derived accounts using DerivedAccountCard
- * 3. import-seed: Enter seed phrase
- * 4. set-name: Choose account name
+ * 1. select-method: derive, import seed, import private key, watch an address
+ * 2. derive-scan: scan the active seed's paths
+ * 3. import-*: the credential
+ * 4. set-name: the name
+ * 5. reauth: the password, when the vault key has lapsed
  */
-
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import CircularProgress from '@mui/material/CircularProgress';
-import ListItemButton from '@mui/material/ListItemButton';
+import {
+  createAccount,
+  EncryptionMaterialMissingError,
+  fontFamily,
+  fontSize,
+  getAccountMnemonic,
+  getScanNetworks,
+  getScanNetworksWithMirrors,
+  getShortAddress,
+  importAccountFromPrivateKey,
+  importWatchOnlyAccount,
+  isVaultKeyCached,
+  lineHeight,
+  NETWORK_DISPLAY,
+  normalizeMnemonic,
+  scanDerivedAccounts,
+  SHORT_PHRASE,
+  spacing,
+  trackEvent,
+  useAccountsContext,
+  useImportPrivateKey,
+  useImportWatchOnly,
+  validateMnemonic,
+  type AccountAddStep,
+  type DerivedAccountInfo,
+  type IconGlyphProps,
+} from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -23,104 +52,24 @@ import {
   TreeStructureIcon,
   iconSize,
 } from '../../icons';
-import { styled } from '../../utils/styled';
-import {
-  colors,
-  semantic,
-  spacing,
-  borderRadius,
-  fontSize,
-  fontWeight,
-  useAccountsContext,
-  scanDerivedAccounts,
-  validateMnemonic,
-  normalizeMnemonic,
-  createAccount,
-  importAccountFromPrivateKey,
-  importWatchOnlyAccount,
-  isVaultKeyCached,
-  useImportPrivateKey,
-  useImportWatchOnly,
-  getShortAddress,
-  getAccountMnemonic,
-  NETWORK_DISPLAY,
-  getScanNetworks,
-  SHORT_PHRASE,
-  EncryptionMaterialMissingError,
-  trackEvent,
-  type AccountAddStep,
-  type DerivedAccountInfo,
-  componentSizes,
-} from '@salmon/shared';
-import { SettingsPanelContent } from '../SettingsPanelContent';
 import { PrimaryButton } from '../Button';
-import { DerivedAccountCard } from '../DerivedAccountCard';
-import { WarningNotice } from '../WarningNotice';
-import { SeedPhraseEntry } from '../SeedPhrase';
+import { Card } from '../Card';
+import { ConfirmDialog } from '../ConfirmDialog';
+import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
 import { PasswordInput } from '../PasswordInput';
+import { SectionLabel } from '../SectionLabel';
+import { SeedPhraseEntry } from '../SeedPhrase';
+import { SettingsPanelContent } from '../SettingsPanelContent';
+import { TextInput } from '../TextInput';
+import { WarningNotice } from '../WarningNotice';
 import type { AccountAddPanelProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const MethodCard = styled(ListItemButton)({
-  display: 'flex',
-  alignItems: 'center',
-  gap: spacing.md,
-  padding: spacing.lg,
-  backgroundColor: colors.interactive.surface,
-  // The control radius, by its scale name (DESIGN.md §The Control Radius Rule).
-  borderRadius: borderRadius.r3,
-  marginBottom: spacing.md,
-});
-
-const MethodIcon = styled(Box)({
-  width: componentSizes.iconSize3XL,
-  height: componentSizes.iconSize3XL,
-  borderRadius: borderRadius.r2,
-  backgroundColor: colors.interactive.hoverSubtle,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-});
-
-const MethodInfo = styled(Box)({
-  flex: 1,
-  minWidth: 0,
-});
-
-/**
- * The committing action is the system's own primary button — the settings
- * surface joined the system (DESIGN.md §Motion), so no panel hand-rolls the
- * salmon fill any more. This only holds the gap above it.
- */
-const CONFIRM_SLOT_STYLE = { marginTop: spacing.xl } as const;
-
-const StyledTextField = styled(TextField)({
-  '& .MuiOutlinedInput-root': {
-    backgroundColor: colors.interactive.surface,
-    // The control radius: a field and the button under it are one shape
-    // (DESIGN.md §The Control Radius Rule). It was 8.
-    borderRadius: componentSizes.inputRadius,
-    color: colors.text.primary,
-    fontSize: fontSize.body,
-    '& fieldset': {
-      borderColor: colors.border.default,
-    },
-    '&:hover fieldset': {
-      borderColor: colors.text.secondary,
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: colors.accent.primary,
-    },
-  },
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+/** The leading well every settings row carries. */
+const ROW_BUBBLE_SIZE = 40;
+/** Mirrors the cards a scan lists, so the wait does not jump on swap. */
+const SCAN_SKELETON_COUNT = 3;
 
 export function AccountAddPanel({
   onComplete,
@@ -129,6 +78,7 @@ export function AccountAddPanel({
   onCloseSettings,
 }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const { text, status } = useSemantic();
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, accounts, counter } = accountState;
 
@@ -145,7 +95,10 @@ export function AccountAddPanel({
   const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
   const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
-  const [confirmError, setConfirmError] = useState('');
+  // Creation-failure notice, surfaced as a sheet rather than inline.
+  const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
+    null
+  );
   // Re-auth step state. The password lives here only for the moment between
   // typing and the verified write.
   const [reauthPassword, setReauthPassword] = useState('');
@@ -156,11 +109,9 @@ export function AccountAddPanel({
 
   /**
    * The wait is **not rendered here**. This panel lives inside the settings
-   * drawer, and the add finishes by closing that drawer — a wait mounted in
-   * here would be torn down with it and its closing wave would play nowhere,
-   * which is the exact cut `useWaitExit` exists to prevent. The panel raises
-   * the wait on the stack (`onWait`), which hosts it outside the drawer, and
-   * the wait then leaves over the screen the user is returned to.
+   * stack, and the add finishes by closing it — a wait mounted in here would
+   * be torn down with it and its closing wave would play nowhere. The panel
+   * raises the wait on the stack (`onWait`), which hosts it outside.
    */
   const raiseWait = useCallback(() => {
     onWait({
@@ -171,8 +122,7 @@ export function AccountAddPanel({
     });
   }, [onWait, selectedDerived, t]);
 
-  // A wait this panel raised may not outlive the panel unnoticed: if the user
-  // dismisses settings mid-flight, nothing else would ever lower it. Read
+  // A wait this panel raised may not outlive the panel unnoticed. Read
   // through a ref so only unmount — never a new `onWait` identity — lowers it.
   const onWaitRef = useRef(onWait);
   useEffect(() => {
@@ -187,9 +137,7 @@ export function AccountAddPanel({
   const [accountName, setAccountName] = useState('');
 
   // Deriving needs a seed phrase to derive from. An account imported from a
-  // private key, or a watch-only one, has none — so the card is not offered
-  // rather than offered and inert. This reads the same value the handler
-  // guards on, so the two cannot drift apart.
+  // private key, or a watch-only one, has none — so the row is not offered.
   const canDerive = !!getAccountMnemonic(activeAccount);
 
   const handleSelectDerive = useCallback(async () => {
@@ -207,8 +155,8 @@ export function AccountAddPanel({
       setDerivedAccounts(derived);
       setFailedNetworks(failed);
     } catch {
-      // Total failure (network catalog unreachable) — mark the scan as failed
-      // so the UI shows the error state instead of an empty list.
+      // Total failure (network catalog unreachable) — the error state, not an
+      // empty list.
       setDerivedAccounts([]);
       setFailedNetworks(['all']);
     } finally {
@@ -216,9 +164,7 @@ export function AccountAddPanel({
     }
   }, [activeAccount]);
 
-  const handleSelectImport = useCallback(() => {
-    setStep('import-seed');
-  }, []);
+  const handleSelectImport = useCallback(() => setStep('import-seed'), []);
 
   const handleSelectImportPrivateKey = useCallback(() => {
     privateKeyImport.reset();
@@ -280,8 +226,6 @@ export function AccountAddPanel({
    */
   const buildAccount = useCallback(async () => {
     const name = accountName.trim() || defaultName;
-    // A private key owns one address and derives nothing, so it takes the
-    // import factory instead of the mnemonic fan-out across networks.
     if (privateKeyImport.privateKey) {
       return importAccountFromPrivateKey({
         name,
@@ -289,7 +233,6 @@ export function AccountAddPanel({
         networkId: privateKeyImport.networkId,
       });
     }
-    // A watched address derives nothing either, and has no key to import.
     if (watchOnlyImport.address) {
       return importWatchOnlyAccount({
         name,
@@ -300,8 +243,11 @@ export function AccountAddPanel({
     return createAccount({
       name,
       mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-      networkIds: await getScanNetworks(),
+      networkIds: await getScanNetworksWithMirrors(),
       startIndex: selectedDerived ? selectedDerived.index : 0,
+      // A derived account is a wallet of its own that shares this wallet's
+      // seed; recording which one lets Wallets draw the descent (spec 025).
+      ...(selectedDerived && activeAccount ? { derivedFrom: activeAccount.id } : {}),
     });
   }, [
     accountName,
@@ -316,18 +262,12 @@ export function AccountAddPanel({
   const persistAccount = useCallback(
     async (account: Awaited<ReturnType<typeof buildAccount>>['account'], password?: string) => {
       await accountActions.addAccount(account, password);
-      // Anonymous funnel event: an account was added from inside the app. A
-      // derived account reuses the active seed (create); an imported seed or
-      // private key is a recovery. No seed, address or key material leaves
-      // here — just which flow completed.
+      // Anonymous funnel event: no seed, address or key material leaves here.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      // The key has done its job; drop it from component state rather than
-      // leaving it resident until the panel happens to unmount.
       privateKeyImport.reset();
       watchOnlyImport.reset();
-      // The account has landed, so the surface that added it is done: the wait
-      // is lowered — which is what starts its exit — and settings closes under
-      // it, so the last wave crosses the home screen rather than a sidebar.
+      // The account has landed: the wait is lowered and settings closes under
+      // it, so the last wave crosses the screen the user is returned to.
       onWait(null);
       onComplete();
       onCloseSettings();
@@ -343,12 +283,20 @@ export function AccountAddPanel({
     ]
   );
 
-  const handleConfirm = useCallback(async () => {
-    setConfirmError('');
+  const reportFailure = useCallback(
+    (err: unknown) => {
+      console.error('Failed to add account:', err);
+      setCreationError({
+        title: t('general.error'),
+        message: t('settings.account_add.creation_error'),
+      });
+    },
+    [t]
+  );
 
+  const handleConfirm = useCallback(async () => {
     // Asked before the work, not after it fails: the vault key expires on
-    // inactivity, and finding out at the write means showing a wait and then a
-    // dead end for something that was knowable up front.
+    // inactivity, and finding out at the write means a wait and then a dead end.
     if (!(await isVaultKeyCached())) {
       setStep('reauth');
       return;
@@ -365,15 +313,14 @@ export function AccountAddPanel({
         setStep('reauth');
         return;
       }
-      console.error('Failed to add account:', err);
-      setConfirmError(t('settings.account_add.creation_error'));
+      reportFailure(err);
     }
-  }, [buildAccount, persistAccount, raiseWait, onWait, t]);
+  }, [buildAccount, persistAccount, raiseWait, onWait, reportFailure]);
 
   /**
    * Completes the add with a password the user just supplied. Verifies it
-   * first: re-encrypting the vault under an unverified password would lock the
-   * user out of every account they own.
+   * first: re-encrypting the vault under an unverified password would lock
+   * the user out of every account they own.
    */
   const handleReauthConfirm = useCallback(async () => {
     if (!reauthPassword) {
@@ -405,10 +352,18 @@ export function AccountAddPanel({
       setReauthPassword('');
     } catch (err) {
       onWait(null);
-      console.error('Failed to add account after re-auth:', err);
-      setConfirmError(t('settings.account_add.creation_error'));
+      reportFailure(err);
     }
-  }, [reauthPassword, accountActions, buildAccount, persistAccount, raiseWait, onWait, t]);
+  }, [
+    reauthPassword,
+    accountActions,
+    buildAccount,
+    persistAccount,
+    raiseWait,
+    onWait,
+    reportFailure,
+    t,
+  ]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'reauth') {
@@ -436,6 +391,305 @@ export function AccountAddPanel({
     }
   }, [step, selectedDerived, privateKeyImport, watchOnlyImport, onBack]);
 
+  // ========================================================================
+  // Render helpers
+  // ========================================================================
+
+  const hintStyle: React.CSSProperties = {
+    margin: 0,
+    color: text.secondary,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.caption,
+    padding: `0 ${spacing.xs}px`,
+  };
+  const errorStyle: React.CSSProperties = { ...hintStyle, color: status.danger };
+  const addressStyle: React.CSSProperties = {
+    margin: 0,
+    color: text.primary,
+    fontFamily: fontFamily.mono,
+    fontSize: fontSize.mono,
+  };
+  /** The inside of one step: 12 binds a label to its field and a field to its hint. */
+  const stack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: spacing.md };
+
+  const methods: {
+    id: string;
+    icon: React.ComponentType<IconGlyphProps>;
+    titleKey: string;
+    descriptionKey: string;
+    onPress: () => void;
+  }[] = [
+    ...(canDerive
+      ? [
+          {
+            id: 'derive',
+            icon: TreeStructureIcon,
+            titleKey: 'settings.account_add.create_new',
+            descriptionKey: 'settings.account_add.create_new_description',
+            onPress: () => void handleSelectDerive(),
+          },
+        ]
+      : []),
+    {
+      id: 'import',
+      icon: FileTextIcon,
+      titleKey: 'settings.account_add.import_seed',
+      descriptionKey: 'settings.account_add.import_seed_description',
+      onPress: handleSelectImport,
+    },
+    {
+      id: 'private-key',
+      icon: KeyIcon,
+      titleKey: 'settings.account_add.import_private_key',
+      descriptionKey: 'settings.account_add.import_private_key_description',
+      onPress: handleSelectImportPrivateKey,
+    },
+    {
+      id: 'watch-only',
+      icon: EyeIcon,
+      titleKey: 'settings.account_add.import_watch_only',
+      descriptionKey: 'settings.account_add.import_watch_only_description',
+      onPress: handleSelectImportWatchOnly,
+    },
+  ];
+
+  const renderSelectMethod = () =>
+    methods.map((method) => (
+      <ListRow
+        key={method.id}
+        testID={`account-add-method-${method.id}`}
+        leading={
+          <IconBubble
+            size={ROW_BUBBLE_SIZE}
+            shape="rounded"
+            tone="accent-tint"
+            icon={method.icon}
+            iconSize={iconSize.md}
+          />
+        }
+        title={t(method.titleKey)}
+        subtitle={t(method.descriptionKey)}
+        onPress={method.onPress}
+        trailing={<CaretRightIcon size={iconSize.sm} color={text.tertiary} />}
+      />
+    ));
+
+  const renderDeriveScan = () => {
+    if (scanning) {
+      return (
+        <div style={stack} aria-busy="true" aria-label={t('settings.account_add.scanning')}>
+          {Array.from({ length: SCAN_SKELETON_COUNT }, (_, i) => (
+            <DerivedAccountCardSkeleton key={i} />
+          ))}
+          <p style={{ ...hintStyle, textAlign: 'center' }}>{t('settings.account_add.scanning')}</p>
+        </div>
+      );
+    }
+
+    if (derivedAccounts.length === 0 && failedNetworks.length > 0) {
+      return (
+        <div style={stack} data-testid="derived-scan-error">
+          <WarningNotice tone="error" title={t('wallet.derived.scan_failed_title')}>
+            {t('wallet.derived.scan_failed_body')}
+          </WarningNotice>
+          <PrimaryButton
+            onPress={() => void handleSelectDerive()}
+            testID="derived-scan-retry-button"
+          >
+            {t('transactions.tapToRetry')}
+          </PrimaryButton>
+        </div>
+      );
+    }
+
+    return (
+      <div style={stack}>
+        {failedNetworks.length > 0 && (
+          <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
+        )}
+        {derivedAccounts.map((item) => (
+          <DerivedAccountCard
+            key={`${item.networkId}-${item.address}`}
+            testID={`account-add-derived-${item.address}`}
+            address={item.address}
+            networkName={item.networkName}
+            path={item.path}
+            balanceFormatted={item.balanceFormatted}
+            selected={selectedDerived?.address === item.address}
+            dimmed={item.balance === 0}
+            onToggle={() => handleDerivedSelect(item)}
+            blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
+          />
+        ))}
+        <PrimaryButton
+          onPress={handleDerivedContinue}
+          disabled={!selectedDerived}
+          testID="account-add-derive-continue-button"
+        >
+          {t('actions.continue')}
+        </PrimaryButton>
+      </div>
+    );
+  };
+
+  const renderImportSeed = () => (
+    <div style={stack}>
+      <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
+      <SeedPhraseEntry
+        testID="account-add-seed"
+        words={seedWords}
+        onChange={handleSeedWords}
+        onLengthChange={handleSeedLength}
+        onPasteRejected={setPastedCount}
+      />
+      {pastedCount !== null ? (
+        <p style={errorStyle}>{t('wallet.recover.pastedWordCount', { count: pastedCount })}</p>
+      ) : seedError ? (
+        <p style={errorStyle}>{seedError}</p>
+      ) : null}
+      <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
+        {t('actions.continue')}
+      </PrimaryButton>
+    </div>
+  );
+
+  const renderImportPrivateKey = () => (
+    <div style={stack}>
+      <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
+        {t('wallet.import.warning_body')}
+      </WarningNotice>
+      <SectionLabel variant="caps">{t('wallet.import.label')}</SectionLabel>
+      <PasswordInput
+        testID="account-add-private-key-input"
+        value={privateKeyImport.value}
+        onChangeText={privateKeyImport.setValue}
+        placeholder={t('wallet.import.placeholder')}
+        error={privateKeyImport.error ? t(privateKeyImport.error) : undefined}
+        onSubmitEditing={() => void handlePrivateKeySubmit()}
+        autoFocus
+      />
+      {/* One slot under the field: the hint stands where the error will
+          stand, so the layout does not shift when a message replaces it. */}
+      {!privateKeyImport.error && <p style={hintStyle}>{t('wallet.import.help')}</p>}
+      {privateKeyImport.address && (
+        <Card
+          padding="md"
+          gap={spacing.xxs}
+          style={{ flexDirection: 'column' }}
+          testID="account-add-private-key-address"
+        >
+          <p style={hintStyle}>{t('wallet.import.resolved_address')}</p>
+          <p style={addressStyle}>{getShortAddress(privateKeyImport.address)}</p>
+        </Card>
+      )}
+      <PrimaryButton
+        onPress={() => void handlePrivateKeySubmit()}
+        disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
+        testID="account-add-private-key-continue-button"
+      >
+        {t('actions.continue')}
+      </PrimaryButton>
+    </div>
+  );
+
+  const renderImportWatchOnly = () => (
+    <div style={stack}>
+      {/* No warning notice and no masked field: an address is public. */}
+      <SectionLabel variant="caps">{t('wallet.watchOnly.label')}</SectionLabel>
+      <TextInput
+        testID="account-add-watch-only-input"
+        value={watchOnlyImport.value}
+        onChangeText={watchOnlyImport.setValue}
+        placeholder={t('wallet.watchOnly.placeholder')}
+        accessibilityLabel={t('wallet.watchOnly.label')}
+        autoFocus
+        mono
+        onSubmitEditing={handleWatchOnlySubmit}
+      />
+      <p
+        data-testid="account-add-watch-only-message"
+        style={watchOnlyImport.error ? errorStyle : hintStyle}
+      >
+        {watchOnlyImport.error ? t(watchOnlyImport.error) : t('wallet.watchOnly.help')}
+      </p>
+      {watchOnlyImport.address && (
+        <Card
+          padding="md"
+          gap={spacing.xxs}
+          style={{ flexDirection: 'column' }}
+          testID="account-add-watch-only-address"
+        >
+          <p style={hintStyle}>{t('wallet.watchOnly.resolved_address')}</p>
+          <p style={addressStyle}>{getShortAddress(watchOnlyImport.address)}</p>
+        </Card>
+      )}
+      <PrimaryButton
+        onPress={handleWatchOnlySubmit}
+        disabled={!watchOnlyImport.hasInput}
+        testID="account-add-watch-only-continue-button"
+      >
+        {t('actions.continue')}
+      </PrimaryButton>
+    </div>
+  );
+
+  const renderReauth = () => (
+    <div style={stack}>
+      <p
+        style={{
+          margin: 0,
+          color: text.secondary,
+          fontFamily: fontFamily.sans,
+          fontSize: fontSize.body,
+          lineHeight: `${fontSize.body * lineHeight.snug}px`,
+        }}
+      >
+        {t('settings.account_add.reauth_body')}
+      </p>
+      <SectionLabel variant="caps">{t('lock.password_label', 'Password')}</SectionLabel>
+      <PasswordInput
+        testID="account-add-reauth-password"
+        value={reauthPassword}
+        onChangeText={(value) => {
+          setReauthPassword(value);
+          if (reauthError) setReauthError('');
+        }}
+        placeholder={t('lock.password_placeholder')}
+        error={reauthError || undefined}
+        onSubmitEditing={() => void handleReauthConfirm()}
+        autoFocus
+      />
+      <PrimaryButton
+        onPress={() => void handleReauthConfirm()}
+        disabled={!reauthPassword || reauthChecking}
+        testID="account-add-reauth-confirm-button"
+      >
+        {t('settings.account_add.reauth_confirm')}
+      </PrimaryButton>
+    </div>
+  );
+
+  const renderSetName = () => (
+    <div style={stack}>
+      <SectionLabel variant="caps">{t('settings.account_add.set_name')}</SectionLabel>
+      <TextInput
+        testID="account-add-name-input"
+        value={accountName}
+        onChangeText={setAccountName}
+        placeholder={t('settings.account_add.set_name_placeholder')}
+        accessibilityLabel={t('settings.account_add.set_name')}
+        autoFocus
+        maxLength={32}
+        onSubmitEditing={() => void handleConfirm()}
+      />
+      <PrimaryButton onPress={() => void handleConfirm()} testID="account-add-confirm-button">
+        {selectedDerived
+          ? t('settings.account_add.confirm_create')
+          : t('settings.account_add.confirm_import')}
+      </PrimaryButton>
+    </div>
+  );
+
   const stepTitles: Record<AccountAddStep, string> = {
     'select-method': t('settings.account_add.title'),
     'derive-scan': t('settings.account_add.create_new'),
@@ -447,409 +701,62 @@ export function AccountAddPanel({
     complete: t('settings.account_add.title'),
   };
 
+  const stepSubtitles: Record<AccountAddStep, string> = {
+    'select-method': t(
+      'settings.account_add.select_method_subtitle',
+      'Choose how you want to add this account.'
+    ),
+    'derive-scan': t(
+      'settings.account_add.create_new_description',
+      'Derive a new account from your existing seed phrase'
+    ),
+    'import-seed': t(
+      'settings.account_add.import_seed_description',
+      'Import an account using a different seed phrase'
+    ),
+    'import-private-key': t(
+      'settings.account_add.import_private_key_description',
+      'Add a wallet you already own using its private key'
+    ),
+    'import-watch-only': t(
+      'settings.account_add.watch_only_subtitle',
+      "Follow a wallet's address without moving its funds"
+    ),
+    'set-name': t(
+      'settings.account_add.set_name_subtitle',
+      "Give this account a name you'll recognize"
+    ),
+    reauth: t('settings.account_add.reauth_subtitle', 'Enter your password to keep going.'),
+    complete: t('settings.account_add.title'),
+  };
+
   return (
     <>
-      <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
-        <Box sx={{ padding: `0 ${spacing.lg}px` }}>
-          {step === 'select-method' && (
-            <>
-              {canDerive && (
-                <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
-                  <MethodIcon>
-                    <TreeStructureIcon color={colors.accent.primary} size={iconSize.xl} />
-                  </MethodIcon>
-                  <MethodInfo>
-                    <Typography
-                      sx={{
-                        color: colors.text.primary,
-                        fontWeight: fontWeight.semibold,
-                        fontSize: fontSize.body,
-                        marginBottom: spacing.xxs,
-                      }}
-                    >
-                      {t('settings.account_add.create_new')}
-                    </Typography>
-                    <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                      {t('settings.account_add.create_new_description')}
-                    </Typography>
-                  </MethodInfo>
-                  <CaretRightIcon color={colors.text.secondary} />
-                </MethodCard>
-              )}
-
-              <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
-                <MethodIcon>
-                  <FileTextIcon color={colors.accent.primary} size={iconSize.xl} />
-                </MethodIcon>
-                <MethodInfo>
-                  <Typography
-                    sx={{
-                      color: colors.text.primary,
-                      fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.body,
-                      marginBottom: spacing.xxs,
-                    }}
-                  >
-                    {t('settings.account_add.import_seed')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('settings.account_add.import_seed_description')}
-                  </Typography>
-                </MethodInfo>
-                <CaretRightIcon color={colors.text.secondary} />
-              </MethodCard>
-
-              <MethodCard
-                onClick={handleSelectImportPrivateKey}
-                data-testid="account-add-method-private-key"
-              >
-                <MethodIcon>
-                  <KeyIcon color={colors.accent.primary} size={iconSize.xl} />
-                </MethodIcon>
-                <MethodInfo>
-                  <Typography
-                    sx={{
-                      color: colors.text.primary,
-                      fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.body,
-                      marginBottom: spacing.xxs,
-                    }}
-                  >
-                    {t('settings.account_add.import_private_key')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('settings.account_add.import_private_key_description')}
-                  </Typography>
-                </MethodInfo>
-                <CaretRightIcon color={colors.text.secondary} />
-              </MethodCard>
-
-              <MethodCard
-                onClick={handleSelectImportWatchOnly}
-                data-testid="account-add-method-watch-only"
-              >
-                <MethodIcon>
-                  <EyeIcon color={colors.accent.primary} size={iconSize.xl} />
-                </MethodIcon>
-                <MethodInfo>
-                  <Typography
-                    sx={{
-                      color: colors.text.primary,
-                      fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.body,
-                      marginBottom: spacing.xxs,
-                    }}
-                  >
-                    {t('settings.account_add.import_watch_only')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('settings.account_add.import_watch_only_description')}
-                  </Typography>
-                </MethodInfo>
-                <CaretRightIcon color={colors.text.secondary} />
-              </MethodCard>
-            </>
-          )}
-
-          {step === 'import-private-key' && (
-            <>
-              <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
-                {t('wallet.import.warning_body')}
-              </WarningNotice>
-              <Box sx={{ marginTop: `${spacing.lg}px` }}>
-                <PasswordInput
-                  value={privateKeyImport.value}
-                  onChangeText={privateKeyImport.setValue}
-                  placeholder={t('wallet.import.placeholder')}
-                  error={privateKeyImport.error ? t(privateKeyImport.error) : undefined}
-                  onSubmitEditing={handlePrivateKeySubmit}
-                  autoFocus
-                  testID="account-add-private-key-input"
-                />
-              </Box>
-              {/* One slot under the field: the hint stands where the error
-                  will stand, so the layout does not shift when a message
-                  replaces it. Matches PasswordInput's own error text. */}
-              {!privateKeyImport.error && (
-                <Typography
-                  sx={{
-                    color: colors.text.secondary,
-                    fontSize: fontSize.caption,
-                    marginTop: `${spacing.sm}px`,
-                    paddingLeft: `${spacing.xs}px`,
-                    paddingRight: `${spacing.xs}px`,
-                  }}
-                >
-                  {t('wallet.import.help')}
-                </Typography>
-              )}
-              {privateKeyImport.address && (
-                <Box
-                  sx={{ marginTop: `${spacing.lg}px` }}
-                  data-testid="account-add-private-key-address"
-                >
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('wallet.import.resolved_address')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
-                    {getShortAddress(privateKeyImport.address)}
-                  </Typography>
-                </Box>
-              )}
-              <PrimaryButton
-                style={CONFIRM_SLOT_STYLE}
-                onClick={handlePrivateKeySubmit}
-                disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
-                testID="account-add-private-key-continue-button"
-              >
-                {t('actions.continue')}
-              </PrimaryButton>
-            </>
-          )}
-
-          {step === 'import-watch-only' && (
-            <>
-              {/* No warning notice and no masked field: an address is public.
-                  The private-key step's PasswordInput would imply otherwise. */}
-              <StyledTextField
-                fullWidth
-                value={watchOnlyImport.value}
-                onChange={(e) => watchOnlyImport.setValue(e.target.value)}
-                placeholder={t('wallet.watchOnly.placeholder')}
-                aria-label={t('wallet.watchOnly.label')}
-                autoFocus
-                inputProps={{ 'data-testid': 'account-add-watch-only-input' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleWatchOnlySubmit();
-                }}
-              />
-              {/* One slot under the field: the hint stands where the error
-                  will stand, so the layout does not shift. */}
-              <Typography
-                sx={{
-                  color: watchOnlyImport.error ? semantic.status.danger : colors.text.secondary,
-                  fontSize: fontSize.caption,
-                  marginTop: `${spacing.sm}px`,
-                  paddingLeft: `${spacing.xs}px`,
-                  paddingRight: `${spacing.xs}px`,
-                }}
-                data-testid="account-add-watch-only-message"
-              >
-                {watchOnlyImport.error ? t(watchOnlyImport.error) : t('wallet.watchOnly.help')}
-              </Typography>
-              {watchOnlyImport.address && (
-                <Box
-                  sx={{ marginTop: `${spacing.lg}px` }}
-                  data-testid="account-add-watch-only-address"
-                >
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('wallet.watchOnly.resolved_address')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
-                    {getShortAddress(watchOnlyImport.address)}
-                  </Typography>
-                </Box>
-              )}
-              <PrimaryButton
-                style={CONFIRM_SLOT_STYLE}
-                onClick={handleWatchOnlySubmit}
-                disabled={!watchOnlyImport.hasInput}
-                testID="account-add-watch-only-continue-button"
-              >
-                {t('actions.continue')}
-              </PrimaryButton>
-            </>
-          )}
-
-          {step === 'derive-scan' && (
-            <>
-              {scanning ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: `${spacing['3xl']}px 0`,
-                    gap: spacing.md,
-                  }}
-                >
-                  <CircularProgress sx={{ color: colors.accent.primary }} />
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.body }}>
-                    {t('settings.account_add.scanning')}
-                  </Typography>
-                </Box>
-              ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: `${spacing['3xl']}px 0`,
-                    gap: spacing.md,
-                  }}
-                  data-testid="derived-scan-error"
-                >
-                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
-                    {t('wallet.derived.scan_failed_title')}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: colors.text.secondary,
-                      fontSize: fontSize.caption,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {t('wallet.derived.scan_failed_body')}
-                  </Typography>
-                  <PrimaryButton
-                    fullWidth={false}
-                    onClick={handleSelectDerive}
-                    testID="derived-scan-retry-button"
-                  >
-                    {t('transactions.tapToRetry')}
-                  </PrimaryButton>
-                </Box>
-              ) : (
-                <>
-                  {failedNetworks.length > 0 && (
-                    <Box sx={{ marginBottom: `${spacing.md}px` }}>
-                      <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
-                    </Box>
-                  )}
-                  {derivedAccounts.map((item) => (
-                    <DerivedAccountCard
-                      key={`${item.networkId}-${item.address}`}
-                      testID={`account-add-derived-${item.address}`}
-                      address={item.address}
-                      networkName={item.networkName}
-                      path={item.path}
-                      balanceFormatted={item.balanceFormatted}
-                      selected={selectedDerived?.address === item.address}
-                      dimmed={item.balance === 0}
-                      onToggle={() => handleDerivedSelect(item)}
-                      blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
-                    />
-                  ))}
-                  <PrimaryButton
-                    style={CONFIRM_SLOT_STYLE}
-                    onClick={handleDerivedContinue}
-                    disabled={!selectedDerived}
-                    testID="account-add-derive-continue-button"
-                  >
-                    {t('actions.continue')}
-                  </PrimaryButton>
-                </>
-              )}
-            </>
-          )}
-
-          {step === 'import-seed' && (
-            <>
-              <SeedPhraseEntry
-                testID="account-add-seed"
-                words={seedWords}
-                onChange={handleSeedWords}
-                onLengthChange={handleSeedLength}
-                onPasteRejected={setPastedCount}
-              />
-              {(pastedCount !== null || seedError) && (
-                <Typography
-                  sx={{
-                    color: semantic.status.danger,
-                    fontSize: fontSize.caption,
-                    marginTop: `${spacing.sm}px`,
-                    paddingLeft: `${spacing.xs}px`,
-                    paddingRight: `${spacing.xs}px`,
-                  }}
-                >
-                  {pastedCount !== null
-                    ? t('wallet.recover.pastedWordCount', { count: pastedCount })
-                    : seedError}
-                </Typography>
-              )}
-              <PrimaryButton
-                style={CONFIRM_SLOT_STYLE}
-                onClick={handleSeedSubmit}
-                testID="account-add-seed-continue-button"
-              >
-                {t('actions.continue')}
-              </PrimaryButton>
-            </>
-          )}
-
-          {step === 'reauth' && (
-            <>
-              <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                {t('settings.account_add.reauth_body')}
-              </Typography>
-              <Box sx={{ marginTop: `${spacing.lg}px` }}>
-                <PasswordInput
-                  value={reauthPassword}
-                  onChangeText={(value) => {
-                    setReauthPassword(value);
-                    if (reauthError) setReauthError('');
-                  }}
-                  placeholder={t('lock.password_placeholder')}
-                  error={reauthError || undefined}
-                  onSubmitEditing={handleReauthConfirm}
-                  autoFocus
-                  testID="account-add-reauth-password"
-                />
-              </Box>
-              <PrimaryButton
-                style={CONFIRM_SLOT_STYLE}
-                onClick={handleReauthConfirm}
-                disabled={!reauthPassword || reauthChecking}
-                testID="account-add-reauth-confirm-button"
-              >
-                {t('settings.account_add.reauth_confirm')}
-              </PrimaryButton>
-            </>
-          )}
-
-          {step === 'set-name' && (
-            <>
-              <StyledTextField
-                fullWidth
-                value={accountName}
-                onChange={(e) => {
-                  setAccountName(e.target.value);
-                  if (confirmError) setConfirmError('');
-                }}
-                placeholder={t('settings.account_add.set_name_placeholder')}
-                aria-label={t('settings.account_add.set_name')}
-                autoFocus
-                inputProps={{ maxLength: 32, 'data-testid': 'account-add-name-input' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleConfirm();
-                }}
-              />
-              {confirmError && (
-                <Typography
-                  sx={{
-                    color: semantic.status.danger,
-                    fontSize: fontSize.caption,
-                    marginTop: `${spacing.sm}px`,
-                    paddingLeft: `${spacing.xs}px`,
-                    paddingRight: `${spacing.xs}px`,
-                  }}
-                >
-                  {confirmError}
-                </Typography>
-              )}
-              <PrimaryButton
-                style={CONFIRM_SLOT_STYLE}
-                onClick={handleConfirm}
-                testID="account-add-confirm-button"
-              >
-                {selectedDerived
-                  ? t('settings.account_add.confirm_create')
-                  : t('settings.account_add.confirm_import')}
-              </PrimaryButton>
-            </>
-          )}
-        </Box>
+      <SettingsPanelContent
+        title={stepTitles[step]}
+        subtitle={stepSubtitles[step]}
+        onBack={handleStepBack}
+      >
+        {step === 'select-method' && renderSelectMethod()}
+        {step === 'derive-scan' && renderDeriveScan()}
+        {step === 'import-seed' && renderImportSeed()}
+        {step === 'import-private-key' && renderImportPrivateKey()}
+        {step === 'import-watch-only' && renderImportWatchOnly()}
+        {step === 'set-name' && renderSetName()}
+        {step === 'reauth' && renderReauth()}
       </SettingsPanelContent>
+
+      {/* Failure notice as a sheet: nothing to confirm, one dismiss button. */}
+      <ConfirmDialog
+        visible={creationError !== null}
+        onClose={() => setCreationError(null)}
+        title={creationError?.title ?? ''}
+        message={creationError?.message ?? ''}
+        acknowledgeOnly
+        confirmText={t('actions.close')}
+        onConfirm={async () => {}}
+        confirmTestID="account-add-error-close"
+      />
     </>
   );
 }

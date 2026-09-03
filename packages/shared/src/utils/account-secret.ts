@@ -61,11 +61,6 @@ export function getAccountMnemonic(account: Account | null | undefined): string 
   return account.secret.kind === 'mnemonic' ? account.secret.mnemonic : null;
 }
 
-/** True when the account was imported from a private key. */
-export function isImportedAccount(account: Account | null | undefined): boolean {
-  return account?.secret.kind === 'privateKey';
-}
-
 /**
  * True when the account is watch-only: an address the wallet follows without
  * holding its key.

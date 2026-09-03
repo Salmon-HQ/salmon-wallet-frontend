@@ -1,105 +1,72 @@
 /**
- * PasswordStrengthBar - Visual indicator of password strength
+ * PasswordStrengthBar — three bars and a label, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension.
- * Displays 3 bars and a label indicating password strength level.
+ * The mobile twin is `apps/mobile/src/components/PasswordInput/PasswordStrengthBar.tsx`:
+ * weak lights one bar in `status.danger`, medium two in `status.warning`,
+ * strong three in `status.success`; the unlit bars are `step.inactive`. All
+ * read off the live mode.
  */
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import {
-  colors,
-  semantic,
-  spacing,
   borderRadius,
-  fontFamily,
-  fontWeight,
-  getPasswordStrengthLabel,
-  fontSize,
   componentSizes,
   duration,
   easing,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  getPasswordStrengthLabel,
+  spacing,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import type { PasswordStrengthBarProps } from './types';
 
-const Container = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.sm,
-});
+const BAR_COUNT = 3;
 
-const BarsContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  gap: spacing.xs,
-});
-
-const Bar = styled(Box)<{ $active: boolean; $barColor: string }>(({ $active, $barColor }) => ({
-  width: componentSizes.iconSizeLarge,
-  height: spacing.xs,
-  borderRadius: borderRadius.scrollbar,
-  backgroundColor: $active ? $barColor : colors.step.inactive,
-  transition: `background-color ${duration.normal} ${easing.ease}`,
-}));
-
-const Label = styled(Typography)<{ $labelColor: string }>(({ $labelColor }) => ({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  textTransform: 'capitalize',
-  color: $labelColor,
-}));
-
-/**
- * PasswordStrengthBar component for visual password strength feedback
- *
- * Displays three colored bars and a text label:
- * - Weak: 1 bar filled (red)
- * - Medium: 2 bars filled (yellow/amber)
- * - Strong: 3 bars filled (green)
- *
- * @example
- * ```tsx
- * <PasswordStrengthBar strength="medium" />
- * <PasswordStrengthBar strength="strong" t={i18n.t} />
- * ```
- */
 export function PasswordStrengthBar({ strength, t, className, style }: PasswordStrengthBarProps) {
-  const getStrengthColor = () => {
-    switch (strength) {
-      case 'strong':
-        return semantic.status.success;
-      case 'medium':
-        return semantic.status.warning;
-      default:
-        return semantic.status.danger;
-    }
-  };
+  const { status, step } = useSemantic();
 
-  const getBarCount = () => {
-    switch (strength) {
-      case 'strong':
-        return 3;
-      case 'medium':
-        return 2;
-      default:
-        return 1;
-    }
-  };
-
-  const barColor = getStrengthColor();
-  const activeCount = getBarCount();
+  const barColor =
+    strength === 'strong' ? status.success : strength === 'medium' ? status.warning : status.danger;
+  const activeCount = strength === 'strong' ? 3 : strength === 'medium' ? 2 : 1;
   const label = getPasswordStrengthLabel(strength, t);
 
   return (
-    <Container className={className} style={style}>
-      <BarsContainer>
-        {[0, 1, 2].map((index) => (
-          <Bar key={index} $active={index < activeCount} $barColor={barColor} />
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        ...style,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'row', gap: spacing.xs }}>
+        {Array.from({ length: BAR_COUNT }, (_, index) => (
+          <div
+            key={index}
+            style={{
+              width: componentSizes.iconSizeLarge,
+              height: spacing.xs,
+              borderRadius: borderRadius.scrollbar,
+              backgroundColor: index < activeCount ? barColor : step.inactive,
+              transition: `background-color ${duration.normal} ${easing.ease}`,
+            }}
+          />
         ))}
-      </BarsContainer>
-      <Label $labelColor={barColor}>{label}</Label>
-    </Container>
+      </div>
+      <span
+        style={{
+          fontFamily: fontFamily.sans,
+          fontSize: fontSize.sm,
+          fontWeight: fontWeight.medium,
+          textTransform: 'capitalize',
+          color: barColor,
+        }}
+      >
+        {label}
+      </span>
+    </div>
   );
 }

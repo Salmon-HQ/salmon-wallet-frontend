@@ -23,11 +23,8 @@
  * all ~1,500 icons through the bundler, which costs both dev transpile time
  * and, under a misconfigured build, bundle size the extension cannot spend.
  *
- * Known exception: `components/DAppApproval` and `components/PendingActivityBanner`
- * still import `@mui/icons-material` directly. They are owned by concurrent work
- * and were left alone on purpose; that dependency stays in this package's
- * manifest until they move too, at which point it can be dropped here as it
- * already was from `apps/web` and `apps/extension`.
+ * MUI left this package on 2026-09-02 (spec 028, lot 4 close): no `@mui`
+ * package is in the manifest, and no DOM glyph comes from anywhere but here.
  */
 
 import { createElement } from 'react';
@@ -50,6 +47,7 @@ export type IconSizeToken = keyof typeof iconSize;
 
 export { AddressBookIcon } from '@phosphor-icons/react/dist/csr/AddressBook';
 export { ArrowDownIcon } from '@phosphor-icons/react/dist/csr/ArrowDown';
+export { ArrowDownLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowDownLeft';
 export { ArrowElbowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowElbowUpRight';
 export { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 export { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
@@ -70,6 +68,9 @@ export { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
 export { ChatsCircleIcon } from '@phosphor-icons/react/dist/csr/ChatsCircle';
 export { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 export { CheckCircleIcon } from '@phosphor-icons/react/dist/csr/CheckCircle';
+export { CircleIcon } from '@phosphor-icons/react/dist/csr/Circle';
+export { CircleHalfIcon } from '@phosphor-icons/react/dist/csr/CircleHalf';
+export { ClipboardIcon } from '@phosphor-icons/react/dist/csr/Clipboard';
 export { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
 export { ClockCountdownIcon } from '@phosphor-icons/react/dist/csr/ClockCountdown';
 export { CloudIcon } from '@phosphor-icons/react/dist/csr/Cloud';
@@ -107,6 +108,7 @@ export { MedalIcon } from '@phosphor-icons/react/dist/csr/Medal';
 export { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus';
 export { MoneyIcon } from '@phosphor-icons/react/dist/csr/Money';
 export { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
+export { DotsSixVerticalIcon } from '@phosphor-icons/react/dist/csr/DotsSixVertical';
 export { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 export { PenNibIcon } from '@phosphor-icons/react/dist/csr/PenNib';
 export { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
@@ -122,15 +124,19 @@ export { RocketLaunchIcon } from '@phosphor-icons/react/dist/csr/RocketLaunch';
 export { ScanIcon } from '@phosphor-icons/react/dist/csr/Scan';
 export { SealCheckIcon } from '@phosphor-icons/react/dist/csr/SealCheck';
 export { ShareNetworkIcon } from '@phosphor-icons/react/dist/csr/ShareNetwork';
+export { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
 export { ShieldIcon } from '@phosphor-icons/react/dist/csr/Shield';
 export { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
+export { SlidersIcon } from '@phosphor-icons/react/dist/csr/Sliders';
 export { SparkleIcon } from '@phosphor-icons/react/dist/csr/Sparkle';
 export { SquaresFourIcon } from '@phosphor-icons/react/dist/csr/SquaresFour';
 export { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 export { StarIcon } from '@phosphor-icons/react/dist/csr/Star';
+export { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 export { SwapIcon } from '@phosphor-icons/react/dist/csr/Swap';
 export { TagIcon } from '@phosphor-icons/react/dist/csr/Tag';
 export { TextTIcon } from '@phosphor-icons/react/dist/csr/TextT';
+export { TranslateIcon } from '@phosphor-icons/react/dist/csr/Translate';
 export { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 export { TrashSimpleIcon } from '@phosphor-icons/react/dist/csr/TrashSimple';
 export { TreeStructureIcon } from '@phosphor-icons/react/dist/csr/TreeStructure';

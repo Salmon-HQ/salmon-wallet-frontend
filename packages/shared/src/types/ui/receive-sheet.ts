@@ -22,6 +22,13 @@ export interface ReceiveSheetPropsBase<TStyle> {
    * its copied feedback; `false` (or a rejection) suppresses it.
    */
   onCopy?: () => boolean | Promise<boolean>;
+  /**
+   * The environment the address lives on ("Devnet", "Testnet", "Sepolia"), or
+   * undefined on mainnet. A deposit sent to a test-network address is not real
+   * money, so the sheet says which environment it is asking to be paid on
+   * (spec 026 D6).
+   */
+  networkLabel?: string;
   /** Additional styles */
   style?: TStyle;
 }

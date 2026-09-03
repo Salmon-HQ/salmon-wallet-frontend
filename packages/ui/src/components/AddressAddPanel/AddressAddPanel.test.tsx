@@ -20,19 +20,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens plus
-// the real form hook — the enabling condition under test is that hook's.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/hooks/useAddressBookForm')),
-}));
-
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
-
 vi.mock('../SettingsPanelContent', () => ({
   SettingsPanelContent: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));

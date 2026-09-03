@@ -6,55 +6,31 @@ import React from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockCopyToClipboard = vi.fn().mockResolvedValue(undefined);
+const mockCopyToClipboard = vi.fn().mockResolvedValue(true);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string, options?: Record<string, unknown>) => {
-      const template = fallback ?? key;
-      if (!options) return template;
-      return template.replace(/\{\{(\w+)\}\}/g, (_m, name) => String(options[name] ?? ''));
-    },
+    t: (key: string, options?: Record<string, unknown>) =>
+      key === 'transactions.detail.copyAddressLabel' ? `Copy ${options?.label} address` : key,
   }),
 }));
 
-vi.mock('../../utils/styled', () => ({
-  styled: (Component: React.ElementType) => () => Component,
-}));
-
-vi.mock('../../icons', () => ({
-  CheckIcon: () => null,
-  CopyIcon: () => null,
-  iconSize: { sm: 16 },
-}));
-
-vi.mock('../BlurContainer', () => ({
-  BlurContainer: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
-}));
-
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
-  semantic: { status: { success: '#0f0' } },
-  colors: {
-    text: { secondary: '#999', primary: '#fff' },
-    background: { card: '#111' },
-  },
-  borderRadius: { md: 12 },
-  componentSizes: { iconSizeMButton: 32 },
-  fontFamily: { mono: 'monospace' },
-  getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+// The real barrel, with only the clipboard overridden.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   copyToClipboard: (...args: unknown[]) => mockCopyToClipboard(...args),
-  spacing: { sm: 8, md: 12 },
-  fontSize: { sm: 14 },
-  fontWeight: { medium: 500 },
-  durationMs: { feedbackShort: 1500 },
 }));
 
+import { createSemantic } from '@salmon/shared';
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { AddressCopyRow } from './AddressCopyRow';
 
-describe('AddressCopyRow copy feedback', () => {
+const ADDRESS = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+
+describe('AddressCopyRow', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -62,17 +38,17 @@ describe('AddressCopyRow copy feedback', () => {
     cleanup();
   });
 
-  it('announces the copy confirmation and reverts to the copy label', async () => {
-    render(<AddressCopyRow label="From" address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" />);
+  it('truncates the address and copies the whole of it', async () => {
+    render(<AddressCopyRow label="From" address={ADDRESS} />);
+    expect(screen.getByTestId('tx-detail-address-value').textContent).toBe('7xKXtg...osgAsU');
 
     // The handler awaits copyToClipboard before setting `copied`, so the click
-    // has to be flushed through act — waiting on the mock alone returns before
-    // React has re-rendered with the new label.
+    // has to be flushed through act.
     await act(async () => {
       fireEvent.click(screen.getByTestId('tx-detail-copy-address-From'));
     });
 
-    expect(mockCopyToClipboard).toHaveBeenCalled();
+    expect(mockCopyToClipboard).toHaveBeenCalledWith(ADDRESS);
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
 
     act(() => {
@@ -81,5 +57,14 @@ describe('AddressCopyRow copy feedback', () => {
 
     expect(screen.queryByLabelText('actions.copied')).toBeNull();
     expect(screen.getByLabelText('Copy From address')).toBeTruthy();
+  });
+
+  it("reads the live mode: in light the address takes light's ink", () => {
+    const light = createSemantic('light');
+    renderInMode('light', <AddressCopyRow label="To" address={ADDRESS} />);
+
+    expect(screen.getByTestId('tx-detail-address-value').style.color).toBe(
+      asRenderedColor(light.text.primary)
+    );
   });
 });

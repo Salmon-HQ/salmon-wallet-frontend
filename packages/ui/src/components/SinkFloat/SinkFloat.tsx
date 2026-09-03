@@ -26,7 +26,8 @@
  */
 import { useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { keyframes } from '@mui/material/styles';
+import { keyframes } from '@emotion/react';
+import styled from '@emotion/styled';
 import {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
@@ -37,8 +38,7 @@ import {
   motionEasing,
 } from '@salmon/shared';
 
-import { styled } from '../../utils/styled';
-import { useReducedMotion } from '../../utils/useReducedMotion';
+import { useReducedMotion } from '../../motion/useReducedMotion';
 import type { SinkFloatProps } from './types';
 
 /**
@@ -90,7 +90,9 @@ const sinkLight = keyframes`
   to { opacity: 0; }
 `;
 
-const Frame = styled('div')<{ $phase: 'float' | 'sink' | 'cut' }>(({ $phase }) => ({
+const Frame = styled('div', { shouldForwardProp: (prop) => prop !== '$phase' })<{
+  $phase: 'float' | 'sink' | 'cut';
+}>(({ $phase }) => ({
   // Transparent to whatever layout owns this slot: the wrapper carries the
   // verb and nothing else.
   minWidth: 0,
@@ -124,6 +126,7 @@ export function SinkFloat({
   holdMs = FLOAT_DELAY_MS,
   className,
   style,
+  testID,
 }: SinkFloatProps) {
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -166,6 +169,7 @@ export function SinkFloat({
       // again — the same reason FadeThrough keys its frame.
       key={`${swap.key}:${phase}`}
       $phase={phase}
+      data-testid={testID}
       className={className}
       style={
         {

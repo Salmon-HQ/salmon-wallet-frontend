@@ -135,3 +135,59 @@ describe('useBalance state', () => {
     expect(result.current.isError).toBe(false);
   });
 });
+
+describe('useBalance off mainnet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const pricedToken = {
+    items: [
+      {
+        mint: 'mint-1',
+        amount: '1000',
+        decimals: 3,
+        uiAmount: 1,
+        symbol: 'TKN',
+        name: 'Token',
+        price: 42,
+        usdBalance: 42,
+        priceChange24h: 3,
+      },
+    ],
+    usdTotal: 42,
+    last24HoursChange: 1,
+  };
+
+  function renderOn(networkId: string) {
+    const { wrapper } = makeWrapper();
+    return renderHook(
+      () =>
+        useBalance({
+          account: makeAccount(() => Promise.resolve(pricedToken)),
+          networkId: networkId as any,
+        }),
+      { wrapper }
+    );
+  }
+
+  it('shows no USD at all for a devnet balance', async () => {
+    const { result } = renderOn('solana-devnet');
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1));
+    expect(result.current.tokens[0].price).toBeUndefined();
+    expect(result.current.tokens[0].usdBalance).toBeUndefined();
+    expect(result.current.tokens[0].priceChange24h).toBeUndefined();
+    expect(result.current.usdTotal).toBeUndefined();
+    // The token itself is still there — only its price is unknown.
+    expect(result.current.tokens[0].symbol).toBe('TKN');
+  });
+
+  it('keeps the USD figures on mainnet', async () => {
+    const { result } = renderOn('solana-mainnet');
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(1));
+    expect(result.current.tokens[0].usdBalance).toBe(42);
+    expect(result.current.usdTotal).toBe(42);
+  });
+});

@@ -16,7 +16,7 @@ export interface SwapReviewButtonsProps {
 
 /**
  * SwapReviewButtons - Shared Back/Confirm buttons for review screens
- * Used by SwapReviewScreen and BridgeReviewScreen
+ * Used by SwapReviewScreen
  */
 export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
   onBack,

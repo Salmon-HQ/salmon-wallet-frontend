@@ -2,60 +2,21 @@
  * SeedWordInput - Input for validating a specific mnemonic word
  */
 import { useTranslation } from 'react-i18next';
-import type { Ref } from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  type NativeSyntheticEvent,
-  type TextInputKeyPressEventData,
-} from 'react-native';
-import {
-  colors,
   spacing,
   componentSizes,
   fontSize,
   borderWidth,
   fontFamilyNative,
-  semantic,
+  useFieldFocus,
+  type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { SeedWordInputProps } from './types';
 
-type ValidationState = 'idle' | 'correct' | 'incorrect';
-
-export interface SeedWordInputProps extends Testable {
-  /** Word position (1-indexed) */
-  position: number;
-  /** Current input value */
-  value: string;
-  /** Change handler */
-  onChangeText: (text: string) => void;
-  /** Validation state */
-  validationState?: ValidationState;
-  /** Auto focus this input */
-  autoFocus?: boolean;
-  /** Called when user submits */
-  onSubmitEditing?: () => void;
-  /** Handle to focus this box from a grid that owns the focus order. */
-  inputRef?: Ref<TextInput>;
-  /** Raw key events — a grid uses this to move back on backspace. */
-  onKeyPress?: (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void;
-  /**
-   * Compact: the number sits inside the box instead of on a line above it, so
-   * twelve of these fit in a grid rather than a column.
-   */
-  compact?: boolean;
-  /**
-   * Denser box, for the 24-word grid. Twenty-four boxes have to occupy the
-   * band twelve did — the grid gets tighter rather than taller, because a grid
-   * that grows would shove the layout the slot grid exists to hold still.
-   */
-  dense?: boolean;
-  /** Keyboard's return key. `next` by default. */
-  returnKeyType?: 'next' | 'done';
-}
+export type { SeedWordInputProps };
 
 export function SeedWordInput({
   position,
@@ -72,6 +33,8 @@ export function SeedWordInput({
   testID,
 }: SeedWordInputProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent, status, input, text } = useSemantic();
 
   /**
    * BIP-39 words are lowercase, and a capitalised one is an invalid mnemonic
@@ -86,14 +49,18 @@ export function SeedWordInput({
   // A typed recovery word is worth as much as a displayed one.
   useSecretScreen('seed-word-input');
 
+  const { focused, onFocus, onBlur } = useFieldFocus();
+
+  // A verdict outranks focus: a word already judged wrong must keep saying so
+  // while it is being fixed.
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct':
-        return semantic.status.success;
+        return status.success;
       case 'incorrect':
-        return semantic.status.danger;
+        return status.danger;
       default:
-        return colors.input.border;
+        return focused ? accent.ink : input.edge;
     }
   };
 
@@ -113,8 +80,10 @@ export function SeedWordInput({
           style={styles.compactInput}
           value={value}
           onChangeText={onChangeText}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={text.tertiary}
           onKeyPress={onKeyPress}
+          onFocus={onFocus}
+          onBlur={onBlur}
           autoFocus={autoFocus}
           onSubmitEditing={onSubmitEditing}
           returnKeyType={returnKeyType}
@@ -136,8 +105,10 @@ export function SeedWordInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={t('wallet.create.enter_word_number', { position })}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={text.tertiary}
         onKeyPress={onKeyPress}
+        onFocus={onFocus}
+        onBlur={onBlur}
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
         returnKeyType={returnKeyType}
@@ -165,78 +136,79 @@ const secretInputProps = {
   keyboardType: 'visible-password',
 } as const;
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  label: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
-  },
-  compactBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: componentSizes.buttonHeightSmall,
-    backgroundColor: colors.input.background,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.sm,
-    gap: spacing.xs,
-  },
-  denseBox: {
-    height: componentSizes.buttonHeightCompact,
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xxs,
-  },
-  /**
-   * The index's period, in the brand salmon.
-   *
-   * Decoration only (product, 2026-08-18). Three things it must never do, on a
-   * screen where a stray character is a wrong seed:
-   *
-   * - **Never reach the value.** It is markup, not content: it is not in `value`,
-   *   never passes through `onChangeText`, and cannot survive into the mnemonic
-   *   that gets validated or stored.
-   * - **Never be announced.** The `accessibilityLabel` on the wrapping `Text` is
-   *   the bare number, which takes precedence over the rendered children, so a
-   *   screen reader says "1", not "one full stop".
-   * - **Never move the word.** It is nested inside the index's existing
-   *   right-aligned box rather than added beside it, so "1." (about 12dp) still
-   *   fits the box's `minWidth` and the word after it does not shift at all.
-   */
-  indexDot: {
-    color: semantic.text.accent,
-  },
-  compactIndex: {
-    color: colors.text.tertiary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
-    minWidth: spacing.lg,
-    textAlign: 'right',
-  },
-  // The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
-  // readable character by character, exactly like a displayed one.
-  compactInput: {
-    flex: 1,
-    height: '100%',
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.base,
-    padding: 0,
-  },
-  input: {
-    width: '100%',
-    minHeight: componentSizes.inputHeight,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.input.background,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.lg,
-    color: colors.text.primary,
-    // Seed Phrase Rule: the typed word renders in the mono face.
-    fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.bodyLg,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+    },
+    label: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: fontSize.caption,
+      marginBottom: spacing.xs,
+    },
+    compactBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: componentSizes.buttonHeightSmall,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.xs,
+    },
+    denseBox: {
+      height: componentSizes.buttonHeightCompact,
+      paddingHorizontal: spacing.xs,
+      gap: spacing.xxs,
+    },
+    /**
+     * The index's period, in the brand salmon.
+     *
+     * Decoration only (product, 2026-08-18). Three things it must never do, on a
+     * screen where a stray character is a wrong seed:
+     *
+     * - **Never reach the value.** It is markup, not content: it is not in `value`,
+     *   never passes through `onChangeText`, and cannot survive into the mnemonic
+     *   that gets validated or stored.
+     * - **Never be announced.** The `accessibilityLabel` on the wrapping `Text` is
+     *   the bare number, which takes precedence over the rendered children, so a
+     *   screen reader says "1", not "one full stop".
+     * - **Never move the word.** It is nested inside the index's existing
+     *   right-aligned box rather than added beside it, so "1." (about 12dp) still
+     *   fits the box's `minWidth` and the word after it does not shift at all.
+     */
+    indexDot: {
+      color: t.text.accent,
+    },
+    compactIndex: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: fontSize.caption,
+      minWidth: spacing.lg,
+      textAlign: 'right',
+    },
+    // The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
+    // readable character by character, exactly like a displayed one.
+    compactInput: {
+      flex: 1,
+      height: '100%',
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: fontSize.body,
+      padding: 0,
+    },
+    input: {
+      width: '100%',
+      minHeight: componentSizes.inputHeight,
+      paddingVertical: spacing.xs,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.lg,
+      color: t.text.primary,
+      // Seed Phrase Rule: the typed word renders in the mono face.
+      fontFamily: fontFamilyNative.mono,
+      fontSize: fontSize.bodyLg,
+    },
+  });

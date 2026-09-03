@@ -252,10 +252,6 @@ export const TRANSACTION_STATUS = {
   BUYING: 'buying',
   /** Token swap is in progress */
   SWAPPING: 'swapping',
-  /** Cross-chain bridge transfer is in progress */
-  BRIDGING: 'bridging',
-  /** Bridge transfer completed successfully */
-  BRIDGE_SUCCESS: 'bridge_success',
 } as const;
 
 /**
@@ -280,8 +276,6 @@ const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   [TRANSACTION_STATUS.CANCELING_OFFER]: 'Canceling Offer',
   [TRANSACTION_STATUS.BUYING]: 'Buying',
   [TRANSACTION_STATUS.SWAPPING]: 'Swapping',
-  [TRANSACTION_STATUS.BRIDGING]: 'Bridging',
-  [TRANSACTION_STATUS.BRIDGE_SUCCESS]: 'Bridge Complete',
 };
 
 /**
@@ -322,7 +316,6 @@ export function isTransactionPending(status: TransactionStatus): boolean {
     TRANSACTION_STATUS.CANCELING_OFFER,
     TRANSACTION_STATUS.BUYING,
     TRANSACTION_STATUS.SWAPPING,
-    TRANSACTION_STATUS.BRIDGING,
   ];
 
   return pendingStatuses.includes(status);
@@ -335,7 +328,7 @@ export function isTransactionPending(status: TransactionStatus): boolean {
  * @returns True if the transaction completed successfully
  */
 export function isTransactionSuccess(status: TransactionStatus): boolean {
-  return status === TRANSACTION_STATUS.SUCCESS || status === TRANSACTION_STATUS.BRIDGE_SUCCESS;
+  return status === TRANSACTION_STATUS.SUCCESS;
 }
 
 /**

@@ -1,9 +1,10 @@
-import { colors, isOpaqueColor } from '@salmon/shared';
+import { isOpaqueColor } from '@salmon/shared';
 import { BlurView } from 'expo-blur';
 import React, { useId, useState } from 'react';
 import { type LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useBlurTarget } from './BlurTargetContext';
+import { useSemantic } from '../../theme/useThemedStyles';
 import type { BlurContainerProps } from './types';
 
 /** Radial gradient stops for glassy border effect (Figma "Glassy_BORDER") */
@@ -82,13 +83,16 @@ export function BlurContainer({
   style,
   blurIntensity = 4,
   blurTint = 'dark',
-  backgroundColor = colors.background.tokenItem,
-  borderColor = colors.border.default,
+  backgroundColor,
+  borderColor,
   borderWidth = 1,
   useGradientBorder = true,
   pointerEvents,
 }: BlurContainerProps) {
   const blurTarget = useBlurTarget();
+  const { surface, border } = useSemantic();
+  const resolvedBackgroundColor = backgroundColor ?? surface.raised;
+  const resolvedBorderColor = borderColor ?? border.default;
   const [layout, setLayout] = useState({ width: 0, height: 0 });
 
   const handleLayout = (e: LayoutChangeEvent) => {
@@ -100,7 +104,9 @@ export function BlurContainer({
 
   const borderRadius = extractBorderRadius(style);
 
-  const solidBorderStyle = !useGradientBorder ? { borderColor, borderWidth } : undefined;
+  const solidBorderStyle = !useGradientBorder
+    ? { borderColor: resolvedBorderColor, borderWidth }
+    : undefined;
 
   return (
     <View
@@ -112,8 +118,11 @@ export function BlurContainer({
           on Android it is a real surface per row. The default fill is opaque
           now — a list row is content, and DESIGN.md gives translucency only to
           floating chrome — so the common case is a plain filled View. */}
-      {isOpaqueColor(backgroundColor) ? (
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor }]} />
+      {isOpaqueColor(resolvedBackgroundColor) ? (
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: resolvedBackgroundColor }]}
+        />
       ) : (
         <BlurView
           intensity={blurIntensity}
@@ -124,7 +133,7 @@ export function BlurContainer({
             Platform.OS === 'android' ? ANDROID_BLUR_REDUCTION_FACTOR : undefined
           }
           pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: resolvedBackgroundColor }]}
         />
       )}
       {useGradientBorder && (
@@ -132,7 +141,7 @@ export function BlurContainer({
           width={layout.width}
           height={layout.height}
           borderRadius={borderRadius}
-          color={borderColor}
+          color={resolvedBorderColor}
           strokeWidth={GLASSY_BORDER_WIDTH}
         />
       )}

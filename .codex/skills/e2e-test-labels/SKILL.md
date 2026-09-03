@@ -1,11 +1,11 @@
 ---
 name: e2e-test-labels
-description: "Add and maintain stable test/accessibility labels (testID, data-testid, accessibilityRole/Label, aria-label, semantic roles) on components, screens, and pages so Maestro flows and Playwright suites can select elements reliably. Use whenever creating or modifying interactive UI in apps/mobile, apps/web, apps/extension, or packages/ui, or when a cross-platform contract in packages/shared/src/types/ui gains a new interactive element. Use together with mobile-component-scaffold, ui-component-scaffold, and salmon-repo-rules whenever new UI is built."
+description: "Add and maintain stable test/accessibility labels (testID, data-testid, accessibilityRole/Label, aria-label, semantic roles) on components, screens, and pages so Maestro flows and Playwright suites can select elements reliably. Use whenever creating or modifying interactive UI in apps/mobile, apps/extension, or packages/ui, or when a cross-platform contract in packages/shared/src/types/ui gains a new interactive element. Use together with mobile-component-scaffold, ui-component-scaffold, and salmon-repo-rules whenever new UI is built."
 ---
 
 # E2E Test Labels
 
-Maestro (mobile) and Playwright (web/extension) become reliable only when the UI tree exposes stable, semantic identifiers. Text-based selection breaks on copy changes and i18n. This skill defines the labeling convention so every new or modified interactive element is targetable from both harnesses without brittle CSS/text matching.
+Maestro (mobile) and Playwright (extension) become reliable only when the UI tree exposes stable, semantic identifiers. Text-based selection breaks on copy changes and i18n. This skill defines the labeling convention so every new or modified interactive element is targetable from both harnesses without brittle CSS/text matching.
 
 ## How each harness selects
 

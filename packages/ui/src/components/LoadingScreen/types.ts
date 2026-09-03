@@ -1,13 +1,13 @@
 /**
- * LoadingScreen types for the extension app
+ * LoadingScreen types, on the DOM.
  */
-import type { LoadingScreenBaseProps } from '@salmon/shared';
+import type { LoadingScreenPropsBase } from '@salmon/shared';
 
 /**
  * Props for the LoadingScreen component (React DOM)
- * Extends base props with web-specific options
+ * Extends the shared contract with the DOM's own option.
  */
-export interface LoadingScreenProps extends LoadingScreenBaseProps {
+export interface LoadingScreenProps extends LoadingScreenPropsBase {
   /**
    * Drop the water column and wait on flat ground instead.
    *

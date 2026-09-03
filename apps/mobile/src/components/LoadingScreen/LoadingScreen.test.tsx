@@ -12,7 +12,7 @@
  * time.
  */
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
@@ -27,9 +27,12 @@ jest.mock('@salmon/shared', () => ({
     accent: { primary: '#FF5C45' },
   },
   semantic: {
-    text: { accent: '#FF5C45', primary: '#EDF1F7' },
+    text: { accent: '#FF5C45', primary: '#EDF1F7', secondary: '#A7B1C4' },
     border: { hairline: 'rgba(199,211,232,0.10)' },
-    accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
+    accent: { ink: '#FF5C45', fill: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
+    depth: { abyss: '#10131C' },
+    surface: { raised: '#161C2D' },
+    water: { crestShadow: { color: '#070911', alpha: 0.9 } },
   },
   componentSizes: {
     descentTrackWidth: 2,
@@ -38,8 +41,10 @@ jest.mock('@salmon/shared', () => ({
     waveAmplitude: 3,
   },
   fontFamilyNative: { regular: 'DMSansRegular', semiBold: 'DMSansSemiBold', bold: 'DMSansBold' },
-  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24 },
+  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24, caption: 12, body: 14 },
+  lineHeight: { snug: 1.4, tight: 1.25 },
   letterSpacing: { widest: 1 },
+  s: (value: number) => value,
   motionMs: {
     flick: 90,
     swell: 180,
@@ -53,7 +58,7 @@ jest.mock('@salmon/shared', () => ({
     waitFloor: 5000,
   },
   markPaths: ['M0 0h1v1H0z'],
-  markViewBoxAttr: '0 0 253 236',
+  markViewBoxAttr: '0 0 253 237',
   WAVEFRONT_CROSS_MS: 1400,
   WAVEFRONT_EBB_MS: 360,
   WAVEFRONT_PERIOD_MS: 2000,
@@ -75,6 +80,12 @@ jest.mock('@salmon/shared', () => ({
   // tokens with nothing under it to transform, and a fake here would let the
   // two platforms draw two different waves without a test noticing.
   ...jest.requireActual('@salmon/shared/src/motion/crest'),
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
 
 jest.mock('expo-linear-gradient', () => {
@@ -112,6 +123,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 import { LoadingScreen } from './LoadingScreen';
+import { TaskChromeProvider, useTaskChrome } from '../../contexts/TaskChromeContext';
 
 describe('LoadingScreen', () => {
   afterEach(() => {
@@ -194,7 +206,7 @@ describe('LoadingScreen', () => {
       expect(emitter.left).toBeUndefined();
     });
 
-    it('keeps the water out of the cluster, so the snow never travels with it', () => {
+    it('keeps the water out of the cluster, so the ground never travels with it', () => {
       // The ground is the ground: the departing transform lives on the
       // cluster, and anything under it would sink with the words on exit.
       render(<LoadingScreen visible title="Processing swap" />);
@@ -290,6 +302,29 @@ describe('LoadingScreen', () => {
         jest.advanceTimersByTime(1 + 180);
       });
       expect(onExited).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces the shell when the wait leaves — once, whatever ends it', () => {
+      // Every wait that ends hands Home its float back, so no call site has to
+      // remember to (owner, 2026-09-02).
+      function SurfaceProbe() {
+        return <Text testID="surface-key">{String(useTaskChrome().surfaceKey)}</Text>;
+      }
+      const wait = (visible: boolean) => (
+        <TaskChromeProvider>
+          <SurfaceProbe />
+          <LoadingScreen visible={visible} title="Processing swap" waves />
+        </TaskChromeProvider>
+      );
+      const { rerender } = render(wait(true));
+      expect(screen.getByTestId('surface-key').props.children).toBe('0');
+
+      rerender(wait(false));
+      act(() => {
+        jest.advanceTimersByTime(5000 + 5000);
+      });
+
+      expect(screen.getByTestId('surface-key').props.children).toBe('1');
     });
 
     it('hands off exactly once, however many clocks reach the end first', () => {

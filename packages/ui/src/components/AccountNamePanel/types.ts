@@ -1,4 +1,3 @@
-export interface AccountNamePanelProps {
-  accountId: string;
-  onBack: () => void;
-}
+import type { AccountNamePanelPropsBase } from '@salmon/shared';
+
+export interface AccountNamePanelProps extends AccountNamePanelPropsBase {}

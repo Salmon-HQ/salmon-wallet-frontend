@@ -9,7 +9,8 @@ appId: io.salmonwallet.app
 #         NFT_MINT: CNM8...
 #         DEST_ADDRESS: ${SALMON_TEST_WALLET_B_ADDR}
 #
-# Starts from Home and leaves the app back on the Collectibles tab.
+# Starts from Home and leaves the app on the in-page NFTs sub-tab: the
+# receipt's Continue dismisses the whole NFT sub-stack back to it.
 #
 # Do not declare an `env:` defaults block in this file. Maestro lets the default
 # win over the value passed by `runFlow`, and the selector silently degrades to
@@ -19,7 +20,7 @@ appId: io.salmonwallet.app
 # name: Maestro full-matches text, and the test wallets hold phishing airdrops
 # whose names are padded with zero-width spaces.
 - tapOn:
-    id: 'tab-collectibles'
+    id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 20000
@@ -33,32 +34,32 @@ appId: io.salmonwallet.app
     id: 'nft-card-${NFT_MINT}'
 - waitForAnimationToEnd:
     timeout: 6000
-# The detail sheet scrolls (image, description, attributes, details); the Send
-# and Burn buttons sit below the fold, so they are not on screen on open.
-- scrollUntilVisible:
-    element:
-      id: 'nft-detail-send-button'
-    direction: DOWN
-    timeout: 20000
+# The detail is a pushed screen now (spec 019 D7). Send and Burn sit on the
+# fixed bottom band, so they are on screen from the moment it mounts — no
+# scroll needed to reach them.
 - tapOn:
     id: 'nft-detail-send-button'
 - waitForAnimationToEnd:
     timeout: 5000
 - tapOn:
-    id: 'input-address-input'
+    id: 'send-recipient-input'
 - inputText: ${DEST_ADDRESS}
-- tapOn: 'Recipient'
+- hideKeyboard
+# The validator debounces 500ms before Continue goes live.
 - waitForAnimationToEnd:
     timeout: 3000
+- tapOn:
+    id: 'nft-send-continue-button'
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     id: 'nft-send-confirm-button'
 - extendedWaitUntil:
     visible: 'NFT sent'
     timeout: 120000
-# Continue stays disabled while `settleAfterTx` invalidates and refetches the
+# Continue stays disabled while settlement invalidates and refetches the
 # balance and NFT queries, so a tap that lands during settling is swallowed and
-# the sheet stays open — covering the tab bar and breaking whatever runs next.
-# Retry until the success screen is actually gone.
+# the receipt stays up — breaking whatever runs next. Retry until it is gone.
 - repeat:
     times: 12
     commands:
@@ -75,11 +76,5 @@ appId: io.salmonwallet.app
     notVisible:
       id: 'tx-success-continue-button'
     timeout: 30000
-# Closing the sheet raises a native alert from the Collectibles screen.
-- runFlow:
-    when:
-      visible: 'OK'
-    commands:
-      - tapOn: 'OK'
 - waitForAnimationToEnd:
     timeout: 5000

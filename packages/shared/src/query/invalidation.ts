@@ -251,10 +251,6 @@ function balanceSignature(queryClient: QueryClient, opts: InvalidationOptions): 
  * differs, or after `maxWaitMs`. A success screen can `await` this so it dwells
  * exactly as long as the indexer needs (typically ~12-14s) and no longer,
  * guaranteeing the user returns to a fresh balance instead of a stale one.
- *
- * NOT for the StealthEX bridge: cross-chain settlement takes minutes, so the
- * destination balance is settled by the background exchange-status poller
- * instead of by blocking a screen.
  */
 export function useSettleUntilChanged(): (
   opts: SettleUntilChangedOptions

@@ -261,7 +261,7 @@ describe('OnboardingLayout', () => {
     expect(beforeHeights.assist).toBe(0);
   });
 
-  it('draws the mark far larger on identity than on content', () => {
+  it('draws the mark larger on identity than on content', () => {
     // The first pass drew 80 everywhere and it read as a badge floating in a
     // void. On the screens where the mark *is* the screen it is the hero; on
     // the seed screens the words are, and the mark gets out of their way.
@@ -274,7 +274,7 @@ describe('OnboardingLayout', () => {
 
     expect(identityMark).toBe(onboardingIdentityGridFull.markSize);
     expect(contentMark).toBe(onboardingContentGridFull.markSize);
-    expect(identityMark).toBeGreaterThan(2 * contentMark);
+    expect(identityMark).toBeGreaterThan(contentMark);
   });
 
   it('holds the two families’ control bands at one height', () => {

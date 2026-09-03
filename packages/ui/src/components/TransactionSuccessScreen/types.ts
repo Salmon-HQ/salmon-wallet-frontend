@@ -1,3 +1,4 @@
-import type { TransactionSuccessScreenProps as SharedTransactionSuccessScreenProps } from '@salmon/shared';
+import type { TransactionSuccessScreenPropsBase } from '@salmon/shared';
 
-export interface TransactionSuccessScreenProps extends SharedTransactionSuccessScreenProps {}
+/** The DOM half of the contract: nothing platform-specific to add. */
+export type TransactionSuccessScreenProps = TransactionSuccessScreenPropsBase;

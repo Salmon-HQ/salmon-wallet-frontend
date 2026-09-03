@@ -17,7 +17,6 @@
 /scripts/          @Luquish
 
 # Apps and shared packages.
-/apps/web/       @Luquish
 /apps/mobile/    @Luquish
 /apps/extension/ @Luquish
 /packages/ui/    @Luquish

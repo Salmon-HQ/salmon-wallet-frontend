@@ -1,44 +1,31 @@
 import {
   borderRadius,
-  borderWidth,
-  colors,
-  componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
+  formatLargeNumber,
   formatTokenAmount,
   getLabelValue,
   hiddenValue,
-  lineHeight,
   ms,
   s,
   showPercentage,
   spacing,
   useCurrencyContext,
   vs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BlurContainer } from '../BlurContainer';
+import { StyleSheet, Text, View } from 'react-native';
+import { ListRow } from '../ListRow';
 import { TokenLogo } from '../TokenLogo';
-import TokenBadges from './TokenBadges';
+import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { TokenListItemProps } from './types';
 
-/**
- * Arrow indicator component for price changes
- */
-const ChangeArrow: React.FC<{ isPositive: boolean }> = ({ isPositive }) => (
-  <Text
-    style={[
-      styles.changeArrow,
-      { color: isPositive ? colors.change.positive : colors.change.negative },
-    ]}
-  >
-    {isPositive ? '\u25B2' : '\u25BC'}
-  </Text>
-);
+/** The card's own logo size — pinned by the redesign spec, not the legacy
+ * `componentSizes.tokenIcon` token. */
+const TOKEN_LOGO_SIZE = 44;
 
 /**
  * Individual token item component for the TokenList
@@ -46,8 +33,8 @@ const ChangeArrow: React.FC<{ isPositive: boolean }> = ({ isPositive }) => (
  * Displays token logo, name, price with change indicator, USD holdings, and token amount.
  *
  * Layout varies by blockchain:
- * - Solana/Ethereum: Full layout with token name, price, and detailed info
- * - Bitcoin: Simplified layout showing only total USD value and BTC amount
+ * - Solana/Ethereum: name, ticker/price/change subline, amount + fiat trailing
+ * - Bitcoin: name, ticker/price/change subline, amount trailing (no fiat)
  *
  * @example
  * ```tsx
@@ -76,25 +63,24 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
-  const [, { formatValue, formatChange }] = useCurrencyContext();
-  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
+  const styles = useThemedStyles(stylesFor);
+  const { change: changeTones } = useSemantic();
+  const [, { formatValue }] = useCurrencyContext();
+  const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange } = token;
 
   const handlePress = React.useCallback(() => {
     onPress?.(token);
   }, [onPress, token]);
 
-  // Get the label type for coloring the percentage and absolute change
+  // Get the label type for coloring the percentage
   const percentageChange = last24HoursChange?.perc ?? 0;
-  const absoluteChange = last24HoursChange?.abs;
   const labelType = getLabelValue(percentageChange);
-  const changeColor = colors.change[labelType];
-  const isPositiveChange = percentageChange >= 0;
+  const changeColor = changeTones[labelType];
 
   // Format display values
   const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
 
   const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
-  const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
 
   const displayUsdValue = hiddenBalance
     ? hiddenValue
@@ -102,140 +88,108 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       ? formatValue(usdBalance)
       : null;
 
-  const displayTokenAmount = hiddenBalance
-    ? hiddenValue
-    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
+  // A holding of 28,896.26376 BONK printed in full pushed the ticker off the
+  // row ("28896.26376 Bo…"). `formatLargeNumber` is the repo's compact
+  // renderer: K/M/B above a thousand, full precision below it, so a dust
+  // balance still reads digit for digit.
+  const numericAmount = typeof uiAmount === 'string' ? parseFloat(uiAmount) : uiAmount;
+  const compactAmount = Number.isFinite(numericAmount)
+    ? formatLargeNumber(numericAmount)
+    : formatTokenAmount(uiAmount);
+  const displayTokenAmount = hiddenBalance ? hiddenValue : `${compactAmount} ${symbol || ''}`;
 
-  // Bitcoin has a different layout showing price, change, and BTC amount
+  // What the screen reader is told, masked exactly like the pixels are. The
+  // labels used to interpolate the raw `price` and `uiAmount` regardless of
+  // `hiddenBalance`, so VoiceOver read out the balance the user had just
+  // chosen to hide.
+  const spokenAmount = hiddenBalance ? hiddenValue : uiAmount;
+  const spokenPrice = hiddenBalance ? hiddenValue : price;
+
+  // One text run that ellipsises at its end, like the DOM twin
+  // (`packages/ui/src/components/TokenList/TokenListItem.tsx`). Three
+  // fixed-width Texts fighting for space beside a non-shrinking name column
+  // squeezed the ticker to "mSC$145.52"; a single `numberOfLines={1}` Text
+  // degrades to "mSOL · $145.…" instead.
+  const hasTail = !!displayPrice || !!displayPercentage;
+  const tickerSegment = symbol ? (hasTail ? `${symbol} · ` : symbol) : null;
+  const changeSegment = displayPercentage
+    ? displayPrice
+      ? ` · ${displayPercentage}`
+      : displayPercentage
+    : null;
+  const subline = (tickerSegment || displayPrice || changeSegment) && (
+    <Text
+      testID={`token-row-subline-${symbol}`}
+      style={styles.subline}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+      maxFontSizeMultiplier={fontScaleCap.dense}
+    >
+      {tickerSegment}
+      {displayPrice}
+      {!!changeSegment && (
+        <Text style={[styles.change, { color: changeColor }]}>{changeSegment}</Text>
+      )}
+    </Text>
+  );
+
+  const logoNode = (
+    <TokenLogo
+      uri={logo}
+      symbol={symbol}
+      size={s(TOKEN_LOGO_SIZE)}
+      borderRadius={borderRadius.tokenIcon}
+    />
+  );
+
+  // Bitcoin shows only the amount, not a fiat line beside it — unchanged from
+  // the hand-drawn row this replaces.
   if (blockchain === 'bitcoin') {
-    const Wrapper = onPress ? TouchableOpacity : View;
-    const wrapperProps = onPress
-      ? {
-          onPress: handlePress,
-          activeOpacity: 0.7,
-          accessibilityRole: 'button' as const,
-          accessibilityLabel: t(
-            'accessibility.token_price_balance',
-            '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}',
-            { name, price, amount: uiAmount, symbol }
-          ),
-        }
-      : {};
     return (
-      <BlurContainer style={[styles.glassWrapper, style]} borderWidth={borderWidth.tokenListItem}>
-        <Wrapper testID={`token-row-${symbol}`} style={styles.bitcoinContainer} {...wrapperProps}>
-          {/* Token Logo */}
-          <TokenLogo uri={logo} symbol={symbol} size={s(33)} borderRadius={16.5} />
-
-          {/* Bitcoin Info - Price and percentage change */}
-          <View style={styles.bitcoinInfoContainer}>
-            {displayPrice && (
-              <Text
-                style={styles.bitcoinPrice}
-                numberOfLines={1}
-                maxFontSizeMultiplier={fontScaleCap.dense}
-              >
-                {displayPrice}
-              </Text>
-            )}
-            <View style={styles.bitcoinChangeRow}>
-              {displayPercentage && (
-                <>
-                  <ChangeArrow isPositive={isPositiveChange} />
-                  <Text
-                    style={[styles.bitcoinChangeText, { color: changeColor }]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    maxFontSizeMultiplier={fontScaleCap.dense}
-                  >
-                    {displayPercentage}
-                    {displayAbsChange && ` (${displayAbsChange})`}
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
-
-          {/* Bitcoin Amount - Right Side */}
-          <View style={styles.bitcoinAmountContainer}>
-            <Text
-              style={styles.bitcoinAmount}
-              numberOfLines={1}
-              maxFontSizeMultiplier={fontScaleCap.dense}
-            >
-              {displayTokenAmount}
-            </Text>
-          </View>
-        </Wrapper>
-      </BlurContainer>
+      <ListRow
+        testID={`token-row-${symbol}`}
+        padding="lg"
+        emphasis="strong"
+        leading={logoNode}
+        title={name}
+        subtitle={subline || undefined}
+        trailing={
+          <Text
+            style={styles.tokenAmount}
+            numberOfLines={1}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+          >
+            {displayTokenAmount}
+          </Text>
+        }
+        onPress={onPress ? handlePress : undefined}
+        accessibilityLabel={t(
+          'accessibility.token_price_balance',
+          '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}',
+          { name, price: spokenPrice, amount: spokenAmount, symbol }
+        )}
+        style={StyleSheet.flatten([styles.cardSpacing, style])}
+      />
     );
   }
 
-  // Solana/Ethereum layout
   return (
-    <BlurContainer style={[styles.glassWrapper, style]} borderWidth={borderWidth.tokenListItem}>
-      <TouchableOpacity
-        testID={`token-row-${symbol}`}
-        style={styles.container}
-        onPress={handlePress}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={t(
-          'accessibility.token_balance',
-          '{{name}} token, balance {{amount}} {{symbol}}',
-          { name, amount: uiAmount, symbol }
-        )}
-      >
-        {/* Token Logo */}
-        <TokenLogo
-          uri={logo}
-          symbol={symbol}
-          size={s(componentSizes.tokenIcon)}
-          borderRadius={borderRadius.tokenIcon}
-        />
-
-        {/* Token Info - Left Side */}
-        <View style={styles.infoContainer}>
-          <View style={styles.nameRow}>
-            <Text
-              style={styles.name}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              maxFontSizeMultiplier={fontScaleCap.dense}
-            >
-              {name}
-            </Text>
-            <TokenBadges tags={tags} />
-          </View>
-          <View style={styles.priceRow}>
-            {displayPrice && (
-              <Text
-                style={styles.price}
-                numberOfLines={1}
-                maxFontSizeMultiplier={fontScaleCap.dense}
-              >
-                {displayPrice}
-              </Text>
-            )}
-            {displayPercentage && (
-              <>
-                <ChangeArrow isPositive={isPositiveChange} />
-                <Text
-                  style={[styles.changeText, { color: changeColor }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  maxFontSizeMultiplier={fontScaleCap.dense}
-                >
-                  {displayPercentage}
-                  {displayAbsChange && ` (${displayAbsChange})`}
-                </Text>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Value Info - Right Side */}
+    <ListRow
+      testID={`token-row-${symbol}`}
+      padding="lg"
+      emphasis="strong"
+      leading={logoNode}
+      title={name}
+      subtitle={subline || undefined}
+      trailing={
         <View style={styles.valueContainer}>
+          <Text
+            style={styles.tokenAmount}
+            numberOfLines={1}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+          >
+            {displayTokenAmount}
+          </Text>
           {displayUsdValue && (
             <Text
               style={styles.usdValue}
@@ -245,134 +199,57 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
               {displayUsdValue}
             </Text>
           )}
-          <Text
-            style={styles.tokenAmount}
-            numberOfLines={1}
-            maxFontSizeMultiplier={fontScaleCap.dense}
-          >
-            {displayTokenAmount}
-          </Text>
         </View>
-      </TouchableOpacity>
-    </BlurContainer>
+      }
+      onPress={handlePress}
+      accessibilityLabel={t(
+        'accessibility.token_balance',
+        '{{name}} token, balance {{amount}} {{symbol}}',
+        { name, amount: spokenAmount, symbol }
+      )}
+      style={StyleSheet.flatten([styles.cardSpacing, style])}
+    />
   );
 };
 
-const styles = StyleSheet.create({
-  // Glass wrapper for iOS 26+ Liquid Glass effect
-  glassWrapper: {
-    borderRadius: borderRadius.lg,
-    marginBottom: vs(spacing.sm),
-    marginHorizontal: s(spacing['2xl']),
-    overflow: 'hidden',
-  },
-  // Common container styles
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: s(spacing.md),
-    paddingVertical: vs(spacing.md),
-    gap: s(spacing.md),
-  },
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The card ground, radius and hairline are `Card`'s; what stays here is the
+    // list glue — how far one row sits from the next. Card→card is a
+    // sibling-component seam per DESIGN.md's component gap rule, so it takes
+    // the same `screenGutter` (20) as the screen's side gutters, not an
+    // internal-anatomy step.
+    cardSpacing: {
+      marginBottom: vs(spacing.screenGutter),
+    },
 
-  // Solana/Ethereum styles
-  infoContainer: {
-    flex: 1,
-    minWidth: 0,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 0,
-  },
-  name: {
-    fontSize: ms(fontSize.body),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.balance,
-    flexShrink: 1,
-    minWidth: 0,
-    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
-    letterSpacing: ms(-0.07, 0.3),
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xxs),
-    minWidth: 0,
-  },
-  price: {
-    fontSize: ms(fontSize.body),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
-    letterSpacing: ms(-0.07, 0.3),
-    flexShrink: 0,
-  },
-  changeArrow: {
-    fontSize: ms(fontSize.body),
-  },
-  changeText: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.regular,
-    letterSpacing: ms(-0.06, 0.3),
-    flexShrink: 1,
-  },
-  valueContainer: {
-    alignItems: 'flex-end',
-    gap: vs(spacing.xs),
-    flexShrink: 0,
-    maxWidth: '46%',
-  },
-  usdValue: {
-    fontSize: ms(fontSize.lg),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.balance,
-    letterSpacing: ms(-0.09, 0.3),
-  },
-  tokenAmount: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
-  },
-
-  // Bitcoin-specific styles (based on Figma specs)
-  bitcoinContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: s(spacing.md),
-    paddingVertical: vs(spacing.md),
-    gap: s(spacing.md),
-  },
-  bitcoinInfoContainer: {
-    flex: 1,
-    gap: vs(spacing.xxs),
-  },
-  bitcoinPrice: {
-    fontSize: ms(fontSize.lg),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    letterSpacing: ms(-0.09, 0.3),
-  },
-  bitcoinChangeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xxs),
-  },
-  bitcoinChangeText: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.light,
-    letterSpacing: ms(-0.06, 0.3),
-  },
-  bitcoinAmountContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  bitcoinAmount: {
-    fontSize: ms(fontSize.xl),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.secondary,
-    letterSpacing: ms(-0.095, 0.3),
-  },
-});
+    // Secondary line: "SOL · $159.58 · +4.2%" as one text run that
+    // ellipsises at its end — matches the DOM twin.
+    subline: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    change: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+    },
+    valueContainer: {
+      alignItems: 'flex-end',
+      gap: vs(spacing.xxs),
+      flexShrink: 0,
+      maxWidth: '46%',
+    },
+    usdValue: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+    },
+    tokenAmount: {
+      fontSize: ms(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+  });
 
 export default TokenListItem;

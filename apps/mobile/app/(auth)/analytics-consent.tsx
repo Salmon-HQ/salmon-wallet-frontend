@@ -2,9 +2,8 @@
  * AnalyticsConsentScreen - First-run, opt-in pseudonymous-analytics consent.
  *
  * Shown after the success screen — the final onboarding step before the
- * wallet home. Both of success's exits funnel through here (directly via
- * "Go to my Account", or after the derived-accounts detour), so consent is
- * asked exactly once and cannot be skipped. Either choice persists via
+ * wallet home. Success's one exit funnels through here, so consent is asked
+ * exactly once and cannot be skipped. Either choice persists via
  * `resolveConsentPrompt` and enters the app.
  *
  * Composed on the onboarding slot grid. The metrics glyph is the screen's
@@ -17,14 +16,14 @@
  */
 
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   lineHeight,
-  semantic,
+  s,
   useAnalyticsConsent,
+  type Semantic,
 } from '@salmon/shared';
 import {
   OnboardingLayout,
@@ -33,6 +32,7 @@ import {
   ScreenHeader,
 } from '../../src/components';
 import { ChartBarIcon } from '../../src/icons';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -43,6 +43,8 @@ const ICON_SIZE = componentSizes.logoSizeSmall;
 
 export default function AnalyticsConsentScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const { resolveConsentPrompt } = useAnalyticsConsent();
 
   const resolve = useCallback(
@@ -70,7 +72,7 @@ export default function AnalyticsConsentScreen() {
         The metrics glyph takes the top slot the fish used to hold — one icon
         on the screen, not two, and the same asset the body carried before.
       */
-      mark={<ChartBarIcon size={ICON_SIZE} color={colors.text.primary} />}
+      mark={<ChartBarIcon size={ICON_SIZE} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         <ScrollView contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
@@ -113,27 +115,28 @@ export default function AnalyticsConsentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bodyContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copy: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    textAlign: 'center',
-  },
-  bold: {
-    fontFamily: fontFamilyNative.bold,
-  },
-  foot: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    bodyContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copy: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: fontSize.bodyLg * lineHeight.normal,
+      textAlign: 'center',
+    },
+    bold: {
+      fontFamily: fontFamilyNative.bold,
+    },
+    foot: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

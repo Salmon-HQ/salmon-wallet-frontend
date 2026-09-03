@@ -19,13 +19,13 @@
  */
 
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   lineHeight,
-  semantic,
+  s,
+  type Semantic,
 } from '@salmon/shared';
 import { WarningIcon } from '../../src/icons';
 import {
@@ -34,6 +34,7 @@ import {
   PrimaryButton,
   ScreenHeader,
 } from '../../src/components';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,8 @@ const END_SLOP = 8;
 
 export default function SeedWarningScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const [read, setRead] = useState(false);
   const viewportHeight = useRef(0);
   const contentHeight = useRef(0);
@@ -102,7 +105,7 @@ export default function SeedWarningScreen() {
         stays on welcome and the lock only. The gate names itself: this step
         exists to be read as a warning, so it wears one.
       */
-      mark={<WarningIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+      mark={<WarningIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
       body={
         <ScrollView
@@ -131,16 +134,17 @@ export default function SeedWarningScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bodyContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  body: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    bodyContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+    },
+    body: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: fontSize.bodyLg * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

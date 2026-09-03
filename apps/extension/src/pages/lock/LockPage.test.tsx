@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ComponentType, PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
 
 import { LockPage } from './LockPage';
 
@@ -35,14 +35,6 @@ vi.mock('react-i18next', () => ({
     // options object on a few; only a string may be rendered.
     t: (_key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : _key),
   }),
-}));
-
-vi.mock('../../utils/styled', () => ({
-  styled: (Component: React.ElementType | ComponentType<unknown>) => () => {
-    const StyledComponent = ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) =>
-      React.createElement(Component as React.ElementType, sanitizeDomProps(props), children);
-    return StyledComponent;
-  },
 }));
 
 vi.mock('../../components', () => ({

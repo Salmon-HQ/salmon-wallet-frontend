@@ -8,6 +8,7 @@ export * from './crypto';
 export * from './factories';
 export * from './hooks';
 export * from './query';
+export * from './settings';
 export * from './locales';
 export * from './motion';
 export * from './storage';

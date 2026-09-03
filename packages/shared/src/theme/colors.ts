@@ -5,6 +5,7 @@
 
 import type { BlockchainId } from '../types/ui/balance-card';
 import { danger, neutral, salmon, success } from './palette';
+import { chainMarks } from './brand';
 import { scales, surface } from './semantic';
 
 export const colors = {
@@ -13,7 +14,6 @@ export const colors = {
     secondary: '#161c2d',
     tertiary: 'rgba(255, 255, 255, 0.08)', // elevated surfaces
     card: 'rgba(255, 255, 255, 0.05)',
-    glass: 'rgba(0, 0, 0, 0.4)',
     /**
      * List rows and the cards that behave like them.
      *
@@ -76,26 +76,17 @@ export const colors = {
     primaryText: neutral[1000],
     secondaryBackground: '#2a3441',
     secondaryText: '#FFFFFF',
-    cancelBackground: '#1f232f',
     dangerHover: '#FF7A64',
-    destructiveHover: '#DC2626',
     disabledText: '#666666',
     disabledOpacity: 0.5,
-    inactiveBackground: '#444444',
   },
   step: {
     active: '#FF5C45',
     inactive: 'rgba(255, 255, 255, 0.3)',
   },
-  /** TabBar navigation */
-  tabBar: {
-    active: '#FF5C45',
-    inactive: 'rgba(255, 255, 255, 0.6)',
-  },
   interactive: {
     surface: 'rgba(255, 255, 255, 0.04)',
     hoverSubtle: 'rgba(255, 255, 255, 0.06)',
-    hoverStrong: 'rgba(255, 255, 255, 0.12)',
     hoverMedium: 'rgba(255, 255, 255, 0.15)',
     highlight: 'rgba(255, 255, 255, 0.2)',
   },
@@ -123,22 +114,19 @@ export const colors = {
   scanner: {
     background: '#1a1a2e',
     surface: '#2a2a4e',
-    text: '#ffffff',
     textSecondary: '#8b8b9e',
     textTertiary: '#6b6b7e',
     button: '#4a4a6e',
   },
-  /** Decorative palette for badges, avatars, tags */
-  palette: {
-    orange: '#FF5C45',
-    green: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    blue: '#3B82F6',
-    pink: '#EC4899',
-    cyan: '#06B6D4',
-    indigo: '#6366F1',
-  },
+  /**
+   * Decorative palette for badges, avatars, tags.
+   *
+   * Values live in `brand.ts` as `chainMarks` (2026-09-01 cleanup) — these
+   * are per-chain brand marks, not theme colours. Kept here, referencing
+   * `chainMarks`, because `apps/extension` still reads
+   * `colors.palette` directly.
+   */
+  palette: chainMarks,
 } as const;
 
 /**
@@ -158,26 +146,13 @@ export const colors = {
  * — channels that survive a colorblind user, a narrow column, and a
  * screenshot, which a background hue does not.
  *
- * The keys are preserved because three apps read them.
+ * The keys are preserved because both apps read them.
  */
 const DEEP_PANE = [neutral[850], neutral[900], neutral[950]] as const;
 const SHALLOW_PANE = [neutral[800], neutral[850], neutral[900]] as const;
 const VERTICAL = { start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } } as const;
 const DEEP_PANE_CSS = `linear-gradient(180deg, ${neutral[850]} 0%, ${neutral[900]} 50%, ${neutral[950]} 100%)`;
 const SHALLOW_PANE_CSS = `linear-gradient(180deg, ${neutral[800]} 0%, ${neutral[850]} 50%, ${neutral[900]} 100%)`;
-
-/**
- * Tab-bar fade tunables — see `gradients.tabBarFade` below. Locations run
- * along the gradient axis, physical bottom edge (0) → top of the mask (1).
- */
-/**
- * Densest alpha of the fade. Deliberately < 1 (owner, on-device 2026-08-19):
- * the floor must read as deep water content sinks into, not an opaque plate —
- * tune within ~0.9–0.93.
- */
-const TAB_BAR_FADE_MAX_ALPHA = 0.92;
-/** The dense band holds max alpha from the bottom edge up to this fraction (≈ the pill's zone). */
-const TAB_BAR_FADE_DENSE_STOP = 0.55;
 
 export const gradients = {
   /**
@@ -195,29 +170,6 @@ export const gradients = {
     colors: [salmon[500], salmon[500]] as const,
     start: { x: 0, y: 0 },
     end: { x: 1, y: 0.04 },
-  },
-  /** Balance card default (diagonal descent through the column) */
-  balanceCard: {
-    colors: DEEP_PANE,
-    start: { x: 0, y: 0 },
-    end: { x: 1, y: 1 },
-  },
-  /** Balance card Solana (vertical) */
-  balanceCardSolana: {
-    colors: DEEP_PANE,
-    ...VERTICAL,
-  },
-  balanceCardSolanaDevnet: {
-    colors: SHALLOW_PANE,
-    ...VERTICAL,
-  },
-  balanceCardBitcoin: {
-    colors: DEEP_PANE,
-    ...VERTICAL,
-  },
-  balanceCardBitcoinTestnet: {
-    colors: SHALLOW_PANE,
-    ...VERTICAL,
   },
   balanceCardEthereum: {
     colors: DEEP_PANE,
@@ -239,36 +191,9 @@ export const gradients = {
     start: { x: 0.5, y: 0 },
     end: { x: 0.5, y: 1 },
   },
-  /**
-   * TabBar bottom fade (water → transparent, bottom to top). The opaque stop
-   * is the depth ramp's own floor (`semantic.water.gradient[1]`), so content
-   * dissolves into the water darkening — never a flat black slab over it.
-   *
-   * Shape (owner, on-device 2026-08-19): transparent at the top → dense by
-   * the pill's zone → dense sustained to the physical bottom edge. The dense
-   * band is NOT fully opaque — content under the pill should sink into the
-   * water, not vanish behind a plate. Locations run along the gradient axis,
-   * bottom (0) → top (1). Tunables:
-   *  - TAB_BAR_FADE_MAX_ALPHA: density of the sustained band (~0.9–0.93).
-   *  - TAB_BAR_FADE_DENSE_STOP: how far up the dense band holds before the
-   *    fade begins (lower it and rows read through the pill).
-   * All stops stay on the water floor's hue (`neutral[1000]` = #070911) —
-   * never #000000 (a test guards it): the ramp must still read as water.
-   */
-  tabBarFade: {
-    colors: [
-      `rgba(7, 9, 17, ${TAB_BAR_FADE_MAX_ALPHA})`,
-      `rgba(7, 9, 17, ${TAB_BAR_FADE_MAX_ALPHA})`,
-      'rgba(7, 9, 17, 0)',
-    ] as const,
-    locations: [0, TAB_BAR_FADE_DENSE_STOP, 1] as const,
-    start: { x: 0.5, y: 1 },
-    end: { x: 0.5, y: 0 },
-  },
   // CSS versions for web
   primaryCSS: `linear-gradient(180deg, ${salmon[500]} 0%, ${salmon[500]} 100%)`,
   primaryButtonCSS: `linear-gradient(180deg, ${salmon[500]} 0%, ${salmon[500]} 100%)`,
-  disabledCSS: `linear-gradient(180deg, ${neutral[925]} 0%, ${neutral[925]} 100%)`,
   balanceCardSolanaCSS: DEEP_PANE_CSS,
   balanceCardSolanaDevnetCSS: SHALLOW_PANE_CSS,
   balanceCardBitcoinCSS: DEEP_PANE_CSS,
@@ -286,7 +211,7 @@ export type Gradients = typeof gradients;
  * Chain tinting is removed: a 6%-opacity pattern cannot be a data channel —
  * it survives neither a colorblind user nor a screenshot, and it was the last
  * place a chain's brand hue leaked into the water. The signature is kept
- * because three apps call it; only what it returns changed.
+ * because both apps call it; only what it returns changed.
  */
 export const getScalesColorForBlockchain = (_blockchain: BlockchainId): string =>
   scales.deepFieldStroke;

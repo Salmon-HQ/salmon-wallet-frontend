@@ -2,7 +2,7 @@
 
 ## Scope
 
-- `packages/ui` is only for React DOM components shared by `apps/web` and `apps/extension`
+- `packages/ui` is only for React DOM components used by `apps/extension`
 - Do not put mobile-only UI here
 - Do not put business logic-heavy flows here unless the logic has already been extracted
 

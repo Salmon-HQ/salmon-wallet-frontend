@@ -1,134 +1,41 @@
 /**
  * AddressEditPanel - Edit an existing contact in the address book (mobile)
+ *
+ * `AddressForm`'s fields, seeded from the contact; saving commits against the
+ * contact's original address.
  */
 
-import React, { useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  colors,
-  spacing,
-  borderRadius,
-  fontFamilyNative,
-  useAddressBookForm,
-  type AddressBookEditBaseProps,
-  fontSize,
-  semantic,
-} from '@salmon/shared';
-import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { PrimaryButton } from '../../Button';
-import { InputAddress } from '../../InputAddress';
-
-// ============================================================================
-// Component
-// ============================================================================
+import { useAddressEditPanel, type BlockchainType } from '@salmon/shared';
+import { AddressForm } from '../../AddressForm';
+import type { AddressEditPanelProps } from './types';
 
 export function AddressEditPanel({
   contact,
   activeBlockchain: _activeBlockchain,
   onSave,
   onBack,
-}: AddressBookEditBaseProps) {
+}: AddressEditPanelProps) {
   const { t } = useTranslation();
-  const form = useAddressBookForm({
-    label: contact.name,
-    address: contact.domain || contact.address,
-    networkId: contact.networkId,
-    resolvedAddress: contact.address,
-    isDomain: !!contact.domain,
-  });
+  const { form, save } = useAddressEditPanel({ contact, onSave });
 
-  const handleSave = useCallback(async () => {
-    if (!form.canSave) return;
-    await onSave(contact.address, form.buildInput());
-  }, [form, onSave, contact.address]);
+  const chain = contact.networkId.split('-')[0];
+  const networkLabel = chain.charAt(0).toUpperCase() + chain.slice(1);
 
   return (
-    <SettingsScreenLayout title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
-      {/* Label */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
-      <TextInput
-        testID="address-book-label-input"
-        style={styles.textInput}
-        value={form.label}
-        onChangeText={form.setLabel}
-        placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
-
-      {/* Address */}
-      <View style={styles.addressSection}>
-        <InputAddress
-          address={form.address}
-          onChange={form.setAddress}
-          onValidation={form.handleValidation}
-          label={t('general.address', 'Address')}
-          testID="address-book-address"
-        />
-      </View>
-
-      {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
-      <View style={styles.networkDisplay}>
-        <Text style={styles.networkText}>
-          {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-            contact.networkId.split('-')[0].slice(1)}
-        </Text>
-      </View>
-
-      {/* Save Button */}
-      <View style={styles.saveButtonContainer}>
-        <PrimaryButton
-          testID="address-book-save-button"
-          onPress={handleSave}
-          disabled={!form.canSave}
-        >
-          {t('settings.addressbook.save', 'Save Address')}
-        </PrimaryButton>
-      </View>
-    </SettingsScreenLayout>
+    <AddressForm
+      title={t('settings.addressbook.edit', 'Edit Address')}
+      subtitle={t('settings.addressbook.edit_subtitle', "Update this contact's label or address.")}
+      networkLabel={networkLabel}
+      form={form}
+      onSave={save}
+      onBack={onBack}
+      blockchain={chain as BlockchainType}
+      addressPlaceholder={t('send.enter_address_or_domain')}
+    />
   );
 }
 
 export default AddressEditPanel;
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  fieldLabel: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  textInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  addressSection: {
-    marginTop: spacing.lg,
-  },
-  networkDisplay: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
-  },
-  networkText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  saveButtonContainer: {
-    marginTop: spacing['2xl'],
-  },
-});

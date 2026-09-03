@@ -55,10 +55,12 @@ const ARC_AMP = 10;
 const WIDTH: readonly [number, number] = [2, 7];
 
 /**
- * Ink: `[core, halo]` fill opacity. Few veins, so the core sits just under
- * the 0.2 ceiling `flesh.test.ts` enforces.
+ * Ink: `[core, halo]` fill opacity. Few veins, so the core could sit just
+ * under the 0.2 ceiling `flesh.test.ts` enforces; it sits a step lower
+ * (0.16 → 0.12, owner, 2026-09-02, on device: the marbling on the buttons
+ * read a shade too loud — subtle, not stated).
  */
-const INK: readonly [number, number] = [0.16, 0.05];
+const INK: readonly [number, number] = [0.12, 0.04];
 
 /** The drawing's native tile, in the units the paths are authored in. */
 export const fleshTile = { width: 150, height: 88 } as const;

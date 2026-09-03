@@ -22,23 +22,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real theme tables plus the one hook this screen reads. The root
-// `@salmon/shared` barrel cannot be imported here — it reaches React Native,
-// which Vite cannot parse.
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  // The passage's own numbers and the hook that holds the wait mounted: both
-  // are runtime-agnostic, and faking them would let this screen's sink drift
-  // from the verb every other surface speaks.
-  const sinkFloat = await import('../../../../shared/src/motion/sinkFloat');
-  const waitExit = await import('../../../../shared/src/hooks/useWaitExit');
-  return {
-    ...theme,
-    ...sinkFloat,
-    ...waitExit,
-    useUnlockThrottle: () => mockThrottle,
-  };
-});
+// The real barrel, with only the throttle hook overridden so a test can put
+// the screen into its throttled state.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useUnlockThrottle: () => mockThrottle,
+}));
 
 // The loading overlay reads wavefront constants that live outside the theme
 // subtree, and it draws nothing this file asserts. What it does carry is the
@@ -58,6 +47,8 @@ vi.mock('../WaterColumn', () => ({
   waterColumnHost: { position: 'relative', isolation: 'isolate' },
 }));
 
+import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
+import type { ThemeContextValue } from '@salmon/shared';
 import { LockScreen } from './LockScreen';
 
 const renderLock = (onUnlock = vi.fn().mockResolvedValue(true), onUnlocked?: () => void) => {
@@ -131,6 +122,38 @@ describe('LockScreen', () => {
     expect(onUnlocked).toHaveBeenCalledTimes(1);
   });
 
+  it("reads the live mode: in light the title and the field take light's inks", () => {
+    // The screen used to read the static dark set, so a light side panel drew
+    // a dark field under an unreadable title. Every ink comes off the theme
+    // context now — the same contract mobile's `useSemantic()` has.
+    const light = createSemantic('light');
+    const value = {
+      mode: 'light',
+      preference: 'light',
+      setPreference: async () => undefined,
+      semantic: light,
+      shadows,
+      ready: true,
+    } as unknown as ThemeContextValue;
+
+    render(
+      <ThemeContext.Provider value={value}>
+        <LockScreen
+          onUnlock={vi.fn().mockResolvedValue(true)}
+          onRemoveAllAccounts={vi.fn().mockResolvedValue(undefined)}
+        />
+      </ThemeContext.Provider>
+    );
+
+    expect(screen.getByRole('heading', { level: 1 }).style.color).toBe(
+      hexToRgb(light.text.primary)
+    );
+    const field = screen.getByTestId('lock-password-input');
+    expect(getComputedStyle(field).backgroundColor).toBe(hexToRgb(light.input.ground));
+    // The mark is the brand accent in both modes, never the text ink.
+    expect(screen.getByTestId('brand-mark').getAttribute('fill')).toBe(light.accent.fill);
+  });
+
   it('puts the throttle notice in `assist` and disables the button in place', () => {
     mockThrottle.remainingMs = 5000;
     mockThrottle.remainingSeconds = 5;
@@ -146,3 +169,12 @@ describe('LockScreen', () => {
     expect(button.disabled).toBe(true);
   });
 });
+
+/** jsdom reports inline colours as `rgb(...)`, the tokens are hex. */
+function hexToRgb(hex: string): string {
+  const value = hex.replace('#', '');
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `rgb(${r}, ${g}, ${b})`;
+}

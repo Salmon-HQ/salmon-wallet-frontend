@@ -410,9 +410,6 @@ let currentPlatform: Platform | null = null;
  *
  * // Extension initialization
  * initStorage({ platform: 'extension' });
- *
- * // Web initialization
- * initStorage({ platform: 'web' });
  * ```
  */
 export function initStorage(config: StorageConfig): void {
@@ -428,9 +425,6 @@ export function initStorage(config: StorageConfig): void {
 
   // Create platform-specific adapter
   switch (platform) {
-    case 'web':
-      currentAdapter = createLocalStorageAdapter();
-      break;
     case 'extension':
       currentAdapter = createChromeStorageAdapter();
       break;

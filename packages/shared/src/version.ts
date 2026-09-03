@@ -1,9 +1,9 @@
 /**
  * The running app's version, as a single source of truth.
  *
- * Each Vite-built app (web, extension) replaces `__APP_VERSION__` at build time
- * with its own package.json version — see the `define` block in
- * `apps/web/vite.config.ts` and `apps/extension/wxt.config.ts`. Mobile does not
+ * The extension replaces `__APP_VERSION__` at build time with its own
+ * package.json version — see the `define` block in
+ * `apps/extension/wxt.config.ts`. Mobile does not
  * go through Vite and reads `app.json` directly in `apps/mobile/index.js`.
  *
  * The guard keeps this importable from vitest and any other context that does

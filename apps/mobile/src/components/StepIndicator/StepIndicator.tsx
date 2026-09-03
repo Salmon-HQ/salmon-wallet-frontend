@@ -19,8 +19,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, componentSizes, motionMs } from '@salmon/shared';
+import { componentSizes, motionMs, type Semantic } from '@salmon/shared';
 import { timing } from '../../utils/motion';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { StepIndicatorProps } from './types';
 
 /** Centre-to-centre distance between two dots. */
@@ -28,6 +29,7 @@ const stride = componentSizes.stepDotSize + componentSizes.stepDotGap;
 
 export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const isReduceMotionEnabled = useReducedMotion();
   // Zero-indexed position of the salmon dot, in dots.
   const position = useSharedValue(Math.max(0, currentStep - 1));
@@ -67,28 +69,29 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-  },
-  track: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: componentSizes.stepDotGap,
-  },
-  dot: {
-    width: componentSizes.stepDotSize,
-    height: componentSizes.stepDotSize,
-    borderRadius: componentSizes.stepDotSize / 2,
-  },
-  active: {
-    position: 'absolute',
-    left: 0,
-  },
-  dotActive: {
-    backgroundColor: colors.step.active,
-  },
-  dotInactive: {
-    backgroundColor: colors.step.inactive,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      justifyContent: 'center',
+    },
+    track: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: componentSizes.stepDotGap,
+    },
+    dot: {
+      width: componentSizes.stepDotSize,
+      height: componentSizes.stepDotSize,
+      borderRadius: componentSizes.stepDotSize / 2,
+    },
+    active: {
+      position: 'absolute',
+      left: 0,
+    },
+    dotActive: {
+      backgroundColor: t.step.active,
+    },
+    dotInactive: {
+      backgroundColor: t.step.inactive,
+    },
+  });

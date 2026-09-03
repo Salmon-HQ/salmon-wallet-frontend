@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from 'react-native';
-import { colors, fontFamilyNative, fontSize, spacing } from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, spacing, type Semantic } from '@salmon/shared';
+import { useThemedStyles } from '../src/theme/useThemedStyles';
 
 export default function NotFoundScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   return (
     <>
       <Stack.Screen options={{ title: t('general.not_found.title', 'Oops!') }} />
@@ -25,25 +27,25 @@ export default function NotFoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  link: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  linkText: {
-    fontSize: fontSize.base,
-    color: colors.accent.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    title: {
+      fontSize: s(fontSize.title),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+    },
+    link: {
+      marginTop: spacing.lg,
+      paddingVertical: spacing.lg,
+    },
+    linkText: {
+      fontSize: s(fontSize.body),
+      color: t.accent.ink,
+    },
+  });

@@ -23,10 +23,10 @@ Creating a React Native component in this repo can follow two valid paths: app-l
 
 Ask 1-3 focused questions if any of these are unclear:
 
-- Is this UI truly mobile-only, or should web/extension share the same semantic contract?
+- Is this UI truly mobile-only, or does the extension draw it too (then it is a twin on a shared contract)?
 - Does a shared `PropsBase<TStyle>` contract already exist in `packages/shared/src/types/ui`?
 - Is this component tied to Expo, React Native APIs, navigation, biometrics, camera, or another native capability?
-- Does the behavior require `.native.tsx` / `.web.tsx` or another platform split?
+- Does the behavior need a platform split inside mobile (iOS/Android), or is one RN file enough?
 - Is the component public enough to belong in `apps/mobile/src/components/index.ts`?
 
 If the answer changes the branch, the contract location, or the public export path, ask first.
@@ -65,3 +65,7 @@ Report findings with file paths and concrete recommendations.
 ## Test labels
 
 Any interactive RN component must follow the `e2e-test-labels` skill: accept/forward `testID`, and set `accessibilityRole`, `accessibilityLabel` (defaulting to the visible text), and `accessibilityState` for disabled/loading so Maestro can select it by `id` without relying on copy.
+
+## Twins and the parity gate
+
+Every `apps/mobile/src/components` component and every `apps/mobile/app` route is one half of a pair with the extension (`AGENTS.md` §Twins). Before finishing: mobile's `types.ts` `extends` the shared `XPropsBase` (not merely imports it) and the component imports its props from `./types`; the DOM twin in `packages/ui` builds on the same base and gets the same change; any size/colour/spacing both share is a token in `packages/shared/src/theme`, not a literal. A mobile-only component or route is listed in `scripts/check-dom-parity.mjs` `MOBILE_ONLY` / `MOBILE_ONLY_SCREENS` with its reason. Run `pnpm check:parity` — it is strict in CI.

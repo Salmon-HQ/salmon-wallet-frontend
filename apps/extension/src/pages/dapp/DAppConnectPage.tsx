@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { DAppConnectApprovalView } from '@salmon/ui';
 import { useDAppMetadata, type TrustedApp } from '@salmon/shared';
 import type { DAppConnectRequest } from '@salmon/shared';
+import { useDAppApproval } from './useDAppApproval';
 
 interface DAppConnectPageProps {
   origin: string;
@@ -22,54 +23,34 @@ export function DAppConnectPage({
   onDeny,
   onDismiss,
 }: DAppConnectPageProps): React.ReactElement {
-  const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
+  const { loading, setLoading, sendToBackground } = useDAppApproval({
+    requestId: request.id,
+    // The connect window has its own dismiss pair (onDeny + onDismiss);
+    // the shared reject is not used here.
+    onDismiss: () => {},
+  });
 
   const handleApprove = useCallback(async () => {
     setLoading(true);
     try {
       await onApprove(origin, metadata ? { name: metadata.name, icon: metadata.icon } : undefined);
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          channel: 'salmon_extension_background_channel',
-          data: {
-            method: 'connected',
-            params: { publicKey: address },
-            id: request.id,
-          },
-        });
-      }
+      sendToBackground({ method: 'connected', params: { publicKey: address } });
       onDismiss();
     } catch (err) {
       console.error('[Salmon] DApp connect approve failed:', err);
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          channel: 'salmon_extension_background_channel',
-          data: {
-            error: 'Failed to approve connection',
-            id: request.id,
-          },
-        });
-      }
+      sendToBackground({ error: 'Failed to approve connection' });
       onDismiss();
     } finally {
       setLoading(false);
     }
-  }, [address, metadata, onApprove, onDismiss, origin, request.id]);
+  }, [address, metadata, onApprove, onDismiss, origin, sendToBackground, setLoading]);
 
   const handleReject = useCallback(() => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({
-        channel: 'salmon_extension_background_channel',
-        data: {
-          error: 'User rejected the request',
-          id: request.id,
-        },
-      });
-    }
+    sendToBackground({ error: 'User rejected the request' });
     onDeny();
     onDismiss();
-  }, [onDeny, onDismiss, request.id]);
+  }, [onDeny, onDismiss, sendToBackground]);
 
   return (
     <DAppConnectApprovalView

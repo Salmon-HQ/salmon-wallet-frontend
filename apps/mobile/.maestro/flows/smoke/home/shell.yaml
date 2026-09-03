@@ -1,0 +1,64 @@
+appId: io.salmonwallet.app
+---
+# Walk the Home shell that replaced the bottom tab bar: the balance block with
+# its eye toggle and money actions, the in-page Portfolio | NFTs sub-tabs, and
+# the powerups FAB with the browse screen it pushes.
+#
+# Read-only: the eye toggle is never tapped (it persists), the sub-tabs only
+# change what is drawn, and the browse screen installs nothing. Everything
+# is asserted by testID — the labels are localised.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- assertVisible:
+    id: 'home-screen'
+- assertVisible:
+    id: 'balance-eye-toggle'
+- assertVisible:
+    id: 'home-send-button'
+- assertVisible:
+    id: 'portfolio-tab-portfolio'
+- assertVisible:
+    id: 'portfolio-tab-nfts'
+- assertVisible:
+    id: 'powerups-fab'
+- takeScreenshot: screenshots/smoke/home/shell-portfolio
+
+# The sub-tabs are offered on every chain; NFTs takes the balance back to
+# Solana on its own when it needs to.
+- tapOn:
+    id: 'portfolio-tab-nfts'
+- extendedWaitUntil:
+    visible: 'My Collectibles'
+    timeout: 30000
+# The sub-tab row stays reachable on the NFTs tab — that is the whole point of
+# it sticking rather than scrolling away with the balance.
+- assertVisible:
+    id: 'portfolio-tab-portfolio'
+- takeScreenshot: screenshots/smoke/home/shell-nfts
+- tapOn:
+    id: 'portfolio-tab-portfolio'
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# The `+` pushes POWERUPS 02 · Browse as a full-height screen. The FAB is
+# mounted ONCE, above the stack (`(app)/_layout.tsx`), so it stays in the same
+# spot across both routes, turned to the close mark, and taps again to dismiss.
+# One mounted instance means `id: powerups-fab` can never match two views —
+# it used to be mounted twice (Home's and the browse screen's) and only the
+# fullScreenModal window kept the two apart.
+- tapOn:
+    id: 'powerups-fab'
+- extendedWaitUntil:
+    visible:
+      id: 'powerups-browse-screen'
+    timeout: 20000
+- takeScreenshot: screenshots/smoke/home/shell-powerups
+- tapOn:
+    id: 'powerups-fab'
+# Home is never unmounted underneath, so its own id proves nothing here: what
+# has to be gone is the screen that covered it.
+- extendedWaitUntil:
+    notVisible:
+      id: 'powerups-browse-screen'
+    timeout: 20000
+- assertVisible:
+    id: 'powerups-fab'

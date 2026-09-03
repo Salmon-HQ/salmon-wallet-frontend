@@ -13,15 +13,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// The root `@salmon/shared` barrel reaches React Native, which Vite cannot
-// parse. The theme subtree and the seed-phrase utils are both pure, so they
-// stand in for the barrel and the real `distributePhrase` is exercised.
-vi.mock('@salmon/shared', async () => {
-  const theme = await import('../../../../shared/src/theme');
-  const seedPhrase = await import('../../../../shared/src/utils/seed-phrase');
-  return { ...theme, ...seedPhrase };
-});
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) => `${key}${values?.position ?? ''}`,

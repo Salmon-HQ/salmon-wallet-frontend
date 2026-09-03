@@ -1,20 +1,2 @@
-export {
-  Icon,
-  LockIcon,
-  EyeIcon,
-  EyeOffIcon,
-  RefreshIcon,
-  SendIcon,
-  ReceiveIcon,
-  SettingsIcon,
-  CopyIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-  ActivityIcon,
-  WalletIcon,
-  CloseIcon,
-  SolanaSvgIcon,
-  BitcoinSvgIcon,
-  EthereumSvgIcon,
-} from './Icon';
-export type { UnifiedIconProps, IconProps } from './types';
+export { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from './Icon';
+export type { BlockchainMarkProps } from './types';

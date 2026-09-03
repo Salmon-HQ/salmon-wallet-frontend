@@ -6,6 +6,8 @@ const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
 const mockNotificationAsync = jest.fn().mockResolvedValue(undefined);
 const mockExplorerPress = jest.fn();
 const mockExplorerProps = jest.fn();
+// The technical block follows the provider's flag, not a prop.
+let mockDeveloperMode = false;
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -38,44 +40,15 @@ jest.mock('../../utils/haptics', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The real tokens: the detail is built from the kit now, and every
+  // primitive it composes reads a different corner of the theme. Listing
+  // tokens by hand is how this mock used to break on an unrelated change.
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The mobile wrapper hook reads the real motion vocabulary.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  semantic: {
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
-    depth: { column: '#0B0F19', abyss: '#070911' },
-    accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
-    border: { default: '#58637B', raised: '#6F7B95' },
-  },
-  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
-  borderRadius: { lg: 16, button: 16, sm: 8, tokenIcon: 20 },
-  borderWidth: { thin: 1 },
-  colors: {
-    change: { negative: '#f44', positive: '#4f4' },
-    palette: {
-      purple: '#90f',
-      cyan: '#0ff',
-      orange: '#f90',
-      green: '#0f0',
-      amber: '#fc0',
-      blue: '#09f',
-    },
-    text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
-    status: { success: '#0f0', error: '#f00', warning: '#fc0' },
-    accent: { primary: '#f54', tint: 'rgba(255, 92, 69, 0.1)' },
-    background: { card: '#111' },
-    border: { subtle: '#222' },
-  },
-  fontFamilyNative: {
-    bold: 'System',
-    semiBold: 'DMSansSemiBold',
-    medium: 'System',
-    regular: 'System',
-    mono: 'GeistMonoRegular',
-  },
-  fontSize: { xs: 12, sm: 14, base: 16, lg: 20, headline: 24, mono: 13 },
+  // The display tables and derivations are real: the verb, the status ink
+  // and the swap rate are what this detail is built from.
+  ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  useDeveloperMode: () => mockDeveloperMode,
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
   formatRawAmount: (amount: string | number, decimals: number) =>
@@ -86,13 +59,43 @@ jest.mock('@salmon/shared', () => ({
     if (networkId.startsWith('ethereum')) return 'ethereum';
     return 'solana';
   },
-  letterSpacing: { label: 1, snug: -0.12 },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, headerPadding: 20 },
   truncateHash: (value: string) => `hash:${value.slice(0, 8)}`,
-  ms: (value: number) => value,
-  vs: (value: number) => value,
-  s: (value: number) => value,
 }));
+
+// No worklets runtime in Jest: the kit's pressable bubble pulls reanimated in,
+// so the animated touchable, the press hook and the two textures need
+// plain-JS stand-ins (same shape as the IconBubble suite's).
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+
+jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
+
+jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
 jest.mock('../BlurContainer', () => ({
   BlurContainer: ({ children }: { children?: React.ReactNode }) => {
@@ -105,7 +108,7 @@ jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
-jest.mock('../TransactionHistorySheet/AddressCopyRow', () => ({
+jest.mock('../Activity/AddressCopyRow', () => ({
   AddressCopyRow: ({ label, address }: { label: string; address: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -113,7 +116,7 @@ jest.mock('../TransactionHistorySheet/AddressCopyRow', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/ExplorerLinkButton', () => ({
+jest.mock('../Activity/ExplorerLinkButton', () => ({
   ExplorerLinkButton: ({
     onPress,
     ...props
@@ -138,7 +141,7 @@ jest.mock('../TransactionHistorySheet/ExplorerLinkButton', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/PriceImpactBadge', () => ({
+jest.mock('../Activity/PriceImpactBadge', () => ({
   PriceImpactBadge: ({ value }: { value: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -146,7 +149,7 @@ jest.mock('../TransactionHistorySheet/PriceImpactBadge', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/ConversionRateDisplay', () => ({
+jest.mock('../Activity/ConversionRateDisplay', () => ({
   ConversionRateDisplay: ({
     fromSymbol,
     toSymbol,
@@ -162,6 +165,7 @@ jest.mock('../TransactionHistorySheet/ConversionRateDisplay', () => ({
   },
 }));
 
+import { borderRadius, semantic } from '@salmon/shared';
 import { TransactionDetail } from './TransactionDetail';
 
 const BASE_TRANSACTION = {
@@ -294,16 +298,11 @@ describe('TransactionDetail', () => {
 
   it('shows developer details and forwards explorer action', () => {
     const onViewExplorer = jest.fn();
+    mockDeveloperMode = true;
 
-    render(
-      <TransactionDetail
-        transaction={BASE_TRANSACTION}
-        onViewExplorer={onViewExplorer}
-        developerMode
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} onViewExplorer={onViewExplorer} />);
 
-    expect(screen.getByText('Developer Info')).toBeTruthy();
+    expect(screen.getByText('DEVELOPER INFO')).toBeTruthy();
     expect(screen.getByText('SWAP')).toBeTruthy();
     expect(screen.getAllByText('Orca').length).toBeGreaterThan(0);
 
@@ -352,6 +351,23 @@ describe('TransactionDetail', () => {
     const blockNumber = StyleSheet.flatten(screen.getByText('#123456').props.style);
 
     expect(blockNumber.fontVariant).toEqual(['tabular-nums']);
+  });
+
+  it('draws the status block and the receipt cards with the kit primitives', () => {
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
+
+    // The status mark is `IconBubble` 48, circle, accent tint — not a
+    // hand-drawn box with its own radius and its own tinted fill.
+    const mark = StyleSheet.flatten(screen.getByTestId('tx-detail-status-mark').props.style);
+    expect(mark.width).toBe(48);
+    expect(mark.height).toBe(48);
+    expect(mark.borderRadius).toBe(borderRadius.full);
+    expect(mark.backgroundColor).toBe(semantic.accent.tint);
+
+    // Each block below is a `Card` on the kit's ground and radius.
+    const meta = StyleSheet.flatten(screen.getByTestId('tx-detail-meta').props.style);
+    expect(meta.borderRadius).toBe(borderRadius.r4);
+    expect(meta.backgroundColor).toBe(semantic.surface.membraneThin);
   });
 
   it('falls back to Solana mainnet when networkId is missing', () => {

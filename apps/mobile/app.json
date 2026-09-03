@@ -41,11 +41,6 @@
         "android.permission.READ_MEDIA_IMAGES"
       ]
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       [
         "expo-camera",

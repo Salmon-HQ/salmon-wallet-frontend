@@ -9,14 +9,9 @@
  * orphaned the outcome. Leaving a screen cost the user the answer to "did my
  * money move".
  *
- * This is the sibling of `BridgeSettlementContext`, deliberately not a merge of
- * it. They share the pattern — mounted at the app root, persisted to storage,
- * polled in the background, rehydrated on restart — but nothing else: a bridge
- * is a REST order at a third party that settles in minutes and has no expiry,
- * while these are chain signatures that settle in ~13 seconds and go
- * permanently invalid when their blockhash window closes. One poller serving
- * both would be an `if` on every line. What *is* shared is the surface:
- * `usePendingActivity` merges both lists into the one banner the user sees.
+ * Mounted at the app root, persisted to storage, polled in the background,
+ * rehydrated on restart. `usePendingActivity` is the surface: it is what the
+ * one pending banner the user sees renders from.
  *
  * ## What "done" means, once, for the whole app
  *

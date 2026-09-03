@@ -23,8 +23,9 @@ import {
   fontSize,
   lineHeight,
   onboardingIdentityGridFull,
-  semantic,
+  s,
   useAccountsContext,
+  type Semantic,
 } from '@salmon/shared';
 import {
   BrandMark,
@@ -34,8 +35,11 @@ import {
   TextButton,
   Wordmark,
 } from '../../src/components';
+import { useThemedStyles } from '../../src/theme/useThemedStyles';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+
+import { useSemantic } from '../../src/theme/useThemedStyles';
 import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
@@ -44,6 +48,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
+  const styles = useThemedStyles(stylesFor);
   const [state, actions] = useAccountsContext();
 
   // Check if there are existing accounts stored
@@ -64,7 +70,7 @@ export default function WelcomeScreen() {
   };
 
   /**
-   * Lock accounts and navigate to main app where the GateContainer
+   * Lock accounts and navigate to main app where the lock overlay
    * lock state will show.
    */
   const handleAccessExistingAccount = async () => {
@@ -88,7 +94,9 @@ export default function WelcomeScreen() {
       */
       mark={
         <View testID="welcome-brand-mark">
-          <BrandMark size={onboardingIdentityGridFull.markSize} />
+          {/* The fish at the door is the brand accent, as it is on the lock and
+              the wait (owner, 2026-09-02). */}
+          <BrandMark size={onboardingIdentityGridFull.markSize} color={accent.fill} />
         </View>
       }
       /*
@@ -129,14 +137,15 @@ export default function WelcomeScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  // The slogan is a brand line at body size in secondary ink — quieter than
-  // the flow's description token, subordinate to the wordmark above it.
-  slogan: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    // The slogan is a brand line at body size in secondary ink — quieter than
+    // the flow's description token, subordinate to the wordmark above it.
+    slogan: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

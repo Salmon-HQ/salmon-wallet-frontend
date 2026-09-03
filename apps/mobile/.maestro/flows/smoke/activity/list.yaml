@@ -1,14 +1,17 @@
 appId: io.salmonwallet.app
 ---
-# Open the Activity sheet from the Home action chip.
+# Open the Activity screen from the Home balance pill. Activity is a pushed
+# screen now (CORE 08), not a bottom sheet — it leaves through the back well.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
     id: 'wallet-header-account-switcher'
 - tapOn:
     id: 'home-activity-button'
 - assertVisible:
-    id: 'activity-list'
+    id: 'activity-screen'
+- assertVisible:
+    id: 'activity-filters'
 - takeScreenshot: screenshots/smoke/activity/list
-- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- runFlow: ../../../subflows/settings-back.yaml
 - assertVisible:
     id: 'wallet-header-account-switcher'

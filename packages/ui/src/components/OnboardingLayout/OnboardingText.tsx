@@ -6,43 +6,37 @@
  * line-heights for the same size. These two components are the whole of the
  * flow's typography now, so a screen cannot introduce a fifth.
  *
- * Both read the same tokens the React Native twin reads, so the two platforms
- * reserve the same number of pixels for the same string.
+ * Both read the same tokens the React Native twin reads
+ * (`apps/mobile/src/components/OnboardingLayout/OnboardingText.tsx`), off the
+ * live mode, so the two platforms reserve the same number of pixels for the
+ * same string and both re-ink when the mode changes.
  */
-import Typography from '@mui/material/Typography';
-import { fontFamily, fontSize, fontWeight, lineHeight, semantic } from '@salmon/shared';
+import { fontFamily, fontSize, fontWeight, lineHeight } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
-import type { ReactNode } from 'react';
-import { styled } from '../../utils/styled';
+import type { CSSProperties, ReactNode } from 'react';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 
 export interface OnboardingTextProps extends Testable {
   children: ReactNode;
 }
 
-const Title = styled(Typography<'h1'>)({
-  color: semantic.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.bold,
-  fontSize: fontSize.headline,
-  lineHeight: `${Math.round(fontSize.headline * lineHeight.tight)}px`,
-  textAlign: 'center',
-  margin: 0,
-});
-
-const Description = styled(Typography<'p'>)({
-  color: semantic.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
-  textAlign: 'center',
-  margin: 0,
-});
-
 export function OnboardingTitle({ children, testID }: OnboardingTextProps): React.ReactElement {
+  const { text } = useSemantic();
+  const style: CSSProperties = {
+    color: text.primary,
+    fontFamily: fontFamily.sans,
+    fontWeight: fontWeight.bold,
+    fontSize: fontSize.headline,
+    lineHeight: `${Math.round(fontSize.headline * lineHeight.tight)}px`,
+    textAlign: 'center',
+    margin: 0,
+  };
+
   return (
-    <Title component="h1" data-testid={testID}>
+    <h1 style={style} data-testid={testID}>
       {children}
-    </Title>
+    </h1>
   );
 }
 
@@ -50,9 +44,19 @@ export function OnboardingDescription({
   children,
   testID,
 }: OnboardingTextProps): React.ReactElement {
+  const { text } = useSemantic();
+  const style: CSSProperties = {
+    color: text.secondary,
+    fontFamily: fontFamily.sans,
+    fontSize: fontSize.bodyLg,
+    lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
+    textAlign: 'center',
+    margin: 0,
+  };
+
   return (
-    <Description component="p" data-testid={testID}>
+    <p style={style} data-testid={testID}>
       {children}
-    </Description>
+    </p>
   );
 }

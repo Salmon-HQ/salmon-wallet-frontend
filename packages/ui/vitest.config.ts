@@ -9,6 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@salmon/shared/utils/': fileURLToPath(new URL('../shared/src/utils/', import.meta.url)),
+      // The `@salmon/shared` barrel reaches `react-native` through its storage
+      // adapter. RN ships Flow, which Vitest's transform cannot parse, and this
+      // package never renders RN — so the module resolves to an empty stub and
+      // a kit test can import the real tokens, contexts and contracts.
+      'react-native': fileURLToPath(new URL('./src/test/react-native-stub.ts', import.meta.url)),
     },
   },
   test: {

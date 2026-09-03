@@ -13,7 +13,7 @@
     },
     {
       "id": "cross-platform-mobile-implementation",
-      "prompt": "Implement the React Native side of a component that should share the same semantic contract with web and extension.",
+      "prompt": "Implement the React Native side of a component that should share the same semantic contract with the extension.",
       "expected_output": "Use mobile-component-scaffold, choose the cross-platform branch, extend the shared PropsBase contract locally with ViewStyle, keep the RN implementation in apps/mobile, and update mobile exports.",
       "files": [
         "packages/shared/src/types/ui/wallet-header.ts",

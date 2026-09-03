@@ -5,9 +5,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../assets/fonts.css';
 
-// Theme — MUI needs an explicit dark theme; its default is light.
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { IconDefaults, salmonTheme } from '@salmon/ui';
+// Theme — the provider owns the mode (stored preference + system scheme) and
+// writes the `--sw-*` tokens on the root; the html entry's own reset paints
+// the ground from those tokens, so no MUI baseline is needed.
+import { IconDefaults, SalmonThemeProvider, TaskChromeProvider } from '@salmon/ui';
 
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
@@ -24,7 +25,6 @@ import {
   CurrencyProvider,
   createQueryClient,
   QueryClientProvider,
-  BridgeSettlementProvider,
 } from '@salmon/shared';
 
 // Initialize storage with Chrome extension adapter
@@ -40,11 +40,10 @@ function Root() {
   const [queryClient] = React.useState(() => createQueryClient());
   return (
     <React.StrictMode>
-      <ThemeProvider theme={salmonTheme}>
-        <CssBaseline />
-        <IconDefaults>
-          <QueryClientProvider client={queryClient}>
-            <BridgeSettlementProvider>
+      <SalmonThemeProvider>
+        <TaskChromeProvider>
+          <IconDefaults>
+            <QueryClientProvider client={queryClient}>
               <I18nextProvider i18n={i18n}>
                 <AccountsProvider>
                   <CurrencyProvider>
@@ -54,10 +53,10 @@ function Root() {
                   </CurrencyProvider>
                 </AccountsProvider>
               </I18nextProvider>
-            </BridgeSettlementProvider>
-          </QueryClientProvider>
-        </IconDefaults>
-      </ThemeProvider>
+            </QueryClientProvider>
+          </IconDefaults>
+        </TaskChromeProvider>
+      </SalmonThemeProvider>
     </React.StrictMode>
   );
 }

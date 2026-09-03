@@ -3,23 +3,21 @@
 jest.mock('@salmon/shared', () => ({
   ContentLoader: () => null,
   Rect: () => null,
-  colors: {
-    skeleton: { base: '#111', highlight: '#222' },
-    text: { primary: '#fff', secondary: '#aaa' },
-  },
-  spacing: { xs: 4, sm: 8 },
+  spacing: { xs: 4, sm: 8, screenGutter: 20 },
   borderRadius: { full: 999 },
   fontFamilyNative: { bold: 'Font-Bold' },
   fontWeight: { bold: '700' },
   isPositivePerformance: () => true,
   PRICE_CHART_PERIODS: ['1H', '1D', '1W', '1M', '3M', '1Y'],
-  fontSize: { base: 16 },
-  motionMs: { drift: 280 },
-  opacity: { soft: 0.7, full: 1 },
+  fontSize: { body: 16 },
+  s: (size: number) => size,
+  motionMs: { drift: 280, tide: 720 },
+  opacity: { faint: 0.4, soft: 0.7, full: 1 },
   semantic: {
     status: { success: '#0f0', danger: '#f00' },
     accent: { tint: '#fee' },
-    text: { accent: '#f88' },
+    text: { accent: '#f88', primary: '#fff', secondary: '#aaa' },
+    skeleton: { base: '#111', highlight: '#222' },
   },
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },
@@ -28,7 +26,13 @@ jest.mock('@salmon/shared', () => ({
     swellIn: { native: [0.34, 1.14, 0.64, 1] },
   },
   resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
+  // The curve math is real: bounds and resampling are what the path is made of.
+  ...jest.requireActual('@salmon/shared/src/utils/priceChartPath'),
 }));
+
+// The period selector is the kit's UnderlineTabs, whose own tokens the partial
+// mock above does not carry; nothing here renders the selector.
+jest.mock('../UnderlineTabs', () => ({ UnderlineTabs: () => null }));
 
 jest.mock('react-native-reanimated', () => {
   const { View } = jest.requireActual('react-native');
@@ -40,11 +44,13 @@ jest.mock('react-native-reanimated', () => {
     useDerivedValue: (fn: () => unknown) => ({ value: fn() }),
     useReducedMotion: () => false,
     withTiming: (toValue: unknown) => toValue,
+    withRepeat: (value: unknown) => value,
     Easing: { bezier: () => () => 0 },
   };
 });
 
-import { resampleYs, buildLinePath } from './PriceChart';
+import { resampleYs } from '@salmon/shared';
+import { buildLinePath } from './PriceChart';
 
 const HEIGHT = 200;
 const WIDTH = 300;

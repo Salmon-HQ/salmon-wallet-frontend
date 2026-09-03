@@ -48,7 +48,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
@@ -64,17 +63,18 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import {
-  colors,
   CREST_FADE_FROM,
   crestStops,
   crestTrain,
+  type CrestShadow,
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
+  lineHeight,
   markPaths,
   markViewBoxAttr,
   motionMs,
-  semantic,
+  s,
   spacing,
   fontSize,
   planWavefrontExit,
@@ -85,7 +85,9 @@ import {
   WAVEFRONT_PERIOD_MS,
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
+  type Semantic,
   type WavefrontPoint,
+  componentSizes,
 } from '@salmon/shared';
 
 import { LoadingScreenProps } from './types';
@@ -96,8 +98,10 @@ import {
   SINK_FLOAT_TRAVEL,
   floatEntering,
 } from '../../utils/sinkAndFloat';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 // ============================================================================
 // Constants
@@ -123,7 +127,7 @@ const MARK_SINK_DIM = 0.12;
  * middle of the phone and bigger*, because the origin of a radial front is the
  * one thing on a wait screen that may not be off-centre.
  */
-const MARK_SIZE = 96;
+const MARK_SIZE = componentSizes.markHero;
 /** Clear space between the mark's edge and the first word under it. */
 const MARK_TO_WORDS = spacing['3xl'];
 
@@ -199,8 +203,18 @@ function crestBox(origin: WavefrontPoint) {
  * not the whole disc, and `userSpaceOnUse` makes a gradient offset and a
  * fraction of the front's radius the same number on both platforms.
  */
-function CrestArc({ id, alpha }: { id: string; alpha: number }) {
-  const stops = crestStops(alpha);
+function CrestArc({
+  id,
+  alpha,
+  color,
+  shadow,
+}: {
+  id: string;
+  alpha: number;
+  color: string;
+  shadow: CrestShadow;
+}) {
+  const stops = crestStops(alpha, color, shadow);
   const inner = stops[0].offset;
   const outer = stops[stops.length - 1].offset;
   return (
@@ -260,6 +274,8 @@ export function LoadingScreen({
   onReady,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent, water } = useSemantic();
 
   // Resolve tip keys through t() for i18n
   const resolvedTips = useMemo(() => tips.map((tipKey) => t(tipKey, tipKey)), [tips, t]);
@@ -312,6 +328,18 @@ export function LoadingScreen({
    */
   const exitedRef = useRef(false);
   /**
+   * The shell surfaces when the wait leaves. Every wait — unlock, wallet
+   * switch, a send — hands Home its float back through this, so no call site
+   * has to remember (owner, 2026-09-02). Outside a provider (onboarding) the
+   * context default makes it a no-op. Held in a ref for the same reason
+   * `onExited` is.
+   */
+  const { surface: surfaceShell } = useTaskChrome();
+  const surfaceRef = useRef(surfaceShell);
+  useEffect(() => {
+    surfaceRef.current = surfaceShell;
+  }, [surfaceShell]);
+  /**
    * When the loop started, so the exit can ask where the front is without
    * reading an animation. The phase is `(now − startedAt) % period`, which is
    * all `planWavefrontExit` needs to keep the handoff pure and testable.
@@ -335,6 +363,7 @@ export function LoadingScreen({
     if (exitedRef.current) return;
     exitedRef.current = true;
     setIsVisible(false);
+    surfaceRef.current();
     onExitedRef.current?.();
   }, []);
 
@@ -694,17 +723,14 @@ export function LoadingScreen({
 
   const wait = (
     <Animated.View style={[styles.overlay, overlayStyle]}>
-      <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        onLayout={measureFrame}
-      >
+      <View style={styles.container} onLayout={measureFrame}>
         {/* A wait is a screen, and a screen is water — the same pair the tab
-            ground and the auth stack mount, over this overlay's own flat
-            gradient rather than instead of it, so the wait keeps the exact
-            enter and exit it had. Nothing below is redrawn. */}
+            ground and the auth stack mount. It used to sit over a second,
+            flat `[depth.abyss, surface.raised]` gradient of this screen's own,
+            which `DepthBackground` covered entirely and which ran the opposite
+            way to `water.gradient` in both modes. Dead paint, and a ground the
+            DOM twin never had: the wait now takes its ground where every other
+            screen takes it. */}
         <DepthBackground />
         <ScalesBackground variant="deepField" />
 
@@ -725,7 +751,12 @@ export function LoadingScreen({
                   crestStyles[index],
                 ]}
               >
-                <CrestArc id={`crest-${index}`} alpha={alpha} />
+                <CrestArc
+                  id={`crest-${index}`}
+                  alpha={alpha}
+                  color={accent.fill}
+                  shadow={water.crestShadow}
+                />
               </Animated.View>
             ))}
           </>
@@ -757,10 +788,9 @@ export function LoadingScreen({
               The cluster is centred as one column instead, so the wait's
               content is centred on both axes whatever number of lines the
               caller passes, and the front's origin is still measured from
-              this box rather than assumed. The mark is **white**
-              (`semantic.text.primary`, the same ink as the title below it) and
-              deliberately not the accent: salmon is the ink of *action*, and a
-              wait has no action in it — see DESIGN.md §The wait. */}
+              this box rather than assumed. The mark is the brand accent,
+              `accent.fill`, the button's own salmon in both modes — same as the crest it emits (owner
+              ruling, 2026-09-01, DESIGN.md §The wait). */}
             {waves && (
               <Animated.View
                 style={[styles.emitter, sinkStyle]}
@@ -771,7 +801,7 @@ export function LoadingScreen({
               >
                 <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
                   {markPaths.map((d) => (
-                    <Path key={d} d={d} fill={semantic.text.primary} />
+                    <Path key={d} d={d} fill={accent.fill} />
                   ))}
                 </Svg>
               </Animated.View>
@@ -799,7 +829,7 @@ export function LoadingScreen({
             )}
           </Animated.View>
         </View>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 
@@ -827,135 +857,136 @@ export function LoadingScreen({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-  },
-  container: {
-    flex: 1,
-  },
-  /**
-   * The wave's coordinate space, and it has to be **exactly the frame**.
-   *
-   * It carried `paddingHorizontal: spacing['2xl']`, and that single line was
-   * the miscentring product saw on the device: Yoga resolves a percentage
-   * `left` on an absolutely-positioned child against the parent's *content*
-   * width (width minus padding) but lays it out from the parent's *border-box*
-   * edge, so `left: '50%'` landed the emitter at `(W − 2·24)/2` instead of
-   * `W/2` — 24dp to the left, measured at 73px on a 1280px-wide 3× capture.
-   * The words and the tips were unaffected because they set explicit `left` and
-   * `right` insets rather than a percentage, which is exactly why the title
-   * looked centred next to a mark that was not.
-   *
-   * The padding was also dead weight: every child here is absolutely positioned
-   * and carries its own horizontal inset. Nothing may reintroduce it — the
-   * emitter's centre is both the visual centre of the screen and the origin the
-   * whole front is measured from.
-   */
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  /**
-   * The cluster — mark, then words — centred as one column in the frame.
-   *
-   * The wait's content is what the eye reads, so it is what has to be centred.
-   * Pinning the mark to `top: 50%` and hanging the words below it centred the
-   * emitter and left the cluster low by half the words' height, which is the
-   * off-centre product saw on the swap wait (two lines) more than on the
-   * one-line waits. Centring the column keeps the mark horizontally exact —
-   * `alignItems: 'center'`, no percentage anchor, so the Yoga padding trap
-   * documented on `content` cannot come back — and the front's origin is
-   * measured from the mark's real box, so it follows the cluster honestly.
-   */
-  cluster: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  words: {
-    alignSelf: 'stretch',
-    paddingHorizontal: spacing['2xl'],
-    alignItems: 'center',
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.headline,
-    lineHeight: 32,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  /**
-   * The emitter, head of the cluster — see `styles.cluster`. The clear space
-   * to the first word lives here rather than on the words, so a wait with no
-   * mark (`waves={false}`) centres its words with no phantom gap above them.
-   */
-  emitter: {
-    marginBottom: MARK_TO_WORDS,
-    width: MARK_SIZE,
-    height: MARK_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  /**
-   * The front, drawn — see `CrestArc` for what is inside it and why. The box is
-   * a fixed `CREST_RASTER` square scaled up to the front's real size; this style
-   * carries nothing but position, because everything that changes per frame has
-   * to stay a transform.
-   */
-  crest: {
-    position: 'absolute',
-  },
-  /**
-   * `bottomOffset` clears the floating chrome, and it is applied *here* rather
-   * than as padding on the container. As container padding it shortened the
-   * surface the emitter centres itself in, pushing the mark up by half the
-   * offset on exactly the screen where the wave matters most — the transaction
-   * wait. The chrome only ever needed the tips out of its way.
-   */
-  tipsContainer: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    alignItems: 'center',
-    // The word "Tip" is a fixed landmark, so the block reserves room for the
-    // longest tip instead of being sized by the current one. Anchored from the
-    // bottom and sized by content, a two-line tip pushed the label up and a
-    // one-line tip dropped it back down — the label moved every rotation,
-    // which is the one thing on this screen that should not.
-    height: TIP_LABEL_BLOCK_HEIGHT + TIP_LINE_HEIGHT * MAX_TIP_LINES,
-    justifyContent: 'flex-start',
-  },
-  tipLabel: {
-    color: colors.accent.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.sm,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: letterSpacing.widest,
-    marginBottom: spacing.sm,
-  },
-  tipText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: TIP_LINE_HEIGHT,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9999,
+    },
+    container: {
+      flex: 1,
+    },
+    /**
+     * The wave's coordinate space, and it has to be **exactly the frame**.
+     *
+     * It carried `paddingHorizontal: spacing['2xl']`, and that single line was
+     * the miscentring product saw on the device: Yoga resolves a percentage
+     * `left` on an absolutely-positioned child against the parent's *content*
+     * width (width minus padding) but lays it out from the parent's *border-box*
+     * edge, so `left: '50%'` landed the emitter at `(W − 2·24)/2` instead of
+     * `W/2` — 24dp to the left, measured at 73px on a 1280px-wide 3× capture.
+     * The words and the tips were unaffected because they set explicit `left` and
+     * `right` insets rather than a percentage, which is exactly why the title
+     * looked centred next to a mark that was not.
+     *
+     * The padding was also dead weight: every child here is absolutely positioned
+     * and carries its own horizontal inset. Nothing may reintroduce it — the
+     * emitter's centre is both the visual centre of the screen and the origin the
+     * whole front is measured from.
+     */
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    /**
+     * The cluster — mark, then words — centred as one column in the frame.
+     *
+     * The wait's content is what the eye reads, so it is what has to be centred.
+     * Pinning the mark to `top: 50%` and hanging the words below it centred the
+     * emitter and left the cluster low by half the words' height, which is the
+     * off-centre product saw on the swap wait (two lines) more than on the
+     * one-line waits. Centring the column keeps the mark horizontally exact —
+     * `alignItems: 'center'`, no percentage anchor, so the Yoga padding trap
+     * documented on `content` cannot come back — and the front's origin is
+     * measured from the mark's real box, so it follows the cluster honestly.
+     */
+    cluster: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    words: {
+      alignSelf: 'stretch',
+      paddingHorizontal: spacing['2xl'],
+      alignItems: 'center',
+    },
+    title: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.headline),
+      lineHeight: fontSize.headline * lineHeight.snug,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    subtitle: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: fontSize.bodyLg * lineHeight.tight,
+      textAlign: 'center',
+    },
+    /**
+     * The emitter, head of the cluster — see `styles.cluster`. The clear space
+     * to the first word lives here rather than on the words, so a wait with no
+     * mark (`waves={false}`) centres its words with no phantom gap above them.
+     */
+    emitter: {
+      marginBottom: MARK_TO_WORDS,
+      width: MARK_SIZE,
+      height: MARK_SIZE,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    /**
+     * The front, drawn — see `CrestArc` for what is inside it and why. The box is
+     * a fixed `CREST_RASTER` square scaled up to the front's real size; this style
+     * carries nothing but position, because everything that changes per frame has
+     * to stay a transform.
+     */
+    crest: {
+      position: 'absolute',
+    },
+    /**
+     * `bottomOffset` clears the floating chrome, and it is applied *here* rather
+     * than as padding on the container. As container padding it shortened the
+     * surface the emitter centres itself in, pushing the mark up by half the
+     * offset on exactly the screen where the wave matters most — the transaction
+     * wait. The chrome only ever needed the tips out of its way.
+     */
+    tipsContainer: {
+      position: 'absolute',
+      left: 24,
+      right: 24,
+      alignItems: 'center',
+      // The word "Tip" is a fixed landmark, so the block reserves room for the
+      // longest tip instead of being sized by the current one. Anchored from the
+      // bottom and sized by content, a two-line tip pushed the label up and a
+      // one-line tip dropped it back down — the label moved every rotation,
+      // which is the one thing on this screen that should not.
+      height: TIP_LABEL_BLOCK_HEIGHT + TIP_LINE_HEIGHT * MAX_TIP_LINES,
+      justifyContent: 'flex-start',
+    },
+    tipLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.snug,
+      textTransform: 'uppercase',
+      letterSpacing: letterSpacing.widest,
+      marginBottom: spacing.sm,
+    },
+    tipText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: TIP_LINE_HEIGHT,
+      textAlign: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+  });
 
 export default LoadingScreen;

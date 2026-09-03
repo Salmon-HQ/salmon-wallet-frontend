@@ -48,15 +48,16 @@ We believe open ecosystems deserve open wallet infrastructure.
 
 ## Current Platforms
 
-Salmon currently supports:
+Salmon currently ships as:
 
-- Browser Extension
-- Web Wallet
-- Android App
+- Browser extension (Chrome side panel; Firefox build available)
+- Android app
 
 Coming soon:
 
 - iOS
+
+The web wallet was retired on 2026-09-02; the extension is the only browser surface.
 
 The project launched in 2022 and continues to evolve with a focus on reliability, security, and ecosystem interoperability.
 
@@ -67,7 +68,6 @@ The project launched in 2022 and continues to evolve with a focus on reliability
 ```text
 apps/
 ├── extension/
-├── web/
 └── mobile/
 
 packages/
@@ -77,6 +77,9 @@ packages/
 
 docs/
 └── ARCHITECTURE.md
+
+scripts/
+└── check-dom-parity.mjs
 ```
 
 ### Applications
@@ -84,29 +87,34 @@ docs/
 | Package          | Description                                    |
 | ---------------- | ---------------------------------------------- |
 | `apps/extension` | Browser extension built with WXT and React     |
-| `apps/web`       | Web wallet built with Vite and React           |
 | `apps/mobile`    | Mobile wallet built with Expo and React Native |
 
 ### Shared Packages
 
-| Package           | Description                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------- |
-| `packages/shared` | Wallet logic, blockchain integrations, APIs, storage, crypto utilities, hooks, types and localization |
-| `packages/ui`     | Shared React UI components                                                                            |
-| `packages/assets` | Shared fonts and image assets                                                                         |
+| Package           | Description                                                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/shared` | Everything that does not draw: API services, blockchain logic, screen-flow hooks and contexts, cross-platform component contracts, storage, crypto, design tokens, motion constants, EN/ES locales |
+| `packages/ui`     | The extension's React DOM kit — every component is the twin of one in `apps/mobile`, on the same shared contract                                                                                   |
+| `packages/assets` | Shared fonts and image assets                                                                                                                                                                      |
+
+### One app, two renderings
+
+Every screen and kit component exists twice — once in React Native, once on the DOM — on one `*PropsBase` contract in `packages/shared/src/types/ui`. The logic behind a screen lives once in `packages/shared`; each platform is a thin provider plus rendering. `scripts/check-dom-parity.mjs` enforces this in CI (live-mode tokens only, one twin per component and per route, one contract per pair, a duplication ceiling that only goes down). See `docs/ARCHITECTURE.md`.
 
 ---
 
 ## Tech Stack
 
-|               | Web                 | Extension          | Mobile                           |
-| ------------- | ------------------- | ------------------ | -------------------------------- |
-| **Language**  | TypeScript ~5.9     | TypeScript ~5.9    | TypeScript ~5.9                  |
-| **UI**        | React 19.1          | React 19.1         | React 19.2 / React Native 0.83.6 |
-| **Framework** | Vite 7              | WXT 0.20           | Expo SDK 55                      |
-| **Routing**   | react-router-dom 7  | react-router-dom 7 | expo-router 55                   |
-| **Styling**   | MUI 7 + Emotion     | MUI 7 + Emotion    | react-native-paper 5             |
-| **Testing**   | Vitest + Playwright | Vitest             | Jest + Maestro                   |
+|               | Extension                                      | Mobile                           |
+| ------------- | ---------------------------------------------- | -------------------------------- |
+| **Language**  | TypeScript ~5.9                                | TypeScript ~5.9                  |
+| **UI**        | React 19                                       | React 19 / React Native 0.83     |
+| **Framework** | WXT 0.21 (MV3 side panel + popup)              | Expo SDK 55                      |
+| **Routing**   | page state inside the side panel               | expo-router 55                   |
+| **Styling**   | Emotion + `useSemantic()` on the shared tokens | `StyleSheet` + the shared tokens |
+| **Testing**   | Vitest + Playwright                            | Jest                             |
+
+Light and dark come from one `createSemantic(mode)` in `packages/shared/src/theme`; the DOM also gets them as CSS variables (`--sw-<group>-<token>`).
 
 **Monorepo tooling:** pnpm Workspaces · Turborepo · ESLint 9
 
@@ -138,10 +146,15 @@ pnpm dev
 Or run a specific application:
 
 ```bash
-pnpm web:dev
-pnpm extension:dev
+pnpm extension:dev   # WXT dev build → apps/extension/dist/chrome-mv3-dev
 pnpm mobile:start
 ```
+
+Load the extension in Chrome from `chrome://extensions` → _Load unpacked_ → `apps/extension/dist/chrome-mv3-dev`. The dev build reads `apps/extension/.env` (local backend by default); `pnpm extension:build` bakes `.env.production` and talks to production — check which one you loaded before debugging data.
+
+### Local backend
+
+The API lives in the sibling repo `../salmon-wallet-backend` and runs in Docker on `127.0.0.1:3001`. Both apps' `.env` point there out of the box (`*_SALMON_ENV=local`, `*_API_HOST=127.0.0.1`, `*_API_PORT=3001`).
 
 Mobile native targets:
 
@@ -157,7 +170,6 @@ pnpm mobile:android
 Each application includes example environment files:
 
 ```text
-apps/web/.env.example
 apps/extension/.env.example
 apps/mobile/.env.example
 apps/mobile/.env.local.example
@@ -166,7 +178,6 @@ apps/mobile/.env.local.example
 Copy the relevant file before running locally:
 
 ```bash
-cp apps/web/.env.example apps/web/.env
 cp apps/extension/.env.example apps/extension/.env
 cp apps/mobile/.env.example apps/mobile/.env
 ```
@@ -185,14 +196,6 @@ pnpm test
 pnpm test:coverage
 ```
 
-### Web
-
-```bash
-pnpm web:build
-pnpm web:build:staging
-pnpm web:build:prod
-```
-
 ### Extension
 
 ```bash
@@ -209,6 +212,15 @@ pnpm extension:zip:firefox
 pnpm mobile -- test
 pnpm mobile -- lint
 pnpm mobile -- typecheck
+```
+
+### Checks CI runs on every PR
+
+```bash
+pnpm format:check                     # Prettier
+pnpm turbo run typecheck lint test    # every package, zero lint warnings
+pnpm check:i18n                       # EN/ES keys in sync, no orphans
+pnpm check:parity                     # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
 ```
 
 ---
@@ -241,7 +253,6 @@ Unit and integration tests live with the package or application that owns the be
 
 - Shared wallet logic → `packages/shared`
 - Shared UI → `packages/ui`
-- Web-specific functionality → `apps/web`
 - Extension-specific functionality → `apps/extension`
 - Mobile-specific functionality → `apps/mobile`
 
@@ -255,7 +266,6 @@ E2E suites are application-owned:
 
 ```text
 apps/extension/.playwright
-apps/web/.playwright
 apps/mobile/.maestro
 ```
 
@@ -267,10 +277,10 @@ Read the suite-local `README.md` and `AGENTS.md` before extending or running E2E
 
 The repository follows a simple ownership model:
 
-- Shared cross-platform wallet logic belongs in `packages/shared`
-- Shared React UI belongs in `packages/ui`
+- Anything that does not draw — logic, contracts, tokens — belongs in `packages/shared`
+- DOM components belong in `packages/ui`, each the twin of a mobile component on a shared contract
 - React Native code belongs in `apps/mobile`
-- Browser-specific runtime code belongs in `apps/web` or `apps/extension`
+- Browser-extension runtime code belongs in `apps/extension`
 
 Before moving code across package boundaries, read:
 
@@ -293,9 +303,10 @@ We welcome contributors who care about:
 Before opening a PR:
 
 ```bash
-pnpm typecheck
-pnpm lint
-pnpm test
+pnpm format:check
+pnpm turbo run typecheck lint test
+pnpm check:i18n
+pnpm check:parity
 ```
 
 For user-facing copy, update both English and Spanish translations in:

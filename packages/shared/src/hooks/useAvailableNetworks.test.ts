@@ -197,6 +197,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
     });
 
@@ -208,6 +214,34 @@ describe('useAvailableNetworks Hook', () => {
       return waitFor(() => {
         expect(result.current.networks.solana).toHaveLength(1);
         expect(result.current.networks.solana[0].id).toBe('solana-mainnet');
+      });
+    });
+
+    it('keeps offering the devnet the session is standing on', () => {
+      const { result } = renderHook(() =>
+        useAvailableNetworks({
+          activeBlockchainAccount: mockActiveAccount,
+          activeNetworkId: 'solana-devnet',
+        })
+      );
+
+      return waitFor(() => {
+        const networkIds = result.current.networks.solana.map((n) => n.id);
+        expect(networkIds).toEqual(['solana-mainnet', 'solana-devnet']);
+      });
+    });
+
+    it('never offers a network the wallet does not hold', () => {
+      const { result } = renderHook(() =>
+        useAvailableNetworks({
+          activeBlockchainAccount: mockActiveAccount,
+          heldNetworkIds: ['bitcoin-mainnet'],
+        })
+      );
+
+      return waitFor(() => {
+        expect(result.current.networks.solana).toHaveLength(0);
+        expect(result.current.networks.bitcoin.map((n) => n.id)).toEqual(['bitcoin-mainnet']);
       });
     });
 
@@ -285,6 +319,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
     });
 
@@ -345,6 +385,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -378,6 +424,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -406,6 +458,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -431,6 +489,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -458,6 +522,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -483,6 +553,12 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        showUnverifiedTokens: false,
+        setShowUnverifiedTokens: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
+        derivedScannedAccountIds: [],
+        markDerivedScanned: vi.fn(),
       });
 
       const { result } = renderHook(() =>

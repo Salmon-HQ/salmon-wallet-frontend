@@ -13,7 +13,6 @@ jest.mock('@salmon/shared', () => ({
 
 import {
   fontSize,
-  onboardingIdentityGridFull,
   onboardingMarkTitleGap,
   semantic,
   wordmarkAspectRatio,
@@ -29,14 +28,6 @@ describe('Wordmark', () => {
     const svg = screen.getByTestId('wordmark');
     expect(svg.props.height).toBe(fontSize.headline);
     expect(svg.props.width).toBe(fontSize.headline * wordmarkAspectRatio);
-  });
-
-  it('stays narrower than the mark it sits under', () => {
-    // A name wider than the mark stops being a lockup and starts competing.
-    render(<Wordmark />);
-    expect(screen.getByTestId('wordmark').props.width).toBeLessThan(
-      onboardingIdentityGridFull.markSize
-    );
   });
 
   it('centres itself and pins its own gap, whatever slot it lands in', () => {

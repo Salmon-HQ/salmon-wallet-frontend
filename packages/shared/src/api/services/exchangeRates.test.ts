@@ -12,10 +12,12 @@ vi.mock('../client', async () => {
   };
 });
 
-import { apiClient } from '../client';
-import { clearExchangeRateCache, getExchangeRates } from './exchangeRates';
+import type { apiClient as apiClientType } from '../client';
+import type { getExchangeRates as getExchangeRatesType } from './exchangeRates';
 
-const mockApiClientGet = vi.mocked(apiClient.get);
+let apiClient: typeof apiClientType;
+let getExchangeRates: typeof getExchangeRatesType;
+let mockApiClientGet: ReturnType<typeof vi.mocked<typeof apiClientType.get>>;
 
 const MOCK_RATES: ExchangeRates = {
   base: 'usd',
@@ -46,9 +48,12 @@ const FALLBACK_RATES: ExchangeRates = {
 };
 
 describe('exchange rates service', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    clearExchangeRateCache();
+    vi.resetModules();
+    ({ apiClient } = await import('../client'));
+    ({ getExchangeRates } = await import('./exchangeRates'));
+    mockApiClientGet = vi.mocked(apiClient.get);
   });
 
   it('fetches exchange rates from the backend endpoint', async () => {
@@ -106,27 +111,5 @@ describe('exchange rates service', () => {
 
     warnSpy.mockRestore();
     errorSpy.mockRestore();
-  });
-
-  it('forces a fresh fetch after clearing the cache', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_RATES }).mockResolvedValueOnce({
-      data: {
-        ...MOCK_RATES,
-        timestamp: 1710000300,
-        rates: {
-          ...MOCK_RATES.rates,
-          eur: 0.95,
-        },
-      } satisfies ExchangeRates,
-    });
-
-    const first = await getExchangeRates();
-    clearExchangeRateCache();
-    const second = await getExchangeRates();
-
-    expect(mockApiClientGet).toHaveBeenCalledTimes(2);
-    expect(first.timestamp).toBe(1710000000);
-    expect(second.timestamp).toBe(1710000300);
-    expect(second.rates.eur).toBe(0.95);
   });
 });

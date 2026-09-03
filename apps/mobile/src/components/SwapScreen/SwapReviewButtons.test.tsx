@@ -103,7 +103,7 @@ describe('SwapReviewButtons — the pair stacks, full width', () => {
 
   it('reserves the same height in every state the pair can be in', () => {
     // The second action is not always "Confirm" — an expired quote makes it
-    // "Refresh Quote", and a bridge "Refresh Estimate". Both buttons pin their
+    // "Refresh Quote". Both buttons pin their
     // height, so the stack occupies the same space whichever label it carries
     // and nothing above it moves when the quote expires.
     const heights = (label?: string) => {

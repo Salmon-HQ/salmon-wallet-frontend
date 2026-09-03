@@ -23,32 +23,43 @@ export const spacing = {
   headerPadding: 18,
   /** 20px */
   xl: 20,
-  /** 22px - Lock screen gap */
-  lockScreenGap: 22,
   /** 24px */
   '2xl': 24,
   /** 30px */
   '3.5xl': 30,
-  /** 31px - Lock screen section gap */
-  lockScreenSectionGap: 31,
   /** 32px */
   '3xl': 32,
   /** 34px - Sheet bottom padding */
   sheetBottomPadding: 34,
-  /** 36px - Lock screen horizontal padding */
-  lockScreenPadding: 36,
   /** 40px */
   '4xl': 40,
-  /** 42px - Pagination gap in balance card */
-  paginationGap: 42,
-  /** 45px - Tab bar outer padding */
-  tabBarPadding: 45,
   /** 48px */
   '5xl': 48,
   /** 60px */
   '5.5xl': 60,
   /** 80px */
   '7xl': 80,
+  /** 20px - Redesigned screen horizontal padding (both sides) */
+  screenGutter: 20,
+  /**
+   * 0px - Redesigned screen top padding, added below the safe-area top inset.
+   * The inset already clears the island on every device that has one, so the
+   * header row's top edge sits exactly at `insets.top`; anything on top of it
+   * read as empty water. Kept as a named term rather than deleted: the header
+   * slot, `useTabChrome` and `ScreenHeader` all derive from it, and a future
+   * device may need it back.
+   */
+  screenTop: 0,
+  /**
+   * 20px - The side panel's stand-in for the safe-area top inset. The DOM has
+   * no island to clear, so without it the header row touched the panel's top
+   * edge while the sides and the bottom kept their 20 (owner, 2026-09-02).
+   * A DOM screen's top edge is `panelTop + screenTop`, exactly as mobile's is
+   * `insets.top + screenTop`.
+   */
+  panelTop: 20,
+  /** 20px - Redesigned screen bottom padding, added to the safe-area bottom inset */
+  screenBottom: 20,
 } as const;
 
 /**
@@ -103,7 +114,7 @@ export const borderRadius = {
   /** 12px — the control radius. @deprecated use `r3` */
   lg: radiusScale.r3,
   /**
-   * 12px — alias of `r3`, kept because ~15 call sites across three apps import
+   * 12px — alias of `r3`, kept because ~15 call sites across both apps import
    * it by this name. It used to be 14; it was never a distinct step, only the
    * legacy scale's separate value for "button". Pinned by
    * `controlRadius.test.ts`.
@@ -133,7 +144,7 @@ export const componentSizes = {
   buttonHeight: 56,
   buttonHeightMedium: 48,
   buttonHeightSmall: 44,
-  /** 42px - Compact action buttons (swap, bridge, receive, success) */
+  /** 42px - Compact action buttons (swap, receive, success) */
   buttonHeightCompact: 42,
   /**
    * The control radius. It was 28, which on a 56px control is a pill, and the
@@ -157,9 +168,23 @@ export const componentSizes = {
    * how large the material reads.
    */
   buttonFleshScale: 1,
+  /**
+   * Tile scale for the flesh texture inside a filled `IconBubble` (Send, the
+   * powerups FAB) rather than a full-width pill.
+   *
+   * The tile is 150×88 and `Pattern` is `patternUnits="userSpaceOnUse"`, so it
+   * tiles from the SVG's own (0,0) with no offset. A 42px bubble at scale 1
+   * only ever shows a single fixed 42×42 corner of that tile — and because
+   * every band thins to its minimum width at the tile's top/bottom edges
+   * (`flesh.ts`'s swell profile), that corner is exactly where the veins are
+   * thinnest, which is why the fill read as flat salmon with no visible
+   * texture on device. At 0.5 the effective tile is 75×44: its full height
+   * fits inside a 42-44px bubble, so the swelled mid-band always appears
+   * somewhere in the visible window instead of only its thin tips.
+   */
+  bubbleFleshScale: 0.5,
 
   // ActionButtonRow
-  actionButtonWidth: 112,
   actionButtonHeight: 47,
   /** The control radius — see `buttonRadius`. Was 14. */
   actionButtonRadius: borderRadius.lg,
@@ -183,10 +208,14 @@ export const componentSizes = {
   avatarProfileMax: 180,
 
   // Logo
+  /**
+   * 96px - The brand mark wherever it IS the screen: the wait's emitter, the
+   * lock, welcome, success and the password door. One size on both platforms
+   * (owner, 2026-09-02: the doors take the wait's mark, not a larger one).
+   */
+  markHero: 96,
   logoSizeLarge: 137,
   logoSizeMedium: 120,
-  /** 96px - Success circle */
-  successCircleSize: 96,
   logoSizeSmall: 80,
 
   // Step indicator
@@ -217,6 +246,8 @@ export const componentSizes = {
   iconSizeLarge: 32,
   /** 36px - Token card logos, address book rows */
   iconSizeXL: 36,
+  /** 36px - A secondary control drawn as an IconBubble beside a row (the sub-tabs' order button) */
+  iconBubbleSm: 36,
   /** 40px - Avatars, type icon containers */
   iconSize2XL: 40,
   /** 48px - Featured tokens, add account icons */
@@ -230,6 +261,13 @@ export const componentSizes = {
 
   // Header
   headerHeight: 56,
+  /**
+   * 38px - the mobile wallet header row. It is the height of its own tallest
+   * child (the 38px account thumb), not a slot: a taller slot centres the row
+   * inside it and pushes the header down by half the slack, which is exactly
+   * how the row drifted 9px below `safe area + screenTop`.
+   */
+  walletHeaderRowHeight: 38,
   /** 44px - Header action buttons */
   headerButtonSize: 44,
   backButtonSize: 40,
@@ -243,13 +281,6 @@ export const componentSizes = {
   // Balance card elements
   logoContainer: 35,
   /**
-   * @deprecated Larger than `logoContainer`, which is what it is drawn inside.
-   * Size the mark from its container with `blockchainMarkRatio` instead — a
-   * mark sized from its own token overflowed the box by eight points and
-   * clipped Bitcoin's glyph, which fills its viewBox more than Solana's does.
-   */
-  blockchainIcon: 45,
-  /**
    * The chain mark inside `logoContainer`. Under 1 by construction, so the
    * mark can never reach the edge of the box that centres it whatever either
    * value is retuned to. One rule, read by all three surfaces that draw it.
@@ -257,8 +288,6 @@ export const componentSizes = {
   blockchainMarkRatio: 0.74,
   eyeIcon: 20,
   changeArrowIcon: 15,
-  /** Inner header container height */
-  headerInnerHeight: 63,
 
   // Tab Bar (GlassTabBar)
   /**
@@ -267,11 +296,6 @@ export const componentSizes = {
    * `controlRadius.test.ts`.
    */
   tabBarRadius: borderRadius.lg,
-  tabBarPaddingTop: 32,
-  tabBarMinBottomPadding: 16,
-  /** 60px - Tab bar item container height */
-  tabBarItemHeight: 60,
-  tabBarHeight: 88,
   /** Scroll content bottom padding to clear tab bar */
   tabBarScrollPadding: 160,
 
@@ -279,8 +303,6 @@ export const componentSizes = {
   tokenIcon: 38,
 
   // Sheet/Modal components
-  sheetHandleWidth: 70,
-  sheetHandleHeight: 6,
   sheetHandleOpacity: 0.4 as const,
   /** Top fade gradient height */
   sheetFadeGradientHeight: 30,
@@ -320,23 +342,16 @@ export const componentSizes = {
   buttonMinWidth: 120,
   buttonMinWidthLg: 160,
 
-  // The descent — the wait indicator that replaced the spinning ring. A track
-  // and a segment of salmon *ink* that runs down it: it travels downward, which
-  // is the opposite direction to The Surfacing, so a wait and a success can
-  // never be confused for each other; and being ink rather than a fill it does
-  // not spend the one living salmon element a screen is allowed.
-  /** 2px — the track is a hairline, not a bar. */
-  descentTrackWidth: 2,
-  /** 120px — one full pass, long enough for the deceleration to be legible. */
-  descentTrackHeight: 120,
-  /** 44px — the moving segment; a bit over a third of the track. */
-  descentSegmentHeight: 44,
+  // The descent — the wait indicator that replaced the spinning ring. Salmon
+  // *ink* that runs downward, the opposite direction to The Surfacing, so a
+  // wait and a success can never be confused for each other; and being ink
+  // rather than a fill it does not spend the one living salmon element a
+  // screen is allowed.
   /** 3px — wave displacement. Perceptible if you look, invisible if you don't. */
   waveAmplitude: 3,
 
   // Swap
   swapSelectorMinWidth: 100,
-  swapReviewCardMinHeight: 75,
 
   // Badge
   badgeMinWidth: 55,
@@ -375,14 +390,6 @@ export const componentSizes = {
   // Sheet
   sheetMaxHeight: 700,
 
-  // Lock Screen (mobile)
-  /** 140px - Lock screen logo */
-  lockScreenLogoSize: 140,
-  /** 72px - Lock screen logo (extension) */
-  lockScreenLogoSizeExtension: 72,
-  /** 64px - Biometric auth button */
-  biometricButtonSize: 64,
-
   // Breakpoints
   breakpointDesktop: 768,
 } as const;
@@ -404,12 +411,8 @@ export const borderWidth = {
   tokenListItem: 0.75,
   /** 0.75px - Sheet top border */
   sheet: 0.75,
-  /** 0.8px - Accent/decorative borders */
-  accent: 0.8,
   /** 1px */
   thin: 1,
-  /** 1.5px */
-  thick: 1.5,
   /** 2px */
   medium: 2,
   /** 3px - Loading spinner */
@@ -446,8 +449,6 @@ export const blur = {
   sm: 6,
   /** 10px - Medium blur (sheet overlays) */
   md: 10,
-  /** 12px - Strong blur (interactive elements) */
-  lg: 12,
 } as const;
 
 export type Blur = typeof blur;

@@ -1,40 +1,57 @@
 /**
  * @vitest-environment jsdom
  *
- * The Send page's steps, and the verb they speak between them.
+ * The send flow's four steps, the verb between them, and the passage.
  *
- * The contract: a step change inside the open flow sinks what leaves and
- * floats what arrives; the flow's own arrival is not its content's event, so
- * the first step has no entrance — nor does the form a single-token chain
- * opens straight onto; back is the mirror; and the receipt is not floated in
- * as a block, because it owns its own arrival sequence.
+ * The contract, mobile's: recipient → amount → review → receipt for a token;
+ * recipient → review → receipt for a collectible; a step change sinks what
+ * leaves and floats what arrives, the first step and the receipt excepted;
+ * the wait holds the receipt back until its last wave has left; a failure
+ * stays on the surface, and a broadcast whose outcome could not be
+ * established is reported as unconfirmed, never as failed.
  *
- * The verb's pixels and its reduce-motion mapping belong to `SinkFloat` and
- * are pinned by its own suite. Here the primitive is a recorder: what is
- * asserted is the decision this page makes about each arrival.
+ * The steps' own pixels are pinned by their suites; here they are recorders.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ThemeProvider, createSemantic } from '@salmon/shared';
+
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 /** What the send hook reports this render. Mutable so a test can move it. */
-const sendState = { status: 'idle' as string, settling: false };
+const sendState = {
+  status: 'idle' as string,
+  settling: false,
+  error: null as string | null,
+  feeEstimateFailed: false,
+};
+const sendTransaction = vi.fn(async () => ({ txId: 'tx-1' }));
+const sendNft = vi.fn(async () => ({ txId: 'nft-tx-1' }));
 
-// `@salmon/shared` pulls React Native through its barrel; this page reads five
-// things from it, and only one of them — the hold that keeps the wait mounted
-// until its closing wave has left — is part of what these assertions are
-// about, so that one is the real (pure React) implementation.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/hooks/useWaitExit')),
-  useSendTransaction: () => ({ ...sendState, reset: vi.fn() }),
+// The flow's state is the shared `useSendFlowState`, which reaches the
+// transfer hook by its own module path — so the fake has to sit on that
+// module, not only on the barrel the page imports from.
+vi.mock('@salmon/shared/src/hooks/useSendTransaction', () => ({
+  useSendTransaction: () => ({
+    ...sendState,
+    reset: vi.fn(),
+    estimateFee: vi.fn(async () => null),
+    sendTransaction,
+  }),
+}));
+
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useNftTransfer: () => ({ sendNft, settling: false, reset: vi.fn() }),
   getTransactionUrl: () => 'https://explorer.example/tx',
   getDefaultExplorer: () => 'explorer',
-  getShortAddress: (address: string) => address,
-  SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
+  classifyTransactionError: () => 'transaction.errors.generic',
 }));
 
 /** Every `transitionKey` / `floatMs` the page has handed the verb, in order. */
@@ -55,37 +72,54 @@ vi.mock('../SinkFloat', () => ({
   },
 }));
 
-vi.mock('../PageShell', () => ({
-  PageShell: ({ children, onBack }: { children: React.ReactNode; onBack: () => void }) => (
-    <div>
-      <button data-testid="page-back" onClick={onBack} />
-      {children}
-    </div>
+vi.mock('./StepRecipient', () => ({
+  StepRecipient: ({
+    onContinue,
+    nft,
+  }: {
+    onContinue: (r: { address: string }) => void;
+    nft?: unknown;
+  }) => (
+    <button
+      data-testid={nft ? 'step-recipient-nft' : 'step-recipient'}
+      onClick={() => onContinue({ address: 'recipient' })}
+    />
   ),
 }));
 
-vi.mock('./StepTokenSelect', () => ({
-  StepTokenSelect: ({ onSelectToken }: { onSelectToken: (token: unknown) => void }) => (
-    <button data-testid="step-token-select" onClick={() => onSelectToken(solToken)} />
+vi.mock('./StepAmount', () => ({
+  StepAmount: ({
+    onReview,
+    setAmount,
+  }: {
+    onReview: () => void;
+    setAmount: (a: string) => void;
+  }) => (
+    <button
+      data-testid="step-amount"
+      onClick={() => {
+        setAmount('1');
+        onReview();
+      }}
+    />
   ),
 }));
 
-vi.mock('./StepAddressAmount', () => ({
-  StepAddressAmount: ({ onReview }: { onReview: (address: string, amount: string) => void }) => (
-    <button data-testid="step-address-amount" onClick={() => onReview('recipient', '1')} />
+vi.mock('./StepReview', () => ({
+  StepReview: ({ onConfirm, nftError }: { onConfirm: () => void; nftError?: string | null }) => (
+    <button data-testid="step-review" data-nft-error={nftError ?? ''} onClick={onConfirm} />
   ),
 }));
 
-vi.mock('./StepConfirmation', () => ({
-  StepConfirmation: ({ onSuccess }: { onSuccess: (txId: string) => void }) => (
-    <button data-testid="step-confirmation" onClick={() => onSuccess('tx-1')} />
+vi.mock('./StepSuccess', () => ({
+  StepSuccess: ({ txId, nft }: { txId: string; nft?: unknown }) => (
+    <div data-testid="step-success" data-tx={txId} data-nft={nft ? 'yes' : 'no'} />
   ),
 }));
 
 vi.mock('../LoadingScreen', () => ({
   // Stand-in that keeps the exit contract without a frame clock: it reports
-  // `onExited` only when the test says the last wave has left, which is what
-  // the real screen does once its final front is off the screen.
+  // `onExited` only when the test says the last wave has left.
   LoadingScreen: ({ visible, onExited }: { visible?: boolean; onExited?: () => void }) => (
     <div data-testid="send-wave-screen" data-visible={String(visible)}>
       <button data-testid="wave-last-front-gone" onClick={() => onExited?.()} />
@@ -93,146 +127,156 @@ vi.mock('../LoadingScreen', () => ({
   ),
 }));
 
-vi.mock('../TransactionSuccessScreen', () => ({
-  TransactionSuccessScreen: () => <div data-testid="success-screen" />,
-}));
+vi.mock('../DepthBackground', () => ({ DepthBackground: () => null }));
+vi.mock('../ScalesBackground', () => ({ ScalesBackground: () => null }));
 
-const solToken = { address: 'sol', symbol: 'SOL', decimals: 9, uiAmount: 1 };
-const btcToken = { address: 'btc', symbol: 'BTC', decimals: 8, uiAmount: 1 };
-const solTokens = [solToken];
-const btcTokens = [btcToken];
-const account = { network: { networkId: 'mainnet-beta' } };
+const solToken = { address: 'sol', name: 'Solana', symbol: 'SOL', decimals: 9, uiAmount: 1 };
+const account = { getReceiveAddress: () => 'sender', getNetworkId: () => 'solana-mainnet' };
 
 const { SendPage } = await import('./SendPage');
 
 /** What the verb was last told, which is what is on screen now. */
 const lastVerb = () => verbProps[verbProps.length - 1];
 
-const renderPage = (props: Record<string, unknown> = {}) =>
-  render(
-    <SendPage
-      tokens={solTokens as never}
-      blockchain={'solana' as never}
-      account={account as never}
-      onBack={vi.fn()}
-      {...props}
-    />
-  );
+const pageProps = () => ({
+  tokens: [solToken] as never,
+  blockchain: 'solana' as never,
+  networkId: 'solana-mainnet' as never,
+  account: account as never,
+  onBack: vi.fn(),
+});
+
+const renderPage = (props: Record<string, unknown> = {}, mode: 'dark' | 'light' = 'dark') =>
+  renderInMode(mode, <SendPage {...pageProps()} {...props} />);
+
+/** The same tree the page was rendered in, so a rerender keeps its state. */
+const wrapped = () => (
+  <ThemeProvider systemScheme="dark">
+    <SendPage {...pageProps()} />
+  </ThemeProvider>
+);
 
 beforeEach(() => {
   verbProps.length = 0;
   sendState.status = 'idle';
   sendState.settling = false;
+  sendState.error = null;
+  sendTransaction.mockClear();
+  sendNft.mockClear();
 });
 
 afterEach(() => {
   cleanup();
 });
 
-describe('SendPage — the steps speak the sink and the float', () => {
-  it('gives the first step no entrance as the flow opens', () => {
+describe('SendPage — four steps, and the verb between them', () => {
+  it('opens on the recipient with no entrance — the page is what arrives', () => {
     renderPage();
-    // The page is the thing that arrives; the step it opens on is already there.
-    expect(lastVerb()).toEqual({ transitionKey: 'token-select', floatMs: 0 });
+    expect(screen.getByTestId('step-recipient')).toBeTruthy();
+    expect(lastVerb()).toEqual({ transitionKey: 'recipient', floatMs: 0 });
   });
 
-  it('gives the form no entrance when a single-token chain opens on it', () => {
-    renderPage({ tokens: btcTokens, blockchain: 'bitcoin' });
-    // Bitcoin's sequence starts at the form: nothing stepped, so nothing floats.
-    expect(lastVerb()).toEqual({ transitionKey: 'address-amount', floatMs: 0 });
+  it('walks recipient → amount → review, floating each step that arrives', () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('step-recipient'));
+    expect(screen.getByTestId('step-amount')).toBeTruthy();
+    expect(lastVerb()).toEqual({ transitionKey: 'amount', floatMs: undefined });
+
+    fireEvent.click(screen.getByTestId('step-amount'));
+    expect(screen.getByTestId('step-review')).toBeTruthy();
+    expect(lastVerb()).toEqual({ transitionKey: 'review', floatMs: undefined });
   });
 
-  it('floats the step that arrives once a step has actually changed', () => {
-    renderPage();
-    fireEvent.click(screen.getByTestId('step-token-select'));
-
-    expect(screen.getByTestId('step-address-amount')).toBeTruthy();
-    // The verb's own clock: the page overrides nothing.
-    expect(lastVerb()).toEqual({ transitionKey: 'address-amount', floatMs: undefined });
+  it('skips the amount for a collectible — recipient goes straight to review', () => {
+    renderPage({ nft: { name: 'Fish #1', blockchain: 'solana', mint: 'm' } });
+    fireEvent.click(screen.getByTestId('step-recipient-nft'));
+    expect(screen.getByTestId('step-review')).toBeTruthy();
+    expect(screen.queryByTestId('step-amount')).toBeNull();
   });
 
-  it('mirrors the step on the way back', () => {
-    renderPage();
-    fireEvent.click(screen.getByTestId('step-token-select'));
-    fireEvent.click(screen.getByTestId('page-back'));
+  it('sends the collectible through useNftTransfer and lands on the receipt', async () => {
+    renderPage({ nft: { name: 'Fish #1', blockchain: 'solana', mint: 'm' } });
+    fireEvent.click(screen.getByTestId('step-recipient-nft'));
+    fireEvent.click(screen.getByTestId('step-review'));
 
-    expect(screen.getByTestId('step-token-select')).toBeTruthy();
-    expect(lastVerb()).toEqual({ transitionKey: 'token-select', floatMs: undefined });
-  });
-
-  it('hands the receipt no entrance of its own — it owns its arrival', () => {
-    renderPage();
-    fireEvent.click(screen.getByTestId('step-token-select'));
-    fireEvent.click(screen.getByTestId('step-address-amount'));
-    fireEvent.click(screen.getByTestId('step-confirmation'));
-
-    expect(screen.getByTestId('success-screen')).toBeTruthy();
-    // Floating the step in as a block would make the receipt's own band
-    // sequence arrive twice. The confirmation under it still sinks: the key
-    // changed, so the outgoing half is spoken as it is on every other step.
-    expect(lastVerb()).toEqual({ transitionKey: 'success', floatMs: 0 });
+    expect(sendNft).toHaveBeenCalledTimes(1);
+    const receipt = await screen.findByTestId('step-success');
+    expect(receipt.getAttribute('data-tx')).toBe('nft-tx-1');
+    expect(receipt.getAttribute('data-nft')).toBe('yes');
+    expect(sendTransaction).not.toHaveBeenCalled();
   });
 });
 
-describe('SendPage — the wait, and what it holds back', () => {
-  /** Walk the flow to the confirmation step, with the send hook still idle. */
-  const reachConfirmation = () => {
+describe('SendPage — the passage', () => {
+  const reachReview = () => {
     const view = renderPage();
-    fireEvent.click(screen.getByTestId('step-token-select'));
-    fireEvent.click(screen.getByTestId('step-address-amount'));
+    fireEvent.click(screen.getByTestId('step-recipient'));
+    fireEvent.click(screen.getByTestId('step-amount'));
     return view;
   };
 
   it('shows the wave wait while the transaction is in flight', () => {
-    const { rerender } = reachConfirmation();
-
+    const { rerender } = reachReview();
     sendState.status = 'sending';
-    rerender(
-      <SendPage
-        tokens={solTokens as never}
-        blockchain={'solana' as never}
-        account={account as never}
-        onBack={vi.fn()}
-      />
-    );
+    rerender(wrapped());
 
     expect(screen.getByTestId('send-wave-screen').getAttribute('data-visible')).toBe('true');
-    expect(screen.queryByTestId('success-screen')).toBeNull();
+    expect(screen.queryByTestId('step-success')).toBeNull();
   });
 
-  it('holds the receipt back until the wait reports its last wave has left', () => {
-    const { rerender } = reachConfirmation();
-
-    // Signed and in flight: the wait owns the screen.
+  it('holds the receipt back until the wait reports its last wave has left', async () => {
+    const { rerender } = reachReview();
     sendState.status = 'sending';
-    const rerenderPage = () =>
-      rerender(
-        <SendPage
-          tokens={solTokens as never}
-          blockchain={'solana' as never}
-          account={account as never}
-          onBack={vi.fn()}
-        />
-      );
-    rerenderPage();
+    rerender(wrapped());
 
-    // The transaction lands: the step is the receipt's, but the water is not
-    // calm yet, so the receipt must not be on screen.
-    fireEvent.click(screen.getByTestId('step-confirmation'));
-    expect(screen.getByTestId('send-wave-screen')).toBeTruthy();
-    expect(screen.queryByTestId('success-screen')).toBeNull();
+    // The transaction lands: the flow holds a txId, but the water is not calm.
+    fireEvent.click(screen.getByTestId('step-review'));
+    expect(sendTransaction).toHaveBeenCalledTimes(1);
+    await Promise.resolve();
+    expect(screen.queryByTestId('step-success')).toBeNull();
 
-    // The work is done, so the wait starts leaving — and is still mounted,
-    // playing its closing wave. The receipt still waits.
     sendState.status = 'idle';
-    sendState.settling = false;
-    rerenderPage();
+    rerender(wrapped());
     expect(screen.getByTestId('send-wave-screen').getAttribute('data-visible')).toBe('false');
-    expect(screen.queryByTestId('success-screen')).toBeNull();
+    expect(screen.queryByTestId('step-success')).toBeNull();
 
-    // Last front off the screen: only now does the receipt arrive.
+    // Last front off the screen: only now does the receipt arrive, whole.
     fireEvent.click(screen.getByTestId('wave-last-front-gone'));
-    expect(screen.queryByTestId('send-wave-screen')).toBeNull();
-    expect(screen.getByTestId('success-screen')).toBeTruthy();
+    const receipt = await screen.findByTestId('step-success');
+    expect(receipt.getAttribute('data-tx')).toBe('tx-1');
+    expect(lastVerb()).toEqual({ transitionKey: 'success', floatMs: 0 });
+  });
+
+  it('reports a failure on the surface the wait stood on, with retry and the way out', () => {
+    const { rerender } = reachReview();
+    sendState.status = 'failed';
+    sendState.error = 'transaction.errors.generic';
+    rerender(wrapped());
+
+    expect(screen.getByTestId('send-failure-surface')).toBeTruthy();
+    expect(screen.getByTestId('send-failure-title').textContent).toBe('transaction.sendFailed');
+    expect(screen.getByTestId('send-failure-retry')).toBeTruthy();
+    expect(screen.getByTestId('send-failure-dismiss')).toBeTruthy();
+  });
+
+  it('says "unconfirmed", never "failed", when the broadcast outcome is unknown', () => {
+    const { rerender } = reachReview();
+    sendState.status = 'failed';
+    sendState.error = 'transaction.errors.broadcastUnknown';
+    rerender(wrapped());
+
+    expect(screen.getByTestId('send-failure-title').textContent).toBe(
+      'transaction.sendUnconfirmed'
+    );
+  });
+
+  it('paints the failure surface off the live mode', () => {
+    sendState.status = 'failed';
+    sendState.error = 'transaction.errors.generic';
+    renderPage({}, 'light');
+
+    expect(screen.getByTestId('send-failure-title').style.color).toBe(
+      asRenderedColor(createSemantic('light').text.primary)
+    );
   });
 });

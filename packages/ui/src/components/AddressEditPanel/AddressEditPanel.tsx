@@ -1,85 +1,16 @@
 /**
- * AddressEditPanel - Edit existing contact page
+ * AddressEditPanel — edit a contact, on the DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressEditPanel`.
+ * `AddressForm`'s fields, seeded from the contact; saving commits against the
+ * contact's original address.
  */
-
-import React, { useCallback } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import InputBase from '@mui/material/InputBase';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  semantic,
-  spacing,
-  fontFamily,
-  fontWeight,
-  useAddressBookForm,
-  getNetworkName,
-  borderRadius,
-  borderWidth,
-  fontSize,
-  opacity,
-} from '@salmon/shared';
-import { PrimaryButton } from '../Button';
-import { SettingsPanelContent } from '../SettingsPanelContent';
-import { InputAddress } from '../InputAddress';
+import { getNetworkName, useAddressEditPanel } from '@salmon/shared';
+
+import { AddressForm } from '../AddressForm';
 import type { AddressEditPanelProps } from './types';
-
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const FieldLabel = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.body,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  marginBottom: spacing.sm,
-  marginTop: spacing.lg,
-});
-
-const StyledInput = styled(InputBase)({
-  width: '100%',
-  backgroundColor: colors.input.background,
-  borderRadius: borderRadius.r3,
-  border: `${borderWidth.thin}px solid ${colors.input.border}`,
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  '& .MuiInputBase-input': {
-    padding: `${spacing.md}px 0`,
-    '&::placeholder': {
-      color: colors.text.tertiary,
-      opacity: opacity.full,
-    },
-  },
-});
-
-const NetworkBox = styled(Box)({
-  backgroundColor: colors.input.background,
-  borderRadius: borderRadius.r3,
-  padding: `${spacing.md}px ${spacing.lg}px`,
-});
-
-const NetworkText = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.bodyLg,
-  fontFamily: fontFamily.sans,
-});
-
-const ErrorText = styled(Typography)({
-  fontSize: fontSize.caption,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  color: semantic.status.danger,
-  marginTop: spacing.sm,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function AddressEditPanel({
   contact,
@@ -89,60 +20,17 @@ export function AddressEditPanel({
   errorText,
 }: AddressEditPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const form = useAddressBookForm({
-    label: contact.name,
-    address: contact.domain || contact.address,
-    networkId: contact.networkId,
-    resolvedAddress: contact.address,
-    isDomain: !!contact.domain,
-  });
-
-  const handleSave = useCallback(async () => {
-    if (!form.canSave) return;
-    await onSave(contact.address, form.buildInput());
-  }, [form, onSave, contact.address]);
+  const { form, save } = useAddressEditPanel({ contact, onSave });
 
   return (
-    <SettingsPanelContent title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
-      <Box sx={{ px: `${spacing.lg}px` }}>
-        {/* Label */}
-        <FieldLabel>{t('settings.addressbook.label', 'Label')}</FieldLabel>
-        <StyledInput
-          value={form.label}
-          onChange={(e) => form.setLabel(e.target.value)}
-          placeholder={t('settings.addressbook.label', 'Label')}
-          autoComplete="off"
-          inputProps={{ spellCheck: false, 'data-testid': 'address-book-label-input' }}
-        />
-
-        {/* Address */}
-        <Box sx={{ mt: `${spacing.lg}px` }}>
-          <InputAddress
-            address={form.address}
-            onChange={form.setAddress}
-            onValidation={form.handleValidation}
-            label={t('general.address', 'Address')}
-            testID="address-book-address"
-          />
-        </Box>
-
-        {/* Network */}
-        <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
-        <NetworkBox>
-          <NetworkText>{getNetworkName(contact.networkId)}</NetworkText>
-        </NetworkBox>
-
-        {/* Save */}
-        <PrimaryButton
-          onClick={handleSave}
-          disabled={!form.canSave}
-          testID="address-book-save-button"
-          style={{ marginTop: spacing['2xl'] }}
-        >
-          {t('settings.addressbook.save', 'Save Address')}
-        </PrimaryButton>
-        {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}
-      </Box>
-    </SettingsPanelContent>
+    <AddressForm
+      title={t('settings.addressbook.edit', 'Edit Address')}
+      subtitle={t('settings.addressbook.edit_subtitle', "Update this contact's label or address.")}
+      networkLabel={getNetworkName(contact.networkId)}
+      form={form}
+      onSave={save}
+      onBack={onBack}
+      errorText={errorText}
+    />
   );
 }

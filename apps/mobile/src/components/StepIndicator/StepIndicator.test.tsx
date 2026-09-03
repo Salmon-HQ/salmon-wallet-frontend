@@ -35,7 +35,7 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-import { colors, componentSizes } from '@salmon/shared';
+import { componentSizes, semantic } from '@salmon/shared';
 import { StepIndicator } from './StepIndicator';
 
 const flatten = (style: unknown) => {
@@ -53,7 +53,7 @@ const trackDots = (tree: ReturnType<typeof render>) =>
 const activeDot = (tree: ReturnType<typeof render>) =>
   tree.UNSAFE_getAllByType(require('react-native').View).find((node) => {
     const style = flatten(node.props.style);
-    return style.backgroundColor === colors.step.active;
+    return style.backgroundColor === semantic.step.active;
   });
 
 describe('StepIndicator', () => {
@@ -61,7 +61,7 @@ describe('StepIndicator', () => {
     const tree = render(<StepIndicator totalSteps={4} currentStep={2} />);
     expect(trackDots(tree)).toHaveLength(4);
     for (const dot of trackDots(tree)) {
-      expect(flatten(dot.props.style).backgroundColor).toBe(colors.step.inactive);
+      expect(flatten(dot.props.style).backgroundColor).toBe(semantic.step.inactive);
     }
     expect(activeDot(tree)).toBeTruthy();
   });

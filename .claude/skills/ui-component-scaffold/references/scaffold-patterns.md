@@ -2,7 +2,7 @@
 
 ## Decide the branch first
 
-Use the DOM-only branch when the component is shared only by `web` and `extension`, and no reusable semantic contract is needed outside `packages/ui`.
+Use the DOM-only branch when the component has no mobile twin (listed in `scripts/check-dom-parity.mjs` `DOM_ONLY` with a reason), so no reusable semantic contract is needed outside `packages/ui`.
 
 Use the cross-platform branch when:
 

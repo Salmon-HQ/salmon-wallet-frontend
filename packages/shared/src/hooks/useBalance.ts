@@ -29,6 +29,8 @@ import type { EthereumAccount } from '../blockchain/ethereum';
 import type { BlockchainAccount, NetworkId } from '../types/blockchain';
 import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/account';
 import { removeDecimals } from '../utils/decimals';
+import { isMainnetNetworkId } from '../utils/network';
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { queryKeys } from '../query/keys';
 
 import { type WalletBalance, type TokenBalanceWithPrice, SOL_CONSTANTS } from '../utils/balance';
@@ -65,6 +67,17 @@ export interface UseBalanceResult {
   balance: WalletBalance | null;
   tokens: TokenBalanceWithPrice[];
   usdTotal: number | undefined;
+  /**
+   * The native token's own quantity — SOL on Solana, BTC on Bitcoin — or
+   * `undefined` when no balance is held yet.
+   *
+   * It exists because off mainnet there is no USD figure to report at all
+   * (`withoutUsd` below), so the surfaces that print a total have nothing to
+   * print. The native unit is the honest answer there, and deriving it here
+   * means both apps read one implementation of "which item is native"
+   * instead of each re-deriving it from the mint.
+   */
+  nativeAmount: number | undefined;
   changePercent: number | undefined;
   changeAmount: number | undefined;
   /** True only while there is nothing to show yet (no cached balance for this key). */
@@ -244,22 +257,40 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
  * Top-level fetcher used by the React Query queryFn. Routes to the per-chain
  * fetcher based on account type.
  */
+/**
+ * Drops every USD figure from a balance.
+ *
+ * A devnet SOL is not SOL, and a testnet token that happens to carry a
+ * mainnet symbol is worth nothing at all — showing the mainnet asset's price
+ * beside it is the one wrong answer. Unknown is the honest one, and the rows
+ * already render an em-dash for it.
+ */
+function withoutUsd(balance: WalletBalance): WalletBalance {
+  return {
+    items: balance.items.map(({ price, usdBalance, priceChange24h, ...item }) => item),
+  };
+}
+
 export async function fetchBalanceForAccount(
   account: BlockchainAccount,
-  _networkId: NetworkId,
+  networkId: NetworkId,
   includeSpam: boolean
 ): Promise<WalletBalance> {
-  if (isSolanaAccount(account)) {
-    return fetchSolanaBalance(account, includeSpam);
-  }
-  if (isBitcoinAccount(account)) {
-    return fetchBitcoinBalance(account);
-  }
-  if (isEthereumAccount(account)) {
-    return fetchEthereumBalance(account);
-  }
-  // Fallback: treat as Solana for backwards compatibility
-  return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
+  const balance = await (async () => {
+    if (isSolanaAccount(account)) {
+      return fetchSolanaBalance(account, includeSpam);
+    }
+    if (isBitcoinAccount(account)) {
+      return fetchBitcoinBalance(account);
+    }
+    if (isEthereumAccount(account)) {
+      return fetchEthereumBalance(account);
+    }
+    // Fallback: treat as Solana for backwards compatibility
+    return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
+  })();
+
+  return isMainnetNetworkId(networkId) ? balance : withoutUsd(balance);
 }
 
 // ============================================================================
@@ -327,6 +358,15 @@ export function useBalance({
 
   const data = query.data;
   const tokens = data?.items ?? [];
+  // The native item carries the chain's own name as its mint (see the three
+  // fetchers above), so the family the network belongs to identifies it.
+  const nativeItem = data?.items.find(
+    (item) => item.mint === getBlockchainFromNetworkId(networkId)
+  );
+  const nativeUiAmount =
+    typeof nativeItem?.uiAmount === 'string'
+      ? parseFloat(nativeItem.uiAmount)
+      : nativeItem?.uiAmount;
   // Held data always wins, so a failed refetch keeps showing the balance.
   // With nothing held, a fetch in flight (including a user-pressed retry) is a
   // skeleton and a settled failure is the error state.
@@ -338,6 +378,10 @@ export function useBalance({
     balance: data ?? null,
     tokens,
     usdTotal: data?.usdTotal,
+    // A held balance with no native item is a real zero, not an unknown: the
+    // backend answered and the wallet holds none.
+    nativeAmount:
+      data === undefined ? undefined : Number.isFinite(nativeUiAmount) ? nativeUiAmount : 0,
     changePercent: data?.last24HoursChangePercent,
     changeAmount: data?.last24HoursChange,
     loading: query.isPending && enabled,

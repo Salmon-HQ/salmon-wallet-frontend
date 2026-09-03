@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import type { TokenBadgesSectionPropsBase } from '@salmon/shared';
 import type { MarketData } from '../TokenMarketData';
 import type { PriceChartPeriod, PriceDataPoint, Token, CoinInfo } from '@salmon/shared';
 
@@ -8,12 +7,14 @@ export type { CoinInfo } from '@salmon/shared';
 
 /**
  * Props for TokenDetailContent — the token detail screen body, shared by the
- * pushed detail page and the Bitcoin home tab.
+ * pushed detail page and the Bitcoin home tab. The anatomy is mobile's
+ * `app/(app)/token/[id].tsx`: balance block, performance (price, chart,
+ * period change), market data card, about card.
  */
 export interface TokenDetailContentProps {
-  /** Token to display. Undefined renders the token-row skeleton. */
+  /** Token to display. Undefined renders the balance-block skeleton. */
   token?: Token;
-  /** Blockchain type */
+  /** Which chain's asset this is — Bitcoin has no contract address to copy. */
   blockchain?: 'solana' | 'bitcoin' | 'ethereum';
   /** Whether balances are masked */
   hiddenBalance?: boolean;
@@ -33,9 +34,12 @@ export interface TokenDetailContentProps {
   coinInfo: CoinInfo | null;
   /** Market data (market cap, volume, etc.) */
   marketData: MarketData | undefined;
-  /** Coin info has never resolved — skeletons the info sections, not the chart */
+  /** Coin info has never resolved — skeletons the info cards, not the chart */
   infoLoading?: boolean;
-  /** Horizontal padding of the container, which the chart bleeds out to */
+  /**
+   * Horizontal padding of the container the chart bleeds out of on the left
+   * (the curve runs off the screen edge and stops a gutter short of the right).
+   */
   bleed?: number;
   /** Optional inline styles */
   style?: CSSProperties;
@@ -44,17 +48,12 @@ export interface TokenDetailContentProps {
 }
 
 /**
- * Props for the TokenDetailPage component (Web/Extension)
+ * Props for the TokenDetailPage component (extension): the pushed form of the
+ * screen — mobile's `token/[id]` route — with the kit header over the body.
  */
-export interface TokenDetailPageProps extends Omit<TokenDetailContentProps, 'bleed'> {
+export interface TokenDetailPageProps extends Omit<TokenDetailContentProps, 'bleed' | 'token'> {
+  /** The token the page is about — the header names it. */
+  token: Token;
   /** Callback to navigate back */
   onBack: () => void;
-}
-
-/**
- * Props for the TokenBadgesSection component (Web/Extension)
- */
-export interface TokenBadgesSectionProps extends TokenBadgesSectionPropsBase<CSSProperties> {
-  /** Optional CSS class name */
-  className?: string;
 }

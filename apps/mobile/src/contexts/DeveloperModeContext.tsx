@@ -1,15 +1,12 @@
-import { createContext, useContext } from 'react';
-
-interface DeveloperModeContextValue {
-  developerNetworks: boolean;
-}
-
-const DeveloperModeContext = createContext<DeveloperModeContextValue>({
-  developerNetworks: false,
-});
-
-export const DeveloperModeProvider = DeveloperModeContext.Provider;
-
-export function useDeveloperMode(): boolean {
-  return useContext(DeveloperModeContext).developerNetworks;
-}
+/**
+ * The developer-mode context lives in `@salmon/shared` since spec 028 lot 6b:
+ * one provider, one `useEnsureMirrorNetworks`, mounted on both platforms. This
+ * module keeps the app's import path.
+ */
+export {
+  DeveloperModeProvider,
+  useDeveloperMode,
+  useUnverifiedTokens,
+  useDeveloperModeSettings,
+  type DeveloperModeContextValue,
+} from '@salmon/shared';

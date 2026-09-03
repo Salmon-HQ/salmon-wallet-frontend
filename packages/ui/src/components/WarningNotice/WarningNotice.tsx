@@ -1,65 +1,88 @@
-import type { ReactNode } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+/**
+ * WarningNotice – icon-led alert banner for security/failure states, on the
+ * DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/WarningNotice/WarningNotice.tsx`;
+ * the anatomy is the same, read from the same `WarningNoticePropsBase`
+ * contract (`packages/shared/src/types/ui/warning-notice.ts`).
+ */
+import React from 'react';
+import {
+  borderRadius,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  spacing,
+  type Semantic,
+} from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import { WarningIcon, iconSize } from '../../icons';
-import { borderRadius, colors, fontSize, fontWeight, semantic, spacing } from '@salmon/shared';
-import { styled } from '../../utils/styled';
 import type { WarningNoticeProps } from './types';
 
-const WarningBannerRoot = styled(Box)({
-  display: 'flex',
-  gap: spacing.sm,
-  alignItems: 'flex-start',
-  boxSizing: 'border-box',
-  width: '100%',
-  padding: spacing.md,
-  borderRadius: borderRadius.lg,
-  border: '1px solid',
-});
-
-/**
- * Consistent, icon-led alert banner shared by every approval screen — the
- * tx-lookalike "Signing blocked", the SIWS domain-mismatch block, and the
- * insecure-origin advisory. The triangle icon and tone color make security
- * state impossible to miss while staying within the dark palette.
- */
 export function WarningNotice({
   tone = 'error',
   title,
   children,
   action,
-}: WarningNoticeProps): ReactNode {
-  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
-  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
+  style,
+  className,
+  testID,
+}: WarningNoticeProps): React.ReactElement {
+  const t = useSemantic();
+  const accent =
+    tone === 'warning' ? t.status.warning : tone === 'info' ? t.text.secondary : t.status.danger;
+  const background =
+    tone === 'warning'
+      ? t.status.warningTint
+      : tone === 'info'
+        ? t.surface.shelf
+        : t.status.dangerTint;
 
   return (
-    <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>
-      <WarningIcon size={iconSize.md} color={accent} style={{ flexShrink: 0, marginTop: '1px' }} />
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          sx={{
-            color: accent,
-            fontSize: fontSize.sm,
-            fontWeight: fontWeight.semibold,
-            marginBottom: '2px',
-          }}
-        >
-          {title}
-        </Typography>
-        {children != null && (
-          <Typography
-            sx={{
-              color: colors.text.primary,
-              fontSize: fontSize.sm,
-              lineHeight: 1.45,
-              overflowWrap: 'anywhere',
-            }}
-          >
-            {children}
-          </Typography>
-        )}
-        {action != null && <Box sx={{ marginTop: '6px' }}>{action}</Box>}
-      </Box>
-    </WarningBannerRoot>
+    <div
+      data-testid={testID}
+      role={tone === 'info' ? 'status' : 'alert'}
+      className={className}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        boxSizing: 'border-box',
+        width: '100%',
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        borderStyle: 'solid',
+        borderWidth: 1,
+        borderColor: accent,
+        backgroundColor: background,
+        gap: spacing.sm,
+        ...style,
+      }}
+    >
+      <WarningIcon size={iconSize.md} color={accent} style={{ flexShrink: 0, marginTop: 1 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={titleStyle(accent)}>{title}</span>
+        {children != null && <div style={bodyStyle(t)}>{children}</div>}
+        {action != null && <div style={{ marginTop: 6, alignSelf: 'flex-start' }}>{action}</div>}
+      </div>
+    </div>
   );
 }
+
+const titleStyle = (accent: string): React.CSSProperties => ({
+  display: 'block',
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.semibold,
+  fontSize: fontSize.caption,
+  color: accent,
+  marginBottom: spacing.xxs,
+});
+
+const bodyStyle = (t: Semantic): React.CSSProperties => ({
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontSize: fontSize.caption,
+  lineHeight: `${fontSize.caption * 1.45}px`,
+  color: t.text.primary,
+  overflowWrap: 'anywhere',
+});

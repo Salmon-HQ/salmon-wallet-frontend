@@ -1,109 +1,39 @@
 /**
- * SupportSelector - Help & Support component for browser extension
+ * SupportSelector — Help & Support, on the DOM.
  *
- * Displays a list of support options (FAQ, docs, social, email)
- * with a security notice about seed phrase protection.
+ * The mobile twin is `apps/mobile/src/components/SupportSelector`: a
+ * `ListRow` per support option plus a security notice about seed phrase
+ * protection. Every row leaves the app for an external URL (docs, social,
+ * mailto): the external-link glyph says so, and the row announces as a link.
  */
-
 import React, { useCallback } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
+import { useTranslation } from 'react-i18next';
+import { type SupportOptionItem, type IconGlyphProps } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
 import {
   ArrowSquareOutIcon,
-  ChatsCircleIcon,
+  BookOpenIcon,
   EnvelopeIcon,
-  FileTextIcon,
   QuestionIcon,
-  ShieldIcon,
   XLogoIcon,
   iconSize,
 } from '../../icons';
-import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  semantic,
-  spacing,
-  borderRadius,
-  type SupportOptionItem,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  componentSizes,
-} from '@salmon/shared';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
 import type { SupportSelectorProps } from './types';
 
-// ============================================================================
-// Icon mapping
-// ============================================================================
+/** The leading well every option row carries — Settings' own row bubble size. */
+const ROW_BUBBLE_SIZE = 40;
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-  faq: <QuestionIcon />,
-  docs: <FileTextIcon />,
-  twitter: <XLogoIcon />,
-  discord: <ChatsCircleIcon />,
-  email: <EnvelopeIcon />,
+const ICON_MAP: Record<string, React.ComponentType<IconGlyphProps>> = {
+  faq: QuestionIcon,
+  docs: BookOpenIcon,
+  twitter: XLogoIcon,
+  email: EnvelopeIcon,
 };
-
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const StyledList = styled(List)({
-  padding: 0,
-});
-
-const StyledListItemButton = styled(ListItemButton)({
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const StyledListItemIcon = styled(ListItemIcon)({
-  minWidth: componentSizes.backButtonSize,
-  color: colors.accent.primary,
-});
-
-const ExternalIcon = styled(ArrowSquareOutIcon)({
-  color: colors.text.secondary,
-  width: iconSize.sm,
-  height: iconSize.sm,
-});
-
-const SecurityNotice = styled(Box)({
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: spacing.sm,
-  backgroundColor: semantic.status.warningTint,
-  borderRadius: borderRadius.md,
-  padding: spacing.md,
-  margin: `${spacing.lg}px ${spacing.lg}px`,
-});
-
-const SecurityIcon = styled(ShieldIcon)({
-  color: semantic.status.warning,
-  width: iconSize.md,
-  height: iconSize.md,
-  marginTop: spacing.xxs,
-});
-
-const SecurityText = styled(Typography)({
-  fontSize: fontSize.caption,
-  color: colors.text.secondary,
-  lineHeight: lineHeight.tokenListItem,
-  flex: 1,
-});
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function SupportSelector({
   options,
@@ -111,48 +41,45 @@ export function SupportSelector({
   onBack,
 }: SupportSelectorProps): React.ReactElement {
   const { t } = useTranslation();
+  const { text } = useSemantic();
 
   const renderOption = useCallback(
     (option: SupportOptionItem) => (
-      <ListItem key={option.id} disablePadding>
-        {/* Every row leaves the app for an external URL (docs, social, mailto),
-            so each one announces as a link, not a button — the same reading the
-            mobile surface gives them (DESIGN.md §"The settings surface joined
-            the system"). */}
-        <StyledListItemButton role="link" onClick={() => onOpenLink(option.url)}>
-          <StyledListItemIcon>{ICON_MAP[option.id] || <QuestionIcon />}</StyledListItemIcon>
-          <ListItemText
-            primary={t(option.title)}
-            secondary={t(option.description)}
-            primaryTypographyProps={{
-              sx: {
-                color: colors.text.primary,
-                fontSize: fontSize.body,
-                fontWeight: fontWeight.medium,
-              },
-            }}
-            secondaryTypographyProps={{
-              sx: {
-                color: colors.text.secondary,
-                fontSize: fontSize.caption,
-              },
-            }}
+      <ListRow
+        key={option.id}
+        testID={`support-option-${option.id}`}
+        accessibilityRole="link"
+        leading={
+          <IconBubble
+            size={ROW_BUBBLE_SIZE}
+            shape="rounded"
+            tone="surface"
+            // A list where nothing commits has no living element to spend the
+            // accent on. Row glyphs take the same quiet ink the settings rows use.
+            icon={ICON_MAP[option.id] || QuestionIcon}
+            iconSize={iconSize.md}
           />
-          <ExternalIcon />
-        </StyledListItemButton>
-      </ListItem>
+        }
+        title={t(option.title)}
+        subtitle={t(option.description)}
+        onPress={() => onOpenLink(option.url)}
+        trailing={<ArrowSquareOutIcon size={iconSize.md} color={text.tertiary} />}
+      />
     ),
-    [onOpenLink, t]
+    [onOpenLink, t, text.tertiary]
   );
 
   return (
-    <SettingsPanelContent title={t('settings.help_support')} onBack={onBack}>
-      <StyledList>{options.map(renderOption)}</StyledList>
+    <SettingsPanelContent
+      title={t('settings.help_support')}
+      subtitle={t('settings.help_support_subtitle', 'Get help or contact the team.')}
+      onBack={onBack}
+    >
+      {options.map(renderOption)}
 
-      <SecurityNotice>
-        <SecurityIcon />
-        <SecurityText>{t('settings.security_notice')}</SecurityText>
-      </SecurityNotice>
+      <WarningNotice tone="warning" title={t('settings.security_notice_title')}>
+        {t('settings.security_notice')}
+      </WarningNotice>
     </SettingsPanelContent>
   );
 }

@@ -12,14 +12,13 @@ adaptive
 
 Three shipped surfaces from one monorepo:
 
-| Surface           | Form                                        | Notes                                                                                                         |
-| ----------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| iOS               | React Native / Expo app                     | In App Store review at the time of writing; one Guideline 2.1 rejection recorded (v1.0.3, first review round) |
-| Android           | React Native / Expo app                     | Live, labelled Beta                                                                                           |
-| Browser extension | Chrome (MV3) and Firefox, built with WXT    | Opens as a **side panel**                                                                                     |
-| Web               | Browser app, served at `v2.salmonwallet.io` | Despite the repo being named v3, "v2" is the current production web wallet                                    |
+| Surface           | Form                                     | Notes                                                                                                         |
+| ----------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| iOS               | React Native / Expo app                  | In App Store review at the time of writing; one Guideline 2.1 rejection recorded (v1.0.3, first review round) |
+| Android           | React Native / Expo app                  | Live, labelled Beta                                                                                           |
+| Browser extension | Chrome (MV3) and Firefox, built with WXT | Opens as a **side panel**                                                                                     |
 
-`adaptive`, not `web`: the same business logic ships to a native runtime and to two browser runtimes, and each is expected to respect its own platform conventions rather than render one design language everywhere.
+`adaptive`, not `web`: the same business logic ships to a native runtime and to a browser runtime, and each is expected to respect its own platform conventions rather than render one design language everywhere. (A standalone web wallet was the third surface until it was retired on 2026-09-02; the extension is the only browser surface now.)
 
 **The extension is a side panel, not a popup.** Chrome uses `chrome.sidePanel.setPanelBehavior`, Firefox uses `sidebarAction.toggle()`. That means full viewport height and a user-resizable width, not a fixed 360×600 popup. Any reasoning that starts from "it's a 360px popup" is reasoning about a surface this product does not have. A narrow column is still the governing width case; a short one is not.
 
@@ -45,7 +44,7 @@ Sophistication is assumed high. The store copy names the audience as active Sola
 
 ## Product Purpose
 
-An open-source, self-custodial, Solana-first crypto wallet, with Bitcoin shipped alongside it and Ethereum reachable today only as a bridge destination.
+An open-source, self-custodial, Solana-first crypto wallet, with Bitcoin shipped alongside it; Ethereum is not reachable in the shipped product (scaffolding only).
 
 The stated purpose [stated]:
 
@@ -72,13 +71,15 @@ Two positioning cautions the product must respect:
 - **Approval is the product's centre of gravity.** Every sensitive action must explain what will happen, what can go wrong, what it costs, and what is being approved.
 - **Off-chain message signing (OCMS)** is shipped — a Solana Foundation standard, with Salmon listed as an early adopter. A v1 OCMS message begins with `0xff` plus the literal domain `"solana offchain"`, which can never begin a valid transaction, closing the transaction-lookalike blind-signing attack. Shipped on web v1.1.0 and extension 0.11.1/0.11.2. Mobile carries only the WebCrypto polyfill and has no dApp surface at all.
 - **Mobile Wallet Adapter is Android-only, permanently.** iOS suspends backgrounded apps, which kills the socket MWA depends on. dApp connectivity is therefore an Android-and-extension capability, and the iOS build must present that absence as a platform reality rather than a missing or broken feature.
-- **Third-party dependencies with user-visible failure modes**: Jupiter (same-chain swap), StealthEX (cross-chain bridge, non-KYC, third-party custody window with "no control, no cancel, and no recovery path"), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on all three platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
+- **Third-party dependencies with user-visible failure modes**: Jupiter (same-chain swap), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on both platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
 
 ## Capabilities and Constraints
 
 ### Shipped
 
-Solana and Bitcoin accounts (mainnet plus devnet/testnet), send, receive, swap (Jupiter), bridge (StealthEX, Solana ↔ Bitcoin ↔ Ethereum), NFTs/collectibles, a spam filter, OCMS and Sign-in-with-Solana on web and extension.
+Solana and Bitcoin accounts (mainnet plus devnet/testnet), send, receive, NFTs/collectibles, a spam filter, OCMS and Sign-in-with-Solana on the extension.
+
+Swap (Jupiter) shipped and was then withdrawn: the surface is closed in every app pending the Powerups boundary work (spec 027), and no app offers a way to reach it.
 
 ### Powerups — planned, not built
 
@@ -86,7 +87,7 @@ The flagship roadmap concept. A Powerup is an installable capability module. The
 
 > "Powerups can propose actions. Salmon core validates, explains, requests approval, signs, and broadcasts."
 
-The three named first official Powerups are **Swap**, **Bridge**, and **Explore**. Swap and Bridge ship today as core tabs; the Powerups model retroactively reframes them as modules. Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
+The three named first official Powerups were **Swap**, **Bridge**, and **Explore**. Swap ships today as a core tab; the Powerups model retroactively reframes it as a module. Bridge shipped as a core tab until its removal (2026-09, Apple Guideline 3.1.5(iii)). Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
 
 Two tiers: **Official** (built and maintained by Salmon) and **Community** (external developers on a restricted SDK). "Community-built does not mean trusted by default."
 
@@ -109,15 +110,15 @@ A **SALMON** token exists only as a "proposed ownership coin, not a live token".
 - **No dark patterns, by written policy.** The non-goals forbid "a growth machine that optimizes distribution while weakening trust": no urgency timers, no pre-checked consent, no dismissal-hostile modals.
 - **Theme tokens may need to be plain CSS custom properties**, not only JS objects, if Salmon-themed UI is ever rendered inside a third-party component library (the Blinks proposal themes Dialect via CSS variables). Cheap to guarantee now.
 
-### Platform fees — resolved: both rates are disclosed
+### Platform fees — resolved: the rate is disclosed
 
-Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all) and a **0.4% StealthEX bridge partner fee** (`STEALTHEX_PARTNER_FEE` in `../salmon-wallet-backend`, sent upstream as `partner_fee` and netted into the estimate StealthEX returns).
+Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all).
 
-The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. Both review screens now name the rate: swap shows "Salmon fee" with the percentage the backend reports, and bridge shows the same row against `BRIDGE_PARTNER_FEE_PERCENT`, with the please-note copy stating that the estimate already has the fee deducted.
+The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. The swap review screen names the rate: it shows "Salmon fee" with the percentage the backend reports.
 
-What is disclosed is the **rate**, not an amount, and that is a limitation rather than a choice: StealthEX returns only the net `estimated_amount`, so no fee amount reaches the frontend. Showing one would require the backend to echo `partner_fee` and the gross estimate, or to add an explicit fee field to `BridgeEstimateResponse`. No document justifies the specific rates; that remains unrecorded.
+Resolved engineering note: the backend's `calculateFee` used to label non-SOL fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which denominates the swap order fee in the input token.
 
-Resolved engineering note: the backend's `calculateFee` used to label non-SOL fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which denominates the swap order fee in the input token. It never affected the bridge, which does no fee arithmetic on either side.
+Historical: the wallet previously shipped a StealthEX cross-chain bridge with its own 0.4% partner fee. It was removed 2026-09 after Apple's App Store Guideline 3.1.5(iii) rejection; the backend's `/v1/bridge/*` endpoints are gone.
 
 ## Brand Commitments
 
@@ -138,7 +139,7 @@ Resolved engineering note: the backend's `calculateFee` used to label non-SOL fe
 ## Evidence on Hand
 
 - **Real assets**: the shipped theme tokens in `packages/shared/src/theme`, the brand mark as vector path data in `theme/brand.ts`, the seigaiha `ScalesBackground` component in `packages/ui`, and the DM Sans / Geist Mono binaries in `packages/assets/src/fonts` (SIL OFL 1.1, cleared for embedding).
-- **Real product docs**: OCMS overview and approval-UI notes, the Jupiter referral and StealthEX bridge specs, the frontend analytics/privacy model, and the frontend error-handling contract.
+- **Real product docs**: OCMS overview and approval-UI notes, the Jupiter referral spec, the frontend analytics/privacy model, and the frontend error-handling contract.
 - **Absent, and not to be fabricated**: user research of any kind; personas; testimonials; usage or retention numbers; competitor teardowns; a Figma or any other design-file reference; specs for Explore, seedless wallet, watch mode, onboarding rework, portfolio view, or notifications; and the provenance of the `Bool`/`BoolSplashLogo` asset, which appears in the codebase and nowhere in the knowledge base.
 
 ## Product Principles

@@ -13,6 +13,7 @@ export type SettingsScreen =
   | 'network'
   | 'language'
   | 'currency'
+  | 'appearance'
   | 'about'
   | 'backup'
   | 'privateKey'
@@ -41,28 +42,16 @@ export interface SettingsPanelEntry {
 }
 
 /**
- * Base props shared between mobile and extension SettingsSheet
+ * Base props shared between mobile and extension Settings.
+ *
+ * Settings is a screen on both platforms — a route on mobile, a page of the
+ * DOM stack — so there is no `visible` here: it is mounted or it is not.
  */
-export interface SettingsSheetBaseProps {
+export interface SettingsScreenBaseProps {
   /**
-   * Whether the settings sheet is visible.
-   */
-  visible: boolean;
-
-  /**
-   * Callback when the sheet should close.
+   * Leave Settings and return to the screen that opened it.
    */
   onClose: () => void;
-
-  /**
-   * Whether developer networks (testnets/devnets) are enabled.
-   */
-  developerNetworksEnabled?: boolean;
-
-  /**
-   * Callback when developer networks toggle is changed.
-   */
-  onDeveloperNetworksToggle?: (enabled: boolean) => void;
 
   /**
    * Whether anonymous usage analytics is enabled (opt-in, default off).
@@ -176,6 +165,25 @@ export interface LanguageSelectorBaseProps {
 }
 
 // ============================================================================
+// Appearance Selector
+// ============================================================================
+
+/** A theme preference option as displayed in the appearance selector UI. */
+export type AppearancePreference = 'system' | 'light' | 'dark';
+
+/**
+ * Base props shared between mobile and extension AppearanceSelector components.
+ */
+export interface AppearanceSelectorBaseProps {
+  /** Currently active preference */
+  activePreference: AppearancePreference;
+  /** Called when the user selects a preference */
+  onSelectPreference: (preference: AppearancePreference) => void;
+  /** Called when the user navigates back */
+  onBack: () => void;
+}
+
+// ============================================================================
 // Trusted Apps Selector
 // ============================================================================
 
@@ -257,12 +265,6 @@ export const SUPPORT_OPTIONS: SupportOptionItem[] = [
     title: 'settings.support.twitter.title',
     description: 'settings.support.twitter.description',
     url: 'https://twitter.com/salmonwallet',
-  },
-  {
-    id: 'discord',
-    title: 'settings.support.discord.title',
-    description: 'settings.support.discord.description',
-    url: 'https://discord.gg/salmonwallet',
   },
   {
     id: 'email',
@@ -362,6 +364,7 @@ export const SETTINGS_ITEM_SLUGS: Record<string, string> = {
   privateKey: 'private-key',
   language: 'display-language',
   currency: 'display-currency',
+  appearance: 'appearance',
   explorer: 'block-explorer',
   addressBook: 'address-book',
   trustedApps: 'trusted-apps',

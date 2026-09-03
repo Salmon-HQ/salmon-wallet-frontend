@@ -1,52 +1,30 @@
-import React from 'react';
+/**
+ * SettingsSelectorList — the shared single-choice list for Language,
+ * Currency, Explorer and Appearance, on the DOM.
+ *
+ * The mobile twin is
+ * `apps/mobile/src/components/SettingsSelectors/SettingsSelectorList`: a
+ * `ListRow` per choice, the chosen row marked by a trailing check in the
+ * accent ink — a state rather than an action, never an accent fill on the
+ * row (DESIGN.md §Navigation: a vertical set of exclusive choices does not
+ * take the travelling underline).
+ */
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import CircularProgress from '@mui/material/CircularProgress';
-import { CheckIcon, iconSize } from '../../icons';
-import { colors, spacing, fontSize, fontWeight } from '@salmon/shared';
+import { fontFamily, fontSize, spacing } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckCircleIcon, iconSize } from '../../icons';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
+import { SkeletonRow } from '../SkeletonRow';
 import type { SettingsSelectorListProps } from './types';
 
-// ============================================================================
-// Styled Components (shared across all settings selectors)
-// ============================================================================
+/** Mirrors a rendered card row, so the loading state does not jump on swap. */
+const SKELETON_ROW_COUNT = 3;
 
-const StyledList = styled(List)({
-  padding: `${spacing.sm}px 0`,
-});
-
-const StyledListItemButton = styled(ListItemButton)<{ $selected?: boolean }>(({ $selected }) => ({
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  backgroundColor: $selected ? colors.accent.tint : 'transparent',
-  '&:hover': {
-    backgroundColor: $selected ? colors.accent.tintHover : colors.background.card,
-  },
-}));
-
-const CheckIconStyled = styled(CheckIcon)({
-  color: colors.accent.primary,
-  width: iconSize.md,
-  height: iconSize.md,
-});
-
-const LoadingContainer = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: spacing.xl,
-});
-
-const EmptyState = styled(Typography)({
-  color: colors.text.secondary,
-  fontSize: fontSize.body,
-  textAlign: 'center',
-  padding: spacing.xl,
-});
+/** The leading well every option row carries when a selector has no art of its own. */
+const ROW_BUBBLE_SIZE = 40;
 
 export function SettingsSelectorList<T>({
   items,
@@ -55,78 +33,91 @@ export function SettingsSelectorList<T>({
   onSelect,
   getPrimaryText,
   getSecondaryText,
-  secondaryTypographyProps,
   renderLeadingElement,
   loading,
   emptyMessage,
   testIdPrefix,
 }: SettingsSelectorListProps<T>): React.ReactElement {
   const { t } = useTranslation();
+  const { accent, text } = useSemantic();
+
+  const renderItem = useCallback(
+    (item: T) => {
+      const selected = isSelected(item);
+      const key = getKey(item);
+      const primary = getPrimaryText(item);
+      const secondary = getSecondaryText?.(item);
+
+      // No art of its own (Explorer, Language): the row still carries a
+      // leading well, filled with the same short code its subtitle already
+      // states, rather than mixing bare and bubbled rows in one list.
+      const leading = renderLeadingElement?.(item) ?? (
+        <IconBubble size={ROW_BUBBLE_SIZE} tone="surface">
+          {(secondary ?? primary).slice(0, 2).toUpperCase()}
+        </IconBubble>
+      );
+
+      return (
+        <ListRow
+          key={key}
+          testID={testIdPrefix ? `${testIdPrefix}-${key}` : undefined}
+          onPress={() => onSelect(item)}
+          leading={leading}
+          title={primary}
+          subtitle={secondary || undefined}
+          trailing={
+            selected ? (
+              // The chosen row is a state, said by the glyph and by the name.
+              <span
+                data-testid={testIdPrefix ? `${testIdPrefix}-${key}-selected` : undefined}
+                data-selected="true"
+                style={{ display: 'inline-flex' }}
+              >
+                <CheckCircleIcon size={iconSize.lg} color={accent.ink} />
+              </span>
+            ) : undefined
+          }
+        />
+      );
+    },
+    [
+      isSelected,
+      getKey,
+      onSelect,
+      getPrimaryText,
+      getSecondaryText,
+      renderLeadingElement,
+      testIdPrefix,
+      accent,
+    ]
+  );
 
   if (loading) {
     return (
-      <LoadingContainer>
-        <CircularProgress
-          size={iconSize.lg}
-          aria-label={t('general.loading')}
-          sx={{ color: colors.accent.primary }}
-        />
-      </LoadingContainer>
+      <SkeletonRow
+        count={SKELETON_ROW_COUNT}
+        leadingSize={ROW_BUBBLE_SIZE}
+        accessibilityLabel={t('general.loading')}
+      />
     );
   }
 
   if (items.length === 0 && emptyMessage) {
-    return <EmptyState>{emptyMessage}</EmptyState>;
+    return (
+      <p
+        style={{
+          margin: 0,
+          padding: spacing.xl,
+          textAlign: 'center',
+          fontFamily: fontFamily.sans,
+          fontSize: fontSize.body,
+          color: text.secondary,
+        }}
+      >
+        {emptyMessage}
+      </p>
+    );
   }
 
-  return (
-    // Listbox semantics, not a list of buttons: MUI's `selected` prop is a CSS
-    // class and emits neither a role nor `aria-selected`, so without this a
-    // screen reader cannot tell which language, currency or network is active.
-    // The `li` takes `role="none"` so each option is owned directly by the
-    // listbox, as the pattern requires.
-    <StyledList role="listbox">
-      {items.map((item) => {
-        const selected = isSelected(item);
-
-        return (
-          <ListItem key={getKey(item)} disablePadding role="none">
-            <StyledListItemButton
-              role="option"
-              aria-selected={selected}
-              selected={selected}
-              $selected={selected}
-              onClick={() => onSelect(item)}
-              data-testid={testIdPrefix ? `${testIdPrefix}-${getKey(item)}` : undefined}
-            >
-              {renderLeadingElement?.(item)}
-              <ListItemText
-                primary={getPrimaryText(item)}
-                secondary={getSecondaryText?.(item)}
-                primaryTypographyProps={{
-                  sx: {
-                    color: colors.text.primary,
-                    fontWeight: selected ? fontWeight.semibold : fontWeight.medium,
-                    fontSize: fontSize.body,
-                  },
-                }}
-                secondaryTypographyProps={
-                  getSecondaryText
-                    ? {
-                        sx: {
-                          color: colors.text.secondary,
-                          fontSize: fontSize.caption,
-                          ...(secondaryTypographyProps || {}),
-                        },
-                      }
-                    : undefined
-                }
-              />
-              {selected && <CheckIconStyled />}
-            </StyledListItemButton>
-          </ListItem>
-        );
-      })}
-    </StyledList>
-  );
+  return <>{items.map(renderItem)}</>;
 }

@@ -1,10 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { TokenAboutPropsBase } from '@salmon/shared';
 
-/**
- * Props for the TokenAbout component (Web/Extension)
- */
-export interface TokenAboutProps extends TokenAboutPropsBase<CSSProperties> {
-  /** Optional className for the container */
+/** The DOM half of `TokenAboutPropsBase`: the contract plus a style. */
+export interface TokenAboutProps extends TokenAboutPropsBase {
+  style?: CSSProperties;
   className?: string;
 }

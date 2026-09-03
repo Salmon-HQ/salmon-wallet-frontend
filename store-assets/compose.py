@@ -28,37 +28,34 @@ INK_ON_CORAL = (0x07, 0x09, 0x11)
 
 # Каждый frame: (capture, eyebrow, headline, background)
 DECK = [
-    # (captura, eyebrow, headline, fondo, stores)
+    # (captura, eyebrow, headline, fondo, stores). Swap left the deck on
+    # 2026-09-03: the powerups surface is closed for the submission.
     ("01-home",         "OPEN-SOURCE. SELF-CUSTODIAL.", "Your keys.\nYour coins.",         "coral", None),
     ("02-send",         None, "Send to any wallet\nor .sol name",                          "navy",  None),
-    ("07-swap",         None, "Swap and bridge,\nbuilt in.",                               "coral", None),
-    ("08-swap-review",  None, "See every fee\nbefore you sign",                            "navy",  None),
     ("03-transactions", None, "Your assets and activity,\none view.",                      "coral", None),
     ("04-collectibles", None, "Your NFTs,\nfront and center",                              "navy",  None),
     ("05-nft-detail",   None, "Every collectible,\nin detail",                             "coral", None),
     ("06-token-info",   None, "Live prices\nfor every token",                              "navy",  None),
-    # Play admite 8; about entra solo en App Store, que admite 10. Es el frame
-    # mas prescindible del deck: la pantalla About muestra version y links, no
-    # el producto en uso, que es lo que Play pide demostrar en las capturas.
-    ("09-about",        None, "If you can\u2019t verify it,\nyou don\u2019t own it.",     "coral", ("app-store",)),
+    # About is the most dispensable frame: version and links, not the product
+    # in use, which is what Play asks the captures to show. App Store only.
 ]
 
 CWS_DECK = [
     ("01-home",         "Your whole portfolio,\none click away",  "coral"),
-    ("02-swap",         "Swap without\nleaving the tab",          "navy"),
-    ("04-transactions", "Every transaction,\nin plain language",  "coral"),
-    ("03-collectibles", "Your NFTs,\nfront and center",           "navy"),
-    ("05-settings",     "Connect to dApps.\nSign with clarity.",  "coral"),
+    ("02-transactions", "Every transaction,\nin plain language",  "navy"),
+    ("03-collectibles", "Your NFTs,\nfront and center",           "coral"),
+    ("04-settings",     "Connect to dApps.\nSign with clarity.",  "navy"),
+    ("05-send",         "Send to any wallet\nor .sol name",       "coral"),
 ]
 
 STORES = {
     # name:        (canvas,        source dir,      output dir)
     "play":        ((1080, 1920), "android-staged", "play/phone"),
     "app-store":   ((1320, 2868), "ios-staged",     "app-store/iphone-6.9"),
-    # Apaisado: la captura web es una columna de 430x800, asi que va a la
-    # derecha y el caption ocupa la mitad izquierda — meterla centrada en un
-    # lienzo horizontal dejaria dos franjas vacias enormes.
-    "chrome-web-store": ((1280, 800), "web-staged/cropped", "chrome-web-store/screenshots"),
+    # Apaisado: la captura es el side panel (400x800), asi que va a la derecha
+    # y el caption ocupa la mitad izquierda — centrada en un lienzo horizontal
+    # dejaria dos franjas vacias enormes.
+    "chrome-web-store": ((1280, 800), "extension-staged", "chrome-web-store/screenshots"),
 }
 
 

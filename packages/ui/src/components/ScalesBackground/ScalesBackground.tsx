@@ -9,13 +9,11 @@
  * also removes the `<pattern id>` collision that two live instances in one
  * document used to risk.
  */
-import { useMemo } from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import { seigaihaTile, seigaihaTiledPaths, semantic } from '@salmon/shared';
-import type { ScalesBackgroundProps, ScalesVariant } from './types';
+import { useMemo, type CSSProperties } from 'react';
+import { seigaihaTile, seigaihaTiledPaths, type Semantic } from '@salmon/shared';
 
-const { scales } = semantic;
+import { useSemantic } from '../../theme/ThemeProvider';
+import type { ScalesBackgroundProps, ScalesVariant } from './types';
 
 /**
  * Per-appearance defaults. The old component had one look — a near-black
@@ -23,10 +21,9 @@ const { scales } = semantic;
  * absent — tiled edge to edge as wallpaper. Each variant now has a job, a
  * distance, and a stroke that is actually visible at that distance.
  */
-const VARIANTS: Record<
-  ScalesVariant,
-  { stroke: string; scale: number; fade: boolean; fadeFloor: number }
-> = {
+const variantsFor = (
+  scales: Semantic['scales']
+): Record<ScalesVariant, { stroke: string; scale: number; fade: boolean; fadeFloor: number }> => ({
   deepField: {
     stroke: scales.deepFieldStroke,
     scale: scales.deepFieldScale,
@@ -49,26 +46,19 @@ const VARIANTS: Record<
    * and used as a mask over one full-width horizontal gradient.
    */
   refraction: {
-    stroke: '#FFFFFF',
+    // Unused: the sweep's stroke is decided at render (see below).
+    stroke: '',
     scale: scales.refractionScale,
     fade: false,
     fadeFloor: 1,
   },
-  /**
-   * The membrane field — the thermocline's own texture, edge to edge. Same
-   * 0.5× geometry as the refraction strip but a flat *dark* ink (owner,
-   * 2026-08-19: dark scales, one continuous field, no brighter band).
-   */
-  membrane: {
-    stroke: scales.membraneFieldStroke,
-    scale: scales.refractionScale,
-    fade: false,
-    fadeFloor: 1,
-  },
-};
+});
+
+/** 1px is the only stroke weight for a boundary in this system. */
+const STROKE_WIDTH = 1;
 
 /** `background-image` for the refraction band: the horizontal sweep. */
-function refractionSweep(): string {
+function refractionSweep(scales: Semantic['scales']): string {
   return `linear-gradient(to right, ${scales.refractionSweep.join(', ')})`;
 }
 
@@ -100,40 +90,6 @@ function tileUrl(stroke: string, strokeWidth: number, scale: number, tile: numbe
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const Container = styled(Box)<{
-  $topOffset: number;
-  $image: string;
-  $fade: boolean;
-  $floor: number;
-  $sweep: boolean;
-}>(({ $topOffset, $image, $fade, $floor, $sweep }) => ({
-  position: 'absolute',
-  top: $topOffset,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  pointerEvents: 'none',
-  // The refraction band inverts the roles: the sweep gradient is the paint
-  // and the white-stroked tile is the mask, so the gradient runs unbroken
-  // across the whole band instead of restarting per repeat.
-  backgroundImage: $sweep ? refractionSweep() : $image,
-  backgroundRepeat: 'repeat',
-  ...($sweep
-    ? {
-        maskImage: $image,
-        maskRepeat: 'repeat',
-        WebkitMaskImage: $image,
-        WebkitMaskRepeat: 'repeat',
-      }
-    : {}),
-  ...($fade
-    ? {
-        maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
-        WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
-      }
-    : {}),
-}));
-
 /**
  * ScalesBackground - the seigaiha fish-scale motif, at one of its three scales.
  *
@@ -154,31 +110,48 @@ const Container = styled(Box)<{
  */
 export function ScalesBackground({
   variant = 'deepField',
-  strokeColor,
-  strokeWidth = 1,
-  patternHeight,
-  topOffset = 0,
   style,
   className,
 }: ScalesBackgroundProps) {
-  const config = VARIANTS[variant];
-  const stroke = strokeColor ?? config.stroke;
-  // `patternHeight` stays supported for callers that set the tile height.
-  const tile = patternHeight ?? seigaihaTile.height;
+  const { scales, text } = useSemantic();
+  const config = variantsFor(scales)[variant];
+  const isSweep = variant === 'refraction';
+  // The sweep's tile is an alpha mask, so any opaque ink draws it; the
+  // primary text ink is the one opaque token every mode carries.
+  const stroke = isSweep ? text.primary : config.stroke;
   const image = useMemo(
-    () => tileUrl(stroke, strokeWidth, config.scale, tile),
-    [stroke, strokeWidth, config.scale, tile]
+    () => tileUrl(stroke, STROKE_WIDTH, config.scale, seigaihaTile.height),
+    [stroke, config.scale]
   );
 
-  return (
-    <Container
-      $topOffset={topOffset}
-      $image={image}
-      $fade={config.fade}
-      $floor={config.fadeFloor}
-      $sweep={variant === 'refraction'}
-      style={style}
-      className={className}
-    />
-  );
+  const containerStyle: CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    // The refraction band inverts the roles: the sweep gradient is the paint
+    // and the white-stroked tile is the mask, so the gradient runs unbroken
+    // across the whole band instead of restarting per repeat.
+    backgroundImage: isSweep ? refractionSweep(scales) : image,
+    backgroundRepeat: 'repeat',
+    ...(isSweep
+      ? {
+          maskImage: image,
+          maskRepeat: 'repeat',
+          WebkitMaskImage: image,
+          WebkitMaskRepeat: 'repeat',
+        }
+      : {}),
+    ...(config.fade
+      ? {
+          maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${config.fadeFloor}) 100%)`,
+          WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${config.fadeFloor}) 100%)`,
+        }
+      : {}),
+    ...style,
+  };
+
+  return <div style={containerStyle} className={className} />;
 }

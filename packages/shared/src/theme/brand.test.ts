@@ -17,8 +17,8 @@ import {
 
 describe('brand mark geometry', () => {
   it('keeps the authored artboard', () => {
-    expect(markViewBox).toEqual({ width: 253, height: 236 });
-    expect(markViewBoxAttr).toBe('0 0 253 236');
+    expect(markViewBox).toEqual({ width: 253, height: 237 });
+    expect(markViewBoxAttr).toBe('0 0 253 237');
   });
 
   it('has the three paths that compose the mark', () => {
@@ -40,8 +40,8 @@ describe('markToSvg', () => {
   it('defaults to the native artboard', () => {
     const svg = markToSvg('#FF5C45');
     expect(svg).toContain('width="253"');
-    expect(svg).toContain('height="236"');
-    expect(svg).toContain('viewBox="0 0 253 236"');
+    expect(svg).toContain('height="237"');
+    expect(svg).toContain('viewBox="0 0 253 237"');
   });
 
   it('derives height from width so the mark is never stretched', () => {

@@ -204,10 +204,14 @@ export const STORAGE_KEYS = {
   CURRENCY: 'salmon_currency',
   /** User's preferred language (useLanguage) */
   LANGUAGE: 'salmon_language',
+  /** Appearance preference: 'system' | 'light' | 'dark' (ThemeContext) */
+  APPEARANCE: 'salmon_appearance',
   /** Address book / contacts (useAddressbook) */
   CONTACTS: 'salmon_contacts',
   /** Balance visibility preference */
   HIDDEN_BALANCE: 'salmon_hidden_balance',
+  /** The order Home draws its sub-tabs in (useHomeTabOrder) */
+  HOME_TABS_ORDER: 'salmon_home_tabs_order',
   /** Anonymous usage-analytics consent flag (opt-in, default off) */
   ANALYTICS_CONSENT: 'salmon_analytics_consent',
   /** Random per-install analytics id — NOT derived from any wallet data */
@@ -221,9 +225,6 @@ export const STORAGE_KEYS = {
   /** Device-only onboarding event ('wallet_created' | 'wallet_recovered') parked until the consent prompt is answered */
   ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
 
-  // -- Cross-chain settlement --
-  /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */
-  PENDING_BRIDGES: 'salmon_pending_bridges',
   /** Submitted on-chain signatures still awaiting a verdict (PendingTransactions) */
   PENDING_TRANSACTIONS: 'salmon_pending_transactions',
 
@@ -274,7 +275,7 @@ export type StashKey = (typeof STASH_KEYS)[keyof typeof STASH_KEYS];
 /**
  * Supported platform types for storage implementation selection.
  */
-export type Platform = 'mobile' | 'extension' | 'web';
+export type Platform = 'mobile' | 'extension';
 
 /**
  * Configuration for storage initialization.

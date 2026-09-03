@@ -8,7 +8,7 @@
  * Used in the settings flow to change the account profile picture.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,6 @@ import {
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   spacing,
   contentPadding,
   borderRadius,
@@ -29,13 +28,16 @@ import {
   fontSize,
   fontFamilyNative,
   PRESET_AVATAR_URLS,
-  useAvatarNfts,
+  useAvatarPicker,
+  type AvatarPickerTab,
   type NftAvatarItem,
   type AvatarPickerPropsBase,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
+import { UnderlineTabs } from '../../UnderlineTabs';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 
 // ============================================================================
 // Constants
@@ -48,8 +50,6 @@ const NFT_MIN_COLUMNS = 2;
 const NFT_MAX_COLUMNS = 3;
 const NFT_MIN_SIZE = 96;
 const GRID_GAP = spacing.sm;
-
-type Tab = 'presets' | 'nfts';
 
 // ============================================================================
 // Types
@@ -78,16 +78,19 @@ export function AccountAvatarPanel({
   onBack,
 }: AccountAvatarPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const { width: windowWidth } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState<Tab>('presets');
-  const [selectedUrl, setSelectedUrl] = useState<string | undefined>(currentAvatarUrl);
-
-  const { nfts, loading: nftsLoading } = useAvatarNfts({
-    account,
-    enabled: activeTab === 'nfts',
-  });
-
-  const hasChanged = selectedUrl !== currentAvatarUrl;
+  const {
+    activeTab,
+    setActiveTab,
+    selectedUrl,
+    setSelectedUrl,
+    nfts,
+    nftsLoading,
+    hasChanged,
+    save: handleSave,
+  } = useAvatarPicker({ currentAvatarUrl, account, onSave });
   const availableWidth = useMemo(() => windowWidth - contentPadding.screen * 2, [windowWidth]);
   const presetColumns = useMemo(
     () =>
@@ -106,12 +109,6 @@ export function AccountAvatarPanel({
     () => (availableWidth - GRID_GAP * (nftColumns - 1)) / nftColumns,
     [availableWidth, nftColumns]
   );
-
-  const handleSave = useCallback(() => {
-    if (selectedUrl && hasChanged) {
-      onSave(selectedUrl);
-    }
-  }, [selectedUrl, hasChanged, onSave]);
 
   // Preset avatar item renderer
   const renderPresetItem = useCallback(
@@ -142,7 +139,7 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [presetItemSize, selectedUrl]
+    [presetItemSize, selectedUrl, setSelectedUrl, styles]
   );
 
   // NFT item renderer
@@ -173,38 +170,33 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [nftItemSize, selectedUrl]
+    [nftItemSize, selectedUrl, setSelectedUrl, styles]
   );
 
   const presetKeyExtractor = useCallback((_item: string, index: number) => `preset-${index}`, []);
   const nftKeyExtractor = useCallback((item: NftAvatarItem) => item.mint, []);
 
   return (
-    <SettingsScreenLayout title={t('settings.profile_picture')} onBack={onBack} scrollable={false}>
+    <SettingsScreenLayout
+      title={t('settings.profile_picture')}
+      subtitle={t('settings.profile_picture_subtitle', 'Pick a preset or use one of your NFTs.')}
+      onBack={onBack}
+      scrollable={false}
+    >
       <View style={styles.container}>
-        {/* Tab Bar */}
-        <View style={styles.tabBar}>
-          <TouchableOpacity
-            testID="avatar-tab-presets"
-            style={[styles.tab, activeTab === 'presets' && styles.tabActive]}
-            onPress={() => setActiveTab('presets')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'presets' && styles.tabTextActive]}>
-              {t('settings.avatar_presets')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            testID="avatar-tab-nfts"
-            style={[styles.tab, activeTab === 'nfts' && styles.tabActive]}
-            onPress={() => setActiveTab('nfts')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'nfts' && styles.tabTextActive]}>
-              {t('settings.avatar_nfts')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Lateral choice takes the travelling underline, never a boxed or
+            filled container — DESIGN.md §Navigation. */}
+        <UnderlineTabs
+          testID="avatar-tabs"
+          tabs={[
+            { key: 'presets', label: t('settings.avatar_presets') },
+            { key: 'nfts', label: t('settings.avatar_nfts') },
+          ]}
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as AvatarPickerTab)}
+          tabTestIDPrefix="avatar-tab"
+          style={styles.tabs}
+        />
 
         {activeTab === 'presets' ? (
           <FlatList
@@ -220,7 +212,7 @@ export function AccountAvatarPanel({
           />
         ) : nftsLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={semantic.accent.ink} />
+            <ActivityIndicator size="large" color={accent.ink} />
           </View>
         ) : nfts.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -255,93 +247,70 @@ export function AccountAvatarPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  list: {
-    flex: 1,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.card,
-  },
-  // The panel's one accent is spent on Save. An active tab is chrome, and a
-  // salmon tab beside a salmon Save put two of them on one panel.
-  tabActive: {
-    backgroundColor: semantic.surface.crest,
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-  },
-  tabText: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    color: semantic.text.secondary,
-  },
-  tabTextActive: {
-    color: semantic.text.primary,
-  },
-  gridContent: {
-    paddingBottom: spacing.lg,
-  },
-  columnWrapper: {
-    gap: GRID_GAP,
-    marginBottom: GRID_GAP,
-  },
-  presetItem: {
-    overflow: 'hidden',
-    borderWidth: borderWidth.medium,
-    borderColor: 'transparent',
-  },
-  presetItemSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  presetImage: {
-    width: '100%',
-    height: '100%',
-  },
-  nftItem: {
-    borderRadius: borderRadius.r2,
-    overflow: 'hidden',
-    borderWidth: borderWidth.medium,
-    borderColor: 'transparent',
-  },
-  nftItemSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  nftImage: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-  },
-  emptyText: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    color: semantic.text.secondary,
-    textAlign: 'center',
-  },
-  saveButtonContainer: {
-    marginTop: spacing.md,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    tabs: {
+      marginBottom: spacing.lg,
+    },
+    list: {
+      flex: 1,
+    },
+    gridContent: {
+      paddingBottom: spacing.lg,
+    },
+    columnWrapper: {
+      gap: GRID_GAP,
+      marginBottom: GRID_GAP,
+    },
+    presetItem: {
+      overflow: 'hidden',
+      borderWidth: borderWidth.medium,
+      borderColor: 'transparent',
+    },
+    presetItemSelected: {
+      borderColor: t.state.selectedEdge,
+    },
+    presetImage: {
+      width: '100%',
+      height: '100%',
+    },
+    nftItem: {
+      borderRadius: borderRadius.r2,
+      overflow: 'hidden',
+      borderWidth: borderWidth.medium,
+      borderColor: 'transparent',
+    },
+    nftItemSelected: {
+      borderColor: t.state.selectedEdge,
+    },
+    nftImage: {
+      width: '100%',
+      height: '100%',
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing['3xl'],
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing['3xl'],
+    },
+    emptyText: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+      color: t.text.secondary,
+      textAlign: 'center',
+    },
+    saveButtonContainer: {
+      marginTop: spacing.md,
+    },
+  });
 
 export default AccountAvatarPanel;

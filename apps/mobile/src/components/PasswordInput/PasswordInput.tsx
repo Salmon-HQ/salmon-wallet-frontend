@@ -6,25 +6,17 @@ import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { EyeIcon, EyeSlashIcon } from '../../icons';
 import {
-  colors,
   componentSizes,
   spacing,
   borderWidth,
   fontSize,
   fontFamilyNative,
-  semantic,
+  useFieldFocus,
+  type Semantic,
 } from '@salmon/shared';
 
-interface PasswordInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  error?: string;
-  editable?: boolean;
-  autoFocus?: boolean;
-  onSubmitEditing?: () => void;
-  testID?: string;
-}
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { PasswordInputProps } from './types';
 
 export function PasswordInput({
   value,
@@ -37,32 +29,30 @@ export function PasswordInput({
   testID,
 }: PasswordInputProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, accent, input, text } = useSemantic();
   const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const { focused, onFocus, onBlur } = useFieldFocus();
 
-  const getBorderColor = () => {
-    if (error) return semantic.status.danger;
-    if (isFocused) return colors.accent.primary;
-    return colors.input.border;
-  };
+  const borderColor = error ? status.danger : focused ? accent.ink : input.edge;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.inputWrapper, { borderColor: getBorderColor() }]}>
+      <View style={[styles.inputWrapper, { borderColor }]}>
         <TextInput
           testID={testID}
           style={styles.input}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder ?? t('lock.password_placeholder')}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={text.tertiary}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           autoCorrect={false}
           editable={editable}
           autoFocus={autoFocus}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={onFocus}
+          onBlur={onBlur}
           onSubmitEditing={onSubmitEditing}
           returnKeyType="done"
         />
@@ -76,9 +66,9 @@ export function PasswordInput({
           style={styles.toggleButton}
         >
           {showPassword ? (
-            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={text.secondary} />
           ) : (
-            <EyeIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+            <EyeIcon size={componentSizes.iconSizeMedium} color={text.secondary} />
           )}
         </TouchableOpacity>
       </View>
@@ -87,34 +77,35 @@ export function PasswordInput({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: componentSizes.inputHeight,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.input.background,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.lg,
-  },
-  input: {
-    flex: 1,
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  toggleButton: {
-    padding: spacing.xs,
-  },
-  errorText: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+    },
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: componentSizes.inputHeight,
+      paddingVertical: spacing.xs,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.lg,
+    },
+    input: {
+      flex: 1,
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.bodyLg,
+    },
+    toggleButton: {
+      padding: spacing.xs,
+    },
+    errorText: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: fontSize.caption,
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.xs,
+    },
+  });

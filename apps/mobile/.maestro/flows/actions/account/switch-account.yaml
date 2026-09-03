@@ -2,18 +2,21 @@ appId: io.salmonwallet.app
 ---
 # Switch the ACTIVE account between two wallets.
 #
-# smoke/mobile/wallet-switcher.yaml only opens and closes the switcher sheet —
-# it never selects a different account, so the actual switch path (which changes
-# persistent state) had no coverage. This flow adds a second account, then
+# smoke/mobile/wallet-switcher.yaml only opens and closes the Wallets screen —
+# it never selects a different wallet, so the actual switch path (which changes
+# persistent state) had no coverage. This flow adds a second wallet, then
 # switches back to the first.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 
-# --- Add a derived account; it becomes the active one ---
-- tapOn: 'Switch wallet account'
+# --- Add a derived wallet; it becomes the active one ---
+- tapOn:
+    id: 'wallet-header-account-switcher'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: 'Your Wallets'
-- tapOn: 'Add New Account'
+- assertVisible:
+    id: 'wallets-screen'
+- tapOn:
+    id: 'wallets-add-wallet'
 - extendedWaitUntil:
     visible:
       id: 'account-add-method-derive'
@@ -34,26 +37,21 @@ appId: io.salmonwallet.app
 - tapOn: 'Confirm'
 - waitForAnimationToEnd:
     timeout: 15000
-# The panel pops back to the Settings sheet.
+# `returnTo=wallets`: a flow opened from Wallets lands back on Wallets with the
+# new wallet already active.
 - extendedWaitUntil:
-    visible: 'Settings'
+    visible:
+      id: 'wallets-screen'
     timeout: 30000
-- runFlow: ../../../subflows/settings-close.yaml
-- extendedWaitUntil:
-    visible: 'Switch wallet account'
-    timeout: 20000
 
 # --- Switch back to Account #1 ---
-- tapOn: 'Switch wallet account'
-- extendedWaitUntil:
-    visible: 'Your Wallets'
-    timeout: 8000
 # Row accessibility text is exactly "Account #1" (the active row reads
 # "Account 2, active"), and Maestro full-matches.
 - tapOn: 'Account #1'
 - waitForAnimationToEnd:
     timeout: 8000
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'wallet-header-account-switcher'
     timeout: 25000
 - takeScreenshot: screenshots/actions/account/switched-back-to-1

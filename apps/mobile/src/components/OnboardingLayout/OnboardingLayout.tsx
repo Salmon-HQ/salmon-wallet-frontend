@@ -172,6 +172,13 @@ export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
    * signal. `chrome` and `action` never travel.
    */
   float?: boolean;
+  /**
+   * Ink override for the default mark, when `mark` itself is not passed.
+   * Only the lock screen sets this (owner ruling, 2026-09-01): its fish is
+   * the brand accent, `accent.ink`, not the white every other family's mark
+   * still draws — see `BrandMark`'s own default.
+   */
+  markColor?: string;
 }
 
 export function OnboardingLayout({
@@ -188,6 +195,7 @@ export function OnboardingLayout({
   backgroundColor,
   background,
   float = false,
+  markColor,
   testID,
 }: OnboardingLayoutProps) {
   // Measured rather than read off `Dimensions`: the grid has to react to the
@@ -342,7 +350,7 @@ export function OnboardingLayout({
           style={[styles.centered, { height: grid.mark }]}
           testID="onboarding-slot-mark"
         >
-          {mark ?? <BrandMark size={grid.markSize} />}
+          {mark ?? <BrandMark size={grid.markSize} color={markColor} />}
         </Animated.View>
       )}
 

@@ -44,7 +44,7 @@ interface SolanaErrorLike {
 }
 
 /** Message prefixes that are already translation keys — pass them through. */
-const KEY_PREFIXES = ['transaction.errors.', 'swap.errors.', 'bridge.errors.'];
+const KEY_PREFIXES = ['transaction.errors.', 'swap.errors.'];
 
 export function classifyTransactionError(err: unknown): string {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';

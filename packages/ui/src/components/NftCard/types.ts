@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
+import type { NftCardPropsBase, NftCardSkeletonPropsBase } from '@salmon/shared';
 
-// Import NFT types from shared package (same as ui does)
+// Import NFT types from shared package (same as mobile does)
 export type {
   NftBlockchain,
   NftAttribute,
@@ -11,35 +12,14 @@ export type {
   BitcoinNftData,
 } from '@salmon/shared';
 
-// Re-import for local use
-import type { NftData } from '@salmon/shared';
-
-/**
- * Props for the NftCard component (Web/Extension)
- */
-export interface NftCardProps {
-  /** NFT data to display */
-  nft: NftData;
-  /** Callback when the card is pressed */
-  onPress?: () => void;
-  /** Optional custom styles for the container */
+/** The DOM half of `NftCardPropsBase`: the contract plus a style. */
+export interface NftCardProps extends NftCardPropsBase {
   style?: CSSProperties;
-  /** Optional CSS class name */
   className?: string;
-  /** Test ID for testing */
-  testID?: string;
 }
 
-/**
- * Props for the NftCardSkeleton component (Web/Extension)
- */
-export interface NftCardSkeletonProps {
-  /** Optional custom styles for the container */
+/** The DOM half of `NftCardSkeletonPropsBase`: the contract plus a style. */
+export interface NftCardSkeletonProps extends NftCardSkeletonPropsBase {
   style?: CSSProperties;
-  /** Optional CSS class name */
   className?: string;
-  /** Test ID for testing */
-  testID?: string;
-  /** Whether to animate the skeleton (default: true) */
-  animated?: boolean;
 }

@@ -1,96 +1,25 @@
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { styled } from '@mui/material/styles';
-import CompareArrowsOutlinedIcon from '@mui/icons-material/CompareArrowsOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
-  colors,
-  fontFamily,
   fontSize,
-  fontWeight,
   formatBaseUnits,
   getShortAddress,
-  semantic,
   spacing,
-  tabularNums,
   type ApprovalGrant,
   type SolChange,
   type TokenChange,
-  type TransactionEffects,
   type UndeterminedReason,
 } from '@salmon/shared';
-import { Card, Label, SectionHeader, sectionIconSx } from './common';
+
+import { ArrowsLeftRightIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { WarningNotice } from '../WarningNotice';
+import { CardHead, bodyText, cardColumn, monoText } from './common';
+import type { TransactionEffectsCardProps } from './types';
 
 const SOL_DECIMALS = 9;
-
-/**
- * One movement of one asset. The direction is carried three ways at once —
- * colour, sign glyph, and a written label — because colour alone is not a
- * channel every user has.
- */
-const EffectRow = styled(Box)({
-  display: 'flex',
-  alignItems: 'baseline',
-  justifyContent: 'space-between',
-  gap: spacing.md,
-  padding: `${spacing.md}px 0`,
-  borderTop: `1px solid ${colors.border.subtle}`,
-});
-
-const EffectAsset = styled(Typography)({
-  minWidth: 0,
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.primary,
-  overflowWrap: 'anywhere',
-});
-
-const EffectDirection = styled(Typography)({
-  fontSize: fontSize.xs,
-  color: colors.text.secondary,
-});
-
-const EffectAmount = styled(Typography)({
-  ...tabularNums.css,
-  flexShrink: 0,
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.semibold,
-  textAlign: 'right',
-});
-
-/** A block that states what could not be established, or what would go wrong. */
-const Notice = styled(Box)({
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: spacing.sm,
-  padding: spacing.md,
-  borderRadius: borderRadius.lg,
-  border: '1px solid',
-});
-
-const NoticeTitle = styled(Typography)({
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.primary,
-});
-
-const NoticeBody = styled(Typography)({
-  marginTop: spacing.xs,
-  fontSize: fontSize.sm,
-  lineHeight: 1.45,
-  color: colors.text.secondary,
-  overflowWrap: 'anywhere',
-});
-
-const MonoInline = styled('span')({
-  fontFamily: fontFamily.mono,
-});
 
 /** Every `UndeterminedReason` gets its own sentence — none of them mean "safe". */
 const REASON_KEYS: Record<UndeterminedReason, string> = {
@@ -115,43 +44,49 @@ interface AmountRowProps {
   decimals: number;
 }
 
+/**
+ * One movement of one asset. The direction is carried three ways at once —
+ * colour, sign glyph, and a written label — because colour alone is not a
+ * channel every user has.
+ */
 function AmountRow({ asset, amount, decimals }: AmountRowProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const isOutgoing = amount < 0n;
 
   return (
-    <EffectRow>
-      <Box sx={{ minWidth: 0 }}>
-        <EffectAsset>{asset}</EffectAsset>
-        <EffectDirection>
-          {isOutgoing
-            ? t('dapp.effects_out', 'Leaves your wallet')
-            : t('dapp.effects_in', 'Enters your wallet')}
-        </EffectDirection>
-      </Box>
-      <EffectAmount sx={{ color: isOutgoing ? semantic.status.danger : semantic.status.success }}>
-        {isOutgoing ? '−' : '+'}
-        {formatBaseUnits(amount, decimals)}
-      </EffectAmount>
-    </EffectRow>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xxs }}>
+      <KeyValueRow
+        label={asset}
+        labelWeight={600}
+        value={`${isOutgoing ? '−' : '+'}${formatBaseUnits(amount, decimals)}`}
+        valueTone={isOutgoing ? 'danger' : 'success'}
+      />
+      <span style={{ ...bodyText(tokens), fontSize: fontSize.caption }}>
+        {isOutgoing
+          ? t('dapp.effects_out', 'Leaves your wallet')
+          : t('dapp.effects_in', 'Enters your wallet')}
+      </span>
+    </div>
   );
 }
 
 function SolRow({ sol }: { sol: SolChange }): React.ReactElement | null {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   if (sol.lamports === 0n) return null;
 
   return (
-    <Box>
+    <>
       <AmountRow asset="SOL" amount={sol.lamports} decimals={SOL_DECIMALS} />
       {sol.feeLamports != null && sol.feeLamports > 0n ? (
-        <EffectDirection sx={{ paddingBottom: `${spacing.sm}px` }}>
+        <p style={{ ...bodyText(tokens), fontSize: fontSize.caption }}>
           {t('dapp.effects_fee_note', 'Includes the {{fee}} SOL network fee.', {
             fee: formatBaseUnits(sol.feeLamports, SOL_DECIMALS),
           })}
-        </EffectDirection>
+        </p>
       ) : null}
-    </Box>
+    </>
   );
 }
 
@@ -172,42 +107,33 @@ function TokenRow({ change }: { change: TokenChange }): React.ReactElement {
  */
 function ApprovalRow({ grant }: { grant: ApprovalGrant }): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
   const isUnlimited = grant.scope === 'unlimited';
   const token = grant.symbol ?? getShortAddress(grant.mint, 4) ?? grant.mint;
   const amount = isUnlimited
     ? t('dapp.effects_approval_unlimited', 'an unlimited amount of')
     : formatBaseUnits(grant.amount, grant.decimals);
-  const tone = isUnlimited ? semantic.status.danger : semantic.status.warning;
-  const background = isUnlimited ? semantic.status.dangerTint : semantic.status.warningTint;
 
   return (
-    <Notice sx={{ borderColor: tone, backgroundColor: background, marginTop: `${spacing.md}px` }}>
-      <KeyOutlinedIcon sx={{ ...sectionIconSx, color: tone }} />
-      <Box sx={{ minWidth: 0 }}>
-        <NoticeTitle>{t('dapp.effects_approval_title', 'Spending permission')}</NoticeTitle>
-        <NoticeBody>
-          {t(
-            'dapp.effects_approval_body',
-            '{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.',
-            {
-              spender: getShortAddress(grant.spender, 4) ?? grant.spender,
-              amount,
-              token,
-            }
-          )}
-        </NoticeBody>
-        <NoticeBody>
-          <MonoInline>{grant.spender}</MonoInline>
-        </NoticeBody>
-      </Box>
-    </Notice>
+    <WarningNotice
+      tone={isUnlimited ? 'error' : 'warning'}
+      title={t('dapp.effects_approval_title', 'Spending permission')}
+      testID="effects-approval"
+    >
+      {t(
+        'dapp.effects_approval_body',
+        '{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.',
+        {
+          spender: getShortAddress(grant.spender, 4) ?? grant.spender,
+          amount,
+          token,
+        }
+      )}
+      <span style={{ ...monoText(tokens), display: 'block', color: tokens.text.secondary }}>
+        {grant.spender}
+      </span>
+    </WarningNotice>
   );
-}
-
-export interface TransactionEffectsCardProps {
-  /** `null` while the preview is still running. */
-  effects: TransactionEffects | null;
-  loading: boolean;
 }
 
 /**
@@ -222,35 +148,27 @@ export function TransactionEffectsCard({
   loading,
 }: TransactionEffectsCardProps): React.ReactElement {
   const { t } = useTranslation();
+  const tokens = useSemantic();
 
   return (
-    <Card>
-      <SectionHeader>
-        <CompareArrowsOutlinedIcon sx={sectionIconSx} />
-        <Label sx={{ marginBottom: 0 }}>{t('dapp.effects_title', 'Balance changes')}</Label>
-      </SectionHeader>
+    <Card padding="lg" gap={spacing.md} style={cardColumn} testID="transaction-effects">
+      <CardHead icon={ArrowsLeftRightIcon} label={t('dapp.effects_title', 'Balance changes')} />
 
       {loading || !effects ? (
-        <NoticeBody>{t('dapp.effects_loading', 'Simulating this transaction…')}</NoticeBody>
+        <p style={bodyText(tokens)}>{t('dapp.effects_loading', 'Simulating this transaction…')}</p>
       ) : null}
 
       {effects?.kind === 'no-effect' ? (
-        <Notice sx={{ borderColor: colors.border.subtle }}>
-          <CheckCircleOutlineIcon sx={sectionIconSx} />
-          <Box>
-            <NoticeTitle>{t('dapp.effects_none_title', 'No balance changes')}</NoticeTitle>
-            <NoticeBody>
-              {t(
-                'dapp.effects_none_body',
-                'This transaction runs without moving any of your balances.'
-              )}
-            </NoticeBody>
-          </Box>
-        </Notice>
+        <WarningNotice tone="info" title={t('dapp.effects_none_title', 'No balance changes')}>
+          {t(
+            'dapp.effects_none_body',
+            'This transaction runs without moving any of your balances.'
+          )}
+        </WarningNotice>
       ) : null}
 
       {effects?.kind === 'effects' ? (
-        <Box>
+        <>
           <SolRow sol={effects.sol} />
           {effects.tokens.map((change) => (
             <TokenRow key={change.tokenAccount} change={change} />
@@ -258,51 +176,36 @@ export function TransactionEffectsCard({
           {effects.approvals.map((grant) => (
             <ApprovalRow key={`${grant.tokenAccount}-${grant.spender}`} grant={grant} />
           ))}
-        </Box>
+        </>
       ) : null}
 
       {effects?.kind === 'transaction-would-fail' ? (
-        <Notice
-          sx={{ borderColor: semantic.status.danger, backgroundColor: semantic.status.dangerTint }}
+        <WarningNotice
+          tone="error"
+          title={t('dapp.effects_would_fail_title', 'This transaction would fail')}
+          testID="effects-would-fail"
         >
-          <ErrorOutlineIcon sx={{ ...sectionIconSx, color: semantic.status.danger }} />
-          <Box sx={{ minWidth: 0 }}>
-            <NoticeTitle>
-              {t('dapp.effects_would_fail_title', 'This transaction would fail')}
-            </NoticeTitle>
-            <NoticeBody>
-              {t(
-                'dapp.effects_would_fail_body',
-                'Salmon simulated it and the network rejected it. Signing it would spend the fee and change nothing.'
-              )}
-            </NoticeBody>
-          </Box>
-        </Notice>
+          {t(
+            'dapp.effects_would_fail_body',
+            'Salmon simulated it and the network rejected it. Signing it would spend the fee and change nothing.'
+          )}
+        </WarningNotice>
       ) : null}
 
       {effects?.kind === 'undetermined' ? (
-        <Notice
-          sx={{
-            borderColor: semantic.status.warning,
-            backgroundColor: semantic.status.warningTint,
-          }}
+        <WarningNotice
+          tone="warning"
+          title={t('dapp.effects_undetermined_title', 'Salmon could not determine what this does')}
+          testID="effects-undetermined"
         >
-          <HelpOutlineIcon sx={{ ...sectionIconSx, color: semantic.status.warning }} />
-          <Box sx={{ minWidth: 0 }}>
-            <NoticeTitle>
-              {t('dapp.effects_undetermined_title', 'Salmon could not determine what this does')}
-            </NoticeTitle>
-            <NoticeBody>
-              {t(REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}
-            </NoticeBody>
-            <NoticeBody>
-              {t(
-                'dapp.effects_undetermined_body',
-                'This is not the same as "nothing happens". Approve only if you trust this app and understand what you are asking it to do.'
-              )}
-            </NoticeBody>
-          </Box>
-        </Notice>
+          {t(REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}
+          <span style={{ display: 'block', marginTop: spacing.xs }}>
+            {t(
+              'dapp.effects_undetermined_body',
+              'This is not the same as "nothing happens". Approve only if you trust this app and understand what you are asking it to do.'
+            )}
+          </span>
+        </WarningNotice>
       ) : null}
     </Card>
   );

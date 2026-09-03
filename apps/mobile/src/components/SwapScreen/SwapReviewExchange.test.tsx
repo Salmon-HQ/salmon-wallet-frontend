@@ -86,7 +86,7 @@ describe('SwapReviewExchange — one graphic block instead of two cards', () => 
     expect(screen.getByText('You Receive')).toBeTruthy();
   });
 
-  it('omits the USD line when no dollar value exists (bridge case)', () => {
+  it('omits the USD line when no dollar value exists', () => {
     render(
       <SwapReviewExchange
         send={{ label: 'You Send', symbol: 'SOL', amount: '1.5 SOL' }}

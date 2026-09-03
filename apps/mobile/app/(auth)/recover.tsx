@@ -21,11 +21,12 @@ import {
   fontSize,
   lineHeight,
   normalizeMnemonic,
-  semantic,
+  s,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonic,
+  type Semantic,
 } from '@salmon/shared';
 import {
   OnboardingDescription,
@@ -40,6 +41,7 @@ import {
 import { SHORT_PHRASE, distributePhrase } from '../../src/components/SeedPhrase';
 import { KeyIcon } from '../../src/icons';
 import { useSecretScreen } from '../../hooks/useSecretScreen';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
@@ -53,6 +55,8 @@ import { StyleSheet, Text } from 'react-native';
 export default function RecoverWalletScreen() {
   // Hooks
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
 
   // `SeedWordInput` already opts every box in; this covers the screen itself
   // for the frames where no box is mounted yet.
@@ -187,13 +191,14 @@ export default function RecoverWalletScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  invalid: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.snug,
-    paddingHorizontal: spacing.sm,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    invalid: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+      paddingHorizontal: spacing.sm,
+      textAlign: 'center',
+    },
+  });

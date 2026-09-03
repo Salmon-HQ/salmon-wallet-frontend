@@ -1,6 +1,6 @@
 appId: io.salmonwallet.app
 ---
-# Swipe the BalanceCardCarousel between Solana and Bitcoin.
+# Swipe the BalanceHeader between Solana and Bitcoin.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
     id: 'wallet-header-account-switcher'

@@ -11,12 +11,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { WarningIcon, iconSize } from '../../icons';
 import {
   borderRadius,
-  colors,
   fontFamilyNative,
   fontSize,
+  s,
   spacing,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { WarningNoticeProps } from './types';
 
 export function WarningNotice({
@@ -25,12 +27,18 @@ export function WarningNotice({
   children,
   action,
   style,
+  testID,
 }: WarningNoticeProps): React.ReactElement {
-  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
-  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
+  const styles = useThemedStyles(stylesFor);
+  const { status, surface, text } = useSemantic();
+  const accent =
+    tone === 'warning' ? status.warning : tone === 'info' ? text.secondary : status.danger;
+  const background =
+    tone === 'warning' ? status.warningTint : tone === 'info' ? surface.shelf : status.dangerTint;
 
   return (
     <View
+      testID={testID}
       style={[styles.container, { backgroundColor: background, borderColor: accent }, style]}
       accessibilityRole="alert"
     >
@@ -44,37 +52,38 @@ export function WarningNotice({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    width: '100%',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    gap: spacing.sm,
-  },
-  icon: {
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  textColumn: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.sm,
-    marginBottom: 2,
-  },
-  action: {
-    marginTop: 6,
-    alignSelf: 'flex-start',
-  },
-  body: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.45,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      width: '100%',
+      padding: spacing.md,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      gap: spacing.sm,
+    },
+    icon: {
+      flexShrink: 0,
+      marginTop: 1,
+    },
+    textColumn: {
+      flex: 1,
+      minWidth: 0,
+    },
+    title: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.caption),
+      marginBottom: spacing.xxs,
+    },
+    action: {
+      marginTop: 6,
+      alignSelf: 'flex-start',
+    },
+    body: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * 1.45,
+    },
+  });

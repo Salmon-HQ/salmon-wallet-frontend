@@ -31,27 +31,25 @@
  * capture. There is no DOM equivalent — a browser cannot stop a screenshot —
  * and nothing here pretends there is.
  */
-import Box from '@mui/material/Box';
 import { distributePhrase, LONG_PHRASE, SHORT_PHRASE, spacing } from '@salmon/shared';
-import { useCallback, useRef } from 'react';
-import { styled } from '../../utils/styled';
+import { useCallback, useRef, type CSSProperties } from 'react';
 import { SeedWordInput } from './SeedWordInput';
 import type { SeedPhraseEntryProps } from './types';
 
-const Grid = styled(Box)({
+const grid: CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
   width: '100%',
   // Both lengths centre in the reserved `body` band rather than top-packing,
   // so growing the grid to 24 does not move its first row.
   alignContent: 'center',
-});
+};
 
-const Cell = styled(Box)<{ $columns: number; $dense: boolean }>(({ $columns, $dense }) => ({
-  width: `${100 / $columns}%`,
-  padding: $dense ? spacing.xxs : spacing.xs,
+const cellFor = (columns: number, dense: boolean): CSSProperties => ({
+  width: `${100 / columns}%`,
+  padding: dense ? spacing.xxs : spacing.xs,
   boxSizing: 'border-box',
-}));
+});
 
 export function SeedPhraseEntry({
   words,
@@ -136,16 +134,14 @@ export function SeedPhraseEntry({
   );
 
   return (
-    // `data-columns` is the grid's density, stated rather than inferred: the
-    // widths come from an emotion class, and both the unit tests and the
-    // Playwright suite need to assert that twenty-four words got denser rather
-    // than taller.
-    <Grid data-testid={`${testID}-word-grid`} data-columns={columns}>
+    // `data-columns` is the grid's density, stated rather than inferred, so
+    // both the unit tests and the Playwright suite can assert that
+    // twenty-four words got denser rather than taller.
+    <div style={grid} data-testid={`${testID}-word-grid`} data-columns={columns}>
       {words.map((word, index) => (
-        <Cell
+        <div
           key={index}
-          $columns={columns}
-          $dense={dense}
+          style={cellFor(columns, dense)}
           data-testid={`${testID}-word-cell-${index + 1}`}
         >
           <SeedWordInput
@@ -162,8 +158,8 @@ export function SeedPhraseEntry({
               refs.current[index] = input;
             }}
           />
-        </Cell>
+        </div>
       ))}
-    </Grid>
+    </div>
   );
 }

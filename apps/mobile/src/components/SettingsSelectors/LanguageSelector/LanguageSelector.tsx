@@ -8,9 +8,10 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type LanguageSelectorBaseProps, type LanguageSelectorItem } from '@salmon/shared';
+import { type LanguageSelectorItem } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
+import type { LanguageSelectorProps } from './types';
 
 // ============================================================================
 // Component
@@ -21,7 +22,7 @@ export function LanguageSelector({
   activeLanguageCode,
   onSelectLanguage,
   onBack,
-}: LanguageSelectorBaseProps) {
+}: LanguageSelectorProps) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(
@@ -30,7 +31,11 @@ export function LanguageSelector({
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.languages.title', 'Language')} onBack={onBack}>
+    <SettingsScreenLayout
+      title={t('settings.languages.title', 'Language')}
+      subtitle={t('settings.languages.subtitle', "Choose the app's display language.")}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={languages}
         getKey={(lang) => lang.code}

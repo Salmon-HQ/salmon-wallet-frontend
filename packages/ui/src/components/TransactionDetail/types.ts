@@ -1,21 +1,23 @@
 import type { CSSProperties } from 'react';
-import type { TransactionDetailModalPropsBase } from '@salmon/shared';
+import type { TransactionDetailPropsBase } from '@salmon/shared';
 
-// Re-export Transaction for consumers
-export type { Transaction } from '@salmon/shared';
+// Re-export the transaction shapes the detail's variant files consume
+export type {
+  NftAttribute,
+  SwapConversionRate,
+  Transaction,
+  TransactionTokenAmount,
+} from '@salmon/shared';
 
 /**
- * Props for the TransactionDetail component (Web/Extension).
+ * Props for the TransactionDetail component (DOM).
  *
- * The detail is a step inside the activity surface, not a surface of its own,
- * so it owns no visibility: the page that shows it decides when it is on
- * screen (DESIGN.md §The sink and the float — the transition verb).
+ * The detail is the content of a sheet over the Activity screen, not a sheet
+ * of its own, so it owns no visibility: the surface that shows it decides
+ * when it is on screen.
  */
-export interface TransactionDetailProps extends Omit<
-  TransactionDetailModalPropsBase<CSSProperties>,
-  'visible' | 'onClose'
-> {
-  /** Additional CSS class for the step container */
+export interface TransactionDetailProps extends TransactionDetailPropsBase<CSSProperties> {
+  /** Additional CSS class for the container */
   className?: string;
   /**
    * Active network ID (e.g. 'solana-mainnet', 'bitcoin-testnet') used to pick

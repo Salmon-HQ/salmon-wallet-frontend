@@ -1,120 +1,42 @@
 /**
- * DerivedAccountCard - Selectable account card for derived account discovery
- *
- * Web version using MUI and @emotion/styled for browser extension.
+ * DerivedAccountCard — a selectable account found by a derivation scan, on
+ * the DOM. The mobile twin is `apps/mobile/src/components/DerivedAccountCard`.
  */
 import React from 'react';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { CheckIcon, iconSize } from '../../icons';
 import {
-  colors,
-  spacing,
   borderRadius,
   borderWidth,
   componentSizes,
   fontFamily,
-  fontWeight,
   fontSize,
-  duration,
-  easing,
+  fontWeight,
+  opacity,
+  spacing,
   tabularNums,
 } from '@salmon/shared';
-import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { CheckIcon, iconSize } from '../../icons';
+import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon';
 import type { DerivedAccountCardProps } from './types';
 
 const ICON_SIZE = componentSizes.iconSizeXs;
 
-const BlockchainIcon: React.FC<{ blockchain?: string }> = ({ blockchain }) => {
-  const iconStyle = {
-    fontSize: ICON_SIZE,
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    color: colors.text.tertiary,
-  };
+function BlockchainIcon({ blockchain, color }: { blockchain?: string; color: string }) {
+  const style = { width: ICON_SIZE, height: ICON_SIZE, color };
   switch (blockchain) {
     case 'solana':
-      return <SolanaSvgIcon style={iconStyle} />;
+      return <SolanaSvgIcon style={style} />;
     case 'bitcoin':
-      return <BitcoinSvgIcon style={iconStyle} />;
+      return <BitcoinSvgIcon style={style} />;
     case 'ethereum':
-      return <EthereumSvgIcon style={iconStyle} />;
+      return <EthereumSvgIcon style={style} />;
     default:
       return null;
   }
-};
+}
 
-const Card = styled(Box)<{ $selected: boolean }>(({ $selected }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: colors.card.background,
-  borderRadius: borderRadius.xl,
-  border: `${borderWidth.thin}px solid ${$selected ? colors.card.borderActive : colors.card.border}`,
-  padding: spacing.lg,
-  marginBottom: spacing.md,
-  cursor: 'pointer',
-  transition: `border-color ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    borderColor: $selected ? colors.card.borderActive : colors.accent.primary,
-  },
-}));
-
-const Checkbox = styled(Box)<{ $selected: boolean }>(({ $selected }) => ({
-  width: componentSizes.checkboxSize,
-  height: componentSizes.checkboxSize,
-  borderRadius: borderRadius.sm,
-  backgroundColor: $selected ? colors.accent.primary : colors.interactive.highlight,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: spacing.lg,
-  flexShrink: 0,
-}));
-
-const Info = styled(Box)({
-  flex: 1,
-  minWidth: 0,
-});
-
-const Address = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-});
-
-const NetworkRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.xs,
-  marginTop: spacing.xxs,
-});
-
-const PathText = styled(Typography)({
-  ...tabularNums.css,
-  color: colors.text.tertiary,
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.medium,
-  fontSize: fontSize.sm,
-});
-
-const BalanceContainer = styled(Box)({
-  display: 'flex',
-  alignItems: 'flex-end',
-  flexShrink: 0,
-});
-
-const Balance = styled(Typography)<{ $dimmed: boolean }>(({ $dimmed }) => ({
-  ...tabularNums.css,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.base,
-  opacity: $dimmed ? 0.4 : 1,
-}));
-
-const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
+function DerivedAccountCardComponent({
   address,
   networkName,
   path,
@@ -126,34 +48,102 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
   style,
   className,
   testID,
-}) => {
+}: DerivedAccountCardProps) {
+  const t = useSemantic();
+
   return (
-    <Card
-      $selected={selected}
+    <button
+      type="button"
+      aria-pressed={selected}
       onClick={onToggle}
-      style={style}
       className={className}
       data-testid={testID}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
+        margin: 0,
+        cursor: 'pointer',
+        textAlign: 'left',
+        font: 'inherit',
+        backgroundColor: t.surface.raised,
+        borderRadius: borderRadius.xl,
+        borderStyle: 'solid',
+        borderWidth: borderWidth.thin,
+        borderColor: selected ? t.state.selectedEdge : t.border.raised,
+        padding: spacing.lg,
+        ...style,
+      }}
     >
-      <Checkbox $selected={selected}>
-        {selected && <CheckIcon size={iconSize.sm} color={colors.text.primary} />}
-      </Checkbox>
+      <span
+        style={{
+          width: componentSizes.checkboxSize,
+          height: componentSizes.checkboxSize,
+          borderRadius: borderRadius.sm,
+          backgroundColor: selected ? t.accent.ink : t.overlay.highlight,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: spacing.lg,
+          flexShrink: 0,
+        }}
+      >
+        {selected && <CheckIcon size={iconSize.sm} color={t.accent.onFill} />}
+      </span>
 
-      <Info>
-        <Address>{address}</Address>
-        <NetworkRow>
-          <BlockchainIcon blockchain={blockchain} />
-          <PathText>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <span
+          style={{
+            color: t.text.primary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.bodyLg,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {address}
+        </span>
+        <span
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs,
+            marginTop: spacing.xxs,
+          }}
+        >
+          <BlockchainIcon blockchain={blockchain} color={t.text.tertiary} />
+          <span
+            style={{
+              ...tabularNums.css,
+              color: t.text.tertiary,
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.medium,
+              fontSize: fontSize.caption,
+            }}
+          >
             {networkName} &middot; {path}
-          </PathText>
-        </NetworkRow>
-      </Info>
+          </span>
+        </span>
+      </span>
 
-      <BalanceContainer>
-        <Balance $dimmed={dimmed}>{balanceFormatted}</Balance>
-      </BalanceContainer>
-    </Card>
+      <span
+        style={{
+          ...tabularNums.css,
+          color: t.text.primary,
+          fontFamily: fontFamily.sans,
+          fontSize: fontSize.body,
+          opacity: dimmed ? opacity.faint : 1,
+          flexShrink: 0,
+        }}
+      >
+        {balanceFormatted}
+      </span>
+    </button>
   );
-};
+}
 
 export const DerivedAccountCard = React.memo(DerivedAccountCardComponent);

@@ -1,15 +1,10 @@
 import type { StyleProp, ViewStyle } from 'react-native';
+import type { ThermoclinePropsBase } from '@salmon/shared';
 
-/**
- * Which tier of the material this surface is. `thin` may only carry
- * `text.primary` at ≥15px / weight ≥500; anything secondary needs `thick`.
- * See DESIGN.md §the scrim floor.
- */
-export type ThermoclineTier = 'thin' | 'thick';
+export type { ThermoclineTier } from '@salmon/shared';
 
-export interface ThermoclineProps {
-  /** @default 'thin' */
-  tier?: ThermoclineTier;
+/** The mobile half of `ThermoclinePropsBase`: the cross-platform contract plus RN-only extras. */
+export interface ThermoclineProps extends ThermoclinePropsBase {
   /**
    * @deprecated Unread since 2026-08-19: the refraction strip merged into
    * the membrane field — its brighter top 24px stacked over the field and

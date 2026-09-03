@@ -14,22 +14,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse; the tokens the page and the layout read are runtime-agnostic.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/scaling')),
-  ...(await vi.importActual('../../../../shared/src/types/ui')),
-  // The onboarding layout's column reads the sink's numbers so it can give way
-  // to a wait; this screen never sinks, but it composes on that layout.
-  ...(await vi.importActual('../../../../shared/src/motion/sinkFloat')),
-}));
-
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
-
 // The water is not under test, and its shaders drag their own dependencies.
 vi.mock('../WaterColumn', () => ({
   WaterColumn: () => null,

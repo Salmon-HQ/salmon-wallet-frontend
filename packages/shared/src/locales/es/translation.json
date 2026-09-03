@@ -6,17 +6,15 @@
     "daysAgo": "hace {{count}}d"
   },
   "tabs": {
-    "swap": "Intercambiar",
-    "collectibles": "Coleccionables",
-    "settings": "Configuracion",
-    "home": "Inicio"
+    "home": "Inicio",
+    "portfolio": "Portfolio",
+    "nfts": "NFTs"
   },
   "general": {
     "address": "Dirección",
     "name_or_address": "Nombre o Dirección \"{{token}}\"",
     "seed_phrase": "Seed-phrase",
     "loading": "Cargando...",
-    "close": "Cerrar",
     "max": "Máx",
     "back": "Volver",
     "confirm": "Confirmar",
@@ -40,12 +38,8 @@
     "terms_and_conditions": "Términos y Condiciones",
     "yes": "Sí",
     "no": "No",
-    "ok": "OK",
     "page": "Página",
-    "go_home": "Ir al Inicio",
     "not_supported": "No soportado",
-    "network_mainnet": "Mainnet",
-    "network_devnet": "Devnet",
     "network_solana_mainnet": "Solana Mainnet",
     "not_found": {
       "title": "¡Ups!",
@@ -57,15 +51,16 @@
     "next": "Siguiente",
     "start": "Comenzar",
     "copy": "Copiar",
+    "paste": "Pegar",
     "close": "Cerrar",
     "save": "Guardar",
     "remove": "Eliminar",
     "remove_all": "Eliminar todas",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
+    "change": "Cambiar",
     "done": "Listo",
     "send": "Enviar",
-    "receive": "Recibir",
     "search_placeholder": "Buscar...",
     "view_more": "Ver más",
     "continue": "Continuar",
@@ -73,21 +68,15 @@
     "retry": "Reintentar",
     "searching": "Buscando...",
     "activity": "Actividad",
-    "back": "Volver",
     "copied": "¡Copiado!",
     "edit": "Editar",
-    "hide": "Ocultar",
     "reveal": "Revelar",
-    "select": "Seleccionar",
-    "sending": "Enviando..."
+    "select": "Seleccionar"
   },
   "dapp": {
     "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
     "connect_title": "Conectar con dApp",
     "connect_subtitle": "Este sitio quiere conectar con tu Salmon Wallet",
-    "unlock_subtitle": "Ingresá tu contraseña para aprobar esta solicitud",
-    "no_wallet_title": "No se encontró ninguna billetera",
-    "no_wallet_subtitle": "Abrí Salmon Wallet y configurá una cuenta, después volvé a intentarlo.",
     "requesting_site": "Sitio que solicita",
     "wallet_address": "Billetera",
     "approve": "Aprobar",
@@ -162,14 +151,19 @@
   "settings": {
     "title": "Configuración",
     "address_book": "Contactos",
+    "address_book_subtitle": "Guardá direcciones a las que enviás seguido.",
     "display_language": "Idioma",
     "change_network": "Cambiar Network",
+    "change_network_subtitle": "Cambiá la red que usa tu billetera.",
     "select_explorer": "Seleccionar Explorador",
     "explorer": "Explorador de Bloques",
+    "explorer_subtitle": "Elegí dónde se abren los links de transacciones.",
     "trusted_apps": "Apps Autorizadas",
+    "trusted_apps_subtitle": "Apps que conectaste a tu billetera.",
     "no_trusted_apps": "No hay apps conectadas",
     "no_trusted_apps_hint": "Las apps que conectes aparecerán aquí",
     "help_support": "Ayuda & Soporte",
+    "help_support_subtitle": "Conseguí ayuda o contactá al equipo.",
     "support": {
       "faq": {
         "title": "Preguntas Frecuentes",
@@ -183,19 +177,27 @@
         "title": "Twitter / X",
         "description": "Enterate de las novedades y escribinos"
       },
-      "discord": {
-        "title": "Comunidad de Discord",
-        "description": "Sumate a nuestra comunidad para recibir ayuda"
-      },
       "email": {
         "title": "Soporte por Email",
         "description": "Contactanos directamente para recibir ayuda"
       }
     },
     "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
+    "security_notice_title": "Nunca compartas tus claves",
     "currency": "Moneda de visualización",
+    "currency_subtitle": "Elegí en qué moneda se muestran tus saldos.",
+    "appearance": "Apariencia",
+    "appearance_subtitle": "Elegí modo claro, oscuro o automático.",
+    "appearance_options": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "appearance_system_hint": "Sigue a tu dispositivo",
     "backup": "Respaldar Seed Phrase",
+    "backup_subtitle": "Mirá o respaldá tu frase de recuperación.",
     "private_key": "Clave Privada",
+    "private_key_subtitle": "Mirá las claves privadas de esta red.",
     "select_network": "Seleccionar Red",
     "select_network_description": "Elegí una red para ver sus claves privadas",
     "derivation_path": "Ruta de Derivación",
@@ -203,14 +205,17 @@
     "authenticate_to_reveal": "Autenticar para revelar",
     "no_accounts_for_network": "No se encontraron cuentas para esta red",
     "about": "Acerca de",
+    "about_subtitle": "Versión de la app e información legal.",
     "about_website": "Sitio Web",
     "about_terms": "Términos de Servicio",
     "about_privacy": "Política de Privacidad",
-    "about_build": "Compilación {{build}}",
+    "about_version_label": "Versión",
+    "about_build_label": "Compilación",
     "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
     "developer_networks": "Redes de Desarrollo",
     "developer_networks_description": "Mostrar redes testnet y devnet",
-    "developer_networks_desc": "Mostrar redes testnet y devnet",
+    "unverified_tokens": "Mostrar tokens no verificados",
+    "unverified_tokens_description": "Mostrá los tokens y coleccionables que no fueron verificados, spam incluido. Desactivado por defecto.",
     "analytics": "Datos de Uso",
     "analytics_description": "Compartí estadísticas de uso pseudónimas para ayudar a mejorar Salmon. Nunca incluye direcciones, balances ni montos. Desactivado por defecto.",
     "analytics_prompt_title": "Ayudá a mejorar Salmon",
@@ -218,7 +223,6 @@
     "analytics_prompt_footnote": "Apagalo cuando quieras desde <bold>Ajustes</bold>.",
     "analytics_prompt_accept": "Aceptar",
     "analytics_prompt_close": "Cerrar sin aceptar",
-    "app_version": "Versión v{{version}}",
     "remove_wallet": "Eliminar Billetera",
     "remove_all_wallets": "Eliminar Todas las Billeteras",
     "sections": {
@@ -234,28 +238,39 @@
     "remove_wallet_error": "Error al eliminar la billetera. Por favor, intentalo de nuevo.",
     "remove_wallets_error": "Error al eliminar las billeteras. Por favor, intentalo de nuevo.",
     "wallets": {
-      "your_wallets": "Tus Billeteras",
-      "add_new_wallet": "Agregar Cuenta",
-      "delete_account": "Eliminar Cuenta",
       "delete_confirm_title": "¿Eliminar Cuenta?",
       "delete_confirm_message": "¿Estás seguro de que querés eliminar esta cuenta? Esta acción no se puede deshacer.",
-      "cannot_delete_last": "No se puede eliminar la última cuenta",
       "remove_wallet": "Remover Cuenta",
       "remove_all_wallets": "Remover todas las Cuentas",
       "remove_all_wallets_description": "Estás a punto de desconectar todas tus cuentas. Tené en cuenta que necesitarás tus seed-phrases o claves privadas para volver a conectarlas.",
       "remove_wallet_description": "Estás a punto de eliminar esta cuenta. Tené en cuenta que, para usarlo nuevamente, deberás usar tu seed-phrase.",
       "edit_name_disclaimer": "Tené en cuenta que el nombre funciona únicamente para identificar tu cuenta localmente. Esta información no se guarda en el blockchain.",
       "tap_to_reveal": "Tocá para ver",
-      "edit_name_empty": "El nombre de la cuenta no puede estar vacío"
+      "edit_name_empty": "El nombre de la cuenta no puede estar vacío",
+      "screen_title": "Billeteras",
+      "screen_subtitle": "Cambiá o administrá tus cuentas.",
+      "total_title": "Balance total",
+      "included_count": "{{included}} de {{total}} billeteras incluidas",
+      "include_in_total": "Incluir en el total",
+      "include_hint": "Marcá para incluir",
+      "add_wallet": "Agregar billetera",
+      "keep_one_included": "Al menos una billetera tiene que quedar en el total.",
+      "include_in_total_a11y": "Incluir {{name}} en el total",
+      "exclude_from_total_a11y": "Excluir {{name}} del total",
+      "find_derived": "Buscar cuentas derivadas",
+      "derived_from": "Derivada de {{name}}"
     },
     "profile_picture": "Foto de Perfil",
+    "profile_picture_subtitle": "Elegí un preset o usá uno de tus NFTs.",
     "avatar_presets": "Avatares",
     "avatar_nfts": "NFTs",
     "avatar_empty_nfts": "No se encontraron coleccionables",
     "addressbook": {
       "add": "Agregar dirección",
+      "add_subtitle": "Guardá una etiqueta y dirección para después.",
       "addnew": "Agregar nueva dirección",
       "edit": "Editar dirección",
+      "edit_subtitle": "Actualizá la etiqueta o dirección de este contacto.",
       "save": "Guardar dirección",
       "label": "Etiqueta",
       "empty": "Parece vacío aquí.\nAgregá tu primer contacto haciendo clic en el botón.",
@@ -268,26 +283,29 @@
     },
     "languages": {
       "title": "Idioma",
-      "en": "Inglés",
-      "es": "Español"
+      "subtitle": "Elegí el idioma de la app."
     },
     "accounts": {
-      "title": "Cuentas"
+      "title": "Cuentas",
+      "subtitle": "Cambiá entre tus cuentas o administralas."
     },
     "account_edit": {
       "title": "Editar Cuenta",
       "name_section": "Nombre de la Cuenta",
+      "name_section_subtitle": "Elegí un nombre para esta cuenta.",
       "avatar_section": "Foto de Perfil",
       "backup_section": "Respaldar Seed Phrase",
       "private_key_section": "Exportar Clave Privada"
     },
     "account_add": {
       "title": "Agregar Cuenta",
+      "select_method_subtitle": "Elegí cómo agregar esta cuenta.",
       "create_new": "Crear Nueva Cuenta",
       "create_new_description": "Derivar una nueva cuenta desde tu seed phrase existente",
       "import_seed": "Importar Seed Phrase",
       "import_seed_description": "Importar una cuenta usando una seed phrase diferente",
       "set_name": "Nombre de la Cuenta",
+      "set_name_subtitle": "Ponele un nombre que vayas a reconocer",
       "set_name_placeholder": "Ingresá el nombre de la cuenta",
       "default_name": "Cuenta {{number}}",
       "scanning": "Buscando cuentas...",
@@ -298,10 +316,12 @@
       "import_private_key": "Importar clave privada",
       "import_private_key_description": "Agregá una billetera que ya tenés usando su clave privada",
       "reauth_title": "Confirmá tu contraseña",
+      "reauth_subtitle": "Ingresá tu contraseña para continuar.",
       "reauth_body": "La billetera estuvo inactiva unos minutos, así que la clave que la cifra ya no está en memoria. Ingresá tu contraseña para terminar de agregar esta cuenta — no se pierde nada de lo que cargaste.",
       "reauth_confirm": "Confirmar y agregar",
       "import_watch_only": "Seguir una billetera",
-      "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos"
+      "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos",
+      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos"
     },
     "security": {
       "title": "Seguridad",
@@ -314,14 +334,23 @@
       "wrong_password": "La contraseña actual es incorrecta",
       "biometric_unlock": "Biometría",
       "biometric_description": "Usar biometría para desbloquear tu billetera",
-      "change_password_button": "Actualizar Contraseña"
+      "change_password_button": "Actualizar Contraseña",
+      "subtitle": "Protegé el acceso a tu billetera.",
+      "score_strong": "Tu protección es fuerte",
+      "score_partial": "Podés reforzar tu protección",
+      "score_detail": "{{enabled}} de {{total}} protecciones activas",
+      "state_on": "Sí",
+      "state_off": "No",
+      "biometric_face_id": "Face ID",
+      "biometric_touch_id": "Touch ID",
+      "biometric_generic": "Biometría",
+      "recovery": "Recuperación",
+      "recovery_phrase": "Frase de recuperación",
+      "recovery_phrase_description": "Vela y respaldala de forma segura",
+      "connected_apps": "Apps conectadas",
+      "connected_apps_description": "Revisá los permisos de tu billetera",
+      "lock_now": "Bloquear billetera ahora"
     },
-    "about_general": "General",
-    "about_legal": "Legal",
-    "about_made_with_love": "Hecho con amor por el equipo de Salmon",
-    "about_social": "Seguinos",
-    "backup_warning_title": "Nunca compartas tu frase de recuperación",
-    "backup_warning_description": "Cualquiera con tu frase de recuperación puede quedarse con tus fondos, y si la perdés nadie puede restaurar tu cuenta: ni siquiera Salmon. Guardala de forma segura y nunca la ingreses en sitios web.",
     "reveal_phrase_title": "Confirmá que sos vos",
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
@@ -330,12 +359,11 @@
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
     "no_seed_phrase": "Esta cuenta se importó con una clave privada y no tiene frase de recuperación.",
-    "recovery_phrase": "Frase de Recuperación",
     "remove_all_wallets_description": "Esto eliminará TODAS las billeteras de este dispositivo. Esta acción no se puede deshacer. Asegurate de haber respaldado todas las frases de recuperación.",
     "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
-    "tap_to_reveal": "Tocá para revelar",
     "trusted_apps_revoke": "Revocar",
-    "copy_failed": "Falló el copiado — no se copió nada al portapapeles"
+    "copy_failed": "Falló el copiado — no se copió nada al portapapeles",
+    "subtitle": "Administrá tu billetera y preferencias."
   },
   "token": {
     "action": {
@@ -353,80 +381,35 @@
       "addressBook": "Libreta de Direcciones",
       "recipient": "Destinatario",
       "amountLabel": "Monto",
-      "reviewAndSend": "Revisar",
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
-      "confirmAgain": "Confirmar de nuevo",
-      "copyRecipientAddress": "Copiar la dirección del destinatario",
-      "networkFeeAmount": "Comisión de Red: ~{{fee}}",
-      "resolvedFrom": "Resuelta desde {{domain}}",
       "no_sol_title": "Necesitás SOL para enviar",
       "no_sol_body": "Cada transacción en Solana cuesta una pequeña comisión en SOL, sin importar qué estés enviando. Agregá al menos {{amount}} SOL a esta billetera primero."
     },
     "marketData": {
       "marketCap": "Capitalización",
-      "rank": "Ranking",
       "volume24h": "Volumen 24h",
-      "high24h": "Máximo 24h",
-      "low24h": "Mínimo 24h",
       "circulatingSupply": "Suministro Circulante",
       "totalSupply": "Suministro Total",
-      "maxSupply": "Suministro Máximo",
       "allTimeHigh": "Máximo Histórico",
-      "fromATH": "Desde ATH",
-      "athDate": "Fecha ATH",
-      "allTimeLow": "Mínimo Histórico",
-      "fromATL": "Desde ATL",
-      "atlDate": "Fecha ATL",
       "title": "Datos de mercado"
     },
     "info": {
       "about": "Acerca de",
-      "marketStats": "Estadísticas de Mercado",
-      "marketCap": "Capitalización",
-      "volume24h": "Volumen 24h",
-      "circulating": "Circulante",
-      "totalSupply": "Suministro Total",
-      "maxSupply": "Suministro Máximo",
       "contractAddress": "Dirección del Contrato",
-      "visitWebsite": "Visitar Sitio Web",
-      "contractAddressCopied": "Dirección del contrato copiada"
-    },
-    "about": {
-      "readMore": "Leer más",
-      "readLess": "Leer menos"
+      "visitWebsite": "Visitar Sitio Web"
     },
     "detail": {
-      "title": "Información del Token"
+      "title": "Información del Token",
+      "currentPrice": "Precio actual",
+      "periodChange": "Cambio {{period}}"
     },
     "chart": {
       "noData": "No hay datos disponibles",
       "loadError": "No se pudieron cargar los datos del gráfico"
-    },
-    "badges": {
-      "title": "Insignias",
-      "verified": "Verificado",
-      "strict": "Estricto",
-      "major": "Principal",
-      "moonshot": "Moonshot",
-      "community": "Comunidad",
-      "communityAssist": "Apoyo Comunitario",
-      "originalLst": "LST Original",
-      "stablecoin": "Stablecoin",
-      "yieldBearing": "Con Rendimiento",
-      "launchpad": "Launchpad",
-      "trending": "En Tendencia",
-      "preStocks": "Pre-stocks",
-      "xStocks": "X-stocks",
-      "legacyRegistry": "Registro Antiguo",
-      "deduplicated": "Deduplicado",
-      "duplicate": "Duplicado",
-      "deprecated": "Obsoleto",
-      "internal": "Interno"
     }
   },
   "lock": {
-    "title": "Hola de nuevo",
     "forgot_password": "Olvidé mi contraseña",
     "reset_wallet_title": "Restablecer Billetera",
     "reset_wallet_message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos de este dispositivo.\n\nPodrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
@@ -452,32 +435,13 @@
     "biometric_prompt": "Autenticate para desbloquear tu billetera",
     "biometric_enroll_prompt": "Confirmá para activar el desbloqueo biométrico",
     "password_placeholder": "Contraseña",
-    "password_label": "Contraseña",
-    "error": {
-      "empty_password": "Por favor ingresá tu contraseña",
-      "invalid_password": "La contraseña es incorrecta",
-      "unlock_failed": "Error al desbloquear la billetera",
-      "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo."
-    },
-    "confirm_reset": {
-      "title": "¿Estás seguro?",
-      "message": "Esta acción no se puede deshacer. Todos los datos de la billetera se eliminarán permanentemente.",
-      "confirm": "Eliminar Todos los Datos",
-      "cancel": "Cancelar"
-    },
-    "reset_wallet": {
-      "title": "Restablecer Billetera",
-      "message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos. Podrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
-      "reset": "Restablecer Billetera",
-      "cancel": "Cancelar"
-    }
+    "password_label": "Contraseña"
   },
   "wallet": {
     "partial_load_error": "Algunos balances no se pudieron cargar. Los datos mostrados pueden estar incompletos.",
     "init_failed_title": "No se pudo cargar tu billetera",
     "init_failed_body": "Tus cuentas y fondos están a salvo. Intentá de nuevo.",
     "name_template": "Cuenta Nro {{number}}",
-    "my_nfts": "Mis Coleccionables",
     "copied": "¡Copiado al portapapeles!",
     "create_wallet": "Crear Cuenta",
     "recover_wallet": "Recuperar Cuenta",
@@ -509,10 +473,6 @@
       "success_message": "¡Felicitaciones!",
       "success_message_body": "Tu Cuenta ya está lista.",
       "go_to_my_wallet": "¡Ir a mi Cuenta!",
-      "check_derivables": "Comprobar Derivables",
-      "derivable_info_icon": "¿Qué es una cuenta derivable?",
-      "derivable_info": "¿Qué es una cuenta derivable?",
-      "derivable_description": "Las Derivables son \"sub cuentas\" que nacen del mismo seed-phrase. Usando criptografía, se combina la seed-phrase con un patrón de derivación que genera estas diferentes cuentas. Permite así la generación de tantas cuentas como se quieran crear bajo la misma seed-phrase.",
       "invalidSeed": "Seed phrase inválida",
       "recovery_error": "Error al recuperar la cuenta. Por favor, verificá tu seed phrase e intentalo de nuevo.",
       "recovery_network_error": "No se pudo conectar con el servidor. Revisá tu conexión e intentalo de nuevo. Tu seed phrase está bien.",
@@ -534,19 +494,19 @@
       "recovering_account": "Recuperando Cuenta"
     },
     "derived": {
-      "title": "Cuentas Derivadas",
-      "subtitle": "Buscá cuentas adicionales derivadas de tu seed phrase.",
-      "searching": "Buscando cuentas...",
-      "empty_title": "No se encontraron cuentas derivadas",
-      "empty_subtitle": "No se pudieron derivar cuentas adicionales de tu seed phrase.",
-      "found_one": "Se encontró {{count}} cuenta derivada",
-      "found_other": "Se encontraron {{count}} cuentas derivadas",
-      "import_selected": "Importar seleccionadas ({{count}})",
-      "continue": "Continuar",
-      "skip": "Omitir",
       "scan_failed_title": "No se pudieron buscar las cuentas",
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
-      "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos."
+      "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos.",
+      "found_title_one": "Encontramos {{count}} cuenta de tu frase",
+      "found_title_other": "Encontramos {{count}} cuentas de tu frase",
+      "found_body": "Se crearon con la misma frase de recuperación. Elegí cuáles agregar.",
+      "import_count_one": "Importar {{count}}",
+      "import_count_other": "Importar {{count}}",
+      "not_now": "Ahora no",
+      "none_new_title": "No hay cuentas nuevas",
+      "none_new_body": "Ya tenés todo lo que hay en tu frase.",
+      "add_a11y": "Agregar {{name}}",
+      "skip_a11y": "No agregar {{name}}"
     },
     "no_tokens_found": "No se encontraron tokens",
     "tokens_load_error": "No se pudieron cargar tus tokens en este momento.",
@@ -589,9 +549,10 @@
     }
   },
   "transactions": {
-    "unknown": "Desconocido",
     "from": "De",
     "to": "Para",
+    "groupToday": "Hoy",
+    "groupEarlier": "Anteriores",
     "noTransactions": "Sin Transacciones",
     "emptySubtitle": "Tu historial de transacciones aparecerá aquí",
     "loadError": "Error al cargar transacciones",
@@ -620,7 +581,6 @@
       "block": "Bloque",
       "conversion": "Conversión",
       "swapRoute": "Ruta del Swap",
-      "addresses": "Direcciones",
       "networkFee": "Comisión de Red",
       "swapFee": "Comisión de Swap",
       "transactionHash": "Hash de Transacción",
@@ -643,7 +603,6 @@
       "innerCount": "{{count}} internas",
       "copyTransactionHash": "Copiar hash de transacción",
       "chooseExplorer": "Elegí un explorador",
-      "explorerHint": "Abre la transacción en el explorador de blockchain",
       "copyAddressHint": "Copia la dirección al portapapeles",
       "nftMediaAlt": "Contenido del NFT"
     },
@@ -665,10 +624,8 @@
     }
   },
   "nft": {
-    "send_nft": "Enviar",
     "burn_nft": "Quemar",
     "detail": {
-      "description": "Descripción",
       "attributes": "Atributos",
       "details": "Detalles",
       "tokenStandard": "Estándar del Token",
@@ -680,14 +637,14 @@
       "contentType": "Tipo de Contenido",
       "genesisBlock": "Bloque Génesis",
       "title": "Detalle del NFT",
-      "backToDetails": "Volver al detalle del NFT",
       "imageAlt": "Imagen del NFT {{name}}",
-      "cardLabel": "NFT: {{name}}"
+      "cardLabel": "NFT: {{name}}",
+      "collection": "Colección",
+      "mintAddress": "Mint address"
     },
     "send": {
       "title": "Enviar NFT",
       "reviewTitle": "Revisar envío",
-      "sending": "Enviando NFT...",
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
       "ordinalsNotSupported": "Las transferencias de Ordinals aún no están soportadas.",
       "successTitle": "NFT enviado",
@@ -710,15 +667,12 @@
       "confirm": "Confirmar quema",
       "notSupported": "La quema de NFTs de {{blockchain}} todavía no está soportada."
     },
-    "ordinal_send_unsupported": "Las transferencias de Ordinals aún no están soportadas.",
     "unnamed": "NFT sin nombre",
     "emptyTitle": "Sin Coleccionables",
     "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
-    "notFound": "NFT no encontrado. Volvé a entrar desde tu colección.",
-    "noCollectionData": "No hay datos de la colección. Volvé a entrar desde tu colección."
+    "notFound": "NFT no encontrado. Volvé a entrar desde tu colección."
   },
   "swap": {
-    "swap": "Swap",
     "you_send": "Enviás",
     "enter_amount": "Ingresá un monto",
     "you_receive": "Recibís",
@@ -751,80 +705,15 @@
       "minimumAmount": "El monto mínimo para swap es ${{amount}} USD",
       "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
       "quoteFailed": "No se pudo obtener la cotización",
-      "estimateFailed": "No se pudo obtener la estimación del swap",
-      "invalidAddress": "Dirección inválida",
-      "invalidSolanaAddress": "Dirección de Solana inválida",
-      "invalidEthereumAddress": "Dirección de Ethereum inválida",
-      "invalidBitcoinAddress": "Dirección de Bitcoin inválida",
-      "addressTooShort": "La dirección es demasiado corta",
       "noActiveAccount": "No hay una cuenta activa",
       "invalidAmount": "Monto inválido",
       "noQuote": "No hay cotización disponible. Obtené una cotización primero.",
       "noAccount": "No se encontró una cuenta"
     }
   },
-  "bridge": {
-    "errors": {
-      "belowMinimum": "El monto es menor al mínimo para este par. Aumentalo y volvé a intentarlo.",
-      "belowMinimumWithAmount": "El mínimo para este par es {{min}}. Aumentá el monto y volvé a intentarlo.",
-      "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
-      "generic": "No se pudo crear el intercambio. Volvé a intentarlo.",
-      "pairUnavailable": "Este par de tokens todavía no está disponible para el bridge. Probá con otro token.",
-      "aboveMaximum": "El monto supera el máximo para este par",
-      "aboveMaximumWithAmount": "El máximo para este par es {{max}}",
-      "networkError": "Error de red: no se pudo conectar con el servidor",
-      "estimateFailed": "No se pudo obtener la estimación del bridge"
-    },
-    "bridge": "Bridge",
-    "recipient": {
-      "title": "Dirección del Destinatario",
-      "description": "Ingresá la dirección donde querés recibir tus tokens transferidos",
-      "destinationAddress": "Dirección de Destino",
-      "enterRecipientAddress": "Ingresá la dirección del destinatario",
-      "important": "Importante",
-      "importantText": "Asegurate de que la dirección sea correcta. Las transacciones entre cadenas no se pueden revertir una vez iniciadas.",
-      "review": "Revisar",
-      "descriptionWithChain": "Ingresá la dirección donde querés recibir tus tokens transferidos en {{chain}}.",
-      "enterDestinationAddress": "Ingresá la dirección de destino",
-      "chainAddressHint": "(dirección de {{chain}})",
-      "helper": "Ingresá la dirección de {{chain}} donde querés recibir tus {{symbol}}"
-    },
-    "review": {
-      "title": "Revisión del Bridge",
-      "youReceiveEstimated": "Recibís (estimado)",
-      "recipient": "Destinatario",
-      "fromNetwork": "Red de Origen",
-      "toNetwork": "Red de Destino",
-      "minimumAmount": "Monto Mínimo",
-      "estimatedOutput": "Salida Estimada",
-      "salmonFee": "Comisión Salmon",
-      "provider": "Proveedor",
-      "pleaseNote": "Nota Importante",
-      "pleaseNoteText": "Las transferencias entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación. El monto estimado de arriba ya tiene descontada la comisión de Salmon.",
-      "irreversible": "Esto no se puede deshacer",
-      "irreversibleText": "Al confirmar, tus fondos van a StealthEX, que los retiene hasta que se complete la transferencia entre cadenas. Una vez confirmada no hay cancelación ni forma de revertirla o recuperarla: ni por parte de Salmon ni por la tuya.",
-      "confirmSwap": "Confirmar Bridge",
-      "confirmCountdown": "Confirmar Bridge ({{seconds}})",
-      "refreshEstimate": "Actualizar estimación"
-    },
-    "amountToSend": "Monto a enviar",
-    "currentStatus": "Estado actual",
-    "depositAddress": "Enviá los fondos a",
-    "depositTxId": "Transacción de depósito",
-    "estimatedReceive": "Vas a recibir aproximadamente",
-    "exchangeId": "ID de intercambio",
-    "depositAddressLabel": "Dirección de depósito",
-    "reference_title": "Guardá esta referencia",
-    "reference_body": "Este bridge no se completó, pero el intercambio ya fue creado. Guardá estos datos: son los que soporte necesita para encontrarlo.",
-    "initiated": "Bridge iniciado",
-    "payoutTxId": "Transacción de pago",
-    "settlement_stalled_title": "No se puede verificar el estado de tu bridge",
-    "settlement_stalled_body": "Tus fondos están en camino, pero no se puede consultar el servicio de estado. Vamos a seguir intentando.",
-    "settlement_retry": "Verificar ahora"
-  },
   "transaction": {
-    "sendComplete": "Envio Completado",
     "sendFailed": "No se pudo enviar",
+    "sendUnconfirmed": "Envío sin confirmar",
     "swapComplete": "Swap Completado",
     "pendingSend": "Enviando fondos",
     "sendSummary": "{{amount}} {{symbol}} a {{recipient}}",
@@ -833,6 +722,7 @@
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
       "insufficientFunds": "Saldo insuficiente para esta transacción.",
       "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",
+      "broadcastUnknown": "No pudimos confirmar el envío a la red. Es posible que tu transacción ya esté en camino — revisá tu actividad antes de volver a enviar.",
       "quoteExpired": "La cotización cambió antes de ejecutarse. Revisá y confirmá de nuevo.",
       "slippage": "El precio se movió más allá de tu tolerancia de slippage. Volvé a intentarlo o ajustá el monto.",
       "noRoute": "No hay ninguna ruta disponible para este par en este momento. Probá con otro monto u otro token.",
@@ -849,10 +739,7 @@
     "permissionMessage": "Para escanear códigos QR se necesita acceso a la cámara. Igual podés escribir o pegar la dirección manualmente.",
     "openSettings": "Abrir Ajustes",
     "notAddress": "Este código no es una dirección válida",
-    "wrongNetwork": "Esta dirección pertenece a otra red",
-    "mobileAppOnly": "Usá la app móvil de Salmon Wallet para escanear códigos QR.",
-    "unavailableTitle": "Escáner QR no disponible",
-    "unavailableMessage": "El escaneo de códigos QR solo está disponible en la app móvil."
+    "wrongNetwork": "Esta dirección pertenece a otra red"
   },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",
@@ -861,7 +748,6 @@
     "edit_account": "Editar cuenta",
     "delete_account": "Eliminar cuenta",
     "refresh_balance": "Actualizar balance",
-    "selected_token": "Token seleccionado: {{name}}",
     "loading_token_list": "Cargando lista de tokens",
     "go_back": "Volver",
     "step_progress": "Paso {{current}} de {{total}}",
@@ -872,38 +758,25 @@
     "hide_balance": "Ocultar balance",
     "token_on_network": "{{token}} en {{network}}",
     "select_blockchain": "Cambiar a {{name}}",
-    "previous_blockchain": "Blockchain anterior",
-    "next_blockchain": "Blockchain siguiente",
     "loading_token_info": "Cargando información del token",
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
-    "select_token": "Seleccionar {{name}}",
-    "select_token_on_network": "Seleccionar {{name}} en {{network}}",
     "copy_contract_address": "Copiar dirección del contrato",
     "open_website": "Abrir sitio web: {{url}}",
-    "select_period": "Seleccionar período {{period}}",
     "active_account": "{{name}}, activa",
     "transaction_row": "Transacción: {{type}}, {{description}}",
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
-    "loading_account_info": "Cargando información de la cuenta",
-    "swap_tab": "Pestaña de Swap",
-    "bridge_tab": "Pestaña de Bridge"
+    "open_powerups": "Abrir Powerups",
+    "close_powerups": "Cerrar Powerups",
+    "portfolio_order": "Ordenar las pestañas"
   },
   "collectibles": {
-    "title": "Coleccionables",
-    "empty": "No se encontraron coleccionables",
-    "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
-    "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
-    "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
-    "loading": "Cargando tus coleccionables…",
     "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
   },
   "common": {
-    "cancel": "Cancelar",
     "coming_soon": "Próximamente...",
-    "delete": "Eliminar",
     "no_explorers": "No hay explorers disponibles para esta red"
   },
   "errors": {
@@ -911,17 +784,45 @@
     "password_check_failed": "No se pudo verificar la contraseña",
     "password_required": "La contraseña es obligatoria"
   },
+  "activity": {
+    "emptyFiltered": "Ninguna transacción coincide con este filtro",
+    "filters": {
+      "all": "Todas",
+      "send": "Enviadas",
+      "receive": "Recibidas",
+      "other": "Otras"
+    }
+  },
   "home": {
-    "no_tokens": "No se encontraron tokens",
-    "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
-    "unnamed_account": "Cuenta"
+    "unnamed_account": "Cuenta",
+    "total_balance": "Balance total",
+    "change_period_24h": "24h",
+    "tabs": {
+      "order": {
+        "title": "Ordená las pestañas",
+        "hint": "Arrastrá para cambiar el orden.",
+        "handle": "Reordenar {{tab}}"
+      }
+    }
   },
   "send": {
     "fee_estimate_failed": "No se pudo estimar la comisión",
-    "enter_address": "Ingresá la dirección del destinatario",
     "recipient": "Destinatario",
     "enter_address_or_domain": "Ingresá una dirección o dominio",
-    "resolved_address": "Dirección resuelta:",
+    "screens": {
+      "recipientSubtitle": "Elegí quién va a recibir tus activos.",
+      "amountSubtitle": "Ingresá el monto a enviar.",
+      "reviewTitle": "Revisar envío",
+      "reviewSubtitle": "Revisá los detalles antes de firmar.",
+      "recent": "Recientes",
+      "available": "Disponible",
+      "address": "Dirección",
+      "status": "Estado",
+      "estimatedArrival": "Llegada estimada",
+      "arrivalSeconds": "Unos segundos",
+      "successTitle": "Enviado con éxito",
+      "successBody": "{{amount}} está en camino a {{name}}."
+    },
     "validation": {
       "network_error": "No se pudo verificar la dirección. Revisá tu conexión.",
       "invalid": "Formato de dirección inválido",
@@ -933,12 +834,6 @@
       "no_funds": "Esta dirección no tiene saldo de ETH",
       "unknown": "Error de validación desconocido"
     }
-  },
-  "walletSwitcher": {
-    "title": "Tus Billeteras",
-    "addAccount": "Agregar Nueva Cuenta",
-    "deleteConfirmTitle": "¿Eliminar Cuenta?",
-    "deleteConfirmMessage": "¿Estás seguro de que querés eliminar \"{{name}}\"? Esta acción no se puede deshacer."
   },
   "pending": {
     "send": {
@@ -953,9 +848,6 @@
       "failed": "El swap falló",
       "expired": "El swap venció"
     },
-    "bridge": {
-      "pending": "Bridge en curso"
-    },
     "expiredHint": "Nunca llegó a la red. No salió nada de tu billetera.",
     "dismiss": "Descartar"
   },
@@ -964,6 +856,51 @@
       "weak": "Débil",
       "medium": "Media",
       "strong": "Fuerte"
+    }
+  },
+  "powerups": {
+    "installed": "INSTALADOS",
+    "browse_title": "Explorar Powerups",
+    "browse_subtitle": "Destacados, oficiales y de la comunidad",
+    "badge": {
+      "official": "Oficial",
+      "community": "Comunidad",
+      "featured": "Destacado"
+    },
+    "search_placeholder": "Buscar powerups",
+    "empty_section": "Todavía no hay nada aquí",
+    "filters": {
+      "all": "Todos",
+      "featured": "Destacados",
+      "official": "Oficiales",
+      "community": "Comunidad"
+    },
+    "sections": {
+      "featured": "DESTACADOS",
+      "official": "OFICIALES",
+      "community": "COMUNIDAD"
+    },
+    "catalog": {
+      "swap": {
+        "name": "Swap",
+        "description": "Intercambia tokens en Solana"
+      },
+      "wallet_guard": {
+        "name": "Wallet Guard",
+        "description": "Simula transacciones y marca firmas riesgosas."
+      },
+      "staking": {
+        "name": "Staking",
+        "description": "Creado y mantenido por Salmon"
+      },
+      "auto_compound": {
+        "name": "Auto-compound",
+        "description": "Automatiza las recompensas de staking"
+      },
+      "nft_floor_watch": {
+        "name": "NFT Floor Watch",
+        "description": "Seguimiento del precio piso de colecciones"
+      }
     }
   }
 }

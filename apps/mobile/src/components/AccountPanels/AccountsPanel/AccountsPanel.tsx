@@ -1,148 +1,129 @@
 /**
- * AccountsPanel - Account management list for mobile
+ * AccountsPanel - account management list for mobile.
  *
- * Displays all user accounts with avatar, name, truncated address,
- * active indicator, and edit/delete actions. Includes an "Add Account"
- * button as the list footer.
+ * Mirrors the CORE 10 wallet row (`app/(app)/wallets.tsx`): a `Card` per
+ * account with an avatar bubble, an inline rename pencil beside the name, the
+ * short address in mono, a `WatchOnlyBadge` when it applies, and a trailing
+ * cluster of delete + active-check. "Add account" closes the list as its own
+ * outlined card, same idiom as Wallets' "Add wallet".
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
-import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  componentSizes,
-  spacing,
-  borderRadius,
-  borderWidth,
-  fontSize,
-  lineHeight,
   fontFamilyNative,
-  getAvatarColor,
-  getShortAddress,
-  getInitials,
+  fontSize,
+  fontWeight,
   getAccountAddress,
+  getShortAddress,
   isWatchOnlyAccount,
+  s,
+  spacing,
+  vs,
   type Account,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
+import { Card } from '../../Card';
+import { AccountAvatar } from '../../AccountAvatar';
+import { IconBubble } from '../../IconBubble';
+import { WatchOnlyBadge } from '../../WatchOnlyBadge';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { ConfirmSheet } from '../../ConfirmSheet';
-import { WatchOnlyBadge } from '../../WatchOnlyBadge';
+import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountsPanelProps } from './types';
 
+/** The inline rename and trailing action affordances. */
+const ACTION_BUBBLE_SIZE = 24;
+
 // ============================================================================
-// AccountListItem
+// AccountRow
 // ============================================================================
 
-function AccountListItem({
-  account,
-  isActive,
-  onPress,
-  onEdit,
-  onDelete,
-  canDelete,
-}: {
+interface AccountRowProps {
   account: Account;
   isActive: boolean;
+  canDelete: boolean;
   onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  canDelete: boolean;
-}) {
+}
+
+function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }: AccountRowProps) {
   const { t } = useTranslation();
-  const avatarColor = useMemo(() => getAvatarColor(account.id), [account.id]);
-  const initials = useMemo(() => getInitials(account.name), [account.name]);
-  const address = useMemo(() => getAccountAddress(account), [account]);
-  const truncatedAddress = useMemo(() => getShortAddress(address), [address]);
-  const [imgError, setImgError] = useState(false);
+  const styles = useThemedStyles(stylesFor);
+  const { status, accent } = useSemantic();
+  const address = getAccountAddress(account);
+  const shortAddress = getShortAddress(address) ?? '';
 
   return (
-    <TouchableOpacity
+    <Card
       testID={`account-item-${account.id}`}
-      style={[styles.accountItem, isActive && styles.accountItemActive]}
+      padding="lg"
       onPress={onPress}
-      activeOpacity={0.7}
       accessibilityLabel={
         isActive
           ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
           : account.name
       }
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
+      style={isActive ? styles.activeCard : undefined}
     >
-      {/* Avatar */}
-      {account.avatar && !imgError ? (
-        <Image
-          source={{ uri: account.avatar }}
-          style={styles.avatar}
-          contentFit="cover"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      )}
+      <View style={styles.row}>
+        <AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />
 
-      {/* Account Info */}
-      <View style={styles.accountInfo}>
-        <Text style={styles.accountName} numberOfLines={1}>
-          {account.name}
-        </Text>
-        <View style={styles.accountAddressRow}>
-          {truncatedAddress ? (
-            <Text style={styles.accountAddress} numberOfLines={1}>
-              {truncatedAddress}
+        <View style={styles.info}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {account.name}
             </Text>
-          ) : null}
-          {isWatchOnlyAccount(account) && (
-            <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
+            <IconBubble
+              testID={`account-edit-${account.id}`}
+              size={ACTION_BUBBLE_SIZE}
+              shape="circle"
+              tone="surface"
+              icon={PencilSimpleIcon}
+              iconSize={13}
+              onPress={onEdit}
+              accessibilityLabel={t('accessibility.edit_account', 'Edit account')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            />
+            {isWatchOnlyAccount(account) && (
+              <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
+            )}
+          </View>
+          {shortAddress ? <Text style={styles.address}>{shortAddress}</Text> : null}
+        </View>
+
+        <View style={styles.trailing}>
+          {canDelete && (
+            <IconBubble
+              testID={`account-remove-${account.id}`}
+              size={ACTION_BUBBLE_SIZE}
+              tone="ghost"
+              icon={TrashIcon}
+              iconSize={iconSize.sm}
+              iconColor={status.danger}
+              onPress={onDelete}
+              accessibilityLabel={t('accessibility.delete_account', 'Delete account')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            />
+          )}
+          {isActive && (
+            // Selection is salmon, not green: green is a status ink (an
+            // outcome), and a selected row is not an outcome.
+            <IconBubble
+              size={ACTION_BUBBLE_SIZE}
+              tone="ghost"
+              icon={CheckCircleIcon}
+              iconSize={iconSize.lg}
+              iconColor={accent.ink}
+            />
           )}
         </View>
       </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          testID={`account-edit-${account.id}`}
-          style={styles.actionButton}
-          onPress={onEdit}
-          activeOpacity={0.7}
-          accessibilityLabel={t('accessibility.edit_account', 'Edit account')}
-          accessibilityRole="button"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <PencilSimpleIcon size={iconSize.md} color={semantic.text.secondary} />
-        </TouchableOpacity>
-
-        {canDelete && (
-          <TouchableOpacity
-            testID={`account-remove-${account.id}`}
-            style={styles.actionButton}
-            onPress={onDelete}
-            activeOpacity={0.7}
-            accessibilityLabel={t('accessibility.delete_account', 'Delete account')}
-            accessibilityRole="button"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <TrashIcon size={iconSize.md} color={semantic.status.danger} />
-          </TouchableOpacity>
-        )}
-
-        {isActive && (
-          <View style={styles.checkmarkContainer}>
-            {/* Selection is salmon, not green: green is a status ink (an
-                outcome), and a selected row is not an outcome. Same
-                vocabulary the settings selectors use. */}
-            <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+    </Card>
   );
 }
 
@@ -160,59 +141,55 @@ export function AccountsPanel({
   onBack,
 }: AccountsPanelProps): React.ReactElement {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const canDelete = accounts.length > 1;
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
-
-  const handleDelete = useCallback((account: Account) => {
-    setAccountToDelete(account);
-  }, []);
 
   const handleDeleteConfirmed = useCallback(async () => {
     if (!accountToDelete) return;
     await onDeleteAccount(accountToDelete.id);
   }, [accountToDelete, onDeleteAccount]);
 
-  const renderItem = useCallback(
-    (item: Account) => (
-      <AccountListItem
-        account={item}
-        isActive={item.id === activeAccountId}
-        onPress={() => onSelectAccount(item.id)}
-        onEdit={() => onEditAccount(item.id)}
-        onDelete={() => handleDelete(item)}
-        canDelete={canDelete}
-      />
-    ),
-    [activeAccountId, onSelectAccount, onEditAccount, handleDelete, canDelete]
-  );
-
-  const ListFooter = useMemo(
-    () => (
-      <TouchableOpacity
-        testID="account-add-button"
-        style={styles.addAccountButton}
-        onPress={onAddAccount}
-        activeOpacity={0.7}
-        accessibilityLabel={t('settings.accounts.title')}
-        accessibilityRole="button"
-      >
-        <View style={styles.addAccountIcon}>
-          <PlusIcon size={iconSize.lg} color={semantic.text.primary} />
-        </View>
-        <Text style={styles.addAccountText}>{t('settings.account_add.title')}</Text>
-      </TouchableOpacity>
-    ),
-    [onAddAccount, t]
+  const rows = useMemo(
+    () =>
+      accounts.map((account) => (
+        <AccountRow
+          key={account.id}
+          account={account}
+          isActive={account.id === activeAccountId}
+          canDelete={canDelete}
+          onPress={() => onSelectAccount(account.id)}
+          onEdit={() => onEditAccount(account.id)}
+          onDelete={() => setAccountToDelete(account)}
+        />
+      )),
+    [accounts, activeAccountId, canDelete, onEditAccount, onSelectAccount]
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.accounts.title')} onBack={onBack} scrollable={false}>
-      <View>
-        {accounts.map((account) => (
-          <React.Fragment key={account.id}>{renderItem(account)}</React.Fragment>
-        ))}
-        {ListFooter}
-      </View>
+    <SettingsScreenLayout
+      title={t('settings.accounts.title')}
+      subtitle={t('settings.accounts.subtitle', 'Switch between or manage your accounts.')}
+      onBack={onBack}
+    >
+      {rows}
+
+      {/* The one action that is not an account: outlined, so it reads as an
+          empty slot rather than a card with nothing in it — same idiom as
+          Wallets' "Add wallet". */}
+      <Card
+        testID="account-add-button"
+        padding="lg"
+        onPress={onAddAccount}
+        accessibilityLabel={t('settings.account_add.title')}
+        style={styles.addCard}
+      >
+        <View style={styles.addRow}>
+          <PlusIcon size={iconSize.md} color={accent.ink} />
+          <Text style={styles.addLabel}>{t('settings.account_add.title')}</Text>
+        </View>
+      </Card>
 
       <ConfirmSheet
         visible={accountToDelete !== null}
@@ -233,103 +210,62 @@ export function AccountsPanel({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  accountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    // Control Radius Rule: a settings list row is a control — r3, not r2.
-    borderRadius: borderRadius.r3,
-    marginBottom: spacing.sm,
-  },
-  accountItemActive: {
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.state.selectedEdge,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.none,
-  },
-  accountInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-    marginRight: spacing.sm,
-  },
-  accountName: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-  },
-  accountAddressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xxs,
-  },
-  accountAddress: {
-    color: semantic.text.secondary,
-    // An address is position-critical, so it reads in mono at the mono step.
-    fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.mono,
-    lineHeight: fontSize.mono * lineHeight.snug,
-    flexShrink: 1,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  actionButton: {
-    width: componentSizes.iconSizeLarge,
-    height: componentSizes.iconSizeLarge,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.r1,
-  },
-  checkmarkContainer: {
-    width: componentSizes.iconSizeLarge,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addAccountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-    // Control Radius Rule: a settings list row is a control — r3, not r2.
-    borderRadius: borderRadius.r3,
-  },
-  addAccountIcon: {
-    width: 44,
-    height: 44,
-    // Sits in the avatar slot, so it shares the avatar's `full` radius.
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background.card,
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.default,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addAccountText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-    lineHeight: fontSize.bodyLg * lineHeight.normal,
-    marginLeft: spacing.md,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    activeCard: {
+      borderWidth: 1,
+      borderColor: t.accent.ink,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    info: {
+      flex: 1,
+      minWidth: 0,
+      gap: vs(spacing.xxs),
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+      flexWrap: 'wrap',
+    },
+    name: {
+      flexShrink: 1,
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: s(fontSize.bodyLg),
+    },
+    address: {
+      color: t.text.secondary,
+      // An address is position-critical, so it reads in mono at the mono step.
+      fontFamily: fontFamilyNative.mono,
+      fontSize: s(fontSize.mono),
+    },
+    trailing: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.xs),
+    },
+    addCard: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.border.raised,
+    },
+    addRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    addLabel: {
+      color: t.accent.ink,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+      fontSize: s(fontSize.body),
+    },
+  });

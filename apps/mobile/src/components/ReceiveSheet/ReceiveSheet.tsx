@@ -1,5 +1,4 @@
 import {
-  colors,
   fontSize,
   getChainDisplayName,
   letterSpacing,
@@ -10,8 +9,7 @@ import {
   ms,
   s,
   vs,
-  lineHeight,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect } from 'react';
 import {
@@ -25,9 +23,10 @@ import {
 import { CheckIcon, CopyIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BrandMark } from '../BrandMark';
 import { Thermocline } from '../Thermocline';
 import { FleshBackground } from '../FleshBackground';
@@ -70,12 +69,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   onClose,
   address,
   blockchain,
+  networkLabel,
   onCopy,
   style,
 }) => {
   const { width: screenWidth } = useWindowDimensions();
   const { copied, scale: tickScale, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text, depth, accent } = useSemantic();
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
 
   // Calculate QR size: full width minus padding and border
@@ -100,7 +102,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
     }
   }, [onCopy, showCopied]);
 
-  const title = <Text style={styles.title}>{t('token.receive.title')}</Text>;
+  const title = <SheetTitle>{t('token.receive.title')}</SheetTitle>;
 
   // A deposit made on the wrong chain is gone for good, so the chain is named
   // twice: an opaque badge with a label (never a tint — DESIGN.md) and a
@@ -141,8 +143,8 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
             <QRCode
               value={address}
               size={qrSize}
-              backgroundColor={semantic.text.primary}
-              color={semantic.depth.abyss}
+              backgroundColor={text.primary}
+              color={depth.abyss}
               // The centered mark hides modules, so the code carries level-H
               // redundancy — a wallet QR must stay scannable before it looks good.
               ecLevel="H"
@@ -164,12 +166,21 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
               >
                 <BrandMark
                   size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                  color={semantic.depth.abyss}
+                  color={depth.abyss}
                 />
               </View>
             </View>
           </View>
         </View>
+
+        {/* Off mainnet the environment is named under the code: the chain
+            badge above says "Solana" on devnet too, and a deposit made to a
+            test address is not money (spec 026 D6). */}
+        {!!networkLabel && (
+          <Text style={styles.networkLabel} testID="receive-network-label">
+            {networkLabel}
+          </Text>
+        )}
 
         {/* Wrong-network deposits are unrecoverable, so say so here rather
             than leaving the chain to be inferred from the address format. */}
@@ -195,10 +206,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           <FleshBackground />
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <CheckIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
+              <CheckIcon weight="bold" size={ms(23)} color={accent.onFill} />
             </Animated.View>
           ) : (
-            <CopyIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
+            <CopyIcon weight="bold" size={ms(23)} color={accent.onFill} />
           )}
           {/* The written address is gone from the sheet, so this control is the
               only path to the string: the copied state has to be announced,
@@ -217,93 +228,92 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  sheetContainer: {
-    minHeight: undefined,
-    maxHeight: '92%',
-    overflow: 'hidden',
-  },
-  // The material fills the sheet and clips itself to the sheet's own top
-  // corners; the refraction strip rides its top edge.
-  thermocline: {
-    ...StyleSheet.absoluteFillObject,
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
-  },
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(24 * lineHeight.condensed),
-  },
-  content: {
-    alignItems: 'center',
-    paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
-    gap: vs(componentSizes.receiveContentGap),
-  },
-  // The badge sits `spacing.md` over the QR it labels — clearly tighter than
-  // the content gap that separates the group from the sheet title above it.
-  qrGroup: {
-    alignItems: 'center',
-    gap: vs(spacing.md),
-    marginTop: vs(spacing.headerPadding),
-  },
-  qrContainer: {
-    borderRadius: ms(borderRadius.xl),
-    borderWidth: componentSizes.qrBorderWidth,
-    borderColor: colors.text.primary,
-    overflow: 'hidden',
-  },
-  qrLogoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qrLogoKnockout: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: semantic.text.primary,
-  },
-  chainBadge: {
-    backgroundColor: semantic.surface.raised,
-    // A text chip takes the chip step, not a pill: the Control Radius Rule
-    // reserves `full` for what genuinely is a circle (avatars, toggles).
-    borderRadius: ms(borderRadius.r1),
-    borderWidth: 1,
-    borderColor: semantic.border.raised,
-    paddingVertical: vs(spacing.xs),
-    paddingHorizontal: s(spacing.md),
-  },
-  chainBadgeText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.primary,
-    letterSpacing: letterSpacing.label,
-  },
-  copyButton: {
-    flexDirection: 'row',
-    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.button.primaryBackground,
-    borderRadius: ms(borderRadius.lg),
-    minWidth: s(componentSizes.copyButtonWidth),
-    maxWidth: '100%',
-    minHeight: vs(componentSizes.buttonHeightCompact),
-    paddingVertical: vs(spacing.xs),
-    paddingHorizontal: s(spacing.lg),
-    gap: s(spacing.xs),
-  },
-  copyButtonText: {
-    flexShrink: 1,
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.button.primaryText,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    sheetContainer: {
+      maxHeight: '92%',
+      overflow: 'hidden',
+    },
+    // The material fills the sheet and clips itself to the sheet's own top
+    // corners; the refraction strip rides its top edge.
+    thermocline: {
+      ...StyleSheet.absoluteFillObject,
+      borderTopLeftRadius: borderRadius.card,
+      borderTopRightRadius: borderRadius.card,
+    },
+    content: {
+      alignItems: 'center',
+      paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
+      gap: vs(componentSizes.receiveContentGap),
+    },
+    // The badge sits `spacing.md` over the QR it labels — clearly tighter than
+    // the content gap that separates the group from the sheet title above it.
+    qrGroup: {
+      alignItems: 'center',
+      gap: vs(spacing.md),
+      marginTop: vs(spacing.headerPadding),
+    },
+    qrContainer: {
+      borderRadius: ms(borderRadius.xl),
+      borderWidth: componentSizes.qrBorderWidth,
+      borderColor: t.text.primary,
+      overflow: 'hidden',
+    },
+    qrLogoOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    qrLogoKnockout: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.text.primary,
+    },
+    chainBadge: {
+      backgroundColor: t.surface.raised,
+      // A text chip takes the chip step, not a pill: the Control Radius Rule
+      // reserves `full` for what genuinely is a circle (avatars, toggles).
+      borderRadius: ms(borderRadius.r1),
+      borderWidth: 1,
+      borderColor: t.border.raised,
+      paddingVertical: vs(spacing.xs),
+      paddingHorizontal: s(spacing.md),
+    },
+    chainBadgeText: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.label,
+    },
+    networkLabel: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.tertiary,
+      letterSpacing: letterSpacing.label,
+      textAlign: 'center',
+    },
+    copyButton: {
+      flexDirection: 'row',
+      // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.accent.fill,
+      borderRadius: ms(borderRadius.lg),
+      minWidth: s(componentSizes.copyButtonWidth),
+      maxWidth: '100%',
+      minHeight: vs(componentSizes.buttonHeightCompact),
+      paddingVertical: vs(spacing.xs),
+      paddingHorizontal: s(spacing.lg),
+      gap: s(spacing.xs),
+    },
+    copyButtonText: {
+      flexShrink: 1,
+      fontSize: ms(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.bold,
+      color: t.accent.onFill,
+      textAlign: 'center',
+    },
+  });
 
 export default ReceiveSheet;

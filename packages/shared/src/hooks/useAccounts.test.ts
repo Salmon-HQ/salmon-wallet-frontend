@@ -1117,6 +1117,47 @@ describe('useAccounts Hook', () => {
       expect(state.accounts[0].avatar).toBe(newAvatar);
     });
 
+    it('adds derived accounts without mutating the account held before the edit', async () => {
+      const mockAccount = createMockAccount();
+      (storage.getStorageItem as any).mockImplementation((key: string) => {
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
+        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        return Promise.resolve(null);
+      });
+
+      const { result } = renderHook(() => useAccounts());
+
+      await waitFor(() => {
+        expect(result.current[0].ready).toBe(true);
+      });
+
+      const [before, actions] = result.current;
+      const previous = before.accounts[0];
+      const networkId = Object.keys(previous.networksAccounts)[0];
+      const previousSlots = previous.networksAccounts[networkId];
+      const previousLength = previousSlots.length;
+      const derived = { ...previousSlots[0], index: previousLength + 1 } as any;
+
+      await act(async () => {
+        await actions.editAccount(mockAccount.id, { newDerivedAccounts: [derived] });
+      });
+
+      const [after] = result.current;
+      expect(after.accounts[0].networksAccounts[networkId][previousLength + 1]).toBe(derived);
+      expect(after.accounts[0].networksAccounts[networkId][previousLength]).toBeNull();
+      // The object captured before the edit is untouched.
+      expect(previous.networksAccounts[networkId]).toBe(previousSlots);
+      expect(previousSlots.length).toBe(previousLength);
+    });
+
     it('should remove account', async () => {
       const mockAccount1 = createMockAccount();
       const mockAccount2 = { ...createMockAccount(), id: 'account_789' };

@@ -19,17 +19,15 @@ export type {
   CurrencyProviderProps,
 } from './CurrencyContext';
 
-// Bridge settlement context (background cross-chain settlement)
-export {
-  BridgeSettlementContext,
-  BridgeSettlementProvider,
-  useBridgeSettlement,
-} from './BridgeSettlementContext';
+// Theme context (appearance preference → active mode → resolved tokens)
+export { ThemeContext, ThemeProvider, useTheme } from './ThemeContext';
 
 export type {
-  PendingBridgeExchange,
-  BridgeSettlementProviderProps,
-} from './BridgeSettlementContext';
+  ThemePreference,
+  SystemScheme,
+  ThemeContextValue,
+  ThemeProviderProps,
+} from './ThemeContext';
 
 // Pending transactions context (global in-flight state for signed on-chain txs)
 export {
@@ -45,3 +43,18 @@ export type {
   PendingTransactionStatus,
   PendingTransactionsProviderProps,
 } from './PendingTransactionsContext';
+
+// Task chrome (a task flow's grip on the shell; the surface count Home keys on)
+export { TaskChromeProvider, useTaskChrome, useTaskChromeClaim } from './TaskChromeContext';
+
+export type { TaskChromeContextValue } from './TaskChromeContext';
+
+// Developer mode (which networks are offered; whether unverified tokens show)
+export {
+  DeveloperModeProvider,
+  useDeveloperMode,
+  useUnverifiedTokens,
+  useDeveloperModeSettings,
+} from './DeveloperModeContext';
+
+export type { DeveloperModeContextValue } from './DeveloperModeContext';

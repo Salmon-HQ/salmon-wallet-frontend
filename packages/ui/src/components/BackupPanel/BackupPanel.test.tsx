@@ -3,17 +3,12 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { BackupPanel } from './BackupPanel';
-import { semantic } from '../../../../shared/src/theme';
-
-/** jsdom reports computed colors as `rgb(...)`; the tokens are authored as hex. */
-function rgbOf(hex: string): string {
-  const value = parseInt(hex.slice(1), 16);
-  return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
-}
 
 /** Obviously fake — no real credential belongs in a test. */
 const CORRECT_PASSWORD = 'test-password-000';
@@ -24,14 +19,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real @salmon/shared barrel pulls in react-native, which Vite cannot
-// parse, so the module is stubbed with the runtime-agnostic theme tokens plus
-// the accounts context the panel reads the mnemonic from.
-vi.mock('@salmon/shared', async () => ({
-  ...(await vi.importActual('../../../../shared/src/theme')),
-  ...(await vi.importActual('../../../../shared/src/utils/scaling')),
-  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
-  ...(await vi.importActual('../../../../shared/src/utils/account-secret')),
+// The real barrel loads fine under vitest; only the accounts context the
+// panel reads the mnemonic from needs to be stubbed for a deterministic seed.
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   useAccountsContext: () => [
     {
       activeAccount: {
@@ -42,10 +33,17 @@ vi.mock('@salmon/shared', async () => ({
   ],
 }));
 
-vi.mock('../../utils/styled', async () => {
-  const emotion = await import('@emotion/styled');
-  return { styled: emotion.default };
-});
+function stubMatchMedia() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+}
 
 function setClipboardWriteText(impl: () => Promise<void>) {
   Object.defineProperty(window.navigator, 'clipboard', {
@@ -54,37 +52,45 @@ function setClipboardWriteText(impl: () => Promise<void>) {
   });
 }
 
+function renderPanel(mode: 'dark' | 'light' = 'dark') {
+  stubMatchMedia();
+  renderInMode(mode, <BackupPanel onBack={vi.fn()} />);
+}
+
 /** The reveal is gated on the password, so every test has to pay it. */
-async function reauthenticate(password: string = CORRECT_PASSWORD) {
-  fireEvent.change(screen.getByLabelText('Password'), { target: { value: password } });
+function reauthenticate(password: string = CORRECT_PASSWORD) {
+  fireEvent.change(screen.getByTestId('confirm-dialog-password'), { target: { value: password } });
   fireEvent.click(screen.getByTestId('backup-reauth-confirm'));
 }
 
 async function renderPanelWithRevealedSeed() {
-  render(<BackupPanel onBack={vi.fn()} />);
-  fireEvent.click(screen.getByTestId('backup-seed-reveal-button'));
-  await reauthenticate();
+  renderPanel();
+  fireEvent.click(screen.getByTestId('backup-seed-reveal-overlay'));
+  reauthenticate();
   await waitFor(() => {
     expect(screen.getByText('alpha')).toBeTruthy();
   });
 }
 
-describe('BackupPanel seed reveal', () => {
-  afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
-  it('does not hand over the phrase to whoever is holding an unlocked session', async () => {
-    render(<BackupPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('backup-seed-reveal-button'));
+describe('BackupPanel seed reveal', () => {
+  it('does not hand over the phrase to whoever is holding an unlocked session', () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId('backup-seed-reveal-overlay'));
 
     // Asking is not enough — the password has to be re-entered.
     expect(screen.queryByText('alpha')).toBeNull();
-    expect(screen.getByLabelText('Password')).toBeTruthy();
+    expect(screen.getByTestId('confirm-dialog-password')).toBeTruthy();
   });
 
   it('keeps the phrase hidden when the password is wrong', async () => {
-    render(<BackupPanel onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTestId('backup-seed-reveal-button'));
-    await reauthenticate('wrong-password-000');
+    renderPanel();
+    fireEvent.click(screen.getByTestId('backup-seed-reveal-overlay'));
+    reauthenticate('wrong-password-000');
 
     await waitFor(() => {
       expect(screen.getByText('Invalid password')).toBeTruthy();
@@ -99,47 +105,28 @@ describe('BackupPanel seed reveal', () => {
   });
 });
 
-describe('BackupPanel seed exhibition surface', () => {
-  afterEach(cleanup);
+describe('BackupPanel reveal gate', () => {
+  it('covers the phrase with opaque bedrock, not a translucent scrim, in both modes', () => {
+    renderPanel('light');
 
-  it('exhibits the phrase on bedrock, not on a translucent card', () => {
-    render(<BackupPanel onBack={vi.fn()} />);
-
-    const card = screen.getByTestId('backup-seed-phrase');
-    const background = window.getComputedStyle(card).backgroundColor;
-
+    const cover = screen.getByTestId('backup-seed-reveal-overlay');
+    expect(cover.tagName).toBe('BUTTON');
+    expect(cover.getAttribute('aria-label')).toBe('settings.wallets.tap_to_reveal');
     // A secret shown through a translucent surface is the failure this pins.
-    expect(background).toBe(rgbOf(semantic.surface.bedrock));
-    expect(background).not.toContain('rgba');
-  });
-});
-
-describe('BackupPanel reveal overlay keyboard access', () => {
-  afterEach(cleanup);
-
-  it('exposes the overlay as a focusable button with a name', () => {
-    render(<BackupPanel onBack={vi.fn()} />);
-
-    const overlay = screen.getByTestId('backup-seed-reveal-overlay');
-    expect(overlay.getAttribute('role')).toBe('button');
-    expect(overlay.getAttribute('tabindex')).toBe('0');
-    expect(overlay.getAttribute('aria-label')).toBe('Tap to reveal');
+    expect(cover.style.backgroundColor).toBe(
+      asRenderedColor(createSemantic('light').surface.bedrock)
+    );
+    expect(cover.style.backgroundColor).not.toContain('rgba');
   });
 
   it('opens the same password gate from the keyboard as from a click', () => {
-    render(<BackupPanel onBack={vi.fn()} />);
+    renderPanel();
     fireEvent.keyDown(screen.getByTestId('backup-seed-reveal-overlay'), { key: 'Enter' });
+    fireEvent.click(screen.getByTestId('backup-seed-reveal-overlay'));
 
-    // Keyboard reaches the gate, and the gate still holds.
-    expect(screen.getByLabelText('Password')).toBeTruthy();
+    // The gate holds either way.
+    expect(screen.getByTestId('confirm-dialog-password')).toBeTruthy();
     expect(screen.queryByText('alpha')).toBeNull();
-  });
-
-  it('ignores keys that are not activation keys', () => {
-    render(<BackupPanel onBack={vi.fn()} />);
-    fireEvent.keyDown(screen.getByTestId('backup-seed-reveal-overlay'), { key: 'a' });
-
-    expect(screen.queryByLabelText('Password')).toBeNull();
   });
 });
 
@@ -147,8 +134,6 @@ describe('BackupPanel seed copy failure', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-
-  afterEach(cleanup);
 
   it('warns when the clipboard write fails so the user does not assume the seed was copied', async () => {
     setClipboardWriteText(() => Promise.reject(new Error('denied')));

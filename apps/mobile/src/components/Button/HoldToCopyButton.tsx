@@ -13,10 +13,11 @@
  * VoiceOver synthesize a press, and gating that behind a hold would make the
  * action inaccessible, mirroring the DOM version's immediate keyboard path.
  */
-import { semantic } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
+import type { Semantic, Testable } from '@salmon/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { SecondaryButton } from './SecondaryButton';
 
 /** How long the control must be held before it commits — same as the DOM. */
@@ -29,6 +30,7 @@ export interface HoldToCopyButtonProps extends Testable {
 }
 
 export function HoldToCopyButton({ onCopy, children, disabled, testID }: HoldToCopyButtonProps) {
+  const styles = useThemedStyles(stylesFor);
   const [progress, setProgress] = useState(0);
   const frame = useRef<number | null>(null);
   const startedAt = useRef<number | null>(null);
@@ -107,16 +109,17 @@ function noop() {
   // A touch tap that never became a hold does nothing at all.
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    position: 'relative',
-    width: '100%',
-  },
-  progress: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    height: 2,
-    backgroundColor: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    wrapper: {
+      position: 'relative',
+      width: '100%',
+    },
+    progress: {
+      position: 'absolute',
+      left: 0,
+      bottom: 0,
+      height: 2,
+      backgroundColor: t.text.primary,
+    },
+  });

@@ -66,6 +66,7 @@ export async function createAccount(options: CreateAccountOptions): Promise<Crea
     mnemonic,
     networkIds = ['solana-mainnet'],
     startIndex = 0,
+    derivedFrom,
   } = options;
 
   const networksAccounts: NetworksAccounts = {};
@@ -96,8 +97,15 @@ export async function createAccount(options: CreateAccountOptions): Promise<Crea
   createdAccounts.forEach((entry) => {
     if (!entry) return;
 
-    networksAccounts[entry.networkId] = [entry.blockchainAccount];
-    pathIndexes[entry.networkId] = [startIndex];
+    // Position is the derivation index everywhere else in the codebase —
+    // `getDefaultPathIndex` reads it with `findIndex(Boolean)` and storage
+    // rebuilds the path indexes from it. A wallet created at a non-zero index
+    // therefore sits at that position, with holes before it; parking it at 0
+    // is what used to make it come back as index 0 on the next unlock, at the
+    // seed's first address instead of its own.
+    const slots = Array<null>(startIndex).fill(null);
+    networksAccounts[entry.networkId] = [...slots, entry.blockchainAccount];
+    pathIndexes[entry.networkId] = [...slots, startIndex];
   });
 
   const account: Account = {
@@ -107,6 +115,7 @@ export async function createAccount(options: CreateAccountOptions): Promise<Crea
     secret: { kind: 'mnemonic', mnemonic },
     pathIndexes,
     networksAccounts,
+    ...(derivedFrom ? { derivedFrom } : {}),
   };
 
   return { account, blockchainAccounts: networksAccounts };

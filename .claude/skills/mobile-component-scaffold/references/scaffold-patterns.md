@@ -72,7 +72,7 @@ Reach for platform-specific files when rendering or native capabilities differ:
 - Mobile-only: `Button`, `TopSheet`, `ConfirmSheet`, `SubAccountSelector`
 - Cross-platform with shared contract: `WalletHeader`, `StepIndicator`, `ReceiveSheet`, `PriceChart`
 - Platform split: `QRCode`, `QRScanner`, `LoadingScreen`, `GlassTabBar`
-- Complex families: `SendSheet`, `SwapScreen`, `TransactionHistorySheet`
+- Complex families: `SendSheet`, `SwapScreen`, `Activity`
 
 ## Verification
 

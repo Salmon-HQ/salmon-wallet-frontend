@@ -14,7 +14,6 @@
 import { CheckCircleIcon, SparkleIcon, iconSize } from '../../src/icons';
 import {
   borderRadius,
-  colors,
   componentSizes,
   contentPadding,
   fontFamilyNative,
@@ -23,11 +22,12 @@ import {
   generateValidationPositions,
   lineHeight,
   motionMs,
-  semantic,
+  s,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonicWords,
+  type Semantic,
 } from '@salmon/shared';
 import {
   HoldToCopyButton,
@@ -39,6 +39,7 @@ import {
   SeedWordGrid,
   SeedWordInput,
 } from '../../src/components';
+import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -70,6 +71,8 @@ interface ToastProps {
 }
 
 function Toast({ message, visible }: ToastProps) {
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   if (!visible) return null;
 
   return (
@@ -94,12 +97,18 @@ interface SeedPhraseStepProps {
 }
 
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
+  const semantic = useSemantic();
   const [showToast, setShowToast] = useState(false);
+  // Gates "Guardé mi seed-phrase": the owner wants the commit disabled until
+  // the hold-to-copy has actually fired once, so advancing costs having seen
+  // the phrase land somewhere durable, not just having scrolled past it.
+  const [copied, setCopied] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
       await Clipboard.setStringAsync(mnemonic);
+      setCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
@@ -120,7 +129,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           flow screens (welcome and the lock keep it); each step wears one
           semantic glyph in the mark slot, consent's pattern and size.
         */
-        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -131,7 +140,16 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
         description={
           <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
         }
-        body={<SeedWordGrid words={words} columns={3} />}
+        body={
+          // The component gap (`spacing.xl`) between the description and the
+          // grid — the "content" variant's compact rung reserves only one
+          // description line plus its own buffer, and this screen's copy can
+          // wrap to two lines at a short viewport, eating that buffer and
+          // leaving the grid flush under the text. Mirrors the DOM twin.
+          <View style={{ paddingTop: spacing.xl }}>
+            <SeedWordGrid words={words} columns={3} />
+          </View>
+        }
         secondary={
           /*
             Held, not tapped: the phrase lands on the clipboard, where anything
@@ -143,7 +161,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           </HoldToCopyButton>
         }
         action={
-          <PrimaryButton onPress={onNext} testID="create-backed-up-button">
+          <PrimaryButton onPress={onNext} disabled={!copied} testID="create-backed-up-button">
             {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
         }
@@ -167,6 +185,8 @@ interface ValidateStepProps {
 }
 
 function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const words = useMemo(() => (mnemonic ? mnemonic.split(' ') : []), [mnemonic]);
   const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
 
@@ -219,7 +239,7 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
       float
       // Same glyph as the phrase it confirms — the step dots carry which half
       // of the creation this is.
-      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}
@@ -329,34 +349,35 @@ export default function CreateWalletScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  validationInputs: {
-    width: '100%',
-    gap: spacing.lg,
-  },
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    validationInputs: {
+      width: '100%',
+      gap: spacing.lg,
+    },
 
-  // Toast
-  toastContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dialog.overlay,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius['2xl'],
-    gap: spacing.sm,
-  },
-  toastText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.snug,
-  },
-});
+    // Toast
+    toastContainer: {
+      position: 'absolute',
+      bottom: 100,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      paddingHorizontal: contentPadding.screen,
+    },
+    toast: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.overlay.backdrop,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius['2xl'],
+      gap: spacing.sm,
+    },
+    toastText: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: fontSize.body * lineHeight.snug,
+    },
+  });

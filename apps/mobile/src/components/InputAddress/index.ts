@@ -5,9 +5,7 @@
  * Supports Solana public keys and domain names with real-time validation.
  */
 
-export { InputAddress, default } from './InputAddress';
 export { useAddressValidation } from '@salmon/shared';
-export type { InputAddressProps } from './types';
 export type {
   BlockchainType,
   ValidationState,

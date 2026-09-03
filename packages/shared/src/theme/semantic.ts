@@ -2,307 +2,686 @@
  * Semantic color tokens for Salmon Wallet — "Deep Water".
  *
  * Every value here points at a step in `palette.ts` rather than at a literal.
- * That indirection is the whole point: a light theme becomes a second mapping
- * of the same names onto different ramp indices, so consumers keep asking for
- * `text.primary` and never learn which theme is active.
+ * That indirection is the whole point: the light theme is a second mapping of
+ * the same names onto different ramp indices, so consumers keep asking for
+ * `text.primary` and never learn which mode is active.
  *
  * Names are depth names because depth is the system — the app is a column of
  * water, and a surface's name says how far down it sits.
  *
- * This layer is additive. The legacy `colors` export in `colors.ts` still
- * works and is still what most components read today; components move over as
- * they are touched, rather than in one sweeping rename.
+ * ## The resolver
+ *
+ * `createSemantic(mode)` builds the whole token object once per mode. Every
+ * leaf that differs between modes is written as `pick({ dark, light })`, so
+ * the two ramp indices for a token sit on the same line and cannot drift
+ * apart in separate files. A leaf written as a plain value is invariant by
+ * construction — `accent.fill` and `accent.onFill` are the two the brand
+ * depends on (DESIGN.md §Two modes), and the scanner overlay is invariant
+ * because a camera view is always dark.
+ *
+ * `export const semantic = createSemantic('dark')` is unchanged in shape and
+ * in value: web, extension, `packages/ui` and every mobile file that has not
+ * moved to the theme hook keep reading the same static object.
  *
  * Works for both React Native (Expo) and Web (WXT+Vite extension).
  */
 
+import { chainMarks } from './brand';
 import { danger, neutral, salmon, success, warning } from './palette';
+import { withAlpha } from './withAlpha';
+
+export type ThemeMode = 'dark' | 'light';
+
+/** One resolver entry: what each mode reads for a single token. */
+interface ModeRefs<T> {
+  dark: T;
+  light: T;
+}
 
 /**
- * Ground and surfaces, ordered by depth.
+ * Builds the semantic layer for one mode.
  *
- * The two `membrane` tiers are translucent and only guarantee their text
- * contrast when composited over the documented scrim; opaque surfaces are
- * safe anywhere. `bedrock` is opaque by rule, not by accident: the approval
- * and seed-phrase screens must never show anything through them.
+ * Light values come from `specs/021-light-theme/spec.md`, whose source is the
+ * `product.pen` light drawing mapped onto the existing ramp. Where the `.pen`
+ * value would fail WCAG the ramp step wins — those rows are commented
+ * individually, because an accessibility override that is not written down
+ * gets "fixed" back to the drawing six months later.
  */
-export const depth = {
-  /** Window/root behind everything. No content sits directly on it. */
-  abyss: neutral[1000],
-  /** App ground. Hosts the scales field. */
-  column: neutral[975],
-} as const;
+export function createSemantic(mode: ThemeMode) {
+  const pick = <T>(refs: ModeRefs<T>): T => refs[mode];
 
-export const surface = {
-  /** Default opaque card */
-  shelf: neutral[950],
-  /** Opaque card above a card */
-  raised: neutral[900],
-  /** Opaque top elevation — menus, opaque sheets */
-  crest: neutral[925],
-  /** Translucent tier 1 — pair with blur; see the material model */
-  membraneThin: 'rgba(11, 15, 25, 0.62)',
-  /** Translucent tier 2 — pair with blur */
-  membraneThick: 'rgba(11, 15, 25, 0.80)',
-  /** Opaque by rule: approval and seed screens forbid translucency */
-  bedrock: neutral[975],
-} as const;
-
-/** Text roles. Ratios are quoted against `surface.shelf`. */
-export const text = {
-  /** 16.37:1 — balances, headings, body */
-  primary: neutral[50],
-  /** 8.59:1 — labels, supporting rows */
-  secondary: neutral[300],
-  /** 6.24:1 — timestamps, address middles, placeholders */
-  tertiary: neutral[400],
-  /** 4.37:1 — disabled controls */
-  disabled: neutral[500],
-  /** 6.07:1 — salmon used as ink */
-  accent: salmon[500],
-  /** 6.50:1 on a salmon fill. The only text color allowed on one. */
-  onAccent: neutral[1000],
-  /** Text over any membrane; the scrim floor guarantees the ratio */
-  onGlass: neutral[50],
-} as const;
-
-/**
- * Borders are per-plane because WCAG 1.4.11's 3:1 requirement is measured
- * against whatever the border sits on. Any border above `surface.shelf` must
- * use `raised` or stronger — `default` drops to 2.82:1 on `surface.raised`.
- */
-export const border = {
-  /** 3.08:1 on `surface.shelf` */
-  default: neutral[600],
-  /** 3.99:1 on `surface.raised`, 3.74:1 on `surface.crest` */
-  raised: neutral[500],
-  /** 6.24:1 on `surface.shelf` — emphasis and focus targets */
-  strong: neutral[400],
-  /** Decorative only. Nothing meaningful may depend on seeing this line. */
-  hairline: 'rgba(199, 211, 232, 0.10)',
-} as const;
-
-/**
- * Status ink, hue-separated from salmon so errors never read as brand.
- *
- * The `*Tint` values are the tinted notice surfaces — faint washes that sit
- * *under* status ink, never carry text contrast of their own. Their values are
- * inherited unchanged from the retired `colors.status.*Background` layer, so
- * the migration onto these names is a rename, not a repaint.
- * `warningTintBorder` is the one stroke the old layer shipped alongside them.
- */
-export const status = {
-  success: success[500],
-  danger: danger[500],
-  warning: warning[500],
-  successFill: success[700],
-  dangerFill: danger[700],
-  warningFill: warning[700],
-  /** Tinted notice surface under success ink. */
-  successTint: 'rgba(76, 175, 80, 0.1)',
-  /** Tinted notice surface under danger ink. */
-  dangerTint: 'rgba(239, 68, 68, 0.1)',
-  /** Tinted notice surface under warning ink. */
-  warningTint: 'rgba(255, 171, 0, 0.1)',
-  /** The stroke a warning tint wears when it needs an edge. Decorative. */
-  warningTintBorder: 'rgba(255, 171, 0, 0.3)',
-} as const;
-
-/**
- * Price movement. The previous lime `#80ff54` is retired — it was the single
- * most generic "crypto app" value in the palette, and it collided with the
- * success ramp for no benefit.
- */
-export const change = {
-  positive: success[500],
-  negative: danger[500],
-  neutral: neutral[400],
-} as const;
-
-/**
- * Interaction states, applied as an overlay on any surface so one system
- * covers every control instead of each component inventing its own.
- *
- * `focusVisible` is a ring, never a removal. It is the token that was missing
- * entirely: without it a keyboard user cannot tell which control is focused,
- * which on a transaction-approval screen is a fund-safety problem, not a
- * cosmetic one.
- */
-export const state = {
-  hover: 'rgba(199, 211, 232, 0.06)',
-  press: 'rgba(199, 211, 232, 0.10)',
-  /** Ring color; pair with a 2px offset ring in `depth.abyss` */
-  focusVisible: salmon[300],
-  focusRingWidth: 2,
-  focusRingOffset: 2,
-  selectedFill: 'rgba(255, 92, 69, 0.12)',
-  selectedEdge: salmon[500],
-  disabledOpacity: 0.45,
-  loadingOpacity: 0.5,
-} as const;
-
-/** Salmon-tinted backgrounds that sit *under* salmon ink (5.29:1 composite). */
-export const accent = {
-  ink: salmon[500],
   /**
-   * Salmon as *text* on a membrane. `accent.ink` measures 3.44:1 on
-   * `membraneThick`'s worst-case composite (#3C3F47) — fine for a 26px icon
-   * (1.4.11, 3:1) but under the 4.5:1 AA floor for small text. This step
-   * clears it at 5.27:1, so an active tab label can stay salmon without the
-   * icon losing the brand step. Asserted in `contrast.test.ts`.
-   */
-  inkOnMembrane: salmon[300],
-  tint: 'rgba(255, 92, 69, 0.10)',
-  tintHover: 'rgba(255, 92, 69, 0.15)',
-  /** Fill + the only legal text color on it */
-  fill: salmon[500],
-  onFill: neutral[1000],
-} as const;
-
-/**
- * The scales motif — three appearances, three scales, three jobs.
- *
- * In this world the scales are the water column's texture and their *density
- * is a depth cue*: they say how far down you are looking, the way particulate
- * density does in real water. They are not wallpaper, not a chain indicator,
- * and not a brand stamp, so there are exactly three sanctioned uses and no
- * free-form fourth.
- *
- * Every stroke here is deliberately below the 1.4:1 luminance ceiling for a
- * non-informational stroke, which is what keeps the motif decoration rather
- * than a data channel — and what makes it safe to paint behind type.
- *
- * `patternHeight` is a multiplier on the drawing's native 26px tile.
- */
-export const scales = {
-  /** Deep field — the column's own texture, top to bottom of the ground. */
-  deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
-  deepFieldScale: 3.2,
-  /**
-   * @deprecated The field is no longer a band. It filled 180px and dissolved
-   * to nothing, which put the entire motif under the balance card and left
-   * the lower half of every screen — the empty half — bare. It is now the
-   * height of whatever it is mounted in, thinning with depth via
-   * `deepFieldFloor` instead of stopping. Kept as an export because
-   * `semantic` is read by three apps; no renderer uses it.
-   */
-  deepFieldHeight: 180,
-  /**
-   * How much of the deep field survives at the bottom of its container.
+   * Ground and surfaces, ordered by depth.
    *
-   * The field fades downward because density is the depth cue, but it fades
-   * *to* this rather than to zero: a motif that reaches zero has an end, and
-   * an end at the waterline is what made the fish read as cropped. At 0.35 of
-   * a 0.06 stroke the deepest scales measure ~1.02:1 — present, and nowhere
-   * near the 1.4:1 ceiling.
+   * The two `membrane` tiers are translucent and only guarantee their text
+   * contrast when composited over the documented scrim; opaque surfaces are
+   * safe anywhere. `bedrock` is opaque by rule, not by accident: the approval
+   * and seed-phrase screens must never show anything through them.
    */
-  deepFieldFloor: 0.35,
+  const depth = {
+    /** Window/root behind everything. No content sits directly on it. */
+    abyss: pick({ dark: neutral[1000], light: neutral[50] }),
+    /** App ground. Hosts the scales field. */
+    column: pick({ dark: neutral[975], light: neutral[25] }),
+  } as const;
+
+  const surfaceRaised = pick({ dark: neutral[900], light: neutral[0] });
+
+  const surface = {
+    /** Default opaque card */
+    shelf: pick({ dark: neutral[950], light: neutral[0] }),
+    /** Opaque card above a card */
+    raised: surfaceRaised,
+    /**
+     * The sheet's own top fade, over content scrolling under its lip.
+     *
+     * Ends on `raised` at alpha 0 rather than on `'transparent'`: the latter
+     * is black at alpha 0 in every renderer, which is a dirty band on a pale
+     * sheet and invisible on a deep one.
+     */
+    raisedFade: [surfaceRaised, withAlpha(surfaceRaised, 0)] as readonly [string, string],
+    /**
+     * Opaque top elevation — menus, opaque sheets.
+     *
+     * Deviation from the spec table's `neutral-25` (a row the spec marks
+     * "derived", not drawn): `neutral-25` is also `depth.column`, so a menu
+     * would land in the app's own ground, and `text.tertiary` measures 4.01:1
+     * on it — under AA on the surface menus put their supporting copy. On a
+     * light ground elevation is carried by the shadow (`createShadows`), not
+     * by a lighter plane, so the top elevation is the same white card.
+     */
+    crest: pick({ dark: neutral[925], light: neutral[0] }),
+    /**
+     * Translucent tier 1 — pair with blur; see the material model.
+     *
+     * Lowered from 0.62 (2026-09-01, owner: what lies under a sheet or a card
+     * must show through). The thermocline's only remaining thin-tier consumer
+     * is content — Card's `surface` tone, and the token rows built on it — so
+     * the worst case that governs the alpha is what actually sits under a
+     * card: the water column's own ground (`water.gradient`), not an arbitrary
+     * bright backdrop. `contrast.test.ts` asserts `text.primary` stays ≥4.5:1
+     * against that ground.
+     *
+     * The light values are the same idea with the ink inverted: a card on a
+     * pale ground is *white at high alpha*, not deep-neutral ink, so the
+     * ground still shows through and the card still reads as a white plane
+     * with a `border.default` hairline. `rgba(11, 15, 25, 0.48)` over
+     * `neutral-25` is a grey slab — which is exactly what the first light
+     * screenshot showed (owner, 2026-09-01).
+     */
+    membraneThin: pick({
+      dark: 'rgba(11, 15, 25, 0.48)',
+      light: 'rgba(255, 255, 255, 0.85)',
+    }),
+    /**
+     * Translucent tier 2 — pair with blur.
+     *
+     * Lowered from 0.80 (2026-09-01, same ruling). Still measured against
+     * `water.gradient`'s worst case in `contrast.test.ts`. The light value is
+     * white at a higher alpha than the thin tier, for the same reason the dark
+     * pair differ: chrome that floats over scrolling content lets less
+     * through than a card does.
+     */
+    membraneThick: pick({
+      dark: 'rgba(11, 15, 25, 0.66)',
+      light: 'rgba(255, 255, 255, 0.95)',
+    }),
+    /** Opaque by rule: approval and seed screens forbid translucency */
+    bedrock: pick({ dark: neutral[975], light: neutral[0] }),
+  } as const;
+
   /**
-   * @deprecated The `fish` variant no longer has a call site: salmon fills now
-   * carry the flesh texture (`FleshBackground`, `theme/flesh.ts`), because a
-   * filled button is mass rather than surface and because the seigaiha tile is
-   * taller than a pill, so it reads as a stamp applied on top. Kept because
-   * `ScalesVariant` is a public export of `@salmon/ui` with three apps behind
-   * it; removing it is a contract change that needs a human's sign-off.
+   * Text roles. Dark ratios are quoted against `surface.shelf`, light ratios
+   * against the white card `surface.shelf` becomes.
    */
-  fishStroke: 'rgba(7, 9, 17, 0.10)',
-  fishScale: 1,
-  /** Seigaiha tile scale shared by the refraction and membrane variants. */
-  refractionScale: 0.5,
+  const text = {
+    /** 16.37:1 dark / 13.72:1 light — balances, headings, body */
+    primary: pick({ dark: neutral[50], light: neutral[850] }),
+    /**
+     * 8.59:1 dark / 8.75:1 light — labels, supporting rows.
+     *
+     * The `.pen` draws `#667085` (≈ `neutral-500`); the spec table steps that
+     * to `neutral-600` for headroom. One further step, because `tertiary` is
+     * forced onto `neutral-600` by the AA floor below and the two roles have
+     * to stay a visible step apart. The light ladder (13.72 / 8.75 / 6.03)
+     * mirrors the dark one (16.37 / 8.59 / 6.24) almost exactly.
+     */
+    secondary: pick({ dark: neutral[300], light: neutral[700] }),
+    /**
+     * 6.24:1 dark / 6.03:1 light — timestamps, address middles, placeholders.
+     *
+     * This role is text, so 1.4.3 applies. The `.pen`'s muted `#98A2B3`
+     * (≈ `neutral-400`) measures 2.98:1 on white and the spec table's
+     * `neutral-500` measures 4.25:1 — both under the 4.5:1 floor.
+     * `neutral-600` is the first step that clears it. `neutral-500` is still
+     * the right step for a *boundary* (3:1), which is what `input.edge` and
+     * `step.inactive` take below.
+     */
+    tertiary: pick({ dark: neutral[400], light: neutral[600] }),
+    /** 4.37:1 dark — disabled controls. Non-text use only in light. */
+    disabled: pick({ dark: neutral[500], light: neutral[400] }),
+    /** 6.07:1 dark / 5.48:1 light — salmon used as ink */
+    accent: pick({ dark: salmon[500], light: salmon[700] }),
+    /**
+     * 6.50:1 on a salmon fill, in both modes. The only text color allowed on
+     * one, and one of the two theme-invariant values (DESIGN.md §Two modes).
+     * The `.pen` draws white on the brand fill; rejected at 3.06:1.
+     */
+    /**
+     * Ink on a dark scrim band (an NFT tile's name over its artwork). The
+     * scrim is dark in both modes, so its ink is invariant: never the mode's
+     * primary, which is dark in light.
+     */
+    onScrim: neutral[50],
+    onScrimSecondary: neutral[300],
+    onAccent: neutral[1000],
+  } as const;
+
   /**
-   * The strip's horizontal sweep — caustic cyan through `salmon-300` to
-   * `success-300`, DESIGN.md §the refraction strip. The direction's only
-   * iridescence; composites measure under the 1.4:1 decorative ceiling.
+   * Borders are per-plane because WCAG 1.4.11's 3:1 requirement is measured
+   * against whatever the border sits on. Any border above `surface.shelf` must
+   * use `raised` or stronger — `default` drops to 2.82:1 on `surface.raised`.
    */
-  refractionSweep: ['#9FE0EF', salmon[300], success[300]],
+  const border = {
+    /**
+     * 3.08:1 on dark `surface.shelf`. In light this is the `.pen`'s decorative
+     * card hairline (`#E4E7EC` ≈ `neutral-100`, 1.19:1 on white) — a
+     * decorative edge, exempt from 1.4.11. Anything that must be *seen* in
+     * light uses `border.raised` or `border.strong`.
+     */
+    default: pick({ dark: neutral[600], light: neutral[100] }),
+    /** 3.99:1 on dark `surface.raised`; 4.27:1 on the light white card */
+    raised: pick({ dark: neutral[500], light: neutral[500] }),
+    /**
+     * Emphasis and focus targets — 6.24:1 dark, 6.03:1 light.
+     *
+     * Deviation from the spec table, which maps this to the `.pen`'s
+     * `border-strong` (`#CDD2DA` ≈ `neutral-200`, 1.30:1 on white). This token
+     * is load-bearing — chip outlines, hovered outlined buttons, the scanner's
+     * viewfinder corners — so it keeps the dark mode's job and its ratio; the
+     * `.pen`'s stronger *decorative* edge is `border.default`'s neighbourhood.
+     */
+    strong: pick({ dark: neutral[400], light: neutral[600] }),
+    /** Decorative only. Nothing meaningful may depend on seeing this line. */
+    hairline: pick({
+      dark: 'rgba(199, 211, 232, 0.10)',
+      light: 'rgba(22, 28, 45, 0.08)',
+    }),
+  } as const;
+
   /**
-   * The membrane field's ink — the 0.5× seigaiha over the *whole* thermocline
-   * surface, drawn dark (owner, 2026-08-19: "quiero que estén oscuras las
-   * escamas"). Dark grain in the membrane's own ink, one continuous field with
-   * no brighter edge — the light sweep read as a seam where the strip and the
-   * field overlapped. Near-black at 0.45 measures ~1.06:1 on `surface.crest`,
-   * under the 1.4:1 decorative ceiling. Alpha lives here, deep-field style;
-   * the container paints it at full opacity. Texture, not transparency, so it
-   * survives the opaque rung.
+   * Status ink, hue-separated from salmon so errors never read as brand.
+   *
+   * The `*Tint` values are the tinted notice surfaces — faint washes that sit
+   * *under* status ink, never carry text contrast of their own. The dark
+   * values are inherited unchanged from the retired `colors.status.*Background`
+   * layer; the light ones are the `.pen`'s soft washes, now the `50` step of
+   * each status ramp.
+   *
+   * `*Fill` is mode-invariant: a filled status control is the `700` step in
+   * both modes, and the ink on it is light in both modes — it is **not**
+   * `text.primary` in light. `contrast.test.ts` pins that.
    */
-  membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
-} as const;
+  const status = {
+    success: pick({ dark: success[500], light: success[700] }),
+    danger: pick({ dark: danger[500], light: danger[700] }),
+    warning: pick({ dark: warning[500], light: warning[700] }),
+    successFill: success[700],
+    dangerFill: danger[700],
+    warningFill: warning[700],
+    /**
+     * The only ink allowed on a `*Fill`, and mode-invariant like the fills
+     * themselves.
+     *
+     * A filled status control is the `700` step in both modes, so what it
+     * carries is light ink in both modes. In dark that happens to equal
+     * `text.primary`, which is how the destructive button was written before
+     * this token existed; in light `text.primary` is `neutral-850` and
+     * measures 2.69:1 on the success fill. Naming the pairing is what stops a
+     * light-mode migration from carrying that bug in mechanically.
+     * `contrast.test.ts` asserts AA on all three fills, in both modes.
+     */
+    onFill: neutral[50],
+    /** Tinted notice surface under success ink. */
+    successTint: pick({ dark: 'rgba(76, 175, 80, 0.1)', light: success[50] }),
+    /** Tinted notice surface under danger ink. */
+    dangerTint: pick({ dark: 'rgba(239, 68, 68, 0.1)', light: danger[50] }),
+    /** Tinted notice surface under warning ink. */
+    warningTint: pick({ dark: 'rgba(255, 171, 0, 0.1)', light: warning[50] }),
+    /** The stroke a warning tint wears when it needs an edge. Decorative. */
+    warningTintBorder: pick({ dark: 'rgba(255, 171, 0, 0.3)', light: warning[500] }),
+  } as const;
+
+  /**
+   * Price movement. The previous lime `#80ff54` is retired — it was the single
+   * most generic "crypto app" value in the palette, and it collided with the
+   * success ramp for no benefit.
+   *
+   * Light takes the same `700` steps as the status inks: a `500` step is
+   * chosen to be readable on deep neutrals and measures under 2:1 on white.
+   */
+  const change = {
+    positive: pick({ dark: success[500], light: success[700] }),
+    negative: pick({ dark: danger[500], light: danger[700] }),
+    neutral: pick({ dark: neutral[400], light: neutral[500] }),
+  } as const;
+
+  /**
+   * Interaction states, applied as an overlay on any surface so one system
+   * covers every control instead of each component inventing its own.
+   *
+   * `focusVisible` is a ring, never a removal. It is the token that was missing
+   * entirely: without it a keyboard user cannot tell which control is focused,
+   * which on a transaction-approval screen is a fund-safety problem, not a
+   * cosmetic one. On a light ground the ring steps to `salmon-700` — the
+   * lighter brand steps measure under 3:1 on `depth.column`.
+   */
+  const state = {
+    hover: pick({ dark: 'rgba(199, 211, 232, 0.06)', light: 'rgba(22, 28, 45, 0.06)' }),
+    press: pick({ dark: 'rgba(199, 211, 232, 0.10)', light: 'rgba(22, 28, 45, 0.10)' }),
+    /** Ring color; pair with a 2px offset ring in `depth.abyss` (dark only) */
+    focusVisible: pick({ dark: salmon[300], light: salmon[700] }),
+    focusRingWidth: 2,
+    focusRingOffset: 2,
+    selectedFill: 'rgba(255, 92, 69, 0.12)',
+    selectedEdge: pick({ dark: salmon[500], light: salmon[700] }),
+    disabledOpacity: 0.45,
+  } as const;
+
+  /** Salmon-tinted backgrounds that sit *under* salmon ink (5.29:1 composite). */
+  const accent = {
+    ink: pick({ dark: salmon[500], light: salmon[700] }),
+    /**
+     * Salmon as *text* on a membrane. `accent.ink` measures 3.44:1 on
+     * `membraneThick`'s worst-case composite (#3C3F47) — fine for a 26px icon
+     * (1.4.11, 3:1) but under the 4.5:1 AA floor for small text. This step
+     * clears it at 5.27:1, so an active tab label can stay salmon without the
+     * icon losing the brand step. Asserted in `contrast.test.ts`.
+     *
+     * Invariant while the membrane tiers are: it is ink for a dark material.
+     */
+    inkOnMembrane: salmon[300],
+    tint: pick({ dark: 'rgba(255, 92, 69, 0.10)', light: salmon[50] }),
+    tintHover: pick({ dark: 'rgba(255, 92, 69, 0.15)', light: salmon[100] }),
+    /** Fill + the only legal text color on it. Both theme-invariant. */
+    fill: salmon[500],
+    onFill: neutral[1000],
+  } as const;
+
+  /**
+   * The scales motif — three appearances, three scales, three jobs.
+   *
+   * In this world the scales are the water column's texture and their *density
+   * is a depth cue*: they say how far down you are looking, the way particulate
+   * density does in real water. They are not wallpaper, not a chain indicator,
+   * and not a brand stamp, so there are exactly three sanctioned uses and no
+   * free-form fourth.
+   *
+   * Every stroke here is deliberately below the 1.4:1 luminance ceiling for a
+   * non-informational stroke, which is what keeps the motif decoration rather
+   * than a data channel — and what makes it safe to paint behind type.
+   *
+   * `patternHeight` is a multiplier on the drawing's native 26px tile.
+   *
+   * The deep field is the one part of the material that crosses into light
+   * (owner, 2026-09-01): on the pale ground the scales are **coral**, drawn in
+   * `salmon-500` rather than in the cold near-white, because a light ink on a
+   * light ground has nothing left to say. The alpha doubles to 0.06 — light
+   * neutrals sit at the compressed end of the luminance curve, so the dark
+   * field's 0.03 measures ~1.03:1 there, exactly on the visibility floor. At
+   * 0.06 it reads as a faint coral scale field (~1.07:1) and stays far under
+   * the 1.4:1 decorative ceiling; `contrast.test.ts` pins both ends.
+   *
+   * The rest of the group is still mode-invariant: `fish` and `refraction`
+   * have no call site, and the water ramp and the membrane tiers
+   * wait for the material's own light pass (spec 021).
+   */
+  const scales = {
+    /**
+     * Deep field — the column's own texture, top to bottom of the ground.
+     *
+     * Halved from 0.06 (2026-09-01, owner: the water column scales should
+     * read as farther away). Still visible on an OLED at full brightness —
+     * ~1.05:1 on `depth.column`, above the ~1.03:1 floor — but noticeably
+     * fainter than before. Opacity only; `deepFieldScale` is unchanged.
+     */
+    deepFieldStroke: pick({
+      dark: 'rgba(199, 211, 232, 0.03)',
+      light: 'rgba(255, 92, 69, 0.06)',
+    }),
+    deepFieldScale: 3.2,
+    /**
+     * How much of the deep field survives at the bottom of its container.
+     *
+     * The field fades downward because density is the depth cue, but it fades
+     * *to* this rather than to zero: a motif that reaches zero has an end, and
+     * an end at the waterline is what made the fish read as cropped. At 0.35 of
+     * a 0.06 stroke the deepest scales measure ~1.02:1 — present, and nowhere
+     * near the 1.4:1 ceiling.
+     */
+    deepFieldFloor: 0.35,
+    /**
+     * @deprecated The `fish` variant no longer has a call site: salmon fills now
+     * carry the flesh texture (`FleshBackground`, `theme/flesh.ts`), because a
+     * filled button is mass rather than surface and because the seigaiha tile is
+     * taller than a pill, so it reads as a stamp applied on top. Kept because
+     * `ScalesVariant` is a public export of `@salmon/ui` with both apps behind
+     * it; removing it is a contract change that needs a human's sign-off.
+     */
+    fishStroke: 'rgba(7, 9, 17, 0.10)',
+    fishScale: 1,
+    /** Seigaiha tile scale the refraction variant uses. */
+    refractionScale: 0.5,
+    /**
+     * The strip's horizontal sweep — caustic cyan through `salmon-300` to
+     * `success-300`, DESIGN.md §the refraction strip. The direction's only
+     * iridescence; composites measure under the 1.4:1 decorative ceiling.
+     */
+    refractionSweep: ['#9FE0EF', salmon[300], success[300]],
+  } as const;
+
+  /**
+   * The flesh motif — the myoseptal texture inside a salmon fill.
+   *
+   * Scales are skin and belong on grounds and planes; a filled button is mass,
+   * so what it shows is the cut surface. The one rule that makes this safe to
+   * paint under a label: **the band is always lighter than the fill**, so the
+   * texture can only raise luminance and the worst case under `accent.onFill`
+   * stays exactly the flat fill's 6.50:1. A darker band, at any opacity, would
+   * turn a free guarantee into a contrast budget.
+   *
+   * Invariant: the fill it lives inside is invariant, so its texture is too.
+   *
+   * Geometry lives in `theme/flesh.ts`; this is only the ink.
+   */
+  const flesh = {
+    /** The pale myoseptal band — the lightest step of the brand ramp. */
+    band: salmon[50],
+  } as const;
+
+  /**
+   * The water itself — the ground's depth ramp and the matter suspended in it.
+   *
+   * Two parts, one job: give the column dimension so the deep field's 3.2×
+   * scales have something to be enormous *against*. A large arc with empty
+   * ground in front of it is equally readable as a small arc nearby; scale is a
+   * property of the space, not of the object.
+   *
+   * `gradient` runs top to bottom and darkens. Its top stop is the ground the
+   * both apps actually paint today (`colors.background.primary`, `neutral-950`)
+   * rather than the `depth.column` the spec names, so nothing sitting above or
+   * beside the ground — a safe-area overlay, a page header, a sheet's backdrop —
+   * grows a seam against it. The ramp deepens *from* the shipped ground; moving
+   * the ground itself is a separate change. Deeper is darker, which suggests an
+   * abyss without drawing a floor, and both stops are legal grounds: every text
+   * role that clears AA on `neutral-950` clears it by more on `neutral-1000`, so
+   * the ramp can only raise contrast.
+   *
+   * The ramp is real in both modes (spec 022). Light is rebuilt on light's own
+   * headroom rather than inverted: `neutral-25` down to `neutral-50`, the same
+   * rule as dark — nearer water above, deeper below — on the two steps a pale
+   * ground can spare before the column stops reading as water.
+   *
+   * What this deliberately does *not* include: no sand, no seabed, no ambient
+   * light shafts. The reasons are in DESIGN.md §The water column.
+   */
+  const waterGradient = pick({
+    dark: [neutral[950], neutral[1000]],
+    light: [neutral[25], neutral[50]],
+  }) as readonly [string, string];
+
+  const water = {
+    /** Ground ramp, top → bottom. Nearer water above, abyss below. */
+    gradient: waterGradient,
+    /**
+     * The seam under a fixed block, over content scrolling beneath it.
+     *
+     * Stop 0 is what tops the ground, so the fade starts there and ends on the
+     * same colour at alpha 0 — never on `'transparent'`, which every renderer
+     * reads as black at alpha 0 and which smudged a grey band across the pale
+     * ground on its way to nothing.
+     */
+    fadeTop: [waterGradient[0], withAlpha(waterGradient[0], 0)] as readonly [string, string],
+    /** The floor fade over the end of a list. Stop 1 is what floors the ground. */
+    fadeBottom: [withAlpha(waterGradient[1], 0), waterGradient[1]] as readonly [string, string],
+    /**
+     * Cold caustic light — what water returns when it catches a highlight.
+     *
+     * The one cold ink this system allows. It was promoted to a token when the
+     * wait's crest became its third consumer and three copies of a literal is
+     * drift waiting to happen; the caustic band that was one of the three has
+     * since been deleted with the receipt's entrance, so the live consumers are
+     * the press specular and the crest (DESIGN.md §The wait).
+     *
+     * It is deliberately **not** `accent.ink` (DESIGN.md §The wait: *"las ondas
+     * siguen siendo naranjas"*). Salmon on a travelling ring reads as a brand
+     * element crossing the screen; the crest is light returning off water, so it
+     * takes the colour of the material rather than of the company.
+     */
+    light: '#9FE0EF',
+    /**
+     * The wait's crest shadow — the flank beside each lit crown, as a colour
+     * and an alpha the renderer composes into one gradient stop.
+     *
+     * The crest was calibrated on the deep ground (luminance 16 of 255):
+     * ink at 0.9 there falls only ~14 levels, a third of the crown's rise,
+     * which is the 3:1 crown-to-flank split the eye reads as relief. The
+     * same 0.9 on the pale ground falls ~220 levels and the flank shouts
+     * while the coral crown whispers (owner, on device, 2026-09-02). Light
+     * rebuilds the split from the rule rather than inverting the number:
+     * the mode's ink at 0.04 falls ~19 levels under a crown that sits ~54
+     * below the ground — `contrast.test.ts` holds both modes to the band.
+     */
+    crestShadow: pick({
+      dark: { color: neutral[1000], alpha: 0.9 },
+      light: { color: neutral[900], alpha: 0.04 },
+    }),
+  } as const;
+
+  /**
+   * Loading-state shimmer. Two neutral steps, not one, so the sweep between
+   * them reads as motion. In dark, `surface.crest` only cleared 1.07:1 against
+   * `surface.raised` — not enough to see move — so the highlight steps to
+   * `neutral-800`, the nearest ramp step that clears the visibility floor
+   * (1.38:1, asserted in `contrast.test.ts`).
+   *
+   * Light deviates from the spec table's `neutral-50 / neutral-100`: those two
+   * steps measure 1.14:1, under the same 1.3:1 floor the dark pair is held to
+   * (light neutrals sit at the compressed end of the luminance curve, so
+   * adjacent steps buy almost no ratio). The visibility floor is the
+   * requirement and the steps are derived, so the pair moves to
+   * `neutral-200 / neutral-50` — 1.45:1, and the sweep runs lighter, which is
+   * the direction a shimmer runs on a light ground.
+   *
+   * Consumer: `Skeleton`.
+   */
+  const skeleton = {
+    base: pick({ dark: surface.raised, light: neutral[200] }),
+    highlight: pick({ dark: neutral[800], light: neutral[50] }),
+  } as const;
+
+  /**
+   * Text-entry fields. From the legacy `colors.input.background`
+   * (`rgba(64, 73, 98, 0.2)`, composited it lands within a few hex steps of
+   * `surface.raised`) and `colors.input.border` (`neutral-600`). Placeholder
+   * ink reuses `text.tertiary`, the same role the legacy `colors.text.tertiary`
+   * doc comment already named as "also used as placeholder color".
+   *
+   * In light the field's ground is the card it sits on, so the *edge* is what
+   * makes it a field: `neutral-500`, 4.27:1, well over the 3:1 a form control's
+   * boundary is held to (1.4.11). `border.default`'s light step is decorative
+   * and would leave the field invisible.
+   *
+   * Consumers: `TextField`, `AmountInput`, `RecipientInput`.
+   */
+  const input = {
+    ground: surface.raised,
+    edge: pick({ dark: border.default, light: neutral[500] }),
+    placeholder: text.tertiary,
+  } as const;
+
+  /**
+   * Full-bleed scrims — the wash behind a sheet, dialog, or hovered/pressed
+   * row. In dark both are `depth.abyss` at the alpha the legacy layer already
+   * used, so the migration is a rename of the alpha, not a re-tune of it. In
+   * light they keep the alphas and take `neutral-900` as their ink: a scrim
+   * darkens whatever it covers in both modes.
+   *
+   * `backdrop` takes `colors.dialog.overlay`'s alpha (0.7) rather than
+   * `colors.sheet.backdrop`'s fully-opaque black — the dialog value is the one
+   * every current sheet/dialog consumer actually renders; the plain-opaque
+   * form is a stronger scrim than any live surface uses today.
+   * Consumers: `BaseDialog`, `BaseSheetDialog` (`backdrop`); hover/press
+   * overlays on dark imagery (`scrim`, from `colors.overlay.darkHover`).
+   */
+  const overlay = {
+    backdrop: pick({ dark: 'rgba(7, 9, 17, 0.7)', light: 'rgba(22, 28, 45, 0.7)' }),
+    /** The press/selection wash on a card (was colors.interactive.highlight). */
+    highlight: pick({ dark: 'rgba(255, 255, 255, 0.2)', light: 'rgba(22, 28, 45, 0.2)' }),
+    scrim: pick({ dark: 'rgba(7, 9, 17, 0.9)', light: 'rgba(22, 28, 45, 0.9)' }),
+  } as const;
+
+  /**
+   * The bottom-sheet drag handle. From `colors.sheet.handle` (`#b9b9b9`,
+   * 4.85:1 on `surface.shelf`) — close enough to `text.tertiary` that the step
+   * is a rename, not a re-tune. Consumer: `BottomSheetContainer`'s handle bar.
+   */
+  const sheet = {
+    handle: text.tertiary,
+  } as const;
+
+  /**
+   * Step/progress indicators (onboarding dots, multi-step forms). From
+   * `colors.step.active` (`#FF5C45`, exactly `salmon-500`) and
+   * `colors.step.inactive` (`rgba(255, 255, 255, 0.3)`, an translucent white
+   * that reads as `border.default` opaque on the deep-water ground).
+   *
+   * An inactive step is a UI boundary that carries meaning — it says how many
+   * steps remain — so in light it takes `neutral-500` (3:1 floor) rather than
+   * `border.default`'s decorative hairline.
+   *
+   * Consumer: `StepIndicator`.
+   */
+  const step = {
+    active: accent.ink,
+    inactive: pick({ dark: border.default, light: neutral[500] }),
+  } as const;
+
+  /**
+   * The QR scanner overlay — its own isolated sub-system, same as it was in
+   * `colors.scanner`. The legacy hexes (`#1a1a2e`, `#2a2a4e`, `#8b8b9e`,
+   * `#6b6b7e`, `#4a4a6e`) were off-palette (no hue-222 blue bias); every step
+   * below is the nearest ramp/role that reads the same depth on the ground.
+   *
+   * Theme-invariant by ruling (spec 021): a camera viewfinder is always dark,
+   * whatever mode the app is in, so these are the dark steps in both — written
+   * as ramp steps rather than as `depth.*` so a light mode cannot brighten
+   * them by accident.
+   *
+   * Consumer: `QRScanner` / `ScanScreen`.
+   */
+  const scanner = {
+    /** From `colors.scanner.background` (`#1a1a2e`) — the camera view's ground. */
+    ground: neutral[1000],
+    /** From `colors.scanner.surface` (`#2a2a4e`) — the mask panel around the scan window. */
+    frame: neutral[900],
+    /** From `colors.scanner.button` (`#4a4a6e`) — the viewfinder corner brackets. */
+    corner: neutral[400],
+    /**
+     * From `colors.scanner.textSecondary`/`textTertiary` (`#8b8b9e`/`#6b6b7e`,
+     * two tones collapsed to one) — the instruction copy under the scan window.
+     */
+    hint: neutral[300],
+  } as const;
+
+  /**
+   * Chain identity where it has to be *read* rather than recognised.
+   *
+   * §Chain identity says identity is a mark or a labelled chip, never a tint.
+   * The balance block's next-chain hint — "→ BTC", "← SOL" — is the one place
+   * a chain's own hue is allowed on type, and only because the text is
+   * already saying the whole thing: the hue is a second channel on a cue that
+   * reads without it, never the channel itself.
+   *
+   * A hue only gets the type if it earns it on this mode's ground. Measured
+   * (`contrast.test.ts`) against the worst of `depth.column` and both stops of
+   * `water.gradient`:
+   *
+   * | hue            | dark        | light       |
+   * | -------------- | ----------- | ----------- |
+   * | amber (BTC)    | 8.64–9.26   | 1.89–2.02   |
+   * | purple (SOL)   | 4.38–4.70   | 3.74–3.98   |
+   * | indigo (ETH)   | 4.15–4.45   | 3.94–4.20   |
+   *
+   * The owner's rulings (2026-09-02): the symbol carries the hue as much as
+   * the arrow does — "SOL" in Solana's purple, "BTC" in Bitcoin's amber —
+   * and it does so in **both modes**, floor or no floor. The hint is a cue
+   * beside a row of dots, not body copy; its text is the channel and the
+   * hue rides on it. Measured for the record: purple and indigo clear 3:1
+   * in both modes, amber clears it in dark only and sits at 1.89:1 on the
+   * pale ground — faint by design, the owner's call on device.
+   */
+  /**
+   * A test network reads as its mainnet: which chain you are on is the
+   * question the hue answers, and *which environment* is the chip's job
+   * (§Chain identity). One entry per `BlockchainId` so no consumer has to
+   * strip a suffix before it can ask for a colour.
+   */
+  const perNetwork = <T>(byChain: { solana: T; bitcoin: T; ethereum: T }) =>
+    ({
+      ...byChain,
+      'solana-devnet': byChain.solana,
+      'bitcoin-testnet': byChain.bitcoin,
+      'ethereum-sepolia': byChain.ethereum,
+    }) as const;
+
+  const chain = {
+    /** The hint — arrow and symbol alike — in the chain's hue where it clears 3:1. */
+    hintInk: perNetwork({
+      bitcoin: chainMarks.byChain.bitcoin,
+      solana: chainMarks.byChain.solana,
+      ethereum: chainMarks.byChain.ethereum,
+    }),
+  } as const;
+
+  return {
+    depth,
+    water,
+    surface,
+    text,
+    border,
+    status,
+    change,
+    state,
+    accent,
+    scales,
+    flesh,
+    skeleton,
+    input,
+    overlay,
+    sheet,
+    step,
+    scanner,
+    chain,
+  } as const;
+}
 
 /**
- * The flesh motif — the myoseptal texture inside a salmon fill.
+ * The deep-water token set, resolved once at module load.
  *
- * Scales are skin and belong on grounds and planes; a filled button is mass,
- * so what it shows is the cut surface. The one rule that makes this safe to
- * paint under a label: **the band is always lighter than the fill**, so the
- * texture can only raise luminance and the worst case under `accent.onFill`
- * stays exactly the flat fill's 6.50:1. A darker band, at any opacity, would
- * turn a free guarantee into a contrast budget.
- *
- * Geometry lives in `theme/flesh.ts`; this is only the ink.
+ * This is the export both apps read as a static object. It is byte-for-byte
+ * what the hand-written layer shipped before the resolver landed —
+ * `semantic.test.ts` asserts that against a frozen snapshot.
  */
-export const flesh = {
-  /** The pale myoseptal band — the lightest step of the brand ramp. */
-  band: salmon[50],
-} as const;
+export const semantic = createSemantic('dark');
 
-/**
- * The water itself — the ground's depth ramp and the matter suspended in it.
- *
- * Two parts, one job: give the column dimension so the deep field's 3.2×
- * scales have something to be enormous *against*. A large arc with empty
- * ground in front of it is equally readable as a small arc nearby; scale is a
- * property of the space, not of the object.
- *
- * `gradient` runs top to bottom and darkens. Its top stop is the ground the
- * three apps actually paint today (`colors.background.primary`, `neutral-950`)
- * rather than the `depth.column` the spec names, so nothing sitting above or
- * beside the ground — a safe-area overlay, a page header, a sheet's backdrop —
- * grows a seam against it. The ramp deepens *from* the shipped ground; moving
- * the ground itself is a separate change. Deeper is darker, which suggests an
- * abyss without drawing a floor, and both stops are legal grounds: every text
- * role that clears AA on `neutral-950` clears it by more on `neutral-1000`, so
- * the ramp can only raise contrast.
- *
- * `snow` is the marine snow's brightest floc; every particle in
- * `theme/depthField.ts` carries a multiplier ≤ 1 on it. It composites to
- * 1.27:1 on the ramp's lightest stop, under the 1.4:1 ceiling for a
- * non-informational stroke — the snow is context, never information, and it
- * obeys The Scales Exclusion Rule: no numbers, rows, addresses, inputs, seed
- * phrases, or approval surfaces behind it.
- *
- * What this deliberately does *not* include: no sand, no seabed, no ambient
- * light shafts. The reasons are in DESIGN.md §The water column.
- */
-export const water = {
-  /** Ground ramp, top → bottom. Nearer water above, abyss below. */
-  gradient: [neutral[950], neutral[1000]] as const,
-  /**
-   * Marine snow, brightest floc. Particle opacities scale this down.
-   *
-   * Lowered from 0.12 (owner, on device): the field was reading as weather
-   * rather than as water. The contrast argument is unchanged in direction and
-   * only gets safer — 1.20:1 on the ramp's lightest stop against the 1.4:1
-   * ceiling a non-informational stroke is held to.
-   */
-  snow: 'rgba(199, 211, 232, 0.09)',
-  /**
-   * Cold caustic light — what water returns when it catches a highlight.
-   *
-   * The one cold ink this system allows. It was promoted to a token when the
-   * wait's crest became its third consumer and three copies of a literal is
-   * drift waiting to happen; the caustic band that was one of the three has
-   * since been deleted with the receipt's entrance, so the live consumers are
-   * the press specular and the crest (DESIGN.md §The wait).
-   *
-   * It is deliberately **not** `accent.ink` (DESIGN.md §The wait: *"las ondas
-   * siguen siendo naranjas"*). Salmon on a travelling ring reads as a brand
-   * element crossing the screen; the crest is light returning off water, so it
-   * takes the colour of the material rather than of the company.
-   */
-  light: '#9FE0EF',
-} as const;
+export type Semantic = typeof semantic;
 
-export const semantic = {
+// The token groups as loose names, for the modules inside this package that
+// import one group rather than the whole object (`colors.ts`, the motion
+// layer, the theme tests). Dark, like `semantic` — anything that has to follow
+// the active mode reads `useTheme()` instead.
+export const {
   depth,
   water,
   surface,
@@ -314,6 +693,11 @@ export const semantic = {
   accent,
   scales,
   flesh,
-} as const;
-
-export type Semantic = typeof semantic;
+  skeleton,
+  input,
+  overlay,
+  sheet,
+  step,
+  scanner,
+  chain,
+} = semantic;

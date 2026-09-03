@@ -1,111 +1,32 @@
 /**
- * ExplorerLinkButton - Button to view transactions on blockchain explorers
+ * ExplorerLinkButton — the outlined control that opens a block explorer, or a
+ * picker of them, on the DOM.
  *
- * Migrated from packages/ui (React Native) to MUI styled components.
- * Uses window.open instead of Linking.openURL.
- *
- * Features:
- * - Single button mode opens the default explorer
- * - Menu mode with multiple explorer options via MUI Menu
+ * The mobile twin is `apps/mobile/src/components/Activity/ExplorerLinkButton.tsx`:
+ * the kit's `SecondaryButton` with the "off to the web" mark and, when there
+ * is a choice, a caret; the picker is a sheet of `ListRow`s (spec 028's DOM
+ * alternative to mobile's modal — Escape and the backdrop dismiss it).
  */
-
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import ButtonBase from '@mui/material/ButtonBase';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import type { PaperProps } from '@mui/material/Paper';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
-  colors,
-  borderRadius,
-  borderWidth,
-  getTransactionUrl,
   getAvailableExplorers,
   getDefaultExplorer,
-  fontSize,
-  fontWeight,
-  opacity,
+  getTransactionUrl,
   spacing,
-  duration,
-  easing,
-  semantic,
+  type ExplorerWithKey,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { SecondaryButton } from '../Button';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
 import type { ExplorerLinkButtonProps } from './types';
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const StyledButton = styled(ButtonBase)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  width: '100%',
-  gap: spacing.sm,
-  transition: `opacity ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
-});
-
-/**
- * A link off to an explorer. It was reading `palette.amber` — a decorative
- * badge hue with no semantic meaning, close enough to salmon to be mistaken
- * for it and not close enough to be it. Links are the textbook case for
- * accent ink: `text.accent`, 6.07:1.
- */
-const ButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.medium,
-  color: semantic.text.accent,
-});
-
-const StyledMenu = styled(Menu)({
-  '& .MuiPaper-root': {
-    backgroundColor: 'transparent',
-    boxShadow: 'none',
-  },
-});
-
-const StyledMenuItem = styled(MenuItem)({
-  padding: `${spacing.md}px ${spacing.lg}px`,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const BlurMenuPaper = React.forwardRef<HTMLDivElement, PaperProps>(function BlurMenuPaper(
-  { children, className, style, ...props },
-  ref
-) {
-  return (
-    <div ref={ref} className={className} {...props}>
-      <BlurContainer
-        style={{
-          ...(style as React.CSSProperties | undefined),
-          borderRadius: borderRadius.lg,
-        }}
-        backgroundColor="rgba(56, 63, 82, 0.20)"
-        borderColor={colors.border.default}
-        borderWidth={borderWidth.thin}
-      >
-        {children}
-      </BlurContainer>
-    </div>
-  );
-});
-
-// ============================================================================
-// Component
-// ============================================================================
+/** The explorer row's leading well. */
+const EXPLORER_BUBBLE_SIZE = 36;
 
 export function ExplorerLinkButton({
   txHash,
@@ -115,10 +36,11 @@ export function ExplorerLinkButton({
   showMenu = false,
   onPress,
   className,
+  style,
 }: ExplorerLinkButtonProps) {
   const { t } = useTranslation();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const menuOpen = Boolean(anchorEl);
+  const { text } = useSemantic();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const availableExplorers = useMemo(
     () => getAvailableExplorers(blockchain, environment),
@@ -126,101 +48,84 @@ export function ExplorerLinkButton({
   );
 
   const selectedExplorerKey = explorerKey || getDefaultExplorer(blockchain);
-
   const selectedExplorer = useMemo(
     () => availableExplorers.find((e) => e.key === selectedExplorerKey),
     [availableExplorers, selectedExplorerKey]
   );
 
   const openExplorer = useCallback(
-    (explorer: { key: string; name: string }) => {
+    (explorer: ExplorerWithKey) => {
       const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
       if (url) {
         window.open(url, '_blank', 'noopener,noreferrer');
         onPress?.(url, explorer.name);
       }
-      setAnchorEl(null);
+      setMenuVisible(false);
     },
     [blockchain, environment, txHash, onPress]
   );
 
-  const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      if (showMenu && availableExplorers.length > 1) {
-        setAnchorEl(event.currentTarget);
-      } else if (selectedExplorer) {
-        openExplorer(selectedExplorer);
-      }
-    },
-    [showMenu, availableExplorers, selectedExplorer, openExplorer]
-  );
+  const hasMenu = showMenu && availableExplorers.length > 1;
 
-  const handleClose = useCallback(() => {
-    setAnchorEl(null);
-  }, []);
+  const handlePress = useCallback(() => {
+    if (hasMenu) {
+      setMenuVisible(true);
+    } else if (selectedExplorer) {
+      openExplorer(selectedExplorer);
+    }
+  }, [hasMenu, selectedExplorer, openExplorer]);
 
   if (availableExplorers.length === 0 || !selectedExplorer) {
     return null;
   }
 
-  const buttonText =
-    showMenu && availableExplorers.length > 1
-      ? t('transactions.detail.viewOnExplorer')
-      : t('transactions.detail.viewOn', { name: selectedExplorer.name });
+  const buttonText = hasMenu
+    ? t('transactions.detail.viewOnExplorer')
+    : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
   return (
     <>
-      <BlurContainer
-        borderColor={colors.palette.amber}
-        style={{ borderRadius: borderRadius.md }}
+      <SecondaryButton
+        testID="tx-detail-explorer-link"
+        onPress={handlePress}
         className={className}
+        style={style}
+        icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
+        trailingIcon={
+          hasMenu ? <CaretDownIcon size={iconSize.sm} color={text.primary} /> : undefined
+        }
       >
-        <StyledButton
-          onClick={handleClick}
-          aria-label={buttonText}
-          data-testid="tx-detail-explorer-link"
-        >
-          <ArrowSquareOutIcon size={iconSize.sm} color={colors.palette.amber} />
-          <ButtonText>{buttonText}</ButtonText>
-          {showMenu && availableExplorers.length > 1 && (
-            <CaretDownIcon size={iconSize.sm} color={colors.palette.amber} />
-          )}
-        </StyledButton>
-      </BlurContainer>
+        {buttonText}
+      </SecondaryButton>
 
-      {showMenu && availableExplorers.length > 1 && (
-        <StyledMenu
-          anchorEl={anchorEl}
-          open={menuOpen}
-          onClose={handleClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{
-            paper: {
-              component: BlurMenuPaper,
-              sx: { width: anchorEl?.offsetWidth },
-            },
-          }}
+      {hasMenu && (
+        <BottomSheetContainer
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
+          testID="tx-detail-explorer-menu"
         >
-          {availableExplorers.map((explorer) => (
-            <StyledMenuItem key={explorer.key} onClick={() => openExplorer(explorer)}>
-              <ListItemIcon>
-                <GlobeIcon size={iconSize.md} color={colors.text.primary} />
-              </ListItemIcon>
-              <ListItemText
-                primary={explorer.name}
-                primaryTypographyProps={{
-                  sx: {
-                    fontSize: fontSize.sm,
-                    fontWeight: fontWeight.medium,
-                    color: colors.text.primary,
-                  },
-                }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+            {availableExplorers.map((explorer) => (
+              <ListRow
+                key={explorer.key}
+                testID={`tx-detail-explorer-${explorer.key}`}
+                leading={
+                  <IconBubble
+                    size={EXPLORER_BUBBLE_SIZE}
+                    shape="circle"
+                    tone="surface"
+                    icon={GlobeIcon}
+                    iconSize={iconSize.sm}
+                  />
+                }
+                title={explorer.name}
+                trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
+                onPress={() => openExplorer(explorer)}
               />
-              <ArrowSquareOutIcon size={iconSize.sm} color={colors.text.tertiary} />
-            </StyledMenuItem>
-          ))}
-        </StyledMenu>
+            ))}
+          </div>
+        </BottomSheetContainer>
       )}
     </>
   );

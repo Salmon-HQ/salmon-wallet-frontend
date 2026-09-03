@@ -41,7 +41,7 @@ beforeEach(() => {
 describe('AnalyticsClient consent gating', () => {
   it('is a no-op until consent is granted', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
     await client.whenReady();
 
     client.track('send_completed');
@@ -84,7 +84,7 @@ describe('AnalyticsClient batching', () => {
   it('flushes automatically when the batch size is reached', async () => {
     const transport = createMemoryTransport();
     const client = initAnalytics({
-      platform: 'web',
+      platform: 'extension',
       appVersion: '3.0.0',
       transport,
       batchSize: 2,
@@ -105,7 +105,7 @@ describe('AnalyticsClient strict mode', () => {
   it('throws on an invalid event when strict', async () => {
     const transport = createMemoryTransport();
     const client = initAnalytics({
-      platform: 'web',
+      platform: 'extension',
       appVersion: '3.0.0',
       transport,
       strict: true,
@@ -121,7 +121,7 @@ describe('AnalyticsClient strict mode', () => {
   it('silently drops an invalid event when not strict', async () => {
     const transport = createMemoryTransport();
     const client = initAnalytics({
-      platform: 'web',
+      platform: 'extension',
       appVersion: '3.0.0',
       transport,
       strict: false,
@@ -139,7 +139,7 @@ describe('AnalyticsClient strict mode', () => {
 describe('AnalyticsClient withdrawing consent', () => {
   it('clears the queue and the install id', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
     await client.whenReady();
 
     await client.setConsent(true);
@@ -169,7 +169,7 @@ describe('AnalyticsClient withdrawing consent', () => {
       },
     };
 
-    const client = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
     await client.whenReady();
     await client.setConsent(true);
     client.track('nft_viewed');
@@ -193,7 +193,7 @@ describe('AnalyticsClient withdrawing consent', () => {
 describe('AnalyticsClient consent persistence across restarts', () => {
   it('keeps a declined choice, and does not re-prompt', async () => {
     const first = initAnalytics({
-      platform: 'web',
+      platform: 'extension',
       appVersion: '3.0.0',
       transport: createMemoryTransport(),
     });
@@ -204,7 +204,7 @@ describe('AnalyticsClient consent persistence across restarts', () => {
     resetAnalytics();
 
     const transport = createMemoryTransport();
-    const restarted = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    const restarted = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
     await restarted.whenReady();
 
     expect(restarted.getConsent()).toBe(false);
@@ -217,7 +217,7 @@ describe('AnalyticsClient consent persistence across restarts', () => {
 
   it('keeps a granted choice', async () => {
     const first = initAnalytics({
-      platform: 'web',
+      platform: 'extension',
       appVersion: '3.0.0',
       transport: createMemoryTransport(),
     });
@@ -227,7 +227,7 @@ describe('AnalyticsClient consent persistence across restarts', () => {
     resetAnalytics();
 
     const transport = createMemoryTransport();
-    const restarted = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    const restarted = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
     await restarted.whenReady();
 
     expect(restarted.getConsent()).toBe(true);

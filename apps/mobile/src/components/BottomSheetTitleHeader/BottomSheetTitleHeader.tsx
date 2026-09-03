@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CaretLeftIcon } from '../../icons';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -12,7 +11,9 @@ import {
   s,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 import type { BottomSheetTitleHeaderProps } from './types';
 
@@ -25,6 +26,8 @@ export function BottomSheetTitleHeader({
   titleStyle,
 }: BottomSheetTitleHeaderProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const resolvedBackLabel = backAccessibilityLabel ?? t('general.back', 'Back');
   return (
     <View style={[styles.container, style]}>
@@ -38,7 +41,7 @@ export function BottomSheetTitleHeader({
           accessibilityLabel={resolvedBackLabel}
           accessibilityRole="button"
         >
-          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={colors.text.primary} />
+          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={text.primary} />
         </TouchableOpacity>
       )}
       <View pointerEvents="none" style={styles.titleContainer}>
@@ -50,31 +53,32 @@ export function BottomSheetTitleHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    minHeight: ms(componentSizes.iconSizeMedium),
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.headerPadding),
-    marginBottom: vs(spacing.lg),
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: s(spacing.headerPadding),
-    zIndex: 1,
-  },
-  titleContainer: {
-    position: 'absolute',
-    left: s(spacing.headerPadding) + ms(componentSizes.iconSizeMedium),
-    right: s(spacing.headerPadding) + ms(componentSizes.iconSizeMedium),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: ms(letterSpacing.snug, 0.3),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      minHeight: ms(componentSizes.iconSizeMedium),
+      justifyContent: 'center',
+      paddingHorizontal: s(spacing.xl),
+      marginBottom: vs(spacing.lg),
+      position: 'relative',
+    },
+    backButton: {
+      position: 'absolute',
+      left: s(spacing.xl),
+      zIndex: 1,
+    },
+    titleContainer: {
+      position: 'absolute',
+      left: s(spacing.xl) + ms(componentSizes.iconSizeMedium),
+      right: s(spacing.xl) + ms(componentSizes.iconSizeMedium),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: ms(fontSize.title),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      textAlign: 'center',
+      letterSpacing: ms(letterSpacing.snug, 0.3),
+    },
+  });

@@ -217,11 +217,12 @@ const shared = {
 } as const;
 
 /**
- * The mark-led families draw it substantially larger than the largest logo
- * token. It was reading as a badge in a lot of empty space, and on these
- * screens the mark *is* the screen — the front door, the moment of recognition.
+ * The mark-led families draw the mark at the size the wait screen emits it
+ * from — `componentSizes.markHero` — so the brand is one object at one size on
+ * every identity moment (owner, 2026-09-02; it was 177, `logoSizeLarge +
+ * 4xl`, which read as a different fish from the wait's).
  */
-const heroMarkSize = componentSizes.logoSizeLarge + spacing['4xl'];
+const heroMarkSize = componentSizes.markHero;
 const heroMark = heroMarkSize + spacing['2xl'];
 
 /** `content` keeps the mark, small, so the words own the middle of the screen. */

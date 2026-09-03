@@ -1,6 +1,5 @@
 import type { DetectedERC20Token } from '../api/services/ethereum';
 import type { TokenSelectorToken } from '../types/ui/token-selector';
-import type { TokenFeature } from '../types/ui';
 import { SOL_CONSTANTS } from './balance';
 
 // ============================================================================
@@ -108,27 +107,6 @@ export function createERC721Token(address: string, symbol?: string): TransferTok
 export function createERC1155Token(address: string, symbol?: string): TransferToken {
   return { address, decimals: 0, symbol, type: 'erc1155' };
 }
-
-// ============================================================================
-// Known Token Decimals (fallback for bridge tokens without API metadata)
-// ============================================================================
-
-export const KNOWN_DECIMALS: Record<string, number> = {
-  btc: 8,
-  eth: 18,
-  sol: 9,
-  usdc: 6,
-  usdt: 6,
-};
-
-/** Fallback logos for native/popular tokens when APIs don't return images */
-export const NATIVE_TOKEN_LOGOS: Record<string, string> = {
-  btc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  eth: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-  sol: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  usdc: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-  usdt: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-};
 
 // ============================================================================
 // Token Search / Filtering
@@ -322,12 +300,3 @@ export const DEFAULT_FEATURE_COLORS = [
   '#3B82F6',
   '#EC4899',
 ];
-
-/**
- * Returns the color for a token feature badge.
- * Uses the feature's own color if set, otherwise cycles through defaults.
- */
-export function getFeatureColor(feature: TokenFeature, index: number): string {
-  if (feature.color) return feature.color;
-  return DEFAULT_FEATURE_COLORS[index % DEFAULT_FEATURE_COLORS.length];
-}

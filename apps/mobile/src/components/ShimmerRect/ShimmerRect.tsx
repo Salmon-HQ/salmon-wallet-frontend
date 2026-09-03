@@ -1,4 +1,5 @@
 import { borderRadius, componentSizes, motionMs, ms } from '@salmon/shared';
+import type { ShimmerRectPropsBase } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,20 +12,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { curve } from '../../utils/motion';
+import { useSemantic } from '../../theme/useThemedStyles';
 
-interface ShimmerRectProps {
-  width: number;
-  height: number;
-  borderRadius?: number;
-}
+type ShimmerRectProps = ShimmerRectPropsBase;
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-
-const GRADIENT_COLORS = [
-  'rgba(255,255,255,0.08)',
-  'rgba(255,255,255,0.18)',
-  'rgba(255,255,255,0.08)',
-] as const;
 
 export const ShimmerRect: React.FC<ShimmerRectProps> = ({
   width,
@@ -50,14 +42,23 @@ export const ShimmerRect: React.FC<ShimmerRectProps> = ({
     );
   }, [translateX, isReduceMotionEnabled]);
 
+  // The band reads the mode's skeleton pair: a fixed white wash vanished on
+  // a white card.
+  const { skeleton } = useSemantic();
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
   return (
-    <View style={[styles.container, { width, height, borderRadius: radius }]}>
+    <View
+      style={[
+        styles.container,
+        { width, height, borderRadius: radius, backgroundColor: skeleton.base },
+      ]}
+    >
       <AnimatedLinearGradient
-        colors={[...GRADIENT_COLORS]}
+        colors={[skeleton.base, skeleton.highlight, skeleton.base]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={[
@@ -75,6 +76,5 @@ export const ShimmerRect: React.FC<ShimmerRectProps> = ({
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
 });

@@ -2,10 +2,16 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-afterEach(cleanup);
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -13,57 +19,40 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => {
-  type StackEntry = { screen: string; props?: unknown };
-  const useSettingsPanelStack = () => {
-    const [stack, setStack] = React.useState<StackEntry[]>([]);
-    const push = React.useCallback(
-      (screen: string, props?: unknown) => setStack((p) => [...p, { screen, props }]),
-      []
-    );
-    const pop = React.useCallback(() => setStack((p) => (p.length ? p.slice(0, -1) : p)), []);
-    const reset = React.useCallback(() => setStack([]), []);
-    return {
-      stack,
-      push,
-      pop,
-      reset,
-      current: stack.length ? stack[stack.length - 1] : null,
-      canGoBack: stack.length > 0,
-    };
-  };
-  return {
-    useSettingsPanelStack,
-    getSettingsItemTestId: (id: string) => `settings-item-${id}`,
-    trackEvent: vi.fn(),
-    semantic: { status: { danger: '#f00', dangerTint: '#400' } },
-    colors: {
-      accent: { primary: '#f60' },
-      background: { primary: '#000', card: '#111' },
-      border: { default: '#333' },
-      dialog: { overlay: '#0008' },
-      text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
-      sheet: { backdrop: '#0008' },
-    },
-    spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
-    fontSize: { label: 10, caption: 12, body: 14, heading: 18 },
-    fontWeight: { regular: 400, medium: 500, semibold: 600 },
-    letterSpacing: { label: 0.3 },
-    borderWidth: { thin: 1 },
-    shadowsCSS: { none: 'none', sheet: 'none', card: 'none' },
-    opacity: { full: 1, half: 0.5, disabled: 0.5 },
-    componentSizes: { backButtonSize: 40, drawerWidth: 320 },
-    durationMs: { fast: 150, normal: 300, medium: 250, slow: 400 },
-    useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: vi.fn() }),
-  };
-});
-
 vi.mock('../LoadingScreen', () => ({
   LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
 }));
 
+// The two "show me more" toggles read the DeveloperMode provider, not props;
+// the stack is rendered without the provider tree, so its slice is faked.
+const mockToggleDeveloperNetworks = vi.fn();
+const mockSetShowUnverifiedTokens = vi.fn();
+const mockChangeNetwork = vi.fn();
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useAccountsContext: () => [{ networkId: 'solana-devnet' }, { changeNetwork: mockChangeNetwork }],
+  useDeveloperModeSettings: () => ({
+    developerNetworks: false,
+    showUnverifiedTokens: false,
+    toggleDeveloperNetworks: mockToggleDeveloperNetworks,
+    setShowUnverifiedTokens: mockSetShowUnverifiedTokens,
+  }),
+}));
+
 import { SettingsPanelStack } from './SettingsPanelStack';
 import type { PanelRegistry } from './types';
+
+function stubMatchMedia() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+}
 
 const makeRegistry = (): PanelRegistry => ({
   accounts: () => <div data-testid="panel-accounts">A</div>,
@@ -74,24 +63,29 @@ const makeRegistry = (): PanelRegistry => ({
   language: () => <div data-testid="panel-language">A</div>,
   currency: () => <div data-testid="panel-currency">A</div>,
   explorer: () => <div data-testid="panel-explorer">A</div>,
+  appearance: () => <div data-testid="panel-appearance">A</div>,
   addressBook: () => <div data-testid="panel-addressBook">A</div>,
   trustedApps: () => <div data-testid="panel-trustedApps">A</div>,
   about: () => <div data-testid="panel-about">A</div>,
   support: () => <div data-testid="panel-support">A</div>,
 });
 
-const renderStack = (overrides?: { onClose?: () => void; panelRegistry?: PanelRegistry }) =>
-  render(
+const renderStack = (
+  overrides?: Partial<React.ComponentProps<typeof SettingsPanelStack>>,
+  mode: 'dark' | 'light' = 'dark'
+) => {
+  stubMatchMedia();
+  return renderInMode(
+    mode,
     <SettingsPanelStack
-      visible
-      onClose={overrides?.onClose ?? vi.fn()}
-      panelRegistry={overrides?.panelRegistry ?? makeRegistry()}
-      developerNetworksEnabled={false}
-      onDeveloperNetworksToggle={vi.fn()}
+      onClose={vi.fn()}
+      panelRegistry={makeRegistry()}
       onRemoveWallet={vi.fn()}
       onRemoveAllWallets={vi.fn()}
+      {...overrides}
     />
   );
+};
 
 describe('SettingsPanelStack — menu routing', () => {
   // Mocked t() returns the labelKey itself (no fallback in render path).
@@ -99,7 +93,8 @@ describe('SettingsPanelStack — menu routing', () => {
     ['settings.currency', 'panel-currency'],
     ['settings.private_key', 'panel-privateKey'],
     ['settings.display_language', 'panel-language'],
-    ['settings.explorer', 'panel-explorer'],
+    ['settings.select_explorer', 'panel-explorer'],
+    ['settings.appearance', 'panel-appearance'],
     ['settings.backup', 'panel-backup'],
     ['settings.profile_picture', 'panel-avatar'],
     ['settings.address_book', 'panel-addressBook'],
@@ -110,8 +105,7 @@ describe('SettingsPanelStack — menu routing', () => {
 
   it.each(cases)('clicking "%s" pushes %s', async (label, expectedTestId) => {
     renderStack();
-    const btn = screen.getByRole('button', { name: label });
-    fireEvent.click(btn);
+    fireEvent.click(screen.getByRole('button', { name: label }));
     await waitFor(() => {
       expect(screen.getByTestId(expectedTestId)).toBeTruthy();
     });
@@ -120,20 +114,34 @@ describe('SettingsPanelStack — menu routing', () => {
       expect(screen.queryByTestId(id)).toBeNull();
     }
   });
+
+  it('states the current choice beside a choosable row', () => {
+    renderStack({ rowValues: { language: 'English', currency: 'USD' } });
+
+    expect(screen.getByTestId('settings-item-display-language-value').textContent).toBe('English');
+    expect(screen.getByTestId('settings-item-display-currency-value').textContent).toBe('USD');
+  });
+
+  it('runs the danger actions instead of pushing a screen', () => {
+    const onRemoveWallet = vi.fn();
+    renderStack({ onRemoveWallet });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.wallets.remove_wallet' }));
+    expect(onRemoveWallet).toHaveBeenCalled();
+  });
 });
 
 describe('SettingsPanelStack — a toggle row announces once', () => {
-  // The row used to be a button wrapping a switch, so the same setting was
-  // announced twice. The switch is the only control on the row now.
+  // The switch is the only control on the row; the row itself is not a button.
   const toggles: Array<[string, string]> = [
     ['settings.developer_networks', 'settings-developer-networks-toggle'],
+    ['settings.unverified_tokens', 'settings-unverified-tokens-toggle'],
     ['settings.analytics', 'settings-analytics-toggle'],
   ];
 
   it.each(toggles)('"%s" is a switch and not also a button', (label) => {
     renderStack();
 
-    expect(screen.getByRole('checkbox', { name: label })).toBeTruthy();
+    expect(screen.getByRole('switch', { name: label })).toBeTruthy();
     expect(screen.queryByRole('button', { name: label })).toBeNull();
   });
 
@@ -143,34 +151,38 @@ describe('SettingsPanelStack — a toggle row announces once', () => {
     expect(screen.getByTestId(testId)).toBeTruthy();
   });
 
-  it('reports the toggle through the switch itself', () => {
-    const onDeveloperNetworksToggle = vi.fn();
-    render(
-      <SettingsPanelStack
-        visible
-        onClose={vi.fn()}
-        panelRegistry={makeRegistry()}
-        developerNetworksEnabled={false}
-        onDeveloperNetworksToggle={onDeveloperNetworksToggle}
-        onRemoveWallet={vi.fn()}
-        onRemoveAllWallets={vi.fn()}
-      />
-    );
+  it('writes each toggle to the shared setting, handing the session over on the way', () => {
+    renderStack();
 
+    // The developer-networks toggle carries the session's network and the
+    // switch, so turning it off on devnet lands the user on mainnet first.
     fireEvent.click(screen.getByTestId('settings-developer-networks-toggle'));
+    expect(mockToggleDeveloperNetworks).toHaveBeenCalledWith({
+      activeNetworkId: 'solana-devnet',
+      changeNetwork: mockChangeNetwork,
+    });
 
-    expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByTestId('settings-unverified-tokens-toggle'));
+    expect(mockSetShowUnverifiedTokens).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('SettingsPanelStack — the screen reads the mode', () => {
+  it('draws the danger label in the light danger ink under light', () => {
+    renderStack(undefined, 'light');
+    const light = createSemantic('light').status.danger;
+    expect(light).not.toBe(createSemantic('dark').status.danger);
+    expect(screen.getByText(/settings\.sections\.danger_zone/i).style.color).toBe(
+      asRenderedColor(light)
+    );
   });
 });
 
 describe('SettingsPanelStack — a rebuilt registry does not remount the panel', () => {
   // The registries in the apps are built by a `useMemo` whose deps include app
-  // state (the active account, among others), so every entry gets a fresh
-  // function identity whenever that state moves. Mounting the entry as a
-  // component type made React read that as a different component and throw the
-  // panel's state away mid-flight: adding an account switched the active
-  // account, tore down the add panel, and lost the completion handoff, so the
-  // panel sat on top of the accounts list instead of returning to it.
+  // state, so every entry gets a fresh function identity whenever that state
+  // moves. Mounting the entry as a component type made React read that as a
+  // different component and throw the panel's state away mid-flight.
   function Counting(): React.ReactElement {
     const [count, setCount] = React.useState(0);
     return (
@@ -188,11 +200,8 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
       <>
         <button type="button" data-testid="rerender" onClick={() => force((n) => n + 1)} />
         <SettingsPanelStack
-          visible
           onClose={vi.fn()}
           panelRegistry={registry}
-          developerNetworksEnabled={false}
-          onDeveloperNetworksToggle={vi.fn()}
           onRemoveWallet={vi.fn()}
           onRemoveAllWallets={vi.fn()}
         />
@@ -201,7 +210,8 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
   }
 
   it('keeps the open panel’s state when the parent re-renders', async () => {
-    render(<Harness />);
+    stubMatchMedia();
+    renderInMode('dark', <Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'settings.accounts.title' }));
     await waitFor(() => expect(screen.getByTestId('panel-counter')).toBeTruthy());
 
@@ -215,9 +225,6 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
 });
 
 describe('SettingsPanelStack — a panel raises the wait on the stack', () => {
-  // The wait a panel raises is hosted by the stack, outside the drawer: the
-  // add-account flow closes settings the moment its work lands, and a wait
-  // rendered inside the drawer would be unmounted with it mid-wave.
   const waitingRegistry = (): PanelRegistry => ({
     ...makeRegistry(),
     about: ({ onWait }) => (
@@ -255,5 +262,10 @@ describe('SettingsPanelStack — a panel raises the wait on the stack', () => {
     fireEvent.click(screen.getByTestId('panel-close-trigger'));
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('opens straight onto a seeded panel, without flashing the root first', () => {
+    renderStack({ initialPanels: [{ screen: 'backup' }] });
+    expect(screen.getByTestId('panel-backup')).toBeTruthy();
   });
 });

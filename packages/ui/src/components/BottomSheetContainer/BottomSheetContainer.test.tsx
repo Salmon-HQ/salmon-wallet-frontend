@@ -1,0 +1,197 @@
+/**
+ * @vitest-environment jsdom
+ */
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createSemantic, ThemeProvider } from '@salmon/shared';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
+import { BottomSheetContainer } from './BottomSheetContainer';
+
+function stubMatchMedia(reduceMotion: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes('prefers-reduced-motion') && reduceMotion,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+}
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+
+describe('BottomSheetContainer', () => {
+  it('renders content and the dark backdrop token when visible', () => {
+    stubMatchMedia(false);
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={vi.fn()} testID="sheet">
+        <div>sheet body</div>
+      </BottomSheetContainer>
+    );
+
+    expect(screen.getByTestId('sheet').tagName).toBe('DIALOG');
+    expect(screen.getByText('sheet body')).toBeTruthy();
+  });
+
+  it('renders nothing when not visible', () => {
+    stubMatchMedia(false);
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible={false} onClose={vi.fn()} testID="sheet">
+        <div>sheet body</div>
+      </BottomSheetContainer>
+    );
+
+    expect(screen.queryByTestId('sheet')).toBeNull();
+  });
+
+  it('draws the drag handle from the mode-correct token, both modes', () => {
+    stubMatchMedia(false);
+    const dark = createSemantic('dark').sheet.handle;
+    const light = createSemantic('light').sheet.handle;
+    expect(dark).not.toBe(light);
+
+    const { unmount } = renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={vi.fn()}>
+        <div>content</div>
+      </BottomSheetContainer>
+    );
+    const handleDark = document.querySelector('[style*="border-radius: 9999px"]');
+    expect(handleDark?.getAttribute('style')).toContain(asRenderedColor(dark));
+    unmount();
+
+    renderInMode(
+      'light',
+      <BottomSheetContainer visible onClose={vi.fn()}>
+        <div>content</div>
+      </BottomSheetContainer>
+    );
+    const handleLight = document.querySelector('[style*="border-radius: 9999px"]');
+    expect(handleLight?.getAttribute('style')).toContain(asRenderedColor(light));
+  });
+
+  it('requests close on a backdrop click', () => {
+    stubMatchMedia(false);
+    const onClose = vi.fn();
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={onClose} testID="sheet">
+        <div>content</div>
+      </BottomSheetContainer>
+    );
+
+    const dialog = screen.getByTestId('sheet');
+    const backdrop = dialog.firstElementChild as HTMLElement;
+    fireEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays open on a backdrop click when not dismissible', () => {
+    stubMatchMedia(false);
+    const onClose = vi.fn();
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={onClose} dismissible={false} testID="sheet">
+        <div>content</div>
+      </BottomSheetContainer>
+    );
+
+    const dialog = screen.getByTestId('sheet');
+    const backdrop = dialog.firstElementChild as HTMLElement;
+    fireEvent.click(backdrop);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('requests close on the platform Escape signal, and is swallowed when not dismissible', () => {
+    stubMatchMedia(false);
+    const onClose = vi.fn();
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={onClose} dismissible={false} testID="sheet">
+        <div>content</div>
+      </BottomSheetContainer>
+    );
+
+    const dialog = screen.getByTestId('sheet');
+    const cancelled = fireEvent(dialog, new Event('cancel', { cancelable: true }));
+    // Always prevented, so the dialog never self-closes ahead of the exit animation.
+    expect(cancelled).toBe(false);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('rises from the closed position: 100% on the first paint, 0 one frame later', async () => {
+    stubMatchMedia(false);
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    render(
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible onClose={vi.fn()} testID="sheet">
+          <div>content</div>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+    const sheet = screen.getByTestId('sheet').querySelector('div + div') as HTMLElement;
+    // The closed position is what the browser paints first — and it is forced
+    // into the style tree before the open transform is scheduled.
+    expect(sheet.style.transform).toBe('translateY(100%)');
+    expect(rect).toHaveBeenCalled();
+
+    await waitFor(() => expect(sheet.style.transform).toBe('translateY(0)'));
+    expect(sheet.style.transition).toContain('transform');
+    rect.mockRestore();
+  });
+
+  it('rises the same way when it was already mounted closed — the path every sheet takes', async () => {
+    // The case above mounts with `visible` already true, which only the very
+    // first sheet of a session does. Every real sheet is mounted closed by the
+    // screen that owns it and flipped open later, and that path runs the effect
+    // twice — once before the dialog exists. The rise has to survive that.
+    stubMatchMedia(false);
+    const Host = ({ open }: { open: boolean }) => (
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible={open} onClose={vi.fn()} testID="sheet">
+          <div>content</div>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+    const { rerender } = render(<Host open={false} />);
+    expect(screen.queryByTestId('sheet')).toBeNull();
+
+    rerender(<Host open />);
+    const sheet = screen.getByTestId('sheet').querySelector('div + div') as HTMLElement;
+    expect(sheet.style.transform).toBe('translateY(100%)');
+
+    await waitFor(() => expect(sheet.style.transform).toBe('translateY(0)'));
+    expect(sheet.style.transition).toContain('transform');
+  });
+
+  it('fires onClosed once the exit has actually left, under reduced motion', async () => {
+    stubMatchMedia(true);
+    const onClosed = vi.fn();
+    const sheet = (visible: boolean) => (
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer
+          visible={visible}
+          onClose={vi.fn()}
+          onClosed={onClosed}
+          testID="sheet"
+        >
+          <div>content</div>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+    const { rerender } = render(sheet(true));
+
+    rerender(sheet(false));
+
+    await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('sheet')).toBeNull();
+  });
+});

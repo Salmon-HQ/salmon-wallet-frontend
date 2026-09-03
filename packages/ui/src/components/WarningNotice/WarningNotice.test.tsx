@@ -1,45 +1,29 @@
 /**
  * @vitest-environment jsdom
  */
-
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { createSemantic } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../utils/styled', () => ({
-  styled: (Component: React.ElementType) => () => Component,
-}));
-
-vi.mock('@salmon/shared', () => ({
-  semantic: {
-    status: { warning: '#fc0', warningTint: '#fc02', danger: '#f43', dangerTint: '#f432' },
-  },
-  colors: {
-    text: { primary: '#fff' },
-  },
-  borderRadius: { lg: 16 },
-  fontSize: { sm: 14 },
-  fontWeight: { semibold: 600 },
-  spacing: { sm: 8, md: 12 },
-}));
-
+import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 import { WarningNotice } from './WarningNotice';
 
-describe('WarningNotice', () => {
-  afterEach(() => {
-    cleanup();
-  });
+afterEach(cleanup);
 
-  it('renders title and body', () => {
-    render(<WarningNotice title="Heads up">Something went wrong</WarningNotice>);
+describe('WarningNotice', () => {
+  it('renders title and body, and announces as an alert', () => {
+    renderInMode('dark', <WarningNotice title="Heads up">Something went wrong</WarningNotice>);
 
     expect(screen.getByText('Heads up')).toBeTruthy();
     expect(screen.getByText('Something went wrong')).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
   });
 
   it('renders the optional action slot and keeps it interactive', () => {
     const onRetry = vi.fn();
-    render(
+    renderInMode(
+      'dark',
       <WarningNotice
         tone="warning"
         title="Stalled"
@@ -54,7 +38,23 @@ describe('WarningNotice', () => {
   });
 
   it('renders no action container when no action is given', () => {
-    render(<WarningNotice title="No action" />);
+    renderInMode('dark', <WarningNotice title="No action" />);
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('takes the danger accent by default, in the dark tokens', () => {
+    renderInMode('dark', <WarningNotice title="Danger" testID="notice" />);
+    expect(screen.getByTestId('notice').style.borderColor).toBe(
+      asRenderedColor(createSemantic('dark').status.danger)
+    );
+  });
+
+  it('takes the warning accent for the warning tone, in light mode', () => {
+    const dark = createSemantic('dark').status.warning;
+    const light = createSemantic('light').status.warning;
+    expect(dark).not.toBe(light);
+
+    renderInMode('light', <WarningNotice tone="warning" title="Warn" testID="notice" />);
+    expect(screen.getByTestId('notice').style.borderColor).toBe(asRenderedColor(light));
   });
 });

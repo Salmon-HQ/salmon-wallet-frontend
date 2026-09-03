@@ -1,10 +1,9 @@
 /**
  * The slot grid, measured on the real extension surface.
  *
- * Web and the extension render the *same* `packages/ui` AuthFlow components,
- * and `apps/web/.playwright/tests/onboarding-grid.spec.ts` measures all eight
- * screens of both families across two viewports and two languages. What this
- * spec adds is what only the extension can prove: that the same slots land at
+ * The web app (and its equivalent onboarding-grid spec) was retired on
+ * 2026-09-02; the extension is now the only DOM app. What this
+ * spec proves: that the slots land at
  * the same Y inside the extension's own surface — a 360x600 action popup whose
  * `html`, `body` and `#root` all set `overflow: hidden`, so anything past the
  * fold is clipped rather than scrollable.

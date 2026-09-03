@@ -1,32 +1,16 @@
 /**
  * AddressAddPanel - Add new contact to address book (mobile)
+ *
+ * The fields are `AddressForm`'s; this panel only names the screen and
+ * commits a new contact on the active network.
  */
 
-import React, { useCallback, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { QrCodeIcon, iconSize } from '../../../icons';
 
-import {
-  colors,
-  spacing,
-  borderRadius,
-  fontFamilyNative,
-  useAddressBookForm,
-  type AddressBookAddBaseProps,
-  type BlockchainType,
-  fontSize,
-  semantic,
-} from '@salmon/shared';
-import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { PrimaryButton } from '../../Button';
-import { InputAddress } from '../../InputAddress';
-import { QRScanner } from '../../QRScanner';
-import type { QRScanResult } from '../../QRScanner';
-
-// ============================================================================
-// Component
-// ============================================================================
+import { useAddressAddPanel, type BlockchainType } from '@salmon/shared';
+import { AddressForm } from '../../AddressForm';
+import type { AddressAddPanelProps } from './types';
 
 export function AddressAddPanel({
   activeNetworkId,
@@ -34,143 +18,25 @@ export function AddressAddPanel({
   activeBlockchain,
   onSave,
   onBack,
-}: AddressBookAddBaseProps) {
+}: AddressAddPanelProps) {
   const { t } = useTranslation();
-  const form = useAddressBookForm({ networkId: activeNetworkId });
-  const [showScanner, setShowScanner] = useState(false);
-
-  const handleScan = useCallback(
-    (result: QRScanResult) => {
-      form.setAddress(result.address);
-      setShowScanner(false);
-    },
-    [form]
-  );
-
-  const handleSave = useCallback(async () => {
-    if (!form.canSave) return;
-    await onSave(form.buildInput());
-  }, [form, onSave]);
+  const { form, save } = useAddressAddPanel({ networkId: activeNetworkId, onSave });
 
   return (
-    <SettingsScreenLayout title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
-      {/* Label */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
-      <TextInput
-        testID="address-book-label-input"
-        style={styles.textInput}
-        value={form.label}
-        onChangeText={form.setLabel}
-        placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
-
-      {/* Address */}
-      <View style={styles.addressSection}>
-        <InputAddress
-          address={form.address}
-          onChange={form.setAddress}
-          onValidation={form.handleValidation}
-          label={t('general.address', 'Address')}
-          placeholder={t('general.name_or_address', {
-            token: activeBlockchain,
-            defaultValue: 'Enter address or domain',
-          })}
-          testID="address-book-address"
-        />
-        <TouchableOpacity
-          testID="address-book-scan-button"
-          accessibilityRole="button"
-          accessibilityLabel={t('qrScanner.scanButton', 'Scan QR code')}
-          style={styles.scanButton}
-          onPress={() => setShowScanner(true)}
-          activeOpacity={0.7}
-        >
-          <QrCodeIcon size={iconSize.sm} color={semantic.accent.ink} />
-          <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
-      <View style={styles.networkDisplay}>
-        <Text style={styles.networkText}>
-          {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
-        </Text>
-      </View>
-
-      {/* Save Button */}
-      <View style={styles.saveButtonContainer}>
-        <PrimaryButton
-          testID="address-book-save-button"
-          onPress={handleSave}
-          disabled={!form.canSave}
-        >
-          {t('settings.addressbook.save', 'Save Address')}
-        </PrimaryButton>
-      </View>
-
-      <QRScanner
-        visible={showScanner}
-        blockchain={activeBlockchain as BlockchainType}
-        onScan={handleScan}
-        onClose={() => setShowScanner(false)}
-      />
-    </SettingsScreenLayout>
+    <AddressForm
+      title={t('settings.addressbook.add', 'Add Address')}
+      subtitle={t('settings.addressbook.add_subtitle', 'Save a label and address for later.')}
+      networkLabel={activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
+      form={form}
+      onSave={save}
+      onBack={onBack}
+      blockchain={activeBlockchain as BlockchainType}
+      addressPlaceholder={t('general.name_or_address', {
+        token: activeBlockchain,
+        defaultValue: 'Enter address or domain',
+      })}
+    />
   );
 }
 
 export default AddressAddPanel;
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  fieldLabel: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  textInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  addressSection: {
-    marginTop: spacing.lg,
-  },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    padding: spacing.xs,
-  },
-  scanButtonText: {
-    color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-  },
-  networkDisplay: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
-  },
-  networkText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  saveButtonContainer: {
-    marginTop: spacing['2xl'],
-  },
-});

@@ -14,7 +14,11 @@ export type { UseAccountsState, UseAccountsActions } from './useAccounts';
 
 // User configuration hook
 export { useUserConfig } from './useUserConfig';
-export type { UseUserConfigParams, UseUserConfigResult } from './useUserConfig';
+export type {
+  ToggleDeveloperNetworksOptions,
+  UseUserConfigParams,
+  UseUserConfigResult,
+} from './useUserConfig';
 
 // Runtime detection hook
 export { useRuntime } from './useRuntime';
@@ -74,6 +78,19 @@ export type {
 export { useSendTransaction } from './useSendTransaction';
 export type { UseSendTransactionParams, UseSendTransactionResult } from './useSendTransaction';
 
+// The send flow's state (token, recipient, amount, fee, submit) — one
+// implementation; mobile wraps it in a provider, the DOM calls it directly.
+export { useSendFlowState } from './useSendFlowState';
+export type { UseSendFlowStateParams, SendFlowState } from './useSendFlowState';
+
+// The NFT flow's state (recipient, transfer, burn preview, receipt) — the
+// transaction hooks are the same ones both platforms always called
+export { useNftFlowState } from './useNftFlowState';
+export type { UseNftFlowStateParams, NftFlowState, NftSuccessKind } from './useNftFlowState';
+
+// Completes an older wallet's mirror addresses when Developer Networks asks
+export { useEnsureMirrorNetworks } from './useEnsureMirrorNetworks';
+
 // Private-key import hook
 export { useImportPrivateKey } from './useImportPrivateKey';
 export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';
@@ -83,10 +100,6 @@ export type { UseImportWatchOnlyParams, UseImportWatchOnlyResult } from './useIm
 // Swap hook
 export { useSwap } from './useSwap';
 export type { UseSwapParams, UseSwapResult } from './useSwap';
-
-// Bridge hook
-export { useBridge } from './useBridge';
-export type { UseBridgeParams, UseBridgeResult } from './useBridge';
 
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
@@ -109,7 +122,7 @@ export type {
 export { useJupiterTokenList } from './useJupiterTokenList';
 export type { UseJupiterTokenListParams, UseJupiterTokenListResult } from './useJupiterTokenList';
 
-// Multi-chain tokens hook (for unified swap/bridge)
+// Multi-chain tokens hook
 export { useMultiChainTokens } from './useMultiChainTokens';
 export type {
   ChainType,
@@ -160,6 +173,11 @@ export type {
 
 // Address book form hook (shared form logic for Add/Edit screens)
 export { useAddressBookForm } from './useAddressBookForm';
+export { useAddressAddPanel, useAddressEditPanel } from './useAddressBookPanel';
+export { useValidationDirty } from './useValidationDirty';
+export { useAvatarPicker } from './useAvatarPicker';
+export type { AvatarPickerTab } from './useAvatarPicker';
+export type { UseAddressBookPanelResult } from './useAddressBookPanel';
 export type { AddressBookFormInitial, UseAddressBookFormResult } from './useAddressBookForm';
 
 // Avatar NFTs hook (shared between mobile & extension)
@@ -171,6 +189,15 @@ export { useSolanaNfts } from './useSolanaNfts';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
 // Settings panel stack hook
+export { useWalletTotals, sumIncludedTotals } from './useWalletTotals';
+export type { UseWalletTotalsParams, UseWalletTotalsResult } from './useWalletTotals';
+
+export { useAccountNameDraft } from './useAccountNameDraft';
+export type { UseAccountNameDraftParams, UseAccountNameDraftResult } from './useAccountNameDraft';
+export { useFieldFocus } from './useFieldFocus';
+export type { FieldFocus } from './useFieldFocus';
+export { useSettingsPanelData } from './useSettingsPanelData';
+export type { UseSettingsPanelDataParams } from './useSettingsPanelData';
 export { useSettingsPanelStack } from './useSettingsPanelStack';
 export type { UseSettingsPanelStackResult } from './useSettingsPanelStack';
 
@@ -181,3 +208,32 @@ export type { UseAnalyticsConsentResult } from './useAnalyticsConsent';
 // Currency context (re-export for discoverability)
 export { useCurrencyContext } from '../contexts/CurrencyContext';
 export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext';
+
+// Home sub-tab order (persisted arrangement + reconciliation)
+export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
+export type { UseHomeTabOrderResult } from './useHomeTabOrder';
+
+// Derived-account scan (finds a seed's funded paths; the user picks)
+export { useDerivedAccountsScan, findDerivedAccounts } from './useDerivedAccountsScan';
+export type { DerivedAccountFind, UseDerivedAccountsScanResult } from './useDerivedAccountsScan';
+
+// Form state the kit renders on both platforms; the vault calls are injected
+export { usePasswordConfirm } from './usePasswordConfirm';
+export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswordConfirm';
+export { useChangePassword } from './useChangePassword';
+export type { UseChangePasswordParams } from './useChangePassword';
+
+// Home shell (page index, per-page balances, offered sub-tabs, the swap's owner)
+export {
+  useHomeShell,
+  HOME_TAB_KEYS,
+  blockchainIdOf,
+  mapBalanceToToken,
+  buildBitcoinToken,
+} from './useHomeShell';
+export type {
+  HomeSubTabKey,
+  HomeSwapCause,
+  UseHomeShellParams,
+  UseHomeShellResult,
+} from './useHomeShell';

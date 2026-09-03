@@ -8,13 +8,11 @@ export {
   buildTransactionFromEncodedMessage,
   decodeDAppMessage,
   getDAppTransactionRequestSummary,
-  isSecureOrigin,
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
   previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
-  serializeSignedTransactionsFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
 export type { SolanaTransactionApprovalDetails } from './dapp-approval';
@@ -48,7 +46,6 @@ export {
   toStoredSecret,
   buildSecretVault,
   getAccountMnemonic,
-  isImportedAccount,
   isWatchOnlyAccount,
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
@@ -70,13 +67,11 @@ export {
   AVATAR_BASE_URL,
   PRESET_AVATAR_COUNT,
   PRESET_AVATAR_URLS,
-  isPresetAvatar,
 } from './avatar';
 
 // Address utilities
 export { chunkAddress, getShortAddress, truncateHash } from './address';
 export { classifyTransactionError } from './transaction-errors';
-export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
 
 // How a pasted recovery phrase lays out across one-word boxes. Shared so the
@@ -139,7 +134,6 @@ export {
   formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
-  formatUsdValue,
   formatPercentChange,
   // Price impact
   type PriceImpactSeverity,
@@ -169,10 +163,6 @@ export {
 
 // Token utilities
 export {
-  // Known decimals (bridge token fallback)
-  KNOWN_DECIMALS,
-  // Fallback logos for native tokens
-  NATIVE_TOKEN_LOGOS,
   // Token search
   filterTokensLocally,
   // CoinGecko
@@ -199,7 +189,6 @@ export {
   createERC1155Token,
   // Feature badge colors
   DEFAULT_FEATURE_COLORS,
-  getFeatureColor,
 } from './tokens';
 
 // Currency formatting utilities
@@ -222,7 +211,6 @@ export {
   formatDateTime,
   formatBlockNumber,
   formatRelativeTimeCompact,
-  formatDateString,
 } from './date';
 
 // Balance decoration & calculation utilities
@@ -248,28 +236,22 @@ export { isReactNative, isWebEnvironment, isExtension } from './platform';
 
 // Network utilities
 export {
-  MAINNET_NETWORK_IDS,
   MAINNET_NETWORK_ID,
+  MIRROR_NETWORK_IDS,
   sortNetworks,
-  filterNetworks,
   getNetworkLabel,
   getNetworkName,
+  isMainnetNetworkId,
+  getMainnetSibling,
+  visibleNetworkIds,
 } from './network';
+export type { VisibleNetworkIdsParams } from './network';
 
 // Validation utilities
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
 
 // Swap utilities
-export {
-  isSameChain,
-  getSwapType,
-  getSwapMode,
-  getChainFromNetwork,
-  toStealthExNetwork,
-  validateAddress,
-  mapToSwapToken,
-  unifiedToSwapToken,
-} from './swap';
+export { mapToSwapToken, unifiedToSwapToken } from './swap';
 
 // Transaction transform utilities
 export {
@@ -286,18 +268,11 @@ export {
   isImageContent,
   isSvgImage,
   isAnimatedImage,
-  getNftImageType,
-  bitcoinOrdinalToNftData,
   solanaNftToNftData,
   canonicalNftToSolanaNftData,
   isSolanaNft,
   isBitcoinNft,
-  getNftBlockchainLabel,
   getSatRarityColor,
-  getNftSectionTitle,
-  getVisibleNftSectionKeys,
-  SECTION_TO_NETWORK,
-  INITIAL_NFT_SECTIONS,
 } from './nft';
 
 // Unlock throttling (failed-password backoff)
@@ -335,10 +310,44 @@ export {
   getAccountBalance,
   getScanNetworks,
   getMirrorNetworks,
+  getScanNetworksWithMirrors,
+  ensureMirrorNetworks,
   formatDerivedAccountBalance,
-  getMirrorNetworkId,
   scanDerivedAccounts,
 } from './derived-accounts';
+export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';
+export { balanceCues } from './balanceCues';
+export type { BalanceCue, BalanceCues } from './balanceCues';
+export {
+  CONFIRMATION_CONFIG,
+  CONFIRMATION_LABEL_KEYS,
+  COUNTERPARTY_ADDRESS_CHARS,
+  STATUS_LABEL_KEYS,
+  TYPE_LABEL_KEYS,
+  conversionRateFor,
+  describeTransactionRow,
+  transactionCounterparty,
+  transactionStatusDisplayFor,
+  transactionTypeDisplayFor,
+} from './transactionDisplay';
+export type {
+  ConfirmationTone,
+  ConversionRate,
+  TransactionSentence,
+  TransactionStatusDisplay,
+  TransactionStatusGlyph,
+  TransactionTypeDisplay,
+  TransactionTypeGlyph,
+} from './transactionDisplay';
+export { orderWalletCards } from './walletCards';
+export type { WalletCard } from './walletCards';
+export { MAX_RECENTS, recipientOptions } from './recipientOptions';
+export type { RecipientOption, RecipientOptions } from './recipientOptions';
+export { RESAMPLE_POINTS, buildLinePath, getDataBounds, resampleYs } from './priceChartPath';
+export type { ChartBounds } from './priceChartPath';
+export { APPEARANCE_OPTIONS } from './appearanceOptions';
+export type { AppearanceOption } from './appearanceOptions';
+export type { ActivityFilter, ActivityGroup, ActivityRow } from './activityRows';
 export type {
   NftBlockchain,
   // NftAttribute is exported from blockchain/solana/nft

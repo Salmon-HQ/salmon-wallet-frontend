@@ -19,6 +19,15 @@
  * (15.15.3) stubs `FeTurbulence` and `FeDisplacementMap` out entirely. The
  * irregularity is in the path data and the soft edge is a stacked halo pass.
  *
+ * ## Light mode: this one keeps its texture
+ *
+ * The rest of the underwater material is deferred on a light ground (see
+ * `DepthBackground`, `ScalesBackground`, `Thermocline`), but the flesh is not
+ * a ground — it is the *inside of the salmon fill*, and `accent.fill` and
+ * `flesh.band` are both theme-invariant by ruling (DESIGN.md §Two modes). The
+ * CTA is the same object in both modes, so it carries the same texture, and
+ * the band-lighter-than-fill rule keeps the label's 6.50:1 a floor either way.
+ *
  * @example
  * ```tsx
  * // Inside a salmon fill, under the label
@@ -26,38 +35,24 @@
  * ```
  */
 import React, { useId } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, Pattern, Path, Rect } from 'react-native-svg';
-import { fleshFills, fleshTile, semantic } from '@salmon/shared';
+import { fleshFills, fleshTile } from '@salmon/shared';
 
-export interface FleshBackgroundProps {
-  /**
-   * The band colour. Must be a *pale* tint of the fill it sits on — a darker
-   * band would let the texture cut label contrast instead of only raising it.
-   * @default semantic.flesh.band
-   */
-  color?: string;
-  /**
-   * Tile scale. 1 is tuned for a 44-64px pill; below ~0.7 the bands crowd and
-   * start to read as stripes rather than as material.
-   * @default 1
-   */
-  scale?: number;
-  /**
-   * Overall strength. The default is deliberately near the visibility floor.
-   * @default 1
-   */
-  opacity?: number;
-  /** Additional styles for the container, which otherwise fills its parent. */
-  style?: ViewStyle;
-}
+import { useSemantic } from '../../theme/useThemedStyles';
+import type { FleshBackgroundProps } from './types';
+
+export type { FleshBackgroundProps };
 
 export const FleshBackground: React.FC<FleshBackgroundProps> = ({
-  color = semantic.flesh.band,
+  color,
   scale = 1,
   opacity = 1,
   style,
 }) => {
+  const { flesh } = useSemantic();
+  const band = color ?? flesh.band;
+
   // Unique per instance. Two FleshBackgrounds sharing a hardcoded `id` would
   // both resolve to whichever pattern mounted first — the same collision
   // `ScalesBackground` fixes with `useId`. `useId` yields ":r1:"-style values;
@@ -79,7 +74,7 @@ export const FleshBackground: React.FC<FleshBackgroundProps> = ({
             patternTransform={`scale(${scale})`}
           >
             {fleshFills.map(([d, fillOpacity], i) => (
-              <Path key={i} d={d} fill={color} fillOpacity={fillOpacity * opacity} />
+              <Path key={i} d={d} fill={band} fillOpacity={fillOpacity * opacity} />
             ))}
           </Pattern>
         </Defs>

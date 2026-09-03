@@ -155,7 +155,7 @@ describe('PendingTransactionsProvider', () => {
   });
 
   it('persists in-flight entries and drops them from storage once resolved', async () => {
-    initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+    initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
     let outcome: SignatureOutcome = 'pending';
     const { result } = setup(
       async (_net, queries) => Object.fromEntries(queries.map((q) => [q.signature, outcome])),
@@ -179,7 +179,7 @@ describe('PendingTransactionsProvider', () => {
   });
 
   it('rehydrates on mount and reports a transaction that resolved while the app was closed', async () => {
-    initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+    initStorage({ platform: 'extension', adapter: createLocalStorageAdapter() });
     await setStorageItem(STORAGE_KEYS.PENDING_TRANSACTIONS, [
       {
         signature: 'sig-resumed',

@@ -1,6 +1,11 @@
+/**
+ * LanguageSelector — the display language panel, on the DOM. The mobile twin
+ * is `apps/mobile/src/components/SettingsSelectors/LanguageSelector`.
+ */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type LanguageSelectorItem } from '@salmon/shared';
+
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { LanguageSelectorProps } from './types';
@@ -19,7 +24,11 @@ export function LanguageSelector({
   );
 
   return (
-    <SettingsPanelContent title={t('settings.languages.title', 'Language')} onBack={onBack}>
+    <SettingsPanelContent
+      title={t('settings.languages.title', 'Language')}
+      subtitle={t('settings.languages.subtitle', "Choose the app's display language.")}
+      onBack={onBack}
+    >
       <SettingsSelectorList
         items={languages}
         getKey={(item) => item.code}

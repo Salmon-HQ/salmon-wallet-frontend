@@ -11,7 +11,7 @@ squeezed down. That is the whole point of the file.
     python3 store-assets/make-icons.py extension  # one group
     python3 store-assets/make-icons.py measure    # re-derive the ink bounds
 
-Groups: extension, web, store.
+Groups: extension, store.
 
 Alpha is decided per target, because the stores disagree with each other:
 Play's feature graphic forbids it, Play's 512 icon requires the container to
@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 BRAND_TS = ROOT / "packages/shared/src/theme/brand.ts"
 
 # Coral tile gradient — the same two stops as `compose.py` (CORAL_TOP /
-# CORAL_BOT) and `apps/web/public/favicon.svg`. The bottom stop is salmon-500
+# CORAL_BOT). The bottom stop is salmon-500
 # `#FF5C45` from packages/shared/src/theme/palette.ts.
 CORAL_TOP, CORAL_BOT = (0xFF, 0x81, 0x70), (0xFF, 0x5C, 0x45)
 # The mark's ink: `#FCFCFC`, not pure white. DESIGN.md — "Deep water has no
@@ -56,11 +56,11 @@ PATHS = mark_paths()
 BODY = PATHS[:1]  # body with both eyes as counters; fins excluded
 
 # Tight bounds of the ink, measured by rendering at 10x and reading the alpha
-# bbox (`make-icons.py measure`). The authored viewBox is 253x236 but the ink
+# bbox (`make-icons.py measure`). The authored viewBox is 253x237 but the ink
 # does not fill it, and centring on the viewBox rather than on the ink leaves
 # the mark visibly off-centre in the tile.
-VB_FULL = (0.0, 0.0, 252.4, 235.4)   # all three paths
-VB_BODY = (35.5, 0.0, 182.1, 235.4)  # body alone
+VB_FULL = (0.3, 0.0, 252.4, 237.0)   # all three paths
+VB_BODY = (35.4, 0.0, 182.2, 237.0)  # body alone
 
 
 def render_mark(paths, viewbox, w, h) -> Image.Image:
@@ -155,7 +155,6 @@ PX32 = dict(scale=0.78)
 MASKABLE = dict(scale=0.48)
 
 EXT = ROOT / "apps/extension/public"
-WEB = ROOT / "apps/web/public"
 
 # (path, size, kwargs, alpha, note)
 TARGETS = {
@@ -186,15 +185,6 @@ TARGETS = {
         # `apps/extension/dist/chrome-mv3/manifest.json`.
         (EXT / "icon-192.png", 192, {}, True, "manifest icons (WXT auto-discovered)"),
         (EXT / "icon-512.png", 512, {}, True, "manifest icons (WXT auto-discovered)"),
-    ],
-    "web": [
-        (WEB / "favicon-32.png", 32, PX32, True, "browser tab"),
-        (WEB / "icon-192.png", 192, {}, True, "webmanifest purpose=any"),
-        (WEB / "icon-512.png", 512, {}, True, "webmanifest purpose=any"),
-        (WEB / "icon-192-maskable.png", 192, MASKABLE, True, "purpose=maskable"),
-        (WEB / "icon-512-maskable.png", 512, MASKABLE, True, "purpose=maskable"),
-        # iOS composites this on an opaque ground and masks it itself.
-        (WEB / "apple-touch-icon.png", 180, {}, False, "iOS home screen, opaque"),
     ],
     "store": [
         # Same rule and same bytes as the manifest icon above; the store folder
@@ -255,7 +245,7 @@ def build_feature_graphic():
 def _measure():
     """Re-derive VB_FULL / VB_BODY from the paths. Run after a brand.ts edit."""
     for name, ps in [("VB_FULL", PATHS), ("VB_BODY", BODY)]:
-        im = render_mark(ps, (0, 0, 253, 236), 2530, 2360)
+        im = render_mark(ps, (0, 0, 253, 237), 2530, 2370)
         x0, y0, x1, y1 = (v / 10 for v in im.getchannel("A").getbbox())
         # printed as a viewBox — (min-x, min-y, width, height), not corners
         print(f"{name} = {(round(x0, 1), round(y0, 1), round(x1 - x0, 1), round(y1 - y0, 1))}")

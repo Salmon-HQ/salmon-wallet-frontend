@@ -23,20 +23,33 @@ test('walks send entry → token → address-amount and cancels (no on-chain tx)
   await unlockOrRecover(popup);
   await waitHome(popup);
 
-  // Entry → token select
+  // Entry → the recipient step, the token chosen from its row (spec 028: four steps).
   await popup.getByTestId('home-send-button').click();
+  await expect(popup.getByTestId('send-recipient-screen')).toBeVisible();
+  await popup.getByTestId('send-selected-token').click();
   await expect(popup.getByTestId('send-token-search-input')).toBeVisible();
-
-  // Pick SOL → address-amount step
   await popup.getByTestId('send-token-row-SOL').click();
-  await expect(popup.getByTestId('send-recipient-input')).toBeVisible();
-  await expect(popup.getByTestId('send-amount-input')).toBeVisible();
+  await expect(popup.getByTestId('send-token-search-input')).toHaveCount(0, { timeout: 10_000 });
 
-  // Fill amount (safe; we never confirm) and exercise a quick-fill control.
+  // Recipient: Wallet B (never confirmed). Continue → the amount step.
+  await popup.getByTestId('send-recipient-input').fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
+  await popup.getByTestId('send-continue-button').click({ timeout: 30_000 });
+  await expect(popup.getByTestId('send-amount-screen')).toBeVisible();
+
+  // Fill an amount (safe; we never confirm) and see the presets.
   await popup.getByTestId('send-amount-input').fill('0.001');
-  await expect(popup.getByTestId('send-quickfill-MAX')).toBeVisible();
+  await expect(popup.getByTestId('send-shortcuts')).toBeVisible();
 
-  // Cancel out — never reaches the irreversible confirm step.
-  await popup.getByTestId('send-cancel-button').click();
+  // Back out — never reaches the review, let alone the confirm.
+  //
+  // The back control is not *inside* the step's testID: `send-amount-screen`
+  // names the scrolling body, and the header is its sibling — on both
+  // platforms (mobile's `send/amount.tsx` puts it on the `ScrollView` too), so
+  // this is the spec's assumption to fix and not the component's placement.
+  // Unscoped is unambiguous here: `SinkFloat` mounts one step at a time, so
+  // exactly one back control exists at rest.
+  await popup.getByTestId('screen-header-back-button').click();
+  await expect(popup.getByTestId('send-recipient-screen')).toBeVisible();
+  await popup.getByTestId('screen-header-back-button').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible();
 });

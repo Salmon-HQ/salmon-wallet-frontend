@@ -21,6 +21,7 @@ import {
   componentSizes,
   spacing,
   borderRadius,
+  withAlpha,
   ContentLoader,
   Rect,
   Circle,
@@ -372,7 +373,7 @@ export function TokenSelectorModal({
               pointerEvents="none"
             >
               <LinearGradient
-                colors={[colors.background.secondary, 'transparent']}
+                colors={[colors.background.secondary, withAlpha(colors.background.secondary, 0)]}
                 style={StyleSheet.absoluteFill}
               />
             </Animated.View>

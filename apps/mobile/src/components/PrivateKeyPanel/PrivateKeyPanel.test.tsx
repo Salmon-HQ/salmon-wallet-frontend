@@ -19,42 +19,52 @@ jest.mock('expo-clipboard', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The mobile wrapper hook reads the real motion vocabulary.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  borderRadius: { r1: 4, r2: 8, r3: 12 },
-  colors: {
-    background: { card: '#111', tertiary: '#222' },
-    border: { default: '#58637B' },
-    overlay: { dark: 'rgba(0,0,0,0.8)' },
-    status: { warningBackground: '#332200', errorBackground: '#330000' },
-    // Still read by unmocked dependencies (WarningNotice).
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-  },
-  componentSizes: { iconSize2XL: 40 },
-  fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', mono: 'System' },
-  fontSize: { xs: 10, sm: 12, label: 10, caption: 12, mono: 13, monoLg: 16, body: 14, bodyLg: 18 },
-  letterSpacing: { label: 0.3, loose: 0.5 },
-  lineHeight: { snug: 1.4, normal: 1.5 },
-  motionMs: { feedbackHold: 1500 },
-  semantic: {
-    status: { warning: '#FFB020', danger: '#FF6B85', warningTint: 'rgba(255,171,0,0.1)' },
-    surface: { bedrock: '#0B0F19' },
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-  },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
+  // The real design tokens: the panel composes kit blocks that read far more
+  // of them than a hand-listed subset can keep up with.
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   getShortAddress: (address: string) => address.slice(0, 8),
   getAccountKeysForNetwork: () => [
     { path: "m/44'/501'/0'/0'", address: FAKE_ADDRESS, privateKey: FAKE_PRIVATE_KEY },
   ],
   useAccountsContext: () => [{ activeAccount: {} }, { checkPassword: mockCheckPassword }],
 }));
+// No worklets runtime in Jest: the kit's animated blocks need plain-JS
+// stand-ins.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+
+jest.mock('../PressSpecular', () => ({
+  PressSpecular: () => null,
+  SPECULAR_OPACITY: 0.12,
+}));
 
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: (label: string) => mockUseSecretScreen(label),
-}));
-
-jest.mock('../SettingsHeaderContext', () => ({
-  useSettingsHeaderOverride: jest.fn(),
 }));
 
 jest.mock('../SettingsScreenLayout', () => {

@@ -2,10 +2,9 @@
 
 ## Package ownership
 
-- `packages/shared`: only code shared by `mobile`, `web`, and `extension`
-- `packages/ui`: only shared React DOM components for `web` and `extension`
+- `packages/shared`: code shared by `mobile` and `extension` — logic, contracts, tokens, the screen-flow hooks and contexts
+- `packages/ui`: the extension's React DOM kit, twin for twin with `apps/mobile/src/components`
 - `apps/mobile`: React Native-only UI and platform-specific logic
-- `apps/web`: web-only pages, routes, and web-specific UI
 - `apps/extension`: extension-only pages, flows, and browser-extension logic
 
 ## Shared code placement
@@ -20,8 +19,8 @@
 
 ## Decision shortcuts
 
-- Shared by all three platforms -> `packages/shared`
-- Shared only by `web` and `extension` and is DOM UI -> `packages/ui`
+- Needed by both apps and does not draw -> `packages/shared`
+- Draws on the DOM -> `packages/ui`, with its mobile twin on one contract
 - Shared only by one platform -> keep it in that app
 - Semantic cross-platform props -> `packages/shared/src/types/ui`
 - Visual or platform-specific props -> local `types.ts`

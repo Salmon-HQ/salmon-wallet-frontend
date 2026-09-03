@@ -1,10 +1,12 @@
 import type { Token } from '../index';
-import type { BlockchainType, BlockchainAccount } from '../blockchain';
+import type { ValidationState } from '../validation';
 
 /**
- * Steps in the send flow
+ * The four send screens — recipient, amount, review, receipt. Routes on
+ * mobile (`app/(app)/send/*`), one component stepping through the same four
+ * on the DOM (`SendPage`).
  */
-export type SendStep = 'token-select' | 'address-amount' | 'confirmation' | 'success';
+export type SendStep = 'recipient' | 'amount' | 'review' | 'success';
 
 /**
  * Token data for the send flow (extends Token with decimals)
@@ -14,81 +16,81 @@ export interface SendToken extends Token {
   decimals?: number;
 }
 
-/**
- * Props for the SendSheet component (base - platform-agnostic)
- */
-export interface SendSheetPropsBase<TStyle> {
-  /** Whether the sheet is visible */
-  visible: boolean;
-  /** Callback when the sheet should close */
-  onClose: () => void;
-  /** Available tokens from useBalance */
-  tokens: SendToken[];
-  /** Blockchain type for address validation and transfer routing */
-  blockchain: BlockchainType;
-  /** The active blockchain account */
-  account: BlockchainAccount;
-  /** Callback when transaction completes successfully */
-  onSuccess?: (txId: string) => void;
-  /** Show unverified/unknown tokens (developer mode) */
-  showUnverifiedTokens?: boolean;
-  /** Whether token data is still loading */
-  loading?: boolean;
-  /** Additional styles */
-  style?: TStyle;
+/** Who the transfer pays, and what the screens call them. */
+export interface SendRecipient {
+  /** Exactly what the user typed or tapped — a raw address or a domain. */
+  address: string;
+  /** The address the transfer will actually pay, when a domain resolved. */
+  resolvedAddress?: string;
+  /** The address book's or the wallet list's name for it, when there is one. */
+  name?: string;
 }
 
 /**
- * Props for the token selection step
+ * RecipientInput — the address field of CORE 04. It renders state, it does
+ * not compute it: `useAddressValidation` stays in the screen, which is also
+ * what decides whether Continue is live. Mobile adds the QR scan affordance;
+ * the DOM offers paste instead.
  */
-export interface StepTokenSelectProps {
+export interface RecipientInputPropsBase {
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  validationState: ValidationState;
+  isValidating: boolean;
+  testID?: string;
+  /**
+   * Prefix for the field's own testIDs (`${prefix}-recipient-input`, and the
+   * scan/paste control). Defaults to `'send'`; the address-book panels pass
+   * their own.
+   */
+  testIDPrefix?: string;
+}
+
+/**
+ * TokenSelectList — the send flow's token picker, one pick per opening: the
+ * `SearchField` pill, then a `ListRow` per token.
+ */
+export interface TokenSelectListPropsBase {
   /** Available tokens */
   tokens: SendToken[];
   /** Callback when a token is selected */
   onSelectToken: (token: SendToken) => void;
-  /** Show unverified/unknown tokens (developer mode) */
-  showUnverifiedTokens?: boolean;
   /** Whether token data is still loading (shows skeleton when true) */
   loading?: boolean;
 }
 
+/** @deprecated Read `TokenSelectListPropsBase`. */
+export type StepTokenSelectProps = TokenSelectListPropsBase;
+
 /**
- * Props for the address and amount step (base - platform-agnostic)
+ * TokenPickerSheet — the picker inside a sheet, opened by the recipient
+ * screen up front and by the review screen's "Change".
  */
-export interface StepAddressAmountPropsBase {
-  /** Selected token (snapshot taken when the step opened — used for symbol, decimals, price, etc.) */
-  token: SendToken;
-  /**
-   * Live uiAmount for the selected token, re-read from the parent's reactive
-   * tokens list each render. Falls back to `token.uiAmount` when no live entry
-   * is available (e.g. token was just received and not yet in the list).
-   *
-   * MUST be used for MAX / quick-fill / amount validation so the UI reflects
-   * inbound funds while the user is on this step.
-   */
-  liveBalance?: number;
-  /**
-   * The account's native-token balance (SOL on Solana), in whole units.
-   *
-   * Every Solana transaction pays its fee in SOL whatever asset it moves, so a
-   * wallet holding tokens and no SOL cannot send them. The step needs this to
-   * say so before the user fills in a transfer that the network will refuse.
-   */
-  nativeBalance?: number;
-  /** Blockchain type for address validation */
-  blockchain: BlockchainType;
-  /** The active blockchain account (provides getConnection/getProvider) */
-  account: BlockchainAccount;
-  /**
-   * Navigate back to token selection. Absent when the flow has no
-   * token-selection step (single-token chains open straight on this step), so
-   * the platform implementations must not offer a way back that leads nowhere.
-   */
-  onBack?: () => void;
-  /** Proceed to confirmation */
-  onReview: (address: string, amount: string, resolvedRecipientAddress?: string) => void;
-  /** Cancel and close the sheet */
-  onCancel: () => void;
+export interface TokenPickerSheetPropsBase extends TokenSelectListPropsBase {
+  visible: boolean;
+  onClose: () => void;
+  loading: boolean;
+  testID?: string;
+}
+
+/**
+ * SendFailure — the report on the surface the wait was standing on: what did
+ * not happen, the action that tries again without leaving, the way out.
+ */
+export interface SendFailurePropsBase {
+  /** Heading: what did not happen. */
+  title: string;
+  /** Why, in the user's language. */
+  message: string;
+  /** Re-run the same transfer, without leaving this screen. */
+  onRetry: () => void;
+  /** Retry's label. */
+  retryLabel: string;
+  /** Label for the way out of the failure. */
+  dismissLabel: string;
+  /** Leave the flow. */
+  onDismiss: () => void;
 }
 
 // ============================================================================
@@ -131,28 +133,4 @@ export interface UseSendContactsResult {
   ownWallets: SendOwnWallet[];
   /** Whether address book data is still loading */
   isLoading: boolean;
-}
-
-/**
- * Props for the confirmation step
- */
-export interface StepConfirmationProps {
-  /** Selected token */
-  token: SendToken;
-  /** Recipient address as entered by the user */
-  recipientAddress: string;
-  /** Resolved address used for fee estimation and send execution */
-  resolvedRecipientAddress?: string;
-  /** Amount to send (human-readable) */
-  amount: string;
-  /** Blockchain type */
-  blockchain: BlockchainType;
-  /** The active blockchain account */
-  account: BlockchainAccount;
-  /** Navigate back to address/amount */
-  onBack: () => void;
-  /** Cancel and close the sheet */
-  onCancel: () => void;
-  /** Callback on successful send */
-  onSuccess: (txId: string) => void;
 }

@@ -12,6 +12,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockLogic: Record<string, unknown> = {};
+const mockAccount: { watchOnly: boolean } = { watchOnly: false };
 
 // Reanimated pulls the Worklets native module, which does not exist under
 // Jest; the step transitions only need a View and the reduce-motion flag.
@@ -36,11 +37,8 @@ jest.mock('@salmon/shared', () => ({
   // exactly when the wait leaves and the receipt is allowed in.
   ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
   useSwapScreenLogic: () => mockLogic,
-  useBridgeSettlement: () => ({
-    trackBridgeExchange: jest.fn(),
-    isStalled: false,
-    retryNow: jest.fn(),
-  }),
+  useAccountsContext: () => [{ activeAccount: mockAccount }],
+  isWatchOnlyAccount: (account: { watchOnly?: boolean } | undefined) => !!account?.watchOnly,
   getTransactionUrl: () => 'https://solscan.io/tx/abc',
   // The derivations are unit-tested in packages/shared; here they only need
   // to produce a stable string for the receipt props.
@@ -55,6 +53,12 @@ jest.mock('@salmon/shared', () => ({
     status: { warning: '#FFB020' },
   },
   spacing: { md: 12, lg: 16 },
+  // The task chrome and the Home shell are the real modules (their own suites
+  // cover them); this file needs them present, not faked.
+  ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
+  useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
+  buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
 
 jest.mock('./SwapInputScreen', () => {
@@ -94,14 +98,6 @@ jest.mock('../TokenSelector', () => {
     ),
   };
 });
-jest.mock('../BridgeScreen/BridgeRecipientScreen', () => {
-  const { View } = require('react-native');
-  return { BridgeRecipientScreen: () => <View /> };
-});
-jest.mock('../BridgeScreen/BridgeReviewScreen', () => {
-  const { View } = require('react-native');
-  return { BridgeReviewScreen: () => <View /> };
-});
 jest.mock('../WarningNotice', () => {
   const { View } = require('react-native');
   return { WarningNotice: () => <View /> };
@@ -136,7 +132,6 @@ const setLogic = (overrides: Record<string, unknown>) => {
       inAmount: '',
       outAmount: '',
       successSummary: null,
-      successExchange: null,
       successTxId: null,
       settling: false,
       isConfirming: false,
@@ -146,13 +141,10 @@ const setLogic = (overrides: Record<string, unknown>) => {
       modalOutTokens: [],
       modalFeaturedTokens: [],
       tokensLoading: false,
-      isLoadingBridgeTokens: false,
       isLoadingQuote: false,
-      isLoadingEstimate: false,
       canReview: false,
       reviewWarning: null,
       swapError: null,
-      lastBridgeExchange: null,
       setInAmount: jest.fn(),
       setShowInTokenModal: jest.fn(),
       setShowOutTokenModal: jest.fn(),
@@ -168,7 +160,7 @@ const setLogic = (overrides: Record<string, unknown>) => {
 };
 
 describe('SwapScreen task surface', () => {
-  it('mounts the water column — ramp, snow, and deep-field scales — behind the success screen', () => {
+  it('mounts the water column — ramp and deep-field scales — behind the success screen', () => {
     setLogic({ step: 'success' });
     render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
 
@@ -271,14 +263,14 @@ describe('SwapScreen task window choreography', () => {
 });
 
 /**
- * The compuerta. The gate header and the floating pill are shell chrome —
+ * The task-chrome claim. The wallet header row and the floating pill are shell chrome —
  * outside the step, outside the modal — so the verb reaches them through
  * TaskChromeContext. The contract: engaged the moment the task step begins
  * (the chrome leaves during the beat, before the window covers it), and held
  * until the window has actually gone, so the chrome's return lands exactly
  * on the shell's delayed input float.
  */
-describe('SwapScreen compuerta signal', () => {
+describe('SwapScreen task-chrome signal', () => {
   const reviewLogic = {
     step: 'review',
     quote: { outAmount: '1' },
@@ -314,7 +306,7 @@ describe('SwapScreen compuerta signal', () => {
     jest.useRealTimers();
   });
 
-  it('raises the compuerta the moment review begins — before the window appears', () => {
+  it('claims the chrome the moment review begins — before the window appears', () => {
     setLogic({ step: 'input' });
     const view = renderWithProbe();
     expect(screen.getByTestId('task-chrome-probe').props.children).toBe('false');
@@ -327,7 +319,7 @@ describe('SwapScreen compuerta signal', () => {
     expect(screen.getByTestId('task-chrome-probe').props.children).toBe('true');
   });
 
-  it('holds the compuerta up until the window has gone, then lowers it', () => {
+  it('holds the claim until the window has gone, then releases it', () => {
     setLogic(reviewLogic);
     const view = renderWithProbe();
     act(() => {
@@ -441,6 +433,29 @@ describe('SwapScreen confirm choreography — sink, wave, float', () => {
       jest.advanceTimersByTime(FLOAT_DELAY_MS);
     });
     expect(screen.queryByTestId('swap-task-modal')).toBeNull();
+    expect(screen.getByTestId('swap-input-screen')).toBeTruthy();
+  });
+});
+
+describe('SwapScreen watch-only guard', () => {
+  afterEach(() => {
+    mockAccount.watchOnly = false;
+  });
+
+  it('refuses the whole screen for a watch-only wallet', () => {
+    // The swap route's `href` gate is unconditional now, so the tab no longer
+    // hides this screen from a keyless wallet — the screen has to refuse.
+    mockAccount.watchOnly = true;
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    expect(screen.getByTestId('swap-watch-only-notice')).toBeTruthy();
+    expect(screen.queryByTestId('swap-input-screen')).toBeNull();
+  });
+
+  it('renders the form for a signable wallet', () => {
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    expect(screen.queryByTestId('swap-watch-only-notice')).toBeNull();
     expect(screen.getByTestId('swap-input-screen')).toBeTruthy();
   });
 });

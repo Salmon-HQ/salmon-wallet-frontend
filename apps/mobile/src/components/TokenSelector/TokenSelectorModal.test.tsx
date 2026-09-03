@@ -53,6 +53,7 @@ jest.mock('@salmon/shared', () => ({
   ms: (value: number) => value,
   vs: (value: number) => value,
   s: (value: number) => value,
+  withAlpha: (color: string, alpha: number) => `${color}@${alpha}`,
 }));
 
 jest.mock('../../icons', () => {

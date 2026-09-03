@@ -1,308 +1,202 @@
+/**
+ * NftCard — the collectible tile, on the kit.
+ *
+ * It is a `Card` at the control radius with the artwork edge-to-edge inside
+ * it and the name band over a scrim at the bottom: the tile used to be a
+ * `BlurContainer` with a second `BlurContainer` badge inside it, which is two
+ * blur surfaces per cell in a virtualised grid and a material the redesign no
+ * longer draws. The press feedback is the repo's one press idiom
+ * (`usePressMotion` + `PressSpecular`), the same object `IconBubble` and the
+ * buttons press with, so a tile cannot drift from a control.
+ */
 import {
-  colors,
+  borderRadius,
+  componentSizes,
   fontFamilyNative,
   fontSize,
-  fontWeight,
-  borderRadius,
-  borderWidth,
-  gradients,
-  shadows,
-  componentSizes,
+  lineHeight,
   ms,
   s,
-  vs,
   spacing,
-  semantic,
+  vs,
+  gradients,
+  type Semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
-import { ContentLoader, Rect } from '@salmon/shared';
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { BlurContainer } from '../BlurContainer';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { usePressMotion } from '../../../hooks/usePressMotion';
+import { Card } from '../Card';
+import { PressSpecular } from '../PressSpecular';
+import { ShimmerRect } from '../ShimmerRect';
 import type { NftCardProps, NftCardSkeletonProps } from './types';
 
-/**
- * Orange gradient colors for fallback background
- * Gradient: linear-gradient(91.6deg, rgb(255, 92, 69) 12%, rgba(161, 42, 42, 0.9) 83%)
- */
-/** A full cycle of the skeleton pulse, and how far down it dips. */
-const PULSE_MS = 900;
-const PULSE_MIN_OPACITY = 0.45;
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
+/** The salmon fallback when the token carries no art, or the art fails. */
 const FALLBACK_GRADIENT = {
   colors: [...gradients.primaryButton.colors],
   start: { x: 0.12, y: 0.5 },
   end: { x: 0.83, y: 0.5 },
 } as const;
 
-/**
- * NftCard component for displaying NFTs in a grid layout
- *
- * Features:
- * - ~194x193px responsive card with 18px border radius
- * - NFT image covers the entire card
- * - Orange gradient fallback when no image or image fails to load
- * - Name badge at bottom with glassmorphism effect
- * - Accessible with press handling
- *
- * @example
- * ```tsx
- * <NftCard
- *   nft={{
- *     mint: 'abc123',
- *     name: 'Cool NFT #1',
- *     image: 'https://example.com/nft.png',
- *     collectionName: 'Cool Collection',
- *   }}
- *   onPress={() => console.log('NFT pressed')}
- * />
- * ```
- */
 export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const { scale, pressHandlers, specular } = usePressMotion();
 
-  const handleImageLoadStart = useCallback(() => {
-    setImageLoading(true);
-  }, []);
+  const motionStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  const handleImageLoadEnd = useCallback(() => {
-    setImageLoading(false);
-  }, []);
-
+  const handleImageLoadStart = useCallback(() => setImageLoading(true), []);
+  const handleImageLoadEnd = useCallback(() => setImageLoading(false), []);
   const handleImageError = useCallback(() => {
     setImageLoading(false);
     setImageError(true);
   }, []);
 
   const showFallback = !nft.image || imageError;
-
-  /**
-   * Render the background content (image or gradient fallback)
-   */
-  const renderBackground = () => {
-    if (showFallback) {
-      return (
-        <LinearGradient
-          colors={[...FALLBACK_GRADIENT.colors]}
-          start={FALLBACK_GRADIENT.start}
-          end={FALLBACK_GRADIENT.end}
-          style={styles.fallbackGradient}
-        />
-      );
-    }
-
-    return (
-      <>
-        <Image
-          source={nft.image}
-          style={styles.image}
-          contentFit="cover"
-          onLoadStart={handleImageLoadStart}
-          onLoadEnd={handleImageLoadEnd}
-          onError={handleImageError}
-          accessibilityLabel={t('nft.detail.imageAlt', 'NFT image for {{name}}', {
-            name: nft.name,
-          })}
-          recyclingKey={nft.mint}
-          autoplay={true}
-        />
-        {imageLoading && (
-          <View style={styles.loadingOverlay}>
-            <LinearGradient
-              colors={[...FALLBACK_GRADIENT.colors]}
-              start={FALLBACK_GRADIENT.start}
-              end={FALLBACK_GRADIENT.end}
-              style={styles.fallbackGradient}
-            />
-            <ActivityIndicator size="small" color={semantic.accent.onFill} style={styles.loader} />
-          </View>
-        )}
-      </>
-    );
-  };
-
-  /**
-   * Render the name badge at the bottom of the card
-   */
-  const renderNameBadge = () => {
-    const displayName = nft.name || t('nft.unnamed', 'Unnamed NFT');
-
-    return (
-      <View style={styles.nameBadgeContainer}>
-        <BlurContainer
-          style={styles.nameBadge}
-          blurIntensity={6}
-          backgroundColor={colors.overlay.darkHover}
-          borderColor={semantic.border.raised}
-          borderWidth={borderWidth.actionButton}
-        >
-          <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">
-            {displayName}
-          </Text>
-        </BlurContainer>
-      </View>
-    );
-  };
+  const displayName = nft.name || t('nft.unnamed', 'Unnamed NFT');
 
   return (
-    <TouchableOpacity
-      style={[styles.container, style]}
+    <AnimatedTouchable
+      style={[styles.tile, style, motionStyle]}
       onPress={onPress}
-      activeOpacity={0.8}
       disabled={!onPress}
+      activeOpacity={0.9}
       accessibilityRole="button"
       accessibilityLabel={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: nft.name })}
       accessibilityHint={
         onPress ? t('accessibility.nft_view_hint', 'Double tap to view NFT details') : undefined
       }
       testID={testID ?? `nft-card-${nft.mint ?? nft.name}`}
+      {...pressHandlers}
     >
-      {renderBackground()}
-      {renderNameBadge()}
-    </TouchableOpacity>
+      {/* The card's own padding is zero here: the artwork is the card's
+          ground, not something set inside it. `Card` applies `style` last, so
+          this wins over the tone's padding without a new prop. */}
+      <Card radius="lg" style={styles.card}>
+        {showFallback ? (
+          <LinearGradient
+            colors={[...FALLBACK_GRADIENT.colors]}
+            start={FALLBACK_GRADIENT.start}
+            end={FALLBACK_GRADIENT.end}
+            style={styles.fill}
+          />
+        ) : (
+          <>
+            <Image
+              source={nft.image}
+              style={styles.fill}
+              contentFit="cover"
+              onLoadStart={handleImageLoadStart}
+              onLoadEnd={handleImageLoadEnd}
+              onError={handleImageError}
+              accessibilityLabel={t('nft.detail.imageAlt', 'NFT image for {{name}}', {
+                name: nft.name,
+              })}
+              recyclingKey={nft.mint}
+              autoplay={true}
+            />
+            {imageLoading && (
+              <View style={styles.loadingOverlay}>
+                <LinearGradient
+                  colors={[...FALLBACK_GRADIENT.colors]}
+                  start={FALLBACK_GRADIENT.start}
+                  end={FALLBACK_GRADIENT.end}
+                  style={styles.fill}
+                />
+                <ActivityIndicator size="small" color={accent.onFill} />
+              </View>
+            )}
+          </>
+        )}
+
+        <View style={styles.nameBand}>
+          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+            {displayName}
+          </Text>
+          {!!nft.collectionName && (
+            <Text style={styles.collection} numberOfLines={1} ellipsizeMode="tail">
+              {nft.collectionName}
+            </Text>
+          )}
+        </View>
+
+        {!!onPress && <PressSpecular {...specular} />}
+      </Card>
+    </AnimatedTouchable>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    // Card size: ~194x193px with responsive scaling
-    width: s(componentSizes.nftCardWidth),
-    height: vs(componentSizes.nftCardHeight),
-    borderRadius: ms(borderRadius.iconContainer),
-    overflow: 'hidden',
-    // Shadow: 0px 3px 9px rgba(0,0,0,0.4)
-    ...shadows.nftCard,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  fallbackGradient: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loader: {
-    position: 'absolute',
-  },
-  nameBadgeContainer: {
-    position: 'absolute',
-    bottom: vs(spacing.sm),
-    left: s(spacing.sm),
-    right: s(spacing.sm),
-    alignItems: 'center',
-  },
-  nameBadge: {
-    // Border radius: 9px (BlurContainer handles background/border)
-    borderRadius: ms(borderRadius.badge),
-    // Padding: 6px vertical
-    paddingVertical: vs(spacing.xs),
-    paddingHorizontal: s(spacing.lg),
-    width: '100%',
-    overflow: 'hidden',
-  },
-  nameText: {
-    // DM Sans SemiBold, ~13px, color #e0e0e0
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.sm),
-    fontWeight: fontWeight.semibold,
-    color: colors.text.balance,
-    textAlign: 'center',
-  },
+/**
+ * NftCardSkeleton — the tile's own geometry while a section loads, so the
+ * placeholder grid lines up with the grid that replaces it.
+ */
+export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(({ style, testID }) => {
+  const styles = useThemedStyles(stylesFor);
+
+  return (
+    <View style={[styles.tile, style]} testID={testID}>
+      <Card radius="lg" style={styles.card}>
+        {/* `ShimmerRect` takes pixels, and the tile is fluid: the band is drawn
+            at the tile's drawn size and clipped by the card's own radius. */}
+        <ShimmerRect
+          width={s(componentSizes.nftCardWidth)}
+          height={vs(componentSizes.nftCardHeight)}
+          borderRadius={ms(borderRadius.r3)}
+        />
+      </Card>
+    </View>
+  );
 });
 
-/**
- * NftCardSkeleton component for loading state
- *
- * Uses ContentLoader with proper skeleton colors to match the project's
- * skeleton loading pattern. Replicates the visual structure of NftCard:
- * - Main card background (rounded rectangle)
- * - Name badge at bottom (rounded rectangle)
- *
- * Dimensions match NftCard: ~194x193px with 18px border radius
- */
-export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
-  ({ style, testID, animated = true }) => {
-    // Card dimensions matching NftCard
-    const cardWidth = s(194);
-    const cardHeight = vs(193);
-    const cardBorderRadius = ms(18);
-
-    // Badge dimensions
-    const badgeHeight = vs(25); // 6px padding * 2 + 13px text
-    const badgeBottom = vs(8);
-    const badgeHorizontal = s(8);
-    const badgeBorderRadius = ms(9);
-
-    // The gradient sweep alone is too quiet against this palette: a grid of
-    // placeholders read as a finished, empty grid rather than one still
-    // loading. A pulse on the whole card is legible at a glance.
-    const pulse = useSharedValue(1);
-    const isReduceMotionEnabled = useReducedMotion();
-
-    useEffect(() => {
-      if (!animated || isReduceMotionEnabled) return;
-      pulse.value = withRepeat(withTiming(PULSE_MIN_OPACITY, { duration: PULSE_MS }), -1, true);
-    }, [animated, isReduceMotionEnabled, pulse]);
-
-    const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
-
-    return (
-      <Animated.View style={[styles.container, style, pulseStyle]} testID={testID}>
-        <ContentLoader
-          speed={animated ? 1.5 : 0}
-          width={cardWidth}
-          height={cardHeight}
-          viewBox={`0 0 ${cardWidth} ${cardHeight}`}
-          backgroundColor={colors.skeleton.base}
-          foregroundColor={colors.skeleton.highlight}
-        >
-          {/* Main card background */}
-          <Rect
-            x="0"
-            y="0"
-            rx={cardBorderRadius}
-            ry={cardBorderRadius}
-            width={cardWidth}
-            height={cardHeight}
-          />
-
-          {/* Name badge at bottom */}
-          <Rect
-            x={badgeHorizontal}
-            y={cardHeight - badgeHeight - badgeBottom}
-            rx={badgeBorderRadius}
-            ry={badgeBorderRadius}
-            width={cardWidth - badgeHorizontal * 2}
-            height={badgeHeight}
-          />
-        </ContentLoader>
-      </Animated.View>
-    );
-  }
-);
-
 NftCardSkeleton.displayName = 'NftCardSkeleton';
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    tile: {
+      width: s(componentSizes.nftCardWidth),
+      aspectRatio: componentSizes.nftCardWidth / componentSizes.nftCardHeight,
+    },
+    card: {
+      flex: 1,
+      padding: 0,
+      justifyContent: 'flex-end',
+    },
+    fill: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nameBand: {
+      backgroundColor: t.overlay.scrim,
+      paddingVertical: vs(spacing.sm),
+      paddingHorizontal: s(spacing.md),
+      gap: vs(spacing.xxs),
+    },
+    name: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.onScrim,
+    },
+    collection: {
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      color: t.text.onScrimSecondary,
+    },
+  });
 
 export default NftCard;

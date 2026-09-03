@@ -1,13 +1,7 @@
 import type { CSSProperties } from 'react';
+import type { DepthBackgroundPropsBase } from '@salmon/shared';
 
-export interface DepthBackgroundProps {
-  /**
-   * Draw the marine snow field. Turn it off on any ground that will carry
-   * data in its upper region — the ramp alone is a background colour and is
-   * always safe, the snow is a motif and is not.
-   * @default true
-   */
-  snow?: boolean;
-  style?: CSSProperties;
+/** Props for the DepthBackground component (DOM) */
+export interface DepthBackgroundProps extends DepthBackgroundPropsBase<CSSProperties> {
   className?: string;
 }

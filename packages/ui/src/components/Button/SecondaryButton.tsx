@@ -1,118 +1,119 @@
 /**
- * SecondaryButton - Secondary action button (outline/ghost)
+ * SecondaryButton - the outlined control, on the DOM.
  *
- * Web version using MUI and @emotion/styled for browser extension
+ * The mobile twin is `apps/mobile/src/components/Button/SecondaryButton.tsx`.
+ * Transparent fill, `border.raised` stroke, primary ink. `tone="danger"`
+ * swaps to danger ink and a danger edge for a destructive action that must
+ * not borrow the salmon fill; `tone="danger-fill"` is the filled destructive
+ * plane, whose only ink that clears AA in both modes is `status.onFill`.
  */
-import { styled } from '../../utils/styled';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import {
-  colors,
+  borderWidth,
   componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
   letterSpacing,
-  shadowsCSS,
-  opacity,
-  duration,
-  easing,
+  motionMs,
+  spacing,
 } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { useReducedMotion } from '../../motion';
+import { usePressed } from '../../utils/usePressed';
+import { ButtonSpinner } from './ButtonSpinner';
 import { PressSpecular, setSpecularOrigin } from './PressSpecular';
 import type { SecondaryButtonProps } from './types';
 
-const StyledButton = styled(Button)<{
-  fullWidth?: boolean;
-  $buttonVariant?: 'filled' | 'outline';
-}>(({ fullWidth, $buttonVariant = 'filled' }) => ({
-  // Clip the press specular to the control's own bounds — the highlight is
-  // 240px across and would otherwise spill past the pill.
-  position: 'relative',
-  overflow: 'hidden',
-  width: fullWidth ? '100%' : 'auto',
-  minWidth: componentSizes.buttonMinWidth,
-  height: componentSizes.buttonHeight,
-  backgroundColor: $buttonVariant === 'outline' ? 'transparent' : colors.button.secondaryBackground,
-  border: $buttonVariant === 'outline' ? `1px solid ${colors.border.default}` : 'none',
-  borderRadius: componentSizes.buttonRadius,
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.bold,
-  letterSpacing: letterSpacing.widest,
-  color: colors.button.secondaryText,
-  textTransform: 'none',
-  boxShadow: shadowsCSS.none,
-  transition: `opacity ${duration.normal} ${easing.ease}, transform ${duration.fastest} ${easing.ease}, background-color ${duration.normal} ${easing.ease}`,
-  '&:hover': {
-    backgroundColor:
-      $buttonVariant === 'outline' ? colors.background.card : colors.button.secondaryBackground,
-    opacity: opacity.soft,
-    boxShadow: shadowsCSS.none,
-  },
-  '&:active': {
-    transform: 'scale(0.98)',
-  },
-  '&.Mui-disabled': {
-    backgroundColor:
-      $buttonVariant === 'outline' ? 'transparent' : colors.button.secondaryBackground,
-    opacity: colors.button.disabledOpacity,
-    color: colors.button.secondaryText,
-    border: $buttonVariant === 'outline' ? `1px solid ${colors.border.default}` : 'none',
-  },
-}));
-
-const LoaderWrapper = styled('span')({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-/** Keeps the label above the specular, as mobile draws it. Never a hit target. */
-const Label = styled('span')({
-  position: 'relative',
-  zIndex: 1,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
+/** Mobile's `PRESS_SCALE` — DESIGN.md §Motion's `scale(0.985)`. */
+const PRESS_SCALE = 0.985;
 
 export function SecondaryButton({
-  onClick,
+  onPress,
   children,
   disabled,
   loading,
+  tone = 'default',
+  fullWidth,
   style,
   className,
-  fullWidth = true,
-  variant = 'filled',
-  type = 'button',
+  icon,
+  trailingIcon,
   testID,
+  accessibilityHint,
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
+  const isDanger = tone === 'danger';
+  const isDangerFill = tone === 'danger-fill';
+  const { text, status, border, state } = useSemantic();
+  const { pressed, handlers } = usePressed();
+  const reducedMotion = useReducedMotion();
+
+  const background = isDangerFill ? status.dangerFill : 'transparent';
+  const edgeColor = isDangerFill ? status.dangerFill : isDanger ? status.danger : border.raised;
+  const ink = isDangerFill ? status.onFill : isDanger ? status.danger : text.primary;
 
   return (
-    <StyledButton
-      onClick={onClick}
-      disabled={isDisabled}
-      fullWidth={fullWidth}
-      $buttonVariant={variant}
-      type={type}
-      style={style}
-      className={className}
-      disableRipple={false}
+    <button
+      type="button"
       data-testid={testID}
-      onPointerDown={setSpecularOrigin}
+      aria-label={children}
+      aria-describedby={undefined}
+      aria-disabled={isDisabled || undefined}
+      aria-busy={loading || undefined}
+      title={accessibilityHint}
+      onClick={onPress}
+      disabled={isDisabled}
+      className={className}
+      onPointerDown={(e) => {
+        handlers.onPointerDown();
+        setSpecularOrigin(e);
+      }}
+      onPointerUp={handlers.onPointerUp}
+      onPointerLeave={handlers.onPointerLeave}
+      onBlur={handlers.onBlur}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        width: fullWidth === false ? 'auto' : '100%',
+        minHeight: componentSizes.buttonHeight,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.sm,
+        paddingLeft: spacing.lg,
+        paddingRight: spacing.lg,
+        backgroundColor: background,
+        borderStyle: 'solid',
+        borderWidth: borderWidth.thin,
+        borderColor: edgeColor,
+        borderRadius: componentSizes.buttonRadius,
+        display: 'flex',
+        flexDirection: 'row',
+        gap: spacing.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: isDisabled ? 'default' : 'pointer',
+        fontFamily: fontFamily.sans,
+        fontSize: fontSize.bodyLg,
+        fontWeight: fontWeight.bold,
+        letterSpacing: letterSpacing.normal,
+        color: ink,
+        opacity: isDisabled ? state.disabledOpacity : 1,
+        transform: !isDisabled && pressed ? `scale(${PRESS_SCALE})` : 'scale(1)',
+        transition: reducedMotion ? 'none' : `transform ${motionMs.flick}ms`,
+        ...style,
+      }}
     >
-      {!isDisabled && <PressSpecular />}
-      <Label>
-        {loading ? (
-          <LoaderWrapper>
-            <CircularProgress size={24} sx={{ color: colors.button.secondaryText }} />
-          </LoaderWrapper>
-        ) : (
-          children
-        )}
-      </Label>
-    </StyledButton>
+      {loading ? (
+        <ButtonSpinner color={isDangerFill ? status.onFill : text.primary} />
+      ) : (
+        <>
+          {icon}
+          <span>{children}</span>
+          {trailingIcon}
+        </>
+      )}
+      {!isDisabled && <PressSpecular pressed={pressed} reducedMotion={reducedMotion} />}
+    </button>
   );
 }

@@ -109,3 +109,40 @@ describe('DEFAULT_EXPLORERS', () => {
     expect(DEFAULT_EXPLORERS.ETHEREUM).toBe('ETHERSCAN');
   });
 });
+
+// ============================================================================
+// Solana devnet
+// ============================================================================
+
+describe('Solana devnet explorers', () => {
+  it('never hands back a mainnet URL for a devnet transaction', () => {
+    const txId = '5abc';
+
+    for (const key of Object.keys(EXPLORERS.SOLANA['solana-devnet'] ?? {})) {
+      const devnetUrl = getTransactionUrl('SOLANA', 'solana-devnet', key, txId);
+      const mainnetUrl = getTransactionUrl('SOLANA', 'solana-mainnet', key, txId);
+      expect(devnetUrl).not.toBe(mainnetUrl);
+      expect(devnetUrl).toContain('cluster=devnet');
+    }
+  });
+
+  it('carries each explorer its own cluster query', () => {
+    expect(getTransactionUrl('SOLANA', 'solana-devnet', 'SOLSCAN', '5abc')).toBe(
+      'https://solscan.io/tx/5abc?cluster=devnet'
+    );
+    expect(getTransactionUrl('SOLANA', 'solana-devnet', 'SOLANA_EXPLORER', '5abc')).toBe(
+      'https://explorer.solana.com/tx/5abc?cluster=devnet'
+    );
+    expect(getTransactionUrl('SOLANA', 'solana-devnet', 'SOLANA_FM', '5abc')).toBe(
+      'https://solana.fm/tx/5abc?cluster=devnet-solana'
+    );
+  });
+
+  it('drops the explorers that have no devnet view rather than pointing them at mainnet', () => {
+    expect(getTransactionUrl('SOLANA', 'solana-devnet', 'SOLANA_BEACH', '5abc')).toBeNull();
+  });
+
+  it('keeps the default explorer reachable on devnet', () => {
+    expect(EXPLORERS.SOLANA['solana-devnet']?.[DEFAULT_EXPLORERS.SOLANA]).toBeDefined();
+  });
+});

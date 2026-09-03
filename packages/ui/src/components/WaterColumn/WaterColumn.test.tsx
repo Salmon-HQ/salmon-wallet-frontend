@@ -16,29 +16,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// The real barrel pulls `react-native` into the resolver, which Vite cannot
-// parse. Only the tokens the two layers read matter here; their values are
-// pinned by `contrast.test.ts` and `depthField.test.ts` in @salmon/shared.
-vi.mock('@salmon/shared', () => ({
-  marineSnowSvg: () => '<svg xmlns="http://www.w3.org/2000/svg"/>',
-  blizzardSnowSvg: () => '<svg xmlns="http://www.w3.org/2000/svg"/>',
-  // The seigaiha geometry is data, not a token: stubbing it would assert that
-  // a stub tiles. Its own invariants live in `scales.test.ts` in @salmon/shared.
-  seigaihaTile: { width: 805.589, height: 25.0918 },
-  seigaihaTiledPaths: ['M0 0C1 1 2 2 3 3'],
-  semantic: {
-    water: { gradient: ['#10131C', '#070911'], snow: 'rgba(199, 211, 232, 0.12)' },
-    scales: {
-      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
-      deepFieldScale: 3.2,
-      deepFieldFloor: 0.35,
-      fishStroke: 'rgba(7, 9, 17, 0.10)',
-      fishScale: 1,
-    },
-  },
-}));
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { WaterColumn, waterColumnHost } from './WaterColumn';
 
@@ -73,7 +51,7 @@ describe('the surfaces the water column must never reach', () => {
     // The Bedrock Rule, narrowed (owner, 2026-08-18): bedrock covers the
     // views that SHOW a seed — create's warning, display and validation.
     const source = read('../AuthFlow/CreateWalletPage.tsx');
-    expect(source).toContain('semantic.surface.bedrock');
+    expect(source).toContain('surface.bedrock');
     expect(source).not.toContain('WaterColumn');
   });
 
@@ -83,12 +61,11 @@ describe('the surfaces the water column must never reach', () => {
     // capture protection is unchanged — only the ground moved.
     const source = read('../AuthFlow/RecoverWalletPage.tsx');
     expect(source).toContain('WaterColumn');
-    expect(source).not.toContain('semantic.surface.bedrock');
+    expect(source).not.toContain('surface.bedrock');
   });
 
   it.each([
     ['a card in a grid', '../NftCard/NftCardSkeleton.tsx'],
-    ['a carousel in a page', '../NftCarouselSection/NftCarouselSectionSkeleton.tsx'],
     ['a row in a list', '../DerivedAccountCard/DerivedAccountCardSkeleton.tsx'],
   ])('leaves the skeleton of %s plain, because a skeleton is content', (_name, path) => {
     // The rule that decides this is not "does it spin" but "is it the ground".
@@ -101,7 +78,7 @@ describe('the surfaces the water column must never reach', () => {
 
   it.each([
     ['the approval views', '../DAppApproval'],
-    ['the sheet chrome', '../BaseSheetDialog'],
+    ['the sheet chrome', '../BottomSheetContainer'],
   ])('mounts no field on %s', (_name, dir) => {
     // A sheet is a membrane, and a membrane's texture belongs to the material
     // it is made of, not to the water. The thermocline mounts its own field —

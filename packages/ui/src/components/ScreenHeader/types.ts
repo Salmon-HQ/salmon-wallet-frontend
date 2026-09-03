@@ -1,28 +1,9 @@
-/**
- * ScreenHeader types for web version
- */
-import type { Testable } from '@salmon/shared';
+import type { CSSProperties } from 'react';
+import type { ScreenHeaderPropsBase } from '@salmon/shared';
 
-export interface ScreenHeaderProps extends Testable {
-  /** Callback when back button is clicked */
-  onBack?: () => void;
-  /**
-   * Glyph for the leading affordance. `close` for screens the affordance
-   * exits rather than backs out of — declining advances, so a back chevron
-   * would describe the wrong direction.
-   */
-  glyph?: 'back' | 'close';
-  /** Accessible name for the affordance. Defaults to "Go back". */
-  backLabel?: string;
-  /** Show step indicator */
-  stepIndicator?: {
-    totalSteps: number;
-    currentStep: number;
-  };
-  /** Disable back button */
-  backDisabled?: boolean;
-  /** Additional CSS class */
+/** The DOM half of `ScreenHeaderPropsBase`: the cross-platform contract plus a style. */
+export interface ScreenHeaderProps extends ScreenHeaderPropsBase {
+  /** Layout the parent owns — margins, width. */
+  style?: CSSProperties;
   className?: string;
-  /** Additional styles */
-  style?: React.CSSProperties;
 }

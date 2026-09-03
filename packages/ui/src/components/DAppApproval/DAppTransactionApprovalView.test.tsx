@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -15,73 +15,20 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
   // The approval header draws the mark from the vector rather than Logo.png.
   markPaths: ['M0 0H1V1H0Z'],
-  markViewBoxAttr: '0 0 253 236',
-  markAspectRatio: 253 / 236,
-  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
-  semantic: {
-    status: {
-      danger: '#f00',
-      dangerTint: '#500',
-      warning: '#fa0',
-      warningTint: '#540',
-      success: '#0f0',
-    },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    scales: {
-      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
-      deepFieldScale: 3.2,
-      deepFieldHeight: 180,
-      fishStroke: 'rgba(7, 9, 17, 0.10)',
-      fishScale: 1,
-    },
-    flesh: { band: '#FFF1EE' },
-    water: { light: '#9FE0EF' },
-  },
-  fleshTile: { width: 380, height: 40 },
-  fleshFills: [],
-  palette: {
-    salmon: { 500: '#FF5C45', 600: '#E64A34' },
-    neutral: { 0: '#FFFFFF', 1000: '#070911' },
-  },
-  borderRadius: { full: 999, md: 8, lg: 12, xl: 16 },
-  colors: {
-    background: { primary: '#000', secondary: '#111', card: '#050505' },
-    border: { subtle: '#222', default: '#333' },
-    text: { primary: '#fff', secondary: '#ccc' },
-    interactive: { surface: '#444' },
-    button: {
-      primaryBackground: '#fff',
-      primaryText: '#000',
-      secondaryBackground: '#222',
-      secondaryText: '#fff',
-      disabledOpacity: 0.5,
-    },
-  },
-  componentSizes: { buttonMinWidth: 64, buttonHeight: 48, buttonRadius: 12 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
-  fontFamily: { sans: 'sans-serif', mono: 'monospace' },
-  fontSize: { xs: 10, sm: 12, base: 14, bodyLg: 16, title: 20 },
-  fontWeight: { medium: 500, semibold: 600, bold: 700 },
-  letterSpacing: { widest: '1px' },
-  shadowsCSS: { none: 'none' },
-  opacity: { soft: 0.8 },
-  duration: { normal: '200ms', fastest: '80ms' },
-  motionDuration: { flick: '90ms' },
-  motionEasing: { current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' } },
-  easing: { ease: 'ease' },
-  copyToClipboard: vi.fn().mockResolvedValue(undefined),
-  formatDateTime: (ts: number) => String(ts),
-  formatOrigin: (origin: string) => origin,
-  getShortAddress: (address: string) => address,
-  formatBaseUnits: (amount: bigint) => String(amount < 0n ? -amount : amount),
 }));
 
+import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
+import type { ThemeContextValue } from '@salmon/shared';
 import { DAppTransactionApprovalView } from './DAppTransactionApprovalView';
+
+function hexToRgb(hex: string): string {
+  const value = hex.replace('#', '');
+  return `rgb(${parseInt(value.slice(0, 2), 16)}, ${parseInt(value.slice(2, 4), 16)}, ${parseInt(value.slice(4, 6), 16)})`;
+}
 
 const ACCOUNT = 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' as never;
 
@@ -141,6 +88,45 @@ describe('DAppTransactionApprovalView', () => {
 
     expect(screen.getByRole('button', { name: 'HOLD TO APPROVE' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'APPROVE & SIGN' })).not.toBeInTheDocument();
+  });
+
+  it('shows every technical field and, in light, the decode error in the danger ink', () => {
+    const light = createSemantic('light');
+    const value = {
+      mode: 'light',
+      preference: 'light',
+      setPreference: async () => undefined,
+      semantic: light,
+      shadows,
+      ready: true,
+    } as unknown as ThemeContextValue;
+
+    render(
+      <ThemeContext.Provider value={value}>
+        <DAppTransactionApprovalView
+          {...baseProps}
+          effects={{ kind: 'no-effect', account: ACCOUNT }}
+          parsingError="boom"
+        />
+      </ThemeContext.Provider>
+    );
+
+    // What the user signs on is unchanged by the rendering: fee, count, payer, blockhash.
+    expect(screen.getByText('0.000005 SOL')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('FeePayer1111111111111111111111111111111111')).toBeInTheDocument();
+    expect(screen.getByText('Block1111111111111111111111111111111111111')).toBeInTheDocument();
+    expect(screen.getByText('Review unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'APPROVE & SIGN' })).toBeDisabled();
+
+    expect(screen.getByTestId('dapp-transaction-approval').style.backgroundColor).toBe(
+      hexToRgb(light.surface.bedrock)
+    );
+    expect(
+      within(screen.getByTestId('decode-error')).getByText(
+        'This transaction could not be decoded. Do not approve unless you trust this site.'
+      ).style.color
+    ).toBe(hexToRgb(light.status.danger));
   });
 
   it('demands a hold when the effects could not be established at all', () => {

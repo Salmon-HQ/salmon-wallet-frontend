@@ -33,7 +33,6 @@
 
 import {
   ApiError,
-  colors,
   createAccount,
   fontFamilyNative,
   generateAccountName,
@@ -45,14 +44,15 @@ import {
   fontSize,
   lineHeight,
   removeStashItem,
+  s,
   spacing,
   STASH_KEYS,
   trackOnboardingEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
-  semantic,
   componentSizes,
+  type Semantic,
 } from '@salmon/shared';
 import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -62,6 +62,7 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
+import { useSemantic, useThemedStyles, useThemeMode } from '../../src/theme/useThemedStyles';
 import {
   LoadingScreen,
   OnboardingDescription,
@@ -85,6 +86,9 @@ const RECOVER_FLOW_STEPS = 2;
 
 export default function PasswordScreen() {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
+  const mode = useThemeMode();
   const params = useLocalSearchParams<{ type?: string }>();
   const [state, actions] = useAccountsContext();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
@@ -344,7 +348,7 @@ export default function PasswordScreen() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {/* The form gives way to the wait with the passage's sink. On a failure
           it returns under the wait's own ebb, exactly where it was; on
           success the parked route navigates before it can reappear. */}
@@ -371,7 +375,7 @@ export default function PasswordScreen() {
           The lock: what the password buys. The fish leaves the flow screens
           — one semantic glyph per step, consent's pattern and size.
         */
-            mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+            mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
             chrome={
               <ScreenHeader
                 onBack={handleBack}
@@ -504,36 +508,37 @@ export default function PasswordScreen() {
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  /** The form's travel frame for the passage into the wait. */
-  passage: {
-    flex: 1,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: spacing.lg,
-  },
-  strengthContainer: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-  generalError: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * lineHeight.snug,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-    width: '100%',
-  },
-  termsText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * lineHeight.normal,
-    textAlign: 'center',
-  },
-  termsHighlight: {
-    color: colors.step.active,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /** The form's travel frame for the passage into the wait. */
+    passage: {
+      flex: 1,
+    },
+    inputContainer: {
+      width: '100%',
+      marginBottom: spacing.lg,
+    },
+    strengthContainer: {
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.xs,
+    },
+    generalError: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.snug,
+      marginBottom: spacing.lg,
+      textAlign: 'center',
+      width: '100%',
+    },
+    termsText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.normal,
+      textAlign: 'center',
+    },
+    termsHighlight: {
+      color: t.step.active,
+    },
+  });
