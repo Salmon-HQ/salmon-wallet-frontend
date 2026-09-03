@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { DAppSignInApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignIn,
@@ -8,6 +8,7 @@ import {
   type DAppSignInRequest,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
+import { useDAppApproval } from './useDAppApproval';
 
 interface Props {
   origin: string;
@@ -27,8 +28,15 @@ export function DAppSignInApprovalPage({
   account,
   onDismiss,
 }: Props): React.ReactElement {
-  const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
+  const {
+    loading,
+    reject: handleReject,
+    approve,
+  } = useDAppApproval({
+    requestId: request.id,
+    onDismiss,
+  });
 
   const input = request.params?.input;
 
@@ -43,45 +51,23 @@ export function DAppSignInApprovalPage({
     }
   }, [account, input, origin]);
 
-  const sendToBackground = useCallback(
-    (data: Record<string, unknown>) => {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          channel: 'salmon_extension_background_channel',
-          data: {
-            ...data,
-            id: request.id,
-          },
-        });
-      }
-    },
-    [request.id]
+  const handleApprove = useCallback(
+    () =>
+      approve(
+        () =>
+          approveSolanaSignIn(
+            account as Parameters<typeof approveSolanaSignIn>[0],
+            request.params?.input ?? {},
+            origin
+          ),
+        {
+          guardError:
+            !account || !isSignableSolanaAccount(account) ? 'Solana account not available' : null,
+          failureError: 'Sign-in failed',
+        }
+      ),
+    [account, approve, origin, request]
   );
-
-  const handleReject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
-    onDismiss(false);
-  }, [onDismiss, sendToBackground]);
-
-  const handleApprove = useCallback(async () => {
-    if (!account || !isSignableSolanaAccount(account)) {
-      sendToBackground({ error: 'Solana account not available' });
-      onDismiss(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await approveSolanaSignIn(account, request.params?.input ?? {}, origin);
-      sendToBackground({ result });
-      onDismiss(true);
-    } catch {
-      sendToBackground({ error: 'Sign-in failed' });
-      onDismiss(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [account, onDismiss, origin, request, sendToBackground]);
 
   return (
     <DAppSignInApprovalView

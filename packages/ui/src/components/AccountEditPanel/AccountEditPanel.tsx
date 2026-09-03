@@ -8,7 +8,12 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { IconGlyphProps } from '@salmon/shared';
+import {
+  ACCOUNT_EDIT_SECTIONS,
+  type AccountEditAction,
+  type AccountEditIconName,
+  type IconGlyphProps,
+} from '@salmon/shared';
 
 import { KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../icons';
 import { IconBubble } from '../IconBubble';
@@ -19,12 +24,13 @@ import type { AccountEditPanelProps } from './types';
 /** The leading well every row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
 
-interface SectionItem {
-  labelKey: string;
-  icon: React.ComponentType<IconGlyphProps>;
-  onPress: () => void;
-  testID: string;
-}
+/** The shared table's icon names, as this platform's glyphs. */
+const ICONS: Record<AccountEditIconName, React.ComponentType<IconGlyphProps>> = {
+  textT: TextTIcon,
+  userCircle: UserCircleIcon,
+  key: KeyIcon,
+  lock: LockIcon,
+};
 
 export function AccountEditPanel({
   account,
@@ -36,32 +42,12 @@ export function AccountEditPanel({
 }: AccountEditPanelProps): React.ReactElement {
   const { t } = useTranslation();
 
-  const sections: SectionItem[] = [
-    {
-      labelKey: 'settings.account_edit.name_section',
-      icon: TextTIcon,
-      onPress: onEditName,
-      testID: 'account-edit-name',
-    },
-    {
-      labelKey: 'settings.account_edit.avatar_section',
-      icon: UserCircleIcon,
-      onPress: onEditAvatar,
-      testID: 'account-edit-avatar',
-    },
-    {
-      labelKey: 'settings.account_edit.backup_section',
-      icon: KeyIcon,
-      onPress: onBackupSeed,
-      testID: 'account-edit-backup',
-    },
-    {
-      labelKey: 'settings.account_edit.private_key_section',
-      icon: LockIcon,
-      onPress: onExportPrivateKey,
-      testID: 'account-edit-private-key',
-    },
-  ];
+  const actions: Record<AccountEditAction, () => void> = {
+    name: onEditName,
+    avatar: onEditAvatar,
+    backup: onBackupSeed,
+    privateKey: onExportPrivateKey,
+  };
 
   return (
     <SettingsPanelContent
@@ -69,21 +55,21 @@ export function AccountEditPanel({
       subtitle={account.name}
       onBack={onBack}
     >
-      {sections.map((item) => (
+      {ACCOUNT_EDIT_SECTIONS.map((item) => (
         <ListRow
-          key={item.labelKey}
+          key={item.action}
           testID={item.testID}
           leading={
             <IconBubble
               size={ROW_BUBBLE_SIZE}
               shape="rounded"
               tone="surface"
-              icon={item.icon}
+              icon={ICONS[item.icon]}
               iconSize={iconSize.md}
             />
           }
           title={t(item.labelKey)}
-          onPress={item.onPress}
+          onPress={actions[item.action]}
         />
       ))}
     </SettingsPanelContent>

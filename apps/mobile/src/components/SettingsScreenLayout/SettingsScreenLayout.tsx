@@ -57,6 +57,11 @@ export interface SettingsScreenLayoutProps extends SettingsScreenLayoutPropsBase
   contentContainerStyle?: StyleProp<ViewStyle>;
   /** Whether to render the screen header. Default: true */
   showHeader?: boolean;
+  /**
+   * Space under the footer, for a screen pushed over the tab shell whose
+   * committing action has to clear the floating chrome (`useTabChrome`).
+   */
+  footerBottomInset?: number;
 }
 
 // ============================================================================
@@ -73,6 +78,9 @@ export function SettingsScreenLayout({
   contentContainerStyle,
   showHeader = true,
   footer,
+  footerBottomInset,
+  backDisabled,
+  testID,
 }: SettingsScreenLayoutProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
@@ -102,6 +110,7 @@ export function SettingsScreenLayout({
           {showHeader && (
             <ScreenHeader
               onBack={onBack}
+              backDisabled={backDisabled}
               backLabel={t('accessibility.go_back', 'Go back')}
               title={title}
               subtitle={subtitle}
@@ -114,6 +123,7 @@ export function SettingsScreenLayout({
 
           {scrollable ? (
             <ScrollView
+              testID={testID}
               style={styles.scrollView}
               contentContainerStyle={[
                 styles.scrollContent,
@@ -128,6 +138,7 @@ export function SettingsScreenLayout({
             </ScrollView>
           ) : (
             <View
+              testID={testID}
               style={[
                 styles.staticContent,
                 styles.scrollContent,
@@ -139,7 +150,16 @@ export function SettingsScreenLayout({
             </View>
           )}
 
-          {footer && <View style={styles.footer}>{footer}</View>}
+          {footer && (
+            <View
+              style={[
+                styles.footer,
+                footerBottomInset != null && { paddingBottom: footerBottomInset },
+              ]}
+            >
+              {footer}
+            </View>
+          )}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>

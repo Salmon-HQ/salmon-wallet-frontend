@@ -30,6 +30,7 @@ import {
   motionMs,
   type Semantic,
   normalizeIpfsUrl,
+  useDeveloperMode,
 } from '@salmon/shared';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -78,10 +79,12 @@ export function WalletHeader({
   onCopyAddress,
   onSettingsPress,
   onWalletPress,
-  developerMode = false,
   avatarUrl,
 }: WalletHeaderProps) {
   const { t } = useTranslation();
+  // Developer mode shows more of the address (8+8 instead of 4+4); read from
+  // the provider both platforms mount, not drilled.
+  const developerMode = useDeveloperMode();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();
   const [imgError, setImgError] = useState(false);

@@ -20,3 +20,5 @@ export {
   toLanguageItems,
   toTrustedAppItems,
 } from './items';
+export { ACCOUNT_EDIT_SECTIONS } from './accountEdit';
+export type { AccountEditAction, AccountEditIconName, AccountEditSection } from './accountEdit';

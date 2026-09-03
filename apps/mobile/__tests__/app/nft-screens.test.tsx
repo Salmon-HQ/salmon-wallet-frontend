@@ -89,6 +89,7 @@ jest.mock('@salmon/shared', () => ({
   formatRawAmount: () => '0.005',
   trackEvent: jest.fn(),
   tabularNums: { native: { fontVariant: ['tabular-nums'] } },
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useValidationDirty'),
   useAddressValidation: () => ({
     validationState: 'valid',
     isValidating: false,

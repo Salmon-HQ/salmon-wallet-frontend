@@ -8,7 +8,7 @@
  * Used in the settings flow to change the account profile picture.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,8 @@ import {
   fontSize,
   fontFamilyNative,
   PRESET_AVATAR_URLS,
-  useAvatarNfts,
+  useAvatarPicker,
+  type AvatarPickerTab,
   type NftAvatarItem,
   type AvatarPickerPropsBase,
   type Semantic,
@@ -49,8 +50,6 @@ const NFT_MIN_COLUMNS = 2;
 const NFT_MAX_COLUMNS = 3;
 const NFT_MIN_SIZE = 96;
 const GRID_GAP = spacing.sm;
-
-type Tab = 'presets' | 'nfts';
 
 // ============================================================================
 // Types
@@ -82,15 +81,16 @@ export function AccountAvatarPanel({
   const styles = useThemedStyles(stylesFor);
   const { accent } = useSemantic();
   const { width: windowWidth } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState<Tab>('presets');
-  const [selectedUrl, setSelectedUrl] = useState<string | undefined>(currentAvatarUrl);
-
-  const { nfts, loading: nftsLoading } = useAvatarNfts({
-    account,
-    enabled: activeTab === 'nfts',
-  });
-
-  const hasChanged = selectedUrl !== currentAvatarUrl;
+  const {
+    activeTab,
+    setActiveTab,
+    selectedUrl,
+    setSelectedUrl,
+    nfts,
+    nftsLoading,
+    hasChanged,
+    save: handleSave,
+  } = useAvatarPicker({ currentAvatarUrl, account, onSave });
   const availableWidth = useMemo(() => windowWidth - contentPadding.screen * 2, [windowWidth]);
   const presetColumns = useMemo(
     () =>
@@ -109,12 +109,6 @@ export function AccountAvatarPanel({
     () => (availableWidth - GRID_GAP * (nftColumns - 1)) / nftColumns,
     [availableWidth, nftColumns]
   );
-
-  const handleSave = useCallback(() => {
-    if (selectedUrl && hasChanged) {
-      onSave(selectedUrl);
-    }
-  }, [selectedUrl, hasChanged, onSave]);
 
   // Preset avatar item renderer
   const renderPresetItem = useCallback(
@@ -145,7 +139,7 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [presetItemSize, selectedUrl, styles]
+    [presetItemSize, selectedUrl, setSelectedUrl, styles]
   );
 
   // NFT item renderer
@@ -176,7 +170,7 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [nftItemSize, selectedUrl, styles]
+    [nftItemSize, selectedUrl, setSelectedUrl, styles]
   );
 
   const presetKeyExtractor = useCallback((_item: string, index: number) => `preset-${index}`, []);
@@ -199,7 +193,7 @@ export function AccountAvatarPanel({
             { key: 'nfts', label: t('settings.avatar_nfts') },
           ]}
           activeKey={activeTab}
-          onChange={(key) => setActiveTab(key as Tab)}
+          onChange={(key) => setActiveTab(key as AvatarPickerTab)}
           tabTestIDPrefix="avatar-tab"
           style={styles.tabs}
         />

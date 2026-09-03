@@ -62,7 +62,6 @@ export function SendPage({
   nft = null,
   onBack,
   onSuccess,
-  showUnverifiedTokens = false,
   loading = false,
   onFlowLockChange,
 }: SendPageProps) {
@@ -203,7 +202,6 @@ export function SendPage({
             token={token}
             tokens={tokens}
             tokensLoading={loading}
-            showUnverifiedTokens={showUnverifiedTokens}
             liveBalance={flow.liveBalance}
             onSelectToken={setToken}
             nft={nft}
@@ -236,7 +234,6 @@ export function SendPage({
             token={token}
             tokens={tokens}
             tokensLoading={loading}
-            showUnverifiedTokens={showUnverifiedTokens}
             amount={amount}
             estimatedFee={flow.estimatedFee}
             estimateFee={flow.estimateFee}

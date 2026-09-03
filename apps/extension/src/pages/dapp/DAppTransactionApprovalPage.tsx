@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { DAppTransactionApprovalView } from '@salmon/ui';
 import {
   approveSolanaTransactionRequest,
@@ -9,6 +9,7 @@ import {
   type DAppTransactionRequest,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
+import { useDAppApproval } from './useDAppApproval';
 
 interface Props {
   origin: string;
@@ -25,8 +26,15 @@ export function DAppTransactionApprovalPage({
   networkId,
   onDismiss,
 }: Props): React.ReactElement {
-  const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
+  const {
+    loading,
+    reject: handleReject,
+    approve,
+  } = useDAppApproval({
+    requestId: request.id,
+    onDismiss,
+  });
   const solanaAccount = useMemo(
     () => (account && isSignableSolanaAccount(account) ? account : null),
     [account]
@@ -36,45 +44,22 @@ export function DAppTransactionApprovalPage({
     request,
   });
 
-  const sendToBackground = useCallback(
-    (data: Record<string, unknown>) => {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          channel: 'salmon_extension_background_channel',
-          data: {
-            ...data,
-            id: request.id,
-          },
-        });
-      }
-    },
-    [request.id]
+  const handleApprove = useCallback(
+    () =>
+      approve(
+        () =>
+          approveSolanaTransactionRequest(
+            account as Parameters<typeof approveSolanaTransactionRequest>[0],
+            request
+          ),
+        {
+          guardError:
+            !account || !isSignableSolanaAccount(account) ? 'Solana account not available' : null,
+          failureError: 'Transaction approval failed',
+        }
+      ),
+    [account, approve, request]
   );
-
-  const handleReject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
-    onDismiss(false);
-  }, [onDismiss, sendToBackground]);
-
-  const handleApprove = useCallback(async () => {
-    if (!account || !isSignableSolanaAccount(account)) {
-      sendToBackground({ error: 'Solana account not available' });
-      onDismiss(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await approveSolanaTransactionRequest(account, request);
-      sendToBackground({ result });
-      onDismiss(true);
-    } catch {
-      sendToBackground({ error: 'Transaction approval failed' });
-      onDismiss(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [account, onDismiss, request, sendToBackground]);
 
   return (
     <DAppTransactionApprovalView

@@ -342,6 +342,7 @@ export type { AccountAvatarPanelProps } from './AccountPanels/AccountAvatarPanel
 // ---------------------------------------------------------------------------
 
 export { AddressBookPanel } from './AddressPanels/AddressBookPanel';
+export { AddressForm } from './AddressForm';
 export { AddressAddPanel } from './AddressPanels/AddressAddPanel';
 export { AddressEditPanel } from './AddressPanels/AddressEditPanel';
 
@@ -360,3 +361,5 @@ export { AboutPanel } from './AboutPanel';
 
 export { PendingActivityBanner } from './PendingActivityBanner';
 export type { PendingActivityBannerProps } from './PendingActivityBanner';
+export { RevealCover } from './RevealCover';
+export { AccountAvatar } from './AccountAvatar';

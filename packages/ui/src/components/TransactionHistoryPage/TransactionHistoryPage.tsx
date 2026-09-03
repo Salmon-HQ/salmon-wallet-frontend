@@ -50,7 +50,6 @@ export function TransactionHistoryPage({
   onViewExplorer,
   onCopyHash,
   onShare,
-  developerMode,
   networkId,
   error = null,
   onRetry,
@@ -180,7 +179,6 @@ export function TransactionHistoryPage({
             onViewExplorer={onViewExplorer}
             onCopyHash={onCopyHash}
             onShare={onShare}
-            developerMode={developerMode}
             networkId={networkId}
           />
         )}

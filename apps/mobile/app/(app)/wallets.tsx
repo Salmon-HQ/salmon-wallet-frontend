@@ -7,9 +7,8 @@
  * "Include in total" heading, and an outlined "Add wallet" that routes to the
  * same add screen Settings → Accounts → Add opens.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +25,6 @@ import {
   fontWeight,
   getAccountAddress,
   getAccountMnemonic,
-  getInitials,
   getShortAddress,
   isWatchOnlyAccount,
   letterSpacing,
@@ -43,6 +41,7 @@ import {
 import {
   Card,
   DepthBackground,
+  AccountAvatar,
   IconBubble,
   ListRow,
   ScalesBackground,
@@ -65,8 +64,6 @@ import { useDerivedAccounts } from '../../src/contexts/DerivedAccountsContext';
 import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 
-/** The wallet thumb, per `.pen` CORE 10. */
-const WALLET_BUBBLE_SIZE = 44;
 /** The inline rename affordance beside the name. */
 const RENAME_BUBBLE_SIZE = 24;
 /** The include control at the end of a wallet card. */
@@ -315,11 +312,8 @@ function WalletCard({
   const semantic = useSemantic();
   const [{ accountId: activeId, pathIndex }, accountActions] = useAccountsContext();
   const { scanningAccountId, rescan } = useDerivedAccounts();
-  const [imgError, setImgError] = useState(false);
-
   const address = getAccountAddress(account);
   const shortAddress = getShortAddress(address) ?? '';
-  const initials = getInitials(account.name);
   // Only a seed has a derivation tree to look through — an imported key or a
   // watched address has nothing to find, so the action is absent rather than
   // present and inert.
@@ -363,24 +357,7 @@ function WalletCard({
             : account.name
         }
         style={isActive ? styles.activeCard : undefined}
-        leading={
-          <IconBubble
-            size={WALLET_BUBBLE_SIZE}
-            shape="circle"
-            tone={isActive ? 'ink' : 'accent-tint'}
-          >
-            {account.avatar && !imgError ? (
-              <Image
-                source={{ uri: account.avatar }}
-                style={styles.avatarImage}
-                contentFit="cover"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <Text style={styles.avatarInitials}>{initials}</Text>
-            )}
-          </IconBubble>
-        }
+        leading={<AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />}
         title={account.name}
         titleAccessory={
           <>
@@ -525,15 +502,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.medium,
       fontSize: ms(fontSize.body),
       ...TABULAR,
-    },
-    avatarImage: {
-      width: '100%',
-      height: '100%',
-    },
-    avatarInitials: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.bold,
-      fontSize: ms(fontSize.body),
     },
     // The descent: the derived card steps in one gutter, and a hairline in
     // `border.default` runs from the card above it down its leading edge.

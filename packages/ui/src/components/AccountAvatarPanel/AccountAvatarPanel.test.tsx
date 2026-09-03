@@ -14,6 +14,12 @@ vi.mock('react-i18next', () => ({
 }));
 
 // The NFT list comes from a hook that isn't wired up in this render.
+// The picker hook reaches the NFT query through shared's own module path, so
+// the barrel mock below does not intercept it — this one does.
+vi.mock('@salmon/shared/src/hooks/useAvatarNfts', () => ({
+  useAvatarNfts: () => ({ nfts: [], loading: false }),
+}));
+
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
   PRESET_AVATAR_URLS: ['https://example.test/a.png', 'https://example.test/b.png'],

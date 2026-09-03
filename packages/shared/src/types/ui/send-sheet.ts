@@ -56,8 +56,6 @@ export interface TokenSelectListPropsBase {
   tokens: SendToken[];
   /** Callback when a token is selected */
   onSelectToken: (token: SendToken) => void;
-  /** Show unverified/unknown tokens */
-  showUnverifiedTokens?: boolean;
   /** Whether token data is still loading (shows skeleton when true) */
   loading?: boolean;
 }
@@ -73,7 +71,6 @@ export interface TokenPickerSheetPropsBase extends TokenSelectListPropsBase {
   visible: boolean;
   onClose: () => void;
   loading: boolean;
-  showUnverifiedTokens: boolean;
   testID?: string;
 }
 

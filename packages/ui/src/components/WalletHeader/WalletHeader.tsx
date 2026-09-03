@@ -40,6 +40,7 @@ import {
   motionMs,
   spacing,
   useCopyFeedback,
+  useDeveloperMode,
   normalizeIpfsUrl,
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
@@ -78,13 +79,15 @@ export function WalletHeader({
   onWalletPress,
   onRefreshPress,
   refreshing = false,
-  developerMode = false,
   avatarUrl,
   style,
   className,
 }: WalletHeaderProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
+  // Developer mode shows more of the address (8+8 instead of 4+4); read from
+  // the provider both platforms mount, not drilled.
+  const developerMode = useDeveloperMode();
   const [imgError, setImgError] = useState(false);
   // The stored avatar may point at a gateway a browser cannot hotlink from.
   const avatarSrc = normalizeIpfsUrl(avatarUrl);

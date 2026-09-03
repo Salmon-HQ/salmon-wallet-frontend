@@ -13,7 +13,6 @@ import {
   borderRadius,
   fontFamily,
   fontSize,
-  fontWeight,
   getShortAddress,
   lineHeight,
   spacing,
@@ -28,7 +27,7 @@ import {
 } from '@salmon/shared/utils/account';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { EyeIcon, GlobeIcon, iconSize } from '../../icons';
+import { GlobeIcon, iconSize } from '../../icons';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
@@ -37,6 +36,7 @@ import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
+import { RevealCover } from '../RevealCover';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { PrivateKeyPanelProps } from './types';
@@ -265,34 +265,11 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   {isRevealed ? accountKey.privateKey : KEY_MASK}
                 </span>
                 {!isRevealed && (
-                  <button
-                    type="button"
-                    onClick={() => handleReveal(index)}
-                    data-testid={`private-key-reveal-overlay-${index}`}
-                    aria-label={t('settings.authenticate_to_reveal')}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      zIndex: 10,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: spacing.sm,
-                      margin: 0,
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: surface.bedrock,
-                      borderRadius: borderRadius.r3,
-                      color: text.primary,
-                      fontFamily: fontFamily.sans,
-                      fontWeight: fontWeight.medium,
-                      fontSize: fontSize.bodyLg,
-                    }}
-                  >
-                    <EyeIcon size={iconSize.xl} color={text.primary} />
-                    <span>{t('settings.authenticate_to_reveal')}</span>
-                  </button>
+                  <RevealCover
+                    testID={`private-key-reveal-overlay-${index}`}
+                    label={t('settings.authenticate_to_reveal')}
+                    onPress={() => handleReveal(index)}
+                  />
                 )}
               </div>
 

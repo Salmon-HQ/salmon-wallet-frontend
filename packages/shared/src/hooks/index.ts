@@ -173,6 +173,11 @@ export type {
 
 // Address book form hook (shared form logic for Add/Edit screens)
 export { useAddressBookForm } from './useAddressBookForm';
+export { useAddressAddPanel, useAddressEditPanel } from './useAddressBookPanel';
+export { useValidationDirty } from './useValidationDirty';
+export { useAvatarPicker } from './useAvatarPicker';
+export type { AvatarPickerTab } from './useAvatarPicker';
+export type { UseAddressBookPanelResult } from './useAddressBookPanel';
 export type { AddressBookFormInitial, UseAddressBookFormResult } from './useAddressBookForm';
 
 // Avatar NFTs hook (shared between mobile & extension)

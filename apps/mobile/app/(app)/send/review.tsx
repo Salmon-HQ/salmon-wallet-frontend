@@ -59,7 +59,6 @@ export default function SendReviewScreen() {
     setToken,
     tokens,
     tokensLoading,
-    showUnverifiedTokens,
     recipient,
     amount,
     sendHook,
@@ -209,7 +208,6 @@ export default function SendReviewScreen() {
         onClose={() => setPickerOpen(false)}
         tokens={tokens}
         loading={tokensLoading}
-        showUnverifiedTokens={showUnverifiedTokens}
         onSelectToken={handleSelectToken}
       />
     </SafeAreaView>

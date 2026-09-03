@@ -23,7 +23,6 @@ export function TokenPickerSheet({
   onClose,
   tokens,
   loading,
-  showUnverifiedTokens,
   onSelectToken,
   testID = 'send-token-picker',
 }: TokenPickerSheetProps) {
@@ -39,12 +38,7 @@ export function TokenPickerSheet({
       // material Receive rides.
       background={<Thermocline tier="thick" style={styles.thermocline} />}
     >
-      <TokenSelectList
-        tokens={tokens}
-        loading={loading}
-        showUnverifiedTokens={showUnverifiedTokens}
-        onSelectToken={onSelectToken}
-      />
+      <TokenSelectList tokens={tokens} loading={loading} onSelectToken={onSelectToken} />
     </BottomSheetContainer>
   );
 }

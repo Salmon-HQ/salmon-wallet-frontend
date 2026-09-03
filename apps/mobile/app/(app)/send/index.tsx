@@ -20,10 +20,9 @@
  * good — this screen only draws the verdict.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   formatTokenAmount,
   getShortAddress,
@@ -39,15 +38,13 @@ import {
 } from '@salmon/shared';
 
 import {
-  DepthBackground,
   IconBubble,
   ListRow,
   PrimaryButton,
   QRScanner,
   RecipientInput,
-  ScalesBackground,
-  ScreenHeader,
   SectionLabel,
+  SettingsScreenLayout,
   TokenLogo,
   TokenPickerSheet,
   WarningNotice,
@@ -84,7 +81,6 @@ export default function SendRecipientScreen() {
     setToken,
     tokens,
     tokensLoading,
-    showUnverifiedTokens,
     liveBalance,
   } = useSendFlow();
 
@@ -92,11 +88,8 @@ export default function SendRecipientScreen() {
   const [showScanner, setShowScanner] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const tokenBalance = useMemo(() => {
-    if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) return liveBalance;
-    const fallback = token?.uiAmount;
-    return typeof fallback === 'string' ? parseFloat(fallback) : (fallback ?? 0);
-  }, [liveBalance, token?.uiAmount]);
+  // `liveBalance` already falls back to the token's own amount.
+  const tokenBalance = liveBalance ?? 0;
 
   const senderAddress = account?.getReceiveAddress() ?? '';
   const { contacts, ownWallets } = useSendContacts(senderAddress);
@@ -178,30 +171,28 @@ export default function SendRecipientScreen() {
     );
   };
 
-  // The action row clears the keyboard by the keyboard's own measured height —
-  // one number for both platforms, the idiom every keyboarded surface here
-  // uses.
-  const actionBottomPadding =
-    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
+  // The shell's KeyboardAvoidingView lifts the footer by the keyboard; the
+  // inset under it is what is left of the old padding — the floating chrome
+  // when there is no keyboard, a step when there is.
+  const footerBottomInset = keyboardHeight > 0 ? vs(spacing.sm) : floatingBottomOffset;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Pushed over the tab shell, so it mounts its own water. */}
-      <DepthBackground />
-      <ScalesBackground variant="deepField" />
-
-      <ScreenHeader
-        onBack={() => router.back()}
+    <>
+      <SettingsScreenLayout
+        testID="send-recipient-screen"
         title={t('token.action.send')}
         subtitle={t('send.screens.recipientSubtitle')}
-      />
-
-      <ScrollView
-        testID="send-recipient-screen"
-        style={styles.body}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        onBack={() => router.back()}
+        footerBottomInset={footerBottomInset}
+        footer={
+          <PrimaryButton
+            testID="send-continue-button"
+            onPress={handleContinue}
+            disabled={!isAddressValid || isValidating}
+          >
+            {t('actions.continue')}
+          </PrimaryButton>
+        }
       >
         {/* The token is chosen here, first — amount's row becomes read-only
             once this screen has already asked (owner ruling 2026-09-01). */}
@@ -242,17 +233,7 @@ export default function SendRecipientScreen() {
             {renderGroup('token.send.addressBook', contactRows, 'send-address-book')}
           </>
         )}
-      </ScrollView>
-
-      <View style={[styles.action, { paddingBottom: actionBottomPadding }]}>
-        <PrimaryButton
-          testID="send-continue-button"
-          onPress={handleContinue}
-          disabled={!isAddressValid || isValidating}
-        >
-          {t('actions.continue')}
-        </PrimaryButton>
-      </View>
+      </SettingsScreenLayout>
 
       <QRScanner
         visible={showScanner}
@@ -266,30 +247,16 @@ export default function SendRecipientScreen() {
         onClose={() => setPickerOpen(false)}
         tokens={tokens}
         loading={tokensLoading}
-        showUnverifiedTokens={showUnverifiedTokens}
         onSelectToken={(next) => {
           setToken(next);
           setPickerOpen(false);
         }}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  // The component gap: every top-level child of a screen is 20 from the next
-  // (DESIGN.md §Layout — "The component gap").
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
   // A group is one composed block: its own heading and rows sit at the tighter
   // in-component step, and the 20 belongs to the seam above it.
   group: {
@@ -297,9 +264,5 @@ const styles = StyleSheet.create({
   },
   notice: {
     marginTop: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
   },
 });

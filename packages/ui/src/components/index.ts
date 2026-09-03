@@ -326,6 +326,9 @@ export type { PrivateKeyPanelProps } from './PrivateKeyPanel';
 // AddressBookPanel - Contact list management
 export { AddressBookPanel } from './AddressBookPanel';
 
+// AddressForm - the fields both address-book panels draw
+export { AddressForm } from './AddressForm';
+
 // AddressAddPanel - Add new contact
 export { AddressAddPanel } from './AddressAddPanel';
 
@@ -422,3 +425,9 @@ export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
 // NftsTab - the NFTs sub-tab of Home: one grid, on the active network
 export { NftsTab } from './NftsTab';
 export type { NftsTabProps } from './NftsTab';
+
+// RevealCover - the bedrock gate over an unrevealed secret
+export { RevealCover } from './RevealCover';
+
+// AccountAvatar - the identity well a wallet row carries
+export { AccountAvatar } from './AccountAvatar';

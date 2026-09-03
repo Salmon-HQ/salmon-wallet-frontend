@@ -11,9 +11,9 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { EyeIcon, GlobeIcon, iconSize } from '../../icons';
+import { GlobeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -31,7 +31,7 @@ import {
   type PrivateKeyPanelPropsBase,
   type Semantic,
 } from '@salmon/shared';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
@@ -39,6 +39,7 @@ import { ConfirmSheet } from '../ConfirmSheet';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
+import { RevealCover } from '../RevealCover';
 import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
@@ -96,7 +97,6 @@ export function PrivateKeyPanel({
 }: PrivateKeyPanelProps): React.ReactElement | null {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
 
   // A private key is a full spending credential; protect the panel from the
   // network picker onward so backgrounding mid-flow is never a gap.
@@ -295,19 +295,14 @@ export function PrivateKeyPanel({
                 <Text style={styles.keyText} selectable={isRevealed}>
                   {isRevealed ? accountKey.privateKey : KEY_MASK}
                 </Text>
+                {/* Both branches cost a proof of identity, so the label does
+                    not promise a free tap. */}
                 {!isRevealed && (
-                  <TouchableOpacity
-                    style={styles.revealCover}
-                    onPress={() => handleReveal(index)}
-                    activeOpacity={0.8}
+                  <RevealCover
                     testID={`private-key-reveal-overlay-${index}`}
-                    accessibilityRole="button"
-                  >
-                    <EyeIcon size={iconSize.xl} color={text.primary} />
-                    {/* Both branches cost a proof of identity, so the label
-                        does not promise a free tap. */}
-                    <Text style={styles.revealText}>{t('settings.authenticate_to_reveal')}</Text>
-                  </TouchableOpacity>
+                    label={t('settings.authenticate_to_reveal')}
+                    onPress={() => handleReveal(index)}
+                  />
                 )}
               </View>
 
@@ -381,23 +376,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.mono,
       fontSize: s(fontSize.monoLg),
       lineHeight: s(fontSize.monoLg) * lineHeight.normal,
-    },
-    // Opaque, not a scrim: a translucent cover over a masked key reads as a
-    // loading state and lets the water column through the gate.
-    revealCover: {
-      ...StyleSheet.absoluteFillObject,
-      // Declared, not implied by sibling order: a reorder must not uncover the gate.
-      zIndex: 10,
-      backgroundColor: t.surface.bedrock,
-      borderRadius: borderRadius.r3,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: s(spacing.sm),
-    },
-    revealText: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.bodyLg),
     },
     emptyText: {
       color: t.text.secondary,

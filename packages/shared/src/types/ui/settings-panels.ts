@@ -9,6 +9,8 @@
  */
 import type { ReactNode } from 'react';
 
+import type { UseAddressBookFormResult } from '../../hooks/useAddressBookForm';
+
 import type {
   AddressBookAddBaseProps,
   AddressBookEditBaseProps,
@@ -51,6 +53,8 @@ export interface SettingsScreenLayoutPropsBase extends Testable {
   /** Supporting line under the title — every screen says what it is for. */
   subtitle?: string;
   onBack: () => void;
+  /** Holds the back control while a commit is in flight. */
+  backDisabled?: boolean;
   children: ReactNode;
   /** Whether the body scrolls on its own. Default true. */
   scrollable?: boolean;
@@ -132,3 +136,43 @@ export interface DerivedAccountCardPropsBase extends Testable {
 
 /** WatchOnlyBadge — marks a wallet the user can read but not operate. */
 export interface WatchOnlyBadgePropsBase extends Testable {}
+
+/**
+ * AddressForm — the address-book form both the add and the edit panel draw:
+ * label, address, the network it belongs to, save. The panel decides the
+ * words and what saving does; the form owns nothing but the fields.
+ */
+export interface AddressFormPropsBase extends Testable {
+  title: string;
+  subtitle: string;
+  /** The network the contact lives on, already worded ("Solana", "Bitcoin Testnet"). */
+  networkLabel: string;
+  /** The `useAddressBookForm` the panel seeded. */
+  form: UseAddressBookFormResult;
+  onSave: () => void | Promise<void>;
+  onBack: () => void;
+  /** A save that the panel's caller refused, surfaced under the button. */
+  errorText?: string | null;
+}
+
+/**
+ * RevealCover — the opaque bedrock gate over a secret that has not been
+ * revealed yet (The Bedrock Rule): a translucent scrim would read as a
+ * loading state and let the water through. Rendering only — the panel owns
+ * the secret and decides what pressing it costs.
+ */
+export interface RevealCoverPropsBase extends Testable {
+  label: string;
+  onPress: () => void;
+}
+
+/**
+ * AccountAvatar — the 44px identity well a wallet row carries: the account's
+ * picture, or its initials when there is none or it fails to load.
+ */
+export interface AccountAvatarPropsBase extends Testable {
+  name: string;
+  avatarUrl?: string | null;
+  /** The active wallet's well is ink; every other one is the accent tint. */
+  active: boolean;
+}

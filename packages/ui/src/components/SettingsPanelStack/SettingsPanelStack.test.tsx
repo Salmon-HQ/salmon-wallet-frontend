@@ -23,6 +23,22 @@ vi.mock('../LoadingScreen', () => ({
   LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
 }));
 
+// The two "show me more" toggles read the DeveloperMode provider, not props;
+// the stack is rendered without the provider tree, so its slice is faked.
+const mockToggleDeveloperNetworks = vi.fn();
+const mockSetShowUnverifiedTokens = vi.fn();
+const mockChangeNetwork = vi.fn();
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  useAccountsContext: () => [{ networkId: 'solana-devnet' }, { changeNetwork: mockChangeNetwork }],
+  useDeveloperModeSettings: () => ({
+    developerNetworks: false,
+    showUnverifiedTokens: false,
+    toggleDeveloperNetworks: mockToggleDeveloperNetworks,
+    setShowUnverifiedTokens: mockSetShowUnverifiedTokens,
+  }),
+}));
+
 import { SettingsPanelStack } from './SettingsPanelStack';
 import type { PanelRegistry } from './types';
 
@@ -65,8 +81,6 @@ const renderStack = (
       visible
       onClose={vi.fn()}
       panelRegistry={makeRegistry()}
-      developerNetworksEnabled={false}
-      onDeveloperNetworksToggle={vi.fn()}
       onRemoveWallet={vi.fn()}
       onRemoveAllWallets={vi.fn()}
       {...overrides}
@@ -138,16 +152,19 @@ describe('SettingsPanelStack — a toggle row announces once', () => {
     expect(screen.getByTestId(testId)).toBeTruthy();
   });
 
-  it('reports each toggle through its own switch', () => {
-    const onDeveloperNetworksToggle = vi.fn();
-    const onUnverifiedTokensToggle = vi.fn();
-    renderStack({ onDeveloperNetworksToggle, onUnverifiedTokensToggle });
+  it('writes each toggle to the shared setting, handing the session over on the way', () => {
+    renderStack();
 
+    // The developer-networks toggle carries the session's network and the
+    // switch, so turning it off on devnet lands the user on mainnet first.
     fireEvent.click(screen.getByTestId('settings-developer-networks-toggle'));
-    expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
+    expect(mockToggleDeveloperNetworks).toHaveBeenCalledWith({
+      activeNetworkId: 'solana-devnet',
+      changeNetwork: mockChangeNetwork,
+    });
 
     fireEvent.click(screen.getByTestId('settings-unverified-tokens-toggle'));
-    expect(onUnverifiedTokensToggle).toHaveBeenCalledWith(true);
+    expect(mockSetShowUnverifiedTokens).toHaveBeenCalledWith(true);
   });
 });
 
@@ -187,8 +204,6 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
           visible
           onClose={vi.fn()}
           panelRegistry={registry}
-          developerNetworksEnabled={false}
-          onDeveloperNetworksToggle={vi.fn()}
           onRemoveWallet={vi.fn()}
           onRemoveAllWallets={vi.fn()}
         />

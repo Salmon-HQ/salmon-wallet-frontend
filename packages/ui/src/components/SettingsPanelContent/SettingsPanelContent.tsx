@@ -24,6 +24,7 @@ export function SettingsPanelContent({
   title,
   subtitle,
   onBack,
+  backDisabled,
   children,
   scrollable = true,
   footer,
@@ -61,7 +62,12 @@ export function SettingsPanelContent({
           minHeight: 0,
         }}
       >
-        <ScreenHeader onBack={onBack} title={title} subtitle={subtitle} />
+        <ScreenHeader
+          onBack={onBack}
+          backDisabled={backDisabled}
+          title={title}
+          subtitle={subtitle}
+        />
 
         <div
           data-testid="settings-panel-body"

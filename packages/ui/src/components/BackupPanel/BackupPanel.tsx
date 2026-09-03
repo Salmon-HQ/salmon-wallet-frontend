@@ -14,10 +14,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
   fontFamily,
   fontSize,
-  fontWeight,
   getAccountMnemonic,
   lineHeight,
   spacing,
@@ -26,9 +24,9 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { EyeIcon, iconSize } from '../../icons';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { RevealCover } from '../RevealCover';
 import { SeedWordGrid } from '../SeedPhrase';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
@@ -40,7 +38,7 @@ const MASK = '••••••';
 
 export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const { surface, text } = useSemantic();
+  const { text } = useSemantic();
   const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
@@ -109,37 +107,11 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
         <div style={{ position: 'relative' }} data-testid="backup-seed-phrase">
           <SeedWordGrid words={shownWords} columns={3} />
           {!showSeedPhrase && (
-            // The Bedrock Rule: the cover over an unrevealed phrase is opaque
-            // bedrock, not a translucent scrim — a scrim over masked cells
-            // reads as a loading state, and lets the water through the gate.
-            <button
-              type="button"
-              onClick={handleReveal}
-              data-testid="backup-seed-reveal-overlay"
-              aria-label={t('settings.wallets.tap_to_reveal')}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 10,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: spacing.sm,
-                margin: 0,
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: surface.bedrock,
-                borderRadius: borderRadius.r3,
-                color: text.primary,
-                fontFamily: fontFamily.sans,
-                fontWeight: fontWeight.medium,
-                fontSize: fontSize.bodyLg,
-              }}
-            >
-              <EyeIcon size={iconSize.xl} color={text.primary} />
-              <span>{t('settings.wallets.tap_to_reveal')}</span>
-            </button>
+            <RevealCover
+              testID="backup-seed-reveal-overlay"
+              label={t('settings.wallets.tap_to_reveal')}
+              onPress={handleReveal}
+            />
           )}
         </div>
       )}

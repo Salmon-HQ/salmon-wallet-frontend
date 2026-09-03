@@ -19,9 +19,12 @@ vi.mock('react-i18next', () => ({
 
 // The real barrel, with only the clipboard overridden — the DOM's clipboard
 // is not in jsdom.
+let mockDeveloperMode = false;
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
   copyToClipboard: (...args: unknown[]) => mockCopyToClipboard(...args),
+  // The technical card follows the provider's flag, not a prop.
+  useDeveloperMode: () => mockDeveloperMode,
 }));
 
 import { createSemantic } from '@salmon/shared';
@@ -124,11 +127,14 @@ describe('TransactionDetail', () => {
   });
 
   it('shows the technical card only under developer mode', () => {
+    mockDeveloperMode = false;
     const { rerender } = render(<TransactionDetail transaction={SWAP} />);
     expect(screen.queryByTestId('tx-detail-developer')).toBeNull();
 
-    rerender(<TransactionDetail transaction={SWAP} developerMode />);
+    mockDeveloperMode = true;
+    rerender(<TransactionDetail transaction={SWAP} />);
     expect(within(screen.getByTestId('tx-detail-developer')).getByText('SWAP')).toBeTruthy();
+    mockDeveloperMode = false;
   });
 
   it('copies the hash and reports it', async () => {

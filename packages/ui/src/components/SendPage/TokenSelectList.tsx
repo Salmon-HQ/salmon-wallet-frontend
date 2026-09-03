@@ -16,6 +16,7 @@ import {
   lineHeight,
   spacing,
   tabularNums,
+  useUnverifiedTokens,
   type SendToken,
 } from '@salmon/shared';
 
@@ -38,13 +39,10 @@ function balanceLabel(token: SendToken): string {
   return `${formatTokenAmount(amount)} ${token.symbol}`;
 }
 
-export function TokenSelectList({
-  tokens,
-  onSelectToken,
-  showUnverifiedTokens,
-  loading,
-}: TokenSelectListProps) {
+export function TokenSelectList({ tokens, onSelectToken, loading }: TokenSelectListProps) {
   const { t } = useTranslation();
+  // Spec 026 D4: the unverified-tokens toggle owns this, read where it is used.
+  const showUnverifiedTokens = useUnverifiedTokens();
   const semantic = useSemantic();
   const [searchQuery, setSearchQuery] = useState('');
 

@@ -6,7 +6,7 @@
  * user's NFTs — and the save button. Lateral choice takes the underline,
  * never a boxed or filled container (DESIGN.md §Navigation).
  */
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -17,7 +17,8 @@ import {
   motionMs,
   PRESET_AVATAR_URLS,
   spacing,
-  useAvatarNfts,
+  useAvatarPicker,
+  type AvatarPickerTab,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -26,8 +27,6 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { SkeletonRow } from '../SkeletonRow';
 import { UnderlineTabs } from '../UnderlineTabs';
 import type { AccountAvatarPanelProps } from './types';
-
-type Tab = 'presets' | 'nfts';
 
 /** The grid steps mobile draws: presets four to five across, NFTs two to three. */
 const PRESET_MIN_SIZE = 56;
@@ -43,19 +42,16 @@ export function AccountAvatarPanel({
   const { t } = useTranslation();
   const { state: stateTokens, text } = useSemantic();
 
-  const [activeTab, setActiveTab] = useState<Tab>('presets');
-  const [selectedUrl, setSelectedUrl] = useState<string | undefined>(currentAvatarUrl);
-
-  const { nfts, loading: nftsLoading } = useAvatarNfts({
-    account,
-    enabled: activeTab === 'nfts',
-  });
-
-  const hasChanged = selectedUrl !== currentAvatarUrl;
-
-  const handleSave = useCallback(() => {
-    if (selectedUrl && hasChanged) onSave(selectedUrl);
-  }, [selectedUrl, hasChanged, onSave]);
+  const {
+    activeTab,
+    setActiveTab,
+    selectedUrl,
+    setSelectedUrl,
+    nfts,
+    nftsLoading,
+    hasChanged,
+    save: handleSave,
+  } = useAvatarPicker({ currentAvatarUrl, account, onSave });
 
   const tile = (selected: boolean, round: boolean): React.CSSProperties => ({
     width: '100%',
@@ -92,7 +88,7 @@ export function AccountAvatarPanel({
           { key: 'nfts', label: t('settings.avatar_nfts') },
         ]}
         activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as Tab)}
+        onChange={(key) => setActiveTab(key as AvatarPickerTab)}
         tabTestIDPrefix="avatar-tab"
       />
 

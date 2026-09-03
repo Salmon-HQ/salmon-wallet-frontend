@@ -27,6 +27,8 @@ import {
   motionMs,
   spacing,
   SETTINGS_GROUPS,
+  useAccountsContext,
+  useDeveloperModeSettings,
   useSettingsPanelStack,
   useWaitExit,
   type IconGlyphProps,
@@ -188,10 +190,6 @@ export function SettingsPanelStack({
   onClose,
   panelRegistry,
   initialPanels,
-  developerNetworksEnabled = false,
-  onDeveloperNetworksToggle,
-  unverifiedTokensEnabled = false,
-  onUnverifiedTokensToggle,
   analyticsEnabled = false,
   onAnalyticsToggle,
   onRemoveWallet,
@@ -202,6 +200,30 @@ export function SettingsPanelStack({
   const tokens = useSemantic();
   const reduced = useReducedMotion();
   const { stack, push, pop, reset, canGoBack } = useSettingsPanelStack();
+  // The two "show me more" settings come from the provider the root mounts —
+  // the same instance the carousel and the network panel read (mobile's
+  // settings/index.tsx does the same).
+  const [{ networkId }, accountActions] = useAccountsContext();
+  const {
+    developerNetworks,
+    showUnverifiedTokens,
+    toggleDeveloperNetworks,
+    setShowUnverifiedTokens,
+  } = useDeveloperModeSettings();
+  // Turning the flag off while the session stands on devnet moves it to the
+  // mainnet sibling first — the shared toggle owns that passage.
+  const handleToggleDeveloperNetworks = useCallback(() => {
+    void toggleDeveloperNetworks({
+      activeNetworkId: networkId,
+      changeNetwork: accountActions.changeNetwork,
+    });
+  }, [toggleDeveloperNetworks, networkId, accountActions]);
+  const handleToggleUnverifiedTokens = useCallback(
+    (show: boolean) => {
+      void setShowUnverifiedTokens(show);
+    },
+    [setShowUnverifiedTokens]
+  );
 
   // Track animation state for the top panel
   const [animating, setAnimating] = useState(false);
@@ -291,8 +313,8 @@ export function SettingsPanelStack({
     { checked: boolean; onChange?: (checked: boolean) => void }
   > = {
     analytics: { checked: analyticsEnabled, onChange: onAnalyticsToggle },
-    developerNetworks: { checked: developerNetworksEnabled, onChange: onDeveloperNetworksToggle },
-    unverifiedTokens: { checked: unverifiedTokensEnabled, onChange: onUnverifiedTokensToggle },
+    developerNetworks: { checked: developerNetworks, onChange: handleToggleDeveloperNetworks },
+    unverifiedTokens: { checked: showUnverifiedTokens, onChange: handleToggleUnverifiedTokens },
   };
 
   const renderRow = useCallback(
@@ -386,12 +408,12 @@ export function SettingsPanelStack({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `toggles` is rebuilt per render from these six
     [
       analyticsEnabled,
-      developerNetworksEnabled,
-      unverifiedTokensEnabled,
+      developerNetworks,
+      showUnverifiedTokens,
       handleRowPress,
       onAnalyticsToggle,
-      onDeveloperNetworksToggle,
-      onUnverifiedTokensToggle,
+      handleToggleDeveloperNetworks,
+      handleToggleUnverifiedTokens,
       rowValues,
       tokens,
       t,

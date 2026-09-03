@@ -6,6 +6,8 @@ const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
 const mockNotificationAsync = jest.fn().mockResolvedValue(undefined);
 const mockExplorerPress = jest.fn();
 const mockExplorerProps = jest.fn();
+// The technical block follows the provider's flag, not a prop.
+let mockDeveloperMode = false;
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -46,6 +48,7 @@ jest.mock('@salmon/shared', () => ({
   // The display tables and derivations are real: the verb, the status ink
   // and the swap rate are what this detail is built from.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  useDeveloperMode: () => mockDeveloperMode,
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
   formatRawAmount: (amount: string | number, decimals: number) =>
@@ -295,14 +298,9 @@ describe('TransactionDetail', () => {
 
   it('shows developer details and forwards explorer action', () => {
     const onViewExplorer = jest.fn();
+    mockDeveloperMode = true;
 
-    render(
-      <TransactionDetail
-        transaction={BASE_TRANSACTION}
-        onViewExplorer={onViewExplorer}
-        developerMode
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} onViewExplorer={onViewExplorer} />);
 
     expect(screen.getByText('DEVELOPER INFO')).toBeTruthy();
     expect(screen.getByText('SWAP')).toBeTruthy();

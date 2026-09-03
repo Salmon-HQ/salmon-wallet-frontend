@@ -46,7 +46,6 @@ import {
   type ActivityRow,
 } from '../../src/components';
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
-import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic } from '../../src/theme/useThemedStyles';
 
 // ============================================================================
@@ -57,7 +56,6 @@ export default function ActivityScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const semantic = useSemantic();
-  const developerMode = useDeveloperMode();
 
   const [accountState] = useAccountsContext();
   const { ready, activeBlockchainAccount, networkId } = accountState;
@@ -232,12 +230,7 @@ export default function ActivityScreen() {
         testID="activity-detail-sheet"
       >
         {detail && (
-          <TransactionDetail
-            transaction={detail}
-            onShare={handleShare}
-            developerMode={developerMode}
-            networkId={networkId}
-          />
+          <TransactionDetail transaction={detail} onShare={handleShare} networkId={networkId} />
         )}
       </BottomSheetContainer>
     </SafeAreaView>

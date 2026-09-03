@@ -10,7 +10,6 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -18,7 +17,6 @@ import {
   fontSize,
   fontWeight,
   getAccountAddress,
-  getInitials,
   getShortAddress,
   isWatchOnlyAccount,
   s,
@@ -29,6 +27,7 @@ import {
 } from '@salmon/shared';
 import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { Card } from '../../Card';
+import { AccountAvatar } from '../../AccountAvatar';
 import { IconBubble } from '../../IconBubble';
 import { WatchOnlyBadge } from '../../WatchOnlyBadge';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
@@ -36,8 +35,6 @@ import { ConfirmSheet } from '../../ConfirmSheet';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import type { AccountsPanelProps } from './types';
 
-/** The avatar well every account row carries — the same size Wallets draws. */
-const AVATAR_SIZE = 44;
 /** The inline rename and trailing action affordances. */
 const ACTION_BUBBLE_SIZE = 24;
 
@@ -58,11 +55,8 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { status, accent } = useSemantic();
-  const [imgError, setImgError] = useState(false);
-
   const address = getAccountAddress(account);
   const shortAddress = getShortAddress(address) ?? '';
-  const initials = getInitials(account.name);
 
   return (
     <Card
@@ -77,18 +71,7 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
       style={isActive ? styles.activeCard : undefined}
     >
       <View style={styles.row}>
-        <IconBubble size={AVATAR_SIZE} shape="circle" tone={isActive ? 'ink' : 'accent-tint'}>
-          {account.avatar && !imgError ? (
-            <Image
-              source={{ uri: account.avatar }}
-              style={styles.avatarImage}
-              contentFit="cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <Text style={styles.avatarInitials}>{initials}</Text>
-          )}
-        </IconBubble>
+        <AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />
 
         <View style={styles.info}>
           <View style={styles.nameRow}>
@@ -266,15 +249,6 @@ const stylesFor = (t: Semantic) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.xs),
-    },
-    avatarImage: {
-      width: '100%',
-      height: '100%',
-    },
-    avatarInitials: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.body),
     },
     addCard: {
       backgroundColor: 'transparent',

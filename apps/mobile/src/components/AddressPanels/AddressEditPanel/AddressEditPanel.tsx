@@ -1,35 +1,16 @@
 /**
  * AddressEditPanel - Edit an existing contact in the address book (mobile)
  *
- * Same field shells as `AddressAddPanel`, seeded from the contact being
- * edited.
+ * `AddressForm`'s fields, seeded from the contact; saving commits against the
+ * contact's original address.
  */
 
-import React, { useCallback, useState } from 'react';
-import { Text, TextInput, StyleSheet } from 'react-native';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  fontFamilyNative,
-  fontSize,
-  useAccountsContext,
-  useAddressBookForm,
-  useAddressValidation,
-  type BlockchainType,
-  type Semantic,
-} from '@salmon/shared';
-import { Card } from '../../Card';
-import { PrimaryButton } from '../../Button';
-import { QRScanner } from '../../QRScanner';
-import type { QRScanResult } from '../../QRScanner';
-import { RecipientInput } from '../../Send';
-import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import { useAddressEditPanel, type BlockchainType } from '@salmon/shared';
+import { AddressForm } from '../../AddressForm';
 import type { AddressEditPanelProps } from './types';
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function AddressEditPanel({
   contact,
@@ -38,110 +19,23 @@ export function AddressEditPanel({
   onBack,
 }: AddressEditPanelProps) {
   const { t } = useTranslation();
-  const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
-  const [accountState] = useAccountsContext();
-  const form = useAddressBookForm({
-    label: contact.name,
-    address: contact.domain || contact.address,
-    networkId: contact.networkId,
-    resolvedAddress: contact.address,
-    isDomain: !!contact.domain,
-  });
-  const [showScanner, setShowScanner] = useState(false);
+  const { form, save } = useAddressEditPanel({ contact, onSave });
 
-  const { validationState, isValidating } = useAddressValidation(
-    form.address,
-    accountState.activeBlockchainAccount,
-    { debounceMs: 500, onValidation: form.handleValidation }
-  );
-
-  const handleScan = useCallback(
-    (result: QRScanResult) => {
-      form.setAddress(result.address);
-      setShowScanner(false);
-    },
-    [form]
-  );
-
-  const handleSave = useCallback(async () => {
-    if (!form.canSave) return;
-    await onSave(contact.address, form.buildInput());
-  }, [form, onSave, contact.address]);
-
-  const networkName =
-    contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-    contact.networkId.split('-')[0].slice(1);
+  const chain = contact.networkId.split('-')[0];
+  const networkLabel = chain.charAt(0).toUpperCase() + chain.slice(1);
 
   return (
-    <SettingsScreenLayout
+    <AddressForm
       title={t('settings.addressbook.edit', 'Edit Address')}
       subtitle={t('settings.addressbook.edit_subtitle', "Update this contact's label or address.")}
+      networkLabel={networkLabel}
+      form={form}
+      onSave={save}
       onBack={onBack}
-    >
-      <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
-        <TextInput
-          testID="address-book-label-input"
-          style={styles.input}
-          value={form.label}
-          onChangeText={form.setLabel}
-          placeholder={t('settings.addressbook.label', 'Label')}
-          placeholderTextColor={text.tertiary}
-          autoCapitalize="words"
-          autoCorrect={false}
-        />
-      </Card>
-
-      <RecipientInput
-        testID="address-book-address"
-        value={form.address}
-        onChangeText={form.setAddress}
-        onScanPress={() => setShowScanner(true)}
-        scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
-        placeholder={t('send.enter_address_or_domain')}
-        validationState={validationState}
-        isValidating={isValidating}
-      />
-
-      <Card padding="md" accessibilityLabel={t('settings.addressbook.network')}>
-        <Text style={styles.networkText}>{networkName}</Text>
-      </Card>
-
-      <PrimaryButton
-        testID="address-book-save-button"
-        onPress={handleSave}
-        disabled={!form.canSave}
-      >
-        {t('settings.addressbook.save', 'Save Address')}
-      </PrimaryButton>
-
-      <QRScanner
-        visible={showScanner}
-        blockchain={contact.networkId.split('-')[0] as BlockchainType}
-        onScan={handleScan}
-        onClose={() => setShowScanner(false)}
-      />
-    </SettingsScreenLayout>
+      blockchain={chain as BlockchainType}
+      addressPlaceholder={t('send.enter_address_or_domain')}
+    />
   );
 }
 
 export default AddressEditPanel;
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const stylesFor = (t: Semantic) =>
-  StyleSheet.create({
-    input: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: fontSize.bodyLg,
-      padding: 0,
-    },
-    networkText: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: fontSize.bodyLg,
-    },
-  });

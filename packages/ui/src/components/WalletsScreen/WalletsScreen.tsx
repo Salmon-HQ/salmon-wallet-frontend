@@ -21,7 +21,6 @@ import {
   fontWeight,
   getAccountAddress,
   getAccountMnemonic,
-  getInitials,
   getShortAddress,
   isWatchOnlyAccount,
   letterSpacing,
@@ -49,6 +48,7 @@ import {
   TreeStructureIcon,
   iconSize,
 } from '../../icons';
+import { AccountAvatar } from '../AccountAvatar';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
 import { ConfirmDialog } from '../ConfirmDialog';
@@ -59,8 +59,6 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WatchOnlyBadge } from '../WatchOnlyBadge';
 import type { WalletsScreenProps } from './types';
 
-/** The wallet thumb, per `.pen` CORE 10. */
-const WALLET_BUBBLE_SIZE = 44;
 /** The inline rename affordance beside the name. */
 const RENAME_BUBBLE_SIZE = 24;
 /** The include control at the end of a wallet card. */
@@ -362,11 +360,9 @@ function WalletCard({
   const { t } = useTranslation();
   const tokens = useSemantic();
   const [{ accountId: activeId, pathIndex }, accountActions] = useAccountsContext();
-  const [imgError, setImgError] = useState(false);
 
   const address = getAccountAddress(account);
   const shortAddress = getShortAddress(address) ?? '';
-  const initials = getInitials(account.name);
   // Only a seed has a derivation tree to look through — an imported key or a
   // watched address has nothing to find, so the action is absent rather than
   // present and inert.
@@ -422,31 +418,7 @@ function WalletCard({
             ...(isActive ? { borderColor: tokens.accent.ink } : null),
           }}
         >
-          <IconBubble
-            size={WALLET_BUBBLE_SIZE}
-            shape="circle"
-            tone={isActive ? 'ink' : 'accent-tint'}
-          >
-            {account.avatar && !imgError ? (
-              <img
-                src={account.avatar}
-                alt=""
-                onError={() => setImgError(true)}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-              />
-            ) : (
-              <span
-                style={{
-                  color: tokens.text.primary,
-                  fontFamily: fontFamily.sans,
-                  fontWeight: fontWeight.bold,
-                  fontSize: fontSize.body,
-                }}
-              >
-                {initials}
-              </span>
-            )}
-          </IconBubble>
+          <AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />
 
           <div
             style={{

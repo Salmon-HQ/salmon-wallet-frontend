@@ -277,12 +277,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // The two "show me more" flags come from the provider the side panel root
   // mounts (the same one mobile's `(app)` stack mounts), so every screen
   // reads one value and an older wallet gets its mirror addresses derived.
-  const {
-    developerNetworks,
-    toggleDeveloperNetworks,
-    showUnverifiedTokens,
-    setShowUnverifiedTokens,
-  } = useDeveloperModeSettings();
+  const { developerNetworks, showUnverifiedTokens } = useDeveloperModeSettings();
 
   // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
   // in onboarding (analytics-consent step); here we only bind the Settings toggle.
@@ -1146,7 +1141,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             nft={sendNft}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
-            showUnverifiedTokens={showUnverifiedTokens}
             loading={balanceState === 'loading'}
             onFlowLockChange={setFlowLocked}
           />
@@ -1176,7 +1170,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             error={transactionsError}
             onRetry={transactionsRefresh}
             networkId={networkId}
-            developerMode={developerNetworks}
             contacts={contactsByAddress}
           />
         );
@@ -1212,7 +1205,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onCopyAddress={handleCopyAddress}
             onSettingsPress={flowLocked ? undefined : handleSettingsPress}
             onWalletPress={flowLocked ? undefined : handleWalletPress}
-            developerMode={developerNetworks}
             avatarUrl={activeAccount?.avatar}
             accountId={activeAccount?.id}
           />
@@ -1402,17 +1394,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onClose={handleSettingsClose}
         panelRegistry={panelRegistry}
         initialPanels={settingsInitialPanels}
-        developerNetworksEnabled={developerNetworks}
-        // Turning the flag off while the session stands on devnet moves it to
-        // the mainnet sibling first — the shared toggle owns that passage.
-        onDeveloperNetworksToggle={() =>
-          void toggleDeveloperNetworks({
-            activeNetworkId: networkId,
-            changeNetwork: actions.changeNetwork,
-          })
-        }
-        unverifiedTokensEnabled={showUnverifiedTokens}
-        onUnverifiedTokensToggle={(show) => void setShowUnverifiedTokens(show)}
         analyticsEnabled={analyticsConsent}
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}

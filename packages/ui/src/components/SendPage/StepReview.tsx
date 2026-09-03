@@ -38,7 +38,6 @@ export interface StepReviewProps {
   token: SendToken | null;
   tokens: SendToken[];
   tokensLoading: boolean;
-  showUnverifiedTokens: boolean;
   amount: string;
   estimatedFee: string | null;
   estimateFee: () => void;
@@ -60,7 +59,6 @@ export function StepReview({
   token,
   tokens,
   tokensLoading,
-  showUnverifiedTokens,
   amount,
   estimatedFee,
   estimateFee,
@@ -228,7 +226,6 @@ export function StepReview({
         onClose={() => setPickerOpen(false)}
         tokens={tokens}
         loading={tokensLoading}
-        showUnverifiedTokens={showUnverifiedTokens}
         onSelectToken={handleSelectToken}
       />
     </SendScreen>

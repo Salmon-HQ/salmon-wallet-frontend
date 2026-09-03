@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { DAppSignMessageApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignMessage,
@@ -10,6 +10,7 @@ import {
   type DAppSignOffchainMessageRequest,
 } from '@salmon/shared';
 import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
+import { useDAppApproval } from './useDAppApproval';
 
 interface Props {
   origin: string;
@@ -24,8 +25,15 @@ export function DAppSignMessageApprovalPage({
   account,
   onDismiss,
 }: Props): React.ReactElement {
-  const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
+  const {
+    loading,
+    reject: handleReject,
+    approve,
+  } = useDAppApproval({
+    requestId: request.id,
+    onDismiss,
+  });
 
   const messageData = useMemo(() => {
     const data = request.params?.data;
@@ -40,59 +48,32 @@ export function DAppSignMessageApprovalPage({
     [request]
   );
 
-  const sendToBackground = useCallback(
-    (data: Record<string, unknown>) => {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
-          channel: 'salmon_extension_background_channel',
-          data: {
-            ...data,
-            id: request.id,
-          },
-        });
-      }
-    },
-    [request.id]
-  );
-
-  const handleReject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
-    onDismiss(false);
-  }, [onDismiss, sendToBackground]);
-
-  const handleApprove = useCallback(async () => {
-    if (!account || !isSignableSolanaAccount(account)) {
-      sendToBackground({ error: 'Solana account not available' });
-      onDismiss(false);
-      return;
-    }
-
+  const handleApprove = useCallback(() => {
     const data = request.params?.data;
-    if (!data || !Array.isArray(data)) {
-      sendToBackground({ error: 'Missing message data' });
-      onDismiss(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result =
+    const signable = !!account && isSignableSolanaAccount(account);
+    return approve(
+      () =>
         request.method === 'signOffchain'
-          ? await approveSolanaSignOffchainMessage(
-              account,
-              data,
+          ? approveSolanaSignOffchainMessage(
+              account as Parameters<typeof approveSolanaSignOffchainMessage>[0],
+              data as number[],
               request.params?.requiredSigners ?? []
             )
-          : await approveSolanaSignMessage(account, data);
-      sendToBackground({ result });
-      onDismiss(true);
-    } catch {
-      sendToBackground({ error: 'Message signing failed' });
-      onDismiss(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [account, onDismiss, request, sendToBackground]);
+          : approveSolanaSignMessage(
+              account as Parameters<typeof approveSolanaSignMessage>[0],
+              data as number[]
+            ),
+      {
+        // Same order as before: the account is checked before the payload.
+        guardError: !signable
+          ? 'Solana account not available'
+          : !data || !Array.isArray(data)
+            ? 'Missing message data'
+            : null,
+        failureError: 'Message signing failed',
+      }
+    );
+  }, [account, approve, request]);
 
   return (
     <DAppSignMessageApprovalView

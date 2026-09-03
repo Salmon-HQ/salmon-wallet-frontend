@@ -16,19 +16,16 @@
  * window cannot leak an unjudged address into a signature.
  */
 import React, { useCallback } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { getShortAddress, isSignableAccount, s, spacing, vs } from '@salmon/shared';
+import { getShortAddress, isSignableAccount, spacing } from '@salmon/shared';
 
 import {
   Card,
-  DepthBackground,
   KeyValueRow,
   PrimaryButton,
-  ScalesBackground,
-  ScreenHeader,
+  SettingsScreenLayout,
   WarningNotice,
 } from '../../../../src/components';
 import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
@@ -71,51 +68,16 @@ export default function NftSendReviewScreen() {
   }, [submitSend]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <DepthBackground />
-      <ScalesBackground variant="deepField" />
-
-      <ScreenHeader
-        onBack={() => router.back()}
-        backDisabled={sending}
-        title={t('nft.send.reviewTitle')}
-        subtitle={nft?.name}
-      />
-
-      <ScrollView
-        testID="nft-send-review-screen"
-        style={styles.body}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Card padding="lg" gap={spacing.md} testID="nft-send-review-summary">
-          <KeyValueRow label={t('nft.detail.title')} value={nft?.name ?? ''} />
-          {!!nft?.collectionName && (
-            <KeyValueRow
-              label={t('nft.detail.collection')}
-              value={nft.collectionName}
-              valueTone="secondary"
-            />
-          )}
-          <KeyValueRow
-            testID="nft-send-review-recipient"
-            label={t('token.send.recipient')}
-            value={getShortAddress(destination) ?? destination}
-          />
-          {resolvedFromDomain !== null && (
-            <KeyValueRow
-              testID="nft-send-review-resolved-from"
-              label={t('send.recipient')}
-              value={resolvedFromDomain}
-              valueTone="secondary"
-            />
-          )}
-        </Card>
-
-        {!!sendError && <WarningNotice tone="error" title={t(sendError)} style={styles.notice} />}
-      </ScrollView>
-
-      <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+    // The screen shell every pushed screen wears: its own water, the header,
+    // the gutter body and a footer pinned under it.
+    <SettingsScreenLayout
+      testID="nft-send-review-screen"
+      title={t('nft.send.reviewTitle')}
+      subtitle={nft?.name}
+      onBack={() => router.back()}
+      backDisabled={sending}
+      footerBottomInset={floatingBottomOffset}
+      footer={
         <PrimaryButton
           testID="nft-send-confirm-button"
           onPress={handleConfirm}
@@ -124,28 +86,39 @@ export default function NftSendReviewScreen() {
         >
           {t('actions.send')}
         </PrimaryButton>
-      </View>
-    </SafeAreaView>
+      }
+    >
+      <Card padding="lg" gap={spacing.md} testID="nft-send-review-summary">
+        <KeyValueRow label={t('nft.detail.title')} value={nft?.name ?? ''} />
+        {!!nft?.collectionName && (
+          <KeyValueRow
+            label={t('nft.detail.collection')}
+            value={nft.collectionName}
+            valueTone="secondary"
+          />
+        )}
+        <KeyValueRow
+          testID="nft-send-review-recipient"
+          label={t('token.send.recipient')}
+          value={getShortAddress(destination) ?? destination}
+        />
+        {resolvedFromDomain !== null && (
+          <KeyValueRow
+            testID="nft-send-review-resolved-from"
+            label={t('send.recipient')}
+            value={resolvedFromDomain}
+            valueTone="secondary"
+          />
+        )}
+      </Card>
+
+      {!!sendError && <WarningNotice tone="error" title={t(sendError)} style={styles.notice} />}
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
   notice: {
     marginTop: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
   },
 });

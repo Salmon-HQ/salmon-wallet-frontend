@@ -8,13 +8,14 @@
  * draws the verdict. With a token it also chooses the token up front and
  * offers the wallet's recents, own wallets and address book.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   formatTokenAmount,
   getShortAddress,
   isSignableAccount,
   useAddressValidation,
+  useValidationDirty,
   useSendContacts,
   useTransactions,
   type BlockchainAccount,
@@ -59,7 +60,6 @@ export interface StepRecipientProps {
   token: SendToken | null;
   tokens: SendToken[];
   tokensLoading: boolean;
-  showUnverifiedTokens: boolean;
   liveBalance: number | undefined;
   onSelectToken: (token: SendToken) => void;
   /** The collectible half. */
@@ -75,7 +75,6 @@ export function StepRecipient({
   token,
   tokens,
   tokensLoading,
-  showUnverifiedTokens,
   liveBalance,
   onSelectToken,
   nft,
@@ -97,26 +96,19 @@ export function StepRecipient({
     messageType: addressMessageType,
   } = useAddressValidation(address, account, { debounceMs: VALIDATION_DEBOUNCE_MS });
 
-  // The hook holds its verdict across an edit: for the debounce window it
-  // still reports the PREVIOUS string's `isValid`, so a freshly typed address
-  // reads as approved. `dirty` is the "judged for the current text" bit.
-  const [dirty, setDirty] = useState(false);
-  const wasValidating = useRef(false);
-  useEffect(() => {
-    if (wasValidating.current && !isValidating) setDirty(false);
-    wasValidating.current = isValidating;
-  }, [isValidating]);
+  // Continue waits for a verdict on the CURRENT text, not the previous one.
+  const { dirty, markDirty } = useValidationDirty(isValidating);
 
-  const handleChangeText = useCallback((value: string) => {
-    setDirty(true);
-    setAddress(value);
-  }, []);
+  const handleChangeText = useCallback(
+    (value: string) => {
+      markDirty();
+      setAddress(value);
+    },
+    [markDirty]
+  );
 
-  const tokenBalance = useMemo(() => {
-    if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) return liveBalance;
-    const fallback = token?.uiAmount;
-    return typeof fallback === 'string' ? parseFloat(fallback) : (fallback ?? 0);
-  }, [liveBalance, token?.uiAmount]);
+  // `liveBalance` already falls back to the token's own amount.
+  const tokenBalance = liveBalance ?? 0;
 
   // The people this wallet has actually paid — the same field the activity
   // row reads, so the two surfaces agree on who a transfer went to.
@@ -252,7 +244,6 @@ export function StepRecipient({
           onClose={() => setPickerOpen(false)}
           tokens={tokens}
           loading={tokensLoading}
-          showUnverifiedTokens={showUnverifiedTokens}
           onSelectToken={(next) => {
             onSelectToken(next);
             setPickerOpen(false);

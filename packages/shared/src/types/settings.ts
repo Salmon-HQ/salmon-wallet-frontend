@@ -56,27 +56,6 @@ export interface SettingsSheetBaseProps {
   onClose: () => void;
 
   /**
-   * Whether developer networks (testnets/devnets) are enabled.
-   */
-  developerNetworksEnabled?: boolean;
-
-  /**
-   * Callback when developer networks toggle is changed.
-   */
-  onDeveloperNetworksToggle?: (enabled: boolean) => void;
-
-  /**
-   * Whether unverified (spam-flagged) tokens are shown in the lists. Its own
-   * toggle since spec 026 D4 — developer mode only offers networks.
-   */
-  unverifiedTokensEnabled?: boolean;
-
-  /**
-   * Callback when the unverified-tokens toggle is changed.
-   */
-  onUnverifiedTokensToggle?: (enabled: boolean) => void;
-
-  /**
    * Whether anonymous usage analytics is enabled (opt-in, default off).
    */
   analyticsEnabled?: boolean;

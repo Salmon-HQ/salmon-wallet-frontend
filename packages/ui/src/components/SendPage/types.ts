@@ -35,8 +35,6 @@ export interface SendPageProps {
   onBack: () => void;
   /** Callback when the transfer completes and the receipt is acknowledged */
   onSuccess?: (txId: string) => void;
-  /** Show unverified/unknown tokens */
-  showUnverifiedTokens?: boolean;
   /** Whether token data is still loading */
   loading?: boolean;
   /**

@@ -35,6 +35,7 @@ import {
   STATUS_LABEL_KEYS,
   conversionRateFor,
   transactionStatusDisplayFor,
+  useDeveloperMode,
 } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,11 +76,13 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   onViewExplorer,
   onCopyHash,
   onShare,
-  developerMode,
   networkId,
   style,
 }) => {
   const { t } = useTranslation();
+  // The technical block shows under developer mode — the provider's flag,
+  // not a drilled prop.
+  const developerMode = useDeveloperMode();
   const insets = useSafeAreaInsets();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();

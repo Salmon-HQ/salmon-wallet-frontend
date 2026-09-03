@@ -516,7 +516,6 @@ export default function HomeScreen() {
         onCopyAddress={handleHeaderCopyAddress}
         onSettingsPress={() => router.push('/settings')}
         onWalletPress={() => router.push('/wallets')}
-        developerMode={developerNetworks}
         networkId={currentNetworkId}
         avatarUrl={activeAccount?.avatar}
         accountId={activeAccount?.id}

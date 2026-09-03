@@ -30,6 +30,7 @@ import {
   STATUS_LABEL_KEYS,
   conversionRateFor,
   transactionStatusDisplayFor,
+  useDeveloperMode,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -80,12 +81,14 @@ export function TransactionDetail({
   onViewExplorer,
   onCopyHash,
   onShare,
-  developerMode,
   networkId,
   className,
   style,
 }: TransactionDetailProps): React.ReactElement | null {
   const { t: translate } = useTranslation();
+  // The technical block shows under developer mode — the provider's flag,
+  // not a drilled prop.
+  const developerMode = useDeveloperMode();
   const t = useSemantic();
   const STATUS_CONFIG = useMemo(() => statusConfigFor(t), [t]);
   const TRANSACTION_TYPE_CONFIG = useMemo(() => transactionTypeConfigFor(t), [t]);

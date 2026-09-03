@@ -18,6 +18,7 @@ import {
   spacing,
   tabularNums,
   vs,
+  useUnverifiedTokens,
   type Semantic,
 } from '@salmon/shared';
 import type { SendToken } from '@salmon/shared';
@@ -49,10 +50,11 @@ function balanceLabel(token: SendToken): string {
 export const TokenSelectList: React.FC<TokenSelectListProps> = ({
   tokens,
   onSelectToken,
-  showUnverifiedTokens,
   loading,
 }) => {
   const { t } = useTranslation();
+  // Spec 026 D4: the unverified-tokens toggle owns this, read where it is used.
+  const showUnverifiedTokens = useUnverifiedTokens();
   const styles = useThemedStyles(stylesFor);
   const [searchQuery, setSearchQuery] = useState('');
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();

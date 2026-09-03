@@ -12,20 +12,23 @@
  * Ordinals have no transfer path yet (`useNftTransfer` refuses them), so a
  * Bitcoin NFT gets the notice and no way forward.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { isSignableAccount, s, spacing, useAddressValidation, vs } from '@salmon/shared';
+import {
+  isSignableAccount,
+  spacing,
+  useAddressValidation,
+  useValidationDirty,
+  vs,
+} from '@salmon/shared';
 
 import {
-  DepthBackground,
   PrimaryButton,
   QRScanner,
   RecipientInput,
-  ScalesBackground,
-  ScreenHeader,
+  SettingsScreenLayout,
   WarningNotice,
 } from '../../../../src/components';
 import type { QRScanResult } from '../../../../src/components';
@@ -50,26 +53,15 @@ export default function NftSendScreen() {
     resolvedAddress,
   } = useAddressValidation(recipient, account, { debounceMs: 500 });
 
-  // The hook holds its verdict across an edit: for the 500ms the debounce is
-  // pending it still reports the PREVIOUS string's `isValid` with
-  // `isValidating` false, so a freshly typed address reads as approved. This
-  // flag is the missing "judged for the current text" bit — set on every
-  // keystroke, cleared only when a validation cycle actually completes (the
-  // hook aborts superseded cycles without ever settling them, so only the
-  // last one clears it).
-  const [dirty, setDirty] = useState(false);
-  const wasValidating = useRef(false);
-  useEffect(() => {
-    if (wasValidating.current && !isValidating) setDirty(false);
-    wasValidating.current = isValidating;
-  }, [isValidating]);
+  // Continue waits for a verdict on the CURRENT text, not the previous one.
+  const { dirty, markDirty } = useValidationDirty(isValidating);
 
   const handleChangeText = useCallback(
     (value: string) => {
-      setDirty(true);
+      markDirty();
       setRecipient(value);
     },
-    [setRecipient]
+    [markDirty, setRecipient]
   );
 
   const isOrdinal = nft?.blockchain === 'bitcoin';
@@ -106,24 +98,30 @@ export default function NftSendScreen() {
     router,
   ]);
 
-  // The action row clears the keyboard by the keyboard's own measured height —
-  // the idiom every keyboarded surface here uses.
-  const actionBottomPadding =
-    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
+  // The shell's KeyboardAvoidingView lifts the footer by the keyboard; the
+  // inset under it is what is left of the old padding — the floating chrome
+  // when there is no keyboard, a step when there is.
+  const footerBottomInset = keyboardHeight > 0 ? vs(spacing.sm) : floatingBottomOffset;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <DepthBackground />
-      <ScalesBackground variant="deepField" />
-
-      <ScreenHeader onBack={() => router.back()} title={t('nft.send.title')} subtitle={nft?.name} />
-
-      <ScrollView
+    <>
+      <SettingsScreenLayout
         testID="nft-send-screen"
-        style={styles.body}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        title={t('nft.send.title')}
+        subtitle={nft?.name}
+        onBack={() => router.back()}
+        footerBottomInset={footerBottomInset}
+        footer={
+          isOrdinal ? undefined : (
+            <PrimaryButton
+              testID="nft-send-continue-button"
+              onPress={handleContinue}
+              disabled={!canContinue}
+            >
+              {t('actions.continue')}
+            </PrimaryButton>
+          )
+        }
       >
         {isOrdinal ? (
           <WarningNotice
@@ -142,19 +140,7 @@ export default function NftSendScreen() {
             isValidating={isValidating}
           />
         )}
-      </ScrollView>
-
-      {!isOrdinal && (
-        <View style={[styles.action, { paddingBottom: actionBottomPadding }]}>
-          <PrimaryButton
-            testID="nft-send-continue-button"
-            onPress={handleContinue}
-            disabled={!canContinue}
-          >
-            {t('actions.continue')}
-          </PrimaryButton>
-        </View>
-      )}
+      </SettingsScreenLayout>
 
       <QRScanner
         visible={showScanner}
@@ -162,27 +148,12 @@ export default function NftSendScreen() {
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  body: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
   notice: {
     marginTop: 0,
-  },
-  action: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
   },
 });

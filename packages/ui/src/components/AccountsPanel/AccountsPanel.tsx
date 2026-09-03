@@ -16,7 +16,6 @@ import {
   fontSize,
   fontWeight,
   getAccountAddress,
-  getInitials,
   getShortAddress,
   isWatchOnlyAccount,
   spacing,
@@ -25,6 +24,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
+import { AccountAvatar } from '../AccountAvatar';
 import { Card } from '../Card';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { IconBubble } from '../IconBubble';
@@ -33,8 +33,6 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WatchOnlyBadge } from '../WatchOnlyBadge';
 import type { AccountsPanelProps } from './types';
 
-/** The avatar well every account row carries — the same size Wallets draws. */
-const AVATAR_SIZE = 44;
 /** The inline rename and trailing action affordances. */
 const ACTION_BUBBLE_SIZE = 24;
 
@@ -54,11 +52,9 @@ interface AccountRowProps {
 function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }: AccountRowProps) {
   const { t } = useTranslation();
   const tokens = useSemantic();
-  const [imgError, setImgError] = useState(false);
 
   const address = getAccountAddress(account);
   const shortAddress = getShortAddress(address) ?? '';
-  const initials = getInitials(account.name);
 
   return (
     <RowPress
@@ -81,27 +77,7 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
           ...(isActive ? { borderColor: tokens.accent.ink } : null),
         }}
       >
-        <IconBubble size={AVATAR_SIZE} shape="circle" tone={isActive ? 'ink' : 'accent-tint'}>
-          {account.avatar && !imgError ? (
-            <img
-              src={account.avatar}
-              alt=""
-              onError={() => setImgError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-            />
-          ) : (
-            <span
-              style={{
-                color: tokens.text.primary,
-                fontFamily: fontFamily.sans,
-                fontWeight: fontWeight.bold,
-                fontSize: fontSize.body,
-              }}
-            >
-              {initials}
-            </span>
-          )}
-        </IconBubble>
+        <AccountAvatar name={account.name} avatarUrl={account.avatar} active={isActive} />
 
         <div
           style={{

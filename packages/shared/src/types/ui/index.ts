@@ -161,6 +161,9 @@ export type {
   ConfirmSheetPropsBase,
   DerivedAccountCardPropsBase,
   WatchOnlyBadgePropsBase,
+  AddressFormPropsBase,
+  RevealCoverPropsBase,
+  AccountAvatarPropsBase,
 } from './settings-panels';
 
 // Home Tab Order Sheet

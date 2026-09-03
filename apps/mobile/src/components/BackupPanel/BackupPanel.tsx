@@ -11,13 +11,11 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { EyeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  borderRadius,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -32,10 +30,11 @@ import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmSheet } from '../ConfirmSheet';
+import { RevealCover } from '../RevealCover';
 import { SeedWordGrid } from '../SeedPhrase';
 import { WarningNotice } from '../WarningNotice';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 
 interface BackupPanelProps extends BackupPanelPropsBase {
   biometricAvailable?: boolean;
@@ -53,7 +52,6 @@ export function BackupPanel({
 }: BackupPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text } = useSemantic();
 
   // `SeedWordGrid` protects the frames it is mounted for; the panel holds the
   // mnemonic in memory for its whole lifetime, including before the reveal, so
@@ -134,16 +132,11 @@ export function BackupPanel({
         <View style={styles.seedContainer} testID="backup-seed-phrase">
           <SeedWordGrid words={shownWords} columns={3} />
           {!showSeedPhrase && (
-            <TouchableOpacity
-              style={styles.revealCover}
-              onPress={handleReveal}
-              activeOpacity={0.8}
+            <RevealCover
               testID="backup-seed-reveal-overlay"
-              accessibilityRole="button"
-            >
-              <EyeIcon size={iconSize.xl} color={text.primary} />
-              <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
-            </TouchableOpacity>
+              label={t('settings.wallets.tap_to_reveal')}
+              onPress={handleReveal}
+            />
           )}
         </View>
       )}
@@ -189,24 +182,6 @@ const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     seedContainer: {
       position: 'relative',
-    },
-    // The Bedrock Rule (DESIGN.md): the cover over an unrevealed phrase is
-    // opaque bedrock, not a translucent scrim — a scrim over masked cells reads
-    // as a loading state, and it lets the water column through the gate.
-    revealCover: {
-      ...StyleSheet.absoluteFillObject,
-      // Declared, not implied by sibling order: a reorder must not uncover the gate.
-      zIndex: 10,
-      backgroundColor: t.surface.bedrock,
-      borderRadius: borderRadius.r3,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: s(spacing.sm),
-    },
-    revealText: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.bodyLg),
     },
     emptyText: {
       color: t.text.secondary,
