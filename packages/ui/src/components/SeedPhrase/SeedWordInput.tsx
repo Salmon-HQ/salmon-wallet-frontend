@@ -93,7 +93,10 @@ export function SeedWordInput({
   const edge = edgeFor(validationState);
   // The box owns the field's shape, so focus is the shared rule's to answer;
   // a word already judged keeps the edge its verdict painted.
-  const shellClass = [FIELD_SHELL_CLASS, validationState !== 'idle' ? FIELD_SHELL_ERROR_CLASS : null]
+  const shellClass = [
+    FIELD_SHELL_CLASS,
+    validationState !== 'idle' ? FIELD_SHELL_ERROR_CLASS : null,
+  ]
     .filter(Boolean)
     .join(' ');
 

@@ -225,10 +225,7 @@ export default function SendAmountScreen() {
         <Card
           padding="lg"
           gap={spacing.base}
-          style={[
-            styles.amountCard,
-            amountFocus.focused && { borderColor: semantic.accent.ink },
-          ]}
+          style={[styles.amountCard, amountFocus.focused && { borderColor: semantic.accent.ink }]}
         >
           <View style={styles.amountRow}>
             <TextInput

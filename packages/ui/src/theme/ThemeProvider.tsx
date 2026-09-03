@@ -28,12 +28,7 @@ import {
 } from '@salmon/shared';
 
 import { applySemanticCssVars } from './cssVars';
-import {
-  FIELD_SHELL_CLASS,
-  FIELD_SHELL_ERROR_CLASS,
-  focusRing,
-  focusRingNone,
-} from './index';
+import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRing, focusRingNone } from './index';
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 

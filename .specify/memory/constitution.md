@@ -78,14 +78,14 @@ Some changes cannot ship over the air and must be called out in the spec:
   and a new store binary. `apps/mobile/ios` and `apps/mobile/android` are
   generated and gitignored; `app.json` is the source of truth and native
   directories are never edited directly.
-- **JS-only** — component, copy and logic changes reach mobile via OTA and
-  web/extension via redeploy.
+- **JS-only** — component, copy and logic changes reach mobile via OTA and the
+  extension via a new store build.
 
 Identifiers locked by published artifacts are never renamed as part of another
 change: the bundle identifier and Android package (`io.salmonwallet.app`), the
 Expo slug and EAS `projectId`, the `salmonwallet://` scheme, the Firefox
-add-on id, and the Wallet Standard name `'Salmon'` advertised to dApps by both
-the extension and the web wallet.
+add-on id, and the Wallet Standard name `'Salmon'` advertised to dApps by the
+extension.
 
 `packages/shared/src/theme` is the single source of design tokens. Specs do
 not introduce hardcoded colors, spacing or typography.

@@ -242,7 +242,11 @@ export function useSettingsPanelRegistry(): PanelRegistry {
         />
       ),
       security: ({ onBack, onNavigate }) => (
-        <SecurityPanel onBack={onBack} onNavigate={onNavigate} onPasswordChanged={clearSessionKey} />
+        <SecurityPanel
+          onBack={onBack}
+          onNavigate={onNavigate}
+          onPasswordChanged={clearSessionKey}
+        />
       ),
       accounts: ({ onBack, onNavigate }) => (
         <AccountsPanel

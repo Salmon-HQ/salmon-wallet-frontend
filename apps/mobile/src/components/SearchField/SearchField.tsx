@@ -40,9 +40,7 @@ export function SearchField({
   const { focused, onFocus, onBlur } = useFieldFocus();
 
   return (
-    <View
-      style={[styles.pill, { borderColor: focused ? accent.ink : surface.raised }, style]}
-    >
+    <View style={[styles.pill, { borderColor: focused ? accent.ink : surface.raised }, style]}>
       <MagnifyingGlassIcon size={ms(GLYPH_SIZE)} color={text.secondary} />
       <TextInput
         testID={testID}

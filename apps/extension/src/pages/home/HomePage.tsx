@@ -74,14 +74,7 @@ const TOP_FADE_SCROLL_RANGE = 30;
 /**
  * Available page views within HomePage
  */
-type PageView =
-  | 'home'
-  | 'tokenDetail'
-  | 'nftDetail'
-  | 'activity'
-  | 'send'
-  | 'wallets'
-  | 'settings';
+type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets' | 'settings';
 
 /**
  * How deep each page sits in the stack — what `SlideStack` reads to tell a

@@ -193,10 +193,7 @@ export { useWalletTotals, sumIncludedTotals } from './useWalletTotals';
 export type { UseWalletTotalsParams, UseWalletTotalsResult } from './useWalletTotals';
 
 export { useAccountNameDraft } from './useAccountNameDraft';
-export type {
-  UseAccountNameDraftParams,
-  UseAccountNameDraftResult,
-} from './useAccountNameDraft';
+export type { UseAccountNameDraftParams, UseAccountNameDraftResult } from './useAccountNameDraft';
 export { useFieldFocus } from './useFieldFocus';
 export type { FieldFocus } from './useFieldFocus';
 export { useSettingsPanelData } from './useSettingsPanelData';

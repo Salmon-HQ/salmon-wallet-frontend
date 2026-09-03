@@ -26,7 +26,10 @@ describe('every field wears the shared shell', () => {
   it.each([
     ['TextInput', <TextInput key="t" value="" onChangeText={() => {}} testID="field" />],
     ['PasswordInput', <PasswordInput key="p" value="" onChangeText={() => {}} testID="field" />],
-    ['SearchField', <SearchField key="s" value="" onChangeText={() => {}} placeholder="Search" testID="field" />],
+    [
+      'SearchField',
+      <SearchField key="s" value="" onChangeText={() => {}} placeholder="Search" testID="field" />,
+    ],
   ])('%s', (_name, element) => {
     const { container } = render(element);
     expect(container.querySelector(`.${FIELD_SHELL_CLASS}`)).toBeTruthy();

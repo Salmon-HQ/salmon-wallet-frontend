@@ -46,13 +46,10 @@ export function useAccountNameDraft({
     void onSave(trimmed);
   }, [name, onSave, emptyMessage]);
 
-  const changeName = useCallback(
-    (next: string) => {
-      setName(next);
-      setError((standing) => (standing ? '' : standing));
-    },
-    []
-  );
+  const changeName = useCallback((next: string) => {
+    setName(next);
+    setError((standing) => (standing ? '' : standing));
+  }, []);
 
   return { name, error, changeName, save };
 }

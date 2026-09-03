@@ -43,9 +43,8 @@ export function useSettingsPanelData({
   const userConfigAccount = useMemo(
     () => ({
       network: {
-        environment: (hasBlockchainAccount
-          ? networkId || 'solana-mainnet'
-          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
+        environment: (hasBlockchainAccount ? networkId || 'solana-mainnet' : 'solana-mainnet') as
+          'solana-mainnet' | 'solana-devnet',
         blockchain: networkId?.split('-')[0] || 'solana',
       },
     }),

@@ -394,51 +394,50 @@ const Crest = styled('div')<{
   $ink: string;
   $shadow: CrestShadow;
 }>(({ $alpha, $lagMs, $waves, $ink, $shadow }) => ({
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    // Diameter is `--wave-ring`, written by the measurement pass as twice the
-    // distance from the mark to the farthest corner. The crest is scaled *down*
-    // from its final size rather than up from a small one, so the band never has
-    // to be repainted — only `transform` and `opacity` ever change.
-    width: 'var(--wave-ring, 0px)',
-    height: 'var(--wave-ring, 0px)',
-    borderRadius: '50%',
-    // Both inks come from the live mode. The crown was already passed; the
-    // flank was left to the function's default, which is the *static* token —
-    // dark's near-black at 0.9. On the pale ground that painted a dark ring
-    // around a coral crown, so light mode read as the dark wait with only its
-    // orange kept (owner, 2026-09-03).
-    background: crestGradientCSS($alpha, $ink, $shadow),
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  // Diameter is `--wave-ring`, written by the measurement pass as twice the
+  // distance from the mark to the farthest corner. The crest is scaled *down*
+  // from its final size rather than up from a small one, so the band never has
+  // to be repainted — only `transform` and `opacity` ever change.
+  width: 'var(--wave-ring, 0px)',
+  height: 'var(--wave-ring, 0px)',
+  borderRadius: '50%',
+  // Both inks come from the live mode. The crown was already passed; the
+  // flank was left to the function's default, which is the *static* token —
+  // dark's near-black at 0.9. On the pale ground that painted a dark ring
+  // around a coral crown, so light mode read as the dark wait with only its
+  // orange kept (owner, 2026-09-03).
+  background: crestGradientCSS($alpha, $ink, $shadow),
+  opacity: 0,
+  pointerEvents: 'none',
+  transform: 'translate(-50%, -50%) scale(0)',
+  // A wave train: each crest runs one `CREST_SPACING` of the crossing behind
+  // the one ahead of it, at a fraction of its alpha. On close the train is
+  // emitted exactly once — that emission *is* the exit.
+  //
+  // `linear`, and it is the one place in this system that gets it. The riders'
+  // delays are linear in distance, so the front's position is linear in time —
+  // that is what `d = c·t` means. Easing the front on `current` was measured
+  // doing the wrong thing: it covered 90% of the screen in the first 20% of
+  // the crossing and then waited off-screen for riders it had already passed.
+  // This is a front's velocity, not an element arriving.
+  // The delay carries the *impact*: `WAVEFRONT_SINK_MS` is how long the mark
+  // takes to reach the trough, so the front leaves at the bottom of the sink
+  // rather than at the top of the period. The train's own lag rides on top of
+  // it. One constant holds the mark and the wave together, and the rhythm
+  // falls out of it — see `wavefrontCalmMs`.
+  animation: $waves
+    ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${
+        CONTENT_LANDS_MS + WAVEFRONT_SINK_MS + $lagMs
+      }ms infinite`
+    : 'none',
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
     opacity: 0,
-    pointerEvents: 'none',
-    transform: 'translate(-50%, -50%) scale(0)',
-    // A wave train: each crest runs one `CREST_SPACING` of the crossing behind
-    // the one ahead of it, at a fraction of its alpha. On close the train is
-    // emitted exactly once — that emission *is* the exit.
-    //
-    // `linear`, and it is the one place in this system that gets it. The riders'
-    // delays are linear in distance, so the front's position is linear in time —
-    // that is what `d = c·t` means. Easing the front on `current` was measured
-    // doing the wrong thing: it covered 90% of the screen in the first 20% of
-    // the crossing and then waited off-screen for riders it had already passed.
-    // This is a front's velocity, not an element arriving.
-    // The delay carries the *impact*: `WAVEFRONT_SINK_MS` is how long the mark
-    // takes to reach the trough, so the front leaves at the bottom of the sink
-    // rather than at the top of the period. The train's own lag rides on top of
-    // it. One constant holds the mark and the wave together, and the rhythm
-    // falls out of it — see `wavefrontCalmMs`.
-    animation: $waves
-      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${
-          CONTENT_LANDS_MS + WAVEFRONT_SINK_MS + $lagMs
-        }ms infinite`
-      : 'none',
-    [`@media ${reducedMotion.query}`]: {
-      animation: 'none',
-      opacity: 0,
-    },
-  })
-);
+  },
+}));
 
 const Mark = styled('svg')({
   width: '100%',
