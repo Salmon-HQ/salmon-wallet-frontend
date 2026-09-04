@@ -795,7 +795,7 @@
   },
   "home": {
     "unnamed_account": "Cuenta",
-    "total_balance": "Balance total",
+    "switch_network": "Cambiar de red",
     "change_period_24h": "24h",
     "tabs": {
       "order": {

@@ -795,7 +795,7 @@
   },
   "home": {
     "unnamed_account": "Account",
-    "total_balance": "Total balance",
+    "switch_network": "Switch network",
     "change_period_24h": "24h",
     "tabs": {
       "order": {

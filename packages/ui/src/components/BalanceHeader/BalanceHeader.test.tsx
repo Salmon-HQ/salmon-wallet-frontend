@@ -3,6 +3,11 @@
  *
  * jsdom has no `Element.animate`; it is stubbed here so the verb's calls can be
  * counted, the same pattern `PortfolioSubTabs.test.tsx` uses.
+ *
+ * `ChainSelector` (trigger label, chevron, underline colour, sheet list) is
+ * tested in isolation in `ChainSelector.test.tsx` — here it is mocked to a
+ * plain button so this file stays about the block's own contract, not its
+ * child's internals.
  */
 import React from 'react';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
@@ -17,6 +22,22 @@ vi.mock('react-i18next', () => ({
     t: (key: string, fallback?: string | Record<string, unknown>) =>
       typeof fallback === 'string' ? fallback : key,
   }),
+}));
+
+vi.mock('./ChainSelector', () => ({
+  ChainSelector: ({
+    activeIndex,
+    onSelect,
+    testID,
+  }: {
+    activeIndex: number;
+    onSelect: (index: number) => void;
+    testID?: string;
+  }) => (
+    <button type="button" data-testid={testID} onClick={() => onSelect(activeIndex === 0 ? 1 : 0)}>
+      chain
+    </button>
+  ),
 }));
 
 function fakeAnimation() {
@@ -85,14 +106,10 @@ describe('BalanceHeader', () => {
     expect(screen.getByTestId('home-activity-button')).toBeTruthy();
     expect(screen.getByTestId('home-send-button')).toBeTruthy();
     expect(screen.getByTestId('home-receive-button')).toBeTruthy();
-    // One dot per chain, and the active one is the selected tab.
-    expect(screen.getByTestId('balance-carousel-dot-0').getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByTestId('balance-carousel-dot-1').getAttribute('aria-selected')).toBe(
-      'false'
-    );
+    expect(screen.getByTestId('balance-chain-selector')).toBeTruthy();
   });
 
-  it('turns the page on an arrow key, and on a click on a dot', async () => {
+  it('turns the page on an arrow key, and from the chain selector', async () => {
     stubDom();
     stubMatchMedia(false);
     const onBlockchainChange = vi.fn();
@@ -110,7 +127,7 @@ describe('BalanceHeader', () => {
 
     onBlockchainChange.mockClear();
     await act(async () => {
-      fireEvent.click(screen.getByTestId('balance-carousel-dot-1'));
+      fireEvent.click(screen.getByTestId('balance-chain-selector'));
       await Promise.resolve();
     });
     expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
@@ -155,7 +172,7 @@ describe('BalanceHeader', () => {
     animate.mockClear();
 
     await act(async () => {
-      fireEvent.click(screen.getByTestId('balance-carousel-dot-1'));
+      fireEvent.click(screen.getByTestId('balance-chain-selector'));
       await Promise.resolve();
     });
     // The amount's lateral exit and the change's sink-in-place.
@@ -169,13 +186,13 @@ describe('BalanceHeader', () => {
       'dark',
       <BalanceHeader blockchains={CHAINS} activeIndex={0} onBlockchainChange={onBlockchainChange} />
     );
-    fireEvent.click(screen.getByTestId('balance-carousel-dot-1'));
+    fireEvent.click(screen.getByTestId('balance-chain-selector'));
     // The page still turns; it just does not travel.
     expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it('prints the native quantity and no 24h line off mainnet, and names the environment', () => {
+  it('prints the native quantity and no 24h line off mainnet', () => {
     stubDom();
     stubMatchMedia(false);
 
@@ -184,51 +201,6 @@ describe('BalanceHeader', () => {
     // Off mainnet nothing priced the balance: the change is absent rather than
     // an em-dash, which would promise a figure that is merely late.
     expect(screen.queryByTestId('balance-change')).toBeNull();
-    expect(screen.getByTestId('balance-network-chip')).toBeTruthy();
     expect(screen.getByTestId('balance-amount').textContent).toContain('SOL');
-  });
-
-  it('names the chain each hint points at, in that chain’s own hue', () => {
-    stubDom();
-    stubMatchMedia(false);
-
-    render('dark', <BalanceHeader blockchains={CHAINS} activeIndex={1} />);
-
-    // A middle page has a chain behind it as well as ahead of it; here the last
-    // page names only the one behind.
-    const previous = screen.getByTestId('balance-prev-hint');
-    expect(previous.textContent).toBe('← SOL');
-    expect(previous.style.color).toBeTruthy();
-    expect(screen.queryByTestId('balance-next-hint')).toBeNull();
-  });
-
-  it('puts both cues to the right of the dots on a middle page, and each goes where the dot goes', () => {
-    stubDom();
-    stubMatchMedia(true);
-    const THREE = [
-      ...CHAINS,
-      { network: { id: 'solana-devnet', name: 'Solana Devnet', blockchain: 'solana' } },
-    ] as any;
-    const onBlockchainChange = vi.fn();
-
-    render(
-      'dark',
-      <BalanceHeader blockchains={THREE} activeIndex={1} onBlockchainChange={onBlockchainChange} />
-    );
-
-    const lastDot = screen.getByTestId('balance-carousel-dot-2');
-    const previous = screen.getByTestId('balance-prev-hint');
-    const next = screen.getByTestId('balance-next-hint');
-    expect(
-      lastDot.compareDocumentPosition(previous) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(previous.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(previous.textContent).toBe('← SOL');
-    expect(next.textContent).toBe('SOL →');
-
-    fireEvent.click(next);
-    expect(onBlockchainChange).toHaveBeenCalledWith('solana', 2);
-    fireEvent.click(previous);
-    expect(onBlockchainChange).toHaveBeenCalledWith('solana', 0);
   });
 });
