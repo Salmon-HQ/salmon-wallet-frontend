@@ -73,16 +73,3 @@ export const seigaihaTiledPaths: readonly string[] = [
   shiftSeigaiha(seigaihaPaths[1], 0, -H),
   shiftSeigaiha(seigaihaPaths[1], W, -H),
 ];
-
-/**
- * One arc of the motif, isolated at the tile's own unit size — the "scale"
- * glyph small UI reads to mark a chain (`ChainSelector`'s dropdown rows),
- * stroked wide instead of tiled thin. Built from the same four constants as
- * `seigaihaPaths` (`w`, `rise`, `c` above), unphased: `M0 rise C0 (rise−c) w
- * (rise−c) w rise`.
- */
-export const singleScale = {
-  width: 28.8,
-  height: 12.6,
-  path: 'M0 12.6C0 -4.2 28.8 -4.2 28.8 12.6',
-} as const;

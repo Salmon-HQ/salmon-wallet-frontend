@@ -2,8 +2,8 @@
  * @vitest-environment jsdom
  *
  * The chain selector's own contract: what it shows in place of "Total
- * balance" (trigger label, chevron, environment tag) and what selecting a
- * row in its dropdown reports back. `BalanceHeader.test.tsx` mocks this
+ * balance" (one tab per chain, each reading its own `NETWORK_DISPLAY` name)
+ * and what picking a tab reports back. `BalanceHeader.test.tsx` mocks this
  * component out entirely, so its behaviour is asserted here instead.
  */
 import React from 'react';
@@ -59,22 +59,20 @@ describe('ChainSelector', () => {
     expect(screen.queryByText('Solana')).toBeNull();
   });
 
-  it('names the environment on a single non-mainnet chain, with no chevron to press', () => {
+  it('names the environment on a single non-mainnet chain', () => {
     stubMatchMedia(false);
     render(<ChainSelector blockchains={[SOLANA_DEVNET]} activeIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('Solana Devnet')).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('labels the trigger with the chain name alone on mainnet', () => {
+  it('labels every tab with the chain name alone on mainnet', () => {
     stubMatchMedia(false);
-    render(
-      <ChainSelector blockchains={[SOLANA, BITCOIN]} activeIndex={0} onSelect={vi.fn()} />
-    );
+    render(<ChainSelector blockchains={[SOLANA, BITCOIN]} activeIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('Solana')).toBeTruthy();
+    expect(screen.getByText('Bitcoin')).toBeTruthy();
   });
 
-  it('opens the dropdown and reports the tapped option, closing after', () => {
+  it('reports the tapped tab', () => {
     stubMatchMedia(false);
     const onSelect = vi.fn();
     render(
@@ -86,11 +84,9 @@ describe('ChainSelector', () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId('balance-chain-selector'));
-    fireEvent.click(screen.getByTestId('balance-chain-selector-option-1'));
+    fireEvent.click(screen.getByTestId('balance-chain-selector-option-bitcoin-mainnet'));
 
     expect(onSelect).toHaveBeenCalledWith(1);
-    expect(screen.queryByTestId('balance-chain-selector-dropdown')).toBeNull();
   });
 
   it('does not report a tap on the chain already active', () => {
@@ -105,17 +101,25 @@ describe('ChainSelector', () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId('balance-chain-selector'));
-    fireEvent.click(screen.getByTestId('balance-chain-selector-option-0'));
+    fireEvent.click(screen.getByTestId('balance-chain-selector-option-solana-mainnet'));
 
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('takes the underline colour from the chain hue tokens, never a literal', () => {
+  it('takes the underline colour from the active chain, not the shared accent', () => {
     stubMatchMedia(false);
     const { container } = render(
-      <ChainSelector blockchains={[BITCOIN, SOLANA]} activeIndex={0} onSelect={vi.fn()} />
+      <ChainSelector
+        blockchains={[BITCOIN, SOLANA]}
+        activeIndex={0}
+        onSelect={vi.fn()}
+        testID="balance-chain-selector"
+      />
     );
-    expect(container.innerHTML).toContain(semantic.chain.hintInk.bitcoin);
+    // jsdom normalizes an inline `background-color` to `rgb(...)`, so the
+    // expected hex is normalized through the same DOM API before comparing.
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = semantic.chain.hintInk.bitcoin;
+    expect(container.innerHTML).toContain(probe.style.backgroundColor);
   });
 });

@@ -77,19 +77,16 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   };
   // Move the balance block to a different chain via the chain selector.
   //
-  // The dots-and-hints carousel this used to click was replaced by a
-  // trigger ("Solana · Devnet ⌄") that opens a sheet listing every chain;
-  // picking any option other than the active one fires `network_switched`.
+  // The chain selector is now the same `UnderlineTabs` row as Portfolio |
+  // NFTs — one tab per chain, no trigger to open first. Picking any tab
+  // other than the active one fires `network_switched`.
   const switchNetwork = async () => {
-    const trigger = popup.getByTestId('balance-chain-selector');
-    const currentChain = ((await trigger.textContent()) ?? '').trim();
-    await trigger.click();
-    const options = popup.getByTestId(/^balance-chain-selector-option-\d+$/);
+    const options = popup.getByTestId(/^balance-chain-selector-option-/);
     const count = await options.count();
     for (let i = 0; i < count; i += 1) {
       const option = options.nth(i);
-      const label = ((await option.textContent()) ?? '').trim();
-      if (!label.startsWith(currentChain)) {
+      const selected = await option.getAttribute('aria-selected');
+      if (selected !== 'true') {
         await option.click();
         return;
       }

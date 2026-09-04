@@ -47,7 +47,6 @@ export {
   wordmarkTypeface,
   wordmarkToSvg,
   chainMarks,
-  chainGradientStops,
 } from './brand';
 
 // The onboarding slot grid — five reserved-height tables, read by both apps.
@@ -81,13 +80,7 @@ export { fleshTile, fleshFills } from './flesh';
 export type { FleshFill } from './flesh';
 
 // Seigaiha geometry — the scales motif as path data both platforms draw.
-export {
-  seigaihaTile,
-  seigaihaPaths,
-  seigaihaTiledPaths,
-  shiftSeigaiha,
-  singleScale,
-} from './scales';
+export { seigaihaTile, seigaihaPaths, seigaihaTiledPaths, shiftSeigaiha } from './scales';
 
 // Re-export all tokens from spacing
 export {

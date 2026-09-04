@@ -186,7 +186,7 @@ export function getChainSelectorTrigger(
   };
 }
 
-/** One row of the chain selector's sheet — one derivation for both platforms. */
+/** One tab of the chain selector — one derivation for both platforms. */
 export interface ChainSelectorOption {
   index: number;
   id: string;
@@ -201,6 +201,52 @@ export function getChainSelectorOptions(blockchains: BlockchainBalance[]): Chain
     name: NETWORK_DISPLAY[chainBalance.network.id]?.name ?? chainBalance.network.name,
     blockchain: chainBalance.network.blockchain,
   }));
+}
+
+/** One `UnderlineTabs` tab, built from a {@link ChainSelectorOption}. */
+export interface ChainSelectorTab {
+  key: string;
+  label: string;
+  underlineColor: string;
+}
+
+/** What `ChainSelector` hands its `UnderlineTabs` twin. */
+export interface ChainSelectorState {
+  tabs: ChainSelectorTab[];
+  activeKey: string;
+  onChange: (key: string) => void;
+}
+
+/**
+ * What `ChainSelector` hands its `UnderlineTabs` twin, or `null` when there
+ * is nothing to show — one derivation for both platforms, so the trigger
+ * gate, the tab list, the active key, and the tap handler cannot drift
+ * between them. `hintInk` is theme-resolved (`useSemantic()`'s
+ * `chain.hintInk`), so it is passed in rather than read here.
+ */
+export function getChainSelectorTabs(
+  blockchains: BlockchainBalance[],
+  activeIndex: number,
+  onSelect: (index: number) => void,
+  hintInk: Record<BlockchainId, string>
+): ChainSelectorState | null {
+  if (!getChainSelectorTrigger(blockchains, activeIndex)) return null;
+
+  const options = getChainSelectorOptions(blockchains);
+  const tabs = options.map((option) => ({
+    key: option.id,
+    label: option.name,
+    underlineColor: hintInk[option.blockchain],
+  }));
+
+  return {
+    tabs,
+    activeKey: options[activeIndex]?.id ?? tabs[0]?.key ?? '',
+    onChange: (key: string) => {
+      const index = options.findIndex((option) => option.id === key);
+      if (index !== -1) onSelect(index);
+    },
+  };
 }
 
 export function visibleNetworkIds({
