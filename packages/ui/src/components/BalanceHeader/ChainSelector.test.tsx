@@ -3,7 +3,7 @@
  *
  * The chain selector's own contract: what it shows in place of "Total
  * balance" (trigger label, chevron, environment tag) and what selecting a
- * row in its sheet reports back. `BalanceHeader.test.tsx` mocks this
+ * row in its dropdown reports back. `BalanceHeader.test.tsx` mocks this
  * component out entirely, so its behaviour is asserted here instead.
  */
 import React from 'react';
@@ -62,7 +62,7 @@ describe('ChainSelector', () => {
   it('names the environment on a single non-mainnet chain, with no chevron to press', () => {
     stubMatchMedia(false);
     render(<ChainSelector blockchains={[SOLANA_DEVNET]} activeIndex={0} onSelect={vi.fn()} />);
-    expect(screen.getByText('Solana · Devnet')).toBeTruthy();
+    expect(screen.getByText('Solana Devnet')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe('ChainSelector', () => {
     expect(screen.getByText('Solana')).toBeTruthy();
   });
 
-  it('opens the sheet and reports the tapped option, closing after', () => {
+  it('opens the dropdown and reports the tapped option, closing after', () => {
     stubMatchMedia(false);
     const onSelect = vi.fn();
     render(
@@ -89,9 +89,8 @@ describe('ChainSelector', () => {
     fireEvent.click(screen.getByTestId('balance-chain-selector'));
     fireEvent.click(screen.getByTestId('balance-chain-selector-option-1'));
 
-    // Closing the sheet is `BottomSheetContainer`'s own animated exit
-    // (its suite covers the timing) — here only the selection matters.
     expect(onSelect).toHaveBeenCalledWith(1);
+    expect(screen.queryByTestId('balance-chain-selector-dropdown')).toBeNull();
   });
 
   it('does not report a tap on the chain already active', () => {

@@ -8,6 +8,7 @@
 
 import type { BlockchainType } from '../types/blockchain';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
+import { NETWORK_DISPLAY } from './networkDisplay';
 
 /**
  * Flat record mapping chain to its mainnet network ID.
@@ -155,7 +156,8 @@ export interface VisibleNetworkIdsParams {
  */
 /** What `ChainSelector`'s trigger reads — one derivation for both platforms. */
 export interface ChainSelectorTrigger {
-  /** "Solana" on mainnet, "Solana · Devnet" off it. */
+  /** "Solana" on mainnet, "Solana Devnet" off it — `NETWORK_DISPLAY`'s name
+   * already carries the environment, so this never appends a second tag. */
   label: string;
   /** Whether there is more than one chain to switch between. */
   canSwitch: boolean;
@@ -174,12 +176,11 @@ export function getChainSelectorTrigger(
   const current = blockchains[activeIndex];
   if (!current) return null;
 
-  const networkLabel = getNetworkLabel(current.network.id);
   const canSwitch = blockchains.length > 1;
-  if (!canSwitch && !networkLabel) return null;
+  if (!canSwitch && isMainnetNetworkId(current.network.id)) return null;
 
   return {
-    label: networkLabel ? `${current.network.name} · ${networkLabel}` : current.network.name,
+    label: NETWORK_DISPLAY[current.network.id]?.name ?? current.network.name,
     canSwitch,
     blockchain: current.network.blockchain,
   };
@@ -191,16 +192,14 @@ export interface ChainSelectorOption {
   id: string;
   name: string;
   blockchain: BlockchainId;
-  networkLabel: string | null;
 }
 
 export function getChainSelectorOptions(blockchains: BlockchainBalance[]): ChainSelectorOption[] {
   return blockchains.map((chainBalance, index) => ({
     index,
     id: chainBalance.network.id,
-    name: chainBalance.network.name,
+    name: NETWORK_DISPLAY[chainBalance.network.id]?.name ?? chainBalance.network.name,
     blockchain: chainBalance.network.blockchain,
-    networkLabel: getNetworkLabel(chainBalance.network.id),
   }));
 }
 

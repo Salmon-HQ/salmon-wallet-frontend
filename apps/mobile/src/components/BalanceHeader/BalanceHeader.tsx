@@ -324,10 +324,18 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
             />
           </View>
 
-          {/* Off mainnet nothing priced the balance, so there is no 24h
-              change to report — the line is absent rather than an em-dash,
-              which would promise a figure that is merely late. */}
-          {!isTestNetwork && (
+          {/* The change and the three controls share one row, mirrored: the
+              change reads on the left, the controls sit on the right — the
+              same object as the wallet thumb and the FAB, one `IconBubble`
+              differing only in tone, sized like `portfolio-order-button`
+              (36, DESIGN.md's secondary-control step) rather than a primary
+              action's 42. Send is the block's single salmon fill (and
+              carries the flesh with it); Receive and Activity are its
+              outline twins. `marginLeft: 'auto'` on the controls pins them
+              right. Off mainnet nothing priced the balance, so this reads as
+              an em-dash rather than disappearing — the row stays, only the
+              figure is unknown. */}
+          <View style={styles.changeActionsRow}>
             <Animated.View testID="balance-change-sink" style={[styles.changeText, changeSinkStyle]}>
               <Animated.View
                 key={`change-${currentBlockchainId}`}
@@ -335,9 +343,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 {...changeMotion}
               >
                 <PendingValue pending={loading}>
-                  <Text
-                    style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
-                  >
+                  <Text style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}>
                     {hiddenBalance
                       ? `${hiddenValue} · ${hiddenValue}`
                       : hasChange
@@ -347,47 +353,40 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 </PendingValue>
               </Animated.View>
             </Animated.View>
-          )}
-        </View>
+            <View style={styles.actions}>
+              <IconBubble
+                testID="home-activity-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ClockIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onActivityPress}
+                accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+              />
 
-        {/* The three controls are the same object as the wallet thumb and the
-            FAB: one `IconBubble`, differing only in tone, sized like
-            `portfolio-order-button` (36, DESIGN.md's secondary-control step)
-            rather than a primary action's 42. Send is the block's single
-            salmon fill (and carries the flesh with it); Receive and Activity
-            are its outline twins. */}
-        <View style={styles.actions}>
-          <IconBubble
-            testID="home-activity-button"
-            size={componentSizes.iconBubbleSm}
-            tone="outline"
-            icon={ClockIcon}
-            iconSize={componentSizes.iconSizeXSmall}
-            onPress={onActivityPress}
-            accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-          />
+              <IconBubble
+                testID="home-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onSendPress}
+                disabled={sendDisabled}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
 
-          <IconBubble
-            testID="home-send-button"
-            size={componentSizes.iconBubbleSm}
-            tone="accent"
-            icon={ArrowUpRightIcon}
-            iconWeight="bold"
-            iconSize={componentSizes.iconSizeXSmall}
-            onPress={onSendPress}
-            disabled={sendDisabled}
-            accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-          />
-
-          <IconBubble
-            testID="home-receive-button"
-            size={componentSizes.iconBubbleSm}
-            tone="outline"
-            icon={ArrowDownLeftIcon}
-            iconSize={componentSizes.iconSizeXSmall}
-            onPress={onReceivePress}
-            accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-          />
+              <IconBubble
+                testID="home-receive-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ArrowDownLeftIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onReceivePress}
+                accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+              />
+            </View>
+          </View>
         </View>
       </View>
     </GestureDetector>
@@ -396,11 +395,13 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    container: {
-      gap: vs(spacing.sm),
-    },
+    container: {},
     balanceColumn: {
       gap: vs(spacing.xs),
+    },
+    changeActionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     amountRow: {
       flexDirection: 'row',
@@ -439,6 +440,7 @@ const stylesFor = (t: Semantic) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.sm),
+      marginLeft: 'auto',
     },
   });
 

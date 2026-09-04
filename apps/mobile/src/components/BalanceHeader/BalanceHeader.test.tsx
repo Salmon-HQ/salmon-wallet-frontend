@@ -477,14 +477,14 @@ describe('BalanceHeader on a test network', () => {
     },
   ] as any;
 
-  it('reports the total in the native unit and reports no 24h change', () => {
+  it('reports the total in the native unit, with an em-dash for the unpriced 24h change', () => {
     const view = render(<BalanceHeader blockchains={DEVNET} activeIndex={0} />);
 
     expect(view.getByText('1.25 SOL')).toBeTruthy();
-    // Nothing priced it, so there is no change line at all — not an em-dash,
-    // which would promise a figure that is merely late.
-    expect(view.queryByTestId('balance-change')).toBeNull();
-    expect(view.queryByTestId('balance-change-sink')).toBeNull();
+    // The row stays — mirrored with the action buttons on every network —
+    // but nothing priced this chain, so the figure itself is an em-dash.
+    expect(view.getByTestId('balance-change')).toBeTruthy();
+    expect(view.getByText('—')).toBeTruthy();
   });
 
   it('reports an empty test wallet as zero, never as an em-dash', () => {

@@ -4,13 +4,16 @@
  * The mobile twin is
  * `apps/mobile/src/components/BalanceHeader/ChainSelector.tsx`: same
  * anatomy — a plain trigger reading the active chain and its environment
- * ("Solana · Devnet") with a chevron and an accent underline in the chain's
- * own hue, no box, no chip — opening a sheet listing every chain the balance
- * block already pages through. The keyboard/wheel paging on the amount
+ * ("Solana Devnet" — `NETWORK_DISPLAY`'s name already carries the
+ * environment, so this never appends a second tag) with a chevron and an
+ * accent underline in the chain's own hue under the name only, not the
+ * chevron. Opening it drops a dropdown
+ * anchored right under the trigger — not a sheet — dismissed by a click
+ * outside, Escape, or a selection. The keyboard/wheel paging on the amount
  * (`BalanceHeader`'s own `handleKeyDown`/`handleWheel`) keeps working
  * exactly as it did; this is an alternate route to the same `onSelect`.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type BlockchainBalance,
@@ -20,16 +23,20 @@ import {
   fontWeight,
   getChainSelectorOptions,
   getChainSelectorTrigger,
+  motionEasing,
+  motionMs,
+  shadowsCSS,
   spacing,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { CaretDownIcon, CheckIcon } from '../../icons';
-import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { Card } from '../Card';
 import { ListRow } from '../ListRow';
 
-const CHEVRON_SIZE = componentSizes.iconSizeXxs;
+const CHEVRON_SIZE = componentSizes.iconSizeXs;
 const UNDERLINE_HEIGHT = 2;
+const DROPDOWN_WIDTH = 220;
 
 interface ChainSelectorProps {
   blockchains: BlockchainBalance[];
@@ -47,38 +54,68 @@ export function ChainSelector({
   const { t } = useTranslation();
   const { text, chain, accent } = useSemantic();
   const [open, setOpen] = useState(false);
+  // Two-phase so the dropdown mounts closed, then transitions to open on the
+  // next frame — a CSS transition never has a "before" state to animate from
+  // if both states land in the same paint.
+  const [entered, setEntered] = useState(false);
+
+  const close = () => setOpen(false);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    const raf = requestAnimationFrame(() => setEntered(true));
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      cancelAnimationFrame(raf);
+      setEntered(false);
+    };
+  }, [open]);
 
   const info = getChainSelectorTrigger(blockchains, activeIndex);
   if (!info) return null;
   const ink = chain.hintInk[info.blockchain];
   const trigger = (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', gap: spacing.xxs }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xxs }}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xxs }}>
+      {/* The underline lives in this column, not the row: `width: 100%`
+          then matches only the name's width, never the chevron beside it. */}
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: spacing.xxs }}>
         <span
           style={{
             fontFamily: fontFamily.sans,
             fontWeight: fontWeight.medium,
-            fontSize: fontSize.caption,
+            fontSize: fontSize.body,
             color: text.secondary,
             whiteSpace: 'nowrap',
           }}
         >
           {info.label}
         </span>
-        {info.canSwitch && <CaretDownIcon size={CHEVRON_SIZE} color={ink} weight="bold" />}
+        <div
+          style={{
+            width: '100%',
+            height: UNDERLINE_HEIGHT,
+            borderRadius: UNDERLINE_HEIGHT / 2,
+            backgroundColor: ink,
+          }}
+        />
       </div>
-      <div style={{ height: UNDERLINE_HEIGHT, borderRadius: UNDERLINE_HEIGHT / 2, backgroundColor: ink }} />
+      {info.canSwitch && <CaretDownIcon size={CHEVRON_SIZE} color={ink} weight="bold" />}
     </div>
   );
 
   if (!info.canSwitch) return trigger;
 
   return (
-    <>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
         data-testid={testID}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         aria-label={t('home.switch_network', 'Switch network')}
         style={{
           border: 'none',
@@ -94,54 +131,70 @@ export function ChainSelector({
       >
         {trigger}
       </button>
-      <BottomSheetContainer
-        visible={open}
-        onClose={() => setOpen(false)}
-        title={<SheetTitle>{t('home.switch_network', 'Switch network')}</SheetTitle>}
-        testID={`${testID}-sheet`}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: spacing.xs,
-            paddingBottom: spacing['2xl'],
-          }}
-        >
-          {getChainSelectorOptions(blockchains).map((option) => {
-            const isActive = option.index === activeIndex;
-            return (
-              <ListRow
-                key={option.id}
-                testID={`${testID}-option-${option.index}`}
-                title={option.name}
-                subtitle={option.networkLabel ?? undefined}
-                accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                  name: option.name,
-                })}
-                leading={
-                  <div
-                    style={{
-                      width: componentSizes.iconSizeXxsm,
-                      height: componentSizes.iconSizeXxsm,
-                      borderRadius: componentSizes.iconSizeXxsm / 2,
-                      backgroundColor: chain.hintInk[option.blockchain],
+      {open && (
+        <>
+          {/* Catches a click outside the dropdown; sits under it (z-index)
+              so the dropdown's own clicks still reach its rows. */}
+          <div
+            data-testid={`${testID}-backdrop`}
+            onClick={close}
+            style={{ position: 'fixed', inset: 0, zIndex: 20 }}
+          />
+          <Card
+            testID={`${testID}-dropdown`}
+            tone="surface"
+            padding="sm"
+            gap={spacing.sm}
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              left: 0,
+              width: DROPDOWN_WIDTH,
+              zIndex: 21,
+              boxShadow: shadowsCSS.md,
+              opacity: entered ? 1 : 0,
+              transform: entered ? 'translateY(0)' : 'translateY(-4px)',
+              transition: `opacity ${motionMs.swell}ms ${motionEasing.current.css}, transform ${motionMs.swell}ms ${motionEasing.current.css}`,
+            }}
+          >
+            <div role="listbox" aria-label={t('home.switch_network', 'Switch network')}>
+              {getChainSelectorOptions(blockchains).map((option) => {
+                const isActive = option.index === activeIndex;
+                return (
+                  <ListRow
+                    key={option.id}
+                    testID={`${testID}-option-${option.index}`}
+                    title={option.name}
+                    accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                      name: option.name,
+                    })}
+                    leading={
+                      <div
+                        style={{
+                          width: componentSizes.iconSizeXxsm,
+                          height: componentSizes.iconSizeXxsm,
+                          borderRadius: componentSizes.iconSizeXxsm / 2,
+                          backgroundColor: chain.hintInk[option.blockchain],
+                        }}
+                      />
+                    }
+                    trailing={
+                      isActive ? (
+                        <CheckIcon size={componentSizes.iconSizeXs} color={accent.fill} />
+                      ) : undefined
+                    }
+                    onPress={() => {
+                      close();
+                      if (!isActive) onSelect(option.index);
                     }}
                   />
-                }
-                trailing={
-                  isActive ? <CheckIcon size={componentSizes.iconSizeXs} color={accent.fill} /> : undefined
-                }
-                onPress={() => {
-                  setOpen(false);
-                  if (!isActive) onSelect(option.index);
-                }}
-              />
-            );
-          })}
-        </div>
-      </BottomSheetContainer>
-    </>
+                );
+              })}
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
   );
 }
 

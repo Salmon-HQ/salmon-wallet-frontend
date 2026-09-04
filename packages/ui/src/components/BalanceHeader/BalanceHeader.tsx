@@ -352,10 +352,13 @@ export function BalanceHeader({
           />
         </div>
 
-        {/* Off mainnet nothing priced the balance, so there is no 24h change
-            to report — the line is absent rather than an em-dash, which would
-            promise a figure that is merely late. */}
-        {!isTestNetwork && (
+        {/* The change and the three controls share one row, mirrored: the
+            change reads on the left, the controls sit on the right —
+            `marginLeft: 'auto'` on the controls pins them there whether or
+            not the row is otherwise empty. Off mainnet nothing priced the
+            balance, so this reads as an em-dash rather than disappearing —
+            the row stays, only the figure is unknown. */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
             <PendingValue pending={loading}>
               <span
@@ -380,45 +383,45 @@ export function BalanceHeader({
               </span>
             </PendingValue>
           </div>
-        )}
-      </div>
 
-      {/* The three controls are the same object as the wallet thumb: one
-          `IconBubble`, differing only in tone, sized like
-          `portfolio-order-button` (36, the secondary-control step) rather
-          than a primary action's 42. Send is the block's single salmon fill
-          (and carries the flesh with it); Receive and Activity are its
-          outline twins. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-        <IconBubble
-          testID="home-activity-button"
-          size={componentSizes.iconBubbleSm}
-          tone="outline"
-          icon={ClockIcon}
-          iconSize={componentSizes.iconSizeXSmall}
-          onPress={onActivityPress}
-          accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-        />
-        <IconBubble
-          testID="home-send-button"
-          size={componentSizes.iconBubbleSm}
-          tone="accent"
-          icon={ArrowUpRightIcon}
-          iconWeight="bold"
-          iconSize={componentSizes.iconSizeXSmall}
-          onPress={onSendPress}
-          disabled={sendDisabled}
-          accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-        />
-        <IconBubble
-          testID="home-receive-button"
-          size={componentSizes.iconBubbleSm}
-          tone="outline"
-          icon={ArrowDownLeftIcon}
-          iconSize={componentSizes.iconSizeXSmall}
-          onPress={onReceivePress}
-          accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-        />
+          {/* The three controls are the same object as the wallet thumb: one
+              `IconBubble`, differing only in tone, sized like
+              `portfolio-order-button` (36, the secondary-control step)
+              rather than a primary action's 42. Send is the block's single
+              salmon fill (and carries the flesh with it); Receive and
+              Activity are its outline twins. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}>
+            <IconBubble
+              testID="home-activity-button"
+              size={componentSizes.iconBubbleSm}
+              tone="outline"
+              icon={ClockIcon}
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onActivityPress}
+              accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+            />
+            <IconBubble
+              testID="home-send-button"
+              size={componentSizes.iconBubbleSm}
+              tone="accent"
+              icon={ArrowUpRightIcon}
+              iconWeight="bold"
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onSendPress}
+              disabled={sendDisabled}
+              accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+            />
+            <IconBubble
+              testID="home-receive-button"
+              size={componentSizes.iconBubbleSm}
+              tone="outline"
+              icon={ArrowDownLeftIcon}
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onReceivePress}
+              accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

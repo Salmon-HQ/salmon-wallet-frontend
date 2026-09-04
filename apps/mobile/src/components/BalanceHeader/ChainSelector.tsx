@@ -2,17 +2,23 @@
  * ChainSelector — the balance block's chain switcher.
  *
  * Sits where the "Total balance" label used to: a plain trigger reading the
- * active chain and its environment ("Solana · Devnet") with a chevron and an
- * accent underline in the chain's own hue — the same selection language
- * `UnderlineTabs` uses for lateral choices, just not sliding (DESIGN.md
- * §Chain identity). No box, no chip. Tapping it opens a sheet listing every
- * chain the balance block already pages through; the swipe gesture on the
- * amount (`BalanceHeader`'s own `panGesture`) keeps working exactly as it did
- * — this is an alternate route to the same `onSelect`, not a replacement.
+ * active chain and its environment ("Solana Devnet" — `NETWORK_DISPLAY`'s
+ * name already carries the environment, so this never appends a second tag)
+ * with a chevron and an accent underline in the chain's own hue under the
+ * name only, not the chevron — the same selection language `UnderlineTabs`
+ * uses for lateral choices, just not sliding (DESIGN.md §Chain identity).
+ * No box, no chip.
+ *
+ * Tapping it opens a dropdown anchored to the trigger itself — not a sheet:
+ * a `Modal` measures the trigger's window position on open and positions the
+ * option list right under it, closing on a tap outside or a selection. The
+ * swipe gesture on the amount (`BalanceHeader`'s own `panGesture`) keeps
+ * working exactly as it did; this is an alternate route to the same
+ * `onSelect`, not a replacement.
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   type BlockchainBalance,
   componentSizes,
@@ -22,6 +28,7 @@ import {
   getChainSelectorTrigger,
   ms,
   s,
+  shadows,
   spacing,
   vs,
   type Semantic,
@@ -29,13 +36,15 @@ import {
 
 import { CaretDownIcon, CheckIcon } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { Card } from '../Card';
 import { ListRow } from '../ListRow';
 
 const TOUCH_TARGET_MIN = 44;
-const CHEVRON_SIZE = ms(componentSizes.iconSizeXxs);
+const CHEVRON_SIZE = ms(componentSizes.iconSizeXs);
 const UNDERLINE_HEIGHT = 2;
+/** Gap between the trigger's bottom edge and the dropdown. */
+const DROPDOWN_OFFSET = s(spacing.xs);
+const DROPDOWN_WIDTH = 220;
 
 interface ChainSelectorProps {
   blockchains: BlockchainBalance[];
@@ -53,8 +62,8 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { chain, accent } = useSemantic();
-  const { standardContentBottomPadding } = useBottomSheetChrome();
-  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<View>(null);
+  const [anchor, setAnchor] = useState<{ x: number; y: number; height: number } | null>(null);
 
   const info = getChainSelectorTrigger(blockchains, activeIndex);
   if (!info) return null;
@@ -62,70 +71,94 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
   const trigger = (
     <View style={styles.trigger}>
       <View style={styles.triggerRow}>
-        <Text style={styles.label} numberOfLines={1}>
-          {info.label}
-        </Text>
+        <View style={styles.nameColumn}>
+          <Text style={styles.label} numberOfLines={1}>
+            {info.label}
+          </Text>
+          <View style={[styles.underline, { backgroundColor: ink }]} />
+        </View>
         {info.canSwitch && <CaretDownIcon size={CHEVRON_SIZE} color={ink} weight="bold" />}
       </View>
-      <View style={[styles.underline, { backgroundColor: ink }]} />
     </View>
   );
 
   if (!info.canSwitch) return trigger;
 
+  const open = anchor !== null;
+  const close = () => setAnchor(null);
+
   return (
     <>
       <Pressable
+        ref={triggerRef}
         testID={testID}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          triggerRef.current?.measureInWindow((x, y, _width, height) => {
+            setAnchor({ x, y, height });
+          });
+        }}
         hitSlop={{
-          top: (TOUCH_TARGET_MIN - ms(fontSize.caption)) / 2,
-          bottom: (TOUCH_TARGET_MIN - ms(fontSize.caption)) / 2,
+          top: (TOUCH_TARGET_MIN - ms(fontSize.body)) / 2,
+          bottom: (TOUCH_TARGET_MIN - ms(fontSize.body)) / 2,
           left: s(spacing.xs),
           right: s(spacing.xs),
         }}
         accessibilityRole="button"
         accessibilityLabel={t('home.switch_network', 'Switch network')}
+        accessibilityState={{ expanded: open }}
       >
         {trigger}
       </Pressable>
-      <BottomSheetContainer
-        visible={open}
-        onClose={() => setOpen(false)}
-        title={<SheetTitle>{t('home.switch_network', 'Switch network')}</SheetTitle>}
-        testID={`${testID}-sheet`}
-      >
-        <View style={[styles.list, { paddingBottom: standardContentBottomPadding }]}>
-          {getChainSelectorOptions(blockchains).map((option) => {
-            const isActive = option.index === activeIndex;
-            return (
-              <ListRow
-                key={option.id}
-                testID={`${testID}-option-${option.index}`}
-                title={option.name}
-                subtitle={option.networkLabel ?? undefined}
-                accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                  name: option.name,
-                })}
-                leading={
-                  <View
-                    style={[styles.optionDot, { backgroundColor: chain.hintInk[option.blockchain] }]}
-                  />
-                }
-                trailing={
-                  isActive ? (
-                    <CheckIcon size={ms(componentSizes.iconSizeXs)} color={accent.fill} />
-                  ) : undefined
-                }
-                onPress={() => {
-                  setOpen(false);
-                  if (!isActive) onSelect(option.index);
-                }}
-              />
-            );
-          })}
-        </View>
-      </BottomSheetContainer>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+        <Pressable
+          testID={`${testID}-backdrop`}
+          style={StyleSheet.absoluteFill}
+          onPress={close}
+          accessibilityLabel={t('home.switch_network', 'Switch network')}
+        />
+        {anchor && (
+          <Card
+            testID={`${testID}-dropdown`}
+            tone="surface"
+            padding="sm"
+            gap={spacing.sm}
+            style={[
+              styles.dropdown,
+              shadows.sm,
+              { top: anchor.y + anchor.height + DROPDOWN_OFFSET, left: anchor.x },
+            ]}
+          >
+            {getChainSelectorOptions(blockchains).map((option) => {
+              const isActive = option.index === activeIndex;
+              return (
+                <ListRow
+                  key={option.id}
+                  testID={`${testID}-option-${option.index}`}
+                  title={option.name}
+                  accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                    name: option.name,
+                  })}
+                  leading={
+                    <View
+                      style={[styles.optionDot, { backgroundColor: chain.hintInk[option.blockchain] }]}
+                    />
+                  }
+                  trailing={
+                    isActive ? (
+                      <CheckIcon size={ms(componentSizes.iconSizeXs)} color={accent.fill} />
+                    ) : undefined
+                  }
+                  padding="md"
+                  onPress={() => {
+                    close();
+                    if (!isActive) onSelect(option.index);
+                  }}
+                />
+              );
+            })}
+          </Card>
+        )}
+      </Modal>
     </>
   );
 };
@@ -134,15 +167,20 @@ const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     trigger: {
       alignSelf: 'flex-start',
-      gap: vs(spacing.xxs),
     },
     triggerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.xxs),
     },
+    // The underline lives in this column, not the row: `alignSelf: 'stretch'`
+    // then matches only the name's width, never the chevron beside it.
+    nameColumn: {
+      alignItems: 'stretch',
+      gap: vs(spacing.xxs),
+    },
     label: {
-      fontSize: ms(fontSize.caption),
+      fontSize: ms(fontSize.body),
       fontFamily: fontFamilyNative.medium,
       color: t.text.secondary,
     },
@@ -151,8 +189,9 @@ const stylesFor = (t: Semantic) =>
       height: UNDERLINE_HEIGHT,
       borderRadius: UNDERLINE_HEIGHT / 2,
     },
-    list: {
-      gap: vs(spacing.xs),
+    dropdown: {
+      position: 'absolute',
+      width: DROPDOWN_WIDTH,
     },
     optionDot: {
       width: componentSizes.iconSizeXxsm,

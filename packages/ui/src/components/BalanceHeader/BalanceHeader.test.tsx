@@ -192,15 +192,15 @@ describe('BalanceHeader', () => {
     expect(animate).not.toHaveBeenCalled();
   });
 
-  it('prints the native quantity and no 24h line off mainnet', () => {
+  it('prints the native quantity, with an em-dash for the unpriced 24h change', () => {
     stubDom();
     stubMatchMedia(false);
 
     render('dark', <BalanceHeader blockchains={DEVNET} activeIndex={0} />);
 
-    // Off mainnet nothing priced the balance: the change is absent rather than
-    // an em-dash, which would promise a figure that is merely late.
-    expect(screen.queryByTestId('balance-change')).toBeNull();
+    // The row stays — mirrored with the action buttons on every network —
+    // but nothing priced this chain, so the figure itself is an em-dash.
+    expect(screen.getByTestId('balance-change').textContent).toContain('—');
     expect(screen.getByTestId('balance-amount').textContent).toContain('SOL');
   });
 });

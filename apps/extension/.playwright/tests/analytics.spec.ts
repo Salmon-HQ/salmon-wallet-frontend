@@ -82,7 +82,7 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   // picking any option other than the active one fires `network_switched`.
   const switchNetwork = async () => {
     const trigger = popup.getByTestId('balance-chain-selector');
-    const currentChain = ((await trigger.textContent()) ?? '').split('·')[0].trim();
+    const currentChain = ((await trigger.textContent()) ?? '').trim();
     await trigger.click();
     const options = popup.getByTestId(/^balance-chain-selector-option-\d+$/);
     const count = await options.count();
