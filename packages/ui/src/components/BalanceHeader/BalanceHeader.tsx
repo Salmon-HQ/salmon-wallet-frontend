@@ -98,6 +98,7 @@ export function BalanceHeader({
   const amountRef = useRef<HTMLDivElement>(null);
   const changeRef = useRef<HTMLDivElement>(null);
   const balanceRef = useRef<HTMLSpanElement>(null);
+  const eyeRef = useRef<HTMLDivElement>(null);
   // A long total fits itself to the width beside Send/Receive rather than
   // wrapping — mobile's `adjustsFontSizeToFit`, measured here.
   const [balanceFit, setBalanceFit] = useState(1);
@@ -245,7 +246,27 @@ export function BalanceHeader({
 
   const current = blockchains[activeIndex];
   const currentNetworkId = current?.network.id ?? 'solana-mainnet';
+  const currentBlockchainId = current?.network.blockchain ?? 'solana';
   const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
+
+  // The eye's own cue that the chain under it changed — a blink, not a
+  // report: `scaleY` shuts fast (`sink`) and reopens slower (`settle`), the
+  // same pair the amount's own exit/arrival above use. Skipped on first
+  // mount — nothing changed yet to blink at.
+  const blinkedForRef = useRef(currentBlockchainId);
+  useEffect(() => {
+    if (blinkedForRef.current === currentBlockchainId) return;
+    blinkedForRef.current = currentBlockchainId;
+    if (reducedMotion || !canAnimate(eyeRef.current)) return;
+    eyeRef.current.animate(
+      [
+        { transform: 'scaleY(1)' },
+        { transform: 'scaleY(0.05)', offset: motionMs.flick / (motionMs.flick + motionMs.swell) },
+        { transform: 'scaleY(1)' },
+      ],
+      { duration: motionMs.flick + motionMs.swell, easing: motionEasing.settle.css }
+    );
+  }, [currentBlockchainId, reducedMotion]);
 
   // Off mainnet there is no price, so there is no USD total to print and the
   // block would sit on an em-dash forever. The honest total on a test network
@@ -337,19 +358,21 @@ export function BalanceHeader({
               </span>
             </PendingValue>
           </div>
-          <IconBubble
-            testID="balance-eye-toggle"
-            size={componentSizes.iconSizeMedium}
-            tone="ghost"
-            icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
-            iconSize={componentSizes.changeArrowIcon}
-            onPress={onToggleVisibility}
-            accessibilityLabel={
-              hiddenBalance
-                ? t('accessibility.show_balance', 'Show balance')
-                : t('accessibility.hide_balance', 'Hide balance')
-            }
-          />
+          <div ref={eyeRef}>
+            <IconBubble
+              testID="balance-eye-toggle"
+              size={componentSizes.iconSizeMedium}
+              tone="ghost"
+              icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
+              iconSize={componentSizes.changeArrowIcon}
+              onPress={onToggleVisibility}
+              accessibilityLabel={
+                hiddenBalance
+                  ? t('accessibility.show_balance', 'Show balance')
+                  : t('accessibility.hide_balance', 'Hide balance')
+              }
+            />
+          </div>
         </div>
 
         {/* The change and the three controls share one row, mirrored: the

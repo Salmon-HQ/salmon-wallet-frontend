@@ -18,10 +18,12 @@
  */
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
 import {
   type BlockchainBalance,
+  chainGradientStops,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -75,6 +77,7 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
   const info = getChainSelectorTrigger(blockchains, activeIndex);
   if (!info) return null;
   const ink = chain.hintInk[info.blockchain];
+  const [gradientStart, gradientEnd] = chainGradientStops(info.blockchain);
   const trigger = (
     <View style={styles.trigger}>
       <View style={styles.triggerRow}>
@@ -82,7 +85,12 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
           <Text style={styles.label} numberOfLines={1}>
             {info.label}
           </Text>
-          <View style={[styles.underline, { backgroundColor: ink }]} />
+          <LinearGradient
+            colors={[gradientStart, gradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.underline}
+          />
         </View>
         {info.canSwitch && <CaretDownIcon size={CHEVRON_SIZE} color={ink} weight="bold" />}
       </View>
@@ -137,6 +145,8 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
           >
             {getChainSelectorOptions(blockchains).map((option) => {
               const isActive = option.index === activeIndex;
+              const gradientId = `${testID}-scale-${option.id}`;
+              const [rowStart, rowEnd] = chainGradientStops(option.blockchain);
               return (
                 <ListRow
                   key={option.id}
@@ -151,9 +161,15 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
                       height={SCALE_HEIGHT}
                       viewBox={`0 0 ${singleScale.width} ${singleScale.height}`}
                     >
+                      <Defs>
+                        <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+                          <Stop offset="0" stopColor={rowStart} />
+                          <Stop offset="1" stopColor={rowEnd} />
+                        </SvgLinearGradient>
+                      </Defs>
                       <Path
                         d={singleScale.path}
-                        stroke={chain.hintInk[option.blockchain]}
+                        stroke={`url(#${gradientId})`}
                         strokeWidth={SCALE_STROKE_WIDTH}
                         fill="none"
                       />

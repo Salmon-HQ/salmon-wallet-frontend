@@ -17,6 +17,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type BlockchainBalance,
+  chainGradientStops,
   componentSizes,
   fontFamily,
   fontSize,
@@ -83,6 +84,7 @@ export function ChainSelector({
   const info = getChainSelectorTrigger(blockchains, activeIndex);
   if (!info) return null;
   const ink = chain.hintInk[info.blockchain];
+  const [gradientStart, gradientEnd] = chainGradientStops(info.blockchain);
   const trigger = (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xxs }}>
       {/* The underline lives in this column, not the row: `width: 100%`
@@ -104,7 +106,7 @@ export function ChainSelector({
             width: '100%',
             height: UNDERLINE_HEIGHT,
             borderRadius: UNDERLINE_HEIGHT / 2,
-            backgroundColor: ink,
+            background: `linear-gradient(90deg, ${gradientStart}, ${gradientEnd})`,
           }}
         />
       </div>
@@ -171,6 +173,8 @@ export function ChainSelector({
             >
               {getChainSelectorOptions(blockchains).map((option) => {
                 const isActive = option.index === activeIndex;
+                const gradientId = `${testID}-scale-${option.id}`;
+                const [rowStart, rowEnd] = chainGradientStops(option.blockchain);
                 return (
                   <ListRow
                     key={option.id}
@@ -185,9 +189,15 @@ export function ChainSelector({
                         height={SCALE_HEIGHT}
                         viewBox={`0 0 ${singleScale.width} ${singleScale.height}`}
                       >
+                        <defs>
+                          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0" stopColor={rowStart} />
+                            <stop offset="1" stopColor={rowEnd} />
+                          </linearGradient>
+                        </defs>
                         <path
                           d={singleScale.path}
-                          stroke={chain.hintInk[option.blockchain]}
+                          stroke={`url(#${gradientId})`}
                           strokeWidth={SCALE_STROKE_WIDTH}
                           fill="none"
                         />

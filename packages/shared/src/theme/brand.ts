@@ -124,3 +124,28 @@ export const chainMarks = {
 } as const;
 
 export type ChainMarks = typeof chainMarks;
+
+/**
+ * Solana's own two-tone mark — purple into green, the pair its media kit and
+ * every wallet/explorer in its ecosystem ship as *the* Solana gradient.
+ * Bitcoin's amber and Ethereum's indigo are one-hue marks with no canonical
+ * second stop, so Solana is the one chain with a pair here.
+ */
+const solanaGradient = ['#9945FF', '#14F195'] as const;
+
+/**
+ * The two colour stops a chain's identity paints with — a single hue on
+ * both ends for every chain but Solana, so a caller drawing a gradient (the
+ * balance block's chain-selector underline and scale marker) never has to
+ * branch on which chain has a "real" second stop.
+ *
+ * Takes a full `BlockchainId` (a devnet/testnet/sepolia variant included —
+ * `network.blockchain` carries those, not just the three base chains) and
+ * reads its mainnet's mark, the same rule `chain.hintInk` follows: which
+ * chain you are on decides the hue, not which environment.
+ */
+export function chainGradientStops(blockchain: string): readonly [string, string] {
+  const base = blockchain.replace(/-devnet$|-testnet$|-sepolia$/, '') as keyof typeof chainMarks.byChain;
+  const hue = chainMarks.byChain[base];
+  return base === 'solana' ? solanaGradient : [hue, hue];
+}

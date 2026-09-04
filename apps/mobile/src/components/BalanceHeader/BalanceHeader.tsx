@@ -107,6 +107,11 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // plays the sink *in place* on it, so one gesture drives both.
   const dragX = useSharedValue(0);
   const sinkProgress = useSharedValue(0);
+  // The eye's own cue that the chain under it changed — a blink, not a
+  // report: `scaleY` shuts fast (`sink`/`flick`, same feel the exit above
+  // has) and reopens slower (`settle`/`swell`), independent of the amount's
+  // own swap so it reads on every chain change, not only a swipe's.
+  const blinkScale = useSharedValue(1);
 
   // Leaving accelerates (`sink`); arriving and springing back come to rest
   // (`settle`). Both on `drift`, the beat the dots already travel on.
@@ -235,6 +240,25 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
   const current = blockchains[activeIndex];
   const currentBlockchainId = current?.network.blockchain ?? 'solana';
+
+  // The blink itself: fires on every chain change, including the ones the
+  // ChainSelector dropdown drives directly rather than a swipe. Skipped on
+  // first mount — nothing changed yet to blink at.
+  const blinkedFor = useRef(currentBlockchainId);
+  useEffect(() => {
+    if (blinkedFor.current === currentBlockchainId) return;
+    blinkedFor.current = currentBlockchainId;
+    blinkScale.value = withTiming(0.05, timing(motionMs.flick, isReduceMotionEnabled, curve.sink), (finished) => {
+      if (finished) {
+        blinkScale.value = withTiming(1, timing(motionMs.swell, isReduceMotionEnabled, curve.settle));
+      }
+    });
+  }, [currentBlockchainId, isReduceMotionEnabled, blinkScale]);
+
+  const eyeBlinkStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: blinkScale.value }],
+  }));
+
   const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
   const currentNetworkId = current?.network.id ?? 'solana-mainnet';
 
@@ -309,19 +333,21 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 </Text>
               </PendingValue>
             </Animated.View>
-            <IconBubble
-              testID="balance-eye-toggle"
-              size={componentSizes.iconSizeMedium}
-              tone="ghost"
-              icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
-              iconSize={componentSizes.changeArrowIcon}
-              onPress={onToggleVisibility}
-              accessibilityLabel={
-                hiddenBalance
-                  ? t('accessibility.show_balance', 'Show balance')
-                  : t('accessibility.hide_balance', 'Hide balance')
-              }
-            />
+            <Animated.View style={eyeBlinkStyle}>
+              <IconBubble
+                testID="balance-eye-toggle"
+                size={componentSizes.iconSizeMedium}
+                tone="ghost"
+                icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
+                iconSize={componentSizes.changeArrowIcon}
+                onPress={onToggleVisibility}
+                accessibilityLabel={
+                  hiddenBalance
+                    ? t('accessibility.show_balance', 'Show balance')
+                    : t('accessibility.hide_balance', 'Hide balance')
+                }
+              />
+            </Animated.View>
           </View>
 
           {/* The change and the three controls share one row, mirrored: the
