@@ -33,14 +33,12 @@ import {
   NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
   componentSizes,
-  fontSize,
   s,
   spacing,
   useAccountsContext,
@@ -56,6 +54,7 @@ import {
   isWatchOnlyAccount,
   vs,
   getNetworkLabel,
+  getHeldNetworkIds,
   BLOCKCHAIN_TO_COINGECKO,
   PERIOD_TO_DAYS,
   coinInfoToMarketData,
@@ -167,10 +166,13 @@ export default function HomeScreen() {
   // non-mainnet half; the hook owns the whole rule now, so the active network
   // stays offered even with the flag off and the session is never stranded on
   // a page the carousel cannot reach (spec 026).
+  // Held means a filled slot, not a present key: `getHeldNetworkIds` is the
+  // same rule the active selection resolves against, so the carousel cannot
+  // offer a page the session is unable to read.
   const networksAccounts = activeAccount?.networksAccounts;
   const heldNetworkIds = useMemo(
-    () => (networksAccounts ? Object.keys(networksAccounts) : undefined),
-    [networksAccounts]
+    () => (activeAccount ? getHeldNetworkIds(activeAccount) : undefined),
+    [activeAccount]
   );
   // The flag comes from the hoisted context, not from the hook's own
   // `useUserConfig` instance. That instance reloads from storage only when the
@@ -431,19 +433,19 @@ export default function HomeScreen() {
   // while `balanceState === 'loading'` (see the sub-tabs content further
   // down), so a bare mount waiting on the accounts hook gets the identical
   // shape rather than a second, spinner-based idiom for the same wait.
-  if (!ready) {
+  //
+  // The same wait covers a wallet whose blockchain accounts are not in memory
+  // yet — the pre-unlock placeholder, whose networks stay empty until the vault
+  // is decrypted. It is a wait, not a dead end: which network and slot a wallet
+  // can be read on is decided in `packages/shared` (`resolveActiveSlot`), which
+  // heals a stored pair the active wallet does not hold. This screen renders
+  // the whole chrome — header, carousel, sub-tabs — so a terminal message here
+  // would take the only navigation on screen away with it (there is no tab bar)
+  // and leave the user with nothing but a reinstall.
+  if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
       <View style={[styles.container, styles.tabGutter]} testID="home-loading">
         <SkeletonRow padding="lg" leadingSize={44} trailingWidth={64} count={5} />
-      </View>
-    );
-  }
-
-  // No account state (only show if accounts array is empty)
-  if (!activeAccount || !activeBlockchainAccount) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>{t('wallet.no_account_found', 'No account found')}</Text>
       </View>
     );
   }
@@ -750,22 +752,11 @@ export default function HomeScreen() {
   );
 }
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = (_t: Semantic) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: 'transparent',
-    },
-    loadingContainer: {
-      flex: 1,
-      backgroundColor: 'transparent',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    loadingText: {
-      color: t.text.secondary,
-      fontSize: s(fontSize.bodyLg),
-      marginTop: spacing.lg,
     },
     content: {
       flex: 1,

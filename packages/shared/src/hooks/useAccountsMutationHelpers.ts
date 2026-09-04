@@ -1,16 +1,8 @@
 import { removeStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 import type { Account, StoredAccount } from '../types/account';
+import type { ActiveSlot } from '../utils/active-selection';
 
 export { buildSecretVault } from '../utils/account-secret';
-
-export function getPreferredNetworkId(account: Account, currentNetworkId: string | null): string {
-  if (currentNetworkId) {
-    return currentNetworkId;
-  }
-
-  const availableNetworks = Object.keys(account.networksAccounts);
-  return availableNetworks.includes('solana-mainnet') ? 'solana-mainnet' : availableNetworks[0];
-}
 
 export async function persistAccounts(
   accounts: Account[],
@@ -19,17 +11,24 @@ export async function persistAccounts(
   await setStorageItem(STORAGE_KEYS.ACCOUNTS, accounts.map(formatAccountForStorage));
 }
 
+/**
+ * Persists the active wallet and, when one could be resolved, the network and
+ * slot it is read through.
+ *
+ * The pair travels together on purpose: a network written without its slot (or
+ * the reverse) is how storage and runtime came apart, and the launch after that
+ * reads the half that was wrong.
+ */
 export async function persistActiveSelection(
   accountId: string,
-  pathIndex: number,
-  networkId?: string
+  slot: ActiveSlot | null
 ): Promise<void> {
   await setStorageItem(STORAGE_KEYS.ACCOUNT_ID, accountId);
-  await setStorageItem(STORAGE_KEYS.PATH_INDEX, pathIndex);
 
-  if (networkId) {
-    await setStorageItem(STORAGE_KEYS.NETWORK_ID, networkId);
-  }
+  if (!slot) return;
+
+  await setStorageItem(STORAGE_KEYS.NETWORK_ID, slot.networkId);
+  await setStorageItem(STORAGE_KEYS.PATH_INDEX, slot.pathIndex);
 }
 
 export async function clearAccountsStorage(): Promise<void> {

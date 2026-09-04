@@ -512,7 +512,6 @@
     "tokens_load_error": "No se pudieron cargar tus tokens en este momento.",
     "loading_wallet": "Cargando billetera...",
     "tokens_empty_subtitle": "Tus tokens van a aparecer acá cuando recibas alguno",
-    "no_account_found": "No se encontró ninguna cuenta",
     "unnamed_account": "Cuenta",
     "token_search_failed": "La búsqueda no está disponible en este momento. Intentá de nuevo.",
     "import": {

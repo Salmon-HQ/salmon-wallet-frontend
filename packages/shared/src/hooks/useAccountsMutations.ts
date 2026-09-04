@@ -5,10 +5,10 @@ import { removeStashItem, setStorageItem, STASH_KEYS, STORAGE_KEYS } from '../st
 import type { Account, EditAccountParams, StoredAccount } from '../types/account';
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
+import { resolveActiveSlot } from '../utils/active-selection';
 import {
   buildSecretVault,
   clearAccountsStorage,
-  getPreferredNetworkId,
   persistAccounts,
   persistActiveSelection,
 } from './useAccountsMutationHelpers';
@@ -28,7 +28,6 @@ interface UseAccountsMutationsParams {
   setTrustedApps: Dispatch<SetStateAction<TrustedApps>>;
   setTokens: Dispatch<SetStateAction<CustomTokens>>;
   formatAccountForStorage: (account: Account) => StoredAccount;
-  getDefaultPathIndex: (account: Account, networkId: string) => number;
 }
 
 interface UseAccountsMutationsResult {
@@ -53,7 +52,6 @@ export function useAccountsMutations({
   setTrustedApps,
   setTokens,
   formatAccountForStorage,
-  getDefaultPathIndex,
 }: UseAccountsMutationsParams): UseAccountsMutationsResult {
   const removeAllAccounts = useCallback(async (): Promise<void> => {
     await clearAccountsStorage();
@@ -85,7 +83,12 @@ export function useAccountsMutations({
       const newCounter = counter + 1;
       const newAccounts = [...accounts, account];
       const newAccountId = account.id;
-      const newNetworkId = getPreferredNetworkId(account, networkId);
+      // The new wallet becomes the active one, so the session's network and
+      // slot must be ones *it* holds. Keeping the session's network unchecked
+      // is what stranded a watch-only import (Solana-mainnet only) on whatever
+      // chain page the user happened to be reading — persisted, and therefore
+      // still there on the next launch.
+      const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
       const newVault = buildSecretVault(newAccounts);
 
       // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
@@ -99,9 +102,10 @@ export function useAccountsMutations({
       setCounter(newCounter);
       setAccounts(newAccounts);
       setAccountId(newAccountId);
-      setNetworkId(newNetworkId);
-      const newPathIndex = getDefaultPathIndex(account, newNetworkId);
-      setPathIndex(newPathIndex);
+      if (newSlot) {
+        setNetworkId(newSlot.networkId);
+        setPathIndex(newSlot.pathIndex);
+      }
 
       await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
       if (password) {
@@ -110,16 +114,15 @@ export function useAccountsMutations({
 
       await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
       await persistAccounts(newAccounts, formatAccountForStorage);
-      // The same index the runtime was just put on: a wallet whose only
-      // address sits at a derived path would otherwise come back on an empty
-      // index 0 after the next launch.
-      await persistActiveSelection(newAccountId, newPathIndex, newNetworkId);
+      // The same pair the runtime was just put on: a wallet whose only address
+      // sits at a derived path, or on a single network, would otherwise come
+      // back on an empty slot after the next launch.
+      await persistActiveSelection(newAccountId, newSlot);
     },
     [
       accounts,
       counter,
       formatAccountForStorage,
-      getDefaultPathIndex,
       networkId,
       setAccountId,
       setAccounts,
@@ -190,11 +193,17 @@ export function useAccountsMutations({
       if (accountId === targetId) {
         const account = accounts.find(({ id }) => id !== targetId);
         if (account) {
-          const nextPathIndex = networkId ? getDefaultPathIndex(account, networkId) : 0;
+          // Removing the active wallet hands the session to another one, which
+          // holds its own networks: the pair moves with it, exactly as it does
+          // on an explicit switch.
+          const nextSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
           setAccountId(account.id);
-          setPathIndex(nextPathIndex);
+          if (nextSlot) {
+            setNetworkId(nextSlot.networkId);
+            setPathIndex(nextSlot.pathIndex);
+          }
 
-          await persistActiveSelection(account.id, nextPathIndex);
+          await persistActiveSelection(account.id, nextSlot);
         }
       }
 
@@ -209,11 +218,11 @@ export function useAccountsMutations({
       accountId,
       accounts,
       formatAccountForStorage,
-      getDefaultPathIndex,
       networkId,
       removeAllAccounts,
       setAccountId,
       setAccounts,
+      setNetworkId,
       setPathIndex,
       setRequiredLock,
     ]

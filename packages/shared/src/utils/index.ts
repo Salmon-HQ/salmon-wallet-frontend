@@ -40,6 +40,15 @@ export {
   getActiveSolanaApprovalAccount,
 } from './account';
 
+// Active selection — the network and slot a wallet can be read on
+export {
+  getHeldNetworkIds,
+  getHeldPathIndex,
+  isSlotResolved,
+  resolveActiveSlot,
+} from './active-selection';
+export type { ActiveSlot, PreferredSlot } from './active-selection';
+
 // Account secret / vault serialization
 export {
   toAccountSecret,

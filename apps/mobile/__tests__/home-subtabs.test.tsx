@@ -119,6 +119,10 @@ jest.mock('@salmon/shared', () => ({
   coinInfoToMarketData: () => undefined,
   getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
   getNetworkLabel: (id: string) => (id === 'solana-devnet' ? 'Devnet' : null),
+  getHeldNetworkIds: (account?: { networksAccounts?: Record<string, unknown[]> } | null) =>
+    Object.entries(account?.networksAccounts ?? {})
+      .filter(([, slots]) => slots?.some(Boolean))
+      .map(([id]) => id),
   BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
   PERIOD_TO_DAYS: { '1D': 1, '1M': 30 },
   useAccountsContext: () => [
