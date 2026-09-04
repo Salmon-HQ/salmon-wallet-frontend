@@ -113,6 +113,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // own swap so it reads on every chain change, not only a swipe's.
   const blinkScale = useSharedValue(1);
 
+  // Both halves of the blink are built here, on the JS thread: the reopen runs
+  // from the close's completion callback, which is a worklet, and `timing` is
+  // not one.
+  const blinkCloseTiming = timing(motionMs.flick, isReduceMotionEnabled, curve.sink);
+  const blinkOpenTiming = timing(motionMs.swell, isReduceMotionEnabled, curve.settle);
+
   // Leaving accelerates (`sink`); arriving and springing back come to rest
   // (`settle`). Both on `drift`, the beat the dots already travel on.
   const leaveTiming = timing(motionMs.drift, isReduceMotionEnabled, curve.sink);
@@ -242,18 +248,18 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const currentBlockchainId = current?.network.blockchain ?? 'solana';
 
   // The blink itself: fires on every chain change, including the ones the
-  // ChainSelector dropdown drives directly rather than a swipe. Skipped on
-  // first mount — nothing changed yet to blink at.
+  // ChainSelector tabs drive directly rather than a swipe. Skipped on first
+  // mount — nothing changed yet to blink at.
   const blinkedFor = useRef(currentBlockchainId);
   useEffect(() => {
     if (blinkedFor.current === currentBlockchainId) return;
     blinkedFor.current = currentBlockchainId;
-    blinkScale.value = withTiming(0.05, timing(motionMs.flick, isReduceMotionEnabled, curve.sink), (finished) => {
+    blinkScale.value = withTiming(0.05, blinkCloseTiming, (finished) => {
       if (finished) {
-        blinkScale.value = withTiming(1, timing(motionMs.swell, isReduceMotionEnabled, curve.settle));
+        blinkScale.value = withTiming(1, blinkOpenTiming);
       }
     });
-  }, [currentBlockchainId, isReduceMotionEnabled, blinkScale]);
+  }, [currentBlockchainId, blinkScale, blinkCloseTiming, blinkOpenTiming]);
 
   const eyeBlinkStyle = useAnimatedStyle(() => ({
     transform: [{ scaleY: blinkScale.value }],
