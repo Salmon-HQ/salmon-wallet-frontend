@@ -13,6 +13,7 @@ import {
   buildBitcoinToken,
   type HomeSubTabKey,
   getNetworkLabel,
+  getHeldNetworkIds,
   spacing,
   componentSizes,
   fontSize,
@@ -235,10 +236,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // non-mainnet half; the hook owns the whole rule now, so the active network
   // stays offered even with the flag off and the session is never stranded on
   // a page the balance block cannot reach (spec 026).
-  const heldNetworksAccounts = activeAccount?.networksAccounts;
+  // Held means a filled slot, not a present key: `getHeldNetworkIds` is the
+  // same rule the active selection resolves against, so the balance block
+  // cannot offer a page the session is unable to read.
   const heldNetworkIds = useMemo(
-    () => (heldNetworksAccounts ? Object.keys(heldNetworksAccounts) : undefined),
-    [heldNetworksAccounts]
+    () => (activeAccount ? getHeldNetworkIds(activeAccount) : undefined),
+    [activeAccount]
   );
   const { allNetworks, networksReady } = useAvailableNetworks({
     activeBlockchainAccount: {

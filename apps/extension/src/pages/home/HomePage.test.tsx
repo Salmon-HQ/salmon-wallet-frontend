@@ -138,6 +138,10 @@ vi.mock('@salmon/shared', async () => {
     AddressbookError: class AddressbookError extends Error {},
     getBlockchainFromNetworkId: (id: string) => id.split('-')[0],
     getNetworkLabel: () => null,
+    getHeldNetworkIds: (account?: { networksAccounts?: Record<string, unknown[]> } | null) =>
+      Object.entries(account?.networksAccounts ?? {})
+        .filter(([, slots]) => slots?.some(Boolean))
+        .map(([id]) => id),
     BLOCKCHAIN_TO_COINGECKO: { bitcoin: 'bitcoin' },
     PERIOD_TO_DAYS: { '1M': 30 },
     coinInfoToMarketData: () => undefined,

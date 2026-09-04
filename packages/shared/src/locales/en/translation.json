@@ -512,7 +512,6 @@
     "tokens_load_error": "Your tokens couldn't be loaded right now.",
     "loading_wallet": "Loading wallet...",
     "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
-    "no_account_found": "No account found",
     "unnamed_account": "Account",
     "token_search_failed": "Search isn't available right now. Try again.",
     "import": {

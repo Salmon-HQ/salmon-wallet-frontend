@@ -115,7 +115,16 @@ export function useAccountsLoader({
         defaultNetworkId = held.find(isMainnetNetworkId) ?? held[0];
       }
 
-      setAccountId(storedAccountId ?? null);
+      // A wallet list with no active wallet is a session with nothing to read
+      // and no way to choose — the wallets screen is reached *through* the
+      // wallet header. So a missing (or dangling) stored id lands on the first
+      // wallet rather than on nothing.
+      const activeId =
+        storedAccountId && loadedAccounts.some(({ id }) => id === storedAccountId)
+          ? storedAccountId
+          : (loadedAccounts[0]?.id ?? null);
+
+      setAccountId(activeId);
       setNetworkId(defaultNetworkId ?? null);
       setPathIndex((await getStorageItem<number>(STORAGE_KEYS.PATH_INDEX)) ?? 0);
       setTrustedApps((await getStorageItem<TrustedApps>(STORAGE_KEYS.TRUSTED_APPS)) ?? {});
@@ -123,6 +132,10 @@ export function useAccountsLoader({
 
       if (!storedNetworkId && defaultNetworkId) {
         await setStorageItem(STORAGE_KEYS.NETWORK_ID, defaultNetworkId);
+      }
+
+      if (activeId && activeId !== storedAccountId) {
+        await setStorageItem(STORAGE_KEYS.ACCOUNT_ID, activeId);
       }
 
       setLoaded(true);

@@ -134,13 +134,6 @@ export interface UseAccountsActions {
 // ============================================================================
 
 /**
- * Gets the default path index for an account on a given network.
- */
-function getDefaultPathIndex(account: Account, networkId: string): number {
-  return account.networksAccounts[networkId]?.findIndex(Boolean) ?? 0;
-}
-
-/**
  * Formats an account for storage (removes non-serializable data).
  */
 function formatAccountForStorage(account: Account): StoredAccount {
@@ -402,7 +395,6 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     pathIndex,
     setPathIndex,
     setSwitchingNetwork,
-    getDefaultPathIndex,
   });
 
   const { activeTrustedApps, activeTokens, addTrustedApp, removeTrustedApp, importTokens } =
@@ -434,7 +426,6 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     setTrustedApps,
     setTokens,
     formatAccountForStorage,
-    getDefaultPathIndex,
   });
 
   const resetError = useCallback(() => setError(null), []);
