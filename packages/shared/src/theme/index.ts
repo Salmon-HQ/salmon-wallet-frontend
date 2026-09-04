@@ -80,7 +80,13 @@ export { fleshTile, fleshFills } from './flesh';
 export type { FleshFill } from './flesh';
 
 // Seigaiha geometry — the scales motif as path data both platforms draw.
-export { seigaihaTile, seigaihaPaths, seigaihaTiledPaths, shiftSeigaiha } from './scales';
+export {
+  seigaihaTile,
+  seigaihaPaths,
+  seigaihaTiledPaths,
+  shiftSeigaiha,
+  singleScale,
+} from './scales';
 
 // Re-export all tokens from spacing
 export {

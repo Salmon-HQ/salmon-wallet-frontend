@@ -26,6 +26,7 @@ import {
   motionEasing,
   motionMs,
   shadowsCSS,
+  singleScale,
   spacing,
 } from '@salmon/shared';
 
@@ -37,6 +38,11 @@ import { ListRow } from '../ListRow';
 const CHEVRON_SIZE = componentSizes.iconSizeXs;
 const UNDERLINE_HEIGHT = 2;
 const DROPDOWN_WIDTH = 220;
+/** The row marker: one scale from the seigaiha motif, wide-stroked rather
+ * than filled, at the trigger's own aspect ratio. */
+const SCALE_WIDTH = componentSizes.iconSizeXSmall;
+const SCALE_HEIGHT = Math.round(SCALE_WIDTH * (singleScale.height / singleScale.width));
+const SCALE_STROKE_WIDTH = 5;
 
 interface ChainSelectorProps {
   blockchains: BlockchainBalance[];
@@ -144,7 +150,6 @@ export function ChainSelector({
             testID={`${testID}-dropdown`}
             tone="surface"
             padding="sm"
-            gap={spacing.sm}
             style={{
               position: 'absolute',
               top: 'calc(100% + 8px)',
@@ -157,7 +162,13 @@ export function ChainSelector({
               transition: `opacity ${motionMs.swell}ms ${motionEasing.current.css}, transform ${motionMs.swell}ms ${motionEasing.current.css}`,
             }}
           >
-            <div role="listbox" aria-label={t('home.switch_network', 'Switch network')}>
+            {/* The gap belongs here, between the rows — it did nothing on
+                the Card above, whose only direct child is this listbox. */}
+            <div
+              role="listbox"
+              aria-label={t('home.switch_network', 'Switch network')}
+              style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}
+            >
               {getChainSelectorOptions(blockchains).map((option) => {
                 const isActive = option.index === activeIndex;
                 return (
@@ -169,14 +180,18 @@ export function ChainSelector({
                       name: option.name,
                     })}
                     leading={
-                      <div
-                        style={{
-                          width: componentSizes.iconSizeXxsm,
-                          height: componentSizes.iconSizeXxsm,
-                          borderRadius: componentSizes.iconSizeXxsm / 2,
-                          backgroundColor: chain.hintInk[option.blockchain],
-                        }}
-                      />
+                      <svg
+                        width={SCALE_WIDTH}
+                        height={SCALE_HEIGHT}
+                        viewBox={`0 0 ${singleScale.width} ${singleScale.height}`}
+                      >
+                        <path
+                          d={singleScale.path}
+                          stroke={chain.hintInk[option.blockchain]}
+                          strokeWidth={SCALE_STROKE_WIDTH}
+                          fill="none"
+                        />
+                      </svg>
                     }
                     trailing={
                       isActive ? (

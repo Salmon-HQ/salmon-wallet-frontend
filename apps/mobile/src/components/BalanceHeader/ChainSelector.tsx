@@ -19,6 +19,7 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import {
   type BlockchainBalance,
   componentSizes,
@@ -29,6 +30,7 @@ import {
   ms,
   s,
   shadows,
+  singleScale,
   spacing,
   vs,
   type Semantic,
@@ -45,6 +47,11 @@ const UNDERLINE_HEIGHT = 2;
 /** Gap between the trigger's bottom edge and the dropdown. */
 const DROPDOWN_OFFSET = s(spacing.xs);
 const DROPDOWN_WIDTH = 220;
+/** The row marker: one scale from the seigaiha motif, wide-stroked rather
+ * than filled, at the trigger's own aspect ratio. */
+const SCALE_WIDTH = ms(componentSizes.iconSizeXSmall);
+const SCALE_HEIGHT = ms(componentSizes.iconSizeXSmall * (singleScale.height / singleScale.width));
+const SCALE_STROKE_WIDTH = 5;
 
 interface ChainSelectorProps {
   blockchains: BlockchainBalance[];
@@ -139,9 +146,18 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
                     name: option.name,
                   })}
                   leading={
-                    <View
-                      style={[styles.optionDot, { backgroundColor: chain.hintInk[option.blockchain] }]}
-                    />
+                    <Svg
+                      width={SCALE_WIDTH}
+                      height={SCALE_HEIGHT}
+                      viewBox={`0 0 ${singleScale.width} ${singleScale.height}`}
+                    >
+                      <Path
+                        d={singleScale.path}
+                        stroke={chain.hintInk[option.blockchain]}
+                        strokeWidth={SCALE_STROKE_WIDTH}
+                        fill="none"
+                      />
+                    </Svg>
                   }
                   trailing={
                     isActive ? (
@@ -192,11 +208,6 @@ const stylesFor = (t: Semantic) =>
     dropdown: {
       position: 'absolute',
       width: DROPDOWN_WIDTH,
-    },
-    optionDot: {
-      width: componentSizes.iconSizeXxsm,
-      height: componentSizes.iconSizeXxsm,
-      borderRadius: componentSizes.iconSizeXxsm / 2,
     },
   });
 
