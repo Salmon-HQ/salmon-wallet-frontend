@@ -291,16 +291,12 @@ export function BalanceHeader({
       onWheel={handleWheel}
       style={{
         display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: spacing.md,
+        flexDirection: 'column',
+        gap: spacing.sm,
         ...style,
       }}
     >
-      <div
-        style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: spacing.xs }}
-      >
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
         <ChainSelector
           blockchains={blockchains}
           activeIndex={activeIndex}
@@ -366,7 +362,10 @@ export function BalanceHeader({
                 style={{
                   fontFamily: fontFamily.sans,
                   fontWeight: fontWeight.bold,
-                  fontSize: fontSize.caption,
+                  // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
+                  // at `md`) — one reading size for the block's two
+                  // lateral-choice/status lines.
+                  fontSize: fontSize.bodyLg,
                   letterSpacing: letterSpacing.change,
                   color: hiddenBalance ? text.secondary : changeColor,
                   whiteSpace: 'nowrap',
@@ -385,38 +384,40 @@ export function BalanceHeader({
       </div>
 
       {/* The three controls are the same object as the wallet thumb: one
-          `IconBubble`, differing only in tone. Send is the block's single
-          salmon fill (and carries the flesh with it); Receive and Activity
-          are its outline twins. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, flexShrink: 0 }}>
+          `IconBubble`, differing only in tone, sized like
+          `portfolio-order-button` (36, the secondary-control step) rather
+          than a primary action's 42. Send is the block's single salmon fill
+          (and carries the flesh with it); Receive and Activity are its
+          outline twins. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+        <IconBubble
+          testID="home-activity-button"
+          size={componentSizes.iconBubbleSm}
+          tone="outline"
+          icon={ClockIcon}
+          iconSize={componentSizes.iconSizeXSmall}
+          onPress={onActivityPress}
+          accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+        />
         <IconBubble
           testID="home-send-button"
-          size={componentSizes.buttonHeightCompact}
+          size={componentSizes.iconBubbleSm}
           tone="accent"
           icon={ArrowUpRightIcon}
           iconWeight="bold"
-          iconSize={componentSizes.iconSizeSmall}
+          iconSize={componentSizes.iconSizeXSmall}
           onPress={onSendPress}
           disabled={sendDisabled}
           accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
         />
         <IconBubble
           testID="home-receive-button"
-          size={componentSizes.buttonHeightCompact}
+          size={componentSizes.iconBubbleSm}
           tone="outline"
           icon={ArrowDownLeftIcon}
-          iconSize={componentSizes.iconSizeSmall}
+          iconSize={componentSizes.iconSizeXSmall}
           onPress={onReceivePress}
           accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-        />
-        <IconBubble
-          testID="home-activity-button"
-          size={componentSizes.buttonHeightCompact}
-          tone="outline"
-          icon={ClockIcon}
-          iconSize={componentSizes.iconSizeSmall}
-          onPress={onActivityPress}
-          accessibilityLabel={t('accessibility.view_activity', 'View activity')}
         />
       </div>
     </div>

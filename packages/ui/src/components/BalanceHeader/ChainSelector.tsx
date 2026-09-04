@@ -80,7 +80,17 @@ export function ChainSelector({
         data-testid={testID}
         onClick={() => setOpen(true)}
         aria-label={t('home.switch_network', 'Switch network')}
-        style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+        style={{
+          border: 'none',
+          background: 'transparent',
+          padding: 0,
+          cursor: 'pointer',
+          // A `<button>` centers its content and stretches to the column
+          // parent's width by default — both would pull the trigger off the
+          // left edge the amount below it sits on.
+          textAlign: 'left',
+          alignSelf: 'flex-start',
+        }}
       >
         {trigger}
       </button>
@@ -90,7 +100,14 @@ export function ChainSelector({
         title={<SheetTitle>{t('home.switch_network', 'Switch network')}</SheetTitle>}
         testID={`${testID}-sheet`}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing.xs,
+            paddingBottom: spacing['2xl'],
+          }}
+        >
           {getChainSelectorOptions(blockchains).map((option) => {
             const isActive = option.index === activeIndex;
             return (

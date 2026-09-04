@@ -279,7 +279,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   return (
     <GestureDetector gesture={panGesture}>
       <View style={[styles.container, style]} testID={testID}>
-        <View style={styles.column}>
+        <View style={styles.balanceColumn}>
           <ChainSelector
             blockchains={blockchains}
             activeIndex={activeIndex}
@@ -351,17 +351,29 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
         </View>
 
         {/* The three controls are the same object as the wallet thumb and the
-            FAB: one `IconBubble`, differing only in tone. Send is the block's
-            single salmon fill (and carries the flesh with it); Receive and
-            Activity are its outline twins. */}
+            FAB: one `IconBubble`, differing only in tone, sized like
+            `portfolio-order-button` (36, DESIGN.md's secondary-control step)
+            rather than a primary action's 42. Send is the block's single
+            salmon fill (and carries the flesh with it); Receive and Activity
+            are its outline twins. */}
         <View style={styles.actions}>
           <IconBubble
+            testID="home-activity-button"
+            size={componentSizes.iconBubbleSm}
+            tone="outline"
+            icon={ClockIcon}
+            iconSize={componentSizes.iconSizeXSmall}
+            onPress={onActivityPress}
+            accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+          />
+
+          <IconBubble
             testID="home-send-button"
-            size={componentSizes.buttonHeightCompact}
+            size={componentSizes.iconBubbleSm}
             tone="accent"
             icon={ArrowUpRightIcon}
             iconWeight="bold"
-            iconSize={componentSizes.iconSizeSmall}
+            iconSize={componentSizes.iconSizeXSmall}
             onPress={onSendPress}
             disabled={sendDisabled}
             accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
@@ -369,22 +381,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
           <IconBubble
             testID="home-receive-button"
-            size={componentSizes.buttonHeightCompact}
+            size={componentSizes.iconBubbleSm}
             tone="outline"
             icon={ArrowDownLeftIcon}
-            iconSize={componentSizes.iconSizeSmall}
+            iconSize={componentSizes.iconSizeXSmall}
             onPress={onReceivePress}
             accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-          />
-
-          <IconBubble
-            testID="home-activity-button"
-            size={componentSizes.buttonHeightCompact}
-            tone="outline"
-            icon={ClockIcon}
-            iconSize={componentSizes.iconSizeSmall}
-            onPress={onActivityPress}
-            accessibilityLabel={t('accessibility.view_activity', 'View activity')}
           />
         </View>
       </View>
@@ -395,13 +397,9 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     container: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      gap: s(spacing.md),
+      gap: vs(spacing.sm),
     },
-    column: {
-      flex: 1,
+    balanceColumn: {
       gap: vs(spacing.xs),
     },
     amountRow: {
@@ -429,8 +427,10 @@ const stylesFor = (t: Semantic) =>
     changeText: {
       flexShrink: 1,
     },
+    // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs` at `md`) —
+    // one reading size for the block's two lateral-choice/status lines.
     change: {
-      fontSize: ms(fontSize.caption),
+      fontSize: ms(fontSize.bodyLg),
       fontFamily: fontFamilyNative.bold,
       letterSpacing: letterSpacing.change,
       ...TABULAR,

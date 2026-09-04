@@ -53,7 +53,7 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { chain, accent } = useSemantic();
-  const { compactContentBottomPadding } = useBottomSheetChrome();
+  const { standardContentBottomPadding } = useBottomSheetChrome();
   const [open, setOpen] = useState(false);
 
   const info = getChainSelectorTrigger(blockchains, activeIndex);
@@ -95,7 +95,7 @@ export const ChainSelector: React.FC<ChainSelectorProps> = ({
         title={<SheetTitle>{t('home.switch_network', 'Switch network')}</SheetTitle>}
         testID={`${testID}-sheet`}
       >
-        <View style={[styles.list, { paddingBottom: compactContentBottomPadding }]}>
+        <View style={[styles.list, { paddingBottom: standardContentBottomPadding }]}>
           {getChainSelectorOptions(blockchains).map((option) => {
             const isActive = option.index === activeIndex;
             return (
