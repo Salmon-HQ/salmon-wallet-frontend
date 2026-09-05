@@ -757,7 +757,6 @@
     "show_balance": "Show balance",
     "hide_balance": "Hide balance",
     "token_on_network": "{{token}} on {{network}}",
-    "select_blockchain": "Switch to {{name}}",
     "loading_token_info": "Loading token information",
     "token_balance": "{{name}} token, balance {{amount}} {{symbol}}",
     "token_price_balance": "{{name}} token, price {{price}}, balance {{amount}} {{symbol}}",
@@ -795,7 +794,6 @@
   },
   "home": {
     "unnamed_account": "Account",
-    "switch_network": "Switch network",
     "change_period_24h": "24h",
     "tabs": {
       "order": {
