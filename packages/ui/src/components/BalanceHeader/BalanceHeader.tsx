@@ -3,9 +3,9 @@
  *
  * The mobile twin is `apps/mobile/src/components/BalanceHeader/BalanceHeader.tsx`
  * and the anatomy is the same, read from the same `BalanceHeaderPropsBase`
- * contract: the label row with the eye, the amount, the 24h change beside the
- * Activity pill, the cue row (dots · ← prev · next → · environment chip),
- * and the two money circles at the right. There is no card, no gradient pane
+ * contract: `ChainSelector` where "Total balance" used to sit, the amount
+ * with the eye beside it, the 24h change, and the three money circles
+ * (Send, Receive, Activity) at the right. There is no card, no gradient pane
  * and no edge light — the number sits directly on the water column.
  *
  * What differs is how a page is turned. Mobile pans the amount under the
@@ -14,8 +14,9 @@
  *
  * - **arrow keys** on the focusable amount region (`ArrowLeft`/`ArrowRight`,
  *   plus `Home`/`End`), which is also what assistive tech drives;
- * - **a click on a dot**;
- * - **a horizontal wheel** over the block — a trackpad's two-finger swipe.
+ * - **a horizontal wheel** over the block — a trackpad's two-finger swipe;
+ * - **the `ChainSelector` sheet** — the same alternate route mobile's sheet
+ *   gives a tap.
  *
  * The verb is unchanged and every number comes from `@salmon/shared`: the
  * outgoing amount slides `LATERAL_SWAP_TRAVEL` toward the edge it is heading
@@ -31,21 +32,18 @@ import {
   LATERAL_SWAP_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
-  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
   formatLargeNumber,
   getLabelValue,
-  getNetworkLabel,
   hiddenValue,
   isMainnetNetworkId,
   letterSpacing,
   motionEasing,
   motionMs,
   NETWORK_DISPLAY,
-  balanceCues,
   showPercentage,
   spacing,
   tabularNums,
@@ -56,7 +54,7 @@ import { useTranslation } from 'react-i18next';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { clearAnimations, useReducedMotion } from '../../motion';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
-import { Chip } from '../Chip';
+import { ChainSelector } from './ChainSelector';
 import { IconBubble } from '../IconBubble';
 import { PendingValue } from '../PendingValue';
 import type { BalanceHeaderProps } from './types';
@@ -64,24 +62,6 @@ import type { BalanceHeaderProps } from './types';
 /** A value the backend has not returned yet — never a fabricated 0. */
 const EM_DASH = '—';
 
-/** Dot geometry, unchanged from mobile: the active dot is a pill that travels. */
-const DOT_SIZE = spacing.xs;
-const DOT_ACTIVE_WIDTH = componentSizes.iconSizeXxsm;
-const TOUCH_TARGET_MIN = 44;
-/**
- * A press target in the cue row: padded to the 44px minimum and taken back by
- * the margin, so the row measures its content and nothing else — mobile's
- * hit slop is not layout either.
- */
-const hitBoxStyle = (contentHeight: number): React.CSSProperties => ({
-  border: 'none',
-  background: 'transparent',
-  padding: `${(TOUCH_TARGET_MIN - contentHeight) / 2}px 0`,
-  margin: `${-(TOUCH_TARGET_MIN - contentHeight) / 2}px 0`,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-});
 /** How far a long total may shrink before it is allowed to clip. */
 const BALANCE_MIN_FONT_SCALE = 0.6;
 
@@ -108,7 +88,7 @@ export function BalanceHeader({
   testID,
 }: BalanceHeaderProps) {
   const { t } = useTranslation();
-  const { text, change, chain, accent } = useSemantic();
+  const { text, change } = useSemantic();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const reducedMotion = useReducedMotion();
 
@@ -118,6 +98,7 @@ export function BalanceHeader({
   const amountRef = useRef<HTMLDivElement>(null);
   const changeRef = useRef<HTMLDivElement>(null);
   const balanceRef = useRef<HTMLSpanElement>(null);
+  const eyeRef = useRef<HTMLDivElement>(null);
   // A long total fits itself to the width beside Send/Receive rather than
   // wrapping — mobile's `adjustsFontSizeToFit`, measured here.
   const [balanceFit, setBalanceFit] = useState(1);
@@ -265,7 +246,27 @@ export function BalanceHeader({
 
   const current = blockchains[activeIndex];
   const currentNetworkId = current?.network.id ?? 'solana-mainnet';
+  const currentBlockchainId = current?.network.blockchain ?? 'solana';
   const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
+
+  // The eye's own cue that the chain under it changed — a blink, not a
+  // report: `scaleY` shuts fast (`sink`) and reopens slower (`settle`), the
+  // same pair the amount's own exit/arrival above use. Skipped on first
+  // mount — nothing changed yet to blink at.
+  const blinkedForRef = useRef(currentBlockchainId);
+  useEffect(() => {
+    if (blinkedForRef.current === currentBlockchainId) return;
+    blinkedForRef.current = currentBlockchainId;
+    if (reducedMotion || !canAnimate(eyeRef.current)) return;
+    eyeRef.current.animate(
+      [
+        { transform: 'scaleY(1)' },
+        { transform: 'scaleY(0.05)', offset: motionMs.flick / (motionMs.flick + motionMs.swell) },
+        { transform: 'scaleY(1)' },
+      ],
+      { duration: motionMs.flick + motionMs.swell, easing: motionEasing.settle.css }
+    );
+  }, [currentBlockchainId, reducedMotion]);
 
   // Off mainnet there is no price, so there is no USD total to print and the
   // block would sit on an em-dash forever. The honest total on a test network
@@ -277,23 +278,6 @@ export function BalanceHeader({
     nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
   const changeColor = hasChange ? change[getLabelValue(changePercent)] : text.secondary;
-
-  // The environment chip. The active network decides, not a setting: a devnet
-  // session says "Devnet" whether or not Developer Networks is on, and every
-  // mainnet says nothing — which is exactly what `getNetworkLabel` returns.
-  const networkLabel = getNetworkLabel(currentNetworkId);
-
-  // The cues sit to the right of the dots, both of them (owner, 2026-09-02):
-  // "← SOL" for the page behind, "BTC →" for the page ahead, each arrow
-  // pointing the way the page lies and each in its destination chain's hue.
-  // A cue is a press target that goes where the dot goes. One derivation for
-  // both platforms: `balanceCues` in shared.
-  const cues = balanceCues(blockchains, activeIndex);
-  const previousHint = cues.previous && {
-    ...cues.previous,
-    ink: chain.hintInk[cues.previous.blockchain],
-  };
-  const nextHint = cues.next && { ...cues.next, ink: chain.hintInk[cues.next.blockchain] };
 
   const balanceText = hiddenBalance
     ? hiddenValue
@@ -321,13 +305,6 @@ export function BalanceHeader({
     return () => observer.disconnect();
   }, [balanceText]);
 
-  const hintStyle: React.CSSProperties = {
-    fontFamily: fontFamily.sans,
-    fontWeight: fontWeight.semibold,
-    fontSize: fontSize.micro,
-    whiteSpace: 'nowrap',
-  };
-
   return (
     <div
       data-testid={testID}
@@ -335,226 +312,141 @@ export function BalanceHeader({
       onWheel={handleWheel}
       style={{
         display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: spacing.md,
+        flexDirection: 'column',
+        gap: spacing.sm,
         ...style,
       }}
     >
-      <div
-        style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: spacing.xs }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-          <span
-            style={{
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.medium,
-              fontSize: fontSize.caption,
-              color: text.secondary,
-            }}
-          >
-            {t('home.total_balance', 'Total balance')}
-          </span>
-          <IconBubble
-            testID="balance-eye-toggle"
-            size={componentSizes.iconSizeMedium}
-            tone="ghost"
-            icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
-            iconSize={componentSizes.changeArrowIcon}
-            onPress={onToggleVisibility}
-            accessibilityLabel={
-              hiddenBalance
-                ? t('accessibility.show_balance', 'Show balance')
-                : t('accessibility.hide_balance', 'Hide balance')
-            }
-          />
-        </div>
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
+        <ChainSelector
+          blockchains={blockchains}
+          activeIndex={activeIndex}
+          onSelect={leaveFor}
+          testID="balance-chain-selector"
+        />
 
         {/* The value stays readable while it is being recalculated — the number
             breathes, it is never replaced by a placeholder. The region is the
             keyboard's grip on the pager, which is why it is focusable and
-            carries the network's name. */}
-        <div
-          ref={amountRef}
-          data-testid="balance-amount"
-          role="group"
-          tabIndex={0}
-          aria-label={current?.network.name}
-          onKeyDown={handleKeyDown}
-          style={{ outlineOffset: spacing.xxs }}
-        >
-          <PendingValue pending={loading}>
-            <span
-              ref={balanceRef}
-              style={{
-                fontFamily: fontFamily.sans,
-                fontWeight: fontWeight.bold,
-                fontSize: fontSize.balance * balanceFit,
-                color: text.primary,
-                letterSpacing: letterSpacing.balance,
-                whiteSpace: 'nowrap',
-                ...tabularNums.css,
-              }}
-            >
-              {balanceText}
-            </span>
-          </PendingValue>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.base }}>
-          {/* Off mainnet nothing priced the balance, so there is no 24h change
-              to report — the line is absent rather than an em-dash, which would
-              promise a figure that is merely late. */}
-          {!isTestNetwork && (
-            <div
-              ref={changeRef}
-              data-testid="balance-change"
-              style={{ flexShrink: 1, minWidth: 0 }}
-            >
-              <PendingValue pending={loading}>
-                <span
-                  style={{
-                    fontFamily: fontFamily.sans,
-                    fontWeight: fontWeight.bold,
-                    fontSize: fontSize.caption,
-                    letterSpacing: letterSpacing.change,
-                    color: hiddenBalance ? text.secondary : changeColor,
-                    whiteSpace: 'nowrap',
-                    ...tabularNums.css,
-                  }}
-                >
-                  {hiddenBalance
-                    ? `${hiddenValue} · ${hiddenValue}`
-                    : hasChange
-                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
-                      : EM_DASH}
-                </span>
-              </PendingValue>
-            </div>
-          )}
-          <Chip
-            testID="home-activity-button"
-            size="sm"
-            variant="outline"
-            label={t('actions.activity', 'Activity')}
-            leadingIcon={<ClockIcon size={componentSizes.iconSizeXxs} color={text.secondary} />}
-            onPress={onActivityPress}
-            accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-          />
-        </div>
-
-        {/* The cue row also carries the environment chip, so it paints for a
-            single-chain wallet standing off mainnet — the chip is the warning a
-            test-network session gets. */}
-        {(blockchains.length > 1 || !!networkLabel) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-            {blockchains.length > 1 && (
-              <div
-                role="tablist"
-                aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                  name: current?.network.name ?? '',
-                })}
-                style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}
+            carries the network's name. The eye sits beside it rather than
+            above: a large total gives up its own width first (`balanceFit`
+            below), never the toggle's. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+          <div
+            ref={amountRef}
+            data-testid="balance-amount"
+            role="group"
+            tabIndex={0}
+            aria-label={current?.network.name}
+            onKeyDown={handleKeyDown}
+            style={{ outlineOffset: spacing.xxs, flexShrink: 1, minWidth: 0 }}
+          >
+            <PendingValue pending={loading}>
+              <span
+                ref={balanceRef}
+                style={{
+                  fontFamily: fontFamily.sans,
+                  fontWeight: fontWeight.bold,
+                  fontSize: fontSize.balance * balanceFit,
+                  color: text.primary,
+                  letterSpacing: letterSpacing.balance,
+                  whiteSpace: 'nowrap',
+                  ...tabularNums.css,
+                }}
               >
-                {blockchains.map((chainBalance, index) => {
-                  const isActive = index === activeIndex;
-                  return (
-                    <button
-                      key={chainBalance.network.id}
-                      type="button"
-                      role="tab"
-                      data-testid={`balance-carousel-dot-${index}`}
-                      aria-selected={isActive}
-                      aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                        name: chainBalance.network.name,
-                      })}
-                      onClick={() => leaveFor(index)}
-                      style={hitBoxStyle(DOT_SIZE)}
-                    >
-                      <span
-                        style={{
-                          display: 'block',
-                          width: isActive ? DOT_ACTIVE_WIDTH : DOT_SIZE,
-                          height: DOT_SIZE,
-                          borderRadius: borderRadius.full,
-                          backgroundColor: isActive ? accent.fill : text.disabled,
-                          // Selection indicators inside one block agree: the
-                          // pill widens on the same `drift` beat the sub-tab
-                          // underline travels on.
-                          transition: reducedMotion
-                            ? undefined
-                            : `width ${motionMs.drift}ms ${motionEasing.settle.css}`,
-                        }}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {previousHint && (
-              <button
-                type="button"
-                data-testid="balance-prev-hint"
-                aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                  name: blockchains[previousHint.index]?.network.name,
-                })}
-                onClick={() => leaveFor(previousHint.index)}
-                style={{ ...hitBoxStyle(fontSize.micro), ...hintStyle, color: previousHint.ink }}
-              >
-                {`← ${previousHint.symbol}`}
-              </button>
-            )}
-            {nextHint && (
-              <button
-                type="button"
-                data-testid="balance-next-hint"
-                aria-label={t('accessibility.select_blockchain', 'Switch to {{name}}', {
-                  name: blockchains[nextHint.index]?.network.name,
-                })}
-                onClick={() => leaveFor(nextHint.index)}
-                style={{ ...hitBoxStyle(fontSize.micro), ...hintStyle, color: nextHint.ink }}
-              >
-                {`${nextHint.symbol} →`}
-              </button>
-            )}
-            {networkLabel && (
-              <Chip
-                testID="balance-network-chip"
-                size="sm"
-                variant="outline"
-                label={networkLabel}
-              />
-            )}
+                {balanceText}
+              </span>
+            </PendingValue>
           </div>
-        )}
-      </div>
+          <div ref={eyeRef}>
+            <IconBubble
+              testID="balance-eye-toggle"
+              size={componentSizes.iconSizeMedium}
+              tone="ghost"
+              icon={hiddenBalance ? EyeSlashIcon : EyeIcon}
+              iconSize={componentSizes.changeArrowIcon}
+              onPress={onToggleVisibility}
+              accessibilityLabel={
+                hiddenBalance
+                  ? t('accessibility.show_balance', 'Show balance')
+                  : t('accessibility.hide_balance', 'Hide balance')
+              }
+            />
+          </div>
+        </div>
 
-      {/* The two money controls are the same object as the wallet thumb: one
-          `IconBubble`, differing only in tone. Send is the block's single
-          salmon fill (and carries the flesh with it); Receive is its outline
-          twin. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, flexShrink: 0 }}>
-        <IconBubble
-          testID="home-send-button"
-          size={componentSizes.buttonHeightCompact}
-          tone="accent"
-          icon={ArrowUpRightIcon}
-          iconWeight="bold"
-          iconSize={componentSizes.iconSizeSmall}
-          onPress={onSendPress}
-          disabled={sendDisabled}
-          accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-        />
-        <IconBubble
-          testID="home-receive-button"
-          size={componentSizes.buttonHeightCompact}
-          tone="outline"
-          icon={ArrowDownLeftIcon}
-          iconSize={componentSizes.iconSizeSmall}
-          onPress={onReceivePress}
-          accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-        />
+        {/* The change and the three controls share one row, mirrored: the
+            change reads on the left, the controls sit on the right —
+            `marginLeft: 'auto'` on the controls pins them there whether or
+            not the row is otherwise empty. Off mainnet nothing priced the
+            balance, so this reads as an em-dash rather than disappearing —
+            the row stays, only the figure is unknown. */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
+            <PendingValue pending={loading}>
+              <span
+                style={{
+                  fontFamily: fontFamily.sans,
+                  fontWeight: fontWeight.bold,
+                  // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
+                  // at `md`) — one reading size for the block's two
+                  // lateral-choice/status lines.
+                  fontSize: fontSize.bodyLg,
+                  letterSpacing: letterSpacing.change,
+                  color: hiddenBalance ? text.secondary : changeColor,
+                  whiteSpace: 'nowrap',
+                  ...tabularNums.css,
+                }}
+              >
+                {hiddenBalance
+                  ? `${hiddenValue} · ${hiddenValue}`
+                  : hasChange
+                    ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
+                    : EM_DASH}
+              </span>
+            </PendingValue>
+          </div>
+
+          {/* The three controls are the same object as the wallet thumb: one
+              `IconBubble`, differing only in tone, sized like
+              `portfolio-order-button` (36, the secondary-control step)
+              rather than a primary action's 42. Send is the block's single
+              salmon fill (and carries the flesh with it); Receive and
+              Activity are its outline twins. */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}
+          >
+            <IconBubble
+              testID="home-activity-button"
+              size={componentSizes.iconBubbleSm}
+              tone="outline"
+              icon={ClockIcon}
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onActivityPress}
+              accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+            />
+            <IconBubble
+              testID="home-send-button"
+              size={componentSizes.iconBubbleSm}
+              tone="accent"
+              icon={ArrowUpRightIcon}
+              iconWeight="bold"
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onSendPress}
+              disabled={sendDisabled}
+              accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+            />
+            <IconBubble
+              testID="home-receive-button"
+              size={componentSizes.iconBubbleSm}
+              tone="outline"
+              icon={ArrowDownLeftIcon}
+              iconSize={componentSizes.iconSizeXSmall}
+              onPress={onReceivePress}
+              accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

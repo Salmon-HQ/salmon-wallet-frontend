@@ -3,6 +3,13 @@ import type { Testable } from './testable';
 export interface UnderlineTab {
   key: string;
   label: string;
+  /**
+   * Overrides the row's shared accent for this tab's own underline when it
+   * is active — the balance block's `ChainSelector` reads each chain's own
+   * hue here instead of the one accent every other `UnderlineTabs` consumer
+   * leaves this unset for.
+   */
+  underlineColor?: string;
 }
 
 /**

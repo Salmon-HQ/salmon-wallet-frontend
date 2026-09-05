@@ -253,8 +253,17 @@ export {
   isMainnetNetworkId,
   getMainnetSibling,
   visibleNetworkIds,
+  getChainSelectorTrigger,
+  getChainSelectorOptions,
+  getChainSelectorTabs,
 } from './network';
-export type { VisibleNetworkIdsParams } from './network';
+export type {
+  VisibleNetworkIdsParams,
+  ChainSelectorTrigger,
+  ChainSelectorOption,
+  ChainSelectorTab,
+  ChainSelectorState,
+} from './network';
 
 // Validation utilities
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';

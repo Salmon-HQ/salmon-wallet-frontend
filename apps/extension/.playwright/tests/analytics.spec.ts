@@ -75,17 +75,22 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
     await popup.getByTestId('settings-screen').getByTestId('screen-header-back-button').click();
     await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 15_000 });
   };
-  // Move the balance carousel one step, whichever direction is available.
+  // Move the balance block to a different chain via the chain selector.
   //
-  // The carousel is a row of dots with a hint on each side; the `next`/`prev`
-  // arrows this used to click were replaced by them in the redesign and no
-  // longer exist, so every call spent its action timeout on a locator that
-  // could not resolve. Either hint fires `network_switched`, and exactly one
-  // is showing at each end of a two-network carousel.
+  // The chain selector is now the same `UnderlineTabs` row as Portfolio |
+  // NFTs — one tab per chain, no trigger to open first. Picking any tab
+  // other than the active one fires `network_switched`.
   const switchNetwork = async () => {
-    const next = popup.getByTestId('balance-next-hint');
-    const useNext = (await next.count()) > 0;
-    await (useNext ? next : popup.getByTestId('balance-prev-hint')).click();
+    const options = popup.getByTestId(/^balance-chain-selector-option-/);
+    const count = await options.count();
+    for (let i = 0; i < count; i += 1) {
+      const option = options.nth(i);
+      const selected = await option.getAttribute('aria-selected');
+      if (selected !== 'true') {
+        await option.click();
+        return;
+      }
+    }
   };
 
   // The suite shares one persistent profile, so a previous run may have left

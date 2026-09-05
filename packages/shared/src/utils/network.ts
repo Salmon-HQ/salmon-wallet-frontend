@@ -7,6 +7,8 @@
  */
 
 import type { BlockchainType } from '../types/blockchain';
+import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
+import { NETWORK_DISPLAY } from './networkDisplay';
 
 /**
  * Flat record mapping chain to its mainnet network ID.
@@ -152,6 +154,101 @@ export interface VisibleNetworkIdsParams {
  * session is standing on. That last clause is what keeps a devnet session from
  * being stranded on a page nobody can see once the flag goes off.
  */
+/** What `ChainSelector`'s trigger reads — one derivation for both platforms. */
+export interface ChainSelectorTrigger {
+  /** "Solana" on mainnet, "Solana Devnet" off it — `NETWORK_DISPLAY`'s name
+   * already carries the environment, so this never appends a second tag. */
+  label: string;
+  /** Whether there is more than one chain to switch between. */
+  canSwitch: boolean;
+  blockchain: BlockchainId;
+}
+
+/**
+ * The chain selector's trigger, or `null` when there is nothing to show: one
+ * chain, on mainnet, has neither an environment to name nor a chain to switch
+ * to — the row the "Total balance" label used to be is simply absent.
+ */
+export function getChainSelectorTrigger(
+  blockchains: BlockchainBalance[],
+  activeIndex: number
+): ChainSelectorTrigger | null {
+  const current = blockchains[activeIndex];
+  if (!current) return null;
+
+  const canSwitch = blockchains.length > 1;
+  if (!canSwitch && isMainnetNetworkId(current.network.id)) return null;
+
+  return {
+    label: NETWORK_DISPLAY[current.network.id]?.name ?? current.network.name,
+    canSwitch,
+    blockchain: current.network.blockchain,
+  };
+}
+
+/** One tab of the chain selector — one derivation for both platforms. */
+export interface ChainSelectorOption {
+  index: number;
+  id: string;
+  name: string;
+  blockchain: BlockchainId;
+}
+
+export function getChainSelectorOptions(blockchains: BlockchainBalance[]): ChainSelectorOption[] {
+  return blockchains.map((chainBalance, index) => ({
+    index,
+    id: chainBalance.network.id,
+    name: NETWORK_DISPLAY[chainBalance.network.id]?.name ?? chainBalance.network.name,
+    blockchain: chainBalance.network.blockchain,
+  }));
+}
+
+/** One `UnderlineTabs` tab, built from a {@link ChainSelectorOption}. */
+export interface ChainSelectorTab {
+  key: string;
+  label: string;
+  underlineColor: string;
+}
+
+/** What `ChainSelector` hands its `UnderlineTabs` twin. */
+export interface ChainSelectorState {
+  tabs: ChainSelectorTab[];
+  activeKey: string;
+  onChange: (key: string) => void;
+}
+
+/**
+ * What `ChainSelector` hands its `UnderlineTabs` twin, or `null` when there
+ * is nothing to show — one derivation for both platforms, so the trigger
+ * gate, the tab list, the active key, and the tap handler cannot drift
+ * between them. `hintInk` is theme-resolved (`useSemantic()`'s
+ * `chain.hintInk`), so it is passed in rather than read here.
+ */
+export function getChainSelectorTabs(
+  blockchains: BlockchainBalance[],
+  activeIndex: number,
+  onSelect: (index: number) => void,
+  hintInk: Record<BlockchainId, string>
+): ChainSelectorState | null {
+  if (!getChainSelectorTrigger(blockchains, activeIndex)) return null;
+
+  const options = getChainSelectorOptions(blockchains);
+  const tabs = options.map((option) => ({
+    key: option.id,
+    label: option.name,
+    underlineColor: hintInk[option.blockchain],
+  }));
+
+  return {
+    tabs,
+    activeKey: options[activeIndex]?.id ?? tabs[0]?.key ?? '',
+    onChange: (key: string) => {
+      const index = options.findIndex((option) => option.id === key);
+      if (index !== -1) onSelect(index);
+    },
+  };
+}
+
 export function visibleNetworkIds({
   enabled,
   held,

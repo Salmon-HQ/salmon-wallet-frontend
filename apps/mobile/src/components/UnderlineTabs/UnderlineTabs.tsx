@@ -280,6 +280,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     width: underlineWidth.value,
   }));
 
+  const activeTab = tabs.find((tab) => tab.key === activeKey);
+
   const row = (
     <View style={[styles.tabs, { gap: s(metrics.gap) }]}>
       {tabs.map(({ key, label }) => (
@@ -295,7 +297,14 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
           onPress={() => handlePress(key)}
         />
       ))}
-      <Animated.View testID={underlineTestID} style={[styles.underline, underlineStyle]} />
+      <Animated.View
+        testID={underlineTestID}
+        style={[
+          styles.underline,
+          underlineStyle,
+          activeTab?.underlineColor ? { backgroundColor: activeTab.underlineColor } : null,
+        ]}
+      />
     </View>
   );
 

@@ -39,8 +39,8 @@ export const spacing = {
   '5.5xl': 60,
   /** 80px */
   '7xl': 80,
-  /** 20px - Redesigned screen horizontal padding (both sides) */
-  screenGutter: 20,
+  /** 12px - Redesigned screen horizontal padding (both sides) */
+  screenGutter: 12,
   /**
    * 0px - Redesigned screen top padding, added below the safe-area top inset.
    * The inset already clears the island on every device that has one, so the

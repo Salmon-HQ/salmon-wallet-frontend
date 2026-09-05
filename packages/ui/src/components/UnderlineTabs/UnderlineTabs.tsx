@@ -235,6 +235,7 @@ export function UnderlineTabs({
   };
 
   const gradientStop = t.water.gradient[0];
+  const activeTab = tabs.find((tab) => tab.key === activeKey);
 
   return (
     <div data-testid={testID} className={className} style={containerStyle}>
@@ -301,7 +302,7 @@ export function UnderlineTabs({
               bottom: 0,
               height: UNDERLINE_HEIGHT,
               borderRadius: borderRadius.r1,
-              backgroundColor: t.accent.fill,
+              backgroundColor: activeTab?.underlineColor ?? t.accent.fill,
             }}
           />
         </div>
