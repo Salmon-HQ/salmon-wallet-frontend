@@ -9,7 +9,7 @@
  * block still pages horizontally between chains, still reports
  * `onBlockchainChange(blockchain, index)`, still accepts a controlled
  * `activeIndex`. The host screen keeps the state it already has. The chain
- * pager itself is `ChainSelector` — a chevron trigger, not dots — which sits
+ * pager itself is `ChainSelector` — a row of chain tabs, not dots — which sits
  * where "Total balance" used to; the eye moved beside the amount instead.
  *
  * Sizes come from tokens, not from the design reference. Where the `.pen`
@@ -335,7 +335,11 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                   accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
                   onAccessibilityAction={handleAccessibilityAction}
                 >
-                  {hiddenBalance ? hiddenValue : isTestNetwork ? nativeTotal : formatValue(usdTotal)}
+                  {hiddenBalance
+                    ? hiddenValue
+                    : isTestNetwork
+                      ? nativeTotal
+                      : formatValue(usdTotal)}
                 </Text>
               </PendingValue>
             </Animated.View>
@@ -368,14 +372,19 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               an em-dash rather than disappearing — the row stays, only the
               figure is unknown. */}
           <View style={styles.changeActionsRow}>
-            <Animated.View testID="balance-change-sink" style={[styles.changeText, changeSinkStyle]}>
+            <Animated.View
+              testID="balance-change-sink"
+              style={[styles.changeText, changeSinkStyle]}
+            >
               <Animated.View
                 key={`change-${currentBlockchainId}`}
                 testID="balance-change"
                 {...changeMotion}
               >
                 <PendingValue pending={loading}>
-                  <Text style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}>
+                  <Text
+                    style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
+                  >
                     {hiddenBalance
                       ? `${hiddenValue} · ${hiddenValue}`
                       : hasChange

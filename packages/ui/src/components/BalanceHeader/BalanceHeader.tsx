@@ -413,7 +413,9 @@ export function BalanceHeader({
               rather than a primary action's 42. Send is the block's single
               salmon fill (and carries the flesh with it); Receive and
               Activity are its outline twins. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}
+          >
             <IconBubble
               testID="home-activity-button"
               size={componentSizes.iconBubbleSm}
