@@ -126,7 +126,7 @@ describe('LockContent', () => {
   });
 
   it('shows password fallback when biometric is unavailable', async () => {
-    const refreshState = jest.fn().mockResolvedValue(undefined);
+    const refresh = jest.fn().mockResolvedValue(undefined);
 
     render(
       <LockContent
@@ -134,11 +134,11 @@ describe('LockContent', () => {
         onUnlock={jest.fn().mockResolvedValue(true)}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState,
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh,
         }}
       />
     );
@@ -146,28 +146,31 @@ describe('LockContent', () => {
     await act(async () => {});
 
     await waitFor(() => {
-      expect(refreshState).toHaveBeenCalledTimes(1);
+      expect(refresh).toHaveBeenCalledTimes(1);
       expect(screen.getByPlaceholderText('lock.enter_password')).toBeTruthy();
     });
   });
 
-  it('auto-prompts biometric unlock when available', async () => {
-    const authenticateWithBiometric = jest.fn().mockResolvedValue('cached-key');
-    const onUnlockWithKey = jest.fn().mockResolvedValue(true);
+  /** An armed device, with the unlock result the test wants to exercise. */
+  const armedBiometric = (unlock: jest.Mock) =>
+    ({
+      available: true,
+      armed: true,
+      kind: 'facial',
+      unlock,
+      refresh: jest.fn().mockResolvedValue(undefined),
+    }) as const;
+
+  it('auto-prompts biometrics, and unlocks with the password it recovers', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'ok', password: 'correct-horse' });
+    const onUnlock = jest.fn().mockResolvedValue(true);
 
     render(
       <LockContent
         locked
-        onUnlock={jest.fn().mockResolvedValue(true)}
-        onUnlockWithKey={onUnlockWithKey}
+        onUnlock={onUnlock}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
-        biometric={{
-          state: { isAvailable: true, hasStoredKey: true, biometricType: 'facial' },
-          authenticateWithBiometric,
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: true,
-          refreshState: jest.fn().mockResolvedValue(undefined),
-        }}
+        biometric={armedBiometric(unlock)}
       />
     );
 
@@ -176,10 +179,116 @@ describe('LockContent', () => {
     });
 
     await waitFor(() => {
-      expect(authenticateWithBiometric).toHaveBeenCalledTimes(1);
+      expect(unlock).toHaveBeenCalledTimes(1);
     });
 
-    expect(onUnlockWithKey).toHaveBeenCalledWith('cached-key');
+    // The recovered password goes through the same door a typed one does —
+    // there is no second unlock path carrying a pre-derived key any more.
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    await waitFor(() => {
+      expect(onUnlock).toHaveBeenCalledWith('correct-horse');
+    });
+  });
+
+  it('says nothing when the user dismisses the prompt', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'cancelled' });
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={armedBiometric(unlock)}
+      />
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+    // Declining is not an error. The band stays empty.
+    expect(screen.queryByTestId('lock-error')).toBeNull();
+    expect(screen.queryByTestId('lock-notice')).toBeNull();
+  });
+
+  it('explains itself when the OS has destroyed the enrolment', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'invalidated' });
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={armedBiometric(unlock)}
+      />
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    // The DEV-34 report, answered: the password field arrives *with* the
+    // reason it arrived, and with where to turn Face ID back on.
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    await waitFor(() => {
+      expect(assist.getByText('lock.biometric_invalidated')).toBeTruthy();
+    });
+    expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+  });
+
+  it('falls back quietly when biometrics cannot answer right now', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'unavailable' });
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={armedBiometric(unlock)}
+      />
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+    expect(screen.queryByTestId('lock-notice')).toBeNull();
+    expect(screen.queryByTestId('lock-error')).toBeNull();
+  });
+
+  it('does not offer the biometric button when nothing is armed', async () => {
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          available: true,
+          armed: false,
+          kind: 'facial',
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    // The old screen kept offering "Use Face ID" against a key that could only
+    // ever fail, because the row it read came from a preference string rather
+    // than from the keychain.
+    expect(screen.queryByTestId('lock-biometric-button')).toBeNull();
   });
 
   it('runs wallet reset after confirmation flow', async () => {
@@ -191,11 +300,11 @@ describe('LockContent', () => {
         onUnlock={jest.fn().mockResolvedValue(true)}
         onRemoveAllAccounts={onRemoveAllAccounts}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );
@@ -225,11 +334,11 @@ describe('LockContent', () => {
         onUnlock={jest.fn().mockResolvedValue(false)}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );
@@ -257,11 +366,11 @@ describe('LockContent', () => {
         onUnlock={jest.fn().mockResolvedValue(false)}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );
@@ -314,11 +423,11 @@ describe('LockContent', () => {
         onUnlockExited={onUnlockExited}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );
@@ -380,11 +489,11 @@ describe('LockContent', () => {
         onUnlockExited={onUnlockExited}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );
@@ -426,11 +535,11 @@ describe('LockContent', () => {
       onUnlockExited: jest.fn(),
       onRemoveAllAccounts: jest.fn().mockResolvedValue(undefined),
       biometric: {
-        state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-        authenticateWithBiometric: jest.fn(),
-        storeKeyForBiometric: jest.fn(),
-        enableBiometric: false,
-        refreshState: jest.fn().mockResolvedValue(undefined),
+        available: false,
+        armed: false,
+        kind: null,
+        unlock: jest.fn(),
+        refresh: jest.fn().mockResolvedValue(undefined),
       },
     } as const;
 
@@ -475,11 +584,11 @@ describe('LockContent', () => {
         onUnlock={jest.fn().mockResolvedValue(true)}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
         biometric={{
-          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
-          authenticateWithBiometric: jest.fn(),
-          storeKeyForBiometric: jest.fn(),
-          enableBiometric: false,
-          refreshState: jest.fn().mockResolvedValue(undefined),
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
         }}
       />
     );

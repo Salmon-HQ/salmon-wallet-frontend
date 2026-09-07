@@ -9,7 +9,7 @@
  * Every panel keeps the props it already had, so the bodies themselves are
  * unchanged — the surface under them moved, not the panels.
  */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -55,10 +55,11 @@ import {
   PrivateKeyPanel,
   BackupPanel,
   AboutPanel,
+  ConfirmSheet,
 } from '../components';
 import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useBiometric } from '../contexts/BiometricContext';
 import type { MobilePanelRegistry } from './types';
 import { resolveReturnTo } from './returnTo';
 
@@ -111,12 +112,69 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
   );
 
   const {
-    state: biometricState,
-    enableBiometric,
-    setEnableBiometric,
-    authenticateWithBiometric,
-    clearBiometricKey,
-  } = useBiometricAuth();
+    available: biometricAvailable,
+    armed: biometricArmed,
+    kind: biometricKind,
+    arm: armBiometric,
+    unlock: biometricUnlock,
+    disarm: disarmBiometric,
+  } = useBiometric();
+
+  /**
+   * The password gate the biometric row opens on its way ON.
+   *
+   * Arming seals the password, so the panel cannot do it from a switch alone —
+   * and this is the re-enrolment path the app did not have. Before, the toggle
+   * only wrote a preference string: flipping it back on after the OS had
+   * destroyed the key produced a switch reading "on" with nothing behind it
+   * and no way to fix it short of wiping the wallet.
+   */
+  const [armGateOpen, setArmGateOpen] = useState(false);
+
+  const handleToggleBiometric = useCallback(
+    (enabled: boolean) => {
+      if (enabled) {
+        setArmGateOpen(true);
+        return;
+      }
+      void disarmBiometric();
+    },
+    [disarmBiometric]
+  );
+
+  const handleArmConfirmed = useCallback(
+    async (password?: string) => {
+      if (!password) return;
+      const result = await armBiometric(password);
+      if (result === 'failed') {
+        Alert.alert(t('general.error'), t('settings.security.biometric_arm_failed'));
+      }
+    },
+    [armBiometric, t]
+  );
+
+  /**
+   * A password change re-seals the enrolment under the new password instead of
+   * destroying it. The old behaviour deleted the key and left the preference
+   * reading "on" — the exact state DEV-34 reports, reached deliberately.
+   */
+  const handlePasswordChanged = useCallback(
+    async (newPassword: string) => {
+      if (!biometricArmed) return;
+      await armBiometric(newPassword);
+    },
+    [armBiometric, biometricArmed]
+  );
+
+  /**
+   * Proof of identity for revealing a private key. Only the verdict is used —
+   * the recovered password is discarded here, because the panel is asking
+   * "is this the owner", not "unlock the vault".
+   */
+  const verifyBiometric = useCallback(async () => {
+    const result = await biometricUnlock();
+    return result.status === 'ok';
+  }, [biometricUnlock]);
 
   return useMemo<MobilePanelRegistry>(
     () => ({
@@ -135,17 +193,27 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         );
       },
       security: ({ onBack, onNavigate }) => (
-        <SecurityPanel
-          onBack={onBack}
-          onNavigate={onNavigate}
-          isBiometricAvailable={biometricState.isAvailable && biometricState.isEnrolled}
-          biometricType={biometricState.biometricType}
-          isBiometricEnabled={enableBiometric}
-          onToggleBiometric={async (enabled: boolean) => {
-            await setEnableBiometric(enabled);
-          }}
-          onPasswordChanged={clearBiometricKey}
-        />
+        <>
+          <SecurityPanel
+            onBack={onBack}
+            onNavigate={onNavigate}
+            isBiometricAvailable={biometricAvailable}
+            biometricType={biometricKind}
+            isBiometricEnabled={biometricArmed}
+            onToggleBiometric={handleToggleBiometric}
+            onPasswordChanged={handlePasswordChanged}
+          />
+          <ConfirmSheet
+            visible={armGateOpen}
+            onClose={() => setArmGateOpen(false)}
+            title={t('settings.security.biometric_arm_title')}
+            message={t('settings.security.biometric_arm_message')}
+            confirmText={t('settings.security.biometric_arm_confirm')}
+            requirePassword
+            validatePassword={accountActions.checkPassword}
+            onConfirm={handleArmConfirmed}
+          />
+        </>
       ),
       privateKey: ({ onBack }) => {
         if (!activeAccount) return null;
@@ -155,8 +223,8 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
             networks={networks}
             activeAccount={activeAccount}
             onBack={onBack}
-            biometricAvailable={biometricState.isAvailable && biometricState.hasStoredKey}
-            authenticateWithBiometric={authenticateWithBiometric}
+            biometricAvailable={biometricAvailable && biometricArmed}
+            verifyBiometric={verifyBiometric}
           />
         );
       },
@@ -368,8 +436,8 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       backup: ({ onBack }) => (
         <BackupPanel
           onBack={onBack}
-          biometricAvailable={biometricState.isAvailable && biometricState.hasStoredKey}
-          authenticateWithBiometric={authenticateWithBiometric}
+          biometricAvailable={biometricAvailable && biometricArmed}
+          verifyBiometric={verifyBiometric}
         />
       ),
       about: ({ onBack }) => <AboutPanel onBack={onBack} />,
@@ -381,11 +449,14 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       accountId,
       networkId,
       allNetworks,
-      biometricState,
-      enableBiometric,
-      setEnableBiometric,
-      authenticateWithBiometric,
-      clearBiometricKey,
+      biometricAvailable,
+      biometricArmed,
+      biometricKind,
+      armGateOpen,
+      handleToggleBiometric,
+      handleArmConfirmed,
+      handlePasswordChanged,
+      verifyBiometric,
       currentLanguage,
       availableLanguages,
       changeLanguage,

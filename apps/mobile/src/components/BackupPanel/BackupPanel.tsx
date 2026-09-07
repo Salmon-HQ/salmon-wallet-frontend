@@ -38,18 +38,15 @@ import { useThemedStyles } from '../../theme/useThemedStyles';
 
 interface BackupPanelProps extends BackupPanelPropsBase {
   biometricAvailable?: boolean;
-  authenticateWithBiometric?: () => Promise<string | null>;
+  /** Prompts for biometrics and answers whether it was the owner. */
+  verifyBiometric?: () => Promise<boolean>;
 }
 
 /** What a covered cell shows. Same character count for every word, so the
  *  covered grid gives away nothing about the phrase's shape. */
 const MASK = '••••••';
 
-export function BackupPanel({
-  onBack,
-  biometricAvailable,
-  authenticateWithBiometric,
-}: BackupPanelProps) {
+export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: BackupPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
 
@@ -87,15 +84,18 @@ export function BackupPanel({
       return;
     }
 
-    if (biometricAvailable && authenticateWithBiometric) {
-      const result = await authenticateWithBiometric();
-      if (result === null) return;
-      setShowSeedPhrase(true);
-      return;
+    if (biometricAvailable && verifyBiometric) {
+      const verified = await verifyBiometric();
+      if (verified) {
+        setShowSeedPhrase(true);
+        return;
+      }
+      // Cancelled, unavailable, or the enrolment is gone — fall through to the
+      // password gate rather than leaving the tap unanswered.
     }
 
     setReauthVisible(true);
-  }, [showSeedPhrase, biometricAvailable, authenticateWithBiometric]);
+  }, [showSeedPhrase, biometricAvailable, verifyBiometric]);
 
   const handleReauthenticated = useCallback(async () => {
     setShowSeedPhrase(true);

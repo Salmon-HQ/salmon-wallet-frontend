@@ -3,6 +3,13 @@
 // preference) should reach this code path. Biometric keys are never stored
 // on web because localAuthentication stubs return isAvailable: false.
 
+/**
+ * Mirrors `expo-secure-store`'s keychain accessibility constant so callers can
+ * pass it unconditionally. It has no meaning in localStorage, where nothing is
+ * protected in the first place.
+ */
+export const WHEN_UNLOCKED_THIS_DEVICE_ONLY = 3;
+
 export async function getItemAsync(
   key: string,
   _options?: Record<string, unknown>
@@ -26,7 +33,10 @@ export async function setItemAsync(
   }
 }
 
-export async function deleteItemAsync(key: string): Promise<void> {
+export async function deleteItemAsync(
+  key: string,
+  _options?: Record<string, unknown>
+): Promise<void> {
   try {
     localStorage.removeItem(key);
   } catch {
@@ -39,6 +49,7 @@ export function canUseBiometricAuthentication(): boolean {
 }
 
 const SecureStore = {
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   getItemAsync,
   setItemAsync,
   deleteItemAsync,

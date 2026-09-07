@@ -16,10 +16,9 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
-  getStashItem,
   lineHeight,
-  type DerivedKeyCache,
   s,
+  type BiometricKind,
   type Semantic,
 } from '@salmon/shared';
 import {
@@ -29,7 +28,8 @@ import {
   PrimaryButton,
   SecondaryButton,
 } from '../../src/components';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useBiometric } from '../../src/contexts/BiometricContext';
+import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
 import { EyeIcon, FingerprintIcon, ScanIcon } from '../../src/icons';
 import type { IconComponent } from '../../src/icons';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
@@ -49,7 +49,7 @@ const ICON_SIZE = componentSizes.logoSizeSmall;
 // Helpers
 // ============================================================================
 
-function getBiometricIcon(type: 'fingerprint' | 'facial' | 'iris' | null): IconComponent {
+function getBiometricIcon(type: BiometricKind | null): IconComponent {
   switch (type) {
     case 'facial':
       return ScanIcon;
@@ -68,20 +68,21 @@ export default function BiometricSetupScreen() {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
-  const { state, storeKeyForBiometric, setEnableBiometric } = useBiometricAuth();
+  const { ready, available, kind, arm } = useBiometric();
+  const enrolmentPassword = useEnrolmentPassword();
   const [isStoring, setIsStoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasSkipped = useRef(false);
 
   // Auto-skip when biometrics are not available on this device.
-  // Wait for isReady so we don't skip before the async capability check completes.
+  // Wait for `ready` so we don't skip before the async capability check completes.
   useEffect(() => {
-    if (!state.isReady || hasSkipped.current) return;
-    if (!state.isAvailable) {
+    if (!ready || hasSkipped.current) return;
+    if (!available) {
       hasSkipped.current = true;
       router.replace('/(auth)/success');
     }
-  }, [state.isReady, state.isAvailable]);
+  }, [ready, available]);
 
   const buttonLabel = t('wallet.create.biometric_setup_enable');
 
@@ -89,18 +90,22 @@ export default function BiometricSetupScreen() {
     setIsStoring(true);
     setError(null);
     try {
-      const keyCache = await getStashItem<DerivedKeyCache>('derived_key_cache');
-      if (!keyCache) {
-        // Key not available — skip gracefully
+      // The password the previous step set, handed over in memory. Arming
+      // seals it; the vault key it used to seal instead was pinned to the
+      // vault's salt, and died the first time the vault was re-encrypted.
+      const password = enrolmentPassword?.read() ?? null;
+      if (!password) {
+        // Nothing to seal — this is reachable only if the flow was entered out
+        // of order. Skipping leaves the user with a working password unlock,
+        // and Settings can arm biometrics later.
         router.replace('/(auth)/success');
         return;
       }
 
-      const keyJson = JSON.stringify(keyCache);
-      const result = await storeKeyForBiometric(keyJson);
+      const result = await arm(password);
 
-      if (result === 'stored') {
-        await setEnableBiometric(true);
+      if (result === 'armed') {
+        enrolmentPassword?.forget();
         router.replace('/(auth)/success');
       } else if (result === 'failed') {
         setError(t('wallet.create.biometric_setup_error'));
@@ -114,13 +119,14 @@ export default function BiometricSetupScreen() {
   };
 
   const handleSkip = () => {
+    enrolmentPassword?.forget();
     router.replace('/(auth)/success');
   };
 
-  const BiometricIcon = getBiometricIcon(state.biometricType);
+  const BiometricIcon = getBiometricIcon(kind);
 
   // Render nothing while checking availability to avoid a flash
-  if (!state.isReady || !state.isAvailable) {
+  if (!ready || !available) {
     return null;
   }
 

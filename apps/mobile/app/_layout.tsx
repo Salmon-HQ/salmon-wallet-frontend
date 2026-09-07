@@ -20,6 +20,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
+import { BiometricProvider } from '../src/contexts/BiometricContext';
+import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
@@ -73,13 +75,19 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
+  // A pending update is applied before the app is shown, not on some later
+  // launch the user may never make. Fails open and is time-bounded — see
+  // `useMandatoryUpdate`.
+  const checkingForUpdate = useMandatoryUpdate();
+  const ready = loaded && !checkingForUpdate;
+
   useEffect(() => {
-    if (loaded) {
+    if (ready) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [ready]);
 
-  if (!loaded) {
+  if (!ready) {
     return null;
   }
 
@@ -89,7 +97,13 @@ export default function RootLayout() {
         <AccountsProvider>
           <CurrencyProvider>
             <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
-              <RootLayoutNav />
+              {/* Above both route groups: onboarding arms biometrics, the app
+                  shell unlocks with them, and Settings toggles them. Three
+                  copies of that state is how the toggle and the lock screen
+                  came to disagree. */}
+              <BiometricProvider>
+                <RootLayoutNav />
+              </BiometricProvider>
             </ThemeProvider>
           </CurrencyProvider>
         </AccountsProvider>
@@ -199,27 +213,33 @@ function RootLayoutNav() {
         setHasNavigated(true);
       }
     } else {
-      // Accounts exist - but don't navigate to app if locked
-      // The lock screen overlay will be shown first, and only after
-      // successful unlock should we navigate to the app.
-      // Also skip redirect when user is on post-creation auth screens
-      // (password, success) — they're still in the creation flow and should
-      // finish before being sent to the app.
+      // Accounts exist — route into the app whether or not the wallet is
+      // locked. `(app)/_layout` covers everything it can push with the lock
+      // overlay while locked, so this is the lock screen, mounted.
+      //
+      // It used to wait for `!state.locked`, which never came on a cold start:
+      // metadata populates `accounts` before the lock is raised, so a
+      // returning user matched "has accounts, is locked" and the redirect
+      // never fired. They were left on `(auth)/index` — the *onboarding
+      // welcome screen*, offering to create a wallet — and reached their own
+      // funds through a text link. No Face ID prompt, because the overlay
+      // that raises it had not mounted. Half of "Face ID doesn't work".
+      //
+      // Skip the redirect only for the post-creation screens, which are still
+      // finishing the creation flow.
       const authScreen = segments.slice(1, 2)[0];
       const isPostCreationScreen =
         inAuthGroup &&
         typeof authScreen === 'string' &&
         ['password', 'biometric-setup', 'analytics-consent', 'success'].includes(authScreen);
 
-      if (!inAppGroup && !hasNavigated && !state.locked && !isPostCreationScreen) {
-        // Only auto-navigate to app on initial load when not locked
+      if (!inAppGroup && !hasNavigated && !isPostCreationScreen) {
         router.replace('/(app)/(tabs)');
         setHasNavigated(true);
       }
     }
   }, [
     state.ready,
-    state.locked,
     state.accounts.length,
     segments,
     navigationState?.key,

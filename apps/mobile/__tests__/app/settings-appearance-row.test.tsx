@@ -105,8 +105,8 @@ jest.mock('../../src/components', () => {
 jest.mock('../../src/i18n', () => ({
   useLanguage: () => ({ currentLanguage: 'en' }),
 }));
-jest.mock('../../hooks/useBiometricAuth', () => ({
-  useBiometricAuth: () => ({ setEnableBiometric: jest.fn() }),
+jest.mock('../../src/contexts/BiometricContext', () => ({
+  useBiometric: () => ({ disarm: jest.fn() }),
 }));
 
 import SettingsScreenIndex from '../../app/(app)/settings/index';

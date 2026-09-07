@@ -62,6 +62,7 @@ import { useTranslation } from 'react-i18next';
 import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
+import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
 import { useSemantic, useThemedStyles, useThemeMode } from '../../src/theme/useThemedStyles';
 import {
   LoadingScreen,
@@ -116,6 +117,9 @@ export default function PasswordScreen() {
 
   // Only show single input when adding account to existing encrypted wallet (not during recover)
   const showSingleInput = requiredLock && !isRecoverFlow;
+
+  // Where the password waits for the biometric enrolment step.
+  const enrolmentPassword = useEnrolmentPassword();
 
   // State
   const [password, setPassword] = useState('');
@@ -285,6 +289,11 @@ export default function PasswordScreen() {
       // one beat later. LoadingScreen's own watchdog guarantees `onExited`
       // fires even if the animation callback is dropped, so the route cannot
       // be stranded.
+      // Parked for the enrolment step: arming biometrics seals this password,
+      // and that screen has no other way to reach it. Held in memory by the
+      // `(auth)` layout, taken and dropped there.
+      enrolmentPassword?.remember(password);
+
       pendingRouteRef.current = '/(auth)/biometric-setup';
     } catch (err) {
       console.error('Failed to create account:', err);
@@ -301,7 +310,17 @@ export default function PasswordScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [isFormValid, mnemonic, password, actions, showSingleInput, t, state.counter, flowType]);
+  }, [
+    isFormValid,
+    mnemonic,
+    password,
+    actions,
+    showSingleInput,
+    t,
+    state.counter,
+    flowType,
+    enrolmentPassword,
+  ]);
 
   // Error states for inputs
   const passwordIssue =

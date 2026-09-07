@@ -11,8 +11,12 @@ import { PASSWORD_CONSTRAINTS, getPasswordIssue, validatePassword } from '../cry
 
 export interface UseChangePasswordParams {
   changePassword: (current: string, next: string) => Promise<boolean>;
-  /** Runs after a successful change, before the success line shows. */
-  onPasswordChanged?: () => Promise<void> | void;
+  /**
+   * Runs after a successful change, before the success line shows, and is
+   * handed the password that is now in force — a platform holding anything
+   * sealed under the old one has to re-seal it here or lose it.
+   */
+  onPasswordChanged?: (newPassword: string) => Promise<void> | void;
   t: (key: string, values?: Record<string, unknown>) => string;
 }
 
@@ -55,7 +59,10 @@ export function useChangePassword({
     try {
       const changed = await changePassword(currentPassword, newPassword);
       if (changed) {
-        await onPasswordChanged?.();
+        // Handed the new password, because the platform may need to re-seal
+        // something under it — on mobile, the biometric enrolment, which used
+        // to be silently destroyed here instead.
+        await onPasswordChanged?.(newPassword);
         setSuccess(true);
         setCurrentPassword('');
         setNewPassword('');

@@ -99,14 +99,17 @@ jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
   useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
-jest.mock('../../hooks/useBiometricAuth', () => ({
-  useBiometricAuth: () => ({
-    state: {},
-    enableBiometric: false,
-    setEnableBiometric: jest.fn(),
-    authenticateWithBiometric: jest.fn(),
-    storeKeyForBiometric: jest.fn(),
-    refreshState: jest.fn(),
+jest.mock('../../src/contexts/BiometricContext', () => ({
+  BiometricProvider: ({ children }: { children: React.ReactNode }) => children,
+  useBiometric: () => ({
+    ready: true,
+    available: false,
+    armed: false,
+    kind: null,
+    arm: jest.fn(),
+    unlock: jest.fn(),
+    disarm: jest.fn(),
+    refresh: jest.fn(),
   }),
 }));
 

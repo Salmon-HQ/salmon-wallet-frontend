@@ -81,7 +81,11 @@ export interface PrivateKeyPanelProps extends PrivateKeyPanelPropsBase {
   networks: Network[];
   activeAccount: Account;
   biometricAvailable: boolean;
-  authenticateWithBiometric: () => Promise<string | null>;
+  /**
+   * Prompts for biometrics and answers whether it was the owner. A verdict,
+   * not a key: this panel gates a reveal, it does not unlock anything.
+   */
+  verifyBiometric: () => Promise<boolean>;
 }
 
 // ============================================================================
@@ -93,7 +97,7 @@ export function PrivateKeyPanel({
   activeAccount,
   onBack,
   biometricAvailable,
-  authenticateWithBiometric,
+  verifyBiometric,
 }: PrivateKeyPanelProps): React.ReactElement | null {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
@@ -155,15 +159,21 @@ export function PrivateKeyPanel({
   const handleReveal = useCallback(
     async (index: number) => {
       if (biometricAvailable) {
-        const result = await authenticateWithBiometric();
-        if (result === null) return; // Auth failed, don't reveal
+        const verified = await verifyBiometric();
+        if (!verified) {
+          // Cancelled, unavailable, or the enrolment is gone. Rather than
+          // leave the user staring at a tap that did nothing, fall through to
+          // the password gate — the same proof, typed.
+          setReauthIndex(index);
+          return;
+        }
         revealKey(index);
         return;
       }
 
       setReauthIndex(index);
     },
-    [biometricAvailable, authenticateWithBiometric, revealKey]
+    [biometricAvailable, verifyBiometric, revealKey]
   );
 
   const handleReauthenticated = useCallback(async () => {

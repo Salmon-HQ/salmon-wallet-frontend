@@ -232,6 +232,51 @@ describe('RootLayout mobile lock lifecycle', () => {
     expect(router.replace).not.toHaveBeenCalledWith('/(app)/(tabs)');
   });
 
+  // The other half of "Face ID doesn't work" (DEV-41): a returning user's
+  // wallet is locked on a cold start, and metadata has already populated
+  // `accounts`. The redirect used to require `!locked`, so it never fired —
+  // the user landed on the onboarding welcome screen, which offers to create a
+  // wallet, and the lock overlay that raises the biometric prompt never
+  // mounted. `(app)` covers itself with the overlay while locked, so routing
+  // there IS showing the lock screen.
+  it('routes a locked returning user into the app, where the lock screen lives', async () => {
+    const { router, useSegments } = require('expo-router');
+    (useSegments as jest.Mock).mockReturnValue(['(auth)']);
+    mockUseAccountsContext.mockReturnValue([
+      {
+        ready: true,
+        locked: true,
+        requiredLock: true,
+        accounts: [{ id: 'account-1' }],
+      },
+      { lockAccounts: mockLockAccounts },
+    ]);
+
+    render(<RootLayout />);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(router.replace).toHaveBeenCalledWith('/(app)/(tabs)');
+  });
+
+  it('still lets the creation flow finish before routing into the app', async () => {
+    const { router, useSegments } = require('expo-router');
+    (useSegments as jest.Mock).mockReturnValue(['(auth)', 'biometric-setup']);
+    mockUseAccountsContext.mockReturnValue([
+      {
+        ready: true,
+        locked: false,
+        requiredLock: true,
+        accounts: [{ id: 'account-1' }],
+      },
+      { lockAccounts: mockLockAccounts },
+    ]);
+
+    render(<RootLayout />);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(router.replace).not.toHaveBeenCalledWith('/(app)/(tabs)');
+  });
+
   it('blocks with the init-error screen when init failed and no accounts loaded', async () => {
     const { router } = jest.requireMock('expo-router');
     mockUseAccountsContext.mockReturnValue([
