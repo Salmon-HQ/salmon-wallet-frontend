@@ -21,17 +21,28 @@ interface LockPageProps {
    */
   onUnlockWithCachedKey?: (keyCache: DerivedKeyCache) => Promise<boolean>;
   onRemoveAllAccounts: () => Promise<void>;
+  /**
+   * Fired once the unlock wait has finished leaving the screen. The popup
+   * holds this page mounted until then — see `unlockHeld` in `popup/App.tsx`.
+   */
+  onUnlockExited?: () => void;
 }
 
-export function LockPage({ onUnlock, onRemoveAllAccounts }: LockPageProps): React.ReactElement {
+export function LockPage({
+  onUnlock,
+  onRemoveAllAccounts,
+  onUnlockExited,
+}: LockPageProps): React.ReactElement {
   const handleUnlocked = useCallback(async () => {
     try {
       const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
       if (derivedKey) await storeSessionKey(derivedKey);
     } catch (cacheError) {
       console.warn('Failed to cache session key:', cacheError);
+    } finally {
+      onUnlockExited?.();
     }
-  }, []);
+  }, [onUnlockExited]);
 
   return (
     <LockScreen

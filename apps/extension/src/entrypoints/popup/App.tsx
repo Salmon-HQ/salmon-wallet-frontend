@@ -322,6 +322,37 @@ function App() {
     [actions]
   );
 
+  /**
+   * The parked unlock release, the same hold the mobile app shell keeps.
+   *
+   * `locked` flips inside `unlockAccounts`, and this component chooses its
+   * branch on `locked` alone — so the lock page used to be swapped out for
+   * Home in the same commit the crypto resolved, unmounting the unlock wait
+   * mid-wave. Two things were lost with it: the closing wave, which played
+   * nowhere, and `onUnlocked` — the callback that caches the session key —
+   * which fires from the wait's exit and therefore never fired at all.
+   *
+   * Held from *before* the await, because `locked` flips in an earlier
+   * microtask than anything set after it.
+   */
+  const [unlockHeld, setUnlockHeld] = useState(false);
+  const handleLockUnlock = useCallback(
+    async (password: string): Promise<boolean> => {
+      setUnlockHeld(true);
+      try {
+        const success = await actions.unlockAccounts(password);
+        if (!success) setUnlockHeld(false);
+        return success;
+      } catch (error) {
+        console.error('Unlock failed:', error);
+        setUnlockHeld(false);
+        return false;
+      }
+    },
+    [actions]
+  );
+  const handleUnlockExited = useCallback(() => setUnlockHeld(false), []);
+
   // ---- Auth flow handlers ----
 
   const handleCreateWallet = useCallback(() => {
@@ -438,12 +469,13 @@ function App() {
   // Wallet is locked — show lock screen even if account metadata failed to load.
   // This must be checked BEFORE accounts.length === 0 to prevent showing onboarding
   // when encrypted mnemonics exist but account metadata is missing from storage.
-  if (locked) {
+  if (locked || unlockHeld) {
     return (
       <LockPage
-        onUnlock={actions.unlockAccounts}
+        onUnlock={handleLockUnlock}
         onUnlockWithCachedKey={handleUnlockWithCachedKey}
         onRemoveAllAccounts={handleRemoveAllAccounts}
+        onUnlockExited={handleUnlockExited}
       />
     );
   }

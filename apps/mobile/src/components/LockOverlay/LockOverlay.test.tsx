@@ -11,6 +11,30 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 
+// The shared barrel reaches `@solana/kit`, which is ESM-only under Jest. The
+// overlay needs two motion tokens out of it and nothing else.
+jest.mock('@salmon/shared', () => ({
+  motionMs: { rise: 420 },
+  motionEasing: {
+    current: { native: [0.16, 1, 0.3, 1] },
+    settle: { native: [0.16, 1, 0.3, 1] },
+    sink: { native: [0.55, 0, 1, 0.45] },
+    swellIn: { native: [0.34, 1.04, 0.64, 1] },
+  },
+  resolveMotionMs: (ms: number) => ms,
+}));
+
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: number) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 import { LockOverlay } from './LockOverlay';
 
 describe('LockOverlay', () => {

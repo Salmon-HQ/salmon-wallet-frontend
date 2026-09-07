@@ -522,6 +522,14 @@ export function LoadingScreen({
       return undefined;
     }
 
+    // Nothing to leave. A wait mounted `visible={false}` — which is how the
+    // lock screen mounts it, for the whole time the wallet is locked — has
+    // never been on screen, and planning an exit for it fires `finishExit`:
+    // one `surface()` the shell reads as a real surfacing, remounting Home
+    // behind the overlay on every single lock. The DOM twin has always had
+    // this guard (`packages/ui/.../LoadingScreen.tsx`); mobile did not.
+    if (!isVisible) return undefined;
+
     // The exit, and it waits for calm water. Product, 2026-08: *"que no se pase
     // a la siguiente screen hasta que la última onda salga de la pantalla, es
     // decir, justo cuando el agua está calma."*

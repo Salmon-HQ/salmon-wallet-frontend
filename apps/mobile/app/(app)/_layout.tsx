@@ -65,18 +65,6 @@ export default function AppLayout() {
   );
 
   const isLocked = accountState.locked || unlockHeld;
-  // The screen surfaces each time the overlay leaves — after the unlock wave
-  // has exited — and once on an unlocked mount. Home keys its content on the
-  // count so its float plays when the water is actually clear.
-  //
-  // This is the channel for a surfacing NO wait reports: a biometric unlock
-  // flips `locked` with nothing on screen to report. Every wait that ends
-  // calls `surface()` on the provider itself (`LoadingScreen`), and the two
-  // add up to one count — see `TaskChromeProvider`.
-  const [surfaceKey, setSurfaceKey] = useState(0);
-  useEffect(() => {
-    if (!isLocked) setSurfaceKey((key) => key + 1);
-  }, [isLocked]);
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -140,7 +128,16 @@ export default function AppLayout() {
   );
 
   return (
-    <TaskChromeProvider surfaceKey={surfaceKey}>
+    // One publisher for the surfacing, and it is the wait's own exit.
+    // This layout used to add a second count of its own on `!isLocked`, for
+    // "a surfacing no wait reports" — a biometric unlock that flipped `locked`
+    // with nothing on screen. Since the biometric path was rebuilt it takes
+    // the same wait as the typed one, so both channels fired on every unlock,
+    // `FLOAT_DELAY_MS` apart: Home remounted once under the overlay, then
+    // again as it left, and the visible float was the *second* remount's —
+    // a beat of empty water after the gate had already gone. The wait's
+    // `surface()` alone lands the float on the rise.
+    <TaskChromeProvider>
       <DerivedAccountsProvider>
         {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)
