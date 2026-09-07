@@ -13,10 +13,11 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
 
-### extension
+## extension 0.13.2 — 2026-09-07
 
-- Unlocking now caches the session key it was always meant to cache: the lock page was swapped out the instant the password was accepted, which took the step that stored it with it.
-- The unlock wave finishes instead of being cut, and a failed send lets its wait leave.
+- Unlocking now caches the session key it was always meant to cache. The lock page was swapped out the instant the password was accepted, and that took with it the step that stored the key — so it was never stored at all.
+- The unlock wave finishes instead of being cut off halfway, and the screen behind it arrives once rather than appearing and then animating.
+- A send that fails lets its wait leave instead of cutting it mid-wave, so a retry starts clean.
 
 ## mobile 1.1.0 — 2026-09-03 — the redesign
 
