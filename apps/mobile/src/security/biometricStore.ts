@@ -98,7 +98,9 @@ function toKind(types: LocalAuthentication.AuthenticationType[]): BiometricKind 
  */
 function isCancellation(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : '';
-  return message.includes('cancel') || message.includes('canceled') || message.includes('cancelled');
+  return (
+    message.includes('cancel') || message.includes('canceled') || message.includes('cancelled')
+  );
 }
 
 async function readSeal(): Promise<SealedPassword | null> {

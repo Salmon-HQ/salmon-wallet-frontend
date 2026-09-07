@@ -12,7 +12,7 @@
 Salmon's mobile biometric unlock does not gate a secret. It **snapshots a session
 artefact** — the in-memory `DerivedKeyCache` produced during onboarding — serialises it
 to JSON, and parks it in the iOS keychain behind Face ID. That snapshot is pinned to the
-vault's *salt* and carries a five-minute *expiry* that no reader enforces. Nothing ever
+vault's _salt_ and carries a five-minute _expiry_ that no reader enforces. Nothing ever
 rewrites it. Every event that legitimately changes the vault's salt, and every event that
 legitimately invalidates a `.biometryCurrentSet` keychain item, silently and permanently
 kills Face ID for that user — while `Settings → Security` keeps rendering the toggle as
@@ -21,10 +21,10 @@ first-run onboarding screen the user can never reach again.
 
 Both tickets are that one defect, observed at two different moments.
 
-| Ticket | What the user reports | What actually happened |
-| --- | --- | --- |
-| **DEV-34** | "Biometrics is on but after some time it asks for my password" | The keychain item was invalidated (Face ID re-enrolment / alternate appearance / OS reset). `getItemAsync` resolves `null` per Apple + Expo contract, the code reads that as "no key", shows the password field, and never offers re-enrolment. |
-| **DEV-41** | "Face ID doesn't work in the latest version" | The user typed that password once. `unlockAccounts` ran the `upgradeOutdatedVault` path, which re-encrypts the vault with a **freshly random salt**. The biometric blob still holds the old salt, so `unlockWithKey` now throws `salt does not match` on every future Face ID attempt. Permanent. The KDF bump that made every pre-June vault "outdated" landed in `37906da5` (2026-06-19). |
+| Ticket     | What the user reports                                          | What actually happened                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **DEV-34** | "Biometrics is on but after some time it asks for my password" | The keychain item was invalidated (Face ID re-enrolment / alternate appearance / OS reset). `getItemAsync` resolves `null` per Apple + Expo contract, the code reads that as "no key", shows the password field, and never offers re-enrolment.                                                                                                                                             |
+| **DEV-41** | "Face ID doesn't work in the latest version"                   | The user typed that password once. `unlockAccounts` ran the `upgradeOutdatedVault` path, which re-encrypts the vault with a **freshly random salt**. The biometric blob still holds the old salt, so `unlockWithKey` now throws `salt does not match` on every future Face ID attempt. Permanent. The KDF bump that made every pre-June vault "outdated" landed in `37906da5` (2026-06-19). |
 
 DEV-34 is the trigger. DEV-41 is the terminal state DEV-34 walks the user into. They are
 not independent.
@@ -37,26 +37,26 @@ not independent.
 
 ### 2.1 What is stored, and where
 
-| Artefact | Store | Protection | Written by |
-| --- | --- | --- | --- |
-| Encrypted mnemonic vault (`LockedVault` + `isEncrypted`) | AsyncStorage (`STORAGE_KEYS.MNEMONICS`) | PBKDF2-SHA512 / 220 000 iters → NaCl secretbox (`packages/shared/src/crypto/encryption.ts:268`) | `lock` / `lockAndGetKey` |
-| `DerivedKeyCache` — **the raw 32-byte vault key** | in-memory stash only (`packages/shared/src/storage/stash.ts:56`) | none; process memory | `resolveMnemonicsWithPassword` (`useAccountsSecurityHelpers.ts:84`) |
-| `salmon_biometric_key` — **a JSON copy of that same raw key** | iOS keychain / Android keystore via `expo-secure-store` | `requireAuthentication: true` | `useBiometricAuth.storeKeyForBiometric` (`apps/mobile/hooks/useBiometricAuth.ts:291`) |
-| `salmon_biometric_key_exists` / `..._marker` / `salmon_biometric_enabled` | same store, **unprotected** | none | same hook (`:297`, `:300`, `:384`) |
+| Artefact                                                                  | Store                                                            | Protection                                                                                      | Written by                                                                            |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Encrypted mnemonic vault (`LockedVault` + `isEncrypted`)                  | AsyncStorage (`STORAGE_KEYS.MNEMONICS`)                          | PBKDF2-SHA512 / 220 000 iters → NaCl secretbox (`packages/shared/src/crypto/encryption.ts:268`) | `lock` / `lockAndGetKey`                                                              |
+| `DerivedKeyCache` — **the raw 32-byte vault key**                         | in-memory stash only (`packages/shared/src/storage/stash.ts:56`) | none; process memory                                                                            | `resolveMnemonicsWithPassword` (`useAccountsSecurityHelpers.ts:84`)                   |
+| `salmon_biometric_key` — **a JSON copy of that same raw key**             | iOS keychain / Android keystore via `expo-secure-store`          | `requireAuthentication: true`                                                                   | `useBiometricAuth.storeKeyForBiometric` (`apps/mobile/hooks/useBiometricAuth.ts:291`) |
+| `salmon_biometric_key_exists` / `..._marker` / `salmon_biometric_enabled` | same store, **unprotected**                                      | none                                                                                            | same hook (`:297`, `:300`, `:384`)                                                    |
 
 `DerivedKeyCache` is defined at `packages/shared/src/crypto/encryption.ts:57-68`:
 
 ```ts
 export interface DerivedKeyCache {
-  key: number[];        // the raw secretbox key, as a JSON number array
-  salt: string;         // base58; MUST equal the vault's current salt
+  key: number[]; // the raw secretbox key, as a JSON number array
+  salt: string; // base58; MUST equal the vault's current salt
   iterations: number;
   digest: DigestAlgorithm;
-  expiresAt: number;    // Date.now() + 5 minutes
+  expiresAt: number; // Date.now() + 5 minutes
 }
 ```
 
-This type was designed as a *five-minute in-process cache to skip a re-derivation*
+This type was designed as a _five-minute in-process cache to skip a re-derivation_
 (`KEY_CACHE_TTL`, `:71`). The biometric feature persists it to durable hardware storage
 unchanged. That mismatch — a session object used as a durable credential — is the root of
 everything below.
@@ -92,7 +92,7 @@ if (!inAppGroup && !hasNavigated && !state.locked && !isPostCreationScreen) {
 
 `state.locked` is true, so the redirect never fires and `unstable_settings.initialRouteName`
 (`:45-48`) leaves the user on `(auth)/index` — **the onboarding welcome screen**, with
-"Create wallet" as the primary button and a *text link* ("access existing account",
+"Create wallet" as the primary button and a _text link_ ("access existing account",
 `apps/mobile/app/(auth)/index.tsx:117`) as the way back into their own funds. Only after
 that tap does `(app)/_layout` mount and the Face ID prompt appear
 (`apps/mobile/app/(auth)/index.tsx:75-78`).
@@ -108,7 +108,7 @@ where the key is intact.
 (`apps/mobile/app/(auth)/_layout.tsx`, screen 6 of 8). Verified by grep across `apps/` and
 `packages/` — no other call site.
 
-The Settings toggle does *not* enrol. `apps/mobile/src/settings/panelRegistry.tsx:144-146`:
+The Settings toggle does _not_ enrol. `apps/mobile/src/settings/panelRegistry.tsx:144-146`:
 
 ```tsx
 onToggleBiometric={async (enabled: boolean) => {
@@ -140,7 +140,10 @@ const storedKey = await Promise.race([
   SecureStore.getItemAsync(BIOMETRIC_KEY_STORAGE),
   new Promise<null>((resolve) => setTimeout(() => resolve(null), BIOMETRIC_TIMEOUT_MS)),
 ]);
-if (!storedKey) { console.warn('No stored key found after biometric auth'); return null; }
+if (!storedKey) {
+  console.warn('No stored key found after biometric auth');
+  return null;
+}
 ```
 
 Three problems in eleven lines:
@@ -151,10 +154,10 @@ Three problems in eleven lines:
    OS prompt shows a default reason string instead of the localised
    `lock.biometric_prompt` the enrol path bothers to set.
 2. **An invalidated key is indistinguishable from "never enrolled".** Both produce `null`.
-   Per `node_modules/expo-secure-store/src/SecureStore.ts:143-150`: *"It resolves with
+   Per `node_modules/expo-secure-store/src/SecureStore.ts:143-150`: _"It resolves with
    `null` if there is no entry for the given key **or if the key has been invalidated**.
    Keys are invalidated by the system when biometrics change… After a key has been
-   invalidated, it becomes impossible to read its value."* The code takes the `null`,
+   invalidated, it becomes impossible to read its value."_ The code takes the `null`,
    shows the password field, and leaves the stale `enabled: true` preference in place.
 3. The 30-second race resolves `null` while the native Face ID sheet is **still on
    screen**. The user then authenticates into a promise nobody is holding.
@@ -191,9 +194,9 @@ Facts that matter, read from the installed source and the vendored docs:
   explicit `LocalAuthentication.authenticateAsync` before the write
   (`useBiometricAuth.ts:279-289`) — correct, and worth keeping.
 - **Expo's own warning that this cannot be QA'd on a simulator**
-  (`node_modules/expo-secure-store/src/SecureStore.ts:83`): *"This library requires a real
+  (`node_modules/expo-secure-store/src/SecureStore.ts:83`): _"This library requires a real
   device for testing since emulators/simulators do not require biometric authentication
-  when retrieving secrets, unlike real iOS devices."* This is why both bugs reached
+  when retrieving secrets, unlike real iOS devices."_ This is why both bugs reached
   production.
 - **Expo's warning against sharing a `keychainService` between authenticated and
   unauthenticated items** (`SecureStore.ts:74-76`). The app stores the protected key and
@@ -232,6 +235,7 @@ there is no code path that rewrites it.
    `lockAndGetKey` mints `const salt = randomBytes(SALT_LENGTH)`
    (`encryption.ts:311`) — a **new random salt**. The stash is updated. The keychain blob
    is not; nothing in the repo can update it.
+
 5. Every subsequent Face ID unlock reaches `unlockWithKey`
    (`useAccountsSecurity.ts:173` → `encryption.ts:567`):
 
@@ -247,7 +251,7 @@ there is no code path that rewrites it.
 
 The same orphaning is produced by `changeStoredPassword`
 (`useAccountsSecurityHelpers.ts:115`, `lock(mnemonics, newPassword)` → new salt). That one
-*is* handled — `onPasswordChanged={clearBiometricKey}` — but only by deleting the key, and
+_is_ handled — `onPasswordChanged={clearBiometricKey}` — but only by deleting the key, and
 `setEnableBiometric` is never set back to `false`, and §2.4 shows there is no re-enrolment
 path. Same terminal state, reached deliberately.
 
@@ -306,7 +310,7 @@ condition into permanent destruction of the enrolment.
 
 **Third contributor to "after some time".** The mobile stash is memory-only
 (`stash.ts:294-297`) and mobile has no inactivity timeout
-(`app/_layout.tsx:163-167`), so the *only* thing standing between a user and the lock
+(`app/_layout.tsx:163-167`), so the _only_ thing standing between a user and the lock
 screen is iOS reclaiming the process. "After some time" is, in part, simply the OS killing
 a backgrounded wallet — correct behaviour that becomes a complaint because the unlock that
 follows is broken.
@@ -321,7 +325,7 @@ re-salt half. Fixing one without the other leaves the user in the same place.
 
 **Rebuild.** Not a patch.
 
-The design is wrong at the level of *what the keychain holds*, and no amount of guarding
+The design is wrong at the level of _what the keychain holds_, and no amount of guarding
 around the current shape fixes it:
 
 - **The secret is the wrong artefact.** A `DerivedKeyCache` is a 5-minute performance cache
@@ -372,12 +376,12 @@ unlock:  bioWrapKey ←Face ID→  open(sealed) → password → the ordinary pa
 
 Properties this buys, each mapping to a defect above:
 
-| Property | Kills |
-| --- | --- |
-| The wrapping key is independent of the vault salt | DEV-41: re-salting the vault cannot orphan it |
-| The recovered artefact is the *password*, which feeds `unlockAccounts` unchanged | one unlock code path, so KDF upgrades, throttle and migration all apply to biometric unlock too |
-| The wrapping key is random, single-purpose, and rotatable | a lost/invalidated wrapping key costs one re-enrolment, never funds |
-| The sealed blob is useless alone, and the wrapping key is useless alone | keychain compromise without biometry yields nothing |
+| Property                                                                         | Kills                                                                                           |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| The wrapping key is independent of the vault salt                                | DEV-41: re-salting the vault cannot orphan it                                                   |
+| The recovered artefact is the _password_, which feeds `unlockAccounts` unchanged | one unlock code path, so KDF upgrades, throttle and migration all apply to biometric unlock too |
+| The wrapping key is random, single-purpose, and rotatable                        | a lost/invalidated wrapping key costs one re-enrolment, never funds                             |
+| The sealed blob is useless alone, and the wrapping key is useless alone          | keychain compromise without biometry yields nothing                                             |
 
 Sealing uses the existing `tweetnacl` `secretbox` already imported by
 `packages/shared/src/crypto/encryption.ts:2` — no new dependency.
@@ -437,12 +441,12 @@ Five states. Mobile only; the extension has its own (§7).
 
 ### 6.3 What each store holds
 
-| Store | Holds | Protection | Cleared when |
-| --- | --- | --- | --- |
-| AsyncStorage | encrypted vault | password-derived, unchanged | wallet reset |
-| iOS keychain, `requireAuthentication: true`, `keychainService: 'salmon.bio'`, `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY` | `bioWrapKey` (32 random bytes) | Face ID / Touch ID, `.biometryCurrentSet` | disarm, password change, invalidation, wallet reset |
-| iOS keychain, `requireAuthentication: false`, `keychainService: 'salmon.meta'` | `{ nonce, sealed, armedAt, vaultFingerprint }` | none needed | same |
-| in-memory stash | `DerivedKeyCache`, unchanged, TTL enforced | process memory | `lockAccounts` |
+| Store                                                                                                                              | Holds                                          | Protection                                | Cleared when                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| AsyncStorage                                                                                                                       | encrypted vault                                | password-derived, unchanged               | wallet reset                                        |
+| iOS keychain, `requireAuthentication: true`, `keychainService: 'salmon.bio'`, `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY` | `bioWrapKey` (32 random bytes)                 | Face ID / Touch ID, `.biometryCurrentSet` | disarm, password change, invalidation, wallet reset |
+| iOS keychain, `requireAuthentication: false`, `keychainService: 'salmon.meta'`                                                     | `{ nonce, sealed, armedAt, vaultFingerprint }` | none needed                               | same                                                |
+| in-memory stash                                                                                                                    | `DerivedKeyCache`, unchanged, TTL enforced     | process memory                            | `lockAccounts`                                      |
 
 Two deliberate changes from today:
 
@@ -462,19 +466,20 @@ design no longer depends on the salt.
 
 `bioUnlock()` returns a **discriminated result**, never a bare `string | null`:
 
-| Result | Cause | UI | Persisted state change |
-| --- | --- | --- | --- |
-| `ok(password)` | success | proceed to unlock | `armedAt` refreshed |
-| `cancelled` | user dismissed | password field, **no error text** | none |
-| `invalidated` | `getItemAsync` → `null` while `armed === true` | password field + "Face ID was reset on this device. Turn it back on in Settings → Security." | `armed = false`, both records deleted |
-| `unavailable` | no hardware / not enrolled / device locked (`errSecInteractionNotAllowed`) | password field, **no error text** | **none — nothing is deleted** |
-| `failed(reason)` | anything else | password field + generic message | none |
+| Result           | Cause                                                                      | UI                                                                                           | Persisted state change                |
+| ---------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `ok(password)`   | success                                                                    | proceed to unlock                                                                            | `armedAt` refreshed                   |
+| `cancelled`      | user dismissed                                                             | password field, **no error text**                                                            | none                                  |
+| `invalidated`    | `getItemAsync` → `null` while `armed === true`                             | password field + "Face ID was reset on this device. Turn it back on in Settings → Security." | `armed = false`, both records deleted |
+| `unavailable`    | no hardware / not enrolled / device locked (`errSecInteractionNotAllowed`) | password field, **no error text**                                                            | **none — nothing is deleted**         |
+| `failed(reason)` | anything else                                                              | password field + generic message                                                             | none                                  |
 
 The `invalidated` vs `unavailable` split is the whole DEV-34 fix. Today both land in the
 same `null` (`useBiometricAuth.ts:355`) and `unavailable` additionally triggers destruction
 (`:366-369`). Disambiguation: consult `LocalAuthentication.hasHardwareAsync()` +
 `isEnrolledAsync()` **before** classifying a `null`. Hardware present and enrolled + `null`
-+ `armed` ⇒ `invalidated`. Otherwise ⇒ `unavailable`.
+
+- `armed` ⇒ `invalidated`. Otherwise ⇒ `unavailable`.
 
 `armed = false` is set **only** on `invalidated`, on explicit disarm, and on password
 change. It is the single flag the Settings toggle reads — the three-flag scheme
@@ -501,12 +506,12 @@ Face ID.
 
 ### 6.6 Timeout policy
 
-| Trigger | Behaviour |
-| --- | --- |
-| `AppState → background` | lock immediately (unchanged, `app/_layout.tsx:254-270`) |
-| `AppState → inactive` | `SHIELDED` cover only — never lock (§6.2) |
-| process death | locked by construction (memory stash) |
-| foreground inactivity | **out of scope; explicitly not added** — see §10 Q4 |
+| Trigger                     | Behaviour                                                                                                                                                                                          |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AppState → background`     | lock immediately (unchanged, `app/_layout.tsx:254-270`)                                                                                                                                            |
+| `AppState → inactive`       | `SHIELDED` cover only — never lock (§6.2)                                                                                                                                                          |
+| process death               | locked by construction (memory stash)                                                                                                                                                              |
+| foreground inactivity       | **out of scope; explicitly not added** — see §10 Q4                                                                                                                                                |
 | `DerivedKeyCache.expiresAt` | keeps its 5-minute TTL, in memory, and `isKeyCacheValid` is now enforced on **every** read of it — including the one at `useAccountsSecurity.ts:159-165`, which today checks only `key` and `salt` |
 
 ### 6.7 Cold-start routing
@@ -521,16 +526,16 @@ locked (`(app)/_layout.tsx:231`), so this is safe. Remove the `!state.locked` co
 
 ### 6.8 Platform ownership map
 
-| Concern | Owner | Why |
-| --- | --- | --- |
-| Seal/open primitives (`sealPassword`, `openSealedPassword`) over `secretbox` | `packages/shared/src/crypto/biometric-seal.ts` | pure crypto, no platform API, unit-testable in Vitest, and the extension will want it if WebAuthn unlock is ever built |
-| The `BiometricUnlockResult` discriminated union + `BiometricArmState` types | `packages/shared/src/types/` | one contract both platforms name |
-| Lock state machine (`LOCKED / PROMPTING / PASSWORD / UNLOCKED / SHIELDED`) as a reducer | `packages/shared/src/hooks/useLockMachine.ts` | it is screen-flow logic, which `packages/shared/AGENTS.md` places in shared; it receives the biometric adapter injected and touches no platform API |
-| `expo-secure-store` / `expo-local-authentication` calls | `apps/mobile/src/security/biometricStore.ts` | native modules — must not enter `packages/shared`, which stays RN-importable and DOM-importable |
-| `AppState` wiring | `apps/mobile/app/_layout.tsx` | RN API |
-| Lock UI (RN) | `apps/mobile/src/components/LockOverlay/` | RN render |
-| Lock UI (DOM twin) | `packages/ui/src/components/LockScreen/` | DOM render, on the same `LockScreenPropsBase` contract |
-| Session key cache, `chrome.storage.session` | `apps/extension/src/utils/sessionKeyCache.ts` | extension runtime API |
+| Concern                                                                                 | Owner                                          | Why                                                                                                                                                 |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Seal/open primitives (`sealPassword`, `openSealedPassword`) over `secretbox`            | `packages/shared/src/crypto/biometric-seal.ts` | pure crypto, no platform API, unit-testable in Vitest, and the extension will want it if WebAuthn unlock is ever built                              |
+| The `BiometricUnlockResult` discriminated union + `BiometricArmState` types             | `packages/shared/src/types/`                   | one contract both platforms name                                                                                                                    |
+| Lock state machine (`LOCKED / PROMPTING / PASSWORD / UNLOCKED / SHIELDED`) as a reducer | `packages/shared/src/hooks/useLockMachine.ts`  | it is screen-flow logic, which `packages/shared/AGENTS.md` places in shared; it receives the biometric adapter injected and touches no platform API |
+| `expo-secure-store` / `expo-local-authentication` calls                                 | `apps/mobile/src/security/biometricStore.ts`   | native modules — must not enter `packages/shared`, which stays RN-importable and DOM-importable                                                     |
+| `AppState` wiring                                                                       | `apps/mobile/app/_layout.tsx`                  | RN API                                                                                                                                              |
+| Lock UI (RN)                                                                            | `apps/mobile/src/components/LockOverlay/`      | RN render                                                                                                                                           |
+| Lock UI (DOM twin)                                                                      | `packages/ui/src/components/LockScreen/`       | DOM render, on the same `LockScreenPropsBase` contract                                                                                              |
+| Session key cache, `chrome.storage.session`                                             | `apps/extension/src/utils/sessionKeyCache.ts`  | extension runtime API                                                                                                                               |
 
 `useLockMachine` takes an injected adapter of shape
 `{ arm, unlock, disarm, probe }`. Mobile supplies the `expo-*` implementation; the
@@ -547,19 +552,19 @@ The extension's unlock is **password-only and correct**. `LockPage`
 unlock is separate work. `sessionKeyCache.ts:28` correctly enforces `isKeyCacheValid` on
 read — the mobile biometric path is the only place in the repo that does not.
 
-| | Shared | Rationale |
-| --- | --- | --- |
-| `DerivedKeyCache`, `unlockAccounts`, `unlockWithCachedKey`, vault crypto | **yes** — already shared, unchanged | one vault format, one KDF |
-| `LockScreenPropsBase` (`packages/shared/src/types/ui/lock-screen.ts`) | **yes** | the twins contract; gains an optional `biometric?` field the DOM twin leaves undefined |
-| `useLockMachine` reducer | **yes** | the extension gets the same `LOCKED → PASSWORD → UNLOCKED` path; `PROMPTING` and `SHIELDED` are simply unreachable with the stub adapter |
-| `sealPassword` / `openSealedPassword` | **yes** | pure; unused by the extension today, ready if WebAuthn lands |
-| Anything touching `expo-secure-store`, `expo-local-authentication`, `AppState` | **no** | native modules; would break the MV3 bundle |
-| The extension's `chrome.storage.session` cache | **no** | extension runtime; stays in `apps/extension` |
+|                                                                                | Shared                              | Rationale                                                                                                                                |
+| ------------------------------------------------------------------------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `DerivedKeyCache`, `unlockAccounts`, `unlockWithCachedKey`, vault crypto       | **yes** — already shared, unchanged | one vault format, one KDF                                                                                                                |
+| `LockScreenPropsBase` (`packages/shared/src/types/ui/lock-screen.ts`)          | **yes**                             | the twins contract; gains an optional `biometric?` field the DOM twin leaves undefined                                                   |
+| `useLockMachine` reducer                                                       | **yes**                             | the extension gets the same `LOCKED → PASSWORD → UNLOCKED` path; `PROMPTING` and `SHIELDED` are simply unreachable with the stub adapter |
+| `sealPassword` / `openSealedPassword`                                          | **yes**                             | pure; unused by the extension today, ready if WebAuthn lands                                                                             |
+| Anything touching `expo-secure-store`, `expo-local-authentication`, `AppState` | **no**                              | native modules; would break the MV3 bundle                                                                                               |
+| The extension's `chrome.storage.session` cache                                 | **no**                              | extension runtime; stays in `apps/extension`                                                                                             |
 
 **The shared contract is the right seam** — but only after `useLockMachine` exists. Today
 the seam is `unlockWithCachedKey`, which forces the caller to already hold a valid key
 cache, which is precisely what pushed mobile into persisting a session object. Moving the
-*machine* into shared and leaving the *credential store* per-platform puts the boundary
+_machine_ into shared and leaving the _credential store_ per-platform puts the boundary
 where the platform difference actually is.
 
 `pnpm check:parity` covers `LockScreen` ↔ `LockContent` today; the contract change in
@@ -576,13 +581,13 @@ must survive the update even if every biometric artefact is destroyed.
 in AsyncStorage is untouched by everything in this spec. Every migration path below ends at
 "the user types their password", which is the same path they have today.
 
-| Existing state on device | After update | User experience |
-| --- | --- | --- |
-| Old biometric key present, salt still matches (Face ID working) | detected, **transparently re-armed** on the next successful unlock (§6.5 path 3) | nothing changes; Face ID keeps working |
-| Old key present, salt orphaned (**DEV-41 population**) | old records deleted, `armed = true` retained, one-time notice: "Turn Face ID back on in Settings → Security" | one password unlock, one toggle, fixed |
-| Key invalidated by the OS (**DEV-34 population**) | detected as `invalidated`, records deleted, `armed = false` | the toggle now honestly reads off; re-arm from Settings |
-| Never enrolled | nothing to migrate | unchanged |
-| Enrolled but the password is forgotten | unchanged — the seed phrase is the only recovery, as today | "Forgot password" still resets the wallet (`LockContent.tsx:364-389`), warning intact |
+| Existing state on device                                        | After update                                                                                                 | User experience                                                                       |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Old biometric key present, salt still matches (Face ID working) | detected, **transparently re-armed** on the next successful unlock (§6.5 path 3)                             | nothing changes; Face ID keeps working                                                |
+| Old key present, salt orphaned (**DEV-41 population**)          | old records deleted, `armed = true` retained, one-time notice: "Turn Face ID back on in Settings → Security" | one password unlock, one toggle, fixed                                                |
+| Key invalidated by the OS (**DEV-34 population**)               | detected as `invalidated`, records deleted, `armed = false`                                                  | the toggle now honestly reads off; re-arm from Settings                               |
+| Never enrolled                                                  | nothing to migrate                                                                                           | unchanged                                                                             |
+| Enrolled but the password is forgotten                          | unchanged — the seed phrase is the only recovery, as today                                                   | "Forgot password" still resets the wallet (`LockContent.tsx:364-389`), warning intact |
 
 Migration runs **once**, keyed by a version marker, and is **fail-open**: any error while
 reading legacy records is swallowed, records are deleted, `armed` is set false, and the
@@ -594,7 +599,7 @@ password field. Acceptable; funds intact.
 
 **OTA constraint** (`apps/mobile/AGENTS.md` §"OTA updates cannot carry native modules"):
 this ships **no new native module** — `expo-secure-store` and `expo-local-authentication`
-are already in the binary. So it *can* be an EAS Update. Verify against the installed
+are already in the binary. So it _can_ be an EAS Update. Verify against the installed
 binary before publishing, per the repo checklist.
 
 ---
@@ -603,22 +608,22 @@ binary before publishing, per the repo checklist.
 
 Ordered, each step independently verifiable, each landing green before the next.
 
-| # | Task | Files | Verified by |
-| --- | --- | --- | --- |
-| 1 | **Reproduce DEV-41 in a test.** Vitest: arm with a key cache, re-salt the vault via the upgrade path, assert biometric unlock now fails. Red. | `packages/shared/src/hooks/useAccountsSecurity.test.ts` (new case) | `pnpm turbo run test --filter=@salmon/shared` — the new test **fails** |
-| 2 | **Seal primitives.** `sealPassword` / `openSealedPassword` over `secretbox`; random 32-byte wrap key. No callers yet. | `packages/shared/src/crypto/biometric-seal.ts` + `.test.ts`, `crypto/index.ts` | Vitest: round-trip, wrong-key rejection, tampered-ciphertext rejection |
-| 3 | **Result + arm-state contracts.** `BiometricUnlockResult` union, `BiometricArmState`, adapter interface. Types only. | `packages/shared/src/types/biometric.ts`, `types/index.ts` | `pnpm turbo run typecheck --filter=@salmon/shared` |
-| 4 | **Mobile credential store.** `arm` / `unlock` / `disarm` / `probe` against `expo-secure-store` + `expo-local-authentication`, with the `invalidated` vs `unavailable` disambiguation of §6.4, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`, split `keychainService`. | `apps/mobile/src/security/biometricStore.ts` (new) | Jest with `expo-secure-store` mocked: `null` + hardware-enrolled ⇒ `invalidated`; `null` + no hardware ⇒ `unavailable`; **no delete on `unavailable`** |
-| 5 | **`useLockMachine` reducer** — the five states of §6.2, adapter injected, no platform API. | `packages/shared/src/hooks/useLockMachine.ts` + `.test.ts`, `hooks/index.ts` | Vitest: every transition, incl. `PROMPTING → cancelled → PASSWORD` leaving `armed` untouched |
-| 6 | **Re-seal on unlock.** Wire arm path 3 (§6.5): after a successful password unlock with `armed`, re-seal. **Makes step 1's test pass.** | `packages/shared/src/hooks/useAccountsSecurity.ts`, `useAccountsSecurityHelpers.ts` | step 1 goes green; full `@salmon/shared` suite green |
-| 7 | **Settings re-enrolment.** Toggle-on opens `usePasswordConfirm` then calls `armBiometrics`. Collapse three flags to one `armed`. `changePassword` re-arms instead of clearing. | `apps/mobile/src/settings/panelRegistry.tsx`, `apps/mobile/src/components/SecurityPanel/`, `packages/ui/src/components/SecurityPanel/` (twin), `packages/shared/src/types/ui/security-panel.ts` | Jest: toggle-on without a password does **not** arm; with a correct password does. `pnpm check:parity` |
-| 8 | **Rewire the lock screen** onto `useLockMachine`. Delete the `hasAutoPromptedBiometric` ref, the `setTimeout(400)`, the 30 s `Promise.race`, and the `eslint-disable` at `LockContent.tsx:256`. Surface the `invalidated` message. | `apps/mobile/src/components/LockOverlay/LockContent.tsx`, `types.ts`, `packages/ui/src/components/LockScreen/` (twin) | `apps/mobile/src/components/LockOverlay/LockContent.test.tsx`; `pnpm check:parity` |
-| 9 | **Retire the old hook.** Delete `useBiometricAuth.ts` + its test once every consumer (`(app)/_layout.tsx`, `panelRegistry.tsx`, `(auth)/biometric-setup.tsx`, `PrivateKeyPanel`) reads the machine. Three copies of the state become one. | those four files, `apps/mobile/hooks/useBiometricAuth.{ts,test.tsx}` | `pnpm turbo run typecheck lint test --filter=@salmon/mobile` |
-| 10 | **`SHIELDED` cover** on `AppState → inactive`. Opaque, no lock, no loop. | `apps/mobile/app/_layout.tsx`, `apps/mobile/src/components/PrivacyShield/` (+ DOM twin or a `MOBILE_ONLY` entry with its reason) | Jest AppState simulation: `inactive` does **not** call `lockAccounts` |
-| 11 | **Cold-start routing** (§6.7). Drop `!state.locked` from the redirect; delete `handleAccessExistingAccount` and the welcome text link. | `apps/mobile/app/_layout.tsx:214`, `apps/mobile/app/(auth)/index.tsx:73-79,116-121` | `apps/mobile/__tests__/app/app-lock.test.tsx`: locked + accounts ⇒ routed to `(app)`, overlay mounted |
-| 12 | **Migration** (§8), version-marked, fail-open. | `apps/mobile/src/security/migrateBiometric.ts` (new), called from `(app)/_layout.tsx` | Jest: each of the five rows of §8's table; assert `STORAGE_KEYS.MNEMONICS` is never written |
-| 13 | **Localise** every new string, EN + ES, via `t()`. Never guess a Spanish string — follow `i18n-authoring`. | `packages/shared/src/locales/{en,es}/translation.json` | `pnpm check:i18n` |
-| 14 | **Device verification** (§10 checklist) on physical iPhone + Android. | — | manual, signed off by the owner |
+| #   | Task                                                                                                                                                                                                                                                     | Files                                                                                                                                                                                           | Verified by                                                                                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Reproduce DEV-41 in a test.** Vitest: arm with a key cache, re-salt the vault via the upgrade path, assert biometric unlock now fails. Red.                                                                                                            | `packages/shared/src/hooks/useAccountsSecurity.test.ts` (new case)                                                                                                                              | `pnpm turbo run test --filter=@salmon/shared` — the new test **fails**                                                                                 |
+| 2   | **Seal primitives.** `sealPassword` / `openSealedPassword` over `secretbox`; random 32-byte wrap key. No callers yet.                                                                                                                                    | `packages/shared/src/crypto/biometric-seal.ts` + `.test.ts`, `crypto/index.ts`                                                                                                                  | Vitest: round-trip, wrong-key rejection, tampered-ciphertext rejection                                                                                 |
+| 3   | **Result + arm-state contracts.** `BiometricUnlockResult` union, `BiometricArmState`, adapter interface. Types only.                                                                                                                                     | `packages/shared/src/types/biometric.ts`, `types/index.ts`                                                                                                                                      | `pnpm turbo run typecheck --filter=@salmon/shared`                                                                                                     |
+| 4   | **Mobile credential store.** `arm` / `unlock` / `disarm` / `probe` against `expo-secure-store` + `expo-local-authentication`, with the `invalidated` vs `unavailable` disambiguation of §6.4, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`, split `keychainService`. | `apps/mobile/src/security/biometricStore.ts` (new)                                                                                                                                              | Jest with `expo-secure-store` mocked: `null` + hardware-enrolled ⇒ `invalidated`; `null` + no hardware ⇒ `unavailable`; **no delete on `unavailable`** |
+| 5   | **`useLockMachine` reducer** — the five states of §6.2, adapter injected, no platform API.                                                                                                                                                               | `packages/shared/src/hooks/useLockMachine.ts` + `.test.ts`, `hooks/index.ts`                                                                                                                    | Vitest: every transition, incl. `PROMPTING → cancelled → PASSWORD` leaving `armed` untouched                                                           |
+| 6   | **Re-seal on unlock.** Wire arm path 3 (§6.5): after a successful password unlock with `armed`, re-seal. **Makes step 1's test pass.**                                                                                                                   | `packages/shared/src/hooks/useAccountsSecurity.ts`, `useAccountsSecurityHelpers.ts`                                                                                                             | step 1 goes green; full `@salmon/shared` suite green                                                                                                   |
+| 7   | **Settings re-enrolment.** Toggle-on opens `usePasswordConfirm` then calls `armBiometrics`. Collapse three flags to one `armed`. `changePassword` re-arms instead of clearing.                                                                           | `apps/mobile/src/settings/panelRegistry.tsx`, `apps/mobile/src/components/SecurityPanel/`, `packages/ui/src/components/SecurityPanel/` (twin), `packages/shared/src/types/ui/security-panel.ts` | Jest: toggle-on without a password does **not** arm; with a correct password does. `pnpm check:parity`                                                 |
+| 8   | **Rewire the lock screen** onto `useLockMachine`. Delete the `hasAutoPromptedBiometric` ref, the `setTimeout(400)`, the 30 s `Promise.race`, and the `eslint-disable` at `LockContent.tsx:256`. Surface the `invalidated` message.                       | `apps/mobile/src/components/LockOverlay/LockContent.tsx`, `types.ts`, `packages/ui/src/components/LockScreen/` (twin)                                                                           | `apps/mobile/src/components/LockOverlay/LockContent.test.tsx`; `pnpm check:parity`                                                                     |
+| 9   | **Retire the old hook.** Delete `useBiometricAuth.ts` + its test once every consumer (`(app)/_layout.tsx`, `panelRegistry.tsx`, `(auth)/biometric-setup.tsx`, `PrivateKeyPanel`) reads the machine. Three copies of the state become one.                | those four files, `apps/mobile/hooks/useBiometricAuth.{ts,test.tsx}`                                                                                                                            | `pnpm turbo run typecheck lint test --filter=@salmon/mobile`                                                                                           |
+| 10  | **`SHIELDED` cover** on `AppState → inactive`. Opaque, no lock, no loop.                                                                                                                                                                                 | `apps/mobile/app/_layout.tsx`, `apps/mobile/src/components/PrivacyShield/` (+ DOM twin or a `MOBILE_ONLY` entry with its reason)                                                                | Jest AppState simulation: `inactive` does **not** call `lockAccounts`                                                                                  |
+| 11  | **Cold-start routing** (§6.7). Drop `!state.locked` from the redirect; delete `handleAccessExistingAccount` and the welcome text link.                                                                                                                   | `apps/mobile/app/_layout.tsx:214`, `apps/mobile/app/(auth)/index.tsx:73-79,116-121`                                                                                                             | `apps/mobile/__tests__/app/app-lock.test.tsx`: locked + accounts ⇒ routed to `(app)`, overlay mounted                                                  |
+| 12  | **Migration** (§8), version-marked, fail-open.                                                                                                                                                                                                           | `apps/mobile/src/security/migrateBiometric.ts` (new), called from `(app)/_layout.tsx`                                                                                                           | Jest: each of the five rows of §8's table; assert `STORAGE_KEYS.MNEMONICS` is never written                                                            |
+| 13  | **Localise** every new string, EN + ES, via `t()`. Never guess a Spanish string — follow `i18n-authoring`.                                                                                                                                               | `packages/shared/src/locales/{en,es}/translation.json`                                                                                                                                          | `pnpm check:i18n`                                                                                                                                      |
+| 14  | **Device verification** (§10 checklist) on physical iPhone + Android.                                                                                                                                                                                    | —                                                                                                                                                                                               | manual, signed off by the owner                                                                                                                        |
 
 Steps 1-6 are `packages/shared` and land without touching a screen. 7-11 are `apps/mobile`
 plus their DOM twins. 12-14 close it out.
@@ -664,11 +669,11 @@ device and a human:
 
 1. Arm Face ID → force-quit → reopen → prompt appears and unlocks. **iPhone with Face ID.**
 2. Arm → Settings → Face ID → **Reset Face ID** → re-enrol → reopen the app. Expect: the
-   `invalidated` message, the toggle now off, and re-arming from Settings works. *This is
-   DEV-34's exact reproduction.*
+   `invalidated` message, the toggle now off, and re-arming from Settings works. _This is
+   DEV-34's exact reproduction._
 3. Arm → change the password in Settings → reopen. Expect: Face ID still works (§6.5).
 4. Arm on a build predating `37906da5` → update → password unlock → reopen. Expect: Face ID
-   works. *This is DEV-41's exact reproduction.*
+   works. _This is DEV-41's exact reproduction._
 5. Arm → lock the device screen → wake via notification → open the app. Expect:
    `unavailable`, password field, **and the enrolment survives** — reopening with the device
    unlocked prompts normally.
@@ -689,7 +694,7 @@ stay manual and belong in `docs/QA-RUNBOOK.md`.
    deliberate change to what biometry protects, and this is a wallet. **Blocks §6 entirely.**
 
 2. **On `invalidated`, disarm silently or notify?** Silent is calmer; a notice is the only
-   thing that tells a DEV-34 user *why* Face ID stopped and where to turn it back on.
+   thing that tells a DEV-34 user _why_ Face ID stopped and where to turn it back on.
    §6.4 assumes notify. **Blocks step 8.**
 
 3. **Should a password change keep Face ID armed (§6.5) or force re-arming?** Keeping it is
@@ -714,13 +719,13 @@ stay manual and belong in `docs/QA-RUNBOOK.md`.
 
 Owner decisions on §11, taken before implementation:
 
-| # | Question | Decision |
-| --- | --- | --- |
-| 1 | Sealed envelope of the password behind biometrics? | **Yes** — §6.1 as written |
-| 2 | Silent disarm or notify on `invalidated`? | **Notify** |
-| 3 | Password change: keep Face ID armed? | **Re-arm automatically** under the new password |
-| 4 | Foreground inactivity auto-lock? | **Not now** — background-only, unchanged |
-| 5 | EAS Update or binary release? | **EAS Update**, made mandatory by a launch gate (below) |
+| #   | Question                                           | Decision                                                |
+| --- | -------------------------------------------------- | ------------------------------------------------------- |
+| 1   | Sealed envelope of the password behind biometrics? | **Yes** — §6.1 as written                               |
+| 2   | Silent disarm or notify on `invalidated`?          | **Notify**                                              |
+| 3   | Password change: keep Face ID armed?               | **Re-arm automatically** under the new password         |
+| 4   | Foreground inactivity auto-lock?                   | **Not now** — background-only, unchanged                |
+| 5   | EAS Update or binary release?                      | **EAS Update**, made mandatory by a launch gate (below) |
 
 ### Built
 
@@ -772,7 +777,7 @@ Owner decisions on §11, taken before implementation:
 ### Mandatory update, as shipped
 
 `expo-updates` was installed but never called, so its default behaviour
-applied: fetch in the background, apply on the *next* launch. A user who never
+applied: fetch in the background, apply on the _next_ launch. A user who never
 fully quits the app could stay on a broken build indefinitely. The gate makes
 the update a precondition of the first render — check, fetch, reload — on both
 platforms, which is as close to forced as either store allows for a JS-only

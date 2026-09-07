@@ -46,11 +46,7 @@ interface BackupPanelProps extends BackupPanelPropsBase {
  *  covered grid gives away nothing about the phrase's shape. */
 const MASK = '••••••';
 
-export function BackupPanel({
-  onBack,
-  biometricAvailable,
-  verifyBiometric,
-}: BackupPanelProps) {
+export function BackupPanel({ onBack, biometricAvailable, verifyBiometric }: BackupPanelProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
 

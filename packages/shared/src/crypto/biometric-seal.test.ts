@@ -46,7 +46,9 @@ describe('biometric seal', () => {
   it('refuses a wrapping key of the wrong length', () => {
     const record = sealPassword('hunter2', generateWrapKey());
 
-    expect(() => openSealedPassword(record, bs58.encode(new Uint8Array(16)))).toThrow(SealOpenError);
+    expect(() => openSealedPassword(record, bs58.encode(new Uint8Array(16)))).toThrow(
+      SealOpenError
+    );
   });
 
   it('refuses a wrapping key that is not base58', () => {

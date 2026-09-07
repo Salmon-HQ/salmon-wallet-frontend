@@ -173,13 +173,7 @@ describe('BackupPanel', () => {
   it('takes the biometric prompt as the equivalent of the password when it is available', async () => {
     const verifyBiometric = jest.fn(async () => true);
 
-    render(
-      <BackupPanel
-        onBack={jest.fn()}
-        biometricAvailable
-        verifyBiometric={verifyBiometric}
-      />
-    );
+    render(<BackupPanel onBack={jest.fn()} biometricAvailable verifyBiometric={verifyBiometric} />);
 
     fireEvent.press(screen.getByTestId('backup-seed-reveal-overlay'));
 
