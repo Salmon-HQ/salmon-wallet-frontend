@@ -11,7 +11,7 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { LoadingScreen, WalletInitErrorScreen } from '@salmon/ui';
+import { LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -335,6 +335,7 @@ function App() {
    * Held from *before* the await, because `locked` flips in an earlier
    * microtask than anything set after it.
    */
+  const { surface } = useTaskChrome();
   const [unlockHeld, setUnlockHeld] = useState(false);
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -351,7 +352,21 @@ function App() {
     },
     [actions]
   );
-  const handleUnlockExited = useCallback(() => setUnlockHeld(false), []);
+  /**
+   * The gate opens and the screen surfaces in one commit, as on mobile.
+   *
+   * Today the bump changes nothing visible: `HomePage` mounts fresh on this
+   * swap (it is not rendered behind the lock the way mobile's Home is), and
+   * `SinkFloat`'s first phase carries its `from { opacity: 0 }` as a fill
+   * state, so the float already plays once with no at-rest frame. That is
+   * correct by accident — it holds only while `HomePage` stays below the lock
+   * branch. Bumping here states the invariant instead of inheriting it
+   * (spec 031 §7).
+   */
+  const handleUnlockExited = useCallback(() => {
+    setUnlockHeld(false);
+    surface();
+  }, [surface]);
 
   // ---- Auth flow handlers ----
 

@@ -285,6 +285,18 @@ export function LoadingScreen({
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(visible);
   /**
+   * Committed by the render that asked for it, not one commit later.
+   *
+   * Callers that keep the wait mounted at `visible={false}` — the lock, the
+   * create-password step, the account-add panel — used to wait a whole extra
+   * commit for the overlay to appear, because `setIsVisible(true)` lived
+   * inside the effect below. A render-phase set is the pattern `useHomeShell`
+   * already uses for the same reason. It also dispatches the emitter's
+   * `onLayout` a commit earlier, so `onReady` fires sooner and the unlock's
+   * handshake is less likely to resolve on its watchdog.
+   */
+  if (visible && !isVisible) setIsVisible(true);
+  /**
    * Where the front leaves from and how far it has to go, in the frame of the
    * screen. Filled by `onLayout` on mount and then never again — the origin
    * does not move, so the ring's size is a number and not a per-frame read.
@@ -354,12 +366,25 @@ export function LoadingScreen({
    */
   const shownAtRef = useRef(0);
   /**
-   * True from the moment the exit is planned until the wait shows again.
-   * The exit effect also re-runs when `geometry.origin` lands late while
-   * `visible` is already false; without this guard that re-run re-plans the
-   * exit from a fresh `Date.now()` and restarts the ebb mid-flight.
+   * True from the moment the exit is planned until the wait shows again, so an
+   * exit is planned exactly once however many times the effect re-enters.
    */
   const exitArmedRef = useRef(false);
+  /**
+   * Where the front leaves from, for the exit to read.
+   *
+   * The origin is a **drawing** input, not a lifecycle one: the render uses
+   * `geometry.origin` directly, and the only thing the *effect* needs it for is
+   * deciding whether a front is riding. Held in a ref precisely so it can stay
+   * out of that effect's dependencies — see the dependency note below. It is
+   * always current by the time the exit reads it: written in a passive effect
+   * on the render where the measurement lands, and read only after `visible`
+   * has gone false, which is strictly later.
+   */
+  const originRef = useRef<WavefrontPoint | null>(null);
+  useEffect(() => {
+    originRef.current = geometry.origin;
+  }, [geometry.origin]);
   const finishExit = useCallback(() => {
     if (exitedRef.current) return;
     exitedRef.current = true;
@@ -431,13 +456,24 @@ export function LoadingScreen({
 
   const measureOrigin = useCallback((event: LayoutChangeEvent) => {
     const box = event.nativeEvent.layout;
-    setGeometry((previous) => ({ ...previous, origin: centreOf(box, previous.contentOffset) }));
+    setGeometry((previous) => {
+      // The same guard its two siblings above have, and it was the only one
+      // without it: `centreOf` builds a fresh object every call, so an
+      // `onLayout` that moved nothing still published a new `origin` and
+      // re-rendered the screen. Cheap on its own; the defect it fed is fixed
+      // in the visibility effect (spec 031 §D1).
+      const origin = centreOf(box, previous.contentOffset);
+      return previous.origin?.x === origin.x && previous.origin?.y === origin.y
+        ? previous
+        : { ...previous, origin };
+    });
   }, []);
 
   // Start/stop animations based on visibility
   useEffect(() => {
     if (visible) {
-      setIsVisible(true);
+      // `isVisible` is set in the render phase above — by the time this runs
+      // the overlay is already committed.
       exitedRef.current = false;
       exitArmedRef.current = false;
       shownAtRef.current = Date.now();
@@ -576,7 +612,7 @@ export function LoadingScreen({
 
     const planExit = () => {
       exitArmedRef.current = true;
-      const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
+      const riding = waves && !isReduceMotionEnabled && originRef.current !== null;
       // Resolved while the content is still arriving: the loops are only
       // *scheduled* (they wait out CONTENT_LANDS_MS) and nothing has moved yet,
       // so cancel them and leave on ebb alone — calm water for real. Once the
@@ -628,8 +664,22 @@ export function LoadingScreen({
       clearTimeout(floorTimer);
       clearTimeout(fallback);
     };
+    // `geometry.origin` is deliberately NOT a dependency, and this is the whole
+    // fix for the wait that stuttered on the way in (spec 031 §D1).
+    //
+    // A `withRepeat` in flight is not paused by re-entering the branch above —
+    // it is restarted from zero and re-delayed by `CONTENT_LANDS_MS`, so a
+    // crest mid-crossing vanishes and the screen goes bare for a full second.
+    // With the origin in this array, every `onLayout` did exactly that: a
+    // keyboard dismissal, a Face ID sheet leaving, a `Modal` presenting. Worst
+    // on the unlock path, where those events queue behind PBKDF2 on the JS
+    // thread and land after the loops have started.
+    //
+    // A layout pass may change what is DRAWN; it may never change what is
+    // RUNNING. The render reads `geometry.origin` for the crests and `ringSize`
+    // for their scale, both live; the exit reads `originRef`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, waves, geometry.origin, overlayOpacity, sink, ring, isReduceMotionEnabled]);
+  }, [visible, waves, overlayOpacity, sink, ring, isReduceMotionEnabled]);
 
   // Nothing may outlive the screen: an unmounted wait that left a repeating
   // value running is a loop with no way to stop it.

@@ -16,6 +16,15 @@ import { StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
+/**
+ * How many times a looping animation has been STARTED.
+ *
+ * The wave is `withRepeat`, and a `withRepeat` in flight is not paused by
+ * re-running the effect that owns it — it is restarted from zero and re-delayed
+ * by a beat plus a float, so a crest mid-crossing vanishes and the screen goes
+ * bare. Counting the starts is how a test can see that from outside.
+ */
+let mockWaveStarts = 0;
 
 // The shared barrel reaches the Solana ESM packages, which this Jest config
 // does not transform. Only the tokens this screen reads matter here.
@@ -108,12 +117,22 @@ jest.mock('react-native-reanimated', () => {
   return {
     __esModule: true,
     default: { View, Text },
-    useSharedValue: (value: number) => ({ value }),
+    // Stable across renders, as the real hook is. Returning a fresh object
+    // each render made every re-render look like a dependency change to any
+    // effect that lists a shared value — which is precisely the class of bug
+    // these tests exist to catch, so the stub may not manufacture it.
+    useSharedValue: (value: number) => {
+      const { useRef } = jest.requireActual('react');
+      return useRef({ value }).current;
+    },
     useAnimatedStyle: (fn: () => unknown) => fn(),
     useReducedMotion: () => mockReduceMotion,
     cancelAnimation: () => {},
     interpolate: (value: number) => value,
-    withRepeat: (animation: unknown) => animation,
+    withRepeat: (animation: unknown) => {
+      mockWaveStarts += 1;
+      return animation;
+    },
     withSequence: (animation: unknown) => animation,
     withDelay: (_delay: number, animation: unknown) => animation,
     withTiming: (toValue: number) => toValue,
@@ -126,6 +145,9 @@ import { LoadingScreen } from './LoadingScreen';
 import { TaskChromeProvider, useTaskChrome } from '../../contexts/TaskChromeContext';
 
 describe('LoadingScreen', () => {
+  beforeEach(() => {
+    mockWaveStarts = 0;
+  });
   afterEach(() => {
     mockReduceMotion = false;
   });
@@ -245,6 +267,60 @@ describe('LoadingScreen', () => {
       render(<LoadingScreen visible title="Unlocking Wallet" waves={false} onReady={onReady} />);
 
       expect(onReady).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('a layout pass may change what is drawn, never what is running', () => {
+    const emitterLayout = (y: number) => ({
+      nativeEvent: { layout: { x: 100, y, width: 48, height: 48 } },
+    });
+
+    /**
+     * The wait that stuttered on the way in. `measureOrigin` published a fresh
+     * `origin` object on every `onLayout` and the origin sat in the visibility
+     * effect's dependencies, so any relayout — a keyboard leaving, a Face ID
+     * sheet dismissing, a Modal presenting — restarted the wave from zero.
+     */
+    it('does not restart the wave when the emitter is measured again in place', () => {
+      render(<LoadingScreen visible title="Unlocking Wallet" waves />);
+      const emitter = screen.getByTestId('loading-emitter', { includeHiddenElements: true });
+
+      act(() => fireEvent(emitter, 'layout', emitterLayout(200)));
+      const afterFirstMeasure = mockWaveStarts;
+      expect(afterFirstMeasure).toBeGreaterThan(0);
+
+      // The same geometry again: nothing moved, so nothing may be republished.
+      act(() => fireEvent(emitter, 'layout', emitterLayout(200)));
+
+      expect(mockWaveStarts).toBe(afterFirstMeasure);
+    });
+
+    // The guard above is not enough on its own: a keyboard dismissal genuinely
+    // moves the emitter, and that real change must not cost the wave either.
+    it('does not restart the wave when the emitter actually moves', () => {
+      render(<LoadingScreen visible title="Unlocking Wallet" waves />);
+      const emitter = screen.getByTestId('loading-emitter', { includeHiddenElements: true });
+
+      act(() => fireEvent(emitter, 'layout', emitterLayout(200)));
+      const afterFirstMeasure = mockWaveStarts;
+
+      act(() => fireEvent(emitter, 'layout', emitterLayout(320)));
+
+      expect(mockWaveStarts).toBe(afterFirstMeasure);
+    });
+
+    /**
+     * Every caller that keeps the wait mounted at `visible={false}` — the lock,
+     * the create-password step — used to wait an extra commit for the overlay,
+     * because `isVisible` was set from inside the effect.
+     */
+    it('commits the overlay in the render that asks for it', () => {
+      const { rerender } = render(<LoadingScreen visible={false} title="Unlocking Wallet" />);
+      expect(screen.queryByTestId('loading-cluster')).toBeNull();
+
+      rerender(<LoadingScreen visible title="Unlocking Wallet" />);
+
+      expect(screen.getByTestId('loading-cluster', { includeHiddenElements: true })).toBeTruthy();
     });
   });
 

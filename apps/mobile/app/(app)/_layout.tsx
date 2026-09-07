@@ -76,10 +76,13 @@ export default function AppLayout() {
   // ground it was standing on all along — the passage the owner asked for
   // (2026-09-07), and the one every other step swap in the app already
   // speaks. Every wait with no overlay over it still surfaces itself.
+  //
+  // It is bumped from `release` below, NOT from an effect on `isLocked`. An
+  // effect runs after the commit that removed the overlay, so one frame
+  // painted with Home fully assembled and at rest and the float then played on
+  // content the user had already watched arrive — arrival, then arrival again
+  // (spec 031 §D2).
   const [surfaceKey, setSurfaceKey] = useState(0);
-  useEffect(() => {
-    if (!isLocked) setSurfaceKey((key) => key + 1);
-  }, [isLocked]);
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -105,17 +108,31 @@ export default function AppLayout() {
   // overlay leaves. The beat is `FLOAT_DELAY_MS`, the same pause every sink in
   // this water earns. Under reduce motion the passage is a cut, so the release
   // is immediate.
+  /**
+   * The gate opens and the screen surfaces in ONE commit.
+   *
+   * Both sets are in the same callback, so React batches them: the overlay is
+   * removed and the new `home-content` is mounted in the same tree update.
+   * Reanimated registers a view's entering animation in its constructor, so
+   * that instance's first paint already carries the float's `initialValues` —
+   * there is no at-rest frame to see.
+   */
+  const release = useCallback(() => {
+    setUnlockHeld(false);
+    setSurfaceKey((key) => key + 1);
+  }, []);
+
   const handleUnlockExited = useCallback(() => {
     if (isReduceMotionEnabled) {
-      setUnlockHeld(false);
+      release();
       return;
     }
     if (unlockReleaseTimer.current !== null) clearTimeout(unlockReleaseTimer.current);
     unlockReleaseTimer.current = setTimeout(() => {
       unlockReleaseTimer.current = null;
-      setUnlockHeld(false);
+      release();
     }, FLOAT_DELAY_MS);
-  }, [isReduceMotionEnabled]);
+  }, [isReduceMotionEnabled, release]);
 
   const handleRemoveAllAccountsFromLock = useCallback(async () => {
     await disarmBiometric();
