@@ -1,3 +1,4 @@
+export * from './biometric-seal';
 export * from './encryption';
 export * from './encrypt-mnemonics';
 export * from './mnemonic';

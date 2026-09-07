@@ -6,6 +6,7 @@
 // Domain types (new canonical locations)
 export * from './blockchain';
 export * from './account';
+export * from './biometric';
 export * from './token';
 export * from './address';
 export * from './trusted-app';

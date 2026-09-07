@@ -2,15 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { Stack, useRouter, usePathname } from 'expo-router';
 
-import { useAccountsContext, getStashItem } from '@salmon/shared';
+import { useAccountsContext } from '@salmon/shared';
 import { LockOverlay, LockContent, PowerupsFab } from '../../src/components';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useTabChrome } from '../../hooks/useTabChrome';
 import { POWERUPS_SURFACE_ENABLED } from '../../src/powerups/surface';
 import { TaskChromeProvider, useTaskChrome } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
-import type { DerivedKeyCache } from '@salmon/shared';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
 
 /**
@@ -41,13 +40,14 @@ export default function AppLayout() {
   const [accountState, accountActions] = useAccountsContext();
 
   const {
-    state: biometricState,
-    enableBiometric,
-    setEnableBiometric,
-    authenticateWithBiometric,
-    storeKeyForBiometric,
-    refreshState: refreshBiometricState,
-  } = useBiometricAuth();
+    available: biometricAvailable,
+    armed: biometricArmed,
+    kind: biometricKind,
+    needsReArm: biometricNeedsReArm,
+    unlock: biometricUnlock,
+    disarm: disarmBiometric,
+    refresh: refreshBiometricState,
+  } = useBiometric();
 
   // The parked unlock release. A password unlock flips `locked` the instant the
   // crypto resolves, and unmounting the overlay takes the unlock wait with it,
@@ -114,51 +114,27 @@ export default function AppLayout() {
     }, FLOAT_DELAY_MS);
   }, [isReduceMotionEnabled]);
 
-  const handleLockUnlockWithKey = useCallback(
-    async (keyJson: string): Promise<boolean> => {
-      setUnlockHeld(true);
-      try {
-        const keyCache: DerivedKeyCache = JSON.parse(keyJson);
-        const success = await accountActions.unlockWithCachedKey(keyCache);
-        setUnlockHeld(false);
-        return success;
-      } catch (error) {
-        console.error('Biometric unlock failed:', error);
-        setUnlockHeld(false);
-        return false;
-      }
-    },
-    [accountActions]
-  );
-
-  const handleGetDerivedKey = useCallback(async (): Promise<string | null> => {
-    try {
-      const keyCache = await getStashItem<DerivedKeyCache>('derived_key_cache');
-      return keyCache ? JSON.stringify(keyCache) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-
   const handleRemoveAllAccountsFromLock = useCallback(async () => {
-    await setEnableBiometric(false);
+    await disarmBiometric();
     await accountActions.removeAllAccounts();
     router.replace('/(auth)');
-  }, [accountActions, router, setEnableBiometric]);
+  }, [accountActions, router, disarmBiometric]);
 
   const lockBiometricConfig = React.useMemo(
     () => ({
-      state: biometricState,
-      authenticateWithBiometric,
-      storeKeyForBiometric,
-      enableBiometric,
-      refreshState: refreshBiometricState,
+      available: biometricAvailable,
+      armed: biometricArmed,
+      kind: biometricKind,
+      needsReArm: biometricNeedsReArm,
+      unlock: biometricUnlock,
+      refresh: refreshBiometricState,
     }),
     [
-      biometricState,
-      authenticateWithBiometric,
-      storeKeyForBiometric,
-      enableBiometric,
+      biometricAvailable,
+      biometricArmed,
+      biometricKind,
+      biometricNeedsReArm,
+      biometricUnlock,
       refreshBiometricState,
     ]
   );
@@ -233,8 +209,6 @@ export default function AppLayout() {
               <LockContent
                 locked={accountState.locked}
                 onUnlock={handleLockUnlock}
-                onUnlockWithKey={handleLockUnlockWithKey}
-                onGetDerivedKey={handleGetDerivedKey}
                 onUnlockExited={handleUnlockExited}
                 onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
                 biometric={lockBiometricConfig}

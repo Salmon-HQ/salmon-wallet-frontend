@@ -17,11 +17,16 @@ import { Stack } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { DepthBackground } from '../../src/components/DepthBackground';
 import { ScalesBackground } from '../../src/components/ScalesBackground';
+import { EnrolmentPasswordProvider } from '../../src/contexts/EnrolmentPasswordContext';
 
 export default function AuthLayout() {
   return (
-    <View style={styles.container}>
-      {/*
+    // The password screen sets the password; the biometric screen two steps
+    // later has to seal it. This carries it between them in memory, for the
+    // length of this flow and no longer.
+    <EnrolmentPasswordProvider>
+      <View style={styles.container}>
+        {/*
         The same water the rest of the app stands in, mounted once for the
         whole flow rather than screen by screen — the diagonal onboarding
         gradient this replaces was a ground only onboarding had, which is
@@ -36,13 +41,13 @@ export default function AuthLayout() {
         birth, so it stands in the same water as every other screen here —
         welcome, password, biometric, consent, success.
       */}
-      <DepthBackground />
-      <ScalesBackground variant="deepField" />
-      <Stack
-        screenOptions={{
-          // Hide headers - we handle our own back buttons
-          headerShown: false,
-          /*
+        <DepthBackground />
+        <ScalesBackground variant="deepField" />
+        <Stack
+          screenOptions={{
+            // Hide headers - we handle our own back buttons
+            headerShown: false,
+            /*
             The navigator does not animate. The content does.
 
             `none` used to mean "no transition between onboarding steps", for
@@ -71,23 +76,23 @@ export default function AuthLayout() {
             navigator's instant cut (a detached screen has no frame to sink
             through); see DESIGN.md §The sink and the float.
           */
-          animation: 'none',
-          // Prevent gesture back on certain screens (handled per-screen)
-          gestureEnabled: true,
-          // Transparent background to show gradient
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      >
-        {/* Welcome screen - entry point */}
-        <Stack.Screen
-          name="index"
-          options={{
-            // Can't go back from welcome
-            gestureEnabled: false,
+            animation: 'none',
+            // Prevent gesture back on certain screens (handled per-screen)
+            gestureEnabled: true,
+            // Transparent background to show gradient
+            contentStyle: { backgroundColor: 'transparent' },
           }}
-        />
+        >
+          {/* Welcome screen - entry point */}
+          <Stack.Screen
+            name="index"
+            options={{
+              // Can't go back from welcome
+              gestureEnabled: false,
+            }}
+          />
 
-        {/*
+          {/*
           `recover`, `seed-warning` and `create` inherit
           `gestureEnabled: true`. That is correct: backing out of any of them
           returns towards the welcome screen with no key material written yet,
@@ -95,64 +100,65 @@ export default function AuthLayout() {
           path.
         */}
 
-        {/* Recover wallet with seed phrase */}
-        <Stack.Screen name="recover" />
+          {/* Recover wallet with seed phrase */}
+          <Stack.Screen name="recover" />
 
-        {/*
+          {/*
           What losing or leaking the phrase costs, as a step of its own rather
           than as copy sharing a screen with the phrase. A warning that costs
           a step reads as a gate; one that shares a screen reads as
           boilerplate.
         */}
-        <Stack.Screen name="seed-warning" />
+          <Stack.Screen name="seed-warning" />
 
-        {/* Show and confirm the recovery phrase */}
-        <Stack.Screen name="create" />
+          {/* Show and confirm the recovery phrase */}
+          <Stack.Screen name="create" />
 
-        {/* Set password */}
-        <Stack.Screen
-          name="password"
-          options={{
-            // Deliberate, and load-bearing: `create` calls `generateMnemonic()`
-            // fresh every time its start button is pressed. Swiping back here
-            // and forward again would hand the user a second seed phrase while
-            // the first one is already stashed for the vault write — a wallet
-            // whose recovery phrase was never shown. Do not enable.
-            gestureEnabled: false,
-          }}
-        />
+          {/* Set password */}
+          <Stack.Screen
+            name="password"
+            options={{
+              // Deliberate, and load-bearing: `create` calls `generateMnemonic()`
+              // fresh every time its start button is pressed. Swiping back here
+              // and forward again would hand the user a second seed phrase while
+              // the first one is already stashed for the vault write — a wallet
+              // whose recovery phrase was never shown. Do not enable.
+              gestureEnabled: false,
+            }}
+          />
 
-        {/*
+          {/*
           Everything below runs *after* the vault has been written. Going back
           would land the user on password entry for a wallet that already
           exists, so the gesture stays off on all three.
         */}
 
-        {/* Biometric setup prompt */}
-        <Stack.Screen
-          name="biometric-setup"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
+          {/* Biometric setup prompt */}
+          <Stack.Screen
+            name="biometric-setup"
+            options={{
+              gestureEnabled: false,
+            }}
+          />
 
-        {/* Success confirmation */}
-        <Stack.Screen
-          name="success"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
+          {/* Success confirmation */}
+          <Stack.Screen
+            name="success"
+            options={{
+              gestureEnabled: false,
+            }}
+          />
 
-        {/* First-run anonymous-analytics consent (final onboarding step) */}
-        <Stack.Screen
-          name="analytics-consent"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
-      </Stack>
-    </View>
+          {/* First-run anonymous-analytics consent (final onboarding step) */}
+          <Stack.Screen
+            name="analytics-consent"
+            options={{
+              gestureEnabled: false,
+            }}
+          />
+        </Stack>
+      </View>
+    </EnrolmentPasswordProvider>
   );
 }
 

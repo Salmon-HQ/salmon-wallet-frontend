@@ -63,7 +63,7 @@ import {
 } from '../../../src/components';
 import { useDeveloperModeSettings } from '../../../src/contexts/DeveloperModeContext';
 import { useLanguage } from '../../../src/i18n';
-import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
+import { useBiometric } from '../../../src/contexts/BiometricContext';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 
 /** The leading well every settings row carries. */
@@ -164,7 +164,7 @@ export default function SettingsScreenIndex() {
   const { currentLanguage } = useLanguage();
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
-  const { setEnableBiometric } = useBiometricAuth();
+  const { disarm: disarmBiometric } = useBiometric();
 
   const appearanceLabels: Record<typeof appearancePreference, string> = useMemo(
     () => ({
@@ -203,7 +203,7 @@ export default function SettingsScreenIndex() {
             if (removing) return;
             setRemoving(true);
             try {
-              await setEnableBiometric(false);
+              await disarmBiometric();
               await accountActions.removeAllAccounts();
               router.replace('/(auth)');
             } catch (error) {
@@ -216,7 +216,7 @@ export default function SettingsScreenIndex() {
         },
       ]
     );
-  }, [accountActions, removing, router, setEnableBiometric, t]);
+  }, [accountActions, removing, router, disarmBiometric, t]);
 
   const handleRemoveWallet = useCallback(() => {
     const currentAccount = activeAccount;

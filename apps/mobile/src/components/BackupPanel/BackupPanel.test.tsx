@@ -171,13 +171,13 @@ describe('BackupPanel', () => {
   });
 
   it('takes the biometric prompt as the equivalent of the password when it is available', async () => {
-    const authenticateWithBiometric = jest.fn(async () => 'cached-key');
+    const verifyBiometric = jest.fn(async () => true);
 
     render(
       <BackupPanel
         onBack={jest.fn()}
         biometricAvailable
-        authenticateWithBiometric={authenticateWithBiometric}
+        verifyBiometric={verifyBiometric}
       />
     );
 
@@ -186,7 +186,7 @@ describe('BackupPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('alpha')).toBeTruthy();
     });
-    expect(authenticateWithBiometric).toHaveBeenCalledTimes(1);
+    expect(verifyBiometric).toHaveBeenCalledTimes(1);
     expect(mockCheckPassword).not.toHaveBeenCalled();
   });
 });

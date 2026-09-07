@@ -127,7 +127,7 @@ function renderPanel(overrides: Record<string, any> = {}) {
       activeAccount={{} as any}
       onBack={jest.fn()}
       biometricAvailable={false}
-      authenticateWithBiometric={jest.fn(async () => null)}
+      verifyBiometric={jest.fn(async () => false)}
       {...overrides}
     />
   );
@@ -173,15 +173,15 @@ describe('PrivateKeyPanel', () => {
   });
 
   it('takes the biometric prompt as the equivalent of the password when it is available', async () => {
-    const authenticateWithBiometric = jest.fn(async () => 'cached-key');
-    renderPanel({ biometricAvailable: true, authenticateWithBiometric });
+    const verifyBiometric = jest.fn(async () => true);
+    renderPanel({ biometricAvailable: true, verifyBiometric });
 
     fireEvent.press(screen.getByTestId('private-key-reveal-overlay-0'));
 
     await waitFor(() => {
       expect(screen.getByText(FAKE_PRIVATE_KEY)).toBeTruthy();
     });
-    expect(authenticateWithBiometric).toHaveBeenCalledTimes(1);
+    expect(verifyBiometric).toHaveBeenCalledTimes(1);
     expect(mockCheckPassword).not.toHaveBeenCalled();
   });
 

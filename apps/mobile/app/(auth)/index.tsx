@@ -1,21 +1,16 @@
 /**
  * WelcomeScreen - Onboarding entry point
  *
- * This screen is displayed when the user first opens the app or when
- * they need to create or recover a wallet. It provides options to
- * create a new account or recover an existing one.
- *
- * If the user has existing accounts stored, it also shows an option
- * to access them via the lock screen.
+ * Reached only when no wallet exists on the device. A returning user is
+ * routed straight into `(app)`, where the lock overlay is their first screen;
+ * this screen used to carry a text link back to it, which was the only way
+ * into their own funds when the router left them stranded here.
  *
  * Composed on the onboarding slot grid. The brand speaks in full here (owner,
  * 2026-08-18, superseding "only the fish"): the fish in `mark`, the wordmark
  * in `title` — its pinned gap is the grid's own fish→title air, the same
  * distance success keeps to "Congratulations!" — and the slogan in
  * `description`, so nothing below the pair moves.
- * The third action, offered only when accounts already exist, is a text
- * affordance in `assist`: the reserved `secondary` band holds one control, and
- * a third button would be the one place in the flow where the grid overflows.
  */
 
 import {
@@ -24,7 +19,6 @@ import {
   lineHeight,
   onboardingIdentityGridFull,
   s,
-  useAccountsContext,
   type Semantic,
 } from '@salmon/shared';
 import {
@@ -32,7 +26,6 @@ import {
   OnboardingLayout,
   PrimaryButton,
   SecondaryButton,
-  TextButton,
   Wordmark,
 } from '../../src/components';
 import { useThemedStyles } from '../../src/theme/useThemedStyles';
@@ -50,10 +43,6 @@ export default function WelcomeScreen() {
   const { t } = useTranslation();
   const { accent } = useSemantic();
   const styles = useThemedStyles(stylesFor);
-  const [state, actions] = useAccountsContext();
-
-  // Check if there are existing accounts stored
-  const hasAccounts = state.accounts && state.accounts.length > 0;
 
   /**
    * Navigate to account creation flow
@@ -67,15 +56,6 @@ export default function WelcomeScreen() {
    */
   const handleRecoverAccount = () => {
     router.push('/(auth)/recover');
-  };
-
-  /**
-   * Lock accounts and navigate to main app where the lock overlay
-   * lock state will show.
-   */
-  const handleAccessExistingAccount = async () => {
-    await actions.lockAccounts();
-    router.replace('/(app)/(tabs)');
   };
 
   return (
@@ -111,13 +91,6 @@ export default function WelcomeScreen() {
         <Text style={styles.slogan} testID="welcome-slogan">
           Open code. Open ownership.
         </Text>
-      }
-      assist={
-        hasAccounts ? (
-          <TextButton onPress={handleAccessExistingAccount} testID="select-access-existing-button">
-            {t('wallet.access_existing_account')}
-          </TextButton>
-        ) : undefined
       }
       secondary={
         <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
