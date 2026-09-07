@@ -4,6 +4,20 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## Unreleased
 
+### mobile
+
+- Face ID unlock works again, and it is the same unlock the password takes. The keychain used to hold a session key tied to the vault, which a password change or a key-derivation upgrade silently orphaned — the switch still read "on" with nothing behind it. It now holds a random key with the password sealed under it, so nothing the wallet does to itself can break the enrolment.
+- A Face ID prompt you dismiss no longer costs you the enrolment, and one the system destroys (a re-enrolment, a new fingerprint) now says so and points at where to turn it back on, instead of failing silently.
+- The unlock wait no longer stutters: the wave used to be restarted from the beginning by any relayout behind it — the keyboard leaving, the Face ID sheet dismissing — so it went blank for about a second, twice, before settling.
+- Unlocking no longer plays the same arrival twice. The screen behind the lock used to appear finished for one frame and only then float in.
+- A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
+- Updates are checked at launch and applied before the app opens.
+
+### extension
+
+- Unlocking now caches the session key it was always meant to cache: the lock page was swapped out the instant the password was accepted, which took the step that stored it with it.
+- The unlock wave finishes instead of being cut, and a failed send lets its wait leave.
+
 ## mobile 1.1.0 — 2026-09-03 — the redesign
 
 - The whole app is redrawn: Home, Wallets, Activity, Send in four steps, token and NFT detail, Settings, onboarding and lock.
