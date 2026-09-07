@@ -104,11 +104,14 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // last wave (useWaitExit), and only once the water is calm does the receipt
   // mount, so the receipt arrives exactly once — never over an unconfirmed
   // transaction, and never twice.
+  // `held` already means "committed, or still leaving", so it IS the render
+  // condition. Gating on the step as well collapsed the branch in the same
+  // render a swap failed: `visible={false}` was never committed, the exit
+  // effect never ran, the front was cut mid-crossing, and `onWaveGone` never
+  // fired — leaving `useWaitExit` stuck with `held` true for the life of the
+  // flow. The input step renders over the wait, so its ebb plays out of sight
+  // and the error surfaces there as before (spec 031 §4).
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
-  // Render the wave while the outcome is pending, and keep it through its own
-  // exit on the way to the receipt. A failure is the exception: the flow cuts
-  // back to input (the error surfaces there), so the wave is not held.
-  const showWave = isCommitted || (isWaveHeld && logic.step === 'success');
 
   // Step changes speak the sink and the float: the outgoing step sinks as its
   // light goes, the incoming one floats up into place. The ground under them —
@@ -283,7 +286,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               undelayed float — a second delay here would double-count the
               beat. It holds while the transaction is in flight and leaves on
               its own last wave; the receipt below waits for that report. */}
-          {showWave && (
+          {isWaveHeld && (
             <Animated.View style={styles.step} entering={taskStepEntering}>
               <LoadingScreen
                 visible={isCommitted}

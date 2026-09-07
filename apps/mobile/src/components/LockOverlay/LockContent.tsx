@@ -638,6 +638,12 @@ export function LockContent({
         tipInterval={3000}
         onExited={handleWaitExited}
         onReady={handleWaitReady}
+        /* The one wait in the app that does not surface the shell. This one
+           sits inside an overlay that outlives it by a beat, so surfacing here
+           floated Home while it was still covered — and the overlay then left
+           on content that had already arrived. The surfacing belongs to the
+           overlay's release; see `(app)/_layout.tsx`. */
+        surfaces={false}
       />
     </>
   );

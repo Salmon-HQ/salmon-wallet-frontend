@@ -64,13 +64,14 @@ export function TaskChromeProvider({
   children: React.ReactNode;
   /**
    * An EXTERNAL bump, added to the count this provider owns. The app layout
-   * uses it for the surfacing no wait reports: a biometric unlock flips
-   * `locked` with no wait on screen, so nothing would call `surface()`.
+   * uses it for the surfacing the lock's own wait must not report: that wait
+   * sits inside an overlay that outlives it by a beat, so it passes
+   * `surfaces={false}` and the overlay's release bumps this instead.
    *
-   * One count, two channels. A password unlock crosses both — the wait's
-   * `surface()` first, the overlay's prop bump one beat later — which costs
-   * one discarded remount under the still-opaque overlay and leaves the
-   * visible float where it belongs, on the overlay leaving.
+   * One count, and exactly one channel per surfacing. Both firing was the
+   * unlock's double float: Home remounted once under the still-opaque
+   * overlay and again as it left, so the float the user saw began a beat
+   * after the lock screen had already gone.
    */
   surfaceKey?: number;
 }) {

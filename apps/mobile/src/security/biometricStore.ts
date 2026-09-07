@@ -34,6 +34,7 @@ import {
   type SealedPassword,
 } from '@salmon/shared';
 import i18n from 'i18next';
+import { Platform } from 'react-native';
 
 import * as LocalAuthentication from '../../utils/localAuthentication';
 import * as SecureStore from '../../utils/secureStore';
@@ -103,6 +104,34 @@ function isCancellation(error: unknown): boolean {
   );
 }
 
+/**
+ * The messages Android throws for "the sensor cannot answer right now".
+ *
+ * iOS reports these conditions by resolving `null`, which the caller below
+ * already reads as `unavailable`. Android does not: `AuthenticationHelper`'s
+ * `assertBiometricsSupport()` (expo-secure-store 55) *throws* an
+ * `AuthenticationException` carrying one of these strings, so without this
+ * they landed in the `failed` branch and put a red error on the lock screen
+ * for a device that simply has nothing enrolled. Matched on the message
+ * because the module ships no error codes.
+ *
+ * Only the non-destructive direction is at stake: nothing is deleted on a
+ * thrown error either way, so the worst a miss costs is the wrong wording.
+ */
+const UNAVAILABLE_MESSAGES = [
+  'no hardware available',
+  'no biometrics are currently enrolled',
+  'an update is required',
+  'biometric authentication is unsupported',
+  'requires android api 23',
+  'not in the foreground',
+] as const;
+
+function isUnavailable(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  return UNAVAILABLE_MESSAGES.some((fragment) => message.includes(fragment));
+}
+
 async function readSeal(): Promise<SealedPassword | null> {
   try {
     const raw = await SecureStore.getItemAsync(SEAL_ITEM, { keychainService: SEAL_SERVICE });
@@ -158,23 +187,28 @@ export async function probe(): Promise<BiometricCapabilities> {
 /**
  * Seals `password` behind a fresh wrapping key.
  *
- * The explicit prompt before the write is deliberate: iOS evaluates a keychain
- * access control on read and update, never on create, so writing a protected
- * item succeeds silently. Without this the user would enable Face ID and never
- * be asked for it — and would not learn the enrolment was broken until the
- * next launch.
+ * **iOS only** raises an explicit prompt first, and that asymmetry is the
+ * platforms', not ours. iOS evaluates a keychain access control on read and
+ * update, never on create, so `SecItemAdd` of a protected item succeeds
+ * silently — without the prompt the user would switch Face ID on, never be
+ * asked for it, and not learn the enrolment was broken until the next launch.
+ * Android's `AESEncryptor.createEncryptItem` calls `authenticateCipher` on the
+ * *write* path, so the OS already asks; prompting first as well asked the user
+ * for their fingerprint twice to turn one switch on.
  */
 export async function arm(password: string): Promise<BiometricArmResult> {
   try {
-    const confirmed = await LocalAuthentication.authenticateAsync({
-      promptMessage: i18n.t('lock.biometric_enroll_prompt'),
-      disableDeviceFallback: true,
-    });
+    if (Platform.OS === 'ios') {
+      const confirmed = await LocalAuthentication.authenticateAsync({
+        promptMessage: i18n.t('lock.biometric_enroll_prompt'),
+        disableDeviceFallback: true,
+      });
 
-    if (!confirmed.success) {
-      return confirmed.error === 'user_cancel' || confirmed.error === 'system_cancel'
-        ? 'cancelled'
-        : 'failed';
+      if (!confirmed.success) {
+        return confirmed.error === 'user_cancel' || confirmed.error === 'system_cancel'
+          ? 'cancelled'
+          : 'failed';
+      }
     }
 
     const wrapKey = generateWrapKey();
@@ -238,6 +272,7 @@ export async function unlock(): Promise<BiometricUnlockResult> {
     });
   } catch (error) {
     if (isCancellation(error)) return { status: 'cancelled' };
+    if (isUnavailable(error)) return { status: 'unavailable' };
     console.warn('[biometric] unlock could not read the wrapping key:', error);
     return { status: 'failed', reason: error instanceof Error ? error.message : 'unknown' };
   }

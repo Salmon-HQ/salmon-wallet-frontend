@@ -56,6 +56,9 @@ vi.mock('@salmon/ui', () => ({
   // The popup's first frame names the water column itself, so the mock has to
   // carry the host class the real barrel exports.
   waterColumnHost: 'water-column-host',
+  // The popup publishes the surfacing itself when the lock's overlay is
+  // released — the lock's own wait opts out of it (spec 031).
+  useTaskChrome: () => ({ surface: () => {} }),
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({

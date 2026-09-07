@@ -51,6 +51,24 @@ const USDC_TOKEN = {
   uiAmount: 1,
 };
 
+/** The last props the send layout handed the wave wait. */
+let waitProps: { visible: boolean } | null = null;
+
+// The wait's own entry and exit have their own suite; what this one asserts is
+// the RENDER CONDITION around it — that the layout keeps it rendered while it
+// leaves, rather than unmounting it mid-wave (spec 031 §4).
+jest.mock('../../src/components', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    ...jest.requireActual('../../src/components'),
+    LoadingScreen: (props: { visible: boolean }) => {
+      waitProps = props;
+      return ReactActual.createElement(View, { testID: 'send-wait' });
+    },
+  };
+});
+
 const mockFlow = {
   blockchain: 'solana',
   networkId: 'solana-mainnet',
@@ -141,7 +159,11 @@ jest.mock('@salmon/shared', () => ({
   }),
   useTransactions: () => ({ transactions: [] }),
   useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (v: number) => String(v) }],
-  useWaitExit: (active: boolean) => ({ held: active, onExited: jest.fn() }),
+  // The REAL hook. Stubbed as `held === active` it collapsed the very
+  // distinction the wait's exit is built on — "committed" against "committed,
+  // or still leaving" — so a wait that was cut instead of left looked
+  // identical to one that left properly (spec 031 §4).
+  useWaitExit: jest.requireActual('@salmon/shared/src/hooks/useWaitExit').useWaitExit,
   useBalance: () => ({ tokens: [], loading: false }),
   useSendTransaction: () => mockFlow.sendHook,
   getBlockchainFromNetworkId: () => 'solana',
@@ -252,6 +274,9 @@ beforeEach(() => {
   mockFlow.liveBalance = 2.5;
   mockFlow.nativeBalance = 2.5;
   mockFlow.estimatedFee = null;
+  mockFlow.sendHook.status = 'idle';
+  mockFlow.sendHook.settling = false;
+  waitProps = null;
 });
 
 describe('the recipient screen — 04A and 04B', () => {
@@ -503,5 +528,32 @@ describe('the route guard', () => {
     render(<SendLayout />);
 
     expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  /**
+   * A wait is LEFT, never cut — whatever ends it (spec 031 §4).
+   *
+   * The render condition used to be `isCommitted || (isWaveHeld && !!txId)`,
+   * which on a failure went false in the same render `isCommitted` did: the
+   * wait was unmounted outright, `visible={false}` was never committed, the
+   * exit effect never ran, the front was cut mid-crossing, and `onExited`
+   * never fired — so `useWaitExit` stayed held for the life of the flow and a
+   * retry entered on stale state.
+   */
+  it('lets the wait leave when a send fails, instead of cutting it', () => {
+    mockFlow.sendHook.status = 'sending';
+    const { rerender } = render(<SendLayout />);
+
+    expect(waitProps).toEqual(expect.objectContaining({ visible: true }));
+
+    // The send fails: no txId, and the flow drops back to its own surface.
+    mockFlow.sendHook.status = 'failed';
+    waitProps = null;
+    rerender(<SendLayout />);
+
+    // Still rendered, now leaving. `visible={false}` is what STARTS the exit,
+    // so it has to be committed — unmounting here cut the wave instead, and
+    // `onExited` never came back to unstick the hook.
+    expect(waitProps).toEqual(expect.objectContaining({ visible: false }));
   });
 });

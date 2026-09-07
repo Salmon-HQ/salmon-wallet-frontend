@@ -78,8 +78,14 @@ function SendPassage() {
   // sheet spanned it: gated on `isSending` alone it ended at the signature and
   // the receipt raised a second wait of its own for the indexer.
   const isCommitted = isSending || sendHook.settling;
+  // `held` already means "committed, or still leaving", so it IS the render
+  // condition. Gating on `txId` as well collapsed the branch in the same
+  // render a send failed: `visible={false}` was never committed, the exit
+  // effect never ran, the front was cut mid-crossing, and `onWaveGone` never
+  // fired — leaving `useWaitExit` stuck with `held` true for the life of the
+  // flow, so a retry entered on stale state. The failure surface renders over
+  // the wait, so its ebb plays out of sight (spec 031 §4).
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
-  const showWait = isCommitted || (isWaveHeld && !!txId);
 
   const summary =
     token && recipient
@@ -109,7 +115,7 @@ function SendPassage() {
     <>
       {/* The wave wait, in its own window above every piece of chrome. It
           leaves on its own last wave, and the receipt waits for that report. */}
-      {showWait && (
+      {isWaveHeld && (
         <LoadingScreen
           fullScreen
           visible={isCommitted}

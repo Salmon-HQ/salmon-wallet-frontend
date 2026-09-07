@@ -53,7 +53,7 @@
  *   behind it has already finished. The floor is spent with the crest still
  *   looping, and only then is the exit planned — see the visibility effect.
  */
-import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { keyframes } from '@emotion/react';
@@ -537,6 +537,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   waves = true,
   bedrock = false,
   onExited,
+  surfaces = true,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const { accent, text, water } = useSemantic();
@@ -554,6 +555,13 @@ export const LoadingScreen = memo(function LoadingScreen({
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [tipFading, setTipFading] = useState(false);
   const [isVisible, setIsVisible] = useState(visible);
+  /**
+   * Committed by the render that asked for it, not one commit later — the
+   * same render-phase set the native twin uses. Callers that keep the wait
+   * mounted at `visible={false}` (the lock, the create-password step) used to
+   * wait an extra commit for the overlay to appear.
+   */
+  if (visible && !isVisible) setIsVisible(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
   // The closing wave is in flight: the loop is cancelled, every rider is
   // leaving on its own delay, and the ground is holding until the front is off
@@ -582,19 +590,41 @@ export const LoadingScreen = memo(function LoadingScreen({
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
   // Every wait that ends is a surfacing: the shell floats its content back
-  // when the water clears, and no call site has to remember to say so.
-  const { surface } = useTaskChrome();
+  // when the water clears, and no call site has to remember to say so. The
+  // lock screen opts out — see `surfaces`: its wait sits inside an overlay
+  // that outlives it, so the surfacing belongs to the overlay's release.
+  const { surface: surfaceShell } = useTaskChrome();
+  const surface = useCallback(() => {
+    if (surfaces) surfaceShell();
+  }, [surfaces, surfaceShell]);
   const onExitedRef = useRef(onExited);
   useEffect(() => {
     onExitedRef.current = onExited;
   }, [onExited]);
 
+  /**
+   * True from the moment the exit is planned until the wait shows again, so an
+   * exit is planned exactly once however many times this effect re-enters.
+   *
+   * The cleanup below clears both timers on ANY dependency change. Re-planning
+   * the floor is idempotent — `floorMs` is computed from the absolute
+   * `shownAtRef` — but re-planning after `planExit` has armed `exitTimer` is
+   * not: it recomputes `elapsedMs` and `holdMs` from a fresh `Date.now()`,
+   * rewrites `--wave-hold` mid-flight and re-arms the timer, so `onExited`
+   * arrives late by up to a whole `exitMs`. Latent today, since none of the
+   * dependencies can currently change during an exit; the native twin has
+   * carried this guard since it was written (spec 031 §6).
+   */
+  const exitArmedRef = useRef(false);
+
   // Handle visibility changes
   useEffect(() => {
     if (visible) {
-      setIsVisible(true);
+      // `isVisible` is set in the render phase — by the time this runs the
+      // overlay is already committed.
       setIsFadingOut(false);
       setIsClosing(false);
+      exitArmedRef.current = false;
       startedAtRef.current = Date.now() + CONTENT_LANDS_MS;
       shownAtRef.current = Date.now();
       return undefined;
@@ -627,6 +657,7 @@ export const LoadingScreen = memo(function LoadingScreen({
     // nothing yet: there is no front on the screen to wait out, which is the
     // same answer the plan gives for calm water.
     const planExit = () => {
+      exitArmedRef.current = true;
       const elapsedMs = startedAtRef.current ? Date.now() - startedAtRef.current : 0;
       const preImpact = elapsedMs < 0;
       const { holdMs, exitMs } = planWavefrontExit(
@@ -665,6 +696,10 @@ export const LoadingScreen = memo(function LoadingScreen({
       }, durationMs.slow);
     };
 
+    // Already leaving: the timers this effect's cleanup just cleared belong to
+    // an exit that is mid-flight, and re-planning it would restart the ebb.
+    if (exitArmedRef.current) return undefined;
+
     // The floor is a plain hold: the wait is simply still up, doing what it was
     // already doing, and the exit is planned when it runs out.
     let floorTimer: ReturnType<typeof setTimeout> | undefined;
@@ -675,7 +710,14 @@ export const LoadingScreen = memo(function LoadingScreen({
       if (floorTimer) clearTimeout(floorTimer);
       if (exitTimer) clearTimeout(exitTimer);
     };
-  }, [visible, isVisible, riding, isReduceMotionEnabled, surface]);
+    // `isVisible` is deliberately not a dependency: this effect SETS it, so
+    // listing it made every entry run twice, one commit apart, writing
+    // `startedAtRef` and `shownAtRef` a second time and moving the floor's
+    // origin forward by a frame. It is read at the guard above from the
+    // closure of the render where `visible` flipped false, where it is
+    // correctly still true. See spec 031 §5.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, riding, isReduceMotionEnabled, surface]);
 
   /**
    * The measurement pass — one read, and the only reason the front crosses in

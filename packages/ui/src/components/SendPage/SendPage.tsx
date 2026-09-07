@@ -109,8 +109,14 @@ export function SendPage({
 
   // One wait spans the whole commit, signature through settle.
   const isCommitted = isSending || sendHook.settling;
+  // `held` already means "committed, or still leaving", so it IS the render
+  // condition — twin of the native send. Gating on `txId` as well collapsed
+  // the branch in the same render a send failed, so `visible={false}` was
+  // never committed, the exit never ran, and `onWaveGone` never fired, leaving
+  // this hook stuck with `held` true for the life of the flow. The failure
+  // panel below renders over the wait, so its ebb plays out of sight
+  // (spec 031 §4).
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
-  const showWait = isCommitted || (isWaveHeld && !!txId);
 
   // The receipt waits for the wave's report, then takes the review's place.
   const navigatedRef = useRef(false);
@@ -260,7 +266,7 @@ export function SendPage({
       </SinkFloat>
 
       {/* The wave wait, in its own window above every piece of chrome. */}
-      {showWait && (
+      {isWaveHeld && (
         <LoadingScreen
           visible={isCommitted}
           waves
