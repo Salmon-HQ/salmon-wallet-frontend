@@ -65,6 +65,21 @@ export default function AppLayout() {
   );
 
   const isLocked = accountState.locked || unlockHeld;
+  // The screen surfaces when the OVERLAY leaves — not when the wait inside it
+  // does. Home keys its content on the count, so the float plays on water the
+  // user can actually see.
+  //
+  // This is the only publisher on the unlock path: the lock's `LoadingScreen`
+  // passes `surfaces={false}` precisely because its departure is one beat too
+  // early. It leaves, the water column holds for `FLOAT_DELAY_MS` with nothing
+  // on it, and then the overlay goes and Home floats up through the same
+  // ground it was standing on all along — the passage the owner asked for
+  // (2026-09-07), and the one every other step swap in the app already
+  // speaks. Every wait with no overlay over it still surfaces itself.
+  const [surfaceKey, setSurfaceKey] = useState(0);
+  useEffect(() => {
+    if (!isLocked) setSurfaceKey((key) => key + 1);
+  }, [isLocked]);
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -128,16 +143,7 @@ export default function AppLayout() {
   );
 
   return (
-    // One publisher for the surfacing, and it is the wait's own exit.
-    // This layout used to add a second count of its own on `!isLocked`, for
-    // "a surfacing no wait reports" — a biometric unlock that flipped `locked`
-    // with nothing on screen. Since the biometric path was rebuilt it takes
-    // the same wait as the typed one, so both channels fired on every unlock,
-    // `FLOAT_DELAY_MS` apart: Home remounted once under the overlay, then
-    // again as it left, and the visible float was the *second* remount's —
-    // a beat of empty water after the gate had already gone. The wait's
-    // `surface()` alone lands the float on the rise.
-    <TaskChromeProvider>
+    <TaskChromeProvider surfaceKey={surfaceKey}>
       <DerivedAccountsProvider>
         {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)

@@ -272,6 +272,7 @@ export function LoadingScreen({
   bottomOffset = 0,
   onExited,
   onReady,
+  surfaces = true,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
@@ -337,8 +338,8 @@ export function LoadingScreen({
   const { surface: surfaceShell } = useTaskChrome();
   const surfaceRef = useRef(surfaceShell);
   useEffect(() => {
-    surfaceRef.current = surfaceShell;
-  }, [surfaceShell]);
+    surfaceRef.current = surfaces ? surfaceShell : () => {};
+  }, [surfaceShell, surfaces]);
   /**
    * When the loop started, so the exit can ask where the front is without
    * reading an animation. The phase is `(now − startedAt) % period`, which is

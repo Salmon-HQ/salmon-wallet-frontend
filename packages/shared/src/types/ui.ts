@@ -173,6 +173,22 @@ export interface LoadingScreenPropsBase {
    * under reduce motion it collapses to `ebb`.
    */
   onExited?: () => void;
+  /**
+   * Whether this wait's departure is the moment the shell surfaces
+   * (default: **true**).
+   *
+   * Almost always it is: a wait ends, the water clears, and the screen behind
+   * it floats back — so `LoadingScreen` calls `surface()` from its own exit
+   * and no call site has to remember to.
+   *
+   * The lock screen is the exception, and the only one. Its wait sits inside
+   * an overlay that OUTLIVES it: the wait leaves, the lock's own water column
+   * holds for a beat, and only then does the overlay go. Surfacing when the
+   * wait left made the screen behind float while it was still covered, so the
+   * gate lifted on content that had already arrived. There the surfacing
+   * belongs to the overlay's release, and the wait opts out.
+   */
+  surfaces?: boolean;
 }
 
 /** @deprecated Read `LoadingScreenPropsBase`. Kept for the existing consumers. */

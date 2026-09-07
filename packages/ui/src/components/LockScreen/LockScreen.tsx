@@ -357,6 +357,10 @@ export function LockScreen({
           showTips
           tipInterval={3000}
           onExited={handleWaitExited}
+          /* The lock's wait outlives itself: the popup holds this page
+             mounted until the wave has left, so the surfacing belongs to
+             that release, not to the wait. Twin of the mobile lock. */
+          surfaces={false}
         />
       )}
     </>

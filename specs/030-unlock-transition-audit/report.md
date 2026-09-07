@@ -37,8 +37,10 @@ complaint 2, stated precisely. The regression is mine, from the biometric
 rebuild; the password path had the same double publisher before it, but the
 overlay was still opaque over the discarded remount.
 
-**Fix**: delete the layout's channel. The wait's `surface()` is the single
-publisher, so the float begins on the same frame the gate starts to lift.
+**Fix**: one channel per surfacing. On the lock path the layout's is the
+correct one — it fires when the overlay actually leaves — so the wait opts out
+with `surfaces={false}` (see 3b). Every wait with no overlay over it keeps
+surfacing itself.
 
 ## Finding 3a — lock → wait: animated, by design
 
@@ -47,16 +49,34 @@ wait rises after its own beat. The ~350 ms of bare water column between them is
 the beat DESIGN.md §Motion prescribes, and the ground never travels, so nothing
 actually blanks. Left alone.
 
-## Finding 3b — wait → Home: a genuine hard cut
+## Finding 3b — wait → Home: the hand-off happened under the overlay
 
-`LockOverlay` was a plain `View`. When `isLocked` went false the whole plane
-vanished on one frame. DESIGN.md line 939 still promises "the gate's rise
-(`rise`, 420 ms)" as the last stage of the unlock passage; it was dropped in
-`34f82080` and never reinstated.
+`LockOverlay` was a plain `View` that vanished on one frame, and — worse — the
+float behind it had already played. The surfacing fired from the wait's exit,
+`FLOAT_DELAY_MS` before the overlay's release, so Home floated up while it was
+still covered and the overlay then left on content that had already arrived.
 
-**Fix**: `LockOverlay` is an `Animated.View` with an `exiting` that travels the
-plane one screen height up on `curve.sink` over `motionMs.rise`. Opaque, no
-fade — a gate leaves, it does not become transparent. Cut under reduce motion.
+A "gate's rise" on the overlay was tried first and **rejected by the owner**
+(2026-09-07): the gate is not the vocabulary this app speaks any more, and the
+components already own the verb — inventing a second animation on top of the
+float they already have is exactly the wrong answer.
+
+**Fix**: move the surfacing, not the animation. The lock's `LoadingScreen` is
+the one wait in the app that passes `surfaces={false}`, because it sits inside
+an overlay that outlives it; `(app)/_layout.tsx` bumps the count when the
+overlay is released instead. The passage is then what was asked for, and every
+part of it already existed:
+
+```
+the wait sinks (LoadingScreen's own ebb)
+  → FLOAT_DELAY_MS of bare water column, nothing on it
+  → the overlay goes — invisible, its ground and Home's are the same water
+  → Home's content and header float up together, the float they already had
+```
+
+The overlay's ground (`depth.column` + `DepthBackground` + `ScalesBackground`)
+is the same water the tab shell paints, so its departure has nothing to
+animate: there is no cut to hide, only a float to uncover.
 
 ## Finding 4 — every lock raised a phantom surfacing (unreported)
 

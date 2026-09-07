@@ -53,7 +53,7 @@
  *   behind it has already finished. The floor is spent with the crest still
  *   looping, and only then is the exit planned — see the visibility effect.
  */
-import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { keyframes } from '@emotion/react';
@@ -537,6 +537,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   waves = true,
   bedrock = false,
   onExited,
+  surfaces = true,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
   const { accent, text, water } = useSemantic();
@@ -582,8 +583,13 @@ export const LoadingScreen = memo(function LoadingScreen({
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
   // Every wait that ends is a surfacing: the shell floats its content back
-  // when the water clears, and no call site has to remember to say so.
-  const { surface } = useTaskChrome();
+  // when the water clears, and no call site has to remember to say so. The
+  // lock screen opts out — see `surfaces`: its wait sits inside an overlay
+  // that outlives it, so the surfacing belongs to the overlay's release.
+  const { surface: surfaceShell } = useTaskChrome();
+  const surface = useCallback(() => {
+    if (surfaces) surfaceShell();
+  }, [surfaces, surfaceShell]);
   const onExitedRef = useRef(onExited);
   useEffect(() => {
     onExitedRef.current = onExited;
