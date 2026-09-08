@@ -45,6 +45,18 @@ export function DAppTransactionApprovalPage({
       request,
     });
 
+  // The request may name a network; the popup signs and sends on the wallet's
+  // active one and never switches on a site's word. A mismatch is surfaced and
+  // refused here rather than failing later as an opaque send error.
+  const requestedNetwork = request.params?.network;
+  const networkMismatch = useMemo(
+    () =>
+      requestedNetwork && networkId && requestedNetwork !== networkId
+        ? { requested: requestedNetwork, active: networkId }
+        : null,
+    [networkId, requestedNetwork]
+  );
+
   const handleApprove = useCallback(
     () =>
       approve(
@@ -54,12 +66,15 @@ export function DAppTransactionApprovalPage({
             request
           ),
         {
-          guardError:
-            !account || !isSignableSolanaAccount(account) ? 'Solana account not available' : null,
+          guardError: networkMismatch
+            ? `Network mismatch: the request targets ${networkMismatch.requested} but the wallet is on ${networkMismatch.active}`
+            : !account || !isSignableSolanaAccount(account)
+              ? 'Solana account not available'
+              : null,
           failureError: 'Transaction approval failed',
         }
       ),
-    [account, approve, request]
+    [account, approve, networkMismatch, request]
   );
 
   return (
@@ -76,6 +91,7 @@ export function DAppTransactionApprovalPage({
       feePayer={details?.feePayer ?? null}
       recentBlockhash={details?.recentBlockhash ?? null}
       parsingError={parsingError}
+      networkMismatch={networkMismatch}
       disabled={!account || !networkId}
       loading={loading}
       onApprove={handleApprove}

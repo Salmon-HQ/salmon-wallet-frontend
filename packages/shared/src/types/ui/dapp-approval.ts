@@ -72,6 +72,12 @@ export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   feePayer: string | null;
   recentBlockhash: string | null;
   parsingError: string | null;
+  /**
+   * Set when the request names a network other than the one the wallet is
+   * on. The wallet never switches networks on a site's word, so the request
+   * is shown against the active network and cannot be approved.
+   */
+  networkMismatch?: { requested: string; active: string } | null;
 }
 
 export interface TransactionEffectsCardPropsBase {

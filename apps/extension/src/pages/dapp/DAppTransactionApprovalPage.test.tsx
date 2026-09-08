@@ -37,6 +37,11 @@ vi.mock('@salmon/ui', () => ({
       data-effects-kind={String((props.effects as { kind?: string } | null)?.kind ?? '')}
       data-effects-loading={String(props.effectsLoading ?? '')}
       data-disabled={String(props.disabled ?? '')}
+      data-network-mismatch={
+        props.networkMismatch
+          ? `${(props.networkMismatch as { requested: string }).requested}->${(props.networkMismatch as { active: string }).active}`
+          : undefined
+      }
     />
   ),
 }));
@@ -144,5 +149,48 @@ describe('DAppTransactionApprovalPage', () => {
     const { getByTestId } = render(<DAppTransactionApprovalPage {...baseProps} networkId={null} />);
 
     expect(getByTestId('tx-approval-view').dataset.disabled).toBe('true');
+  });
+});
+
+describe('DAppTransactionApprovalPage network mismatch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSummary.mockReturnValue('Sign transaction');
+    mockUseApproval.mockReturnValue({
+      details: null,
+      feeSol: null,
+      parsingError: null,
+      effects: null,
+      effectsLoading: false,
+    });
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+  });
+
+  it('refuses a request built for another network instead of failing at send time', () => {
+    const request = {
+      ...baseProps.request,
+      params: { ...baseProps.request.params, network: 'solana-devnet' },
+    } as typeof baseProps.request;
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} request={request} networkId="solana-mainnet" />
+    );
+
+    expect(getByTestId('tx-approval-view').dataset.networkMismatch).toBe(
+      'solana-devnet->solana-mainnet'
+    );
+  });
+
+  it('accepts a request that names the active network', () => {
+    const request = {
+      ...baseProps.request,
+      params: { ...baseProps.request.params, network: 'solana-mainnet' },
+    } as typeof baseProps.request;
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} request={request} networkId="solana-mainnet" />
+    );
+
+    expect(getByTestId('tx-approval-view').dataset.networkMismatch).toBeUndefined();
   });
 });
