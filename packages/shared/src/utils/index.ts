@@ -14,6 +14,7 @@ export {
   previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
   TransactionLookalikeMessageError,
+  UnsupportedTransactionVersionError,
 } from './dapp-approval';
 export type { SolanaTransactionApprovalDetails } from './dapp-approval';
 

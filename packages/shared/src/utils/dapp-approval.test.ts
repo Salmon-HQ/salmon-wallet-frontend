@@ -8,7 +8,22 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
+import {
+  appendTransactionMessageInstructions,
+  blockhash,
+  compileTransaction,
+  createKeyPairSignerFromPrivateKeyBytes,
+  createTransactionMessage,
+  getTransactionDecoder,
+  getTransactionEncoder,
+  partiallySignTransaction,
+  pipe,
+  setTransactionMessageConfig,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+} from '@solana/kit';
+import { getAddMemoInstruction } from '@solana-program/memo';
+import { getTransferSolInstruction } from '@solana-program/system';
 import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
 import {
@@ -21,6 +36,7 @@ import {
   previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
   TransactionLookalikeMessageError,
+  UnsupportedTransactionVersionError,
 } from './dapp-approval';
 
 vi.mock('../hooks/useAvailableNetworks', () => ({
@@ -572,23 +588,40 @@ describe('isTransactionLookalike', () => {
       'AgABBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cgTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5TtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAwIAAgwCAAAAAQAAAAAAAAADAgECDAIAAAACAAAAAAAAAA==';
     const V0_MESSAGE_B64 =
       'gAIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOU7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgMCAAIMAgAAAAEAAAAAAAAAAwIBAgwCAAAAAgAAAAAAAAAA';
-    // The v0 bytes with the version prefix changed from 0x80 to 0x81.
+    // Canonical v1 (SIMD-0296) message compiled by @solana/kit 8 from the same
+    // fixture, with computeUnitLimit 200_000, loadedAccountsDataSizeLimit 65_536
+    // and priorityFeeLamports 1_000 in its transactionConfig. Regenerate with
+    // `compileTransaction` on a `createTransactionMessage({ version: 1 })` — never
+    // by flipping a byte on the v0 fixture, which is not a v1 message at all.
     const V1_MESSAGE_B64 =
-      'gQIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOU7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgMCAAIMAgAAAAEAAAAAAAAAAwIBAgwCAAAAAgAAAAAAAAAA';
+      'gQIAAQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1yBOXcOqH0XX1ajVGbDTH7My42KkbTuN6Jd9g9bj8mzlO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADoAwAAAAAAAEANAwAAAAEAAwIMAAMCDAAAAgIAAAABAAAAAAAAAAECAgAAAAIAAAAAAAAA';
+    // The same v1 message with no transactionConfig at all — still a transaction.
+    const V1_NO_LIMITS_MESSAGE_B64 =
+      'gQEAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEDiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1ztSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgIMAAABAgAAAAEAAAAAAAAA';
     const TRUNCATED_V0_MESSAGE_B64 = 'gAIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw==';
+    const TRUNCATED_V1_MESSAGE_B64 = 'gQIAAQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+    // The v1 bytes with the version prefix bumped to 0x82: a version this build
+    // does not decode.
+    const V2_MESSAGE_B64 = `gg${V1_MESSAGE_B64.slice(2)}`;
 
     const decode = (base64: string) => new Uint8Array(Buffer.from(base64, 'base64'));
 
     const corpus: [string, string, boolean][] = [
       ['a legacy message', LEGACY_MESSAGE_B64, true],
       ['a v0 message', V0_MESSAGE_B64, true],
-      // A v1-versioned message is NOT detected: VersionedMessage.deserialize rejects
-      // version 1, and Message.from refuses versioned bytes, so the wallet would sign
-      // v1 transaction bytes as a plain message. Theoretical today (no v1 format is
-      // deployed). @solana/kit may accept v1 and flip this to true, which would be a
-      // security improvement — but still a behavior change that needs sign-off.
-      ['a v1 message', V1_MESSAGE_B64, false],
+      // Kit 8 decodes v1, so a v1 transaction can no longer be smuggled through
+      // `signMessage`. Before Kit 8 this was `false` — the wallet would have signed
+      // v1 transaction bytes as a plain message.
+      ['a v1 message', V1_MESSAGE_B64, true],
+      ['a v1 message without resource limits', V1_NO_LIMITS_MESSAGE_B64, true],
       ['a truncated v0 message', TRUNCATED_V0_MESSAGE_B64, false],
+      ['a truncated v1 message', TRUNCATED_V1_MESSAGE_B64, false],
+      // A version this build cannot decode is still refused when the bytes are
+      // not text: a future format must not reopen the smuggling path just because
+      // Kit has not caught up yet. Non-ASCII text starts with a high byte too and
+      // trips the same decoder error, but it is valid UTF-8, so it stays signable.
+      ['a v2 message (unsupported version, binary)', V2_MESSAGE_B64, true],
+      ['non-ASCII UTF-8 text starting with a high byte', 'w6lsIGVzdMOhIGFxdcOt', false],
       ['short random bytes', 'AQIDBAU=', false],
       ['plain UTF-8 text', 'SGVsbG8gZnJvbSBTYWxtb24gV2FsbGV0', false],
       ['empty bytes', '', false],
@@ -651,6 +684,333 @@ describe('approveSolanaSignMessage', () => {
     await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
       TransactionLookalikeMessageError
     );
+  });
+
+  it('throws TransactionLookalikeMessageError for a canonical v1 transaction message', async () => {
+    // Arrange
+    const account = await signingAccount();
+    const data = Array.from((await v1Fixture()).messageBytes);
+
+    // Act & Assert
+    await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
+      TransactionLookalikeMessageError
+    );
+  });
+});
+
+/**
+ * Builds a canonical v1 (SIMD-0296) transaction with @solana/kit: fee payer and
+ * co-signer is seed 1, the wallet's own account is seed 2, both transfer to
+ * seed 3, blockhash '111…'. Same key material as the web3.js fixtures above,
+ * reached through kit because web3.js 1.x cannot build v1.
+ */
+async function v1Fixture(options: { extraMemoBytes?: number; withConfig?: boolean } = {}) {
+  const { extraMemoBytes = 0, withConfig = true } = options;
+  const seedSigner = (seed: number) =>
+    createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(seed), false);
+  const [payer, wallet, destination] = await Promise.all([
+    seedSigner(1),
+    seedSigner(2),
+    seedSigner(3),
+  ]);
+  const lifetime = {
+    blockhash: blockhash('11111111111111111111111111111111'),
+    lastValidBlockHeight: 0n,
+  };
+  const message = pipe(
+    createTransactionMessage({ version: 1 }),
+    (m) => setTransactionMessageFeePayerSigner(payer, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(lifetime, m),
+    (m) =>
+      appendTransactionMessageInstructions(
+        [
+          getTransferSolInstruction({
+            source: payer,
+            destination: destination.address,
+            amount: 1n,
+          }),
+          getTransferSolInstruction({
+            source: wallet,
+            destination: destination.address,
+            amount: 2n,
+          }),
+          ...(extraMemoBytes > 0
+            ? [getAddMemoInstruction({ memo: 'x'.repeat(extraMemoBytes) })]
+            : []),
+        ],
+        m
+      ),
+    (m) =>
+      withConfig
+        ? setTransactionMessageConfig(
+            {
+              computeUnitLimit: 200_000,
+              loadedAccountsDataSizeLimit: 65_536,
+              priorityFeeLamports: 1_000n,
+            },
+            m
+          )
+        : m
+  );
+  const transaction = compileTransaction(message);
+  const partiallySigned = await partiallySignTransaction([payer.keyPair], transaction);
+  return {
+    payer,
+    wallet,
+    messageBytes: new Uint8Array(transaction.messageBytes),
+    encodedMessage: bs58.encode(new Uint8Array(transaction.messageBytes)),
+    /** Wire bytes with the co-signer's (payer's) signature applied and the wallet's slot empty. */
+    partiallySignedWire: new Uint8Array(getTransactionEncoder().encode(partiallySigned)),
+    payerSignature: partiallySigned.signatures[payer.address] as Uint8Array,
+  };
+}
+
+describe('version 1 transactions', () => {
+  const makeAccount = async (rpc: Record<string, unknown> = {}) => ({
+    signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(2), false),
+    getReceiveAddress: () => testKeypair(2).publicKey.toBase58(),
+    getRpc: () => rpc,
+  });
+  const rpcSendTransaction = () => vi.fn().mockReturnValue({ send: async () => 'sig' });
+  const submittedWire = (sendTransaction: ReturnType<typeof vi.fn>) =>
+    new Uint8Array(Buffer.from(sendTransaction.mock.calls[0][0] as string, 'base64'));
+
+  it('reads the v1 resource settings from transactionConfig in the approval details', async () => {
+    const fixture = await v1Fixture();
+
+    const details = await loadSolanaTransactionApprovalDetails(
+      (await makeAccount({
+        getFeeForMessage: () => ({ send: async () => ({ value: 5000n }) }),
+      })) as never,
+      { id: 'v1-details', method: 'signTransaction', params: { message: fixture.encodedMessage } }
+    );
+
+    expect(details).toEqual({
+      feeLamports: 5000,
+      instructionCount: 2,
+      feePayer: testKeypair(1).publicKey.toBase58(),
+      recentBlockhash: '11111111111111111111111111111111',
+      transactionConfig: {
+        computeUnitLimit: 200_000,
+        loadedAccountsDataSizeLimit: 65_536,
+        priorityFeeLamports: 1_000n,
+      },
+    });
+  });
+
+  it('reports an empty transactionConfig for a v1 message that sets no limits', async () => {
+    const fixture = await v1Fixture({ withConfig: false });
+
+    const details = await loadSolanaTransactionApprovalDetails(
+      (await makeAccount({
+        getFeeForMessage: () => ({ send: async () => ({ value: 5000n }) }),
+      })) as never,
+      { id: 'v1-no-limits', method: 'signTransaction', params: { message: fixture.encodedMessage } }
+    );
+
+    // Zero compute units and zero loaded-account bytes, which the cluster will
+    // reject; the wallet reports the truth instead of inventing defaults.
+    expect(details.transactionConfig).toEqual({});
+  });
+
+  it('signs a v1 message and returns a signature that verifies against the exact bytes', async () => {
+    const fixture = await v1Fixture();
+    const account = await makeAccount();
+
+    const result = await approveSolanaTransactionRequest(account as never, {
+      id: 'v1-sign',
+      method: 'signTransaction',
+      params: { message: fixture.encodedMessage },
+    });
+
+    expect('publicKey' in result && 'signature' in result).toBe(true);
+    if (!('publicKey' in result) || !('signature' in result)) return;
+    expect(
+      nacl.sign.detached.verify(
+        fixture.messageBytes,
+        bs58.decode(result.signature),
+        bs58.decode(fixture.wallet.address)
+      )
+    ).toBe(true);
+    expect(result.publicKey).toBe(fixture.wallet.address);
+  });
+
+  it('re-serializes a signed v1 transaction with the wallet signature in its own slot', async () => {
+    const fixture = await v1Fixture();
+    const account = await makeAccount();
+    const result = await approveSolanaTransactionRequest(account as never, {
+      id: 'v1-serialize',
+      method: 'signTransaction',
+      params: { message: fixture.encodedMessage },
+    });
+    if (!('signature' in result)) throw new Error('expected a signature');
+
+    const wire = serializeSignedTransactionFromApproval(
+      fixture.encodedMessage,
+      fixture.wallet.address,
+      result.signature
+    );
+
+    // v1 envelope: message first, signatures at the tail.
+    expect(wire[0]).toBe(0x81);
+    const decoded = getTransactionDecoder().decode(wire);
+    expect(decoded.messageBytes).toEqual(fixture.messageBytes);
+    expect(decoded.signatures[fixture.wallet.address]).toEqual(bs58.decode(result.signature));
+    expect(decoded.signatures[fixture.payer.address]).toBeNull();
+  });
+
+  it('preserves the co-signer signature byte-for-byte when signing and sending a v1 transaction', async () => {
+    const fixture = await v1Fixture();
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
+
+    await approveSolanaTransactionRequest(account as never, {
+      id: 'v1-send',
+      method: 'signAndSendTransaction',
+      params: {
+        message: fixture.encodedMessage,
+        transaction: bs58.encode(fixture.partiallySignedWire),
+      },
+    });
+
+    const [, sendConfig] = sendTransaction.mock.calls[0];
+    expect(sendConfig).toMatchObject({ encoding: 'base64' });
+    const submitted = getTransactionDecoder().decode(submittedWire(sendTransaction));
+    expect(submitted.messageBytes).toEqual(fixture.messageBytes);
+    expect(submitted.signatures[fixture.payer.address]).toEqual(fixture.payerSignature);
+    expect(
+      nacl.sign.detached.verify(
+        fixture.messageBytes,
+        submitted.signatures[fixture.wallet.address] as Uint8Array,
+        bs58.decode(fixture.wallet.address)
+      )
+    ).toBe(true);
+  });
+
+  it('refuses to sign and send a v1 transaction whose bytes differ from the approved message', async () => {
+    const approved = await v1Fixture();
+    const other = await v1Fixture({ extraMemoBytes: 8 });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
+
+    await expect(
+      approveSolanaTransactionRequest(account as never, {
+        id: 'v1-wysiwys',
+        method: 'signAndSendTransaction',
+        params: {
+          message: approved.encodedMessage,
+          transaction: bs58.encode(other.partiallySignedWire),
+        },
+      })
+    ).rejects.toThrow(/does not match the approved message/);
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses to sign a v1 message in which the wallet is not a required signer', async () => {
+    const fixture = await v1Fixture();
+    // Seed 9 is nobody in this transaction.
+    const stranger = {
+      signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(9), false),
+      getReceiveAddress: () => testKeypair(9).publicKey.toBase58(),
+      getRpc: () => ({}),
+    };
+
+    await expect(
+      approveSolanaTransactionRequest(stranger as never, {
+        id: 'v1-stranger',
+        method: 'signTransaction',
+        params: { message: fixture.encodedMessage },
+      })
+    ).rejects.toThrow();
+    expect(() =>
+      serializeSignedTransactionFromApproval(
+        fixture.encodedMessage,
+        stranger.getReceiveAddress(),
+        bs58.encode(new Uint8Array(64).fill(1))
+      )
+    ).toThrow('Signer public key not found in transaction message');
+  });
+
+  it('previews a v1 transaction larger than 1232 bytes over base64', async () => {
+    const fixture = await v1Fixture({ extraMemoBytes: 2000 });
+    const simulateTransaction = vi
+      .fn()
+      .mockReturnValue({ send: async () => ({ value: { err: null, logs: [], accounts: null } }) });
+    const getMultipleAccounts = vi.fn().mockReturnValue({ send: async () => ({ value: [] }) });
+    const account = await makeAccount({ simulateTransaction, getMultipleAccounts });
+
+    await previewSolanaApprovalEffects(account as never, {
+      id: 'v1-large',
+      method: 'signTransaction',
+      params: { message: fixture.encodedMessage },
+    });
+
+    const [wireTransaction, config] = simulateTransaction.mock.calls[0];
+    const wire = new Uint8Array(Buffer.from(wireTransaction as string, 'base64'));
+    expect(wire.length).toBeGreaterThan(1232);
+    expect(wire.length).toBeLessThanOrEqual(4096);
+    expect(config).toMatchObject({ encoding: 'base64', sigVerify: false });
+    expect(getTransactionDecoder().decode(wire).messageBytes).toEqual(fixture.messageBytes);
+  });
+
+  it('rejects a v1 transaction that would exceed 4096 bytes before any key is used', async () => {
+    const fixture = await v1Fixture({ extraMemoBytes: 4100 });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
+
+    // Still a transaction as far as `signMessage` is concerned.
+    expect(isTransactionLookalike(fixture.messageBytes)).toBe(true);
+
+    const effects = await previewSolanaApprovalEffects(account as never, {
+      id: 'v1-oversized',
+      method: 'signTransaction',
+      params: { message: fixture.encodedMessage },
+    });
+    expect(effects.kind).toBe('undetermined');
+    expect(effects.kind === 'undetermined' && effects.reason).toBe('malformed-transaction');
+
+    await expect(
+      approveSolanaTransactionRequest(account as never, {
+        id: 'v1-oversized-sign',
+        method: 'signTransaction',
+        params: { message: fixture.encodedMessage },
+      })
+    ).rejects.toThrow();
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('reports an unsupported transaction version as such, not as malformed', async () => {
+    const fixture = await v1Fixture();
+    const v2 = Uint8Array.from(fixture.messageBytes);
+    v2[0] = 0x82;
+    const encoded = bs58.encode(v2);
+    const account = await makeAccount({
+      getFeeForMessage: () => ({ send: async () => ({ value: 5000n }) }),
+    });
+
+    const effects = await previewSolanaApprovalEffects(account as never, {
+      id: 'v2-preview',
+      method: 'signTransaction',
+      params: { message: encoded },
+    });
+    expect(effects.kind === 'undetermined' && effects.reason).toBe(
+      'unsupported-transaction-version'
+    );
+
+    await expect(
+      loadSolanaTransactionApprovalDetails(account as never, {
+        id: 'v2-details',
+        method: 'signTransaction',
+        params: { message: encoded },
+      })
+    ).rejects.toThrow(UnsupportedTransactionVersionError);
+    await expect(
+      approveSolanaTransactionRequest(account as never, {
+        id: 'v2-sign',
+        method: 'signTransaction',
+        params: { message: encoded },
+      })
+    ).rejects.toThrow(UnsupportedTransactionVersionError);
   });
 });
 

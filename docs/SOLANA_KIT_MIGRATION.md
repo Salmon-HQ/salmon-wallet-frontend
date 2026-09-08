@@ -2,8 +2,9 @@
 
 apps/web was retired on 2026-09-02; its rows below are history.
 
-Salmon Wallet's Solana stack runs on [`@solana/kit`](https://github.com/anza-xyz/kit) v7 and the generated
-program clients under `@solana-program/*`. `@solana/web3.js` v1 is not a production dependency of any
+Salmon Wallet's Solana stack runs on [`@solana/kit`](https://github.com/anza-xyz/kit) v8 and the generated
+program clients under `@solana-program/*`. Kit 8 is the first release that reads and sends version `1`
+(SIMD-0296, 4096-byte) transactions; the wallet adopted it in DEV-42. `@solana/web3.js` v1 is not a production dependency of any
 package in this monorepo. It survives only as a devDependency, used as an independent oracle in tests.
 
 This document is written for people who need to trust that claim without taking our word for it:
@@ -14,7 +15,7 @@ result yourself.
 
 | Surface           | Solana stack                           | `@solana/web3.js` in production  |
 | ----------------- | -------------------------------------- | -------------------------------- |
-| `packages/shared` | `@solana/kit` v7 + `@solana-program/*` | No — devDependency, tests only   |
+| `packages/shared` | `@solana/kit` v8 + `@solana-program/*` | No — devDependency, tests only   |
 | `packages/ui`     | none (presentation only)               | No — not a dependency            |
 | `apps/web`        | via `@salmon/shared`                   | No — dependency removed entirely |
 | `apps/extension`  | via `@salmon/shared`                   | No — devDependency, tests only   |
@@ -58,7 +59,8 @@ Organized by responsibility rather than by file, since the file layout is an imp
   round-trips the input bytes exactly. Lookup-table readiness is read with
   `@solana-program/address-lookup-table`.
 - **dApp approvals.** Transaction decoding, message compilation and the transaction-lookalike guard
-  all use kit codecs.
+  all use kit codecs, so they read legacy, v0 and v1 alike; v1 resource settings come from
+  `decompileTransactionMessage(...).config`, and Wallet Standard advertises `['legacy', 0, 1]`.
 - **Off-chain message signing (OCMS v1).** Encoding from Anza's `@solana/offchain-messages`, signing
   and verification through kit's `signBytes` / `verifySignature`. See
   [`OFF_CHAIN_MESSAGE_SIGNING.md`](OFF_CHAIN_MESSAGE_SIGNING.md).

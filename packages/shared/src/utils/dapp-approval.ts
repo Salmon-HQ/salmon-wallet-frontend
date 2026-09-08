@@ -1,13 +1,17 @@
 import bs58 from 'bs58';
 import {
+  assertIsTransactionWithinSizeLimit,
+  decompileTransactionMessage,
   getBase58Decoder,
   getBase64Decoder,
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
   getTransactionEncoder,
+  isSolanaError,
   partiallySignTransaction,
   signBytes,
+  SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
 } from '@solana/kit';
 import type {
   Address,
@@ -20,6 +24,7 @@ import type {
   Slot,
   TransactionMessageBytes,
   TransactionMessageBytesBase64,
+  V1TransactionConfig,
 } from '@solana/kit';
 import { address } from '@solana/addresses';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
@@ -54,7 +59,7 @@ export interface DecodedDAppMessage {
 export interface ParsedSolanaTransaction {
   /** Raw compiled-message bytes, exactly as received. Never re-serialized. */
   messageBytes: Uint8Array;
-  /** Decoded compiled message. `message.version` is `'legacy'` or `0`. */
+  /** Decoded compiled message. `message.version` is `'legacy'`, `0` or `1`. */
   message: CompiledTransactionMessage & CompiledTransactionMessageWithLifetime;
 }
 
@@ -63,6 +68,12 @@ export interface SolanaTransactionApprovalDetails {
   instructionCount: number | null;
   feePayer: string | null;
   recentBlockhash: string | null;
+  /**
+   * Resource settings a version-1 message carries in its `transactionConfig`
+   * (`priorityFeeLamports` is a total, not a per-compute-unit price). `null`
+   * for legacy/v0, whose limits live in ComputeBudget instructions instead.
+   */
+  transactionConfig: V1TransactionConfig | null;
 }
 
 /**
@@ -133,18 +144,63 @@ export function decodeDAppMessage(data: number[]): DecodedDAppMessage {
 }
 
 /**
- * Decodes a base58-encoded compiled transaction message. Legacy and v0 messages
- * both decode through the same codec — `message.version` tells them apart — and
- * the raw bytes are carried alongside so callers never have to re-serialize.
+ * Thrown when a dApp sends a transaction message whose version this build of
+ * the wallet cannot decode. Distinct from a malformed message on purpose: the
+ * bytes may be a perfectly valid transaction of a newer format, and the user
+ * should hear "unsupported", not "broken".
+ */
+export class UnsupportedTransactionVersionError extends Error {
+  constructor(readonly version: number) {
+    super(
+      `Transaction version ${version} is not supported by this version of Salmon. ` +
+        'Supported versions are legacy, 0 and 1.'
+    );
+    this.name = 'UnsupportedTransactionVersionError';
+    Object.setPrototypeOf(this, UnsupportedTransactionVersionError.prototype);
+  }
+}
+
+/**
+ * Decodes a base58-encoded compiled transaction message. Legacy, v0 and v1
+ * messages all decode through the same codec — `message.version` tells them
+ * apart — and the raw bytes are carried alongside so callers never have to
+ * re-serialize.
+ *
+ * Also refuses a message that could never fit on the wire once its signature
+ * slots are added (1232 bytes for legacy/v0, 4096 for v1), so an oversized
+ * payload fails here instead of at the node after the key was used.
  */
 export function buildTransactionFromEncodedMessage(
   encodedMessage: string
 ): ParsedSolanaTransaction {
   const messageBytes = bs58.decode(encodedMessage);
-  return {
-    messageBytes,
-    message: getCompiledTransactionMessageDecoder().decode(messageBytes),
-  };
+  let message: ParsedSolanaTransaction['message'];
+  try {
+    message = getCompiledTransactionMessageDecoder().decode(messageBytes);
+  } catch (error) {
+    if (isSolanaError(error, SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED)) {
+      throw new UnsupportedTransactionVersionError(error.context.unsupportedVersion);
+    }
+    throw error;
+  }
+  assertIsTransactionWithinSizeLimit({
+    messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+    signatures: emptySignatureMap(message),
+  });
+  return { messageBytes, message };
+}
+
+/**
+ * Resource settings a v1 message carries in its `transactionConfig`. `null`
+ * for legacy/v0: their limits are ComputeBudget instructions, which v1 runs as
+ * no-ops, so reading them from a v1 message would report the wrong numbers.
+ */
+function readTransactionConfig(
+  message: ParsedSolanaTransaction['message']
+): V1TransactionConfig | null {
+  if (message.version !== 1) return null;
+  const decompiled = decompileTransactionMessage(message);
+  return 'config' in decompiled && decompiled.config ? decompiled.config : {};
 }
 
 /**
@@ -182,6 +238,24 @@ export class TransactionLookalikeMessageError extends Error {
 export function isTransactionLookalike(bytes: Uint8Array): boolean {
   try {
     getCompiledTransactionMessageDecoder().decode(bytes);
+    return true;
+  } catch (error) {
+    // A version this build cannot decode is the one shape the decoder cannot
+    // vouch for either way, and it is exactly the gap that reopens every time
+    // the network ships a new format. Non-ASCII text also starts with a high
+    // byte, so the tie-breaker is whether the bytes are text at all: a real
+    // transaction message (pubkeys, instruction data) is never valid UTF-8
+    // end to end, while legitimate text always is.
+    if (isSolanaError(error, SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED)) {
+      return !isValidUtf8(bytes);
+    }
+    return false;
+  }
+}
+
+function isValidUtf8(bytes: Uint8Array): boolean {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     return true;
   } catch {
     return false;
@@ -227,6 +301,7 @@ export async function loadSolanaTransactionApprovalDetails(
         : parsed.message.numInstructions,
     feePayer: parsed.message.staticAccounts[0] ?? null,
     recentBlockhash: parsed.message.lifetimeToken ?? null,
+    transactionConfig: readTransactionConfig(parsed.message),
   };
 }
 
@@ -294,7 +369,10 @@ export async function previewSolanaApprovalEffects(
     return {
       kind: 'undetermined',
       account: previewedAccount,
-      reason: 'malformed-transaction',
+      reason:
+        error instanceof UnsupportedTransactionVersionError
+          ? 'unsupported-transaction-version'
+          : 'malformed-transaction',
       detail: error instanceof Error ? error.message : String(error),
     };
   }

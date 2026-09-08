@@ -66,6 +66,8 @@ export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   effects: TransactionEffects | null;
   effectsLoading: boolean;
   feeSol: string | null;
+  /** v1 priority fee in SOL. Absent/`null` for legacy/v0 or when the message sets none. */
+  priorityFeeSol?: string | null;
   instructionCount: number | null;
   feePayer: string | null;
   recentBlockhash: string | null;

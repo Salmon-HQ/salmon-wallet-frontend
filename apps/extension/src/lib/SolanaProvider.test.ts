@@ -14,6 +14,8 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { getTransactionDecoder } from '@solana/kit';
+import type { Address } from '@solana/kit';
 import { SolanaProvider } from './SolanaProvider';
 
 // TEST-ONLY deterministic keypairs. Seeds are constants so the fixtures are
@@ -375,6 +377,40 @@ describe('SolanaProvider bytes-native surface', () => {
       key.equals(coSigner.publicKey)
     );
     expect(decoded.signatures[coSignerIndex].some((byte) => byte !== 0)).toBe(true);
+  });
+
+  it('signTransactionBytes signs a v1 transaction and preserves the co-signer slot byte-for-byte', async () => {
+    // Canonical v1 (SIMD-0296) wire: same fixture (seed 1 fee payer, seed 2
+    // wallet, transfers to seed 3, blockhash '111…') compiled with @solana/kit 8,
+    // with the co-signer's signature already applied and the wallet slot empty.
+    const V1_PARTIALLY_SIGNED_WIRE_B64 =
+      'gQIAAQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1yBOXcOqH0XX1ajVGbDTH7My42KkbTuN6Jd9g9bj8mzlO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADoAwAAAAAAAEANAwAAAAEAAwIMAAMCDAAAAgIAAAABAAAAAAAAAAECAgAAAAIAAAAAAAAAngvSsUpCdFjduubaKfVUxg5e9fhgLecqkIVRih0inMY3baDgj0QVEjisDuttBVbymbyMgzCvJ5yojI0US2txAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+    const wire = new Uint8Array(Buffer.from(V1_PARTIALLY_SIGNED_WIRE_B64, 'base64'));
+    const input = getTransactionDecoder().decode(wire);
+    const coSignerAddress = coSigner.publicKey.toBase58() as Address;
+    const salmonAddress = salmon.publicKey.toBase58() as Address;
+    expect(input.signatures[coSignerAddress]).not.toBeNull();
+    expect(input.signatures[salmonAddress]).toBeNull();
+
+    const salmonSignature = new Uint8Array(64).fill(9);
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: { signature: bs58.encode(salmonSignature), publicKey: salmonAddress },
+    });
+
+    const signedWire = await provider.signTransactionBytes(wire, 'solana-devnet');
+
+    const params = sendMessage.mock.calls[0][0].params as Record<string, string>;
+    expect(params.message).toBe(bs58.encode(new Uint8Array(input.messageBytes)));
+
+    expect(signedWire[0]).toBe(0x81);
+    const output = getTransactionDecoder().decode(signedWire);
+    expect(output.messageBytes).toEqual(input.messageBytes);
+    expect(output.signatures[salmonAddress]).toEqual(salmonSignature);
+    expect(output.signatures[coSignerAddress]).toEqual(input.signatures[coSignerAddress]);
   });
 
   it('signAllTransactionsBytes signs every transaction with the shared signature and preserves co-signer slots', async () => {

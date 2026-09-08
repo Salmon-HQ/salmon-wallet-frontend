@@ -39,10 +39,11 @@ export function DAppTransactionApprovalPage({
     () => (account && isSignableSolanaAccount(account) ? account : null),
     [account]
   );
-  const { details, feeSol, parsingError, effects, effectsLoading } = useSolanaTransactionApproval({
-    account: solanaAccount,
-    request,
-  });
+  const { details, feeSol, priorityFeeSol, parsingError, effects, effectsLoading } =
+    useSolanaTransactionApproval({
+      account: solanaAccount,
+      request,
+    });
 
   const handleApprove = useCallback(
     () =>
@@ -70,6 +71,7 @@ export function DAppTransactionApprovalPage({
       effects={effects}
       effectsLoading={effectsLoading}
       feeSol={feeSol}
+      priorityFeeSol={priorityFeeSol}
       instructionCount={details?.instructionCount ?? null}
       feePayer={details?.feePayer ?? null}
       recentBlockhash={details?.recentBlockhash ?? null}

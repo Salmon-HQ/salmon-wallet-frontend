@@ -38,6 +38,13 @@ export interface UseSolanaTransactionApprovalResult {
   details: SolanaTransactionApprovalDetails | null;
   /** The fee in SOL, ready to render, or `null` when it is not known yet. */
   feeSol: string | null;
+  /**
+   * The v1 priority fee in SOL, ready to render. Already inside `feeSol` —
+   * `getFeeForMessage` prices the whole v1 config — so this is an "of which"
+   * line. `null` for legacy/v0 messages and for v1 messages that set none;
+   * either way there is no row to show.
+   */
+  priorityFeeSol: string | null;
   /** Set when the transaction could not be decoded at all. Blocks approval. */
   parsingError: string | null;
   /** `null` only while the preview is still running. */
@@ -71,6 +78,12 @@ export function applySymbols(
       grant.symbol ? grant : { ...grant, symbol: resolveSymbol(grant.mint) ?? null }
     ),
   };
+}
+
+/** Lamports as a trimmed SOL string, or `null` when the amount is not known. */
+function formatLamports(lamports: number | null | undefined): string | null {
+  if (lamports == null) return null;
+  return (lamports / LAMPORTS_PER_SOL).toFixed(9).replace(/0+$/, '').replace(/\.$/, '');
 }
 
 /** The message this request is about — the identity a preview is cached under. */
@@ -133,15 +146,20 @@ export function useSolanaTransactionApproval({
     return applySymbols(effects.data ?? null, (mint) => catalog.get(mint));
   }, [effects.data, resolveSymbol, tokens]);
 
-  const feeSol = useMemo(() => {
-    const feeLamports = details.data?.feeLamports;
-    if (feeLamports == null) return null;
-    return (feeLamports / LAMPORTS_PER_SOL).toFixed(9).replace(/0+$/, '').replace(/\.$/, '');
-  }, [details.data?.feeLamports]);
+  const feeSol = useMemo(
+    () => formatLamports(details.data?.feeLamports),
+    [details.data?.feeLamports]
+  );
+  const priorityFeeLamports = details.data?.transactionConfig?.priorityFeeLamports;
+  const priorityFeeSol = useMemo(
+    () => formatLamports(priorityFeeLamports == null ? null : Number(priorityFeeLamports)),
+    [priorityFeeLamports]
+  );
 
   return {
     details: details.data ?? null,
     feeSol,
+    priorityFeeSol,
     parsingError: details.isError ? 'Failed to decode transaction' : null,
     effects: namedEffects,
     effectsLoading: isEnabled && effects.isPending,

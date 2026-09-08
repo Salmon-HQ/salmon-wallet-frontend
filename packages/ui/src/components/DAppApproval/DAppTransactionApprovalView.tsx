@@ -22,6 +22,7 @@ export function DAppTransactionApprovalView({
   effects,
   effectsLoading,
   feeSol,
+  priorityFeeSol = null,
   instructionCount,
   feePayer,
   recentBlockhash,
@@ -92,6 +93,12 @@ export function DAppTransactionApprovalView({
               label={t('dapp.transaction_fee', 'Estimated fee')}
               value={feeSol ? `${feeSol} SOL` : '-'}
             />
+            {priorityFeeSol && (
+              <KeyValueRow
+                label={t('dapp.priority_fee', 'Priority fee')}
+                value={`${priorityFeeSol} SOL`}
+              />
+            )}
             <KeyValueRow
               label={t('dapp.instructions', 'Instructions')}
               value={instructionCount != null ? String(instructionCount) : '-'}
