@@ -859,6 +859,31 @@ describe('version 1 transactions', () => {
     expect(decoded.signatures[fixture.payer.address]).toBeNull();
   });
 
+  it('signs a batch of v1 messages, one verifiable signature per message', async () => {
+    const [first, second] = await Promise.all([v1Fixture(), v1Fixture({ extraMemoBytes: 16 })]);
+    const account = await makeAccount();
+
+    const result = await approveSolanaTransactionRequest(account as never, {
+      id: 'v1-sign-all',
+      method: 'signAllTransactions',
+      params: { messages: [first.encodedMessage, second.encodedMessage] },
+    });
+
+    expect('signatures' in result).toBe(true);
+    if (!('signatures' in result)) return;
+    expect(result.signatures).toHaveLength(2);
+    for (const [index, fixture] of [first, second].entries()) {
+      expect(
+        nacl.sign.detached.verify(
+          fixture.messageBytes,
+          bs58.decode(result.signatures[index]),
+          bs58.decode(fixture.wallet.address)
+        )
+      ).toBe(true);
+    }
+    expect(result.signatures[0]).not.toBe(result.signatures[1]);
+  });
+
   it('preserves the co-signer signature byte-for-byte when signing and sending a v1 transaction', async () => {
     const fixture = await v1Fixture();
     const sendTransaction = rpcSendTransaction();

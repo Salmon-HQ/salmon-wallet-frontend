@@ -413,6 +413,43 @@ describe('SolanaProvider bytes-native surface', () => {
     expect(output.signatures[coSignerAddress]).toEqual(input.signatures[coSignerAddress]);
   });
 
+  it('signAllTransactionsBytes handles v1 wires, filling only the wallet slot in each', async () => {
+    // Same canonical v1 wire as above, submitted twice: each gets its own
+    // signature and keeps its co-signer slot untouched.
+    const V1_PARTIALLY_SIGNED_WIRE_B64 =
+      'gQIAAQ8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1yBOXcOqH0XX1ajVGbDTH7My42KkbTuN6Jd9g9bj8mzlO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADoAwAAAAAAAEANAwAAAAEAAwIMAAMCDAAAAgIAAAABAAAAAAAAAAECAgAAAAIAAAAAAAAAngvSsUpCdFjduubaKfVUxg5e9fhgLecqkIVRih0inMY3baDgj0QVEjisDuttBVbymbyMgzCvJ5yojI0US2txAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+    const wire = new Uint8Array(Buffer.from(V1_PARTIALLY_SIGNED_WIRE_B64, 'base64'));
+    const input = getTransactionDecoder().decode(wire);
+    const coSignerAddress = coSigner.publicKey.toBase58() as Address;
+    const salmonAddress = salmon.publicKey.toBase58() as Address;
+    const salmonSignatures = [new Uint8Array(64).fill(21), new Uint8Array(64).fill(22)];
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: {
+        signatures: salmonSignatures.map((sig) => bs58.encode(sig)),
+        publicKey: salmonAddress,
+      },
+    });
+
+    const signed = await provider.signAllTransactionsBytes([wire, wire], 'solana-devnet');
+
+    const params = sendMessage.mock.calls[0][0].params as Record<string, unknown>;
+    const encodedMessage = bs58.encode(new Uint8Array(input.messageBytes));
+    expect(params.messages).toEqual([encodedMessage, encodedMessage]);
+
+    signed.forEach((signedWire, index) => {
+      expect(signedWire[0]).toBe(0x81);
+      const output = getTransactionDecoder().decode(signedWire);
+      expect(output.messageBytes).toEqual(input.messageBytes);
+      expect(output.signatures[salmonAddress]).toEqual(salmonSignatures[index]);
+      expect(output.signatures[coSignerAddress]).toEqual(input.signatures[coSignerAddress]);
+    });
+  });
+
   it('signAllTransactionsBytes signs every transaction with the shared signature and preserves co-signer slots', async () => {
     const buildV0 = (lamports: number) => {
       const message = new TransactionMessage({
