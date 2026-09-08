@@ -106,7 +106,7 @@ describe('the onboarding slot grid', () => {
     if (grid.variant !== 'contentTight') {
       expect(grid.secondary).toBe(componentSizes.buttonHeight + spacing.lg);
     }
-    expect(grid.action).toBe(spacing.lg + componentSizes.buttonHeight + spacing['2xl']);
+    expect(grid.action).toBe(spacing.lg + componentSizes.buttonHeight + spacing.lg);
   });
 
   it("the mark-led families draw it at the wait's size — one fish on every identity moment", () => {
@@ -140,7 +140,7 @@ describe('the onboarding slot grid', () => {
     expect(onboardingIdentityGridFull.body).toBe(onboardingCredentialGridFull.body);
     expect(onboardingIdentityGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingContentGridFull.description).toBe(2 * 24 + spacing['2xl']);
-    expect(onboardingIdentityGridFull.stack).toBe(736);
+    expect(onboardingIdentityGridFull.stack).toBe(728);
   });
 
   it('the lock collapses its empty description so title→input equals fish→title', () => {

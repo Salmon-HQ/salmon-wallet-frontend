@@ -234,19 +234,13 @@ export function OnboardingLayout({
     if (height > 0) setMeasured(height);
   };
 
-  // The hero pair centres its fish on the screen (owner, 2026-08-18), so its
-  // stack fills the column and the actions sit at the bottom; the other
-  // families keep the fixed stack centred in the viewport.
+  // The hero pair centres its fish on the screen (owner, 2026-08-18); every
+  // family fills the column so the actions sit on the floor and `body` takes
+  // the surface's extra height instead of scrolling over dead space (owner,
+  // 2026-09-08).
   const centersCluster = variant === 'identity' || variant === 'lock';
 
-  // What the stack actually gets, and how much room is left to centre it in.
-  const height =
-    available === undefined
-      ? grid.stack
-      : centersCluster
-        ? available
-        : Math.min(grid.stack, available);
-  const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
+  const height = available ?? grid.stack;
 
   /**
    * What the stack is short by, once the keyboard has taken its bite.
@@ -317,7 +311,7 @@ export function OnboardingLayout({
     grid.assist +
     grid.secondary +
     grid.action;
-  const bodyHeight = centersCluster ? Math.max(0, height - bands - lead) : grid.body;
+  const bodyHeight = Math.max(0, height - bands - lead);
 
   // Everything between `chrome` and `action` — the region that travels when
   // `float` is on. Heights are all reserved per slot, so grouping them in a
@@ -426,10 +420,7 @@ export function OnboardingLayout({
       )}
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.column} onLayout={onLayout} testID="onboarding-column">
-          <View
-            style={[styles.stack, { height, marginTop: centersCluster ? 0 : slack / 2 }]}
-            testID="onboarding-stack"
-          >
+          <View style={[styles.stack, { height }]} testID="onboarding-stack">
             <View style={[styles.slot, { height: grid.chrome }]} testID="onboarding-slot-chrome">
               {chrome}
             </View>

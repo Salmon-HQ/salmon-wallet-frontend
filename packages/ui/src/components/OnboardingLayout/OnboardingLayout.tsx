@@ -233,18 +233,13 @@ export function OnboardingLayout({
     assist != null
   );
 
-  // The hero pair centres its fish on the screen (owner, 2026-08-18), so its
-  // stack fills the column and the actions sit at the bottom; the other
-  // families keep the fixed stack centred in the viewport.
+  // The hero pair centres its fish on the screen (owner, 2026-08-18); every
+  // family fills the column so the actions sit on the floor and `body` takes
+  // the surface's extra height instead of scrolling over dead space (owner,
+  // 2026-09-08).
   const centersCluster = variant === 'identity' || variant === 'lock';
 
-  const height =
-    available === undefined
-      ? grid.stack
-      : centersCluster
-        ? available
-        : Math.min(grid.stack, available);
-  const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
+  const height = available ?? grid.stack;
 
   // What the stack is short by. Zero is the normal case and nothing collapses.
   // When it is not zero, things go in a fixed order: the description first,
@@ -317,7 +312,6 @@ export function OnboardingLayout({
             flexDirection: 'column',
             width: '100%',
             height,
-            marginTop: centersCluster ? 0 : slack / 2,
           }}
           data-testid="onboarding-stack"
         >

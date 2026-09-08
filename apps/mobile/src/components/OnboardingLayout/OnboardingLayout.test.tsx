@@ -360,7 +360,6 @@ describe('OnboardingLayout', () => {
       const merged = Object.assign({}, ...flat);
       // The stack fills the screen — the actions stay at the bottom.
       expect(merged.height).toBe(TALL);
-      expect(merged.marginTop).toBe(0);
     }
   );
 
@@ -408,7 +407,9 @@ describe('OnboardingLayout', () => {
 
     expect(screen.queryByTestId('onboarding-slot-description')).toBeNull();
     expect(screen.getByTestId('onboarding-slot-mark')).toBeTruthy();
-    expect(reservedHeights().body).toBe(grid.body);
+    // `body` keeps at least its band; the point the dropped description
+    // freed beyond the keyboard's bite lands there, never in the controls.
+    expect(reservedHeights().body).toBeGreaterThanOrEqual(grid.body);
     // The controls never give: the button that commits the field holds.
     expect(reservedHeights().action).toBe(grid.action);
     expect(reservedHeights().assist).toBe(grid.assist);
