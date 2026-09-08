@@ -35,29 +35,29 @@
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "eventemitter3": "^5.0.1",
-    "i18next": "^25.6.2",
+    "i18next": "^25.10.10",
     "i18next-browser-languagedetector": "^8.2.0",
     "process": "^0.11.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-i18next": "^16.3.3"
+    "react-i18next": "^16.6.6"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@solana/web3.js": "^1.98.4",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
-    "@types/chrome": "^0.2.5",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/chrome": "^0.2.7",
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.4",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "@wxt-dev/module-react": "^1.2.2",
     "jsdom": "^27.4.0",
     "typescript": "~5.9.2",
     "vite": "^7.3.1",
-    "vitest": "^4.1.10",
-    "wxt": "^0.21.3"
+    "vitest": "^4.1.11",
+    "wxt": "^0.21.4"
   }
 }
