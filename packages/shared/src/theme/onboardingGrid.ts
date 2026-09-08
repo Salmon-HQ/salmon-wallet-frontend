@@ -47,11 +47,12 @@
  *   it is the same defect in the other direction: it collapses, and pays the
  *   freed height to `body` (`collapsedDescription`, `collapsedSecondary`).
  * - `body` is reserved from the union like every other slot, so the stack has
- *   one fixed height — and that is what lets the stack be **centred** in the
- *   viewport instead of anchored to the top. Anchoring left the slack in one
- *   lump under the action; centring splits it above and below, and because the
- *   stack's height does not vary, every slot keeps a Y identical across the
- *   variant's screens.
+ *   one fixed minimum height. The stack fills the surface and `body` absorbs
+ *   whatever the surface has beyond it (owner, 2026-09-08 — it used to be
+ *   centred with the slack split above and below, which left the actions
+ *   floating over dead space on tall surfaces while `body` scrolled). The
+ *   control bands are anchored to the floor, so every slot below `body`
+ *   keeps a Y identical across the variant's screens on a given surface.
  * - `body` is still the give. Title and description may grow past their
  *   reserved heights (long translations, OS font scaling) and `body` shrinks to
  *   pay for it; when the viewport cannot hold the stack at all, `body` takes
@@ -167,9 +168,9 @@ export interface OnboardingGrid {
   /** Drawn width of the mark. Its height follows `markAspectRatio`. */
   readonly markSize: number;
   /**
-   * Sum of every reserved height, `body` included — the height of the whole
-   * stack. What is left over is split above and below it, not dumped below the
-   * action. Equal across both variants by construction.
+   * Sum of every reserved height, `body` included — the least height of the
+   * whole stack. On a taller surface `body` takes the difference, so the
+   * action stays on the floor. Equal across both variants by construction.
    */
   readonly stack: number;
   /**
@@ -213,7 +214,10 @@ const shared = {
   title: 2 * titleLine + spacing.md,
   assist: componentSizes.buttonHeightSmall + spacing.lg,
   secondary: componentSizes.buttonHeight + spacing.lg,
-  action: spacing.lg + componentSizes.buttonHeight + spacing['2xl'],
+  // The run under the button equals the gap above it, so the primary action
+  // sits the same distance from the floor as from the secondary (owner,
+  // 2026-09-08). Safe-area insets are added outside the grid by the layouts.
+  action: spacing.lg + componentSizes.buttonHeight + spacing.lg,
 } as const;
 
 /**

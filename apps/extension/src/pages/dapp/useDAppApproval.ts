@@ -53,7 +53,10 @@ export function useDAppApproval({ requestId, onDismiss }: UseDAppApprovalParams)
         const result = await run();
         sendToBackground({ result });
         onDismiss(true);
-      } catch {
+      } catch (error) {
+        // The dApp hears the generic text; the real cause stays in the
+        // popup's console for whoever is debugging the approval.
+        console.error('[dapp-approval]', error);
         sendToBackground({ error: failureError });
         onDismiss(false);
       } finally {

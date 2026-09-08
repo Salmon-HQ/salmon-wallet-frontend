@@ -173,10 +173,12 @@ describe('SalmonWallet', () => {
     expect(wallet.features['solana:signTransaction'].supportedTransactionVersions).toEqual([
       'legacy',
       0,
+      1,
     ]);
     expect(wallet.features['solana:signAndSendTransaction'].supportedTransactionVersions).toEqual([
       'legacy',
       0,
+      1,
     ]);
     expect(wallet.features['solana:signOffchainMessage'].supportedMessageVersions).toEqual([1]);
     expect(wallet.features['solana:signOffchainMessage'].version).toBe('1.0.0');

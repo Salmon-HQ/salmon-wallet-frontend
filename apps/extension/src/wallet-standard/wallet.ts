@@ -10,6 +10,7 @@ import type {
   SolanaSignTransactionFeature,
   SolanaSignTransactionMethod,
   SolanaSignTransactionOutput,
+  SolanaTransactionVersion,
 } from '@solana/wallet-standard-features';
 import type { Wallet, WalletAccount } from '@wallet-standard/base';
 import type {
@@ -35,6 +36,16 @@ export type SalmonFeature = {
     salmon: Salmon;
   };
 };
+
+// Every version the signing, preview and sending paths decode and re-encode
+// (see `dapp-approval.ts` and its v1 tests). Version 1 (SIMD-0296, 4096-byte
+// transactions) is not yet in @solana/wallet-standard-features'
+// `SolanaTransactionVersion` union, hence the cast; drop it once upstream adds it.
+const SUPPORTED_TRANSACTION_VERSIONS = [
+  'legacy',
+  0,
+  1,
+] as unknown as readonly SolanaTransactionVersion[];
 
 // OCMS v1 (`solana:signOffchainMessage`) types, per Wallet Standard PR#92.
 // Defined locally because the installed @solana/wallet-standard-features does
@@ -143,12 +154,12 @@ export class SalmonWallet implements Wallet {
       },
       'solana:signAndSendTransaction': {
         version: '1.0.0',
-        supportedTransactionVersions: ['legacy', 0],
+        supportedTransactionVersions: SUPPORTED_TRANSACTION_VERSIONS,
         signAndSendTransaction: this.#signAndSendTransaction,
       },
       'solana:signTransaction': {
         version: '1.0.0',
-        supportedTransactionVersions: ['legacy', 0],
+        supportedTransactionVersions: SUPPORTED_TRANSACTION_VERSIONS,
         signTransaction: this.#signTransaction,
       },
       'solana:signMessage': {

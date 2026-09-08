@@ -66,10 +66,18 @@ export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   effects: TransactionEffects | null;
   effectsLoading: boolean;
   feeSol: string | null;
+  /** v1 priority fee in SOL. Absent/`null` for legacy/v0 or when the message sets none. */
+  priorityFeeSol?: string | null;
   instructionCount: number | null;
   feePayer: string | null;
   recentBlockhash: string | null;
   parsingError: string | null;
+  /**
+   * Set when the request names a network other than the one the wallet is
+   * on. The wallet never switches networks on a site's word, so the request
+   * is shown against the active network and cannot be approved.
+   */
+  networkMismatch?: { requested: string; active: string } | null;
 }
 
 export interface TransactionEffectsCardPropsBase {

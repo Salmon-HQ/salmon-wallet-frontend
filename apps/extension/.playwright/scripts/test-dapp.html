@@ -238,6 +238,32 @@
         </div>
         <div class="out" id="out-siws"></div>
       </div>
+
+      <div class="card">
+        <h2>5 · signAndSendTransaction — v1 (SIMD-0296, hasta 4096 bytes) en devnet</h2>
+        <p class="desc">
+          Arma en la página, con <code>@solana/kit</code> 8 (cargado desde esm.sh), una transacción
+          <strong>versión 1</strong> de ~1.8 KB (self-transfer + memo, límites de recursos y
+          priority fee en el <code>transactionConfig</code>) y la manda por
+          <code>signAndSendTransactionBytes(bytes, 'solana-devnet')</code>. El popup debe mostrar la
+          preview con la fila <strong>Priority fee</strong>; al aprobar, la firma se confirma en
+          devnet. Requiere Connect, la wallet en <strong>devnet</strong> y SOL de devnet en la
+          cuenta. El botón secundario manda los mismos bytes con versión <code>2</code>: la wallet
+          debe rechazarlos como versión no soportada, nunca firmarlos.
+        </p>
+        <div class="row">
+          <input
+            type="text"
+            id="v1-rpc"
+            placeholder="RPC devnet (vacío = https://api.devnet.solana.com)"
+          />
+        </div>
+        <div class="row" style="margin-top: 10px">
+          <button id="btn-v1-send">Firmar y enviar tx v1 (devnet)</button>
+          <button class="secondary" id="btn-v2-unsupported">Mandar versión no soportada</button>
+        </div>
+        <div class="out" id="out-v1"></div>
+      </div>
     </main>
 
     <script>
@@ -448,6 +474,124 @@
 
       $('btn-siws').onclick = () => runSignIn($('siws-domain').value.trim(), 'out-siws');
       $('btn-siws-fake').onclick = () => runSignIn('phishing-site.example', 'out-siws');
+    </script>
+
+    <!-- v1 (SIMD-0296) builder. Kept in a separate module so the classic
+         harness above needs no bundler; @solana/kit 8 is the first release
+         that compiles v1. Dev-only page, served over localhost. -->
+    <script type="module">
+      import {
+        address,
+        appendTransactionMessageInstructions,
+        compileTransaction,
+        createNoopSigner,
+        createSolanaRpc,
+        createTransactionMessage,
+        getTransactionEncoder,
+        pipe,
+        setTransactionMessageConfig,
+        setTransactionMessageFeePayer,
+        setTransactionMessageLifetimeUsingBlockhash,
+      } from 'https://esm.sh/@solana/kit@8.2.0';
+      import { getTransferSolInstruction } from 'https://esm.sh/@solana-program/system@0.14.1?deps=@solana/kit@8.2.0';
+      import { getAddMemoInstruction } from 'https://esm.sh/@solana-program/memo@0.13.1?deps=@solana/kit@8.2.0';
+
+      const EXPLORER = 'https://explorer.solana.com/tx/';
+
+      const rpcUrl = () => $('v1-rpc').value.trim() || 'https://api.devnet.solana.com';
+
+      async function buildV1Wire() {
+        const rpc = createSolanaRpc(rpcUrl());
+        const payer = address(account.address);
+        const { value: blockhash } = await rpc.getLatestBlockhash().send();
+        const message = pipe(
+          createTransactionMessage({ version: 1 }),
+          (m) => setTransactionMessageFeePayer(payer, m),
+          (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+          (m) =>
+            appendTransactionMessageInstructions(
+              [
+                getTransferSolInstruction({
+                  source: createNoopSigner(payer),
+                  destination: payer,
+                  amount: 1_000n,
+                }),
+                getAddMemoInstruction({ memo: 'salmon-v1-harness-'.repeat(90) }),
+              ],
+              m
+            ),
+          // v1 budgets zero CU and zero loaded-account bytes unless set; the
+          // Memo program alone is over 64 KiB and a ~1.6 KB memo burns ~600k CU.
+          (m) =>
+            setTransactionMessageConfig(
+              {
+                computeUnitLimit: 1_400_000,
+                loadedAccountsDataSizeLimit: 262_144,
+                priorityFeeLamports: 1_000n,
+              },
+              m
+            )
+        );
+        const wire = new Uint8Array(getTransactionEncoder().encode(compileTransaction(message)));
+        return { rpc, wire };
+      }
+
+      async function waitConfirmed(rpc, signature) {
+        for (let attempt = 0; attempt < 30; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const { value } = await rpc.getSignatureStatuses([signature]).send();
+          const status = value[0];
+          if (status?.confirmationStatus) return status;
+        }
+        return null;
+      }
+
+      $('btn-v1-send').onclick = async () => {
+        if (!requireProvider('out-v1')) return;
+        if (!account) return void show('out-v1', 'err', 'Hacé Connect primero.');
+        try {
+          show('out-v1', 'warn', 'Armando tx v1 con kit 8…');
+          const { rpc, wire } = await buildV1Wire();
+          show(
+            'out-v1',
+            'warn',
+            `v1 lista: ${wire.length} bytes (primer byte 0x${wire[0].toString(16)}). Abriendo popup… ` +
+              'mirá la fila "Priority fee" y la preview de efectos antes de aprobar.'
+          );
+          const { signature } = await provider.signAndSendTransactionBytes(wire, 'solana-devnet');
+          show('out-v1', 'warn', `Enviada: ${signature}\nEsperando confirmación…`);
+          const status = await waitConfirmed(rpc, signature);
+          show('out-v1', status && !status.err ? 'ok' : 'err', {
+            signature,
+            bytes: wire.length,
+            version: 1,
+            status: status?.confirmationStatus ?? 'sin confirmar (timeout)',
+            err: status?.err ?? null,
+            explorer: `${EXPLORER}${signature}?cluster=devnet`,
+          });
+        } catch (e) {
+          show('out-v1', 'err', 'error: ' + errText(e));
+        }
+      };
+
+      $('btn-v2-unsupported').onclick = async () => {
+        if (!requireProvider('out-v1')) return;
+        if (!account) return void show('out-v1', 'err', 'Hacé Connect primero.');
+        try {
+          const { wire } = await buildV1Wire();
+          const v2 = Uint8Array.from(wire);
+          v2[0] = 0x82; // a version this wallet does not decode
+          show('out-v1', 'warn', 'Mandando bytes con versión 2… la wallet debe rechazarlos.');
+          const signed = await provider.signTransactionBytes(v2, 'solana-devnet');
+          show(
+            'out-v1',
+            'err',
+            '⚠️ FALLÓ: la wallet firmó una versión no soportada. ' + b64(signed)
+          );
+        } catch (e) {
+          show('out-v1', 'ok', 'Rechazado (esperado).\nerror: ' + errText(e));
+        }
+      };
     </script>
   </body>
 </html>

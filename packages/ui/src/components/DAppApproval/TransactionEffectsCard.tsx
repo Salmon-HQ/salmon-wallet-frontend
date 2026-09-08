@@ -24,6 +24,7 @@ const SOL_DECIMALS = 9;
 /** Every `UndeterminedReason` gets its own sentence — none of them mean "safe". */
 const REASON_KEYS: Record<UndeterminedReason, string> = {
   'malformed-transaction': 'dapp.effects_reason_malformed',
+  'unsupported-transaction-version': 'dapp.effects_reason_unsupported_version',
   'simulation-unavailable': 'dapp.effects_reason_unavailable',
   'simulation-not-executed': 'dapp.effects_reason_not_executed',
   'account-state-unavailable': 'dapp.effects_reason_no_state',
@@ -32,6 +33,8 @@ const REASON_KEYS: Record<UndeterminedReason, string> = {
 
 const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'malformed-transaction': 'The transaction could not be decoded.',
+  'unsupported-transaction-version':
+    'The transaction uses a format newer than this version of Salmon supports.',
   'simulation-unavailable': 'The network could not be reached to simulate it.',
   'simulation-not-executed': 'The network did not run the simulation.',
   'account-state-unavailable': 'The network did not return the balances after execution.',

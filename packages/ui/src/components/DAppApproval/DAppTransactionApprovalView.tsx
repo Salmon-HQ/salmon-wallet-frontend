@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatOrigin, spacing } from '@salmon/shared';
+import { formatOrigin, getNetworkName, spacing } from '@salmon/shared';
 
 import { GlobeIcon, ReceiptIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -22,10 +22,12 @@ export function DAppTransactionApprovalView({
   effects,
   effectsLoading,
   feeSol,
+  priorityFeeSol = null,
   instructionCount,
   feePayer,
   recentBlockhash,
   parsingError,
+  networkMismatch = null,
   disabled = false,
   loading = false,
   onApprove,
@@ -45,7 +47,7 @@ export function DAppTransactionApprovalView({
       effects.kind === 'transaction-would-fail' ||
       (effects.kind === 'effects' && effects.approvals.length > 0));
 
-  const cannotApprove = disabled || loading || !!parsingError;
+  const cannotApprove = disabled || loading || !!parsingError || !!networkMismatch;
 
   return (
     <OnboardingLayout
@@ -92,6 +94,12 @@ export function DAppTransactionApprovalView({
               label={t('dapp.transaction_fee', 'Estimated fee')}
               value={feeSol ? `${feeSol} SOL` : '-'}
             />
+            {priorityFeeSol && (
+              <KeyValueRow
+                label={t('dapp.priority_fee', 'Priority fee')}
+                value={`${priorityFeeSol} SOL`}
+              />
+            )}
             <KeyValueRow
               label={t('dapp.instructions', 'Instructions')}
               value={instructionCount != null ? String(instructionCount) : '-'}
@@ -116,6 +124,22 @@ export function DAppTransactionApprovalView({
               value={recentBlockhash || '-'}
               valueFont="mono"
             />
+            {networkMismatch && (
+              <KeyValueRow
+                layout="stacked"
+                label={t('dapp.network', 'Network')}
+                value={t(
+                  'dapp.network_mismatch',
+                  'This site built the transaction for {{requested}}, but your wallet is on {{active}}. Switch networks and try again.',
+                  {
+                    requested: getNetworkName(networkMismatch.requested),
+                    active: getNetworkName(networkMismatch.active),
+                  }
+                )}
+                valueTone="danger"
+                testID="network-mismatch"
+              />
+            )}
             {parsingError && (
               <KeyValueRow
                 layout="stacked"

@@ -32,6 +32,8 @@ import {
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
+  isSolanaError,
+  SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
   unwrapOption,
 } from '@solana/kit';
 import type { Address, Base64EncodedWireTransaction, TransactionError } from '@solana/kit';
@@ -87,6 +89,12 @@ const MAX_ACCOUNTS_PER_REQUEST = 100;
 export type UndeterminedReason =
   /** The wire transaction could not be decoded at all. */
   | 'malformed-transaction'
+  /**
+   * The wire transaction declares a version newer than this build decodes
+   * (legacy, 0 and 1). Its bytes may well be a valid transaction — which is
+   * exactly why it cannot be previewed, and must not be signed blind.
+   */
+  | 'unsupported-transaction-version'
   /** The RPC call itself failed — offline, rate limited, node error. */
   | 'simulation-unavailable'
   /**
@@ -643,7 +651,10 @@ export async function previewTransactionEffects(
   try {
     addresses = await resolveAccountKeys(rpc, wireTransaction);
   } catch (error) {
-    return undetermined(account, 'malformed-transaction', errorMessage(error));
+    const reason = isSolanaError(error, SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED)
+      ? 'unsupported-transaction-version'
+      : 'malformed-transaction';
+    return undetermined(account, reason, errorMessage(error));
   }
   if (!addresses) {
     return undetermined(

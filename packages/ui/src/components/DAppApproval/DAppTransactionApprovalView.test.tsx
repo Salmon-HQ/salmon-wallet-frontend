@@ -145,3 +145,18 @@ describe('DAppTransactionApprovalView', () => {
     expect(screen.getByRole('button', { name: 'HOLD TO APPROVE' })).toBeInTheDocument();
   });
 });
+
+describe('DAppTransactionApprovalView network mismatch', () => {
+  it('surfaces the mismatch and refuses approval when the request targets another network', () => {
+    render(
+      <DAppTransactionApprovalView
+        {...baseProps}
+        effects={{ kind: 'no-effect', account: ACCOUNT }}
+        networkMismatch={{ requested: 'solana-devnet', active: 'solana-mainnet' }}
+      />
+    );
+
+    expect(screen.getByTestId('network-mismatch')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'APPROVE & SIGN' })).toBeDisabled();
+  });
+});

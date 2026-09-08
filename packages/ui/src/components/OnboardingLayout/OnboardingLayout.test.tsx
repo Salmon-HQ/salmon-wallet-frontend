@@ -254,7 +254,6 @@ describe('OnboardingLayout', () => {
 
         const stack = screen.getByTestId('onboarding-stack');
         expect(stack.style.height).toBe(`${TALL}px`);
-        expect(stack.style.marginTop).toBe('0px');
       } finally {
         spy.mockRestore();
       }
