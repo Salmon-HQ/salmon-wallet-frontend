@@ -149,6 +149,61 @@ id coverage; do not run them casually.
 
 Retired with the web app (2026-09-02).
 
+### Solana devnet — live suites and the dApp harness
+
+Two checks need a funded **devnet** key: the opt-in live suites in
+`packages/shared` (`simulation.live.test.ts`, `dapp-approval.live.test.ts`)
+and the manual dApp harness (`apps/extension/.playwright/scripts/test-dapp.html`,
+card 5: a version 1 / >1232-byte transaction through `signAndSendTransaction`).
+Both spend a few thousand lamports per run. Devnet only — never point either
+at mainnet, never use a key that holds real funds, never commit a key.
+
+**One-time setup (a throwaway test key).** Requires the Solana CLI
+(https://docs.anza.xyz/cli/install, Agave ≥ 4.2):
+
+```bash
+solana-keygen new -o ~/.config/solana/devnet.json --no-bip39-passphrase
+solana address -k ~/.config/solana/devnet.json          # fund this address
+solana balance -k ~/.config/solana/devnet.json -u devnet
+```
+
+Fund it at https://faucet.solana.com (the CLI's `solana airdrop 1 -u devnet`
+is usually rate limited). 0.5 SOL covers hundreds of runs. The key file is a
+64-number JSON array; the live suites want only the 32-byte seed — the first
+32 numbers:
+
+```bash
+export SOLANA_LIVE_SIGNER_SEED="$(node -e 'const k=require(require("os").homedir()+"/.config/solana/devnet.json");console.log(JSON.stringify(k.slice(0,32)))')"
+```
+
+Losing or deleting the key costs nothing but the devnet SOL on it — repeat the
+three commands above to get a new one.
+
+**Live suites** (skipped unless both variables are set; skip again if the RPC
+is unreachable, fail if the node answers and the contract does not hold):
+
+```bash
+RUN_SOLANA_LIVE=1 SOLANA_LIVE_SIGNER_SEED="$SOLANA_LIVE_SIGNER_SEED" \
+  pnpm --filter @salmon/shared test -- --run src/blockchain/solana/simulation.live.test.ts src/utils/dapp-approval.live.test.ts
+```
+
+`SOLANA_LIVE_RPC_URL` overrides the default public devnet RPC.
+
+**dApp harness** (manual, against the dev build):
+
+1. `pnpm --filter @salmon/extension dev`, load `apps/extension/dist/chrome-mv3-dev`
+   unpacked; serve the harness from its folder
+   (`python3 -m http.server 8080` in `apps/extension/.playwright/scripts/`)
+   and open `http://localhost:8080/test-dapp.html`.
+2. Switch the extension to **Solana Devnet** and fund its address from the
+   test key: `solana transfer <extension-address> 0.1 -k ~/.config/solana/devnet.json -u devnet --allow-unfunded-recipient`.
+   The approval popup signs on the wallet's _active_ network and refuses a
+   request built for another one, so a wallet left on mainnet shows the
+   network-mismatch notice instead of sending.
+3. Run the cards top to bottom. Card 5 must show the **Priority fee** row in
+   the popup and end with a confirmed signature; its secondary button sends an
+   unsupported version and must be refused without a signature.
+
 ## Accessibility
 
 Two automated layers plus manual checks:
