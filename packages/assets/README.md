@@ -19,7 +19,7 @@ This package is part of the Salmon Wallet monorepo and is automatically availabl
 ### Importing All Assets
 
 ```typescript
-import { DMSansBold, IconHome, Images } from '@salmon/assets';
+import { DMSansBold, Images } from '@salmon/assets';
 ```
 
 ### Importing Specific Categories
@@ -29,7 +29,7 @@ import { DMSansBold, IconHome, Images } from '@salmon/assets';
 import { DMSansBold, DMSansMedium, Fonts } from '@salmon/assets/fonts';
 
 // Images only
-import { IconHome, IconWallet, Images } from '@salmon/assets/images';
+import { Logo, Images } from '@salmon/assets/images';
 ```
 
 ### Using Fonts
@@ -48,7 +48,7 @@ const fontFamily = Fonts.DMSans.Bold;
 Individual exports:
 
 ```typescript
-import { IconHome, IconWallet, AppLogo } from '@salmon/assets';
+import { Logo, AppIcon, IconSolana } from '@salmon/assets';
 ```
 
 Organized by category:
@@ -56,31 +56,20 @@ Organized by category:
 ```typescript
 import { Images } from '@salmon/assets';
 
-const homeIcon = Images.Navigation.IconHome;
-const successIcon = Images.Status.IconSuccess;
+const logo = Images.Branding.Logo;
+const solanaIcon = Images.Blockchain.IconSolana;
 const maskImage = Images.Masks.ImageMaskLGCards;
 ```
 
 ## Image Categories
 
-Assets are organized into the following categories:
+Assets are organized into the following categories (see `Images` in `src/images/index.ts`):
 
-- **Branding**: App icons, logos, splash screens, store badges
-- **Navigation**: Bottom navigation icons, main menu items
-- **Actions**: Action buttons (add, delete, edit, search, etc.)
-- **Direction**: Arrows, chevrons, expand/collapse icons
-- **Transactions**: Transaction type icons, status indicators
-- **Status**: Success, error, warning, info icons
-- **Interaction**: User interaction indicators
-- **Balance**: Balance and trend indicators
-- **Settings**: Settings and profile related icons
-- **Security**: Lock, visibility toggle icons
-- **Controls**: Toggles, pagination, UI controls
-- **Networks**: Blockchain network logos (Bitcoin, Ethereum, Solana, etc.)
-- **Features**: Feature-specific icons (bridge, swap, etc.)
-- **External**: Third-party service logos
+- **Branding**: App icons, logos, splash screen, store badges
 - **Masks**: Background masks and decorative images
-- **Utility**: Loading spinners, utility icons
+- **UI**: Pagination and toggle controls
+- **Backgrounds**: Background textures
+- **Blockchain**: Network logos (Bitcoin, Ethereum, Solana, Near, Eclipse)
 
 ## Fonts Included
 
@@ -107,7 +96,7 @@ packages/assets/
 │   │   └── *.ttf         # Font files
 │   └── images/
 │       ├── index.ts      # Image exports (organized by category)
-│       └── *.*           # Image files (PNG, SVG, JPEG, GIF)
+│       └── *.*           # Image files (PNG, JPEG, SVG)
 ```
 
 ## TypeScript Support
@@ -116,4 +105,4 @@ This package includes full TypeScript support with type definitions for all expo
 
 ## License
 
-MIT
+Apache-2.0

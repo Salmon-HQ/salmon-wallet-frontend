@@ -61,9 +61,9 @@ Settings → Advanced Security:
 
 ## 5. Labels
 
-Area labels used by templates and triage: `app:web`, `app:mobile`,
-`app:extension`, `pkg:shared`, `pkg:ui`, `security`, `e2e` (the `e2e` label
-will trigger the E2E workflow on PRs once that workflow lands). Create once:
+Area labels used by templates and triage: `app:mobile`, `app:extension`,
+`pkg:shared`, `pkg:ui`, `security`, `e2e` (the `e2e` label triggers the E2E
+workflow on PRs). Create once:
 
 ```bash
 gh label create app:mobile --color 1d76db --description "apps/mobile"

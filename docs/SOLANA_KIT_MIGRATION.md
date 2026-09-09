@@ -203,20 +203,17 @@ grep -rn "import('@solana/web3.js')" --include='*.ts' --include='*.tsx' . \
 # 4. Declared only as a devDependency. Expect two lines, shared and extension.
 grep -rn '"@solana/web3.js"' --include=package.json . | grep -v node_modules
 
-# 5. Not in the web bundle. Expect 0.
-pnpm --filter @salmon/web build:prod
-grep -c "Invalid public key input" apps/web/dist/assets/index-*.js
-
-# 6. Not in the extension bundle. Expect no output.
+# 5. Not in the extension bundle. Expect no output.
 pnpm --filter @salmon/extension build:prod
 grep -rl "Invalid public key input\|failed to get info about account" \
   apps/extension/dist/chrome-mv3/
 
-# 7. The ratchet is armed. Add an import of @solana/web3.js to any non-test
+# 6. The ratchet is armed. Add an import of @solana/web3.js to any non-test
 #    .ts file and confirm this warns, then revert.
 pnpm lint
 ```
 
-Checks 5 and 6 grep for strings that only exist in web3.js v1: `Invalid public key input` comes from
+Check 5 greps for strings that only exist in web3.js v1: `Invalid public key input` comes from
 the `PublicKey` constructor and `failed to get info about account` from `Connection.getAccountInfo`.
-Both matched before this migration and neither matches after.
+Both matched before this migration and neither matches after. (The web bundle equivalent no longer
+applies — `apps/web` was retired 2026-09-02.)

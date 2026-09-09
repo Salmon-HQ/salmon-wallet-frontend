@@ -217,10 +217,11 @@ pnpm mobile -- typecheck
 ### Checks CI runs on every PR
 
 ```bash
-pnpm format:check                     # Prettier
-pnpm turbo run typecheck lint test    # every package, zero lint warnings
-pnpm check:i18n                       # EN/ES keys in sync, no orphans
-pnpm check:parity                     # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
+pnpm format:check                       # Prettier
+pnpm turbo run typecheck lint test:coverage   # every package, zero lint warnings, coverage floor
+pnpm --filter @salmon/extension build   # extension bundles with wxt
+pnpm check:i18n                         # EN/ES keys in sync, no orphans
+pnpm check:parity                       # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
 ```
 
 ---
@@ -304,7 +305,7 @@ Before opening a PR:
 
 ```bash
 pnpm format:check
-pnpm turbo run typecheck lint test
+pnpm turbo run typecheck lint test:coverage
 pnpm check:i18n
 pnpm check:parity
 ```
