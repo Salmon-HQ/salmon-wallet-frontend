@@ -44,7 +44,7 @@ export async function getMetadata(url: string): Promise<DappMetadata | null> {
     });
     return data;
   } catch (error) {
-    console.error(`[DappService] Failed to fetch metadata for ${url}:`, error);
+    console.error('[DappService] Failed to fetch metadata for', url, error);
     return null;
   }
 }

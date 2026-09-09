@@ -337,7 +337,7 @@ export async function createBlockchainAccountForWatchOnly(
  * getPathIndex("invalid-path")
  */
 export function getPathIndex(path: string): number | undefined {
-  const index = Number(path?.split('/')?.[3]?.replace("'", ''));
+  const index = Number(path?.split('/')?.[3]?.replace(/'/g, ''));
   return !isNaN(index) ? index : undefined;
 }
 
