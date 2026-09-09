@@ -1,0 +1,40 @@
+# A `mobile/v*` tag marks the commit a store submission was built from, the
+# way `extension/v*` does for the extension. Nothing is built here — mobile
+# binaries are built locally with EAS (apps/mobile/AGENTS.md). The tag is
+# refused when it does not name the version in app.json, or when the native
+# fingerprint baseline was not refreshed for that version: a tag on a stale
+# baseline means the OTA guard is protecting the wrong binary.
+name: Mobile tag
+
+on:
+  push:
+    tags:
+      - 'mobile/v*'
+
+permissions: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check tag matches app.json and the fingerprint baseline
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#mobile/v}"
+          APP_VERSION="$(jq -r .expo.version apps/mobile/app.json)"
+          BASELINE_VERSION="$(jq -r .version apps/mobile/native-fingerprint.json)"
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "::error::Tag mobile/v${TAG_VERSION} does not match apps/mobile/app.json expo.version ${APP_VERSION}"
+            exit 1
+          fi
+          if [ "$TAG_VERSION" != "$BASELINE_VERSION" ]; then
+            echo "::error::apps/mobile/native-fingerprint.json is for ${BASELINE_VERSION}, not ${TAG_VERSION} — run pnpm --filter @salmon/mobile fingerprint:write before tagging"
+            exit 1
+          fi
+          echo "mobile/v${TAG_VERSION} matches app.json and the fingerprint baseline"

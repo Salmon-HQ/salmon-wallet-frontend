@@ -63,6 +63,17 @@ jobs:
       - name: Extension builds (chrome-mv3)
         run: pnpm --filter @salmon/extension build
 
+      # Same reason for mobile: Metro resolves imports the type checker never
+      # sees. Exports the iOS bundle to a scratch dir and keeps nothing.
+      - name: Mobile bundles (Metro)
+        run: pnpm --filter @salmon/mobile export:check
+
+      # The OTA guard (apps/mobile/AGENTS.md): when the native surface has
+      # moved since the last built binary, expo.version must have moved too,
+      # or an update would reach binaries that cannot run it.
+      - name: Native fingerprint vs last binary
+        run: pnpm check:fingerprint
+
       - name: i18n parity (en/es keys, orphans)
         run: node scripts/check-i18n.mjs
 
