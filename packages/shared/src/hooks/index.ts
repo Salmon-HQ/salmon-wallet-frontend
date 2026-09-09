@@ -237,5 +237,12 @@ export type {
   UseHomeShellParams,
   UseHomeShellResult,
 } from './useHomeShell';
+export { useAccountAddFlow } from './useAccountAddFlow';
+export type {
+  AccountAddFlow,
+  UseAccountAddFlowOptions,
+  SeedErrorKey,
+  ReauthErrorKey,
+} from './useAccountAddFlow';
 export { useWaitTips } from './useWaitTips';
 export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';
