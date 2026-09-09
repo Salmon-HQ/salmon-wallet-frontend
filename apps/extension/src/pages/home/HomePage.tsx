@@ -6,38 +6,24 @@ import {
   useAvailableNetworks,
   useBalance,
   useTransactions,
-  useCoinMarketData,
   useDerivedAccountsScan,
   useHomeShell,
   mapBalanceToToken,
-  buildBitcoinToken,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
   spacing,
-  componentSizes,
-  fontSize,
   type SettingsPanelEntry,
   type BlockchainId,
   type NetworkId,
-  type SolanaNetworkId,
   type PriceChartPeriod,
-  type PriceDataPoint,
-  type MarketData,
   type Token,
-  type NftData,
   type SendToken,
   useCurrencyContext,
-  getBlockchainFromNetworkId,
-  BLOCKCHAIN_TO_COINGECKO,
-  PERIOD_TO_DAYS,
-  coinInfoToMarketData,
   usePrefetchBalances,
-  useNftFlowState,
   useDeveloperModeSettings,
   useSendContacts,
 } from '@salmon/shared';
-import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 import {
   WalletHeader,
   BalanceHeader,
@@ -45,10 +31,6 @@ import {
   HomeTabOrderSheet,
   DerivedAccountsSheet,
   NftsTab,
-  StateBlock,
-  WarningNotice,
-  TokenList,
-  TokenDetailContent,
   SinkFloat,
   SlideStack,
   TokenDetailPage,
@@ -60,157 +42,29 @@ import {
   DepthBackground,
   ScalesBackground,
   SendPage,
-  SettingsPanelContent,
-  useSemantic,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
 
+import { PlaceholderPage } from './PlaceholderPage';
+import { PortfolioColumn } from './PortfolioColumn';
+import {
+  TOP_FADE_SCROLL_RANGE,
+  bottomFadeStyle,
+  containerStyle,
+  contentRegionStyle,
+  fillColumnStyle,
+  pinnedHeaderStyle,
+  pinnedSubTabsStyle,
+  screenStyle,
+  topSeamFadeStyle,
+} from './homeStyles';
+import { PAGE_DEPTH, type PageView } from './pages';
+import { useHomeMarketData } from './useHomeMarketData';
+import { useHomeNftFlow } from './useHomeNftFlow';
+
 /** The two in-page sub-tabs — the shell's key, kept under its old local name. */
 type SubTabKey = HomeSubTabKey;
-
-/** Scroll distance over which the top seam fade reaches full opacity. */
-const TOP_FADE_SCROLL_RANGE = 30;
-
-/**
- * Available page views within HomePage
- */
-type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets' | 'settings';
-
-/**
- * How deep each page sits in the stack — what `SlideStack` reads to tell a
- * push from a pop. Settings sits above the rest because it is reached *from*
- * them (Home, and Wallets), and returns to whichever one opened it.
- */
-const PAGE_DEPTH: Record<PageView, number> = {
-  home: 0,
-  tokenDetail: 1,
-  nftDetail: 1,
-  activity: 1,
-  send: 1,
-  wallets: 1,
-  settings: 2,
-};
-
-/**
- * The panel shell.
- *
- * The ground is mounted here, once, behind everything: the depth ramp, the
- * deep field's scales and the bottom fade that ends on the ramp's own floor
- * (mobile mounts the same three in `app/(app)/(tabs)/_layout.tsx`). The
- * screens are siblings of it, so the water never travels with them.
- */
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100dvh',
-  position: 'relative',
-  overflow: 'hidden',
-  backgroundColor: 'var(--sw-water-gradient-1)',
-};
-
-/**
- * The bottom fade. It starts and ends on the ramp's own floor —
- * `transparent` is black at alpha 0, which smudged the fade grey on its way to
- * nothing, and on the pale ground it painted a dark band.
- */
-const bottomFadeStyle: React.CSSProperties = {
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  bottom: 0,
-  // No `componentSizes` token fits this fade's height (mobile's shell uses the
-  // same 180 in `(tabs)/_layout.tsx`).
-  height: 180,
-  background:
-    'linear-gradient(to bottom, var(--sw-water-fadeBottom-0), var(--sw-water-fadeBottom-1))',
-  pointerEvents: 'none',
-  zIndex: 0,
-};
-
-/** Everything the user reads sits above the ground, in flow. */
-const screenStyle: React.CSSProperties = {
-  position: 'relative',
-  zIndex: 1,
-  flex: 1,
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-/**
- * The block above the content region. It is fixed on both sub-tabs — nothing
- * above the sub-tab row scrolls, on either of them (DESIGN.md §Navigation).
- * Block seams are the component gap (20) on every side.
- */
-const pinnedHeaderStyle: React.CSSProperties = {
-  paddingLeft: spacing.screenGutter,
-  paddingRight: spacing.screenGutter,
-  paddingTop: spacing.xl,
-  paddingBottom: spacing.xl,
-};
-
-const pinnedSubTabsStyle: React.CSSProperties = {
-  marginTop: spacing.xl,
-};
-
-/** The content region: the only part of Home that scrolls. */
-const contentRegionStyle: React.CSSProperties = {
-  position: 'relative',
-  flex: 1,
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-/**
- * The one mask on this screen: the seam between the fixed row above and the
- * list scrolling under it. It starts on the ramp's own top stop and ends on
- * that same colour at alpha 0, so it clears without smudging on either ground.
- */
-const topSeamFadeStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  height: componentSizes.sheetFadeGradientHeight,
-  background: 'linear-gradient(to bottom, var(--sw-water-fadeTop-0), var(--sw-water-fadeTop-1))',
-  pointerEvents: 'none',
-  zIndex: 1,
-  opacity: 0,
-};
-
-/** The scroller Portfolio's list and the Bitcoin column live in. */
-const scrollColumnStyle: React.CSSProperties = {
-  flex: 1,
-  minHeight: 0,
-  overflowY: 'auto',
-  paddingLeft: spacing.screenGutter,
-  paddingRight: spacing.screenGutter,
-  paddingBottom: spacing['2xl'],
-};
-
-/**
- * Placeholder page for a view that has nothing to show yet.
- */
-function PlaceholderPage({
-  title,
-  onBack,
-}: {
-  title: string;
-  onBack: () => void;
-}): React.ReactElement {
-  const { t } = useTranslation();
-  const { text } = useSemantic();
-
-  return (
-    <SettingsPanelContent title={title} onBack={onBack}>
-      <p style={{ margin: 0, color: text.secondary, fontSize: fontSize.body, textAlign: 'center' }}>
-        {t('common.coming_soon', 'Coming soon...')}
-      </p>
-    </SettingsPanelContent>
-  );
-}
 
 interface HomePageProps {
   onAddAccount: () => void;
@@ -304,62 +158,31 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setSettingsInitialPanels(undefined);
   }, [settingsReturnTo]);
 
-  // The collectible being sent, when Send was opened from an NFT's detail:
-  // the send flow becomes mobile's `nft/[id]/send` (spec 028 lot 4).
-  const [sendNft, setSendNft] = useState<NftData | null>(null);
-  // Mobile's `nft/[id]/burn` is a route; the DOM keeps the review inside the
-  // detail page, so which step shows is the one local bit of state here.
-  const [burnReviewOpen, setBurnReviewOpen] = useState(false);
-
   // Token detail page state
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedTokenChartPeriod, setSelectedTokenChartPeriod] = useState<PriceChartPeriod>('1M');
 
-  // NFT detail page state
   // A watch-only wallet holds no key, so every flow that spends is closed to
   // it. The refusal is enforced in shared; this only keeps the UI honest.
   const isWatchOnly = isWatchOnlyAccount(activeAccount);
 
-  const [selectedNft, setSelectedNft] = useState<NftData | null>(null);
-  const collectibleSolanaAccount = useMemo(() => {
-    const networksAccounts = activeAccount?.networksAccounts;
-    if (!networksAccounts) return undefined;
-
-    const preferredNetworkIds = ['solana-mainnet', 'solana-devnet'] as const;
-    for (const preferredNetworkId of preferredNetworkIds) {
-      const account = networksAccounts[preferredNetworkId]?.[0];
-      if (account && isSignableSolanaAccount(account)) {
-        return account;
-      }
-    }
-
-    for (const accounts of Object.values(networksAccounts)) {
-      for (const account of accounts ?? []) {
-        if (account && isSignableSolanaAccount(account)) {
-          return account;
-        }
-      }
-    }
-
-    return undefined;
-  }, [activeAccount]);
-
-  // The NFT flow's state — the same hook mobile's `NftFlowProvider` wraps:
-  // the burn preview and its confirmation, the receipt, the settle after a
-  // transfer. The signing account and the network are the collectible's own.
-  const nftFlow = useNftFlowState({
-    nft: selectedNft,
-    account: collectibleSolanaAccount,
-    networkId: (collectibleSolanaAccount?.getNetworkId() ?? 'solana-mainnet') as SolanaNetworkId,
-    activeAccountId: activeAccount?.id,
-    flowKey: selectedNft?.mint,
-  });
+  // The NFT flow: the open collectible, its burn review, the one a Send was
+  // opened for, and the account that signs for it.
   const {
-    prepareBurn: prepareNftBurn,
-    resetBurn: resetNftBurn,
-    acknowledgeSuccess: acknowledgeNftSuccess,
+    selectedNft,
+    sendNft,
+    burnReviewOpen,
+    collectibleSolanaAccount,
+    nftFlow,
+    handleNftDetailPress,
+    handleNftDetailBack,
+    handleNftSendPress,
+    handleNftBurnPress,
+    handleNftBurnBack,
+    handleNftBurnSuccessContinue,
+    clearSendNft,
     settleAfterSend: settleAfterNftSend,
-  } = nftFlow;
+  } = useHomeNftFlow({ activeAccount, navigate: setCurrentPage });
 
   // Bitcoin-specific state
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
@@ -465,21 +288,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, []);
 
   const handleSendBack = useCallback(() => {
-    setSendNft(null);
+    clearSendNft();
     setCurrentPage('home');
-  }, []);
+  }, [clearSendNft]);
 
   const handleSendSuccess = useCallback(() => {
-    // As mobile's `acknowledgeSuccess`: a collectible's transfer settles the
-    // grid and the avatar too.
-    if (sendNft) {
-      settleAfterNftSend();
-      setSendNft(null);
-      setSelectedNft(null);
-    }
+    settleAfterNftSend();
     setCurrentPage('home');
     refresh();
-  }, [refresh, sendNft, settleAfterNftSend]);
+  }, [refresh, settleAfterNftSend]);
 
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
@@ -506,42 +323,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setCurrentPage('home');
     setSelectedToken(null);
   }, []);
-
-  const handleNftDetailPress = useCallback((nft: NftData) => {
-    setSelectedNft(nft);
-    setCurrentPage('nftDetail');
-  }, []);
-
-  const handleNftDetailBack = useCallback(() => {
-    setBurnReviewOpen(false);
-    resetNftBurn();
-    setCurrentPage('home');
-    setSelectedNft(null);
-  }, [resetNftBurn]);
-
-  // NFT action handlers
-  const handleNftSendPress = useCallback(() => {
-    if (!selectedNft) return;
-    setSendNft(selectedNft);
-    setCurrentPage('send');
-  }, [selectedNft]);
-
-  const handleNftBurnPress = useCallback(() => {
-    setBurnReviewOpen(true);
-    void prepareNftBurn();
-  }, [prepareNftBurn]);
-
-  const handleNftBurnBack = useCallback(() => {
-    setBurnReviewOpen(false);
-    resetNftBurn();
-  }, [resetNftBurn]);
-
-  const handleNftBurnSuccessContinue = useCallback(() => {
-    acknowledgeNftSuccess();
-    setBurnReviewOpen(false);
-    setCurrentPage('home');
-    setSelectedNft(null);
-  }, [acknowledgeNftSuccess]);
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);
@@ -614,57 +395,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // mobile's mapping, from shared.
   const formattedTokens = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
 
-  // Bitcoin coin info + chart via shared React Query hook
-  const bitcoinCoinId = currentChain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO.bitcoin : undefined;
-  const {
-    coinInfo: bitcoinCoinInfo,
-    chartData: bitcoinChartDataRaw,
-    infoLoading: bitcoinInfoLoading,
-    chartLoading: bitcoinChartLoading,
-    chartPending: bitcoinChartPending,
-    error: bitcoinDataError,
-  } = useCoinMarketData({
-    coinId: bitcoinCoinId,
+  // Bitcoin's row inside Portfolio and the selected token's detail page.
+  const { bitcoin, selectedToken: selectedTokenMarket } = useHomeMarketData({
+    currentChain,
     currency,
-    days: PERIOD_TO_DAYS[bitcoinChartPeriod],
-    enabled: currentChain === 'bitcoin',
+    nativeAmount,
+    usdTotal,
+    bitcoinChartPeriod,
+    selectedToken,
+    selectedTokenChartPeriod,
+    tokenDetailOpen: currentPage === 'tokenDetail',
   });
-  const bitcoinChartData: PriceDataPoint[] = bitcoinChartDataRaw ?? [];
-
-  // Transform CoinInfo to MarketData for TokenMarketData component
-  const bitcoinMarketData: MarketData | undefined = useMemo(() => {
-    if (!bitcoinCoinInfo) return undefined;
-    return coinInfoToMarketData(bitcoinCoinInfo);
-  }, [bitcoinCoinInfo]);
-
-  const bitcoinToken = useMemo(
-    () => buildBitcoinToken(bitcoinCoinInfo, nativeAmount, usdTotal),
-    [bitcoinCoinInfo, nativeAmount, usdTotal]
-  );
-
-  // Selected token chart + coin info via shared React Query hook.
-  // Tokens without a coingeckoId fall back to the contract-address chart
-  // endpoint via their mint (handled inside the hook/service).
-  const selectedTokenCoinId = selectedToken?.coingeckoId ?? undefined;
-  const {
-    coinInfo: selectedTokenCoinInfo,
-    chartData: selectedTokenChartDataRaw,
-    infoLoading: selectedTokenInfoLoading,
-    chartLoading: selectedTokenChartLoading,
-    chartPending: selectedTokenChartPending,
-    error: selectedTokenError,
-  } = useCoinMarketData({
-    coinId: selectedTokenCoinId,
-    contractAddress: selectedToken?.address,
-    currency,
-    days: PERIOD_TO_DAYS[selectedTokenChartPeriod],
-    enabled: !!selectedToken && currentPage === 'tokenDetail',
-  });
-  const selectedTokenChartData: PriceDataPoint[] = selectedTokenChartDataRaw ?? [];
-  const selectedTokenMarketData: MarketData | undefined = useMemo(
-    () => (selectedTokenCoinInfo ? coinInfoToMarketData(selectedTokenCoinInfo) : undefined),
-    [selectedTokenCoinInfo]
-  );
 
   const accountName = activeAccount?.name || t('home.unnamed_account', 'Account');
 
@@ -679,15 +420,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             <TokenDetailPage
               token={selectedToken}
               blockchain={currentChain}
-              chartData={selectedTokenChartData}
+              chartData={selectedTokenMarket.chartData}
               chartPeriod={selectedTokenChartPeriod}
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}
-              coinInfo={selectedTokenCoinInfo}
-              marketData={selectedTokenMarketData}
-              chartLoading={selectedTokenChartLoading && selectedTokenChartData.length === 0}
-              chartPending={selectedTokenChartPending}
-              infoLoading={selectedTokenInfoLoading && !selectedTokenCoinInfo}
-              chartError={!!selectedTokenError && selectedTokenChartData.length === 0}
+              coinInfo={selectedTokenMarket.coinInfo}
+              marketData={selectedTokenMarket.marketData}
+              chartLoading={
+                selectedTokenMarket.chartLoading && selectedTokenMarket.chartData.length === 0
+              }
+              chartPending={selectedTokenMarket.chartPending}
+              infoLoading={selectedTokenMarket.infoLoading && !selectedTokenMarket.coinInfo}
+              chartError={!!selectedTokenMarket.error && selectedTokenMarket.chartData.length === 0}
               onBack={handleTokenDetailBack}
             />
           );
@@ -818,7 +561,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             key={surfaceKey}
             transitionKey={`${surfaceKey}`}
             testID="home-content"
-            style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+            style={fillColumnStyle}
           >
             {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
                 is the same instance across a switch: `UnderlineTabs` only
@@ -860,7 +603,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               <SinkFloat
                 transitionKey={subTabHasPrior ? effectiveSubTab : 'home-subtab-content'}
                 testID="home-subtab-content"
-                style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+                style={fillColumnStyle}
               >
                 {effectiveSubTab === 'portfolio' ? (
                   // Keyed by chain so switching chains swaps the whole column
@@ -870,77 +613,23 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   <SinkFloat
                     transitionKey={chainHasPrior ? currentNetworkId : 'home-chain-content'}
                     testID="home-chain-content"
-                    style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+                    style={fillColumnStyle}
                   >
-                    <div style={scrollColumnStyle} onScroll={handleContentScroll}>
-                      {/* Partial-load failure: keep whatever data loaded
-                          visible. Only 'ready' carries data, so a total failure
-                          is left to the list's own error state rather than told
-                          "shown data may be incomplete". */}
-                      {balanceError && balanceState === 'ready' && (
-                        <div style={{ marginBottom: spacing.xl }} data-testid="balance-load-error">
-                          <WarningNotice
-                            tone="warning"
-                            title={t(
-                              'wallet.partial_load_error',
-                              "Some balances couldn't be loaded. Shown data may be incomplete."
-                            )}
-                          />
-                        </div>
-                      )}
-
-                      {currentChain === 'bitcoin' ? (
-                        // Bitcoin lives inside Portfolio with chart, market data
-                        // and about — it has no asset-detail screen of its own.
-                        <TokenDetailContent
-                          token={hasData ? bitcoinToken : undefined}
-                          blockchain="bitcoin"
-                          hiddenBalance={hiddenBalance}
-                          chartData={bitcoinChartData}
-                          chartPeriod={bitcoinChartPeriod}
-                          onChartPeriodChange={setBitcoinChartPeriod}
-                          chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
-                          chartPending={bitcoinChartPending}
-                          chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
-                          coinInfo={bitcoinCoinInfo}
-                          marketData={bitcoinMarketData}
-                          infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
-                          bleed={spacing.screenGutter}
-                        />
-                      ) : balanceState === 'loading' || formattedTokens.length > 0 ? (
-                        <TokenList
-                          tokens={formattedTokens}
-                          loading={balanceState === 'loading'}
-                          onTokenPress={handleTokenPress}
-                          hiddenBalance={hiddenBalance}
-                          blockchain={getBlockchainFromNetworkId(currentNetworkId)}
-                        />
-                      ) : balanceState === 'error' ? (
-                        /* A failed load with nothing cached is an error state,
-                           never "No tokens found" and never an endless skeleton
-                           — PRODUCT.md keeps those answers distinct. */
-                        <StateBlock
-                          tone="error"
-                          testID="token-list-error"
-                          retryTestID="token-list-retry-button"
-                          title={t(
-                            'wallet.tokens_load_error',
-                            "Your tokens couldn't be loaded right now."
-                          )}
-                          onRetry={refresh}
-                          retryLabel={t('actions.retry', 'Retry')}
-                        />
-                      ) : (
-                        <StateBlock
-                          tone="empty"
-                          title={t('wallet.no_tokens_found', 'No tokens found')}
-                          body={t(
-                            'wallet.tokens_empty_subtitle',
-                            'Your tokens will appear here once you receive some'
-                          )}
-                        />
-                      )}
-                    </div>
+                    <PortfolioColumn
+                      currentChain={currentChain}
+                      currentNetworkId={currentNetworkId}
+                      balanceState={balanceState}
+                      balanceError={balanceError}
+                      hasData={hasData}
+                      hiddenBalance={hiddenBalance}
+                      tokens={formattedTokens}
+                      onTokenPress={handleTokenPress}
+                      onRetry={refresh}
+                      bitcoin={bitcoin}
+                      bitcoinChartPeriod={bitcoinChartPeriod}
+                      onBitcoinChartPeriodChange={setBitcoinChartPeriod}
+                      onScroll={handleContentScroll}
+                    />
                   </SinkFloat>
                 ) : (
                   // NFTs: the grid owns the only scroller in the content
