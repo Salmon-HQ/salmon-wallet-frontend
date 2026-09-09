@@ -342,7 +342,9 @@ function WalletCard({
   // Only a seed has a derivation tree to look through — an imported key or a
   // watched address has nothing to find, so the action is absent rather than
   // present and inert.
-  const canRescan = !!getAccountMnemonic(account);
+  // A derived wallet shares its parent's seed: scanning it would walk the
+  // same tree and find the same paths, so only the parent offers the scan.
+  const canRescan = !!getAccountMnemonic(account) && !account.derivedFrom;
 
   // The derived accounts this wallet holds on the chain being read. Removed
   // from Home in 015; this is where a wallet's path indexes live now.
