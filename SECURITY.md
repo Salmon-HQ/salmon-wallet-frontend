@@ -6,7 +6,9 @@ This repository contains the client applications of a self-custodial cryptocurre
 
 **Do not open a public issue for security problems.**
 
-Report vulnerabilities privately through **GitHub Security Advisories**: go to the repository's **Security** tab → **Report a vulnerability**. Only repository administrators can see the report, and the discussion stays private until a fix ships.
+Report vulnerabilities privately through **GitHub Security Advisories**: open
+[Report a vulnerability](https://github.com/Salmon-HQ/salmon-wallet-frontend/security/advisories/new)
+(the repository's **Security** tab → **Report a vulnerability**). Only repository administrators can see the report, and the discussion stays private until a fix ships.
 
 Please include:
 
@@ -31,4 +33,5 @@ What data the wallet sends for pseudonymous, opt-in analytics is catalogued in [
 ## Notes for maintainers
 
 - Private vulnerability reporting is a GitHub feature for **public** repositories. This repository is now public but the feature is not yet enabled; an admin must turn it on once under **Settings → Advanced Security → Private vulnerability reporting**.
-- Never commit seed phrases, private keys, or real wallet credentials — including in tests and fixtures. Test secrets live in gitignored `.env.test` files (see `CONTRIBUTING.md`).
+- Never commit seed phrases, private keys, or real wallet credentials — including in tests and fixtures. Test secrets live in gitignored `.env.test` files (see [CONTRIBUTING.md](CONTRIBUTING.md)); CI runs
+  `pnpm check:no-secrets` against every tracked file.
