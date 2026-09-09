@@ -17,7 +17,9 @@ getting a change merged.
 ```bash
 pnpm install
 pnpm turbo run typecheck lint test   # full check, or scope with --filter=@salmon/<pkg>
+pnpm test:coverage                   # what CI runs: each package has a coverage floor that only moves up
 pnpm check:i18n                      # locale parity, missing keys and orphans
+pnpm check:parity                    # every mobile component/screen has its DOM twin on one contract
 ```
 
 Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,

@@ -39,11 +39,29 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Turbo's local cache, keyed per commit and restored from the newest
+      # prior run: a package whose inputs did not change replays its
+      # typecheck/lint/test result instead of re-running it.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
       - name: Format check
         run: pnpm format:check
 
-      - name: Typecheck, lint (zero warnings), test
-        run: pnpm turbo run typecheck lint test
+      # test:coverage, not test: every package carries a coverage floor in its
+      # vitest/jest config (a ratchet — set just under the measured value, only
+      # ever raised), so a PR that drops below fails here.
+      - name: Typecheck, lint (zero warnings), test with coverage floor
+        run: pnpm turbo run typecheck lint test:coverage
+
+      # Typecheck does not exercise the bundler: a deleted barrel or a bad
+      # entrypoint import only surfaces in `wxt build`. Cheap, and it is what
+      # the release workflow runs.
+      - name: Extension builds (chrome-mv3)
+        run: pnpm --filter @salmon/extension build
 
       - name: i18n parity (en/es keys, orphans)
         run: node scripts/check-i18n.mjs

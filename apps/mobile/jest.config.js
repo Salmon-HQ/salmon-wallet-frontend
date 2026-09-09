@@ -13,4 +13,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
+  // Ratchet: floors sit just under the measured coverage (2026-09-09) and
+  // only ever move up. A PR that drops below fails CI.
+  coverageThreshold: {
+    global: { statements: 75, branches: 64, functions: 65, lines: 77 },
+  },
 };

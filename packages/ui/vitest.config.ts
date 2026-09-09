@@ -21,5 +21,12 @@ export default defineConfig({
     // CI runners; the default 5s timeout flakes there while meaning nothing
     // locally.
     testTimeout: 20000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      // Ratchet: floors sit just under the measured coverage (2026-09-09) and
+      // only ever move up. A PR that drops below fails CI.
+      thresholds: { statements: 81, branches: 71, functions: 78, lines: 83 },
+    },
   },
 });
