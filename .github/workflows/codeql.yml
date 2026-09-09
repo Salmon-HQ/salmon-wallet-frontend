@@ -1,0 +1,50 @@
+# CodeQL static analysis (advanced setup, as a workflow file). Runs on every
+# PR and on main, plus weekly so new queries reach old code. Findings land in
+# Security → Code scanning; a PR job fails only on errors of the tool itself,
+# never on findings — those are advisory until a ruleset makes them required.
+#
+# If an admin later turns on CodeQL *default setup* in the repo settings, this
+# workflow must go: default setup refuses uploads from a CodeQL workflow.
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '41 5 * * 3' # weekly, Wednesday 05:41 UTC
+
+permissions: {}
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: codeql (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          languages: ${{ matrix.language }}
+          # No build step: JavaScript/TypeScript and workflow files are read as
+          # source. The queries are the default suite, the same one the repo
+          # settings would pick.
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          category: /language:${{ matrix.language }}
