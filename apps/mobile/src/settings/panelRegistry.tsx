@@ -429,11 +429,18 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       // the new wallet already active — Home by default, as it always did.
       'account-add': ({ onBack, ...props }) => (
         <AccountAddPanel
-          // dismissTo, not replace: the Wallets screen that opened this flow is
-          // still on the stack, and a replace would put a second one on top of it,
-          // so the chevron had to be tapped twice. dismissTo pops back to the one
-          // that is there; Home is the root, so it lands there just the same.
-          onComplete={() => router.dismissTo(resolveReturnTo(props.returnTo as string | undefined))}
+          // From Wallets the flow is the only screen of the settings sub-stack,
+          // pushed on top of Wallets: popping it lands on the Wallets that opened
+          // it. A replace (or a dismissTo, which cannot see past this sub-stack)
+          // put a second Wallets on top and the chevron had to be tapped twice.
+          // From Settings → Accounts, Home is the root: replace clears the way.
+          onComplete={() => {
+            if (resolveReturnTo(props.returnTo as string | undefined) === '/wallets') {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
           onBack={onBack}
         />
       ),
