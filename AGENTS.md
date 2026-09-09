@@ -136,6 +136,40 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
   `packages/shared/src/types/ui`; `pnpm check:parity:report` to read
   findings without failing.
 
+## Gates that carry a baseline — what to update when X changes
+
+Most of CI keeps itself: coverage, lint, typecheck, the bundlers, DOM
+parity, i18n, zizmor, CodeQL, the release job, dependabot (packages and
+action SHAs). A few gates compare the tree against a **committed
+baseline**, and a baseline only a human moves. When a change trips one of
+these, the fix is the deliberate update named here — never a weakened
+threshold or a skipped step.
+
+| You change…                                                                                                            | …so also update                                                                                                                                                                | Command / where                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Anything native in mobile: a package with native code, a config plugin, `app.json` native fields, `patches/`, Expo SDK | `apps/mobile/app.json → expo.version` (this ships as a binary, never as an OTA) and, when that binary is built, the fingerprint baseline `apps/mobile/native-fingerprint.json` | `pnpm --filter @salmon/mobile fingerprint:write`, in the pre-build checklist |
+| `permissions` / `host_permissions` in `apps/extension/wxt.config.ts`, or the API/CDN hosts in `apps/extension/.env.*`  | `apps/extension/manifest-permissions.json` — the diff must say why the extension asks for more                                                                                 | `pnpm --filter @salmon/extension build && pnpm check:manifest --write`       |
+| A test that needs a phrase, a keypair or a signature                                                                   | Use the public vectors (`abandon…`, `test…junk`) or a random one generated inside the test; otherwise mark the line `// no-secrets-ignore: <why>`                              | `pnpm check:no-secrets`                                                      |
+| Coverage of a package goes up for good                                                                                 | Raise that package's `thresholds` (vitest config) / `coverageThreshold` (jest config). They are a ratchet: they only ever go up; a PR that drops below adds tests              | `pnpm test:coverage`                                                         |
+| Cross-platform duplication goes down                                                                                   | Lower `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs` — same ratchet, the other direction                                                                   | `pnpm check:parity:report`                                                   |
+| `packageManager` (pnpm) or the Node version                                                                            | Keep `.nvmrc`, `package.json#engines`, `apps/mobile/eas.json → build.base.node` and `scripts/check-build-env.cjs` saying the same thing                                        | —                                                                            |
+| A dependency that has an entry in `package.json#pnpm.overrides`                                                        | Re-check the override: it exists to patch one advisory, bounded to one major. Remove it once the dependant pulls the fixed version on its own; never widen it past the major   | `pnpm audit`                                                                 |
+| A new `scripts/check-*.mjs` gate                                                                                       | The check list in `README.md`, `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md`, and a step in `.github/workflows/ci.yml`                                              | —                                                                            |
+| A tool pinned by version inside a workflow `run:` step (`web-ext@x.y.z`)                                               | Bump it by hand — dependabot updates `uses:` SHAs, not `npx` pins                                                                                                              | `.github/workflows/build-extension.yml`                                      |
+
+Also manual, by design: closing the "Nightly extension E2E is failing"
+issue once the run is green again; triaging a CodeQL alert (fix, or dismiss
+with a written reason); and the repository settings in
+`docs/REPO-SETTINGS.md`, which need an admin. If an admin ever enables
+CodeQL _default setup_, delete `.github/workflows/codeql.yml` — default
+setup refuses uploads from a CodeQL workflow.
+
+Releases are tags, and each tag is checked against a file: `extension/v*`
+against `apps/extension/package.json` (and CI must have passed on that
+commit; the release notes are the tag's `## extension X.Y.Z` section of
+`CHANGELOG.md`, so write it first), `mobile/v*` against `app.json` and the
+fingerprint baseline.
+
 ## Twins — the extension is the mobile app on the DOM
 
 Every kit component and every screen exists twice — once in React Native
