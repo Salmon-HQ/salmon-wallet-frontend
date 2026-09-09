@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import {
   settingsRowValues,
   useAccountsContext,
+  useAccountRemoval,
   useAnalyticsConsent,
   useCurrencyContext,
   useLanguage,
@@ -86,16 +87,19 @@ export function SettingsPage({ onClose, initialPanels }: SettingsPageProps): Rea
   const [removeWalletDialogVisible, setRemoveWalletDialogVisible] = useState(false);
   const [removeAllWalletsDialogVisible, setRemoveAllWalletsDialogVisible] = useState(false);
 
-  const validatePassword = useCallback(
-    async (password: string): Promise<boolean> => actions.checkPassword(password),
-    [actions]
-  );
+  // Removing re-encrypts what is left, so it needs the password whenever the
+  // unlock key cache has lapsed; the sheet already collects and checks it —
+  // it just has to reach `removeAccount`.
+  const { validatePassword, remove } = useAccountRemoval();
 
-  const confirmRemoveWallet = useCallback(async () => {
-    if (activeAccount?.id) {
-      await actions.removeAccount(activeAccount.id);
-    }
-  }, [actions, activeAccount]);
+  const confirmRemoveWallet = useCallback(
+    async (password?: string) => {
+      if (activeAccount?.id) {
+        await remove(activeAccount.id, password);
+      }
+    },
+    [remove, activeAccount]
+  );
 
   const confirmRemoveAllWallets = useCallback(async () => {
     await clearSessionKey();

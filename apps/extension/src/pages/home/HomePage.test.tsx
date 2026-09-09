@@ -228,6 +228,7 @@ vi.mock('@salmon/shared', async () => {
     useDerivedAccountsScan: () => ({
       scanningAccountId: null,
       sheetVisible: false,
+      sheetRequested: false,
       finds: [],
       rescan: vi.fn(),
       importFinds: vi.fn(),

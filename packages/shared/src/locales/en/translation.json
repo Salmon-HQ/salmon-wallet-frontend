@@ -507,6 +507,7 @@
       "scan_failed_title": "Couldn't scan for accounts",
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
       "scan_partial": "Some networks couldn't be scanned. Results may be incomplete.",
+      "scanning_title": "Looking through your phrase",
       "found_title_one": "We found {{count}} account from your phrase",
       "found_title_other": "We found {{count}} accounts from your phrase",
       "found_body": "They were created from the same recovery phrase. Choose which to add.",

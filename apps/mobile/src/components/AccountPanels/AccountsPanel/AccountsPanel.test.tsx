@@ -19,6 +19,17 @@ jest.mock('@salmon/shared', () => ({
   getAccountAddress: () => '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
   getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
   isWatchOnlyAccount: () => false,
+  // The delete confirmation's state lives in shared; the panel only renders it.
+  useAccountDeleteConfirm: (onDeleteAccount: (id: string, password?: string) => void) => {
+    const { useState } = require('react');
+    const [accountToDelete, setAccountToDelete] = useState(null);
+    return {
+      accountToDelete,
+      setAccountToDelete,
+      confirm: async (password?: string) =>
+        accountToDelete && onDeleteAccount(accountToDelete.id, password),
+    };
+  },
 }));
 
 jest.mock('expo-image', () => {

@@ -8,7 +8,7 @@
  * outlined card, same idiom as Wallets' "Add wallet".
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,7 @@ import {
   isWatchOnlyAccount,
   s,
   spacing,
+  useAccountDeleteConfirm,
   vs,
   type Account,
   type Semantic,
@@ -137,6 +138,8 @@ export function AccountsPanel({
   onSelectAccount,
   onEditAccount,
   onDeleteAccount,
+  requirePassword,
+  validatePassword,
   onAddAccount,
   onBack,
 }: AccountsPanelProps): React.ReactElement {
@@ -144,12 +147,7 @@ export function AccountsPanel({
   const styles = useThemedStyles(stylesFor);
   const { accent } = useSemantic();
   const canDelete = accounts.length > 1;
-  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
-
-  const handleDeleteConfirmed = useCallback(async () => {
-    if (!accountToDelete) return;
-    await onDeleteAccount(accountToDelete.id);
-  }, [accountToDelete, onDeleteAccount]);
+  const { accountToDelete, setAccountToDelete, confirm } = useAccountDeleteConfirm(onDeleteAccount);
 
   const rows = useMemo(
     () =>
@@ -164,7 +162,7 @@ export function AccountsPanel({
           onDelete={() => setAccountToDelete(account)}
         />
       )),
-    [accounts, activeAccountId, canDelete, onEditAccount, onSelectAccount]
+    [accounts, activeAccountId, canDelete, onEditAccount, onSelectAccount, setAccountToDelete]
   );
 
   return (
@@ -200,7 +198,9 @@ export function AccountsPanel({
         })}
         confirmText={t('actions.remove')}
         isDanger
-        onConfirm={handleDeleteConfirmed}
+        requirePassword={requirePassword}
+        validatePassword={validatePassword}
+        onConfirm={confirm}
       />
     </SettingsScreenLayout>
   );

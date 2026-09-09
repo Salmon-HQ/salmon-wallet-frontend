@@ -507,6 +507,7 @@
       "scan_failed_title": "No se pudieron buscar las cuentas",
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
       "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos.",
+      "scanning_title": "Buscando en tu frase",
       "found_title_one": "Encontramos {{count}} cuenta de tu frase",
       "found_title_other": "Encontramos {{count}} cuentas de tu frase",
       "found_body": "Se crearon con la misma frase de recuperación. Elegí cuáles agregar.",

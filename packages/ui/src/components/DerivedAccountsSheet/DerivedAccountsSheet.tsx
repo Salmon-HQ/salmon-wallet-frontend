@@ -13,7 +13,7 @@
  * accounts by hand — but nothing is added until they say so. No derivation
  * index appears: a user reads wallets by name.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import {
   componentSizes,
   fontFamily,
@@ -25,6 +25,7 @@ import {
   spacing,
   tabularNums,
   useAccountsContext,
+  useDerivedFindRows,
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
@@ -34,14 +35,22 @@ import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
+import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import type { DerivedAccountsSheetProps } from './types';
 
 /** The leading well on a find, the same step every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
+/** Nothing to answer while the scan runs, so the backdrop closes nothing. */
+const IGNORE_DISMISS = (): void => {};
+
+/** How many rows the wait stands in for; the mobile twin draws the same three. */
+const SCANNING_ROWS = 3;
+
 export function DerivedAccountsSheet({
   visible,
+  scanning,
   finds,
   onImport,
   onDismiss,
@@ -53,27 +62,18 @@ export function DerivedAccountsSheet({
   const semantic = useSemantic();
   const [{ accounts }] = useAccountsContext();
 
-  const [checked, setChecked] = useState<number[]>([]);
-  useEffect(() => {
-    setChecked(finds.map(({ index }) => index));
-  }, [finds]);
+  const { rows, checked, toggle } = useDerivedFindRows(finds, accounts.length, t);
 
-  // The names these wallets would get — the same names the add-account panel
-  // hands a new account, in the order they would be created.
-  const rows = useMemo(
-    () =>
-      finds.map((find, position) => ({
-        ...find,
-        name: t('settings.account_add.default_name', { number: accounts.length + 1 + position }),
-      })),
-    [finds, accounts.length, t]
-  );
+  // The wait has its own title: the count is not known until the scan answers.
+  const title = scanning
+    ? t('wallet.derived.scanning_title')
+    : t('wallet.derived.found_title', { count: finds.length });
 
   return (
     <BottomSheetContainer
       visible={visible}
-      onClose={onDismiss}
-      title={<SheetTitle>{t('wallet.derived.found_title', { count: finds.length })}</SheetTitle>}
+      onClose={scanning ? IGNORE_DISMISS : onDismiss}
+      title={<SheetTitle>{title}</SheetTitle>}
       testID={testID}
       style={style}
       className={className}
@@ -88,7 +88,9 @@ export function DerivedAccountsSheet({
           gap: spacing.xl,
         }}
       >
-        {rows.length === 0 ? (
+        {scanning ? (
+          <SkeletonRow testID={`${testID}-scanning`} count={SCANNING_ROWS} />
+        ) : rows.length === 0 ? (
           <StateBlock
             tone="empty"
             testID={`${testID}-empty`}
@@ -123,13 +125,7 @@ export function DerivedAccountsSheet({
                         ? t('wallet.derived.skip_a11y', { name })
                         : t('wallet.derived.add_a11y', { name })
                     }
-                    onPress={() =>
-                      setChecked((current) =>
-                        current.includes(index)
-                          ? current.filter((value) => value !== index)
-                          : [...current, index]
-                      )
-                    }
+                    onPress={() => toggle(index)}
                     leading={
                       <IconBubble size={ROW_BUBBLE_SIZE} shape="circle" tone="accent-tint">
                         {getInitials(name)}

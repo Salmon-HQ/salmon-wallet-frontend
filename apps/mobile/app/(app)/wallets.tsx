@@ -42,6 +42,7 @@ import {
   Card,
   DepthBackground,
   AccountAvatar,
+  DerivedAccountsSheet,
   IconBubble,
   ListRow,
   ScalesBackground,
@@ -103,6 +104,12 @@ export default function WalletsScreen() {
   // this screen costs no request — only the preference comes back.
   const showUnverifiedTokens = useUnverifiedTokens();
 
+  // The scan is asked for here, so it is waited on and answered here: the sheet
+  // opens the moment the user taps "find derived" and shows the wait until the
+  // scan has something to say.
+  const { rescanningAccountId, sheetVisible, sheetRequested, finds, importFinds, dismiss } =
+    useDerivedAccounts();
+
   const { hiddenBalance, toggleHidden } = useBalance({
     account: activeBlockchainAccount,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
@@ -158,11 +165,11 @@ export default function WalletsScreen() {
   );
 
   const handleAddWallet = useCallback(() => {
-    // One add-wallet screen; `returnTo` lands the finished flow back here with
-    // the new wallet already active.
+    // The same add-wallet screen Settings → Accounts → Add reaches; completing
+    // pops it back here with the new wallet already active.
     router.push({
       pathname: '/settings/[panel]',
-      params: { panel: 'account-add', returnTo: 'wallets' },
+      params: { panel: 'account-add' },
     });
   }, [router]);
 
@@ -269,6 +276,14 @@ export default function WalletsScreen() {
           </View>
         </Card>
       </ScrollView>
+
+      <DerivedAccountsSheet
+        visible={rescanningAccountId !== null || (sheetVisible && sheetRequested)}
+        scanning={rescanningAccountId !== null}
+        finds={finds}
+        onImport={(indexes) => void importFinds(indexes)}
+        onDismiss={() => void dismiss()}
+      />
     </SafeAreaView>
   );
 }

@@ -43,6 +43,13 @@ jest.mock('../../src/contexts/DeveloperModeContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // Removing a wallet asks the vault for key material; the screen only decides
+  // whether the confirmation shows a password field.
+  useAccountRemoval: () => ({
+    requiresPassword: false,
+    validatePassword: jest.fn(),
+    remove: jest.fn(),
+  }),
   fontFamilyNative: { regular: 'System', bold: 'System' },
   fontSize: { body: 15 },
   s: (value: number) => value,
@@ -93,6 +100,7 @@ jest.mock('../../src/components', () => {
   const ReactActual = require('react');
   const { View, Text } = require('react-native');
   return {
+    ConfirmSheet: () => null,
     DepthBackground: () => null,
     ScalesBackground: () => null,
     SectionLabel: ({ children }: { children?: React.ReactNode }) => <Text>{children}</Text>,

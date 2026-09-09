@@ -669,7 +669,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           nowhere else: the scan belongs to the unlocked session, so its answer
           is taken on the first screen the session lands on. */}
       <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible}
+        visible={derivedAccounts.sheetVisible || derivedAccounts.rescanningAccountId !== null}
+        // A rescan the user asked for opens the sheet at once and waits there;
+        // the automatic pass says nothing until it has an answer.
+        scanning={derivedAccounts.rescanningAccountId !== null}
         finds={derivedAccounts.finds}
         onImport={(indexes: number[]) => void derivedAccounts.importFinds(indexes)}
         onDismiss={() => void derivedAccounts.dismiss()}

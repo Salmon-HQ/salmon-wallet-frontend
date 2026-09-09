@@ -35,6 +35,7 @@ import {
   iconSize,
 } from '../../../src/icons';
 import {
+  useAccountRemoval,
   useAccountsContext,
   useAnalyticsConsent,
   useCurrencyContext,
@@ -54,6 +55,7 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import {
+  ConfirmSheet,
   DepthBackground,
   IconBubble,
   ListRow,
@@ -165,6 +167,8 @@ export default function SettingsScreenIndex() {
   const [{ currency }] = useCurrencyContext();
   const { preference: appearancePreference } = useTheme();
   const { disarm: disarmBiometric } = useBiometric();
+  const accountRemoval = useAccountRemoval();
+  const [removeWalletVisible, setRemoveWalletVisible] = useState(false);
 
   const appearanceLabels: Record<typeof appearancePreference, string> = useMemo(
     () => ({
@@ -218,43 +222,39 @@ export default function SettingsScreenIndex() {
     );
   }, [accountActions, removing, router, disarmBiometric, t]);
 
+  // Removing one wallet re-encrypts the ones that are left, so it asks for the
+  // password whenever the unlock key cache has lapsed — which an `Alert` has
+  // nowhere to put. Removing the *last* wallet wipes the vault instead, so it
+  // needs no key and keeps its alert.
   const handleRemoveWallet = useCallback(() => {
-    const currentAccount = activeAccount;
-    if (!currentAccount) return;
+    if (!activeAccount) return;
 
     if (accountState.accounts.length <= 1) {
       handleRemoveAllWallets();
       return;
     }
 
-    Alert.alert(
-      t('settings.remove_wallet_title'),
-      t('settings.wallets.remove_wallet_description'),
-      [
-        { text: t('actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.confirm_remove'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await accountActions.removeAccount(currentAccount.id);
-              router.back();
-            } catch (error) {
-              console.error('Failed to remove wallet:', error);
-              Alert.alert(t('general.error'), t('settings.remove_wallet_error'));
-            }
-          },
-        },
-      ]
-    );
-  }, [
-    accountState.accounts.length,
-    activeAccount,
-    accountActions,
-    handleRemoveAllWallets,
-    router,
-    t,
-  ]);
+    setRemoveWalletVisible(true);
+  }, [accountState.accounts.length, activeAccount, handleRemoveAllWallets]);
+
+  const confirmRemoveWallet = useCallback(
+    async (password?: string) => {
+      const currentAccount = activeAccount;
+      if (!currentAccount) return;
+      try {
+        await accountRemoval.remove(currentAccount.id, password);
+        setRemoveWalletVisible(false);
+        router.back();
+      } catch (error) {
+        console.error('Failed to remove wallet:', error);
+        Alert.alert(t('general.error'), t('settings.remove_wallet_error'));
+        // Rethrown so the sheet stays open: when the vault key had just
+        // expired it now carries the password field.
+        throw error;
+      }
+    },
+    [accountRemoval, activeAccount, router, t]
+  );
 
   const handleRowPress = useCallback(
     (row: SettingsRowDef) => {
@@ -384,6 +384,18 @@ export default function SettingsScreenIndex() {
           </View>
         ))}
       </ScrollView>
+
+      <ConfirmSheet
+        visible={removeWalletVisible}
+        onClose={() => setRemoveWalletVisible(false)}
+        title={t('settings.remove_wallet_title')}
+        message={t('settings.wallets.remove_wallet_description')}
+        confirmText={t('settings.confirm_remove')}
+        isDanger
+        requirePassword={accountRemoval.requiresPassword}
+        validatePassword={accountRemoval.validatePassword}
+        onConfirm={confirmRemoveWallet}
+      />
     </SafeAreaView>
   );
 }
