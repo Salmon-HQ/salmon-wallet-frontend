@@ -20,13 +20,20 @@ on:
     tags:
       - 'extension/v*'
 
-permissions:
-  contents: read
+permissions: {}
+
+# Two tags pushed close together must not race on one artifact name.
+concurrency:
+  group: build-extension-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,6 +49,19 @@ jobs:
           PKG_VERSION="$(jq -r .version apps/extension/package.json)"
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "::error::Tag extension/v${TAG_VERSION} does not match apps/extension/package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+
+      # A tag on a commit CI never passed does not ship. The PR gate runs on
+      # main after the merge, so the commit under the tag has a run to check.
+      - name: Check CI passed on the tagged commit
+        if: startsWith(github.ref, 'refs/tags/extension/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CONCLUSION="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --json conclusion --jq '[.[] | .conclusion] | if index("success") then "success" else (.[0] // "none") end')"
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::CI has not passed on $GITHUB_SHA (last conclusion: $CONCLUSION) — merge it green before tagging"
             exit 1
           fi
 
@@ -82,6 +102,11 @@ jobs:
             exit 1
           fi
 
+      # Mozilla's own linter, the one AMO runs on upload. An error here is a
+      # rejected submission there; catching it costs a minute, not a version.
+      - name: Lint Firefox build (web-ext)
+        run: npx --yes web-ext@10.6.0 lint --source-dir apps/extension/dist/firefox-mv2 --warnings-as-errors=false
+
       - name: Zip Firefox (MV2)
         run: pnpm --filter @salmon/extension zip:firefox
 
@@ -111,7 +136,16 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      # Build provenance: a signed statement that these zips came out of this
+      # workflow at this commit. Verify with `gh attestation verify <zip> --repo <owner/repo>`.
+      id-token: write
+      attestations: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: CHANGELOG.md
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: salmon-extension-${{ github.sha }}
@@ -131,6 +165,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+          if [ -s NOTES.md ]; then NOTES=(--notes-file NOTES.md); else NOTES=(--generate-notes); fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag "${NOTES[@]}" \
             --title "Extension ${TAG#extension/v}" \
             ./*.zip ./SHA256SUMS

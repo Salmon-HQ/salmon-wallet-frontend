@@ -198,7 +198,7 @@ vi.mock('axios', () => {
 // Test Data
 // ============================================================================
 
-const MOCK_MNEMONIC = 'test test test test test test test test test test test test';
+const MOCK_MNEMONIC = 'test test test test test test test test test test test test'; // no-secrets-ignore: twelve placeholder words, no wallet behind them
 const MOCK_PASSWORD = 'SecurePassword123!';
 const MOCK_ACCOUNT_ID = 'account_123456_abc';
 

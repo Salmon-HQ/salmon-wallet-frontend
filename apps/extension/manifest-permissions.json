@@ -1,0 +1,7 @@
+{
+  "permissions": ["alarms", "clipboardRead", "sidePanel", "storage"],
+  "host_permissions": [
+    "https://d1fh2pwo7kzely.cloudfront.net/*",
+    "https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/*"
+  ]
+}

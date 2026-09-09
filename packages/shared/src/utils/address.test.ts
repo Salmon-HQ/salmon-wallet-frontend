@@ -24,7 +24,7 @@ describe('address utils', () => {
   it('truncates hashes with default chars', () => {
     expect(
       truncateHash(
-        '3z56JsXvaPB7rauJYoNDui4SjwZNGAZw9DDZML29qmm6u8WVMGTkiAc7dfYe7SdHFXNa7H9Hnas6uvnsyA9a7UJc'
+        '3z56JsXvaPB7rauJYoNDui4SjwZNGAZw9DDZML29qmm6u8WVMGTkiAc7dfYe7SdHFXNa7H9Hnas6uvnsyA9a7UJc' // no-secrets-ignore: a transaction hash, not a key
       )
     ).toBe('3z56Js...9a7UJc');
   });

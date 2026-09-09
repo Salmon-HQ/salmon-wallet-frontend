@@ -261,8 +261,11 @@ any release that touches copy.
 - **Web**: retired 2026-09-02; `apps/web` and its deploy workflow are deleted.
 - **Extension**: `build-extension.yml` (`extension/v*` tag push or manual
   `workflow_dispatch`) produces chrome/firefox artifacts, a source bundle, and
-  (on a tag) a GitHub Release with the zips + `SHA256SUMS`; no store
-  auto-publish.
+  (on a tag) a GitHub Release with the zips, `SHA256SUMS`, the tag's
+  CHANGELOG section as notes and a build-provenance attestation (verify with
+  `gh attestation verify <zip> --repo Salmon-HQ/salmon-wallet-frontend`);
+  no store auto-publish. The tag is refused when CI did not pass on its
+  commit.
 - **Mobile**: EAS build (`pnpm build:aab` / `build:apk` from `apps/mobile`) —
   see `apps/mobile/AGENTS.md` for the pre-build checklist and keystore rules.
 
