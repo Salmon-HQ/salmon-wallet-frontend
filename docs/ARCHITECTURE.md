@@ -73,6 +73,27 @@ Para desarrollar contra el backend local en Docker: `pnpm --filter @salmon/exten
 
 Señales de mala ubicación: un componente RN o DOM en `shared`; lógica de producto dentro de `packages/ui`; un hook compartido que usa una API de plataforma; una app que reimplementa algo que `shared` ya tiene; un literal de diseño fuera de `theme`.
 
+## Solana
+
+El cliente Solana es [`@solana/kit`](https://github.com/anza-xyz/kit) 8.x, sobre `@solana-program/*`, en
+`packages/shared/src/blockchain/solana`. `@solana/web3.js` 1.98 no es dependencia de producción de
+ningún paquete: sigue como `devDependency` de `packages/shared` y `apps/extension`, usado únicamente como
+oráculo cruzado en tests — los vectores dorados que fija cada test se producen con web3.js y se reproducen
+con kit, así una discrepancia entre librerías aparece como test roto en vez de firma silenciosamente mal.
+`tweetnacl` cumple el mismo rol para `ed25519` crudo, pero además sigue en producción por una razón sin
+relación con Solana: lo usa `crypto/encryption.ts`.
+
+`eslint.config.js` tiene una regla que corta cualquier import nuevo de `@solana/web3.js` fuera de archivos
+de test (`@typescript-eslint/no-restricted-imports` + un selector `no-restricted-syntax` sobre `TSImportType`,
+porque la primera no cubre imports de sólo-tipo). Es `error`, con vía de escape a propósito: un
+`eslint-disable` en línea con justificación, para cuando kit todavía no cubre algo que sí cubre v1.
+
+Off-chain message signing (OCMS v1) — firmar un mensaje que no es una transacción, sin que la firma se
+pueda reinterpretar como firma de transacción — está implementado en
+`packages/shared/src/blockchain/solana/offchain-message.ts`, con su capa de aprobación en
+`packages/shared/src/utils/dapp-approval.ts` y la UI de aprobación en
+`packages/ui/src/components/DAppApproval/`.
+
 ## Verificación
 
 Desde la raíz, lo mismo que corre CI: `pnpm format:check`, `pnpm turbo run typecheck lint test:coverage`, `pnpm check:i18n`, `pnpm check:parity`. Para un paquete: `pnpm turbo run test --filter=@salmon/<pkg>` (`shared` y `ui` con Vitest, `mobile` con Jest). E2E: `apps/extension/.playwright`, `apps/mobile/.maestro`.
