@@ -27,71 +27,48 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Animated,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Animated, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from 'react-native';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
-  componentSizes,
-  s,
-  spacing,
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
-  useCoinMarketData,
   usePrefetchBalances,
   useCurrencyContext,
   useHomeShell,
   mapBalanceToToken,
-  buildBitcoinToken,
   type HomeSubTabKey,
   isWatchOnlyAccount,
-  vs,
   getNetworkLabel,
   getHeldNetworkIds,
-  BLOCKCHAIN_TO_COINGECKO,
-  PERIOD_TO_DAYS,
-  coinInfoToMarketData,
   type NetworkId,
   type PriceChartPeriod,
-  type PriceDataPoint,
   type Token,
-  type Semantic,
 } from '@salmon/shared';
 import {
-  AboutCard,
   BalanceHeader,
   DerivedAccountsSheet,
   HomeTabOrderSheet,
-  MarketDataCard,
   NftsTab,
   PortfolioSubTabs,
-  PriceChart,
   ReceiveSheet,
   SkeletonRow,
   StateBlock,
   TokenList,
-  TokenListItem,
   WalletHeader,
   WarningNotice,
   type BlockchainId,
-  type MarketData,
 } from '../../../src/components';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
+import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
+import { TOP_FADE_SCROLL_RANGE, stylesFor } from '../../../src/screens/home/homeStyles';
+import { useHomeBitcoinMarket } from '../../../src/screens/home/useHomeBitcoinMarket';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-
-/** Scroll distance over which the top fade gradient reaches full opacity. */
-const TOP_FADE_SCROLL_RANGE = 30;
 
 /** The two in-page sub-tabs — the shell's key, kept under its old local name. */
 type SubTabKey = HomeSubTabKey;
@@ -267,41 +244,20 @@ export default function HomeScreen() {
   const tokenListItems = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
 
   // Bitcoin coin info + chart data via the shared React Query hook (WP4) —
-  // same hook web/extension's HomePage and this app's token detail screen
-  // use, replacing this column's own useState+useEffect fetch pair.
-  const bitcoinCoinId = currentChain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO.bitcoin : undefined;
-  const {
-    coinInfo: bitcoinCoinInfo,
-    chartData: bitcoinChartDataRaw,
-    chartLoading: bitcoinDataLoading,
-    error: bitcoinDataError,
-  } = useCoinMarketData({
-    coinId: bitcoinCoinId,
+  // same hook web/extension's HomePage and this app's token detail screen use.
+  const bitcoin = useHomeBitcoinMarket({
+    currentChain,
+    currentNetworkId,
     currency,
-    days: PERIOD_TO_DAYS[bitcoinChartPeriod],
-    enabled: currentChain === 'bitcoin',
-    // A test network's coin has no market: the hook returns nothing off
-    // mainnet rather than quoting the mainnet asset's price (spec 026).
-    networkId: currentNetworkId,
+    chartPeriod: bitcoinChartPeriod,
+    nativeAmount,
+    usdTotal,
   });
-  const bitcoinChartData: PriceDataPoint[] = bitcoinChartDataRaw ?? [];
-  const bitcoinChartError = !!bitcoinDataError && bitcoinChartData.length === 0;
 
   // Handle chart period change
   const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setBitcoinChartPeriod(period);
   }, []);
-
-  // Transform CoinInfo to MarketData for MarketDataCard
-  const bitcoinMarketData: MarketData | undefined = useMemo(() => {
-    if (!bitcoinCoinInfo) return undefined;
-    return coinInfoToMarketData(bitcoinCoinInfo);
-  }, [bitcoinCoinInfo]);
-
-  const bitcoinToken = useMemo(
-    () => buildBitcoinToken(bitcoinCoinInfo, nativeAmount, usdTotal),
-    [bitcoinCoinInfo, nativeAmount, usdTotal]
-  );
 
   // Handlers
   // Send is a flow of four screens now (spec 018), not a sheet: the first of
@@ -616,66 +572,17 @@ export default function HomeScreen() {
                     {currentChain === 'bitcoin' ? (
                       // Bitcoin lives inside Portfolio with chart, market data
                       // and about — it has no asset-detail screen of its own.
-                      <ScrollView
-                        style={styles.bitcoinScrollView}
-                        contentContainerStyle={[
-                          styles.bitcoinContent,
-                          styles.tabGutter,
-                          { paddingBottom: floatingBottomOffset },
-                        ]}
-                        showsVerticalScrollIndicator={false}
+                      <BitcoinColumn
+                        styles={styles}
+                        bitcoin={bitcoin}
+                        chartPeriod={bitcoinChartPeriod}
+                        onChartPeriodChange={handleChartPeriodChange}
+                        balanceState={balanceState}
+                        hiddenBalance={hiddenBalance}
+                        ListEmptyComponent={ListEmptyComponent}
+                        bottomOffset={floatingBottomOffset}
                         onScroll={handleScroll}
-                        scrollEventThrottle={16}
-                      >
-                        {/* Price Chart */}
-                        {/* The one card that does not sit inside the column's
-                          gutters: it runs off the left screen edge and stops
-                          a gutter short of the right. */}
-                        <PriceChart
-                          data={bitcoinChartData}
-                          selectedPeriod={bitcoinChartPeriod}
-                          onPeriodChange={handleChartPeriodChange}
-                          loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                          error={bitcoinChartError}
-                          height={180}
-                          bleed
-                        />
-
-                        {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-                        {balanceState === 'loading' ? (
-                          <SkeletonRow padding="lg" leadingSize={44} trailingWidth={50} />
-                        ) : balanceState === 'error' ? (
-                          /* A load that failed with nothing cached owes the user
-                           the error state and its retry, never an endless
-                           skeleton. */
-                          ListEmptyComponent
-                        ) : (
-                          bitcoinToken && (
-                            <TokenListItem
-                              token={bitcoinToken}
-                              hiddenBalance={hiddenBalance}
-                              blockchain="bitcoin"
-                              // The column already spaces its children by 20
-                              // (`gap`); the row's own list margin would make
-                              // it 40 under this one card.
-                              style={styles.bitcoinCard}
-                            />
-                          )
-                        )}
-
-                        {/* Market Data */}
-                        <MarketDataCard
-                          data={bitcoinMarketData}
-                          symbol="BTC"
-                          loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                        />
-
-                        {/* About Section - at the end */}
-                        <AboutCard
-                          description={bitcoinCoinInfo?.description}
-                          loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                        />
-                      </ScrollView>
+                      />
                     ) : (
                       // Normal token list for Solana/Ethereum
                       <TokenList
@@ -751,68 +658,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const stylesFor = (_t: Semantic) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: 'transparent',
-    },
-    content: {
-      flex: 1,
-    },
-    // The one gutter every Home sub-tab is held to. It lives on the content
-    // containers here, not inside the tab components — a tab that drew its own
-    // padding (or forgot to, as the NFTs grid did) is how the columns drifted.
-    tabGutter: {
-      paddingHorizontal: s(spacing.screenGutter),
-    },
-    // Block seams are the component gap (20), on both sub-tabs: header row →
-    // balance block is this padding, balance block → sub-tabs row is
-    // `pinnedSubTabs`' marginTop, sub-tabs row → content region is the bottom
-    // padding. The anatomy inside each block keeps the finer 4/8/12 steps.
-    pinnedHeader: {
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.xl),
-      paddingBottom: vs(spacing.xl),
-    },
-    pinnedSubTabs: {
-      marginTop: vs(spacing.xl),
-    },
-    listContainer: {
-      flex: 1,
-    },
-    chainContent: {
-      flex: 1,
-    },
-    balanceErrorBanner: {
-      marginHorizontal: s(spacing.screenGutter),
-      marginBottom: vs(spacing.xl),
-    },
-    listContent: {
-      paddingTop: 0,
-      paddingBottom: vs(componentSizes.tabBarScrollPadding),
-    },
-    topFadeGradient: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      top: 0,
-      height: componentSizes.sheetFadeGradientHeight,
-      zIndex: 1,
-    },
-    // Bitcoin view styles
-    bitcoinCard: {
-      marginBottom: 0,
-    },
-    bitcoinScrollView: {
-      flex: 1,
-    },
-    bitcoinContent: {
-      paddingTop: 0,
-      paddingBottom: vs(componentSizes.tabBarScrollPadding),
-      // The component gap (DESIGN.md §Layout): chart, market data and About are
-      // sibling components on this surface.
-      gap: vs(spacing.screenGutter),
-    },
-  });
