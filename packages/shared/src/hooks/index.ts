@@ -237,3 +237,10 @@ export type {
   UseHomeShellParams,
   UseHomeShellResult,
 } from './useHomeShell';
+export { useAccountAddFlow } from './useAccountAddFlow';
+export type {
+  AccountAddFlow,
+  UseAccountAddFlowOptions,
+  SeedErrorKey,
+  ReauthErrorKey,
+} from './useAccountAddFlow';

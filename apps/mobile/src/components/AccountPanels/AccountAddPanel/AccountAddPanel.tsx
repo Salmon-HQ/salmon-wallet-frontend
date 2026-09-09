@@ -1,6 +1,10 @@
 /**
  * AccountAddPanel - Multi-step account creation flow for mobile
  *
+ * The flow itself — steps, the derived scan, the seed grid, the imports, the
+ * name, the re-auth and both confirms — is the shared `useAccountAddFlow`,
+ * the same machine the DOM twin runs. This file renders it and owns the wait.
+ *
  * Steps:
  * 1. select-method: Choose between deriving or importing
  * 2. derive-scan: Scan for derived accounts using DerivedAccountCard
@@ -9,7 +13,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -22,33 +26,12 @@ import { useTranslation } from 'react-i18next';
 
 import {
   spacing,
-  fontSize,
-  fontFamilyNative,
-  lineHeight,
-  s,
-  vs,
   useAccountsContext,
-  scanDerivedAccounts,
-  validateMnemonic,
-  normalizeMnemonic,
-  createAccount,
-  importAccountFromPrivateKey,
-  importWatchOnlyAccount,
-  isVaultKeyCached,
-  useImportPrivateKey,
-  useImportWatchOnly,
-  getAccountMnemonic,
+  useAccountAddFlow,
   getShortAddress,
-  getScanNetworks,
-  getScanNetworksWithMirrors,
   NETWORK_DISPLAY,
-  SHORT_PHRASE,
-  EncryptionMaterialMissingError,
-  trackEvent,
-  type Account,
   type AccountAddStep,
   type DerivedAccountInfo,
-  type Semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
@@ -66,6 +49,7 @@ import { PasswordInput } from '../../PasswordInput';
 import { useSecretScreen } from '../../../../hooks/useSecretScreen';
 import { useWaitPassage } from '../../../utils/useWaitPassage';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import { stylesFor } from './styles';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -79,22 +63,11 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, accent } = useSemantic();
-  const [accountState, accountActions] = useAccountsContext();
-  const { accounts, activeAccount } = accountState;
+  const [{ accounts }] = useAccountsContext();
 
   // The imported seed lives in this panel's memory for its whole lifetime,
   // not just while the grid is mounted (`SeedWordInput` covers those frames).
   useSecretScreen('account-add-panel');
-
-  // Step state
-  const [step, setStep] = useState<AccountAddStep>('select-method');
-
-  // Derive flow state
-  const [derivedAccounts, setDerivedAccounts] = useState<DerivedAccountInfo[]>([]);
-  // Networks whose scan threw — distinguishes an outage from "no accounts".
-  const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
-  const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
-  const [scanning, setScanning] = useState(false);
 
   // Loading state
   const [loading, setLoading] = useState(false);
@@ -106,11 +79,6 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
     null
   );
-  // Re-auth step state. The password lives here only for the moment between
-  // typing and the verified write.
-  const [reauthPassword, setReauthPassword] = useState('');
-  const [reauthError, setReauthError] = useState('');
-  const [reauthChecking, setReauthChecking] = useState(false);
 
   // The wait's passage: the panel keeps the wait mounted until its closing
   // wave has left, and the completion handoff is parked behind that report —
@@ -125,189 +93,20 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     onComplete();
   }, [waitExited, onComplete]);
 
-  // Import flow state — one entry per grid box. Twelve to begin with; a paste
-  // or a thirteenth typed word grows it to twenty-four.
-  const [seedWords, setSeedWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
-  // What was actually pasted when a paste did not fit. `null` = no rejection.
-  const [pastedCount, setPastedCount] = useState<number | null>(null);
-  const [seedError, setSeedError] = useState('');
-  const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
-
-  // Name step state
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: accounts.length + 1 }),
     [accounts.length, t]
   );
-  const [accountName, setAccountName] = useState('');
 
-  // Private-key import state (shared with web via the same hook)
-  const privateKeyImport = useImportPrivateKey({ accounts });
-  // Watch-only import state (shared with web via the same hook)
-  const watchOnlyImport = useImportWatchOnly({ accounts });
-
-  // ========================================================================
-  // Step handlers
-  // ========================================================================
-
-  // Deriving needs a seed phrase to derive from. An account imported from a
-  // private key, or a watch-only one, has none — so the card is not offered
-  // rather than offered and inert. This reads the same value the handler
-  // guards on, so the two cannot drift apart.
-  const canDerive = !!getAccountMnemonic(activeAccount);
-
-  const handleSelectDerive = useCallback(async () => {
-    const mnemonic = getAccountMnemonic(activeAccount);
-    if (!mnemonic) return;
-    setStep('derive-scan');
-    setScanning(true);
-    setFailedNetworks([]);
-    try {
-      const networkIds = await getScanNetworks();
-      const { accounts: scanned, failedNetworks: failed } = await scanDerivedAccounts(
-        mnemonic,
-        networkIds
-      );
-      setDerivedAccounts(scanned);
-      setFailedNetworks(failed);
-    } catch {
-      // Total failure (network catalog unreachable) — mark the scan as failed
-      // so the UI shows the error state instead of an empty list.
-      setDerivedAccounts([]);
-      setFailedNetworks(['all']);
-    } finally {
-      setScanning(false);
-    }
-  }, [activeAccount]);
-
-  const handleSelectImport = useCallback(() => {
-    setStep('import-seed');
+  const onWaitStart = useCallback(() => setLoading(true), []);
+  const onWaitEnd = useCallback(() => setLoading(false), []);
+  // Parked, not fired: dropping `loading` starts the wait's exit, and
+  // `handleWaitExited` completes once the last wave has left the screen.
+  const onPersisted = useCallback(() => {
+    pendingCompleteRef.current = true;
+    setLoading(false);
   }, []);
-
-  const handleSelectImportPrivateKey = useCallback(() => {
-    privateKeyImport.reset();
-    setStep('import-private-key');
-  }, [privateKeyImport]);
-
-  const handlePrivateKeySubmit = useCallback(async () => {
-    if (!(await privateKeyImport.validate())) return;
-    setAccountName(defaultName);
-    setStep('set-name');
-  }, [privateKeyImport, defaultName]);
-
-  const handleSelectImportWatchOnly = useCallback(() => {
-    watchOnlyImport.reset();
-    setStep('import-watch-only');
-  }, [watchOnlyImport]);
-
-  const handleWatchOnlySubmit = useCallback(() => {
-    if (!watchOnlyImport.validate()) return;
-    setAccountName(defaultName);
-    setStep('set-name');
-  }, [watchOnlyImport, defaultName]);
-
-  const handleDerivedSelect = useCallback((account: DerivedAccountInfo) => {
-    setSelectedDerived((prev) => (prev?.address === account.address ? null : account));
-  }, []);
-
-  const handleDerivedContinue = useCallback(() => {
-    if (!selectedDerived) return;
-    setAccountName(defaultName);
-    setStep('set-name');
-  }, [selectedDerived, defaultName]);
-
-  const handleSeedWords = useCallback((next: string[]) => {
-    setSeedWords(next);
-    setPastedCount(null);
-    setSeedError('');
-  }, []);
-
-  const handleSeedLength = useCallback((length: number) => {
-    setSeedWords((prev) =>
-      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
-    );
-  }, []);
-
-  const handleSeedSubmit = useCallback(() => {
-    if (!validateMnemonic(seedPhrase)) {
-      setSeedError(t('wallet.create.invalidSeed'));
-      return;
-    }
-    setSeedError('');
-    setAccountName(defaultName);
-    setStep('set-name');
-  }, [seedPhrase, defaultName, t]);
-
-  /**
-   * Stores a freshly built account, reporting completion through the wait.
-   *
-   * Split out of `handleConfirm` because the re-auth retry needs exactly this
-   * half: the account is already built, only the encrypted write is missing.
-   */
-  const persistAccount = useCallback(
-    async (account: Account, password?: string) => {
-      await accountActions.addAccount(account, password);
-      // Anonymous funnel event: an account was added from inside the app. A
-      // derived account reuses the active seed (create); an imported seed or
-      // private key is a recovery. No seed, address or key material leaves
-      // here — just which flow completed.
-      trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      // The key has done its job; drop it from component state rather than
-      // leaving it resident until the panel happens to unmount.
-      privateKeyImport.reset();
-      watchOnlyImport.reset();
-      // Parked, not fired: dropping `loading` starts the wait's exit, and
-      // `handleWaitExited` completes once the last wave has left the screen.
-      pendingCompleteRef.current = true;
-      setLoading(false);
-    },
-    [accountActions, selectedDerived, privateKeyImport, watchOnlyImport]
-  );
-
-  /**
-   * Builds the account the current flow describes. Cheap enough to run twice
-   * (once per confirm attempt) and free of side effects, so the re-auth path
-   * can rebuild rather than park key material in component state.
-   */
-  const buildAccount = useCallback(async () => {
-    const name = accountName.trim() || defaultName;
-    // A private key owns one address and derives nothing, so it takes the
-    // import factory instead of the mnemonic fan-out across networks.
-    if (privateKeyImport.privateKey) {
-      return importAccountFromPrivateKey({
-        name,
-        privateKey: privateKeyImport.privateKey,
-        networkId: privateKeyImport.networkId,
-      });
-    }
-    // A watched address derives nothing either, and has no key to import.
-    if (watchOnlyImport.address) {
-      return importWatchOnlyAccount({
-        name,
-        address: watchOnlyImport.address,
-        networkId: watchOnlyImport.networkId,
-      });
-    }
-    return createAccount({
-      name,
-      mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-      networkIds: await getScanNetworksWithMirrors(),
-      startIndex: selectedDerived ? selectedDerived.index : 0,
-      // A derived account is a wallet of its own that happens to share this
-      // wallet's seed; recording which one lets Wallets draw the descent
-      // (spec 025). An imported phrase descends from nothing.
-      ...(selectedDerived && activeAccount ? { derivedFrom: activeAccount.id } : {}),
-    });
-  }, [
-    accountName,
-    defaultName,
-    privateKeyImport,
-    watchOnlyImport,
-    selectedDerived,
-    activeAccount,
-    seedPhrase,
-  ]);
-
-  const reportFailure = useCallback(
+  const onFailure = useCallback(
     (err: unknown) => {
       console.error('Failed to add account:', err);
       setCreationError({
@@ -318,97 +117,15 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     [t]
   );
 
-  const handleConfirm = useCallback(async () => {
-    if (loading) return;
-
-    // Asked before the work, not after it fails: the vault key expires on
-    // inactivity, and finding out at the write means showing a wait, then a
-    // dead end, for something that was knowable up front.
-    if (!(await isVaultKeyCached())) {
-      setStep('reauth');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { account } = await buildAccount();
-      await persistAccount(account);
-    } catch (err) {
-      setLoading(false);
-      // The cache can still lapse between the check and the write.
-      if (err instanceof EncryptionMaterialMissingError) {
-        setStep('reauth');
-        return;
-      }
-      reportFailure(err);
-    }
-  }, [loading, buildAccount, persistAccount, reportFailure]);
-
-  /**
-   * Completes the add with a password the user just supplied, after the vault
-   * key had expired. Verifies it first: re-encrypting the vault under an
-   * unverified password would lock the user out of every account they own.
-   */
-  const handleReauthConfirm = useCallback(async () => {
-    if (loading) return;
-    if (!reauthPassword) {
-      setReauthError(t('errors.password_required'));
-      return;
-    }
-
-    setReauthChecking(true);
-    let valid = false;
-    try {
-      valid = await accountActions.checkPassword(reauthPassword);
-    } catch {
-      setReauthChecking(false);
-      setReauthError(t('errors.password_check_failed'));
-      return;
-    }
-    setReauthChecking(false);
-
-    if (!valid) {
-      setReauthError(t('errors.invalid_password'));
-      return;
-    }
-
-    setReauthError('');
-    setLoading(true);
-    try {
-      const { account } = await buildAccount();
-      await persistAccount(account, reauthPassword);
-      setReauthPassword('');
-    } catch (err) {
-      setLoading(false);
-      reportFailure(err);
-    }
-  }, [loading, reauthPassword, accountActions, buildAccount, persistAccount, reportFailure, t]);
-
-  const handleStepBack = useCallback(() => {
-    if (step === 'reauth') {
-      setReauthPassword('');
-      setReauthError('');
-      setStep('set-name');
-      return;
-    }
-    if (step === 'set-name') {
-      if (selectedDerived) setStep('derive-scan');
-      else if (privateKeyImport.privateKey) setStep('import-private-key');
-      else if (watchOnlyImport.address) setStep('import-watch-only');
-      else setStep('import-seed');
-    } else if (
-      step === 'derive-scan' ||
-      step === 'import-seed' ||
-      step === 'import-private-key' ||
-      step === 'import-watch-only'
-    ) {
-      if (step === 'import-private-key') privateKeyImport.reset();
-      if (step === 'import-watch-only') watchOnlyImport.reset();
-      setStep('select-method');
-    } else {
-      onBack();
-    }
-  }, [step, selectedDerived, privateKeyImport, watchOnlyImport, onBack]);
+  const flow = useAccountAddFlow({
+    defaultName,
+    onBack,
+    onWaitStart,
+    onWaitEnd,
+    onPersisted,
+    onFailure,
+  });
+  const { step, privateKeyImport, watchOnlyImport, selectedDerived } = flow;
 
   // ========================================================================
   // Render helpers
@@ -423,14 +140,14 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     descriptionKey: string;
     onPress: () => void;
   }[] = [
-    ...(canDerive
+    ...(flow.canDerive
       ? [
           {
             id: 'derive',
             icon: TreeStructureIcon,
             titleKey: 'settings.account_add.create_new',
             descriptionKey: 'settings.account_add.create_new_description',
-            onPress: handleSelectDerive,
+            onPress: flow.selectDerive,
           },
         ]
       : []),
@@ -439,21 +156,21 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       icon: FileTextIcon,
       titleKey: 'settings.account_add.import_seed',
       descriptionKey: 'settings.account_add.import_seed_description',
-      onPress: handleSelectImport,
+      onPress: flow.selectImport,
     },
     {
       id: 'private-key',
       icon: KeyIcon,
       titleKey: 'settings.account_add.import_private_key',
       descriptionKey: 'settings.account_add.import_private_key_description',
-      onPress: handleSelectImportPrivateKey,
+      onPress: flow.selectImportPrivateKey,
     },
     {
       id: 'watch-only',
       icon: EyeIcon,
       titleKey: 'settings.account_add.import_watch_only',
       descriptionKey: 'settings.account_add.import_watch_only_description',
-      onPress: handleSelectImportWatchOnly,
+      onPress: flow.selectImportWatchOnly,
     },
   ];
 
@@ -479,7 +196,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     ));
 
   const renderDeriveScan = () => {
-    if (scanning) {
+    if (flow.scanning) {
       return (
         <View style={styles.scanState}>
           <ActivityIndicator size="large" color={accent.ink} />
@@ -488,13 +205,13 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       );
     }
 
-    if (derivedAccounts.length === 0 && failedNetworks.length > 0) {
+    if (flow.derivedAccounts.length === 0 && flow.failedNetworks.length > 0) {
       return (
         <View style={styles.stack} testID="derived-scan-error">
           <WarningNotice tone="error" title={t('wallet.derived.scan_failed_title')}>
             {t('wallet.derived.scan_failed_body')}
           </WarningNotice>
-          <PrimaryButton onPress={handleSelectDerive} testID="derived-scan-retry-button">
+          <PrimaryButton onPress={flow.selectDerive} testID="derived-scan-retry-button">
             {t('transactions.tapToRetry')}
           </PrimaryButton>
         </View>
@@ -503,10 +220,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
     return (
       <View style={styles.stack}>
-        {failedNetworks.length > 0 && (
+        {flow.failedNetworks.length > 0 && (
           <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
         )}
-        {derivedAccounts.map((item: DerivedAccountInfo) => (
+        {flow.derivedAccounts.map((item: DerivedAccountInfo) => (
           <DerivedAccountCard
             key={`${item.networkId}-${item.address}`}
             address={item.address}
@@ -515,12 +232,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             balanceFormatted={item.balanceFormatted}
             selected={selectedDerived?.address === item.address}
             dimmed={item.balance === 0}
-            onToggle={() => handleDerivedSelect(item)}
+            onToggle={() => flow.toggleDerived(item)}
             blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
           />
         ))}
         <PrimaryButton
-          onPress={handleDerivedContinue}
+          onPress={flow.continueDerived}
           disabled={!selectedDerived}
           testID="account-add-derive-continue-button"
         >
@@ -535,19 +252,19 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
       <SeedPhraseEntry
         testID="account-add-seed"
-        words={seedWords}
-        onChange={handleSeedWords}
-        onLengthChange={handleSeedLength}
-        onPasteRejected={setPastedCount}
+        words={flow.seedWords}
+        onChange={flow.setSeedWords}
+        onLengthChange={flow.setSeedLength}
+        onPasteRejected={flow.setPastedCount}
       />
-      {pastedCount !== null ? (
+      {flow.pastedCount !== null ? (
         <Text style={styles.errorText}>
-          {t('wallet.recover.pastedWordCount', { count: pastedCount })}
+          {t('wallet.recover.pastedWordCount', { count: flow.pastedCount })}
         </Text>
-      ) : seedError ? (
-        <Text style={styles.errorText}>{seedError}</Text>
+      ) : flow.seedError ? (
+        <Text style={styles.errorText}>{t(flow.seedError)}</Text>
       ) : null}
-      <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
+      <PrimaryButton onPress={flow.submitSeed} testID="account-add-seed-continue-button">
         {t('actions.continue')}
       </PrimaryButton>
     </View>
@@ -565,7 +282,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         onChangeText={privateKeyImport.setValue}
         placeholder={t('wallet.import.placeholder')}
         error={privateKeyImport.error ? t(privateKeyImport.error) : undefined}
-        onSubmitEditing={handlePrivateKeySubmit}
+        onSubmitEditing={flow.submitPrivateKey}
         autoFocus
       />
       {/* One slot under the field: the hint stands where the error will stand,
@@ -578,7 +295,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         </Card>
       )}
       <PrimaryButton
-        onPress={handlePrivateKeySubmit}
+        onPress={flow.submitPrivateKey}
         disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
         testID="account-add-private-key-continue-button"
       >
@@ -600,7 +317,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         accessibilityLabel={t('wallet.watchOnly.label')}
         autoFocus
         mono
-        onSubmitEditing={handleWatchOnlySubmit}
+        onSubmitEditing={flow.submitWatchOnly}
       />
       {/* One slot under the field: the hint stands where the error will
           stand, so the layout does not shift when a message replaces it. */}
@@ -617,7 +334,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         </Card>
       )}
       <PrimaryButton
-        onPress={handleWatchOnlySubmit}
+        onPress={flow.submitWatchOnly}
         disabled={!watchOnlyImport.hasInput}
         testID="account-add-watch-only-continue-button"
       >
@@ -632,19 +349,16 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       <SectionLabel variant="caps">{t('lock.password_label', 'Password')}</SectionLabel>
       <PasswordInput
         testID="account-add-reauth-password"
-        value={reauthPassword}
-        onChangeText={(value) => {
-          setReauthPassword(value);
-          if (reauthError) setReauthError('');
-        }}
+        value={flow.reauthPassword}
+        onChangeText={flow.setReauthPassword}
         placeholder={t('lock.password_placeholder')}
-        error={reauthError || undefined}
-        onSubmitEditing={handleReauthConfirm}
+        error={flow.reauthError ? t(flow.reauthError) : undefined}
+        onSubmitEditing={flow.confirmReauth}
         autoFocus
       />
       <PrimaryButton
-        onPress={handleReauthConfirm}
-        disabled={!reauthPassword || reauthChecking}
+        onPress={flow.confirmReauth}
+        disabled={!flow.reauthPassword || flow.reauthChecking}
         testID="account-add-reauth-confirm-button"
       >
         {t('settings.account_add.reauth_confirm')}
@@ -657,15 +371,15 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       <SectionLabel variant="caps">{t('settings.account_add.set_name')}</SectionLabel>
       <TextField
         testID="account-add-name-input"
-        value={accountName}
-        onChangeText={setAccountName}
+        value={flow.accountName}
+        onChangeText={flow.setAccountName}
         placeholder={t('settings.account_add.set_name_placeholder')}
         accessibilityLabel={t('settings.account_add.set_name')}
         autoFocus
         maxLength={32}
-        onSubmitEditing={handleConfirm}
+        onSubmitEditing={flow.confirm}
       />
-      <PrimaryButton onPress={handleConfirm} testID="account-add-confirm-button">
+      <PrimaryButton onPress={flow.confirm} testID="account-add-confirm-button">
         {t('settings.account_add.confirm')}
       </PrimaryButton>
     </View>
@@ -732,7 +446,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         subtitle={t('general.loading')}
         onExited={handleWaitExited}
       />
-      <SettingsScreenLayout title={currentTitle} subtitle={currentSubtitle} onBack={handleStepBack}>
+      <SettingsScreenLayout title={currentTitle} subtitle={currentSubtitle} onBack={flow.stepBack}>
         {step === 'select-method' && renderSelectMethod()}
         {step === 'derive-scan' && renderDeriveScan()}
         {step === 'import-seed' && renderImportSeed()}
@@ -757,54 +471,3 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     </>
   );
 }
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const stylesFor = (t: Semantic) =>
-  StyleSheet.create({
-    /**
-     * The inside of one step. 12 binds a label to its field and a field to its
-     * hint; the 20 between steps' blocks is the layout's own (DESIGN.md
-     * §Layout, the component gap).
-     */
-    stack: {
-      gap: s(spacing.md),
-    },
-    scanState: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: vs(spacing['3xl']),
-      gap: s(spacing.md),
-    },
-    scanStateText: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.bodyLg),
-    },
-    bodyText: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
-    },
-    /** Matches PasswordInput's own error text, so hint and error share a slot. */
-    hintText: {
-      color: t.text.secondary,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.caption),
-      paddingHorizontal: s(spacing.xs),
-    },
-    errorText: {
-      color: t.status.danger,
-      fontFamily: fontFamilyNative.regular,
-      fontSize: s(fontSize.caption),
-      paddingHorizontal: s(spacing.xs),
-    },
-    addressText: {
-      color: t.text.primary,
-      fontFamily: fontFamilyNative.mono,
-      fontSize: s(fontSize.mono),
-    },
-  });
