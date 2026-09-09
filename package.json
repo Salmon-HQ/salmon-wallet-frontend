@@ -44,7 +44,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:no-secrets": "node scripts/check-no-secrets.mjs",
-    "check:manifest": "node scripts/check-manifest-permissions.mjs"
+    "check:manifest": "node scripts/check-manifest-permissions.mjs",
+    "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

@@ -22,6 +22,7 @@ pnpm check:i18n                      # locale parity, missing keys and orphans
 pnpm check:parity                    # every mobile component/screen has its DOM twin on one contract
 pnpm check:manifest                  # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                # nothing that looks like a seed phrase or a keypair in tracked files
+pnpm check:fingerprint               # native surface unchanged since the last mobile binary, or expo.version bumped
 ```
 
 Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,

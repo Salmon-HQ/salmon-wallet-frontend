@@ -70,6 +70,14 @@ dies, and the user cannot receive the fix that follows.
 `_layout.tsx` through a barrel, so publishing it as an update to binaries
 built before it was added bricks them.
 
+`pnpm --filter @salmon/mobile fingerprint:check` is that check, automated: it
+compares the native fingerprint (`@expo/fingerprint`) against
+`native-fingerprint.json`, the baseline recorded for the last built binary,
+and fails when the surface moved without a bump of `expo.version`. CI runs it
+on every PR; `pnpm --filter @salmon/mobile ota -- <eas update args>` runs it
+before publishing. Refresh the baseline with `fingerprint:write` as part of
+building a binary, never on its own.
+
 Before publishing any OTA, check whether the diff adds or newly reaches a
 native module. If it does, it is a **binary release with a bumped version**,
 not an update. Adding a silent fallback to make such a module optional is
@@ -85,6 +93,10 @@ Pre-build checklist — run in order before `eas build --profile production`:
 2. **Env vars sane**: confirm `apps/mobile/.env.{mode}` points to the URLs of the intended target
    (no staging pointing to prod or vice versa). See `.env.example` for the layering rules.
 3. **Versioning**: bump `app.json → expo.version` manually (semver, user-facing) when the release warrants it.
+   `app.json` is the only version source; `apps/mobile/package.json` carries none. Then
+   `pnpm --filter @salmon/mobile fingerprint:write` so `native-fingerprint.json` records this
+   binary, and after the store accepts it, tag the commit `mobile/v<version>` (CI verifies
+   both agree, the way `extension/v*` is verified).
    `versionCode` is bumped automatically by EAS via `appVersionSource: "remote"` + `autoIncrement: true`
    on the production profile, so the build needs internet access to reserve the next code.
 4. **Android keystore**: managed by EAS. Inspect with `eas credentials` from `apps/mobile/`.

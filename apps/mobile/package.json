@@ -1,7 +1,6 @@
 {
   "name": "@salmon/mobile",
   "main": "./index.js",
-  "version": "1.0.3",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -14,7 +13,11 @@
     "test:coverage": "node --no-warnings ../../node_modules/jest/bin/jest.js --coverage",
     "build:aab": "f=\"salmon-wallet-$(node -p \"require('./app.json').expo.version\")-$(date +%Y-%m-%d).aab\" && eas build --platform android --profile production --local --output \"$f\"",
     "build:apk": "f=\"salmon-wallet-$(node -p \"require('./app.json').expo.version\")-$(date +%Y-%m-%d).apk\" && eas build --platform android --profile production-apk --local --output \"$f\"",
-    "eas-build-post-install": "test \"$EAS_BUILD_PLATFORM\" = \"android\" && echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' >> ./android/gradle.properties || true"
+    "eas-build-post-install": "test \"$EAS_BUILD_PLATFORM\" = \"android\" && echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' >> ./android/gradle.properties || true",
+    "fingerprint:check": "node scripts/check-native-fingerprint.mjs",
+    "fingerprint:write": "node scripts/check-native-fingerprint.mjs --write",
+    "export:check": "expo export --platform ios --output-dir /tmp/salmon-export-check",
+    "ota": "node scripts/check-native-fingerprint.mjs && eas update"
   },
   "expo": {
     "install": {
@@ -87,6 +90,7 @@
     "readable-stream": "^4.5.2"
   },
   "devDependencies": {
+    "@expo/fingerprint": "0.16.6",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.18",
