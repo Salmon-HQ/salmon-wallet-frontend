@@ -28,3 +28,19 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
   bundled chromium with the built extension loaded). See
   `.playwright/README.md` for setup and `.playwright/AGENTS.md` for
   conventions agents must follow when extending the suite.
+
+## Releasing
+
+- Bump `package.json → version`, add the `## extension X.Y.Z — <date>`
+  section to the root `CHANGELOG.md` (it becomes the GitHub Release notes),
+  merge, then push the tag `extension/vX.Y.Z` on the merged commit. The
+  workflow refuses a tag that does not match `package.json` or whose commit
+  has no green CI run.
+- A new entry in `permissions` / `host_permissions` (also: a new API or CDN
+  host in `.env.production`) is a change users see — Chrome disables the
+  extension until they accept it. CI compares the built manifest with
+  `manifest-permissions.json`; refresh it on purpose, and say why in the PR:
+  `pnpm --filter @salmon/extension build && pnpm check:manifest --write`.
+- Firefox is linted with `web-ext` (pinned by version in
+  `.github/workflows/build-extension.yml`; bump by hand) and rebuilt twice to
+  prove determinism, because AMO rebuilds from `salmon-wallet-source.zip`.

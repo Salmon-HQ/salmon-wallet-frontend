@@ -31,3 +31,10 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this package.
 - New or changed shared behavior should come with targeted tests in this
   package when practical — a bug here ships to both apps at once. A hoisted
   flow keeps its behaviour tests here; platform tests keep rendering.
+- Test vectors: use the public BIP39 phrases (`abandon … about`,
+  `test … junk`) or generate a random one inside the test; a signature,
+  hash or key that CI's `check:no-secrets` mistakes for wallet material
+  gets a trailing `// no-secrets-ignore: <why>`. Never a real phrase.
+- Invariants that hold for every input (a round trip, an ordering, a
+  bound) go in a `*.property.test.ts` with `fast-check`, next to the
+  example-based test; 200 runs is enough.
