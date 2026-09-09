@@ -89,6 +89,9 @@ jest.mock('@salmon/shared', () => ({
   // tokens with nothing under it to transform, and a fake here would let the
   // two platforms draw two different waves without a test noticing.
   ...jest.requireActual('@salmon/shared/src/motion/crest'),
+  // The wait's own numbers and its tip clock, real for the same reason.
+  ...jest.requireActual('@salmon/shared/src/motion/wait'),
+  useWaitTips: jest.requireActual('@salmon/shared/src/hooks/useWaitTips').useWaitTips,
   // The task chrome and the Home shell are the real modules (their own suites
   // cover them); this file needs them present, not faked.
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
