@@ -195,6 +195,9 @@ export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
 // Section Label
 export type { SectionLabelVariant, SectionLabelPropsBase } from './section-label';
 
+// WalletFamily - a wallet and its derived wallets, tied by a rail
+export type { WalletFamilyPropsBase } from './wallet-family';
+
 // Chip
 export type { ChipSize, ChipVariant, ChipPropsBase, ChipOption, ChipGroupPropsBase } from './chip';
 

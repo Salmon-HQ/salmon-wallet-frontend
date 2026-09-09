@@ -358,8 +358,8 @@ export type {
   TransactionTypeDisplay,
   TransactionTypeGlyph,
 } from './transactionDisplay';
-export { orderWalletCards } from './walletCards';
-export type { WalletCard } from './walletCards';
+export { groupWalletFamilies } from './walletCards';
+export type { WalletFamily } from './walletCards';
 export { MAX_RECENTS, recipientOptions } from './recipientOptions';
 export type { RecipientOption, RecipientOptions } from './recipientOptions';
 export { RESAMPLE_POINTS, buildLinePath, getDataBounds, resampleYs } from './priceChartPath';

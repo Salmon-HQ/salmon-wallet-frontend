@@ -4,7 +4,7 @@
  * A derived path is a wallet of its own (spec 025): its own card, its own
  * name, its own place in the total. The only thing that says where it came
  * from is its position — right under the wallet it shares a seed with, stepped
- * in, joined by a descent line, subtitled "Derived from {parent}". That, and
+ * in, tied by a rail, subtitled "Derived from {parent}". That, and
  * the rescan action being offered exactly where there is a seed to scan, is
  * what is pinned here. No index number appears anywhere.
  */
@@ -240,16 +240,16 @@ describe('Wallets — wallets of one seed', () => {
     expect(order).toEqual(['wallet-card-w1', 'wallet-card-w3', 'wallet-card-w2']);
   });
 
-  it('draws the descent and names the wallet it descends from', () => {
+  it('draws the rail and names the wallet it descends from', () => {
     render(<WalletsScreen />);
 
-    expect(screen.getByTestId('wallet-descent-w3')).toBeTruthy();
+    expect(screen.getByTestId('wallet-rail-w3')).toBeTruthy();
     expect(screen.getByTestId('wallet-derived-from-w3').props.children).toBe(
       'Derived from Account 1'
     );
 
     // A wallet nobody derived carries neither.
-    expect(screen.queryByTestId('wallet-descent-w1')).toBeNull();
+    expect(screen.queryByTestId('wallet-rail-w1')).toBeNull();
     expect(screen.queryByTestId('wallet-derived-from-w1')).toBeNull();
   });
 

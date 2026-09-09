@@ -42,3 +42,7 @@
 ## Amendment 2026-09-09 — "Check derivables" returns to Success
 
 Owner ruling: the onboarding offers the check again, as a button, without a screen of its own. `(auth)/success` (and its DOM twin `SuccessPage`) carries a secondary action "Check derivables" that runs the same user-requested scan Wallets' rescan runs (`useDerivedAccountsScan({ automatic: false })` — the silent pass never starts from that screen) and answers over Success in `DerivedAccountsSheet`: the wait first (`scanning`), then the finds or "No new accounts". Either answer marks the wallet scanned. "Go to my wallet" is unchanged; a wallet never asked about is still covered by the automatic pass on the first unlocked Home. The old `(auth)/derived-accounts` route and the "What is a derivable?" helper stay retired.
+
+## Amendment 2026-09-09 — families on a rail
+
+Owner ruling: a wallet and the wallets derived from it are one block, never collapsible. `WalletFamily` (twins in `apps/mobile/src/components` and `packages/ui/src/components`, contract `WalletFamilyPropsBase`) draws the parent's card, then each derived card stepped in one gutter and tied to the parent by a rail: a `border.default` line that leaves the parent, runs down the leading edge through the gaps, and meets each derived card at a `text.accent` node with a short tick into the card; the rail ends at the last node. `groupWalletFamilies` (shared) replaces `orderWalletCards`; the per-card hairline descent is gone, the "Derived from {name}" subtitle stays. Every wallet in a family is a full card with its own actions.

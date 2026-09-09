@@ -9,8 +9,8 @@
  * Add opens.
  *
  * The cards of one seed sit together: a wallet, then the wallets derived
- * from it, joined by a hairline descent and "Derived from {name}" as the
- * derived card's subtitle (spec 025). No index ever appears.
+ * from it, tied to it by `WalletFamily`'s rail, with "Derived from {name}" as
+ * the derived card's subtitle (spec 025). No index ever appears.
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,7 @@ import {
   useWalletTotals,
   type Account,
   type NetworkId,
-  orderWalletCards,
+  groupWalletFamilies,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -56,6 +56,7 @@ import { IconBubble } from '../IconBubble';
 import { RowPress, StopPress } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WalletFamily } from '../WalletFamily';
 import { WatchOnlyBadge } from '../WatchOnlyBadge';
 import type { WalletsScreenProps } from './types';
 
@@ -121,7 +122,7 @@ export function WalletsScreen({
 
   const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
 
-  const ordered = useMemo(() => orderWalletCards(accounts), [accounts]);
+  const families = useMemo(() => groupWalletFamilies(accounts), [accounts]);
 
   const aggregated = useMemo(
     () =>
@@ -256,24 +257,33 @@ export function WalletsScreen({
         </span>
       </div>
 
-      {ordered.map(({ account, parentName }) => (
-        <WalletCard
-          key={account.id}
-          account={account}
-          parentName={parentName}
-          isActive={account.id === accountId}
-          included={isIncluded(account.id)}
-          total={totals[account.id]}
-          hiddenBalance={hiddenBalance}
-          formatValue={formatValue}
-          networkId={(networkId ?? undefined) as NetworkId | undefined}
-          scanning={scanningAccountId !== null}
-          onSelect={() => void handleSelect(account.id)}
-          onRename={() => onRename(account.id)}
-          onRescan={onRescan ? () => onRescan(account.id) : undefined}
-          onToggleInclude={() => handleToggleInclude(account.id)}
-        />
-      ))}
+      {families.map(({ parent, derived }) => {
+        const card = (account: (typeof accounts)[number], parentName?: string) => (
+          <WalletCard
+            account={account}
+            parentName={parentName}
+            isActive={account.id === accountId}
+            included={isIncluded(account.id)}
+            total={totals[account.id]}
+            hiddenBalance={hiddenBalance}
+            formatValue={formatValue}
+            networkId={(networkId ?? undefined) as NetworkId | undefined}
+            scanning={scanningAccountId !== null}
+            onSelect={() => void handleSelect(account.id)}
+            onRename={() => onRename(account.id)}
+            onRescan={onRescan ? () => onRescan(account.id) : undefined}
+            onToggleInclude={() => handleToggleInclude(account.id)}
+          />
+        );
+        return (
+          <WalletFamily
+            key={parent.id}
+            testID={`wallet-family-${parent.id}`}
+            parent={card(parent)}
+            derived={derived.map((child) => ({ id: child.id, card: card(child, parent.name) }))}
+          />
+        );
+      })}
 
       {/* The one action that is not a wallet: outlined, so it reads as an
           empty slot rather than a card with nothing in it. */}
@@ -379,25 +389,9 @@ function WalletCard({
   }, [account.networksAccounts, networkId]);
 
   return (
-    // A wallet derived from another one is indented under it and joined to it
-    // by a hairline descent running up through the gap to the card it came
-    // from — it is a wallet of its own, and this is the only thing that says
-    // where it came from (spec 025).
-    <div style={{ position: 'relative', paddingLeft: parentName ? spacing.screenGutter : 0 }}>
-      {parentName && (
-        <span
-          data-testid={`wallet-descent-${account.id}`}
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: spacing.screenGutter / 2,
-            top: -spacing.screenGutter,
-            bottom: 0,
-            width: borderWidth.thin,
-            backgroundColor: tokens.border.default,
-          }}
-        />
-      )}
+    // A wallet derived from another one is tied to it by `WalletFamily`'s
+    // rail; this card only says so in its subtitle (spec 025).
+    <div style={{ position: 'relative' }}>
       <RowPress
         testID={`wallet-card-${account.id}`}
         onPress={onSelect}

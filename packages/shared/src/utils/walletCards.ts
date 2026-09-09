@@ -1,41 +1,36 @@
 /**
- * The order the Wallets screen draws its cards in, on both platforms.
+ * The shape the Wallets screen draws, on both platforms: families.
  *
- * The cards of one seed sit together: a wallet, then the wallets derived from
- * it, then the next wallet (spec 025 §Wallets). A derived wallet whose parent
- * is gone has nothing to sit under, so it stands on its own rather than
- * disappearing.
+ * A wallet and the wallets derived from it form one family (spec 025
+ * §Wallets, amended 2026-09-09): the parent's card, then the derived cards
+ * tied to it by a rail. A derived wallet whose parent is gone has nothing to
+ * hang from, so it heads a family of its own rather than disappearing.
  */
 
 interface WalletLike {
   id: string;
-  name: string;
   /** The wallet whose seed this one came from, when it is a derived wallet. */
   derivedFrom?: string;
 }
 
-export interface WalletCard<A extends WalletLike> {
-  account: A;
-  /** The parent's name for a derived card's "Derived from {name}" line. */
-  parentName: string | undefined;
+export interface WalletFamily<A extends WalletLike> {
+  parent: A;
+  /** In list order; empty for a wallet nothing was derived from. */
+  derived: A[];
 }
 
-export function orderWalletCards<A extends WalletLike>(accounts: readonly A[]): WalletCard<A>[] {
+export function groupWalletFamilies<A extends WalletLike>(
+  accounts: readonly A[]
+): WalletFamily<A>[] {
+  const ids = new Set(accounts.map(({ id }) => id));
   const derivedByParent = new Map<string, A[]>();
-  const roots: A[] = [];
+  const parents: A[] = [];
   for (const account of accounts) {
-    const parent = account.derivedFrom
-      ? accounts.find(({ id }) => id === account.derivedFrom)
-      : undefined;
-    if (parent)
-      derivedByParent.set(parent.id, [...(derivedByParent.get(parent.id) ?? []), account]);
-    else roots.push(account);
+    const parentId =
+      account.derivedFrom && ids.has(account.derivedFrom) ? account.derivedFrom : null;
+    if (parentId)
+      derivedByParent.set(parentId, [...(derivedByParent.get(parentId) ?? []), account]);
+    else parents.push(account);
   }
-  return roots.flatMap((root) => [
-    { account: root, parentName: undefined },
-    ...(derivedByParent.get(root.id) ?? []).map((child) => ({
-      account: child,
-      parentName: root.name,
-    })),
-  ]);
+  return parents.map((parent) => ({ parent, derived: derivedByParent.get(parent.id) ?? [] }));
 }

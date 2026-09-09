@@ -222,6 +222,10 @@ export const componentSizes = {
   stepDotSize: 8,
   stepDotGap: 8,
 
+  // Wallets — the rail that ties a seed's derived wallets to their parent
+  /** 6px — the node where a derived wallet meets the rail */
+  walletRailNode: 6,
+
   // Checkbox
   checkboxSize: 24,
 
