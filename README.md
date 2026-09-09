@@ -222,6 +222,8 @@ pnpm turbo run typecheck lint test:coverage   # every package, zero lint warning
 pnpm --filter @salmon/extension build   # extension bundles with wxt
 pnpm check:i18n                         # EN/ES keys in sync, no orphans
 pnpm check:parity                       # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
+pnpm check:manifest                     # extension permissions match the reviewed baseline (after an extension build)
+pnpm check:no-secrets                   # nothing that looks like a seed phrase or a keypair in tracked files
 pnpm check:fingerprint                  # mobile native surface unchanged since the last binary, or expo.version bumped
 ```
 

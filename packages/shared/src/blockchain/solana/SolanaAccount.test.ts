@@ -112,7 +112,7 @@ describe('SolanaAccount', () => {
     const account = await createAccount(new Uint8Array(32).fill(1));
 
     expect(account.retrieveSecurePrivateKey()).toBe(
-      '2AXDGYSE4f2sz7tvMMzyHvUfcoJmxudvdhBcmiUSo6iuCXagjUCKEQF21awZnUGxmwD4m9vGXuC3qieHXJQHAcT'
+      '2AXDGYSE4f2sz7tvMMzyHvUfcoJmxudvdhBcmiUSo6iuCXagjUCKEQF21awZnUGxmwD4m9vGXuC3qieHXJQHAcT' // no-secrets-ignore: derived from the public test vector above
     );
     expect(account.signer.address).toBe('AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9');
     expect(account.publicKey).toBe(account.signer.address);

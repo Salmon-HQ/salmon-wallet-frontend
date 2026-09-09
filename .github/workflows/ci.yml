@@ -51,6 +51,11 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
+      # Seed phrases and keypairs in tracked files. GitHub's secret scanning
+      # knows API tokens, not BIP39.
+      - name: No wallet material in the tree
+        run: pnpm check:no-secrets
+
       # test:coverage, not test: every package carries a coverage floor in its
       # vitest/jest config (a ratchet — set just under the measured value, only
       # ever raised), so a PR that drops below fails here.
@@ -62,6 +67,11 @@ jobs:
       # the release workflow runs.
       - name: Extension builds (chrome-mv3)
         run: pnpm --filter @salmon/extension build
+
+      # A new permission disables the extension for every user until they
+      # accept it; the baseline turns that into a reviewed line in the diff.
+      - name: Manifest permissions match the baseline
+        run: pnpm check:manifest
 
       # Same reason for mobile: Metro resolves imports the type checker never
       # sees. Exports the iOS bundle to a scratch dir and keeps nothing.

@@ -127,7 +127,7 @@ const MOCK_TOKEN_LIST: TokenMetadata[] = [
 
 /** A real base58 ed25519 signature — `signature()` validates what the API returns. */
 const MOCK_SIGNATURE =
-  '5b4xdmSrB8gh4rHn5NFFTDEKSekL2CyRN8PrwpGYgp2buABGRULKu4vMUR1XLE1fx12C4FH1imq88aRV7ivZtZq';
+  '5b4xdmSrB8gh4rHn5NFFTDEKSekL2CyRN8PrwpGYgp2buABGRULKu4vMUR1XLE1fx12C4FH1imq88aRV7ivZtZq'; // no-secrets-ignore: a signature, same width as a keypair
 
 const MOCK_SWAP_SUCCESS = {
   signature: MOCK_SIGNATURE,

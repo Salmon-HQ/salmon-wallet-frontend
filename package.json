@@ -43,6 +43,8 @@
     "check:duplicates:report": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:no-secrets": "node scripts/check-no-secrets.mjs",
+    "check:manifest": "node scripts/check-manifest-permissions.mjs",
     "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check"
   },
   "devDependencies": {
