@@ -244,3 +244,5 @@ export type {
   SeedErrorKey,
   ReauthErrorKey,
 } from './useAccountAddFlow';
+export { useWaitTips } from './useWaitTips';
+export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';
