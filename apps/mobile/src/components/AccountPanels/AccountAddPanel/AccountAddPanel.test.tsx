@@ -54,6 +54,8 @@ const mockWatchOnlyImport: {
   networkId: 'solana-mainnet',
 };
 
+jest.mock('expo-clipboard', () => ({ getStringAsync: jest.fn().mockResolvedValue('') }));
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
@@ -179,25 +181,28 @@ jest.mock('../../SettingsScreenLayout', () => ({
   SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock('../../Button', () => ({
-  PrimaryButton: ({
+jest.mock('../../Button', () => {
+  const Button = ({
     children,
     onPress,
     disabled,
+    testID,
   }: {
     children?: React.ReactNode;
     onPress?: () => void;
     disabled?: boolean;
+    testID?: string;
   }) => {
     const React = require('react');
     const { TouchableOpacity, Text } = require('react-native');
     return React.createElement(
       TouchableOpacity,
-      { onPress, disabled },
+      { onPress, disabled, testID },
       React.createElement(Text, null, children)
     );
-  },
-}));
+  };
+  return { PrimaryButton: Button, SecondaryButton: Button };
+});
 
 // The failure notice renders through ConfirmSheet; the stub shows its title
 // and message as plain text only while visible, like the real sheet does.
@@ -393,18 +398,34 @@ describe('AccountAddPanel', () => {
     expect(mockPrivateKeyImport.reset).toHaveBeenCalled();
   });
 
-  it('shows validation error for invalid seed phrase', async () => {
+  it('offers Continue only once the phrase checks out, and says so when a full grid does not', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
 
     // The free-text seed field is gone — the grid is the only entry surface.
     expect(screen.queryByTestId('account-add-seed-input')).toBeNull();
+    expect(screen.getByTestId('account-add-seed-paste-button')).toBeTruthy();
 
-    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'bad seed');
-    fireEvent.press(screen.getByText('actions.continue'));
+    // Half a phrase: nothing to say yet, and no Continue to find out with.
+    // The stub splits on spaces; the trailing space leaves an empty box, as a
+    // half-filled grid does.
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'bad seed ');
+    expect(screen.queryByText('wallet.create.invalidSeed')).toBeNull();
+    // The slot keeps the space; the button in it is hidden from touch and
+    // from accessibility alike, so no query reaches it.
+    expect(screen.queryByTestId('account-add-seed-continue-button')).toBeNull();
 
+    // A full grid that does not check out says so on its own.
+    fireEvent.changeText(
+      screen.getByTestId('account-add-seed-entry'),
+      Array<string>(12).fill('bad').join(' ')
+    );
     expect(screen.getByText('wallet.create.invalidSeed')).toBeTruthy();
+    expect(screen.queryByTestId('account-add-seed-continue-button')).toBeNull();
+
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
+    expect(screen.getByTestId('account-add-seed-continue-button')).toBeTruthy();
   });
 
   it('imports a valid seed phrase and completes account creation', async () => {

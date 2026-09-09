@@ -39,12 +39,13 @@ import {
   TreeStructureIcon,
   iconSize,
 } from '../../icons';
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
+import { ReservedSlot } from '../OnboardingLayout';
 import { PasswordInput } from '../PasswordInput';
 import { SectionLabel } from '../SectionLabel';
 import { SeedPhraseEntry } from '../SeedPhrase';
@@ -276,6 +277,14 @@ export function AccountAddPanel({
     );
   };
 
+  const handlePasteSeed = useCallback(async () => {
+    try {
+      flow.pasteSeed(await navigator.clipboard.readText());
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+    }
+  }, [flow]);
+
   const renderImportSeed = () => (
     <div style={stack}>
       <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
@@ -291,9 +300,24 @@ export function AccountAddPanel({
       ) : flow.seedError ? (
         <p style={errorStyle}>{t(flow.seedError)}</p>
       ) : null}
-      <PrimaryButton onPress={flow.submitSeed} testID="account-add-seed-continue-button">
-        {t('actions.continue')}
-      </PrimaryButton>
+      {/* The recover page's rule: paste is the one action on offer, and
+          Continue takes its reserved place only once the phrase checks out. */}
+      <SecondaryButton
+        onPress={() => void handlePasteSeed()}
+        fullWidth
+        testID="account-add-seed-paste-button"
+      >
+        {t('wallet.recover.pasteSeed')}
+      </SecondaryButton>
+      <ReservedSlot visible={flow.seedValid}>
+        <PrimaryButton
+          onPress={flow.submitSeed}
+          fullWidth
+          testID="account-add-seed-continue-button"
+        >
+          {t('actions.continue')}
+        </PrimaryButton>
+      </ReservedSlot>
     </div>
   );
 
