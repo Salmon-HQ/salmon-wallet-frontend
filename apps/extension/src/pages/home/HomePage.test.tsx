@@ -8,8 +8,8 @@
  * tested on its own in `packages/ui`.
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { PropsWithChildren } from 'react';
 
 vi.mock('react-i18next', () => ({
@@ -25,13 +25,20 @@ function stub(testID: string) {
 }
 
 vi.mock('../../components', () => ({
-  WalletHeader: () => <div data-testid="wallet-header-bar" />,
+  WalletHeader: ({ onWalletPress }: { onWalletPress?: () => void }) => (
+    <div data-testid="wallet-header-bar">
+      <button type="button" data-testid="open-wallets" onClick={onWalletPress} />
+    </div>
+  ),
   BalanceHeader: () => <div data-testid="balance-header" />,
   PortfolioSubTabs: ({ tabs }: { tabs: Array<{ key: string; label: string }> }) => (
     <div data-testid="home-sub-tabs">{tabs.map((tab) => tab.key).join('|')}</div>
   ),
   HomeTabOrderSheet: () => null,
-  DerivedAccountsSheet: () => null,
+  DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
+    visible ? (
+      <div data-testid={scanning ? 'derived-sheet-scanning' : 'derived-sheet-answer'} />
+    ) : null,
   NftsTab: () => <div data-testid="nfts-tab" />,
   StateBlock: () => <div data-testid="state-block" />,
   WarningNotice: () => null,
@@ -106,6 +113,8 @@ const accountsState = {
 // The real barrel pulls React Native through, which Vitest cannot parse — the
 // same treatment every other page suite here gives it: name what the page
 // actually reads.
+const derivedScanState = vi.hoisted(() => ({}) as Record<string, unknown>);
+
 vi.mock('@salmon/shared', async () => {
   const homeShell = await vi.importActual<typeof import('@salmon/shared/hooks/useHomeShell')>(
     '@salmon/shared/hooks/useHomeShell'
@@ -227,12 +236,14 @@ vi.mock('@salmon/shared', async () => {
     }),
     useDerivedAccountsScan: () => ({
       scanningAccountId: null,
+      rescanningAccountId: null,
       sheetVisible: false,
       sheetRequested: false,
       finds: [],
       rescan: vi.fn(),
       importFinds: vi.fn(),
       dismiss: vi.fn(),
+      ...derivedScanState,
     }),
     useHomeTabOrder: () => ({ order: ['portfolio', 'nfts'], setOrder: vi.fn() }),
     // The shell's state is the real hook — its own suite covers the logic;
@@ -293,5 +304,34 @@ describe('HomePage shell', () => {
     expect(screen.queryByTestId('tab-home')).toBeNull();
     expect(screen.queryByTestId('tab-collectibles')).toBeNull();
     expect(screen.queryByTestId('tab-swap')).toBeNull();
+  });
+});
+
+describe('HomePage — the derived-accounts sheet is mounted where the user is', () => {
+  afterEach(() => {
+    cleanup();
+    for (const key of Object.keys(derivedScanState)) delete derivedScanState[key];
+  });
+
+  it('waits for a rescan on Wallets, not on Home', () => {
+    Object.assign(derivedScanState, { rescanningAccountId: 'w1' });
+    render(<HomePage onAddAccount={vi.fn()} />);
+    expect(screen.queryByTestId('derived-sheet-scanning')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('open-wallets'));
+    expect(screen.getByTestId('derived-sheet-scanning')).toBeTruthy();
+  });
+
+  it('answers the rescan the user asked for on Wallets, and the automatic pass on Home', () => {
+    Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: true });
+    const { unmount } = render(<HomePage onAddAccount={vi.fn()} />);
+    expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
+    fireEvent.click(screen.getByTestId('open-wallets'));
+    expect(screen.getByTestId('derived-sheet-answer')).toBeTruthy();
+    unmount();
+
+    Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: false });
+    render(<HomePage onAddAccount={vi.fn()} />);
+    expect(screen.getByTestId('derived-sheet-answer')).toBeTruthy();
   });
 });
