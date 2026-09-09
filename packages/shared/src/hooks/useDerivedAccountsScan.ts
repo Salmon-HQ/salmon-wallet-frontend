@@ -187,7 +187,19 @@ export async function findDerivedAccounts(
  * wallet per render pass on purpose — `addAccount` writes the whole account
  * list it can see, so a loop in one tick would persist only its last wallet.
  */
-export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
+export interface UseDerivedAccountsScanOptions {
+  /**
+   * Whether the hook runs the silent pass on its own for a wallet not yet
+   * scanned. `true` (the default) is Home's session-wide owner; `false` is a
+   * surface that only ever scans when the user asks — the success screen's
+   * "Check derivables" — and must not start a pass the button then trips on.
+   */
+  automatic?: boolean;
+}
+
+export function useDerivedAccountsScan({
+  automatic = true,
+}: UseDerivedAccountsScanOptions = {}): UseDerivedAccountsScanResult {
   const [{ accounts, activeAccount, locked, ready }, accountActions] = useAccountsContext();
   const { derivedScannedAccountIds, markDerivedScanned, isLoading } = useUserConfig({
     activeBlockchainAccount: CONFIG_ACCOUNT,
@@ -260,12 +272,12 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
   );
 
   useEffect(() => {
-    if (!ready || locked || isLoading || !activeAccount) return;
+    if (!automatic || !ready || locked || isLoading || !activeAccount) return;
     if (derivedScannedAccountIds.includes(activeAccount.id)) return;
     if (attemptedRef.current.has(activeAccount.id)) return;
     attemptedRef.current.add(activeAccount.id);
     void run(activeAccount, false);
-  }, [ready, locked, isLoading, activeAccount, derivedScannedAccountIds, run]);
+  }, [automatic, ready, locked, isLoading, activeAccount, derivedScannedAccountIds, run]);
 
   const rescan = useCallback(
     async (accountId: string): Promise<void> => {

@@ -38,3 +38,7 @@
 ## Verification
 
 `pnpm turbo run typecheck lint test --filter=@salmon/shared --filter=@salmon/mobile`, then `pnpm format:check`, full turbo, `node scripts/check-i18n.mjs`. Owner review on device with a recovered seed that has several funded paths.
+
+## Amendment 2026-09-09 — "Check derivables" returns to Success
+
+Owner ruling: the onboarding offers the check again, as a button, without a screen of its own. `(auth)/success` (and its DOM twin `SuccessPage`) carries a secondary action "Check derivables" that runs the same user-requested scan Wallets' rescan runs (`useDerivedAccountsScan({ automatic: false })` — the silent pass never starts from that screen) and answers over Success in `DerivedAccountsSheet`: the wait first (`scanning`), then the finds or "No new accounts". Either answer marks the wallet scanned. "Go to my wallet" is unchanged; a wallet never asked about is still covered by the automatic pass on the first unlocked Home. The old `(auth)/derived-accounts` route and the "What is a derivable?" helper stay retired.

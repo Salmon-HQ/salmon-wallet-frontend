@@ -483,6 +483,7 @@
       "success_message": "Congratulations!",
       "success_message_body": "Your account is now ready",
       "go_to_my_wallet": "Go to my Account!",
+      "check_derivables": "Check derivables",
       "invalidSeed": "Invalid seed phrase",
       "recovery_error": "Failed to recover account. Please check your seed phrase and try again.",
       "recovery_network_error": "Could not reach the server. Check your connection and try again. Your seed phrase is fine.",

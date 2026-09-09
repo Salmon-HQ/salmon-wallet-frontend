@@ -215,8 +215,14 @@ export type { UseHomeTabOrderResult } from './useHomeTabOrder';
 
 // Derived-account scan (finds a seed's funded paths; the user picks)
 export { useDerivedAccountsScan, findDerivedAccounts } from './useDerivedAccountsScan';
-export type { DerivedAccountFind, UseDerivedAccountsScanResult } from './useDerivedAccountsScan';
+export type {
+  DerivedAccountFind,
+  UseDerivedAccountsScanOptions,
+  UseDerivedAccountsScanResult,
+} from './useDerivedAccountsScan';
 export { useDerivedFindRows } from './useDerivedFindRows';
+export { useCheckDerivables } from './useCheckDerivables';
+export type { UseCheckDerivablesResult } from './useCheckDerivables';
 export type { DerivedFindRow, UseDerivedFindRowsResult } from './useDerivedFindRows';
 
 // Form state the kit renders on both platforms; the vault calls are injected

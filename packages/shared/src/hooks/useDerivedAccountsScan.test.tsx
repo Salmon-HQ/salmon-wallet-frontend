@@ -338,6 +338,24 @@ describe('useDerivedAccountsScan', () => {
     expect(result.current.rescanningAccountId).toBeNull();
   });
 
+  it('does not scan on its own when told not to — only a rescan runs', async () => {
+    scanMock.mockResolvedValue({ accounts: [find(2, 'sol-2', 0.5)], failedNetworks: [] });
+    arrange();
+
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: false }));
+
+    await act(async () => {});
+    expect(scanMock).not.toHaveBeenCalled();
+    expect(result.current.sheetVisible).toBe(false);
+
+    await act(async () => {
+      await result.current.rescan('wallet-1');
+    });
+    expect(scanMock).toHaveBeenCalledTimes(1);
+    expect(result.current.sheetVisible).toBe(true);
+    expect(result.current.sheetRequested).toBe(true);
+  });
+
   it('never announces the automatic pass — it is silent until it has an answer', async () => {
     let release: () => void = () => {};
     scanMock.mockImplementation(
