@@ -52,7 +52,6 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
     "jscpd": "^5.0.14",
-    "patch-package": "^8.0.1",
     "prettier": "3.9.6",
     "turbo": "^2.10.9"
   },

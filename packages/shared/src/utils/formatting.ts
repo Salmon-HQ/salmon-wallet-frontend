@@ -87,7 +87,7 @@ const RATE_MIN_DISPLAY = 0.0001;
  * @param locale - Explicit override, mostly for tests
  * @returns The active i18next language, falling back to English
  */
-export function resolveLocale(locale?: string): string {
+function resolveLocale(locale?: string): string {
   return locale || i18n.language || 'en';
 }
 

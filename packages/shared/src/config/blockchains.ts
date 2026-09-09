@@ -52,18 +52,3 @@ export function getBlockchainFromNetworkId(networkId: string): BlockchainType {
 export function isBlockchainEnabled(chain: BlockchainType): boolean {
   return ENABLED_BLOCKCHAINS.includes(chain);
 }
-
-/**
- * Returns true if the given network belongs to an enabled blockchain according
- * to the legacy local defaults.
- *
- * @deprecated The backend network catalog is the runtime source of truth.
- * Prefer `isBackendNetworkEnabled` from `api/services/network` (async) for
- * any gate that runs in production code paths.
- *
- * @param networkId - Network identifier (e.g. 'solana-mainnet', 'ethereum-sepolia')
- */
-export function isNetworkEnabled(networkId: string): boolean {
-  const chain = getBlockchainFromNetworkId(networkId);
-  return isBlockchainEnabled(chain);
-}

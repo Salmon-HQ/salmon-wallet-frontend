@@ -15,7 +15,7 @@
 
 import * as bitcoin from 'bitcoinjs-lib';
 import type { BitcoinNetwork } from '../../types/blockchain';
-import { btcToSatoshis, satoshisToBtc, SATOSHIS_PER_BTC } from '../../utils/decimals';
+import { satoshisToBtc, SATOSHIS_PER_BTC } from '../../utils/decimals';
 import type {
   UTXO,
   TransferTransactionResult,
@@ -455,8 +455,6 @@ export async function sendBitcoin(
 // ============================================================================
 // Utility Functions
 // ============================================================================
-
-export { btcToSatoshis, satoshisToBtc };
 
 /**
  * Calculates the maximum sendable amount after fees.

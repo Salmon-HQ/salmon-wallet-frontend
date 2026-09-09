@@ -49,7 +49,7 @@ export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is E
   );
 }
 
-export function needsMnemonicUpgrade(vault: EncryptedMnemonics): boolean {
+function needsMnemonicUpgrade(vault: EncryptedMnemonics): boolean {
   return vault.digest !== DEFAULT_DIGEST || vault.iterations !== DEFAULT_ITERATIONS;
 }
 
