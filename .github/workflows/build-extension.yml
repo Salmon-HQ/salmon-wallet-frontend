@@ -157,6 +157,30 @@ jobs:
           find . -type f -name '*.zip' -exec sha256sum {} \; | sed 's#\./##' | sort > SHA256SUMS
           cat SHA256SUMS
 
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        id: attest
+        with:
+          subject-path: release/*.zip
+
+      # The same attestation as a file next to the zips, so a download can be
+      # verified offline (`gh attestation verify <zip> --bundle <file> --owner Salmon-HQ`)
+      # and the release reads as signed to anyone checking the assets.
+      - name: Attach the attestation bundle to the release assets
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          TAG: ${{ github.ref_name }}
+        run: cp "$BUNDLE" "release/salmon-extension-${TAG#extension/v}.sigstore.json"
+
+      # Release notes are the tag's section of CHANGELOG.md — the prose written
+      # for users — falling back to the PR list when the section is missing.
+      - name: Release notes from CHANGELOG
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#extension/v}"
+          awk -v v="$VERSION" '/^## extension / { on = ($3 == v); next } on' CHANGELOG.md > release/NOTES.md
+          if [ -s release/NOTES.md ]; then echo "notes from CHANGELOG.md"; else echo "no CHANGELOG section for $VERSION, using generated notes"; fi
+
       # --verify-tag refuses to create a release for a tag that is not on the
       # remote; --generate-notes lists the PRs since the previous tag.
       - name: Publish GitHub Release
@@ -168,4 +192,4 @@ jobs:
           if [ -s NOTES.md ]; then NOTES=(--notes-file NOTES.md); else NOTES=(--generate-notes); fi
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag "${NOTES[@]}" \
             --title "Extension ${TAG#extension/v}" \
-            ./*.zip ./SHA256SUMS
+            ./*.zip ./SHA256SUMS ./*.sigstore.json
