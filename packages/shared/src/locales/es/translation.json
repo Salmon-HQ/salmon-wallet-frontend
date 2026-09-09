@@ -512,6 +512,8 @@
       "found_title_one": "Encontramos {{count}} cuenta de tu frase",
       "found_title_other": "Encontramos {{count}} cuentas de tu frase",
       "found_body": "Se crearon con la misma frase de recuperación. Elegí cuáles agregar.",
+      "tokens_count_one": "+{{count}} token",
+      "tokens_count_other": "+{{count}} tokens",
       "import_count_one": "Importar {{count}}",
       "import_count_other": "Importar {{count}}",
       "not_now": "Ahora no",

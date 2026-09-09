@@ -46,3 +46,7 @@ Owner ruling: the onboarding offers the check again, as a button, without a scre
 ## Amendment 2026-09-09 — families on a rail
 
 Owner ruling: a wallet and the wallets derived from it are one block, never collapsible. `WalletFamily` (twins in `apps/mobile/src/components` and `packages/ui/src/components`, contract `WalletFamilyPropsBase`) draws the parent's card, then each derived card stepped in one gutter and tied to the parent by a rail: a `border.default` line that leaves the parent, runs down the leading edge through the gaps, and meets each derived card at a `text.accent` node with a short tick into the card; the rail ends at the last node. `groupWalletFamilies` (shared) replaces `orderWalletCards`; the per-card hairline descent is gone, the "Derived from {name}" subtitle stays. Every wallet in a family is a full card with its own actions.
+
+## Amendment 2026-09-09 — anything on a path funds it
+
+Owner ruling: a path is offered when it holds _anything_ — native coin or a token. The scan reads Solana through the same balance the Home screen reads (`getAccountFunds`: native and tokens in one answer; Bitcoin and Ethereum keep their native credit), `DerivedAccountInfo` / `DerivedAccountFind` carry `tokenCount`, and the sheet's row says "0 SOL · +2 tokens" for a path funded by tokens alone.

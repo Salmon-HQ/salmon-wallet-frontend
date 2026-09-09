@@ -110,8 +110,8 @@ jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACI
 import { DerivedAccountsSheet } from './DerivedAccountsSheet';
 
 const FINDS = [
-  { index: 2, address: 'BBBBbbbbBBBBbbbbBBBB', balanceFormatted: '0.5000 SOL' },
-  { index: 5, address: 'CCCCccccCCCCccccCCCC', balanceFormatted: '1.2000 SOL' },
+  { index: 2, address: 'BBBBbbbbBBBBbbbbBBBB', balanceFormatted: '0.5000 SOL', tokenCount: 0 },
+  { index: 5, address: 'CCCCccccCCCCccccCCCC', balanceFormatted: '1.2000 SOL', tokenCount: 0 },
 ];
 
 describe('DerivedAccountsSheet', () => {

@@ -121,6 +121,8 @@ describe('WalletsScreen', () => {
 
     expect(screen.getByTestId(`wallet-rescan-${PARENT_ID}`)).toBeTruthy();
     expect(screen.queryByTestId(`wallet-rescan-${OTHER_ID}`)).toBeNull();
+    // A derived wallet shares the seed it would scan: no scan of its own.
+    expect(screen.queryByTestId(`wallet-rescan-${CHILD_ID}`)).toBeNull();
     expect(screen.getByTestId(`wallet-watch-only-${OTHER_ID}`)).toBeTruthy();
 
     fireEvent.click(screen.getByTestId(`wallet-rescan-${PARENT_ID}`));

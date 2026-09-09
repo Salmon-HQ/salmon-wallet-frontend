@@ -326,7 +326,7 @@ export {
   type DerivedAccountInfo,
   type ScanDerivedAccountsResult,
   // Functions
-  getAccountBalance,
+  getAccountFunds,
   getScanNetworks,
   getMirrorNetworks,
   getScanNetworksWithMirrors,

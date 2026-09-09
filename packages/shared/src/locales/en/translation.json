@@ -512,6 +512,8 @@
       "found_title_one": "We found {{count}} account from your phrase",
       "found_title_other": "We found {{count}} accounts from your phrase",
       "found_body": "They were created from the same recovery phrase. Choose which to add.",
+      "tokens_count_one": "+{{count}} token",
+      "tokens_count_other": "+{{count}} tokens",
       "import_count_one": "Import {{count}}",
       "import_count_other": "Import {{count}}",
       "not_now": "Not now",

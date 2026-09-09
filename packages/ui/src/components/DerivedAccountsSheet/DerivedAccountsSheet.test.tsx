@@ -33,8 +33,18 @@ function stubMatchMedia() {
 }
 
 const FINDS = [
-  { index: 1, address: 'Addr1111111111111111111111111111', balanceFormatted: '0.0500 SOL' },
-  { index: 2, address: 'Addr2222222222222222222222222222', balanceFormatted: '1.2000 SOL' },
+  {
+    index: 1,
+    address: 'Addr1111111111111111111111111111',
+    balanceFormatted: '0.0500 SOL',
+    tokenCount: 0,
+  },
+  {
+    index: 2,
+    address: 'Addr2222222222222222222222222222',
+    balanceFormatted: '1.2000 SOL',
+    tokenCount: 0,
+  },
 ];
 
 afterEach(() => {

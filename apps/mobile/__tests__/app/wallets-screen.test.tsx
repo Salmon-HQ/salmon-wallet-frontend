@@ -282,6 +282,8 @@ describe('Wallets — wallets of one seed', () => {
 
     // A watched address has no derivation tree, so no action is offered.
     expect(screen.queryByTestId('wallet-rescan-w2')).toBeNull();
+    // A derived wallet shares the seed it would scan: no scan of its own.
+    expect(screen.queryByTestId('wallet-rescan-w3')).toBeNull();
 
     fireEvent.press(screen.getByTestId('wallet-rescan-w1'));
     expect(mockRescan).toHaveBeenCalledWith('w1');

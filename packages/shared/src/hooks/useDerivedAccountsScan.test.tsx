@@ -57,7 +57,7 @@ function wallet(overrides: Partial<Account> = {}, addresses: string[] = ['sol-0'
 }
 
 /** One entry as `scanDerivedAccounts` reports it. */
-const find = (index: number, address: string, balance: number) => ({
+const find = (index: number, address: string, balance: number, tokenCount = 0) => ({
   account: blockchainAccount(address),
   address,
   path: `m/44/501/${index}`,
@@ -66,8 +66,9 @@ const find = (index: number, address: string, balance: number) => ({
   networkName: 'Solana',
   balance,
   balanceFormatted: `${balance} SOL`,
+  tokenCount,
   currencySymbol: 'SOL',
-  selected: balance > 0,
+  selected: balance > 0 || tokenCount > 0,
 });
 
 const addAccount = vi.fn(async () => {});
@@ -115,7 +116,7 @@ describe('useDerivedAccountsScan', () => {
     // Nobody asked: the surface that shows the automatic pass answers it.
     expect(result.current.sheetRequested).toBe(false);
     expect(result.current.finds).toEqual([
-      { index: 2, address: 'sol-2', balanceFormatted: '0.5 SOL' },
+      { index: 2, address: 'sol-2', balanceFormatted: '0.5 SOL', tokenCount: 0 },
     ]);
     // Nothing is created and nothing is recorded until the user answers.
     expect(createMock).not.toHaveBeenCalled();
@@ -296,6 +297,18 @@ describe('useDerivedAccountsScan', () => {
       release();
     });
     expect(result.current.scanningAccountId).toBeNull();
+  });
+
+  it('offers a path that holds tokens and no native coin', async () => {
+    scanMock.mockResolvedValue({ accounts: [find(3, 'sol-3', 0, 2)], failedNetworks: [] });
+    arrange();
+
+    const { result } = renderHook(() => useDerivedAccountsScan());
+
+    await waitFor(() => expect(result.current.sheetVisible).toBe(true));
+    expect(result.current.finds).toEqual([
+      { index: 3, address: 'sol-3', balanceFormatted: '0 SOL', tokenCount: 2 },
+    ]);
   });
 
   it('a rescan that finds nothing still answers — the sheet opens empty', async () => {
