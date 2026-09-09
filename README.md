@@ -292,6 +292,8 @@ Before moving code across package boundaries, read:
 docs/ARCHITECTURE.md
 ```
 
+Analytics are pseudonymous and opt-in; the event catalog and privacy posture are documented in [`docs/ANALYTICS.md`](docs/ANALYTICS.md).
+
 ---
 
 ## Contributing

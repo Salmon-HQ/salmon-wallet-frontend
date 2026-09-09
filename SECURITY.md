@@ -26,6 +26,8 @@ a fallback), and Solana transactions go straight to the RPC.
 
 Out of scope: the backend API (separate repository — report there), third-party providers the wallet consumes (Jupiter, CoinGecko, Helius, Triton), and social engineering.
 
+What data the wallet sends for pseudonymous, opt-in analytics is catalogued in [`docs/ANALYTICS.md`](docs/ANALYTICS.md).
+
 ## Notes for maintainers
 
 - Private vulnerability reporting is a GitHub feature for **public** repositories. This repository is now public but the feature is not yet enabled; an admin must turn it on once under **Settings → Advanced Security → Private vulnerability reporting**.
