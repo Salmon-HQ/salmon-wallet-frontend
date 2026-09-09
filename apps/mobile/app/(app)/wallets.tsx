@@ -36,18 +36,20 @@ import {
   type Account,
   type NetworkId,
   type Semantic,
-  orderWalletCards,
+  groupWalletFamilies,
 } from '@salmon/shared';
 import {
   Card,
   DepthBackground,
   AccountAvatar,
+  DerivedAccountsSheet,
   IconBubble,
   ListRow,
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
   SubAccountSelector,
+  WalletFamily,
   WatchOnlyBadge,
 } from '../../src/components';
 import {
@@ -103,6 +105,12 @@ export default function WalletsScreen() {
   // this screen costs no request — only the preference comes back.
   const showUnverifiedTokens = useUnverifiedTokens();
 
+  // The scan is asked for here, so it is waited on and answered here: the sheet
+  // opens the moment the user taps "find derived" and shows the wait until the
+  // scan has something to say.
+  const { rescanningAccountId, sheetVisible, sheetRequested, finds, importFinds, dismiss } =
+    useDerivedAccounts();
+
   const { hiddenBalance, toggleHidden } = useBalance({
     account: activeBlockchainAccount,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
@@ -124,7 +132,7 @@ export default function WalletsScreen() {
 
   const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
 
-  const ordered = useMemo(() => orderWalletCards(accounts), [accounts]);
+  const families = useMemo(() => groupWalletFamilies(accounts), [accounts]);
 
   const aggregated = useMemo(
     () =>
@@ -158,11 +166,11 @@ export default function WalletsScreen() {
   );
 
   const handleAddWallet = useCallback(() => {
-    // One add-wallet screen; `returnTo` lands the finished flow back here with
-    // the new wallet already active.
+    // The same add-wallet screen Settings → Accounts → Add reaches; completing
+    // pops it back here with the new wallet already active.
     router.push({
       pathname: '/settings/[panel]',
-      params: { panel: 'account-add', returnTo: 'wallets' },
+      params: { panel: 'account-add' },
     });
   }, [router]);
 
@@ -236,23 +244,32 @@ export default function WalletsScreen() {
           <Text style={styles.headingHint}>{t('settings.wallets.include_hint')}</Text>
         </View>
 
-        {ordered.map(({ account, parentName }) => (
-          <WalletCard
-            key={account.id}
-            account={account}
-            parentName={parentName}
-            isActive={account.id === accountId}
-            included={isIncluded(account.id)}
-            total={totals[account.id]}
-            hiddenBalance={hiddenBalance}
-            hiddenValue={hiddenValue}
-            formatValue={formatValue}
-            networkId={(networkId ?? undefined) as NetworkId | undefined}
-            onSelect={() => handleSelect(account.id)}
-            onRename={() => handleRename(account.id)}
-            onToggleInclude={() => handleToggleInclude(account.id)}
-          />
-        ))}
+        {families.map(({ parent, derived }) => {
+          const card = (account: (typeof accounts)[number], parentName?: string) => (
+            <WalletCard
+              account={account}
+              parentName={parentName}
+              isActive={account.id === accountId}
+              included={isIncluded(account.id)}
+              total={totals[account.id]}
+              hiddenBalance={hiddenBalance}
+              hiddenValue={hiddenValue}
+              formatValue={formatValue}
+              networkId={(networkId ?? undefined) as NetworkId | undefined}
+              onSelect={() => handleSelect(account.id)}
+              onRename={() => handleRename(account.id)}
+              onToggleInclude={() => handleToggleInclude(account.id)}
+            />
+          );
+          return (
+            <WalletFamily
+              key={parent.id}
+              testID={`wallet-family-${parent.id}`}
+              parent={card(parent)}
+              derived={derived.map((child) => ({ id: child.id, card: card(child, parent.name) }))}
+            />
+          );
+        })}
 
         {/* The one action that is not a wallet: outlined, so it reads as an
             empty slot rather than a card with nothing in it. */}
@@ -269,6 +286,14 @@ export default function WalletsScreen() {
           </View>
         </Card>
       </ScrollView>
+
+      <DerivedAccountsSheet
+        visible={rescanningAccountId !== null || (sheetVisible && sheetRequested)}
+        scanning={rescanningAccountId !== null}
+        finds={finds}
+        onImport={(indexes) => void importFinds(indexes)}
+        onDismiss={() => void dismiss()}
+      />
     </SafeAreaView>
   );
 }
@@ -341,12 +366,9 @@ function WalletCard({
     // between wallets — not a second time between a wallet's own row and its
     // derived chips, which stay at the tighter internal-anatomy step.
     //
-    // A wallet derived from another one is indented under it and joined to it
-    // by a hairline descent running up through the gap to the card it came
-    // from — it is a wallet of its own, and this is the only thing that says
-    // where it came from (spec 025).
-    <View style={parentName ? styles.derivedGroup : undefined}>
-      {parentName && <View testID={`wallet-descent-${account.id}`} style={styles.derivedDescent} />}
+    // A wallet derived from another one is tied to it by `WalletFamily`'s
+    // rail; this card only says so in its subtitle (spec 025).
+    <View>
       <ListRow
         testID={`wallet-card-${account.id}`}
         padding="lg"
@@ -502,19 +524,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.medium,
       fontSize: ms(fontSize.body),
       ...TABULAR,
-    },
-    // The descent: the derived card steps in one gutter, and a hairline in
-    // `border.default` runs from the card above it down its leading edge.
-    derivedGroup: {
-      paddingLeft: s(spacing.screenGutter),
-    },
-    derivedDescent: {
-      position: 'absolute',
-      left: s(spacing.screenGutter) / 2,
-      top: -vs(spacing.screenGutter),
-      bottom: 0,
-      width: StyleSheet.hairlineWidth,
-      backgroundColor: t.border.default,
     },
     derivedFrom: {
       color: t.text.tertiary,

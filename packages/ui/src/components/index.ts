@@ -56,6 +56,10 @@ export type {
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 
+// WalletFamily - a wallet and its derived wallets, tied by a rail
+export { WalletFamily } from './WalletFamily';
+export type { WalletFamilyProps } from './WalletFamily';
+
 // WalletsScreen - CORE 10: the wallets, a screen (spec 028 ruling 3)
 export { WalletsScreen } from './WalletsScreen';
 export type { WalletsScreenProps } from './WalletsScreen';

@@ -138,6 +138,42 @@ describe('useAccountAddFlow', () => {
     expect(result.current.seedError).toBe('wallet.create.invalidSeed');
   });
 
+  it('offers Continue only once the grid holds a phrase that checks out', () => {
+    validateMnemonicMock.mockImplementation((value: string) => value === 'valid seed phrase');
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+
+    act(() => result.current.selectImport());
+    expect(result.current.seedValid).toBe(false);
+    expect(result.current.seedError).toBe('');
+
+    act(() => result.current.setSeedWords('valid seed phrase'.split(' ')));
+    expect(result.current.seedValid).toBe(true);
+  });
+
+  it('says a full grid is invalid without waiting for a Continue it does not offer', () => {
+    validateMnemonicMock.mockReturnValue(false);
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+
+    act(() => result.current.selectImport());
+    act(() => result.current.setSeedWords(Array<string>(12).fill('word')));
+
+    expect(result.current.seedValid).toBe(false);
+    expect(result.current.seedError).toBe('wallet.create.invalidSeed');
+  });
+
+  it('fills the grid from a paste, and reports a paste that does not fit', () => {
+    validateMnemonicMock.mockReturnValue(false);
+    const { result } = renderHook(() => useAccountAddFlow(options()));
+
+    act(() => result.current.selectImport());
+    act(() => result.current.pasteSeed(Array<string>(12).fill('w').join(' ')));
+    expect(result.current.seedWords).toEqual(Array<string>(12).fill('w'));
+    expect(result.current.pastedCount).toBeNull();
+
+    act(() => result.current.pasteSeed(Array<string>(13).fill('w').join(' ')));
+    expect(result.current.pastedCount).toBe(13);
+  });
+
   it('asks for the password before doing any work when the vault key has lapsed', async () => {
     vaultCachedMock.mockResolvedValue(false);
     const opts = options();

@@ -49,7 +49,13 @@ describe('DerivedAccountsSheet', () => {
 
     renderInMode(
       mode,
-      <DerivedAccountsSheet visible finds={FINDS} onImport={onImport} onDismiss={vi.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={onImport}
+        onDismiss={vi.fn()}
+      />
     );
 
     // A funded path is almost always the user's own money; unchecking is
@@ -64,7 +70,13 @@ describe('DerivedAccountsSheet', () => {
 
     renderInMode(
       'dark',
-      <DerivedAccountsSheet visible finds={FINDS} onImport={onImport} onDismiss={vi.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={onImport}
+        onDismiss={vi.fn()}
+      />
     );
 
     fireEvent.click(screen.getByTestId('derived-accounts-sheet-row-1'));
@@ -79,7 +91,13 @@ describe('DerivedAccountsSheet', () => {
 
     renderInMode(
       'dark',
-      <DerivedAccountsSheet visible finds={[]} onImport={vi.fn()} onDismiss={vi.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={[]}
+        onImport={vi.fn()}
+        onDismiss={vi.fn()}
+      />
     );
 
     expect(screen.getByTestId('derived-accounts-sheet-empty')).toBeTruthy();
@@ -92,10 +110,30 @@ describe('DerivedAccountsSheet', () => {
 
     renderInMode(
       'dark',
-      <DerivedAccountsSheet visible finds={FINDS} onImport={vi.fn()} onDismiss={onDismiss} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={vi.fn()}
+        onDismiss={onDismiss}
+      />
     );
 
     fireEvent.click(screen.getByTestId('derived-accounts-sheet-dismiss'));
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+  it('waits instead of asking while the scan the user asked for runs', () => {
+    stubMatchMedia();
+
+    renderInMode(
+      'dark',
+      <DerivedAccountsSheet visible scanning finds={[]} onImport={vi.fn()} onDismiss={vi.fn()} />
+    );
+
+    expect(screen.getByTestId('derived-accounts-sheet-scanning')).toBeTruthy();
+    // Nothing to answer yet: no buttons, and not even the empty state.
+    expect(screen.queryByTestId('derived-accounts-sheet-import')).toBeNull();
+    expect(screen.queryByTestId('derived-accounts-sheet-dismiss')).toBeNull();
+    expect(screen.queryByTestId('derived-accounts-sheet-empty')).toBeNull();
   });
 });

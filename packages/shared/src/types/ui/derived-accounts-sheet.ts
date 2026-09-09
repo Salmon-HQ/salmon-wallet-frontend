@@ -10,6 +10,11 @@ import type { Testable } from './testable';
  */
 export interface DerivedAccountsSheetPropsBase extends Testable {
   visible: boolean;
+  /**
+   * A scan the user asked for is running; the sheet shows the wait instead of
+   * finds — no list, no buttons, and no way out until it answers.
+   */
+  scanning: boolean;
   /** The paths found. Empty is a real state: a rescan that found nothing. */
   finds: DerivedAccountFind[];
   /** The chosen derivation indexes — one wallet each. */

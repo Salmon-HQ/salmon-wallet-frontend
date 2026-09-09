@@ -21,6 +21,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useAccountsContext } from '../contexts/AccountsContext';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { normalizeMnemonic, validateMnemonic } from '../crypto/mnemonic';
+import { distributePhrase } from '../utils/seed-phrase';
 import {
   createAccount,
   importAccountFromPrivateKey,
@@ -78,6 +79,8 @@ export interface AccountAddFlow {
   selectedDerived: DerivedAccountInfo | null;
 
   seedWords: string[];
+  /** The grid holds a phrase that checks out: the only time Continue is offered. */
+  seedValid: boolean;
   /** What was actually pasted when a paste did not fit. `null` = no rejection. */
   pastedCount: number | null;
   seedError: SeedErrorKey;
@@ -105,6 +108,12 @@ export interface AccountAddFlow {
   setSeedWords: (next: string[]) => void;
   setSeedLength: (length: number) => void;
   setPastedCount: (count: number | null) => void;
+  /**
+   * Fills the grid from pasted text through the same distribution the grid's
+   * own paste uses, so the button and an in-box paste cannot differ. The
+   * platform reads the clipboard; this is what it does with the text.
+   */
+  pasteSeed: (text: string) => void;
   submitSeed: () => void;
   confirm: () => Promise<void>;
   confirmReauth: () => Promise<void>;
@@ -136,8 +145,14 @@ export function useAccountAddFlow({
     Array<string>(SHORT_PHRASE).fill('')
   );
   const [pastedCount, setPastedCount] = useState<number | null>(null);
-  const [seedError, setSeedError] = useState<SeedErrorKey>('');
+  const [seedErrorState, setSeedError] = useState<SeedErrorKey>('');
   const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
+  const seedValid = useMemo(() => validateMnemonic(seedPhrase), [seedPhrase]);
+  // A full grid that does not check out says so on its own — the user is not
+  // offered a Continue to find out with (the recover screen's rule).
+  const seedComplete = seedWords.every((word) => word.length > 0);
+  const seedError: SeedErrorKey =
+    seedErrorState || (seedComplete && !seedValid ? 'wallet.create.invalidSeed' : '');
 
   // Name
   const [accountName, setAccountName] = useState('');
@@ -222,6 +237,14 @@ export function useAccountAddFlow({
   const setSeedWords = useCallback((next: string[]) => {
     setSeedWordsState(next);
     setPastedCount(null);
+    setSeedError('');
+  }, []);
+
+  const pasteSeed = useCallback((text: string) => {
+    if (!text) return;
+    const { words, fits, count } = distributePhrase(text);
+    setSeedWordsState(words);
+    setPastedCount(fits ? null : count);
     setSeedError('');
   }, []);
 
@@ -425,6 +448,7 @@ export function useAccountAddFlow({
     scanning,
     selectedDerived,
     seedWords,
+    seedValid,
     pastedCount,
     seedError,
     accountName,
@@ -446,6 +470,7 @@ export function useAccountAddFlow({
     setSeedWords,
     setSeedLength,
     setPastedCount,
+    pasteSeed,
     submitSeed,
     confirm,
     confirmReauth,

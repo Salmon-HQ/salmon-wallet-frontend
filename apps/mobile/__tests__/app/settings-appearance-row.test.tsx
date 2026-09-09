@@ -23,6 +23,13 @@ jest.mock('react-native-safe-area-context', () => {
 let mockThemePreference: 'system' | 'light' | 'dark' = 'system';
 
 jest.mock('@salmon/shared', () => ({
+  // Removing a wallet asks the vault for key material; the screen only decides
+  // whether the confirmation shows a password field.
+  useAccountRemoval: () => ({
+    requiresPassword: false,
+    validatePassword: jest.fn(),
+    remove: jest.fn(),
+  }),
   // Developer mode lives in shared now; the screen reads it through the barrel.
   useDeveloperModeSettings: () => ({
     developerNetworks: false,
@@ -80,6 +87,7 @@ jest.mock('../../src/components', () => {
   const ReactActual = require('react');
   const { View, Text } = require('react-native');
   return {
+    ConfirmSheet: () => null,
     DepthBackground: () => null,
     ScalesBackground: () => null,
     SectionLabel: ({ children }: { children?: React.ReactNode }) => <Text>{children}</Text>,

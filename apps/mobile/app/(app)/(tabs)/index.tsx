@@ -646,11 +646,16 @@ export default function HomeScreen() {
         onCopy={handleReceiveSheetCopy}
       />
 
-      {/* The question the derived-account scan raises, asked over Home and
-          nowhere else: the scan belongs to the unlocked session, so its answer
-          is taken on the first screen the session lands on. */}
+      {/* The question the automatic derived-account scan raises: the scan
+          belongs to the unlocked session, so its answer is taken on the first
+          screen the session lands on. A native Modal shows through any screen
+          pushed over Home, and Wallets answers the rescans it asks for over
+          itself, so this one only draws the automatic pass's finds. */}
       <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible}
+        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
+        // The automatic pass is silent: Home only ever draws the answer, never
+        // the wait. A rescan the user asked for is waited on where they asked.
+        scanning={false}
         finds={derivedAccounts.finds}
         onImport={(indexes) => void derivedAccounts.importFinds(indexes)}
         onDismiss={() => void derivedAccounts.dismiss()}

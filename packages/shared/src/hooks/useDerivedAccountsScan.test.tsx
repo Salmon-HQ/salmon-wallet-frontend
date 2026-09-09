@@ -112,6 +112,8 @@ describe('useDerivedAccountsScan', () => {
     const { result } = renderHook(() => useDerivedAccountsScan());
 
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
+    // Nobody asked: the surface that shows the automatic pass answers it.
+    expect(result.current.sheetRequested).toBe(false);
     expect(result.current.finds).toEqual([
       { index: 2, address: 'sol-2', balanceFormatted: '0.5 SOL' },
     ]);
@@ -306,6 +308,72 @@ describe('useDerivedAccountsScan', () => {
     });
 
     expect(result.current.sheetVisible).toBe(true);
+    // The user asked from a surface of their own: that one answers, not Home.
+    expect(result.current.sheetRequested).toBe(true);
     expect(result.current.finds).toEqual([]);
+  });
+
+  it('announces a scan the user asked for, and stops announcing when it answers', async () => {
+    arrange({ scanned: ['wallet-1'] });
+    let release: () => void = () => {};
+    scanMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ accounts: [], failedNetworks: [] });
+        })
+    );
+
+    const { result } = renderHook(() => useDerivedAccountsScan());
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.rescan('wallet-1');
+    });
+    await waitFor(() => expect(result.current.rescanningAccountId).toBe('wallet-1'));
+
+    await act(async () => {
+      release();
+      await pending;
+    });
+    expect(result.current.rescanningAccountId).toBeNull();
+  });
+
+  it('does not scan on its own when told not to — only a rescan runs', async () => {
+    scanMock.mockResolvedValue({ accounts: [find(2, 'sol-2', 0.5)], failedNetworks: [] });
+    arrange();
+
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: false }));
+
+    await act(async () => {});
+    expect(scanMock).not.toHaveBeenCalled();
+    expect(result.current.sheetVisible).toBe(false);
+
+    await act(async () => {
+      await result.current.rescan('wallet-1');
+    });
+    expect(scanMock).toHaveBeenCalledTimes(1);
+    expect(result.current.sheetVisible).toBe(true);
+    expect(result.current.sheetRequested).toBe(true);
+  });
+
+  it('never announces the automatic pass — it is silent until it has an answer', async () => {
+    let release: () => void = () => {};
+    scanMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ accounts: [], failedNetworks: [] });
+        })
+    );
+    arrange();
+
+    const { result } = renderHook(() => useDerivedAccountsScan());
+
+    await waitFor(() => expect(result.current.scanningAccountId).toBe('wallet-1'));
+    expect(result.current.rescanningAccountId).toBeNull();
+
+    await act(async () => {
+      release();
+    });
+    expect(result.current.rescanningAccountId).toBeNull();
   });
 });

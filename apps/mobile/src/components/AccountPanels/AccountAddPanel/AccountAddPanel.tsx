@@ -23,6 +23,7 @@ import {
   iconSize,
 } from '../../../icons';
 import { useTranslation } from 'react-i18next';
+import * as Clipboard from 'expo-clipboard';
 
 import {
   spacing,
@@ -34,7 +35,9 @@ import {
   type DerivedAccountInfo,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { PrimaryButton } from '../../Button';
+import { PrimaryButton, SecondaryButton } from '../../Button';
+// Direct, not the barrel: the layout's own motion has no place in a panel.
+import { ReservedSlot } from '../../OnboardingLayout/ReservedSlot';
 import { Card } from '../../Card';
 import { TextField } from '../../TextInput';
 import { ConfirmSheet } from '../../ConfirmSheet';
@@ -247,6 +250,14 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     );
   };
 
+  const handlePasteSeed = useCallback(async () => {
+    try {
+      flow.pasteSeed(await Clipboard.getStringAsync());
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+    }
+  }, [flow]);
+
   const renderImportSeed = () => (
     <View style={styles.stack}>
       <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
@@ -264,9 +275,16 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       ) : flow.seedError ? (
         <Text style={styles.errorText}>{t(flow.seedError)}</Text>
       ) : null}
-      <PrimaryButton onPress={flow.submitSeed} testID="account-add-seed-continue-button">
-        {t('actions.continue')}
-      </PrimaryButton>
+      {/* The recover screen's rule: paste is the one action on offer, and
+          Continue takes its reserved place only once the phrase checks out. */}
+      <SecondaryButton onPress={handlePasteSeed} testID="account-add-seed-paste-button">
+        {t('wallet.recover.pasteSeed')}
+      </SecondaryButton>
+      <ReservedSlot visible={flow.seedValid}>
+        <PrimaryButton onPress={flow.submitSeed} testID="account-add-seed-continue-button">
+          {t('actions.continue')}
+        </PrimaryButton>
+      </ReservedSlot>
     </View>
   );
 

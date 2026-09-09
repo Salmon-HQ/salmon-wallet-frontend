@@ -8,7 +8,7 @@
  * delete + active-check. "Add account" closes the list as its own outlined
  * card, same idiom as Wallets' "Add wallet".
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderWidth,
@@ -19,6 +19,7 @@ import {
   getShortAddress,
   isWatchOnlyAccount,
   spacing,
+  useAccountDeleteConfirm,
   type Account,
 } from '@salmon/shared';
 
@@ -187,18 +188,15 @@ export function AccountsPanel({
   onSelectAccount,
   onEditAccount,
   onDeleteAccount,
+  requirePassword,
+  validatePassword,
   onAddAccount,
   onBack,
 }: AccountsPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const tokens = useSemantic();
   const canDelete = accounts.length > 1;
-  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
-
-  const handleDeleteConfirmed = useCallback(async () => {
-    if (!accountToDelete) return;
-    await onDeleteAccount(accountToDelete.id);
-  }, [accountToDelete, onDeleteAccount]);
+  const { accountToDelete, setAccountToDelete, confirm } = useAccountDeleteConfirm(onDeleteAccount);
 
   const rows = useMemo(
     () =>
@@ -213,7 +211,7 @@ export function AccountsPanel({
           onDelete={() => setAccountToDelete(account)}
         />
       )),
-    [accounts, activeAccountId, canDelete, onSelectAccount, onEditAccount]
+    [accounts, activeAccountId, canDelete, onSelectAccount, onEditAccount, setAccountToDelete]
   );
 
   return (
@@ -266,7 +264,9 @@ export function AccountsPanel({
         })}
         confirmText={t('actions.remove')}
         isDanger
-        onConfirm={handleDeleteConfirmed}
+        requirePassword={requirePassword}
+        validatePassword={validatePassword}
+        onConfirm={confirm}
       />
     </SettingsPanelContent>
   );

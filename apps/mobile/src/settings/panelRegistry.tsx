@@ -12,9 +12,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 
 import {
+  useAccountRemoval,
   useAccountsContext,
   useCurrencyContext,
   useSettingsPanelData,
@@ -61,14 +61,15 @@ import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
 import { useBiometric } from '../contexts/BiometricContext';
 import type { MobilePanelRegistry } from './types';
-import { resolveReturnTo } from './returnTo';
 
 export function useSettingsPanelRegistry(): MobilePanelRegistry {
   const { t } = useTranslation();
-  const router = useRouter();
   const openLink = useOpenLink();
 
   const [accountState, accountActions] = useAccountsContext();
+  // Removing a wallet re-encrypts the vault that is left: on a cold session
+  // the confirmation has to collect the password first.
+  const accountRemoval = useAccountRemoval();
   const { accounts, accountId, activeAccount, activeBlockchainAccount, networkId } = accountState;
   const activeTrustedApps = accountState.activeTrustedApps;
 
@@ -389,7 +390,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
           activeAccountId={activeAccount?.id || ''}
           onSelectAccount={(id: string) => accountActions.changeAccount(id)}
           onEditAccount={(id: string) => onNavigate('account-edit', { accountId: id })}
-          onDeleteAccount={(id: string) => accountActions.removeAccount(id)}
+          onDeleteAccount={(id: string, password?: string) => accountRemoval.remove(id, password)}
+          requirePassword={accountRemoval.requiresPassword}
+          validatePassword={accountRemoval.validatePassword}
           onAddAccount={() => onNavigate('account-add')}
           onBack={onBack}
         />
@@ -424,15 +427,11 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
           />
         );
       },
-      // One add-wallet screen, two entry points. `returnTo` says which one
-      // opened it, so completing lands on the surface the user came from with
-      // the new wallet already active — Home by default, as it always did.
-      'account-add': ({ onBack, ...props }) => (
-        <AccountAddPanel
-          onComplete={() => router.replace(resolveReturnTo(props.returnTo as string | undefined))}
-          onBack={onBack}
-        />
-      ),
+      // One add-wallet screen, two entry points (Wallets → Add wallet and
+      // Settings → Accounts → Add). Completing pops the flow, so it lands on
+      // whichever screen pushed it — the same way its own back does. The new
+      // wallet is already active by then; nothing needs to be replaced.
+      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
       backup: ({ onBack }) => (
         <BackupPanel
           onBack={onBack}
@@ -445,6 +444,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
     [
       activeAccount,
       accountActions,
+      accountRemoval,
       accounts,
       accountId,
       networkId,
@@ -478,7 +478,6 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       showAddressBookWriteError,
       activeTrustedApps,
       openLink,
-      router,
       t,
     ]
   );

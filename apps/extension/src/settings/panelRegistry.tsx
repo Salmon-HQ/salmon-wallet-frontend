@@ -19,6 +19,7 @@ import {
   toExplorerItems,
   toLanguageItems,
   toTrustedAppItems,
+  useAccountRemoval,
   useAccountsContext,
   useCurrencyContext,
   useSettingsPanelData,
@@ -59,6 +60,9 @@ export function useSettingsPanelRegistry(): PanelRegistry {
   const { t } = useTranslation();
 
   const [accountState, actions] = useAccountsContext();
+  // Removing a wallet re-encrypts the vault that is left: on a cold session
+  // the confirmation has to collect the password first.
+  const accountRemoval = useAccountRemoval();
   const { accounts, accountId, activeAccount, activeBlockchainAccount, networkId } = accountState;
   const activeTrustedApps = accountState.activeTrustedApps;
 
@@ -257,7 +261,9 @@ export function useSettingsPanelRegistry(): PanelRegistry {
             setEditingAccountId(id);
             onNavigate('account-edit', { accountId: id });
           }}
-          onDeleteAccount={(id) => actions.removeAccount(id)}
+          onDeleteAccount={(id, password) => accountRemoval.remove(id, password)}
+          requirePassword={accountRemoval.requiresPassword}
+          validatePassword={accountRemoval.validatePassword}
           onAddAccount={() => onNavigate('account-add')}
           onBack={onBack}
         />
@@ -310,6 +316,7 @@ export function useSettingsPanelRegistry(): PanelRegistry {
     [
       activeAccount,
       actions,
+      accountRemoval,
       accounts,
       accountId,
       networkId,

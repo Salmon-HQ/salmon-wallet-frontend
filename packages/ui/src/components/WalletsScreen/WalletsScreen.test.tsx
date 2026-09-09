@@ -3,7 +3,7 @@
  *
  * Wallets, the screen (spec 028 ruling 3, spec 025): a flat list where the
  * cards of one seed sit together, the derived card under its parent with a
- * descent line and "Derived from {name}", no index anywhere.
+ * rail and "Derived from {name}", no index anywhere.
  */
 import React from 'react';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
@@ -97,7 +97,7 @@ describe('WalletsScreen', () => {
     );
   });
 
-  it('sits a derived wallet under its parent, with the descent and the subtitle, and no index', () => {
+  it('sits a derived wallet under its parent, on the rail, with the subtitle, and no index', () => {
     renderScreen();
 
     const cards = screen
@@ -108,11 +108,11 @@ describe('WalletsScreen', () => {
       `wallet-card-${CHILD_ID}`,
       `wallet-card-${OTHER_ID}`,
     ]);
-    expect(screen.getByTestId(`wallet-descent-${CHILD_ID}`)).toBeTruthy();
+    expect(screen.getByTestId(`wallet-rail-${CHILD_ID}`)).toBeTruthy();
     expect(screen.getByTestId(`wallet-derived-from-${CHILD_ID}`).textContent).toBe(
       'Derived from Main'
     );
-    expect(screen.queryByTestId(`wallet-descent-${PARENT_ID}`)).toBeNull();
+    expect(screen.queryByTestId(`wallet-rail-${PARENT_ID}`)).toBeNull();
     expect(screen.queryByText(/#\d/)).toBeNull();
   });
 

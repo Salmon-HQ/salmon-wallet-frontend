@@ -12,6 +12,9 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  // The rows and the selection are shared logic, not a platform's: the real
+  // hook runs here so the sheet is tested against the contract both twins use.
+  ...jest.requireActual('@salmon/shared/src/hooks/useDerivedFindRows'),
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
@@ -97,6 +100,10 @@ jest.mock('../../../hooks/usePressMotion', () => ({
   }),
 }));
 
+// The shimmer's own suite covers the band; here the skeleton only has to take
+// up the row's shape.
+jest.mock('../ShimmerRect', () => ({ ShimmerRect: () => null }));
+
 jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
 jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
@@ -111,7 +118,13 @@ describe('DerivedAccountsSheet', () => {
   it('offers every find taken, and imports the ones still taken', () => {
     const onImport = jest.fn();
     render(
-      <DerivedAccountsSheet visible finds={FINDS} onImport={onImport} onDismiss={jest.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={onImport}
+        onDismiss={jest.fn()}
+      />
     );
 
     // The names the wallets would get, not their paths.
@@ -128,7 +141,13 @@ describe('DerivedAccountsSheet', () => {
   it('imports everything when nothing was unchecked', () => {
     const onImport = jest.fn();
     render(
-      <DerivedAccountsSheet visible finds={FINDS} onImport={onImport} onDismiss={jest.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={onImport}
+        onDismiss={jest.fn()}
+      />
     );
 
     fireEvent.press(screen.getByTestId('derived-accounts-sheet-import'));
@@ -140,7 +159,13 @@ describe('DerivedAccountsSheet', () => {
     const onImport = jest.fn();
     const onDismiss = jest.fn();
     render(
-      <DerivedAccountsSheet visible finds={FINDS} onImport={onImport} onDismiss={onDismiss} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={onImport}
+        onDismiss={onDismiss}
+      />
     );
 
     fireEvent.press(screen.getByTestId('derived-accounts-sheet-dismiss'));
@@ -150,7 +175,15 @@ describe('DerivedAccountsSheet', () => {
   });
 
   it('says so when a rescan found nothing', () => {
-    render(<DerivedAccountsSheet visible finds={[]} onImport={jest.fn()} onDismiss={jest.fn()} />);
+    render(
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={[]}
+        onImport={jest.fn()}
+        onDismiss={jest.fn()}
+      />
+    );
 
     expect(screen.getByTestId('derived-accounts-sheet-empty')).toBeTruthy();
     expect(screen.queryByTestId('derived-accounts-sheet-import')).toBeNull();
@@ -158,11 +191,34 @@ describe('DerivedAccountsSheet', () => {
 
   it('never draws a derivation index', () => {
     const { toJSON } = render(
-      <DerivedAccountsSheet visible finds={FINDS} onImport={jest.fn()} onDismiss={jest.fn()} />
+      <DerivedAccountsSheet
+        visible
+        scanning={false}
+        finds={FINDS}
+        onImport={jest.fn()}
+        onDismiss={jest.fn()}
+      />
     );
 
     const drawn = JSON.stringify(toJSON());
     expect(drawn).not.toContain('m/44');
     expect(drawn).not.toContain('· 5');
+  });
+  it('waits instead of asking while the scan the user asked for runs', () => {
+    render(
+      <DerivedAccountsSheet
+        visible
+        scanning
+        finds={[]}
+        onImport={jest.fn()}
+        onDismiss={jest.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('derived-accounts-sheet-scanning')).toBeTruthy();
+    // Nothing to answer yet: no buttons, and not even the empty state.
+    expect(screen.queryByTestId('derived-accounts-sheet-import')).toBeNull();
+    expect(screen.queryByTestId('derived-accounts-sheet-dismiss')).toBeNull();
+    expect(screen.queryByTestId('derived-accounts-sheet-empty')).toBeNull();
   });
 });

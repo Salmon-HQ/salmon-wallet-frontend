@@ -329,6 +329,10 @@ export type { AccountsPanelProps } from './AccountPanels/AccountsPanel';
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 
+// WalletFamily - a wallet and its derived wallets, tied by a rail
+export { WalletFamily } from './WalletFamily';
+export type { WalletFamilyProps } from './WalletFamily';
+
 export { AccountEditPanel } from './AccountPanels/AccountEditPanel';
 export type { AccountEditPanelProps } from './AccountPanels/AccountEditPanel';
 

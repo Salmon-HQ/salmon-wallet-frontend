@@ -486,15 +486,30 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       }
       case 'wallets':
+        // Wallets is a page of its own in the stack, not a layer over Home,
+        // so the rescans it asks for are waited on and answered here — the
+        // same sheet, mounted where the user is (mobile does the same).
         return (
-          <WalletsScreen
-            onBack={handleBack}
-            onRename={handleRenameAccount}
-            onAddWallet={handleAddAccount}
-            onRescan={(id) => void derivedAccounts.rescan(id)}
-            scanningAccountId={derivedAccounts.scanningAccountId}
-            showUnverifiedTokens={showUnverifiedTokens}
-          />
+          <>
+            <WalletsScreen
+              onBack={handleBack}
+              onRename={handleRenameAccount}
+              onAddWallet={handleAddAccount}
+              onRescan={(id) => void derivedAccounts.rescan(id)}
+              scanningAccountId={derivedAccounts.scanningAccountId}
+              showUnverifiedTokens={showUnverifiedTokens}
+            />
+            <DerivedAccountsSheet
+              visible={
+                derivedAccounts.rescanningAccountId !== null ||
+                (derivedAccounts.sheetVisible && derivedAccounts.sheetRequested)
+              }
+              scanning={derivedAccounts.rescanningAccountId !== null}
+              finds={derivedAccounts.finds}
+              onImport={(indexes: number[]) => void derivedAccounts.importFinds(indexes)}
+              onDismiss={() => void derivedAccounts.dismiss()}
+            />
+          </>
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
@@ -665,11 +680,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onOrderChange={setSubTabOrder}
       />
 
-      {/* The question the derived-account scan raises, asked over Home and
-          nowhere else: the scan belongs to the unlocked session, so its answer
-          is taken on the first screen the session lands on. */}
+      {/* The question the automatic derived-account scan raises: the scan
+          belongs to the unlocked session, so its answer is taken on the first
+          screen the session lands on. A rescan the user asked for on Wallets
+          is answered there, so Home only ever draws the automatic pass's
+          finds — never the wait. */}
       <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible}
+        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
+        scanning={false}
         finds={derivedAccounts.finds}
         onImport={(indexes: number[]) => void derivedAccounts.importFinds(indexes)}
         onDismiss={() => void derivedAccounts.dismiss()}

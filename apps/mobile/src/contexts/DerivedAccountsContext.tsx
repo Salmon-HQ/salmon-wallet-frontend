@@ -9,15 +9,18 @@
  * start a second scan every time the user opened Wallets.
  *
  * It owns the sheet as well as the scan: Home renders `DerivedAccountsSheet`
- * from this state, and Wallets reads `scanningAccountId` for the skeleton and
- * calls `rescan` for the manual action.
+ * from this state, and Wallets mounts the same sheet on
+ * `rescanningAccountId` — a scan the user asked for is answered on the screen
+ * they asked from — and calls `rescan` for the manual action.
  */
 import React, { createContext, useContext } from 'react';
 import { useDerivedAccountsScan, type UseDerivedAccountsScanResult } from '@salmon/shared';
 
 const DerivedAccountsContext = createContext<UseDerivedAccountsScanResult>({
   scanningAccountId: null,
+  rescanningAccountId: null,
   sheetVisible: false,
+  sheetRequested: false,
   finds: [],
   rescan: async () => {},
   importFinds: async () => {},

@@ -55,8 +55,20 @@ export interface DerivedAccountFind {
 export interface UseDerivedAccountsScanResult {
   /** The wallet being scanned right now, or null when nothing is running. */
   scanningAccountId: string | null;
+  /**
+   * The wallet a scan *the user asked for* is running on, or null. The
+   * automatic pass stays silent: it never sets this, so nothing appears on
+   * screen for a scan nobody requested.
+   */
+  rescanningAccountId: string | null;
   /** Whether the sheet asking about the finds should be on screen. */
   sheetVisible: boolean;
+  /**
+   * Whether the open ask came from a `rescan` the user asked for, rather than
+   * the automatic pass — so the surface that asked can answer it, and the one
+   * that shows the automatic pass's finds can stay out of the way.
+   */
+  sheetRequested: boolean;
   /** The finds the sheet is asking about — empty after a rescan found nothing. */
   finds: DerivedAccountFind[];
   /** Scans one wallet on demand — the rescan action on a mnemonic card. */
@@ -175,14 +187,31 @@ export async function findDerivedAccounts(
  * wallet per render pass on purpose — `addAccount` writes the whole account
  * list it can see, so a loop in one tick would persist only its last wallet.
  */
-export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
+export interface UseDerivedAccountsScanOptions {
+  /**
+   * Whether the hook runs the silent pass on its own for a wallet not yet
+   * scanned. `true` (the default) is Home's session-wide owner; `false` is a
+   * surface that only ever scans when the user asks — the success screen's
+   * "Check derivables" — and must not start a pass the button then trips on.
+   */
+  automatic?: boolean;
+}
+
+export function useDerivedAccountsScan({
+  automatic = true,
+}: UseDerivedAccountsScanOptions = {}): UseDerivedAccountsScanResult {
   const [{ accounts, activeAccount, locked, ready }, accountActions] = useAccountsContext();
   const { derivedScannedAccountIds, markDerivedScanned, isLoading } = useUserConfig({
     activeBlockchainAccount: CONFIG_ACCOUNT,
   });
 
   const [scanningAccountId, setScanningAccountId] = useState<string | null>(null);
-  const [ask, setAsk] = useState<{ accountId: string; finds: DerivedAccountFind[] } | null>(null);
+  const [rescanningAccountId, setRescanningAccountId] = useState<string | null>(null);
+  const [ask, setAsk] = useState<{
+    accountId: string;
+    finds: DerivedAccountFind[];
+    requested: boolean;
+  } | null>(null);
   const [queue, setQueue] = useState<QueuedImport[]>([]);
 
   const runningRef = useRef(false);
@@ -219,6 +248,7 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
       runningRef.current = true;
       cancelledRef.current = false;
       setScanningAccountId(account.id);
+      if (askWhenEmpty) setRescanningAccountId(account.id);
 
       try {
         const finds = await findDerivedAccounts(account, accounts, () => cancelledRef.current);
@@ -227,7 +257,7 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
           await markDerivedScanned(account.id);
           return;
         }
-        setAsk({ accountId: account.id, finds });
+        setAsk({ accountId: account.id, finds, requested: askWhenEmpty });
       } catch (error) {
         // Left unmarked on purpose: the next launch tries again. There is no
         // error surface on Home for this — the user can ask again from Wallets.
@@ -235,18 +265,19 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
       } finally {
         runningRef.current = false;
         setScanningAccountId(null);
+        setRescanningAccountId(null);
       }
     },
     [accounts, markDerivedScanned]
   );
 
   useEffect(() => {
-    if (!ready || locked || isLoading || !activeAccount) return;
+    if (!automatic || !ready || locked || isLoading || !activeAccount) return;
     if (derivedScannedAccountIds.includes(activeAccount.id)) return;
     if (attemptedRef.current.has(activeAccount.id)) return;
     attemptedRef.current.add(activeAccount.id);
     void run(activeAccount, false);
-  }, [ready, locked, isLoading, activeAccount, derivedScannedAccountIds, run]);
+  }, [automatic, ready, locked, isLoading, activeAccount, derivedScannedAccountIds, run]);
 
   const rescan = useCallback(
     async (accountId: string): Promise<void> => {
@@ -323,7 +354,9 @@ export function useDerivedAccountsScan(): UseDerivedAccountsScanResult {
 
   return {
     scanningAccountId,
+    rescanningAccountId,
     sheetVisible: ask !== null,
+    sheetRequested: ask?.requested ?? false,
     finds,
     rescan,
     importFinds,

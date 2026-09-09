@@ -4,7 +4,7 @@
  * A derived path is a wallet of its own (spec 025): its own card, its own
  * name, its own place in the total. The only thing that says where it came
  * from is its position — right under the wallet it shares a seed with, stepped
- * in, joined by a descent line, subtitled "Derived from {parent}". That, and
+ * in, tied by a rail, subtitled "Derived from {parent}". That, and
  * the rescan action being offered exactly where there is a seed to scan, is
  * what is pinned here. No index number appears anywhere.
  */
@@ -17,7 +17,10 @@ const mockChangeAccount = jest.fn(async () => {});
 const mockChangePathIndex = jest.fn(async () => {});
 const mockRescan = jest.fn(async () => {});
 
-const mockDerived: { scanningAccountId: string | null } = { scanningAccountId: null };
+const mockDerived: { scanningAccountId: string | null; rescanningAccountId: string | null } = {
+  scanningAccountId: null,
+  rescanningAccountId: null,
+};
 
 const blockchainAccount = (address: string) => ({ getReceiveAddress: () => address });
 
@@ -113,6 +116,9 @@ jest.mock('@salmon/shared', () => {
     useUnverifiedTokens: () => false,
     useDeveloperMode: () => false,
     ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
+    // The sheet the screen mounts names its rows through shared logic; the real
+    // hook runs here, it is a leaf with no platform reach.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useDerivedFindRows'),
     // The card order is real: parent, then its derived wallets, is what this suite reads.
     ...jest.requireActual('../../../../packages/shared/src/utils/walletCards'),
     getAccountMnemonic: actualSecret.getAccountMnemonic,
@@ -142,10 +148,31 @@ jest.mock('@salmon/shared', () => {
   };
 });
 
+// The sheet has its own suite; what this one reads is the wiring — that the
+// screen puts it on screen, and in which state, the moment the user asks.
+jest.mock('../../src/components/DerivedAccountsSheet', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
+      visible
+        ? ReactActual.createElement(View, {
+            testID: scanning ? 'derived-accounts-sheet-scanning' : 'derived-accounts-sheet',
+          })
+        : null,
+  };
+});
+
 jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
   useDerivedAccounts: () => ({
     scanningAccountId: mockDerived.scanningAccountId,
+    rescanningAccountId: mockDerived.rescanningAccountId,
+    sheetVisible: false,
+    sheetRequested: false,
+    finds: [],
     rescan: mockRescan,
+    importFinds: jest.fn(),
+    dismiss: jest.fn(),
   }),
 }));
 
@@ -202,6 +229,7 @@ import WalletsScreen from '../../app/(app)/wallets';
 beforeEach(() => {
   jest.clearAllMocks();
   mockDerived.scanningAccountId = null;
+  mockDerived.rescanningAccountId = null;
 });
 
 describe('Wallets — wallets of one seed', () => {
@@ -212,16 +240,16 @@ describe('Wallets — wallets of one seed', () => {
     expect(order).toEqual(['wallet-card-w1', 'wallet-card-w3', 'wallet-card-w2']);
   });
 
-  it('draws the descent and names the wallet it descends from', () => {
+  it('draws the rail and names the wallet it descends from', () => {
     render(<WalletsScreen />);
 
-    expect(screen.getByTestId('wallet-descent-w3')).toBeTruthy();
+    expect(screen.getByTestId('wallet-rail-w3')).toBeTruthy();
     expect(screen.getByTestId('wallet-derived-from-w3').props.children).toBe(
       'Derived from Account 1'
     );
 
     // A wallet nobody derived carries neither.
-    expect(screen.queryByTestId('wallet-descent-w1')).toBeNull();
+    expect(screen.queryByTestId('wallet-rail-w1')).toBeNull();
     expect(screen.queryByTestId('wallet-derived-from-w1')).toBeNull();
   });
 
@@ -260,8 +288,13 @@ describe('Wallets — wallets of one seed', () => {
 
     mockRescan.mockClear();
     mockDerived.scanningAccountId = 'w1';
+    mockDerived.rescanningAccountId = 'w1';
     rerender(<WalletsScreen />);
     fireEvent.press(screen.getByTestId('wallet-rescan-w1'));
     expect(mockRescan).not.toHaveBeenCalled();
+
+    // The wait is answered here, not on Home: the sheet the user asked for is
+    // already on screen while the scan runs.
+    expect(screen.getByTestId('derived-accounts-sheet-scanning')).toBeTruthy();
   });
 });
