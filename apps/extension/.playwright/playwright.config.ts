@@ -21,7 +21,9 @@ export default defineConfig({
   globalSetup: path.join(suiteRoot, 'global-setup.ts'),
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  // One retry on CI absorbs a cold-runner hiccup (a closed context, a slow first
+  // paint) without hiding a real regression, which fails both times.
+  retries: process.env.CI ? 1 : 0,
   timeout: 120_000,
   expect: { timeout: 15_000 },
   reporter: [

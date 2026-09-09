@@ -32,8 +32,19 @@ const SLOTS = [
   'action',
 ] as const;
 
-/** Slots whose Y agrees across both families. */
-const SHARED_SLOTS = ['chrome', 'title', 'assist', 'secondary', 'action'] as const;
+/**
+ * Slots whose Y agrees across both families. `assist` and `secondary` are
+ * not among them: a screen that passes nothing for either hands the band to
+ * `body` (`resolveOnboardingBands`), so they sit where that screen puts them.
+ * The stack is the same either way, so the action does not move.
+ */
+const SHARED_SLOTS = ['chrome', 'title', 'action'] as const;
+/**
+ * What the two `content` screens share: everything above the collapsible
+ * bands. `assist` collapses when a screen has nothing for it (recover, until
+ * the phrase is invalid), and `secondary` sits on top of it, so both move.
+ */
+const CONTENT_SLOTS = SLOTS.filter((slot) => slot !== 'assist' && slot !== 'secondary');
 
 type Tops = Partial<Record<(typeof SLOTS)[number], number>>;
 
@@ -41,7 +52,11 @@ async function slotTops(page: Page): Promise<Tops> {
   await page.getByTestId('onboarding-stack').waitFor({ state: 'visible' });
   const tops: Tops = {};
   for (const slot of SLOTS) {
-    const box = await page.getByTestId(`onboarding-slot-${slot}`).boundingBox();
+    // A slot the layout dropped for lack of height (the mark, at 360x600) is
+    // simply absent; `boundingBox` would wait for it until the test timed out.
+    const locator = page.getByTestId(`onboarding-slot-${slot}`);
+    if ((await locator.count()) === 0) continue;
+    const box = await locator.boundingBox();
     if (box) tops[slot] = Math.round(box.y);
   }
   return tops;
@@ -59,26 +74,28 @@ test('the control bands hold at one Y across the screens the popup can reach', a
   );
 
   const welcome = await slotTops(popup);
+  // Back to the welcome screen by address, not by history: the tab was born
+  // on about:blank, so `goBack` lands there and a reload only reloads that.
+  const welcomeUrl = popup.url();
 
   await popup.getByTestId('select-create-button').click();
   const seedWarning = await slotTops(popup);
 
-  await popup.goBack().catch(() => undefined);
-  await popup.reload();
+  await popup.goto(welcomeUrl);
   await popup.getByTestId('select-recover-button').click();
   const recover = await slotTops(popup);
 
   // Welcome is `identity`, the other two are `content` — the mark and the body
   // differ between families on purpose, and the difference cancels, so these
-  // five bands do not move anywhere in the flow. The primary action is the one
-  // the request is about.
+  // bands do not move anywhere in the flow. The primary action is the one the
+  // request is about.
   for (const slot of SHARED_SLOTS) {
     expect(seedWarning[slot], `seed-warning.${slot}`).toBe(welcome[slot]);
     expect(recover[slot], `recover.${slot}`).toBe(welcome[slot]);
   }
 
-  // The two `content` screens agree on everything, mark and body included.
-  for (const slot of SLOTS) {
+  // The two `content` screens agree on everything else, mark and body included.
+  for (const slot of CONTENT_SLOTS) {
     expect(recover[slot], `recover.${slot} against seed-warning`).toBe(seedWarning[slot]);
   }
 });
