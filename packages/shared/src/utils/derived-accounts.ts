@@ -13,11 +13,13 @@ import type { BlockchainAccount } from '../types/blockchain';
 import { SolanaAccount } from '../blockchain/solana';
 import { BitcoinAccount } from '../blockchain/bitcoin';
 import { EthereumAccount } from '../blockchain/ethereum';
-import { LAMPORTS_PER_SOL } from './balance';
+import { SOL_CONSTANTS } from './balance';
 import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { MIRROR_NETWORK_IDS, getMainnetSibling } from './network';
 import { getAccountMnemonic } from './account-secret';
+
+const isNativeSol = (mint: string | undefined): boolean => !mint || mint === SOL_CONSTANTS.ADDRESS;
 import { NETWORK_DISPLAY } from './networkDisplay';
 import type { Account } from '../types/account';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
@@ -70,6 +72,8 @@ export interface DerivedAccountInfo {
   balance: number;
   /** Pre-formatted balance string including symbol, e.g. "0.0500 SOL". */
   balanceFormatted: string;
+  /** Token positions with a balance on this path, native excluded. */
+  tokenCount: number;
   /** Ticker symbol for the native token. */
   currencySymbol: string;
   /** Whether the checkbox for this account is checked in the UI. */
@@ -80,40 +84,59 @@ export interface DerivedAccountInfo {
 // Helpers
 // ============================================================================
 
+/** What a derived path holds: its native coin, and how many tokens besides. */
+export interface AccountFunds {
+  /** Human-readable native amount in SOL / BTC / ETH. */
+  native: number;
+  /** Token positions with a balance, native excluded. Zero where the chain has none. */
+  tokenCount: number;
+}
+
+const NO_FUNDS: AccountFunds = { native: 0, tokenCount: 0 };
+
 /**
- * Fetches the native balance for a blockchain account.
+ * Fetches what a blockchain account holds.
  *
- * Returns a human-readable number in SOL / BTC / ETH.
- * Returns 0 on any RPC failure so scanning is never interrupted by transient errors.
+ * A path is funded by *anything* on it (owner, 2026-09-09): a wallet that
+ * received USDC and never SOL is still the user's money. Solana reads the
+ * same balance the Home screen reads, native and tokens in one answer; the
+ * other chains have no tokens here and read their native credit.
+ * Returns no funds on any RPC failure so scanning is never interrupted by
+ * transient errors.
  *
  * @param account  - Live blockchain account instance.
  * @param networkId - Network ID used to look up blockchain family.
  */
-export async function getAccountBalance(
+export async function getAccountFunds(
   account: BlockchainAccount,
   networkId: string
-): Promise<number> {
+): Promise<AccountFunds> {
   const info = NETWORK_DISPLAY[networkId];
-  if (!info) return 0;
+  if (!info) return NO_FUNDS;
 
   try {
     if (info.blockchain === 'solana') {
-      const lamports = await (account as SolanaAccount).getCredit();
-      return lamports / LAMPORTS_PER_SOL;
+      const { items } = await (account as SolanaAccount).getBalance();
+      const native = items.find((item) => isNativeSol(item.mint));
+      const tokenCount = items.filter((item) => !isNativeSol(item.mint) && item.amount > 0).length;
+      return {
+        native: native ? (native.uiAmount ?? native.amount / 10 ** native.decimals) : 0,
+        tokenCount,
+      };
     }
     if (info.blockchain === 'bitcoin') {
       const satoshis = await (account as BitcoinAccount).getCredit();
-      return satoshis / SATOSHIS_PER_BTC;
+      return { native: satoshis / SATOSHIS_PER_BTC, tokenCount: 0 };
     }
     if (info.blockchain === 'ethereum') {
       const wei = await (account as EthereumAccount).getCredit();
-      return Number(wei) / Number(WEI_PER_ETH_BIGINT);
+      return { native: Number(wei) / Number(WEI_PER_ETH_BIGINT), tokenCount: 0 };
     }
   } catch {
-    // RPC error — return 0 so scanning continues
+    // RPC error — no funds, so scanning continues
   }
 
-  return 0;
+  return NO_FUNDS;
 }
 
 /**
@@ -251,7 +274,7 @@ export interface ScanDerivedAccountsResult {
  *
  * The balance lookup is provided as a callback so platform code can inject
  * different service implementations (e.g. the extension's fetchAndMergeNetworkConfigs
- * pre-warm before calling this). The default `getAccountBalance` works for both
+ * pre-warm before calling this). The default `getAccountFunds` works for both
  * platforms and is used unless callers supply their own.
  *
  * Network scanning runs in parallel; index scanning within each network is
@@ -260,8 +283,8 @@ export interface ScanDerivedAccountsResult {
  * @param mnemonic         - BIP-39 mnemonic phrase.
  * @param networkIds       - Networks to scan (already filtered to backend-enabled
  *                           networks via `getScanNetworks()`).
- * @param getBalance       - Callback: resolves to human-readable native balance.
- *                           Defaults to `getAccountBalance`.
+ * @param getFunds         - Callback: resolves to what the path holds.
+ *                           Defaults to `getAccountFunds`.
  * @param isCancelled      - Optional callback checked before each index derivation.
  *                           Return true to abort early (e.g. on component unmount).
  * @returns Accounts sorted by network then index, plus the networks whose scan
@@ -270,10 +293,10 @@ export interface ScanDerivedAccountsResult {
 export async function scanDerivedAccounts(
   mnemonic: string,
   networkIds: string[],
-  getBalance: (
+  getFunds: (
     account: BlockchainAccount,
     networkId: string
-  ) => Promise<number> = getAccountBalance,
+  ) => Promise<AccountFunds> = getAccountFunds,
   isCancelled?: () => boolean
 ): Promise<ScanDerivedAccountsResult> {
   const failedNetworkSet = new Set<string>();
@@ -297,10 +320,11 @@ export async function scanDerivedAccounts(
         try {
           const account = await deriveBlockchainAccount(mnemonic, networkId, index);
           const address = account.getReceiveAddress();
-          const balance = await getBalance(account, networkId);
+          const { native: balance, tokenCount } = await getFunds(account, networkId);
 
           const isFirstIndex = index === 1;
-          const hasFunds = balance > 0;
+          // Anything on the path funds it: native, or a token the path holds.
+          const hasFunds = balance > 0 || tokenCount > 0;
 
           if (hasFunds) {
             consecutiveEmpty = 0;
@@ -319,6 +343,7 @@ export async function scanDerivedAccounts(
               networkName: info.name,
               balance,
               balanceFormatted: formatDerivedAccountBalance(balance, info.symbol),
+              tokenCount,
               currencySymbol: info.symbol,
               selected: hasFunds || isFirstIndex,
             });

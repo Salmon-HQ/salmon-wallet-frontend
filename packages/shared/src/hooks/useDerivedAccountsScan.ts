@@ -50,6 +50,8 @@ export interface DerivedAccountFind {
   address: string;
   /** Native balance already formatted for that network, e.g. "0.0500 SOL". */
   balanceFormatted: string;
+  /** Token positions with a balance on the path, native excluded. */
+  tokenCount: number;
 }
 
 export interface UseDerivedAccountsScanResult {
@@ -162,13 +164,13 @@ export async function findDerivedAccounts(
   );
 
   const offered = new Map<number, DerivedAccountFind>();
-  for (const { index, address, balance, balanceFormatted } of found) {
+  for (const { index, address, balance, balanceFormatted, tokenCount } of found) {
     // The scan always reports index 1 so the add-account panel can offer it as
     // a fresh account to create by hand; an empty path is indistinguishable
     // from an unused one and means nothing to a user (owner, 2026-09-02).
-    if (balance <= 0) continue;
+    if (balance <= 0 && tokenCount <= 0) continue;
     if (alreadyHeld.has(index) || offered.has(index)) continue;
-    offered.set(index, { index, address, balanceFormatted });
+    offered.set(index, { index, address, balanceFormatted, tokenCount });
   }
 
   return [...offered.values()].sort((a, b) => a.index - b.index);

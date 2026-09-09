@@ -38,7 +38,7 @@ export interface UseDerivedFindRowsResult {
 export function useDerivedFindRows(
   finds: DerivedAccountFind[],
   heldAccountCount: number,
-  t: (key: string, options: { number: number }) => string
+  t: (key: string, options: { number?: number; count?: number }) => string
 ): UseDerivedFindRowsResult {
   // Every find arrives taken: a funded path is almost always the user's own
   // money, and unchecking is cheaper than hunting for the same accounts by hand.
@@ -52,6 +52,12 @@ export function useDerivedFindRows(
       finds.map((find, position) => ({
         ...find,
         name: t('settings.account_add.default_name', { number: heldAccountCount + 1 + position }),
+        // A path funded by tokens alone would read "0 SOL" — the tokens are
+        // what makes it worth importing, so the line says they are there.
+        balanceFormatted:
+          find.tokenCount > 0
+            ? `${find.balanceFormatted} · ${t('wallet.derived.tokens_count', { count: find.tokenCount })}`
+            : find.balanceFormatted,
       })),
     [finds, heldAccountCount, t]
   );

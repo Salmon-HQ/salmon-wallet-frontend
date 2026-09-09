@@ -330,6 +330,7 @@ beforeEach(() => {
         path: "m/44'/501'/0'/0'",
         balanceFormatted: '0 SOL',
         balance: 0,
+        tokenCount: 0,
         index: 4,
       },
     ],

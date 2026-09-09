@@ -40,7 +40,7 @@ describe('scanDerivedAccounts', () => {
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0
+      async () => ({ native: 0, tokenCount: 0 })
     );
 
     expect(result.failedNetworks).toEqual([]);
@@ -51,13 +51,28 @@ describe('scanDerivedAccounts', () => {
     ]);
   });
 
+  it('counts a path funded by tokens alone — no native coin — as funded', async () => {
+    mockDerive.mockImplementation(async (_m, networkId, index) =>
+      makeAccount(networkId, index ?? 0)
+    );
+
+    const result = await scanDerivedAccounts(MNEMONIC, ['solana-mainnet'], async (account) =>
+      account.getReceiveAddress() === 'addr-solana-mainnet-2'
+        ? { native: 0, tokenCount: 1 }
+        : { native: 0, tokenCount: 0 }
+    );
+
+    const second = result.accounts.find((a) => a.index === 2);
+    expect(second).toMatchObject({ tokenCount: 1, balance: 0, selected: true });
+  });
+
   it('reports every network once in failedNetworks when all networks throw', async () => {
     mockDerive.mockRejectedValue(new Error('rpc down'));
 
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0
+      async () => ({ native: 0, tokenCount: 0 })
     );
 
     expect(result.accounts).toEqual([]);
@@ -74,7 +89,7 @@ describe('scanDerivedAccounts', () => {
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0
+      async () => ({ native: 0, tokenCount: 0 })
     );
 
     expect(result.failedNetworks).toEqual(['bitcoin-mainnet']);
