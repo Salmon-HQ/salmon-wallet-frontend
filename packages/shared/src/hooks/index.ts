@@ -237,3 +237,5 @@ export type {
   UseHomeShellParams,
   UseHomeShellResult,
 } from './useHomeShell';
+export { useWaitTips } from './useWaitTips';
+export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';
