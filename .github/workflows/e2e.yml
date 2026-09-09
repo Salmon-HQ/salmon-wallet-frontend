@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+      # Only the nightly writes: it files one tracking issue when it fails.
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -72,3 +74,22 @@ jobs:
           name: extension-playwright-report
           path: apps/extension/.playwright/playwright-report
           retention-days: 7
+
+      # A red nightly used to be visible only to whoever opened the Actions
+      # tab: it stayed red for 18 nights in a row once. Now one open issue
+      # tracks it — created on the first failure, appended on the next ones,
+      # closed by hand when the run is green again.
+      - name: File or update the nightly tracking issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE='Nightly extension E2E is failing'
+          BODY="Scheduled run failed: $RUN_URL (report attached to the run)."
+          NUMBER="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')"
+          if [ -n "$NUMBER" ]; then
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+          fi
