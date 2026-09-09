@@ -75,4 +75,4 @@ Señales de mala ubicación: un componente RN o DOM en `shared`; lógica de prod
 
 ## Verificación
 
-Desde la raíz, lo mismo que corre CI: `pnpm format:check`, `pnpm turbo run typecheck lint test`, `pnpm check:i18n`, `pnpm check:parity`. Para un paquete: `pnpm turbo run test --filter=@salmon/<pkg>` (`shared` y `ui` con Vitest, `mobile` con Jest). E2E: `apps/extension/.playwright`, `apps/mobile/.maestro`.
+Desde la raíz, lo mismo que corre CI: `pnpm format:check`, `pnpm turbo run typecheck lint test:coverage`, `pnpm check:i18n`, `pnpm check:parity`. Para un paquete: `pnpm turbo run test --filter=@salmon/<pkg>` (`shared` y `ui` con Vitest, `mobile` con Jest). E2E: `apps/extension/.playwright`, `apps/mobile/.maestro`.

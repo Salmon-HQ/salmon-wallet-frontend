@@ -14,7 +14,7 @@ Example: fix(swap): surface slippage errors in the user's language
 
 ## Checklist
 
-- [ ] `pnpm turbo run typecheck lint test` passes locally (zero warnings)
+- [ ] `pnpm turbo run typecheck lint test:coverage` passes locally (zero warnings)
 - [ ] `pnpm check:i18n` passes (every user-facing string exists in `en` and `es`)
 - [ ] No seed phrases, private keys, or passwords anywhere — including tests
 - [ ] Touches `packages/shared/src/crypto`, `storage`, or `blockchain` signing? → discussed in an issue first (see CONTRIBUTING.md)

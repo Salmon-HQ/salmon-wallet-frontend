@@ -18,12 +18,13 @@ CI runs this on every PR (`.github/workflows/ci.yml`); the same command works
 locally from the repo root:
 
 ```bash
-pnpm turbo run typecheck lint test   # all 5 packages, zero warnings enforced
-node scripts/check-i18n.mjs          # en/es key parity + orphans
+pnpm turbo run typecheck lint test:coverage   # all 5 packages, zero warnings, coverage floor
+node scripts/check-i18n.mjs                   # en/es key parity + orphans
+node scripts/check-dom-parity.mjs             # extension = mobile on the DOM
 ```
 
-The e2e suites and Lighthouse below need the backend up and are run per-surface
-(see each section). They **skip** when `../salmon-wallet-backend` is unreachable, so they
+The e2e suites below need the backend up and are run per-surface (see each
+section). They **skip** when `../salmon-wallet-backend` is unreachable, so they
 never fail a machine that simply doesn't have the backend running — but a
 reachable backend with wrong behaviour **does** fail them.
 
@@ -31,13 +32,13 @@ reachable backend with wrong behaviour **does** fail them.
 
 ## Pre-release circuit
 
-The complete gate before tagging a release (`web/v*` tag, store submission,
-or extension zip). Ordered so the cheap layers fail first. Steps 1–2 are
+The complete gate before tagging a release (`extension/v*` tag or store
+submission). Ordered so the cheap layers fail first. Steps 1–2 are
 machine-run; 3–5 are local because they need things CI does not have (the
 Docker backend, funded test wallets, an iOS simulator).
 
 **1. PR checks already green** — every merged PR passed
-`typecheck + lint + test + check:i18n` (ci.yml). Nothing to re-run.
+`typecheck + lint + test:coverage + check:i18n + check:parity` (ci.yml). Nothing to re-run.
 
 **2. E2E workflow** — `.github/workflows/e2e.yml` runs the extension
 Playwright suite headless every night and on demand
@@ -88,16 +89,15 @@ a stop.
 
 ## Coverage matrix
 
-| Dimension                 | web                        | extension         | mobile              | How                 |
-| ------------------------- | -------------------------- | ----------------- | ------------------- | ------------------- |
-| Types                     | ✅                         | ✅                | ✅                  | `turbo typecheck`   |
-| Unit / component          | — (shared/ui)              | —                 | ✅ jest             | vitest / jest       |
-| Functional e2e            | ✅ Playwright              | ✅ Playwright     | ✅ Maestro          | per-suite           |
-| Accessibility (automated) | ✅ axe + Lighthouse        | ✅ axe            | 🟡 a11y props only  | axe critical gate   |
-| Performance / CWV         | ✅ Lighthouse              | ❌ (popup, N/A)   | ❌                  | `lh`                |
-| Cross-browser             | ✅ chromium+firefox+webkit | chromium only     | n/a                 | Playwright projects |
-| Responsive                | ✅ breakpoint overflow     | n/a (fixed popup) | 🟡 single simulator | `responsive.spec`   |
-| i18n parity               | ✅                         | ✅                | ✅ (shared locales) | `i18n:check`        |
+| Dimension                 | extension         | mobile              | How                 |
+| ------------------------- | ----------------- | ------------------- | ------------------- |
+| Types                     | ✅                | ✅                  | `turbo typecheck`   |
+| Unit / component          | —                 | ✅ jest             | vitest / jest       |
+| Functional e2e            | ✅ Playwright     | ✅ Maestro          | per-suite           |
+| Accessibility (automated) | ✅ axe            | 🟡 a11y props only  | axe critical gate   |
+| Cross-browser             | chromium only     | n/a                 | Playwright projects |
+| Responsive                | n/a (fixed popup) | 🟡 single simulator | —                   |
+| i18n parity               | ✅                | ✅ (shared locales) | `i18n:check`        |
 
 ✅ automated · 🟡 partial / manual · ❌ not covered (see Known gaps).
 
@@ -106,9 +106,9 @@ a stop.
 ## Environment & prerequisites
 
 - **Backend**: `../salmon-wallet-backend` in Docker, reachable at `http://127.0.0.1:3001`
-  (a `404` on `/` means it's alive). e2e/Lighthouse skip if it's down.
-- **Playwright browsers** (web cross-browser + extension):
-  `pnpm exec playwright install chromium firefox webkit`
+  (a `404` on `/` means it's alive). Backend-gated e2e specs skip if it's down.
+- **Playwright browsers** (extension e2e is chromium-only):
+  `pnpm exec playwright install chromium`
 - **Test secrets**: each Playwright suite reads a gitignored `<suite>/.env.test`
   (see `<suite>/.env.test.example` for the keys — typically
   `SALMON_TEST_PASSWORD` + `SALMON_TEST_SEED_A`/`SEED_B`). Never commit real
@@ -208,11 +208,10 @@ RUN_SOLANA_LIVE=1 SOLANA_LIVE_SIGNER_SEED="$SOLANA_LIVE_SIGNER_SEED" \
 
 Two automated layers plus manual checks:
 
-- **axe-core critical gate** (e2e): `a11y.spec.ts` (web + extension) fails only
+- **axe-core critical gate** (e2e): `a11y.spec.ts` (extension) fails only
   on `critical` violations and attaches the full violation list for triage.
   Automated axe catches ~30–40 % of WCAG — it complements, never replaces,
   manual keyboard + screen-reader passes.
-- **Lighthouse a11y** (contrast/structure) as a category floor (≥0.95).
 - **Authoring**: every interactive element carries a stable `testID` /
   `data-testid` plus semantics (`accessibilityRole`/`aria-label`,
   `accessibilityState`). See the `e2e-test-labels` skill
@@ -247,31 +246,23 @@ any release that touches copy.
 
 ## Known gaps & debt
 
-- **Web boot bundle**: ~4.5 MB (1.7 MB gzip) in a single chunk; Lighthouse
-  performance is 0.84 and FCP/LCP ~1.8 s. Routes are already lazy-loaded; the
-  weight is the eagerly-imported Solana/Bitcoin/web3 vendor code. `manualChunks`
-  vendor-splitting was tried and reverted — splitting those CJS/polyfill deps
-  breaks module init order (a known Vite issue) and only helps caching, not
-  first paint. The real lever (deferring the heavy crypto/web3 libs off the boot
-  path) is open.
-- **Web a11y/responsive depth**: automated coverage is the boot/welcome screen
-  plus the home overflow check; authenticated screens beyond home are not yet
-  axe/responsive-scanned on web.
 - **Cross-browser**: extension e2e is chromium-only (extensions load via a
-  persistent chromium context); only the web suite is multi-engine. Firefox
-  needs its browser binary (`playwright install firefox`).
+  persistent chromium context). Firefox needs its browser binary
+  (`playwright install firefox`).
 - **No visual-regression baselines** and **mobile runs on a single simulator
   size** — UI-shape regressions across devices are caught manually today.
-- **Lighthouse/i18n are local commands**, not yet wired into CI gating.
+- **`@salmon/shared i18n:check`** (locale key linting beyond the root
+  `check-i18n.mjs` parity gate) is a local command, not yet wired into CI.
 
 ---
 
 ## Deploy & rollback (summary)
 
-- **Web**: retired 2026-09-02; `v2.salmonwallet.io` keeps serving the last
-  build from its bucket (versioning on), nothing deploys there.
-- **Extension**: `build-extension.yml` (manual `workflow_dispatch`) produces
-  chrome/firefox artifacts + a source bundle; no auto-publish.
+- **Web**: retired 2026-09-02; `apps/web` and its deploy workflow are deleted.
+- **Extension**: `build-extension.yml` (`extension/v*` tag push or manual
+  `workflow_dispatch`) produces chrome/firefox artifacts, a source bundle, and
+  (on a tag) a GitHub Release with the zips + `SHA256SUMS`; no store
+  auto-publish.
 - **Mobile**: EAS build (`pnpm build:aab` / `build:apk` from `apps/mobile`) —
   see `apps/mobile/AGENTS.md` for the pre-build checklist and keystore rules.
 
