@@ -131,6 +131,7 @@ jest.mock('react-i18next', () => {
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
+  ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),

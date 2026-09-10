@@ -25,6 +25,7 @@ export type { SendFailureProps };
 export const SendFailure: React.FC<SendFailureProps> = ({
   title,
   message,
+  detail,
   onRetry,
   onDismiss,
   retryLabel,
@@ -42,6 +43,11 @@ export const SendFailure: React.FC<SendFailureProps> = ({
         <Text style={styles.message} testID="send-failure-message">
           {message}
         </Text>
+        {detail ? (
+          <Text style={styles.detail} testID="send-failure-detail">
+            {detail}
+          </Text>
+        ) : null}
       </View>
 
       <View style={[styles.actions, { paddingBottom: bottomInset + vs(spacing.xl) }]}>
@@ -79,6 +85,13 @@ const stylesFor = (t: Semantic) =>
       fontSize: ms(fontSize.sm),
       fontFamily: fontFamilyNative.regular,
       color: t.status.danger,
+      textAlign: 'center',
+    },
+    // The chain's own words: quieter than the message, never louder.
+    detail: {
+      fontSize: ms(fontSize.xs),
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.tertiary,
       textAlign: 'center',
     },
     actions: {

@@ -36,7 +36,7 @@ import { useSettleUntilChanged } from '../query/invalidation';
 import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
-import { classifyTransactionError } from '../utils/transaction-errors';
+import { describeTransactionError } from '../utils/transaction-errors';
 
 // ============================================================================
 // Types
@@ -74,8 +74,14 @@ export interface UseSendTransactionResult {
    * Cleared on the next successful estimate and by reset().
    */
   feeEstimateFailed: boolean;
-  /** Error message if failed */
+  /** Error message if failed — a translation key. */
   error: string | null;
+  /**
+   * What actually came back, for the line under the message: the program and
+   * its error number, the last program log, the node's words. `null` when the
+   * message says it all.
+   */
+  errorDetail: string | null;
   /** Whether the hook is in an error state */
   isError: boolean;
   /** Reset the hook state */
@@ -93,6 +99,7 @@ export function useSendTransaction({
   const [status, setStatus] = useState<SendTransactionStatus>('idle');
   const [settling, setSettling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [feeEstimateFailed, setFeeEstimateFailed] = useState(false);
   const settleUntilChanged = useSettleUntilChanged();
   const pendingTransactions = usePendingTransactionsOptional();
@@ -123,6 +130,7 @@ export function useSendTransaction({
     setStatus('idle');
     setSettling(false);
     setError(null);
+    setErrorDetail(null);
     setFeeEstimateFailed(false);
   }, [beginAttempt]);
 
@@ -138,6 +146,8 @@ export function useSendTransaction({
       const attempt = beginAttempt();
       setStatus('estimating-fee');
       setError(null);
+      setErrorDetail(null);
+      setErrorDetail(null);
 
       try {
         const effectiveRecipientAddress =
@@ -191,6 +201,8 @@ export function useSendTransaction({
       beginAttempt();
       setStatus('creating');
       setError(null);
+      setErrorDetail(null);
+      setErrorDetail(null);
 
       try {
         setStatus('sending');
@@ -259,7 +271,9 @@ export function useSendTransaction({
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: false,
         });
-        setError(classifyTransactionError(err));
+        const failure = describeTransactionError(err);
+        setError(failure.key);
+        setErrorDetail(failure.detail);
         setStatus('failed');
         throw err;
       }
@@ -277,9 +291,10 @@ export function useSendTransaction({
       settling,
       feeEstimateFailed,
       error,
+      errorDetail,
       isError: error !== null,
       reset,
     }),
-    [estimateFee, sendTransaction, status, settling, feeEstimateFailed, error, reset]
+    [estimateFee, sendTransaction, status, settling, feeEstimateFailed, error, errorDetail, reset]
   );
 }

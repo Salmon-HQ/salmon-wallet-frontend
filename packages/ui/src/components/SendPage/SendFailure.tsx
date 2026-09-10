@@ -17,6 +17,7 @@ import type { SendFailureProps } from './types';
 export function SendFailure({
   title,
   message,
+  detail,
   onRetry,
   onDismiss,
   retryLabel,
@@ -71,6 +72,21 @@ export function SendFailure({
         >
           {message}
         </p>
+        {detail ? (
+          // The chain's own words: quieter than the message, never louder.
+          <p
+            data-testid="send-failure-detail"
+            style={{
+              margin: 0,
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.xs,
+              color: t.text.tertiary,
+              textAlign: 'center',
+            }}
+          >
+            {detail}
+          </p>
+        ) : null}
       </div>
 
       <div

@@ -81,7 +81,10 @@ export {
 
 // Address utilities
 export { chunkAddress, getShortAddress, truncateHash } from './address';
-export { classifyTransactionError } from './transaction-errors';
+export { classifyTransactionError, describeTransactionError } from './transaction-errors';
+export type { TransactionFailure } from './transaction-errors';
+export { sendFailureReport } from './send-failure-report';
+export type { SendFailureReport } from './send-failure-report';
 export { sanitizeDecimalInput } from './decimal-input';
 
 // How a pasted recovery phrase lays out across one-word boxes. Shared so the

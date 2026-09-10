@@ -30,6 +30,7 @@ import {
   type SendRecipient,
   type SendStep,
   type SendToken,
+  sendFailureReport,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -105,7 +106,7 @@ export function SendPage({
   // ---------------------------------------------------------------- token ---
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const sendFailed = sendHook.status === 'failed';
-  const outcomeUnknown = sendHook.error === 'transaction.errors.broadcastUnknown';
+  const failure = sendFailureReport(sendHook, t);
 
   // One wait spans the whole commit, signature through settle.
   const isCommitted = isSending || sendHook.settling;
@@ -302,8 +303,7 @@ export function SendPage({
             }}
           >
             <SendFailure
-              title={t(outcomeUnknown ? 'transaction.sendUnconfirmed' : 'transaction.sendFailed')}
-              message={t(sendHook.error ?? 'transaction.errors.generic')}
+              {...failure}
               retryLabel={t('actions.retry')}
               dismissLabel={t('transaction.continue')}
               onRetry={() => void submit()}
