@@ -83,6 +83,12 @@ export interface SendFailurePropsBase {
   title: string;
   /** Why, in the user's language. */
   message: string;
+  /**
+   * What actually came back, under the message: the program and its error
+   * number, the last program log, the node's words. Absent when the message
+   * says it all.
+   */
+  detail?: string;
   /** Re-run the same transfer, without leaving this screen. */
   onRetry: () => void;
   /** Retry's label. */

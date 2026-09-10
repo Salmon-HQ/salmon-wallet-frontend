@@ -39,6 +39,7 @@ import {
   useAccountsContext,
   useWaitExit,
   type Semantic,
+  sendFailureReport,
 } from '@salmon/shared';
 
 import {
@@ -69,10 +70,10 @@ function SendPassage() {
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const sendFailed = sendHook.status === 'failed';
 
-  // A broadcast whose outcome we could not establish is not a failure: the
-  // transaction may already be relayed. Same surface, a heading that does not
-  // claim the money stayed put.
-  const outcomeUnknown = sendHook.error === 'transaction.errors.broadcastUnknown';
+  // What the failure surface says — the heading that does not claim the
+  // money stayed put when the outcome is unknown, the message, the chain's
+  // own words under it — decided once for both platforms.
+  const failure = sendFailureReport(sendHook, t);
 
   // One wait spans the whole commit, signature through settle, exactly as the
   // sheet spanned it: gated on `isSending` alone it ended at the signature and
@@ -147,9 +148,7 @@ function SendPassage() {
             entering={floatEntering(isReduceMotionEnabled)}
           >
             <SendFailure
-              title={t(outcomeUnknown ? 'transaction.sendUnconfirmed' : 'transaction.sendFailed')}
-              // The hook hands back a translation key, never a raw chain error.
-              message={t(sendHook.error ?? 'transaction.errors.generic')}
+              {...failure}
               retryLabel={t('actions.retry')}
               dismissLabel={t('transaction.continue')}
               onRetry={submit}
