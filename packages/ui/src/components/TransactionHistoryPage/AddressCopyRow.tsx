@@ -3,10 +3,11 @@
  * it, on the DOM.
  *
  * The mobile twin is `apps/mobile/src/components/Activity/AddressCopyRow.tsx`:
- * the kit's `KeyValueRow` with the address as a monospace value and the copy
- * well (`IconBubble`) as its action — accent for the affordance, success for
- * the confirmation. The clipboard is the platform's; the "copied" hold is the
- * shared `useCopyFeedback`.
+ * the kit's `KeyValueRow` with the address as a monospace value and a bare
+ * copy affordance as its action — the same control the transaction hash row
+ * draws (`TransactionDetailReceipt`), not a contained well: accent for the
+ * affordance, success for the confirmation. The clipboard is the platform's;
+ * the "copied" hold is the shared `useCopyFeedback`.
  */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,14 +22,8 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { CopyTick } from '../CopyTick';
-import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import type { AddressCopyRowProps } from './types';
-
-// The copy control is the kit's 32-ish well; `IconBubble`'s closed union has
-// no 32, so this takes the nearest step (36) rather than growing a tenth size
-// for one caller.
-const COPY_BUBBLE_SIZE = 36;
 
 /** Character counts for each truncation mode */
 const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
@@ -93,22 +88,33 @@ export function AddressCopyRow({
         </span>
       }
       action={
-        <IconBubble
-          testID={`tx-detail-copy-address-${label}`}
-          size={COPY_BUBBLE_SIZE}
-          tone={copied ? 'success-tint' : 'surface'}
-          onPress={() => void handleCopy()}
-          accessibilityLabel={
+        // Same card, same gesture, same ink as the transaction hash row's
+        // copy control: a bare icon, no well, accent for the affordance and
+        // success for the confirmation.
+        <button
+          type="button"
+          data-testid={`tx-detail-copy-address-${label}`}
+          onClick={() => void handleCopy()}
+          aria-label={
             copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
           }
-          accessibilityHint={t('transactions.detail.copyAddressHint')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'inherit',
+          }}
         >
           <CopyTick
             copied={copied}
             copy={<CopyIcon size={iconSize.sm} color={text.accent} />}
             tick={<CheckIcon size={iconSize.sm} color={status.success} />}
           />
-        </IconBubble>
+        </button>
       }
     />
   );

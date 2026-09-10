@@ -13,18 +13,48 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// The real barrel, with the explorer catalogue pinned so the picker has two
-// choices whatever the config says.
-vi.mock('@salmon/shared', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@salmon/shared')>()),
-  getTransactionUrl: (_b: string, _e: string, explorer: string, txHash: string) =>
-    `https://explorer/${explorer}/${txHash}`,
-  getAvailableExplorers: () => [
+// The real barrel, with `useExplorerLink` faked so the picker has two
+// choices whatever the config says — the component's whole contract with
+// the explorer catalogue is that hook, so faking it (rather than the lookup
+// functions it calls internally) is what actually intercepts it.
+vi.mock('@salmon/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@salmon/shared')>();
+  const explorers = [
     { key: 'solscan', name: 'Solscan' },
     { key: 'explorer', name: 'Explorer' },
-  ],
-  getDefaultExplorer: () => 'solscan',
-}));
+  ];
+  return {
+    ...actual,
+    useExplorerLink: ({
+      showMenu,
+      t,
+    }: {
+      showMenu?: boolean;
+      t: (key: string, params?: Record<string, unknown>) => string;
+    }) => {
+      const [menuVisible, setMenuVisible] = React.useState(false);
+      const selectedExplorer = explorers[0];
+      const hasMenu = !!showMenu && explorers.length > 1;
+      const openMenu = () => setMenuVisible(true);
+      return {
+        menuVisible,
+        openMenu,
+        closeMenu: () => setMenuVisible(false),
+        availableExplorers: explorers,
+        selectedExplorer,
+        hasMenu,
+        getExplorerUrl: (explorer: { key: string }) => `https://explorer/${explorer.key}/tx-123`,
+        buttonText: hasMenu
+          ? t('transactions.detail.viewOnExplorer')
+          : t('transactions.detail.viewOn', { name: selectedExplorer.name }),
+        resolvePress: (openExplorer: (explorer: { key: string; name: string }) => void) => {
+          if (hasMenu) openMenu();
+          else openExplorer(selectedExplorer);
+        },
+      };
+    },
+  };
+});
 
 import { ExplorerLinkButton } from './ExplorerLinkButton';
 

@@ -1,19 +1,13 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Animated, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import { fontFamilyNative, fontSize, getShortAddress, ms, type Semantic } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-
-// The copy control is the kit's 32-ish well; `IconBubble`'s closed union has
-// no 32, so this takes the nearest step (36) rather than growing a tenth size
-// for one caller.
-const COPY_BUBBLE_SIZE = 36;
 
 // ============================================================================
 // Types
@@ -126,15 +120,18 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
         </Text>
       }
       action={
-        <IconBubble
+        // Same card, same gesture, same ink as the transaction hash row's
+        // copy control (`TransactionDetailReceipt`): a bare button, no well,
+        // accent for the affordance and success for the confirmation.
+        <TouchableOpacity
           testID={`tx-detail-copy-address-${label}`}
-          size={COPY_BUBBLE_SIZE}
-          tone={copied ? 'success-tint' : 'surface'}
           onPress={handleCopy}
+          style={styles.copyButton}
+          activeOpacity={0.6}
+          accessibilityRole="button"
           accessibilityLabel={
             copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
           }
-          accessibilityHint={t('transactions.detail.copyAddressHint')}
         >
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
@@ -143,7 +140,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           ) : (
             <CopyIcon size={iconSize.sm} color={text.accent} />
           )}
-        </IconBubble>
+        </TouchableOpacity>
       }
     />
   );
@@ -165,6 +162,10 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.mono,
       color: t.text.primary,
       flexShrink: 1,
+    },
+    copyButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });
 

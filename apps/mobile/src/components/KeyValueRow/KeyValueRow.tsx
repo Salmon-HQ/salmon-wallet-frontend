@@ -40,6 +40,7 @@ export function KeyValueRow({
   valueTone = 'primary',
   labelWeight = 500,
   action,
+  labelAction,
   layout = 'inline',
   valueFont = 'sans',
   style,
@@ -51,12 +52,15 @@ export function KeyValueRow({
 
   return (
     <View style={[stacked ? styles.stack : styles.row, style]} testID={testID}>
-      <Text
-        style={[styles.label, labelWeight === 600 && styles.labelEmphasised]}
-        maxFontSizeMultiplier={fontScaleCap.dense}
-      >
-        {label}
-      </Text>
+      <View style={styles.labelGroup}>
+        <Text
+          style={[styles.label, labelWeight === 600 && styles.labelEmphasised]}
+          maxFontSizeMultiplier={fontScaleCap.dense}
+        >
+          {label}
+        </Text>
+        {labelAction}
+      </View>
       <View style={styles.valueGroup}>
         {typeof value === 'string' ? (
           <Text
@@ -104,6 +108,11 @@ const stylesFor = (t: Semantic) =>
     },
     valueGroup: {
       flexShrink: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    labelGroup: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.sm),

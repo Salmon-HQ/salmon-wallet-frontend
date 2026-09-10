@@ -616,7 +616,6 @@
       "innerCount": "{{count}} internas",
       "copyTransactionHash": "Copiar hash de transacción",
       "chooseExplorer": "Elegí un explorador",
-      "copyAddressHint": "Copia la dirección al portapapeles",
       "nftMediaAlt": "Contenido del NFT"
     },
     "tapToViewDetails": "Tocá para ver los detalles de la transacción",

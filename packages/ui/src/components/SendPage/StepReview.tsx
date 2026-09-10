@@ -11,6 +11,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   chunkAddress,
+  fontFamily,
+  fontSize,
+  fontWeight,
   formatTokenAmount,
   getShortAddress,
   spacing,
@@ -20,7 +23,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { WarningNotice } from '../WarningNotice';
@@ -169,19 +172,35 @@ export function StepReview({
     >
       <Card padding="lg" gap={spacing.md} testID="send-review-summary">
         {/* The one row that carries an action: a wrong token picked on the
-            recipient step is fixed here rather than by starting over. */}
+            recipient step is fixed here rather than by starting over. The
+            action sits beside the label, not the value — a bare, text-sized
+            control (not the kit's fixed-height `TextButton`) so the amount
+            still right-aligns with every other row's value and this row's
+            height still matches its siblings'. */}
         <KeyValueRow
           testID="send-confirm-amount"
           label={t('token.send.amountLabel')}
           value={amountDisplay}
-          action={
-            <TextButton
-              testID="send-review-change-token"
-              onPress={() => setPickerOpen(true)}
-              color={semantic.text.accent}
+          labelAction={
+            <button
+              type="button"
+              data-testid="send-review-change-token"
+              onClick={() => setPickerOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: 0,
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                fontFamily: fontFamily.sans,
+                fontSize: fontSize.body,
+                fontWeight: fontWeight.semibold,
+                color: semantic.text.accent,
+              }}
             >
               {t('actions.change')}
-            </TextButton>
+            </button>
           }
         />
         <KeyValueRow

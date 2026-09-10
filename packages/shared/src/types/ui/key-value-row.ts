@@ -19,6 +19,15 @@ export interface KeyValueRowPropsBase extends Testable {
   /** A control drawn after the value — the one place a row carries an action. */
   action?: ReactNode;
   /**
+   * A control drawn beside the label, not the value — for an action that
+   * would otherwise sit to the right of the value and pull it out of the
+   * column every other row's value right-aligns to (the Send review card's
+   * "Change" token action). Bare, text-sized: a fixed-height button here
+   * would inflate this row past its siblings and throw off the row-to-row
+   * gap, so the caller draws it at label size, not button size.
+   */
+  labelAction?: ReactNode;
+  /**
    * `inline` (default) sets the value beside the label on one line, clipped.
    * `stacked` sets the label over the value and lets the value wrap — the
    * row a full address, a hash or a URI needs, where clipping would hide the

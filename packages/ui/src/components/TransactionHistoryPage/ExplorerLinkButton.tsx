@@ -5,17 +5,13 @@
  * The mobile twin is `apps/mobile/src/components/Activity/ExplorerLinkButton.tsx`:
  * the kit's `SecondaryButton` with the "off to the web" mark and, when there
  * is a choice, a caret; the picker is a sheet of `ListRow`s (spec 028's DOM
- * alternative to mobile's modal — Escape and the backdrop dismiss it).
+ * alternative to mobile's modal — Escape and the backdrop dismiss it). The
+ * explorer lookup and the picker's own state are the shared `useExplorerLink`
+ * hook; only opening the resolved URL is platform territory.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  getAvailableExplorers,
-  getDefaultExplorer,
-  getTransactionUrl,
-  spacing,
-  type ExplorerWithKey,
-} from '@salmon/shared';
+import { spacing, useExplorerLink, type ExplorerWithKey } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
@@ -40,48 +36,34 @@ export function ExplorerLinkButton({
 }: ExplorerLinkButtonProps) {
   const { t } = useTranslation();
   const { text } = useSemantic();
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  const availableExplorers = useMemo(
-    () => getAvailableExplorers(blockchain, environment),
-    [blockchain, environment]
-  );
-
-  const selectedExplorerKey = explorerKey || getDefaultExplorer(blockchain);
-  const selectedExplorer = useMemo(
-    () => availableExplorers.find((e) => e.key === selectedExplorerKey),
-    [availableExplorers, selectedExplorerKey]
-  );
+  const {
+    menuVisible,
+    closeMenu,
+    availableExplorers,
+    selectedExplorer,
+    hasMenu,
+    getExplorerUrl,
+    buttonText,
+    resolvePress,
+  } = useExplorerLink({ txHash, blockchain, environment, explorerKey, showMenu, t });
 
   const openExplorer = useCallback(
     (explorer: ExplorerWithKey) => {
-      const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
+      const url = getExplorerUrl(explorer);
       if (url) {
         window.open(url, '_blank', 'noopener,noreferrer');
         onPress?.(url, explorer.name);
       }
-      setMenuVisible(false);
+      closeMenu();
     },
-    [blockchain, environment, txHash, onPress]
+    [getExplorerUrl, onPress, closeMenu]
   );
 
-  const hasMenu = showMenu && availableExplorers.length > 1;
+  const handlePress = useCallback(() => resolvePress(openExplorer), [resolvePress, openExplorer]);
 
-  const handlePress = useCallback(() => {
-    if (hasMenu) {
-      setMenuVisible(true);
-    } else if (selectedExplorer) {
-      openExplorer(selectedExplorer);
-    }
-  }, [hasMenu, selectedExplorer, openExplorer]);
-
-  if (availableExplorers.length === 0 || !selectedExplorer) {
+  if (!buttonText || !selectedExplorer) {
     return null;
   }
-
-  const buttonText = hasMenu
-    ? t('transactions.detail.viewOnExplorer')
-    : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
   return (
     <>
@@ -101,11 +83,19 @@ export function ExplorerLinkButton({
       {hasMenu && (
         <BottomSheetContainer
           visible={menuVisible}
-          onClose={() => setMenuVisible(false)}
+          onClose={closeMenu}
           title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
           testID="tx-detail-explorer-menu"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+          <div
+            style={{
+              paddingTop: spacing.md,
+              paddingBottom: spacing['2xl'],
+              display: 'flex',
+              flexDirection: 'column',
+              gap: spacing.md,
+            }}
+          >
             {availableExplorers.map((explorer) => (
               <ListRow
                 key={explorer.key}

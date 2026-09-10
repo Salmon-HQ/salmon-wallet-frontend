@@ -67,6 +67,13 @@ export type { WaitExit } from './useWaitExit';
 export { useCopyFeedback } from './useCopyFeedback';
 export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
 
+export { useExplorerLink } from './useExplorerLink';
+export type {
+  ExplorerLinkTranslate,
+  UseExplorerLinkParams,
+  UseExplorerLinkResult,
+} from './useExplorerLink';
+
 // Send transaction hook
 export { usePendingActivity } from './usePendingActivity';
 export type {

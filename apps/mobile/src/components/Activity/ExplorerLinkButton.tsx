@@ -1,27 +1,36 @@
-import React, { useCallback, useMemo, useState } from 'react';
+/**
+ * ExplorerLinkButton — the outlined control that opens a block explorer, or a
+ * picker of them.
+ *
+ * The DOM twin is
+ * `packages/ui/src/components/TransactionHistoryPage/ExplorerLinkButton.tsx`:
+ * the kit's `SecondaryButton` with the "off to the web" mark and, when there
+ * is a choice, a caret; the picker is the shared `BottomSheetContainer` with
+ * a list of `ListRow`s, same as every other sheet in the app. The explorer
+ * lookup and the picker's own state are the shared `useExplorerLink` hook;
+ * only opening the resolved URL is platform territory.
+ */
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, StyleSheet, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
-  ms,
-  vs,
-  s,
   spacing,
-  fontSize,
-  borderRadius,
-  getTransactionUrl,
-  getAvailableExplorers,
-  getDefaultExplorer,
+  s,
+  vs,
+  useExplorerLink,
   type Blockchain,
   type NetworkEnvironment,
-  fontFamilyNative,
   type ExplorerWithKey,
   type Semantic,
 } from '@salmon/shared';
-import { BlurContainer } from '../BlurContainer';
 import { SecondaryButton } from '../Button';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 
 // ============================================================================
 // Types
@@ -44,6 +53,9 @@ export interface ExplorerLinkButtonProps {
   style?: ViewStyle;
 }
 
+/** The explorer row's leading well — the settings-row step. */
+const EXPLORER_BUBBLE_SIZE = 36;
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -53,32 +65,6 @@ export interface ExplorerLinkButtonProps {
  *
  * Provides either a single button that opens the default explorer,
  * or a menu with multiple explorer options.
- *
- * @example
- * ```tsx
- * // Single button mode (default explorer)
- * <ExplorerLinkButton
- *   txHash="5abc..."
- *   blockchain="SOLANA"
- *   environment="solana-mainnet"
- * />
- *
- * // Menu mode with multiple explorers
- * <ExplorerLinkButton
- *   txHash="5abc..."
- *   blockchain="SOLANA"
- *   environment="solana-mainnet"
- *   showMenu
- * />
- *
- * // Specific explorer
- * <ExplorerLinkButton
- *   txHash="5abc..."
- *   blockchain="SOLANA"
- *   environment="solana-mainnet"
- *   explorerKey="SOLANA_FM"
- * />
- * ```
  */
 export function ExplorerLinkButton({
   txHash,
@@ -92,27 +78,21 @@ export function ExplorerLinkButton({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
-  const [menuVisible, setMenuVisible] = useState(false);
+  const { standardContentBottomPadding } = useBottomSheetChrome();
+  const {
+    menuVisible,
+    closeMenu,
+    availableExplorers,
+    selectedExplorer,
+    hasMenu,
+    getExplorerUrl,
+    buttonText,
+    resolvePress,
+  } = useExplorerLink({ txHash, blockchain, environment, explorerKey, showMenu, t });
 
-  // Get available explorers for this blockchain/network
-  const availableExplorers = useMemo(
-    () => getAvailableExplorers(blockchain, environment),
-    [blockchain, environment]
-  );
-
-  // Determine which explorer to use for single button mode
-  const selectedExplorerKey = explorerKey || getDefaultExplorer(blockchain);
-
-  // Get the selected explorer info
-  const selectedExplorer = useMemo(
-    () => availableExplorers.find((e) => e.key === selectedExplorerKey),
-    [availableExplorers, selectedExplorerKey]
-  );
-
-  // Open a specific explorer URL
   const openExplorer = useCallback(
     async (explorer: ExplorerWithKey) => {
-      const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
+      const url = getExplorerUrl(explorer);
       if (url) {
         try {
           await Linking.openURL(url);
@@ -121,35 +101,17 @@ export function ExplorerLinkButton({
           console.warn('Failed to open explorer URL:', error);
         }
       }
-      setMenuVisible(false);
+      closeMenu();
     },
-    [blockchain, environment, txHash, onPress]
+    [getExplorerUrl, onPress, closeMenu]
   );
 
-  // Handle button press
-  const handlePress = useCallback(() => {
-    if (showMenu && availableExplorers.length > 1) {
-      setMenuVisible(true);
-    } else if (selectedExplorer) {
-      openExplorer(selectedExplorer);
-    }
-  }, [showMenu, availableExplorers, selectedExplorer, openExplorer]);
-
-  // Close menu
-  const handleCloseMenu = useCallback(() => {
-    setMenuVisible(false);
-  }, []);
+  const handlePress = useCallback(() => resolvePress(openExplorer), [resolvePress, openExplorer]);
 
   // Don't render if no explorers available
-  if (availableExplorers.length === 0 || !selectedExplorer) {
+  if (!buttonText || !selectedExplorer) {
     return null;
   }
-
-  // Button text
-  const buttonText =
-    showMenu && availableExplorers.length > 1
-      ? t('transactions.detail.viewOnExplorer')
-      : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
   return (
     <>
@@ -162,42 +124,40 @@ export function ExplorerLinkButton({
         style={style}
         icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
         trailingIcon={
-          showMenu && availableExplorers.length > 1 ? (
-            <CaretDownIcon size={iconSize.sm} color={text.primary} />
-          ) : undefined
+          hasMenu ? <CaretDownIcon size={iconSize.sm} color={text.primary} /> : undefined
         }
       >
         {buttonText}
       </SecondaryButton>
 
-      {/* Explorer menu modal */}
-      {showMenu && availableExplorers.length > 1 && (
-        <Modal
+      {hasMenu && (
+        <BottomSheetContainer
           visible={menuVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={handleCloseMenu}
+          onClose={closeMenu}
+          title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
+          testID="tx-detail-explorer-menu"
         >
-          <Pressable style={styles.modalOverlay} onPress={handleCloseMenu}>
-            <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
-              <BlurContainer style={styles.menu}>
-                <Text style={styles.menuTitle}>{t('transactions.detail.chooseExplorer')}</Text>
-                {availableExplorers.map((explorer) => (
-                  <TouchableOpacity
-                    key={explorer.key}
-                    style={styles.menuItem}
-                    onPress={() => openExplorer(explorer)}
-                    activeOpacity={0.7}
-                  >
-                    <GlobeIcon size={18} color={text.primary} style={styles.menuItemIcon} />
-                    <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />
-                  </TouchableOpacity>
-                ))}
-              </BlurContainer>
-            </Pressable>
-          </Pressable>
-        </Modal>
+          <View style={[styles.content, { paddingBottom: standardContentBottomPadding }]}>
+            {availableExplorers.map((explorer) => (
+              <ListRow
+                key={explorer.key}
+                testID={`tx-detail-explorer-${explorer.key}`}
+                leading={
+                  <IconBubble
+                    size={EXPLORER_BUBBLE_SIZE}
+                    shape="circle"
+                    tone="surface"
+                    icon={GlobeIcon}
+                    iconSize={iconSize.sm}
+                  />
+                }
+                title={explorer.name}
+                trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
+                onPress={() => openExplorer(explorer)}
+              />
+            ))}
+          </View>
+        </BottomSheetContainer>
       )}
     </>
   );
@@ -207,47 +167,12 @@ export function ExplorerLinkButton({
 // Styles
 // ============================================================================
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = (_t: Semantic) =>
   StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: t.overlay.backdrop,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: spacing.lg,
-    },
-    menuContainer: {
-      width: '100%',
-      maxWidth: 320,
-    },
-    menu: {
-      borderRadius: borderRadius.lg,
-      padding: spacing.md,
-    },
-    menuTitle: {
-      fontSize: ms(fontSize.heading),
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.primary,
-      textAlign: 'center',
-      marginBottom: vs(spacing.screenGutter),
-    },
-    menuItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: vs(spacing.lg),
-      paddingHorizontal: s(spacing.md),
-      borderRadius: borderRadius.md,
-      backgroundColor: t.surface.raised,
-      marginBottom: vs(spacing.sm),
-    },
-    menuItemIcon: {
-      marginRight: s(spacing.md),
-    },
-    menuItemText: {
-      flex: 1,
-      fontSize: ms(fontSize.body),
-      fontFamily: fontFamilyNative.medium,
-      color: t.text.primary,
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.md),
     },
   });
 

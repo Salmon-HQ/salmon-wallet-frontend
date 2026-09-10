@@ -35,6 +35,7 @@ export function KeyValueRow({
   valueTone = 'primary',
   labelWeight = 500,
   action,
+  labelAction,
   layout = 'inline',
   valueFont = 'sans',
   style,
@@ -70,6 +71,13 @@ export function KeyValueRow({
     gap: spacing.sm,
   };
 
+  const labelGroup: React.CSSProperties = {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
+  };
+
   const face: React.CSSProperties =
     valueFont === 'mono'
       ? {
@@ -97,7 +105,10 @@ export function KeyValueRow({
 
   return (
     <div data-testid={testID} className={className} style={row}>
-      <span style={labelStyle}>{label}</span>
+      <span style={labelGroup}>
+        <span style={labelStyle}>{label}</span>
+        {labelAction}
+      </span>
       <span style={valueGroup}>
         {typeof value === 'string' ? <span style={valueStyle}>{value}</span> : value}
         {action}
