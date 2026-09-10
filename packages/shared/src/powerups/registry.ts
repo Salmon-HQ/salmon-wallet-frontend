@@ -1,13 +1,14 @@
 /**
  * The Powerups registry — one entry per Powerup, read by both platforms'
- * navigation (spec 027 §1). Copy is a translation KEY PATH resolved at
- * render; the route is a key each platform maps to its own screen.
+ * Home (spec 027 §1). Copy is a translation KEY PATH resolved at render. An
+ * installed Powerup's `id` IS its Home sub-tab key: there is no route to map,
+ * because a Powerup is a surface of Home, not a screen of its own.
  */
 import type { SolanaNetworkId } from '../types/blockchain';
 
 export type PowerupId = 'swap';
 
-export type PowerupTier = 'official' | 'community';
+export type PowerupTier = 'core' | 'community';
 
 export interface PowerupEntry {
   id: PowerupId;
@@ -15,13 +16,10 @@ export interface PowerupEntry {
   nameKey: string;
   /** Translation key for the one-line description. */
   descriptionKey: string;
+  /** `core` is what Salmon ships; `community` is what people may add later. */
   tier: PowerupTier;
-  /** A placement, not a tier: a featured Powerup is still official or community. */
-  featured?: boolean;
   /** The networks the Powerup can act on; hidden elsewhere. */
   networks: readonly SolanaNetworkId[];
-  /** The screen key: mobile pushes `/${route}`, the DOM opens the page of that name. */
-  route: string;
 }
 
 export const POWERUPS: readonly PowerupEntry[] = [
@@ -29,9 +27,8 @@ export const POWERUPS: readonly PowerupEntry[] = [
     id: 'swap',
     nameKey: 'swap.catalog.name',
     descriptionKey: 'swap.catalog.description',
-    tier: 'official',
+    tier: 'core',
     networks: ['solana-mainnet'],
-    route: 'swap',
   },
 ];
 

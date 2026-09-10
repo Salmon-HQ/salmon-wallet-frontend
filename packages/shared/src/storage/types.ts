@@ -212,6 +212,8 @@ export const STORAGE_KEYS = {
   HIDDEN_BALANCE: 'salmon_hidden_balance',
   /** The order Home draws its sub-tabs in (useHomeTabOrder) */
   HOME_TABS_ORDER: 'salmon_home_tabs_order',
+  /** The Powerup ids installed on THIS device (useInstalledPowerups) */
+  INSTALLED_POWERUPS: 'salmon_installed_powerups',
   /** Anonymous usage-analytics consent flag (opt-in, default off) */
   ANALYTICS_CONSENT: 'salmon_analytics_consent',
   /** Random per-install analytics id — NOT derived from any wallet data */

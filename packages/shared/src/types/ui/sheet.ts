@@ -29,4 +29,11 @@ export interface BottomSheetContainerPropsBase extends Testable {
   headerContent?: ReactNode;
   /** Whether the sheet may be dismissed by the platform's dismiss gesture. */
   dismissible?: boolean;
+  /**
+   * The tallest the sheet may rise, in pixels. Left out, it hugs its content
+   * up to the platform's own ceiling. Home's catalogue measures the bottom of
+   * the Send / Receive / Activity row and passes it here, so the balance and
+   * those buttons stay visible above the sheet.
+   */
+  maxHeight?: number;
 }

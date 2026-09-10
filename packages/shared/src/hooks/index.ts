@@ -211,6 +211,8 @@ export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext
 
 // Home sub-tab order (persisted arrangement + reconciliation)
 export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
+export { useInstalledPowerups, resetInstalledPowerupsForTest } from './useInstalledPowerups';
+export type { UseInstalledPowerupsResult } from './useInstalledPowerups';
 export type { UseHomeTabOrderResult } from './useHomeTabOrder';
 
 // Derived-account scan (finds a seed's funded paths; the user picks)
@@ -240,6 +242,7 @@ export {
   buildBitcoinToken,
 } from './useHomeShell';
 export type {
+  HomePowerupTab,
   HomeSubTabKey,
   HomeSwapCause,
   UseHomeShellParams,

@@ -4,10 +4,10 @@ import * as off from './index.off';
 import * as on from './index';
 
 describe('powerups registry', () => {
-  it('lists swap as an official Powerup on Solana mainnet only', () => {
+  it('lists swap as a core Powerup on Solana mainnet only', () => {
     const swap = getPowerup('swap');
     expect(swap).toBeDefined();
-    expect(swap?.tier).toBe('official');
+    expect(swap?.tier).toBe('core');
     expect(isPowerupOnNetwork(swap!, 'solana-mainnet')).toBe(true);
     expect(isPowerupOnNetwork(swap!, 'solana-devnet')).toBe(false);
     expect(isPowerupOnNetwork(swap!, null)).toBe(false);

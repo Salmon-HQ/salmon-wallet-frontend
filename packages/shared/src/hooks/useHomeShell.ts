@@ -23,15 +23,30 @@ import type { Token } from '../types/ui';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
 import { useHomeTabOrder } from './useHomeTabOrder';
 
-/** The two in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered`. */
-export type HomeSubTabKey = 'portfolio' | 'nfts';
+/**
+ * The in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered` — and
+ * `swap` only once the Swap Powerup is installed on this device and the
+ * screen stands on a network it acts on (`powerupTabs`).
+ */
+export type HomeSubTabKey = 'portfolio' | 'nfts' | 'swap';
 
 /**
- * The sub-tabs Home offers, in the order it draws them before the user has
- * arranged anything. A powerup that adds a surface to Home adds its key here;
- * `useHomeTabOrder` reconciles the stored arrangement against this list.
+ * Every key Home can draw, in the order it would use if the user had never
+ * arranged anything. A Powerup's key lives here so its place in the stored
+ * arrangement survives an uninstall; whether it is OFFERED is decided per
+ * render from `powerupTabs`.
  */
-export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts'];
+export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts', 'swap'];
+
+/** An installed Powerup's Home surface, as the app hands it to the shell. */
+export interface HomePowerupTab {
+  /** The Powerup's id, which is also its sub-tab key. */
+  key: HomeSubTabKey;
+  /** Already localised — the shell does not know a Powerup's copy keys. */
+  label: string;
+  /** The networks it acts on; elsewhere the tab is not offered. */
+  networks: readonly string[];
+}
 
 /** What can swap Home's content, and therefore which wrapper plays the verb. */
 export type HomeSwapCause = 'none' | 'chain' | 'subtab' | 'task';
@@ -58,6 +73,12 @@ export interface UseHomeShellParams {
   surfaceKey: number;
   /** Persists the network change; the index is written optimistically first. */
   changeNetwork: (networkId: string) => Promise<unknown> | unknown;
+  /**
+   * The installed Powerups' Home surfaces. The app reads the registry and the
+   * installed list through the aliased Powerups entry, so a build with
+   * Powerups off simply passes none and the shell knows nothing about them.
+   */
+  powerupTabs?: readonly HomePowerupTab[];
 }
 
 export interface UseHomeShellResult {
@@ -109,6 +130,7 @@ export function useHomeShell({
   isTaskEngaged,
   surfaceKey,
   changeNetwork,
+  powerupTabs,
 }: UseHomeShellParams): UseHomeShellResult {
   const { t } = useTranslation();
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
@@ -178,21 +200,39 @@ export function useHomeShell({
   // The stored arrangement is untouched, so the tab returns to its own place
   // when the block comes back to Solana.
   const nftsOffered = currentChain === 'solana';
-  const effectiveSubTab: HomeSubTabKey =
-    activeSubTab === 'nfts' && !nftsOffered ? 'portfolio' : activeSubTab;
 
   const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
+  // The array arrives as a fresh literal on every render, so the memo keys on
+  // its contents rather than on its identity.
+  const powerupTabsKey = (powerupTabs ?? [])
+    .map((tab) => `${tab.key}\u0000${tab.label}\u0000${tab.networks.join(',')}`)
+    .join('|');
   const subTabs = useMemo(() => {
     const labels: Record<string, string> = {
       portfolio: t('tabs.portfolio', 'Portfolio'),
       nfts: t('tabs.nfts', 'NFTs'),
     };
+    // A Powerup's tab is offered only where it acts. An uninstalled one is not
+    // in this map at all, so it has no label and drops out below — its place
+    // in the stored arrangement is left untouched for a reinstall.
+    for (const tab of powerupTabs ?? []) {
+      if (tab.networks.includes(currentNetworkId)) labels[tab.key] = tab.label;
+    }
     return subTabOrder.flatMap((key) => {
       if (key === 'nfts' && !nftsOffered) return [];
       const label = labels[key];
       return label ? [{ key: key as HomeSubTabKey, label }] : [];
     });
-  }, [subTabOrder, nftsOffered, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTabOrder, nftsOffered, currentNetworkId, powerupTabsKey, t]);
+
+  // Whatever is not offered here falls back to Portfolio — leaving Bitcoin
+  // with NFTs open, uninstalling the Powerup whose tab is showing, or a
+  // session restored onto a tab this network does not carry. The stored
+  // arrangement is untouched, so the tab returns to its own place when it is
+  // offered again (spec 026, ruling 3).
+  const isOffered = subTabs.some((tab) => tab.key === activeSubTab);
+  const effectiveSubTab: HomeSubTabKey = isOffered ? activeSubTab : 'portfolio';
   const subTabsKey = subTabs.map((tab) => tab.key).join('|');
 
   // The row plays the verb whenever the SET of tabs changes — a reorder, NFTs
