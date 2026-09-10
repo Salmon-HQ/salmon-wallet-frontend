@@ -65,6 +65,20 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     // Fall through to default resolution if not found
   }
 
+  // Fix for @zxcvbn-ts/dictionary-compression/decompress: the 4.x language
+  // packs (language-common, language-en) load their compressed dictionaries
+  // through this subpath, which exists only in the package's "exports" map.
+  // Unresolvable while unstable_enablePackageExports is disabled above.
+  if (moduleName === '@zxcvbn-ts/dictionary-compression/decompress') {
+    const decompressPath = findPackage('@zxcvbn-ts/dictionary-compression', 'dist/decompress.cjs');
+    if (decompressPath && fs.existsSync(decompressPath)) {
+      return {
+        filePath: decompressPath,
+        type: 'sourceFile',
+      };
+    }
+  }
+
   // Fix for @solana/kit/program-client-core: the subpath exists only in the
   // package's "exports" map, never on disk, so it is unresolvable while
   // unstable_enablePackageExports is disabled above. Every @solana-program/*
