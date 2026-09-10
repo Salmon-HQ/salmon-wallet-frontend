@@ -1,9 +1,18 @@
 import type { ReactNode } from 'react';
 
+import type { Semantic } from '../../theme/semantic';
 import type { Testable } from './testable';
 
 /** The four inks a value can take. A label is always secondary. */
 export type KeyValueTone = 'primary' | 'success' | 'danger' | 'secondary';
+
+/** The live-mode ink for each tone — one mapping, read by both twins. */
+export const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
+  primary: t.text.primary,
+  success: t.status.success,
+  danger: t.status.danger,
+  secondary: t.text.secondary,
+});
 
 export interface KeyValueRowPropsBase extends Testable {
   label: string;
@@ -18,6 +27,15 @@ export interface KeyValueRowPropsBase extends Testable {
   labelWeight?: 500 | 600;
   /** A control drawn after the value — the one place a row carries an action. */
   action?: ReactNode;
+  /**
+   * A control drawn beside the label, not the value — for an action that
+   * would otherwise sit to the right of the value and pull it out of the
+   * column every other row's value right-aligns to (the Send review card's
+   * "Change" token action). Bare, text-sized: a fixed-height button here
+   * would inflate this row past its siblings and throw off the row-to-row
+   * gap, so the caller draws it at label size, not button size.
+   */
+  labelAction?: ReactNode;
   /**
    * `inline` (default) sets the value beside the label on one line, clipped.
    * `stacked` sets the label over the value and lets the value wrap — the

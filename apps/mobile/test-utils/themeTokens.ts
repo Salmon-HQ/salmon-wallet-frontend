@@ -64,3 +64,9 @@ export type {
  */
 export { useFieldFocus } from '../../../packages/shared/src/hooks/useFieldFocus';
 export { useAccountNameDraft } from '../../../packages/shared/src/hooks/useAccountNameDraft';
+
+/**
+ * `KeyValueRow`'s tone-to-ink mapping — a pure function of the tokens
+ * already re-exported above, imported by path for the same reason.
+ */
+export { valueInkFor } from '../../../packages/shared/src/types/ui/key-value-row';

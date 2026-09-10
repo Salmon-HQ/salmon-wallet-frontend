@@ -136,12 +136,14 @@ export default function SendReviewScreen() {
         <Card padding="lg" gap={spacing.md} testID="send-review-summary">
           {/* The one row that carries an action: a wrong token picked on
               `/send` is fixed here rather than by starting the flow over
-              (owner ruling 2026-09-01). */}
+              (owner ruling 2026-09-01). The action sits beside the label,
+              not the value, so the amount still right-aligns with every
+              other row's value. */}
           <KeyValueRow
             testID="send-confirm-amount"
             label={t('token.send.amountLabel')}
             value={amountDisplay}
-            action={
+            labelAction={
               <TouchableOpacity
                 testID="send-review-change-token"
                 onPress={() => setPickerOpen(true)}

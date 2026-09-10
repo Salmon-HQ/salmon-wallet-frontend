@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({
@@ -11,19 +11,6 @@ vi.mock('react-i18next', () => ({
     t: (key: string, params?: Record<string, string>) =>
       params?.name ? `View on ${params.name}` : key,
   }),
-}));
-
-// The real barrel, with the explorer catalogue pinned so the picker has two
-// choices whatever the config says.
-vi.mock('@salmon/shared', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@salmon/shared')>()),
-  getTransactionUrl: (_b: string, _e: string, explorer: string, txHash: string) =>
-    `https://explorer/${explorer}/${txHash}`,
-  getAvailableExplorers: () => [
-    { key: 'solscan', name: 'Solscan' },
-    { key: 'explorer', name: 'Explorer' },
-  ],
-  getDefaultExplorer: () => 'solscan',
 }));
 
 import { ExplorerLinkButton } from './ExplorerLinkButton';
@@ -50,29 +37,36 @@ describe('ExplorerLinkButton', () => {
     cleanup();
   });
 
-  it('opens the default explorer in a new tab when there is no menu', () => {
+  it('opens the default explorer in a new tab when there is no menu', async () => {
     const onPress = vi.fn();
     render(<ExplorerLinkButton txHash="tx-123" onPress={onPress} />);
 
-    fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
 
     expect(window.open).toHaveBeenCalledWith(
-      'https://explorer/solscan/tx-123',
+      'https://solscan.io/tx/tx-123',
       '_blank',
       'noopener,noreferrer'
     );
-    expect(onPress).toHaveBeenCalledWith('https://explorer/solscan/tx-123', 'Solscan');
+    expect(onPress).toHaveBeenCalledWith('https://solscan.io/tx/tx-123', 'Solscan');
   });
 
-  it('opens a sheet of explorers to pick from, and the pick opens that one', () => {
+  it('opens a sheet of explorers to pick from, and the pick opens that one', async () => {
     render(<ExplorerLinkButton txHash="tx-123" showMenu />);
 
     fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
     expect(screen.getByTestId('tx-detail-explorer-menu').getAttribute('open')).not.toBeNull();
 
-    fireEvent.click(screen.getByTestId('tx-detail-explorer-explorer'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('tx-detail-explorer-SOLANA_FM'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
     expect(window.open).toHaveBeenCalledWith(
-      'https://explorer/explorer/tx-123',
+      'https://solana.fm/tx/tx-123',
       '_blank',
       'noopener,noreferrer'
     );

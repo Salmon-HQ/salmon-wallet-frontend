@@ -191,6 +191,7 @@ export type {
 
 // Key Value Row
 export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
+export { valueInkFor } from './key-value-row';
 
 // Section Label
 export type { SectionLabelVariant, SectionLabelPropsBase } from './section-label';

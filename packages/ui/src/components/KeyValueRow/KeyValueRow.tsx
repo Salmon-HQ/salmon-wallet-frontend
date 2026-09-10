@@ -16,18 +16,11 @@ import {
   lineHeight,
   spacing,
   tabularNums,
-  type Semantic,
+  valueInkFor,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import type { KeyValueRowProps, KeyValueTone } from './types';
-
-const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
-  primary: t.text.primary,
-  success: t.status.success,
-  danger: t.status.danger,
-  secondary: t.text.secondary,
-});
+import type { KeyValueRowProps } from './types';
 
 export function KeyValueRow({
   label,
@@ -35,6 +28,7 @@ export function KeyValueRow({
   valueTone = 'primary',
   labelWeight = 500,
   action,
+  labelAction,
   layout = 'inline',
   valueFont = 'sans',
   style,
@@ -70,6 +64,13 @@ export function KeyValueRow({
     gap: spacing.sm,
   };
 
+  const labelGroup: React.CSSProperties = {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
+  };
+
   const face: React.CSSProperties =
     valueFont === 'mono'
       ? {
@@ -97,7 +98,10 @@ export function KeyValueRow({
 
   return (
     <div data-testid={testID} className={className} style={row}>
-      <span style={labelStyle}>{label}</span>
+      <span style={labelGroup}>
+        <span style={labelStyle}>{label}</span>
+        {labelAction}
+      </span>
       <span style={valueGroup}>
         {typeof value === 'string' ? <span style={valueStyle}>{value}</span> : value}
         {action}

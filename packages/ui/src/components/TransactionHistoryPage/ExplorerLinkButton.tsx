@@ -5,17 +5,15 @@
  * The mobile twin is `apps/mobile/src/components/Activity/ExplorerLinkButton.tsx`:
  * the kit's `SecondaryButton` with the "off to the web" mark and, when there
  * is a choice, a caret; the picker is a sheet of `ListRow`s (spec 028's DOM
- * alternative to mobile's modal — Escape and the backdrop dismiss it).
+ * alternative to mobile's modal — Escape and the backdrop dismiss it). The
+ * whole of the behavior — the explorer lookup, the picker's own state, the
+ * press routing, the row data — is the shared `useExplorerLink` hook; only
+ * opening the resolved URL (and the icon slots on each row) is platform
+ * territory.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  getAvailableExplorers,
-  getDefaultExplorer,
-  getTransactionUrl,
-  spacing,
-  type ExplorerWithKey,
-} from '@salmon/shared';
+import { spacing, useExplorerLink } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
@@ -27,6 +25,10 @@ import type { ExplorerLinkButtonProps } from './types';
 
 /** The explorer row's leading well. */
 const EXPLORER_BUBBLE_SIZE = 36;
+
+const openUrl = (url: string) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
 
 export function ExplorerLinkButton({
   txHash,
@@ -40,48 +42,27 @@ export function ExplorerLinkButton({
 }: ExplorerLinkButtonProps) {
   const { t } = useTranslation();
   const { text } = useSemantic();
-  const [menuVisible, setMenuVisible] = useState(false);
+  const {
+    buttonText,
+    hasMenu,
+    onPress: handlePress,
+    menuVisible,
+    closeMenu,
+    rows,
+  } = useExplorerLink({
+    txHash,
+    blockchain,
+    environment,
+    explorerKey,
+    showMenu,
+    t,
+    openUrl,
+    onPress,
+  });
 
-  const availableExplorers = useMemo(
-    () => getAvailableExplorers(blockchain, environment),
-    [blockchain, environment]
-  );
-
-  const selectedExplorerKey = explorerKey || getDefaultExplorer(blockchain);
-  const selectedExplorer = useMemo(
-    () => availableExplorers.find((e) => e.key === selectedExplorerKey),
-    [availableExplorers, selectedExplorerKey]
-  );
-
-  const openExplorer = useCallback(
-    (explorer: ExplorerWithKey) => {
-      const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
-      if (url) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-        onPress?.(url, explorer.name);
-      }
-      setMenuVisible(false);
-    },
-    [blockchain, environment, txHash, onPress]
-  );
-
-  const hasMenu = showMenu && availableExplorers.length > 1;
-
-  const handlePress = useCallback(() => {
-    if (hasMenu) {
-      setMenuVisible(true);
-    } else if (selectedExplorer) {
-      openExplorer(selectedExplorer);
-    }
-  }, [hasMenu, selectedExplorer, openExplorer]);
-
-  if (availableExplorers.length === 0 || !selectedExplorer) {
+  if (!buttonText) {
     return null;
   }
-
-  const buttonText = hasMenu
-    ? t('transactions.detail.viewOnExplorer')
-    : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
   return (
     <>
@@ -91,42 +72,35 @@ export function ExplorerLinkButton({
         className={className}
         style={style}
         icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
-        trailingIcon={
-          hasMenu ? <CaretDownIcon size={iconSize.sm} color={text.primary} /> : undefined
-        }
+        trailingIcon={hasMenu && <CaretDownIcon size={iconSize.sm} color={text.primary} />}
       >
         {buttonText}
       </SecondaryButton>
-
-      {hasMenu && (
-        <BottomSheetContainer
-          visible={menuVisible}
-          onClose={() => setMenuVisible(false)}
-          title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
-          testID="tx-detail-explorer-menu"
+      <BottomSheetContainer
+        visible={menuVisible}
+        onClose={closeMenu}
+        title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
+        testID="tx-detail-explorer-menu"
+      >
+        <div
+          style={{
+            paddingTop: spacing.md,
+            paddingBottom: spacing['2xl'],
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing.md,
+          }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-            {availableExplorers.map((explorer) => (
-              <ListRow
-                key={explorer.key}
-                testID={`tx-detail-explorer-${explorer.key}`}
-                leading={
-                  <IconBubble
-                    size={EXPLORER_BUBBLE_SIZE}
-                    shape="circle"
-                    tone="surface"
-                    icon={GlobeIcon}
-                    iconSize={iconSize.sm}
-                  />
-                }
-                title={explorer.name}
-                trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
-                onPress={() => openExplorer(explorer)}
-              />
-            ))}
-          </div>
-        </BottomSheetContainer>
-      )}
+          {rows.map(({ key, ...row }) => (
+            <ListRow
+              key={key}
+              {...row}
+              leading={<IconBubble size={EXPLORER_BUBBLE_SIZE} tone="surface" icon={GlobeIcon} />}
+              trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
+            />
+          ))}
+        </div>
+      </BottomSheetContainer>
     </>
   );
 }
