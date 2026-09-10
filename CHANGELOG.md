@@ -13,6 +13,18 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
 
+## extension 0.14.0 — 2026-09-10 — Solana v1 transactions
+
+- The wallet signs and sends Solana v1 transactions (SIMD-0296, up to 4096 bytes) that a dApp hands it, and advertises `supportedTransactionVersions: ['legacy', 0, 1]` to Wallet Standard apps. A transaction built for a network the wallet is not on is refused instead of signed. Off-chain message signing refuses v1 payloads, as the standard requires.
+- Sending from the wallet itself now builds a v1 transaction on Solana Devnet. Mainnet keeps v0 until the feature activates there.
+- A send that fails now says why: every RPC and program error the node can return is read by code and shown with its own message and a one-line detail (insufficient fee or rent, blockhash expired, network busy, compute exceeded, frozen account, program rejection with the program's own log line, and so on), instead of one generic failure.
+- Accounts derived from your recovery phrase are wallets of their own. Wallets shows each one under the wallet it came from, tied by a rail, and a "Check derivables" step after recovery offers to import the funded ones. Any balance counts as funded, tokens included. Rescanning from Wallets answers on Wallets.
+- Importing a seed phrase is paste-first: one Paste button, and Continue appears once the phrase is valid.
+- Removing a wallet asks for the password again when the session's key has lapsed.
+- Adding a wallet returns to wherever you started from.
+- The explorer picker in a transaction's detail is laid out like every other sheet; the copy control on the "From" row matches the one on the transaction hash; in Send's review, "Change" sits next to the amount's label so every value lines up on the right.
+- Transaction detail's developer row reads "Type", not "Helius Type".
+
 ## extension 0.13.2 — 2026-09-07
 
 - Unlocking now caches the session key it was always meant to cache. The lock page was swapped out the instant the password was accepted, and that took with it the step that stored the key — so it was never stored at all.
