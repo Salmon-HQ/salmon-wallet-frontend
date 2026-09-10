@@ -37,7 +37,7 @@ export const TransactionDetailDeveloper: React.FC<TransactionDetailDeveloperProp
 
       {transaction.heliusType && (
         <KeyValueRow
-          label={t('transactions.detail.heliusType', 'Helius Type')}
+          label={t('transactions.detail.heliusType', 'Type')}
           value={transaction.heliusType}
           labelWeight={600}
         />
