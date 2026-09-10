@@ -12,6 +12,8 @@ export type SwapBuildFailure =
 
 const CODE_TO_KEY: Record<string, string> = {
   no_route: 'transaction.errors.noRoute',
+  token_not_supported: 'swap.errors.tokenNotSupported',
+  swap_misconfigured: 'swap.errors.quoteFailed',
   upstream_rate_limited: 'transaction.errors.networkBusy',
   unknown_mint: 'swap.errors.unknownToken',
   provider_fee_mismatch: 'swap.errors.quoteFailed',

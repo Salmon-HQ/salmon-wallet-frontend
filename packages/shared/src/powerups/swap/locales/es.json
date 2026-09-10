@@ -18,7 +18,8 @@
     "route": "Ruta",
     "totalPriceImpact": "Impacto Total en el Precio",
     "pleaseNote": "Nota Importante",
-    "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas."
+    "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",
+    "priorityFee": "Comisión de prioridad de red"
   },
   "available_balance": "Disponible: {{balance}} {{symbol}}",
   "unavailable": {
@@ -32,6 +33,7 @@
     "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
     "quoteFailed": "No se pudo obtener la cotización",
     "unknownToken": "Uno de estos tokens no se puede intercambiar.",
-    "noAccount": "No se encontró una cuenta"
+    "noAccount": "No se encontró una cuenta",
+    "tokenNotSupported": "Este token no se puede intercambiar."
   }
 }

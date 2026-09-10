@@ -95,6 +95,14 @@ export interface SwapBuildResponse {
   salmonFee: SwapFeeLine | null;
   /** Always `null` on 0x. */
   routeFee: SwapFeeLine | null;
+  /**
+   * Informational: the compute-unit price the backend prepended (network p75,
+   * clamped), 0 when ops pinned it off. The ComputeBudget instructions are
+   * already in `transaction` — never add your own.
+   */
+  priorityFeeMicroLamports?: number;
+  /** Informational: the compute-unit limit from the backend's simulation; null when the price is 0. */
+  computeUnitLimit?: number | null;
 }
 
 // ============================================================================

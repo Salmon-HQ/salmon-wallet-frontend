@@ -18,7 +18,8 @@
     "route": "Route",
     "totalPriceImpact": "Total Price Impact",
     "pleaseNote": "Please Note",
-    "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed."
+    "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
+    "priorityFee": "Network priority fee"
   },
   "available_balance": "Available: {{balance}} {{symbol}}",
   "unavailable": {
@@ -32,6 +33,7 @@
     "highPriceImpact": "High price impact! You may receive significantly less than expected.",
     "quoteFailed": "Failed to fetch quote",
     "unknownToken": "One of these tokens is not supported for swapping.",
-    "noAccount": "No account found"
+    "noAccount": "No account found",
+    "tokenNotSupported": "This token can't be swapped."
   }
 }

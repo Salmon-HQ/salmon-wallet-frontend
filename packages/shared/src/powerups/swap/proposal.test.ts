@@ -146,6 +146,29 @@ describe('buildSwapProposal', () => {
   });
 });
 
+describe('buildSwapProposal — priority fee', () => {
+  it('shows the priority fee the backend sized, and nothing when it pinned it off', () => {
+    const withFee = buildSwapProposal(
+      build({ priorityFeeMicroLamports: 10_000, computeUnitLimit: 200_000 }),
+      { inToken: SOL, outToken: USDC, refresh: vi.fn() }
+    );
+    expect(withFee.display.advancedRows).toContainEqual(
+      expect.objectContaining({ label: 'swap.review.priorityFee', value: '0.000002 SOL' })
+    );
+    const pinnedOff = buildSwapProposal(
+      build({ priorityFeeMicroLamports: 0, computeUnitLimit: null }),
+      {
+        inToken: SOL,
+        outToken: USDC,
+        refresh: vi.fn(),
+      }
+    );
+    expect(pinnedOff.display.advancedRows?.map((row) => row.label)).not.toContain(
+      'swap.review.priorityFee'
+    );
+  });
+});
+
 describe('formatFeeLine', () => {
   it('formats the base-unit amount in the fee token with its rate', () => {
     expect(

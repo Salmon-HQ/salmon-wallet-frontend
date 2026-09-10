@@ -78,6 +78,16 @@ export function buildSwapProposal(
   const advancedRows: ConfirmationRow[] = [
     { label: t('swap.review.provider'), value: build.providerDisplayName },
   ];
+  // The priority fee the backend sized, next to nothing else: price × limit,
+  // micro-lamports × units → SOL. Shown only when one was actually set.
+  if (build.priorityFeeMicroLamports && build.computeUnitLimit) {
+    const sol = (build.priorityFeeMicroLamports * build.computeUnitLimit) / 1e15;
+    advancedRows.push({
+      label: t('swap.review.priorityFee'),
+      value: formatAmountWithSymbol(sol, 'SOL'),
+      pending: true,
+    });
+  }
   if (build.route.length > 0) {
     advancedRows.push({
       label: t('swap.review.route'),

@@ -72,6 +72,8 @@ describe('describeSwapBuildError', () => {
     ['region_restricted', 403, { kind: 'unavailable', reason: 'region' }],
     ['wallet_restricted', 403, { kind: 'unavailable', reason: 'wallet' }],
     ['no_route', 404, { kind: 'message', message: 'transaction.errors.noRoute' }],
+    ['token_not_supported', 422, { kind: 'message', message: 'swap.errors.tokenNotSupported' }],
+    ['swap_misconfigured', 500, { kind: 'message', message: 'swap.errors.quoteFailed' }],
     ['upstream_rate_limited', 503, { kind: 'message', message: 'transaction.errors.networkBusy' }],
     ['unknown_mint', 400, { kind: 'message', message: 'swap.errors.unknownToken' }],
     ['invalid_parameter', 400, { kind: 'message', message: 'swap.errors.quoteFailed' }],
