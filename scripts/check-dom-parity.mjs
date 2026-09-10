@@ -84,8 +84,10 @@ export const MAP = {
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
 export const MOBILE_ONLY = {
   QRScanner: 'camera — the side panel has no scanner; paste is the DOM path',
-  PowerupsFab: 'the `+` floats above the stack on mobile; the side panel has no floating layer, so the DOM puts it in WalletHeader (onPowerupsPress)',
-  PowerupBadge: 'the tier mark of the developer-only mock catalogue; the DOM catalogue draws the real entries only',
+  PowerupsFab:
+    'the `+` floats above the stack on mobile; the side panel has no floating layer, so the DOM puts it in WalletHeader (onPowerupsPress)',
+  PowerupBadge:
+    'the tier mark of the developer-only mock catalogue; the DOM catalogue draws the real entries only',
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',

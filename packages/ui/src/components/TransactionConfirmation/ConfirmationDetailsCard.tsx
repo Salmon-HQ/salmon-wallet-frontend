@@ -40,7 +40,13 @@ export function ConfirmationDetailsCard({
   const hasAdvanced = advancedRows.length > 0;
 
   return (
-    <Card padding="lg" gap={spacing.md} radius="xl" style={style} testID="confirmation-details-card">
+    <Card
+      padding="lg"
+      gap={spacing.md}
+      radius="xl"
+      style={style}
+      testID="confirmation-details-card"
+    >
       {rows.map((row) => (
         <DetailRow key={row.label} {...row} />
       ))}

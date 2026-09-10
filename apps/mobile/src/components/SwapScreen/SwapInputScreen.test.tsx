@@ -121,9 +121,7 @@ describe('SwapInputScreen — nothing moves under the finger', () => {
 describe('SwapInputScreen — the Swap CTA geometry is not a state', () => {
   it('hands the button an identical style enabled and disabled', () => {
     const enabled = flatStyle(renderScreen({ canSwap: true }).getByTestId('swap-submit-button'));
-    const disabled = flatStyle(
-      renderScreen({ canSwap: false }).getByTestId('swap-submit-button')
-    );
+    const disabled = flatStyle(renderScreen({ canSwap: false }).getByTestId('swap-submit-button'));
 
     expect(disabled).toEqual(enabled);
   });

@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderInMode } from '../../test/renderInMode';
 
 const mockHost = {
-  request: null as null | { proposal: { display: Record<string, unknown> }; phase: string; error: null },
+  request: null as null | {
+    proposal: { display: Record<string, unknown> };
+    phase: string;
+    error: null;
+  },
   refreshing: false,
   confirmLabel: 'Confirm (10)',
   confirmOrRefresh: vi.fn(),

@@ -270,7 +270,7 @@ export default [
         'error',
         {
           selector:
-            "MemberExpression[property.name=/^(signer|keyPair|seed|retrieveSecurePrivateKey|getAccountMnemonic|signTransaction|signMessage|signAllTransactions)$/]",
+            'MemberExpression[property.name=/^(signer|keyPair|seed|retrieveSecurePrivateKey|getAccountMnemonic|signTransaction|signMessage|signAllTransactions)$/]',
           message:
             'A Powerup never touches key material or signs: propose through requestSignature() (spec 027 §2).',
         },

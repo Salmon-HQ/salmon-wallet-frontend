@@ -22,11 +22,7 @@ vi.mock('./solana-nft', () => ({
 import { ApiError, apiClient, get } from '../client';
 import { getReachableBackendBaseUrl } from '../test-backend';
 import { getSolanaNfts } from './solana-nft';
-import {
-  fetchSolanaAccountBalance,
-  getSolanaTransactions,
-  solanaApiFunctions,
-} from './solana';
+import { fetchSolanaAccountBalance, getSolanaTransactions, solanaApiFunctions } from './solana';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
 const mockGet = vi.mocked(get);

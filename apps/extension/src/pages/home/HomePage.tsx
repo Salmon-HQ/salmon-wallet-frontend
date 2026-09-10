@@ -307,7 +307,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     refresh();
   }, [refresh, settleAfterNftSend]);
 
-
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
   }, []);
@@ -454,7 +453,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             name: token.name,
             decimals: token.decimals ?? 9,
             logo: token.logo ?? undefined,
-            balance: typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount,
+            balance:
+              typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount,
             usdPrice: token.price ?? undefined,
             chain: 'solana' as const,
             networkId: networkId ?? undefined,
@@ -565,7 +565,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
       case 'powerups':
-        if (!PowerupsPage) return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleBack} />;
+        if (!PowerupsPage)
+          return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleBack} />;
         return (
           <PowerupsPage
             powerups={powerupsOnNetwork}

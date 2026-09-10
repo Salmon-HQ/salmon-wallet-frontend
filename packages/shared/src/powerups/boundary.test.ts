@@ -27,14 +27,20 @@ describe('powerups boundary', () => {
     ["import { signAndSendSolanaTransaction } from '../core/broadcast';", 'no-restricted-imports'],
     ["import { encrypt } from '../crypto';", 'no-restricted-imports'],
     ["import { getStorage } from '../storage';", 'no-restricted-imports'],
-    ["import { SolanaAccount } from '../blockchain/solana/SolanaAccount';", 'no-restricted-imports'],
+    [
+      "import { SolanaAccount } from '../blockchain/solana/SolanaAccount';",
+      'no-restricted-imports',
+    ],
     ["import { partiallySignTransaction } from '@solana/kit';", 'no-restricted-imports'],
     [
       "import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';",
       'no-restricted-imports',
     ],
     ['export const k = (account: { signer: unknown }) => account.signer;', 'no-restricted-syntax'],
-    ['export const k = (account: { keyPair: unknown }) => account.keyPair;', 'no-restricted-syntax'],
+    [
+      'export const k = (account: { keyPair: unknown }) => account.keyPair;',
+      'no-restricted-syntax',
+    ],
   ])('fails on %s', async (code, rule) => {
     const rules = await lint(code.includes('export') ? code : `${code}\nexport {};`);
     expect(rules).toContain(rule);

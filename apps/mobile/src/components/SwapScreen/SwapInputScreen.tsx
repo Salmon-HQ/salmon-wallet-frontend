@@ -110,9 +110,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
 
         {/* The fee is a line on the confirmation, never folded into the quote;
             the provider is named from the quote itself (spec 027 §7). */}
-        <Text style={styles.disclaimerText}>
-          {attribution ?? t('swap.fee_disclaimer')}
-        </Text>
+        <Text style={styles.disclaimerText}>{attribution ?? t('swap.fee_disclaimer')}</Text>
       </View>
 
       <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>

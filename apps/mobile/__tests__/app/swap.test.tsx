@@ -29,7 +29,14 @@ jest.mock('@salmon/shared', () => ({
   }),
   useMultiChainTokens: () => ({
     tokens: [
-      { symbol: 'SOL', address: 'mint-sol', decimals: 9, chain: 'solana', balance: 1, usdPrice: 100 },
+      {
+        symbol: 'SOL',
+        address: 'mint-sol',
+        decimals: 9,
+        chain: 'solana',
+        balance: 1,
+        usdPrice: 100,
+      },
     ],
     // A non-Solana featured token has no swap route: it never reaches the form.
     featuredTokens: [{ symbol: 'BTC', address: 'mint-btc', decimals: 8, chain: 'bitcoin' }],
@@ -50,7 +57,9 @@ jest.mock('../../src/components', () => {
     ScreenHeader: ({ onBack }: { onBack: () => void }) => (
       <View testID="swap-header" onPress={onBack} />
     ),
-    StateBlock: ({ title }: { title: string }) => <View testID="state-block" accessibilityLabel={title} />,
+    StateBlock: ({ title }: { title: string }) => (
+      <View testID="state-block" accessibilityLabel={title} />
+    ),
   };
 });
 
@@ -83,7 +92,9 @@ jest.mock('../../src/components/SwapScreen', () => {
   };
 });
 
-const { useAccountsContext } = jest.requireMock('@salmon/shared') as { useAccountsContext: jest.Mock };
+const { useAccountsContext } = jest.requireMock('@salmon/shared') as {
+  useAccountsContext: jest.Mock;
+};
 
 import SwapScreenPage from '../../src/screens/SwapRoute';
 
@@ -94,10 +105,17 @@ describe('SwapRoute', () => {
 
   it('states the absence of an account instead of rendering the form', () => {
     useAccountsContext.mockReturnValue([
-      { ready: false, activeAccount: null, activeBlockchainAccount: null, networkId: 'solana-mainnet' },
+      {
+        ready: false,
+        activeAccount: null,
+        activeBlockchainAccount: null,
+        networkId: 'solana-mainnet',
+      },
     ]);
     render(<SwapScreenPage />);
-    expect(screen.getByTestId('state-block').props.accessibilityLabel).toBe('swap.errors.noAccount');
+    expect(screen.getByTestId('state-block').props.accessibilityLabel).toBe(
+      'swap.errors.noAccount'
+    );
   });
 
   it('hands the Powerup Solana tokens only, the taker, the network and the catalogue', () => {

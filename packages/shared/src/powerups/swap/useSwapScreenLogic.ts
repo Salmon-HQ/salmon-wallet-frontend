@@ -455,7 +455,10 @@ export function useSwapScreenLogic({
       // banner withholds it until the release below.
       const releaseReport = pendingTransactions?.claimForegroundReport(signature);
       setSettling(true);
-      settleUntilChanged({ networkId: SWAP_NETWORK_ID as NetworkId, kinds: ['balance', 'transactions'] })
+      settleUntilChanged({
+        networkId: SWAP_NETWORK_ID as NetworkId,
+        kinds: ['balance', 'transactions'],
+      })
         .catch((err) => {
           console.warn('[useSwapScreenLogic] settleUntilChanged failed:', err);
         })

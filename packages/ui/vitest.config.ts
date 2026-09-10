@@ -9,7 +9,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@salmon/shared/utils/': fileURLToPath(new URL('../shared/src/utils/', import.meta.url)),
-      '@salmon/shared/powerups': fileURLToPath(new URL('../shared/src/powerups/index.ts', import.meta.url)),
+      '@salmon/shared/powerups': fileURLToPath(
+        new URL('../shared/src/powerups/index.ts', import.meta.url)
+      ),
       // The `@salmon/shared` barrel reaches `react-native` through its storage
       // adapter. RN ships Flow, which Vitest's transform cannot parse, and this
       // package never renders RN — so the module resolves to an empty stub and

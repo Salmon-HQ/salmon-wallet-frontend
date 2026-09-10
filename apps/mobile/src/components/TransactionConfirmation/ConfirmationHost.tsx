@@ -29,8 +29,7 @@ export function ConfirmationHost() {
   const styles = useThemedStyles(stylesFor);
   const insets = useSafeAreaInsets();
   const isReduceMotionEnabled = useReducedMotion();
-  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } =
-    useSignatureRequestHost();
+  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } = useSignatureRequestHost();
 
   const isOpen = request !== null;
   const isSigning = request?.phase === 'signing';

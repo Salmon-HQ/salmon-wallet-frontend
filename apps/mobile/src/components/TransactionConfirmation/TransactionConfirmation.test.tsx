@@ -74,7 +74,13 @@ jest.mock('../../icons', () => {
 jest.mock('./ConfirmationExchange', () => {
   const { Text: RNText, View: RNView } = require('react-native');
   return {
-    ConfirmationExchange: ({ send, receive }: { send: { label: string }; receive: { label: string } }) => (
+    ConfirmationExchange: ({
+      send,
+      receive,
+    }: {
+      send: { label: string };
+      receive: { label: string };
+    }) => (
       <RNView>
         <RNText>{send.label}</RNText>
         <RNText>{receive.label}</RNText>
@@ -113,7 +119,9 @@ const display: ProposalDisplay = {
   pendingTitle: 'Processing swap',
 };
 
-function renderScreen(overrides: Partial<React.ComponentProps<typeof TransactionConfirmation>> = {}) {
+function renderScreen(
+  overrides: Partial<React.ComponentProps<typeof TransactionConfirmation>> = {}
+) {
   return render(
     <TransactionConfirmation
       display={display}
@@ -185,7 +193,9 @@ describe('TransactionConfirmation — every fee is its own line, the provider is
   });
 
   it('reports a failed signature above the controls, translated', () => {
-    const { getByTestId, queryByTestId } = renderScreen({ error: 'transaction.errors.networkBusy' });
+    const { getByTestId, queryByTestId } = renderScreen({
+      error: 'transaction.errors.networkBusy',
+    });
     expect(getByTestId('confirmation-error').props.children).toBe('transaction.errors.networkBusy');
     expect(queryByTestId('confirmation-error')).toBeTruthy();
     expect(renderScreen().queryByTestId('confirmation-error')).toBeNull();

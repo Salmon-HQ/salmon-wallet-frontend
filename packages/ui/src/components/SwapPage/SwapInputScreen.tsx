@@ -72,7 +72,11 @@ export function SwapInputScreen({
           }}
         >
           {swapError ? (
-            <span data-testid="swap-error-text" role="alert" style={{ color: semantic.status.danger }}>
+            <span
+              data-testid="swap-error-text"
+              role="alert"
+              style={{ color: semantic.status.danger }}
+            >
               {notice(swapError)}
             </span>
           ) : reviewWarning ? (

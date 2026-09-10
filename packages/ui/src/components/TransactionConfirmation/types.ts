@@ -12,8 +12,7 @@ export interface ConfirmationDetailsCardProps extends ConfirmationDetailsCardPro
 
 export interface ConfirmationExchangeProps extends ConfirmationExchangePropsBase<CSSProperties> {}
 
-export interface TransactionConfirmationProps
-  extends TransactionConfirmationPropsBase<CSSProperties> {}
+export interface TransactionConfirmationProps extends TransactionConfirmationPropsBase<CSSProperties> {}
 
 export interface ConfirmationButtonsProps {
   onBack: () => void;

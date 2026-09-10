@@ -49,8 +49,7 @@ export function buildSwapProposal(
   const minAmount = toDisplayAmount(build.output.minAmount, build.output.decimals);
   const inLabel = formatAmountWithSymbol(inAmount, build.input.symbol);
   const outLabel = formatAmountWithSymbol(outAmount, build.output.symbol);
-  const usd = (value: number | null) =>
-    value != null && formatUsd ? formatUsd(value) : undefined;
+  const usd = (value: number | null) => (value != null && formatUsd ? formatUsd(value) : undefined);
 
   const rows: ConfirmationRow[] = [];
   if (build.salmonFee) {

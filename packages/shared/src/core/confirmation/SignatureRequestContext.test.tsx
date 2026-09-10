@@ -4,10 +4,7 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  SignatureRequestProvider,
-  useSignatureRequestContext,
-} from './SignatureRequestContext';
+import { SignatureRequestProvider, useSignatureRequestContext } from './SignatureRequestContext';
 import { useSignatureRequestHost } from './useSignatureRequestHost';
 import { NoSigningAccountError, SignatureRequestCancelledError } from './types';
 import type { TransactionProposal } from './types';
@@ -130,13 +127,18 @@ describe('SignatureRequestProvider', () => {
   });
 
   it('rebuilds an expired proposal on confirm instead of signing stale bytes', async () => {
-    const fresh = proposal({ id: 'p-fresh', expiresAt: new Date(Date.now() + 60_000).toISOString() });
+    const fresh = proposal({
+      id: 'p-fresh',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
     const refresh = vi.fn(async () => fresh);
     const { view, signProposal } = setup();
 
     act(() => {
       void view.result.current.ctx
-        .requestSignature(proposal({ expiresAt: new Date(Date.now() - 1000).toISOString(), refresh }))
+        .requestSignature(
+          proposal({ expiresAt: new Date(Date.now() - 1000).toISOString(), refresh })
+        )
         .catch(() => undefined);
     });
     await waitFor(() => expect(view.result.current.host.secondsLeft).toBe(0));

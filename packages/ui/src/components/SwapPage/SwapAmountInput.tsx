@@ -88,7 +88,8 @@ export function SwapAmountInput({
       const option = QUICK_FILLS.find((fill) => fill.key === key);
       if (!option || availableBalance === undefined || !token) return;
       const decimals = token.decimals ?? 9;
-      const truncated = Math.floor(availableBalance * option.value * 10 ** decimals) / 10 ** decimals;
+      const truncated =
+        Math.floor(availableBalance * option.value * 10 ** decimals) / 10 ** decimals;
       onChangeValue(truncated > 0 ? truncated.toString() : '0');
     },
     [availableBalance, token, onChangeValue]

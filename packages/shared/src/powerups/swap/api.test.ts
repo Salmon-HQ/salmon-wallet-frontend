@@ -25,7 +25,12 @@ describe('buildSwap', () => {
     });
 
     expect(mockGet).toHaveBeenCalledWith('/v1/solana-mainnet/ft/swap/build', {
-      params: { inputMint: 'mint-in', outputMint: 'mint-out', publicKey: 'wallet-1', uiAmount: '1.5' },
+      params: {
+        inputMint: 'mint-in',
+        outputMint: 'mint-out',
+        publicKey: 'wallet-1',
+        uiAmount: '1.5',
+      },
     });
     expect(result).toEqual({ provider: '0x' });
   });
@@ -40,7 +45,13 @@ describe('buildSwap', () => {
       publicKey: 'w',
     });
     expect(mockGet.mock.calls[0][1]).toEqual({
-      params: { inputMint: 'a', outputMint: 'b', publicKey: 'w', amount: '1000000', slippageBps: 100 },
+      params: {
+        inputMint: 'a',
+        outputMint: 'b',
+        publicKey: 'w',
+        amount: '1000000',
+        slippageBps: 100,
+      },
     });
   });
 
@@ -50,7 +61,9 @@ describe('buildSwap', () => {
   it('throws the ApiError unchanged', async () => {
     const error = new ApiError('forbidden', 403, 'region_restricted');
     mockGet.mockRejectedValueOnce(error);
-    await expect(buildSwap({ inputMint: 'a', outputMint: 'b', publicKey: 'w' })).rejects.toBe(error);
+    await expect(buildSwap({ inputMint: 'a', outputMint: 'b', publicKey: 'w' })).rejects.toBe(
+      error
+    );
   });
 });
 

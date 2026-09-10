@@ -20,8 +20,7 @@ import { TransactionConfirmation } from './TransactionConfirmation';
 
 export function ConfirmationHost() {
   const semantic = useSemantic();
-  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } =
-    useSignatureRequestHost();
+  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } = useSignatureRequestHost();
 
   const isOpen = request !== null;
   const isSigning = request?.phase === 'signing';

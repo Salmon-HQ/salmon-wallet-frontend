@@ -85,9 +85,7 @@ export function PowerupsPage({ powerups, onOpen, onBack, style }: PowerupsPagePr
               <ListRow
                 key={entry.id}
                 testID={`powerups-row-${entry.id}`}
-                leading={
-                  <IconBubble size={ROW_BUBBLE_SIZE} tone="ink" icon={ICONS[entry.id]} />
-                }
+                leading={<IconBubble size={ROW_BUBBLE_SIZE} tone="ink" icon={ICONS[entry.id]} />}
                 title={t(entry.nameKey)}
                 subtitle={t(entry.descriptionKey)}
                 trailing={<CaretRightIcon size={16} color={semantic.text.secondary} />}

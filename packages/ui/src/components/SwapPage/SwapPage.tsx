@@ -67,7 +67,10 @@ export function SwapPage({ onBack, watchOnly = false, style, ...logicParams }: S
       summary?.outSymbol ?? logic.outToken?.symbol ?? ''
     ) ?? undefined;
 
-  const inPickerTokens = useMemo(() => logic.modalInTokens.map(toPickerToken), [logic.modalInTokens]);
+  const inPickerTokens = useMemo(
+    () => logic.modalInTokens.map(toPickerToken),
+    [logic.modalInTokens]
+  );
   const outPickerTokens = useMemo(
     () => logic.modalOutTokens.map(toPickerToken),
     [logic.modalOutTokens]

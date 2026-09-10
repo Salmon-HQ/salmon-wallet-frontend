@@ -96,7 +96,9 @@ export async function signAndSendSolanaTransaction(
     rpcSubscriptions: account.getRpcSubscriptions(),
   });
   await confirmRecentSignature({
-    abortSignal: AbortSignal.timeout(options.confirmationTimeoutMs ?? DEFAULT_CONFIRMATION_TIMEOUT_MS),
+    abortSignal: AbortSignal.timeout(
+      options.confirmationTimeoutMs ?? DEFAULT_CONFIRMATION_TIMEOUT_MS
+    ),
     commitment,
     signature,
   });

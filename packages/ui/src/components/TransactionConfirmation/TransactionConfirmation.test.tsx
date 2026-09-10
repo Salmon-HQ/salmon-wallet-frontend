@@ -34,7 +34,9 @@ const display: ProposalDisplay = {
   pendingTitle: 'Processing swap',
 };
 
-function renderScreen(overrides: Partial<React.ComponentProps<typeof TransactionConfirmation>> = {}) {
+function renderScreen(
+  overrides: Partial<React.ComponentProps<typeof TransactionConfirmation>> = {}
+) {
   return renderInMode(
     'dark',
     <TransactionConfirmation

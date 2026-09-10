@@ -109,8 +109,9 @@ describe('ConfirmationButtons — the pair stacks, full width', () => {
     const refreshing = render(
       <ConfirmationButtons onBack={jest.fn()} onConfirm={jest.fn()} isRefreshing />
     );
-    expect(
-      refreshing.getByTestId('confirmation-confirm-button').props.accessibilityState
-    ).toEqual({ busy: true, disabled: true });
+    expect(refreshing.getByTestId('confirmation-confirm-button').props.accessibilityState).toEqual({
+      busy: true,
+      disabled: true,
+    });
   });
 });

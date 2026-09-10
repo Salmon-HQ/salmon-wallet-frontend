@@ -6,8 +6,17 @@ vi.mock('i18next', () => ({
   default: { t: (key: string) => key },
 }));
 
-const SOL = { address: 'So11111111111111111111111111111111111111112', symbol: 'SOL', decimals: 9, logo: 'sol.png' };
-const USDC = { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', decimals: 6 };
+const SOL = {
+  address: 'So11111111111111111111111111111111111111112',
+  symbol: 'SOL',
+  decimals: 9,
+  logo: 'sol.png',
+};
+const USDC = {
+  address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  symbol: 'USDC',
+  decimals: 6,
+};
 
 function build(overrides: Partial<SwapBuildResponse> = {}): SwapBuildResponse {
   return {
@@ -17,7 +26,13 @@ function build(overrides: Partial<SwapBuildResponse> = {}): SwapBuildResponse {
     transaction: 'AQ'.repeat(40),
     expiresAt: '2026-09-10T12:00:00.000Z',
     input: { mint: SOL.address, amount: '1000000000', decimals: 9, symbol: 'SOL' },
-    output: { mint: USDC.address, amount: '150000000', minAmount: '149250000', decimals: 6, symbol: 'USDC' },
+    output: {
+      mint: USDC.address,
+      amount: '150000000',
+      minAmount: '149250000',
+      decimals: 6,
+      symbol: 'USDC',
+    },
     route: [
       { label: 'Raydium', percent: 60 },
       { label: 'Orca', percent: 100 },
@@ -26,7 +41,14 @@ function build(overrides: Partial<SwapBuildResponse> = {}): SwapBuildResponse {
     slippageBps: 50,
     inUsdValue: 150,
     outUsdValue: 149.8,
-    salmonFee: { amount: '1275000', mint: USDC.address, side: 'output', bps: 85, decimals: 6, symbol: 'USDC' },
+    salmonFee: {
+      amount: '1275000',
+      mint: USDC.address,
+      side: 'output',
+      bps: 85,
+      decimals: 6,
+      symbol: 'USDC',
+    },
     routeFee: null,
     ...overrides,
   };
@@ -60,7 +82,16 @@ describe('buildSwapProposal', () => {
 
   it('adds the route fee line only when the provider charges one', () => {
     const proposal = buildSwapProposal(
-      build({ routeFee: { amount: '500', mint: USDC.address, side: 'output', bps: 5, decimals: 6, symbol: 'USDC' } }),
+      build({
+        routeFee: {
+          amount: '500',
+          mint: USDC.address,
+          side: 'output',
+          bps: 5,
+          decimals: 6,
+          symbol: 'USDC',
+        },
+      }),
       { inToken: SOL, outToken: USDC, refresh }
     );
     expect(proposal.display.rows).toContainEqual({
@@ -118,7 +149,14 @@ describe('buildSwapProposal', () => {
 describe('formatFeeLine', () => {
   it('formats the base-unit amount in the fee token with its rate', () => {
     expect(
-      formatFeeLine({ amount: '2100000', mint: 'm', side: 'input', bps: 85, decimals: 9, symbol: 'SOL' })
+      formatFeeLine({
+        amount: '2100000',
+        mint: 'm',
+        side: 'input',
+        bps: 85,
+        decimals: 9,
+        symbol: 'SOL',
+      })
     ).toBe('0.0021 SOL (0.85%)');
   });
 });

@@ -7,7 +7,10 @@ import type { Powerup } from './catalog';
 
 export const POWERUPS_ENABLED = false;
 
-export function getPowerups(_options: { includeMocks: boolean; networkId: string | null }): Powerup[] {
+export function getPowerups(_options: {
+  includeMocks: boolean;
+  networkId: string | null;
+}): Powerup[] {
   return [];
 }
 

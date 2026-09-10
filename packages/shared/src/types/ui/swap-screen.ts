@@ -51,8 +51,7 @@ export interface SwapInputScreenPropsBase<TStyle> {
 }
 
 /** The whole Powerup screen: the host's inputs to the shared logic. */
-export interface SwapScreenPropsBase<TStyle>
-  extends Omit<UseSwapScreenLogicParams, 'buildSwap'> {
+export interface SwapScreenPropsBase<TStyle> extends Omit<UseSwapScreenLogicParams, 'buildSwap'> {
   style?: TStyle;
 }
 

@@ -56,14 +56,14 @@ in the side panel is the owner's, per the hold.
 ## Batches (each: typecheck + lint + tests green, one commit)
 
 A. shared core: `core/broadcast/solana.ts`, `core/confirmation/*`,
-   `core/signing/requestSignature.ts`; `prepared-transactions.ts` uses broadcast.
+`core/signing/requestSignature.ts`; `prepared-transactions.ts` uses broadcast.
 B. shared powerups: registry, `swap/` (types, `buildSwap` service,
-   `useSwapBuild`, `useSwapScreenLogic` v2), locales split, delete
-   order/execute paths + tests, i18n check reads the split files.
+`useSwapBuild`, `useSwapScreenLogic` v2), locales split, delete
+order/execute paths + tests, i18n check reads the split files.
 C. lint boundary + fixture test.
 D. mobile: `TransactionConfirmation` (from SwapReview*), `ConfirmationHost`
-   in `(app)/_layout.tsx`, SwapScreen v2, `app/(app)/swap.tsx`, powerups
-   route re-wired, catalog from registry, Metro alias, `eas.json`.
+in `(app)/_layout.tsx`, SwapScreen v2, `app/(app)/swap.tsx`, powerups
+route re-wired, catalog from registry, Metro alias, `eas.json`.
 E. DOM: `TransactionConfirmation` twin, host in the extension `App`,
-   `SwapPage`, `PowerupsPage` + entry, WXT alias + env, parity maps.
+`SwapPage`, `PowerupsPage` + entry, WXT alias + env, parity maps.
 F. bundle-grep script + CI step, spec §6 → 0x, AGENTS gate row, CHANGELOG.

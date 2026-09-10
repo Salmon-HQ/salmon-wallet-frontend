@@ -7,12 +7,7 @@ import {
   isSignableSolanaAccount,
   useAccountsContext,
 } from '@salmon/shared';
-import {
-  ConfirmationHost,
-  LockOverlay,
-  LockContent,
-  PowerupsFab,
-} from '../../src/components';
+import { ConfirmationHost, LockOverlay, LockContent, PowerupsFab } from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useTabChrome } from '../../hooks/useTabChrome';
 import { POWERUPS_ENABLED } from '../../src/powerups';
@@ -172,7 +167,8 @@ export default function AppLayout() {
   // otherwise none — a watch-only wallet reaches the confirmation and is
   // refused there (spec 027 §2).
   const signingAccount =
-    accountState.activeBlockchainAccount && isSignableSolanaAccount(accountState.activeBlockchainAccount)
+    accountState.activeBlockchainAccount &&
+    isSignableSolanaAccount(accountState.activeBlockchainAccount)
       ? accountState.activeBlockchainAccount
       : null;
 
@@ -180,47 +176,47 @@ export default function AppLayout() {
     <TaskChromeProvider surfaceKey={surfaceKey}>
       <DerivedAccountsProvider>
         <SignatureRequestProvider account={signingAccount}>
-        {/* The developer-mode settings belong to the unlocked session, not to
+          {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)
           every screen this stack pushes — Activity, Send, NFT detail,
           Powerups — sat ABOVE the provider and read the context default
           instead of the stored flag. */}
-        <DeveloperModeProvider>
-          {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
+          <DeveloperModeProvider>
+            {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
           row the tabs layout renders, and every pushed screen draws the
           kit's own `ScreenHeader`. A native header would double up on both.
           Direction is set once, here: a pushed screen comes in from the
           right and leaves the way it came, and the horizontal gesture is the
           same motion run by hand. Configuring it per screen is how two
           screens end up arriving from different edges. */}
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-              gestureDirection: 'horizontal',
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="wallets" />
-            <Stack.Screen name="activity" />
-            {/* Settings is a sub-stack too (the list plus one screen per
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureDirection: 'horizontal',
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="wallets" />
+              <Stack.Screen name="activity" />
+              {/* Settings is a sub-stack too (the list plus one screen per
             `SettingsScreen` key). It used to be a `href: null` tab, which is
             why it never slid: a tab switch is not a stack push. On the stack it
             takes the same right slide as everything else — and the lock overlay
             below now covers it, which an overlay above the tabs never did. */}
-            <Stack.Screen name="settings" />
-            {/* The send flow is its own sub-stack (spec 018): four screens that
+              <Stack.Screen name="settings" />
+              {/* The send flow is its own sub-stack (spec 018): four screens that
             share the flow's state, taking this stack's right slide. */}
-            <Stack.Screen name="send" />
-            {/* Token and NFT detail are screens of this stack (spec 019), pushed
+              <Stack.Screen name="send" />
+              {/* Token and NFT detail are screens of this stack (spec 019), pushed
             from the Portfolio and NFT lists with the same right slide. */}
-            <Stack.Screen name="token/[id]" />
-            <Stack.Screen name="nft/[id]" />
-            {/* The Swap Powerup, a screen of this stack pushed from the
+              <Stack.Screen name="token/[id]" />
+              <Stack.Screen name="nft/[id]" />
+              {/* The Swap Powerup, a screen of this stack pushed from the
             catalogue. Its body is behind the build flag; the route itself is
             always registered (`swap.tsx`). */}
-            <Stack.Screen name="swap" />
-            {/* Powerups rises from the bottom instead of sliding from the right,
+              <Stack.Screen name="swap" />
+              {/* Powerups rises from the bottom instead of sliding from the right,
             and swipes down to dismiss. It is a plain screen of THIS stack, not
             a modal: a modal is its own native window and nothing — not the
             lock overlay, not the FAB — can float above it. Full cover comes
@@ -229,39 +225,39 @@ export default function AppLayout() {
             The route is registered and its choreography kept, but the screen
             behind it is closed for this release: `powerups.tsx` redirects Home
             and the body is parked in `src/screens/PowerupsRoute.tsx`. */}
-            <Stack.Screen
-              name="powerups"
-              options={{
-                animation: 'slide_from_bottom',
-                gestureDirection: 'vertical',
-              }}
-            />
-          </Stack>
+              <Stack.Screen
+                name="powerups"
+                options={{
+                  animation: 'slide_from_bottom',
+                  gestureDirection: 'vertical',
+                }}
+              />
+            </Stack>
 
-          {/* One powerups control for both routes, above the stack: Home and the
+            {/* One powerups control for both routes, above the stack: Home and the
           browse screen are two screens of the same stack, so the button never
           unmounts between them and the turn plays while the screen rises. */}
-          <PowerupsLayer />
+            <PowerupsLayer />
 
-          {/* Core's confirmation window, above every screen a Powerup can
+            {/* Core's confirmation window, above every screen a Powerup can
           propose from: the one place a proposal is reviewed and signed. */}
-          <ConfirmationHost />
+            <ConfirmationHost />
 
-          {/* The lock screen. It covers every screen this stack can push and
+            {/* The lock screen. It covers every screen this stack can push and
           takes every touch — Powerups included, now that it is a plain
           screen of this stack. */}
-          {isLocked && (
-            <LockOverlay>
-              <LockContent
-                locked={accountState.locked}
-                onUnlock={handleLockUnlock}
-                onUnlockExited={handleUnlockExited}
-                onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
-                biometric={lockBiometricConfig}
-              />
-            </LockOverlay>
-          )}
-        </DeveloperModeProvider>
+            {isLocked && (
+              <LockOverlay>
+                <LockContent
+                  locked={accountState.locked}
+                  onUnlock={handleLockUnlock}
+                  onUnlockExited={handleUnlockExited}
+                  onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
+                  biometric={lockBiometricConfig}
+                />
+              </LockOverlay>
+            )}
+          </DeveloperModeProvider>
         </SignatureRequestProvider>
       </DerivedAccountsProvider>
     </TaskChromeProvider>
