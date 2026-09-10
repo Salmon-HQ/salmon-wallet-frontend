@@ -151,10 +151,16 @@ jobs:
           name: salmon-extension-${{ github.sha }}
           path: release
 
+      # The artifact keeps the build's directory layout, so the browser zips
+      # arrive under apps/extension/dist/ while the source zip sits at the top.
+      # Every step below globs `*.zip` at the top, so bring them all there.
+      - name: Flatten the artifact
+        working-directory: release
+        run: find . -mindepth 2 -type f -name '*.zip' -exec mv -t . {} + && ls -1 *.zip
       - name: Checksums
         working-directory: release
         run: |
-          find . -type f -name '*.zip' -exec sha256sum {} \; | sed 's#\./##' | sort > SHA256SUMS
+          find . -maxdepth 1 -type f -name '*.zip' -exec sha256sum {} \; | sed 's#\./##' | sort > SHA256SUMS
           cat SHA256SUMS
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
