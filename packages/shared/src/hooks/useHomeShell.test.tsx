@@ -188,6 +188,40 @@ describe('useHomeShell', () => {
     expect(result.current.swapCause).toBe('none');
     expect(result.current.tabsHasPrior).toBe(false);
   });
+
+  it('offers an installed Powerup as a sub-tab, only where it acts', () => {
+    const swapTab = { key: 'swap' as const, label: 'Swap', networks: ['solana-mainnet'] };
+
+    const onSolana = renderHook(() => useHomeShell(params({ powerupTabs: [swapTab] })));
+    expect(onSolana.result.current.subTabs.map((tab) => tab.key)).toEqual([
+      'portfolio',
+      'nfts',
+      'swap',
+    ]);
+
+    // Off the network it acts on the tab is not offered, exactly as NFTs are
+    // not offered off Solana. The stored arrangement is untouched.
+    const onBitcoin = renderHook(() =>
+      useHomeShell(params({ networkId: 'bitcoin-mainnet', powerupTabs: [swapTab] }))
+    );
+    expect(onBitcoin.result.current.subTabs.map((tab) => tab.key)).toEqual(['portfolio']);
+  });
+
+  it('does not offer a Powerup that is not installed, and falls back when one leaves', () => {
+    const swapTab = { key: 'swap' as const, label: 'Swap', networks: ['solana-mainnet'] };
+    const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
+      initialProps: params({ powerupTabs: [swapTab] }),
+    });
+
+    act(() => result.current.setActiveSubTab('swap'));
+    expect(result.current.effectiveSubTab).toBe('swap');
+
+    // Uninstalled mid-session: the tab it was standing on is gone, so Home
+    // falls back to Portfolio rather than rendering nothing.
+    rerender(params({ powerupTabs: [] }));
+    expect(result.current.subTabs.map((tab) => tab.key)).toEqual(['portfolio', 'nfts']);
+    expect(result.current.effectiveSubTab).toBe('portfolio');
+  });
 });
 
 describe('mapBalanceToToken', () => {

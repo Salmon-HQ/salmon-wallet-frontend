@@ -88,4 +88,28 @@ describe('HomeTabOrderSheet', () => {
     expect(onOrderChange).not.toHaveBeenCalled();
     expect(screen.queryByText('actions.save')).toBeNull();
   });
+
+  it('offers a remove control on a Powerup tab, and on nothing else', () => {
+    stubMatchMedia(false);
+    const onRemove = vi.fn();
+
+    renderInMode(
+      'dark',
+      <HomeTabOrderSheet
+        visible
+        onClose={vi.fn()}
+        tabs={[...TABS, { key: 'swap', label: 'Swap' }]}
+        onOrderChange={vi.fn()}
+        removableKeys={['swap']}
+        onRemove={onRemove}
+      />
+    );
+
+    // Portfolio and NFTs are the wallet itself: there is nothing to remove.
+    expect(screen.queryByTestId('home-tab-order-row-portfolio-remove')).toBeNull();
+    expect(screen.queryByTestId('home-tab-order-row-nfts-remove')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('home-tab-order-row-swap-remove'));
+    expect(onRemove).toHaveBeenCalledWith('swap');
+  });
 });
