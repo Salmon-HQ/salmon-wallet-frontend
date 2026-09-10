@@ -598,7 +598,7 @@
       "swapFee": "Swap Fee",
       "transactionHash": "Transaction Hash",
       "developerInfo": "Developer Info",
-      "heliusType": "Helius Type",
+      "heliusType": "Type",
       "accountsInvolved": "Accounts Involved",
       "programs": "Programs",
       "innerSwaps": "Inner Swaps",

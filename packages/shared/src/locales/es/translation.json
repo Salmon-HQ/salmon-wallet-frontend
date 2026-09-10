@@ -598,7 +598,7 @@
       "swapFee": "Comisión de Swap",
       "transactionHash": "Hash de Transacción",
       "developerInfo": "Info de Desarrollador",
-      "heliusType": "Tipo Helius",
+      "heliusType": "Tipo",
       "accountsInvolved": "Cuentas Involucradas",
       "programs": "Programas",
       "innerSwaps": "Swaps Internos",
