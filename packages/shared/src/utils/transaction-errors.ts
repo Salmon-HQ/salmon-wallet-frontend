@@ -155,7 +155,7 @@ function classifyCustom(programId: string | null, code: number): { key: string; 
 // ============================================================================
 
 const FAILED_PROGRAM = /^Program ([1-9A-HJ-NP-Za-km-z]{32,44}) failed/;
-const ANCHOR_MESSAGE = /Error Message: (.+?)\.?$/;
+const ANCHOR_MESSAGE = 'Error Message: ';
 const PROGRAM_LOG = /^Program log: (.+)$/;
 
 function logsOf(err: unknown): string[] {
@@ -175,8 +175,8 @@ function failingProgram(logs: string[]): string | null {
 /** The most telling program log: an Anchor error message, else the last log. */
 function tellingLog(logs: string[]): string | null {
   for (let i = logs.length - 1; i >= 0; i--) {
-    const anchor = ANCHOR_MESSAGE.exec(logs[i]);
-    if (anchor) return anchor[1];
+    const at = logs[i].indexOf(ANCHOR_MESSAGE);
+    if (at >= 0) return logs[i].slice(at + ANCHOR_MESSAGE.length).replace(/\.$/, '');
   }
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = PROGRAM_LOG.exec(logs[i]);
