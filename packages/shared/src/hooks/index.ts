@@ -69,6 +69,7 @@ export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
 
 export { useExplorerLink } from './useExplorerLink';
 export type {
+  ExplorerLinkRow,
   ExplorerLinkTranslate,
   UseExplorerLinkParams,
   UseExplorerLinkResult,

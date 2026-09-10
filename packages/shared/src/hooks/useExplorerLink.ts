@@ -1,12 +1,13 @@
 /**
- * useExplorerLink — the computed state behind `ExplorerLinkButton`, without
- * the platform-specific "open a URL" call.
+ * useExplorerLink — the whole of `ExplorerLinkButton`'s behavior, without the
+ * platform-specific "open a URL" call.
  *
  * Opening a link is platform territory (`window.open` on the DOM,
- * `Linking.openURL` on native), so this hook does not open anything — it
- * owns the explorer catalogue lookup, which one is selected, whether a
- * picker is warranted, and the menu's own visibility. Each twin calls
- * `getExplorerUrl(explorer)` and opens the result itself.
+ * `Linking.openURL` on native), so the caller passes `openUrl` in and this
+ * hook does the rest: the explorer catalogue lookup, which one is selected,
+ * whether a picker is warranted, the menu's own visibility, the button's
+ * press routing, and the picker's rows — ready to spread onto `<ListRow>`,
+ * with only the platform icon slots (`leading`/`trailing`) left to the twin.
  *
  * @module hooks/useExplorerLink
  */
@@ -34,27 +35,32 @@ export interface UseExplorerLinkParams {
   showMenu?: boolean;
   /** `useTranslation()`'s `t`, for the button's own label. */
   t: ExplorerLinkTranslate;
+  /** Opens a resolved URL — `window.open` on the DOM, `Linking.openURL` on native. */
+  openUrl: (url: string) => void | Promise<void>;
+  /** Reported once a row's URL has actually opened. */
+  onPress?: (url: string, explorerName: string) => void;
+}
+
+/** One row of the picker sheet, ready to spread onto `<ListRow>`. */
+export interface ExplorerLinkRow {
+  key: string;
+  testID: string;
+  title: string;
+  onPress: () => void;
 }
 
 export interface UseExplorerLinkResult {
-  /** Whether the picker sheet is open. */
-  menuVisible: boolean;
-  openMenu: () => void;
-  closeMenu: () => void;
-  availableExplorers: ExplorerWithKey[];
-  selectedExplorer: ExplorerWithKey | undefined;
-  /** True only when there is a real choice to offer. */
-  hasMenu: boolean;
-  /** The transaction's URL on the given explorer, or `null` if none applies. */
-  getExplorerUrl: (explorer: ExplorerWithKey) => string | null;
   /** `null` when there is nothing to show — the caller renders nothing. */
   buttonText: string | null;
-  /**
-   * The button's own press: opens the picker when there is a choice,
-   * otherwise hands the selected explorer to the caller's platform opener
-   * (`window.open` on the DOM, `Linking.openURL` on native).
-   */
-  resolvePress: (openExplorer: (explorer: ExplorerWithKey) => void) => void;
+  /** True only when there is a real choice to offer. */
+  hasMenu: boolean;
+  /** The button's own press: opens the picker, or the selected explorer directly. */
+  onPress: () => void;
+  /** Whether the picker sheet is open. */
+  menuVisible: boolean;
+  closeMenu: () => void;
+  /** The picker's rows, one per available explorer. */
+  rows: ExplorerLinkRow[];
 }
 
 export function useExplorerLink({
@@ -64,8 +70,11 @@ export function useExplorerLink({
   explorerKey,
   showMenu = false,
   t,
+  openUrl,
+  onPress: onExplorerOpened,
 }: UseExplorerLinkParams): UseExplorerLinkResult {
   const [menuVisible, setMenuVisible] = useState(false);
+  const closeMenu = useCallback(() => setMenuVisible(false), []);
 
   const availableExplorers = useMemo(
     () => getAvailableExplorers(blockchain, environment),
@@ -80,37 +89,50 @@ export function useExplorerLink({
 
   const hasMenu = showMenu && availableExplorers.length > 1;
 
-  const getExplorerUrl = useCallback(
-    (explorer: ExplorerWithKey) => getTransactionUrl(blockchain, environment, explorer.key, txHash),
-    [blockchain, environment, txHash]
-  );
-
-  const openMenu = useCallback(() => setMenuVisible(true), []);
-  const closeMenu = useCallback(() => setMenuVisible(false), []);
-
   const buttonText = !selectedExplorer
     ? null
     : hasMenu
       ? t('transactions.detail.viewOnExplorer')
       : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
-  const resolvePress = useCallback(
-    (openExplorer: (explorer: ExplorerWithKey) => void) => {
-      if (hasMenu) openMenu();
-      else if (selectedExplorer) openExplorer(selectedExplorer);
+  const openExplorer = useCallback(
+    async (explorer: ExplorerWithKey) => {
+      const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
+      if (url) {
+        try {
+          await openUrl(url);
+          onExplorerOpened?.(url, explorer.name);
+        } catch (error) {
+          console.warn('Failed to open explorer URL:', error);
+        }
+      }
+      setMenuVisible(false);
     },
-    [hasMenu, selectedExplorer, openMenu]
+    [blockchain, environment, txHash, openUrl, onExplorerOpened]
+  );
+
+  const handlePress = useCallback(() => {
+    if (hasMenu) setMenuVisible(true);
+    else if (selectedExplorer) openExplorer(selectedExplorer);
+  }, [hasMenu, selectedExplorer, openExplorer]);
+
+  const rows = useMemo(
+    () =>
+      availableExplorers.map((explorer) => ({
+        key: explorer.key,
+        testID: `tx-detail-explorer-${explorer.key}`,
+        title: explorer.name,
+        onPress: () => openExplorer(explorer),
+      })),
+    [availableExplorers, openExplorer]
   );
 
   return {
-    menuVisible,
-    openMenu,
-    closeMenu,
-    availableExplorers,
-    selectedExplorer,
-    hasMenu,
-    getExplorerUrl,
     buttonText,
-    resolvePress,
+    hasMenu,
+    onPress: handlePress,
+    menuVisible,
+    closeMenu,
+    rows,
   };
 }
