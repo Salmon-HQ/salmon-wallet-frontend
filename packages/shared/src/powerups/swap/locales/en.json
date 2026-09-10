@@ -31,7 +31,6 @@
     "minimumAmount": "Minimum swap amount is ${{amount}} USD",
     "highPriceImpact": "High price impact! You may receive significantly less than expected.",
     "quoteFailed": "Failed to fetch quote",
-    "pairUnavailable": "Swap is unavailable for this pair right now. Try again later.",
     "unknownToken": "One of these tokens is not supported for swapping.",
     "noAccount": "No account found"
   }

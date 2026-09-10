@@ -12,7 +12,6 @@ export type SwapBuildFailure =
 
 const CODE_TO_KEY: Record<string, string> = {
   no_route: 'transaction.errors.noRoute',
-  fee_account_missing: 'swap.errors.pairUnavailable',
   upstream_rate_limited: 'transaction.errors.networkBusy',
   unknown_mint: 'swap.errors.unknownToken',
   provider_fee_mismatch: 'swap.errors.quoteFailed',

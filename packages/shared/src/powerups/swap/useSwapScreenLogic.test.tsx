@@ -59,7 +59,7 @@ function build(overrides: Partial<SwapBuildResponse> = {}): SwapBuildResponse {
     slippageBps: 50,
     inUsdValue: 150,
     outUsdValue: 149.9,
-    salmonFee: { amount: '1275000', mint: USDC.address, bps: 85, decimals: 6, symbol: 'USDC' },
+    salmonFee: { amount: '1275000', mint: USDC.address, side: 'output', bps: 85, decimals: 6, symbol: 'USDC' },
     routeFee: null,
     ...overrides,
   };

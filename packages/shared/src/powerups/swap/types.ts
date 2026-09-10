@@ -57,6 +57,12 @@ export interface SwapRouteLeg {
 export interface SwapFeeLine {
   amount: string;
   mint: string;
+  /**
+   * `output`: taken from the output token, `output.amount` already net of it.
+   * `input`: deducted from the input token before routing — the user's debit
+   * is `input.amount`, of which `amount` goes to Salmon.
+   */
+  side: 'input' | 'output';
   bps: number;
   decimals: number;
   symbol: string;
@@ -81,7 +87,11 @@ export interface SwapBuildResponse {
   slippageBps: number;
   inUsdValue: number | null;
   outUsdValue: number | null;
-  /** Taken from the OUTPUT token; `output.amount` is already net of it. */
+  /**
+   * Salmon's fee, on the side it says. `null` when Salmon takes none for this
+   * pair (no fee account for either token): the swap goes through fee-less
+   * and the line is omitted.
+   */
   salmonFee: SwapFeeLine | null;
   /** Always `null` on 0x. */
   routeFee: SwapFeeLine | null;
