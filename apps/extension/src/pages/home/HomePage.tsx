@@ -45,6 +45,14 @@ import {
 } from '../../components';
 
 import { SettingsPage } from '../settings';
+import {
+  POWERUPS,
+  POWERUPS_ENABLED,
+  PowerupsPage,
+  SwapPage,
+  isPowerupOnNetwork,
+  type PowerupEntry,
+} from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
 import { PortfolioColumn } from './PortfolioColumn';
@@ -77,7 +85,8 @@ interface HomePageProps {
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const [{ currency }] = useCurrencyContext();
+  const [{ currency }, { formatValue }] = useCurrencyContext();
+  const formatSwapUsd = useCallback((value: number) => `~${formatValue(value)}`, [formatValue]);
   const { ready, activeAccount, activeBlockchainAccount, networkId } = state;
 
   // The two "show me more" flags come from the provider the side panel root
@@ -298,6 +307,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     refresh();
   }, [refresh, settleAfterNftSend]);
 
+
   const handleReceivePress = useCallback(() => {
     setReceiveSheetVisible(true);
   }, []);
@@ -412,6 +422,47 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
   // reads the page swap as a push (depth 1 over Home's 0) or a pop.
+  // Powerups (spec 027): the catalogue rises over Home; a Powerup's screen is
+  // pushed from it. Both come through `@salmon/ui/powerups`, the entry the
+  // build flag aliases, so a build with Powerups off has no `+` at all.
+  const handlePowerupsPress = useCallback(() => {
+    setCurrentPage('powerups');
+  }, []);
+  const handlePowerupsBack = useCallback(() => {
+    setCurrentPage('home');
+  }, []);
+  const handlePowerupOpen = useCallback((entry: PowerupEntry) => {
+    if (entry.route === 'swap') setCurrentPage('swap');
+  }, []);
+  const handleSwapBack = useCallback(() => {
+    setCurrentPage('powerups');
+  }, []);
+  const handleSwapHome = useCallback(() => {
+    setCurrentPage('home');
+    refresh();
+  }, [refresh]);
+  const powerupsOnNetwork = useMemo(
+    () => POWERUPS.filter((entry) => isPowerupOnNetwork(entry, networkId ?? null)),
+    [networkId]
+  );
+  const swapTokens = useMemo(
+    () =>
+      currentChain === 'solana'
+        ? tokens.map((token) => ({
+            address: token.address,
+            symbol: token.symbol,
+            name: token.name,
+            decimals: token.decimals ?? 9,
+            logo: token.logo ?? undefined,
+            balance: typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount,
+            usdPrice: token.price ?? undefined,
+            chain: 'solana' as const,
+            networkId: networkId ?? undefined,
+          }))
+        : [],
+    [currentChain, tokens, networkId]
+  );
+
   const renderPage = (): React.ReactElement => {
     switch (currentPage) {
       case 'tokenDetail':
@@ -513,6 +564,32 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
+      case 'powerups':
+        if (!PowerupsPage) return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleBack} />;
+        return (
+          <PowerupsPage
+            powerups={powerupsOnNetwork}
+            onOpen={handlePowerupOpen}
+            onBack={handlePowerupsBack}
+          />
+        );
+      case 'swap':
+        if (!SwapPage || !activeBlockchainAccount) {
+          return <PlaceholderPage title={t('swap.catalog.name')} onBack={handleSwapBack} />;
+        }
+        return (
+          <SwapPage
+            tokens={swapTokens}
+            publicKey={activeBlockchainAccount.getReceiveAddress()}
+            networkId={networkId ?? null}
+            loading={balanceState === 'loading'}
+            initialInToken={swapTokens[0]}
+            formatUsd={formatSwapUsd}
+            watchOnly={isWatchOnly}
+            onBack={handleSwapBack}
+            onNavigateHome={handleSwapHome}
+          />
+        );
       case 'activity':
         return (
           <TransactionHistoryPage
@@ -561,6 +638,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onCopyAddress={handleCopyAddress}
             onSettingsPress={flowLocked ? undefined : handleSettingsPress}
             onWalletPress={flowLocked ? undefined : handleWalletPress}
+            onPowerupsPress={
+              POWERUPS_ENABLED && !flowLocked && powerupsOnNetwork.length > 0
+                ? handlePowerupsPress
+                : undefined
+            }
             avatarUrl={activeAccount?.avatar}
             accountId={activeAccount?.id}
           />

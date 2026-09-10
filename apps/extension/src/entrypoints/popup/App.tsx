@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  SignatureRequestProvider,
+  isSignableSolanaAccount,
   useAccountsContext,
   useAnalyticsConsent,
   useInactivityTimeout,
@@ -11,7 +13,7 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
+import { ConfirmationHost, LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -606,8 +608,19 @@ function App() {
     );
   }
 
-  // Wallet is unlocked
-  return <HomePage onAddAccount={handleAddAccountFromHome} />;
+  // Wallet is unlocked. Core's signature request sits above Home: a Powerup
+  // proposes from a page, the confirmation covers the panel, and the account
+  // that signs is the active one when it can sign on Solana (spec 027 §2).
+  const signingAccount =
+    activeBlockchainAccount && isSignableSolanaAccount(activeBlockchainAccount)
+      ? activeBlockchainAccount
+      : null;
+  return (
+    <SignatureRequestProvider account={signingAccount}>
+      <HomePage onAddAccount={handleAddAccountFromHome} />
+      <ConfirmationHost />
+    </SignatureRequestProvider>
+  );
 }
 
 export default App;

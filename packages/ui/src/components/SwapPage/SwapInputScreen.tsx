@@ -1,0 +1,119 @@
+/**
+ * SwapInputScreen — the Swap Powerup's form, on the DOM: pair, amounts, the
+ * notice slot and the swap control. The next screen is core's confirmation,
+ * not the Powerup's. The mobile twin is
+ * `apps/mobile/src/components/SwapScreen/SwapInputScreen.tsx`.
+ */
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { PrimaryButton } from '../Button';
+import { SwapAmountInput } from './SwapAmountInput';
+import type { SwapInputScreenProps } from './types';
+
+export function SwapInputScreen({
+  inToken,
+  outToken,
+  inAmount,
+  outAmount,
+  onInAmountChange,
+  onInTokenPress,
+  onOutTokenPress,
+  inUsdValue,
+  isLoadingQuote = false,
+  canSwap,
+  reviewWarning,
+  swapError,
+  attribution,
+  onSwap,
+  style,
+}: SwapInputScreenProps) {
+  const { t } = useTranslation();
+  const semantic = useSemantic();
+
+  const notice = (message: typeof swapError) =>
+    !message ? null : typeof message === 'string' ? t(message) : t(message.key, message.params);
+
+  return (
+    <div
+      data-testid="swap-input-screen"
+      style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, ...style }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
+        <SwapAmountInput
+          testID="swap-from"
+          label={t('swap.you_send', 'You Send')}
+          value={inAmount}
+          onChangeValue={onInAmountChange}
+          token={inToken}
+          onTokenPress={onInTokenPress}
+          usdValue={inUsdValue}
+          availableBalance={inToken?.balance}
+          editable
+          placeholder={t('swap.enter_amount', 'Enter an amount')}
+        />
+
+        {/* The notice slot, reserved: one line of height from the first
+            frame, filled when there is something to say, so the "You
+            Receive" block never travels under the pointer. */}
+        <div
+          data-testid="swap-notice-slot"
+          style={{
+            minHeight: fontSize.sm * lineHeight.normal,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.medium,
+            textAlign: 'center',
+          }}
+        >
+          {swapError ? (
+            <span data-testid="swap-error-text" role="alert" style={{ color: semantic.status.danger }}>
+              {notice(swapError)}
+            </span>
+          ) : reviewWarning ? (
+            <span data-testid="swap-warning-text" style={{ color: semantic.status.warning }}>
+              {notice(reviewWarning)}
+            </span>
+          ) : null}
+        </div>
+
+        <SwapAmountInput
+          testID="swap-to"
+          label={t('swap.you_receive', 'You Receive')}
+          value={outAmount}
+          onChangeValue={() => {}}
+          token={outToken}
+          onTokenPress={onOutTokenPress}
+          editable={false}
+          placeholder="0"
+          isLoading={isLoadingQuote}
+        />
+
+        {/* The fee is a line on the confirmation, never folded into the quote;
+            the provider is named from the quote itself (spec 027 §7). */}
+        <span
+          data-testid="swap-attribution"
+          style={{
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.micro,
+            color: semantic.text.tertiary,
+            textAlign: 'center',
+          }}
+        >
+          {attribution ?? t('swap.fee_disclaimer')}
+        </span>
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      <PrimaryButton testID="swap-submit-button" onPress={onSwap} disabled={!canSwap}>
+        {t('swap.swap_now', 'Swap')}
+      </PrimaryButton>
+    </div>
+  );
+}

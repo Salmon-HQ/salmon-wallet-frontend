@@ -67,6 +67,7 @@ export const MAP = {
   Icon: ['Icon'],
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
+  SwapScreen: ['SwapPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
   SettingsSelectors: [
     'SettingsSelectorList',
@@ -83,9 +84,8 @@ export const MAP = {
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
 export const MOBILE_ONLY = {
   QRScanner: 'camera — the side panel has no scanner; paste is the DOM path',
-  PowerupsFab: 'POWERUPS_SURFACE_ENABLED=false for the submission; spec 027 rebuilds it',
-  PowerupBadge: 'same — powerups surface closed',
-  SwapScreen: 'swap retired until spec 027; deleted from both when it lands',
+  PowerupsFab: 'the `+` floats above the stack on mobile; the side panel has no floating layer, so the DOM puts it in WalletHeader (onPowerupsPress)',
+  PowerupBadge: 'the tier mark of the developer-only mock catalogue; the DOM catalogue draws the real entries only',
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',
@@ -107,6 +107,8 @@ export const DOM_ONLY = {
   WalletsScreen: "mobile's Wallets is the route app/(app)/wallets.tsx; the DOM keeps a component",
   SettingsPanelStack:
     "mobile's Settings root is the route app/(app)/settings/index.tsx; the DOM keeps a component",
+  PowerupsPage:
+    "mobile's catalogue is the route body src/screens/PowerupsRoute.tsx (SCREENS maps (app)/powerups here)",
 };
 
 /**
@@ -128,6 +130,8 @@ export const SCREENS = {
   '(app)/nft/[id]/success': 'packages/ui/src/components/NftDetailPage/NftDetailPage.tsx',
   '(app)/nft/[id]/send': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/token/[id]': 'packages/ui/src/components/TokenDetailPage/TokenDetailPage.tsx',
+  '(app)/powerups': 'packages/ui/src/components/PowerupsPage/PowerupsPage.tsx',
+  '(app)/swap': 'packages/ui/src/components/SwapPage/SwapPage.tsx',
   '(app)/settings/index': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(app)/settings/[panel]': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(auth)/index': 'packages/ui/src/components/AuthFlow/SelectOptionsPage.tsx',
@@ -141,8 +145,6 @@ export const SCREENS = {
 
 /** Mobile-only routes, with the reason. */
 export const MOBILE_ONLY_SCREENS = {
-  '(app)/powerups':
-    'powerups surface closed for the submission; the route redirects Home, spec 027',
   '(auth)/biometric-setup': 'biometrics are native; the extension has none',
   '+html': 'Expo scaffolding',
   '+not-found': 'Expo scaffolding',

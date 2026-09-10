@@ -1,5 +1,5 @@
 import { defineConfig } from 'wxt';
-import { loadEnv } from 'vite';
+import { loadEnv, type Plugin } from 'vite';
 import { version as appVersion } from './package.json';
 import path from 'path';
 import { createRequire } from 'module';
@@ -8,13 +8,44 @@ const require = createRequire(import.meta.url);
 const bufferPath = path.dirname(require.resolve('buffer/package.json'));
 const processPath = path.dirname(require.resolve('process/package.json'));
 
+const sharedSrc = path.resolve(__dirname, '../../packages/shared/src');
+const uiSrc = path.resolve(__dirname, '../../packages/ui/src');
+
+/**
+ * The Powerups build flag (spec 027 §3). Off, every Powerups entry —
+ * `@salmon/shared/powerups`, `@salmon/ui/powerups`, and the same files reached
+ * by a relative import — resolves to its `.off` twin: an empty registry, no
+ * pages, no locales. A bundler alias, not a runtime `if`, so the production
+ * zip carries no swap code or copy.
+ */
+const POWERUPS_ENTRIES: Record<string, string> = {
+  [path.join(sharedSrc, 'powerups/index.ts')]: path.join(sharedSrc, 'powerups/index.off.ts'),
+  [path.join(uiSrc, 'powerups.ts')]: path.join(uiSrc, 'powerups.off.ts'),
+};
+
+function powerupsFlagPlugin(on: boolean): Plugin {
+  return {
+    name: 'salmon-powerups-flag',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      if (on) return null;
+      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+      if (!resolved) return null;
+      const off = POWERUPS_ENTRIES[resolved.id];
+      return off ? { id: off } : null;
+    },
+  };
+}
+
 export default defineConfig({
   srcDir: 'src',
   outDir: 'dist',
 
   vite: (wxtEnv) => {
     const env = loadEnv(wxtEnv.mode, __dirname, 'VITE_');
+    const powerupsOn = (env.VITE_POWERUPS ?? 'on') === 'on';
     return {
+      plugins: [powerupsFlagPlugin(powerupsOn)],
       define: {
         global: 'globalThis',
         __APP_VERSION__: JSON.stringify(appVersion),
@@ -32,13 +63,18 @@ export default defineConfig({
           VITE_API_URL: env.VITE_API_URL ?? '',
           VITE_STATIC_API_URL: env.VITE_STATIC_API_URL ?? '',
           VITE_ANALYTICS_URL: env.VITE_ANALYTICS_URL ?? '',
+          VITE_POWERUPS: powerupsOn ? 'on' : 'off',
           NODE_ENV: process.env.NODE_ENV ?? 'development',
         }),
       },
       resolve: {
         alias: {
-          '@salmon/shared': path.resolve(__dirname, '../../packages/shared/src'),
-          '@salmon/ui': path.resolve(__dirname, '../../packages/ui/src'),
+          // The Powerups entries first: an alias list is matched in order and
+          // the bare package aliases below would otherwise claim these paths.
+          '@salmon/shared/powerups': path.join(sharedSrc, 'powerups/index.ts'),
+          '@salmon/ui/powerups': path.join(uiSrc, 'powerups.ts'),
+          '@salmon/shared': sharedSrc,
+          '@salmon/ui': uiSrc,
           // Mock react-native modules for web extension build
           'react-native-fast-crypto': path.resolve(
             __dirname,

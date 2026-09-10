@@ -90,6 +90,16 @@ vi.mock('../../components', () => ({
 
 vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
 
+// The Powerups entry is a build-time alias; Home only reads the flag and the
+// registry, so the pages behind it are stubbed rather than loaded.
+vi.mock('@salmon/ui/powerups', () => ({
+  POWERUPS_ENABLED: true,
+  POWERUPS: [],
+  isPowerupOnNetwork: () => false,
+  PowerupsPage: () => null,
+  SwapPage: () => null,
+}));
+
 const NETWORKS = [
   { id: 'solana-mainnet', name: 'Solana' },
   { id: 'bitcoin-mainnet', name: 'Bitcoin' },

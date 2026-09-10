@@ -215,6 +215,26 @@ export type {
   TokenSelectListProps,
 } from './SendPage';
 
+// TransactionConfirmation - core's confirmation screen and the cover it opens in
+// (spec 027 §2). The Powerup pages (SwapPage, PowerupsPage) are NOT exported
+// here: the extension imports them through `@salmon/ui/powerups`, the entry
+// the build flag aliases.
+export {
+  ConfirmationButtons,
+  ConfirmationDetailsCard,
+  ConfirmationExchange,
+  ConfirmationHost,
+  TransactionConfirmation,
+} from './TransactionConfirmation';
+export type {
+  ConfirmationButtonsProps,
+  ConfirmationDetailsCardProps,
+  ConfirmationExchangeProps,
+  ConfirmationRow,
+  ProposalDisplay,
+  TransactionConfirmationProps,
+} from './TransactionConfirmation';
+
 // DAppApproval - Shared approval views for web and extension
 export {
   DAppConnectApprovalView,
