@@ -161,6 +161,7 @@ describe('prepared-transactions', () => {
     expect(rpc.sendTransaction).toHaveBeenCalledWith(expect.any(String), {
       encoding: 'base64',
       preflightCommitment: 'confirmed',
+      skipPreflight: false,
     });
 
     const { transaction, message } = decodeSent(rpc.sendTransaction.mock.calls[0][0] as string);

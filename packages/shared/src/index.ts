@@ -4,6 +4,7 @@ export * from './api';
 export * from './blockchain';
 export * from './config';
 export * from './contexts';
+export * from './core';
 export * from './crypto';
 export * from './factories';
 export * from './hooks';

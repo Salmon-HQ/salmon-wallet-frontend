@@ -1,14 +1,7 @@
-import {
-  address,
-  getBase64EncodedWireTransaction,
-  getCompiledTransactionMessageDecoder,
-  getCompiledTransactionMessageEncoder,
-  getTransactionDecoder,
-  partiallySignTransaction,
-} from '@solana/kit';
-import type { Address, Commitment, TransactionMessageBytes } from '@solana/kit';
+import { address } from '@solana/kit';
+import type { Address, Commitment } from '@solana/kit';
 import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
-import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
+import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
 import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
 import type { SolanaRpc } from './networks';
@@ -19,7 +12,6 @@ export interface SignAndSendPreparedSolanaTransactionsOptions {
 
 const LOOKUP_TABLE_POLL_INTERVAL_MS = 400;
 const LOOKUP_TABLE_TIMEOUT_MS = 20_000;
-const SIGNATURE_CONFIRMATION_TIMEOUT_MS = 30_000;
 
 interface LookupTableReadiness {
   ready: boolean;
@@ -142,53 +134,19 @@ export async function signAndSendPreparedSolanaTransactions(
     throw new Error('Transaction flow was not returned by the API');
   }
 
-  const rpc = account.getRpc();
   const commitment = options.commitment ?? 'confirmed';
-  const confirmRecentSignature = createRecentSignatureConfirmationPromiseFactory({
-    rpc,
-    rpcSubscriptions: account.getRpcSubscriptions(),
-  });
   const signatures: string[] = [];
 
   for (const preparedTransaction of preparedTransactions) {
     try {
-      const decoded = getTransactionDecoder().decode(
-        new Uint8Array(Buffer.from(preparedTransaction.transaction, 'base64'))
+      // Blockhash refresh, signing, send and confirmation are core/broadcast's
+      // — the same path the swap Powerup's proposals take.
+      const signature = await signAndSendSolanaTransaction(
+        account,
+        preparedTransaction.transaction,
+        { commitment }
       );
-      const { value } = await rpc.getLatestBlockhash({ commitment }).send();
-
-      // The compiled message is patched and re-encoded rather than decompiled
-      // and rebuilt: decompiling re-derives account ordering and lookup-table
-      // indices, which does not reproduce the input bytes. Swapping the one
-      // field is the only transformation that round-trips exactly.
-      const compiled = getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
-      const messageBytes = getCompiledTransactionMessageEncoder().encode({
-        ...compiled,
-        lifetimeToken: value.blockhash,
-      }) as TransactionMessageBytes;
-
-      // partiallySignTransaction preserves signatures already in the map, so a
-      // co-signer's signature on a prepared transaction survives.
-      const signed = await partiallySignTransaction([account.signer.keyPair], {
-        messageBytes,
-        signatures: decoded.signatures,
-      });
-
-      const signature = await rpc
-        .sendTransaction(getBase64EncodedWireTransaction(signed), {
-          encoding: 'base64',
-          preflightCommitment: commitment,
-        })
-        .send();
       signatures.push(signature);
-
-      // No polling fallback: a broken WebSocket endpoint should fail loudly
-      // rather than degrade into a silent slow path.
-      await confirmRecentSignature({
-        abortSignal: AbortSignal.timeout(SIGNATURE_CONFIRMATION_TIMEOUT_MS),
-        commitment,
-        signature,
-      });
 
       if (
         preparedTransaction.lookupTableAddress &&
