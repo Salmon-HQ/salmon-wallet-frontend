@@ -16,18 +16,11 @@ import {
   lineHeight,
   spacing,
   tabularNums,
-  type Semantic,
+  valueInkFor,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import type { KeyValueRowProps, KeyValueTone } from './types';
-
-const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
-  primary: t.text.primary,
-  success: t.status.success,
-  danger: t.status.danger,
-  secondary: t.text.secondary,
-});
+import type { KeyValueRowProps } from './types';
 
 export function KeyValueRow({
   label,

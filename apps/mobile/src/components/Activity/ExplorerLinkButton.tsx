@@ -108,27 +108,27 @@ export function ExplorerLinkButton({
           the caret says "and you get to pick where" — the picker's own
           affordance, kept from the hand-drawn button this replaced. */}
       <SecondaryButton
-        icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
         testID="tx-detail-explorer-link"
-        trailingIcon={hasMenu && <CaretDownIcon size={iconSize.sm} color={text.primary} />}
         onPress={handlePress}
         style={style}
+        icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
+        trailingIcon={hasMenu && <CaretDownIcon size={iconSize.sm} color={text.primary} />}
       >
         {buttonText}
       </SecondaryButton>
       <BottomSheetContainer
-        testID="tx-detail-explorer-menu"
-        title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
         visible={menuVisible}
         onClose={closeMenu}
+        title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
+        testID="tx-detail-explorer-menu"
       >
         <View style={[styles.content, { paddingBottom: standardContentBottomPadding }]}>
           {rows.map(({ key, ...row }) => (
             <ListRow
-              {...row}
               key={key}
-              trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
+              {...row}
               leading={<IconBubble size={EXPLORER_BUBBLE_SIZE} tone="surface" icon={GlobeIcon} />}
+              trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
             />
           ))}
         </View>

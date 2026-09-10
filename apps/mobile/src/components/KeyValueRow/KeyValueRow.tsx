@@ -17,22 +17,16 @@ import {
   s,
   spacing,
   tabularNums,
+  valueInkFor,
   type Semantic,
 } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-import type { KeyValueRowProps, KeyValueTone } from './types';
+import type { KeyValueRowProps } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one, so the spread is the copy that satisfies it.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
-
-const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
-  primary: t.text.primary,
-  success: t.status.success,
-  danger: t.status.danger,
-  secondary: t.text.secondary,
-});
 
 export function KeyValueRow({
   label,

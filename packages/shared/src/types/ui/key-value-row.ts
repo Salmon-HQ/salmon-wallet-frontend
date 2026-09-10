@@ -1,9 +1,18 @@
 import type { ReactNode } from 'react';
 
+import type { Semantic } from '../../theme/semantic';
 import type { Testable } from './testable';
 
 /** The four inks a value can take. A label is always secondary. */
 export type KeyValueTone = 'primary' | 'success' | 'danger' | 'secondary';
+
+/** The live-mode ink for each tone — one mapping, read by both twins. */
+export const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
+  primary: t.text.primary,
+  success: t.status.success,
+  danger: t.status.danger,
+  secondary: t.text.secondary,
+});
 
 export interface KeyValueRowPropsBase extends Testable {
   label: string;
