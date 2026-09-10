@@ -35,6 +35,7 @@ vi.mock('../../components', () => ({
     <div data-testid="home-sub-tabs">{tabs.map((tab) => tab.key).join('|')}</div>
   ),
   HomeTabOrderSheet: () => null,
+  PowerupsFab: () => null,
   DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
     visible ? (
       <div data-testid={scanning ? 'derived-sheet-scanning' : 'derived-sheet-answer'} />
@@ -90,13 +91,15 @@ vi.mock('../../components', () => ({
 
 vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
 
-// The Powerups entry is a build-time alias; Home only reads the flag and the
-// registry, so the pages behind it are stubbed rather than loaded.
+// The Powerups entry is a build-time alias; Home only reads the flag, the
+// registry and the catalogue, so what is behind it is stubbed rather than
+// loaded. Nothing installed: the Powerup tabs are their own suite.
 vi.mock('@salmon/ui/powerups', () => ({
   POWERUPS_ENABLED: true,
   POWERUPS: [],
   isPowerupOnNetwork: () => false,
-  PowerupsPage: () => null,
+  getPowerupCatalog: () => [],
+  PowerupsCatalog: () => null,
   SwapPage: () => null,
 }));
 
@@ -266,6 +269,12 @@ vi.mock('@salmon/shared', async () => {
     }),
     ...settings,
     useHomeShell: homeShell.useHomeShell,
+    useInstalledPowerups: () => ({
+      installed: [],
+      isInstalled: () => false,
+      install: vi.fn(),
+      uninstall: vi.fn(),
+    }),
     mapBalanceToToken: homeShell.mapBalanceToToken,
     buildBitcoinToken: homeShell.buildBitcoinToken,
   };

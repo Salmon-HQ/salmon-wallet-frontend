@@ -1,33 +1,28 @@
 /**
- * PowerupsCatalog — the catalogue, as a sheet over Home.
+ * PowerupsCatalog — the catalogue, as a sheet over Home, on the DOM.
  *
- * Two sections and nothing else: Core is what Salmon ships, Community is what
+ * The mobile twin is `apps/mobile/src/components/PowerupsCatalog`. Two
+ * sections and nothing else: Core is what Salmon ships, Community is what
  * people may add later. No filters, no search, no "installed" section — an
  * installed Powerup keeps its place in its own tier and says it is installed
  * there. Tapping an entry opens its detail in the same sheet, where one
  * control adds it to Home or takes it away again.
  *
  * The sheet rises only to `maxHeight`, which Home measures from the bottom of
- * its Send / Receive / Activity row: the balance and those buttons stay
- * visible above the catalogue, so it reads as a drawer of Home rather than as
- * a screen that replaced it.
+ * its Send / Receive / Activity row.
  */
-import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  fontFamilyNative,
-  fontScaleCap,
+  fontFamily,
   fontSize,
+  fontWeight,
   lineHeight,
-  s,
   spacing,
-  vs,
   type PowerupsCatalogEntry,
-  type Semantic,
 } from '@salmon/shared';
 
-import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useSemantic } from '../../theme/ThemeProvider';
 import {
   ArrowsLeftRightIcon,
   CaretLeftIcon,
@@ -39,9 +34,8 @@ import {
   StackIcon,
   TrendUpIcon,
 } from '../../icons';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { IconBubble, type IconGlyphProps } from '../IconBubble';
+import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
@@ -58,10 +52,9 @@ const CONTROL_ICON_SIZE = 22;
 
 /**
  * The mark each entry wears here. A Powerup the platform has no icon for —
- * a community one, later — falls back to the catalogue's own lightning
- * rather than to an empty circle.
+ * a community one, later — falls back to the catalogue's own lightning.
  */
-const ICONS: Record<string, React.ComponentType<IconGlyphProps>> = {
+const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
   swap: ArrowsLeftRightIcon,
   'wallet-guard': ShieldCheckIcon,
   staking: StackIcon,
@@ -71,7 +64,7 @@ const ICONS: Record<string, React.ComponentType<IconGlyphProps>> = {
 
 const TIERS = ['core', 'community'] as const;
 
-export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
+export function PowerupsCatalog({
   visible,
   onClose,
   entries,
@@ -80,11 +73,9 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   maxHeight,
   style,
   testID = 'powerups-catalog',
-}) => {
+}: PowerupsCatalogProps) {
   const { t } = useTranslation();
-  const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
-  const { standardContentBottomPadding } = useBottomSheetChrome();
 
   const [detailId, setDetailId] = useState<string | null>(null);
   // A closed sheet is back at its list: reopening onto the detail of whatever
@@ -95,33 +86,32 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 
   const detail = entries.find((entry) => entry.id === detailId) ?? null;
 
-  const handleToggle = useCallback(
-    (entry: PowerupsCatalogEntry) => {
-      if (entry.installed) onUninstall(entry.id);
-      else onInstall(entry.id);
-    },
-    [onInstall, onUninstall]
-  );
+  const handleToggle = (entry: PowerupsCatalogEntry) => {
+    if (entry.installed) onUninstall(entry.id);
+    else onInstall(entry.id);
+  };
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {
     const Icon = ICONS[entry.id] ?? LightningIcon;
     const name = t(entry.nameKey);
     return (
-      <View testID={`powerups-detail-${entry.id}`} style={styles.detail}>
-        <View style={styles.detailTop}>
-          <IconBubble
-            size={DETAIL_BUBBLE_SIZE}
-            shape="rounded"
-            tone="accent"
-            icon={Icon}
-            iconWeight="bold"
-          />
+      <div
+        data-testid={`powerups-detail-${entry.id}`}
+        style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <IconBubble size={DETAIL_BUBBLE_SIZE} shape="rounded" tone="accent" icon={Icon} />
           <IconBubble
             testID={`powerups-toggle-${entry.id}`}
             size={CONTROL_SIZE}
             tone={entry.installed ? 'outline' : 'accent'}
             icon={entry.installed ? MinusIcon : PlusIcon}
-            iconWeight="bold"
             iconSize={CONTROL_ICON_SIZE}
             onPress={() => handleToggle(entry)}
             accessibilityLabel={t(
@@ -129,45 +119,77 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
               { name }
             )}
           />
-        </View>
-        <View style={styles.detailText}>
-          <Text style={styles.detailTitle}>{name}</Text>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: spacing.sm,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.bold,
+              fontSize: fontSize.heading,
+              lineHeight: `${fontSize.heading * lineHeight.snug}px`,
+              color: semantic.text.primary,
+            }}
+          >
+            {name}
+          </span>
           <PowerupBadge tier={entry.tier} />
-          <Text style={styles.description}>{t(entry.descriptionKey)}</Text>
-        </View>
-      </View>
+          <span
+            style={{
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.medium,
+              fontSize: fontSize.body,
+              lineHeight: `${fontSize.body * lineHeight.relaxed}px`,
+              color: semantic.text.secondary,
+            }}
+          >
+            {t(entry.descriptionKey)}
+          </span>
+        </div>
+      </div>
     );
   };
 
   const renderList = () => (
-    <View style={styles.sections}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
       {TIERS.map((tier) => {
         const rows = entries.filter((entry) => entry.tier === tier);
         return (
-          <View key={tier} style={styles.section}>
+          <div key={tier} style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
             <SectionLabel variant="caps">{t(`powerups.sections.${tier}`)}</SectionLabel>
             {rows.length > 0 ? (
               rows.map((entry) => (
                 <ListRow
                   key={entry.id}
                   testID={`powerups-row-${entry.id}`}
-                  padding="lg"
                   leading={
                     <IconBubble
                       size={ROW_BUBBLE_SIZE}
                       shape="rounded"
                       tone="accent-tint"
                       icon={ICONS[entry.id] ?? LightningIcon}
-                      iconWeight="bold"
                     />
                   }
                   title={t(entry.nameKey)}
                   subtitle={t(entry.descriptionKey)}
                   trailing={
                     entry.installed ? (
-                      <Text style={styles.installed} maxFontSizeMultiplier={fontScaleCap.chrome}>
+                      <span
+                        style={{
+                          fontFamily: fontFamily.sans,
+                          fontWeight: fontWeight.medium,
+                          fontSize: fontSize.caption,
+                          color: semantic.text.tertiary,
+                        }}
+                      >
                         {t('powerups.installed')}
-                      </Text>
+                      </span>
                     ) : undefined
                   }
                   onPress={() => setDetailId(entry.id)}
@@ -180,10 +202,10 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                 title={t('powerups.empty_section')}
               />
             )}
-          </View>
+          </div>
         );
       })}
-    </View>
+    </div>
   );
 
   return (
@@ -194,7 +216,15 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
       testID={testID}
       style={style}
       headerContent={
-        <View style={styles.header}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: spacing.sm,
+            padding: `0 ${spacing.screenGutter}px`,
+          }}
+        >
           {detail ? (
             <IconBubble
               testID="powerups-detail-back"
@@ -206,78 +236,24 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
               accessibilityLabel={t('accessibility.go_back', 'Go back')}
             />
           ) : (
-            <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
+            <LightningIcon size={CONTROL_ICON_SIZE} color={semantic.accent.ink} />
           )}
           <SheetTitle>{detail ? t(detail.nameKey) : t('powerups.browse_title')}</SheetTitle>
-        </View>
+        </div>
       }
     >
-      <ScrollView
-        testID="powerups-catalog-scroll"
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: standardContentBottomPadding },
-        ]}
-        showsVerticalScrollIndicator={false}
+      <div
+        data-testid="powerups-catalog-scroll"
+        style={{
+          overflowY: 'auto',
+          paddingTop: spacing.md,
+          paddingBottom: spacing['2xl'],
+        }}
       >
         {detail ? renderDetail(detail) : renderList()}
-      </ScrollView>
+      </div>
     </BottomSheetContainer>
   );
-};
-
-const stylesFor = (t: Semantic) =>
-  StyleSheet.create({
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: s(spacing.sm),
-      paddingHorizontal: s(spacing.screenGutter),
-    },
-    scroll: {
-      flexGrow: 0,
-    },
-    scrollContent: {
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.md),
-    },
-    sections: {
-      gap: vs(spacing.xl),
-    },
-    section: {
-      gap: vs(spacing.xl),
-    },
-    detail: {
-      gap: vs(spacing.xl),
-    },
-    detailTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    detailText: {
-      gap: vs(spacing.sm),
-      alignItems: 'flex-start',
-    },
-    detailTitle: {
-      fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.heading),
-      lineHeight: s(fontSize.heading) * lineHeight.snug,
-      color: t.text.primary,
-    },
-    description: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.relaxed,
-      color: t.text.secondary,
-    },
-    installed: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.caption),
-      color: t.text.tertiary,
-    },
-  });
+}
 
 export default PowerupsCatalog;

@@ -431,10 +431,7 @@ export default function HomeScreen() {
   const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
   // Only a real Powerup can be installed: the mocks advertise nothing the
   // wallet can open, so the catalogue refuses to give them a tab.
-  const isRealPowerup = useCallback(
-    (id: string) => POWERUPS.some((entry) => entry.id === id),
-    []
-  );
+  const isRealPowerup = useCallback((id: string) => POWERUPS.some((entry) => entry.id === id), []);
   const handleInstall = useCallback(
     (id: string) => {
       if (isRealPowerup(id)) install(id);

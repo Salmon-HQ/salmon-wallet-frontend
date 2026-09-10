@@ -176,17 +176,14 @@ describe('the developer flag across the (app) stack', () => {
     storedConfig.showUnverifiedTokens = true;
   });
 
-  it.each(['activity', 'send', 'nft/[id]'])(
-    'hands the stored flag to the %s screen',
-    (route) => {
-      probes[route] = probeFor('probe');
+  it.each(['activity', 'send', 'nft/[id]'])('hands the stored flag to the %s screen', (route) => {
+    probes[route] = probeFor('probe');
 
-      render(<AppLayout />);
+    render(<AppLayout />);
 
-      expect(screen.getByTestId('probe-developer').props.children).toBe('true');
-      expect(screen.getByTestId('probe-unverified').props.children).toBe('true');
-    }
-  );
+    expect(screen.getByTestId('probe-developer').props.children).toBe('true');
+    expect(screen.getByTestId('probe-unverified').props.children).toBe('true');
+  });
 
   it('hands the same instance to every pushed screen at once', () => {
     probes.activity = probeFor('activity');

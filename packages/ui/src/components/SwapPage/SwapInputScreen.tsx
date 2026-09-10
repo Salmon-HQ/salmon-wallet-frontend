@@ -41,7 +41,20 @@ export function SwapInputScreen({
       data-testid="swap-input-screen"
       style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, ...style }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing['2xl'] }}>
+      {/* The form lives in Home's content region now, under the balance block
+          and the sub-tab row (spec 027): in a short panel the two amount
+          fields and the attribution no longer fit it. They scroll; the CTA
+          stays pinned to the bottom of the region. */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing['2xl'],
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+        }}
+      >
         <SwapAmountInput
           testID="swap-from"
           label={t('swap.you_send', 'You Send')}
@@ -113,7 +126,9 @@ export function SwapInputScreen({
         </span>
       </div>
 
-      <div style={{ flex: 1 }} />
+      {/* The scroller above takes the slack; this is the seam before the CTA,
+          which sits on the bottom edge of Home's content region. */}
+      <div style={{ paddingTop: spacing.lg }} />
 
       <PrimaryButton testID="swap-submit-button" onPress={onSwap} disabled={!canSwap}>
         {t('swap.swap_now', 'Swap')}

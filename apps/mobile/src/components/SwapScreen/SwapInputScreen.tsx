@@ -1,5 +1,5 @@
 import React from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -51,12 +51,17 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
   return (
-    <Pressable
-      style={[styles.container, { paddingBottom: stickyCtaScrollPadding }, style]}
-      onPress={Keyboard.dismiss}
-      accessible={false}
-    >
-      <View style={styles.inputsContainer}>
+    <Pressable style={[styles.container, style]} onPress={Keyboard.dismiss} accessible={false}>
+      {/* The form lives in Home's content region now, under the balance block
+          and the sub-tab row (spec 027): on a short screen, or at a large font
+          scale, the two amount fields and the attribution no longer fit it.
+          They scroll; the CTA stays pinned to the bottom of the region. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.inputsContainer, { paddingBottom: stickyCtaScrollPadding }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* You Send */}
         <SwapAmountInput
           testID="swap-from"
@@ -111,7 +116,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
         {/* The fee is a line on the confirmation, never folded into the quote;
             the provider is named from the quote itself (spec 027 §7). */}
         <Text style={styles.disclaimerText}>{attribution ?? t('swap.fee_disclaimer')}</Text>
-      </View>
+      </ScrollView>
 
       <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>
         <PrimaryButton
@@ -130,10 +135,13 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: s(spacing.headerPadding),
-    paddingTop: vs(spacing['2xl']),
+  },
+  scroll: {
+    flex: 1,
   },
   inputsContainer: {
+    paddingHorizontal: s(spacing.headerPadding),
+    paddingTop: vs(spacing['2xl']),
     gap: vs(spacing['2xl']),
   },
   buttonContainer: {

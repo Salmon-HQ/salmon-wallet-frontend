@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAccountsContext,
@@ -8,7 +8,9 @@ import {
   useTransactions,
   useDerivedAccountsScan,
   useHomeShell,
+  useInstalledPowerups,
   mapBalanceToToken,
+  type HomePowerupTab,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
@@ -42,16 +44,16 @@ import {
   DepthBackground,
   ScalesBackground,
   SendPage,
+  PowerupsFab,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
 import {
   POWERUPS,
   POWERUPS_ENABLED,
-  PowerupsPage,
+  PowerupsCatalog,
   SwapPage,
-  isPowerupOnNetwork,
-  type PowerupEntry,
+  getPowerupCatalog,
 } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
@@ -144,6 +146,18 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Sheet visibility state
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
+
+  // The Powerups catalogue, and the ceiling it rises to: the bottom of the
+  // Send / Receive / Activity row, so the balance and those buttons stay
+  // visible above the sheet.
+  const [catalogVisible, setCatalogVisible] = useState(false);
+  const [catalogMaxHeight, setCatalogMaxHeight] = useState<number | undefined>(undefined);
+  const balanceBlockRef = useRef<HTMLDivElement>(null);
+
+  // What this device has installed. Nothing is installed out of the box, so
+  // Home starts with Portfolio and NFTs and gains a tab only when the user
+  // adds one from the catalogue.
+  const { installed, install, uninstall } = useInstalledPowerups();
 
   // Which panels Settings opens onto (Wallets opens it already deep), and the
   // screen leaving Settings returns to — the page that pushed it.
@@ -354,6 +368,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     }
   }, []);
 
+  // The installed Powerups, as Home surfaces. The registry and the copy come
+  // through `@salmon/ui/powerups`, the entry the build flag aliases, so a
+  // build with Powerups off passes an empty list.
+  const powerupTabs = useMemo<HomePowerupTab[]>(
+    () =>
+      POWERUPS.filter((entry) => installed.includes(entry.id)).map((entry) => ({
+        key: entry.id as HomeSubTabKey,
+        label: t(entry.nameKey),
+        networks: entry.networks,
+      })),
+    [installed, t]
+  );
+
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
   // in shared; this page renders it (`useHomeShell`).
@@ -379,6 +406,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     isTaskEngaged,
     surfaceKey,
     changeNetwork: actions.changeNetwork,
+    powerupTabs,
   });
 
   // A page change on the balance block. The incoming chain's list starts at
@@ -420,30 +448,51 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
-  // reads the page swap as a push (depth 1 over Home's 0) or a pop.
-  // Powerups (spec 027): the catalogue rises over Home; a Powerup's screen is
-  // pushed from it. Both come through `@salmon/ui/powerups`, the entry the
-  // build flag aliases, so a build with Powerups off has no `+` at all.
-  const handlePowerupsPress = useCallback(() => {
-    setCurrentPage('powerups');
-  }, []);
-  const handlePowerupsBack = useCallback(() => {
-    setCurrentPage('home');
-  }, []);
-  const handlePowerupOpen = useCallback((entry: PowerupEntry) => {
-    if (entry.route === 'swap') setCurrentPage('swap');
-  }, []);
-  const handleSwapBack = useCallback(() => {
-    setCurrentPage('powerups');
-  }, []);
-  const handleSwapHome = useCallback(() => {
-    setCurrentPage('home');
-    refresh();
-  }, [refresh]);
-  const powerupsOnNetwork = useMemo(
-    () => POWERUPS.filter((entry) => isPowerupOnNetwork(entry, networkId ?? null)),
-    [networkId]
+  // reads the page swap as a push (depth 1 over Home's 0) or a pop. A Powerup
+  // is not one of them: the catalogue is a sheet over Home and an installed
+  // Powerup is a sub-tab of it (spec 027).
+  const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
+  const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
+  const catalogEntries = useMemo(
+    () =>
+      getPowerupCatalog({
+        includeMocks: developerNetworks,
+        networkId: currentNetworkId,
+        installedIds: installed,
+      }),
+    [developerNetworks, currentNetworkId, installed]
   );
+  // Only a real Powerup can be installed: the mocks advertise nothing the
+  // wallet can open, so the catalogue refuses to give them a tab.
+  const handleInstall = useCallback((id: string) => {
+    if (POWERUPS.some((entry) => entry.id === id)) install(id);
+    // `install` is stable; the registry is a module constant.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Removing a tab in the arrangement sheet is the same act as uninstalling.
+  const removableTabKeys = useMemo(
+    () => powerupTabs.map((tab) => tab.key as string),
+    [powerupTabs]
+  );
+
+  // The catalogue's ceiling, measured off the live layout: the side panel can
+  // be resized, and the balance block's height changes with the figures in it.
+  useLayoutEffect(() => {
+    const node = balanceBlockRef.current;
+    if (!node) return undefined;
+    const measure = () =>
+      setCatalogMaxHeight(
+        Math.max(window.innerHeight - node.getBoundingClientRect().bottom - spacing.md, 0)
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [currentPage]);
   const swapTokens = useMemo(
     () =>
       currentChain === 'solana'
@@ -564,33 +613,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
-      case 'powerups':
-        if (!PowerupsPage)
-          return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleBack} />;
-        return (
-          <PowerupsPage
-            powerups={powerupsOnNetwork}
-            onOpen={handlePowerupOpen}
-            onBack={handlePowerupsBack}
-          />
-        );
-      case 'swap':
-        if (!SwapPage || !activeBlockchainAccount) {
-          return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleSwapBack} />;
-        }
-        return (
-          <SwapPage
-            tokens={swapTokens}
-            publicKey={activeBlockchainAccount.getReceiveAddress()}
-            networkId={networkId ?? null}
-            loading={balanceState === 'loading'}
-            initialInToken={swapTokens[0]}
-            formatUsd={formatSwapUsd}
-            watchOnly={isWatchOnly}
-            onBack={handleSwapBack}
-            onNavigateHome={handleSwapHome}
-          />
-        );
       case 'activity':
         return (
           <TransactionHistoryPage
@@ -639,11 +661,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onCopyAddress={handleCopyAddress}
             onSettingsPress={flowLocked ? undefined : handleSettingsPress}
             onWalletPress={flowLocked ? undefined : handleWalletPress}
-            onPowerupsPress={
-              POWERUPS_ENABLED && !flowLocked && powerupsOnNetwork.length > 0
-                ? handlePowerupsPress
-                : undefined
-            }
             avatarUrl={activeAccount?.avatar}
             accountId={activeAccount?.id}
           />
@@ -665,18 +682,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
             <div style={pinnedHeaderStyle}>
-              <BalanceHeader
-                testID="balance-header"
-                blockchains={blockchainBalances}
-                hiddenBalance={hiddenBalance}
-                onToggleVisibility={toggleHidden}
-                onBlockchainChange={handleBlockchainChange}
-                activeIndex={activeBlockchainIndex}
-                onSendPress={handleSendPress}
-                onReceivePress={handleReceivePress}
-                onActivityPress={handleActivityPress}
-                sendDisabled={isWatchOnly}
-              />
+              <div ref={balanceBlockRef}>
+                <BalanceHeader
+                  testID="balance-header"
+                  blockchains={blockchainBalances}
+                  hiddenBalance={hiddenBalance}
+                  onToggleVisibility={toggleHidden}
+                  onBlockchainChange={handleBlockchainChange}
+                  activeIndex={activeBlockchainIndex}
+                  onSendPress={handleSendPress}
+                  onReceivePress={handleReceivePress}
+                  onActivityPress={handleActivityPress}
+                  sendDisabled={isWatchOnly}
+                />
+              </div>
               <div style={pinnedSubTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
@@ -729,7 +748,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       onScroll={handleContentScroll}
                     />
                   </SinkFloat>
-                ) : (
+                ) : effectiveSubTab === 'nfts' ? (
                   // NFTs: the grid owns the only scroller in the content
                   // region, and everything above it is the same fixed block
                   // Portfolio shows.
@@ -743,7 +762,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       paddingBottom: spacing['2xl'],
                     }}
                   />
-                )}
+                ) : SwapPage && effectiveSubTab === 'swap' && activeBlockchainAccount ? (
+                  // The Swap Powerup's own surface. The confirmation is core's
+                  // and covers the whole panel when the user signs (§2).
+                  <SwapPage
+                    tokens={swapTokens}
+                    publicKey={activeBlockchainAccount.getReceiveAddress()}
+                    networkId={networkId ?? null}
+                    loading={balanceState === 'loading'}
+                    initialInToken={swapTokens[0]}
+                    formatUsd={formatSwapUsd}
+                    watchOnly={isWatchOnly}
+                  />
+                ) : null}
               </SinkFloat>
 
               {/* The seam between the fixed row above and whatever scrolls
@@ -752,15 +783,39 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             </div>
           </SinkFloat>
         )}
+
+        {/* The `+`. It floats over the content and opens the catalogue; while
+            the catalogue is up the plus turns into the close mark. It leaves
+            with the content when a task takes the screen. */}
+        {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && (
+          <PowerupsFab open={catalogVisible} onPress={handleCatalogToggle} />
+        )}
       </div>
 
+      {/* The catalogue: a drawer of Home, stopping just below the Send /
+          Receive / Activity row so the balance stays in view above it. */}
+      {PowerupsCatalog && (
+        <PowerupsCatalog
+          visible={catalogVisible}
+          onClose={handleCatalogClose}
+          entries={catalogEntries}
+          onInstall={handleInstall}
+          onUninstall={uninstall}
+          maxHeight={catalogMaxHeight}
+        />
+      )}
+
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
-          rows are dropped, and there is nothing to save. */}
+          rows are dropped, and there is nothing to save. Portfolio and NFTs
+          are the wallet itself; a Powerup's tab carries a `−` that uninstalls
+          it. */}
       <HomeTabOrderSheet
         visible={orderSheetVisible}
         onClose={handleOrderSheetClose}
         tabs={subTabs}
         onOrderChange={setSubTabOrder}
+        removableKeys={removableTabKeys}
+        onRemove={uninstall}
       />
 
       {/* The question the automatic derived-account scan raises: the scan

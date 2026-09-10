@@ -1,8 +1,10 @@
 /**
- * SwapPage — the Swap Powerup on the DOM: the form and the receipt.
+ * SwapPage — the Swap Powerup's surface on Home, on the DOM: the form and the
+ * receipt. It is a sub-tab of Home, not a screen, so it draws no header and no
+ * ground of its own — Home's are already behind it.
  *
- * The mobile twin is `apps/mobile/src/screens/SwapRoute.tsx` +
- * `src/components/SwapScreen`. Review and signing are not here: "Swap" hands
+ * The mobile twin is `apps/mobile/src/components/SwapScreen` (wired by
+ * `src/screens/SwapTab.tsx`). Review and signing are not here: "Swap" hands
  * core a proposal through the shared `useSwapScreenLogic`, core covers the
  * page with its confirmation (`ConfirmationHost`), signs and broadcasts, and
  * the receipt renders once the signature is back (spec 027 §2).
@@ -21,11 +23,7 @@ import {
 } from '@salmon/shared';
 import { useSwapScreenLogic } from '@salmon/shared/powerups';
 
-import { useSemantic } from '../../theme/ThemeProvider';
-import { DepthBackground } from '../DepthBackground';
 import { ReceiptScreen } from '../ReceiptScreen';
-import { ScalesBackground } from '../ScalesBackground';
-import { ScreenHeader } from '../ScreenHeader';
 import { StateBlock } from '../StateBlock';
 import { TokenPickerSheet } from '../SendPage/TokenPickerSheet';
 import { WarningNotice } from '../WarningNotice';
@@ -45,9 +43,8 @@ function toPickerToken(token: SwapToken & { mint: string; uiAmount: number }): S
   };
 }
 
-export function SwapPage({ onBack, watchOnly = false, style, ...logicParams }: SwapPageProps) {
+export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageProps) {
   const { t } = useTranslation();
-  const semantic = useSemantic();
   const logic = useSwapScreenLogic(logicParams);
 
   const summary = logic.successSummary;
@@ -164,36 +161,20 @@ export function SwapPage({ onBack, watchOnly = false, style, ...logicParams }: S
         flexDirection: 'column',
         flex: 1,
         minHeight: 0,
-        overflow: 'hidden',
-        backgroundColor: semantic.water.gradient[1],
         ...style,
       }}
     >
-      <DepthBackground style={{ zIndex: 0 }} />
-      <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
       <div
         style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
           flex: 1,
           minHeight: 0,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: `0 ${spacing.screenGutter}px ${spacing.screenGutter}px`,
         }}
       >
-        <ScreenHeader testID="swap-header" title={t('swap.catalog.name')} onBack={onBack} />
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: `0 ${spacing.screenGutter}px ${spacing.screenGutter}px`,
-          }}
-        >
-          {body}
-        </div>
+        {body}
       </div>
 
       <TokenPickerSheet

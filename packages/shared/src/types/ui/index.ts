@@ -170,6 +170,7 @@ export type {
 export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';
 export type { PowerupsCatalogEntry, PowerupsCatalogPropsBase } from './powerups-catalog';
 export type { PowerupsFabPropsBase } from './powerups-fab';
+export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 
 // ---------------------------------------------------------------------------
 // The kit — the contracts mobile and the DOM both implement (spec 028, lot 2)

@@ -857,10 +857,6 @@
       "core": "CORE",
       "community": "COMUNIDAD"
     },
-    "detail": {
-      "install": "Agregar a Inicio",
-      "uninstall": "Quitar de Inicio"
-    },
     "catalog": {
       "wallet_guard": {
         "name": "Wallet Guard",

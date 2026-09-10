@@ -76,6 +76,7 @@ export function BottomSheetContainer({
   background,
   dismissible = true,
   contentGutter = true,
+  maxHeight,
   style,
   className,
   testID,
@@ -205,7 +206,10 @@ export function BottomSheetContainer({
     borderTopWidth: borderWidth.sheet,
     borderTopStyle: 'solid',
     borderTopColor: t.border.default,
-    maxHeight: '92%',
+    // A ceiling in pixels, when the caller measured one: Home's catalogue
+    // stops just below the Send / Receive / Activity row instead of covering
+    // it.
+    maxHeight: maxHeight != null ? maxHeight : '92%',
     boxShadow: shadowsCSS.lg,
     overflow: 'hidden',
     transform: isOpen ? 'translateY(0)' : 'translateY(100%)',

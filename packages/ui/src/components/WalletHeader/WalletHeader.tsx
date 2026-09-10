@@ -46,7 +46,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { ArrowsClockwiseIcon, CheckIcon, CopyIcon, GearIcon, PlusIcon } from '../../icons';
+import { ArrowsClockwiseIcon, CheckIcon, CopyIcon, GearIcon } from '../../icons';
 import { BrandMark } from '../BrandMark';
 import { Chip } from '../Chip';
 import { CopyTick } from '../CopyTick';
@@ -76,7 +76,6 @@ export function WalletHeader({
   networkId,
   onCopyAddress,
   onSettingsPress,
-  onPowerupsPress,
   onWalletPress,
   onRefreshPress,
   refreshing = false,
@@ -291,17 +290,6 @@ export function WalletHeader({
             onPress={onRefreshPress}
             disabled={refreshing}
             accessibilityLabel={t('accessibility.refresh_balance', 'Refresh balance')}
-          />
-        )}
-        {onPowerupsPress && (
-          <IconBubble
-            testID="wallet-header-powerups-button"
-            size={SETTINGS_BUTTON_SIZE}
-            tone="ink"
-            icon={PlusIcon}
-            iconSize={GLYPH_SIZE}
-            onPress={onPowerupsPress}
-            accessibilityLabel={t('accessibility.open_powerups')}
           />
         )}
         {/* The gear reads as what it does; the avatar it replaced read as an

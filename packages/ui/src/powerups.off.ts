@@ -3,16 +3,17 @@
  * resolves `@salmon/ui/powerups` here when `VITE_POWERUPS` is not 'on'.
  */
 import type { ComponentType } from 'react';
-import type { PowerupEntry } from '@salmon/shared/powerups';
+import type { PowerupsCatalogProps } from './components/PowerupsCatalog';
 import type { SwapPageProps } from './components/SwapPage';
-import type { PowerupsPageProps } from './components/PowerupsPage';
 
-export const POWERUPS_ENABLED = false;
-export const POWERUPS: readonly PowerupEntry[] = [];
-export function isPowerupOnNetwork(_entry: PowerupEntry, _networkId: string | null): boolean {
-  return false;
-}
-export type { PowerupEntry, PowerupsPageProps, SwapPageProps };
+export {
+  POWERUPS_ENABLED,
+  POWERUPS,
+  getPowerupCatalog,
+  isPowerupOnNetwork,
+} from '@salmon/shared/powerups';
+export type { PowerupEntry } from '@salmon/shared/powerups';
+export type { PowerupsCatalogProps, SwapPageProps };
 
+export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = null;
 export const SwapPage: ComponentType<SwapPageProps> | null = null;
-export const PowerupsPage: ComponentType<PowerupsPageProps> | null = null;

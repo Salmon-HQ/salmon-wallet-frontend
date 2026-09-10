@@ -97,6 +97,7 @@ export { GraduationCapIcon } from '@phosphor-icons/react/dist/csr/GraduationCap'
 export { HandPalmIcon } from '@phosphor-icons/react/dist/csr/HandPalm';
 export { HeartIcon } from '@phosphor-icons/react/dist/csr/Heart';
 export { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
+export { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
 export { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
 export { KeyIcon } from '@phosphor-icons/react/dist/csr/Key';
 export { LinkIcon } from '@phosphor-icons/react/dist/csr/Link';

@@ -442,6 +442,14 @@ export type { BalanceHeaderProps } from './BalanceHeader';
 export { HomeTabOrderSheet } from './HomeTabOrderSheet';
 export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
 
+// PowerupsFab - the `+` that opens the Powerups catalogue over Home. The
+// catalogue itself is NOT here: it reaches the app through `@salmon/ui/powerups`,
+// the entry the build flag aliases.
+export { PowerupsFab } from './PowerupsFab';
+export type { PowerupsFabProps } from './PowerupsFab';
+export { PowerupBadge } from './PowerupBadge';
+export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
+
 // DerivedAccountsSheet - which of a seed's funded paths become wallets
 export { DerivedAccountsSheet } from './DerivedAccountsSheet';
 export type { DerivedAccountsSheetProps } from './DerivedAccountsSheet';
