@@ -21,6 +21,7 @@ export default defineConfig({
     // CI runners; the default 5s timeout flakes there while meaning nothing
     // locally.
     testTimeout: 20000,
+    setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
