@@ -105,10 +105,6 @@ export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './use
 export { useImportWatchOnly } from './useImportWatchOnly';
 export type { UseImportWatchOnlyParams, UseImportWatchOnlyResult } from './useImportWatchOnly';
 
-// Swap hook
-export { useSwap } from './useSwap';
-export type { UseSwapParams, UseSwapResult } from './useSwap';
-
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
 
@@ -161,10 +157,6 @@ export type {
 
 export { useNftBurn } from './useNftBurn';
 export type { UseNftBurnParams, UseNftBurnResult, NftBurnStatus } from './useNftBurn';
-
-// SwapScreen logic hook (shared between mobile & extension)
-export { useSwapScreenLogic } from './useSwapScreenLogic';
-export type { UseSwapScreenLogicParams, UseSwapScreenLogicResult } from './useSwapScreenLogic';
 
 // Send contacts hook (address book + own wallets for send flow)
 export { useSendContacts } from './useSendContacts';

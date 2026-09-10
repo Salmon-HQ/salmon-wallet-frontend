@@ -69,19 +69,6 @@ export {
   getPublicKeyFromDomain,
 } from './domains';
 
-// Swap functions
-export {
-  getSwapQuote,
-  executeSwap,
-  swap,
-  getExpectedOutput,
-  getMinimumOutput,
-  getPriceImpact,
-  parseQuoteInfo,
-} from './swap';
-// Swap types are defined in types/swap.ts — import from there directly
-// DI function types (GetSwapOrderFn, ExecuteSwapApiFn, GetTokenListFn) remain in ./swap
-
 // Transaction history functions
 export {
   getPreparedSolanaTransactions,

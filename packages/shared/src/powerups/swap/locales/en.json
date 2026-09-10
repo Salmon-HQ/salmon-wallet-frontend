@@ -1,0 +1,39 @@
+{
+  "catalog": {
+    "name": "Swap",
+    "description": "Swap tokens on Solana"
+  },
+  "you_send": "You Send",
+  "enter_amount": "Enter an amount",
+  "you_receive": "You Receive",
+  "slippage_tolerance": "Slippage Tolerance",
+  "minimum_received": "Minimum Received",
+  "fee_disclaimer": "Salmon's fee is shown as its own line before you confirm.",
+  "swap_now": "Swap",
+  "review": {
+    "title": "Swap Review",
+    "salmonFee": "Salmon fee",
+    "routeFee": "Route fee",
+    "provider": "Provider",
+    "route": "Route",
+    "totalPriceImpact": "Total Price Impact",
+    "pleaseNote": "Please Note",
+    "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed."
+  },
+  "available_balance": "Available: {{balance}} {{symbol}}",
+  "unavailable": {
+    "network": "Swap is available on Solana mainnet only.",
+    "region": "Swap is not available in your region.",
+    "wallet": "Swap is not available for this wallet."
+  },
+  "errors": {
+    "insufficientBalance": "Insufficient balance",
+    "minimumAmount": "Minimum swap amount is ${{amount}} USD",
+    "highPriceImpact": "High price impact! You may receive significantly less than expected.",
+    "quoteFailed": "Failed to fetch quote",
+    "pairUnavailable": "Swap is unavailable for this pair right now. Try again later.",
+    "unknownToken": "One of these tokens is not supported for swapping.",
+    "noActiveAccount": "No active account",
+    "noAccount": "No account found"
+  }
+}

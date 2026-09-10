@@ -1,0 +1,39 @@
+{
+  "catalog": {
+    "name": "Swap",
+    "description": "Intercambiá tokens en Solana"
+  },
+  "you_send": "Enviás",
+  "enter_amount": "Ingresá un monto",
+  "you_receive": "Recibís",
+  "slippage_tolerance": "Tolerancia de Deslizamiento",
+  "minimum_received": "Mínimo a Recibir",
+  "fee_disclaimer": "La comisión de Salmon se muestra en su propia línea antes de confirmar.",
+  "swap_now": "Intercambiar",
+  "review": {
+    "title": "Revisión de Swap",
+    "salmonFee": "Comisión Salmon",
+    "routeFee": "Comisión de ruta",
+    "provider": "Proveedor",
+    "route": "Ruta",
+    "totalPriceImpact": "Impacto Total en el Precio",
+    "pleaseNote": "Nota Importante",
+    "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas."
+  },
+  "available_balance": "Disponible: {{balance}} {{symbol}}",
+  "unavailable": {
+    "network": "Swap solo está disponible en Solana mainnet.",
+    "region": "Swap no está disponible en tu región.",
+    "wallet": "Swap no está disponible para esta billetera."
+  },
+  "errors": {
+    "insufficientBalance": "Saldo insuficiente",
+    "minimumAmount": "El monto mínimo para swap es ${{amount}} USD",
+    "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
+    "quoteFailed": "No se pudo obtener la cotización",
+    "pairUnavailable": "Swap no está disponible para este par por ahora. Probá más tarde.",
+    "unknownToken": "Uno de estos tokens no se puede intercambiar.",
+    "noActiveAccount": "No hay una cuenta activa",
+    "noAccount": "No se encontró una cuenta"
+  }
+}

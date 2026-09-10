@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SolanaBalanceItem } from '../../types/transfer';
 import type { SolanaTransaction } from '../../types/transaction';
-import type { ApiSwapExecuteResponse, SwapOrderResponse } from '../../types/swap';
 
 vi.mock('../client', async () => {
   const actual = await vi.importActual<typeof import('../client')>('../client');
@@ -24,15 +23,12 @@ import { ApiError, apiClient, get } from '../client';
 import { getReachableBackendBaseUrl } from '../test-backend';
 import { getSolanaNfts } from './solana-nft';
 import {
-  executeSwapApi,
   fetchSolanaAccountBalance,
   getSolanaTransactions,
-  getSwapOrder,
   solanaApiFunctions,
 } from './solana';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
-const mockApiClientPost = vi.mocked(apiClient.post);
 const mockGet = vi.mocked(get);
 const mockGetSolanaNfts = vi.mocked(getSolanaNfts);
 const backendBaseUrl = await getReachableBackendBaseUrl();
@@ -46,45 +42,6 @@ const MOCK_SOLANA_TRANSACTION = {
   inputs: [],
   outputs: [],
 } as SolanaTransaction;
-
-const MOCK_SWAP_ORDER: SwapOrderResponse = {
-  routeNames: ['Raydium'],
-  routeSymbols: ['SOL', 'USDC'],
-  fee: {
-    amount: 5000,
-    decimals: 9,
-    symbol: 'SOL',
-    percent: 0.5,
-  },
-  input: {
-    amount: '1000000',
-    decimals: 9,
-    symbol: 'SOL',
-  },
-  output: {
-    amount: '85539',
-    decimals: 6,
-    symbol: 'USDC',
-  },
-  custom: {
-    transaction: 'base64-transaction',
-    requestId: 'request-1',
-    router: 'okx',
-    priceImpact: -0.45,
-    feeBps: 50,
-    prioritizationFeeLamports: 42608,
-    rentFeeLamports: 2039280,
-    gasless: false,
-    slippageBps: 22,
-    swapMode: 'ExactIn',
-    otherAmountThreshold: '85350',
-  },
-};
-
-const MOCK_SWAP_EXECUTE_RESPONSE: ApiSwapExecuteResponse = {
-  signature: 'swap-signature',
-  status: 'Success',
-};
 
 async function fetchWithRetry(url: string, attempts = 2): Promise<Response> {
   let lastError: unknown;
@@ -179,66 +136,6 @@ describe('solana service', () => {
       transactions: [],
       oldestSignature: null,
       hasMore: false,
-    });
-  });
-
-  it('forwards all supported swap quote params', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_SWAP_ORDER });
-
-    const result = await getSwapOrder('solana-mainnet', {
-      inputMint: 'mint-in',
-      outputMint: 'mint-out',
-      amount: '1000000',
-      publicKey: 'wallet-1',
-    });
-
-    expect(mockApiClientGet).toHaveBeenCalledWith('/v1/solana-mainnet/ft/swap/order', {
-      params: {
-        inputMint: 'mint-in',
-        outputMint: 'mint-out',
-        amount: '1000000',
-        publicKey: 'wallet-1',
-      },
-    });
-    expect(result).toEqual(MOCK_SWAP_ORDER);
-  });
-
-  it('returns null for missing swap routes', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getSwapOrder('solana-mainnet', {
-      inputMint: 'mint-in',
-      outputMint: 'mint-out',
-      amount: '1000000',
-      publicKey: 'wallet-1',
-    });
-
-    expect(result).toBeNull();
-  });
-
-  it('posts signed swap execution payloads', async () => {
-    mockApiClientPost.mockResolvedValueOnce({ data: MOCK_SWAP_EXECUTE_RESPONSE });
-
-    const result = await executeSwapApi('solana-mainnet', 'signed-transaction', 'request-1');
-
-    expect(mockApiClientPost).toHaveBeenCalledWith('/v1/solana-mainnet/ft/swap/execute', {
-      signedTransaction: 'signed-transaction',
-      requestId: 'request-1',
-    });
-    expect(result).toEqual(MOCK_SWAP_EXECUTE_RESPONSE);
-  });
-
-  it('returns failed execute responses for api errors', async () => {
-    mockApiClientPost.mockRejectedValueOnce(
-      new ApiError('swap execution failed', 400, 'swap_failed')
-    );
-
-    const result = await executeSwapApi('solana-mainnet', 'signed-transaction', 'request-1');
-
-    expect(result).toEqual({
-      signature: '',
-      status: 'Failed',
-      error: 'swap execution failed',
     });
   });
 
@@ -410,57 +307,6 @@ describe('solana service integration', () => {
         status: expect.any(String),
         inputs: expect.any(Array),
         outputs: expect.any(Array),
-      })
-    );
-  }, 20000);
-
-  it('reads a live solana swap quote from salmon-api', async () => {
-    if (!walletAddress) {
-      console.log('Skipping live solana swap quote integration: SALMON_TEST_LIVE_WALLET not set');
-      return;
-    }
-    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
-    if (!liveBackendBaseUrl) {
-      console.log('Skipping live solana swap quote assertions: backend not reachable');
-      return;
-    }
-
-    mockApiClientGet.mockImplementation(async (path, config) => {
-      const url = new URL(`${liveBackendBaseUrl}${path as string}`);
-      const params = config?.params as Record<string, string | number | boolean> | undefined;
-      if (params) {
-        for (const [key, value] of Object.entries(params)) {
-          url.searchParams.set(key, String(value));
-        }
-      }
-
-      const response = await fetchWithRetry(url.toString());
-
-      if (!response.ok) {
-        throw new ApiError(`HTTP ${response.status}`, response.status);
-      }
-
-      return {
-        data: await response.json(),
-      } as { data: SwapOrderResponse };
-    });
-
-    const result = await getSwapOrder('solana-mainnet', {
-      inputMint: 'So11111111111111111111111111111111111111112',
-      outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-      amount: '1000000',
-      publicKey: walletAddress,
-    });
-
-    expect(result).toEqual(
-      expect.objectContaining({
-        output: expect.objectContaining({
-          amount: expect.any(String),
-        }),
-        custom: expect.objectContaining({
-          transaction: expect.any(String),
-          requestId: expect.any(String),
-        }),
       })
     );
   }, 20000);

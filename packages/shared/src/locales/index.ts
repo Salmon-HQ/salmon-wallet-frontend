@@ -9,6 +9,7 @@
 
 import en from './en/translation.json';
 import es from './es/translation.json';
+import { powerupTranslations } from '../powerups';
 
 // ============================================================================
 // Translation Resources
@@ -31,8 +32,8 @@ import es from './es/translation.json';
  * ```
  */
 export const translations = {
-  en,
-  es,
+  en: { ...en, ...powerupTranslations.en },
+  es: { ...es, ...powerupTranslations.es },
 } as const;
 
 // ============================================================================
@@ -141,8 +142,8 @@ export type TranslationKey = FlattenKeys<TranslationResource>;
  * ```
  */
 export const i18nResources = {
-  en: { translation: en },
-  es: { translation: es },
+  en: { translation: translations.en },
+  es: { translation: translations.es },
 } as const;
 
 /**

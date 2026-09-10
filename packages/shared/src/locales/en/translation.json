@@ -684,45 +684,6 @@
     "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
     "notFound": "NFT not found. Please navigate from your collection."
   },
-  "swap": {
-    "you_send": "You Send",
-    "enter_amount": "Enter an amount",
-    "you_receive": "You Receive",
-    "router": "Router",
-    "gasless": "Gasless",
-    "yes": "Yes",
-    "priority_fee": "Priority Fee",
-    "rent_fee": "Rent Fee",
-    "slippage_tolerance": "Slippage Tolerance",
-    "minimum_received": "Minimum Received",
-    "swap_mode": "Swap Mode",
-    "platform_fee_disclaimer": "Includes 0.5% platform fee",
-    "showing_verified_tokens": "Showing verified tokens. Search to find other tokens.",
-    "review": {
-      "title": "Swap Review",
-      "salmonFee": "Salmon fee",
-      "route": "Route",
-      "details": "Details",
-      "totalPriceImpact": "Total Price Impact",
-      "pleaseNote": "Please Note",
-      "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
-      "confirmSwap": "Confirm",
-      "confirmCountdown": "Confirm ({{seconds}})",
-      "refreshQuote": "Refresh Quote",
-      "reviewAndSwap": "Review"
-    },
-    "available_balance": "Available: {{balance}} {{symbol}}",
-    "errors": {
-      "insufficientBalance": "Insufficient balance",
-      "minimumAmount": "Minimum swap amount is ${{amount}} USD",
-      "highPriceImpact": "High price impact! You may receive significantly less than expected.",
-      "quoteFailed": "Failed to fetch quote",
-      "noActiveAccount": "No active account",
-      "invalidAmount": "Invalid amount",
-      "noQuote": "No quote available. Please get a quote first.",
-      "noAccount": "No account found"
-    }
-  },
   "transaction": {
     "sendFailed": "Send failed",
     "sendUnconfirmed": "Send unconfirmed",
@@ -749,7 +710,9 @@
       "accountFrozen": "This token account is frozen by the token's issuer, so it cannot be moved.",
       "programRejected": "The program refused this transaction. Nothing was sent.",
       "malformed": "This transaction is not valid on this network. If a site built it, report it to them.",
-      "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign."
+      "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign.",
+      "cancelled": "The transaction was not signed.",
+      "confirmationBusy": "Another confirmation is already open."
     },
     "viewOnExplorer": "View on Explorer",
     "continue": "Back to wallet"
@@ -902,10 +865,6 @@
       "community": "COMMUNITY"
     },
     "catalog": {
-      "swap": {
-        "name": "Swap",
-        "description": "Swap tokens on Solana"
-      },
       "wallet_guard": {
         "name": "Wallet Guard",
         "description": "Simulate transactions and flag risky signatures."
@@ -923,5 +882,11 @@
         "description": "Track collection floor prices"
       }
     }
+  },
+  "confirmation": {
+    "details": "Details",
+    "confirm": "Confirm",
+    "confirmCountdown": "Confirm ({{seconds}})",
+    "refreshQuote": "Refresh Quote"
   }
 }

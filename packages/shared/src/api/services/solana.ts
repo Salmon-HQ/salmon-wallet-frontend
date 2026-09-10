@@ -5,8 +5,6 @@
  * API Endpoints:
  * - GET /v1/{networkId}/account/{address}/transactions - Get paginated transactions
  * - GET /v1/{networkId}/account/{address}/transactions/{txId} - Get single transaction
- * - GET /v1/{networkId}/ft/swap/order - Get swap quote
- * - POST /v1/{networkId}/ft/swap/execute - Execute swap
  *
  * Note: Token list endpoints (verified, batch, search) are in tokens.ts
  */
@@ -32,13 +30,6 @@ export type {
   SolanaPagingParams,
   SolanaTransactionsResponse,
 } from '../../types/transaction';
-
-import type {
-  SwapOrderResponse,
-  SwapOrderParams,
-  SwapExecuteRequest,
-  ApiSwapExecuteResponse,
-} from '../../types/swap';
 
 // ============================================================================
 // API Functions - Transactions
@@ -119,96 +110,6 @@ export async function getSolanaTransactions(
       return { transactions: [], oldestSignature: null, hasMore: false };
     }
     reportUnexpected('[SolanaService] Failed to get transactions:', error);
-    throw error;
-  }
-}
-
-// ============================================================================
-// API Functions - Swap
-// ============================================================================
-
-/**
- * Get a swap quote/order
- *
- * Endpoint: GET /v1/{networkId}/ft/swap/order
- *
- * This endpoint returns a quote and a serialized transaction ready to be signed.
- * The transaction is valid for a limited time (check expiresAt).
- *
- * @param networkId - Solana network identifier
- * @param params - Swap parameters
- * @returns Swap order with route info and unsigned transaction
- */
-export async function getSwapOrder(
-  networkId: SolanaNetworkId,
-  params: SwapOrderParams
-): Promise<SwapOrderResponse | null> {
-  try {
-    const queryParams: Record<string, string | number | boolean> = {
-      inputMint: params.inputMint,
-      outputMint: params.outputMint,
-      publicKey: params.publicKey,
-    };
-
-    if (params.amount !== undefined) {
-      queryParams.amount = params.amount;
-    }
-    if (params.uiAmount !== undefined) {
-      queryParams.uiAmount = params.uiAmount;
-    }
-
-    const { data } = await apiClient.get<SwapOrderResponse>(`/v1/${networkId}/ft/swap/order`, {
-      params: queryParams,
-    });
-
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError && error.isNotFound()) {
-      return null;
-    }
-    reportUnexpected('[SolanaService] Failed to get swap order:', error);
-    throw error;
-  }
-}
-
-/**
- * Execute a signed swap transaction via API
- *
- * Endpoint: POST /v1/{networkId}/ft/swap/execute
- *
- * After signing the transaction from getSwapOrder(), submit it here for execution.
- * The backend handles transaction submission and confirmation.
- *
- * @param networkId - Solana network identifier
- * @param signedTransaction - Base64 encoded signed transaction
- * @param requestId - Request ID from the swap order response
- * @returns Execution result with signature
- */
-export async function executeSwapApi(
-  networkId: SolanaNetworkId,
-  signedTransaction: string,
-  requestId: string
-): Promise<ApiSwapExecuteResponse> {
-  try {
-    const { data } = await apiClient.post<ApiSwapExecuteResponse>(
-      `/v1/${networkId}/ft/swap/execute`,
-      {
-        signedTransaction,
-        requestId,
-      } as SwapExecuteRequest
-    );
-
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      console.error('[SolanaService] Failed to execute swap:', error.message);
-      return {
-        signature: '',
-        status: 'Failed',
-        error: error.message,
-      };
-    }
-    reportUnexpected('[SolanaService] Failed to execute swap:', error);
     throw error;
   }
 }

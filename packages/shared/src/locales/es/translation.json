@@ -684,45 +684,6 @@
     "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
     "notFound": "NFT no encontrado. Volvé a entrar desde tu colección."
   },
-  "swap": {
-    "you_send": "Enviás",
-    "enter_amount": "Ingresá un monto",
-    "you_receive": "Recibís",
-    "router": "Router",
-    "gasless": "Sin Gas",
-    "yes": "Sí",
-    "priority_fee": "Tarifa de Prioridad",
-    "rent_fee": "Tarifa de Renta",
-    "slippage_tolerance": "Tolerancia de Deslizamiento",
-    "minimum_received": "Mínimo a Recibir",
-    "swap_mode": "Modo de Swap",
-    "platform_fee_disclaimer": "Incluye 0.5% de comisión de plataforma",
-    "showing_verified_tokens": "Mostrando tokens verificados. Buscá para encontrar otros tokens.",
-    "review": {
-      "title": "Revisión de Swap",
-      "salmonFee": "Comisión Salmon",
-      "route": "Ruta",
-      "details": "Detalles",
-      "totalPriceImpact": "Impacto Total en el Precio",
-      "pleaseNote": "Nota Importante",
-      "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",
-      "confirmSwap": "Confirmar",
-      "confirmCountdown": "Confirmar ({{seconds}})",
-      "refreshQuote": "Actualizar cotización",
-      "reviewAndSwap": "Revisar"
-    },
-    "available_balance": "Disponible: {{balance}} {{symbol}}",
-    "errors": {
-      "insufficientBalance": "Saldo insuficiente",
-      "minimumAmount": "El monto mínimo para swap es ${{amount}} USD",
-      "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
-      "quoteFailed": "No se pudo obtener la cotización",
-      "noActiveAccount": "No hay una cuenta activa",
-      "invalidAmount": "Monto inválido",
-      "noQuote": "No hay cotización disponible. Obtené una cotización primero.",
-      "noAccount": "No se encontró una cuenta"
-    }
-  },
   "transaction": {
     "sendFailed": "No se pudo enviar",
     "sendUnconfirmed": "Envío sin confirmar",
@@ -749,7 +710,9 @@
       "accountFrozen": "Esta cuenta de token está congelada por el emisor del token, así que no se puede mover.",
       "programRejected": "El programa rechazó esta transacción. No se envió nada.",
       "malformed": "Esta transacción no es válida en esta red. Si la armó un sitio, avisales.",
-      "watchOnlyAccount": "Esta es una billetera de solo lectura, así que no puede firmar."
+      "watchOnlyAccount": "Esta es una billetera de solo lectura, así que no puede firmar.",
+      "cancelled": "La transacción no se firmó.",
+      "confirmationBusy": "Ya hay otra confirmación abierta."
     },
     "viewOnExplorer": "Ver en Explorer",
     "continue": "Volver a la billetera"
@@ -902,10 +865,6 @@
       "community": "COMUNIDAD"
     },
     "catalog": {
-      "swap": {
-        "name": "Swap",
-        "description": "Intercambia tokens en Solana"
-      },
       "wallet_guard": {
         "name": "Wallet Guard",
         "description": "Simula transacciones y marca firmas riesgosas."
@@ -923,5 +882,11 @@
         "description": "Seguimiento del precio piso de colecciones"
       }
     }
+  },
+  "confirmation": {
+    "details": "Detalles",
+    "confirm": "Confirmar",
+    "confirmCountdown": "Confirmar ({{seconds}})",
+    "refreshQuote": "Actualizar cotización"
   }
 }
