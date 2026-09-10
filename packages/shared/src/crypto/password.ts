@@ -11,7 +11,7 @@
  * this password — a weak password undermines the KDF regardless of iterations.
  */
 
-import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core';
+import { ZxcvbnFactory } from '@zxcvbn-ts/core';
 import * as zxcvbnCommon from '@zxcvbn-ts/language-common';
 import * as zxcvbnEn from '@zxcvbn-ts/language-en';
 
@@ -62,11 +62,11 @@ export interface PasswordValidation {
 // zxcvbn setup (offline dictionaries, configured once)
 // ============================================================================
 
-let zxcvbnConfigured = false;
+let estimator: ZxcvbnFactory | null = null;
 
-function ensureZxcvbnConfigured(): void {
-  if (zxcvbnConfigured) return;
-  zxcvbnOptions.setOptions({
+/** The estimator, built on first use so the dictionaries load once and lazily. */
+function getEstimator(): ZxcvbnFactory {
+  estimator ??= new ZxcvbnFactory({
     dictionary: {
       ...zxcvbnCommon.dictionary,
       ...zxcvbnEn.dictionary,
@@ -74,7 +74,7 @@ function ensureZxcvbnConfigured(): void {
     graphs: zxcvbnCommon.adjacencyGraphs,
     translations: zxcvbnEn.translations,
   });
-  zxcvbnConfigured = true;
+  return estimator;
 }
 
 // ============================================================================
@@ -93,8 +93,6 @@ function ensureZxcvbnConfigured(): void {
  * console.log(result.isValid); // true
  */
 export function validatePassword(password: string): PasswordValidation {
-  ensureZxcvbnConfigured();
-
   const checks = {
     hasMinLength: password.length >= PASSWORD_CONSTRAINTS.MIN_LENGTH,
     hasMaxLength: password.length <= PASSWORD_CONSTRAINTS.MAX_LENGTH,
@@ -106,7 +104,7 @@ export function validatePassword(password: string): PasswordValidation {
 
   // Estimate guessability offline. Empty input short-circuits to score 0 to
   // avoid running the estimator on every keystroke before anything is typed.
-  const result = password.length > 0 ? zxcvbn(password) : null;
+  const result = password.length > 0 ? getEstimator().check(password) : null;
   const score = result?.score ?? 0;
 
   // Map the zxcvbn 0-4 score onto the existing strength enum for the UI bar.
