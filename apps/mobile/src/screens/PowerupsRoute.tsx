@@ -1,23 +1,17 @@
 /**
- * PowerupsRoute — the browse screen's body, parked off the router.
+ * PowerupsRoute — the browse screen's body.
  *
- * The powerups surface is closed for this release. It was closed with a flag
- * (`POWERUPS_SURFACE_ENABLED`) that hides the `+` control, which is enough to
- * make it unreachable by tapping — but Expo Router still answered
- * `salmonwallet://powerups`, so the screen had a way in that no UI offered.
- * Off `app/`, there is no route to answer.
- *
- * Nothing here is deleted: the screen, its catalogue and its filters come back
- * with spec 027. To bring it back, re-add `app/(app)/powerups.tsx` re-exporting
- * this, its `Stack.Screen` entry in `(app)/_layout.tsx`, the
- * `MOBILE_ONLY_SCREENS` line in `scripts/check-dom-parity.mjs`, and flip
- * `POWERUPS_SURFACE_ENABLED`.
+ * Reached through `app/(app)/powerups.tsx` via `src/powerups`, the entry the
+ * build flag aliases: a build with Powerups off has no catalogue and the route
+ * answers Home (spec 027 §3). The catalogue itself is the shared registry,
+ * filtered to the active network.
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
+  useAccountsContext,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -78,6 +72,7 @@ export default function PowerupsScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const developerMode = useDeveloperMode();
+  const [{ networkId }] = useAccountsContext();
 
   // No close-on-lock effect: this is a plain screen of the `(app)` stack now,
   // so the lock overlay in `(app)/_layout.tsx` covers it like every other
@@ -88,7 +83,10 @@ export default function PowerupsScreen() {
 
   // The mock catalogue is developer-only: without the flag the screen shows
   // the one powerup the wallet can actually open, and says so everywhere else.
-  const catalogue = useMemo(() => getPowerups({ includeMocks: developerMode }), [developerMode]);
+  const catalogue = useMemo(
+    () => getPowerups({ includeMocks: developerMode, networkId: networkId ?? null }),
+    [developerMode, networkId]
+  );
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -123,8 +121,9 @@ export default function PowerupsScreen() {
   const handleOpen = useCallback(
     (powerup: Powerup) => {
       if (!powerup.route) return;
-      // Swap lives in the tab navigator, which is BEHIND this screen: pushing
-      // it without dismissing first would open it under the catalogue.
+      // The catalogue rose from the bottom over Home; a Powerup's screen is a
+      // right-slide push of the same stack, so the catalogue leaves first and
+      // the screen arrives over Home the way every pushed screen does.
       router.back();
       router.push(powerup.route as never);
     },

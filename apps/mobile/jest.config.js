@@ -11,6 +11,9 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    // The Powerups entry is a subpath the package does not publish; the
+    // bundlers alias it (see metro.config.js), so the tests map it the same way.
+    '^@salmon/shared/powerups$': '<rootDir>/../../packages/shared/src/powerups',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
   // Ratchet: floors sit just under the measured coverage (2026-09-09) and

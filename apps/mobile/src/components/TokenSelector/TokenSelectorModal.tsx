@@ -262,7 +262,7 @@ export function TokenSelectorModal({
         {showVerifiedDisclaimer && searchQuery.length < 3 && (
           <View style={styles.disclaimerContainer}>
             <Text style={styles.disclaimerText}>
-              {t('swap.showing_verified_tokens', 'Showing verified tokens only')}
+              {t('tokenSelector.showing_verified_tokens', 'Showing verified tokens only')}
             </Text>
           </View>
         )}

@@ -1,16 +1,18 @@
 /**
- * The powerups catalogue.
+ * The powerups catalogue, as mobile draws it.
  *
- * One real entry ships today — Swap, which is already installed and is the
- * only powerup with a route. Everything else in the `.pen` frames is a mock,
- * so it lives behind the developer flag: a catalogue that advertises four
- * things the wallet cannot install is a promise, not a product.
+ * The real entries come from the shared registry (spec 027 §1) — copy keys,
+ * tier, networks, route — with the platform's icon and path put on. Everything
+ * else in the `.pen` frames is a mock, so it lives behind the developer flag:
+ * a catalogue that advertises four things the wallet cannot install is a
+ * promise, not a product.
  *
  * `name` and `description` are translation KEY PATHS, not copy: the localised
  * string is resolved at render, where the locale is known.
  */
 import type { ComponentType } from 'react';
 
+import { POWERUPS, isPowerupOnNetwork, type PowerupId } from '@salmon/shared/powerups';
 import { ArrowsLeftRightIcon, ImageIcon, ShieldCheckIcon, StackIcon, TrendUpIcon } from '../icons';
 import type { IconGlyphProps } from '../components/IconBubble';
 
@@ -32,21 +34,10 @@ export interface Powerup {
   route?: string;
 }
 
-/** What the wallet ships a screen for. None is openable in this release. */
-export const REAL_POWERUPS: Powerup[] = [
-  {
-    id: 'swap',
-    name: 'powerups.catalog.swap.name',
-    description: 'powerups.catalog.swap.description',
-    tier: 'official',
-    installed: true,
-    // No `route`, so the tile draws but does not open: the swap surface is
-    // closed for this release and its screen is parked off the router
-    // (`src/screens/SwapRoute.tsx`). A route here would push a path nothing
-    // answers. Spec 027 restores both.
-    icon: ArrowsLeftRightIcon,
-  },
-];
+/** The registry's icon on this platform. */
+const ICONS: Record<PowerupId, ComponentType<IconGlyphProps>> = {
+  swap: ArrowsLeftRightIcon,
+};
 
 /** The `.pen` frames' catalogue. Developer mode only — none of these exist. */
 export const MOCK_POWERUPS: Powerup[] = [
@@ -86,6 +77,28 @@ export const MOCK_POWERUPS: Powerup[] = [
   },
 ];
 
-export function getPowerups({ includeMocks }: { includeMocks: boolean }): Powerup[] {
-  return includeMocks ? [...REAL_POWERUPS, ...MOCK_POWERUPS] : REAL_POWERUPS;
+/**
+ * The catalogue for the active network: a registry entry is offered only
+ * where it acts (spec 027 §4), and the mocks only to a developer.
+ */
+export function getPowerups({
+  includeMocks,
+  networkId,
+}: {
+  includeMocks: boolean;
+  networkId: string | null;
+}): Powerup[] {
+  const real = POWERUPS.filter((entry) => isPowerupOnNetwork(entry, networkId)).map(
+    (entry): Powerup => ({
+      id: entry.id,
+      name: entry.nameKey,
+      description: entry.descriptionKey,
+      tier: entry.tier,
+      featured: entry.featured,
+      installed: true,
+      icon: ICONS[entry.id],
+      route: `/${entry.route}`,
+    })
+  );
+  return includeMocks ? [...real, ...MOCK_POWERUPS] : real;
 }

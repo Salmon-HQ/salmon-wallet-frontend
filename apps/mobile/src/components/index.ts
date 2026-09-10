@@ -281,24 +281,26 @@ export type {
 export { RecipientInput, SendFailure, TokenPickerSheet, TokenSelectList } from './Send';
 export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } from './Send';
 
+// The Swap Powerup's screens are NOT exported here: the swap route imports
+// them through `src/powerups`, the entry the build flag aliases, so a build
+// with Powerups off carries none of them (spec 027 §3).
+
+// TransactionConfirmation - core's confirmation screen and its window
 export {
-  SwapScreen,
-  SwapAmountInput,
-  SwapReviewExchange,
-  SwapInputScreen,
-  SwapReviewScreen,
-} from './SwapScreen';
+  ConfirmationButtons,
+  ConfirmationDetailsCard,
+  ConfirmationExchange,
+  ConfirmationHost,
+  TransactionConfirmation,
+} from './TransactionConfirmation';
 export type {
-  SwapToken,
-  SwapQuote,
-  SwapStep,
-  SwapChainType,
-  SwapScreenProps,
-  SwapAmountInputProps,
-  SwapReviewExchangeProps,
-  SwapInputScreenProps,
-  SwapReviewScreenProps,
-} from './SwapScreen';
+  ConfirmationButtonsProps,
+  ConfirmationDetailsCardProps,
+  ConfirmationExchangeProps,
+  ConfirmationRow,
+  ProposalDisplay,
+  TransactionConfirmationProps,
+} from './TransactionConfirmation';
 
 // ---------------------------------------------------------------------------
 // Settings

@@ -33,7 +33,6 @@
     "quoteFailed": "Failed to fetch quote",
     "pairUnavailable": "Swap is unavailable for this pair right now. Try again later.",
     "unknownToken": "One of these tokens is not supported for swapping.",
-    "noActiveAccount": "No active account",
     "noAccount": "No account found"
   }
 }

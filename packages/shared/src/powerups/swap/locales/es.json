@@ -33,7 +33,6 @@
     "quoteFailed": "No se pudo obtener la cotización",
     "pairUnavailable": "Swap no está disponible para este par por ahora. Probá más tarde.",
     "unknownToken": "Uno de estos tokens no se puede intercambiar.",
-    "noActiveAccount": "No hay una cuenta activa",
     "noAccount": "No se encontró una cuenta"
   }
 }

@@ -888,5 +888,8 @@
     "confirm": "Confirmar",
     "confirmCountdown": "Confirmar ({{seconds}})",
     "refreshQuote": "Actualizar cotización"
+  },
+  "tokenSelector": {
+    "showing_verified_tokens": "Mostrando tokens verificados. Buscá para encontrar otros tokens."
   }
 }

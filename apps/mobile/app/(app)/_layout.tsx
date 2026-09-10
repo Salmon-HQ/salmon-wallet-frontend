@@ -2,11 +2,20 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { Stack, useRouter, usePathname } from 'expo-router';
 
-import { useAccountsContext } from '@salmon/shared';
-import { LockOverlay, LockContent, PowerupsFab } from '../../src/components';
+import {
+  SignatureRequestProvider,
+  isSignableSolanaAccount,
+  useAccountsContext,
+} from '@salmon/shared';
+import {
+  ConfirmationHost,
+  LockOverlay,
+  LockContent,
+  PowerupsFab,
+} from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useTabChrome } from '../../hooks/useTabChrome';
-import { POWERUPS_SURFACE_ENABLED } from '../../src/powerups/surface';
+import { POWERUPS_ENABLED } from '../../src/powerups';
 import { TaskChromeProvider, useTaskChrome } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
@@ -159,9 +168,18 @@ export default function AppLayout() {
     ]
   );
 
+  // The account core signs with: the active one when it can sign on Solana,
+  // otherwise none — a watch-only wallet reaches the confirmation and is
+  // refused there (spec 027 §2).
+  const signingAccount =
+    accountState.activeBlockchainAccount && isSignableSolanaAccount(accountState.activeBlockchainAccount)
+      ? accountState.activeBlockchainAccount
+      : null;
+
   return (
     <TaskChromeProvider surfaceKey={surfaceKey}>
       <DerivedAccountsProvider>
+        <SignatureRequestProvider account={signingAccount}>
         {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)
           every screen this stack pushes — Activity, Send, NFT detail,
@@ -198,6 +216,10 @@ export default function AppLayout() {
             from the Portfolio and NFT lists with the same right slide. */}
             <Stack.Screen name="token/[id]" />
             <Stack.Screen name="nft/[id]" />
+            {/* The Swap Powerup, a screen of this stack pushed from the
+            catalogue. Its body is behind the build flag; the route itself is
+            always registered (`swap.tsx`). */}
+            <Stack.Screen name="swap" />
             {/* Powerups rises from the bottom instead of sliding from the right,
             and swipes down to dismiss. It is a plain screen of THIS stack, not
             a modal: a modal is its own native window and nothing — not the
@@ -221,6 +243,10 @@ export default function AppLayout() {
           unmounts between them and the turn plays while the screen rises. */}
           <PowerupsLayer />
 
+          {/* Core's confirmation window, above every screen a Powerup can
+          propose from: the one place a proposal is reviewed and signed. */}
+          <ConfirmationHost />
+
           {/* The lock screen. It covers every screen this stack can push and
           takes every touch — Powerups included, now that it is a plain
           screen of this stack. */}
@@ -236,6 +262,7 @@ export default function AppLayout() {
             </LockOverlay>
           )}
         </DeveloperModeProvider>
+        </SignatureRequestProvider>
       </DerivedAccountsProvider>
     </TaskChromeProvider>
   );
@@ -268,7 +295,7 @@ function PowerupsLayer() {
     else router.push('/powerups');
   }, [open, router]);
 
-  if (!POWERUPS_SURFACE_ENABLED || isTaskEngaged || !POWERUPS_FAB_ROUTES.includes(pathname)) {
+  if (!POWERUPS_ENABLED || isTaskEngaged || !POWERUPS_FAB_ROUTES.includes(pathname)) {
     return null;
   }
 

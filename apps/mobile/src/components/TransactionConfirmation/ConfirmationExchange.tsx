@@ -18,7 +18,7 @@ import { ArrowRightIcon, iconSize } from '../../icons';
 import { BlurContainer } from '../BlurContainer';
 import { PendingValue } from '../PendingValue';
 import { TokenLogo } from '../TokenLogo';
-import type { SwapReviewExchangeProps } from './types';
+import type { ConfirmationExchangeProps } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable array, so it is spread into a fresh one.
@@ -55,14 +55,18 @@ const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
 );
 
 /**
- * SwapReviewExchange - the single graphic block on the swap review
+ * ConfirmationExchange - the single graphic block on the confirmation
  * screen: sent token logo, arrow, received token logo, with amounts
- * underneath. Replaces the two stacked You Send / You Receive cards.
+ * underneath.
  */
-export const SwapReviewExchange: React.FC<SwapReviewExchangeProps> = ({ send, receive, style }) => {
+export const ConfirmationExchange: React.FC<ConfirmationExchangeProps> = ({
+  send,
+  receive,
+  style,
+}) => {
   return (
     <BlurContainer style={[styles.container, style]}>
-      <View style={styles.row} testID="swap-review-exchange">
+      <View style={styles.row} testID="confirmation-exchange">
         <ExchangeSide {...send} />
         <ArrowRightIcon size={iconSize.md} color={colors.text.secondary} />
         <ExchangeSide {...receive} />
@@ -119,4 +123,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SwapReviewExchange;
+export default ConfirmationExchange;

@@ -19,8 +19,8 @@ import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { SwapInputScreenProps } from './types';
 
 /**
- * SwapInputScreen - First step of swap flow
- * Shows input/output token selectors and amounts
+ * SwapInputScreen - the Swap Powerup's form: pair, amounts and the swap
+ * control. The next screen is core's confirmation, not the Powerup's.
  */
 export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   inToken,
@@ -32,20 +32,21 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   onOutTokenPress,
   inUsdValue,
   isLoadingQuote = false,
-  canReview,
+  canSwap,
   reviewWarning,
   swapError,
-  onReview,
+  attribution,
+  onSwap,
   style,
 }) => {
   const { t } = useTranslation();
   const { floatingBottomOffset, stickyCtaScrollPadding } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
 
-  // The review CTA is absolutely positioned, so KeyboardAvoidingView cannot
-  // reach it. While the amount keyboard is open, anchor it just above the
-  // keyboard instead of above the tab bar so the user can still act on the
-  // amount they just typed.
+  // The CTA is absolutely positioned, so KeyboardAvoidingView cannot reach
+  // it. While the amount keyboard is open, anchor it just above the keyboard
+  // instead of above the tab bar so the user can still act on the amount
+  // they just typed.
   const ctaBottomOffset =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
@@ -55,7 +56,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
       onPress={Keyboard.dismiss}
       accessible={false}
     >
-      {/* Input Fields */}
       <View style={styles.inputsContainer}>
         {/* You Send */}
         <SwapAmountInput
@@ -77,9 +77,8 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
             slot holds one line of height from the first frame and fills it
             when it has something to say. Without the reservation the whole
             "You Receive" block travelled down the screen the moment the
-            amount crossed the minimum, which is the field moving under the
-            finger that the layout rule exists to forbid. Same technique as
-            `ReservedSlot`: keep the space, not the content. */}
+            amount crossed the minimum. Same technique as `ReservedSlot`:
+            keep the space, not the content. */}
         <View style={styles.noticeSlot} testID="swap-notice-slot">
           {swapError ? (
             <Text testID="swap-error-text" style={styles.errorText}>
@@ -109,20 +108,21 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           isLoading={isLoadingQuote}
         />
 
+        {/* The fee is a line on the confirmation, never folded into the quote;
+            the provider is named from the quote itself (spec 027 §7). */}
         <Text style={styles.disclaimerText}>
-          {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
+          {attribution ?? t('swap.fee_disclaimer')}
         </Text>
       </View>
 
-      {/* Review Button */}
       <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>
         <PrimaryButton
-          onPress={onReview}
-          disabled={!canReview}
+          onPress={onSwap}
+          disabled={!canSwap}
           style={styles.button}
-          testID="swap-review-button"
+          testID="swap-submit-button"
         >
-          {t('swap.review.reviewAndSwap', 'Review')}
+          {t('swap.swap_now', 'Swap')}
         </PrimaryButton>
       </View>
     </Pressable>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: s(spacing.headerPadding),
-    paddingTop: vs(spacing['3xl'] + spacing['3xl']),
+    paddingTop: vs(spacing['2xl']),
   },
   inputsContainer: {
     gap: vs(spacing['2xl']),
@@ -145,9 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // One line of the notice type, always. The messages are single-line by
-  // construction; a longer one grows the slot rather than being clipped,
-  // which is the honest trade — an unreadable notice is worse than a shift
-  // that only a rare message can cause.
+  // construction; a longer one grows the slot rather than being clipped.
   noticeSlot: {
     minHeight: vs(fontSize.sm * lineHeight.normal),
     justifyContent: 'center',
@@ -167,24 +165,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   disclaimerText: {
-    fontSize: 11,
+    fontSize: fontSize.micro,
     color: colors.text.tertiary,
     textAlign: 'center',
     marginTop: spacing.xs,
   },
-  // Size only. Radius, fill, border, bezel and material belong to the button:
-  // this CTA used to sit inside a gradient wrapper carrying a 12px radius, a
-  // salmon outline and a glow, with the button's own fill forced transparent —
-  // a second, squarer shape behind the pill that read as two stacked buttons.
+  // Size only. Radius, fill, border, bezel and material belong to the button.
+  // One fixed width, in both states: a control pinned to both edges of this
+  // screen reads as a bar rather than a button, and sizing it to its label
+  // made the geometry a function of its state. Width is not a state.
   button: {
-    // One fixed width, in both states. DESIGN.md's Buttons section makes a
-    // screen's committing action full-width, but a control pinned to both
-    // edges of this screen reads as a bar rather than a button, so this CTA
-    // is the qualified case: narrower than the screen, and a fixed step
-    // rather than `auto` — sizing it to its label made the geometry a
-    // function of its state, and the one target the user is waiting to
-    // become pressable shrank and moved while they typed. Width is not a
-    // state.
     width: s(componentSizes.copyButtonWidth),
     height: vs(componentSizes.buttonHeightCompact),
   },

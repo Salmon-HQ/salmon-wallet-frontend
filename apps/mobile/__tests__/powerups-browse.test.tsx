@@ -37,7 +37,7 @@ jest.mock('react-i18next', () => {
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../test-utils/themeTokens'),
-  useAccountsContext: () => [{ locked: false }, {}],
+  useAccountsContext: () => [{ locked: false, networkId: 'solana-mainnet' }, {}],
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
@@ -161,6 +161,22 @@ jest.mock('../src/components', () => {
   };
 });
 
+// The registry, without the Swap Powerup's module graph behind it.
+jest.mock('@salmon/shared/powerups', () => ({
+  POWERUPS: [
+    {
+      id: 'swap',
+      nameKey: 'swap.catalog.name',
+      descriptionKey: 'swap.catalog.description',
+      tier: 'official',
+      networks: ['solana-mainnet'],
+      route: 'swap',
+    },
+  ],
+  isPowerupOnNetwork: (entry: { networks: string[] }, networkId: string | null) =>
+    networkId !== null && entry.networks.includes(networkId),
+}));
+
 import PowerupsScreen from '../src/screens/PowerupsRoute';
 
 const NAMES = en.powerups.catalog;
@@ -236,17 +252,15 @@ describe('powerups browse', () => {
     expect(screen.queryByTestId('powerups-fab')).toBeNull();
   });
 
-  // Swap is listed and inert: the surface is closed for this release and its
-  // screen is parked off the router, so the catalogue entry carries no route
-  // and the tile opens nothing. This test used to assert the opposite — that
-  // pressing it dismissed the catalogue and pushed `/swap` — which is exactly
-  // the path being closed. It stays as the guard that it *is* closed.
-  it('draws swap but opens nothing — the surface is closed until spec 027', () => {
+  // Swap is installed and owns a screen: pressing its tile dismisses the
+  // catalogue (it rose over Home) and pushes the Powerup's route on the
+  // same stack.
+  it('opens the swap Powerup from its tile', () => {
     render(<PowerupsScreen />);
 
     fireEvent.press(screen.getByTestId('powerups-tile-swap'));
 
-    expect(mockRouter.back).not.toHaveBeenCalled();
-    expect(mockRouter.push).not.toHaveBeenCalled();
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    expect(mockRouter.push).toHaveBeenCalledWith('/swap');
   });
 });

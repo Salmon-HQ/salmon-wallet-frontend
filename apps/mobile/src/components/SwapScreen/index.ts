@@ -1,24 +1,15 @@
-// SwapScreen - Complete swap interface
+// SwapScreen - the Swap Powerup's form and receipt. Not exported from the
+// components barrel: only the swap route imports it, through the powerups
+// entry, so a build with Powerups off carries none of it (spec 027 §3).
 export { SwapScreen } from './SwapScreen';
 export { SwapAmountInput } from './SwapAmountInput';
-export { SwapDetailsCard } from './SwapDetailsCard';
-export { SwapReviewExchange } from './SwapReviewExchange';
-export { SwapReviewButtons } from './SwapReviewButtons';
 export { SwapInputScreen } from './SwapInputScreen';
-export { SwapReviewScreen } from './SwapReviewScreen';
 
-// Types
 export type {
   SwapToken,
-  SwapQuote,
-  SwapStep,
   SwapChainType,
+  SwapNetworkId,
   SwapScreenProps,
   SwapAmountInputProps,
-  SwapDetailItem,
-  SwapDetailsCardProps,
-  SwapReviewExchangeProps,
   SwapInputScreenProps,
-  SwapReviewScreenProps,
 } from './types';
-export type { SwapReviewButtonsProps } from './SwapReviewButtons';

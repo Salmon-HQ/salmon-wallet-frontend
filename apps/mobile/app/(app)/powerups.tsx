@@ -1,19 +1,15 @@
 /**
- * The powerups route, closed.
- *
- * The surface is not in this release. `POWERUPS_SURFACE_ENABLED` already hid
- * its `+` control, but hiding a control is not closing a door: Expo Router
- * kept answering `salmonwallet://powerups`, so the screen was reachable by
- * deep link with no UI offering it (owner, 2026-09-03).
- *
- * The route stays registered and sends anyone who reaches it Home. It is not
- * deleted, because the typed router is what the `+` control and its tests are
- * written against, and because the way back is this file: spec 027 replaces
- * the redirect with `export { default } from '../../src/screens/PowerupsRoute'`
- * and flips the flag. The screen itself is parked there, whole.
+ * The powerups route. The browse screen is imported through `src/powerups`,
+ * the entry Metro aliases to its empty twin when `EXPO_PUBLIC_POWERUPS` is
+ * off — so the route stays registered in every build (the typed router and
+ * the `+` control are written against it) and sends anyone who reaches it
+ * Home when Powerups are not compiled in (spec 027 §3).
  */
+import React from 'react';
 import { Redirect } from 'expo-router';
+import { POWERUPS_ENABLED, PowerupsRoute } from '../../src/powerups';
 
-export default function PowerupsClosed() {
-  return <Redirect href="/" />;
+export default function PowerupsScreenRoute() {
+  if (!POWERUPS_ENABLED || !PowerupsRoute) return <Redirect href="/" />;
+  return <PowerupsRoute />;
 }

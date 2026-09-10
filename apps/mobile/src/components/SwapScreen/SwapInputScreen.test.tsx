@@ -71,8 +71,8 @@ const baseProps: SwapInputScreenProps = {
   onInAmountChange: jest.fn(),
   onInTokenPress: jest.fn(),
   onOutTokenPress: jest.fn(),
-  canReview: true,
-  onReview: jest.fn(),
+  canSwap: true,
+  onSwap: jest.fn(),
 };
 
 function renderScreen(overrides: Partial<SwapInputScreenProps> = {}) {
@@ -118,22 +118,35 @@ describe('SwapInputScreen — nothing moves under the finger', () => {
   });
 });
 
-describe('SwapInputScreen — the Review CTA geometry is not a state', () => {
+describe('SwapInputScreen — the Swap CTA geometry is not a state', () => {
   it('hands the button an identical style enabled and disabled', () => {
-    const enabled = flatStyle(renderScreen({ canReview: true }).getByTestId('swap-review-button'));
+    const enabled = flatStyle(renderScreen({ canSwap: true }).getByTestId('swap-submit-button'));
     const disabled = flatStyle(
-      renderScreen({ canReview: false }).getByTestId('swap-review-button')
+      renderScreen({ canSwap: false }).getByTestId('swap-submit-button')
     );
 
     expect(disabled).toEqual(enabled);
   });
 
   it('gives the committing action one fixed width, narrower than the screen', () => {
-    for (const canReview of [true, false]) {
-      const style = flatStyle(renderScreen({ canReview }).getByTestId('swap-review-button'));
+    for (const canSwap of [true, false]) {
+      const style = flatStyle(renderScreen({ canSwap }).getByTestId('swap-submit-button'));
 
       // The mocked token, unscaled: a number, never '100%' and never 'auto'.
       expect(style.width).toBe(120);
     }
+  });
+});
+
+describe('SwapInputScreen — the provider is named from the quote', () => {
+  it('shows the fee disclaimer until a quote names its provider', () => {
+    const { getByText } = renderScreen({ attribution: null });
+    expect(getByText('swap.fee_disclaimer')).toBeTruthy();
+  });
+
+  it('renders the attribution verbatim once a quote carries one', () => {
+    const { getByText, queryByText } = renderScreen({ attribution: 'Powered by 0x' });
+    expect(getByText('Powered by 0x')).toBeTruthy();
+    expect(queryByText('swap.fee_disclaimer')).toBeNull();
   });
 });

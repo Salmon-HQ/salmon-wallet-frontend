@@ -17,11 +17,11 @@ import {
 import { CaretDownIcon, iconSize } from '../../icons';
 import { BlurContainer } from '../BlurContainer';
 import { PendingValue } from '../PendingValue';
-import type { SwapDetailItem } from '@salmon/shared';
-import type { SwapDetailsCardProps } from './types';
+import type { ConfirmationDetailsCardProps, ConfirmationRow } from './types';
 
 /**
- * SwapDetailsCard - the review screens' detail rows grouped into ONE card.
+ * ConfirmationDetailsCard - the confirmation's detail rows grouped into ONE
+ * card.
  *
  * Each row used to be its own pill (padding + gap per row); nine to eleven of
  * them alone overflowed the viewport, which is what kept the review
@@ -29,7 +29,7 @@ import type { SwapDetailsCardProps } from './types';
  * hairline. Advanced rows fold behind a "Details" disclosure, collapsed by
  * default — the critical rows and the warning stay on screen.
  */
-const DetailRow: React.FC<SwapDetailItem & { withSeparator: boolean }> = ({
+const DetailRow: React.FC<ConfirmationRow & { withSeparator: boolean }> = ({
   label,
   value,
   pending = false,
@@ -43,7 +43,7 @@ const DetailRow: React.FC<SwapDetailItem & { withSeparator: boolean }> = ({
   </View>
 );
 
-export const SwapDetailsCard: React.FC<SwapDetailsCardProps> = ({
+export const ConfirmationDetailsCard: React.FC<ConfirmationDetailsCardProps> = ({
   rows,
   advancedRows = [],
   style,
@@ -54,7 +54,7 @@ export const SwapDetailsCard: React.FC<SwapDetailsCardProps> = ({
 
   return (
     // BlurContainer takes no testID; the wrapper carries the hook instead.
-    <View style={style} testID="swap-details-card">
+    <View style={style} testID="confirmation-details-card">
       <BlurContainer style={styles.card}>
         {rows.map((row, index) => (
           <DetailRow key={row.label} {...row} withSeparator={index > 0} />
@@ -62,14 +62,14 @@ export const SwapDetailsCard: React.FC<SwapDetailsCardProps> = ({
         {hasAdvanced && (
           <>
             <TouchableOpacity
-              testID="swap-details-disclosure"
+              testID="confirmation-details-disclosure"
               accessibilityRole="button"
               accessibilityState={{ expanded: isExpanded }}
-              accessibilityLabel={t('swap.review.details', 'Details')}
+              accessibilityLabel={t('confirmation.details', 'Details')}
               onPress={() => setIsExpanded((expanded) => !expanded)}
               style={[styles.row, styles.rowSeparator]}
             >
-              <Text style={styles.label}>{t('swap.review.details', 'Details')}</Text>
+              <Text style={styles.label}>{t('confirmation.details', 'Details')}</Text>
               <View style={isExpanded ? styles.chevronExpanded : undefined}>
                 <CaretDownIcon size={iconSize.sm} color={colors.text.secondary} />
               </View>
@@ -118,4 +118,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SwapDetailsCard;
+export default ConfirmationDetailsCard;

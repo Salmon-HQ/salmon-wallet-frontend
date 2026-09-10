@@ -46,6 +46,10 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The confirmation provider and host are core's own (their own suites);
+  // the layout only has to mount them.
+  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+  isSignableSolanaAccount: () => false,
   // The providers the layout mounts live in shared now; the task chrome is the
   // real one, developer mode is pass-through (its flags are mocked below).
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
@@ -115,6 +119,7 @@ jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   const ReactActual = require('react');
   return {
+    ConfirmationHost: () => null,
     LockOverlay: ({ children }: { children: React.ReactNode }) =>
       ReactActual.createElement(
         View,
@@ -134,6 +139,15 @@ jest.mock('../../src/components', () => {
 
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({ floatingBottomOffset: 0 }),
+}));
+
+// The Powerups entry is a build-time alias (metro.config.js); the layout only
+// reads the flag, so the entry is stubbed rather than loaded.
+jest.mock('../../src/powerups', () => ({
+  POWERUPS_ENABLED: true,
+  SwapRoute: null,
+  PowerupsRoute: null,
+  getPowerups: () => [],
 }));
 
 import AppLayout from '../../app/(app)/_layout';

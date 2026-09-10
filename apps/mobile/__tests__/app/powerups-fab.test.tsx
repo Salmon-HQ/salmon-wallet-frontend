@@ -34,6 +34,10 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The confirmation provider and host are core's own (their own suites);
+  // the layout only has to mount them.
+  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+  isSignableSolanaAccount: () => false,
   // The provider the layout mounts lives in shared now; its flags are faked below.
   DeveloperModeProvider: ({ children }: { children: React.ReactNode }) => children,
   useDeveloperMode: () => false,
@@ -92,6 +96,7 @@ jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   return {
     LockOverlay: ({ children }: { children: React.ReactNode }) => children,
+    ConfirmationHost: () => null,
     LockContent: () => null,
     PowerupsFab: ({
       open,
@@ -111,12 +116,11 @@ jest.mock('../../src/components', () => {
   };
 });
 
-// The surface is closed for the submission build; these tests describe the
-// control as it behaves when the door is open, so the flag is raised here.
-jest.mock('../../src/powerups/surface', () => ({ POWERUPS_SURFACE_ENABLED: true }));
-const surface = jest.requireMock('../../src/powerups/surface') as {
-  POWERUPS_SURFACE_ENABLED: boolean;
-};
+// The Powerups entry is a build-time alias (metro.config.js); these tests
+// describe the control as it behaves in a build with Powerups on, and one
+// asserts the off build draws nothing.
+jest.mock('../../src/powerups', () => ({ POWERUPS_ENABLED: true }));
+const powerups = jest.requireMock('../../src/powerups') as { POWERUPS_ENABLED: boolean };
 
 import AppLayout from '../../app/(app)/_layout';
 
@@ -161,12 +165,12 @@ describe('the powerups control', () => {
   );
 
   it('is not mounted at all while the surface is closed', () => {
-    surface.POWERUPS_SURFACE_ENABLED = false;
+    powerups.POWERUPS_ENABLED = false;
     try {
       const { queryByTestId } = render(<AppLayout />);
       expect(queryByTestId('powerups-fab')).toBeNull();
     } finally {
-      surface.POWERUPS_SURFACE_ENABLED = true;
+      powerups.POWERUPS_ENABLED = true;
     }
   });
 

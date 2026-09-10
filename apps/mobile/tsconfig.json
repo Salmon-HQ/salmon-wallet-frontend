@@ -3,9 +3,22 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": ["./*"],
-      "@salmon/shared": ["../../packages/shared/src"]
+      "@/*": [
+        "./*"
+      ],
+      "@salmon/shared": [
+        "../../packages/shared/src"
+      ],
+      "@salmon/shared/powerups": [
+        "../../packages/shared/src/powerups"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "declarations.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "declarations.d.ts"
+  ]
 }

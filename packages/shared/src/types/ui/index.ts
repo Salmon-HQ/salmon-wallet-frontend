@@ -278,3 +278,18 @@ export type { BlockchainMarkPropsBase } from './blockchain-mark';
 
 // The plain text field
 export type { TextInputPropsBase } from './text-input';
+
+// The Swap Powerup's screens (the contract is here; the Powerup is in powerups/)
+export type {
+  SwapAmountInputPropsBase,
+  SwapInputScreenPropsBase,
+  SwapScreenPropsBase,
+  SwapScreenLogic,
+} from './swap-screen';
+
+// Core's confirmation screen (spec 027 §2)
+export type {
+  ConfirmationDetailsCardPropsBase,
+  ConfirmationExchangePropsBase,
+  TransactionConfirmationPropsBase,
+} from './transaction-confirmation';

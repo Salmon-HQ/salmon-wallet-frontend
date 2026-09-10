@@ -888,5 +888,8 @@
     "confirm": "Confirm",
     "confirmCountdown": "Confirm ({{seconds}})",
     "refreshQuote": "Refresh Quote"
+  },
+  "tokenSelector": {
+    "showing_verified_tokens": "Showing verified tokens. Search to find other tokens."
   }
 }

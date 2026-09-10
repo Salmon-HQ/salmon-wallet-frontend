@@ -13,7 +13,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_SALMON_ENV": "local"
+        "EXPO_PUBLIC_SALMON_ENV": "local",
+        "EXPO_PUBLIC_POWERUPS": "on"
       },
       "ios": {
         "simulator": true
@@ -26,7 +27,8 @@
       "extends": "base",
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_SALMON_ENV": "staging"
+        "EXPO_PUBLIC_SALMON_ENV": "staging",
+        "EXPO_PUBLIC_POWERUPS": "on"
       },
       "ios": {
         "simulator": false
@@ -42,7 +44,8 @@
       "env": {
         "NODE_ENV": "production",
         "EXPO_NO_DOCTOR": "1",
-        "EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK": "1"
+        "EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK": "1",
+        "EXPO_PUBLIC_POWERUPS": "off"
       },
       "channel": "production"
     },

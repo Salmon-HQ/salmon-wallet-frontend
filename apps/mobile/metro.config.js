@@ -46,10 +46,37 @@ config.resolver.unstable_enablePackageExports = false;
 // Support for .cjs files (some packages need this)
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'cjs'];
 
+// The Powerups build flag (spec 027 §3). Off, every Powerups entry —
+// `@salmon/shared/powerups`, `packages/shared/src/powerups`, `src/powerups` —
+// resolves to its `index.off.ts` twin: an empty registry, no screens, no
+// locales. A Metro alias, not a runtime `if`, so the submission bundle
+// carries no swap code or copy. On for dev unless the profile says
+// otherwise (`eas.json` sets it per profile).
+const POWERUPS_ON = (process.env.EXPO_PUBLIC_POWERUPS ?? 'on') === 'on';
+const POWERUPS_ENTRIES = [
+  path.join(monorepoRoot, 'packages/shared/src/powerups/index.ts'),
+  path.join(projectRoot, 'src/powerups/index.ts'),
+];
+const SHARED_POWERUPS_ENTRY = POWERUPS_ENTRIES[0];
+
+function withPowerupsFlag(resolution) {
+  if (POWERUPS_ON || !resolution || resolution.type !== 'sourceFile') return resolution;
+  if (POWERUPS_ENTRIES.includes(resolution.filePath)) {
+    return { ...resolution, filePath: resolution.filePath.replace(/index\.ts$/, 'index.off.ts') };
+  }
+  return resolution;
+}
+
 // Custom resolver for problematic packages with conditional exports
 // This handles packages that don't have React Native-compatible export conditions
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // `@salmon/shared/powerups` is a subpath the package does not publish
+  // (exports are disabled above); it is the one Powerups entry, aliased here.
+  if (moduleName === '@salmon/shared/powerups') {
+    return withPowerupsFlag({ filePath: SHARED_POWERUPS_ENTRY, type: 'sourceFile' });
+  }
+
   // Fix for rpc-websockets: package only has "browser" and "node" export conditions,
   // but React Native needs explicit resolution. Use the browser build for mobile.
   // See: https://github.com/solana-labs/solana-web3.js/issues/1981
@@ -158,11 +185,12 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     // Fall through to default resolution if not found
   }
 
-  // Fall back to the default resolver for all other modules
+  // Fall back to the default resolver for all other modules, then apply the
+  // Powerups flag to whatever it resolved (a relative `../powerups` too).
   if (originalResolveRequest) {
-    return originalResolveRequest(context, moduleName, platform);
+    return withPowerupsFlag(originalResolveRequest(context, moduleName, platform));
   }
-  return context.resolveRequest(context, moduleName, platform);
+  return withPowerupsFlag(context.resolveRequest(context, moduleName, platform));
 };
 
 module.exports = config;
