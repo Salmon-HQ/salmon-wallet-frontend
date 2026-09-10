@@ -17,6 +17,8 @@ import {
   createKeyPairSignerFromPrivateKeyBytes,
   some,
   none,
+  getBase64Encoder,
+  getCompiledTransactionMessageDecoder,
 } from '@solana/kit';
 import type { Address } from '@solana/kit';
 import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
@@ -134,6 +136,59 @@ describe('createSolTransaction', () => {
     // The fee payer travels as a signer, not a bare address, so the compiled
     // message marks it WRITABLE_SIGNER.
     expect(transaction.instructions[0].accounts![0].role).toBe(AccountRole.WRITABLE_SIGNER);
+  });
+});
+
+// ============================================================================
+// Transaction version
+// ============================================================================
+
+describe('transaction version', () => {
+  // Spec 032: the version is the caller's choice per network. Omitted means
+  // v0, so every caller that predates the option keeps its behaviour.
+  const recipient = () => address(Keypair.generate().publicKey.toBase58());
+
+  it('builds v0 when no version is asked for, and when 0 is', async () => {
+    const signer = await testSigner(1);
+    const implicit = await createSolTransaction(createRpc(), signer, recipient(), 1);
+    const explicit = await createSolTransaction(createRpc(), signer, recipient(), 1, {
+      version: 0,
+    });
+    expect(implicit.version).toBe(0);
+    expect(explicit.version).toBe(0);
+  });
+
+  it('builds a v1 SOL transfer on request', async () => {
+    const signer = await testSigner(1);
+    const transaction = await createSolTransaction(createRpc(), signer, recipient(), 1, {
+      version: 1,
+    });
+    expect(transaction.version).toBe(1);
+    expect(transaction.feePayer.address).toBe(signer.address);
+    expect(transaction.instructions).toHaveLength(1);
+  });
+
+  it('builds a v1 SPL transfer on request', async () => {
+    mockMint(6);
+    const signer = await testSigner(1);
+    const transaction = await createSplTransaction(createRpc(), signer, recipient(), USDC_MINT, 1, {
+      version: 1,
+    });
+    expect(transaction.version).toBe(1);
+    // ATA creation + transfer, as for v0.
+    expect(transaction.instructions).toHaveLength(2);
+  });
+
+  it('estimates the fee on a message of the same version it would send', async () => {
+    const signer = await testSigner(1);
+    const rpc = createRpc();
+    await estimateFee(rpc, signer, recipient(), SOL_ADDRESS, 1, { version: 1 });
+
+    const [message] = vi.mocked(rpc.getFeeForMessage).mock.calls[0];
+    const compiled = getCompiledTransactionMessageDecoder().decode(
+      getBase64Encoder().encode(message)
+    );
+    expect(compiled.version).toBe(1);
   });
 });
 

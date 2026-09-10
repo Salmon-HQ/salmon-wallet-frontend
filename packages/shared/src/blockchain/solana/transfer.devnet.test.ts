@@ -40,7 +40,7 @@ const RPC = process.env.DEVNET_RPC_URL || 'https://api.devnet.solana.com';
 const devnet = ENABLED ? describe : describe.skip;
 
 devnet('createTransfer (devnet integration)', () => {
-  it('builds a SOL transfer that actually lands and reduces the sender balance', async () => {
+  it('builds a v1 SOL transfer that actually lands and reduces the sender balance', async () => {
     if (!SECRET) {
       throw new Error(
         'DEVNET_TEST_SECRET_KEY is required (JSON secret-key array of a funded devnet keypair).'
@@ -59,7 +59,10 @@ devnet('createTransfer (devnet integration)', () => {
     expect(before).toBeGreaterThan(0.01 * LAMPORTS_PER_SOL); // needs funding
 
     const amountSol = 0.001;
-    const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol);
+    // Spec 032: devnet runs v1, so this is what the wallet builds there.
+    const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol, {
+      version: 1,
+    });
     // Without `simulate`, txId is a real signature string (the union type also
     // allows a simulation payload when simulating).
     expect(typeof txId).toBe('string');
@@ -70,6 +73,12 @@ devnet('createTransfer (devnet integration)', () => {
       commitment: 'confirmed',
       signature: txId as Signature,
     });
+
+    // The cluster read it back as a v1 transaction, not a v0 that happened to land.
+    const landed = await rpc
+      .getTransaction(txId as Signature, { encoding: 'json', maxSupportedTransactionVersion: 1 })
+      .send();
+    expect(landed?.version).toBe(1);
 
     const after = await getBalance(sender.address);
     const delta = before - after;

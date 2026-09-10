@@ -14,6 +14,7 @@ import type { SolanaWalletBalance } from '../../types/balance';
 import type { FetchSolanaBalanceFn, FetchSolanaTransactionsFn } from '../../types/transfer';
 import type { FetchNftsFromBackendFn } from '../../types/nft';
 import { SolanaReadAccount } from './SolanaReadAccount';
+import { transactionVersionFor } from './networks';
 import type { ValidationResult } from './validation';
 
 /**
@@ -137,14 +138,10 @@ export class SolanaAccount extends SolanaReadAccount {
     amount: number,
     opts?: SolanaTransferOptions
   ): Promise<{ txId: string }> {
-    const result = await createTransfer(
-      this.getRpc(),
-      this.signer,
-      address(to),
-      token,
-      amount,
-      opts
-    );
+    const result = await createTransfer(this.getRpc(), this.signer, address(to), token, amount, {
+      ...opts,
+      version: transactionVersionFor(this.network.networkId),
+    });
     return { txId: result.txId as string };
   }
 
@@ -163,14 +160,10 @@ export class SolanaAccount extends SolanaReadAccount {
     amount: number,
     opts?: EstimateFeeOptions
   ): Promise<FeeEstimateResult | null> {
-    const fee = await estimateSolanaFee(
-      this.getRpc(),
-      this.signer,
-      address(to),
-      token,
-      amount,
-      opts
-    );
+    const fee = await estimateSolanaFee(this.getRpc(), this.signer, address(to), token, amount, {
+      ...opts,
+      version: transactionVersionFor(this.network.networkId),
+    });
     if (fee === null) return null;
     const feeInSol = removeDecimals(fee, 9);
     return {

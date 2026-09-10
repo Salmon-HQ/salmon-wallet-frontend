@@ -1,5 +1,5 @@
 import type { Rpc, RpcSubscriptions, SolanaRpcApi, SolanaRpcSubscriptionsApi } from '@solana/kit';
-import type { SolanaNetwork } from '../../types/blockchain';
+import type { SolanaNetwork, SolanaNetworkId } from '../../types/blockchain';
 
 /** The kit RPC client this package talks to Solana through. */
 export type SolanaRpc = Rpc<SolanaRpcApi>;
@@ -32,6 +32,26 @@ export const SOLANA_NETWORKS: Record<string, SolanaNetwork> = {
     },
   },
 };
+
+/**
+ * The transaction version the wallet's own Send builds on each cluster.
+ *
+ * v1 (SIMD-0296: 4096-byte transactions, resource limits in the header) is
+ * accepted only where the feature is active; a cluster that has not activated
+ * it refuses a v1 at preflight with VERSION_NUMBER_NOT_SUPPORTED. Devnet runs
+ * it; mainnet does not yet. On mainnet activation, confirm on the cluster
+ * (a v1 send lands), flip the entry to 1 and move the pin in networks.test.ts.
+ * Nothing else changes: the builder in transfer.ts takes whatever is here.
+ */
+export const SOLANA_TRANSACTION_VERSION: Readonly<Record<SolanaNetworkId, 0 | 1>> = {
+  'solana-mainnet': 0,
+  'solana-devnet': 1,
+};
+
+/** The version Send builds for a network. */
+export function transactionVersionFor(networkId: SolanaNetworkId): 0 | 1 {
+  return SOLANA_TRANSACTION_VERSION[networkId];
+}
 
 /**
  * Derives the WebSocket endpoint from an RPC endpoint.

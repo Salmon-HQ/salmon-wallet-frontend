@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { deriveSolanaWsUrl, resolveSolanaWsUrl } from './networks';
+import {
+  SOLANA_TRANSACTION_VERSION,
+  deriveSolanaWsUrl,
+  resolveSolanaWsUrl,
+  transactionVersionFor,
+} from './networks';
 
 describe('deriveSolanaWsUrl', () => {
   it.each([
@@ -40,5 +45,16 @@ describe('resolveSolanaWsUrl', () => {
 
   it('derives when no wsUrl is configured', () => {
     expect(resolveSolanaWsUrl('http://127.0.0.1:8899')).toBe('ws://127.0.0.1:8900/');
+  });
+});
+
+describe('SOLANA_TRANSACTION_VERSION', () => {
+  // The version a cluster runs is written down once, here. Devnet activated
+  // SIMD-0296 (v1, 4096-byte transactions); mainnet has not yet. When it does,
+  // flip the mainnet entry and this pin together — nothing else moves.
+  it('sends v1 on devnet and v0 on mainnet', () => {
+    expect(SOLANA_TRANSACTION_VERSION).toEqual({ 'solana-devnet': 1, 'solana-mainnet': 0 });
+    expect(transactionVersionFor('solana-devnet')).toBe(1);
+    expect(transactionVersionFor('solana-mainnet')).toBe(0);
   });
 });
