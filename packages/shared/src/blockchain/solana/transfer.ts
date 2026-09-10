@@ -31,6 +31,7 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
   signTransactionMessageWithSigners,
   unwrapOption,
+  setTransactionMessageConfig,
 } from '@solana/kit';
 import type {
   Address,
@@ -38,6 +39,7 @@ import type {
   Signature,
   TransactionMessageBytesBase64,
   TransactionSigner,
+  V1TransactionConfig,
 } from '@solana/kit';
 import { getTransferSolInstruction } from '@solana-program/system';
 import { getAddMemoInstruction } from '@solana-program/memo';
@@ -74,9 +76,14 @@ const ONE_IN_BASIS_POINTS = 10_000n;
 /**
  * Options for creating a transfer transaction
  */
+/** The transaction message versions Send can build; see SOLANA_TRANSACTION_VERSION. */
+export type TransferTransactionVersion = 0 | 1;
+
 export interface TransferOptions {
   /** Simulate transaction instead of sending */
   simulate?: boolean;
+  /** Message version to build; defaults to 0 (see `SOLANA_TRANSACTION_VERSION`) */
+  version?: TransferTransactionVersion;
   /** Memo to attach to the transaction (for Token-2022) */
   memo?: string;
   /** Token decimals (used as fallback if mint lookup fails) */
@@ -88,8 +95,8 @@ export type SimulatedTransferResponse = Awaited<
   ReturnType<ReturnType<SolanaRpc['simulateTransaction']>['send']>
 >['value'];
 
-/** A transaction message ready to be signed and submitted. */
-type TransferTransactionMessage = Awaited<ReturnType<typeof createSolTransaction>>;
+/** A transaction message ready to be signed and submitted, in either version. */
+type TransferTransactionMessage = Awaited<ReturnType<typeof buildTransactionMessage>>;
 
 /**
  * Result of a transfer operation
@@ -105,6 +112,8 @@ export interface TransferResult {
 export interface EstimateFeeOptions {
   /** Token decimals (used as fallback) */
   decimals?: number;
+  /** Message version to estimate on; the same one the send will build */
+  version?: TransferTransactionVersion;
 }
 
 /**
@@ -149,19 +158,61 @@ function calculateFee(transferFee: TransferFee, preFeeAmount: bigint): bigint {
   return rawFee > transferFee.maximumFee ? transferFee.maximumFee : rawFee;
 }
 
-/** Assembles a v0 transaction message paid for and signed by `signer`. */
+/**
+ * The resource budget a legacy/v0 transaction gets without asking: 200k compute
+ * units per instruction (capped at the transaction maximum) and 64 MiB of loaded
+ * account data. A v1 message that leaves these unset is budgeted zero of each
+ * and fails at preflight (`Transaction exceeded max loaded accounts data size
+ * cap`, measured on devnet), so the transfer writes the same budget into the
+ * header the runtime used to assume.
+ */
+const V0_COMPUTE_UNITS_PER_INSTRUCTION = 200_000;
+const MAX_COMPUTE_UNIT_LIMIT = 1_400_000;
+const V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT = 64 * 1024 * 1024;
+
+/** The v1 header equivalent of what a v0 transaction with `instructions` is granted. */
+export function v1ResourceBudget(instructions: readonly Instruction[]): V1TransactionConfig {
+  return {
+    computeUnitLimit: Math.min(
+      V0_COMPUTE_UNITS_PER_INSTRUCTION * instructions.length,
+      MAX_COMPUTE_UNIT_LIMIT
+    ),
+    loadedAccountsDataSizeLimit: V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT,
+  };
+}
+
+/**
+ * Assembles a transaction message paid for and signed by `signer`.
+ *
+ * A v1 message (SIMD-0296) admits no address-lookup-table instructions; the
+ * transfer never used any. Each `createTransactionMessage` call keeps its
+ * literal version so kit's typed message shapes carry through to the signer,
+ * and the v1 branch writes the resource budget v0 received implicitly.
+ */
+// ponytail: a fixed v0-equivalent budget, not a measured one; simulate for
+// `unitsConsumed` and size the limit to it once a priority fee is charged per CU.
 async function buildTransactionMessage(
   rpc: SolanaRpc,
   signer: TransactionSigner,
-  instructions: Instruction[]
+  instructions: Instruction[],
+  version: TransferTransactionVersion = 0
 ) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
-  return pipe(
+  const base = pipe(
     createTransactionMessage({ version: 0 }),
     (message) => setTransactionMessageFeePayerSigner(signer, message),
     (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
     (message) => appendTransactionMessageInstructions(instructions, message)
+  );
+  if (version === 0) return base;
+
+  return pipe(
+    createTransactionMessage({ version: 1 }),
+    (message) => setTransactionMessageFeePayerSigner(signer, message),
+    (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
+    (message) => appendTransactionMessageInstructions(instructions, message),
+    (message) => setTransactionMessageConfig(v1ResourceBudget(instructions), message)
   );
 }
 
@@ -200,7 +251,7 @@ export async function createTransfer(
   const { simulate = false } = opts;
 
   const transaction = isNativeSol(token)
-    ? await createSolTransaction(rpc, signer, to, amount)
+    ? await createSolTransaction(rpc, signer, to, amount, opts)
     : await createSplTransaction(rpc, signer, to, token, amount, opts);
 
   const result = await executeTransaction(rpc, transaction, simulate);
@@ -214,21 +265,28 @@ export async function createTransfer(
  * @param signer - Sender's transaction signer
  * @param to - Recipient's address
  * @param amount - Amount in SOL
+ * @param opts - Transfer options (only `version` applies)
  * @returns Prepared transaction message
  */
 export async function createSolTransaction(
   rpc: SolanaRpc,
   signer: TransactionSigner,
   to: Address,
-  amount: number
+  amount: number,
+  opts: Pick<TransferOptions, 'version'> = {}
 ) {
-  return buildTransactionMessage(rpc, signer, [
-    getTransferSolInstruction({
-      source: signer,
-      destination: to,
-      amount: BigInt(Math.floor(LAMPORTS_PER_SOL * amount)),
-    }),
-  ]);
+  return buildTransactionMessage(
+    rpc,
+    signer,
+    [
+      getTransferSolInstruction({
+        source: signer,
+        destination: to,
+        amount: BigInt(Math.floor(LAMPORTS_PER_SOL * amount)),
+      }),
+    ],
+    opts.version
+  );
 }
 
 /**
@@ -340,7 +398,7 @@ export async function createSplTransaction(
     );
   }
 
-  return buildTransactionMessage(rpc, signer, instructions);
+  return buildTransactionMessage(rpc, signer, instructions, opts.version);
 }
 
 /**
@@ -400,7 +458,7 @@ export async function estimateFee(
   opts: EstimateFeeOptions = {}
 ): Promise<number | null> {
   const transaction = isNativeSol(token)
-    ? await createSolTransaction(rpc, signer, to, amount)
+    ? await createSolTransaction(rpc, signer, to, amount, opts)
     : await createSplTransaction(rpc, signer, to, token, amount, opts);
 
   const compiled = compileTransaction(transaction);

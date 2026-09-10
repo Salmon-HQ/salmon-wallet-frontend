@@ -40,7 +40,7 @@ const RPC = process.env.DEVNET_RPC_URL || 'https://api.devnet.solana.com';
 const devnet = ENABLED ? describe : describe.skip;
 
 devnet('createTransfer (devnet integration)', () => {
-  it('builds a SOL transfer that actually lands and reduces the sender balance', async () => {
+  it('builds a v1 SOL transfer that actually lands and reduces the sender balance', async () => {
     if (!SECRET) {
       throw new Error(
         'DEVNET_TEST_SECRET_KEY is required (JSON secret-key array of a funded devnet keypair).'
@@ -55,11 +55,16 @@ devnet('createTransfer (devnet integration)', () => {
     const getBalance = async (owner: string) =>
       Number((await rpc.getBalance(address(owner)).send()).value);
 
-    const before = await getBalance(sender.address);
-    expect(before).toBeGreaterThan(0.01 * LAMPORTS_PER_SOL); // needs funding
-
     const amountSol = 0.001;
-    const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol);
+    const FEE_MARGIN = 50_000;
+
+    const before = await getBalance(sender.address);
+    // Needs funding: the amount, the fee, and rent for the sender to stay alive.
+    expect(before).toBeGreaterThan(amountSol * LAMPORTS_PER_SOL + 2 * FEE_MARGIN);
+    // Spec 032: devnet runs v1, so this is what the wallet builds there.
+    const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol, {
+      version: 1,
+    });
     // Without `simulate`, txId is a real signature string (the union type also
     // allows a simulation payload when simulating).
     expect(typeof txId).toBe('string');
@@ -71,12 +76,18 @@ devnet('createTransfer (devnet integration)', () => {
       signature: txId as Signature,
     });
 
+    // The cluster read it back as a v1 transaction, not a v0 that happened to land.
+    const landed = await rpc
+      .getTransaction(txId as Signature, { encoding: 'json', maxSupportedTransactionVersion: 1 })
+      .send();
+    expect(landed?.version).toBe(1);
+
     const after = await getBalance(sender.address);
     const delta = before - after;
 
     // Dropped by the transfer amount plus a (small) network fee.
     expect(delta).toBeGreaterThanOrEqual(Math.floor(amountSol * LAMPORTS_PER_SOL));
-    expect(delta).toBeLessThan(Math.floor(amountSol * LAMPORTS_PER_SOL) + 50_000);
+    expect(delta).toBeLessThan(Math.floor(amountSol * LAMPORTS_PER_SOL) + FEE_MARGIN);
 
     // Recipient received exactly the transfer amount.
     expect(await getBalance(recipient)).toBe(Math.floor(amountSol * LAMPORTS_PER_SOL));

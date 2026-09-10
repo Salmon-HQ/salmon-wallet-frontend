@@ -20,6 +20,9 @@ export {
 } from './factory';
 export type { CreateSolanaAccountOptions, DeriveSolanaAccountsOptions } from './factory';
 
+// Networks
+export { SOLANA_TRANSACTION_VERSION, transactionVersionFor } from './networks';
+
 // Transfer functions
 export {
   createTransfer,

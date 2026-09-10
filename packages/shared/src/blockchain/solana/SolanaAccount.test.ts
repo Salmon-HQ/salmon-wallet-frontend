@@ -7,7 +7,14 @@ vi.mock('./domains', () => ({
   getPublicKeyFromDomain: vi.fn(),
 }));
 
+vi.mock('./transfer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./transfer')>()),
+  createTransfer: vi.fn().mockResolvedValue({ txId: 'sig' }),
+  estimateFee: vi.fn().mockResolvedValue(5000),
+}));
+
 import { SOLANA_NETWORKS } from './networks';
+import { createTransfer, estimateFee } from './transfer';
 import { SolanaAccount } from './SolanaAccount';
 import { getDomain, getDomainFromPublicKey, getPublicKeyFromDomain } from './domains';
 
@@ -18,9 +25,12 @@ const mockGetPublicKeyFromDomain = vi.mocked(getPublicKeyFromDomain);
 /** A fixed address that is not the one under test. */
 const OTHER_ADDRESS = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
 
-async function createAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
+async function createAccount(
+  seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
+  network = SOLANA_NETWORKS['solana-mainnet']
+) {
   return new SolanaAccount({
-    network: SOLANA_NETWORKS['solana-mainnet'],
+    network,
     index: 0,
     path: "m/44'/501'/0'/0'",
     keyPair: { seed, signer: await createKeyPairSignerFromPrivateKeyBytes(seed, false) },
@@ -134,5 +144,32 @@ describe('SolanaAccount', () => {
     await expect(account.createSwapTransaction()).rejects.toThrow(
       'method_not_supported: Use swap service directly'
     );
+  });
+
+  // Spec 032: the account is where the network and the signer meet, so it is
+  // the account that says which transaction version the transfer is built in.
+  describe('transaction version per network', () => {
+    it('sends v1 on devnet and v0 on mainnet, and estimates the fee the same way', async () => {
+      const devnet = await createAccount(undefined, SOLANA_NETWORKS['solana-devnet']);
+      const mainnet = await createAccount();
+
+      await devnet.transfer(OTHER_ADDRESS, 'So11111111111111111111111111111111111111112', 1);
+      await mainnet.transfer(OTHER_ADDRESS, 'So11111111111111111111111111111111111111112', 1);
+      await devnet.estimateTransferFee(
+        OTHER_ADDRESS,
+        'So11111111111111111111111111111111111111112',
+        1
+      );
+      await mainnet.estimateTransferFee(
+        OTHER_ADDRESS,
+        'So11111111111111111111111111111111111111112',
+        1
+      );
+
+      const versions = (fn: { mock: { calls: unknown[][] } }) =>
+        fn.mock.calls.map((call) => (call[5] as { version?: number }).version);
+      expect(versions(vi.mocked(createTransfer))).toEqual([1, 0]);
+      expect(versions(vi.mocked(estimateFee))).toEqual([1, 0]);
+    });
   });
 });
