@@ -7,6 +7,7 @@ import { createSemantic } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
+import { iconSize } from '../../icons';
 import { WarningNotice } from './WarningNotice';
 
 afterEach(cleanup);
@@ -56,5 +57,13 @@ describe('WarningNotice', () => {
 
     renderInMode('light', <WarningNotice tone="warning" title="Warn" testID="notice" />);
     expect(screen.getByTestId('notice').style.borderColor).toBe(asRenderedColor(light));
+  });
+
+  it('centres the icon on the first line: the title is exactly as tall as the icon', () => {
+    renderInMode('dark', <WarningNotice title="Could not resolve domain name" />);
+
+    expect(screen.getByText('Could not resolve domain name').style.lineHeight).toBe(
+      `${iconSize.md}px`
+    );
   });
 });

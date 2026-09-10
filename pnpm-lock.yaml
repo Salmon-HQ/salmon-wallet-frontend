@@ -36,6 +36,7 @@ overrides:
   lodash: '>=4.18.0 <5'
   stream-json: '>=3.5.0 <4'
   js-yaml: '>=4.3.2 <5'
+  '@solana-name-service/sns-sdk-kit>@solana-program/token': 0.16.1
 
 patchedDependencies:
   expo-camera@55.0.21:
@@ -370,8 +371,8 @@ importers:
         specifier: ~2.2.0
         version: 2.2.0
       '@solana-name-service/sns-sdk-kit':
-        specifier: ^0.10.1
-        version: 0.10.1(@solana-program/token@0.9.0(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)))(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+        specifier: ^1.0.1
+        version: 1.0.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana-program/address-lookup-table':
         specifier: ^0.14.1
         version: 0.14.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
@@ -2519,10 +2520,10 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@solana-name-service/sns-sdk-kit@0.10.1':
-    resolution: {integrity: sha512-7se5CMl80CUO4r08QnDA+/QyTDvgWTeqUde20k7zDHnF/8BplcnL63Reur5iDm3kav+z4N/nczfvv3IwwH7sgQ==}
+  '@solana-name-service/sns-sdk-kit@1.0.1':
+    resolution: {integrity: sha512-sapLZQQYH31KRaAwuxyRd9/WimMPzhRpg67kq46nWN0l9C9ztW0nHDZ2ysjFPatn7PGEnUVfGE5iPm9uy+AYsg==}
+    engines: {node: '>=24.0.0'}
     peerDependencies:
-      '@solana-program/token': ^0.13.0
       '@solana/kit': ^6.9.0
 
   '@solana-program/address-lookup-table@0.14.1':
@@ -2554,6 +2555,11 @@ packages:
     peerDependenciesMeta:
       '@solana/zk-sdk':
         optional: true
+
+  '@solana-program/token@0.16.1':
+    resolution: {integrity: sha512-X9dsvbh+VDq4SuCfvxn95P1DCvtBYHJOBiVmgBJMfW8l/lp8uSwEhy9IurpcdltnGi5kNIkCm4sk4YOXKAMiCw==}
+    peerDependencies:
+      '@solana/kit': ^8.0.0
 
   '@solana-program/token@0.9.0':
     resolution: {integrity: sha512-vnZxndd4ED4Fc56sw93cWZ2djEeeOFxtaPS8SPf5+a+JZjKA/EnKqzbE1y04FuMhIVrLERQ8uR8H2h72eZzlsA==}
@@ -10641,10 +10647,10 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@solana-name-service/sns-sdk-kit@0.10.1(@solana-program/token@0.9.0(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)))(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
+  '@solana-name-service/sns-sdk-kit@1.0.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@scure/base': 1.2.6
-      '@solana-program/token': 0.9.0(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+      '@solana-program/token': 0.16.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana/kit': 8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
       borsh: 2.0.0
       ipaddr.js: 2.3.0
@@ -10676,13 +10682,14 @@ snapshots:
       '@solana/kit': 8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
       '@solana/sysvars': 8.2.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
 
+  '@solana-program/token@0.16.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
+    dependencies:
+      '@solana-program/system': 0.14.1(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+      '@solana/kit': 8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
+
   '@solana-program/token@0.9.0(@solana/kit@5.5.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@solana/kit': 5.5.1(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
-
-  '@solana-program/token@0.9.0(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
-    dependencies:
-      '@solana/kit': 8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
 
   '@solana-program/zk-elgamal-proof@0.4.0(@solana/kit@8.2.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:

@@ -21,6 +21,7 @@ export const VALIDATION_MESSAGES: Record<string, string> = {
   // Solana
   invalid: 'send.validation.invalid',
   invalid_domain: 'send.validation.invalid_domain',
+  sol_domain_paused: 'send.validation.sol_domain_paused',
   same_address: 'send.validation.same_address',
   no_info: 'send.validation.no_info',
   off_curve_no_funds: 'send.validation.off_curve_no_funds',

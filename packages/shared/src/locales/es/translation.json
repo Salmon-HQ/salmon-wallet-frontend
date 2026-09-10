@@ -847,6 +847,7 @@
       "network_error": "No se pudo verificar la dirección. Revisá tu conexión.",
       "invalid": "Formato de dirección inválido",
       "invalid_domain": "No se pudo resolver el nombre de dominio",
+      "sol_domain_paused": "Los nombres “.sol” están pausados mientras SNS pasa a “.sns”. Usá el mismo nombre con .sns.",
       "same_address": "No podés enviarte a tu propia dirección",
       "no_info": "Esta cuenta todavía no existe on-chain. El destinatario va a tener que fondearla.",
       "off_curve_no_funds": "Esta es una dirección derivada de programa sin fondos",

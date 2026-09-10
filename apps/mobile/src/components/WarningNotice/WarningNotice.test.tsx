@@ -8,6 +8,7 @@ import { render, screen } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../../test-utils/themeTokens') }));
 
+import { iconSize } from '../../icons';
 import { WarningNotice } from './WarningNotice';
 
 describe('WarningNotice', () => {
@@ -32,5 +33,15 @@ describe('WarningNotice', () => {
 
     expect(screen.getByText('Retry')).toBeTruthy();
     expect(screen.getByText('Body copy')).toBeTruthy();
+  });
+
+  it('centres the icon on the first line: the title is exactly as tall as the icon', () => {
+    render(<WarningNotice testID="warning" title="Could not resolve domain name" />);
+
+    const flat = Object.assign(
+      {},
+      ...[screen.getByText('Could not resolve domain name').props.style].flat()
+    );
+    expect(flat.lineHeight).toBe(iconSize.md);
   });
 });

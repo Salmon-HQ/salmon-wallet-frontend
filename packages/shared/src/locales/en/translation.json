@@ -847,6 +847,7 @@
       "network_error": "Could not verify address. Check your connection.",
       "invalid": "Invalid address format",
       "invalid_domain": "Could not resolve domain name",
+      "sol_domain_paused": "“.sol” names are paused while SNS moves to “.sns”. Use the same name with .sns.",
       "same_address": "Cannot send to your own address",
       "no_info": "This account does not exist on-chain yet. The recipient will need to fund it.",
       "off_curve_no_funds": "This is a program-derived address without funds",
