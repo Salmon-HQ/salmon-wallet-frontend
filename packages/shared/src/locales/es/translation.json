@@ -752,7 +752,9 @@
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
     "open_powerups": "Abrir Powerups",
     "close_powerups": "Cerrar Powerups",
-    "portfolio_order": "Ordenar las pestañas"
+    "portfolio_order": "Ordenar las pestañas",
+    "install_powerup": "Agregar {{name}} a Inicio",
+    "uninstall_powerup": "Quitar {{name}} de Inicio"
   },
   "collectibles": {
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
@@ -784,7 +786,8 @@
       "order": {
         "title": "Ordená las pestañas",
         "hint": "Arrastrá para cambiar el orden.",
-        "handle": "Reordenar {{tab}}"
+        "handle": "Reordenar {{tab}}",
+        "remove": "Quitar {{tab}}"
       }
     }
   },
@@ -843,26 +846,20 @@
     }
   },
   "powerups": {
-    "installed": "INSTALADOS",
-    "browse_title": "Explorar Powerups",
-    "browse_subtitle": "Destacados, oficiales y de la comunidad",
+    "browse_title": "Powerups",
+    "installed": "Instalado",
+    "empty_section": "Todavía no hay nada acá",
     "badge": {
-      "official": "Oficial",
-      "community": "Comunidad",
-      "featured": "Destacado"
-    },
-    "search_placeholder": "Buscar powerups",
-    "empty_section": "Todavía no hay nada aquí",
-    "filters": {
-      "all": "Todos",
-      "featured": "Destacados",
-      "official": "Oficiales",
+      "core": "Core",
       "community": "Comunidad"
     },
     "sections": {
-      "featured": "DESTACADOS",
-      "official": "OFICIALES",
+      "core": "CORE",
       "community": "COMUNIDAD"
+    },
+    "detail": {
+      "install": "Agregar a Inicio",
+      "uninstall": "Quitar de Inicio"
     },
     "catalog": {
       "wallet_guard": {

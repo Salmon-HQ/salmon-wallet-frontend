@@ -186,6 +186,8 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 
 export { PowerupsFab } from './PowerupsFab';
 export type { PowerupsFabProps } from './PowerupsFab';
+export { PowerupsCatalog } from './PowerupsCatalog';
+export type { PowerupsCatalogProps } from './PowerupsCatalog';
 
 export { TokenList, TokenListItem } from './TokenList';
 export type { TokenListProps, TokenListItemProps } from './TokenList';

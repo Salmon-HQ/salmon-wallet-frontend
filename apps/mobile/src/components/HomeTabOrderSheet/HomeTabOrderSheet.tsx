@@ -2,9 +2,9 @@
  * HomeTabOrderSheet — where the user arranges Home's sub-tabs.
  *
  * One state, so it is a sheet and not a screen (DESIGN.md §Sheets): a list of
- * the tabs Home currently offers, each with a drag handle, and nothing a
- * second tap can turn into another surface. Order only — hiding a tab is a
- * separate decision, so no copy here promises it.
+ * the tabs Home currently offers, each with a drag handle. Portfolio and NFTs
+ * are the wallet itself and can only be arranged; a Powerup's tab also carries
+ * a `−`, which uninstalls the Powerup and takes its tab away.
  *
  * There is no Save. The new order is reported as each row is dropped, Home
  * re-flows behind the sheet, and the arrangement is already persisted by the
@@ -17,7 +17,7 @@
  * the set is two rows today and a handful once powerups add theirs.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Pressable, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -44,7 +44,7 @@ import {
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { timing } from '../../utils/motion';
-import { DotsSixVerticalIcon, iconSize } from '../../icons';
+import { DotsSixVerticalIcon, MinusIcon, iconSize } from '../../icons';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { ListRow } from '../ListRow';
 import type { HomeTabOrderSheetProps } from './types';
@@ -71,6 +71,8 @@ interface TabOrderRowProps {
   count: number;
   label: string;
   handleLabel: string;
+  removeLabel?: string;
+  onRemove?: () => void;
   isDragged: boolean;
   isReduceMotionEnabled: boolean;
   activeIndex: SharedValue<number>;
@@ -87,6 +89,8 @@ const TabOrderRow: React.FC<TabOrderRowProps> = ({
   count,
   label,
   handleLabel,
+  removeLabel,
+  onRemove,
   isDragged,
   isReduceMotionEnabled,
   activeIndex,
@@ -159,16 +163,30 @@ const TabOrderRow: React.FC<TabOrderRowProps> = ({
         // than as the same row somewhere unexpected.
         style={isDragged ? styles.lifted : undefined}
         trailing={
-          <GestureDetector gesture={pan}>
-            <View
-              style={styles.handle}
-              accessibilityRole="adjustable"
-              accessibilityLabel={handleLabel}
-              testID={`${testID}-handle`}
-            >
-              <DotsSixVerticalIcon size={iconSize.md} color={text.tertiary} />
-            </View>
-          </GestureDetector>
+          <View style={styles.trailing}>
+            {onRemove ? (
+              <Pressable
+                onPress={onRemove}
+                style={styles.handle}
+                accessibilityRole="button"
+                accessibilityLabel={removeLabel}
+                testID={`${testID}-remove`}
+                hitSlop={s(spacing.sm)}
+              >
+                <MinusIcon size={iconSize.md} color={text.tertiary} />
+              </Pressable>
+            ) : null}
+            <GestureDetector gesture={pan}>
+              <View
+                style={styles.handle}
+                accessibilityRole="adjustable"
+                accessibilityLabel={handleLabel}
+                testID={`${testID}-handle`}
+              >
+                <DotsSixVerticalIcon size={iconSize.md} color={text.tertiary} />
+              </View>
+            </GestureDetector>
+          </View>
         }
       />
     </Animated.View>
@@ -180,6 +198,8 @@ export const HomeTabOrderSheet: React.FC<HomeTabOrderSheetProps> = ({
   onClose,
   tabs,
   onOrderChange,
+  removableKeys,
+  onRemove,
   style,
   testID = 'home-tab-order-sheet',
 }) => {
@@ -235,6 +255,10 @@ export const HomeTabOrderSheet: React.FC<HomeTabOrderSheetProps> = ({
               count={tabs.length}
               label={tab.label}
               handleLabel={t('home.tabs.order.handle', 'Reorder {{tab}}', { tab: tab.label })}
+              removeLabel={t('home.tabs.order.remove', 'Remove {{tab}}', { tab: tab.label })}
+              onRemove={
+                onRemove && removableKeys?.includes(tab.key) ? () => onRemove(tab.key) : undefined
+              }
               isDragged={draggedIndex === index}
               isReduceMotionEnabled={isReduceMotionEnabled}
               activeIndex={activeIndex}
@@ -272,6 +296,10 @@ const stylesFor = (t: Semantic) =>
     lifted: {
       backgroundColor: t.surface.raised,
       ...shadows.card,
+    },
+    trailing: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     handle: {
       // A grip needs a target, and 12 around a 20pt glyph clears the 44pt

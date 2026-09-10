@@ -3,9 +3,9 @@
  *
  * The rule is a navigation contract, not a per-screen decision: Wallets,
  * Activity and each settings sub-screen slide in from the right and leave the
- * way they came, and the horizontal gesture is that motion run by hand.
- * Powerups is the one exception, and it is an exception on purpose — it rises
- * from the bottom over the Home header, as a plain screen of the same stack.
+ * way they came, and the horizontal gesture is that motion run by hand. A
+ * Powerup is not among them: an installed one is a sub-tab of Home and its
+ * catalogue is a sheet over Home, so neither has a route at all.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
@@ -88,20 +88,6 @@ jest.mock('../../src/components', () => ({
   LockContent: () => null,
   DepthBackground: () => null,
   ScalesBackground: () => null,
-  PowerupsFab: () => null,
-}));
-
-jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0 }),
-}));
-
-// The Powerups entry is a build-time alias (metro.config.js); the layout only
-// reads the flag, so the entry is stubbed rather than loaded.
-jest.mock('../../src/powerups', () => ({
-  POWERUPS_ENABLED: true,
-  SwapRoute: null,
-  PowerupsRoute: null,
-  getPowerups: () => [],
 }));
 
 import AppLayout from '../../app/(app)/_layout';
@@ -139,16 +125,13 @@ describe('the app stack', () => {
     expect(screensByName.send).toBeUndefined();
   });
 
-  it('keeps Powerups the one bottom-up screen — a screen of this stack, not a modal', () => {
+  it('registers no route for a Powerup — Home carries them now', () => {
     render(<AppLayout />);
 
-    expect(screensByName.powerups).toMatchObject({
-      animation: 'slide_from_bottom',
-      gestureDirection: 'vertical',
-    });
-    // No `presentation`: a modal is its own native window, and nothing —
-    // neither the lock overlay nor the powerups control — can float above one.
-    expect(screensByName.powerups).not.toHaveProperty('presentation');
+    // An installed Powerup is a sub-tab of Home and the catalogue is a sheet
+    // over Home: a route for either would be a second place to reach them.
+    expect('powerups' in screensByName).toBe(false);
+    expect('swap' in screensByName).toBe(false);
   });
 
   it('gives the settings sub-stack the same right slide', () => {

@@ -2,7 +2,7 @@
  * The developer flag has to reach the screens that read it.
  *
  * `DeveloperModeProvider` used to mount inside `(tabs)/_layout.tsx`. Activity,
- * Send, NFT detail and Powerups are screens pushed on the `(app)` stack, which
+ * Send and NFT detail are screens pushed on the `(app)` stack, which
  * sits ABOVE the tabs layout — so every one of them read the context's default
  * `false` while storage said `true`, and the four suites that cover them
  * mocked the context and could not see it. This one does not mock the context:
@@ -95,6 +95,13 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
   ...jest.requireActual('@salmon/shared/src/contexts/DeveloperModeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  // Nothing installed: the Powerup tabs are their own suite.
+  useInstalledPowerups: () => ({
+    installed: [],
+    isInstalled: () => false,
+    install: jest.fn(),
+    uninstall: jest.fn(),
+  }),
   mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
   buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
@@ -124,6 +131,17 @@ jest.mock('react-native-reanimated', () => ({
   useReducedMotion: () => false,
 }));
 
+// The Powerups entry is a build-time alias (metro.config.js). Home reads it
+// for the catalogue, the tab bodies and the flag; the real module pulls in the
+// sheet and its motion, which is not what any of this is about.
+jest.mock('../../src/powerups', () => ({
+  POWERUPS: [],
+  POWERUPS_ENABLED: true,
+  PowerupsCatalog: null,
+  getPowerupCatalog: () => [],
+  getPowerupTab: () => null,
+}));
+
 jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   const ReactActual = require('react');
@@ -135,19 +153,6 @@ jest.mock('../../src/components', () => {
     PowerupsFab: () => ReactActual.createElement(View, { testID: 'powerups-fab' }),
   };
 });
-
-jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0 }),
-}));
-
-// The Powerups entry is a build-time alias (metro.config.js); the layout only
-// reads the flag, so the entry is stubbed rather than loaded.
-jest.mock('../../src/powerups', () => ({
-  POWERUPS_ENABLED: true,
-  SwapRoute: null,
-  PowerupsRoute: null,
-  getPowerups: () => [],
-}));
 
 import AppLayout from '../../app/(app)/_layout';
 import { useDeveloperMode, useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
@@ -171,7 +176,7 @@ describe('the developer flag across the (app) stack', () => {
     storedConfig.showUnverifiedTokens = true;
   });
 
-  it.each(['activity', 'send', 'nft/[id]', 'powerups'])(
+  it.each(['activity', 'send', 'nft/[id]'])(
     'hands the stored flag to the %s screen',
     (route) => {
       probes[route] = probeFor('probe');
@@ -185,12 +190,12 @@ describe('the developer flag across the (app) stack', () => {
 
   it('hands the same instance to every pushed screen at once', () => {
     probes.activity = probeFor('activity');
-    probes.powerups = probeFor('powerups');
+    probes.send = probeFor('send');
 
     render(<AppLayout />);
 
     expect(screen.getByTestId('activity-developer').props.children).toBe('true');
-    expect(screen.getByTestId('powerups-developer').props.children).toBe('true');
+    expect(screen.getByTestId('send-developer').props.children).toBe('true');
   });
 
   it('reads false back from storage, never a hardcoded default', () => {

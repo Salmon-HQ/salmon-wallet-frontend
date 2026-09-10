@@ -7,7 +7,9 @@
  * values the rest of the app reads exist here; every Powerup module import
  * is dead behind `POWERUPS_ENABLED`.
  */
+import type { PowerupsCatalogEntry } from '../types/ui/index';
 import type { PowerupEntry, PowerupId } from './registry';
+import type { PowerupCatalogParams } from './catalog';
 
 export const POWERUPS_ENABLED = false;
 
@@ -20,5 +22,13 @@ export function getPowerup(_id: PowerupId): PowerupEntry | undefined {
 export function isPowerupOnNetwork(_entry: PowerupEntry, _networkId: string | null): boolean {
   return false;
 }
+
+export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [];
+
+export function getPowerupCatalog(_params: PowerupCatalogParams): PowerupsCatalogEntry[] {
+  return [];
+}
+
+export type { PowerupCatalogParams };
 
 export const powerupTranslations = { en: {}, es: {} } as const;

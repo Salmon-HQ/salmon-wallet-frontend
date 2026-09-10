@@ -1,18 +1,17 @@
 /**
- * The Swap Powerup's route: what the screen hands the Powerup (Solana tokens
- * only, the taker, the active network, the catalogue) and where it sends the
- * user afterwards. The Powerup's own behaviour is the shared hook's suite.
+ * The Swap Powerup's Home sub-tab: what it hands the Powerup — Solana tokens
+ * only, the taker, the active network, the catalogue. There is nowhere to
+ * navigate afterwards: the tab stays where it is. The Powerup's own behaviour
+ * is the shared hook's suite.
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-const mockRouter = { replace: jest.fn(), back: jest.fn(), push: jest.fn() };
 const mockSearchTokens = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
 }));
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 jest.mock('react-native-safe-area-context', () => {
   const { View } = jest.requireActual('react-native');
   return { SafeAreaView: View, useSafeAreaInsets: () => ({ top: 0, bottom: 0 }) };
@@ -96,9 +95,9 @@ const { useAccountsContext } = jest.requireMock('@salmon/shared') as {
   useAccountsContext: jest.Mock;
 };
 
-import SwapScreenPage from '../../src/screens/SwapRoute';
+import SwapTab from '../../src/screens/SwapTab';
 
-describe('SwapRoute', () => {
+describe('SwapTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -112,7 +111,7 @@ describe('SwapRoute', () => {
         networkId: 'solana-mainnet',
       },
     ]);
-    render(<SwapScreenPage />);
+    render(<SwapTab />);
     expect(screen.getByTestId('state-block').props.accessibilityLabel).toBe(
       'swap.errors.noAccount'
     );
@@ -127,7 +126,7 @@ describe('SwapRoute', () => {
         networkId: 'solana-devnet',
       },
     ]);
-    render(<SwapScreenPage />);
+    render(<SwapTab />);
 
     expect(screen.getByText('tokens:SOL')).toBeTruthy();
     expect(screen.getByText('featured:')).toBeTruthy();
@@ -140,10 +139,5 @@ describe('SwapRoute', () => {
 
     fireEvent.press(screen.getByTestId('search'));
     expect(mockSearchTokens).toHaveBeenCalledWith('usd', 'solana-mainnet');
-
-    fireEvent.press(screen.getByTestId('navigate-home'));
-    expect(mockRouter.replace).toHaveBeenCalledWith('/');
-    fireEvent.press(screen.getByTestId('swap-header'));
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
   });
 });

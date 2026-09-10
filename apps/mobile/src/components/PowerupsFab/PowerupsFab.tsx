@@ -1,6 +1,6 @@
 /**
  * PowerupsFab — the `+` floating action button that opens the Powerups
- * browse screen (and, from that screen, closes it).
+ * catalogue over Home (and, while it is up, closes it).
  *
  * It is a pressable accent `IconBubble` and nothing else: the circle, the
  * flesh, the specular and the press scale all come from the primitive, so this
@@ -45,10 +45,8 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
     () => timing(motionMs.swell, isReduceMotionEnabled, curve.settle),
     [isReduceMotionEnabled]
   );
-  // Always starts at zero, even when the FAB mounts already open: the browse
-  // screen renders its OWN instance of this control in the same spot as
-  // Home's, so the turn has to play on mount for the two to read as one
-  // object rotating rather than two buttons swapping.
+  // Always starts at zero: the catalogue rises over Home without unmounting
+  // this control, so the turn plays as the sheet arrives.
   const rotation = useSharedValue(0);
   useEffect(() => {
     rotation.value = withTiming(open ? OPEN_ROTATION : 0, rotateTiming);

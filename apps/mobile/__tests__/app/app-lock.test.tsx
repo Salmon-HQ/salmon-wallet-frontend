@@ -3,10 +3,9 @@
  * BEHIND every screen pushed on the `(app)` stack — a lock landing while
  * Wallets or Activity was open left balances sitting on top of the lock.
  * It now mounts in `(app)/_layout.tsx`, a sibling of the `<Stack>` itself,
- * so it covers every screen the stack can push. Powerups used to be the one
- * exception — as a `fullScreenModal` it was its own native window and had to
- * close itself on lock. It is a plain screen of this stack now, so it is
- * covered like the rest and that effect is gone.
+ * so it covers every screen the stack can push. A Powerup has no screen at
+ * all now — an installed one is a sub-tab of Home and the catalogue is a
+ * sheet over Home — so the overlay covers it with Home.
  */
 import React from 'react';
 import { act, render } from '@testing-library/react-native';
@@ -133,22 +132,8 @@ jest.mock('../../src/components', () => {
       lockContentProps = props;
       return ReactActual.createElement(View, { testID: 'lock-content' });
     },
-    PowerupsFab: () => ReactActual.createElement(View, { testID: 'powerups-fab' }),
   };
 });
-
-jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0 }),
-}));
-
-// The Powerups entry is a build-time alias (metro.config.js); the layout only
-// reads the flag, so the entry is stubbed rather than loaded.
-jest.mock('../../src/powerups', () => ({
-  POWERUPS_ENABLED: true,
-  SwapRoute: null,
-  PowerupsRoute: null,
-  getPowerups: () => [],
-}));
 
 import AppLayout from '../../app/(app)/_layout';
 
@@ -169,10 +154,6 @@ describe('the (app) shell', () => {
     // layout's overlay — a lock landing on a settings sub-screen left secrets
     // sitting on top of it. On this stack it is covered like anything else.
     expect('settings' in screensByName).toBe(true);
-    // Powerups too: it was a `fullScreenModal` (its own native window, above
-    // this whole React tree) and closed itself on lock. On this stack the
-    // overlay reaches it like anything else.
-    expect('powerups' in screensByName).toBe(true);
   });
 
   it('does not render the lock overlay while unlocked', () => {
@@ -191,7 +172,6 @@ describe('the (app) shell', () => {
     expect('wallets' in screensByName).toBe(true);
     expect('activity' in screensByName).toBe(true);
     expect('settings' in screensByName).toBe(true);
-    expect('powerups' in screensByName).toBe(true);
 
     const overlay = getByTestId('lock-overlay');
     const style = Object.assign({}, ...[overlay.props.style].flat(Infinity).filter(Boolean));

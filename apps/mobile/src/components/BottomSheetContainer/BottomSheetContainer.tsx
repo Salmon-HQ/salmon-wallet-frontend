@@ -156,6 +156,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   background,
   dragAreaStyle,
   dismissible = true,
+  maxHeight,
   testID,
 }) => {
   const styles = useThemedStyles(stylesFor);
@@ -321,7 +322,17 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           </TouchableWithoutFeedback>
 
           {/* Sheet */}
-          <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
+          <Reanimated.View
+            style={[
+              styles.sheetContainer,
+              // A ceiling in pixels, when the caller measured one: Home's
+              // catalogue stops just below the Send / Receive / Activity row
+              // instead of covering it.
+              maxHeight != null && { maxHeight },
+              sheetAnimatedStyle,
+              style,
+            ]}
+          >
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
               {/* No scales. Every sheet in the app mounts through here —

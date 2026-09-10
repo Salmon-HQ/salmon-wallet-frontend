@@ -141,6 +141,13 @@ jest.mock('@salmon/shared', () => ({
   // cover the logic, and Home is rendered here with what they hand back.
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  // Nothing installed: the Powerup tabs are their own suite.
+  useInstalledPowerups: () => ({
+    installed: [],
+    isInstalled: () => false,
+    install: jest.fn(),
+    uninstall: jest.fn(),
+  }),
   mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
   buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
@@ -151,6 +158,17 @@ jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
   useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
+// The Powerups entry is a build-time alias (metro.config.js). Home reads it
+// for the catalogue, the tab bodies and the flag; the real module pulls in the
+// sheet and its motion, which is not what any of this is about.
+jest.mock('../src/powerups', () => ({
+  POWERUPS: [],
+  POWERUPS_ENABLED: true,
+  PowerupsCatalog: null,
+  getPowerupCatalog: () => [],
+  getPowerupTab: () => null,
+}));
+
 jest.mock('../src/components', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
@@ -158,6 +176,7 @@ jest.mock('../src/components', () => {
   return {
     DerivedAccountsSheet: () => null,
     HomeTabOrderSheet: () => null,
+    PowerupsFab: () => null,
     // The identity line. Its own suite covers it; here it only has to render
     // so the Home tree mounts.
     WalletHeader: () => <View testID="wallet-header" />,

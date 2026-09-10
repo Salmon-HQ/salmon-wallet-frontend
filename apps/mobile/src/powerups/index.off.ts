@@ -3,18 +3,18 @@
  * resolves `src/powerups` here when `EXPO_PUBLIC_POWERUPS` is not 'on'.
  */
 import type { ComponentType } from 'react';
-import type { Powerup } from './catalog';
+import type { PowerupsCatalogProps } from '../components/PowerupsCatalog';
 
-export const POWERUPS_ENABLED = false;
+export {
+  POWERUPS_ENABLED,
+  POWERUPS,
+  getPowerupCatalog,
+  isPowerupOnNetwork,
+} from '@salmon/shared/powerups';
+export type { PowerupsCatalogProps };
 
-export function getPowerups(_options: {
-  includeMocks: boolean;
-  networkId: string | null;
-}): Powerup[] {
-  return [];
+export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = null;
+
+export function getPowerupTab(_id: string): ComponentType | null {
+  return null;
 }
-
-export const SwapRoute: ComponentType | null = null;
-export const PowerupsRoute: ComponentType | null = null;
-
-export type { Powerup };

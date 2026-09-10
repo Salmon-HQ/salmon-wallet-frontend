@@ -752,7 +752,9 @@
     "nft_view_hint": "Double tap to view NFT details",
     "open_powerups": "Open Powerups",
     "close_powerups": "Close Powerups",
-    "portfolio_order": "Arrange tabs"
+    "portfolio_order": "Arrange tabs",
+    "install_powerup": "Add {{name}} to Home",
+    "uninstall_powerup": "Remove {{name}} from Home"
   },
   "collectibles": {
     "no_account_for_network": "No account available for this network.",
@@ -784,7 +786,8 @@
       "order": {
         "title": "Arrange tabs",
         "hint": "Drag to change the order.",
-        "handle": "Reorder {{tab}}"
+        "handle": "Reorder {{tab}}",
+        "remove": "Remove {{tab}}"
       }
     }
   },
@@ -843,26 +846,20 @@
     }
   },
   "powerups": {
-    "installed": "INSTALLED",
-    "browse_title": "Browse Powerups",
-    "browse_subtitle": "Featured, official and community",
-    "badge": {
-      "official": "Official",
-      "community": "Community",
-      "featured": "Featured"
-    },
-    "search_placeholder": "Search powerups",
+    "browse_title": "Powerups",
+    "installed": "Installed",
     "empty_section": "Nothing here yet",
-    "filters": {
-      "all": "All",
-      "featured": "Featured",
-      "official": "Official",
+    "badge": {
+      "core": "Core",
       "community": "Community"
     },
     "sections": {
-      "featured": "FEATURED",
-      "official": "OFFICIAL",
+      "core": "CORE",
       "community": "COMMUNITY"
+    },
+    "detail": {
+      "install": "Add to Home",
+      "uninstall": "Remove from Home"
     },
     "catalog": {
       "wallet_guard": {

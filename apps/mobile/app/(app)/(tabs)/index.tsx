@@ -25,9 +25,16 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  View,
+} from 'react-native';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
@@ -37,12 +44,16 @@ import {
   usePrefetchBalances,
   useCurrencyContext,
   useHomeShell,
+  useInstalledPowerups,
   mapBalanceToToken,
+  type HomePowerupTab,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
   getHeldNetworkIds,
   type NetworkId,
+  spacing,
+  vs,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
@@ -52,6 +63,7 @@ import {
   HomeTabOrderSheet,
   NftsTab,
   PortfolioSubTabs,
+  PowerupsFab,
   ReceiveSheet,
   SkeletonRow,
   StateBlock,
@@ -60,6 +72,13 @@ import {
   WarningNotice,
   type BlockchainId,
 } from '../../../src/components';
+import {
+  POWERUPS,
+  POWERUPS_ENABLED,
+  PowerupsCatalog,
+  getPowerupCatalog,
+  getPowerupTab,
+} from '../../../src/powerups';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
@@ -70,8 +89,21 @@ import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
-/** The two in-page sub-tabs — the shell's key, kept under its old local name. */
+/** The in-page sub-tabs — the shell's key, kept under its old local name. */
 type SubTabKey = HomeSubTabKey;
+
+/** The catalogue's ceiling is measured against the window, once. */
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
+
+/**
+ * The active Powerup's surface, resolved through the aliased entry so Home
+ * never names a Powerup itself. Nothing when the id owns no surface — a build
+ * with Powerups off, or a stored tab whose Powerup is gone.
+ */
+function PowerupTabBody({ tabKey }: { tabKey: string }) {
+  const body = getPowerupTab(tabKey);
+  return body ? React.createElement(body) : null;
+}
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -101,6 +133,25 @@ export default function HomeScreen() {
   // The sheet where the sub-tabs are arranged
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
 
+  // The Powerups catalogue, and the ceiling it rises to: the bottom of the
+  // Send / Receive / Activity row in window coordinates, so the balance and
+  // those buttons stay visible above the sheet.
+  const [catalogVisible, setCatalogVisible] = useState(false);
+  const [actionsBottom, setActionsBottom] = useState(0);
+  const balanceBlockRef = useRef<View>(null);
+  const handleBalanceBlockLayout = useCallback(() => {
+    balanceBlockRef.current?.measureInWindow((_x, y, _width, height) =>
+      setActionsBottom(y + height)
+    );
+  }, []);
+  const catalogMaxHeight =
+    actionsBottom > 0 ? Math.max(WINDOW_HEIGHT - actionsBottom - vs(spacing.md), 0) : undefined;
+
+  // What this device has installed. Nothing is installed out of the box, so
+  // Home starts with Portfolio and NFTs and gains a tab only when the user
+  // adds one from the catalogue.
+  const { installed, install, uninstall } = useInstalledPowerups();
+
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -110,10 +161,9 @@ export default function HomeScreen() {
     if (!accountState.locked) return;
 
     setReceiveSheetVisible(false);
-    // Powerups is a route now, not a sheet — it closes itself on lock (see
-    // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
-    // mounts the lock overlay and Home cannot reach it from here. Token
-    // detail is a route too (spec 019) — same story, it closes itself.
+    setCatalogVisible(false);
+    // Token detail is a route (spec 019) — it sits above the tab shell that
+    // mounts the lock overlay, so it closes itself.
   }, [accountState.locked]);
 
   // Unverified tokens — its own setting now (spec 026 D4). Developer Networks
@@ -210,6 +260,19 @@ export default function HomeScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
 
+  // The installed Powerups, as Home surfaces. The registry and the copy come
+  // through `src/powerups`, the entry the build flag aliases, so a build with
+  // Powerups off passes an empty list and the shell never hears of them.
+  const powerupTabs = useMemo<HomePowerupTab[]>(
+    () =>
+      POWERUPS.filter((entry) => installed.includes(entry.id)).map((entry) => ({
+        key: entry.id as HomeSubTabKey,
+        label: t(entry.nameKey),
+        networks: entry.networks,
+      })),
+    [installed, t]
+  );
+
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
   // in shared; this screen renders it (`useHomeShell`).
@@ -237,6 +300,7 @@ export default function HomeScreen() {
     isTaskEngaged,
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
+    powerupTabs,
   });
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
@@ -351,6 +415,38 @@ export default function HomeScreen() {
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
   const handleOrderSheetClose = useCallback(() => setOrderSheetVisible(false), []);
 
+  // The catalogue. Its entries are the registry's for the active network plus
+  // the developer-only mocks; an installed one keeps its place in its tier and
+  // says it is installed there.
+  const catalogEntries = useMemo(
+    () =>
+      getPowerupCatalog({
+        includeMocks: developerNetworks,
+        networkId: currentNetworkId,
+        installedIds: installed,
+      }),
+    [developerNetworks, currentNetworkId, installed]
+  );
+  const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
+  const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
+  // Only a real Powerup can be installed: the mocks advertise nothing the
+  // wallet can open, so the catalogue refuses to give them a tab.
+  const isRealPowerup = useCallback(
+    (id: string) => POWERUPS.some((entry) => entry.id === id),
+    []
+  );
+  const handleInstall = useCallback(
+    (id: string) => {
+      if (isRealPowerup(id)) install(id);
+    },
+    [install, isRealPowerup]
+  );
+  // Removing a tab in the arrangement sheet is the same act as uninstalling.
+  const removableTabKeys = useMemo(
+    () => powerupTabs.map((tab) => tab.key as string),
+    [powerupTabs]
+  );
+
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
   // The list only renders this once the load settled (TokenList shows the
@@ -411,17 +507,19 @@ export default function HomeScreen() {
   // The block above the content. It is fixed on both sub-tabs — nothing above
   // the sub-tab row scrolls (owner, 2026-09-01).
   const balanceBlock = (
-    <BalanceHeader
-      blockchains={blockchainBalances}
-      hiddenBalance={hiddenBalance}
-      onToggleVisibility={toggleHidden}
-      onBlockchainChange={handleBlockchainChange}
-      activeIndex={activeBlockchainIndex}
-      onSendPress={handleSendPress}
-      onReceivePress={handleReceivePress}
-      onActivityPress={handleActivityPress}
-      sendDisabled={isWatchOnlyAccount(activeAccount)}
-    />
+    <View ref={balanceBlockRef} onLayout={handleBalanceBlockLayout} collapsable={false}>
+      <BalanceHeader
+        blockchains={blockchainBalances}
+        hiddenBalance={hiddenBalance}
+        onToggleVisibility={toggleHidden}
+        onBlockchainChange={handleBlockchainChange}
+        activeIndex={activeBlockchainIndex}
+        onSendPress={handleSendPress}
+        onReceivePress={handleReceivePress}
+        onActivityPress={handleActivityPress}
+        sendDisabled={isWatchOnlyAccount(activeAccount)}
+      />
+    </View>
   );
 
   const subTabsRow = (
@@ -439,6 +537,12 @@ export default function HomeScreen() {
       }
       tabsExiting={tabsHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
     />
+  );
+
+  const powerupTabContent = (
+    <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
+      <PowerupTabBody tabKey={effectiveSubTab} />
+    </View>
   );
 
   // The one mask on this screen: the seam between the fixed row above and the
@@ -607,7 +711,7 @@ export default function HomeScreen() {
                   {topFade}
                 </View>
               </>
-            ) : (
+            ) : effectiveSubTab === 'nfts' ? (
               // NFTs: the grid owns the only scroll view in the content region,
               // and everything above it is the same fixed block Portfolio shows.
               <View style={styles.listContainer}>
@@ -618,18 +722,50 @@ export default function HomeScreen() {
                 />
                 {topFade}
               </View>
+            ) : (
+              // An installed Powerup's own surface. The confirmation is core's
+              // and covers the whole app when the user signs (spec 027 §2).
+              powerupTabContent
             )}
           </Reanimated.View>
         </Reanimated.View>
       )}
 
+      {/* The `+`. It floats over the content and opens the catalogue; while
+          the catalogue is up the plus turns into the close mark. It leaves
+          with the content when a task takes the screen. */}
+      {POWERUPS_ENABLED && !isTaskEngaged && (
+        <PowerupsFab
+          open={catalogVisible}
+          onPress={handleCatalogToggle}
+          bottomOffset={floatingBottomOffset}
+        />
+      )}
+
+      {/* The catalogue: a drawer of Home, stopping just below the Send /
+          Receive / Activity row so the balance stays in view above it. */}
+      {PowerupsCatalog && (
+        <PowerupsCatalog
+          visible={catalogVisible}
+          onClose={handleCatalogClose}
+          entries={catalogEntries}
+          onInstall={handleInstall}
+          onUninstall={uninstall}
+          maxHeight={catalogMaxHeight}
+        />
+      )}
+
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
-          rows are dropped, and there is nothing to save. */}
+          rows are dropped, and there is nothing to save. Portfolio and NFTs
+          are the wallet itself; a Powerup's tab carries a `−` that uninstalls
+          it. */}
       <HomeTabOrderSheet
         visible={orderSheetVisible}
         onClose={handleOrderSheetClose}
         tabs={subTabs}
         onOrderChange={setSubTabOrder}
+        removableKeys={removableTabKeys}
+        onRemove={uninstall}
       />
 
       {/* Receive Sheet */}
