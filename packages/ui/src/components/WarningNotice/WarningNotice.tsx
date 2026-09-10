@@ -59,7 +59,7 @@ export function WarningNotice({
         ...style,
       }}
     >
-      <WarningIcon size={iconSize.md} color={accent} style={{ flexShrink: 0, marginTop: 1 }} />
+      <WarningIcon size={iconSize.md} color={accent} style={{ flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={titleStyle(accent)}>{title}</span>
         {children != null && <div style={bodyStyle(t)}>{children}</div>}
@@ -74,6 +74,9 @@ const titleStyle = (accent: string): React.CSSProperties => ({
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.semibold,
   fontSize: fontSize.caption,
+  // The first line is as tall as the icon beside it, so the two share a
+  // centre; the body below keeps its own leading.
+  lineHeight: `${iconSize.md}px`,
   color: accent,
   marginBottom: spacing.xxs,
 });

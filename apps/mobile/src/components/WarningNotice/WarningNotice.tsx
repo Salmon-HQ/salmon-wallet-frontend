@@ -65,7 +65,6 @@ const stylesFor = (t: Semantic) =>
     },
     icon: {
       flexShrink: 0,
-      marginTop: 1,
     },
     textColumn: {
       flex: 1,
@@ -74,6 +73,9 @@ const stylesFor = (t: Semantic) =>
     title: {
       fontFamily: fontFamilyNative.semiBold,
       fontSize: s(fontSize.caption),
+      // The first line is as tall as the icon beside it, so the two share a
+      // centre; the body below keeps its own leading.
+      lineHeight: iconSize.md,
       marginBottom: spacing.xxs,
     },
     action: {
