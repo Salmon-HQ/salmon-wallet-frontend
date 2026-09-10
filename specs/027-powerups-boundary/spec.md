@@ -59,6 +59,8 @@ The backend screens the wallet address against sanctions lists before quoting (J
 
 ## 6. Swap: moved now, rewritten later
 
+> **Implemented 2026-09-10 on `feat/swap-0x`** (§1–3 and the Swap v2 rewrite, see `plan.md`). The provider became **0x**, not Jupiter: the backend serves `GET /v1/solana-mainnet/ft/swap/build` (mainnet only, unsigned v0 transaction, blockhash + priority fee set server-side, `salmonFee` with its `side`, `routeFee` always `null` on 0x); the client signs through §2, broadcasts through `core/broadcast`, rebuilds on `expiresAt`. The attribution and the API in use are rendered from the response (§7). The text below is the pre-implementation plan, kept for the record.
+
 - `powerups/swap/` receives today's swap module unchanged in logic, behind the boundary, marked `@deprecated — rewrite against the v2 contract`.
 - The backend is deleting `GET /v1/solana-{env}/ft/swap/order` and `POST …/ft/swap/execute` (Jupiter Ultra deprecated; `/execute` was the last place the backend accepted signed bytes). Swap v2 will be a new endpoint backed by Jupiter `GET /swap/v2/build`: the backend sets `platformFeeBps` + `feeAccount` server-side and returns an **unsigned** transaction (or instructions); the client signs through §2, broadcasts through `core/broadcast`, and confirms the signature itself. No execute step; the shape differs from today's `order` / `requestId`. That rewrite is its own later spec.
 - Jupiter license requirements the screen must meet when it returns: "Powered by Jupiter" and the API in use named on the swap screen; the Salmon fee shown as a separate line, never folded into the quote.

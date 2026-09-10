@@ -73,6 +73,12 @@ jobs:
       - name: Manifest permissions match the baseline
         run: pnpm check:manifest
 
+      # The production build has VITE_POWERUPS=off (.env.production): every
+      # Powerups entry is aliased to its empty twin, so no swap code or copy
+      # may reach the zip (spec 027 §3).
+      - name: Powerups compiled out of the production extension
+        run: pnpm check:powerups-bundle apps/extension/dist/chrome-mv3
+
       # Same reason for mobile: Metro resolves imports the type checker never
       # sees. Exports the iOS bundle to a scratch dir and keeps nothing.
       - name: Mobile bundles (Metro)

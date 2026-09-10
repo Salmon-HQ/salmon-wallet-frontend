@@ -43,6 +43,16 @@ Scope agreed with the owner: §1–3 of the spec, the Swap v2 rewrite against th
   Rebuild on `expiresAt`. Fee line from `salmonFee` (amount + bps), route fee
   omitted when null, attribution from the response.
 
+## Status (2026-09-10)
+
+A–F done on `feat/swap-0x`, every batch green on typecheck + lint + tests;
+parity and i18n gates pass; the extension built with `VITE_POWERUPS=off`
+carries no Powerup marker (`scripts/check-powerups-bundle.mjs`). Not done:
+§4 allowlist (`/v1/networks.powerups`, the backend has no such field yet)
+and the mobile bundle grep in CI (the extension is gated; mobile is
+documented, run it by hand on an `expo export`). Manual QA on device and
+in the side panel is the owner's, per the hold.
+
 ## Batches (each: typecheck + lint + tests green, one commit)
 
 A. shared core: `core/broadcast/solana.ts`, `core/confirmation/*`,

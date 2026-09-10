@@ -575,7 +575,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'swap':
         if (!SwapPage || !activeBlockchainAccount) {
-          return <PlaceholderPage title={t('swap.catalog.name')} onBack={handleSwapBack} />;
+          return <PlaceholderPage title={t('powerups.browse_title')} onBack={handleSwapBack} />;
         }
         return (
           <SwapPage
