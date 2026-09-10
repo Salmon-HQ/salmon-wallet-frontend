@@ -58,8 +58,10 @@ export {
 
 // Domain name services
 export {
-  getSolDomain,
-  resolveSolDomain,
+  getSnsDomain,
+  resolveSnsDomain,
+  isSnsDomain,
+  SolDomainPausedError,
   getAllDomain,
   resolveAllDomain,
   getDomain,

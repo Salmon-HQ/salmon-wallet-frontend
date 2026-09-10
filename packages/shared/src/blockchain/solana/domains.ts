@@ -5,74 +5,93 @@
  * - src/adapter/services/solana/alldomains-name-service.js
  *
  * Provides functionality for resolving Solana domain names:
- * - SPL Name Service (.sol domains via @solana-name-service/sns-sdk-kit)
+ * - SNS (.sns domains, and legacy .sol, via @solana-name-service/sns-sdk-kit)
  * - AllDomains (multiple TLDs via @onsol/tldparser-kit)
  *
- * Features:
- * - Resolve .sol domains to public keys
- * - Resolve any TLD domains to public keys
- * - Get domain names for public keys (with fallback)
+ * SNS moved its TLD from .sol to .sns (dev.sns.id/docs/migration). An SNS
+ * name is displayed as `name.sns`; a typed `name.sol` still resolves through
+ * the SDK's legacy path until finalized slot 452,825,395, after which the
+ * SDK refuses it and `resolveSnsDomain` throws `SolDomainPausedError` so the
+ * UI can point at `.sns`.
  */
 
 import type { Address } from '@solana/kit';
-import { getPrimaryDomain, resolveDomain } from '@solana-name-service/sns-sdk-kit';
+import { getPrimaryDomain, resolve, UnsupportedTldError } from '@solana-name-service/sns-sdk-kit';
 import { TldParser } from '@onsol/tldparser-kit';
 import type { SolanaRpc } from './networks';
 
 // ============================================================================
-// SPL Name Service (.sol domains)
+// SNS (.sns domains, legacy .sol)
 // ============================================================================
 
+const SNS_TLD = '.sns';
+const LEGACY_SOL_TLD = '.sol';
+
+/** True for the two suffixes SNS resolves: the current `.sns` and the legacy `.sol`. */
+export function isSnsDomain(domain: string): boolean {
+  return domain.endsWith(SNS_TLD) || domain.endsWith(LEGACY_SOL_TLD);
+}
+
 /**
- * Gets the .sol domain for a wallet address
- *
- * Uses the SNS SDK Kit to get the favorite .sol domain associated with a
- * wallet address.
+ * Thrown by `resolveSnsDomain` when a `.sol` name is refused because SNS has
+ * paused legacy resolution (from finalized slot 452,825,395). The same name
+ * is expected to resolve as `.sns`.
+ */
+export class SolDomainPausedError extends Error {
+  constructor(domain: string) {
+    super(`SNS paused .sol resolution; try ${domain.slice(0, -LEGACY_SOL_TLD.length)}${SNS_TLD}`);
+    this.name = 'SolDomainPausedError';
+  }
+}
+
+/**
+ * Gets the SNS primary domain for a wallet address, as `name.sns`.
  *
  * @param rpc - Kit RPC client
  * @param walletAddress - Wallet address to look up
- * @returns Domain name with .sol extension, or null if not found
+ * @returns Domain name with .sns extension, or null if not found
  *
  * @example
  * ```typescript
- * const domain = await getSolDomain(rpc, address('...'));
- * // Returns: 'mydomain.sol' or null
+ * const domain = await getSnsDomain(rpc, address('...'));
+ * // Returns: 'mydomain.sns' or null
  * ```
  */
-export async function getSolDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
+export async function getSnsDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
   try {
     const favorite = await getPrimaryDomain({ rpc, walletAddress });
     if (!favorite?.domainName) {
       return null;
     }
-    return favorite.domainName + '.sol';
+    return favorite.domainName + SNS_TLD;
   } catch {
     return null;
   }
 }
 
 /**
- * Resolves a .sol domain to its owner's address
+ * Resolves an SNS domain to its owner's address.
+ *
+ * A bare name gets `.sns`; `name.sns` and `name.sol` are passed as typed, so
+ * the SDK decides how a legacy `.sol` name is served during the transition.
  *
  * @param rpc - Kit RPC client
- * @param domain - Domain name (with or without .sol extension)
+ * @param domain - Domain name (`name`, `name.sns` or `name.sol`)
  * @returns Owner's address as base58 string, or null if not found
- *
- * @example
- * ```typescript
- * const owner = await resolveSolDomain(rpc, 'mydomain.sol');
- * // Returns: 'AddressBase58...' or null
- * ```
+ * @throws SolDomainPausedError when a `.sol` name is refused after the pause
  */
-export async function resolveSolDomain(rpc: SolanaRpc, domain: string): Promise<string | null> {
+export async function resolveSnsDomain(rpc: SolanaRpc, domain: string): Promise<string | null> {
+  const fullName = isSnsDomain(domain) ? domain : domain + SNS_TLD;
   try {
-    const domainName = domain.endsWith('.sol') ? domain.slice(0, -4) : domain;
-    const owner = await resolveDomain({ rpc, domain: domainName });
+    const owner = await resolve({ rpc, domain: fullName });
     if (!owner) {
       return null;
     }
     return owner;
-  } catch {
+  } catch (error) {
+    if (error instanceof UnsupportedTldError && fullName.endsWith(LEGACY_SOL_TLD)) {
+      throw new SolDomainPausedError(fullName);
+    }
     return null;
   }
 }
@@ -155,7 +174,7 @@ export async function resolveAllDomain(rpc: SolanaRpc, domain: string): Promise<
 /**
  * Gets a domain name for a wallet address with fallback
  *
- * Tries AllDomains first, then falls back to SPL Name Service (.sol).
+ * Tries AllDomains first, then falls back to SNS (.sns).
  * This provides the best chance of finding a domain for a given address.
  *
  * @param rpc - Kit RPC client
@@ -165,7 +184,7 @@ export async function resolveAllDomain(rpc: SolanaRpc, domain: string): Promise<
  * @example
  * ```typescript
  * const domain = await getDomain(rpc, address('...'));
- * // Returns: 'mydomain.abc', 'mydomain.sol', or null
+ * // Returns: 'mydomain.abc', 'mydomain.sns', or null
  * ```
  */
 export async function getDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
@@ -175,8 +194,8 @@ export async function getDomain(rpc: SolanaRpc, walletAddress: Address): Promise
     return allDomain;
   }
 
-  // Fall back to SPL Name Service (.sol)
-  return getSolDomain(rpc, walletAddress);
+  // Fall back to SNS (.sns)
+  return getSnsDomain(rpc, walletAddress);
 }
 
 /**
@@ -197,17 +216,18 @@ export async function getDomainFromPublicKey(
  * Resolves a domain to its owner's address based on TLD
  *
  * Automatically detects the domain type:
- * - For .sol domains, uses SPL Name Service
+ * - For .sns and legacy .sol domains, uses SNS
  * - For other TLDs, uses AllDomains
  *
  * @param rpc - Kit RPC client
  * @param domain - Full domain name including TLD
  * @returns Owner's address as base58 string, or null if not found
+ * @throws SolDomainPausedError when a `.sol` name is refused after the pause
  *
  * @example
  * ```typescript
- * // Resolves .sol domain
- * const owner1 = await getPublicKeyFromDomain(rpc, 'mydomain.sol');
+ * // Resolves .sns domain
+ * const owner1 = await getPublicKeyFromDomain(rpc, 'mydomain.sns');
  *
  * // Resolves other TLD domain
  * const owner2 = await getPublicKeyFromDomain(rpc, 'mydomain.abc');
@@ -217,8 +237,8 @@ export async function getPublicKeyFromDomain(
   rpc: SolanaRpc,
   domain: string
 ): Promise<string | null> {
-  if (domain.endsWith('.sol')) {
-    return resolveSolDomain(rpc, domain);
+  if (isSnsDomain(domain)) {
+    return resolveSnsDomain(rpc, domain);
   }
   return resolveAllDomain(rpc, domain);
 }

@@ -2,7 +2,7 @@
  * Solana Domain Name Services Tests
  *
  * Tests for:
- * - SPL Name Service (.sol domains via SNS SDK Kit)
+ * - SNS (.sns domains, legacy .sol, via SNS SDK Kit)
  * - AllDomains (multiple TLDs via TldParser Kit)
  * - Combined functions with fallback
  *
@@ -13,8 +13,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { address, createSolanaRpc } from '@solana/kit';
 import * as SnsSdkKit from '@solana-name-service/sns-sdk-kit';
 import {
-  getSolDomain,
-  resolveSolDomain,
+  getSnsDomain,
+  resolveSnsDomain,
+  SolDomainPausedError,
   getAllDomain,
   resolveAllDomain,
   getDomain,
@@ -31,7 +32,9 @@ import type { SolanaRpc } from './networks';
 // Mock the SNS SDK Kit
 vi.mock('@solana-name-service/sns-sdk-kit', () => ({
   getPrimaryDomain: vi.fn(),
-  resolveDomain: vi.fn(),
+  resolve: vi.fn(),
+  // The real class, so `instanceof` in domains.ts matches what the SDK throws.
+  UnsupportedTldError: class UnsupportedTldError extends Error {},
 }));
 
 // Mock TldParser - must be mocked as a class
@@ -83,10 +86,10 @@ function expectCalledWithRpc(mockFn: any, expectedRpc: SolanaRpc, rest: Record<s
  * Test addresses and domains
  */
 const TEST_DATA = {
-  // Known .sol domain (Bonfida example)
+  // Known SNS domain (Bonfida example)
   solDomain: {
     name: 'bonfida',
-    fullName: 'bonfida.sol',
+    fullName: 'bonfida.sns',
     publicKey: address('HKKp49qGWXd639QsuH7JiLijfVW5UtCVY4s1n2HANwEA'),
     publicKeyString: 'HKKp49qGWXd639QsuH7JiLijfVW5UtCVY4s1n2HANwEA',
   },
@@ -117,7 +120,7 @@ describe('SPL Name Service (.sol domains)', () => {
     rpc = createSolanaRpc(network.config.nodeUrl);
   });
 
-  describe('getSolDomain', () => {
+  describe('getSnsDomain', () => {
     it('should get .sol domain for a public key', async () => {
       // Mock SNS SDK Kit's getPrimaryDomain
       vi.mocked(SnsSdkKit.getPrimaryDomain).mockResolvedValueOnce({
@@ -126,7 +129,7 @@ describe('SPL Name Service (.sol domains)', () => {
         stale: false,
       });
 
-      const result = await getSolDomain(rpc, TEST_DATA.solDomain.publicKey);
+      const result = await getSnsDomain(rpc, TEST_DATA.solDomain.publicKey);
 
       expectCalledWithRpc(SnsSdkKit.getPrimaryDomain, rpc, {
         walletAddress: TEST_DATA.solDomain.publicKey,
@@ -134,16 +137,16 @@ describe('SPL Name Service (.sol domains)', () => {
       expect(result).toBe(TEST_DATA.solDomain.fullName);
     });
 
-    it('should append .sol extension to domain name', async () => {
+    it('should append .sns extension to domain name', async () => {
       vi.mocked(SnsSdkKit.getPrimaryDomain).mockResolvedValueOnce({
         domainAddress: TEST_DATA.solDomain.publicKey,
         domainName: 'testdomain',
         stale: false,
       });
 
-      const result = await getSolDomain(rpc, TEST_DATA.solDomain.publicKey);
+      const result = await getSnsDomain(rpc, TEST_DATA.solDomain.publicKey);
 
-      expect(result).toBe('testdomain.sol');
+      expect(result).toBe('testdomain.sns');
     });
 
     it('should return null if no domain found', async () => {
@@ -153,7 +156,7 @@ describe('SPL Name Service (.sol domains)', () => {
         stale: false,
       });
 
-      const result = await getSolDomain(rpc, TEST_DATA.noDomain.publicKey);
+      const result = await getSnsDomain(rpc, TEST_DATA.noDomain.publicKey);
 
       expect(result).toBeNull();
     });
@@ -161,7 +164,7 @@ describe('SPL Name Service (.sol domains)', () => {
     it('should return null on error', async () => {
       vi.mocked(SnsSdkKit.getPrimaryDomain).mockRejectedValueOnce(new Error('Domain not found'));
 
-      const result = await getSolDomain(rpc, TEST_DATA.noDomain.publicKey);
+      const result = await getSnsDomain(rpc, TEST_DATA.noDomain.publicKey);
 
       expect(result).toBeNull();
     });
@@ -173,59 +176,76 @@ describe('SPL Name Service (.sol domains)', () => {
         stale: false,
       });
 
-      const result = await getSolDomain(rpc, TEST_DATA.noDomain.publicKey);
+      const result = await getSnsDomain(rpc, TEST_DATA.noDomain.publicKey);
 
       expect(result).toBeNull();
     });
   });
 
-  describe('resolveSolDomain', () => {
+  describe('resolveSnsDomain', () => {
     it('should resolve .sol domain to public key', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
 
-      const result = await resolveSolDomain(rpc, TEST_DATA.solDomain.fullName);
+      const result = await resolveSnsDomain(rpc, TEST_DATA.solDomain.fullName);
 
-      expectCalledWithRpc(SnsSdkKit.resolveDomain, rpc, {
-        domain: TEST_DATA.solDomain.name,
+      expectCalledWithRpc(SnsSdkKit.resolve, rpc, {
+        domain: TEST_DATA.solDomain.fullName,
       });
       expect(result).toBe(TEST_DATA.solDomain.publicKeyString);
     });
 
-    it('should handle domain without .sol extension', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
+    it('should append .sns to a bare name', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
 
-      const result = await resolveSolDomain(rpc, TEST_DATA.solDomain.name);
+      const result = await resolveSnsDomain(rpc, TEST_DATA.solDomain.name);
 
-      expectCalledWithRpc(SnsSdkKit.resolveDomain, rpc, {
-        domain: TEST_DATA.solDomain.name,
+      expectCalledWithRpc(SnsSdkKit.resolve, rpc, {
+        domain: TEST_DATA.solDomain.fullName,
       });
       expect(result).toBe(TEST_DATA.solDomain.publicKeyString);
     });
 
-    it('should handle domain with .sol extension', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
+    it('passes a legacy .sol name through as typed, so the SDK serves the transition', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
 
-      const result = await resolveSolDomain(rpc, 'bonfida.sol');
+      const result = await resolveSnsDomain(rpc, 'bonfida.sol');
 
-      // Should strip .sol before calling resolveDomain
-      expectCalledWithRpc(SnsSdkKit.resolveDomain, rpc, { domain: 'bonfida' });
+      expectCalledWithRpc(SnsSdkKit.resolve, rpc, { domain: 'bonfida.sol' });
       expect(result).toBe(TEST_DATA.solDomain.publicKeyString);
+    });
+
+    it('reports a paused .sol name instead of swallowing it, so the UI can point at .sns', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockRejectedValueOnce(
+        new SnsSdkKit.UnsupportedTldError('unsupported')
+      );
+
+      await expect(resolveSnsDomain(rpc, 'bonfida.sol')).rejects.toBeInstanceOf(
+        SolDomainPausedError
+      );
+    });
+
+    it('treats an unsupported TLD on a .sns name as unresolved', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockRejectedValueOnce(
+        new SnsSdkKit.UnsupportedTldError('unsupported')
+      );
+
+      expect(await resolveSnsDomain(rpc, 'bonfida.sns')).toBeNull();
     });
 
     it('should return null if domain not found', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockResolvedValueOnce(
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(
         null as unknown as ReturnType<typeof address>
       );
 
-      const result = await resolveSolDomain(rpc, 'nonexistent.sol');
+      const result = await resolveSnsDomain(rpc, 'nonexistent.sol');
 
       expect(result).toBeNull();
     });
 
     it('should return null on error', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockRejectedValueOnce(new Error('Invalid domain'));
+      vi.mocked(SnsSdkKit.resolve).mockRejectedValueOnce(new Error('Invalid domain'));
 
-      const result = await resolveSolDomain(rpc, 'invalid.sol');
+      const result = await resolveSnsDomain(rpc, 'invalid.sol');
 
       expect(result).toBeNull();
     });
@@ -426,12 +446,21 @@ describe('Combined Domain Functions', () => {
   });
 
   describe('getPublicKeyFromDomain', () => {
-    it('should use resolveSolDomain for .sol domains', async () => {
-      vi.mocked(SnsSdkKit.resolveDomain).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
+    it('should use resolveSnsDomain for .sns domains', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
+
+      const result = await getPublicKeyFromDomain(rpc, 'bonfida.sns');
+
+      expectCalledWithRpc(SnsSdkKit.resolve, rpc, { domain: 'bonfida.sns' });
+      expect(result).toBe(TEST_DATA.solDomain.publicKeyString);
+    });
+
+    it('should use resolveSnsDomain for legacy .sol domains', async () => {
+      vi.mocked(SnsSdkKit.resolve).mockResolvedValueOnce(TEST_DATA.solDomain.publicKey);
 
       const result = await getPublicKeyFromDomain(rpc, 'bonfida.sol');
 
-      expectCalledWithRpc(SnsSdkKit.resolveDomain, rpc, { domain: 'bonfida' });
+      expectCalledWithRpc(SnsSdkKit.resolve, rpc, { domain: 'bonfida.sol' });
       expect(result).toBe(TEST_DATA.solDomain.publicKeyString);
     });
 
@@ -489,9 +518,9 @@ describe('Domain Error Handling', () => {
     const malformedDomains = ['', '.sol', 'nodot', '..doubledot', 'spaces in name.sol'];
 
     for (const domain of malformedDomains) {
-      vi.mocked(SnsSdkKit.resolveDomain).mockRejectedValueOnce(new Error('Invalid domain'));
+      vi.mocked(SnsSdkKit.resolve).mockRejectedValueOnce(new Error('Invalid domain'));
 
-      const result = await resolveSolDomain(rpc, domain);
+      const result = await resolveSnsDomain(rpc, domain);
       expect(result).toBeNull();
     }
   });
@@ -499,16 +528,16 @@ describe('Domain Error Handling', () => {
   it('should handle very long domain names', async () => {
     const longDomain = 'a'.repeat(1000) + '.sol';
 
-    vi.mocked(SnsSdkKit.resolveDomain).mockRejectedValueOnce(new Error('Domain too long'));
+    vi.mocked(SnsSdkKit.resolve).mockRejectedValueOnce(new Error('Domain too long'));
 
-    const result = await resolveSolDomain(rpc, longDomain);
+    const result = await resolveSnsDomain(rpc, longDomain);
     expect(result).toBeNull();
   });
 
   it('should handle network timeouts gracefully', async () => {
     vi.mocked(SnsSdkKit.getPrimaryDomain).mockRejectedValueOnce(new Error('Network timeout'));
 
-    const result = await getSolDomain(rpc, TEST_DATA.noDomain.publicKey);
+    const result = await getSnsDomain(rpc, TEST_DATA.noDomain.publicKey);
     expect(result).toBeNull();
   });
 
@@ -546,7 +575,7 @@ describe('Domain Integration Tests (optional)', () => {
       return;
     }
 
-    const result = await resolveSolDomain(rpc, domain);
+    const result = await resolveSnsDomain(rpc, domain);
 
     expect(result).toBe(publicKey);
   });

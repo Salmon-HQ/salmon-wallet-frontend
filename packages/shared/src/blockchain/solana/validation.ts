@@ -4,7 +4,7 @@
  *
  * Provides validation for Solana addresses and domain names.
  * Supports both standard public keys and domain resolution via:
- * - SNS SDK Kit (.sol domains)
+ * - SNS SDK Kit (.sns domains, legacy .sol)
  * - AllDomains TLD Parser Kit (other TLDs)
  *
  * Features:
@@ -16,7 +16,7 @@
 
 import { isAddress, isOffCurveAddress, address as toAddress } from '@solana/addresses';
 import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
-import { getPublicKeyFromDomain } from './domains';
+import { getPublicKeyFromDomain, SolDomainPausedError } from './domains';
 import type { SolanaRpc } from './networks';
 import type {
   ValidationResult,
@@ -33,7 +33,7 @@ export type { ValidationResult, ValidationResultType, ValidationResultCode, Addr
 // ============================================================================
 
 // Shared constants from types/validation
-const { VALID_DOMAIN, NO_INFO, INVALID_ADDRESS, INVALID_DOMAIN, NETWORK_ERROR } =
+const { VALID_DOMAIN, NO_INFO, INVALID_ADDRESS, INVALID_DOMAIN, SOL_DOMAIN_PAUSED, NETWORK_ERROR } =
   VALIDATION_RESULTS;
 
 // Chain-specific constants
@@ -165,7 +165,7 @@ async function validatePublicKey(rpc: SolanaRpc, address: string): Promise<Valid
  * Validates and resolves a domain name
  *
  * Uses the domain resolution functions from ./domains module which support:
- * - SNS SDK Kit for .sol domains
+ * - SNS SDK Kit for .sns (and legacy .sol) domains
  * - AllDomains TLD Parser Kit for other TLDs
  *
  * @param rpc - Kit RPC client
@@ -176,7 +176,10 @@ async function validateDomain(rpc: SolanaRpc, domain: string): Promise<Validatio
   let resolvedAddress;
   try {
     resolvedAddress = await getPublicKeyFromDomain(rpc, domain);
-  } catch {
+  } catch (error) {
+    if (error instanceof SolDomainPausedError) {
+      return SOL_DOMAIN_PAUSED;
+    }
     return NETWORK_ERROR;
   }
 

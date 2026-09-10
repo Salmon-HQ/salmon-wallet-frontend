@@ -1,11 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { address, getProgramDerivedAddress } from '@solana/kit';
 
-vi.mock('./domains', () => ({
-  getPublicKeyFromDomain: vi.fn(),
-}));
+vi.mock('./domains', () => {
+  // Declared inside the factory (vi.mock is hoisted): the validator's
+  // `instanceof` runs against this class, and so does the test that throws it.
+  class SolDomainPausedError extends Error {}
+  return {
+    SolDomainPausedError,
+    getPublicKeyFromDomain: vi.fn(),
+  };
+});
 
-import { getPublicKeyFromDomain } from './domains';
+import { getPublicKeyFromDomain, SolDomainPausedError } from './domains';
 import { validateDestinationAccount } from './validation';
 
 const mockGetPublicKeyFromDomain = vi.mocked(getPublicKeyFromDomain);
@@ -191,5 +197,13 @@ describe('solana validation', () => {
       type: 'ERROR',
       code: 'network_error',
     });
+  });
+
+  it('says a paused .sol name should be typed as .sns, not that the domain is invalid', async () => {
+    mockGetPublicKeyFromDomain.mockRejectedValueOnce(new SolDomainPausedError('bonfida.sol'));
+
+    const result = await validateDestinationAccount(mockRpc(null), 'bonfida.sol');
+
+    expect(result).toEqual({ type: 'ERROR', code: 'sol_domain_paused' });
   });
 });

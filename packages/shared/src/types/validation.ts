@@ -26,6 +26,7 @@ export type ValidationResultType = 'SUCCESS' | 'WARNING' | 'ERROR';
  * - 'invalid' - Invalid address format
  * - 'same_address' - Address matches the sender
  * - 'invalid_domain' - Domain could not be resolved
+ * - 'sol_domain_paused' - A legacy `.sol` name SNS no longer resolves; use `.sns`
  *
  * Solana-specific:
  * - 'off_curve_no_funds' - Off-curve address (PDA) without funds
@@ -40,6 +41,7 @@ export type ValidationResultCode =
   | 'invalid'
   | 'same_address'
   | 'invalid_domain'
+  | 'sol_domain_paused'
   | 'network_error'
   // Solana-specific
   | 'off_curve_no_funds'
@@ -132,6 +134,11 @@ export const VALIDATION_RESULTS = {
     code: 'invalid_domain' as const,
   } satisfies ValidationResult,
 
+  /** A legacy `.sol` name SNS has paused; the same name resolves as `.sns` */
+  SOL_DOMAIN_PAUSED: {
+    type: 'ERROR' as const,
+    code: 'sol_domain_paused' as const,
+  } satisfies ValidationResult,
   /** Network or RPC error during validation */
   NETWORK_ERROR: {
     type: 'ERROR' as const,
