@@ -55,10 +55,12 @@ devnet('createTransfer (devnet integration)', () => {
     const getBalance = async (owner: string) =>
       Number((await rpc.getBalance(address(owner)).send()).value);
 
-    const before = await getBalance(sender.address);
-    expect(before).toBeGreaterThan(0.01 * LAMPORTS_PER_SOL); // needs funding
-
     const amountSol = 0.001;
+    const FEE_MARGIN = 50_000;
+
+    const before = await getBalance(sender.address);
+    // Needs funding: the amount, the fee, and rent for the sender to stay alive.
+    expect(before).toBeGreaterThan(amountSol * LAMPORTS_PER_SOL + 2 * FEE_MARGIN);
     // Spec 032: devnet runs v1, so this is what the wallet builds there.
     const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol, {
       version: 1,
@@ -85,7 +87,7 @@ devnet('createTransfer (devnet integration)', () => {
 
     // Dropped by the transfer amount plus a (small) network fee.
     expect(delta).toBeGreaterThanOrEqual(Math.floor(amountSol * LAMPORTS_PER_SOL));
-    expect(delta).toBeLessThan(Math.floor(amountSol * LAMPORTS_PER_SOL) + 50_000);
+    expect(delta).toBeLessThan(Math.floor(amountSol * LAMPORTS_PER_SOL) + FEE_MARGIN);
 
     // Recipient received exactly the transfer amount.
     expect(await getBalance(recipient)).toBe(Math.floor(amountSol * LAMPORTS_PER_SOL));

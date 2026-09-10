@@ -93,7 +93,7 @@ On activation day, whoever ships the flip changes exactly one value in one place
 - Devnet has v1 active (proven by DEV-42's live suite, which sends a >1232-byte v1 through the approval path on devnet).
 - Mainnet activation lands on or after 2026-09-15; the flip is done by hand after confirming the feature is active on the cluster, never on the announced date alone.
 - The kit in use (`@solana/transaction-messages` 8.2) compiles, signs and wire-encodes v1 (`messageFirst`) with no new dependency.
-- Priority fees: the transfer sets none today, so the v1 `config` block stays empty. Adding one later is a separate spec.
+- Priority fees: the transfer sets none today. The v1 `config` block is **not** empty though: a v1 without `computeUnitLimit` / `loadedAccountsDataSizeLimit` is budgeted zero of each and fails at preflight (`Transaction exceeded max loaded accounts data size cap`, measured on devnet 2026-09-10). Send writes the budget v0 received implicitly (200k CU per instruction, 64 MiB of account data). A measured budget and a priority fee are a separate spec.
 
 ## Constitution check
 

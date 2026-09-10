@@ -24,7 +24,7 @@
 
 **Performance Goals**: none new; a v1 message for a transfer is the same size class as v0.
 
-**Constraints**: v1 messages carry no address-lookup-table instructions (kit types enforce `InstructionWithoutLookupTables` for `version: 1`); the transfer never used tables. Priority fee is not set today, so no `config` block. `getFeeForMessage` must accept the v1 message on the RPC in use: covered by the live suite.
+**Constraints**: v1 messages carry no address-lookup-table instructions (kit types enforce `InstructionWithoutLookupTables` for `version: 1`); the transfer never used tables. A v1 header must carry `computeUnitLimit` and `loadedAccountsDataSizeLimit` (zero budget otherwise); Send writes the v0-equivalent budget via `v1ResourceBudget`. No priority fee. `getFeeForMessage` accepts the v1 message on the public devnet RPC: proven by the live suite.
 
 **Scale/Scope**: 4 source files, 3 test files.
 

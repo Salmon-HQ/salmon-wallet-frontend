@@ -31,6 +31,7 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
   signTransactionMessageWithSigners,
   unwrapOption,
+  setTransactionMessageConfig,
 } from '@solana/kit';
 import type {
   Address,
@@ -38,6 +39,7 @@ import type {
   Signature,
   TransactionMessageBytesBase64,
   TransactionSigner,
+  V1TransactionConfig,
 } from '@solana/kit';
 import { getTransferSolInstruction } from '@solana-program/system';
 import { getAddMemoInstruction } from '@solana-program/memo';
@@ -157,13 +159,38 @@ function calculateFee(transferFee: TransferFee, preFeeAmount: bigint): bigint {
 }
 
 /**
+ * The resource budget a legacy/v0 transaction gets without asking: 200k compute
+ * units per instruction (capped at the transaction maximum) and 64 MiB of loaded
+ * account data. A v1 message that leaves these unset is budgeted zero of each
+ * and fails at preflight (`Transaction exceeded max loaded accounts data size
+ * cap`, measured on devnet), so the transfer writes the same budget into the
+ * header the runtime used to assume.
+ */
+const V0_COMPUTE_UNITS_PER_INSTRUCTION = 200_000;
+const MAX_COMPUTE_UNIT_LIMIT = 1_400_000;
+const V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT = 64 * 1024 * 1024;
+
+/** The v1 header equivalent of what a v0 transaction with `instructions` is granted. */
+export function v1ResourceBudget(instructions: readonly Instruction[]): V1TransactionConfig {
+  return {
+    computeUnitLimit: Math.min(
+      V0_COMPUTE_UNITS_PER_INSTRUCTION * instructions.length,
+      MAX_COMPUTE_UNIT_LIMIT
+    ),
+    loadedAccountsDataSizeLimit: V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT,
+  };
+}
+
+/**
  * Assembles a transaction message paid for and signed by `signer`.
  *
  * A v1 message (SIMD-0296) admits no address-lookup-table instructions; the
- * transfer never used any, so the two branches only differ in the header the
- * compiler writes. Each `createTransactionMessage` call keeps its literal
- * version so kit's typed message shapes carry through to the signer.
+ * transfer never used any. Each `createTransactionMessage` call keeps its
+ * literal version so kit's typed message shapes carry through to the signer,
+ * and the v1 branch writes the resource budget v0 received implicitly.
  */
+// ponytail: a fixed v0-equivalent budget, not a measured one; simulate for
+// `unitsConsumed` and size the limit to it once a priority fee is charged per CU.
 async function buildTransactionMessage(
   rpc: SolanaRpc,
   signer: TransactionSigner,
@@ -172,13 +199,20 @@ async function buildTransactionMessage(
 ) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
-  return pipe(
-    version === 1
-      ? createTransactionMessage({ version: 1 })
-      : createTransactionMessage({ version: 0 }),
+  const base = pipe(
+    createTransactionMessage({ version: 0 }),
     (message) => setTransactionMessageFeePayerSigner(signer, message),
     (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
     (message) => appendTransactionMessageInstructions(instructions, message)
+  );
+  if (version === 0) return base;
+
+  return pipe(
+    createTransactionMessage({ version: 1 }),
+    (message) => setTransactionMessageFeePayerSigner(signer, message),
+    (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
+    (message) => appendTransactionMessageInstructions(instructions, message),
+    (message) => setTransactionMessageConfig(v1ResourceBudget(instructions), message)
   );
 }
 

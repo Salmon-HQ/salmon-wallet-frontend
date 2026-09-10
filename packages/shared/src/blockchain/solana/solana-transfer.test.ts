@@ -19,6 +19,8 @@ import {
   none,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
+  getTransactionMessageComputeUnitLimit,
+  getTransactionMessageLoadedAccountsDataSizeLimit,
 } from '@solana/kit';
 import type { Address } from '@solana/kit';
 import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
@@ -37,6 +39,7 @@ import {
   estimateFee,
   requiresMemo,
   SOL_ADDRESS,
+  v1ResourceBudget,
 } from './transfer';
 import { createSolanaAccount } from './factory';
 import { SOLANA_NETWORKS } from './factory';
@@ -177,6 +180,25 @@ describe('transaction version', () => {
     expect(transaction.version).toBe(1);
     // ATA creation + transfer, as for v0.
     expect(transaction.instructions).toHaveLength(2);
+  });
+
+  it('writes the v0-equivalent resource budget into a v1 header, and nothing into v0', async () => {
+    mockMint(6);
+    const signer = await testSigner(1);
+    const v0 = await createSplTransaction(createRpc(), signer, recipient(), USDC_MINT, 1);
+    const v1 = await createSplTransaction(createRpc(), signer, recipient(), USDC_MINT, 1, {
+      version: 1,
+    });
+
+    // v0 never carried ComputeBudget instructions: the runtime granted 200k CU
+    // per instruction and 64 MiB of account data. v1 grants zero unless told.
+    expect(getTransactionMessageComputeUnitLimit(v0)).toBeUndefined();
+    expect(getTransactionMessageLoadedAccountsDataSizeLimit(v0)).toBeUndefined();
+    expect(getTransactionMessageComputeUnitLimit(v1)).toBe(200_000 * v1.instructions.length);
+    expect(getTransactionMessageLoadedAccountsDataSizeLimit(v1)).toBe(64 * 1024 * 1024);
+    expect(v1ResourceBudget(new Array(10).fill(v1.instructions[0])).computeUnitLimit).toBe(
+      1_400_000
+    );
   });
 
   it('estimates the fee on a message of the same version it would send', async () => {

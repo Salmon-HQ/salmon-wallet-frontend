@@ -6,12 +6,12 @@ repo, not from memory.
 ## Kit surface for v1 (installed 8.2.0)
 
 - `createTransactionMessage({ version })` is generic over `TransactionVersion = 'legacy' | 0 | 1` (`create-transaction-message.d.ts`).
-- A `V1TransactionMessage` is `BaseTransactionMessage<1, InstructionWithoutLookupTables> & { config?: V1TransactionConfig }` (`transaction-message.d.ts`). Lookup tables are excluded at the type level; `config` is optional and carries compute-unit limit, priority fee, heap size and loaded-accounts-data-size. The transfer sets none of these today, so the block stays absent.
+- A `V1TransactionMessage` is `BaseTransactionMessage<1, InstructionWithoutLookupTables> & { config?: V1TransactionConfig }` (`transaction-message.d.ts`). Lookup tables are excluded at the type level. `config` is optional in the type but not in practice: kit's own doc on `V1TransactionConfig` says a v1 that leaves `computeUnitLimit` or `loadedAccountsDataSizeLimit` unset "is budgeted **zero**" rather than getting v0's defaults, and the first live run confirmed it (preflight: `Transaction exceeded max loaded accounts data size cap`, kit code 7050032). `setTransactionMessageConfig` writes the header. Send sets the v0-equivalent budget: 200k CU × instructions (cap 1.4M), 64 MiB data.
 - `compileTransactionMessage` has a v1 overload (`compile/v1/message.d.ts`) producing `V1CompiledTransactionMessage` with `configMask`/`configValues`.
 - `@solana/transactions` picks the wire layout by version: `version === 1 ? "messageFirst" : "signaturesFirst"` and a `V1_TRANSACTION_SIZE_LIMIT = 4096` (`dist/index.node.mjs` lines 45, 410, 456).
 - `signTransactionMessageWithSigners`, `getBase64EncodedWireTransaction`, `rpc.sendTransaction(..., { encoding: 'base64' })` are the same calls for every version. The wallet already sends dApp-provided v1 through `prepared-transactions.ts` with them.
 
-**Decision**: no new dependency, no version bump. Pass `version` into the one builder.
+**Decision**: no new dependency, no version bump. Pass `version` into the one builder; the v1 branch also writes the resource budget.
 
 ## Repo surface
 

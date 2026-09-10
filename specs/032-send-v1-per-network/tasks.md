@@ -28,7 +28,7 @@
 
 ## Phase 5: Verification
 
-- [ ] T009 [US1] (code done; live run pending owner go) Extend `packages/shared/src/blockchain/solana/transfer.devnet.test.ts`: after confirmation, `getTransaction(sig, { maxSupportedTransactionVersion: 1 })` and assert `transaction.message.version === 1` when built with `version: 1`. Run it once with the QA devnet key (`RUN_DEVNET=1`); record the signature in the PR.
+- [x] T009 [US1] Extend `packages/shared/src/blockchain/solana/transfer.devnet.test.ts`: after confirmation, `getTransaction(sig, { maxSupportedTransactionVersion: 1 })` and assert `transaction.message.version === 1` when built with `version: 1`. Run it once with the QA devnet key (`RUN_DEVNET=1`); record the signature in the PR.
 - [x] T010 `pnpm turbo run typecheck lint test:coverage --filter=@salmon/shared`; `pnpm check:no-secrets`; `pnpm check:parity`; `pnpm format:check`.
 - [ ] T011 PR `feat(send): build v1 transactions where the network runs them` against `main`, linked to DEV-47; owner tests a devnet send on the extension, checks Activity, then deploys.
 
