@@ -213,4 +213,68 @@ export default [
       ],
     },
   },
+  // The Powerups boundary (spec 027 §2): a Powerup proposes, core signs. Nothing
+  // under a `powerups/` folder — shared, the kit or an app — may reach key
+  // material, the vault, the signing entry point or the RPC send path. The one
+  // door is `requestSignature` from core/confirmation, which renders Salmon's
+  // confirmation and only then signs and broadcasts. `packages/shared/src/
+  // powerups/boundary.test.ts` asserts this block fires on a fixture.
+  {
+    files: ['packages/shared/src/powerups/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/core/signing',
+                '**/core/signing/**',
+                '**/core/broadcast',
+                '**/core/broadcast/**',
+                '**/crypto',
+                '**/crypto/**',
+                '**/storage',
+                '**/storage/**',
+                '**/blockchain/*/*Account',
+                '**/blockchain/*/*Account.*',
+                '@solana/transaction-confirmation',
+              ],
+              message:
+                'A Powerup never signs, stores or broadcasts: propose through requestSignature() from core/confirmation (spec 027 §2).',
+            },
+          ],
+          paths: [
+            {
+              name: '@solana/kit',
+              importNames: [
+                'partiallySignTransaction',
+                'signTransaction',
+                'signTransactionMessageWithSigners',
+                'partiallySignTransactionMessageWithSigners',
+                'createKeyPairSignerFromBytes',
+                'createKeyPairSignerFromPrivateKeyBytes',
+                'createKeyPairFromBytes',
+                'createKeyPairFromPrivateKeyBytes',
+                'sendAndConfirmTransactionFactory',
+                'sendTransactionWithoutConfirmingFactory',
+              ],
+              message:
+                'A Powerup never signs or sends: propose through requestSignature() from core/confirmation (spec 027 §2).',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "MemberExpression[property.name=/^(signer|keyPair|seed|retrieveSecurePrivateKey|getAccountMnemonic|signTransaction|signMessage|signAllTransactions)$/]",
+          message:
+            'A Powerup never touches key material or signs: propose through requestSignature() (spec 027 §2).',
+        },
+      ],
+    },
+  },
 ];

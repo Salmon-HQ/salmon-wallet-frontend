@@ -20,8 +20,7 @@ import { classifyTransactionError } from '../../utils/transaction-errors';
 import { formatPercent } from '../../utils/formatting';
 import { useSettleAfterTx, useSettleUntilChanged } from '../../query/invalidation';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
-import { trackEvent, trackFirstTime } from '../../analytics';
-import { STORAGE_KEYS } from '../../storage';
+import { trackEvent, trackFirstSwapCompleted } from '../../analytics';
 import { buildSwap as buildSwapApi } from './api';
 import type { BuildSwapFn } from './api';
 import { describeSwapBuildError } from './errors';
@@ -451,7 +450,7 @@ export function useSwapScreenLogic({
       setStep('success');
       // Anonymous funnel event: no amounts, addresses or mints.
       trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
-      void trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
+      void trackFirstSwapCompleted();
       // This screen is now the one surface reporting this signature; the
       // banner withholds it until the release below.
       const releaseReport = pendingTransactions?.claimForegroundReport(signature);
