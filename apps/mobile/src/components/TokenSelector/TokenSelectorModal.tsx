@@ -321,6 +321,10 @@ export function TokenSelectorModal({
       onClose={handleClose}
       headerContent={<BottomSheetTitleHeader title={t('wallet.select_token', 'Select Token')} />}
       testID="token-selector-modal"
+      // A sheet hugs its content, and a virtualised list has none to hug — it
+      // fills whatever it is given. So this sheet is given a height, or the
+      // list collapses to the handle (the same rule the send picker follows).
+      style={styles.sheet}
     >
       <View style={styles.content}>
         <BlurContainer style={styles.searchContainer}>
@@ -385,6 +389,10 @@ export function TokenSelectorModal({
 }
 
 const styles = StyleSheet.create({
+  sheet: {
+    height: '70%',
+    overflow: 'hidden',
+  },
   content: {
     flex: 1,
     paddingHorizontal: s(spacing.headerPadding),

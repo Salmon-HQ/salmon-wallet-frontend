@@ -27,6 +27,7 @@ import {
   usePrefetchBalances,
   useDeveloperModeSettings,
   useSendContacts,
+  motionMs,
 } from '@salmon/shared';
 import {
   WalletHeader,
@@ -412,31 +413,39 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Each sub-tab has its own scroller, so the offset the seam fade reads must
   // start over with it.
-  const isPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
-
-  // A sub-tab change may move the header (focus mode, below): the DOM plays
-  // it as a same-document view transition — the row's position interpolates,
-  // the balance cross-fades out — with `flushSync` so the DOM is already in
-  // its new layout when the snapshot is taken. No API, or reduce motion: the
-  // change is a cut, which is the fallback the API itself prescribes.
-  const isReduceMotionEnabled = useReducedMotion();
   const handleSubTabChange = useCallback(
     (key: string) => {
-      const apply = () => {
-        resetSeamFade();
-        setActiveSubTab(key as SubTabKey);
-      };
-      const { startViewTransition } = document as Document & {
-        startViewTransition?: (update: () => void) => unknown;
-      };
-      if (isReduceMotionEnabled || typeof startViewTransition !== 'function') {
-        apply();
-        return;
-      }
-      startViewTransition.call(document, () => flushSync(apply));
+      resetSeamFade();
+      setActiveSubTab(key as SubTabKey);
     },
-    [isReduceMotionEnabled, resetSeamFade, setActiveSubTab]
+    [resetSeamFade, setActiveSubTab]
   );
+
+  // Focus mode, in two beats (owner, on device): the underline reaches the
+  // tab first and stops; one underline-slide later the header moves. The DOM
+  // plays that second beat as a same-document view transition — the row's
+  // position interpolates, the balance cross-fades out — with `flushSync` so
+  // the DOM is already in its new layout when the snapshot is taken. No API,
+  // or reduce motion: a cut, which is the fallback the API itself prescribes.
+  const isReduceMotionEnabled = useReducedMotion();
+  const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+  const [isPowerupMode, setIsPowerupMode] = useState(wantsPowerupMode);
+  useLayoutEffect(() => {
+    if (wantsPowerupMode === isPowerupMode) return undefined;
+    const { startViewTransition } = document as Document & {
+      startViewTransition?: (update: () => void) => unknown;
+    };
+    const flip = () => setIsPowerupMode(wantsPowerupMode);
+    if (isReduceMotionEnabled || typeof startViewTransition !== 'function') {
+      flip();
+      return undefined;
+    }
+    const timer = setTimeout(
+      () => startViewTransition.call(document, () => flushSync(flip)),
+      motionMs.drift
+    );
+    return () => clearTimeout(timer);
+  }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
 
   // BE handles spam/unknown filtering via `includeSpam` above; the rows are
   // mobile's mapping, from shared.

@@ -295,6 +295,26 @@ export default function HomeScreen() {
     powerupTabs,
   });
 
+  // Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the balance block
+  // — chain selector, total, Send / Receive / Activity — leaves, and the
+  // sub-tab row rises to where the chain selector stood. Portfolio or NFTs
+  // bring it all back. A container transform: the row is one element whose
+  // position interpolates; the balance sinks out under it.
+  // Two beats, not one (owner, on device): the underline reaches the tab
+  // first and stops; only then does the header move. So the mode follows the
+  // tab one underline-slide later.
+  const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+  const [isPowerupMode, setIsPowerupMode] = useState(wantsPowerupMode);
+  useEffect(() => {
+    if (wantsPowerupMode === isPowerupMode) return undefined;
+    const delay = isReduceMotionEnabled ? 0 : motionMs.drift;
+    const timer = setTimeout(() => setIsPowerupMode(wantsPowerupMode), delay);
+    return () => clearTimeout(timer);
+  }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
+  const headerLayout = isReduceMotionEnabled
+    ? undefined
+    : LinearTransition.duration(motionMs.drift);
+
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
   const tokenListItems = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
@@ -485,16 +505,6 @@ export default function HomeScreen() {
 
   // `address` is defined above, next to the account state it comes from.
 
-  // Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the balance block
-  // — chain selector, total, Send / Receive / Activity — leaves, and the
-  // sub-tab row rises to where the chain selector stood. Portfolio or NFTs
-  // bring it all back. A container transform: the row is one element whose
-  // position interpolates; the balance sinks out under it.
-  const isPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
-  const headerLayout = isReduceMotionEnabled
-    ? undefined
-    : LinearTransition.duration(motionMs.drift);
-
   // The block above the content. It is fixed on both sub-tabs — nothing above
   // the sub-tab row scrolls (owner, 2026-09-01).
   const balanceBlock = (
@@ -632,6 +642,9 @@ export default function HomeScreen() {
             key={effectiveSubTab}
             testID="home-subtab-content"
             style={styles.chainContent}
+            // Rides the header's move: as the block above shrinks, the content
+            // follows it up on the same clock instead of jumping.
+            layout={headerLayout}
             entering={
               subTabHasPrior
                 ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
