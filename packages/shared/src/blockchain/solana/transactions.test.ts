@@ -102,7 +102,7 @@ const MOCK_SWAP_TX: SolanaTransaction = {
   fee: { amount: 10000, decimals: 9, symbol: 'SOL' },
   type: 'swap',
   description: 'Swap SOL for USDC',
-  source: 'JUPITER',
+  source: 'RAYDIUM',
   inputs: [
     {
       amount: '5000000', // 5 USDC received
@@ -110,7 +110,7 @@ const MOCK_SWAP_TX: SolanaTransaction = {
       symbol: 'USDC',
       name: 'USD Coin',
       contract: USDC_CONTRACT,
-      source: 'JupiterProgram',
+      source: 'RaydiumProgram',
     },
   ],
   outputs: [
@@ -120,7 +120,7 @@ const MOCK_SWAP_TX: SolanaTransaction = {
       symbol: 'SOL',
       name: 'Solana',
       contract: SOL_CONTRACT,
-      destination: 'JupiterProgram',
+      destination: 'RaydiumProgram',
     },
   ],
   heliusType: 'SWAP',

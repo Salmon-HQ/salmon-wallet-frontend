@@ -32,11 +32,11 @@ describe('useDAppMetadata', () => {
 
   it('loads metadata for a valid origin', async () => {
     mockGetDappMetadata.mockResolvedValueOnce({
-      name: 'Jupiter',
-      icon: 'https://jup.ag/icon.png',
+      name: 'Raydium',
+      icon: 'https://raydium.io/icon.png',
     });
 
-    const { result } = renderHook(() => useDAppMetadata('https://jup.ag'), {
+    const { result } = renderHook(() => useDAppMetadata('https://raydium.io'), {
       wrapper: wrapWithClient(),
     });
 
@@ -44,10 +44,10 @@ describe('useDAppMetadata', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockGetDappMetadata).toHaveBeenCalledWith('https://jup.ag');
+    expect(mockGetDappMetadata).toHaveBeenCalledWith('https://raydium.io');
     expect(result.current.metadata).toEqual({
-      name: 'Jupiter',
-      icon: 'https://jup.ag/icon.png',
+      name: 'Raydium',
+      icon: 'https://raydium.io/icon.png',
     });
   });
 
@@ -62,7 +62,7 @@ describe('useDAppMetadata', () => {
   it('falls back to null metadata when the request fails', async () => {
     mockGetDappMetadata.mockRejectedValueOnce(new Error('boom'));
 
-    const { result } = renderHook(() => useDAppMetadata('https://jup.ag'), {
+    const { result } = renderHook(() => useDAppMetadata('https://raydium.io'), {
       wrapper: wrapWithClient(),
     });
 

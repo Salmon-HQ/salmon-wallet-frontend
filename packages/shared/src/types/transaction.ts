@@ -160,7 +160,7 @@ export interface Transaction {
   outputs: TransactionTokenAmount[];
   /** Human-readable description from Helius */
   description?: string;
-  /** Source protocol (e.g., 'JUPITER', 'MAGIC_EDEN') */
+  /** Source protocol (e.g., 'RAYDIUM', 'MAGIC_EDEN') */
   source?: string;
   /** Original Helius transaction type */
   heliusType?: string;
@@ -467,7 +467,7 @@ export interface SolanaTransaction {
   outputs: TransactionTokenAmount[];
   /** Human-readable description from Helius */
   description?: string;
-  /** Source protocol (e.g., 'JUPITER', 'MAGIC_EDEN', 'PHANTOM') */
+  /** Source protocol (e.g., 'RAYDIUM', 'MAGIC_EDEN', 'PHANTOM') */
   source?: string;
   /** Transaction events */
   events?: Record<string, unknown>;

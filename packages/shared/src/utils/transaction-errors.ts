@@ -16,7 +16,8 @@
  *   `InstructionError` variants: `@solana/errors` codes, mirrored from Agave.
  * - Program-specific `Custom(n)` codes: SPL Token (`solana-program/token`,
  *   `interface/src/error.rs`), the System program (`solana-sdk`,
- *   `system-interface/src/error.rs`), Jupiter's swap program (6001 = slippage).
+ *   `system-interface/src/error.rs`), the swap aggregator programs earlier
+ *   swaps routed through (6001 = slippage).
  * - Anything that is not a `SolanaError` (Bitcoin, Ethereum, the backend, an
  *   aggregator) still goes by message patterns, as before.
  */
@@ -85,7 +86,8 @@ const TOKEN_PROGRAMS = new Set([
   'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
 ]);
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
-const JUPITER_PROGRAMS = new Set([
+/** The aggregator programs earlier swaps routed through; kept so their history still decodes. */
+const AGGREGATOR_PROGRAMS = new Set([
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
   'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB',
 ]);
@@ -127,7 +129,7 @@ const SYSTEM_ERROR_NAMES = [
   'NonceUnexpectedBlockhashValue',
 ];
 
-const JUPITER_SLIPPAGE_CODE = 6001;
+const AGGREGATOR_SLIPPAGE_CODE = 6001;
 
 function classifyCustom(programId: string | null, code: number): { key: string; name: string } {
   if (programId && TOKEN_PROGRAMS.has(programId)) {
@@ -142,8 +144,8 @@ function classifyCustom(programId: string | null, code: number): { key: string; 
     if (code === 1) return { key: 'transaction.errors.insufficientFunds', name };
     return { key: 'transaction.errors.programRejected', name };
   }
-  if ((programId && JUPITER_PROGRAMS.has(programId)) || code === JUPITER_SLIPPAGE_CODE) {
-    if (code === JUPITER_SLIPPAGE_CODE) {
+  if ((programId && AGGREGATOR_PROGRAMS.has(programId)) || code === AGGREGATOR_SLIPPAGE_CODE) {
+    if (code === AGGREGATOR_SLIPPAGE_CODE) {
       return { key: 'transaction.errors.slippage', name: 'SlippageToleranceExceeded' };
     }
   }
@@ -315,7 +317,7 @@ const INSUFFICIENT_FUNDS_PATTERNS = [
 const SLIPPAGE_PATTERNS = [
   'slippage tolerance exceeded',
   'slippagetoleranceexceeded',
-  // Jupiter's swap program reports slippage as custom error 6001 (0x1771),
+  // The aggregator programs report slippage as custom error 6001 (0x1771),
   // which reaches us as a stringified InstructionError or as a hex code.
   '"custom":6001',
   '0x1771',

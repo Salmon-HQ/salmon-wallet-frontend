@@ -80,12 +80,12 @@ These use `trackFirstTime()`: they emit the event **once**, guarded by a persist
 
 ### Recurring use
 
-| Event            | Props                               | Fires on                                                                  | Wired in                                                                   |
-| ---------------- | ----------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                                 | `packages/shared/src/hooks/useSendTransaction.ts`                          |
-| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome (Solana↔Solana, via Jupiter), fires immediately in `useSwap` | `useSwap.ts`                                                               |
-| `nft_viewed`     | `chain`                             | Open NFT detail                                                           | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
-| `nft_sent`       | `chain`                             | Successful NFT transfer                                                   | `packages/shared/src/hooks/useNftTransfer.ts`                              |
+| Event            | Props                               | Fires on                                                   | Wired in                                                                   |
+| ---------------- | ----------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                  | `packages/shared/src/hooks/useSendTransaction.ts`                          |
+| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome (Solana↔Solana), fires once the swap confirms | `packages/shared/src/powerups/swap/useSwapScreenLogic.ts`                  |
+| `nft_viewed`     | `chain`                             | Open NFT detail                                            | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
+| `nft_sent`       | `chain`                             | Successful NFT transfer                                    | `packages/shared/src/hooks/useNftTransfer.ts`                              |
 
 ### Feature adoption
 

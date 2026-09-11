@@ -28,7 +28,7 @@ describe('transaction utils', () => {
         },
       ],
       description: 'Unknown',
-      source: 'JUPITER',
+      source: 'RAYDIUM',
       heliusType: 'SWAP',
     } as any);
 
@@ -170,7 +170,7 @@ describe('transaction utils', () => {
     const swapRoute = {
       hops: [
         {
-          dex: 'JUPITER',
+          dex: 'RAYDIUM',
           percent: 100,
           inputToken: { symbol: 'SOL', amount: '1000000000', decimals: 9 },
           outputToken: { symbol: 'USDC', amount: '120000000', decimals: 6 },

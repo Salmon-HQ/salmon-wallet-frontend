@@ -151,7 +151,7 @@ async function doSwap(
   await popup.getByTestId(`swap-from-quickfill-${quickfill}`).click();
 
   const review = popup.getByTestId('swap-review-button');
-  // Enabled only once Jupiter answers with a quote AND the leg clears the $1.00
+  // Enabled only once the router answers with a quote AND the leg clears the $1.00
   // minimum. If this times out, check the balance before suspecting the
   // selector: below the minimum the button just stays disabled, with the reason
   // printed on screen.
@@ -223,7 +223,7 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   await dismissSuccess(popup);
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // ── swap_completed + first_swap_completed — real Jupiter swaps, out and back.
+  // ── swap_completed + first_swap_completed — real swaps, out and back.
   await doSwap(popup, SWAP_OUT);
   await doSwap(popup, SWAP_BACK);
 

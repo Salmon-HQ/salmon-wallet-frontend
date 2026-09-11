@@ -159,7 +159,7 @@ tail -f apps/extension/.playwright/reports/PHASE1-WALKTHROUGH.md
 | `walkthrough.mjs`     | Full sweep — onboarding, recover, home, tabs (Home/Collectibles/Swap), Send/Receive/Activity, every Settings panel via the legacy in-place driver. |
 | `settings-panels.mjs` | The 10 Settings sub-panels, each captured from a **fresh popup** (works around an SPA route issue in the legacy walkthrough).                      |
 | `lock-and-pages.mjs`  | Lock cycle, re-lock-on-reload regression, About + Help & Support, NFT detail navigation.                                                           |
-| `dapp-providers.mjs`  | Inspects the injected `window.solana` / `window.salmon` provider against jup.ag, plus a deep dump of the Security panel.                           |
+| `dapp-providers.mjs`  | Inspects the injected `window.solana` / `window.salmon` provider against a public Solana dApp, plus a deep dump of the Security panel.             |
 
 ### Wallet plumbing
 

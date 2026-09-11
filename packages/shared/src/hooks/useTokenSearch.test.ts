@@ -10,7 +10,7 @@ import { useTokenSearch } from './useTokenSearch';
 const TOKENS = [
   { address: 'sol', symbol: 'SOL', name: 'Solana', uiAmount: 2 },
   { address: 'usdc', symbol: 'USDC', name: 'USD Coin', uiAmount: 10 },
-  { address: 'jup', symbol: 'JUP', name: 'Jupiter', uiAmount: 1 },
+  { address: 'ray', symbol: 'RAY', name: 'Raydium', uiAmount: 1 },
 ];
 
 describe('useTokenSearch', () => {

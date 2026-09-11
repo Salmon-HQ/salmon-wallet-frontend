@@ -172,7 +172,7 @@ const BASE_TRANSACTION = {
   id: 'tx-1234567890abcdef',
   type: 'swap',
   status: 'completed',
-  source: 'Jupiter',
+  source: 'Raydium',
   timestamp: 1710000000000,
   confirmationStatus: 'finalized',
   slot: 123456,

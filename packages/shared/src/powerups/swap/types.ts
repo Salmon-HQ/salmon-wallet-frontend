@@ -15,7 +15,7 @@ export const SWAP_NETWORK_ID: SwapNetworkId = 'solana-mainnet';
 // ============================================================================
 
 /** The routing provider, as data: the UI never branches on it. */
-export type SwapProvider = '0x' | 'jupiter' | 'dflow';
+export type SwapProvider = '0x' | 'dflow';
 
 /**
  * Exactly one of `amount` (base units) or `uiAmount` (decimal string) is

@@ -101,7 +101,7 @@ describe('describeTransactionError — decoded Solana errors', () => {
     );
   });
 
-  it('keeps Jupiter slippage as slippage', () => {
+  it('keeps the aggregator slippage code as slippage', () => {
     expect(classifyTransactionError(preflight(custom(6001)))).toBe('transaction.errors.slippage');
   });
 
@@ -174,7 +174,7 @@ describe('describeTransactionError — plain messages', () => {
     );
   });
 
-  it('maps a Jupiter slippage failure to the slippage message', () => {
+  it('maps an aggregator slippage failure to the slippage message', () => {
     expect(classifyTransactionError(new Error('{"InstructionError":[3,{"Custom":6001}]}'))).toBe(
       'transaction.errors.slippage'
     );

@@ -101,9 +101,9 @@ async function testDappSignMessage() {
   // Create a minimal dApp page on a benign domain that exercises wallet-standard
   const dapp = await ctx.newPage();
   errors.push(...tapConsole(dapp, 'dapp'));
-  await dapp.goto('https://jup.ag/swap');
+  await dapp.goto('https://raydium.io/swap/');
   await sleep(8000);
-  await capture(dapp, 'dapp-sign', '01-jup');
+  await capture(dapp, 'dapp-sign', '01-dapp');
 
   // Extract injected wallet provider. wallet-standard registers via window.
   const providers = await dapp
@@ -118,11 +118,11 @@ async function testDappSignMessage() {
     .catch((e) => ['eval err: ' + e.message]);
   log('  providers: ' + providers.join(' | '));
 
-  // Try to drive signMessage via wallet-standard. If Jupiter's connect button
-  // is visible, the wallet was injected. Driving signMessage UI from Jupiter
+  // Try to drive signMessage via wallet-standard. If the dApp's connect button
+  // is visible, the wallet was injected. Driving signMessage UI from the dApp
   // is complex (needs a real wallet flow). Instead, we observe whether the
   // approval popup pattern works when triggered programmatically.
-  findings.push('dApp sign message: observed providers via jup.ag — ' + providers.join('; '));
+  findings.push('dApp sign message: observed providers via the dApp — ' + providers.join('; '));
   findings.push(
     'dApp sign message: full programmatic signMessage requires wallet-standard adapter scripting; deferred for focused script'
   );

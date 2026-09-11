@@ -71,7 +71,7 @@ Two positioning cautions the product must respect:
 - **Approval is the product's centre of gravity.** Every sensitive action must explain what will happen, what can go wrong, what it costs, and what is being approved.
 - **Off-chain message signing (OCMS)** is shipped — a Solana Foundation standard, with Salmon listed as an early adopter. A v1 OCMS message begins with `0xff` plus the literal domain `"solana offchain"`, which can never begin a valid transaction, closing the transaction-lookalike blind-signing attack. Shipped on web v1.1.0 and extension 0.11.1/0.11.2. Mobile carries only the WebCrypto polyfill and has no dApp surface at all.
 - **Mobile Wallet Adapter is Android-only, permanently.** iOS suspends backgrounded apps, which kills the socket MWA depends on. dApp connectivity is therefore an Android-and-extension capability, and the iOS build must present that absence as a platform reality rather than a missing or broken feature.
-- **Third-party dependencies with user-visible failure modes**: Jupiter (same-chain swap), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on both platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
+- **Third-party dependencies with user-visible failure modes**: 0x (same-chain swap), CoinGecko (prices and the token list), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on both platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
 
 ## Capabilities and Constraints
 
@@ -79,7 +79,7 @@ Two positioning cautions the product must respect:
 
 Solana and Bitcoin accounts (mainnet plus devnet/testnet), send, receive, NFTs/collectibles, a spam filter, OCMS and Sign-in-with-Solana on the extension.
 
-Swap (Jupiter) shipped and was then withdrawn: the surface is closed in every app pending the Powerups boundary work (spec 027), and no app offers a way to reach it.
+Swap shipped on its first provider and was then withdrawn; it returns as the Swap Powerup on 0x behind the Powerups boundary (spec 027): the backend builds an unsigned transaction, core signs and broadcasts it.
 
 ### Powerups — planned, not built
 
@@ -112,7 +112,7 @@ A **SALMON** token exists only as a "proposed ownership coin, not a live token".
 
 ### Platform fees — resolved: the rate is disclosed
 
-Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all).
+Salmon takes a **swap fee the backend sets and reports on every build** (server-side; the frontend has no fee logic at all).
 
 The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. The swap review screen names the rate: it shows "Salmon fee" with the percentage the backend reports.
 
@@ -139,7 +139,7 @@ Historical: the wallet previously shipped a StealthEX cross-chain bridge with it
 ## Evidence on Hand
 
 - **Real assets**: the shipped theme tokens in `packages/shared/src/theme`, the brand mark as vector path data in `theme/brand.ts`, the seigaiha `ScalesBackground` component in `packages/ui`, and the DM Sans / Geist Mono binaries in `packages/assets/src/fonts` (SIL OFL 1.1, cleared for embedding).
-- **Real product docs**: OCMS overview and approval-UI notes, the Jupiter referral spec, the frontend analytics/privacy model, and the frontend error-handling contract.
+- **Real product docs**: OCMS overview and approval-UI notes, the swap fee spec, the frontend analytics/privacy model, and the frontend error-handling contract.
 - **Absent, and not to be fabricated**: user research of any kind; personas; testimonials; usage or retention numbers; competitor teardowns; a Figma or any other design-file reference; specs for Explore, seedless wallet, watch mode, onboarding rework, portfolio view, or notifications; and the provenance of the `Bool`/`BoolSplashLogo` asset, which appears in the codebase and nowhere in the knowledge base.
 
 ## Product Principles

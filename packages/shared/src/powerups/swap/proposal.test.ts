@@ -66,7 +66,7 @@ describe('buildSwapProposal', () => {
     expect(proposal.id).toBe(swapProposalId(build()));
   });
 
-  // Jupiter/0x licence terms and spec 027 §2: the Salmon fee is its own line,
+  // 0x licence terms and spec 027 §2: the Salmon fee is its own line,
   // never folded into the quote, and the provider is named from the response.
   it('shows the Salmon fee as its own line with amount and rate, and the attribution verbatim', () => {
     const proposal = buildSwapProposal(build(), { inToken: SOL, outToken: USDC, refresh });
