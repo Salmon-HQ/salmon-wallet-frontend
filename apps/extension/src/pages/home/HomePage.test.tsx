@@ -26,6 +26,8 @@ function stub(testID: string) {
 
 vi.mock('../../components', () => ({
   useReducedMotion: () => false,
+  floatEntering: () => undefined,
+  sinkExiting: () => undefined,
   VIEW_TRANSITION_LEAVING_BLOCK: 'sw-leaving-block',
   VIEW_TRANSITION_RISING_ROW: 'sw-rising-row',
   VIEW_TRANSITION_MS_VAR: '--sw-view-transition-ms',
@@ -142,7 +144,12 @@ vi.mock('@salmon/shared', async () => {
   );
   const settings =
     await vi.importActual<typeof import('@salmon/shared/settings')>('@salmon/shared/settings');
+  // The focus-mode clock is real: the suite reads Home in its resting phases.
+  const focusMode = await vi.importActual<typeof import('@salmon/shared/motion/useFocusModePhase')>(
+    '@salmon/shared/motion/useFocusModePhase'
+  );
   return {
+    ...focusMode,
     colors: {
       background: { primary: '#000', card: '#111', tertiary: '#222' },
       text: { primary: '#fff', secondary: '#aaa', disabled: '#555' },

@@ -62,6 +62,8 @@ export {
   TaskChromeProvider,
   useTaskChrome,
   useReducedMotion,
+  floatEntering,
+  sinkExiting,
   VIEW_TRANSITION_LEAVING_BLOCK,
   VIEW_TRANSITION_MS_VAR,
   VIEW_TRANSITION_RISING_ROW,

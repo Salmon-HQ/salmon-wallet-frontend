@@ -87,6 +87,8 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The focus-mode clock is real: the screen reads Home in its resting phases.
+  ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
   motionMs: { drift: 280 },
   SINK_OUT_MS: 225,

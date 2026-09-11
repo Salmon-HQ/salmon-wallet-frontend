@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -30,6 +30,8 @@ import {
   FLOAT_IN_MS,
   SINK_OUT_MS,
   motionMs,
+  useFocusModePhase,
+  type FocusModePhase,
 } from '@salmon/shared';
 import {
   WalletHeader,
@@ -51,6 +53,8 @@ import {
   SendPage,
   PowerupsFab,
   useReducedMotion,
+  floatEntering,
+  sinkExiting,
   VIEW_TRANSITION_MS_VAR,
 } from '../../components';
 
@@ -454,28 +458,54 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, [currentPage]);
 
   const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
-  const [isPowerupMode, setIsPowerupMode] = useState(wantsPowerupMode);
-  useLayoutEffect(() => {
-    if (wantsPowerupMode === isPowerupMode) return undefined;
-    const { startViewTransition } = document as Document & {
-      startViewTransition?: (update: () => void) => unknown;
-    };
-    const flip = () => setIsPowerupMode(wantsPowerupMode);
-    if (isReduceMotionEnabled || typeof startViewTransition !== 'function') {
-      flip();
-      return undefined;
-    }
-    const timer = setTimeout(() => {
+  // The two moves of the row — up once the block is gone, down before it
+  // returns — are same-document view transitions: the row's position
+  // interpolates, with `flushSync` so the DOM is already in its new layout
+  // when the snapshot is taken. No API, or reduce motion: a cut, which is the
+  // fallback the API itself prescribes. The sink and the float of the block
+  // are the kit's own verbs on the element, played in place.
+  const commitFocusPhase = useCallback(
+    (next: FocusModePhase, apply: () => void) => {
+      const moves = next === 'gone' || next === 'returning';
+      const { startViewTransition } = document as Document & {
+        startViewTransition?: (update: () => void) => unknown;
+      };
+      if (!moves || isReduceMotionEnabled || typeof startViewTransition !== 'function') {
+        apply();
+        return;
+      }
       // The row travels exactly as long as the balance's verb: the sink's
-      // length while it leaves, the float's while it comes back.
+      // length going up, the float's coming down.
       document.documentElement.style.setProperty(
         VIEW_TRANSITION_MS_VAR,
-        `${wantsPowerupMode ? SINK_OUT_MS : FLOAT_IN_MS}ms`
+        `${next === 'gone' ? SINK_OUT_MS : FLOAT_IN_MS}ms`
       );
-      startViewTransition.call(document, () => flushSync(flip));
-    }, motionMs.drift);
-    return () => clearTimeout(timer);
-  }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
+      startViewTransition.call(document, () => flushSync(apply));
+    },
+    [isReduceMotionEnabled]
+  );
+  const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled, {
+    commit: commitFocusPhase,
+  });
+  const isPowerupMode = focusPhase === 'gone';
+
+  // The block's room: its height, read while shown, holds while it sinks and
+  // comes back empty before it floats in. The block itself plays the verbs.
+  const balanceRef = useRef<HTMLDivElement>(null);
+  const [balanceHeight, setBalanceHeight] = useState<number | null>(null);
+  const previousPhase = useRef<FocusModePhase>(focusPhase);
+  useEffect(() => {
+    const was = previousPhase.current;
+    previousPhase.current = focusPhase;
+    const element = balanceRef.current;
+    if (focusPhase === 'sinking' && element) {
+      setBalanceHeight(element.getBoundingClientRect().height);
+      sinkExiting(element, isReduceMotionEnabled);
+    }
+    if (focusPhase === 'shown' && was === 'returning') {
+      floatEntering(element, isReduceMotionEnabled);
+    }
+  }, [focusPhase, isReduceMotionEnabled]);
 
   // BE handles spam/unknown filtering via `includeSpam` above; the rows are
   // mobile's mapping, from shared.
@@ -721,20 +751,31 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               {/* Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the
                   balance block leaves and the sub-tab row rises to where the
                   chain selector stood; Portfolio or NFTs bring it back. */}
-              {isPowerupMode ? null : (
-                <div data-testid="home-balance-block" style={balanceBlockStyle}>
-                  <BalanceHeader
-                    testID="balance-header"
-                    blockchains={blockchainBalances}
-                    hiddenBalance={hiddenBalance}
-                    onToggleVisibility={toggleHidden}
-                    onBlockchainChange={handleBlockchainChange}
-                    activeIndex={activeBlockchainIndex}
-                    onSendPress={handleSendPress}
-                    onReceivePress={handleReceivePress}
-                    onActivityPress={handleActivityPress}
-                    sendDisabled={isWatchOnly}
-                  />
+              {focusPhase !== 'gone' && (
+                <div
+                  data-testid="home-balance-room"
+                  style={
+                    focusPhase !== 'shown' && balanceHeight !== null
+                      ? { ...balanceBlockStyle, height: balanceHeight, overflow: 'hidden' }
+                      : balanceBlockStyle
+                  }
+                >
+                  {focusPhase !== 'returning' && (
+                    <div ref={balanceRef} data-testid="home-balance-block">
+                      <BalanceHeader
+                        testID="balance-header"
+                        blockchains={blockchainBalances}
+                        hiddenBalance={hiddenBalance}
+                        onToggleVisibility={toggleHidden}
+                        onBlockchainChange={handleBlockchainChange}
+                        activeIndex={activeBlockchainIndex}
+                        onSendPress={handleSendPress}
+                        onReceivePress={handleReceivePress}
+                        onActivityPress={handleActivityPress}
+                        sendDisabled={isWatchOnly}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               <div style={isPowerupMode ? risenSubTabsStyle : subTabsStyle}>

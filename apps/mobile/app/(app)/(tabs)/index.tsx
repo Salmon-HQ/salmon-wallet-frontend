@@ -56,9 +56,9 @@ import {
   FLOAT_IN_MS,
   SINK_OUT_MS,
   motionEasing,
-  motionMs,
   type PriceChartPeriod,
   type Token,
+  useFocusModePhase,
 } from '@salmon/shared';
 import {
   BalanceHeader,
@@ -319,21 +319,24 @@ export default function HomeScreen() {
   // first and stops; only then does the header move. So the mode follows the
   // tab one underline-slide later.
   const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
-  const [isPowerupMode, setIsPowerupMode] = useState(wantsPowerupMode);
-  useEffect(() => {
-    if (wantsPowerupMode === isPowerupMode) return undefined;
-    const delay = isReduceMotionEnabled ? 0 : motionMs.drift;
-    const timer = setTimeout(() => setIsPowerupMode(wantsPowerupMode), delay);
-    return () => clearTimeout(timer);
-  }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
+  // Three beats, never overlapping (owner, on device): the underline reaches
+  // the tab and stops; the balance sinks while the row holds its place; only
+  // then does the row travel. Coming back, the row travels down first and
+  // the balance floats into the room it left. `useFocusModePhase` keeps the
+  // clock; this screen draws each phase.
+  const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled);
+  const isPowerupMode = focusPhase === 'gone';
+  // The block's height, measured while shown, so its room can be held while
+  // it sinks and given back before it floats in.
+  const [balanceHeight, setBalanceHeight] = useState<number | null>(null);
   // The row travels exactly as long as the balance's verb, on the verb's
   // travel curve: the sink's length while the balance leaves, the float's
   // while it comes back (owner: same duration, no exceptions).
   const headerLayout = isReduceMotionEnabled
     ? undefined
-    : LinearTransition.duration(isPowerupMode ? SINK_OUT_MS : FLOAT_IN_MS).easing(
-        Easing.bezier(...motionEasing.settle.native)
-      );
+    : LinearTransition.duration(
+        focusPhase === 'gone' || focusPhase === 'sinking' ? SINK_OUT_MS : FLOAT_IN_MS
+      ).easing(Easing.bezier(...motionEasing.settle.native));
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -639,21 +642,40 @@ export default function HomeScreen() {
               is the same instance across a switch: `UnderlineTabs` only slides
               its underline if it is not remounted. */}
           <Reanimated.View layout={headerLayout} style={styles.pinnedHeader}>
-            {isPowerupMode ? null : (
-              <Reanimated.View
-                key="home-balance"
-                testID="home-balance-block"
-                entering={floatEntering(isReduceMotionEnabled)}
-                exiting={sinkExiting(isReduceMotionEnabled)}
+            {/* The balance's room. While the block sinks the room stays, at
+                the height the block had, so the row under it does not move
+                until the block is gone; on the way back the room returns
+                empty first, and the block floats into it. */}
+            {focusPhase !== 'gone' && (
+              <View
+                testID="home-balance-room"
+                style={
+                  focusPhase !== 'shown' && balanceHeight !== null
+                    ? { height: balanceHeight }
+                    : undefined
+                }
+                onLayout={
+                  focusPhase === 'shown'
+                    ? (event) => setBalanceHeight(event.nativeEvent.layout.height)
+                    : undefined
+                }
               >
-                {balanceBlock}
-              </Reanimated.View>
+                {focusPhase === 'shown' && (
+                  <Reanimated.View
+                    key="home-balance"
+                    testID="home-balance-block"
+                    entering={floatEntering(isReduceMotionEnabled)}
+                    exiting={sinkExiting(isReduceMotionEnabled)}
+                  >
+                    {balanceBlock}
+                  </Reanimated.View>
+                )}
+              </View>
             )}
             {/* The row carries its own `layout`: Reanimated animates the frame
                 of the view that holds the prop, so a parent's `layout` never
-                moves a child — and an exiting sibling leaves the layout at
-                once. Without this the row cut to its risen place while the
-                balance was still sinking (owner, on device, 2026-09-11). */}
+                moves a child. It travels when the room above leaves or
+                returns — the sink's length up, the float's down. */}
             <Reanimated.View
               ref={subTabsRef}
               onLayout={handleSubTabsLayout}
