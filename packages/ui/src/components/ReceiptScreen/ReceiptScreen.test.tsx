@@ -145,7 +145,6 @@ describe('ReceiptScreen — exchange tone', () => {
     expect(screen.getByTestId('tx-success-hero')).toBeTruthy();
     expect(screen.getByTestId('tx-success-sent')).toBeTruthy();
     expect(screen.getByTestId('tx-success-received')).toBeTruthy();
-    expect(screen.getByTestId('tx-success-tick')).toBeTruthy();
     expect(screen.getByText('1 SOL')).toBeTruthy();
     expect(screen.getByText('200 USDC')).toBeTruthy();
   });

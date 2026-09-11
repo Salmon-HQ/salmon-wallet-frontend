@@ -26,7 +26,7 @@ import {
   type Semantic,
 } from '@salmon/shared';
 
-import { ArrowDownIcon, CheckIcon } from '../../icons';
+import { ArrowDownIcon } from '../../icons';
 import { floatEntering } from '../../utils/sinkAndFloat';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { Card } from '../Card';
@@ -53,7 +53,7 @@ const MIN_AMOUNT_SCALE = fontSize.body / fontSize.title;
  */
 const LOGO_SIZE = componentSizes.iconSize3XL;
 
-/** The tick and the arrow are chrome-sized glyphs, not illustrations. */
+/** The arrow is a chrome-sized glyph, not an illustration. */
 const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 
 /**
@@ -85,7 +85,7 @@ export function ExchangeReceipt({
   const actionStep = exchange ? 4 : 2;
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text, status } = useSemantic();
+  const { text } = useSemantic();
   const { floatingBottomOffset, insets } = useTabChrome();
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -156,12 +156,10 @@ export function ExchangeReceipt({
         {exchange ? (
           /* The hero is the graphic, and it reads down: the mark of the token
            that left with its amount on top, an arrow travelling downward from
-           it, and the token that arrived below — its amount beside it and the
-           tick attached to it, the same glyph the copy control draws when
-           something has landed. The tick belongs to what was received, not to
-           the block. The lines are the accessibility elements; the arrow and
-           the tick are decoration and are hidden from the reader, so the
-           result the sentence used to carry rides on the received line. */
+           it, and the token that arrived below with its amount beside it. The
+           lines are the accessibility elements; the arrow is decoration and is
+           hidden from the reader, so the result the sentence used to carry
+           rides on the received line. */
           <View style={styles.exchangeBlock} testID="tx-success-hero">
             <Animated.View
               style={styles.tokenLine}
@@ -178,7 +176,6 @@ export function ExchangeReceipt({
               >
                 {exchange.send.amount}
               </Text>
-              <View style={styles.tickSlot} />
             </Animated.View>
             <Animated.View
               style={styles.trackRow}
@@ -210,9 +207,6 @@ export function ExchangeReceipt({
               >
                 {exchange.receive.amount}
               </Text>
-              <View style={styles.tickSlot} testID="tx-success-tick">
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={status.success} />
-              </View>
             </Animated.View>
           </View>
         ) : (
@@ -352,7 +346,7 @@ const stylesFor = (t: Semantic) =>
       marginBottom: vs(spacing['2xl']),
     },
     // The exchange, read down the screen: what left on top, the arrow between,
-    // what arrived below with its tick. Each amount travels with its own mark.
+    // what arrived below. Each amount travels with its own mark.
     exchangeBlock: {
       alignSelf: 'stretch',
       alignItems: 'center',
@@ -367,13 +361,6 @@ const stylesFor = (t: Semantic) =>
       gap: s(spacing.sm),
     },
     trackRow: {
-      alignItems: 'center',
-    },
-    // The tick's place, reserved on both lines so the two amounts sit on one
-    // vertical axis — the same reservation the assist band makes below, for the
-    // same reason. Only the received line puts a glyph in it.
-    tickSlot: {
-      width: s(GRAPHIC_ICON_SIZE),
       alignItems: 'center',
     },
     amountCell: {

@@ -40,7 +40,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion, floatEntering } from '../../motion';
-import { ArrowDownIcon, CheckIcon } from '../../icons';
+import { ArrowDownIcon } from '../../icons';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -49,7 +49,7 @@ import type { ExchangeReceiptScreenProps } from './types';
 
 /** The token marks are the graphic's subject: the icon ramp's largest step. */
 const LOGO_SIZE = componentSizes.iconSize3XL;
-/** The tick and the arrow are chrome-sized glyphs, not illustrations. */
+/** The arrow is a chrome-sized glyph, not an illustration. */
 const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 
 /**
@@ -216,7 +216,6 @@ export function ExchangeReceipt({
                   {exchange.send.amount}
                 </span>
               </div>
-              <div style={styles.tickSlot} />
             </Rise>
             <Rise step={1} style={styles.trackRow} aria-hidden data-testid="tx-success-arrow">
               <ArrowDownIcon
@@ -243,9 +242,6 @@ export function ExchangeReceipt({
                 <span style={styles.amount} data-testid="tx-success-summary">
                   {exchange.receive.amount}
                 </span>
-              </div>
-              <div style={styles.tickSlot} data-testid="tx-success-tick">
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
               </div>
             </Rise>
           </div>
@@ -370,12 +366,6 @@ const stylesFor = (t: Semantic): Record<string, React.CSSProperties> => ({
   trackRow: {
     display: 'flex',
     justifyContent: 'center',
-  },
-  tickSlot: {
-    width: GRAPHIC_ICON_SIZE,
-    display: 'flex',
-    justifyContent: 'center',
-    flexShrink: 0,
   },
   amountCell: {
     display: 'flex',

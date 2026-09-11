@@ -59,6 +59,17 @@ jest.mock('@salmon/shared', () => ({
   vs: (value: number) => value,
 }));
 
+jest.mock('../WarningNotice', () => {
+  const { Text, View } = jest.requireActual('react-native');
+  return {
+    WarningNotice: ({ title, children }: { title: string; children?: React.ReactNode }) => (
+      <View>
+        <Text>{title}</Text>
+        <Text>{children}</Text>
+      </View>
+    ),
+  };
+});
 jest.mock('../BlurContainer', () => {
   const { View: RNView } = require('react-native');
   return { BlurContainer: RNView };

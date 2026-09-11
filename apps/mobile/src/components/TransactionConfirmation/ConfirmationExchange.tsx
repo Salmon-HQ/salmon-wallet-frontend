@@ -2,8 +2,6 @@ import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 import i18n from 'i18next';
 import {
-  colors,
-  semantic,
   fontSize,
   formatTokenAmountSignificant,
   letterSpacing,
@@ -14,9 +12,11 @@ import {
   s,
   fontFamilyNative,
   tabularNums,
+  type Semantic,
 } from '@salmon/shared';
 import type { SwapReviewExchangeSide } from '@salmon/shared';
 import { ArrowRightIcon, iconSize } from '../../icons';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PendingValue } from '../PendingValue';
 import { TokenLogo } from '../TokenLogo';
 import type { ConfirmationExchangeProps } from './types';
@@ -61,26 +61,29 @@ const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
   pendingAmount = false,
   pendingUsdValue = false,
   emphasis = false,
-}) => (
-  <View style={styles.side}>
-    <Text style={styles.label}>{label}</Text>
-    <TokenLogo uri={logo} symbol={symbol} size={s(LOGO_SIZE)} />
-    <PendingValue pending={pendingAmount}>
-      <Text
-        style={[styles.amount, TABULAR, emphasis && styles.amountEmphasis]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-      >
-        {toSignificantAmount(amount)}
-      </Text>
-    </PendingValue>
-    {usdValue != null && (
-      <PendingValue pending={pendingUsdValue}>
-        <Text style={[styles.usdValue, TABULAR]}>{stripApprox(usdValue)}</Text>
+}) => {
+  const styles = useThemedStyles(stylesFor);
+  return (
+    <View style={styles.side}>
+      <Text style={styles.label}>{label}</Text>
+      <TokenLogo uri={logo} symbol={symbol} size={s(LOGO_SIZE)} />
+      <PendingValue pending={pendingAmount}>
+        <Text
+          style={[styles.amount, TABULAR, emphasis && styles.amountEmphasis]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {toSignificantAmount(amount)}
+        </Text>
       </PendingValue>
-    )}
-  </View>
-);
+      {usdValue != null && (
+        <PendingValue pending={pendingUsdValue}>
+          <Text style={[styles.usdValue, TABULAR]}>{stripApprox(usdValue)}</Text>
+        </PendingValue>
+      )}
+    </View>
+  );
+};
 
 /**
  * ConfirmationExchange - the single graphic block on the confirmation
@@ -92,58 +95,61 @@ export const ConfirmationExchange: React.FC<ConfirmationExchangeProps> = ({
   receive,
   style,
 }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { accent } = useSemantic();
   return (
     <View style={[styles.row, style]} testID="confirmation-exchange">
       <ExchangeSide {...send} />
-      <ArrowRightIcon size={iconSize.md} color={semantic.accent.ink} weight="bold" />
+      <ArrowRightIcon size={iconSize.md} color={accent.ink} weight="bold" />
       <ExchangeSide {...receive} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: s(spacing.base),
-    paddingVertical: vs(spacing.base),
-    gap: s(spacing.sm),
-  },
-  side: {
-    flex: 1,
-    alignItems: 'center',
-    gap: vs(spacing.xs),
-  },
-  label: {
-    fontSize: ms(fontSize.xs),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
-    textAlign: 'center',
-  },
-  amount: {
-    fontSize: ms(fontSize.lg),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(fontSize.lg * lineHeight.tight),
-    textAlign: 'center',
-  },
-  // The received amount on a success receipt outranks the sent one — one
-  // step up in size, same tabular digits.
-  amountEmphasis: {
-    fontSize: ms(fontSize.xl),
-    lineHeight: ms(fontSize.xl * lineHeight.tight),
-  },
-  usdValue: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.secondary,
-    letterSpacing: letterSpacing.slight,
-    lineHeight: ms(fontSize.sm * lineHeight.tokenListItem),
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: s(spacing.base),
+      paddingVertical: vs(spacing.base),
+      gap: s(spacing.sm),
+    },
+    side: {
+      flex: 1,
+      alignItems: 'center',
+      gap: vs(spacing.xs),
+    },
+    label: {
+      fontSize: ms(fontSize.xs),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.tertiary,
+      textTransform: 'uppercase',
+      letterSpacing: letterSpacing.wider,
+      textAlign: 'center',
+    },
+    amount: {
+      fontSize: ms(fontSize.lg),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.snug,
+      lineHeight: ms(fontSize.lg * lineHeight.tight),
+      textAlign: 'center',
+    },
+    // The received amount on a success receipt outranks the sent one — one
+    // step up in size, same tabular digits.
+    amountEmphasis: {
+      fontSize: ms(fontSize.xl),
+      lineHeight: ms(fontSize.xl * lineHeight.tight),
+    },
+    usdValue: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      letterSpacing: letterSpacing.slight,
+      lineHeight: ms(fontSize.sm * lineHeight.tokenListItem),
+      textAlign: 'center',
+    },
+  });
 
 export default ConfirmationExchange;

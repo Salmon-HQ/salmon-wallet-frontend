@@ -1,6 +1,4 @@
 import {
-  borderRadius,
-  colors,
   componentSizes,
   fontSize,
   fontFamilyNative,
@@ -11,14 +9,15 @@ import {
   s,
   spacing,
   vs,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { SINK_FLOAT_STAGGER_MS, floatEntering } from '../../utils/sinkAndFloat';
-import { BlurContainer } from '../BlurContainer';
+import { useThemedStyles } from '../../theme/useThemedStyles';
+import { WarningNotice } from '../WarningNotice';
 import { ConfirmationDetailsCard } from './ConfirmationDetailsCard';
 import { ConfirmationExchange } from './ConfirmationExchange';
 import { ConfirmationButtons } from './ConfirmationButtons';
@@ -42,6 +41,7 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
   style,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
 
   // The screen surfaces in bands, not as one slab: title, exchange, details,
   // warning, buttons — each one `SINK_FLOAT_STAGGER_MS` (the Surfacing
@@ -102,14 +102,11 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
         {/* Warning box — band 3 */}
         {display.warning && (
           <Animated.View entering={bandEntering(3)}>
-            <BlurContainer
-              borderColor={colors.palette.amber}
-              backgroundColor={semantic.status.warningTint}
-              style={styles.warningBox}
-            >
-              <Text style={styles.warningTitle}>{display.warning.title}</Text>
-              <Text style={styles.warningText}>{display.warning.body}</Text>
-            </BlurContainer>
+            {/* The kit's notice, as the DOM twin draws it: its inks follow the
+                live mode, so the body reads in light as well as in dark. */}
+            <WarningNotice tone="warning" title={display.warning.title} style={styles.warningBox}>
+              {display.warning.body}
+            </WarningNotice>
           </Animated.View>
         )}
       </ScrollView>
@@ -135,69 +132,54 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: s(spacing.headerPadding),
-    paddingTop: vs(spacing['2xl']),
-  },
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(24 * lineHeight.condensed),
-    marginBottom: vs(spacing['2xl']),
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: vs(spacing['4xl']),
-  },
-  cardsContainer: {
-    gap: vs(spacing.md),
-    marginBottom: vs(spacing.xl),
-  },
-  detailsContainer: {
-    marginBottom: vs(spacing.xl),
-  },
-  attribution: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.tertiary,
-    textAlign: 'center',
-    opacity: opacity.soft,
-    marginBottom: vs(spacing['3xl']),
-    minHeight: vs(componentSizes.swapDetailRowHeight / 2),
-  },
-  warningBox: {
-    borderRadius: borderRadius.md,
-    padding: s(spacing.base),
-    marginBottom: vs(spacing.lg),
-  },
-  warningTitle: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.status.warning,
-    marginBottom: vs(spacing.xs),
-    letterSpacing: letterSpacing.normal,
-  },
-  warningText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.secondary,
-    lineHeight: ms(12 * lineHeight.normal),
-    letterSpacing: letterSpacing.normal,
-  },
-  errorText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.status.danger,
-    textAlign: 'center',
-    marginBottom: vs(spacing.md),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: s(spacing.headerPadding),
+      paddingTop: vs(spacing['2xl']),
+    },
+    title: {
+      fontSize: ms(fontSize.headline),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.primary,
+      textAlign: 'center',
+      letterSpacing: letterSpacing.snug,
+      lineHeight: ms(24 * lineHeight.condensed),
+      marginBottom: vs(spacing['2xl']),
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: vs(spacing['4xl']),
+    },
+    cardsContainer: {
+      gap: vs(spacing.md),
+      marginBottom: vs(spacing.xl),
+    },
+    detailsContainer: {
+      marginBottom: vs(spacing.xl),
+    },
+    attribution: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.tertiary,
+      textAlign: 'center',
+      opacity: opacity.soft,
+      marginBottom: vs(spacing['3xl']),
+      minHeight: vs(componentSizes.swapDetailRowHeight / 2),
+    },
+    warningBox: {
+      marginBottom: vs(spacing.lg),
+    },
+    errorText: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.medium,
+      color: t.status.danger,
+      textAlign: 'center',
+      marginBottom: vs(spacing.md),
+    },
+  });
 
 export default TransactionConfirmation;

@@ -4,7 +4,10 @@ import { render, screen } from '@testing-library/react-native';
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
 jest.mock('@salmon/shared', () => ({
   colors: { text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' } },
-  semantic: { accent: { ink: '#ff5c45' } },
+  semantic: {
+    accent: { ink: '#ff5c45' },
+    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
+  },
   fontSize: { xs: 10, sm: 14, lg: 18, xl: 22 },
   fontFamilyNative: { medium: 'System', bold: 'System' },
   letterSpacing: { slight: 0.1, snug: -0.2, wider: 1 },
