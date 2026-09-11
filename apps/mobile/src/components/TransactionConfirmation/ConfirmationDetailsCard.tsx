@@ -1,47 +1,54 @@
+/**
+ * ConfirmationDetailsCard — the confirmation's detail rows grouped into ONE
+ * card, on the same material and rhythm as every other card of facts in
+ * the wallet (the token detail's Market data, a Powerup's Made by /
+ * Networks): `Card` + `KeyValueRow`, rows spaced by the card's gap, no
+ * hairlines (owner, 2026-09-11). Advanced rows fold behind a "Details"
+ * disclosure, collapsed by default — the critical rows and the warning stay
+ * on screen. The DOM twin is
+ * `packages/ui/src/components/TransactionConfirmation/ConfirmationDetailsCard.tsx`.
+ */
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
-  colors,
-  componentSizes,
   fontFamilyNative,
+  fontScaleCap,
   fontSize,
-  letterSpacing,
   lineHeight,
-  ms,
   s,
   spacing,
-  vs,
+  valueInkFor,
+  type Semantic,
 } from '@salmon/shared';
 import { CaretDownIcon, iconSize } from '../../icons';
-import { BlurContainer } from '../BlurContainer';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
 import { PendingValue } from '../PendingValue';
 import type { ConfirmationDetailsCardProps, ConfirmationRow } from './types';
 
-/**
- * ConfirmationDetailsCard - the confirmation's detail rows grouped into ONE
- * card.
- *
- * Each row used to be its own pill (padding + gap per row); nine to eleven of
- * them alone overflowed the viewport, which is what kept the review
- * scrolling. Grouped, a row costs `componentSizes.swapDetailRowHeight` and a
- * hairline. Advanced rows fold behind a "Details" disclosure, collapsed by
- * default — the critical rows and the warning stay on screen.
- */
-const DetailRow: React.FC<ConfirmationRow & { withSeparator: boolean }> = ({
-  label,
-  value,
-  pending = false,
-  withSeparator,
-}) => (
-  <View style={[styles.row, withSeparator && styles.rowSeparator]}>
-    <Text style={styles.label}>{label}</Text>
-    <PendingValue pending={pending}>
-      <Text style={styles.value}>{value}</Text>
-    </PendingValue>
-  </View>
-);
+/** One row: the kit's label, and the kit's value wrapped in the pending shimmer. */
+const DetailRow: React.FC<ConfirmationRow> = ({ label, value, pending = false }) => {
+  const styles = useThemedStyles(stylesFor);
+  const valueInk = valueInkFor(useSemantic());
+  return (
+    <KeyValueRow
+      label={label}
+      value={
+        <PendingValue pending={pending}>
+          <Text
+            style={[styles.value, { color: valueInk.primary }]}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+            numberOfLines={1}
+          >
+            {value}
+          </Text>
+        </PendingValue>
+      }
+    />
+  );
+};
 
 export const ConfirmationDetailsCard: React.FC<ConfirmationDetailsCardProps> = ({
   rows,
@@ -49,73 +56,74 @@ export const ConfirmationDetailsCard: React.FC<ConfirmationDetailsCardProps> = (
   style,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const semantic = useSemantic();
   const [isExpanded, setIsExpanded] = useState(false);
   const hasAdvanced = advancedRows.length > 0;
 
   return (
-    // BlurContainer takes no testID; the wrapper carries the hook instead.
-    <View style={style} testID="confirmation-details-card">
-      <BlurContainer style={styles.card}>
-        {rows.map((row, index) => (
-          <DetailRow key={row.label} {...row} withSeparator={index > 0} />
-        ))}
-        {hasAdvanced && (
-          <>
-            <TouchableOpacity
-              testID="confirmation-details-disclosure"
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isExpanded }}
-              accessibilityLabel={t('confirmation.details', 'Details')}
-              onPress={() => setIsExpanded((expanded) => !expanded)}
-              style={[styles.row, styles.rowSeparator]}
-            >
-              <Text style={styles.label}>{t('confirmation.details', 'Details')}</Text>
-              <View style={isExpanded ? styles.chevronExpanded : undefined}>
-                <CaretDownIcon size={iconSize.sm} color={colors.text.secondary} />
-              </View>
-            </TouchableOpacity>
-            {isExpanded &&
-              advancedRows.map((row) => <DetailRow key={row.label} {...row} withSeparator />)}
-          </>
-        )}
-      </BlurContainer>
-    </View>
+    <Card
+      padding="lg"
+      gap={spacing.md}
+      radius="xl"
+      style={style}
+      testID="confirmation-details-card"
+    >
+      {rows.map((row) => (
+        <DetailRow key={row.label} {...row} />
+      ))}
+      {hasAdvanced && (
+        <>
+          {/* The disclosure is a row in the card's own rhythm: the label at
+              the row label's weight, the caret where a value would sit. */}
+          <TouchableOpacity
+            testID="confirmation-details-disclosure"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isExpanded }}
+            accessibilityLabel={t('confirmation.details', 'Details')}
+            onPress={() => setIsExpanded((expanded) => !expanded)}
+            style={styles.disclosure}
+          >
+            <Text style={styles.label} maxFontSizeMultiplier={fontScaleCap.dense}>
+              {t('confirmation.details', 'Details')}
+            </Text>
+            <View style={isExpanded ? styles.chevronExpanded : undefined}>
+              <CaretDownIcon size={iconSize.sm} color={semantic.text.secondary} />
+            </View>
+          </TouchableOpacity>
+          {isExpanded && advancedRows.map((row) => <DetailRow key={row.label} {...row} />)}
+        </>
+      )}
+    </Card>
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: borderRadius.md,
-    paddingVertical: vs(spacing.xs),
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: s(spacing.base),
-    height: vs(componentSizes.swapDetailRowHeight),
-  },
-  rowSeparator: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.subtle,
-  },
-  chevronExpanded: {
-    transform: [{ rotate: '180deg' }],
-  },
-  label: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
-    letterSpacing: letterSpacing.slight,
-    lineHeight: ms(15 * lineHeight.normal),
-  },
-  value: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.extraBold,
-    color: colors.text.primary,
-    letterSpacing: letterSpacing.slight,
-    lineHeight: ms(15 * lineHeight.normal),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    disclosure: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    // The kit row's label and value, so a pending value and the disclosure
+    // read exactly like the rows beside them.
+    label: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+    value: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontVariant: ['tabular-nums'],
+      textAlign: 'right',
+    },
+    chevronExpanded: {
+      transform: [{ rotate: '180deg' }],
+    },
+  });
 
 export default ConfirmationDetailsCard;

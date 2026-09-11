@@ -30,13 +30,18 @@ jest.mock('@salmon/shared', () => ({
     palette: { amber: '#cc0' },
     border: { subtle: 'rgba(255, 255, 255, 0.15)' },
   },
-  semantic: { status: { warning: '#FFB020', warningTint: '#330', danger: '#F00' } },
+  semantic: {
+    status: { warning: '#FFB020', warningTint: '#330', danger: '#F00' },
+    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
+  },
+  valueInkFor: () => ({ primary: '#fff', success: '#0f0', danger: '#f00', secondary: '#aaa' }),
+  fontScaleCap: { dense: 1.2, chrome: 1.2 },
   componentSizes: { swapDetailRowHeight: 38 },
-  fontSize: { sm: 14, bodyLg: 16, headline: 24 },
-  fontFamilyNative: { semiBold: 'System', medium: 'System', extraBold: 'System' },
+  fontSize: { sm: 14, body: 14, bodyLg: 16, headline: 24 },
+  fontFamilyNative: { semiBold: 'System', medium: 'System', bold: 'System', extraBold: 'System' },
   borderRadius: { md: 12 },
   letterSpacing: { normal: 0, slight: 0, snug: -0.12 },
-  lineHeight: { condensed: 1.2, normal: 1.5 },
+  lineHeight: { condensed: 1.2, snug: 1.4, normal: 1.5 },
   opacity: { faint: 0.05, soft: 0.8 },
   spacing: {
     xs: 4,
@@ -57,6 +62,26 @@ jest.mock('@salmon/shared', () => ({
 jest.mock('../BlurContainer', () => {
   const { View: RNView } = require('react-native');
   return { BlurContainer: RNView };
+});
+
+// The card and the row have their own suites; here they only have to put
+// the label and the value on screen.
+jest.mock('../Card', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    Card: ({ children, testID }: { children?: React.ReactNode; testID?: string }) =>
+      ReactActual.createElement(View, { testID }, children),
+  };
+});
+
+jest.mock('../KeyValueRow', () => {
+  const ReactActual = require('react');
+  const { Text, View } = require('react-native');
+  return {
+    KeyValueRow: ({ label, value }: { label: string; value: React.ReactNode }) =>
+      ReactActual.createElement(View, null, ReactActual.createElement(Text, null, label), value),
+  };
 });
 
 jest.mock('../PendingValue', () => {
