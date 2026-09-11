@@ -120,6 +120,7 @@ export {
   formatAmount,
   formatBaseUnits,
   formatTokenAmount,
+  formatTokenAmountSignificant,
   showAmount,
   showValue,
   // Percentage utilities
@@ -280,7 +281,9 @@ export {
   transformSolanaTransaction,
   transformMultichainTransaction,
   getTransactionDescription,
+  pickSwapLegs,
 } from './transactions';
+export type { SwapLegSelection } from './transactions';
 
 // Content loader (platform-split: native uses react-content-loader/native, web uses SVG)
 export { ContentLoader, Rect, Circle } from './ContentLoader';

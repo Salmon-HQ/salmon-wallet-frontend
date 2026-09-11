@@ -31,6 +31,9 @@ jest.mock('@salmon/shared', () => ({
   // The row's verb table and its sentence are real — they are the row.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
   ...jest.requireActual('@salmon/shared/src/hooks/useTransactionItemDerived'),
+  // The swap primary/residual split is real — the "+N more" and mark tests
+  // depend on it picking inputs[0]/outputs[0].
+  pickSwapLegs: jest.requireActual('@salmon/shared/src/utils/transactions').pickSwapLegs,
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   formatRelativeTimeCompact: () => '2h',

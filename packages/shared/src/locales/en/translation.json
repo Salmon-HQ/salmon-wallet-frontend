@@ -593,6 +593,7 @@
       "confirmation": "Confirmation",
       "block": "Block",
       "conversion": "Conversion",
+      "alsoMoved": "Also moved",
       "swapRoute": "Swap Route",
       "networkFee": "Network Fee",
       "swapFee": "Swap Fee",
@@ -622,7 +623,6 @@
     "share_message": "Check out this transaction: {{url}}",
     "description": {
       "swap": "{{from}} to {{to}}",
-      "swapMany": "{{fromCount}} tokens to {{toCount}} tokens",
       "sendTo": "To {{address}}",
       "send": "Sent tokens",
       "receiveFrom": "From {{address}}",

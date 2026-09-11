@@ -15,6 +15,7 @@ import {
   fontWeight,
   formatRawAmount,
   lineHeight,
+  pickSwapLegs,
   spacing,
   tabularNums,
 } from '@salmon/shared';
@@ -105,8 +106,7 @@ export interface TransactionDetailSwapProps {
 export function TransactionDetailSwap({ transaction, conversionRate }: TransactionDetailSwapProps) {
   const { t: translate } = useTranslation();
   const t = useSemantic();
-  const fromToken = transaction.outputs[0];
-  const toToken = transaction.inputs[0];
+  const { primaryInput: toToken, primaryOutput: fromToken, residual } = pickSwapLegs(transaction);
   const hops = transaction.swapRoute?.hops ?? [];
 
   const hopText: React.CSSProperties = {
@@ -172,6 +172,43 @@ export function TransactionDetailSwap({ transaction, conversionRate }: Transacti
               rate={conversionRate.rate}
               size="medium"
             />
+          </div>
+        )}
+
+        {residual.length > 0 && (
+          <div
+            data-testid="tx-detail-conversion-residual"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: spacing.xs,
+              paddingTop: spacing.sm,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: fontFamily.sans,
+                fontSize: fontSize.micro,
+                fontWeight: fontWeight.semibold,
+                color: t.text.secondary,
+              }}
+            >
+              {translate('transactions.detail.alsoMoved', 'Also moved')}
+            </span>
+            {residual.map((leg, index) => (
+              <span
+                key={`residual-${index}`}
+                style={{
+                  fontFamily: fontFamily.sans,
+                  fontSize: fontSize.caption,
+                  fontWeight: fontWeight.regular,
+                  color: t.text.secondary,
+                  ...tabularNums.css,
+                }}
+              >
+                {formatRawAmount(leg.amount, leg.decimals)} {leg.symbol}
+              </span>
+            ))}
           </div>
         )}
       </Card>

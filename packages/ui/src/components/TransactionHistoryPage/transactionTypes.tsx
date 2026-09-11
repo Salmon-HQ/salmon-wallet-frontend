@@ -12,6 +12,7 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
+  pickSwapLegs,
   spacing,
   transactionTypeDisplayFor,
   withPlatformGlyphs,
@@ -122,42 +123,45 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
 
-  if (type === 'swap' && inputs[0] && outputs[0]) {
-    return (
-      <span
-        data-testid="tx-mark-swap"
-        style={{
-          position: 'relative',
-          display: 'inline-flex',
-          alignItems: 'center',
-          height: LEADING_SIZE,
-        }}
-      >
-        <TokenLogo
-          uri={outputs[0].logo ?? undefined}
-          symbol={outputs[0].symbol}
-          size={SWAP_LOGO_SIZE}
-          borderRadius={borderRadius.full}
-        />
+  if (type === 'swap') {
+    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
+    if (primaryInput && primaryOutput) {
+      return (
         <span
+          data-testid="tx-mark-swap"
           style={{
+            position: 'relative',
             display: 'inline-flex',
-            marginLeft: -spacing.md,
-            borderRadius: borderRadius.full,
-            boxSizing: 'content-box',
-            border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
+            alignItems: 'center',
+            height: LEADING_SIZE,
           }}
         >
           <TokenLogo
-            uri={inputs[0].logo ?? undefined}
-            symbol={inputs[0].symbol}
+            uri={primaryOutput.logo ?? undefined}
+            symbol={primaryOutput.symbol}
             size={SWAP_LOGO_SIZE}
             borderRadius={borderRadius.full}
           />
+          <span
+            style={{
+              display: 'inline-flex',
+              marginLeft: -spacing.md,
+              borderRadius: borderRadius.full,
+              boxSizing: 'content-box',
+              border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
+            }}
+          >
+            <TokenLogo
+              uri={primaryInput.logo ?? undefined}
+              symbol={primaryInput.symbol}
+              size={SWAP_LOGO_SIZE}
+              borderRadius={borderRadius.full}
+            />
+          </span>
+          <TypeBadge icon={config.icon} color={config.color} />
         </span>
-        <TypeBadge icon={config.icon} color={config.color} />
-      </span>
-    );
+      );
+    }
   }
 
   // The token that moved is always the mark (owner, 2026-09-11): its logo, or

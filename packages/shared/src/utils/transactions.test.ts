@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getTransactionDescription,
+  pickSwapLegs,
   transformMultichainTransaction,
   transformSolanaTransaction,
 } from './transactions';
+import type { TransactionTokenAmount } from '../types/transaction';
 
 describe('transaction utils', () => {
   it('normalizes native Solana token data and infers swap from unknown type', () => {
@@ -151,7 +153,6 @@ describe('transaction utils', () => {
     expect(enKeys).toEqual(
       expect.arrayContaining([
         'swap',
-        'swapMany',
         'sendTo',
         'send',
         'receiveFrom',
@@ -237,5 +238,53 @@ describe('transformSolanaTransaction — token leg images', () => {
 
     expect(tx.inputs[0].logo).toMatch(/^https:\/\//);
     expect(tx.inputs[0].logo).toContain('bafyimage');
+  });
+});
+
+describe('pickSwapLegs', () => {
+  const leg = (overrides: Partial<TransactionTokenAmount>): TransactionTokenAmount => ({
+    amount: '0',
+    decimals: 6,
+    symbol: 'TOK',
+    contract: 'mint',
+    ...overrides,
+  });
+
+  it('passes through a plain one-in/one-out swap unchanged', () => {
+    const inputs = [leg({ amount: '1338100', decimals: 6, symbol: 'USDC' })];
+    const outputs = [leg({ amount: '40000000', decimals: 9, symbol: 'SOL' })];
+
+    const result = pickSwapLegs({ inputs, outputs });
+
+    expect(result.primaryInput).toBe(inputs[0]);
+    expect(result.primaryOutput).toBe(outputs[0]);
+    expect(result.residual).toEqual([]);
+  });
+
+  it('trusts the backend order — inputs[0]/outputs[0] are always primary, the rest is residual', () => {
+    // The SOL -> PYUSD -> USDC bug case: the backend nets pass-through hops
+    // to zero and puts the chosen pair first, so a real leg can still be
+    // followed by a small extra leg (e.g. unspent route change) — that
+    // extra leg is residual, never re-ranked ahead of inputs[0]/outputs[0].
+    const chosen = leg({ amount: '1338100', decimals: 6, symbol: 'USDC' });
+    const change = leg({ amount: '40087', decimals: 6, symbol: 'PYUSD' });
+    const inputs = [chosen, change];
+    const outputs = [leg({ amount: '40000000', decimals: 9, symbol: 'SOL' })];
+
+    const result = pickSwapLegs({ inputs, outputs });
+
+    expect(result.primaryInput).toBe(chosen);
+    expect(result.primaryOutput).toBe(outputs[0]);
+    expect(result.residual).toEqual([change]);
+  });
+
+  it('never compares amounts across mints — a bigger raw amount later in the array stays residual', () => {
+    const first = leg({ amount: '1', decimals: 0, symbol: 'A' });
+    const biggerButLater = leg({ amount: '1000000', decimals: 0, symbol: 'B' });
+
+    const result = pickSwapLegs({ inputs: [], outputs: [first, biggerButLater] });
+
+    expect(result.primaryOutput).toBe(first);
+    expect(result.residual).toEqual([biggerButLater]);
   });
 });

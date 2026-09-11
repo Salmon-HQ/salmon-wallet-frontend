@@ -17,6 +17,7 @@ import {
   fontSize,
   formatRawAmount,
   lineHeight,
+  pickSwapLegs,
   s,
   spacing,
   tabularNums,
@@ -76,8 +77,7 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
-  const fromToken = transaction.outputs[0];
-  const toToken = transaction.inputs[0];
+  const { primaryInput: toToken, primaryOutput: fromToken, residual } = pickSwapLegs(transaction);
   const hops = transaction.swapRoute?.hops ?? [];
 
   return (
@@ -118,6 +118,19 @@ export const TransactionDetailSwap: React.FC<TransactionDetailSwapProps> = ({
               rate={conversionRate.rate}
               size="medium"
             />
+          </View>
+        )}
+
+        {residual.length > 0 && (
+          <View style={styles.residual} testID="tx-detail-conversion-residual">
+            <Text style={styles.residualLabel}>
+              {t('transactions.detail.alsoMoved', 'Also moved')}
+            </Text>
+            {residual.map((leg, index) => (
+              <Text key={`residual-${index}`} style={styles.residualRow}>
+                {formatRawAmount(leg.amount, leg.decimals)} {leg.symbol}
+              </Text>
+            ))}
           </View>
         )}
       </Card>
@@ -185,6 +198,24 @@ const stylesFor = (t: Semantic) =>
       paddingTop: vs(spacing.md),
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: t.border.hairline,
+    },
+    /** Route dust and other non-primary legs — quiet ink, below the rate. */
+    residual: {
+      gap: vs(spacing.xs),
+      paddingTop: vs(spacing.sm),
+    },
+    residualLabel: {
+      fontSize: s(fontSize.micro),
+      lineHeight: s(fontSize.micro) * lineHeight.snug,
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.secondary,
+    },
+    residualRow: {
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.secondary,
+      ...TABULAR,
     },
     hopRow: {
       flexDirection: 'row',

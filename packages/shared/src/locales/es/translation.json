@@ -593,6 +593,7 @@
       "confirmation": "Confirmación",
       "block": "Bloque",
       "conversion": "Conversión",
+      "alsoMoved": "También se movió",
       "swapRoute": "Ruta del Swap",
       "networkFee": "Comisión de Red",
       "swapFee": "Comisión de Swap",
@@ -622,7 +623,6 @@
     "share_message": "Mirá esta transacción: {{url}}",
     "description": {
       "swap": "{{from}} a {{to}}",
-      "swapMany": "{{fromCount}} tokens a {{toCount}} tokens",
       "sendTo": "A {{address}}",
       "send": "Tokens enviados",
       "receiveFrom": "De {{address}}",

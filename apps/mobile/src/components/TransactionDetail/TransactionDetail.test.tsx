@@ -50,6 +50,9 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
   ...jest.requireActual('@salmon/shared/src/hooks/useTransactionDetailDerived'),
   ...jest.requireActual('@salmon/shared/src/utils/transactionDeveloperRows'),
+  // The swap primary/residual split is real — the conversion card and its
+  // "Also moved" residual rows are built from it.
+  pickSwapLegs: jest.requireActual('@salmon/shared/src/utils/transactions').pickSwapLegs,
   useDeveloperMode: () => mockDeveloperMode,
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,

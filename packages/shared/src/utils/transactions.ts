@@ -162,6 +162,33 @@ export interface TransactionDescription {
   values?: Record<string, string | number>;
 }
 
+export interface SwapLegSelection {
+  /** The swap's primary received leg — the backend's `inputs[0]`. */
+  primaryInput?: TransactionTokenAmount;
+  /** The swap's primary sent leg — the backend's `outputs[0]`. */
+  primaryOutput?: TransactionTokenAmount;
+  /** Every other leg on either side (pass-through route hops that net to zero). */
+  residual: TransactionTokenAmount[];
+}
+
+/**
+ * Picks a swap's primary input/output pair and returns every other leg as
+ * `residual`. The backend guarantees `inputs[0]`/`outputs[0]` are the pair
+ * the user chose — route hops that open and close inside the transaction
+ * net to zero, and any genuine pass-through leg is ordered after them — so
+ * this trusts array order rather than ranking legs itself: there is no
+ * price data in transaction history, and comparing raw amounts across
+ * different mints/decimals is meaningless.
+ */
+export function pickSwapLegs(
+  transaction: Pick<Transaction, 'inputs' | 'outputs'>
+): SwapLegSelection {
+  const { inputs, outputs } = transaction;
+  const [primaryInput, ...residualInputs] = inputs;
+  const [primaryOutput, ...residualOutputs] = outputs;
+  return { primaryInput, primaryOutput, residual: [...residualInputs, ...residualOutputs] };
+}
+
 /**
  * Describes a transaction for its history row.
  */
@@ -173,18 +200,10 @@ export function getTransactionDescription(
   description?: string
 ): TransactionDescription {
   if (type === 'swap') {
-    const outputSymbols = [...new Set(outputs.map((o) => o.symbol))];
-    const inputSymbols = [...new Set(inputs.map((i) => i.symbol))];
-
-    if (outputSymbols.length <= 2 && inputSymbols.length <= 2) {
-      return {
-        key: 'transactions.description.swap',
-        values: { from: outputSymbols.join(', '), to: inputSymbols.join(', ') },
-      };
-    }
+    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
     return {
-      key: 'transactions.description.swapMany',
-      values: { fromCount: outputSymbols.length, toCount: inputSymbols.length },
+      key: 'transactions.description.swap',
+      values: { from: primaryOutput?.symbol ?? '', to: primaryInput?.symbol ?? '' },
     };
   }
 

@@ -12,7 +12,7 @@ import { chainMarks } from '../theme/brand';
 import type { Semantic } from '../theme/semantic';
 import type { Transaction, TransactionType } from '../types/transaction';
 import { getShortAddress } from './address';
-import { getTransactionDescription } from './transactions';
+import { getTransactionDescription, pickSwapLegs } from './transactions';
 
 // ============================================================================
 // Type
@@ -153,7 +153,9 @@ export interface ConversionRate {
 
 /**
  * A swap's rate: the route's own when it carries one, otherwise derived from
- * a one-in/one-out pair. `null` when there is nothing to rate.
+ * the primary input/output pair (see `pickSwapLegs` — the backend's
+ * `inputs[0]`/`outputs[0]`, any other leg is residual). `null` when there is
+ * nothing to rate.
  */
 export function conversionRateFor(
   transaction: Pick<Transaction, 'swapRoute' | 'inputs' | 'outputs'> | null | undefined
@@ -161,9 +163,8 @@ export function conversionRateFor(
   if (!transaction) return null;
   const { swapRoute, inputs, outputs } = transaction;
   if (swapRoute?.conversionRate) return swapRoute.conversionRate;
-  if (inputs.length !== 1 || outputs.length !== 1) return null;
-  const fromToken = outputs[0];
-  const toToken = inputs[0];
+  const { primaryInput: toToken, primaryOutput: fromToken } = pickSwapLegs({ inputs, outputs });
+  if (!fromToken || !toToken) return null;
   const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
   const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
   if (!(fromAmount > 0)) return null;

@@ -42,7 +42,7 @@ describe('transactionDisplay', () => {
     expect(CONFIRMATION_CONFIG.finalized.tone).toBe('success');
   });
 
-  it('rates a swap from the route, else from a one-in/one-out pair, else not at all', () => {
+  it('rates a swap from the route, else from the primary (first) pair, else not at all', () => {
     expect(conversionRateFor(null)).toBeNull();
     expect(
       conversionRateFor(
@@ -59,11 +59,13 @@ describe('transactionDisplay', () => {
     expect(
       conversionRateFor(tx({ outputs: [amount('SOL', '0', 9)], inputs: [amount('USDC', '1', 6)] }))
     ).toBeNull();
+    // Extra legs (route dust, pass-through hops) sit after the chosen pair —
+    // the rate still comes from outputs[0]/inputs[0], not the trailing ones.
     expect(
       conversionRateFor(
         tx({ outputs: [amount('A', '1', 0), amount('B', '1', 0)], inputs: [amount('C', '1', 0)] })
       )
-    ).toBeNull();
+    ).toEqual({ fromSymbol: 'A', toSymbol: 'C', rate: '1.000000' });
   });
 
   it('finds the other side of a transfer, and nothing for anything else', () => {

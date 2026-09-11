@@ -11,6 +11,7 @@ import {
   formatRawAmount,
   formatRelativeTimeCompact,
   lineHeight,
+  pickSwapLegs,
   spacing,
   tabularNums,
   useTransactionItemDerived,
@@ -148,8 +149,10 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     // Complex swap: the row states the first leg of each side and how many
     // more there are. The rest is one tap away, in the detail.
     if (isComplex) {
-      const firstOutput = outputs[0];
-      const firstInput = inputs[0];
+      const { primaryOutput: firstOutput, primaryInput: firstInput } = pickSwapLegs({
+        inputs,
+        outputs,
+      });
 
       return (
         <>

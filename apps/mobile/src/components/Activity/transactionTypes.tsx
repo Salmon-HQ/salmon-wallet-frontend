@@ -25,6 +25,7 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
+  pickSwapLegs,
   s,
   spacing,
   transactionTypeDisplayFor,
@@ -101,24 +102,27 @@ export const TransactionMark: React.FC<{ transaction: Transaction }> = ({ transa
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
 
-  if (type === 'swap' && inputs[0] && outputs[0]) {
-    return (
-      <View style={styles.swapPair}>
-        <TokenLogo
-          uri={outputs[0].logo ?? undefined}
-          symbol={outputs[0].symbol}
-          size={SWAP_LOGO_SIZE}
-        />
-        <View style={styles.swapOverlap}>
+  if (type === 'swap') {
+    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
+    if (primaryInput && primaryOutput) {
+      return (
+        <View style={styles.swapPair}>
           <TokenLogo
-            uri={inputs[0].logo ?? undefined}
-            symbol={inputs[0].symbol}
+            uri={primaryOutput.logo ?? undefined}
+            symbol={primaryOutput.symbol}
             size={SWAP_LOGO_SIZE}
           />
+          <View style={styles.swapOverlap}>
+            <TokenLogo
+              uri={primaryInput.logo ?? undefined}
+              symbol={primaryInput.symbol}
+              size={SWAP_LOGO_SIZE}
+            />
+          </View>
+          <TypeBadge icon={config.icon} color={config.color} />
         </View>
-        <TypeBadge icon={config.icon} color={config.color} />
-      </View>
-    );
+      );
+    }
   }
 
   // The token that moved is always the mark (owner, 2026-09-11): its logo, or
