@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { getBlockchainFromNetworkId } from '../config/blockchains';
-import type { BlockchainType } from '../types/blockchain';
+import type { BlockchainType, PowerupDisabledReason } from '../types/blockchain';
 import type { CoinInfo } from '../types/price';
 import type { Token } from '../types/ui';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
@@ -42,6 +42,11 @@ export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts', 'swap'];
 export interface HomePowerupTab {
   /** The Powerup's id, which is also its sub-tab key. */
   key: HomeSubTabKey;
+  /**
+   * Set when the backend has switched the Powerup off (spec 029 §5.2): the
+   * tab is still offered, and its surface is the reason, never a blank.
+   */
+  disabledReason?: PowerupDisabledReason;
   /** Already localised — the shell does not know a Powerup's copy keys. */
   label: string;
   /** The networks it acts on; elsewhere the tab is not offered. */
@@ -205,7 +210,10 @@ export function useHomeShell({
   // The array arrives as a fresh literal on every render, so the memo keys on
   // its contents rather than on its identity.
   const powerupTabsKey = (powerupTabs ?? [])
-    .map((tab) => `${tab.key}\u0000${tab.label}\u0000${tab.networks.join(',')}`)
+    .map(
+      (tab) =>
+        `${tab.key}\u0000${tab.label}\u0000${tab.networks.join(',')}\u0000${tab.disabledReason ?? ''}`
+    )
     .join('|');
   const subTabs = useMemo(() => {
     const labels: Record<string, string> = {

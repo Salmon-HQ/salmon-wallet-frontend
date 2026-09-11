@@ -286,6 +286,7 @@ vi.mock('@salmon/shared', async () => {
     useHomeShell: homeShell.useHomeShell,
     useHomePowerupTabs: homePowerups.useHomePowerupTabs,
     useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
+    useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
     useInstalledPowerups: () => ({
       installed: [],
       isInstalled: () => false,

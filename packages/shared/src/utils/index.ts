@@ -399,3 +399,10 @@ export type {
   TransactionDeveloperSection,
   TransactionDeveloperTranslate,
 } from './transactionDeveloperRows';
+
+export {
+  EMPTY_POWERUP_ALLOWLIST,
+  parsePowerupSwitches,
+  toPowerupAllowlist,
+} from './powerupSwitches';
+export type { PowerupAllowlist } from './powerupSwitches';

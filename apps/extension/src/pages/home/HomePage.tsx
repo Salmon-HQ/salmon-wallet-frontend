@@ -32,6 +32,7 @@ import {
   motionMs,
   useFocusModePhase,
   type FocusModePhase,
+  useNetworkPowerups,
 } from '@salmon/shared';
 import {
   WalletHeader,
@@ -56,6 +57,7 @@ import {
   floatEntering,
   sinkExiting,
   VIEW_TRANSITION_MS_VAR,
+  StateBlock,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
@@ -379,7 +381,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // come through the shared registry (aliased out with the build flag off),
   // so a build with Powerups off passes an empty list
   // (`useHomePowerupTabs`, shared with mobile's HomeScreen).
-  const powerupTabs = useHomePowerupTabs({ installed, powerups: POWERUPS });
+  // The backend's kill switch for the network the account stands on (spec
+  // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
+  // offered, and a switched-off one keeps its tab only to show why.
+  const powerupAllowlist = useNetworkPowerups(state.networkId ?? null);
+  const powerupTabs = useHomePowerupTabs({
+    installed,
+    powerups: POWERUPS,
+    allowlist: powerupAllowlist,
+  });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -543,7 +553,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId: currentNetworkId,
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
+    allowlist: powerupAllowlist,
   });
+
+  const activePowerupDisabledReason = powerupTabs.find(
+    (tab) => tab.key === effectiveSubTab
+  )?.disabledReason;
 
   const swapTokens = useMemo(
     () =>
@@ -843,6 +858,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       paddingRight: spacing.screenGutter,
                       paddingBottom: spacing['2xl'],
                     }}
+                  />
+                ) : activePowerupDisabledReason ? (
+                  // A Powerup the backend switched off keeps its tab; its
+                  // surface is the reason, never a blank (spec 029 §5.2).
+                  <StateBlock
+                    tone="empty"
+                    testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+                    title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
                   />
                 ) : SwapPage && effectiveSubTab === 'swap' && activeBlockchainAccount ? (
                   // The Swap Powerup's own surface. The confirmation is core's

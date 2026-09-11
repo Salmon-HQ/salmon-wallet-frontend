@@ -882,6 +882,11 @@
       "networks": "Redes",
       "uses": "Usa"
     },
+    "disabled": {
+      "region": "Este Powerup no está disponible en tu región.",
+      "maintenance": "Este Powerup está en pausa por mantenimiento. Volvé a probar en un rato.",
+      "deprecated": "Este Powerup fue retirado. Podés quitarlo de Home."
+    },
     "author": {
       "salmon": "Salmon",
       "community": "Colaborador de la comunidad"

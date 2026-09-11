@@ -58,29 +58,35 @@ export interface PowerupCatalogParams {
   networkId: string | null;
   /** What this device has installed — an installed entry stays in its tier. */
   installedIds: readonly string[];
+  /**
+   * The backend's kill switch for `networkId` (spec 029 §5.2): only these
+   * ids are offered. Absent from the list means not offered, not mountable.
+   */
+  allowedIds: readonly string[];
 }
 
 export function getPowerupCatalog({
   includeMocks,
   networkId,
   installedIds,
+  allowedIds,
 }: PowerupCatalogParams): PowerupsCatalogEntry[] {
-  const real = POWERUPS.filter((entry) => isPowerupOnNetwork(entry, networkId)).map(
-    (entry): PowerupsCatalogEntry => ({
-      id: entry.id,
-      nameKey: entry.nameKey,
-      descriptionKey: entry.descriptionKey,
-      tier: entry.tier,
-      installed: installedIds.includes(entry.id),
-      details: {
-        aboutKey: entry.aboutKey,
-        actionKeys: entry.actionKeys,
-        usesKey: entry.usesKey,
-        authorKey: entry.authorKey,
-        networks: entry.networks,
-      },
-    })
-  );
+  const real = POWERUPS.filter(
+    (entry) => isPowerupOnNetwork(entry, networkId) && allowedIds.includes(entry.id)
+  ).map((entry): PowerupsCatalogEntry => ({
+    id: entry.id,
+    nameKey: entry.nameKey,
+    descriptionKey: entry.descriptionKey,
+    tier: entry.tier,
+    installed: installedIds.includes(entry.id),
+    details: {
+      aboutKey: entry.aboutKey,
+      actionKeys: entry.actionKeys,
+      usesKey: entry.usesKey,
+      authorKey: entry.authorKey,
+      networks: entry.networks,
+    },
+  }));
   if (!includeMocks) return real;
   return [...real, ...MOCK_POWERUPS.map((entry) => ({ ...entry, installed: false }))];
 }

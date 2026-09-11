@@ -310,3 +310,5 @@ export type {
   UseAmountShortcutsParams,
   UseAmountShortcutsResult,
 } from './useAmountShortcuts';
+
+export { useNetworkPowerups, resetNetworkPowerupsCache } from './useNetworkPowerups';

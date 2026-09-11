@@ -154,6 +154,7 @@ jest.mock('@salmon/shared', () => ({
   useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
     .useHomePowerupsCatalog,
   // Nothing installed: the Powerup tabs are their own suite.
+  useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,

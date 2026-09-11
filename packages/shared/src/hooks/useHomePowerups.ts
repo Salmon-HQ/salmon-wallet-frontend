@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import type { PowerupCatalogParams } from '../powerups/catalog';
 import type { PowerupEntry } from '../powerups/registry';
 import type { PowerupsCatalogEntry } from '../types/ui/index';
+import type { PowerupAllowlist } from '../utils/powerupSwitches';
 import type { HomePowerupTab, HomeSubTabKey } from './useHomeShell';
 
 export interface UseHomePowerupTabsParams {
@@ -33,24 +34,36 @@ export interface UseHomePowerupTabsParams {
   installed: readonly string[];
   /** The registry, from the platform's Powerups entry (empty with Powerups off). */
   powerups: readonly PowerupEntry[];
+  /**
+   * The backend's kill switch for the network the screen stands on
+   * (`useNetworkPowerups`). An installed Powerup it does not list is not
+   * offered; one it lists as disabled keeps its tab and shows the reason.
+   */
+  allowlist: PowerupAllowlist;
 }
 
 /** The installed Powerups, as Home surfaces — `useHomeShell`'s `powerupTabs` input. */
 export function useHomePowerupTabs({
   installed,
   powerups,
+  allowlist,
 }: UseHomePowerupTabsParams): HomePowerupTab[] {
   const { t } = useTranslation();
   return useMemo<HomePowerupTab[]>(
     () =>
       powerups
-        .filter((entry) => installed.includes(entry.id))
+        .filter(
+          (entry) =>
+            installed.includes(entry.id) &&
+            (allowlist.enabled.includes(entry.id) || entry.id in allowlist.disabled)
+        )
         .map((entry) => ({
           key: entry.id as HomeSubTabKey,
           label: t(entry.nameKey),
           networks: entry.networks,
+          disabledReason: allowlist.disabled[entry.id],
         })),
-    [installed, powerups, t]
+    [installed, powerups, allowlist, t]
   );
 }
 
@@ -67,6 +80,8 @@ export interface UseHomePowerupsCatalogParams {
   powerups: readonly PowerupEntry[];
   /** The catalogue builder, from the same entry (returns nothing with Powerups off). */
   getCatalog: (params: PowerupCatalogParams) => PowerupsCatalogEntry[];
+  /** The backend's kill switch for `networkId`; only its enabled ids are offered. */
+  allowlist: PowerupAllowlist;
 }
 
 export interface UseHomePowerupsCatalogResult {
@@ -88,21 +103,28 @@ export function useHomePowerupsCatalog({
   networkId,
   powerups,
   getCatalog,
+  allowlist,
 }: UseHomePowerupsCatalogParams): UseHomePowerupsCatalogResult {
   const [catalogVisible, setCatalogVisible] = useState(false);
   const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
   const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
 
   const catalogEntries = useMemo(
-    () => getCatalog({ includeMocks: developerNetworks, networkId, installedIds: installed }),
-    [getCatalog, developerNetworks, networkId, installed]
+    () =>
+      getCatalog({
+        includeMocks: developerNetworks,
+        networkId,
+        installedIds: installed,
+        allowedIds: allowlist.enabled,
+      }),
+    [getCatalog, developerNetworks, networkId, installed, allowlist]
   );
 
   const handleInstall = useCallback(
     (id: string) => {
-      if (powerups.some((entry) => entry.id === id)) install(id);
+      if (powerups.some((entry) => entry.id === id) && allowlist.enabled.includes(id)) install(id);
     },
-    [install, powerups]
+    [install, powerups, allowlist]
   );
 
   const removableTabKeys = useMemo(

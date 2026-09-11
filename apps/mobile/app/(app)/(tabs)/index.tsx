@@ -59,6 +59,7 @@ import {
   type PriceChartPeriod,
   type Token,
   useFocusModePhase,
+  useNetworkPowerups,
 } from '@salmon/shared';
 import {
   BalanceHeader,
@@ -278,7 +279,15 @@ export default function HomeScreen() {
   // through the shared registry (aliased out with the build flag off), so a
   // build with Powerups off passes an empty list and the shell never hears
   // of them (`useHomePowerupTabs`, shared with the extension's HomePage).
-  const powerupTabs = useHomePowerupTabs({ installed, powerups: POWERUPS });
+  // The backend's kill switch for the network the account stands on (spec
+  // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
+  // offered, and a switched-off one keeps its tab only to show why.
+  const powerupAllowlist = useNetworkPowerups(networkId ?? null);
+  const powerupTabs = useHomePowerupTabs({
+    installed,
+    powerups: POWERUPS,
+    allowlist: powerupAllowlist,
+  });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -475,6 +484,7 @@ export default function HomeScreen() {
     networkId: currentNetworkId,
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
+    allowlist: powerupAllowlist,
   });
 
   // Memoize the empty component
@@ -569,9 +579,22 @@ export default function HomeScreen() {
     />
   );
 
+  // A Powerup the backend switched off keeps its tab; its surface is the
+  // reason, never a blank (spec 029 §5.2).
+  const activePowerupDisabledReason = powerupTabs.find(
+    (tab) => tab.key === effectiveSubTab
+  )?.disabledReason;
   const powerupTabContent = (
     <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
-      <PowerupTabBody tabKey={effectiveSubTab} onNavigateHome={returnToPortfolio} />
+      {activePowerupDisabledReason ? (
+        <StateBlock
+          tone="empty"
+          testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+          title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+        />
+      ) : (
+        <PowerupTabBody tabKey={effectiveSubTab} onNavigateHome={returnToPortfolio} />
+      )}
     </View>
   );
 
