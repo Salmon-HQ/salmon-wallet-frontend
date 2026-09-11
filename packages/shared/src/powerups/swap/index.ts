@@ -14,8 +14,6 @@ export type {
   SwapFeeLine,
   SwapProvider,
   SwapRouteLeg,
-  SwapScreenStep,
-  SwapSuccessSummary,
   SwapUnavailableReason,
 } from './types';
 export { useSwapScreenLogic } from './useSwapScreenLogic';

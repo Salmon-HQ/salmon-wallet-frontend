@@ -6,8 +6,9 @@
  * and Swap always used — over whatever screen proposed, renders
  * `TransactionConfirmation` from the proposal, and on confirm shows the wave
  * wait while core signs, broadcasts and confirms. The wait leaves on its own
- * last wave; only then does the window go, so the Powerup's receipt behind it
- * arrives over calm water.
+ * last wave, and the receipt floats in behind it — in this same window, on
+ * the same water. Its one button closes the window and hands the Powerup
+ * back (owner ruling, 2026-09-11).
  *
  * Its own window on purpose: the confirmation must cover the tab bar, the
  * header row and the FAB, and no Powerup screen can decide otherwise.
@@ -16,12 +17,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { spacing, useSignatureRequestHost, useWaitExit, type Semantic } from '@salmon/shared';
+import {
+  buildConfirmationReceipt,
+  spacing,
+  useSignatureRequestHost,
+  useWaitExit,
+  type Semantic,
+} from '@salmon/shared';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
+import { ReceiptScreen } from '../ReceiptScreen';
 import { ScalesBackground } from '../ScalesBackground';
 import { TransactionConfirmation } from './TransactionConfirmation';
 
@@ -29,9 +37,10 @@ export function ConfirmationHost() {
   const styles = useThemedStyles(stylesFor);
   const insets = useSafeAreaInsets();
   const isReduceMotionEnabled = useReducedMotion();
-  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } = useSignatureRequestHost();
+  const { request, receipt, refreshing, confirmLabel, confirmOrRefresh, cancel, dismissReceipt } =
+    useSignatureRequestHost();
 
-  const isOpen = request !== null;
+  const isOpen = request !== null || receipt !== null;
   const isSigning = request?.phase === 'signing';
 
   // The wait between the decision and the receipt: held past its own exit so
@@ -102,6 +111,16 @@ export function ConfirmationHost() {
               isRefreshing={refreshing}
               error={request.error}
               style={{ paddingBottom: insets.bottom + spacing.lg }}
+            />
+          </Animated.View>
+        )}
+
+        {receipt && !isWaveHeld && (
+          <Animated.View style={styles.step} entering={floatEntering(isReduceMotionEnabled)}>
+            <ReceiptScreen
+              tone="exchange"
+              {...buildConfirmationReceipt(receipt)}
+              onContinue={dismissReceipt}
             />
           </Animated.View>
         )}

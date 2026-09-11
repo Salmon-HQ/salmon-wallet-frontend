@@ -4,10 +4,15 @@
  * `requestSignature(proposal)` parks the proposal in this context and returns
  * a promise. The platform mounts a host that renders core's confirmation
  * screen from the parked proposal; the user's confirm calls `signProposal`
- * with the active account and resolves the promise with the signature, their
- * cancel rejects it. One request at a time: a second request while one is
- * parked rejects immediately, so no Powerup can queue a confirmation behind
- * another.
+ * with the active account, their cancel rejects the promise. One request at a
+ * time: a second request while one is parked rejects immediately, so no
+ * Powerup can queue a confirmation behind another.
+ *
+ * A signature does NOT end the request. Core keeps the window and shows the
+ * receipt (`receipt`); the promise resolves only when the user dismisses it
+ * (`dismissReceipt`), so the Powerup gets control back after the user has
+ * read the outcome, not while they are still reading it (owner ruling,
+ * 2026-09-11).
  *
  * The account is a prop of the provider, not of the request: the Powerup does
  * not choose who signs.
@@ -40,14 +45,28 @@ export interface PendingSignatureRequest {
   error: string | null;
 }
 
+/** A signed proposal, waiting to be read: what the host's receipt renders. */
+export interface SignatureRequestReceipt {
+  proposal: TransactionProposal;
+  signature: string;
+}
+
 export interface SignatureRequestContextValue {
   /** The parked request the host renders, or `null`. */
   pending: PendingSignatureRequest | null;
-  /** The Powerup's side: park a proposal and wait for the user. */
+  /** The signed outcome the host's receipt renders, or `null`. */
+  receipt: SignatureRequestReceipt | null;
+  /**
+   * The Powerup's side: park a proposal and wait for the user. Resolves once
+   * the user has dismissed the receipt of a signed transaction; rejects when
+   * they back out of the confirmation.
+   */
   requestSignature: (proposal: TransactionProposal) => Promise<SignedResult>;
   /** The host's side. Each is a no-op without a parked request. */
   confirm: () => Promise<void>;
   cancel: () => void;
+  /** The receipt's one button: close the window and hand the Powerup back. */
+  dismissReceipt: () => void;
   /** Replace the parked proposal with a fresh build of the same intent. */
   refresh: () => Promise<void>;
 }
@@ -58,6 +77,8 @@ interface ParkedRequest {
   proposal: TransactionProposal;
   resolve: (result: SignedResult) => void;
   reject: (error: Error) => void;
+  /** Set once signed; the request resolves with it when the receipt is dismissed. */
+  result?: SignedResult;
 }
 
 export interface SignatureRequestProviderProps {
@@ -78,6 +99,7 @@ export function SignatureRequestProvider({
   children,
 }: SignatureRequestProviderProps) {
   const [pending, setPending] = useState<PendingSignatureRequest | null>(null);
+  const [receipt, setReceipt] = useState<SignatureRequestReceipt | null>(null);
   const parkedRef = useRef<ParkedRequest | null>(null);
   const accountRef = useRef(account);
   useEffect(() => {
@@ -87,6 +109,7 @@ export function SignatureRequestProvider({
   const settle = useCallback(() => {
     parkedRef.current = null;
     setPending(null);
+    setReceipt(null);
   }, []);
 
   const requestSignature = useCallback(
@@ -116,8 +139,11 @@ export function SignatureRequestProvider({
 
     try {
       const result = await signProposal(signer, parked.proposal);
-      settle();
-      parked.resolve(result);
+      // The request stays parked: the window now shows the receipt, and the
+      // Powerup hears nothing until the user has closed it.
+      parked.result = result;
+      setPending(null);
+      setReceipt({ proposal: parked.proposal, signature: result.signature });
     } catch (error) {
       // The parked request stays: the host shows the failure and the user
       // retries or backs out. The rejection reaches the Powerup only on cancel.
@@ -128,9 +154,18 @@ export function SignatureRequestProvider({
 
   const cancel = useCallback(() => {
     const parked = parkedRef.current;
-    if (!parked) return;
+    // Nothing backs out of a transaction that is already signed and away.
+    if (!parked || parked.result) return;
     settle();
     parked.reject(new SignatureRequestCancelledError());
+  }, [settle]);
+
+  const dismissReceipt = useCallback(() => {
+    const parked = parkedRef.current;
+    const result = parked?.result;
+    if (!parked || !result) return;
+    settle();
+    parked.resolve(result);
   }, [settle]);
 
   const refresh = useCallback(async () => {
@@ -151,8 +186,8 @@ export function SignatureRequestProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ pending, requestSignature, confirm, cancel, refresh }),
-    [pending, requestSignature, confirm, cancel, refresh]
+    () => ({ pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh }),
+    [pending, receipt, requestSignature, confirm, cancel, dismissReceipt, refresh]
   );
 
   return (

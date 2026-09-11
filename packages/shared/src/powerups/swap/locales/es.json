@@ -28,7 +28,6 @@
     "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",
     "priorityFee": "Comisión de prioridad de red"
   },
-  "available_balance": "Disponible: {{balance}} {{symbol}}",
   "unavailable": {
     "network": "Swap solo está disponible en Solana mainnet.",
     "region": "Swap no está disponible en tu región.",

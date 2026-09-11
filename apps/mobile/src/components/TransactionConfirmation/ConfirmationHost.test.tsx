@@ -20,20 +20,25 @@ jest.mock('react-native-reanimated', () => {
 
 const mockHost: {
   request: null | { proposal: { display: Record<string, unknown> }; phase: string; error: null };
+  receipt: null | { proposal: Record<string, unknown>; signature: string };
   refreshing: boolean;
   confirmLabel: string;
   confirmOrRefresh: jest.Mock;
   cancel: jest.Mock;
+  dismissReceipt: jest.Mock;
 } = {
   request: null,
+  receipt: null,
   refreshing: false,
   confirmLabel: 'Confirm (10)',
   confirmOrRefresh: jest.fn(),
   cancel: jest.fn(),
+  dismissReceipt: jest.fn(),
 };
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
+  ...jest.requireActual('@salmon/shared/src/core/confirmation/receipt'),
   spacing: { lg: 16 },
   useSignatureRequestHost: () => mockHost,
 }));
@@ -61,6 +66,28 @@ jest.mock('../LoadingScreen', () => {
       }, [visible, onExited]);
       return <View testID="confirmation-wave" accessibilityLabel={String(visible)} />;
     },
+  };
+});
+jest.mock('../ReceiptScreen', () => {
+  const { View } = require('react-native');
+  return {
+    ReceiptScreen: ({
+      tone,
+      title,
+      explorerUrl,
+      onContinue,
+    }: {
+      tone: string;
+      title: string;
+      explorerUrl: string | null;
+      onContinue: () => void;
+    }) => (
+      <View
+        testID="confirmation-receipt"
+        accessibilityLabel={`${tone}:${title}:${explorerUrl ?? ''}`}
+        onPress={onContinue}
+      />
+    ),
   };
 });
 jest.mock('./TransactionConfirmation', () => {
@@ -91,6 +118,7 @@ describe('ConfirmationHost', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHost.request = null;
+    mockHost.receipt = null;
   });
 
   it('opens nothing while no proposal is parked', () => {
@@ -123,6 +151,31 @@ describe('ConfirmationHost', () => {
 
     act(() => getByTestId('confirmation-window').props.onRequestClose());
     expect(mockHost.cancel).not.toHaveBeenCalled();
+  });
+
+  it('shows the receipt in the same window once the wave is gone, and closes on its button', () => {
+    mockHost.receipt = {
+      proposal: {
+        networkId: 'solana-mainnet',
+        display: {
+          title: 'Swap Review',
+          pendingTitle: 'Processing swap',
+          pendingSubtitle: '1 SOL → 150 USDC',
+          receipt: { title: 'Swap complete', fee: '0.85%' },
+        },
+      },
+      signature: 'sig-1',
+    };
+    const { getByTestId, queryByTestId, rerender } = render(<ConfirmationHost />);
+    rerender(<ConfirmationHost />);
+
+    expect(queryByTestId('transaction-confirmation')).toBeNull();
+    const label = getByTestId('confirmation-receipt').props.accessibilityLabel as string;
+    expect(label.startsWith('exchange:Swap complete:')).toBe(true);
+    expect(label).toContain('sig-1');
+
+    fireEvent.press(getByTestId('confirmation-receipt'));
+    expect(mockHost.dismissReceipt).toHaveBeenCalledTimes(1);
   });
 
   it('holds the window until the wave has left, then closes it', () => {

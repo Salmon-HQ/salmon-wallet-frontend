@@ -7,34 +7,14 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-}));
-
 const mockLogic: Record<string, unknown> = {};
 const mockAccount: { watchOnly: boolean } = { watchOnly: false };
-
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    __esModule: true,
-    default: { View },
-    useReducedMotion: () => false,
-    withTiming: (toValue: unknown) => toValue,
-    withDelay: (_delayMs: number, animation: unknown) => animation,
-    Easing: { bezier: () => () => 0 },
-  };
-});
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   useAccountsContext: () => [{ activeAccount: mockAccount }],
   isWatchOnlyAccount: (account: { watchOnly?: boolean } | undefined) => !!account?.watchOnly,
-  getTransactionUrl: () => 'https://solscan.io/tx/abc',
-  formatEffectiveRate: (_inAmount: string, inSymbol: string, _out: string, outSymbol: string) =>
-    inSymbol && outSymbol ? `1 ${inSymbol} ≈ x ${outSymbol}` : null,
-  getDefaultExplorer: () => 'solscan',
   spacing: { md: 12, lg: 16 },
 }));
 jest.mock('@salmon/shared/powerups', () => ({
@@ -46,14 +26,6 @@ jest.mock('./SwapInputScreen', () => {
   return {
     SwapInputScreen: ({ attribution }: { attribution?: string | null }) => (
       <View testID="swap-input-screen" accessibilityLabel={attribution ?? ''} />
-    ),
-  };
-});
-jest.mock('../TransactionSuccessScreen', () => {
-  const { View } = require('react-native');
-  return {
-    TransactionSuccessScreen: ({ exchangeFee }: { exchangeFee?: string }) => (
-      <View testID="tx-success-screen" accessibilityLabel={exchangeFee ?? ''} />
     ),
   };
 });
@@ -95,7 +67,6 @@ function setLogic(overrides: Record<string, unknown>) {
   Object.assign(
     mockLogic,
     {
-      step: 'input',
       unavailable: null,
       swapError: null,
       inToken: { symbol: 'SOL', chain: 'solana', networkId: 'solana-mainnet' },
@@ -107,9 +78,6 @@ function setLogic(overrides: Record<string, unknown>) {
       showInTokenModal: false,
       showOutTokenModal: false,
       tokensLoading: false,
-      successTxId: null,
-      successSummary: null,
-      settling: false,
       inUsdValue: 150,
       canSwap: true,
       reviewWarning: null,
@@ -125,7 +93,6 @@ function setLogic(overrides: Record<string, unknown>) {
       handleOutTokenModalSelect: jest.fn(),
       handleSearchTokens: undefined,
       handleSwap: jest.fn(),
-      handleSuccessContinue: jest.fn(),
     },
     overrides
   );
@@ -142,6 +109,8 @@ describe('SwapScreen', () => {
     setLogic({});
     render(<SwapScreen {...props} />);
     expect(screen.getByTestId('swap-input-screen').props.accessibilityLabel).toBe('Powered by 0x');
+    // The receipt is core's, drawn in the confirmation window: this screen
+    // never ends a swap itself (owner ruling 2026-09-11).
     expect(screen.queryByTestId('tx-success-screen')).toBeNull();
   });
 
@@ -151,25 +120,6 @@ describe('SwapScreen', () => {
     const [send, receive] = screen.getAllByTestId('token-selector-modal');
     expect(send.props.accessibilityLabel).toBe('balances');
     expect(receive.props.accessibilityLabel).toBe('no-balances');
-  });
-
-  it('renders the receipt from the snapshot once the signature is back', () => {
-    setLogic({
-      step: 'success',
-      successTxId: 'sig-1',
-      successSummary: {
-        inAmount: '1',
-        inSymbol: 'SOL',
-        outAmount: '150',
-        outSymbol: 'USDC',
-        chain: 'solana',
-        networkId: 'solana-mainnet',
-        fee: '0.85%',
-      },
-    });
-    render(<SwapScreen {...props} />);
-    expect(screen.getByTestId('tx-success-screen').props.accessibilityLabel).toBe('0.85%');
-    expect(screen.queryByTestId('swap-input-screen')).toBeNull();
   });
 
   // Spec 027 §4–5: refused is a state of its own, never a generic error.

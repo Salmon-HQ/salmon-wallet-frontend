@@ -28,10 +28,11 @@ import {
   type SwapToken,
 } from '@salmon/shared';
 import { SWAP_NETWORK_ID } from '@salmon/shared/powerups';
+import type { PowerupTabProps } from '../powerups';
 import { StateBlock } from '../components';
 import { SwapScreen } from '../components/SwapScreen';
 
-export default function SwapTab() {
+export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
   const { t } = useTranslation();
   const [, { formatValue }] = useCurrencyContext();
 
@@ -92,6 +93,7 @@ export default function SwapTab() {
       onSearchTokens={handleSearchTokens}
       initialInToken={swapTokens[0]}
       formatUsd={formatUsd}
+      onNavigateHome={onNavigateHome}
     />
   );
 }

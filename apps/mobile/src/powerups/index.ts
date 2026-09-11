@@ -16,10 +16,16 @@ export {
 } from '@salmon/shared/powerups';
 export type { PowerupsCatalogProps };
 
+/** What Home hands an installed Powerup's surface. */
+export interface PowerupTabProps {
+  /** The Powerup's way back: Home returns to Portfolio when its task is done. */
+  onNavigateHome?: () => void;
+}
+
 /** The catalogue sheet; `null` in a build with Powerups off. */
 export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = PowerupsCatalogImpl;
 
 /** An installed Powerup's Home surface, by id. Home never names one itself. */
-export function getPowerupTab(id: string): ComponentType | null {
+export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null {
   return id === 'swap' ? SwapTabImpl : null;
 }

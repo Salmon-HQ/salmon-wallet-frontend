@@ -13,8 +13,13 @@ export {
 } from '@salmon/shared/powerups';
 export type { PowerupsCatalogProps };
 
+/** What Home hands an installed Powerup's surface. */
+export interface PowerupTabProps {
+  onNavigateHome?: () => void;
+}
+
 export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = null;
 
-export function getPowerupTab(_id: string): ComponentType | null {
+export function getPowerupTab(_id: string): ComponentType<PowerupTabProps> | null {
   return null;
 }

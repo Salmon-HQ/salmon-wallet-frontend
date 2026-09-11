@@ -3,8 +3,11 @@ export {
   useRequestSignature,
   useSignatureRequestContext,
 } from './SignatureRequestContext';
+export { buildConfirmationReceipt } from './receipt';
+export type { ConfirmationReceiptView } from './receipt';
 export type {
   PendingSignatureRequest,
+  SignatureRequestReceipt,
   SignatureRequestContextValue,
   SignatureRequestPhase,
   SignatureRequestProviderProps,

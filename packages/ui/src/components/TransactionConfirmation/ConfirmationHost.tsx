@@ -4,25 +4,29 @@
  * it covers the viewport — the DOM's own window over whatever screen
  * proposed — renders `TransactionConfirmation` from the proposal, and on
  * confirm shows the wave wait while core signs, broadcasts and confirms. The
- * wait leaves on its own last wave; only then does the cover go.
+ * wait leaves on its own last wave, and the receipt floats in behind it — in
+ * this same cover, on the same water. Its one button closes the cover and
+ * hands the Powerup back (owner ruling, 2026-09-11).
  *
  * The mobile twin is `apps/mobile/src/components/TransactionConfirmation/ConfirmationHost.tsx`.
  */
 import React, { useEffect, useState } from 'react';
-import { useSignatureRequestHost, useWaitExit } from '@salmon/shared';
+import { buildConfirmationReceipt, useSignatureRequestHost, useWaitExit } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
+import { ReceiptScreen } from '../ReceiptScreen';
 import { ScalesBackground } from '../ScalesBackground';
 import { TransactionConfirmation } from './TransactionConfirmation';
 
 export function ConfirmationHost() {
   const semantic = useSemantic();
-  const { request, refreshing, confirmLabel, confirmOrRefresh, cancel } = useSignatureRequestHost();
+  const { request, receipt, refreshing, confirmLabel, confirmOrRefresh, cancel, dismissReceipt } =
+    useSignatureRequestHost();
 
-  const isOpen = request !== null;
+  const isOpen = request !== null || receipt !== null;
   const isSigning = request?.phase === 'signing';
 
   // The wait between the decision and the receipt: held past its own exit so
@@ -83,6 +87,14 @@ export function ConfirmationHost() {
             confirmLabel={confirmLabel}
             isRefreshing={refreshing}
             error={request.error}
+          />
+        )}
+
+        {receipt && !isWaveHeld && (
+          <ReceiptScreen
+            tone="exchange"
+            {...buildConfirmationReceipt(receipt)}
+            onContinue={dismissReceipt}
           />
         )}
 

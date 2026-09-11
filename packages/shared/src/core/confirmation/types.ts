@@ -40,6 +40,19 @@ export interface ProposalDisplay {
   /** Provider attribution rendered verbatim, e.g. "Powered by 0x". */
   attribution?: string;
   warning?: ConfirmationWarning;
+  /**
+   * What the receipt shows once core has signed: its own title and the two
+   * lines the exchange keeps. The Powerup resolves this copy like the rest of
+   * the proposal; core only lays it out. Without it the receipt falls back to
+   * `title`, which is the review's wording.
+   */
+  receipt?: {
+    title: string;
+    /** Effective rate line, e.g. "1 USDC ≈ 0.0127 SOL". */
+    rate?: string;
+    /** The Salmon fee as a rate, e.g. "0.85%". */
+    fee?: string;
+  };
   /** The wave wait's title while core signs and broadcasts, e.g. "Processing swap". */
   pendingTitle: string;
   /** Amounts and symbols only, e.g. `1.5 SOL → 210 USDC`. */

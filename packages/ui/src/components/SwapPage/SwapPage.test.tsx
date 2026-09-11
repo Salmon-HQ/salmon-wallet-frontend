@@ -18,17 +18,10 @@ const mockLogic: Record<string, unknown> = {};
 vi.mock('@salmon/shared/powerups', () => ({ useSwapScreenLogic: () => mockLogic }));
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
-  getTransactionUrl: () => 'https://explorer.example/tx',
-  getDefaultExplorer: () => 'explorer',
   useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (v?: number) => `${v ?? 0}` }],
 }));
 vi.mock('../DepthBackground', () => ({ DepthBackground: () => null }));
 vi.mock('../ScalesBackground', () => ({ ScalesBackground: () => null }));
-vi.mock('../ReceiptScreen', () => ({
-  ReceiptScreen: ({ exchangeFee, summary }: { exchangeFee?: string; summary: string }) => (
-    <div data-testid="tx-success-screen" data-fee={exchangeFee ?? ''} data-summary={summary} />
-  ),
-}));
 vi.mock('../SendPage/TokenPickerSheet', () => ({
   TokenPickerSheet: ({
     visible,
@@ -65,7 +58,6 @@ function setLogic(overrides: Record<string, unknown>) {
   Object.assign(
     mockLogic,
     {
-      step: 'input',
       unavailable: null,
       swapError: null,
       inToken: SOL,
@@ -77,9 +69,6 @@ function setLogic(overrides: Record<string, unknown>) {
       showInTokenModal: false,
       showOutTokenModal: false,
       tokensLoading: false,
-      successTxId: null,
-      successSummary: null,
-      settling: false,
       inUsdValue: 150,
       canSwap: true,
       reviewWarning: null,
@@ -95,7 +84,6 @@ function setLogic(overrides: Record<string, unknown>) {
       handleOutTokenModalSelect: vi.fn(),
       handleSearchTokens: undefined,
       handleSwap: vi.fn(),
-      handleSuccessContinue: vi.fn(),
     },
     overrides
   );
@@ -130,24 +118,10 @@ describe('SwapPage', () => {
     );
   });
 
-  it('renders the receipt from the snapshot once the signature is back', () => {
-    setLogic({
-      step: 'success',
-      successTxId: 'sig-1',
-      successSummary: {
-        inAmount: '1',
-        inSymbol: 'SOL',
-        outAmount: '150',
-        outSymbol: 'USDC',
-        chain: 'solana',
-        networkId: 'solana-mainnet',
-        fee: '0.85%',
-      },
-    });
+  it("never draws an ending of its own: the receipt is core's", () => {
+    setLogic({});
     renderInMode('dark', <SwapPage {...props} />);
-    const receipt = screen.getByTestId('tx-success-screen');
-    expect(receipt.getAttribute('data-fee')).toBe('0.85%');
-    expect(receipt.getAttribute('data-summary')).toBe('1 SOL → 150 USDC');
+    expect(screen.queryByTestId('tx-success-screen')).toBeNull();
   });
 
   it.each(['network', 'region', 'wallet'])('fails closed with the %s state', (reason) => {

@@ -104,9 +104,15 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window');
  * never names a Powerup itself. Nothing when the id owns no surface — a build
  * with Powerups off, or a stored tab whose Powerup is gone.
  */
-function PowerupTabBody({ tabKey }: { tabKey: string }) {
+function PowerupTabBody({
+  tabKey,
+  onNavigateHome,
+}: {
+  tabKey: string;
+  onNavigateHome: () => void;
+}) {
   const body = getPowerupTab(tabKey);
-  return body ? React.createElement(body) : null;
+  return body ? React.createElement(body, { onNavigateHome }) : null;
 }
 
 export default function HomeScreen() {
@@ -438,6 +444,10 @@ export default function HomeScreen() {
     [topFadeOpacity, setActiveSubTab]
   );
 
+  // A Powerup's task ends on Home's own ground: the portfolio the new
+  // balances belong to, not the form that is already reset behind the user.
+  const returnToPortfolio = useCallback(() => setActiveSubTab('portfolio'), [setActiveSubTab]);
+
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
   const handleOrderSheetClose = useCallback(() => setOrderSheetVisible(false), []);
 
@@ -558,7 +568,7 @@ export default function HomeScreen() {
 
   const powerupTabContent = (
     <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
-      <PowerupTabBody tabKey={effectiveSubTab} />
+      <PowerupTabBody tabKey={effectiveSubTab} onNavigateHome={returnToPortfolio} />
     </View>
   );
 

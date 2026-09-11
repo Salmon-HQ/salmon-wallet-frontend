@@ -814,6 +814,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     initialInToken={swapTokens[0]}
                     formatUsd={formatSwapUsd}
                     watchOnly={isWatchOnly}
+                    // The swap ends on Home's own ground: when core's receipt
+                    // is closed, the portfolio the new balances belong to.
+                    onNavigateHome={() => setActiveSubTab('portfolio')}
                   />
                 ) : null}
               </SinkFloat>

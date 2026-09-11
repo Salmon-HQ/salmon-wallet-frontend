@@ -45,12 +45,16 @@ function setup({
 }
 
 describe('SignatureRequestProvider', () => {
-  it('parks the proposal, signs on confirm and resolves the signature', async () => {
+  it('parks the proposal, signs on confirm and shows the receipt before resolving', async () => {
     const { view, signProposal } = setup();
     let result: Promise<{ signature: string }> | undefined;
+    let resolved = false;
 
     act(() => {
       result = view.result.current.ctx.requestSignature(proposal());
+      void result?.then(() => {
+        resolved = true;
+      });
     });
     expect(view.result.current.ctx.pending?.proposal.id).toBe('p-1');
     expect(view.result.current.ctx.pending?.phase).toBe('review');
@@ -59,9 +63,38 @@ describe('SignatureRequestProvider', () => {
       await view.result.current.host.confirmOrRefresh();
     });
 
-    await expect(result).resolves.toEqual({ signature: 'sig-1' });
+    // Signed, but the Powerup hears nothing yet: the window is on the receipt.
     expect(signProposal).toHaveBeenCalledWith(ACCOUNT, expect.objectContaining({ id: 'p-1' }));
     expect(view.result.current.ctx.pending).toBeNull();
+    expect(view.result.current.ctx.receipt).toEqual({
+      proposal: expect.objectContaining({ id: 'p-1' }),
+      signature: 'sig-1',
+    });
+    expect(resolved).toBe(false);
+
+    await act(async () => {
+      view.result.current.host.dismissReceipt();
+    });
+
+    await expect(result).resolves.toEqual({ signature: 'sig-1' });
+    expect(view.result.current.ctx.receipt).toBeNull();
+  });
+
+  it('ignores a cancel once the transaction is signed and the receipt is up', async () => {
+    const { view } = setup();
+    let result: Promise<{ signature: string }> | undefined;
+
+    act(() => {
+      result = view.result.current.ctx.requestSignature(proposal());
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+    act(() => view.result.current.ctx.cancel());
+    expect(view.result.current.ctx.receipt?.signature).toBe('sig-1');
+
+    act(() => view.result.current.ctx.dismissReceipt());
+    await expect(result).resolves.toEqual({ signature: 'sig-1' });
   });
 
   it('rejects with the cancellation error and clears the request on cancel', async () => {
@@ -100,6 +133,7 @@ describe('SignatureRequestProvider', () => {
     await act(async () => {
       await view.result.current.ctx.confirm();
     });
+    act(() => view.result.current.ctx.dismissReceipt());
     await expect(result).resolves.toEqual({ signature: 'sig-2' });
   });
 

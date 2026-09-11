@@ -1,29 +1,20 @@
 /**
- * SwapPage — the Swap Powerup's surface on Home, on the DOM: the form and the
- * receipt. It is a sub-tab of Home, not a screen, so it draws no header and no
- * ground of its own — Home's are already behind it.
+ * SwapPage — the Swap Powerup's surface on Home, on the DOM: the form, and
+ * only the form. It is a sub-tab of Home, not a screen, so it draws no header
+ * and no ground of its own — Home's are already behind it.
  *
  * The mobile twin is `apps/mobile/src/components/SwapScreen` (wired by
- * `src/screens/SwapTab.tsx`). Review and signing are not here: "Swap" hands
- * core a proposal through the shared `useSwapScreenLogic`, core covers the
- * page with its confirmation (`ConfirmationHost`), signs and broadcasts, and
- * the receipt renders once the signature is back (spec 027 §2).
+ * `src/screens/SwapTab.tsx`). Review, signing and the receipt are not here:
+ * "Swap" hands core a proposal through the shared `useSwapScreenLogic`, core
+ * covers the page with its confirmation (`ConfirmationHost`), signs,
+ * broadcasts and shows the receipt there. Closing it ends the swap and Home
+ * returns to Portfolio (spec 027 §2, owner ruling 2026-09-11).
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  formatEffectiveRate,
-  getDefaultExplorer,
-  getTransactionUrl,
-  spacing,
-  type Blockchain,
-  type NetworkEnvironment,
-  type SendToken,
-  type SwapToken,
-} from '@salmon/shared';
+import { spacing, type SendToken, type SwapToken } from '@salmon/shared';
 import { useSwapScreenLogic } from '@salmon/shared/powerups';
 
-import { ReceiptScreen } from '../ReceiptScreen';
 import { StateBlock } from '../StateBlock';
 import { TokenPickerSheet } from '../SendPage/TokenPickerSheet';
 import { WarningNotice } from '../WarningNotice';
@@ -46,23 +37,6 @@ function toPickerToken(token: SwapToken & { mint: string; uiAmount: number }): S
 export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageProps) {
   const { t } = useTranslation();
   const logic = useSwapScreenLogic(logicParams);
-
-  const summary = logic.successSummary;
-  const successInLabel = summary
-    ? `${summary.inAmount} ${summary.inSymbol}`
-    : `${logic.inAmount} ${logic.inToken?.symbol ?? ''}`;
-  const successOutLabel = summary
-    ? `${summary.outAmount} ${summary.outSymbol}`
-    : `${logic.outAmount} ${logic.outToken?.symbol ?? ''}`;
-  const successChain = summary ? summary.chain : logic.inToken?.chain;
-  const successNetworkId = summary ? summary.networkId : logic.inToken?.networkId;
-  const successRate =
-    formatEffectiveRate(
-      summary?.inAmount ?? logic.inAmount,
-      summary?.inSymbol ?? logic.inToken?.symbol ?? '',
-      summary?.outAmount ?? logic.outAmount,
-      summary?.outSymbol ?? logic.outToken?.symbol ?? ''
-    ) ?? undefined;
 
   const inPickerTokens = useMemo(
     () => logic.modalInTokens.map(toPickerToken),
@@ -91,44 +65,6 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
           testID={`swap-unavailable-${logic.unavailable}`}
           tone="empty"
           title={t(`swap.unavailable.${logic.unavailable}`)}
-        />
-      );
-    }
-    if (logic.step === 'success') {
-      return (
-        <ReceiptScreen
-          tone="exchange"
-          title={t('transaction.swapComplete')}
-          summary={`${successInLabel} → ${successOutLabel}`}
-          explorerUrl={
-            logic.successTxId && successChain
-              ? getTransactionUrl(
-                  successChain.toUpperCase() as Blockchain,
-                  (successNetworkId ?? 'mainnet') as NetworkEnvironment,
-                  getDefaultExplorer(successChain.toUpperCase() as Blockchain),
-                  logic.successTxId
-                )
-              : null
-          }
-          onContinue={logic.handleSuccessContinue}
-          settling={logic.settling}
-          pendingTitle={t('transaction.pendingSwap')}
-          exchange={{
-            send: {
-              label: t('transactions.detail.sentLabel', 'Sent'),
-              logo: summary?.inLogo ?? logic.inToken?.logo,
-              symbol: summary?.inSymbol ?? logic.inToken?.symbol ?? '',
-              amount: successInLabel,
-            },
-            receive: {
-              label: t('transactions.detail.receivedLabel', 'Received'),
-              logo: summary?.outLogo ?? logic.outToken?.logo,
-              symbol: summary?.outSymbol ?? logic.outToken?.symbol ?? '',
-              amount: successOutLabel,
-            },
-          }}
-          exchangeRate={successRate}
-          exchangeFee={summary?.fee}
         />
       );
     }

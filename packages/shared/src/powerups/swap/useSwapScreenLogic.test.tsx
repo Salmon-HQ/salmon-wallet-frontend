@@ -15,7 +15,11 @@ import { useSwapScreenLogic, type UseSwapScreenLogicParams } from './useSwapScre
 import type { SwapBuildResponse } from './types';
 
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }));
-vi.mock('../../analytics', () => ({ trackEvent: vi.fn(), trackFirstTime: vi.fn() }));
+vi.mock('../../analytics', () => ({
+  trackEvent: vi.fn(),
+  trackFirstTime: vi.fn(),
+  trackFirstSwapCompleted: vi.fn(),
+}));
 
 const SOL: SwapToken = {
   address: 'So11111111111111111111111111111111111111112',
@@ -150,6 +154,12 @@ async function swapAnd(view: View, decide: 'confirm' | 'cancel') {
     if (decide === 'confirm') await view.result.current.core.confirm();
     else view.result.current.core.cancel();
   });
+  if (decide === 'confirm') {
+    // The signature alone does not hand the Powerup back: core holds the
+    // window open on the receipt until the user closes it.
+    expect(view.result.current.core.receipt?.signature).toBe('sig-1');
+    act(() => view.result.current.core.dismissReceipt());
+  }
   await act(async () => {
     await done;
   });
@@ -252,20 +262,15 @@ describe('useSwapScreenLogic', () => {
     expect(signProposal).toHaveBeenCalledTimes(1);
     const proposal = (signProposal.mock.calls[0] as unknown[])[1] as {
       transaction: string;
-      display: { attribution: string };
+      display: { attribution: string; receipt?: { title: string; rate?: string; fee?: string } };
     };
     expect(proposal.transaction).toBe('AQ==');
     expect(proposal.display.attribution).toBe('Powered by 0x');
-    expect(view.result.current.logic.step).toBe('success');
-    expect(view.result.current.logic.successTxId).toBe('sig-1');
-    expect(view.result.current.logic.successSummary).toMatchObject({
-      inAmount: '1',
-      inSymbol: 'SOL',
-      outAmount: '150',
-      outSymbol: 'USDC',
-      fee: '0.85%',
-    });
+    // The receipt core shows is the proposal's own copy, resolved by the
+    // Powerup: its title, the effective rate and the Salmon fee.
+    expect(proposal.display.receipt).toMatchObject({ fee: '0.85%' });
     expect(view.result.current.core.pending).toBeNull();
+    expect(view.result.current.core.receipt).toBeNull();
   });
 
   it('returns to the form silently when the user backs out of the confirmation', async () => {
@@ -275,7 +280,6 @@ describe('useSwapScreenLogic', () => {
     await swapAnd(view, 'cancel');
 
     expect(signProposal).not.toHaveBeenCalled();
-    expect(view.result.current.logic.step).toBe('input');
     expect(view.result.current.logic.swapError).toBeNull();
     expect(view.result.current.logic.isConfirming).toBe(false);
     expect(view.result.current.logic.inAmount).toBe('1');
@@ -300,36 +304,25 @@ describe('useSwapScreenLogic', () => {
     await act(async () => {
       await view.result.current.core.confirm();
     });
+    expect(view.result.current.core.receipt?.signature).toBe('sig-1');
+    act(() => view.result.current.core.dismissReceipt());
     await act(async () => {
       await done;
     });
-    expect(view.result.current.logic.step).toBe('success');
+    expect(view.result.current.logic.isConfirming).toBe(false);
   });
 
-  it('resets the form and settles balances on continue', async () => {
+  it('resets the form and returns Home once the receipt is dismissed', async () => {
     const onNavigateHome = vi.fn();
     const { view } = setup({ onNavigateHome });
     await quote(view);
-    await swapAnd(view, 'confirm');
-    expect(view.result.current.logic.step).toBe('success');
 
-    act(() => view.result.current.logic.handleSuccessContinue());
-    expect(view.result.current.logic.step).toBe('input');
+    await swapAnd(view, 'confirm');
+
+    expect(view.result.current.logic.swapError).toBeNull();
     expect(view.result.current.logic.inAmount).toBe('');
-    expect(view.result.current.logic.successTxId).toBeNull();
-    expect(view.result.current.logic.successSummary).toBeNull();
+    expect(view.result.current.logic.outAmount).toBe('');
+    expect(view.result.current.logic.build).toBeNull();
     expect(onNavigateHome).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps the confirmed pair in successSummary when the spent token drops out of the list', async () => {
-    const { view } = setup();
-    await quote(view);
-    await swapAnd(view, 'confirm');
-
-    // The post-swap balance refresh drops the fully-spent token; the form
-    // resets underneath the receipt, the snapshot does not.
-    view.rerender({ tokens: [] });
-    expect(view.result.current.logic.inToken).toBeNull();
-    expect(view.result.current.logic.successSummary?.inSymbol).toBe('SOL');
   });
 });

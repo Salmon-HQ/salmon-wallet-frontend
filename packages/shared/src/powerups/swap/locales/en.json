@@ -28,7 +28,6 @@
     "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
     "priorityFee": "Network priority fee"
   },
-  "available_balance": "Available: {{balance}} {{symbol}}",
   "unavailable": {
     "network": "Swap is available on Solana mainnet only.",
     "region": "Swap is not available in your region.",

@@ -13,10 +13,12 @@ const mockHost = {
     phase: string;
     error: null;
   },
+  receipt: null as null | { proposal: Record<string, unknown>; signature: string },
   refreshing: false,
   confirmLabel: 'Confirm (10)',
   confirmOrRefresh: vi.fn(),
   cancel: vi.fn(),
+  dismissReceipt: vi.fn(),
 };
 
 vi.mock('@salmon/shared', async (importOriginal) => ({
@@ -33,6 +35,28 @@ vi.mock('../LoadingScreen', () => ({
     }, [visible, onExited]);
     return <div data-testid="confirmation-wave" data-visible={String(visible)} />;
   },
+}));
+vi.mock('../ReceiptScreen', () => ({
+  ReceiptScreen: ({
+    tone,
+    title,
+    explorerUrl,
+    onContinue,
+  }: {
+    tone: string;
+    title: string;
+    explorerUrl: string | null;
+    onContinue: () => void;
+  }) => (
+    <button
+      type="button"
+      data-testid="confirmation-receipt"
+      data-tone={tone}
+      data-title={title}
+      data-explorer={explorerUrl ?? ''}
+      onClick={onContinue}
+    />
+  ),
 }));
 vi.mock('./TransactionConfirmation', () => ({
   TransactionConfirmation: ({
@@ -59,6 +83,7 @@ describe('ConfirmationHost', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockHost.request = null;
+    mockHost.receipt = null;
   });
   afterEach(cleanup);
 
@@ -86,6 +111,31 @@ describe('ConfirmationHost', () => {
     renderInMode('dark', <ConfirmationHost />);
     expect(screen.queryByTestId('transaction-confirmation')).toBeNull();
     expect(screen.getByTestId('confirmation-wave').getAttribute('data-visible')).toBe('true');
+  });
+
+  it('shows the receipt in the same cover once the wave is gone, and closes on its button', () => {
+    mockHost.receipt = {
+      proposal: {
+        networkId: 'solana-mainnet',
+        display: {
+          title: 'Swap Review',
+          pendingTitle: 'Processing swap',
+          pendingSubtitle: '1 SOL → 150 USDC',
+          receipt: { title: 'Swap complete', fee: '0.85%' },
+        },
+      },
+      signature: 'sig-1',
+    };
+    renderInMode('dark', <ConfirmationHost />);
+
+    const receipt = screen.getByTestId('confirmation-receipt');
+    expect(screen.queryByTestId('transaction-confirmation')).toBeNull();
+    expect(receipt.getAttribute('data-tone')).toBe('exchange');
+    expect(receipt.getAttribute('data-title')).toBe('Swap complete');
+    expect(receipt.getAttribute('data-explorer')).toContain('sig-1');
+
+    fireEvent.click(receipt);
+    expect(mockHost.dismissReceipt).toHaveBeenCalledTimes(1);
   });
 
   it('holds the cover until the wave has left, then removes it', () => {

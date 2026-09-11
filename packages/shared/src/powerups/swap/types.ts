@@ -109,9 +109,6 @@ export interface SwapBuildResponse {
 // Screen state
 // ============================================================================
 
-/** The Powerup's own steps; review and signing belong to core's confirmation. */
-export type SwapScreenStep = 'input' | 'success';
-
 /**
  * A swap failure to render: a bare translation key, or a key plus the
  * interpolation params it needs (e.g. the pair minimum).
@@ -123,26 +120,3 @@ export type SwapErrorMessage = string | { key: string; params: Record<string, st
  * closed: the screen renders the state and quotes nothing further.
  */
 export type SwapUnavailableReason = 'region' | 'wallet';
-
-/**
- * Immutable snapshot of the pair the user actually confirmed, captured at
- * confirm time. The success screen renders from this instead of live form
- * state: post-swap balance refreshes can drop a fully-spent input token from
- * the token list and reset the form while success is still mounted.
- */
-export interface SwapSuccessSummary {
-  /** Input amount as entered (display units) */
-  inAmount: string;
-  inSymbol: string;
-  /** Output amount shown at confirm time (display units) */
-  outAmount: string;
-  outSymbol: string;
-  /** Input token chain — drives the explorer URL */
-  chain?: SwapChainType;
-  /** Input token network id — drives the explorer URL environment */
-  networkId?: string;
-  inLogo?: string;
-  outLogo?: string;
-  /** The Salmon fee as shown on the confirmation (e.g. "0.85%"), when the build had one */
-  fee?: string;
-}

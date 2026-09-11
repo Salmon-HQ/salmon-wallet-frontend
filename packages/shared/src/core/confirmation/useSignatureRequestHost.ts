@@ -7,10 +7,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import i18n from 'i18next';
 import { useSignatureRequestContext } from './SignatureRequestContext';
-import type { PendingSignatureRequest } from './SignatureRequestContext';
+import type { PendingSignatureRequest, SignatureRequestReceipt } from './SignatureRequestContext';
 
 export interface SignatureRequestHost {
   request: PendingSignatureRequest | null;
+  /** The signed outcome to show, once the wave has left. */
+  receipt: SignatureRequestReceipt | null;
   /** Whole seconds until `expiresAt`; `null` when the proposal never expires. */
   secondsLeft: number | null;
   /** True while a refreshed proposal is being built. */
@@ -20,6 +22,8 @@ export interface SignatureRequestHost {
   /** Confirm, or rebuild first when the quote expired. */
   confirmOrRefresh: () => Promise<void>;
   cancel: () => void;
+  /** The receipt's one button: close the window, hand the Powerup back. */
+  dismissReceipt: () => void;
 }
 
 function secondsUntil(expiresAt: string | undefined, now: number): number | null {
@@ -30,7 +34,8 @@ function secondsUntil(expiresAt: string | undefined, now: number): number | null
 }
 
 export function useSignatureRequestHost(): SignatureRequestHost {
-  const { pending, confirm, cancel, refresh } = useSignatureRequestContext();
+  const { pending, receipt, confirm, cancel, dismissReceipt, refresh } =
+    useSignatureRequestContext();
   const expiresAt = pending?.proposal.expiresAt;
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
@@ -68,5 +73,14 @@ export function useSignatureRequestHost(): SignatureRequestHost {
     });
   }, [expired, secondsLeft]);
 
-  return { request: pending, secondsLeft, refreshing, confirmLabel, confirmOrRefresh, cancel };
+  return {
+    request: pending,
+    receipt,
+    secondsLeft,
+    refreshing,
+    confirmLabel,
+    confirmOrRefresh,
+    cancel,
+    dismissReceipt,
+  };
 }

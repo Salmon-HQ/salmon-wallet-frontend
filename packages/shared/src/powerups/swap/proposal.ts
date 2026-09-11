@@ -9,7 +9,7 @@
  */
 import i18n from 'i18next';
 import type { TransactionProposal, ConfirmationRow } from '../../core/confirmation/types';
-import { formatAmountWithSymbol, formatPercent } from '../../utils/formatting';
+import { formatAmountWithSymbol, formatEffectiveRate, formatPercent } from '../../utils/formatting';
 import type { SwapToken } from '../../types/swap';
 import { SWAP_NETWORK_ID } from './types';
 import type { SwapBuildResponse, SwapFeeLine } from './types';
@@ -125,6 +125,15 @@ export function buildSwapProposal(
       rows,
       advancedRows,
       attribution: build.attribution,
+      // What core's receipt shows once this is signed: the swap's own wording
+      // for the outcome, and the two lines the graphic keeps.
+      receipt: {
+        title: t('transaction.swapComplete'),
+        rate:
+          formatEffectiveRate(inAmount, build.input.symbol, outAmount, build.output.symbol) ??
+          undefined,
+        fee: build.salmonFee ? formatPercent(build.salmonFee.bps / 100) : undefined,
+      },
       warning: {
         title: t('swap.review.pleaseNote'),
         body: t('swap.review.pleaseNoteText'),

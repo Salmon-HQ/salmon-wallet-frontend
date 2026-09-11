@@ -1,11 +1,14 @@
 /**
  * useSwapScreenLogic — the Swap Powerup's screen state, shared by both twins.
  *
- * The Powerup owns the form (pair, amount, the quote it debounces) and the
- * receipt. It does NOT own review or signing: "Swap" hands core a proposal
- * through `requestSignature`, core renders the confirmation, signs and
- * broadcasts, and this hook receives a signature back — or a cancellation,
- * which just returns the user to the form (spec 027 §2).
+ * The Powerup owns the form (pair, amount, the quote it debounces) and
+ * nothing else. It does NOT own review, signing, or the receipt: "Swap" hands
+ * core a proposal through `requestSignature`, core renders the confirmation,
+ * signs, broadcasts and shows the receipt, and this hook receives a signature
+ * back only once the user has dismissed that receipt — or a cancellation,
+ * which just returns the user to the form (spec 027 §2, owner ruling
+ * 2026-09-11). With the receipt read and the swap done, the tab hands Home
+ * back to Portfolio through `onNavigateHome`.
  */
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { SwapToken } from '../../types/swap';
@@ -17,8 +20,7 @@ import {
 } from '../../core/confirmation/types';
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
 import { classifyTransactionError } from '../../utils/transaction-errors';
-import { formatPercent } from '../../utils/formatting';
-import { useSettleAfterTx, useSettleUntilChanged } from '../../query/invalidation';
+import { useSettleAfterTx } from '../../query/invalidation';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstSwapCompleted } from '../../analytics';
 import { buildSwap as buildSwapApi } from './api';
@@ -26,13 +28,7 @@ import type { BuildSwapFn } from './api';
 import { describeSwapBuildError } from './errors';
 import { buildSwapProposal, toDisplayAmount } from './proposal';
 import { SWAP_NETWORK_ID } from './types';
-import type {
-  SwapBuildResponse,
-  SwapErrorMessage,
-  SwapScreenStep,
-  SwapSuccessSummary,
-  SwapUnavailableReason,
-} from './types';
+import type { SwapBuildResponse, SwapErrorMessage, SwapUnavailableReason } from './types';
 
 // ============================================================================
 // Constants
@@ -119,14 +115,13 @@ export interface UseSwapScreenLogicParams {
   initialOutToken?: SwapToken;
   /** The user's currency formatter for USD lines, e.g. `~$84.65`. */
   formatUsd?: (value: number) => string;
-  /** Called when the receipt is dismissed */
+  /** Called once the swap is done and core's receipt has been dismissed. */
   onNavigateHome?: () => void;
   /** Test seam: the build call. Defaults to the Powerup's API service. */
   buildSwap?: BuildSwapFn;
 }
 
 export interface UseSwapScreenLogicResult {
-  step: SwapScreenStep;
   /** Why the screen quotes nothing at all: not on mainnet, or the backend refused. */
   unavailable: 'network' | SwapUnavailableReason | null;
   /** The last swap failure, a translation key. Cleared when the user edits the amount. */
@@ -142,10 +137,6 @@ export interface UseSwapScreenLogicResult {
   showInTokenModal: boolean;
   showOutTokenModal: boolean;
   tokensLoading: boolean;
-  successTxId: string | null;
-  successSummary: SwapSuccessSummary | null;
-  /** True while the receipt waits for the indexer to reflect the new balances. */
-  settling: boolean;
   inUsdValue: number;
   canSwap: boolean;
   reviewWarning: SwapErrorMessage | null;
@@ -166,7 +157,6 @@ export interface UseSwapScreenLogicResult {
   handleSearchTokens: ((query: string) => Promise<TokenSelectorToken[]>) | undefined;
   /** Hand the current build to core's confirmation. */
   handleSwap: () => Promise<void>;
-  handleSuccessContinue: () => void;
 }
 
 // ============================================================================
@@ -189,15 +179,12 @@ export function useSwapScreenLogic({
 }: UseSwapScreenLogicParams): UseSwapScreenLogicResult {
   const requestSignature = useRequestSignature();
   const settleAfterTx = useSettleAfterTx();
-  const settleUntilChanged = useSettleUntilChanged();
   const pendingTransactions = usePendingTransactionsOptional();
 
   // ── State ──────────────────────────────────────────────────────────────
 
-  const [step, setStep] = useState<SwapScreenStep>('input');
   const [refused, setRefused] = useState<SwapUnavailableReason | null>(null);
   const [swapError, setSwapError] = useState<SwapErrorMessage | null>(null);
-  const [settling, setSettling] = useState(false);
   const [inToken, setInToken] = useState<SwapToken | null>(initialInToken || tokens[0] || null);
   const [outToken, setOutToken] = useState<SwapToken | null>(initialOutToken || null);
   const [inAmount, setInAmount] = useState('');
@@ -206,8 +193,6 @@ export function useSwapScreenLogic({
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [quoteError, setQuoteError] = useState<SwapErrorMessage | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [successTxId, setSuccessTxId] = useState<string | null>(null);
-  const [successSummary, setSuccessSummary] = useState<SwapSuccessSummary | null>(null);
   const [showInTokenModal, setShowInTokenModal] = useState(false);
   const [showOutTokenModal, setShowOutTokenModal] = useState(false);
 
@@ -383,27 +368,6 @@ export function useSwapScreenLogic({
     setInAmount(value);
   }, []);
 
-  // The confirmed pair, frozen for the receipt. Live form state keeps reacting
-  // to token-list refreshes after the swap, so success rendering must never
-  // read it. Taken from the proposal core actually signed, which may be a
-  // rebuild of the form's build.
-  const captureSuccessSummary = useCallback(
-    (signed: SwapBuildResponse) => {
-      setSuccessSummary({
-        inAmount: toDisplayAmount(signed.input.amount, signed.input.decimals).toString(),
-        inSymbol: signed.input.symbol,
-        outAmount: toDisplayAmount(signed.output.amount, signed.output.decimals).toString(),
-        outSymbol: signed.output.symbol,
-        chain: inToken?.chain,
-        networkId: inToken?.networkId,
-        inLogo: inToken?.logo ?? undefined,
-        outLogo: outToken?.logo ?? undefined,
-        fee: signed.salmonFee ? formatPercent(signed.salmonFee.bps / 100) : undefined,
-      });
-    },
-    [inToken, outToken]
-  );
-
   const handleSwap = useCallback(async () => {
     if (!build || !inToken || !outToken || !publicKey || isConfirming) return;
 
@@ -413,9 +377,6 @@ export function useSwapScreenLogic({
     // proposal's own `refresh`, not the form's debounce.
     ++quoteSeqRef.current;
 
-    // The build core signs: the form's, or the rebuild the confirmation asked
-    // for once the quote expired.
-    let signedBuild = build;
     const toProposal = (current: SwapBuildResponse): TransactionProposal =>
       buildSwapProposal(current, {
         inToken,
@@ -428,59 +389,53 @@ export function useSwapScreenLogic({
             uiAmount: inAmount,
             publicKey,
           });
-          signedBuild = fresh;
           return toProposal(fresh);
         },
       });
 
+    // The signature is the only step that can fail for the user. Everything
+    // after it is bookkeeping on a swap that already happened, and must never
+    // be reported back to them as a failed swap.
+    let signature: string;
     try {
-      const { signature } = await requestSignature(toProposal(build));
-      setSuccessTxId(signature);
-      // Hand the signature to the global pending store before any screen-owned
-      // state moves: the pending entry is what reports the outcome to a user
-      // who navigates away, locks, or kills the app mid-flight.
-      pendingTransactions?.trackPendingTransaction({
-        signature,
-        kind: 'swap',
-        networkId: SWAP_NETWORK_ID as NetworkId,
-        submittedAt: Date.now(),
-        summary: `${inAmount} ${inToken.symbol} → ${outAmount} ${outToken.symbol}`.trim(),
-      });
-      captureSuccessSummary(signedBuild);
-      setStep('success');
-      // Anonymous funnel event: no amounts, addresses or mints.
-      trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
-      void trackFirstSwapCompleted();
-      // This screen is now the one surface reporting this signature; the
-      // banner withholds it until the release below.
-      const releaseReport = pendingTransactions?.claimForegroundReport(signature);
-      setSettling(true);
-      settleUntilChanged({
-        networkId: SWAP_NETWORK_ID as NetworkId,
-        kinds: ['balance', 'transactions'],
-      })
-        .catch((err) => {
-          console.warn('[useSwapScreenLogic] settleUntilChanged failed:', err);
-        })
-        .finally(() => {
-          setSettling(false);
-          releaseReport?.();
-        });
+      // Resolves only after the user has read core's receipt and closed it.
+      ({ signature } = await requestSignature(toProposal(build)));
     } catch (error) {
+      setIsConfirming(false);
       if (error instanceof SignatureRequestCancelledError) {
         // Backing out of the confirmation is not a failure: the form is as
         // they left it, and the quote is fetched again on the next edit.
         setBuild(null);
         setOutAmount('');
         setInAmount((amount) => amount);
-      } else {
-        console.error('[useSwapScreenLogic] swap failed:', error);
-        trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
-        setSwapError(classifyTransactionError(error));
+        return;
       }
-    } finally {
-      setIsConfirming(false);
+      console.error('[useSwapScreenLogic] swap failed:', error);
+      trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
+      setSwapError(classifyTransactionError(error));
+      return;
     }
+
+    setIsConfirming(false);
+    pendingTransactions?.trackPendingTransaction({
+      signature,
+      kind: 'swap',
+      networkId: SWAP_NETWORK_ID as NetworkId,
+      submittedAt: Date.now(),
+      summary: `${inAmount} ${inToken.symbol} → ${outAmount} ${outToken.symbol}`.trim(),
+    });
+    // Anonymous funnel event: no amounts, addresses or mints.
+    trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
+    void trackFirstSwapCompleted();
+    // The form starts over behind the user, and Home goes back to the
+    // portfolio the new balances belong to.
+    setInAmount('');
+    setOutAmount('');
+    setBuild(null);
+    settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(
+      () => undefined
+    );
+    onNavigateHome?.();
   }, [
     build,
     inToken,
@@ -492,22 +447,9 @@ export function useSwapScreenLogic({
     formatUsd,
     requestSignature,
     pendingTransactions,
-    captureSuccessSummary,
-    settleUntilChanged,
+    settleAfterTx,
+    onNavigateHome,
   ]);
-
-  const handleSuccessContinue = useCallback(() => {
-    setStep('input');
-    setInAmount('');
-    setOutAmount('');
-    setBuild(null);
-    setSuccessTxId(null);
-    setSuccessSummary(null);
-    settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(
-      () => undefined
-    );
-    onNavigateHome?.();
-  }, [settleAfterTx, onNavigateHome]);
 
   // ── Derived / memoised ─────────────────────────────────────────────────
 
@@ -604,7 +546,6 @@ export function useSwapScreenLogic({
   }));
 
   return {
-    step,
     unavailable,
     swapError,
     inToken,
@@ -617,9 +558,6 @@ export function useSwapScreenLogic({
     showInTokenModal,
     showOutTokenModal,
     tokensLoading: loading,
-    successTxId,
-    successSummary,
-    settling,
     inUsdValue,
     canSwap,
     reviewWarning,
@@ -638,6 +576,5 @@ export function useSwapScreenLogic({
     handleOutTokenModalSelect,
     handleSearchTokens,
     handleSwap,
-    handleSuccessContinue,
   };
 }
