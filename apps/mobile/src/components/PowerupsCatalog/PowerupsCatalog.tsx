@@ -24,6 +24,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
+  borderRadius,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -160,13 +161,29 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
         {details.actionKeys.length > 0 ? (
           <View style={styles.block}>
             <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
-            {details.actionKeys.map((key) => (
-              <Text key={key} style={styles.body}>
-                {`\u2022 ${t(key)}`}
-              </Text>
-            ))}
+            {/* A hanging list: the marker keeps its own column, so a wrapped
+                line starts under the first word, never under the dot. */}
+            <View style={styles.list}>
+              {details.actionKeys.map((key) => (
+                <View key={key} style={styles.listItem}>
+                  <View style={styles.marker}>
+                    <View style={styles.dot} />
+                  </View>
+                  <Text style={styles.listText}>{t(key)}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         ) : null}
+
+        {/* A sentence, not a fact: it reads like About, not like a value in
+            the facts card, whose values are bold by construction. */}
+        <View style={styles.block}>
+          <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
+          <Text style={styles.body} testID="powerups-detail-uses">
+            {t(details.usesKey)}
+          </Text>
+        </View>
 
         <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
           <KeyValueRow
@@ -177,11 +194,6 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           <KeyValueRow
             label={t('powerups.detail.networks')}
             value={details.networks.map(getNetworkName).join(', ')}
-          />
-          <KeyValueRow
-            label={t('powerups.detail.uses')}
-            value={t(details.usesKey)}
-            layout="stacked"
           />
         </Card>
       </View>
@@ -320,10 +332,37 @@ const stylesFor = (t: Semantic) =>
     block: {
       gap: vs(spacing.sm),
     },
+    // Body copy at the token detail's weight: regular under a caps label, so
+    // label, paragraph and list read as three levels, not one grey block.
     body: {
-      fontFamily: fontFamilyNative.medium,
+      fontFamily: fontFamilyNative.regular,
       fontSize: s(fontSize.body),
       lineHeight: s(fontSize.body) * lineHeight.relaxed,
+      color: t.text.secondary,
+    },
+    list: {
+      gap: vs(spacing.xs),
+    },
+    listItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    marker: {
+      width: s(spacing.md),
+      // Sits the dot on the first line's optical centre.
+      paddingTop: vs(spacing.sm),
+    },
+    dot: {
+      width: s(spacing.xs),
+      height: s(spacing.xs),
+      borderRadius: borderRadius.full,
+      backgroundColor: t.accent.ink,
+    },
+    listText: {
+      flex: 1,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
       color: t.text.secondary,
     },
     installed: {

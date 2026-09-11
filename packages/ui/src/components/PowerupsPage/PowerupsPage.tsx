@@ -13,6 +13,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  borderRadius,
   fontFamily,
   fontSize,
   fontWeight,
@@ -82,17 +83,39 @@ export function PowerupsPage({
     else onInstall(entry.id);
   };
 
+  // Body copy at the token detail's weight: regular under a caps label, so
+  // label, paragraph and list read as three levels, not one grey block.
   const bodyStyle: React.CSSProperties = {
     fontFamily: fontFamily.sans,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.regular,
     fontSize: fontSize.body,
     lineHeight: `${fontSize.body * lineHeight.relaxed}px`,
     color: semantic.text.secondary,
+  };
+  const listTextStyle: React.CSSProperties = {
+    ...bodyStyle,
+    lineHeight: `${fontSize.body * lineHeight.snug}px`,
+    flex: 1,
   };
   const blockStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: spacing.sm,
+  };
+  // A hanging list: the marker keeps its own column, so a wrapped line
+  // starts under the first word, never under the dot.
+  const listItemStyle: React.CSSProperties = { display: 'flex', alignItems: 'flex-start' };
+  const markerStyle: React.CSSProperties = {
+    width: spacing.md,
+    flexShrink: 0,
+    paddingTop: spacing.sm,
+  };
+  const dotStyle: React.CSSProperties = {
+    display: 'block',
+    width: spacing.xs,
+    height: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: semantic.accent.ink,
   };
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {
@@ -149,13 +172,27 @@ export function PowerupsPage({
           {details.actionKeys.length > 0 ? (
             <div style={blockStyle}>
               <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
-              {details.actionKeys.map((key) => (
-                <span key={key} style={bodyStyle}>
-                  {`\u2022 ${t(key)}`}
-                </span>
-              ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
+                {details.actionKeys.map((key) => (
+                  <div key={key} style={listItemStyle}>
+                    <span style={markerStyle}>
+                      <span style={dotStyle} />
+                    </span>
+                    <span style={listTextStyle}>{t(key)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
+
+          {/* A sentence, not a fact: it reads like About, not like a value in
+              the facts card, whose values are bold by construction. */}
+          <div style={blockStyle}>
+            <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
+            <span style={bodyStyle} data-testid="powerups-detail-uses">
+              {t(details.usesKey)}
+            </span>
+          </div>
 
           <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
             <KeyValueRow
@@ -166,11 +203,6 @@ export function PowerupsPage({
             <KeyValueRow
               label={t('powerups.detail.networks')}
               value={details.networks.map(getNetworkName).join(', ')}
-            />
-            <KeyValueRow
-              label={t('powerups.detail.uses')}
-              value={t(details.usesKey)}
-              layout="stacked"
             />
           </Card>
         </div>
