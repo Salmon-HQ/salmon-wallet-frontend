@@ -183,6 +183,7 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
         onClose={() => logic.setShowInTokenModal(false)}
         tokens={inPickerTokens}
         loading={logic.tokensLoading}
+        networkId={logicParams.networkId}
         onSelectToken={(token) =>
           logic.handleInTokenModalSelect({
             mint: token.address,
@@ -200,6 +201,7 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
         onClose={() => logic.setShowOutTokenModal(false)}
         tokens={outPickerTokens}
         loading={logic.tokensLoading}
+        networkId={logicParams.networkId}
         onSelectToken={(token) =>
           logic.handleOutTokenModalSelect({
             mint: token.address,

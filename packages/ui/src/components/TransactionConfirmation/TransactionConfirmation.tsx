@@ -21,6 +21,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { floatEntering, useReducedMotion } from '../../motion';
+import { DataAttribution } from '../DataAttribution';
 import { WarningNotice } from '../WarningNotice';
 import { ConfirmationButtons } from './ConfirmationButtons';
 import { ConfirmationDetailsCard } from './ConfirmationDetailsCard';
@@ -53,6 +54,7 @@ export function TransactionConfirmation({
   confirmLabel,
   isRefreshing = false,
   error,
+  networkId,
   style,
 }: TransactionConfirmationProps) {
   const { t } = useTranslation();
@@ -136,6 +138,8 @@ export function TransactionConfirmation({
               {display.attribution}
             </span>
           ) : null}
+          {/* The USD values' provider, credited once under the details. */}
+          <DataAttribution networkId={networkId} />
         </Band>
 
         {display.warning && (

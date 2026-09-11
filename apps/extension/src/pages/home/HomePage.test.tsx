@@ -36,6 +36,7 @@ vi.mock('../../components', () => ({
   ),
   HomeTabOrderSheet: () => null,
   PowerupsFab: () => null,
+  DataAttribution: () => null,
   DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
     visible ? (
       <div data-testid={scanning ? 'derived-sheet-scanning' : 'derived-sheet-answer'} />

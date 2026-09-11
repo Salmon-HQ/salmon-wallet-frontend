@@ -83,6 +83,7 @@ export function ConfirmationHost() {
             confirmLabel={confirmLabel}
             isRefreshing={refreshing}
             error={request.error}
+            networkId={request.proposal.networkId}
           />
         )}
 

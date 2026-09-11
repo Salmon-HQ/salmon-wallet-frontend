@@ -9,7 +9,13 @@ import {
   type Token,
 } from '@salmon/shared';
 
-import { StateBlock, TokenDetailContent, TokenList, WarningNotice } from '../../components';
+import {
+  DataAttribution,
+  StateBlock,
+  TokenDetailContent,
+  TokenList,
+  WarningNotice,
+} from '../../components';
 
 import { scrollColumnStyle } from './homeStyles';
 import type { HomeBitcoinMarketData } from './useHomeMarketData';
@@ -86,13 +92,20 @@ export function PortfolioColumn({
           bleed={spacing.screenGutter}
         />
       ) : balanceState === 'loading' || tokens.length > 0 ? (
-        <TokenList
-          tokens={tokens}
-          loading={balanceState === 'loading'}
-          onTokenPress={onTokenPress}
-          hiddenBalance={hiddenBalance}
-          blockchain={getBlockchainFromNetworkId(currentNetworkId)}
-        />
+        <>
+          <TokenList
+            tokens={tokens}
+            loading={balanceState === 'loading'}
+            onTokenPress={onTokenPress}
+            hiddenBalance={hiddenBalance}
+            blockchain={getBlockchainFromNetworkId(currentNetworkId)}
+          />
+          {/* The price provider's credit closes the list (its terms: once
+              per screen that shows its prices). */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <DataAttribution networkId={currentNetworkId} />
+          </div>
+        </>
       ) : balanceState === 'error' ? (
         /* A failed load with nothing cached is an error state, never "No
            tokens found" and never an endless skeleton — PRODUCT.md keeps

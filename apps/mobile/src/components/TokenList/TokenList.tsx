@@ -49,6 +49,7 @@ const TokenList: React.FC<TokenListProps> = ({
   onTokenPress,
   hiddenBalance = false,
   ListHeaderComponent,
+  ListFooterComponent,
   ListEmptyComponent,
   onRefresh,
   contentContainerStyle,
@@ -142,6 +143,7 @@ const TokenList: React.FC<TokenListProps> = ({
         windowSize={5}
         removeClippedSubviews={true}
         ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={ListFooterComponent}
         ListEmptyComponent={emptyComponent}
         refreshControl={refreshControl}
         onScroll={onScroll}

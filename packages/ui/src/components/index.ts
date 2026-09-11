@@ -448,6 +448,9 @@ export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
 export { PowerupsFab } from './PowerupsFab';
 export type { PowerupsFabProps } from './PowerupsFab';
 export { PowerupBadge } from './PowerupBadge';
+// DataAttribution - a data provider's mandatory credit (CoinGecko), once per screen
+export { DataAttribution } from './DataAttribution';
+export type { DataAttributionProps } from './DataAttribution';
 export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
 
 // DerivedAccountsSheet - which of a seed's funded paths become wallets

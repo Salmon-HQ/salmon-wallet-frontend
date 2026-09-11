@@ -25,6 +25,7 @@ export {
   NftCardSkeleton,
   NftsTab,
   HomeTabOrderSheet,
+  DataAttribution,
   PowerupsFab,
   PortfolioSubTabs,
   SinkFloat,

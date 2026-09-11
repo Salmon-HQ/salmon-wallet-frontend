@@ -195,6 +195,18 @@ export type EthereumEnvironment = 'mainnet' | 'sepolia';
  *
  * Previously defined in api/client.ts.
  */
+/**
+ * A data provider's mandatory credit, published by the backend on the
+ * network whose prices and token list it serves (CoinGecko's API terms need
+ * "Data provided by CoinGecko" linked to their site wherever that data
+ * shows). Rendered verbatim by `DataAttribution`; `null` where no such data
+ * is served.
+ */
+export interface DataAttribution {
+  text: string;
+  url: string;
+}
+
 export interface NetworkCatalogBase {
   id: string;
   name: string;
@@ -206,6 +218,8 @@ export interface NetworkCatalogBase {
   };
   enabled: boolean;
   sections: NetworkCapabilities['sections'];
+  /** The credit owed to the network's price/token-list provider, if any. */
+  attribution?: DataAttribution | null;
 }
 
 export interface SolanaNetworkCatalogEntry extends NetworkCatalogBase {

@@ -59,6 +59,7 @@ import {
 } from '@salmon/shared';
 import {
   BalanceHeader,
+  DataAttribution,
   DerivedAccountsSheet,
   HomeTabOrderSheet,
   NftsTab,
@@ -692,6 +693,9 @@ export default function HomeScreen() {
                         onTokenPress={handleTokenPress}
                         hiddenBalance={hiddenBalance}
                         ListEmptyComponent={ListEmptyComponent}
+                        // The price provider's credit closes the list (its
+                        // terms: once per screen that shows its prices).
+                        ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
                         onRefresh={refresh}
                         onScroll={handleScroll}
                         scrollEventThrottle={16}

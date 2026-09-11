@@ -40,6 +40,8 @@ export { StateBlock } from './StateBlock';
 export type { StateBlockProps, StateBlockTone } from './StateBlock';
 
 export { PowerupBadge } from './PowerupBadge';
+export { DataAttribution } from './DataAttribution';
+export type { DataAttributionProps } from './DataAttribution';
 export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
 
 export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';

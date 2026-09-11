@@ -11,6 +11,9 @@
 // Testable (shared test-label contract)
 export type { Testable } from './testable';
 
+// DataAttribution (a data provider's credit, e.g. CoinGecko's)
+export type { DataAttributionPropsBase } from './data-attribution';
+
 // Token Selector
 export type {
   TokenSelectorToken,

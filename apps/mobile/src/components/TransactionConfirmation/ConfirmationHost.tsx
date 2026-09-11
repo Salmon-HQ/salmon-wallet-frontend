@@ -101,6 +101,7 @@ export function ConfirmationHost() {
               confirmLabel={confirmLabel}
               isRefreshing={refreshing}
               error={request.error}
+              networkId={request.proposal.networkId}
               style={{ paddingBottom: insets.bottom + spacing.lg }}
             />
           </Animated.View>

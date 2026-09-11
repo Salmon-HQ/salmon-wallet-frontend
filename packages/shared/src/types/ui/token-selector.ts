@@ -108,6 +108,8 @@ export interface TokenSelectorModalPropsBase<TStyle> {
    * do not hold what you are about to receive. Defaults to true.
    */
   showBalances?: boolean;
+  /** The network whose catalogue is listed: its data provider's credit closes the list */
+  networkId?: string | null;
   /** Platform-specific style prop */
   style?: TStyle;
 }

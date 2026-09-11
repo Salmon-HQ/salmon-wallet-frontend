@@ -181,6 +181,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         onSearch={logic.handleSearchTokens}
         showNetworkChip={true}
         loading={logic.tokensLoading}
+        networkId={logicParams.networkId}
       />
 
       <TokenSelectorModal
@@ -192,6 +193,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         // You Receive: what you already hold is noise when choosing what to get.
         showBalances={false}
         loading={logic.tokensLoading}
+        networkId={logicParams.networkId}
       />
     </View>
   );
