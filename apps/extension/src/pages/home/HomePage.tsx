@@ -268,6 +268,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId: (networkId || 'solana-mainnet') as NetworkId,
     skip: !ready || !activeBlockchainAccount || currentPage !== 'activity',
     account: activeBlockchainAccount,
+    includeSpam: showUnverifiedTokens,
   });
 
   // Navigation handlers

@@ -6,7 +6,7 @@ export const queryKeys = {
   avatarNfts: (params: { accountId: string }) => ['avatar-nfts', params] as const,
   solanaNfts: (params: { accountId: string; networkId: NetworkId; includeSpam?: boolean }) =>
     ['solana-nfts', params] as const,
-  transactions: (params: { accountId: string; networkId: NetworkId }) =>
+  transactions: (params: { accountId: string; networkId: NetworkId; includeSpam?: boolean }) =>
     ['transactions', params] as const,
   coinInfo: (params: { coinId: string; currency: string }) => ['coin-info', params] as const,
   marketChart: (params: { coinId: string; currency: string; days: number }) =>

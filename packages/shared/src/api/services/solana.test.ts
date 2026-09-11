@@ -123,6 +123,32 @@ describe('solana service', () => {
     );
   });
 
+  it('opts the BE into including unverified-token-only transfers via includeSpam, and surfaces meta.hidden', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: {
+        data: [MOCK_SOLANA_TRANSACTION],
+        meta: { nextPageToken: 'cursor-1', hidden: 2 },
+      },
+    });
+
+    const result = await getSolanaTransactions('solana-mainnet', 'wallet-1', {
+      includeSpam: true,
+    });
+
+    expect(mockApiClientGet).toHaveBeenCalledWith(
+      '/v1/solana-mainnet/account/wallet-1/transactions',
+      {
+        params: { includeSpam: 'true' },
+      }
+    );
+    expect(result).toEqual({
+      transactions: [MOCK_SOLANA_TRANSACTION],
+      oldestSignature: 'cursor-1',
+      hasMore: true,
+      hidden: 2,
+    });
+  });
+
   it('returns empty transaction history on 404', async () => {
     mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
 

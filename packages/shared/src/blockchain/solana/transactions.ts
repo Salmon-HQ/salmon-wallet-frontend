@@ -53,6 +53,8 @@ export interface SolanaTransactionPaging {
   nextPageToken?: string;
   /** Number of transactions per page */
   pageSize?: number;
+  /** When `true`, asks the BE to skip the unverified-token transfer filter. */
+  includeSpam?: boolean;
 }
 
 /**
@@ -63,6 +65,8 @@ export interface SolanaTransactionListResponse {
   data: SolanaTransaction[];
   /** Token for fetching the next page (null if no more pages) */
   pageToken?: string;
+  /** Number of items the BE dropped (unverified-token-only transfers), when known */
+  hidden?: number;
 }
 
 // ============================================================================
@@ -81,7 +85,7 @@ export async function getRecentTransactions(
   paging: SolanaTransactionPaging | undefined,
   fetchTransactions: GetSolanaTransactionsFn
 ): Promise<SolanaTransactionListResponse> {
-  const { nextPageToken, pageSize } = paging || {};
+  const { nextPageToken, pageSize, includeSpam } = paging || {};
 
   // Convert v2-style paging to API service paging
   const apiPaging: SolanaPagingParams = {};
@@ -91,6 +95,9 @@ export async function getRecentTransactions(
   if (pageSize) {
     apiPaging.limit = pageSize;
   }
+  if (includeSpam) {
+    apiPaging.includeSpam = includeSpam;
+  }
 
   const response = await fetchTransactions(networkId as SolanaNetworkId, address, apiPaging);
 
@@ -98,6 +105,7 @@ export async function getRecentTransactions(
   return {
     data: response.transactions,
     pageToken: response.hasMore ? (response.oldestSignature ?? undefined) : undefined,
+    hidden: response.hidden,
   };
 }
 

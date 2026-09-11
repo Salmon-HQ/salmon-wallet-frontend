@@ -46,6 +46,7 @@ import {
   type ActivityRow,
 } from '../../src/components';
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
+import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic } from '../../src/theme/useThemedStyles';
 
 // ============================================================================
@@ -67,6 +68,7 @@ export default function ActivityScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
   const explorerNetworkId = (networkId ?? 'solana-mainnet') as NetworkId;
+  const showUnverifiedTokens = useUnverifiedTokens();
 
   const { transactions, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
     useTransactions({
@@ -74,6 +76,7 @@ export default function ActivityScreen() {
       networkId: explorerNetworkId,
       skip: !ready || !activeBlockchainAccount,
       account: activeBlockchainAccount,
+      includeSpam: showUnverifiedTokens,
     });
 
   // The app's one balance-visibility preference, not a second one for this

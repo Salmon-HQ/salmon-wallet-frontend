@@ -85,11 +85,16 @@ export async function getSolanaTransactions(
     if (paging?.type) {
       params.type = paging.type;
     }
+    if (paging?.includeSpam) {
+      params.includeSpam = 'true';
+    }
 
-    // Backend returns { data: Transaction[], meta: { nextPageToken?: string } }
+    // Backend returns { data: Transaction[], meta: { nextPageToken?: string, hidden?: number } }
+    // meta.hidden is the count of incoming transfers dropped for being made only of
+    // unverified fungible tokens, unless `?includeSpam=true` is set.
     interface BackendResponse {
       data: SolanaTransaction[];
-      meta?: { nextPageToken?: string };
+      meta?: { nextPageToken?: string; hidden?: number };
     }
 
     const { data: response } = await apiClient.get<BackendResponse>(
@@ -104,6 +109,7 @@ export async function getSolanaTransactions(
       transactions,
       oldestSignature: nextPageToken || null,
       hasMore: !!nextPageToken,
+      hidden: response.meta?.hidden,
     };
   } catch (error) {
     if (error instanceof ApiError && error.isNotFound()) {

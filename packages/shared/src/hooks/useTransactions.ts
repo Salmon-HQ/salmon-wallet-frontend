@@ -49,6 +49,8 @@ export interface UseTransactionsParams {
   skip?: boolean;
   /** Blockchain account instance (used for DI-based transaction fetching) */
   account?: BlockchainAccount;
+  /** Solana only: when `true`, asks the BE to skip the unverified-token transfer filter */
+  includeSpam?: boolean;
 }
 
 /**
@@ -82,6 +84,8 @@ export interface UseTransactionsResult {
   refresh: () => Promise<void>;
   /** Total number of transactions loaded */
   totalCount: number;
+  /** Total number of items the BE dropped (unverified-token-only transfers) across loaded pages */
+  hiddenCount: number;
 }
 
 // ============================================================================
@@ -101,6 +105,7 @@ const STALE_TIME_MS = 60 * 1000;
 interface TransactionPage {
   items: Transaction[];
   nextCursor: string | undefined;
+  hidden: number;
 }
 
 interface FetchPageArgs {
@@ -108,6 +113,7 @@ interface FetchPageArgs {
   networkId: NetworkId;
   pageParam: string | undefined;
   pageSize: number;
+  includeSpam: boolean;
 }
 
 async function fetchTransactionsPage({
@@ -115,6 +121,7 @@ async function fetchTransactionsPage({
   networkId,
   pageParam,
   pageSize,
+  includeSpam,
 }: FetchPageArgs): Promise<TransactionPage> {
   const blockchain = getBlockchainFromNetworkId(networkId);
 
@@ -122,10 +129,12 @@ async function fetchTransactionsPage({
     const response = await account.getRecentTransactions({
       nextPageToken: pageParam,
       pageSize,
+      ...(includeSpam ? { includeSpam } : {}),
     });
     return {
       items: response.data.map(transformSolanaTransaction),
       nextCursor: response.pageToken,
+      hidden: response.hidden ?? 0,
     };
   }
 
@@ -138,6 +147,7 @@ async function fetchTransactionsPage({
       transformMultichainTransaction(tx as unknown as TransactionItem, blockchain)
     ),
     nextCursor: response.nextPageToken,
+    hidden: 0,
   };
 }
 
@@ -157,6 +167,7 @@ export function useTransactions({
   pageSize = DEFAULT_PAGE_SIZE,
   skip = false,
   account,
+  includeSpam = false,
 }: UseTransactionsParams): UseTransactionsResult {
   const queryClient = useQueryClient();
   const enabled = !!address && !!account && !skip;
@@ -166,6 +177,7 @@ export function useTransactions({
   const queryKey = queryKeys.transactions({
     accountId: address ?? '',
     networkId,
+    includeSpam,
   });
 
   const query = useInfiniteQuery<
@@ -182,6 +194,7 @@ export function useTransactions({
         networkId,
         pageParam,
         pageSize,
+        includeSpam,
       }),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -202,6 +215,11 @@ export function useTransactions({
       }
     }
     return out;
+  }, [query.data]);
+
+  const hiddenCount = useMemo<number>(() => {
+    if (!query.data) return 0;
+    return query.data.pages.reduce((sum, page) => sum + page.hidden, 0);
   }, [query.data]);
 
   const loadMore = useCallback(async () => {
@@ -234,5 +252,6 @@ export function useTransactions({
     loadMore,
     refresh,
     totalCount: transactions.length,
+    hiddenCount,
   };
 }

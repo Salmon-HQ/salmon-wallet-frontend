@@ -75,6 +75,7 @@ jest.mock('../../hooks/useTabChrome', () => ({
 
 jest.mock('../../src/contexts/DeveloperModeContext', () => ({
   useDeveloperMode: () => false,
+  useUnverifiedTokens: () => false,
 }));
 
 /** The row is its own suite's subject; here it only needs an id and a press. */

@@ -492,6 +492,8 @@ export interface SolanaPagingParams {
   before?: string;
   /** @deprecated Use pageSize instead */
   limit?: number;
+  /** When `true`, asks the BE to skip the unverified-token transfer filter. */
+  includeSpam?: boolean;
 }
 
 /**
@@ -504,6 +506,8 @@ export interface SolanaTransactionsResponse {
   oldestSignature?: string | null;
   /** Whether there are more transactions to fetch */
   hasMore: boolean;
+  /** Number of items the BE dropped (unverified-token-only transfers), when known */
+  hidden?: number;
 }
 
 // ============================================================================

@@ -88,6 +88,46 @@ describe('useTransactions (react-query infinite)', () => {
     expect(result.current.transactions[0]?.id).toBe('tx-1');
     expect(result.current.hasMore).toBe(true);
     expect(result.current.totalCount).toBe(1);
+    expect(result.current.hiddenCount).toBe(0);
+  });
+
+  it('passes includeSpam through to getRecentTransactions and the query key when set', async () => {
+    const account = {
+      getRecentTransactions: vi.fn().mockResolvedValue({
+        data: [{ id: 'tx-1' }],
+        pageToken: undefined,
+        hidden: 3,
+      }),
+    };
+
+    const { client, wrapper } = makeWrapper();
+    const { result } = renderHook(
+      () =>
+        useTransactions({
+          address: 'wallet-1',
+          networkId: 'solana-mainnet',
+          account: account as any,
+          includeSpam: true,
+        }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.transactions).toHaveLength(1);
+    });
+
+    expect(account.getRecentTransactions).toHaveBeenCalledWith({
+      nextPageToken: undefined,
+      pageSize: 20,
+      includeSpam: true,
+    });
+    expect(result.current.hiddenCount).toBe(3);
+
+    const keysWithSpam = client
+      .getQueryCache()
+      .findAll({ queryKey: ['transactions'] })
+      .map((q) => q.queryKey);
+    expect(keysWithSpam.some(([, params]: any) => params?.includeSpam === true)).toBe(true);
   });
 
   it('loadMore fetches the next page and appends, deduplicating by id', async () => {
