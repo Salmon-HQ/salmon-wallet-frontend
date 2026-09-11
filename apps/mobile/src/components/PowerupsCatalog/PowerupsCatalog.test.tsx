@@ -11,6 +11,13 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
+  getNetworkName: (network: string) => network,
+  ...jest.requireActual('@salmon/shared/src/types/ui/key-value-row'),
+}));
+
+jest.mock('../../utils/sinkAndFloat', () => ({
+  floatEntering: () => undefined,
+  sinkExiting: () => undefined,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -81,6 +88,13 @@ const entries = [
     descriptionKey: 'swap.catalog.description',
     tier: 'core' as const,
     installed: false,
+    details: {
+      aboutKey: 'swap.catalog.about',
+      actionKeys: ['swap.catalog.actions.quote'],
+      usesKey: 'swap.catalog.uses',
+      authorKey: 'powerups.author.salmon',
+      networks: ['solana-mainnet'],
+    },
   },
   {
     id: 'auto-compound',
@@ -88,6 +102,13 @@ const entries = [
     descriptionKey: 'powerups.catalog.auto_compound.description',
     tier: 'community' as const,
     installed: false,
+    details: {
+      aboutKey: 'powerups.catalog.mock.about',
+      actionKeys: [],
+      usesKey: 'powerups.catalog.mock.uses',
+      authorKey: 'powerups.author.community',
+      networks: ['solana-mainnet'],
+    },
   },
 ];
 
@@ -136,6 +157,9 @@ describe('PowerupsCatalog', () => {
     expect(screen.getByTestId('powerups-detail-swap')).toBeTruthy();
     // The list is gone: the detail took the sheet, it did not stack on it.
     expect(screen.queryByTestId('powerups-row-auto-compound')).toBeNull();
+    // The facts under the row: who made it, where it acts, what it uses.
+    expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
+    expect(screen.getByTestId('powerups-facts-swap')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('powerups-toggle-swap'));
     expect(onInstall).toHaveBeenCalledWith('swap');

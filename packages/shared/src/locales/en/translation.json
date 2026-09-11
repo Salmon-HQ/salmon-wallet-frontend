@@ -873,7 +873,22 @@
       "nft_floor_watch": {
         "name": "NFT Floor Watch",
         "description": "Track collection floor prices"
+      },
+      "mock": {
+        "about": "A preview from the design frames. It does not exist yet.",
+        "uses": "Nothing leaves your device."
       }
+    },
+    "detail": {
+      "about": "About",
+      "what_you_can_do": "What you can do",
+      "made_by": "Made by",
+      "networks": "Networks",
+      "uses": "Uses"
+    },
+    "author": {
+      "salmon": "Salmon",
+      "community": "Community contributor"
     }
   },
   "confirmation": {

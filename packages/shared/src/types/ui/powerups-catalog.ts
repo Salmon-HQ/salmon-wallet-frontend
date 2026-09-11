@@ -15,6 +15,26 @@ export interface PowerupsCatalogEntry {
   tier: 'core' | 'community';
   /** Whether this device has it installed — the detail shows `−` instead of `+`. */
   installed: boolean;
+  /** What the detail says about it beyond the one-line description. */
+  details: PowerupsCatalogEntryDetails;
+}
+
+/**
+ * The detail's facts (owner, 2026-09-11): what it does, what the user can do
+ * with it, what leaves the device and where, who made it, where it acts. All
+ * copy is translation keys; the network ids are formatted at render.
+ */
+export interface PowerupsCatalogEntryDetails {
+  /** Translation key for the paragraph under "About". */
+  aboutKey: string;
+  /** Translation keys, one per thing the user can do with it. */
+  actionKeys: readonly string[];
+  /** Translation key for what leaves the device, and to whom. */
+  usesKey: string;
+  /** Translation key for who made it. */
+  authorKey: string;
+  /** The network ids it acts on. */
+  networks: readonly string[];
 }
 
 /**

@@ -7,8 +7,17 @@
  * twin. A catalogue that advertised four things the wallet cannot install
  * would be a promise, not a product, so the mocks are developer-only.
  */
-import type { PowerupsCatalogEntry } from '../types/ui/index';
+import type { PowerupsCatalogEntry, PowerupsCatalogEntryDetails } from '../types/ui/index';
 import { POWERUPS, isPowerupOnNetwork } from './registry';
+
+/** What every mock says in its detail: a placeholder, not a promise. */
+const mockDetails = (tier: PowerupsCatalogEntry['tier']): PowerupsCatalogEntryDetails => ({
+  aboutKey: 'powerups.catalog.mock.about',
+  actionKeys: [],
+  usesKey: 'powerups.catalog.mock.uses',
+  authorKey: tier === 'core' ? 'powerups.author.salmon' : 'powerups.author.community',
+  networks: ['solana-mainnet'],
+});
 
 /** The `.pen` frames' catalogue. Developer mode only — none of these exist. */
 export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [
@@ -17,24 +26,28 @@ export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] =
     nameKey: 'powerups.catalog.wallet_guard.name',
     descriptionKey: 'powerups.catalog.wallet_guard.description',
     tier: 'core',
+    details: mockDetails('core'),
   },
   {
     id: 'staking',
     nameKey: 'powerups.catalog.staking.name',
     descriptionKey: 'powerups.catalog.staking.description',
     tier: 'core',
+    details: mockDetails('core'),
   },
   {
     id: 'auto-compound',
     nameKey: 'powerups.catalog.auto_compound.name',
     descriptionKey: 'powerups.catalog.auto_compound.description',
     tier: 'community',
+    details: mockDetails('community'),
   },
   {
     id: 'nft-floor-watch',
     nameKey: 'powerups.catalog.nft_floor_watch.name',
     descriptionKey: 'powerups.catalog.nft_floor_watch.description',
     tier: 'community',
+    details: mockDetails('community'),
   },
 ];
 
@@ -59,6 +72,13 @@ export function getPowerupCatalog({
       descriptionKey: entry.descriptionKey,
       tier: entry.tier,
       installed: installedIds.includes(entry.id),
+      details: {
+        aboutKey: entry.aboutKey,
+        actionKeys: entry.actionKeys,
+        usesKey: entry.usesKey,
+        authorKey: entry.authorKey,
+        networks: entry.networks,
+      },
     })
   );
   if (!includeMocks) return real;

@@ -1,7 +1,14 @@
 {
   "catalog": {
     "name": "Swap",
-    "description": "Swap tokens on Solana"
+    "description": "Swap tokens on Solana",
+    "about": "Trade one Solana token for another from your wallet. Salmon asks its backend for the best route, shows you exactly what leaves and what arrives, and signs only on your confirmation. Nothing is sent until you approve it.",
+    "actions": {
+      "quote": "Get a live quote between any two tokens in the catalogue",
+      "review": "Review the rate, the fees and the minimum you receive before signing",
+      "receipt": "Keep a receipt with the on-chain signature once it lands"
+    },
+    "uses": "Your address and token balances go to the Salmon API to build the route. No third party sees your keys."
   },
   "you_send": "You Send",
   "enter_amount": "Enter an amount",

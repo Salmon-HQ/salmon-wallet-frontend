@@ -14,15 +14,21 @@
  *
  * The detail keeps the sheet's own grammar: the standard title header with
  * its back caret, then the entry as the same row the list drew it as, with
- * the install / uninstall control where the row's trailing slot is.
+ * the install / uninstall control where the row's trailing slot is — and
+ * under it the facts (owner, 2026-09-11): what it does, what you can do, who
+ * made it, where it acts, what leaves the device. List and detail trade
+ * places on the verb: the one leaving sinks, the one arriving floats.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
+  getNetworkName,
+  lineHeight,
   s,
   spacing,
   vs,
@@ -42,9 +48,12 @@ import {
   TrendUpIcon,
 } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { Card } from '../Card';
 import { IconBubble, type IconGlyphProps } from '../IconBubble';
+import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
@@ -86,6 +95,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { standardContentBottomPadding } = useBottomSheetChrome();
+  const isReduceMotionEnabled = useReducedMotion();
 
   const [detailId, setDetailId] = useState<string | null>(null);
   // A closed sheet is back at its list: reopening onto the detail of whatever
@@ -106,8 +116,9 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {
     const name = t(entry.nameKey);
+    const { details } = entry;
     return (
-      <View testID={`powerups-detail-${entry.id}`}>
+      <View testID={`powerups-detail-${entry.id}`} style={styles.detail}>
         <ListRow
           padding="lg"
           leading={
@@ -140,6 +151,39 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
             />
           }
         />
+
+        <View style={styles.block}>
+          <SectionLabel variant="caps">{t('powerups.detail.about')}</SectionLabel>
+          <Text style={styles.body}>{t(details.aboutKey)}</Text>
+        </View>
+
+        {details.actionKeys.length > 0 ? (
+          <View style={styles.block}>
+            <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
+            {details.actionKeys.map((key) => (
+              <Text key={key} style={styles.body}>
+                {`\u2022 ${t(key)}`}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
+          <KeyValueRow
+            testID="powerups-detail-author"
+            label={t('powerups.detail.made_by')}
+            value={t(details.authorKey)}
+          />
+          <KeyValueRow
+            label={t('powerups.detail.networks')}
+            value={details.networks.map(getNetworkName).join(', ')}
+          />
+          <KeyValueRow
+            label={t('powerups.detail.uses')}
+            value={t(details.usesKey)}
+            layout="stacked"
+          />
+        </Card>
       </View>
     );
   };
@@ -199,16 +243,28 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
       testID={testID}
       style={style}
       headerContent={
-        detail ? (
-          // The detail is a page of the sheet: the standard title header, its
-          // back caret where every sheet page keeps it.
-          <BottomSheetTitleHeader title={t(detail.nameKey)} onBack={() => setDetailId(null)} />
-        ) : (
-          <View style={styles.header}>
-            <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
-            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
-          </View>
-        )
+        // The header trades places with the page: keyed, so the one leaving
+        // sinks and the one arriving floats, on the chrome's own beat.
+        <Animated.View
+          key={detail ? 'detail' : 'list'}
+          entering={floatEntering(isReduceMotionEnabled)}
+          exiting={sinkExiting(isReduceMotionEnabled)}
+        >
+          {detail ? (
+            // The detail is a page of the sheet: the standard title header, its
+            // back caret where every sheet page keeps it.
+            <BottomSheetTitleHeader title={t(detail.nameKey)} onBack={() => setDetailId(null)} />
+          ) : (
+            <View style={styles.header}>
+              <LightningIcon
+                weight="bold"
+                size={s(CONTROL_ICON_SIZE)}
+                color={semantic.accent.ink}
+              />
+              <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+            </View>
+          )}
+        </Animated.View>
       }
     >
       <ScrollView
@@ -220,7 +276,13 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {detail ? renderDetail(detail) : renderList()}
+        <Animated.View
+          key={detail ? `detail-${detail.id}` : 'list'}
+          entering={floatEntering(isReduceMotionEnabled)}
+          exiting={sinkExiting(isReduceMotionEnabled)}
+        >
+          {detail ? renderDetail(detail) : renderList()}
+        </Animated.View>
       </ScrollView>
     </BottomSheetContainer>
   );
@@ -247,6 +309,18 @@ const stylesFor = (t: Semantic) =>
     },
     section: {
       gap: vs(spacing.xl),
+    },
+    detail: {
+      gap: vs(spacing.xl),
+    },
+    block: {
+      gap: vs(spacing.sm),
+    },
+    body: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.relaxed,
+      color: t.text.secondary,
     },
     installed: {
       fontFamily: fontFamilyNative.medium,

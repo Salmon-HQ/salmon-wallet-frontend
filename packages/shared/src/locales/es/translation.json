@@ -873,7 +873,22 @@
       "nft_floor_watch": {
         "name": "NFT Floor Watch",
         "description": "Seguimiento del precio piso de colecciones"
+      },
+      "mock": {
+        "about": "Una vista previa de los diseños. Todavía no existe.",
+        "uses": "Nada sale de tu dispositivo."
       }
+    },
+    "detail": {
+      "about": "Acerca de",
+      "what_you_can_do": "Qué podés hacer",
+      "made_by": "Hecho por",
+      "networks": "Redes",
+      "uses": "Usa"
+    },
+    "author": {
+      "salmon": "Salmon",
+      "community": "Colaborador de la comunidad"
     }
   },
   "confirmation": {

@@ -10,6 +10,11 @@ import React from 'react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, screen, fireEvent } from '@testing-library/react';
 
+// The verb holds the arriving page a beat; the suite reads the page, not the beat.
+vi.mock('../SinkFloat', () => ({
+  SinkFloat: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 import { renderInMode } from '../../test/renderInMode';
 import { PowerupsCatalog } from './PowerupsCatalog';
 
@@ -20,6 +25,13 @@ const entries = [
     descriptionKey: 'swap.catalog.description',
     tier: 'core' as const,
     installed: false,
+    details: {
+      aboutKey: 'swap.catalog.about',
+      actionKeys: ['swap.catalog.actions.quote'],
+      usesKey: 'swap.catalog.uses',
+      authorKey: 'powerups.author.salmon',
+      networks: ['solana-mainnet'],
+    },
   },
   {
     id: 'auto-compound',
@@ -27,6 +39,13 @@ const entries = [
     descriptionKey: 'powerups.catalog.auto_compound.description',
     tier: 'community' as const,
     installed: false,
+    details: {
+      aboutKey: 'powerups.catalog.mock.about',
+      actionKeys: [],
+      usesKey: 'powerups.catalog.mock.uses',
+      authorKey: 'powerups.author.community',
+      networks: ['solana-mainnet'],
+    },
   },
 ];
 
@@ -70,6 +89,9 @@ describe('PowerupsCatalog', () => {
     expect(screen.getByTestId('powerups-detail-swap')).toBeTruthy();
     // The list is gone: the detail took the sheet, it did not stack on it.
     expect(screen.queryByTestId('powerups-row-auto-compound')).toBeNull();
+    // The facts under the row: who made it, where it acts, what it uses.
+    expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
+    expect(screen.getByTestId('powerups-facts-swap')).toBeTruthy();
 
     fireEvent.click(screen.getByTestId('powerups-toggle-swap'));
     expect(onInstall).toHaveBeenCalledWith('swap');

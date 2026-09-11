@@ -1,7 +1,14 @@
 {
   "catalog": {
     "name": "Swap",
-    "description": "Intercambiá tokens en Solana"
+    "description": "Intercambiá tokens en Solana",
+    "about": "Cambiá un token de Solana por otro desde tu billetera. Salmon le pide la mejor ruta a su backend, te muestra exactamente qué sale y qué llega, y firma sólo cuando confirmás. No se envía nada hasta que lo aprobás.",
+    "actions": {
+      "quote": "Pedí una cotización en vivo entre dos tokens del catálogo",
+      "review": "Revisá la tasa, las comisiones y el mínimo que recibís antes de firmar",
+      "receipt": "Guardá un recibo con la firma on-chain cuando se confirma"
+    },
+    "uses": "Tu dirección y tus saldos de tokens van a la API de Salmon para armar la ruta. Ningún tercero ve tus claves."
   },
   "you_send": "Enviás",
   "enter_amount": "Ingresá un monto",

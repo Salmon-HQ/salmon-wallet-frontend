@@ -16,6 +16,14 @@ export interface PowerupEntry {
   nameKey: string;
   /** Translation key for the one-line description. */
   descriptionKey: string;
+  /** Translation key for the detail's "About" paragraph. */
+  aboutKey: string;
+  /** Translation keys, one per thing the user can do with it. */
+  actionKeys: readonly string[];
+  /** Translation key for what leaves the device, and to whom. */
+  usesKey: string;
+  /** Translation key for who made it. */
+  authorKey: string;
   /** `core` is what Salmon ships; `community` is what people may add later. */
   tier: PowerupTier;
   /** The networks the Powerup can act on; hidden elsewhere. */
@@ -27,6 +35,14 @@ export const POWERUPS: readonly PowerupEntry[] = [
     id: 'swap',
     nameKey: 'swap.catalog.name',
     descriptionKey: 'swap.catalog.description',
+    aboutKey: 'swap.catalog.about',
+    actionKeys: [
+      'swap.catalog.actions.quote',
+      'swap.catalog.actions.review',
+      'swap.catalog.actions.receipt',
+    ],
+    usesKey: 'swap.catalog.uses',
+    authorKey: 'powerups.author.salmon',
     tier: 'core',
     networks: ['solana-mainnet'],
   },

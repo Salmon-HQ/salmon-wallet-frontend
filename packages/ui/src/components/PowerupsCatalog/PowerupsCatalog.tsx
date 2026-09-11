@@ -12,7 +12,9 @@
  * the top of its Portfolio / NFTs row. The detail keeps the sheet's own
  * grammar: the title with its back caret on the left, then the entry as the
  * same row the list drew it as, with the install / uninstall control in the
- * row's trailing slot.
+ * row's trailing slot — and under it the facts (owner, 2026-09-11): what it
+ * does, what you can do, who made it, where it acts, what leaves the device.
+ * List and detail trade places on the verb through `SinkFloat`.
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +23,8 @@ import {
   fontFamily,
   fontSize,
   fontWeight,
+  getNetworkName,
+  lineHeight,
   spacing,
   type PowerupsCatalogEntry,
 } from '@salmon/shared';
@@ -38,8 +42,11 @@ import {
   TrendUpIcon,
 } from '../../icons';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
+import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
+import { SinkFloat } from '../SinkFloat';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
 import { StateBlock } from '../StateBlock';
@@ -92,10 +99,27 @@ export function PowerupsCatalog({
     else onInstall(entry.id);
   };
 
+  const bodyStyle: React.CSSProperties = {
+    fontFamily: fontFamily.sans,
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.body,
+    lineHeight: `${fontSize.body * lineHeight.relaxed}px`,
+    color: semantic.text.secondary,
+  };
+  const blockStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
+  };
+
   const renderDetail = (entry: PowerupsCatalogEntry) => {
     const name = t(entry.nameKey);
+    const { details } = entry;
     return (
-      <div data-testid={`powerups-detail-${entry.id}`}>
+      <div
+        data-testid={`powerups-detail-${entry.id}`}
+        style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}
+      >
         <ListRow
           leading={
             <IconBubble
@@ -125,6 +149,39 @@ export function PowerupsCatalog({
             />
           }
         />
+
+        <div style={blockStyle}>
+          <SectionLabel variant="caps">{t('powerups.detail.about')}</SectionLabel>
+          <span style={bodyStyle}>{t(details.aboutKey)}</span>
+        </div>
+
+        {details.actionKeys.length > 0 ? (
+          <div style={blockStyle}>
+            <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
+            {details.actionKeys.map((key) => (
+              <span key={key} style={bodyStyle}>
+                {`\u2022 ${t(key)}`}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
+          <KeyValueRow
+            testID="powerups-detail-author"
+            label={t('powerups.detail.made_by')}
+            value={t(details.authorKey)}
+          />
+          <KeyValueRow
+            label={t('powerups.detail.networks')}
+            value={details.networks.map(getNetworkName).join(', ')}
+          />
+          <KeyValueRow
+            label={t('powerups.detail.uses')}
+            value={t(details.usesKey)}
+            layout="stacked"
+          />
+        </Card>
       </div>
     );
   };
@@ -189,55 +246,57 @@ export function PowerupsCatalog({
       testID={testID}
       style={style}
       headerContent={
-        detail ? (
-          // The detail is a page of the sheet: the title centred, the back
-          // caret on the left where the mobile title header keeps it.
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: componentSizes.iconSizeMedium,
-              padding: `0 ${spacing.xl + componentSizes.iconSizeMedium}px`,
-            }}
-          >
-            <button
-              type="button"
-              data-testid="screen-header-back-button"
-              aria-label={t('general.back', 'Back')}
-              onClick={() => setDetailId(null)}
+        <SinkFloat transitionKey={detail ? 'detail' : 'list'}>
+          {detail ? (
+            // The detail is a page of the sheet: the title centred, the back
+            // caret on the left where the mobile title header keeps it.
+            <div
               style={{
-                position: 'absolute',
-                left: spacing.xl,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                display: 'inline-flex',
-                padding: 0,
-                border: 'none',
-                background: 'transparent',
-                color: semantic.text.primary,
-                cursor: 'pointer',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: componentSizes.iconSizeMedium,
+                padding: `0 ${spacing.xl + componentSizes.iconSizeMedium}px`,
               }}
             >
-              <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
-            </button>
-            <SheetTitle>{t(detail.nameKey)}</SheetTitle>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: spacing.sm,
-              padding: `0 ${spacing.screenGutter}px`,
-            }}
-          >
-            <LightningIcon size={CONTROL_ICON_SIZE} color={semantic.accent.ink} />
-            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
-          </div>
-        )
+              <button
+                type="button"
+                data-testid="screen-header-back-button"
+                aria-label={t('general.back', 'Back')}
+                onClick={() => setDetailId(null)}
+                style={{
+                  position: 'absolute',
+                  left: spacing.xl,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  display: 'inline-flex',
+                  padding: 0,
+                  border: 'none',
+                  background: 'transparent',
+                  color: semantic.text.primary,
+                  cursor: 'pointer',
+                }}
+              >
+                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
+              </button>
+              <SheetTitle>{t(detail.nameKey)}</SheetTitle>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: spacing.sm,
+                padding: `0 ${spacing.screenGutter}px`,
+              }}
+            >
+              <LightningIcon size={CONTROL_ICON_SIZE} color={semantic.accent.ink} />
+              <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+            </div>
+          )}
+        </SinkFloat>
       }
     >
       <div
@@ -248,7 +307,9 @@ export function PowerupsCatalog({
           paddingBottom: spacing['2xl'],
         }}
       >
-        {detail ? renderDetail(detail) : renderList()}
+        <SinkFloat transitionKey={detail ? `detail-${detail.id}` : 'list'}>
+          {detail ? renderDetail(detail) : renderList()}
+        </SinkFloat>
       </div>
     </BottomSheetContainer>
   );

@@ -171,7 +171,11 @@ export type {
 
 // Home Tab Order Sheet
 export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';
-export type { PowerupsCatalogEntry, PowerupsCatalogPropsBase } from './powerups-catalog';
+export type {
+  PowerupsCatalogEntry,
+  PowerupsCatalogEntryDetails,
+  PowerupsCatalogPropsBase,
+} from './powerups-catalog';
 export type { PowerupsFabPropsBase } from './powerups-fab';
 export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 
