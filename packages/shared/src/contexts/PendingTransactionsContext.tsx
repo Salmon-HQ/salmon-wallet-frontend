@@ -15,31 +15,22 @@
  *
  * ## What "done" means, once, for the whole app
  *
- * Two different signals used to both claim to mean "finished", and they
- * disagreed for up to twenty seconds:
+ * Two signals report on one signature, and only one of them is the verdict:
  *
- * 1. **Chain confirmation** — `getSignatureStatuses`, polled here, typically
- *    1–3s. This is the **verdict**: the transaction either landed or it did
- *    not, and nothing after this can change that answer.
+ * 1. **Chain confirmation** — the flow that sent waits for it in the
+ *    foreground (`confirmSolanaSignature`), and the poller here re-asks with
+ *    `getSignatureStatuses` for anything resumed from storage. The
+ *    transaction either landed or it did not.
  * 2. **Indexer settlement** — `settleUntilChanged`, polled by the screen that
- *    signed, ceiling 20s. This is *not* a verdict; it is how long the balance
- *    the user is about to look at takes to catch up.
+ *    signed, ceiling 20s. Not a verdict: how long the balance the user is
+ *    about to look at takes to catch up.
  *
- * **The chain is the answer. The indexer is a stage.** So `status` here flips
- * on the chain's word, and a screen that is still waiting on the indexer is
- * showing the *last stage of the same report*, not a competing one.
- *
- * Which leaves the coherence rule, and it is a rule about *surfaces*, not about
- * either signal: **one signature is reported by one surface at a time.** While
- * a screen in the foreground is reporting a signature, it claims it through
- * `claimForegroundReport`, and `usePendingActivity` withholds that row from the
- * banner. When the screen releases — because it settled, or because the user
- * left — the banner takes the report over. It is never possible for the app to
- * say "processing" and "confirmed" about one signature at the same time.
- *
- * The claim lives here, and the guard lives in `usePendingActivity`, because
- * the same split produced the same bug on three flows (swap, send, NFT send).
- * A guard inside any one screen's hook fixes one of them.
+ * **The chain is the answer. The indexer is a stage.** A flow that already
+ * waited for the chain records its signature here as `confirmed` (owner
+ * ruling, 2026-09-11: the banner appears once the transfer or swap is done,
+ * never "in progress" beside a receipt). A signature enters as `pending` only
+ * when the sender could not wait — and then the poller carries it to a
+ * verdict.
  *
  * Scope: Solana only. Bitcoin and Ethereum sends are not tracked here because
  * there is no cross-chain status lookup in this package yet, and a pending row
@@ -93,24 +84,15 @@ interface PendingTransactionsContextValue {
   /** Everything in flight plus recently resolved entries still being shown. */
   pendingTransactions: PendingTransaction[];
   /**
-   * Start tracking a freshly submitted signature. Idempotent per signature;
-   * ignores non-Solana networks (see module doc).
+   * Start tracking a submitted signature. `status` defaults to `pending`; a
+   * flow that already waited for the chain passes the verdict it saw.
+   * Idempotent per signature; ignores non-Solana networks (see module doc).
    */
-  trackPendingTransaction: (tx: Omit<PendingTransaction, 'status'>) => void;
+  trackPendingTransaction: (
+    tx: Omit<PendingTransaction, 'status'> & { status?: PendingTransactionStatus }
+  ) => void;
   /** Remove an entry the user acknowledged. */
   dismissPendingTransaction: (signature: string) => void;
-  /**
-   * Signatures a foreground screen is currently reporting itself. The banner
-   * withholds these rows so the app never reports one signature twice, in two
-   * states, at once. See the module doc.
-   */
-  foregroundReported: readonly string[];
-  /**
-   * Claim a signature for the screen in the foreground. Returns the release —
-   * call it when the screen stops reporting (settled, errored, or unmounted).
-   * Idempotent per signature; releasing twice is safe.
-   */
-  claimForegroundReport: (signature: string) => () => void;
 }
 
 const PendingTransactionsContext = createContext<PendingTransactionsContextValue | null>(null);
@@ -162,27 +144,17 @@ export function PendingTransactionsProvider({
     pendingRef.current = pendingTransactions;
   }, [pendingTransactions]);
 
-  const trackPendingTransaction = useCallback((tx: Omit<PendingTransaction, 'status'>) => {
-    if (!tx.signature || !isSolanaNetwork(tx.networkId)) return;
-    setPendingTransactions((prev) =>
-      prev.some((p) => p.signature === tx.signature)
-        ? prev
-        : [...prev, { ...tx, status: 'pending' }]
-    );
-  }, []);
-
-  const [foregroundReported, setForegroundReported] = useState<string[]>([]);
-
-  const claimForegroundReport = useCallback((signature: string) => {
-    if (!signature) return () => undefined;
-    setForegroundReported((prev) => (prev.includes(signature) ? prev : [...prev, signature]));
-    let released = false;
-    return () => {
-      if (released) return;
-      released = true;
-      setForegroundReported((prev) => prev.filter((s) => s !== signature));
-    };
-  }, []);
+  const trackPendingTransaction = useCallback(
+    (tx: Omit<PendingTransaction, 'status'> & { status?: PendingTransactionStatus }) => {
+      if (!tx.signature || !isSolanaNetwork(tx.networkId)) return;
+      setPendingTransactions((prev) =>
+        prev.some((p) => p.signature === tx.signature)
+          ? prev
+          : [...prev, { ...tx, status: tx.status ?? 'pending' }]
+      );
+    },
+    []
+  );
 
   const dismissPendingTransaction = useCallback((signature: string) => {
     setPendingTransactions((prev) => prev.filter((p) => p.signature !== signature));
@@ -298,20 +270,8 @@ export function PendingTransactionsProvider({
   }, [resolvedKey]);
 
   const value = useMemo(
-    () => ({
-      pendingTransactions,
-      trackPendingTransaction,
-      dismissPendingTransaction,
-      foregroundReported,
-      claimForegroundReport,
-    }),
-    [
-      pendingTransactions,
-      trackPendingTransaction,
-      dismissPendingTransaction,
-      foregroundReported,
-      claimForegroundReport,
-    ]
+    () => ({ pendingTransactions, trackPendingTransaction, dismissPendingTransaction }),
+    [pendingTransactions, trackPendingTransaction, dismissPendingTransaction]
   );
 
   return (

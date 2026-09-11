@@ -74,6 +74,16 @@ export interface TransactionProposal {
   expiresAt?: string;
   refresh?: () => Promise<TransactionProposal>;
   display: ProposalDisplay;
+  /**
+   * How the pending-activity banner reports this transaction once signed.
+   * Core records the confirmed signature there the moment the receipt shows;
+   * without this, the signature is not reported in the banner at all.
+   */
+  pending?: {
+    kind: 'send' | 'swap';
+    /** Amounts and symbols only — rendered verbatim beside translated copy. */
+    summary?: string;
+  };
 }
 
 export interface SignedResult {

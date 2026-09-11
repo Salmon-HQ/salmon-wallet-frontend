@@ -227,14 +227,15 @@ export function useSendTransaction({
         });
         // First successful send is an activation milestone — reported once per install.
         void trackFirstTime('first_send_completed', STORAGE_KEYS.ANALYTICS_FIRST_SEND);
-        // Return the txId immediately so the UI can show the success screen,
-        // then settle in the background. `settling` stays true until the
-        // indexer reflects the new balance (or the ceiling is hit), letting the
-        // success screen dwell until the user can return to a fresh balance.
+        // `transfer` resolved only once the chain confirmed the signature, so
+        // the receipt can show now; the indexer settles in the background.
+        // `settling` stays true until it reflects the new balance (or the
+        // ceiling is hit), letting the wait dwell until the user can return to
+        // a fresh balance.
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
-        // Record the signature globally before anything screen-owned runs, so
-        // the outcome survives the user leaving, locking, or killing the app.
+        // The banner reports the transfer as done from this moment — the
+        // chain already said so.
         pendingTransactions?.trackPendingTransaction({
           signature: String(result.txId),
           kind: 'send',
@@ -242,11 +243,8 @@ export function useSendTransaction({
           accountId,
           submittedAt: Date.now(),
           summary: `${params.amount} ${params.token.symbol}`,
+          status: 'confirmed',
         });
-        // This screen is now the one surface reporting this signature; the
-        // banner withholds it until the release below. Same guard as swap —
-        // see PendingTransactionsContext's module doc.
-        const releaseReport = pendingTransactions?.claimForegroundReport(String(result.txId));
         setSettling(true);
         settleUntilChanged({
           accountId,
@@ -258,7 +256,6 @@ export function useSendTransaction({
           })
           .finally(() => {
             setSettling(false);
-            releaseReport?.();
           });
         return result;
       } catch (err) {

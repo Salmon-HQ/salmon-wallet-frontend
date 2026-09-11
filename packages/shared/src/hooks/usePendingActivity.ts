@@ -39,32 +39,20 @@ export function usePendingActivity(): UsePendingActivityResult {
   const pendingTx = usePendingTransactionsOptional();
 
   const transactions = pendingTx?.pendingTransactions;
-  const foregroundReported = pendingTx?.foregroundReported;
   const dismissPendingTransaction = pendingTx?.dismissPendingTransaction;
 
   return useMemo(() => {
-    const items: PendingActivityItem[] = [
-      // The coherence guard, and the only place it exists. A signature a
-      // foreground screen is currently reporting is withheld here, so the app
-      // can never say "processing" on the screen and "confirmed" in the banner
-      // about the same transaction. See PendingTransactionsContext's module doc
-      // for which of the two signals is the verdict and which is a stage. This
-      // guard sits in the merge rather than in any screen's hook because the
-      // same split produced the same bug on swap, send and NFT send.
-      ...(transactions ?? [])
-        .filter((tx) => !(foregroundReported ?? []).includes(tx.signature))
-        .map((tx) => ({
-          id: tx.signature,
-          kind: tx.kind as PendingActivityKind,
-          status: tx.status,
-          detail: tx.summary,
-          dismissible: true,
-        })),
-    ];
+    const items: PendingActivityItem[] = (transactions ?? []).map((tx) => ({
+      id: tx.signature,
+      kind: tx.kind as PendingActivityKind,
+      status: tx.status,
+      detail: tx.summary,
+      dismissible: true,
+    }));
 
     return {
       items,
       dismiss: (id: string) => dismissPendingTransaction?.(id),
     };
-  }, [transactions, foregroundReported, dismissPendingTransaction]);
+  }, [transactions, dismissPendingTransaction]);
 }

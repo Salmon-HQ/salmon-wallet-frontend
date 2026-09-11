@@ -311,10 +311,6 @@ export type {
   DerivedAccountCardSkeletonProps,
 } from './DerivedAccountCard';
 
-// TransactionSuccessScreen - the exchange receipt, an alias over ReceiptScreen
-export { TransactionSuccessScreen } from './TransactionSuccessScreen';
-export type { TransactionSuccessScreenProps } from './TransactionSuccessScreen';
-
 // AccountsPanel - Account list management
 export { AccountsPanel } from './AccountsPanel';
 export type { AccountsPanelProps } from './AccountsPanel';

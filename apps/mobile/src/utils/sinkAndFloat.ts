@@ -21,7 +21,7 @@
  * as something leaving and entering water. The acceptance bar: *"tiene que
  * parecer que sale del agua."* So the clock, the distance and the opacity are
  * all re-derived from The Surfacing
- * (`TransactionSuccessScreen/surfacing.ts`, `packages/shared/src/motion`)
+ * (`packages/shared/src/motion`)
  * rather than from any generic motion spec:
  *
  * - **Viscosity.** The float takes `FLOAT_IN_MS` (drift×2 — the band the

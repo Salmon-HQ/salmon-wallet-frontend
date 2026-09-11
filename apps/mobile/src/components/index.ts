@@ -269,8 +269,6 @@ export type {
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 
-export { TransactionSuccessScreen } from './TransactionSuccessScreen';
-
 export { ReceiptScreen } from './ReceiptScreen';
 export type {
   ExchangeReceiptScreenProps,

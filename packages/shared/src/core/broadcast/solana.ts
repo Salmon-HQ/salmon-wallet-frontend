@@ -14,7 +14,7 @@ import {
   partiallySignTransaction,
 } from '@solana/kit';
 import type { Commitment, KeyPairSigner, Signature, TransactionMessageBytes } from '@solana/kit';
-import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
+import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
 
 /** What broadcasting needs from an account: its signer and its RPC clients. */
@@ -35,8 +35,6 @@ export interface SolanaBroadcastOptions {
   /** How long to wait for the signature to reach `commitment`. */
   confirmationTimeoutMs?: number;
 }
-
-const DEFAULT_CONFIRMATION_TIMEOUT_MS = 30_000;
 
 /**
  * Signs and broadcasts one unsigned transaction, then waits for confirmation.
@@ -91,17 +89,11 @@ export async function signAndSendSolanaTransaction(
     })
     .send();
 
-  const confirmRecentSignature = createRecentSignatureConfirmationPromiseFactory({
-    rpc,
-    rpcSubscriptions: account.getRpcSubscriptions(),
-  });
-  await confirmRecentSignature({
-    abortSignal: AbortSignal.timeout(
-      options.confirmationTimeoutMs ?? DEFAULT_CONFIRMATION_TIMEOUT_MS
-    ),
-    commitment,
+  await confirmSolanaSignature(
+    { rpc, rpcSubscriptions: account.getRpcSubscriptions() },
     signature,
-  });
+    { commitment, timeoutMs: options.confirmationTimeoutMs }
+  );
 
   return signature;
 }

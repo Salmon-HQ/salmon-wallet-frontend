@@ -125,12 +125,6 @@ export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
 // Security Panel
 export type { SecurityPanelPropsBase } from './security-panel';
 
-// Transaction Success Screen
-export type {
-  TransactionSuccessScreenProps,
-  TransactionSuccessScreenPropsBase,
-} from './transaction-success-screen';
-
 // Backup Panel
 export type { BackupPanelPropsBase } from './backup-panel';
 

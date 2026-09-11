@@ -1,5 +1,5 @@
 import { address, getAddressEncoder } from '@solana/kit';
-import type { KeyPairSigner } from '@solana/kit';
+import type { KeyPairSigner, Signature } from '@solana/kit';
 import bs58 from 'bs58';
 import {
   createTransfer,
@@ -7,6 +7,7 @@ import {
   type TransferOptions as SolanaTransferOptions,
   type EstimateFeeOptions,
 } from './transfer';
+import { confirmSolanaSignature } from './confirm';
 import { removeDecimals } from '../../utils/decimals';
 import type { FeeEstimateResult } from '../../types/send';
 import type { SolanaNetwork } from '../../types/blockchain';
@@ -130,7 +131,7 @@ export class SolanaAccount extends SolanaReadAccount {
    * @param token - Token mint address (SOL_ADDRESS for native SOL)
    * @param amount - Amount to transfer (human-readable)
    * @param opts - Transfer options (simulate, memo, decimals)
-   * @returns Object containing the transaction ID
+   * @returns Object containing the transaction ID, once the cluster confirms it
    */
   async transfer(
     to: string,
@@ -142,6 +143,15 @@ export class SolanaAccount extends SolanaReadAccount {
       ...opts,
       version: transactionVersionFor(this.network.networkId),
     });
+    // A simulation has no signature to wait for. A real send is not done
+    // until the chain says so: the receipt behind this must never show for a
+    // transaction that did not land.
+    if (!opts?.simulate) {
+      await confirmSolanaSignature(
+        { rpc: this.getRpc(), rpcSubscriptions: this.getRpcSubscriptions() },
+        result.txId as Signature
+      );
+    }
     return { txId: result.txId as string };
   }
 

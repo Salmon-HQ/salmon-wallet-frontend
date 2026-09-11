@@ -87,6 +87,23 @@ describe('PendingTransactionsProvider', () => {
     expect(result.current.pendingTransactions[0].status).toBe('pending');
   });
 
+  it('records a signature the sender already saw confirmed as resolved, without polling', async () => {
+    const getOutcomes = vi.fn(always('pending'));
+    const { result } = setup(getOutcomes);
+    act(() => {
+      result.current.trackPendingTransaction({
+        signature: 'sig-done',
+        kind: 'swap',
+        networkId: NET,
+        submittedAt: Date.now(),
+        status: 'confirmed',
+      });
+    });
+
+    expect(result.current.pendingTransactions[0].status).toBe('confirmed');
+    expect(getOutcomes).not.toHaveBeenCalled();
+  });
+
   it('is idempotent per signature', async () => {
     const { result } = setup(always('pending'));
     await track(result, 'sig-dupe');

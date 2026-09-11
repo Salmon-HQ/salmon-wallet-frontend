@@ -33,7 +33,9 @@ import { ButtonSpinner } from '../Button/ButtonSpinner';
 import type { PendingActivityBannerProps } from './types';
 
 /** The banner sits over every screen. */
-const BANNER_Z_INDEX = 1000;
+// One above the confirmation cover: the banner reports over the receipt, as
+// the mobile banner does from above the whole stack.
+const BANNER_Z_INDEX = 1001;
 
 /**
  * Ink + icon per outcome, so every row carries its state in three channels —

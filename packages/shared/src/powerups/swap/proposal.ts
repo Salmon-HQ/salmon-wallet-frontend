@@ -102,6 +102,7 @@ export function buildSwapProposal(
     transaction: build.transaction,
     expiresAt: build.expiresAt,
     refresh,
+    pending: { kind: 'swap', summary: `${inLabel} → ${outLabel}` },
     display: {
       title: t('swap.review.title'),
       exchange: {

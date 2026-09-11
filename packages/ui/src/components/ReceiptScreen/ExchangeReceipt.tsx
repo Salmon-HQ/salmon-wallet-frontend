@@ -4,26 +4,22 @@
  *
  * The mobile twin is `apps/mobile/src/components/ReceiptScreen/ExchangeReceipt.tsx`;
  * the anatomy, tokens and staged reveal are the same, read from the same
- * `TransactionSuccessScreenProps` contract. DOM alternatives:
+ * `ExchangeReceiptScreenPropsBase` contract. DOM alternatives:
  * - mobile's `Animated.View entering={floatEntering(...)}` (Reanimated) is
  *   the shared kit's own `floatEntering` (`packages/ui/src/motion`), a Web
  *   Animations API call fired from a ref in a `useEffect` — one call per
  *   staged block, same `beat(step)` schedule.
  * - `adjustsFontSizeToFit`/`minimumFontScale` (RN `Text` auto-shrink) has no
  *   DOM text primitive; the amount instead shrinks with a CSS `clamp()` keyed
- *   off a `--amount-chars` custom property, exactly as the legacy MUI
- *   `TransactionSuccessScreen` in this package already solved it.
+ *   off a `--amount-chars` custom property.
  * - `Linking.openURL` becomes `window.open(url, '_blank', 'noopener,noreferrer')`.
  * - `useTabChrome()` (floating tab bar offset, safe-area insets) has no DOM
  *   equivalent — the web app has neither, so the bottom edge is plain
  *   `env(safe-area-inset-bottom, 0px)` and the ending bands are unpadded.
  * - the success haptic (`expo-haptics`) has no DOM equivalent and is
  *   dropped — brief hard rule 4, "No haptics."
- * - there is no shared DOM token mark yet (`TokenLogo` is mobile-only, and
- *   the legacy MUI `TransactionSuccessScreen` keeps its own private copy for
- *   the same reason its own comment gives: consolidating four private copies
- *   is a decision of its own). This component keeps a small local mark for
- *   the same reason, built from tokens/hooks rather than MUI.
+ * - there is no shared DOM token mark yet (`TokenLogo` is mobile-only), so
+ *   this component keeps a small local mark, built from tokens/hooks.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -57,10 +53,9 @@ const LOGO_SIZE = componentSizes.iconSize3XL;
 const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 
 /**
- * Widest per-character advance the amount clamp budgets for, in em — the
- * same figure and the same `clamp()` strategy the legacy MUI
- * `TransactionSuccessScreen` in this package already solved DOM
- * auto-shrink with, in place of RN's `adjustsFontSizeToFit`. Each amount
+ * Widest per-character advance the amount clamp budgets for, in em — a
+ * `clamp()` strategy for DOM auto-shrink, in place of RN's
+ * `adjustsFontSizeToFit`. Each amount
  * sits in a `containerType: inline-size` box so `cqw` reads that box's
  * width, not the viewport's.
  */

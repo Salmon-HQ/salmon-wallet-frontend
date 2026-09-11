@@ -1,14 +1,13 @@
 /**
  * ExchangeReceipt — the graphic receipt: token-mark hero, arrow, rate/fee
- * block, the settling wait. Moved here byte-for-byte from
- * `TransactionSuccessScreen`, which is now a thin alias over
- * `ReceiptScreen tone="exchange"` so `SwapScreen` needs no change.
+ * block, the settling wait. Rendered through `ReceiptScreen tone="exchange"`.
  */
 import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
+import type { ExchangeReceiptScreenProps } from './types';
 import {
   componentSizes,
   fontFamilyNative,
@@ -28,7 +27,6 @@ import {
   vs,
   type Semantic,
 } from '@salmon/shared';
-import type { TransactionSuccessScreenProps } from '@salmon/shared';
 
 import { ArrowDownIcon, CheckIcon } from '../../icons';
 import { floatEntering } from '../../utils/sinkAndFloat';
@@ -87,7 +85,7 @@ export function ExchangeReceipt({
   exchange,
   exchangeRate,
   exchangeFee,
-}: TransactionSuccessScreenProps) {
+}: Omit<ExchangeReceiptScreenProps, 'tone'>) {
   // Every receipt reveals itself top to bottom, one stagger step per element.
   // The two shapes are one rhythm at different lengths: an exchange reads
   // sent -> arrow -> received -> rows, a send or NFT reads status -> amount,

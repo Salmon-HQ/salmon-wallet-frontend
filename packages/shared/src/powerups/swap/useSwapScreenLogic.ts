@@ -13,7 +13,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { SwapToken } from '../../types/swap';
 import type { TokenSelectorToken } from '../../types/ui/token-selector';
-import type { NetworkId } from '../../types/blockchain';
 import {
   SignatureRequestCancelledError,
   type TransactionProposal,
@@ -21,7 +20,6 @@ import {
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
 import { classifyTransactionError } from '../../utils/transaction-errors';
 import { useSettleAfterTx } from '../../query/invalidation';
-import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstSwapCompleted } from '../../analytics';
 import { buildSwap as buildSwapApi } from './api';
 import type { BuildSwapFn } from './api';
@@ -179,7 +177,6 @@ export function useSwapScreenLogic({
 }: UseSwapScreenLogicParams): UseSwapScreenLogicResult {
   const requestSignature = useRequestSignature();
   const settleAfterTx = useSettleAfterTx();
-  const pendingTransactions = usePendingTransactionsOptional();
 
   // ── State ──────────────────────────────────────────────────────────────
 
@@ -396,10 +393,10 @@ export function useSwapScreenLogic({
     // The signature is the only step that can fail for the user. Everything
     // after it is bookkeeping on a swap that already happened, and must never
     // be reported back to them as a failed swap.
-    let signature: string;
     try {
-      // Resolves only after the user has read core's receipt and closed it.
-      ({ signature } = await requestSignature(toProposal(build)));
+      // Resolves only after the user has read core's receipt and closed it;
+      // core itself reports the signature in the pending banner.
+      await requestSignature(toProposal(build));
     } catch (error) {
       setIsConfirming(false);
       if (error instanceof SignatureRequestCancelledError) {
@@ -417,13 +414,6 @@ export function useSwapScreenLogic({
     }
 
     setIsConfirming(false);
-    pendingTransactions?.trackPendingTransaction({
-      signature,
-      kind: 'swap',
-      networkId: SWAP_NETWORK_ID as NetworkId,
-      submittedAt: Date.now(),
-      summary: `${inAmount} ${inToken.symbol} → ${outAmount} ${outToken.symbol}`.trim(),
-    });
     // Anonymous funnel event: no amounts, addresses or mints.
     trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
     void trackFirstSwapCompleted();
@@ -443,10 +433,8 @@ export function useSwapScreenLogic({
     publicKey,
     isConfirming,
     inAmount,
-    outAmount,
     formatUsd,
     requestSignature,
-    pendingTransactions,
     settleAfterTx,
     onNavigateHome,
   ]);

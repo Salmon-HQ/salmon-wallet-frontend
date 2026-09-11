@@ -5,19 +5,15 @@
  * card of rows under two actions) — what `send/success.tsx` first drew and
  * `nft/[id]/success.tsx` now shares. `exchange` is the graphic receipt swap
  * has always rendered (token-mark hero, arrow, rate/fee block) under its
- * `tx-success-*` e2e vocabulary — moved here byte-for-byte from
- * `TransactionSuccessScreen`, which is now a thin alias over this tone so
- * `SwapScreen` needs no change. The two tones do not share a prop shape:
- * `exchange` keeps `TransactionSuccessScreenProps`, the shared contract swap
- * already speaks; `transfer` takes the CORE 07 shape (rows, primary/secondary
- * actions) new callers compose against.
+ * `tx-success-*` e2e vocabulary, now core's receipt after a signed proposal.
+ * The two tones do not share a prop shape: `exchange` takes
+ * `ExchangeReceiptScreenPropsBase`; `transfer` takes the CORE 07 shape (rows,
+ * primary/secondary actions) new callers compose against.
  *
  * `TransferReceipt` is required lazily rather than imported: it pulls in
  * `Card`/`IconBubble`, which `ExchangeReceipt` (and every swap render) has no
  * business loading. A static import would load both subtrees for every
- * consumer of either tone, including `TransactionSuccessScreen`'s own test
- * suite, which mocks `@salmon/shared`'s `semantic` down to what the exchange
- * receipt reads.
+ * consumer of either tone.
  */
 import React from 'react';
 

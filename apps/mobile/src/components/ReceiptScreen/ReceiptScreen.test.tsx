@@ -3,11 +3,9 @@
  *
  * `transfer` proves the CORE 07 composition (seal, title, body, receipt
  * card of rows, two actions) renders from the crisp prop shape. `exchange`
- * proves the same `ReceiptScreen` delegates to the graphic receipt
- * `TransactionSuccessScreen` is a thin alias over — its own suite
- * (`TransactionSuccessScreen.test.tsx`) is the exhaustive one; this case only
- * has to show the `tone="exchange"` branch renders that receipt's e2e
- * vocabulary when driven straight through `ReceiptScreen`.
+ * proves the same `ReceiptScreen` delegates to the graphic receipt: the
+ * `tone="exchange"` branch renders that receipt's e2e vocabulary when driven
+ * straight through `ReceiptScreen`.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';

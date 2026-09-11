@@ -127,7 +127,7 @@ const selectToken = (popup: Page, symbol: string) =>
     .first()
     .click();
 
-/** Dismiss a TransactionSuccessScreen. Continue is disabled while the tx settles. */
+/** Dismiss the receipt. Continue is disabled while the tx settles. */
 async function dismissSuccess(popup: Page): Promise<void> {
   const cont = popup.getByTestId('tx-success-continue-button');
   await expect(cont).toBeVisible({ timeout: CONFIRM_TIMEOUT_MS });

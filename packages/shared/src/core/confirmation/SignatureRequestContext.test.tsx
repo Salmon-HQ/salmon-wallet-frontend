@@ -4,7 +4,12 @@
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SignatureRequestProvider, useSignatureRequestContext } from './SignatureRequestContext';
+import {
+  PendingTransactionsProvider,
+  usePendingTransactions,
+} from '../../contexts/PendingTransactionsContext';
 import { useSignatureRequestHost } from './useSignatureRequestHost';
 import { NoSigningAccountError, SignatureRequestCancelledError } from './types';
 import type { TransactionProposal } from './types';
@@ -78,6 +83,49 @@ describe('SignatureRequestProvider', () => {
 
     await expect(result).resolves.toEqual({ signature: 'sig-1' });
     expect(view.result.current.ctx.receipt).toBeNull();
+  });
+
+  it('reports the signed transaction in the pending banner as confirmed, when the receipt shows', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const getOutcomes = vi.fn(async () => ({}));
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <PendingTransactionsProvider getOutcomes={getOutcomes} pollIntervalMs={10_000}>
+          <SignatureRequestProvider
+            account={ACCOUNT}
+            signProposal={vi.fn(async () => ({ signature: 'sig-1' })) as never}
+          >
+            {children}
+          </SignatureRequestProvider>
+        </PendingTransactionsProvider>
+      </QueryClientProvider>
+    );
+    const view = renderHook(
+      () => ({ ctx: useSignatureRequestContext(), pending: usePendingTransactions() }),
+      { wrapper }
+    );
+
+    act(() => {
+      void view.result.current.ctx.requestSignature(
+        proposal({ pending: { kind: 'swap', summary: '1 SOL → 200 USDC' } })
+      );
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+
+    expect(view.result.current.ctx.receipt?.signature).toBe('sig-1');
+    expect(view.result.current.pending.pendingTransactions).toEqual([
+      expect.objectContaining({
+        signature: 'sig-1',
+        kind: 'swap',
+        networkId: 'solana-mainnet',
+        summary: '1 SOL → 200 USDC',
+        status: 'confirmed',
+      }),
+    ]);
+    // Already a verdict: nothing left for the poller to ask.
+    expect(getOutcomes).not.toHaveBeenCalled();
   });
 
   it('ignores a cancel once the transaction is signed and the receipt is up', async () => {

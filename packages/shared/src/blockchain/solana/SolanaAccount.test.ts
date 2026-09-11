@@ -7,6 +7,10 @@ vi.mock('./domains', () => ({
   getPublicKeyFromDomain: vi.fn(),
 }));
 
+vi.mock('./confirm', () => ({
+  confirmSolanaSignature: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('./transfer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./transfer')>()),
   createTransfer: vi.fn().mockResolvedValue({ txId: 'sig' }),

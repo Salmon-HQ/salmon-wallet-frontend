@@ -27,6 +27,7 @@ import React, {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
 import {
@@ -101,6 +102,7 @@ export function SignatureRequestProvider({
   const [pending, setPending] = useState<PendingSignatureRequest | null>(null);
   const [receipt, setReceipt] = useState<SignatureRequestReceipt | null>(null);
   const parkedRef = useRef<ParkedRequest | null>(null);
+  const pendingTransactions = usePendingTransactionsOptional();
   const accountRef = useRef(account);
   useEffect(() => {
     accountRef.current = account;
@@ -139,6 +141,20 @@ export function SignatureRequestProvider({
 
     try {
       const result = await signProposal(signer, parked.proposal);
+      // Signing waited for the chain, so the banner reports the transaction as
+      // done from the same moment the receipt shows — never "in progress"
+      // beside it.
+      const { pending: report, networkId } = parked.proposal;
+      if (report) {
+        pendingTransactions?.trackPendingTransaction({
+          signature: result.signature,
+          kind: report.kind,
+          networkId,
+          submittedAt: Date.now(),
+          summary: report.summary,
+          status: 'confirmed',
+        });
+      }
       // The request stays parked: the window now shows the receipt, and the
       // Powerup hears nothing until the user has closed it.
       parked.result = result;
@@ -150,7 +166,7 @@ export function SignatureRequestProvider({
       const message = error instanceof Error ? error.message : String(error);
       setPending((prev) => (prev ? { ...prev, phase: 'review', error: message } : prev));
     }
-  }, [settle, signProposal]);
+  }, [settle, signProposal, pendingTransactions]);
 
   const cancel = useCallback(() => {
     const parked = parkedRef.current;
