@@ -22,7 +22,13 @@ import { join } from 'node:path';
  * on purpose: the bundler escapes non-ASCII copy, and the attribution
  * ("Powered by 0x") arrives from the backend at runtime, never in code.
  */
-const MARKERS = ['ft/swap/build', 'swap.catalog', 'Swap Review', 'Tolerancia de Deslizamiento'];
+const MARKERS = [
+  'ft/swap/build',
+  'swap.catalog',
+  'Swap Review',
+  'Tolerancia de Deslizamiento',
+  'kamino-positions.catalog',
+];
 
 const [, , dir, ...flags] = process.argv;
 if (!dir) {

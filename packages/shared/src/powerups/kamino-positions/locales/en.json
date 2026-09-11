@@ -1,0 +1,10 @@
+{
+  "catalog": {
+    "name": "Kamino Positions",
+    "description": "See your Kamino lending and liquidity positions",
+    "about": "Reads the positions this address holds on Kamino and shows them in one place. It only looks: nothing is signed and nothing moves.",
+    "actions": {
+      "positions": "See every Kamino position of the active wallet"
+    }
+  }
+}

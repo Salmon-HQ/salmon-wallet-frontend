@@ -38,6 +38,7 @@ import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { PlusMinusGlyph } from '../PlusMinusGlyph';
+import { WarningNotice } from '../WarningNotice';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
 import { SettingsPanelContent } from '../SettingsPanelContent';
@@ -163,6 +164,16 @@ export function PowerupsPage({
               </IconBubble>
             }
           />
+
+          {/* Switched off by the backend: one state per reason, before anything
+              else, so the user reads why the surface is gone (spec 029 §5.2). */}
+          {entry.disabledReason ? (
+            <WarningNotice
+              tone="warning"
+              testID={`powerups-disabled-${entry.disabledReason}`}
+              title={t(`powerups.disabled.${entry.disabledReason}`)}
+            />
+          ) : null}
 
           <div style={blockStyle}>
             <SectionLabel variant="caps">{t('powerups.detail.about')}</SectionLabel>

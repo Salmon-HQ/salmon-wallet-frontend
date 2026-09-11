@@ -153,6 +153,24 @@ describe('useHomePowerupsCatalog', () => {
     expect(install).not.toHaveBeenCalled();
   });
 
+  it('keeps an installed, switched-off Powerup listed with its reason', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupsCatalog({
+        powerupTabs: [],
+        installed: ['swap'],
+        install: vi.fn(),
+        developerNetworks: false,
+        networkId: 'solana-mainnet',
+        powerups: POWERUPS,
+        getCatalog: getPowerupCatalog,
+        allowlist: { enabled: [], disabled: { swap: 'maintenance' } },
+      })
+    );
+    const swap = result.current.catalogEntries.find((entry) => entry.id === 'swap');
+    expect(swap?.installed).toBe(true);
+    expect(swap?.disabledReason).toBe('maintenance');
+  });
+
   it('installs only a real Powerup id', () => {
     const { result, install } = setup();
     act(() => result.current.handleInstall('swap'));

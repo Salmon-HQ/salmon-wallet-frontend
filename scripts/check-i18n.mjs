@@ -23,7 +23,10 @@ function flatten(obj, prefix = '', out = {}) {
 
 // A Powerup's copy lives next to the Powerup (spec 027 §3) and is merged
 // under its namespace at runtime; the check reads it the same way.
-const POWERUP_LOCALES = [['swap', 'packages/shared/src/powerups/swap/locales']];
+const POWERUP_LOCALES = [
+  ['swap', 'packages/shared/src/powerups/swap/locales'],
+  ['kamino-positions', 'packages/shared/src/powerups/kamino-positions/locales'],
+];
 function loadLocale(lang) {
   const base = readJson(`packages/shared/src/locales/${lang}/translation.json`);
   for (const [namespace, dir] of POWERUP_LOCALES) base[namespace] = readJson(`${dir}/${lang}.json`);

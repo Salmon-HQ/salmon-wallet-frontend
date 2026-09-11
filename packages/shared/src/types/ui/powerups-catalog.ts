@@ -15,6 +15,12 @@ export interface PowerupsCatalogEntry {
   tier: 'core' | 'community';
   /** Whether this device has it installed — the detail shows `−` instead of `+`. */
   installed: boolean;
+  /**
+   * Set when the backend has switched the Powerup off (spec 029 §5.2). Only
+   * an installed one is listed in that state: it stays so the user can read
+   * why and remove it; a new install is not offered.
+   */
+  disabledReason?: 'region' | 'maintenance' | 'deprecated';
   /** What the detail says about it beyond the one-line description. */
   details: PowerupsCatalogEntryDetails;
 }

@@ -64,6 +64,8 @@ export interface PowerupCatalogParams {
    * ids are offered. Absent from the list means not offered, not mountable.
    */
   allowedIds: readonly string[];
+  /** The switched-off ids and why; an installed one stays listed with its reason. */
+  disabledReasons?: Readonly<Record<string, 'region' | 'maintenance' | 'deprecated'>>;
 }
 
 export function getPowerupCatalog({
@@ -71,15 +73,20 @@ export function getPowerupCatalog({
   networkId,
   installedIds,
   allowedIds,
+  disabledReasons = {},
 }: PowerupCatalogParams): PowerupsCatalogEntry[] {
   const real = POWERUPS.filter(
-    (entry) => isPowerupOnNetwork(entry, networkId) && allowedIds.includes(entry.id)
+    (entry) =>
+      isPowerupOnNetwork(entry, networkId) &&
+      (allowedIds.includes(entry.id) ||
+        (installedIds.includes(entry.id) && entry.id in disabledReasons))
   ).map((entry): PowerupsCatalogEntry => ({
     id: entry.id,
     nameKey: entry.nameKey,
     descriptionKey: entry.descriptionKey,
     tier: entry.tier,
     installed: installedIds.includes(entry.id),
+    disabledReason: disabledReasons[entry.id],
     details: {
       aboutKey: entry.aboutKey,
       actionKeys: entry.actionKeys,

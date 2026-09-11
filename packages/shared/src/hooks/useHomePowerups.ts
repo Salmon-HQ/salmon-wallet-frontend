@@ -54,6 +54,8 @@ export function useHomePowerupTabs({
       powerups
         .filter(
           (entry) =>
+            // A read-only Powerup with no Home surface is installed, not tabbed.
+            entry.entries.tab !== undefined &&
             installed.includes(entry.id) &&
             (allowlist.enabled.includes(entry.id) || entry.id in allowlist.disabled)
         )
@@ -116,6 +118,7 @@ export function useHomePowerupsCatalog({
         networkId,
         installedIds: installed,
         allowedIds: allowlist.enabled,
+        disabledReasons: allowlist.disabled,
       }),
     [getCatalog, developerNetworks, networkId, installed, allowlist]
   );

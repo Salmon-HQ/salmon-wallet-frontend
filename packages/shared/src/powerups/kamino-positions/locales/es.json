@@ -1,0 +1,10 @@
+{
+  "catalog": {
+    "name": "Posiciones en Kamino",
+    "description": "Mirá tus posiciones de préstamo y liquidez en Kamino",
+    "about": "Lee las posiciones que esta dirección tiene en Kamino y las muestra en un solo lugar. Sólo mira: no firma nada y nada se mueve.",
+    "actions": {
+      "positions": "Ver todas las posiciones en Kamino de la billetera activa"
+    }
+  }
+}
