@@ -48,28 +48,35 @@ export function AmountEntryCard({
     <Card
       padding="lg"
       gap={spacing.base}
-      style={[styles.card, focused && { borderColor: semantic.accent.ink }, style]}
+      style={[focused && { borderColor: semantic.accent.ink }, style]}
       testID={testID}
     >
-      <View style={styles.row}>
-        {loading ? (
-          <View style={styles.loading}>
+      {/* The field spans the card and centres its text, so the number, the
+          placeholder and the wait all sit on one centre line and the card
+          never changes shape between them. The input stays mounted while a
+          quote loads; the wait floats over it. */}
+      <View style={styles.field}>
+        <TextInput
+          testID={testID ? `${testID}-input` : undefined}
+          style={[styles.input, loading && styles.inputHidden]}
+          placeholder={placeholder}
+          placeholderTextColor={semantic.text.tertiary}
+          value={value}
+          onChangeText={(text) => onChangeValue(sanitizeDecimalInput(text))}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          editable={editable && !loading}
+          keyboardType="decimal-pad"
+          autoCorrect={false}
+        />
+        {loading && (
+          <View
+            style={styles.loading}
+            pointerEvents="none"
+            testID={testID ? `${testID}-loading` : undefined}
+          >
             <ActivityIndicator size="large" color={semantic.text.secondary} />
           </View>
-        ) : (
-          <TextInput
-            testID={testID ? `${testID}-input` : undefined}
-            style={styles.input}
-            placeholder={placeholder}
-            placeholderTextColor={semantic.text.tertiary}
-            value={value}
-            onChangeText={(text) => onChangeValue(sanitizeDecimalInput(text))}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            editable={editable}
-            keyboardType="decimal-pad"
-            autoCorrect={false}
-          />
         )}
       </View>
       {subtext !== undefined && (
@@ -83,26 +90,13 @@ export function AmountEntryCard({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    card: {
-      alignItems: 'center',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: s(spacing.sm),
-    },
-    // The wait stands where the number will: centred, on the number's line.
-    loading: {
-      flex: 1,
-      minWidth: s(80),
-      height: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
-      alignItems: 'center',
+    field: {
+      alignSelf: 'stretch',
       justifyContent: 'center',
     },
     input: {
       ...TABULAR,
-      flex: 1,
-      minWidth: s(80),
+      alignSelf: 'stretch',
       fontSize: s(AMOUNT_ENTRY_FONT),
       lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
       fontFamily: fontFamilyNative.bold,
@@ -110,8 +104,21 @@ const stylesFor = (t: Semantic) =>
       textAlign: 'center',
       paddingVertical: 0,
     },
+    inputHidden: {
+      opacity: 0,
+    },
+    loading: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     subtext: {
       ...TABULAR,
+      alignSelf: 'center',
       fontSize: s(fontSize.mono),
       fontFamily: fontFamilyNative.medium,
       color: t.text.secondary,

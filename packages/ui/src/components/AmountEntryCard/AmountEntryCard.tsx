@@ -11,7 +11,6 @@ import {
   fontWeight,
   lineHeight,
   sanitizeDecimalInput,
-  spacing,
   tabularNums,
 } from '@salmon/shared';
 
@@ -43,21 +42,57 @@ export function AmountEntryCard({
       radius="xl"
       className={editable ? FIELD_SHELL_CLASS : undefined}
       style={{
-        alignItems: 'center',
         ...(focused ? { borderColor: semantic.accent.ink } : {}),
         ...style,
       }}
       testID={testID}
     >
-      <div
-        style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}
-      >
-        {loading ? (
-          <PendingValue pending style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
-            {/* The wait stands where the number will: centred, at the number's size. */}
+      {/* The field spans the card and centres its text, so the number, the
+          placeholder and the wait all sit on one centre line and the card
+          never changes shape between them. The input stays mounted while a
+          quote loads; the wait floats over it. */}
+      <div style={{ position: 'relative', display: 'flex', alignSelf: 'stretch' }}>
+        <input
+          data-testid={testID ? `${testID}-input` : undefined}
+          inputMode="decimal"
+          placeholder={placeholder}
+          value={value}
+          readOnly={!editable || loading}
+          onChange={(event) => onChangeValue(sanitizeDecimalInput(event.target.value))}
+          autoCorrect="off"
+          autoComplete="off"
+          style={{
+            ...tabularNums.css,
+            flex: 1,
+            minWidth: 0,
+            border: 'none',
+            ...focusRingNone,
+            background: 'transparent',
+            padding: 0,
+            fontSize: AMOUNT_ENTRY_FONT,
+            lineHeight: `${AMOUNT_ENTRY_FONT * lineHeight.snug}px`,
+            fontFamily: fontFamily.sans,
+            fontWeight: fontWeight.bold,
+            color: semantic.text.primary,
+            textAlign: 'center',
+            opacity: loading ? 0 : 1,
+          }}
+        />
+        {loading && (
+          <PendingValue
+            pending
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
             <span
+              data-testid={testID ? `${testID}-loading` : undefined}
               style={{
-                display: 'block',
                 fontFamily: fontFamily.sans,
                 fontSize: AMOUNT_ENTRY_FONT,
                 lineHeight: `${AMOUNT_ENTRY_FONT * lineHeight.snug}px`,
@@ -68,32 +103,6 @@ export function AmountEntryCard({
               …
             </span>
           </PendingValue>
-        ) : (
-          <input
-            data-testid={testID ? `${testID}-input` : undefined}
-            inputMode="decimal"
-            placeholder={placeholder}
-            value={value}
-            readOnly={!editable}
-            onChange={(event) => onChangeValue(sanitizeDecimalInput(event.target.value))}
-            autoCorrect="off"
-            autoComplete="off"
-            style={{
-              ...tabularNums.css,
-              flex: 1,
-              minWidth: 80,
-              border: 'none',
-              ...focusRingNone,
-              background: 'transparent',
-              padding: 0,
-              fontSize: AMOUNT_ENTRY_FONT,
-              lineHeight: `${AMOUNT_ENTRY_FONT * lineHeight.snug}px`,
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.bold,
-              color: semantic.text.primary,
-              textAlign: 'center',
-            }}
-          />
         )}
       </div>
       {subtext !== undefined && (
@@ -101,6 +110,7 @@ export function AmountEntryCard({
           data-testid={testID ? `${testID}-fiat` : undefined}
           style={{
             ...tabularNums.css,
+            alignSelf: 'center',
             fontSize: fontSize.mono,
             fontFamily: fontFamily.sans,
             fontWeight: fontWeight.medium,
