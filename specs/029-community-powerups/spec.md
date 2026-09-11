@@ -1,6 +1,6 @@
 # Feature Specification: Community Powerups — a manifest, a pull request, no plugin runtime
 
-**Spec dir** `029-community-powerups` · **Created** 2026-09-11 · **Status**: Draft for owner sign-off, not scheduled. Builds on `027-powerups-boundary` (implemented for §1–3 on `feat/swap-0x`); does not restate it.
+**Spec dir** `029-community-powerups` · **Created** 2026-09-11 · **Status**: Owner-approved 2026-09-11 (§8 answers), not scheduled — build hold stands. Builds on `027-powerups-boundary` (implemented for §1–3 on `feat/swap-0x`); does not restate it.
 
 Source of intent: the owner's model, approved verbatim. This document records that model; it does not redesign it. Backend counterpart: the `salmon-wallet-backend` session mirrors §5 before either side implements.
 
@@ -84,13 +84,15 @@ Tier does **not** decide disclosure. Custody and data exposure do: a community r
 
 The client maps this to `TransactionProposal` exactly as `powerups/swap/proposal.ts` does today, and hands it to `requestSignature`. There is no execute step: the backend never receives signed bytes.
 
-**Open**: `display` rows as keys+params means the backend must know the key namespace a Powerup owns. The alternative — the Powerup's own client code building the rows from typed response fields, as Swap does — keeps copy in the repo and is the lazier reading. Owner/backend decide (§8).
+**Decided (owner, 2026-09-11)**: the CLIENT builds the confirmation rows from typed response fields, exactly as `powerups/swap/proposal.ts` does; the backend sends no translation keys. The `display` row above is therefore read as "the typed fields the rows are built from", not as pre-shaped rows.
+
+The response also carries **`contributor: { name, url } | null`** — who authored the Powerup, from the registry entry Salmon maintainers keep — rendered next to the data-provider `attribution` on the confirmation.
 
 ### 5.2 Kill switch
 
-`GET /v1/networks` gains `powerups: string[]` per network — the ids enabled on that network. This is spec 027 §4's allowlist, in its narrow form: a list, not a map. Rules:
+`GET /v1/networks` gains, per network, `powerups: { id: string; enabled: boolean; reason?: 'region' | 'maintenance' | 'deprecated' }[]` — spec 027 §4's allowlist, with the reason a disabled Powerup shows (owner, 2026-09-11: with a reason code). Rules:
 
-- A Powerup absent from the list for the active network is not offered and not mountable.
+- A Powerup absent from the list, or listed with `enabled: false`, is not offered and not mountable; a disabled one that the device has installed shows its `reason` copy in place of its surface (`powerups.disabled.region` / `.maintenance` / `.deprecated`, EN+ES), never a blank tab.
 - **Fail closed**: an unavailable or unparseable field means no Powerups, not all Powerups.
 - A stored reference to a now-disabled Powerup (a restored Home sub-tab) falls back to Home rather than crashing.
 - `/v1/networks` is CloudFront-cached and region-agnostic. Region is decided per request at build time, not here.
@@ -137,13 +139,15 @@ locales: 'swap', entries: { tab: 'swap' }
 
 `registry.ts` imports it instead of declaring the entry inline. Files, tests, locales, the API service, the proposal builder and both twins stay exactly where they are. Swap keeps calling `GET /v1/{networkId}/ft/swap/build` — §5.1's generic path is for new Powerups; migrating Swap onto it buys nothing and is explicitly not in scope.
 
-## 8. Open questions
+## 8. Decisions (owner, 2026-09-11, relayed by the backend session)
 
-1. `display` as translation keys from the backend vs the Powerup's own client-side proposal builder (§5.1) — the second keeps copy in-repo and matches Swap; the first is needed only if a Powerup's rows are backend-driven.
-2. Does `powerups: string[]` in `/v1/networks` need a reason code for a disabled Powerup (maintenance vs retired), or is silence enough?
-3. Where does a community contributor's attribution live in the catalogue — a manifest `author` field, or only the tier badge?
-4. Is `install` per device or per wallet (today: `installedIds` is device state)?
-5. Does a read-only Powerup's third-party call need a per-endpoint kill switch, or is removing the Powerup in a release enough?
+1. Confirmation rows: the client builds them from typed fields, as Swap does. The backend sends no i18n keys.
+2. A disabled Powerup carries a reason code; the allowlist is `powerups: [{ id, enabled, reason? }]` (§5.2).
+3. Contributor attribution: the build response carries `contributor: { name, url }` from the registry entry, shown beside the data-provider attribution (§5.1); the catalogue detail's "Made by" row reads the same source.
+4. Install scope: per device (local storage), as today. No server-side persistence per public key for now.
+5. Kill switch for read-only Powerups: by id via the allowlist only. No per-endpoint switch.
+
+Under discussion backend-side, nothing to change here yet: contributors should never need to touch the backend repo — a tx-building Powerup gets its bytes from Salmon through a registry entry Salmon maintainers add.
 
 ## Non-goals
 
