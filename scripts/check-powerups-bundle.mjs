@@ -28,6 +28,7 @@ const MARKERS = [
   'Swap Review',
   'Tolerancia de Deslizamiento',
   'kamino-positions.catalog',
+  'memo.catalog',
 ];
 
 const [, , dir, ...flags] = process.argv;

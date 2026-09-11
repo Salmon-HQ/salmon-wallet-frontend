@@ -289,6 +289,7 @@ export type {
   SwapScreenPropsBase,
   SwapScreenLogic,
 } from './swap-screen';
+export type { MemoScreenPropsBase } from './memo-screen';
 
 // Core's confirmation screen (spec 027 §2)
 export type {

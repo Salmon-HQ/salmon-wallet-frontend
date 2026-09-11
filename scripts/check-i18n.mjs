@@ -26,6 +26,7 @@ function flatten(obj, prefix = '', out = {}) {
 const POWERUP_LOCALES = [
   ['swap', 'packages/shared/src/powerups/swap/locales'],
   ['kamino-positions', 'packages/shared/src/powerups/kamino-positions/locales'],
+  ['memo', 'packages/shared/src/powerups/memo/locales'],
 ];
 function loadLocale(lang) {
   const base = readJson(`packages/shared/src/locales/${lang}/translation.json`);

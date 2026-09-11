@@ -6,6 +6,7 @@
 import type { ComponentType } from 'react';
 import type { PowerupsCatalogProps } from '../components/PowerupsCatalog';
 import { PowerupsCatalog as PowerupsCatalogImpl } from '../components/PowerupsCatalog';
+import MemoTabImpl from '../screens/MemoTab';
 import SwapTabImpl from '../screens/SwapTab';
 
 export {
@@ -27,5 +28,7 @@ export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = Power
 
 /** An installed Powerup's Home surface, by id. Home never names one itself. */
 export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null {
-  return id === 'swap' ? SwapTabImpl : null;
+  if (id === 'swap') return SwapTabImpl;
+  if (id === 'memo') return MemoTabImpl;
+  return null;
 }

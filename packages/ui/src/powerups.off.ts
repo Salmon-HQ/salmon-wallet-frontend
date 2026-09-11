@@ -4,6 +4,7 @@
  */
 import type { ComponentType } from 'react';
 import type { PowerupsPageProps } from './components/PowerupsPage';
+import type { MemoPageProps } from './components/MemoPage';
 import type { SwapPageProps } from './components/SwapPage';
 
 export {
@@ -13,7 +14,8 @@ export {
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';
 export type { PowerupEntry } from '@salmon/shared/powerups';
-export type { PowerupsPageProps, SwapPageProps };
+export type { MemoPageProps, PowerupsPageProps, SwapPageProps };
 
 export const PowerupsPage: ComponentType<PowerupsPageProps> | null = null;
 export const SwapPage: ComponentType<SwapPageProps> | null = null;
+export const MemoPage: ComponentType<MemoPageProps> | null = null;

@@ -28,7 +28,7 @@ import { useHomeTabOrder } from './useHomeTabOrder';
  * `swap` only once the Swap Powerup is installed on this device and the
  * screen stands on a network it acts on (`powerupTabs`).
  */
-export type HomeSubTabKey = 'portfolio' | 'nfts' | 'swap';
+export type HomeSubTabKey = 'portfolio' | 'nfts' | 'swap' | 'memo';
 
 /**
  * Every key Home can draw, in the order it would use if the user had never
@@ -36,7 +36,7 @@ export type HomeSubTabKey = 'portfolio' | 'nfts' | 'swap';
  * arrangement survives an uninstall; whether it is OFFERED is decided per
  * render from `powerupTabs`.
  */
-export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts', 'swap'];
+export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts', 'swap', 'memo'];
 
 /** An installed Powerup's Home surface, as the app hands it to the shell. */
 export interface HomePowerupTab {

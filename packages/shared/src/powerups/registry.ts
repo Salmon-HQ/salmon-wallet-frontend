@@ -7,6 +7,7 @@
  */
 import type { PowerupEntry, PowerupId } from './manifest';
 import { kaminoPositionsManifest } from './kamino-positions/manifest';
+import { memoManifest } from './memo/manifest';
 import { swapManifest } from './swap/manifest';
 
 export type {
@@ -17,7 +18,11 @@ export type {
   PowerupTier,
 } from './manifest';
 
-export const POWERUPS: readonly PowerupEntry[] = [swapManifest, kaminoPositionsManifest];
+export const POWERUPS: readonly PowerupEntry[] = [
+  swapManifest,
+  kaminoPositionsManifest,
+  memoManifest,
+];
 
 export function getPowerup(id: PowerupId): PowerupEntry | undefined {
   return POWERUPS.find((entry) => entry.id === id);

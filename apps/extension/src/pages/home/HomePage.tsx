@@ -67,6 +67,7 @@ import {
   PowerupsPage,
   SwapPage,
   getPowerupCatalog,
+  MemoPage,
 } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
@@ -866,6 +867,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     tone="empty"
                     testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
                     title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+                  />
+                ) : MemoPage && effectiveSubTab === 'memo' && activeBlockchainAccount ? (
+                  <MemoPage
+                    publicKey={activeBlockchainAccount.getReceiveAddress()}
+                    networkId={networkId ?? null}
+                    onNavigateHome={() => setActiveSubTab('portfolio')}
                   />
                 ) : SwapPage && effectiveSubTab === 'swap' && activeBlockchainAccount ? (
                   // The Swap Powerup's own surface. The confirmation is core's

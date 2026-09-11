@@ -1,0 +1,25 @@
+{
+  "catalog": {
+    "name": "Memo",
+    "description": "Escribí una nota corta on-chain",
+    "about": "Escribe una nota corta en Solana con el programa Memo, firmada por tu billetera. Es el Powerup de referencia: la transacción más simple que Salmon puede armar para vos y que vos podés firmar.",
+    "actions": {
+      "write": "Escribir una nota de hasta 256 bytes on-chain"
+    }
+  },
+  "note_label": "Tu nota",
+  "note_placeholder": "gm desde Salmon",
+  "sign": "Escribir memo",
+  "review": {
+    "title": "Revisión del memo",
+    "note": "Nota",
+    "size": "Tamaño",
+    "bytes": "{{count}} bytes"
+  },
+  "pending": "Escribiendo memo",
+  "complete": "Memo escrito",
+  "errors": {
+    "tooLong": "La nota tiene más de 256 bytes.",
+    "buildFailed": "No se pudo preparar el memo. Probá de nuevo."
+  }
+}

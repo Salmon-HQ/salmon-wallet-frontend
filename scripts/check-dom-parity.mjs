@@ -68,6 +68,7 @@ export const MAP = {
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
   SwapScreen: ['SwapPage'],
+  MemoScreen: ['MemoPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
   SettingsSelectors: [

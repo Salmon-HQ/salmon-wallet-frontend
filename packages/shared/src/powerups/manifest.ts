@@ -10,7 +10,7 @@
  */
 import type { SolanaNetworkId } from '../types/blockchain';
 
-export type PowerupId = 'swap' | 'kamino-positions';
+export type PowerupId = 'swap' | 'kamino-positions' | 'memo';
 
 /** Origin only: who wrote it. It never decides the disclosure (spec 029 §4). */
 export type PowerupTier = 'core' | 'community';

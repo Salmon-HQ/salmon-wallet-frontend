@@ -108,6 +108,7 @@ vi.mock('@salmon/ui/powerups', () => ({
   getPowerupCatalog: () => [],
   PowerupsPage: () => null,
   SwapPage: () => null,
+  MemoPage: () => null,
 }));
 
 const NETWORKS = [

@@ -1,0 +1,25 @@
+{
+  "catalog": {
+    "name": "Memo",
+    "description": "Write a short note on-chain",
+    "about": "Writes a short note to Solana with the Memo program, signed by your wallet. It is the reference Powerup: the simplest transaction Salmon can build for you and you can sign.",
+    "actions": {
+      "write": "Write a note of up to 256 bytes on-chain"
+    }
+  },
+  "note_label": "Your note",
+  "note_placeholder": "gm from Salmon",
+  "sign": "Write memo",
+  "review": {
+    "title": "Memo Review",
+    "note": "Note",
+    "size": "Size",
+    "bytes": "{{count}} bytes"
+  },
+  "pending": "Writing memo",
+  "complete": "Memo written",
+  "errors": {
+    "tooLong": "The note is longer than 256 bytes.",
+    "buildFailed": "Couldn't prepare the memo. Try again."
+  }
+}
