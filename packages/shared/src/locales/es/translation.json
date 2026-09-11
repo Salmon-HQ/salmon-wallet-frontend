@@ -219,7 +219,7 @@
     "developer_networks": "Redes de Desarrollo",
     "developer_networks_description": "Mostrar redes testnet y devnet",
     "unverified_tokens": "Mostrar tokens no verificados",
-    "unverified_tokens_description": "Mostrá los tokens y coleccionables que no fueron verificados, spam incluido. Desactivado por defecto.",
+    "unverified_tokens_description": "Mostrá los tokens y coleccionables no verificados o de baja capitalización, spam incluido. Desactivado por defecto.",
     "analytics": "Datos de Uso",
     "analytics_description": "Compartí estadísticas de uso pseudónimas para ayudar a mejorar Salmon. Nunca incluye direcciones, balances ni montos. Desactivado por defecto.",
     "analytics_prompt_title": "Ayudá a mejorar Salmon",
