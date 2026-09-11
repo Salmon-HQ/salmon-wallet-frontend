@@ -29,7 +29,6 @@ export function AmountEntryCard({
   onChangeValue,
   editable = true,
   placeholder = '0',
-  trailing,
   subtext,
   loading = false,
   focused,
@@ -89,13 +88,10 @@ export function AmountEntryCard({
               fontFamily: fontFamily.sans,
               fontWeight: fontWeight.bold,
               color: semantic.text.primary,
-              // No trailing control: the card holds the number alone, so it
-              // centres rather than right-aligning next to nothing.
-              textAlign: trailing ? 'right' : 'center',
+              textAlign: 'center',
             }}
           />
         )}
-        {trailing}
       </div>
       {subtext !== undefined && (
         <span

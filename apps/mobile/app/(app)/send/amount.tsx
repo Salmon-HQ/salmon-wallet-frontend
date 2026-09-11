@@ -24,15 +24,13 @@
  * transaction-path change and is not made here. See the spec report.
  */
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   SOL_CONSTANTS,
   formatTokenAmount,
-  fontFamilyNative,
-  fontSize,
   getShortAddress,
   getSolShortfall,
   useFieldFocus,
@@ -209,7 +207,6 @@ export default function SendAmountScreen() {
           testID="send-amount"
           value={amount}
           onChangeValue={setAmount}
-          trailing={<Text style={styles.ticker}>{token?.symbol ?? ''}</Text>}
           subtext={fiatDisplay}
           focused={amountFocus.focused}
           onFocus={amountFocus.onFocus}
@@ -265,7 +262,7 @@ export default function SendAmountScreen() {
   );
 }
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = (_t: Semantic) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -277,11 +274,6 @@ const stylesFor = (t: Semantic) =>
       paddingHorizontal: s(spacing.screenGutter),
       paddingBottom: vs(spacing.screenGutter),
       gap: vs(spacing.screenGutter),
-    },
-    ticker: {
-      fontSize: s(fontSize.body),
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.secondary,
     },
     shortcuts: {
       flexGrow: 0,

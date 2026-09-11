@@ -33,7 +33,6 @@ export function AmountEntryCard({
   onChangeValue,
   editable = true,
   placeholder = '0',
-  trailing,
   subtext,
   loading = false,
   focused = false,
@@ -60,7 +59,7 @@ export function AmountEntryCard({
         ) : (
           <TextInput
             testID={testID ? `${testID}-input` : undefined}
-            style={[styles.input, !trailing && styles.inputCentered]}
+            style={styles.input}
             placeholder={placeholder}
             placeholderTextColor={semantic.text.tertiary}
             value={value}
@@ -72,7 +71,6 @@ export function AmountEntryCard({
             autoCorrect={false}
           />
         )}
-        {trailing}
       </View>
       {subtext !== undefined && (
         <Text style={styles.subtext} testID={testID ? `${testID}-fiat` : undefined}>
@@ -105,13 +103,8 @@ const stylesFor = (t: Semantic) =>
       lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
       fontFamily: fontFamilyNative.bold,
       color: t.text.primary,
-      textAlign: 'right',
-      paddingVertical: 0,
-    },
-    // No trailing control: the card holds the number alone, so it centres
-    // rather than right-aligning next to nothing.
-    inputCentered: {
       textAlign: 'center',
+      paddingVertical: 0,
     },
     subtext: {
       ...TABULAR,

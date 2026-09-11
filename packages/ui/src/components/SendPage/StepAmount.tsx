@@ -11,9 +11,6 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   SOL_CONSTANTS,
-  fontFamily,
-  fontSize,
-  fontWeight,
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
@@ -24,7 +21,6 @@ import {
   type SendToken,
 } from '@salmon/shared';
 
-import { useSemantic } from '../../theme/ThemeProvider';
 import { AmountEntryCard } from '../AmountEntryCard';
 import { PrimaryButton } from '../Button';
 import { Card } from '../Card';
@@ -77,7 +73,6 @@ export function StepAmount({
   onBack,
 }: StepAmountProps) {
   const { t } = useTranslation();
-  const semantic = useSemantic();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
 
   const tokenBalance = useMemo(() => {
@@ -176,18 +171,6 @@ export function StepAmount({
         testID="send-amount"
         value={amount}
         onChangeValue={setAmount}
-        trailing={
-          <span
-            style={{
-              fontSize: fontSize.body,
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.bold,
-              color: semantic.text.secondary,
-            }}
-          >
-            {token.symbol}
-          </span>
-        }
         subtext={fiatDisplay}
       />
 
