@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -430,6 +430,28 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // the DOM is already in its new layout when the snapshot is taken. No API,
   // or reduce motion: a cut, which is the fallback the API itself prescribes.
   const isReduceMotionEnabled = useReducedMotion();
+
+  // The catalogue is a page of the stack here, so the FAB that opens it
+  // unmounts the moment the push happens — it never sees `open` go true.
+  // This local flag plays the plus→cross turn on press, before the push, so
+  // the button that opens the catalogue still announces it; the FAB remounts
+  // at rest when the page comes back, so it never gets stuck as a cross.
+  const [fabPressed, setFabPressed] = useState(false);
+  const openPowerups = useCallback(() => {
+    if (isReduceMotionEnabled) {
+      setCurrentPage('powerups');
+      return;
+    }
+    setFabPressed(true);
+    setTimeout(() => setCurrentPage('powerups'), motionMs.drift);
+  }, [isReduceMotionEnabled]);
+  // The FAB remounts as soon as `home` is back — this drops it back to
+  // `false` a beat later, so the fresh mount (still reading `true`) plays the
+  // unwind instead of arriving already flat.
+  useEffect(() => {
+    if (currentPage === 'home') setFabPressed(false);
+  }, [currentPage]);
+
   const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
   const [isPowerupMode, setIsPowerupMode] = useState(wantsPowerupMode);
   useLayoutEffect(() => {
@@ -802,10 +824,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           </SinkFloat>
         )}
 
-        {/* The `+`. It floats over the content and opens the catalogue page.
-            It leaves with the content when a task takes the screen. */}
+        {/* The `+`. It floats over the content and opens the catalogue page,
+            turning into the close mark on press so the turn plays before the
+            push takes the FAB off screen. It leaves with the content when a
+            task takes the screen. */}
         {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && (
-          <PowerupsFab open={false} onPress={() => setCurrentPage('powerups')} />
+          <PowerupsFab open={fabPressed} onPress={openPowerups} />
         )}
       </div>
 

@@ -34,15 +34,17 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
 
   // A plus turned 45 degrees IS the close mark — the same glyph, not a swap,
   // so the launcher's open state is legible on the control that opened it.
-  // It is a state change in place, so it runs on `swell` (reduce motion:
-  // `timing` resolves to a cut and the mark still ends up rotated).
+  // The catalogue rises under it at the same time, so the turn runs on
+  // `drift` — an element enter / in-place layout change, the same window as
+  // the layer it announces — with the system default curve `current` (reduce
+  // motion: `timing` resolves to a cut and the mark still ends up rotated).
   //
   // The config is built here, on the JS thread, and only the resulting plain
   // object crosses into the worklet. Calling `timing()` inside
   // `useAnimatedStyle` crashed the app at launch: "[Worklets] Tried to
   // synchronously call a non-worklet function 'timing' on the UI thread".
   const rotateTiming = useMemo(
-    () => timing(motionMs.swell, isReduceMotionEnabled, curve.settle),
+    () => timing(motionMs.drift, isReduceMotionEnabled, curve.current),
     [isReduceMotionEnabled]
   );
   // Always starts at zero: the catalogue rises over Home without unmounting

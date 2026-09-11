@@ -27,8 +27,6 @@ import {
   ArrowsLeftRightIcon,
   ImageIcon,
   LightningIcon,
-  MinusIcon,
-  PlusIcon,
   ShieldCheckIcon,
   StackIcon,
   TrendUpIcon,
@@ -38,6 +36,7 @@ import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
+import { PlusMinusGlyph } from '../PlusMinusGlyph';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
 import { SettingsPanelContent } from '../SettingsPanelContent';
@@ -125,8 +124,6 @@ export function PowerupsPage({
                 testID={`powerups-toggle-${entry.id}`}
                 size={CONTROL_SIZE}
                 tone={entry.installed ? 'outline' : 'accent'}
-                icon={entry.installed ? MinusIcon : PlusIcon}
-                iconSize={CONTROL_ICON_SIZE}
                 onPress={() => handleToggle(entry)}
                 accessibilityLabel={t(
                   entry.installed
@@ -134,7 +131,13 @@ export function PowerupsPage({
                     : 'accessibility.install_powerup',
                   { name }
                 )}
-              />
+              >
+                <PlusMinusGlyph
+                  minus={entry.installed}
+                  size={CONTROL_ICON_SIZE}
+                  color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
+                />
+              </IconBubble>
             }
           />
 

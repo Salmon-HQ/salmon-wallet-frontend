@@ -54,7 +54,7 @@ export function PowerupsFab({
         transform: `rotate(${open ? OPEN_ROTATION : 0}deg)`,
         transition: reducedMotion
           ? undefined
-          : `transform ${motionMs.swell}ms ${motionEasing.settle.css}`,
+          : `transform ${motionMs.drift}ms ${motionEasing.current.css}`,
         ...style,
       }}
     />

@@ -41,8 +41,6 @@ import {
   ArrowsLeftRightIcon,
   ImageIcon,
   LightningIcon,
-  MinusIcon,
-  PlusIcon,
   ShieldCheckIcon,
   StackIcon,
   TrendUpIcon,
@@ -55,6 +53,7 @@ import { Card } from '../Card';
 import { IconBubble, type IconGlyphProps } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
+import { PlusMinusGlyph } from '../PlusMinusGlyph';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
 import { StateBlock } from '../StateBlock';
@@ -138,9 +137,6 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
               testID={`powerups-toggle-${entry.id}`}
               size={CONTROL_SIZE}
               tone={entry.installed ? 'outline' : 'accent'}
-              icon={entry.installed ? MinusIcon : PlusIcon}
-              iconWeight="bold"
-              iconSize={CONTROL_ICON_SIZE}
               onPress={() => handleToggle(entry)}
               accessibilityLabel={t(
                 entry.installed
@@ -148,7 +144,13 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                   : 'accessibility.install_powerup',
                 { name }
               )}
-            />
+            >
+              <PlusMinusGlyph
+                minus={entry.installed}
+                size={CONTROL_ICON_SIZE}
+                color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
+              />
+            </IconBubble>
           }
         />
 
