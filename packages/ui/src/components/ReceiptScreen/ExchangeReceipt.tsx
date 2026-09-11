@@ -30,8 +30,6 @@ import {
   fontWeight,
   letterSpacing,
   lineHeight,
-  resolveOnboardingBands,
-  resolveOnboardingGrid,
   SINK_FLOAT_STAGGER_MS,
   spacing,
   tabularNums,
@@ -43,7 +41,9 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion, floatEntering } from '../../motion';
 import { ArrowDownIcon, CheckIcon } from '../../icons';
-import { PrimaryButton, TextButton } from '../Button';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import type { ExchangeReceiptScreenProps } from './types';
 
@@ -62,14 +62,6 @@ const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 const AMOUNT_CHAR_EM = 0.62;
 const amountClamp = (floorPx: number, ceilPx: number) =>
   `clamp(${floorPx}px, calc(100cqw / (var(--amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${ceilPx}px)`;
-
-/**
- * The ending's reserved heights, read from the onboarding grid (DESIGN.md
- * §The ending borrows the onboarding ending's bands) — the same call mobile
- * makes. The receipt offers no secondary action, so the assist band's union
- * is zero and it collapses onto the primary.
- */
-const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
 
 /** One stagger step per revealed element, top to bottom, on the verb's own constant. */
 const beat = (step: number) => step * SINK_FLOAT_STAGGER_MS;
@@ -287,50 +279,35 @@ export function ExchangeReceipt({
           </Rise>
         )}
 
+        {/* The fine print, last: the receipt card Send draws (`Card` +
+          `KeyValueRow`) — effective rate, Salmon fee when it arrived, local
+          time. */}
         {exchange ? (
-          <Rise step={3} style={styles.receiptRows} data-testid="tx-success-receipt">
-            {exchangeRate ? (
-              <div style={styles.receiptRow}>
-                <span style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</span>
-                <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{exchangeRate}</span>
-              </div>
-            ) : null}
-            {exchangeFee ? (
-              <div style={styles.receiptRow}>
-                <span style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</span>
-                <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{exchangeFee}</span>
-              </div>
-            ) : null}
-            <div style={styles.receiptRow}>
-              <span style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</span>
-              <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{receiptTime}</span>
-            </div>
+          <Rise step={3} style={styles.receiptCard}>
+            <Card padding="lg" gap={spacing.md} testID="tx-success-receipt">
+              {exchangeRate ? (
+                <KeyValueRow label={t('transactions.detail.rate', 'Rate')} value={exchangeRate} />
+              ) : null}
+              {exchangeFee ? (
+                <KeyValueRow label={t('swap.review.salmonFee', 'Salmon fee')} value={exchangeFee} />
+              ) : null}
+              <KeyValueRow label={t('transactions.detail.time', 'Time')} value={receiptTime} />
+            </Card>
           </Rise>
         ) : null}
       </div>
 
+      {/* The ending is Send's: the explorer link as the secondary button over
+          the primary, the wallet's own action bottom-most. */}
       <Rise step={actionStep} style={styles.actionGroup} data-testid="tx-success-actions">
-        <div style={styles.assistBand} data-testid="tx-success-assist">
-          {explorerUrl ? (
-            <TextButton
-              onPress={handleExplorerClick}
-              color={semantic.text.secondary}
-              testID="tx-success-explorer-link"
-            >
-              {t('transaction.viewOnExplorer')}
-            </TextButton>
-          ) : null}
-        </div>
-
-        <div style={styles.actionBand} data-testid="tx-success-action">
-          <PrimaryButton
-            onPress={onContinue}
-            disabled={settling}
-            testID="tx-success-continue-button"
-          >
-            {t('transaction.continue', 'Back to wallet')}
-          </PrimaryButton>
-        </div>
+        {explorerUrl ? (
+          <SecondaryButton testID="tx-success-explorer-link" onPress={handleExplorerClick}>
+            {t('transaction.viewOnExplorer')}
+          </SecondaryButton>
+        ) : null}
+        <PrimaryButton onPress={onContinue} disabled={settling} testID="tx-success-continue-button">
+          {t('transaction.continue', 'Back to wallet')}
+        </PrimaryButton>
       </Rise>
     </div>
   );
@@ -420,57 +397,23 @@ const stylesFor = (t: Semantic): Record<string, React.CSSProperties> => ({
   },
   amountSpent: {
     fontSize: amountClamp(fontSize.body, fontSize.bodyLg),
-    fontWeight: fontWeight.regular,
+    fontWeight: fontWeight.bold,
     color: t.text.secondary,
     lineHeight: `${fontSize.bodyLg * lineHeight.tight}px`,
   },
-  receiptRows: {
+  receiptCard: {
     display: 'flex',
-    alignSelf: 'stretch',
     flexDirection: 'column',
-    gap: spacing.sm,
+    alignSelf: 'stretch',
     marginBottom: spacing.xl,
-    paddingLeft: spacing.base,
-    paddingRight: spacing.base,
-  },
-  receiptRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  receiptLabel: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.sans,
-    color: t.text.tertiary,
-  },
-  receiptValue: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.sans,
-    fontWeight: fontWeight.medium,
-    color: t.text.secondary,
-    textAlign: 'right',
   },
   actionGroup: {
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
     marginTop: 'auto',
-  },
-  assistBand: {
-    height: endingBands.assist,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBand: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'stretch',
-    height: endingBands.action,
-    justifyContent: 'flex-start',
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing['2xl'],
-    boxSizing: 'border-box',
+    gap: spacing.md,
   },
 });
