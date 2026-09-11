@@ -236,36 +236,36 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   );
 
   return (
-    <>
-      <BottomSheetContainer
-        visible={visible}
-        onClose={onClose}
-        height={height}
-        testID={testID}
-        style={style}
-        headerContent={
-          <View style={styles.header}>
-            <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
-            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
-          </View>
-        }
+    <BottomSheetContainer
+      visible={visible}
+      onClose={onClose}
+      height={height}
+      testID={testID}
+      style={style}
+      headerContent={
+        <View style={styles.header}>
+          <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
+          <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+        </View>
+      }
+    >
+      <ScrollView
+        testID="powerups-catalog-scroll"
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: standardContentBottomPadding },
+        ]}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          testID="powerups-catalog-scroll"
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: standardContentBottomPadding },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderList()}
-        </ScrollView>
-      </BottomSheetContainer>
+        {renderList()}
+      </ScrollView>
 
       {/* The detail is its own sheet, risen over the catalogue (owner,
-          2026-09-11): the list stays where it was underneath, and the back
-          caret — or the drag — lowers the detail back onto it. */}
+              2026-09-11): the list stays where it was underneath, and the back
+              caret — or the drag — lowers the detail back onto it. Mounted INSIDE
+              the catalogue's sheet: iOS presents one native modal at a time
+              unless the next one is presented from within the first. */}
       <BottomSheetContainer
         visible={visible && detail !== null}
         onClose={() => setDetailId(null)}
@@ -288,7 +288,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           {detail ? renderDetail(detail) : null}
         </ScrollView>
       </BottomSheetContainer>
-    </>
+    </BottomSheetContainer>
   );
 };
 
