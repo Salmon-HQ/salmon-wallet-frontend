@@ -3,7 +3,6 @@ import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
-  colors,
   componentSizes,
   fontSize,
   fontFamilyNative,
@@ -11,13 +10,13 @@ import {
   letterSpacing,
   lineHeight,
   ms,
-  opacity,
-  shadows,
   spacing,
   useCurrencyContext,
   vs,
   s,
+  type Semantic,
 } from '@salmon/shared';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { AmountEntryCard } from '../AmountEntryCard';
 import { TokenLogo } from '../TokenLogo';
 import type { SwapAmountInputProps } from './types';
@@ -43,6 +42,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   testID,
 }) => {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
 
   const subtext =
@@ -65,7 +65,11 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
           onPress={onTokenPress}
           activeOpacity={0.7}
         >
-          <TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={ms(22)} />
+          <TokenLogo
+            uri={token?.logo || undefined}
+            symbol={token?.symbol}
+            size={componentSizes.iconSizeMedium}
+          />
           <Text style={styles.tokenSymbol}>{token?.symbol || t('actions.select', 'Select')}</Text>
         </TouchableOpacity>
 
@@ -95,53 +99,55 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    gap: vs(spacing.sm),
-  },
-  label: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    letterSpacing: letterSpacing.normal,
-    lineHeight: ms(fontSize.base * lineHeight.condensed),
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.sm),
-  },
-  tokenDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.button.secondaryBackground,
-    borderRadius: borderRadius.sm + 2,
-    paddingHorizontal: s(spacing.sm),
-    paddingVertical: vs(spacing.xxs),
-    gap: s(spacing.sm - 1),
-    minHeight: vs(componentSizes.iconSizeXL),
-    minWidth: s(componentSizes.swapSelectorMinWidth),
-    ...shadows.sm,
-  },
-  tokenSymbol: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    opacity: opacity.soft,
-    letterSpacing: letterSpacing.normal,
-    lineHeight: ms(fontSize.base * lineHeight.condensed),
-  },
-  availableText: {
-    flexShrink: 1,
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
-    letterSpacing: letterSpacing.normal,
-    lineHeight: ms(fontSize.sm * lineHeight.normal),
-    textAlign: 'right',
-  },
-});
+// The token chip is one object on both twins: a raised plate, the mark at
+// the icon ramp's medium step, the symbol in bold primary ink. Every measure
+// is a token, so the DOM twin reads the same numbers.
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      gap: vs(spacing.sm),
+    },
+    label: {
+      fontSize: ms(fontSize.base),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.normal,
+      lineHeight: ms(fontSize.base * lineHeight.condensed),
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.sm),
+    },
+    tokenDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.surface.raised,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: s(spacing.sm),
+      paddingVertical: vs(spacing.xxs),
+      gap: s(spacing.xs),
+      minHeight: vs(componentSizes.iconSizeXL),
+      minWidth: s(componentSizes.swapSelectorMinWidth),
+    },
+    tokenSymbol: {
+      fontSize: ms(fontSize.base),
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.normal,
+      lineHeight: ms(fontSize.base * lineHeight.condensed),
+    },
+    availableText: {
+      flexShrink: 1,
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.secondary,
+      letterSpacing: letterSpacing.normal,
+      lineHeight: ms(fontSize.sm * lineHeight.normal),
+      textAlign: 'right',
+    },
+  });
 
 export default SwapAmountInput;
