@@ -71,12 +71,6 @@ export interface TokenPickerSheetPropsBase extends TokenSelectListPropsBase {
   visible: boolean;
   onClose: () => void;
   loading: boolean;
-  /**
-   * The network whose catalogue is listed, when the list is one (the swap
-   * picker): its data provider's credit closes the list. The send picker
-   * lists holdings only and leaves it out.
-   */
-  networkId?: string | null;
   testID?: string;
 }
 

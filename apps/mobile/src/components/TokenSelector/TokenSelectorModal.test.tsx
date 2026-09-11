@@ -16,8 +16,6 @@ jest.mock('expo-linear-gradient', () => {
   return { LinearGradient: View };
 });
 
-jest.mock('../DataAttribution', () => ({ DataAttribution: () => null }));
-
 jest.mock('@salmon/shared', () => ({
   useTokenSearch: (tokens: unknown[]) => ({
     searchQuery: '',

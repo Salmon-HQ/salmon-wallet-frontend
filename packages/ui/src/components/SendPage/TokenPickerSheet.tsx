@@ -10,7 +10,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { DataAttribution } from '../DataAttribution';
 import { TokenSelectList } from './TokenSelectList';
 import type { TokenPickerSheetProps } from './types';
 
@@ -20,7 +19,6 @@ export function TokenPickerSheet({
   tokens,
   loading,
   onSelectToken,
-  networkId,
   testID = 'send-token-picker',
 }: TokenPickerSheetProps) {
   const { t } = useTranslation();
@@ -37,10 +35,6 @@ export function TokenPickerSheet({
       style={{ height: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
     >
       <TokenSelectList tokens={tokens} loading={loading} onSelectToken={onSelectToken} />
-      {/* The catalogue's provider is credited once, where the list ends. */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <DataAttribution networkId={networkId} />
-      </div>
     </BottomSheetContainer>
   );
 }

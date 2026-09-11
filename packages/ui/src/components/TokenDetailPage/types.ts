@@ -36,6 +36,8 @@ export interface TokenDetailContentProps {
   marketData: MarketData | undefined;
   /** Coin info has never resolved — skeletons the info cards, not the chart */
   infoLoading?: boolean;
+  /** The network the token lives on: its data provider is credited under the about card */
+  networkId?: string | null;
   /**
    * Horizontal padding of the container the chart bleeds out of on the left
    * (the curve runs off the screen edge and stops a gutter short of the right).

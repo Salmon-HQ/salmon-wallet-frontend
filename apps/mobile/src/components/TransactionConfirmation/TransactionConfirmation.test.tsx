@@ -23,8 +23,6 @@ jest.mock('react-native-reanimated', () => {
 });
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
-jest.mock('../DataAttribution', () => ({ DataAttribution: () => null }));
-
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   colors: {

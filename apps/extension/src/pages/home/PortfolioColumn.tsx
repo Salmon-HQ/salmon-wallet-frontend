@@ -79,6 +79,7 @@ export function PortfolioColumn({
         <TokenDetailContent
           token={hasData ? bitcoin.token : undefined}
           blockchain="bitcoin"
+          networkId={currentNetworkId}
           hiddenBalance={hiddenBalance}
           chartData={bitcoin.chartData}
           chartPeriod={bitcoinChartPeriod}
@@ -100,8 +101,8 @@ export function PortfolioColumn({
             hiddenBalance={hiddenBalance}
             blockchain={getBlockchainFromNetworkId(currentNetworkId)}
           />
-          {/* The price provider's credit closes the list (its terms: once
-              per screen that shows its prices). */}
+          {/* The price provider's credit closes the list: once, below the
+              data set, as its attribution guide asks. */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <DataAttribution networkId={currentNetworkId} />
           </div>

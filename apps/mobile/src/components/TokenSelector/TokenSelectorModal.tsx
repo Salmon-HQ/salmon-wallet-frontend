@@ -42,7 +42,6 @@ import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { BlurContainer } from '../BlurContainer';
-import { DataAttribution } from '../DataAttribution';
 import { TokenLogo } from '../TokenLogo';
 import type { TokenSelectorToken, TokenSelectorModalProps } from './types';
 
@@ -147,7 +146,6 @@ export function TokenSelectorModal({
   showVerifiedDisclaimer = false,
   loading = false,
   showBalances = true,
-  networkId,
 }: TokenSelectorModalProps & {
   /**
    * Whether rows show the user's holdings. The You Send selector keeps them
@@ -279,22 +277,17 @@ export function TokenSelectorModal({
     );
   }, [showVerifiedDisclaimer, searchQuery, isSearching, t, renderFeaturedTokens]);
 
-  const renderFooter = useCallback(
-    () => (
-      <>
-        {hasMore ? (
-          <TouchableOpacity onPress={loadMore} activeOpacity={0.7} accessibilityRole="button">
-            <BlurContainer style={[styles.tokenRow, styles.loadMoreRow]}>
-              <Text style={styles.loadMoreText}>{t('actions.view_more', 'View More')}</Text>
-            </BlurContainer>
-          </TouchableOpacity>
-        ) : null}
-        {/* The catalogue's provider is credited once, where the list ends. */}
-        <DataAttribution networkId={networkId} />
-      </>
-    ),
-    [hasMore, loadMore, networkId, t]
-  );
+  const renderFooter = useCallback(() => {
+    if (!hasMore) return null;
+
+    return (
+      <TouchableOpacity onPress={loadMore} activeOpacity={0.7} accessibilityRole="button">
+        <BlurContainer style={[styles.tokenRow, styles.loadMoreRow]}>
+          <Text style={styles.loadMoreText}>{t('actions.view_more', 'View More')}</Text>
+        </BlurContainer>
+      </TouchableOpacity>
+    );
+  }, [hasMore, loadMore, t]);
 
   const renderEmpty = useCallback(() => {
     if (isSearching) return null;

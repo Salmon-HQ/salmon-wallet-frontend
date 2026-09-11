@@ -19,7 +19,6 @@ import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { SINK_FLOAT_STAGGER_MS, floatEntering } from '../../utils/sinkAndFloat';
 import { BlurContainer } from '../BlurContainer';
-import { DataAttribution } from '../DataAttribution';
 import { ConfirmationDetailsCard } from './ConfirmationDetailsCard';
 import { ConfirmationExchange } from './ConfirmationExchange';
 import { ConfirmationButtons } from './ConfirmationButtons';
@@ -40,7 +39,6 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
   confirmLabel,
   isRefreshing = false,
   error,
-  networkId,
   style,
 }) => {
   const { t } = useTranslation();
@@ -99,8 +97,6 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
               {display.attribution}
             </Text>
           ) : null}
-          {/* The USD values' provider, credited once under the details. */}
-          <DataAttribution networkId={networkId} />
         </Animated.View>
 
         {/* Warning box — band 3 */}

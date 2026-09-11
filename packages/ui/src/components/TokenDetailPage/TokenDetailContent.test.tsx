@@ -25,6 +25,7 @@ vi.mock('@salmon/shared', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@salmon/shared');
   return {
     ...actual,
+    useDataAttribution: () => null,
     useCurrencyContext: () => [
       { currency: 'USD' },
       { formatValue: (value: number) => `$${value.toFixed(2)}` },

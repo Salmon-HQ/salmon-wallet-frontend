@@ -30,7 +30,5 @@ export interface TransactionConfirmationPropsBase<TStyle> {
   isRefreshing?: boolean;
   /** The last signing failure, a translation key, drawn on the screen */
   error?: string | null;
-  /** The proposal's network: its data provider's credit is drawn under the details */
-  networkId?: string | null;
   style?: TStyle;
 }

@@ -38,6 +38,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { KeyValueRow } from '../KeyValueRow';
 import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
+import { DataAttribution } from '../DataAttribution';
 import { TokenAbout } from '../TokenAbout';
 import { TokenLogo } from '../TokenList';
 import { TokenMarketData } from '../TokenMarketData';
@@ -62,6 +63,7 @@ export function TokenDetailContent({
   bleed = spacing.screenGutter,
   style,
   className,
+  networkId,
 }: TokenDetailContentProps): React.ReactElement {
   const { t } = useTranslation();
   const semantic = useSemantic();
@@ -183,6 +185,12 @@ export function TokenDetailContent({
         website={coinInfo?.links?.homepage}
         loading={infoLoading}
       />
+
+      {/* The provider behind the chart, the market data and the description
+          is credited here, on the one screen that is made of its data. */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <DataAttribution networkId={networkId} />
+      </div>
     </div>
   );
 }

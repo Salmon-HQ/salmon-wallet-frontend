@@ -520,6 +520,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             <TokenDetailPage
               token={selectedToken}
               blockchain={currentChain}
+              networkId={currentNetworkId}
               chartData={selectedTokenMarket.chartData}
               chartPeriod={selectedTokenChartPeriod}
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}

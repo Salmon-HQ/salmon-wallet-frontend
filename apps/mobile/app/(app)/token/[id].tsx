@@ -49,6 +49,7 @@ import {
 } from '@salmon/shared';
 import {
   AboutCard,
+  DataAttribution,
   DepthBackground,
   KeyValueRow,
   MarketDataCard,
@@ -241,6 +242,10 @@ export default function TokenDetailScreen() {
           contractAddressShort={getShortAddress(token.address, 6) ?? token.address}
           website={website}
         />
+
+        {/* The provider behind the chart, the market data and the description
+            is credited here, on the one screen that is made of its data. */}
+        <DataAttribution networkId={networkId} />
       </ScrollView>
     </SafeAreaView>
   );
