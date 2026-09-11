@@ -149,7 +149,8 @@ export class SolanaAccount extends SolanaReadAccount {
     if (!opts?.simulate) {
       await confirmSolanaSignature(
         { rpc: this.getRpc(), rpcSubscriptions: this.getRpcSubscriptions() },
-        result.txId as Signature
+        result.txId as Signature,
+        result.lastValidBlockHeight
       );
     }
     return { txId: result.txId as string };

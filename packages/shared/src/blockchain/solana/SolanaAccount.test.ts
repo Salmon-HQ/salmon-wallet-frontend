@@ -13,7 +13,7 @@ vi.mock('./confirm', () => ({
 
 vi.mock('./transfer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./transfer')>()),
-  createTransfer: vi.fn().mockResolvedValue({ txId: 'sig' }),
+  createTransfer: vi.fn().mockResolvedValue({ txId: 'sig', lastValidBlockHeight: 1n }),
   estimateFee: vi.fn().mockResolvedValue(5000),
 }));
 

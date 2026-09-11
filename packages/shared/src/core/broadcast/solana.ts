@@ -32,8 +32,6 @@ export interface SolanaBroadcastOptions {
    * transaction that would fail is refused before it costs a fee.
    */
   skipPreflight?: boolean;
-  /** How long to wait for the signature to reach `commitment`. */
-  confirmationTimeoutMs?: number;
 }
 
 /**
@@ -50,7 +48,8 @@ export interface SolanaBroadcastOptions {
  *
  * Confirmation has no polling fallback: a broken WebSocket endpoint fails
  * loudly rather than degrading into a silent slow path. The signature is
- * returned to the caller only once the cluster reports it at `commitment`.
+ * returned to the caller only once the cluster reports it at `commitment`;
+ * the wait ends otherwise only when the blockhash expires (see `confirm.ts`).
  *
  * @param account - The signing account and its RPC clients.
  * @param transactionBase64 - The unsigned transaction, base64 wire format.
@@ -92,7 +91,8 @@ export async function signAndSendSolanaTransaction(
   await confirmSolanaSignature(
     { rpc, rpcSubscriptions: account.getRpcSubscriptions() },
     signature,
-    { commitment, timeoutMs: options.confirmationTimeoutMs }
+    value.lastValidBlockHeight,
+    { commitment }
   );
 
   return signature;

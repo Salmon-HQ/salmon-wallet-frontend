@@ -104,6 +104,8 @@ type TransferTransactionMessage = Awaited<ReturnType<typeof buildTransactionMess
 export interface TransferResult {
   /** Transaction ID (signature) */
   txId: Signature | SimulatedTransferResponse;
+  /** Block height after which the sent transaction can never land — the bound of the confirmation wait. */
+  lastValidBlockHeight: bigint;
 }
 
 /**
@@ -255,7 +257,10 @@ export async function createTransfer(
     : await createSplTransaction(rpc, signer, to, token, amount, opts);
 
   const result = await executeTransaction(rpc, transaction, simulate);
-  return { txId: result };
+  return {
+    txId: result,
+    lastValidBlockHeight: transaction.lifetimeConstraint.lastValidBlockHeight,
+  };
 }
 
 /**

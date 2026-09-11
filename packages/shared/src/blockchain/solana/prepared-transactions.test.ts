@@ -77,6 +77,9 @@ function createRpc(overrides: Record<string, unknown> = {}) {
     getSignatureStatuses: vi.fn().mockReturnValue({
       send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
     }),
+    getEpochInfo: vi.fn().mockReturnValue({
+      send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }),
+    }),
     ...overrides,
   };
 }
@@ -85,6 +88,14 @@ function createRpcSubscriptions(notifications: SignatureNotifications = noNotifi
   return {
     signatureNotifications: vi.fn().mockReturnValue({
       subscribe: async () => notifications(),
+    }),
+    // Slots that never arrive: the blockhash-expiry verdict stays open.
+    slotNotifications: vi.fn().mockReturnValue({
+      subscribe: async () =>
+        (async function* () {
+          await new Promise(() => undefined);
+          yield { slot: 0n }; // unreachable: the promise above never settles
+        })(),
     }),
   };
 }

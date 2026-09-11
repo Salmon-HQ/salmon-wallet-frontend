@@ -3,6 +3,8 @@ import {
   createKeyPairSignerFromPrivateKeyBytes,
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
+  isSolanaError,
+  SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED,
 } from '@solana/kit';
 import { signAndSendSolanaTransaction } from './solana';
 
@@ -31,13 +33,28 @@ function createRpc(overrides: Record<string, unknown> = {}) {
     }),
     sendTransaction: vi.fn().mockReturnValue({ send: async () => 'signature-1' }),
     getSignatureStatuses: vi.fn().mockReturnValue({ send: async () => ({ value: [null] }) }),
+    getEpochInfo: vi.fn().mockReturnValue({
+      send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }),
+    }),
     ...overrides,
   };
 }
 
-function createRpcSubscriptions(notifications: SignatureNotifications = noNotifications) {
+type SlotNotifications = () => AsyncGenerator<{ slot: bigint }>;
+
+/** Slots that never arrive: the block-height verdict stays open until the signature's wins. */
+const noSlots: SlotNotifications = async function* () {
+  await new Promise(() => undefined);
+  yield { slot: 0n }; // unreachable: the promise above never settles
+};
+
+function createRpcSubscriptions(
+  notifications: SignatureNotifications = noNotifications,
+  slots: SlotNotifications = noSlots
+) {
   return {
     signatureNotifications: vi.fn().mockReturnValue({ subscribe: async () => notifications() }),
+    slotNotifications: vi.fn().mockReturnValue({ subscribe: async () => slots() }),
   };
 }
 
@@ -73,6 +90,28 @@ describe('signAndSendSolanaTransaction', () => {
     const account = await createAccount(createRpc(), createRpcSubscriptions(failedNotification));
 
     await expect(signAndSendSolanaTransaction(account, FIXTURE_B64)).rejects.toThrow();
+  });
+
+  it('reports the transaction expired once the network passes its last valid block height', async () => {
+    // The signature never confirms; the network moves past `lastValidBlockHeight` (1n).
+    const pending: SignatureNotifications = async function* () {
+      await new Promise(() => undefined);
+      yield { value: { err: null } }; // unreachable: the promise above never settles
+    };
+    const pastTheWindow: SlotNotifications = async function* () {
+      yield { slot: 5n };
+    };
+    const rpc = createRpc({
+      getEpochInfo: vi
+        .fn()
+        .mockReturnValueOnce({ send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }) })
+        .mockReturnValue({ send: async () => ({ absoluteSlot: 5n, blockHeight: 5n }) }),
+    });
+    const account = await createAccount(rpc, createRpcSubscriptions(pending, pastTheWindow));
+
+    const outcome = await signAndSendSolanaTransaction(account, FIXTURE_B64).catch((e) => e);
+    // The verdict the error decoder maps to `transaction.errors.expired`.
+    expect(isSolanaError(outcome, SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED)).toBe(true);
   });
 
   it('honours skipPreflight and the commitment it is given', async () => {

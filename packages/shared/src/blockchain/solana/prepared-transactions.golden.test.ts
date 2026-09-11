@@ -56,8 +56,17 @@ describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
       getSignatureStatuses: () => ({
         send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
       }),
+      getEpochInfo: () => ({ send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }) }),
     };
     const rpcSubscriptions = {
+      // Slots that never arrive: the blockhash-expiry verdict stays open.
+      slotNotifications: () => ({
+        subscribe: async () =>
+          (async function* () {
+            await new Promise(() => undefined);
+            yield { slot: 0n }; // unreachable: the promise above never settles
+          })(),
+      }),
       signatureNotifications: () => ({
         /* eslint-disable require-yield -- generator that completes without yielding; block form survives reformatting */
         subscribe: async () =>
