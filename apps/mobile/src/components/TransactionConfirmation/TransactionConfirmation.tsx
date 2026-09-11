@@ -158,10 +158,10 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     gap: vs(spacing.md),
-    marginBottom: vs(spacing['2xl']),
+    marginBottom: vs(spacing.xl),
   },
   detailsContainer: {
-    marginBottom: vs(spacing.sm),
+    marginBottom: vs(spacing.xl),
   },
   attribution: {
     fontSize: ms(fontSize.sm),

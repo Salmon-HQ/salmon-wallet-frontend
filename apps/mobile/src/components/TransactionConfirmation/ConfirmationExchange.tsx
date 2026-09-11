@@ -1,12 +1,14 @@
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
+import i18n from 'i18next';
 import {
   colors,
+  semantic,
   fontSize,
+  formatTokenAmountSignificant,
   letterSpacing,
   lineHeight,
   spacing,
-  borderRadius,
   ms,
   vs,
   s,
@@ -15,7 +17,6 @@ import {
 } from '@salmon/shared';
 import type { SwapReviewExchangeSide } from '@salmon/shared';
 import { ArrowRightIcon, iconSize } from '../../icons';
-import { BlurContainer } from '../BlurContainer';
 import { PendingValue } from '../PendingValue';
 import { TokenLogo } from '../TokenLogo';
 import type { ConfirmationExchangeProps } from './types';
@@ -25,6 +26,27 @@ import type { ConfirmationExchangeProps } from './types';
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
 const LOGO_SIZE = 40;
+
+/**
+ * The proposal formats `amount` at full precision as "<number> <SYMBOL>".
+ * The review reads better trimmed to significant digits — the full figure
+ * still renders in the details card's "Minimum Received" row.
+ */
+function toSignificantAmount(raw: string): string {
+  const spaceIdx = raw.lastIndexOf(' ');
+  if (spaceIdx < 0) return raw;
+  const numPart = raw.slice(0, spaceIdx);
+  const symbolPart = raw.slice(spaceIdx + 1);
+  const normalized = i18n.language?.startsWith('es') ? numPart.replace(',', '.') : numPart;
+  const value = parseFloat(normalized);
+  if (!isFinite(value)) return raw;
+  return `${formatTokenAmountSignificant(value, i18n.language)} ${symbolPart}`;
+}
+
+/** The Portfolio list drops the "~"; the review reads the same way. */
+function stripApprox(raw: string): string {
+  return raw.replace(/^~\s*/, '');
+}
 
 /**
  * One half of the exchange graphic: microcopy label, token logo, amount in
@@ -44,11 +66,17 @@ const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
     <Text style={styles.label}>{label}</Text>
     <TokenLogo uri={logo} symbol={symbol} size={s(LOGO_SIZE)} />
     <PendingValue pending={pendingAmount}>
-      <Text style={[styles.amount, TABULAR, emphasis && styles.amountEmphasis]}>{amount}</Text>
+      <Text
+        style={[styles.amount, TABULAR, emphasis && styles.amountEmphasis]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {toSignificantAmount(amount)}
+      </Text>
     </PendingValue>
     {usdValue != null && (
       <PendingValue pending={pendingUsdValue}>
-        <Text style={[styles.usdValue, TABULAR]}>{usdValue}</Text>
+        <Text style={[styles.usdValue, TABULAR]}>{stripApprox(usdValue)}</Text>
       </PendingValue>
     )}
   </View>
@@ -65,20 +93,15 @@ export const ConfirmationExchange: React.FC<ConfirmationExchangeProps> = ({
   style,
 }) => {
   return (
-    <BlurContainer style={[styles.container, style]}>
-      <View style={styles.row} testID="confirmation-exchange">
-        <ExchangeSide {...send} />
-        <ArrowRightIcon size={iconSize.md} color={colors.text.secondary} />
-        <ExchangeSide {...receive} />
-      </View>
-    </BlurContainer>
+    <View style={[styles.row, style]} testID="confirmation-exchange">
+      <ExchangeSide {...send} />
+      <ArrowRightIcon size={iconSize.md} color={semantic.accent.ink} weight="bold" />
+      <ExchangeSide {...receive} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: borderRadius.md,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

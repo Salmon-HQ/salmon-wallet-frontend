@@ -53,6 +53,7 @@ describe('TransactionConfirmation', () => {
   it('draws the exchange, every fee as its own line, and the attribution verbatim', () => {
     renderScreen();
     expect(screen.getByTestId('confirmation-exchange')).toBeTruthy();
+    expect(screen.getByText('$1.00')).toBeTruthy();
     expect(screen.getByText('1 USDC')).toBeTruthy();
     expect(screen.getByText('0.0197 SOL')).toBeTruthy();
     expect(screen.getByText('Salmon fee')).toBeTruthy();

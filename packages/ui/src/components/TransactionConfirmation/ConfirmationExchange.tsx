@@ -5,11 +5,13 @@
  * `apps/mobile/src/components/TransactionConfirmation/ConfirmationExchange.tsx`.
  */
 import React, { useState } from 'react';
+import i18n from 'i18next';
 import {
   componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
+  formatTokenAmountSignificant,
   letterSpacing,
   lineHeight,
   spacing,
@@ -20,12 +22,32 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ArrowRightIcon } from '../../icons';
-import { Card } from '../Card';
 import { PendingValue } from '../PendingValue';
 import type { ConfirmationExchangeProps } from './types';
 
 /** The token marks are the graphic's subject: the icon ramp's 40 step. */
 const LOGO_SIZE = componentSizes.iconSizeXL;
+
+/**
+ * The proposal formats `amount` at full precision as "<number> <SYMBOL>".
+ * The review reads better trimmed to significant digits — the full figure
+ * still renders in the details card's "Minimum Received" row.
+ */
+function toSignificantAmount(raw: string): string {
+  const spaceIdx = raw.lastIndexOf(' ');
+  if (spaceIdx < 0) return raw;
+  const numPart = raw.slice(0, spaceIdx);
+  const symbolPart = raw.slice(spaceIdx + 1);
+  const normalized = i18n.language?.startsWith('es') ? numPart.replace(',', '.') : numPart;
+  const value = parseFloat(normalized);
+  if (!isFinite(value)) return raw;
+  return `${formatTokenAmountSignificant(value, i18n.language)} ${symbolPart}`;
+}
+
+/** The Portfolio list drops the "~"; the review reads the same way. */
+function stripApprox(raw: string): string {
+  return raw.replace(/^~\s*/, '');
+}
 
 function TokenMark({ uri, symbol }: { uri?: string; symbol: string }) {
   const t = useSemantic();
@@ -85,13 +107,23 @@ function ExchangeSide({
       <span style={styles.label}>{label}</span>
       <TokenMark uri={logo} symbol={symbol} />
       <PendingValue pending={pendingAmount}>
-        <span style={{ ...styles.amount, ...(emphasis ? styles.amountEmphasis : {}) }}>
-          {amount}
+        <span
+          style={{
+            ...styles.amount,
+            ...(emphasis ? styles.amountEmphasis : {}),
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: 'block',
+            maxWidth: '100%',
+          }}
+        >
+          {toSignificantAmount(amount)}
         </span>
       </PendingValue>
       {usdValue != null && (
         <PendingValue pending={pendingUsdValue}>
-          <span style={styles.usdValue}>{usdValue}</span>
+          <span style={styles.usdValue}>{stripApprox(usdValue)}</span>
         </PendingValue>
       )}
     </div>
@@ -101,16 +133,25 @@ function ExchangeSide({
 export function ConfirmationExchange({ send, receive, style }: ConfirmationExchangeProps) {
   const t = useSemantic();
   return (
-    <Card padding="lg" radius="xl" style={style}>
-      <div
-        data-testid="confirmation-exchange"
-        style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}
-      >
-        <ExchangeSide {...send} />
-        <ArrowRightIcon size={componentSizes.iconSizeMedium} color={t.text.secondary} aria-hidden />
-        <ExchangeSide {...receive} />
-      </div>
-    </Card>
+    <div
+      data-testid="confirmation-exchange"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: spacing.sm,
+        padding: spacing.lg,
+        ...style,
+      }}
+    >
+      <ExchangeSide {...send} />
+      <ArrowRightIcon
+        size={componentSizes.iconSizeMedium}
+        color={t.accent.ink}
+        weight="bold"
+        aria-hidden
+      />
+      <ExchangeSide {...receive} />
+    </div>
   );
 }
 

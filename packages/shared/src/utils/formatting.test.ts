@@ -11,6 +11,7 @@ import {
   formatRawAmount,
   formatSolFee,
   formatTokenAmount,
+  formatTokenAmountSignificant,
   formatTokenBalance,
   showPercentage,
 } from './formatting';
@@ -18,6 +19,27 @@ import { formatFiatChange, formatFiatPrice, formatFiatValue } from './currencyFo
 
 /** U+2212, the typographic minus the number contract renders negatives with. */
 const MINUS = '\u2212';
+
+describe('formatTokenAmountSignificant', () => {
+  it('trims a long fraction to 6 significant digits', () => {
+    expect(formatTokenAmountSignificant(1234.567891234, 'en')).toBe('1234.57');
+    expect(formatTokenAmountSignificant(0.000123456789, 'en')).toBe('0.000123457');
+  });
+
+  it('leaves an amount already within 6 significant digits untouched', () => {
+    expect(formatTokenAmountSignificant(1.5, 'en')).toBe('1.5');
+    expect(formatTokenAmountSignificant(250, 'en')).toBe('250');
+  });
+
+  it('follows the app language for the decimal separator', () => {
+    expect(formatTokenAmountSignificant(1234.5678, 'es')).toBe('1234,57');
+  });
+
+  it('renders zero bare and returns non-finite input as-is', () => {
+    expect(formatTokenAmountSignificant(0, 'en')).toBe('0');
+    expect(formatTokenAmountSignificant(NaN, 'en')).toBe('NaN');
+  });
+});
 
 describe('formatTokenAmount', () => {
   it('uses a point as decimal separator under en', () => {

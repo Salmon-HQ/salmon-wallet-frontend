@@ -94,12 +94,11 @@ export function TransactionConfirmation({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: spacing['2xl'],
           paddingBottom: spacing['4xl'],
         }}
       >
         {display.exchange && (
-          <Band step={1}>
+          <Band step={1} style={{ marginBottom: spacing.xl }}>
             {/* The amount being sent is what the user typed: a rebuild cannot
                 change it. Its dollar value can, and so can the receive side. */}
             <ConfirmationExchange
@@ -113,7 +112,15 @@ export function TransactionConfirmation({
           </Band>
         )}
 
-        <Band step={2} style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+        <Band
+          step={2}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing.xl,
+            marginBottom: spacing['2xl'],
+          }}
+        >
           <ConfirmationDetailsCard
             rows={display.rows.map((row) => ({ ...row, pending: !!row.pending && isRefreshing }))}
             advancedRows={display.advancedRows?.map((row) => ({

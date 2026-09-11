@@ -234,6 +234,40 @@ export function formatTokenAmount(amount: number | string, locale?: string): str
 }
 
 /**
+ * Significant digits for a token amount in a review context — the exact
+ * figure is not the point there (e.g. the confirmation screen's exchange
+ * block); the full-precision figure still renders elsewhere (e.g. the
+ * "Minimum Received" row).
+ */
+const AMOUNT_REVIEW_SIGNIFICANT_DIGITS = 6;
+
+/**
+ * Renders a token amount trimmed to a fixed count of significant digits, for
+ * a review context where full precision reads as noise. Grouping is off,
+ * matching `formatTokenAmount`'s "quantity, not money" treatment.
+ *
+ * @param amount - Token amount in UI units (number, or its string form)
+ * @param locale - Override locale; defaults to the active i18next language
+ * @returns The trimmed amount, or the input as-is when not a finite number
+ *
+ * @example
+ * ```typescript
+ * formatTokenAmountSignificant(1234.567891234, 'en') // '1234.57'
+ * formatTokenAmountSignificant(0.000123456789, 'en')  // '0.000123457'
+ * ```
+ */
+export function formatTokenAmountSignificant(amount: number | string, locale?: string): string {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (typeof value !== 'number' || !isFinite(value)) return String(amount);
+  if (value === 0) return '0';
+  return formatNumber(
+    value,
+    { maximumSignificantDigits: AMOUNT_REVIEW_SIGNIFICANT_DIGITS, useGrouping: false },
+    locale
+  );
+}
+
+/**
  * Formats an amount as a USD dollar value
  *
  * @deprecated Use `formatFiatValue` from `currencyFormatting` for multi-currency support.
