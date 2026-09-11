@@ -26,6 +26,9 @@ function stub(testID: string) {
 
 vi.mock('../../components', () => ({
   useReducedMotion: () => false,
+  VIEW_TRANSITION_LEAVING_BLOCK: 'sw-leaving-block',
+  VIEW_TRANSITION_RISING_ROW: 'sw-rising-row',
+  VIEW_TRANSITION_MS_VAR: '--sw-view-transition-ms',
   WalletHeader: ({ onWalletPress }: { onWalletPress?: () => void }) => (
     <div data-testid="wallet-header-bar">
       <button type="button" data-testid="open-wallets" onClick={onWalletPress} />

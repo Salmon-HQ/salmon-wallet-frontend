@@ -62,6 +62,9 @@ export {
   TaskChromeProvider,
   useTaskChrome,
   useReducedMotion,
+  VIEW_TRANSITION_LEAVING_BLOCK,
+  VIEW_TRANSITION_MS_VAR,
+  VIEW_TRANSITION_RISING_ROW,
 } from '@salmon/ui';
 
 export type { PanelRegistry, ReceiveSheetProps } from '@salmon/ui';

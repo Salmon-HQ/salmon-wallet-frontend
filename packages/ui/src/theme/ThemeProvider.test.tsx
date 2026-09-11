@@ -28,6 +28,7 @@ vi.mock('../../../shared/src/storage', () => ({
 // needs the tokens and the shared theme context, both plain TypeScript.
 vi.mock('@salmon/shared', async () => ({
   ...(await import('../../../shared/src/theme')),
+  ...(await import('../../../shared/src/motion/sinkFloat')),
   ...(await import('../../../shared/src/contexts/ThemeContext')),
 }));
 

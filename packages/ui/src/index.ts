@@ -43,3 +43,9 @@ export type { TaskChromeContextValue } from './contexts/TaskChromeContext';
 export { visuallyHidden } from './utils/visuallyHidden';
 export { injectKeyframes } from './utils/injectKeyframes';
 export { usePressed } from './utils/usePressed';
+
+export {
+  VIEW_TRANSITION_LEAVING_BLOCK,
+  VIEW_TRANSITION_MS_VAR,
+  VIEW_TRANSITION_RISING_ROW,
+} from './theme/ThemeProvider';

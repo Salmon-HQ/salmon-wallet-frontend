@@ -52,7 +52,8 @@ jest.mock('react-native-reanimated', () => {
   return {
     __esModule: true,
     default: { View },
-    LinearTransition: { duration: () => undefined },
+    LinearTransition: { duration: () => ({ easing: () => undefined }) },
+    Easing: { bezier: () => undefined },
     useReducedMotion: () => false,
   };
 });
@@ -88,6 +89,9 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 jest.mock('@salmon/shared', () => ({
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
   motionMs: { drift: 280 },
+  SINK_OUT_MS: 225,
+  FLOAT_IN_MS: 560,
+  motionEasing: { settle: { native: [0.22, 1, 0.36, 1] } },
   colors: {
     accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },

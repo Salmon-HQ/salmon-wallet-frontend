@@ -27,6 +27,8 @@ import {
   usePrefetchBalances,
   useDeveloperModeSettings,
   useSendContacts,
+  FLOAT_IN_MS,
+  SINK_OUT_MS,
   motionMs,
 } from '@salmon/shared';
 import {
@@ -49,6 +51,7 @@ import {
   SendPage,
   PowerupsFab,
   useReducedMotion,
+  VIEW_TRANSITION_MS_VAR,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
@@ -440,10 +443,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       flip();
       return undefined;
     }
-    const timer = setTimeout(
-      () => startViewTransition.call(document, () => flushSync(flip)),
-      motionMs.drift
-    );
+    const timer = setTimeout(() => {
+      // The row travels exactly as long as the balance's verb: the sink's
+      // length while it leaves, the float's while it comes back.
+      document.documentElement.style.setProperty(
+        VIEW_TRANSITION_MS_VAR,
+        `${wantsPowerupMode ? SINK_OUT_MS : FLOAT_IN_MS}ms`
+      );
+      startViewTransition.call(document, () => flushSync(flip));
+    }, motionMs.drift);
     return () => clearTimeout(timer);
   }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
 

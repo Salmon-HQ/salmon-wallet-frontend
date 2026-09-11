@@ -25,10 +25,19 @@ import {
   semantic as deepWater,
   shadows as deepWaterShadows,
   ThemeProvider as SharedThemeProvider,
+  SINK_OUT_MS,
+  motionEasing,
 } from '@salmon/shared';
 
 import { applySemanticCssVars } from './cssVars';
 import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRing, focusRingNone } from './index';
+
+/** `view-transition-name` of the one row that travels to a new position. */
+export const VIEW_TRANSITION_RISING_ROW = 'sw-rising-row';
+/** `view-transition-name` of the block that leaves (or returns) beside it. */
+export const VIEW_TRANSITION_LEAVING_BLOCK = 'sw-leaving-block';
+/** The CSS variable the caller sets to the verb's length before starting. */
+export const VIEW_TRANSITION_MS_VAR = '--sw-view-transition-ms';
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -40,6 +49,25 @@ const DARK_QUERY = '(prefers-color-scheme: dark)';
  * opts out with `focusRingNone` and rings the wrapper (`PasswordInput`).
  */
 const baseline = css`
+  /* Same-document view transitions (a header that folds, a row that rises):
+     the caller names the row \`${VIEW_TRANSITION_RISING_ROW}\` and the block
+     that leaves \`${VIEW_TRANSITION_LEAVING_BLOCK}\`, and sets
+     \`--sw-view-transition-ms\` to the verb it is matching before it starts
+     the transition, so the travel lasts exactly as long as the sink or the
+     float beside it and rides the verb's travel curve. */
+  ::view-transition-group(${VIEW_TRANSITION_RISING_ROW}),
+  ::view-transition-old(${VIEW_TRANSITION_LEAVING_BLOCK}),
+  ::view-transition-new(${VIEW_TRANSITION_LEAVING_BLOCK}) {
+    animation-duration: var(--sw-view-transition-ms, ${SINK_OUT_MS}ms);
+    animation-timing-function: ${motionEasing.settle.css};
+  }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
   body {
     margin: 0;
     background-color: var(--sw-depth-column);

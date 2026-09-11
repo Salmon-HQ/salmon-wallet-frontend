@@ -35,7 +35,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Reanimated, { LinearTransition, useReducedMotion } from 'react-native-reanimated';
+import Reanimated, { Easing, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import {
   useAccountsContext,
@@ -53,6 +53,9 @@ import {
   getNetworkLabel,
   getHeldNetworkIds,
   type NetworkId,
+  FLOAT_IN_MS,
+  SINK_OUT_MS,
+  motionEasing,
   motionMs,
   type PriceChartPeriod,
   type Token,
@@ -311,9 +314,14 @@ export default function HomeScreen() {
     const timer = setTimeout(() => setIsPowerupMode(wantsPowerupMode), delay);
     return () => clearTimeout(timer);
   }, [wantsPowerupMode, isPowerupMode, isReduceMotionEnabled]);
+  // The row travels exactly as long as the balance's verb, on the verb's
+  // travel curve: the sink's length while the balance leaves, the float's
+  // while it comes back (owner: same duration, no exceptions).
   const headerLayout = isReduceMotionEnabled
     ? undefined
-    : LinearTransition.duration(motionMs.drift);
+    : LinearTransition.duration(isPowerupMode ? SINK_OUT_MS : FLOAT_IN_MS).easing(
+        Easing.bezier(...motionEasing.settle.native)
+      );
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
