@@ -122,9 +122,9 @@ export type {
   MarketChartPoint,
 } from './useCoinMarketData';
 
-// Jupiter token list hook (shared between mobile/web/extension swap entries)
-export { useJupiterTokenList } from './useJupiterTokenList';
-export type { UseJupiterTokenListParams, UseJupiterTokenListResult } from './useJupiterTokenList';
+// Verified token catalogue hook (shared between the swap entries)
+export { useTokenCatalog } from './useTokenCatalog';
+export type { UseTokenCatalogParams, UseTokenCatalogResult } from './useTokenCatalog';
 
 // Multi-chain tokens hook
 export { useMultiChainTokens } from './useMultiChainTokens';

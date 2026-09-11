@@ -19,7 +19,7 @@ import {
   previewSolanaApprovalEffects,
 } from '../utils/dapp-approval';
 import type { SolanaTransactionApprovalDetails } from '../utils/dapp-approval';
-import { useJupiterTokenList } from './useJupiterTokenList';
+import { useTokenCatalog } from './useTokenCatalog';
 import type { ResolveSymbolFn, TransactionEffects } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type { DAppTransactionRequest } from '../types/dapp-approval';
@@ -135,7 +135,7 @@ export function useSolanaTransactionApproval({
 
   // The catalog the swap screens already hold: cached, shared, and free here.
   // A preview never waits for it, and never fails because of it.
-  const { tokens } = useJupiterTokenList({
+  const { tokens } = useTokenCatalog({
     networkId: account?.network?.id as SwapNetworkId | undefined,
     enabled: isEnabled,
   });

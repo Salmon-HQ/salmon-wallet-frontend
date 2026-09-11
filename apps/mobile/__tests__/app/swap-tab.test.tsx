@@ -20,7 +20,7 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('@salmon/shared', () => ({
   useAccountsContext: jest.fn(),
   useCurrencyContext: () => [{}, { formatValue: (value: number) => `$${value.toFixed(2)}` }],
-  useJupiterTokenList: () => ({
+  useTokenCatalog: () => ({
     tokens: [{ address: 'mint-usdc', symbol: 'USDC', decimals: 6 }],
     loading: false,
     error: null,

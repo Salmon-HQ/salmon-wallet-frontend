@@ -28,6 +28,7 @@ export function mapToSwapToken(
     usdPrice: usdPrice,
     chain: 'solana',
     networkId: 'solana-mainnet',
+    swappable: token.swappable,
   };
 }
 

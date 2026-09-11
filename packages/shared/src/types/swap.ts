@@ -36,6 +36,8 @@ export interface SwapToken {
   chain?: SwapChainType;
   /** Network ID (e.g., 'solana-mainnet', 'bitcoin-mainnet', 'ethereum-mainnet') */
   networkId?: string;
+  /** `false` = the router cannot trade it (Token-2022 fee/hook); left out of the picker */
+  swappable?: boolean;
 }
 
 /**

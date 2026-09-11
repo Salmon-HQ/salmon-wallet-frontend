@@ -245,7 +245,7 @@ function balanceSignature(queryClient: QueryClient, opts: InvalidationOptions): 
 }
 
 /**
- * Event-driven settlement for same-chain actions (send, Jupiter swap, NFT
+ * Event-driven settlement for same-chain actions (send, swap, NFT
  * burn/send). Snapshots the balance, then refetches on an interval until the
  * indexer reflects the change — resolving the moment the balance signature
  * differs, or after `maxWaitMs`. A success screen can `await` this so it dwells

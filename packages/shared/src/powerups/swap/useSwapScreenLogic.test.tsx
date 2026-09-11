@@ -104,6 +104,32 @@ function setup(params: Partial<UseSwapScreenLogicParams> = {}) {
 
 type View = ReturnType<typeof setup>['view'];
 
+describe('useSwapScreenLogic — the picker leaves out what the router cannot trade', () => {
+  const HOOKED: SwapToken = {
+    ...USDC,
+    address: 'Hook11111111111111111111111111111111111111',
+    symbol: 'HOOK',
+    swappable: false,
+  };
+
+  it('drops a non-swappable catalogue token from the output picker, keeps the rest', () => {
+    const { view } = setup({ catalogTokens: [USDC, HOOKED] });
+
+    const symbols = view.result.current.logic.modalOutTokens.map((t) => t.symbol);
+    expect(symbols).toContain('USDC');
+    expect(symbols).not.toContain('HOOK');
+  });
+
+  it('drops a non-swappable token from search results too', async () => {
+    const onSearchTokens = vi.fn(async () => [USDC, HOOKED]);
+    const { view } = setup({ onSearchTokens });
+
+    const results = await view.result.current.logic.handleSearchTokens!('h');
+
+    expect(results.map((t) => t.symbol)).toEqual(['USDC']);
+  });
+});
+
 /** Type an amount for the pair and let the debounce fire. */
 async function quote(view: View, amount = '1') {
   act(() => view.result.current.logic.handleOutTokenSelect(USDC));

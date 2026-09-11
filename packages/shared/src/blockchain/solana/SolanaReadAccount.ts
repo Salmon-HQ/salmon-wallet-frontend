@@ -183,7 +183,7 @@ export class SolanaReadAccount {
    * Fetches the Solana balance items from the backend API. Items
    * already carry `price`, `usdBalance`, and `priceChange24h` when the
    * salmon-api `multichain/price-enrichers/solana-price-enricher` has a
-   * Jupiter quote for the asset.
+   * price for the asset.
    */
   private async fetchSolanaBalance(opts?: { includeSpam?: boolean }): Promise<SolanaBalanceItem[]> {
     return this.fetchBalanceFn(this.network.id, this.publicKey, opts);

@@ -132,7 +132,7 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
     params.includeSpam = 'true';
   }
 
-  // The salmon-api Solana balance provider already merges Jupiter v2 metadata
+  // The salmon-api Solana balance provider already merges token metadata
   // (logo/name/symbol/coingeckoId/tags), drops zero-amount SPL entries, and
   // drops `unknown`-only tagged tokens unless `?includeSpam=true`.
   const data = await get<SolanaBalanceItem[]>(`/v1/${networkId}/account/${address}/balance`, {
@@ -141,7 +141,7 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
 
   return data.map((token) => ({
     ...token,
-    // Native SOL inherits the canonical Jupiter tag set so the FE can keep
+    // Native SOL inherits the canonical tag set so the FE can keep
     // tag-based UI logic uniform across natives + SPL tokens.
     tags: token.mint ? token.tags : (token.tags ?? [...SOL_CONSTANTS.TAGS]),
     uiAmount: removeDecimals(token.amount, token.decimals),

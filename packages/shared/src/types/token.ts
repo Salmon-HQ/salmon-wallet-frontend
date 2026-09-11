@@ -32,6 +32,12 @@ export interface TokenMetadata {
   coingeckoId?: string;
   /** Token tags for categorization */
   tags?: string[];
+  /**
+   * Whether the swap router can trade it. `false` only for Token-2022 mints
+   * with a transfer fee or hook; such a token still sends and receives, it
+   * is only left out of the swap picker.
+   */
+  swappable?: boolean;
 }
 
 /**

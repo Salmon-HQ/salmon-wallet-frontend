@@ -22,7 +22,7 @@ import {
   unifiedToSwapToken,
   useAccountsContext,
   useCurrencyContext,
-  useJupiterTokenList,
+  useTokenCatalog,
   useMultiChainTokens,
   type SwapNetworkId,
   type SwapToken,
@@ -57,7 +57,7 @@ export default function SwapTab() {
   );
 
   // The verified catalogue for the output side (shared React Query hook).
-  const { tokens: catalogTokens } = useJupiterTokenList({
+  const { tokens: catalogTokens } = useTokenCatalog({
     networkId: SWAP_NETWORK_ID as SwapNetworkId,
   });
 

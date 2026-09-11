@@ -517,7 +517,11 @@ export function useSwapScreenLogic({
     // then the catalogue tokens not already in the user's list.
     const userSolanaTokens = tokens.filter((t) => (t.chain || 'solana') === 'solana');
     const userAddresses = new Set(userSolanaTokens.map((t) => t.address.toLowerCase()));
-    const remaining = catalogTokens.filter((t) => !userAddresses.has(t.address.toLowerCase()));
+    // A catalogue token the router cannot trade (Token-2022 fee/hook) is
+    // left out here and only here: it still sends and receives.
+    const remaining = catalogTokens.filter(
+      (t) => t.swappable !== false && !userAddresses.has(t.address.toLowerCase())
+    );
     return [...userSolanaTokens, ...remaining];
   }, [inToken, tokens, catalogTokens]);
 
@@ -580,7 +584,9 @@ export function useSwapScreenLogic({
   const handleSearchTokens = onSearchTokens
     ? async (query: string): Promise<TokenSelectorToken[]> => {
         const results = await onSearchTokens(query);
-        return results.map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
+        return results
+          .filter((t) => t.swappable !== false)
+          .map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
       }
     : undefined;
 

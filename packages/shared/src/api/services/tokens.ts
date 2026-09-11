@@ -2,9 +2,8 @@
  * Token List Service
  *
  * Thin wrapper around the salmon-api fungible-token catalog endpoints.
- * Provider selection (Jupiter primary, Solana Labs CDN fallback) lives
- * server-side; the client makes a single call per surface and trusts the
- * backend's curated list.
+ * Provider selection (metadata and prices) lives server-side; the client
+ * makes a single call per surface and trusts the backend's curated list.
  *
  * API Endpoints:
  * - GET /v1/{networkId}/ft/verified         - Curated verified token list
@@ -30,6 +29,8 @@ interface BackendToken {
   chainId?: number;
   coingeckoId?: string | null;
   tags?: string[];
+  /** `false` = a Token-2022 mint with a transfer fee/hook the router cannot trade. */
+  swappable?: boolean;
   // Defensive: legacy responses occasionally surfaced these fields. Accepted
   // here so the normalizer covers both paths without runtime branching.
   icon?: string;
@@ -63,6 +64,8 @@ export function normalizeBackendTokens(tokens: BackendToken[]): TokenMetadata[] 
     chainId: token.chainId,
     coingeckoId: token.coingeckoId ?? undefined,
     tags: token.tags || [],
+    // Older backends do not send it; absent means tradeable.
+    swappable: token.swappable ?? true,
   }));
 }
 

@@ -180,7 +180,18 @@ describe('Token Service - Pure Functions', () => {
         chainId: 101,
         coingeckoId: 'solana',
         tags: ['verified', 'strict'],
+        swappable: true,
       });
+    });
+
+    it('keeps swappable=false and reads an absent flag as tradeable', () => {
+      const [untradeable, legacy] = normalizeBackendTokens([
+        { ...mockBackendTokens[0], swappable: false },
+        { ...mockBackendTokens[1], swappable: undefined },
+      ]);
+
+      expect(untradeable.swappable).toBe(false);
+      expect(legacy.swappable).toBe(true);
     });
 
     it('should prefer logo over icon field', () => {

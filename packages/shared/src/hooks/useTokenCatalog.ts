@@ -1,9 +1,9 @@
 /**
- * useJupiterTokenList
+ * useTokenCatalog
  *
- * Shared hook that fetches the Jupiter verified-token catalog for a Solana
- * network, mapped to the SwapToken shape used by swap UI. Replaces the
- * `useState + useEffect` pattern duplicated in mobile/web/extension swap entries.
+ * Shared hook that fetches the backend's verified-token catalogue for a
+ * Solana network (`/ft/verified`, provider-agnostic: the backend picks the
+ * source), mapped to the SwapToken shape used by swap UI.
  */
 
 import { useCallback } from 'react';
@@ -13,27 +13,25 @@ import { getTokenList } from '../api/services';
 import { mapToSwapToken } from '../utils/swap';
 import type { SwapToken, SwapNetworkId } from '../types/swap';
 
-export interface UseJupiterTokenListParams {
+export interface UseTokenCatalogParams {
   networkId: SwapNetworkId | undefined;
   enabled?: boolean;
 }
 
-export interface UseJupiterTokenListResult {
+export interface UseTokenCatalogResult {
   tokens: SwapToken[];
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
 
-export function useJupiterTokenList(params: UseJupiterTokenListParams): UseJupiterTokenListResult {
+export function useTokenCatalog(params: UseTokenCatalogParams): UseTokenCatalogResult {
   const { networkId, enabled = true } = params;
   const queryClient = useQueryClient();
   const isEnabled = !!networkId && enabled;
 
   const query = useQuery({
-    queryKey: networkId
-      ? queryKeys.jupiterTokenList({ networkId })
-      : ['jupiter-token-list', 'disabled'],
+    queryKey: networkId ? queryKeys.tokenCatalog({ networkId }) : ['token-catalog', 'disabled'],
     queryFn: async () => {
       const list = await getTokenList(networkId as SwapNetworkId);
       return list.map((t) => mapToSwapToken(t));
@@ -45,7 +43,7 @@ export function useJupiterTokenList(params: UseJupiterTokenListParams): UseJupit
   const refresh = useCallback(async () => {
     if (!networkId) return;
     await queryClient.invalidateQueries({
-      queryKey: queryKeys.jupiterTokenList({ networkId }),
+      queryKey: queryKeys.tokenCatalog({ networkId }),
     });
   }, [queryClient, networkId]);
 
