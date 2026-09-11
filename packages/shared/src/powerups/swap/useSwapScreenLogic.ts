@@ -136,6 +136,8 @@ export interface UseSwapScreenLogicResult {
   showOutTokenModal: boolean;
   tokensLoading: boolean;
   inUsdValue: number;
+  /** Fiat value of the quoted receive amount; `null` when unknown. */
+  outUsdValue: number | null;
   canSwap: boolean;
   reviewWarning: SwapErrorMessage | null;
   priceImpact: number | null;
@@ -218,6 +220,15 @@ export function useSwapScreenLogic({
   const inTokenPrice =
     tokens.find((t) => t.address === inToken?.address)?.usdPrice ?? inToken?.usdPrice;
   const inUsdValue = inTokenPrice && inAmount ? parseFloat(inAmount) * inTokenPrice : 0;
+  // What the receive side is worth: the quote's own figure when the provider
+  // gives one, otherwise the catalogue price times the quoted amount. `null`
+  // when neither is known — the card then shows no fiat line at all rather
+  // than a zero.
+  const outTokenPrice =
+    tokens.find((t) => t.address === outToken?.address)?.usdPrice ?? outToken?.usdPrice;
+  const outUsdValue =
+    build?.outUsdValue ??
+    (outTokenPrice && outAmount ? parseFloat(outAmount) * outTokenPrice : null);
 
   const canSwap =
     unavailable === null &&
@@ -551,6 +562,7 @@ export function useSwapScreenLogic({
     showOutTokenModal,
     tokensLoading: loading,
     inUsdValue,
+    outUsdValue,
     canSwap,
     reviewWarning,
     priceImpact,

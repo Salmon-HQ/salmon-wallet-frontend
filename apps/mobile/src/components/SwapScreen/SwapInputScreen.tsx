@@ -42,6 +42,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   onInTokenPress,
   onOutTokenPress,
   inUsdValue,
+  outUsdValue,
   isLoadingQuote = false,
   canSwap,
   reviewWarning,
@@ -153,6 +154,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           onChangeValue={() => {}}
           token={outToken}
           onTokenPress={onOutTokenPress}
+          usdValue={outAmount && outUsdValue != null ? outUsdValue : undefined}
           editable={false}
           placeholder="0"
           isLoading={isLoadingQuote}

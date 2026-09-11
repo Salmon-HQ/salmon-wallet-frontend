@@ -37,6 +37,8 @@ export interface SwapInputScreenPropsBase<TStyle> {
   onInTokenPress: () => void;
   onOutTokenPress: () => void;
   inUsdValue?: number;
+  /** Fiat value of the quoted receive amount, under the "You Receive" number. */
+  outUsdValue?: number | null;
   isLoadingQuote?: boolean;
   /** Whether the swap control is enabled */
   canSwap: boolean;

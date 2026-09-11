@@ -78,6 +78,7 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
         onInTokenPress={() => logic.setShowInTokenModal(true)}
         onOutTokenPress={() => logic.setShowOutTokenModal(true)}
         inUsdValue={logic.inUsdValue}
+        outUsdValue={logic.outUsdValue}
         isLoadingQuote={logic.isLoadingQuote}
         canSwap={logic.canSwap}
         reviewWarning={logic.reviewWarning}
