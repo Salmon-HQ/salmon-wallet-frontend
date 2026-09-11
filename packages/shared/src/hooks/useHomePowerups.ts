@@ -19,31 +19,38 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// Straight from the registry/catalog modules, not the `../powerups` barrel:
-// that barrel also re-exports the swap surface, which pulls in an ESM-only
-// dependency (`lodash-es`) Jest's CJS transform for `requireActual` cannot
-// parse — both Home tests use `requireActual` to get the real hook.
-import { getPowerupCatalog } from '../powerups/catalog';
-import { POWERUPS } from '../powerups/registry';
+// Types only: the registry and the catalogue reach these hooks as PARAMETERS,
+// handed in by each Home from its platform's Powerups entry (the module the
+// build flag aliases to its `.off` twin). Importing them here by value would
+// carry every Powerup's copy into a build with Powerups off (spec 027 §3).
+import type { PowerupCatalogParams } from '../powerups/catalog';
+import type { PowerupEntry } from '../powerups/registry';
 import type { PowerupsCatalogEntry } from '../types/ui/index';
 import type { HomePowerupTab, HomeSubTabKey } from './useHomeShell';
 
 export interface UseHomePowerupTabsParams {
   /** What this device has installed. */
   installed: readonly string[];
+  /** The registry, from the platform's Powerups entry (empty with Powerups off). */
+  powerups: readonly PowerupEntry[];
 }
 
 /** The installed Powerups, as Home surfaces — `useHomeShell`'s `powerupTabs` input. */
-export function useHomePowerupTabs({ installed }: UseHomePowerupTabsParams): HomePowerupTab[] {
+export function useHomePowerupTabs({
+  installed,
+  powerups,
+}: UseHomePowerupTabsParams): HomePowerupTab[] {
   const { t } = useTranslation();
   return useMemo<HomePowerupTab[]>(
     () =>
-      POWERUPS.filter((entry) => installed.includes(entry.id)).map((entry) => ({
-        key: entry.id as HomeSubTabKey,
-        label: t(entry.nameKey),
-        networks: entry.networks,
-      })),
-    [installed, t]
+      powerups
+        .filter((entry) => installed.includes(entry.id))
+        .map((entry) => ({
+          key: entry.id as HomeSubTabKey,
+          label: t(entry.nameKey),
+          networks: entry.networks,
+        })),
+    [installed, powerups, t]
   );
 }
 
@@ -56,6 +63,10 @@ export interface UseHomePowerupsCatalogParams {
   developerNetworks: boolean;
   /** The network the screen stands on (`useHomeShell`'s `currentNetworkId`). */
   networkId: string;
+  /** The registry, from the platform's Powerups entry (empty with Powerups off). */
+  powerups: readonly PowerupEntry[];
+  /** The catalogue builder, from the same entry (returns nothing with Powerups off). */
+  getCatalog: (params: PowerupCatalogParams) => PowerupsCatalogEntry[];
 }
 
 export interface UseHomePowerupsCatalogResult {
@@ -75,22 +86,23 @@ export function useHomePowerupsCatalog({
   install,
   developerNetworks,
   networkId,
+  powerups,
+  getCatalog,
 }: UseHomePowerupsCatalogParams): UseHomePowerupsCatalogResult {
   const [catalogVisible, setCatalogVisible] = useState(false);
   const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
   const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
 
   const catalogEntries = useMemo(
-    () =>
-      getPowerupCatalog({ includeMocks: developerNetworks, networkId, installedIds: installed }),
-    [developerNetworks, networkId, installed]
+    () => getCatalog({ includeMocks: developerNetworks, networkId, installedIds: installed }),
+    [getCatalog, developerNetworks, networkId, installed]
   );
 
   const handleInstall = useCallback(
     (id: string) => {
-      if (POWERUPS.some((entry) => entry.id === id)) install(id);
+      if (powerups.some((entry) => entry.id === id)) install(id);
     },
-    [install]
+    [install, powerups]
   );
 
   const removableTabKeys = useMemo(

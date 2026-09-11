@@ -6,9 +6,9 @@
  * these.
  */
 import type { ComponentType } from 'react';
-import { PowerupsCatalog as PowerupsCatalogImpl } from './components/PowerupsCatalog';
+import { PowerupsPage as PowerupsPageImpl } from './components/PowerupsPage';
 import { SwapPage as SwapPageImpl } from './components/SwapPage';
-import type { PowerupsCatalogProps } from './components/PowerupsCatalog';
+import type { PowerupsPageProps } from './components/PowerupsPage';
 import type { SwapPageProps } from './components/SwapPage';
 
 export {
@@ -18,10 +18,10 @@ export {
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';
 export type { PowerupEntry } from '@salmon/shared/powerups';
-export type { PowerupsCatalogProps, SwapPageProps };
+export type { PowerupsPageProps, SwapPageProps };
 
-/** The catalogue sheet; `null` in a build with Powerups off. */
-export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = PowerupsCatalogImpl;
+/** The catalogue page of Home's stack; `null` in a build with Powerups off. */
+export const PowerupsPage: ComponentType<PowerupsPageProps> | null = PowerupsPageImpl;
 
 /** The Swap Powerup's Home sub-tab; `null` in a build with Powerups off. */
 export const SwapPage: ComponentType<SwapPageProps> | null = SwapPageImpl;

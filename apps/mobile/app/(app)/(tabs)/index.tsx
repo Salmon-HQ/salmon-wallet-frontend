@@ -76,7 +76,13 @@ import {
   WarningNotice,
   type BlockchainId,
 } from '../../../src/components';
-import { POWERUPS_ENABLED, PowerupsCatalog, getPowerupTab } from '../../../src/powerups';
+import {
+  POWERUPS,
+  POWERUPS_ENABLED,
+  PowerupsCatalog,
+  getPowerupCatalog,
+  getPowerupTab,
+} from '../../../src/powerups';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
@@ -266,7 +272,7 @@ export default function HomeScreen() {
   // through the shared registry (aliased out with the build flag off), so a
   // build with Powerups off passes an empty list and the shell never hears
   // of them (`useHomePowerupTabs`, shared with the extension's HomePage).
-  const powerupTabs = useHomePowerupTabs({ installed });
+  const powerupTabs = useHomePowerupTabs({ installed, powerups: POWERUPS });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -454,6 +460,8 @@ export default function HomeScreen() {
     install,
     developerNetworks,
     networkId: currentNetworkId,
+    powerups: POWERUPS,
+    getCatalog: getPowerupCatalog,
   });
 
   // Memoize the empty component

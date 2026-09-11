@@ -2,7 +2,7 @@
 
 /** Available page views within HomePage. */
 export type PageView =
-  'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets' | 'settings';
+  'home' | 'tokenDetail' | 'nftDetail' | 'activity' | 'send' | 'wallets' | 'powerups' | 'settings';
 
 /**
  * How deep each page sits in the stack — what `SlideStack` reads to tell a
@@ -16,5 +16,6 @@ export const PAGE_DEPTH: Record<PageView, number> = {
   activity: 1,
   send: 1,
   wallets: 1,
+  powerups: 1,
   settings: 2,
 };

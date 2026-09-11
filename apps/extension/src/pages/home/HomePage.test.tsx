@@ -104,7 +104,7 @@ vi.mock('@salmon/ui/powerups', () => ({
   POWERUPS: [],
   isPowerupOnNetwork: () => false,
   getPowerupCatalog: () => [],
-  PowerupsCatalog: () => null,
+  PowerupsPage: () => null,
   SwapPage: () => null,
 }));
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -55,7 +55,13 @@ import {
 } from '../../components';
 
 import { SettingsPage } from '../settings';
-import { POWERUPS_ENABLED, PowerupsCatalog, SwapPage } from '@salmon/ui/powerups';
+import {
+  POWERUPS,
+  POWERUPS_ENABLED,
+  PowerupsPage,
+  SwapPage,
+  getPowerupCatalog,
+} from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
 import { PortfolioColumn } from './PortfolioColumn';
@@ -149,13 +155,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Sheet visibility state
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
-
-  // The ceiling the Powerups catalogue rises to: the bottom of the Send /
-  // Receive / Activity row, so the balance and those buttons stay visible
-  // above the sheet. `catalogVisible` itself is `useHomePowerupsCatalog`'s
-  // state, set up further down with the rest of the Powerups slice.
-  const [catalogHeight, setCatalogHeight] = useState<number | undefined>(undefined);
-  const subTabsRef = useRef<HTMLDivElement>(null);
 
   // What this device has installed. Nothing is installed out of the box, so
   // Home starts with Portfolio and NFTs and gains a tab only when the user
@@ -375,7 +374,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // come through the shared registry (aliased out with the build flag off),
   // so a build with Powerups off passes an empty list
   // (`useHomePowerupTabs`, shared with mobile's HomeScreen).
-  const powerupTabs = useHomePowerupTabs({ installed });
+  const powerupTabs = useHomePowerupTabs({ installed, powerups: POWERUPS });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -475,47 +474,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
-  // reads the page swap as a push (depth 1 over Home's 0) or a pop. A Powerup
-  // is not one of them: the catalogue is a sheet over Home and an installed
-  // Powerup is a sub-tab of it (spec 027).
-  // The catalogue drawer's own state and entries — shared with mobile's
-  // HomeScreen (`useHomePowerupsCatalog`). Entries are the registry's for
-  // the active network plus the developer-only mocks; an installed one
-  // keeps its place in its tier and says it is installed there. Only a real
-  // Powerup can be installed: the mocks advertise nothing the wallet can
-  // open, so the catalogue refuses to give them a tab.
-  const {
-    catalogVisible,
-    handleCatalogToggle,
-    handleCatalogClose,
-    catalogEntries,
-    handleInstall,
-    removableTabKeys,
-  } = useHomePowerupsCatalog({
+  // reads the page swap as a push (depth 1 over Home's 0) or a pop. The
+  // catalogue is one of them here (owner, 2026-09-11: on the DOM it is a page,
+  // not the sheet mobile draws); an installed Powerup is a sub-tab of Home.
+  // Its entries are shared with mobile's HomeScreen (`useHomePowerupsCatalog`):
+  // the registry's for the active network plus the developer-only mocks; an
+  // installed one keeps its place in its tier and says it is installed there.
+  // Only a real Powerup can be installed: the mocks advertise nothing the
+  // wallet can open, so the catalogue refuses to give them a tab.
+  const { catalogEntries, handleInstall, removableTabKeys } = useHomePowerupsCatalog({
     powerupTabs,
     installed,
     install,
     developerNetworks,
     networkId: currentNetworkId,
+    powerups: POWERUPS,
+    getCatalog: getPowerupCatalog,
   });
 
-  // The catalogue's height, measured off the live layout: the room under the
-  // top of the Portfolio / NFTs row (owner, 2026-09-11). The side panel can be
-  // resized, and the block above the row changes height with the figures in it.
-  useLayoutEffect(() => {
-    const node = subTabsRef.current;
-    if (!node) return undefined;
-    const measure = () =>
-      setCatalogHeight(Math.max(window.innerHeight - node.getBoundingClientRect().top, 0));
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    window.addEventListener('resize', measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [currentPage]);
   const swapTokens = useMemo(
     () =>
       currentChain === 'solana'
@@ -609,6 +585,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           />
         );
       }
+      case 'powerups':
+        // The catalogue is a page of the stack on the DOM (owner, 2026-09-11):
+        // a side panel's sheet neither animates well nor fits the detail.
+        return PowerupsPage ? (
+          <PowerupsPage
+            entries={catalogEntries}
+            onInstall={handleInstall}
+            onUninstall={uninstall}
+            onBack={handleBack}
+          />
+        ) : (
+          <></>
+        );
       case 'wallets':
         // Wallets is a page of its own in the stack, not a layer over Home,
         // so the rescans it asks for are waited on and answered here — the
@@ -725,7 +714,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   />
                 </div>
               )}
-              <div ref={subTabsRef} style={isPowerupMode ? risenSubTabsStyle : subTabsStyle}>
+              <div style={isPowerupMode ? risenSubTabsStyle : subTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
                   tabs={subTabs}
@@ -813,26 +802,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           </SinkFloat>
         )}
 
-        {/* The `+`. It floats over the content and opens the catalogue; while
-            the catalogue is up the plus turns into the close mark. It leaves
-            with the content when a task takes the screen. */}
+        {/* The `+`. It floats over the content and opens the catalogue page.
+            It leaves with the content when a task takes the screen. */}
         {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && (
-          <PowerupsFab open={catalogVisible} onPress={handleCatalogToggle} />
+          <PowerupsFab open={false} onPress={() => setCurrentPage('powerups')} />
         )}
       </div>
-
-      {/* The catalogue: a drawer of Home, stopping just below the Send /
-          Receive / Activity row so the balance stays in view above it. */}
-      {PowerupsCatalog && (
-        <PowerupsCatalog
-          visible={catalogVisible}
-          onClose={handleCatalogClose}
-          entries={catalogEntries}
-          onInstall={handleInstall}
-          onUninstall={uninstall}
-          height={catalogHeight}
-        />
-      )}
 
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
           rows are dropped, and there is nothing to save. Portfolio and NFTs

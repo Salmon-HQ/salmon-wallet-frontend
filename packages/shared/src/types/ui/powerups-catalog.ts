@@ -38,22 +38,18 @@ export interface PowerupsCatalogEntryDetails {
 }
 
 /**
- * The Powerups catalogue: a bottom sheet over Home with two sections, Core
- * and Community. Tapping an entry opens its detail inside the same sheet,
- * where a single control installs it (which adds its Home sub-tab) or takes
- * it away again.
+ * The Powerups catalogue's content: two sections, Core and Community; an
+ * entry opens its detail, where a single control installs it (which adds
+ * its Home sub-tab) or takes it away again.
  *
- * The sheet rises exactly to `height` — Home measures the top of its
- * Portfolio / NFTs row and passes the room below it — so the balance and the
- * Send / Receive / Activity buttons stay visible above the catalogue.
+ * The container is the platform's (owner, 2026-09-11): mobile draws it as a
+ * sheet over Home that rises to the sub-tab row; the extension draws it as a
+ * page of Home's stack, because a side panel's sheet neither animates well
+ * nor fits the detail. Each twin adds its own container props to this base.
  */
 export interface PowerupsCatalogPropsBase extends Testable {
-  visible: boolean;
-  onClose: () => void;
   /** Every Powerup on offer for the active network, installed or not. */
   entries: readonly PowerupsCatalogEntry[];
   onInstall: (id: string) => void;
   onUninstall: (id: string) => void;
-  /** The sheet's fixed height, in pixels: the room under the sub-tab row. */
-  height?: number;
 }

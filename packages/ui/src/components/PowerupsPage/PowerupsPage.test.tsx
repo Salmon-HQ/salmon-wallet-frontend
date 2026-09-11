@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  *
  * The catalogue's contract with Home, on the DOM — the mobile twin's suite is
- * `apps/mobile/src/components/PowerupsCatalog/PowerupsCatalog.test.tsx`: two
+ * `apps/mobile/src/components/PowerupsPage/PowerupsPage.test.tsx`: two
  * sections and nothing else, an entry opens its own detail inside the same
  * sheet, and the one control there adds the Powerup to Home or takes it away.
  */
@@ -10,13 +10,17 @@ import React from 'react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, screen, fireEvent } from '@testing-library/react';
 
-// The verb holds the arriving page a beat; the suite reads the page, not the beat.
-vi.mock('../SinkFloat', () => ({
-  SinkFloat: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+// The stack holds the leaving screen a beat; the suite reads the screen, not the beat.
+vi.mock('../../motion', async () => {
+  const actual = await vi.importActual<typeof import('../../motion')>('../../motion');
+  return {
+    ...actual,
+    SlideStack: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
+});
 
 import { renderInMode } from '../../test/renderInMode';
-import { PowerupsCatalog } from './PowerupsCatalog';
+import { PowerupsPage } from './PowerupsPage';
 
 const entries = [
   {
@@ -49,18 +53,16 @@ const entries = [
   },
 ];
 
-function setup(overrides: Partial<React.ComponentProps<typeof PowerupsCatalog>> = {}) {
+function setup(overrides: Partial<React.ComponentProps<typeof PowerupsPage>> = {}) {
   const onInstall = vi.fn();
   const onUninstall = vi.fn();
   renderInMode(
     'dark',
-    <PowerupsCatalog
-      visible
-      onClose={vi.fn()}
+    <PowerupsPage
+      onBack={vi.fn()}
       entries={entries}
       onInstall={onInstall}
       onUninstall={onUninstall}
-      height={420}
       {...overrides}
     />
   );
@@ -69,7 +71,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof PowerupsCatalog>> 
 
 afterEach(cleanup);
 
-describe('PowerupsCatalog', () => {
+describe('PowerupsPage', () => {
   it('draws Core and Community, and nothing else', () => {
     setup();
 

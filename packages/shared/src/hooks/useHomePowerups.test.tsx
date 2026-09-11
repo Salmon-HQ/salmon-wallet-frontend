@@ -15,22 +15,28 @@ vi.mock('react-i18next', () => ({
 }));
 
 import { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';
+import { getPowerupCatalog } from '../powerups/catalog';
+import { POWERUPS } from '../powerups/registry';
 
 describe('useHomePowerupTabs', () => {
   it('carries nothing installed', () => {
-    const { result } = renderHook(() => useHomePowerupTabs({ installed: [] }));
+    const { result } = renderHook(() => useHomePowerupTabs({ installed: [], powerups: POWERUPS }));
     expect(result.current).toEqual([]);
   });
 
   it('turns an installed id into a Home tab, labelled and networked', () => {
-    const { result } = renderHook(() => useHomePowerupTabs({ installed: ['swap'] }));
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({ installed: ['swap'], powerups: POWERUPS })
+    );
     expect(result.current).toEqual([
       { key: 'swap', label: 'swap.catalog.name', networks: ['solana-mainnet'] },
     ]);
   });
 
   it('ignores an installed id the registry does not carry', () => {
-    const { result } = renderHook(() => useHomePowerupTabs({ installed: ['not-a-powerup'] }));
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({ installed: ['not-a-powerup'], powerups: POWERUPS })
+    );
     expect(result.current).toEqual([]);
   });
 });
@@ -48,6 +54,8 @@ describe('useHomePowerupsCatalog', () => {
           install,
           developerNetworks: props.developerNetworks,
           networkId: props.networkId,
+          powerups: POWERUPS,
+          getCatalog: getPowerupCatalog,
         }),
       { initialProps: { installed, networkId: 'solana-mainnet', developerNetworks: false } }
     );
@@ -76,6 +84,8 @@ describe('useHomePowerupsCatalog', () => {
           install: vi.fn(),
           developerNetworks: false,
           networkId,
+          powerups: POWERUPS,
+          getCatalog: getPowerupCatalog,
         }),
       { initialProps: 'solana-mainnet' }
     );
