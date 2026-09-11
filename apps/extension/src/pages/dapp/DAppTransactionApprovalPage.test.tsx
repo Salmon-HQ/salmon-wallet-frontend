@@ -181,16 +181,40 @@ describe('DAppTransactionApprovalPage network mismatch', () => {
     );
   });
 
-  it('accepts a request that names the active network', () => {
+  it.each([
+    ['mainnet', 'solana-mainnet'],
+    ['mainnet-beta', 'solana-mainnet'],
+    ['devnet', 'solana-devnet'],
+    ['testnet', 'solana-testnet'],
+    ['solana:mainnet', 'solana-mainnet'],
+    ['solana:devnet', 'solana-devnet'],
+    ['solana:testnet', 'solana-testnet'],
+    ['solana-mainnet', 'solana-mainnet'],
+    ['solana-devnet', 'solana-devnet'],
+  ])('accepts %s on %s', (network, networkId) => {
     const request = {
       ...baseProps.request,
-      params: { ...baseProps.request.params, network: 'solana-mainnet' },
+      params: { ...baseProps.request.params, network },
     } as typeof baseProps.request;
 
     const { getByTestId } = render(
-      <DAppTransactionApprovalPage {...baseProps} request={request} networkId="solana-mainnet" />
+      <DAppTransactionApprovalPage {...baseProps} request={request} networkId={networkId} />
     );
 
     expect(getByTestId('tx-approval-view').dataset.networkMismatch).toBeUndefined();
   });
+
+  it.each(['mainnet', 'solana:mainnet', 'testnet', 'unknown', 'bitcoin-devnet'])(
+    'still refuses %s on Solana Devnet',
+    (network) => {
+      const request = {
+        ...baseProps.request,
+        params: { ...baseProps.request.params, network },
+      } as typeof baseProps.request;
+      const view = render(
+        <DAppTransactionApprovalPage {...baseProps} request={request} networkId="solana-devnet" />
+      ).getByTestId('tx-approval-view');
+      expect(view.dataset.networkMismatch).toBeDefined();
+    }
+  );
 });
