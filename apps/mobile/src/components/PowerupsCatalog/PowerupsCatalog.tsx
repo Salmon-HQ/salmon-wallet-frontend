@@ -16,12 +16,12 @@
  * its back caret, then the entry as the same row the list drew it as, with
  * the install / uninstall control where the row's trailing slot is — and
  * under it the facts (owner, 2026-09-11): what it does, what you can do, who
- * made it, where it acts, what leaves the device. List and detail trade
- * places on the verb: the one leaving sinks, the one arriving floats.
+ * made it, where it acts, what leaves the device. The detail is a second
+ * sheet risen over the catalogue (owner, 2026-09-11), not a page inside it:
+ * the list stays put underneath and takes the detail back when it lowers.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamilyNative,
@@ -46,7 +46,6 @@ import {
   TrendUpIcon,
 } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-import { floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { Card } from '../Card';
@@ -94,7 +93,6 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { standardContentBottomPadding } = useBottomSheetChrome();
-  const isReduceMotionEnabled = useReducedMotion();
 
   const [detailId, setDetailId] = useState<string | null>(null);
   // A closed sheet is back at its list: reopening onto the detail of whatever
@@ -238,55 +236,59 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   );
 
   return (
-    <BottomSheetContainer
-      visible={visible}
-      onClose={onClose}
-      height={height}
-      testID={testID}
-      style={style}
-      headerContent={
-        // The header trades places with the page: keyed, so the one leaving
-        // sinks and the one arriving floats, on the chrome's own beat.
-        <Animated.View
-          key={detail ? 'detail' : 'list'}
-          entering={floatEntering(isReduceMotionEnabled)}
-          exiting={sinkExiting(isReduceMotionEnabled)}
-        >
-          {detail ? (
-            // The detail is a page of the sheet: the standard title header, its
-            // back caret where every sheet page keeps it.
-            <BottomSheetTitleHeader title={t(detail.nameKey)} onBack={() => setDetailId(null)} />
-          ) : (
-            <View style={styles.header}>
-              <LightningIcon
-                weight="bold"
-                size={s(CONTROL_ICON_SIZE)}
-                color={semantic.accent.ink}
-              />
-              <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
-            </View>
-          )}
-        </Animated.View>
-      }
-    >
-      <ScrollView
-        testID="powerups-catalog-scroll"
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: standardContentBottomPadding },
-        ]}
-        showsVerticalScrollIndicator={false}
+    <>
+      <BottomSheetContainer
+        visible={visible}
+        onClose={onClose}
+        height={height}
+        testID={testID}
+        style={style}
+        headerContent={
+          <View style={styles.header}>
+            <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
+            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+          </View>
+        }
       >
-        <Animated.View
-          key={detail ? `detail-${detail.id}` : 'list'}
-          entering={floatEntering(isReduceMotionEnabled)}
-          exiting={sinkExiting(isReduceMotionEnabled)}
+        <ScrollView
+          testID="powerups-catalog-scroll"
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: standardContentBottomPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
         >
-          {detail ? renderDetail(detail) : renderList()}
-        </Animated.View>
-      </ScrollView>
-    </BottomSheetContainer>
+          {renderList()}
+        </ScrollView>
+      </BottomSheetContainer>
+
+      {/* The detail is its own sheet, risen over the catalogue (owner,
+          2026-09-11): the list stays where it was underneath, and the back
+          caret — or the drag — lowers the detail back onto it. */}
+      <BottomSheetContainer
+        visible={visible && detail !== null}
+        onClose={() => setDetailId(null)}
+        testID={detail ? `powerups-detail-sheet-${detail.id}` : 'powerups-detail-sheet'}
+        headerContent={
+          detail ? (
+            <BottomSheetTitleHeader title={t(detail.nameKey)} onBack={() => setDetailId(null)} />
+          ) : null
+        }
+      >
+        <ScrollView
+          testID="powerups-detail-scroll"
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: standardContentBottomPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {detail ? renderDetail(detail) : null}
+        </ScrollView>
+      </BottomSheetContainer>
+    </>
   );
 };
 

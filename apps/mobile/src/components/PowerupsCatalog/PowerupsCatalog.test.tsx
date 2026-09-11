@@ -15,11 +15,6 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/types/ui/key-value-row'),
 }));
 
-jest.mock('../../utils/sinkAndFloat', () => ({
-  floatEntering: () => undefined,
-  sinkExiting: () => undefined,
-}));
-
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallbackOrValues?: unknown) =>
@@ -155,8 +150,9 @@ describe('PowerupsCatalog', () => {
     fireEvent.press(screen.getByTestId('powerups-row-swap'));
 
     expect(screen.getByTestId('powerups-detail-swap')).toBeTruthy();
-    // The list is gone: the detail took the sheet, it did not stack on it.
-    expect(screen.queryByTestId('powerups-row-auto-compound')).toBeNull();
+    // The detail is its own sheet over the catalogue: the list stays underneath.
+    expect(screen.getByTestId('powerups-detail-sheet-swap')).toBeTruthy();
+    expect(screen.getByTestId('powerups-row-auto-compound')).toBeTruthy();
     // The facts under the row: who made it, where it acts, what it uses.
     expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
     expect(screen.getByTestId('powerups-facts-swap')).toBeTruthy();
