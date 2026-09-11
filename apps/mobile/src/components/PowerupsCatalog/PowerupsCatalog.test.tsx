@@ -54,17 +54,19 @@ jest.mock('../BottomSheetContainer', () => {
       headerContent,
       height,
       testID,
+      onClose,
     }: {
       visible: boolean;
       children: React.ReactNode;
       headerContent?: React.ReactNode;
       height?: number;
       testID?: string;
+      onClose?: () => void;
     }) =>
       visible
         ? ReactActual.createElement(
             View,
-            { testID, accessibilityLabel: String(height ?? '') },
+            { testID, accessibilityLabel: String(height ?? ''), onTouchEnd: onClose },
             headerContent,
             children
           )
@@ -159,6 +161,16 @@ describe('PowerupsCatalog', () => {
 
     fireEvent.press(screen.getByTestId('powerups-toggle-swap'));
     expect(onInstall).toHaveBeenCalledWith('swap');
+  });
+
+  it('dismissing the detail sheet leaves the whole catalogue, not one level', () => {
+    const onClose = jest.fn();
+    setup({ onClose });
+
+    fireEvent.press(screen.getByTestId('powerups-row-swap'));
+    fireEvent(screen.getByTestId('powerups-detail-sheet-swap'), 'touchEnd');
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('offers to take an installed Powerup away instead', () => {

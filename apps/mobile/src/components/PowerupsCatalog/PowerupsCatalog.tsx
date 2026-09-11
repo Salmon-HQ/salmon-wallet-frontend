@@ -104,6 +104,11 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 
   const detail = entries.find((entry) => entry.id === detailId) ?? null;
 
+  const handleDismissAll = useCallback(() => {
+    setDetailId(null);
+    onClose();
+  }, [onClose]);
+
   const handleToggle = useCallback(
     (entry: PowerupsCatalogEntry) => {
       if (entry.installed) onUninstall(entry.id);
@@ -280,7 +285,10 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
               unless the next one is presented from within the first. */}
       <BottomSheetContainer
         visible={visible && detail !== null}
-        onClose={() => setDetailId(null)}
+        // Dismissing the detail — a tap above it, a drag down — leaves the
+        // whole catalogue (owner, 2026-09-11): the user is done, not one
+        // level back. Only the back caret returns to the list.
+        onClose={handleDismissAll}
         testID={detail ? `powerups-detail-sheet-${detail.id}` : 'powerups-detail-sheet'}
         headerContent={
           detail ? (
