@@ -10,7 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ACCOUNT_EDIT_SECTIONS,
-  type AccountEditAction,
+  buildAccountEditActions,
   type AccountEditIconName,
   type IconGlyphProps,
 } from '@salmon/shared';
@@ -42,12 +42,12 @@ export function AccountEditPanel({
 }: AccountEditPanelProps): React.ReactElement {
   const { t } = useTranslation();
 
-  const actions: Record<AccountEditAction, () => void> = {
-    name: onEditName,
-    avatar: onEditAvatar,
-    backup: onBackupSeed,
-    privateKey: onExportPrivateKey,
-  };
+  const actions = buildAccountEditActions({
+    onEditName,
+    onEditAvatar,
+    onBackupSeed,
+    onExportPrivateKey,
+  });
 
   return (
     <SettingsPanelContent

@@ -17,7 +17,7 @@ import {
   lineHeight,
   spacing,
   useAccountsContext,
-  useCopyFeedback,
+  usePrivateKeyPanelLogic,
   type AccountKeyInfo,
   type IconGlyphProps,
 } from '@salmon/shared';
@@ -77,11 +77,6 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
-  const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
-  const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
-  // Which key the password sheet is currently standing in front of.
-  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   // Auto-select if only one network
   const effectiveNetworkId = networks.length === 1 ? networks[0].id : selectedNetworkId;
@@ -91,55 +86,37 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     [effectiveNetworkId, activeAccount]
   );
 
+  // The password is asked again before a private key, full spending control
+  // of the account, comes into view. Reveal/copy/reauth state lives in
+  // shared so this cannot drift from the mobile twin's step-2 behavior; the
+  // DOM twin never passes biometric options, so it always falls through to
+  // the password gate, same as before.
+  const {
+    revealedIndexes,
+    copiedIndex,
+    copyFailedIndex,
+    reauthIndex,
+    setReauthIndex,
+    resetRevealState,
+    handleReveal,
+    handleReauthenticated,
+    handleCopy,
+  } = usePrivateKeyPanelLogic({
+    copyToClipboard: (privateKey) => navigator.clipboard.writeText(privateKey),
+  });
+
   const handleSelectNetwork = useCallback(
     (networkId: string) => {
       setSelectedNetworkId(networkId);
-      setRevealedIndexes(new Set());
-      resetCopied();
-      setCopyFailedIndex(null);
-      setReauthIndex(null);
+      resetRevealState();
     },
-    [resetCopied]
-  );
-
-  // An unlocked session is not proof of identity — the password is asked
-  // again before a private key, full spending control of the account, comes
-  // into view.
-  const handleReveal = useCallback((index: number) => {
-    setReauthIndex(index);
-  }, []);
-
-  const handleReauthenticated = useCallback(async () => {
-    setRevealedIndexes((prev) => {
-      if (reauthIndex === null) return prev;
-      const next = new Set(prev);
-      next.add(reauthIndex);
-      return next;
-    });
-  }, [reauthIndex]);
-
-  const handleCopy = useCallback(
-    async (privateKey: string, index: number) => {
-      if (!revealedIndexes.has(index)) return;
-      try {
-        await navigator.clipboard.writeText(privateKey);
-        setCopyFailedIndex(null);
-        showCopied(index);
-      } catch {
-        // Surface the failure — a silent no-op looks like a successful copy.
-        setCopyFailedIndex(index);
-      }
-    },
-    [revealedIndexes, showCopied]
+    [resetRevealState]
   );
 
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
-    setRevealedIndexes(new Set());
-    resetCopied();
-    setCopyFailedIndex(null);
-    setReauthIndex(null);
-  }, [resetCopied]);
+    resetRevealState();
+  }, [resetRevealState]);
 
   // ========================================================================
   // Step 1: Network Selection

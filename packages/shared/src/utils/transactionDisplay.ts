@@ -95,6 +95,30 @@ export const transactionStatusDisplayFor = (
   pending: { label: 'Pending', color: t.status.warning, glyph: 'clock' },
 });
 
+/**
+ * Resolves a display table's glyph *names* to a platform's icon
+ * *components* — the one step `transactionTypeConfigFor` (Activity /
+ * TransactionHistoryPage) and the TransactionDetail twins' `statusConfigFor`
+ * each reimplemented once per platform. The glyph map is the only thing that
+ * differs between platforms, so it stays the caller's argument.
+ */
+export function withPlatformGlyphs<
+  Key extends string,
+  Glyph extends string,
+  IconT,
+  Display extends { label: string; color: string; glyph: Glyph },
+>(
+  displayTable: Record<Key, Display>,
+  glyphs: Record<Glyph, IconT>
+): Record<Key, { label: string; color: string; icon: IconT }> {
+  return Object.fromEntries(
+    Object.entries<Display>(displayTable).map(([key, display]) => [
+      key,
+      { label: display.label, color: display.color, icon: glyphs[display.glyph] },
+    ])
+  ) as Record<Key, { label: string; color: string; icon: IconT }>;
+}
+
 /** The value tones the kit's KeyValueRow offers; confirmation depth is one of them. */
 export type ConfirmationTone = 'primary' | 'secondary' | 'success';
 

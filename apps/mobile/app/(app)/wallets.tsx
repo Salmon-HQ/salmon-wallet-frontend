@@ -7,7 +7,7 @@
  * "Include in total" heading, and an outlined "Add wallet" that routes to the
  * same add screen Settings → Accounts → Add opens.
  */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -15,16 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   useAccountsContext,
-  useBalance,
   useCurrencyContext,
-  useUserConfig,
-  useWalletTotals,
-  sumIncludedTotals,
+  useWalletsScreen,
+  useWalletCardDerived,
   fontFamilyNative,
   fontSize,
   fontWeight,
   getAccountAddress,
-  getAccountMnemonic,
   getShortAddress,
   isWatchOnlyAccount,
   letterSpacing,
@@ -36,7 +33,6 @@ import {
   type Account,
   type NetworkId,
   type Semantic,
-  groupWalletFamilies,
 } from '@salmon/shared';
 import {
   Card,
@@ -85,64 +81,33 @@ export default function WalletsScreen() {
   const { accounts, accountId, activeBlockchainAccount, networkId } = accountState;
   const [, { formatValue }] = useCurrencyContext();
 
-  const userConfigAccount = useMemo(
-    () => ({
-      network: {
-        environment: (activeBlockchainAccount
-          ? networkId || 'solana-mainnet'
-          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-        blockchain: 'solana',
-      },
-    }),
-    [activeBlockchainAccount, networkId]
-  );
-  const { excludedFromTotal, setIncludedInTotal } = useUserConfig({
-    activeBlockchainAccount: userConfigAccount,
-  });
-
-  // The eye is the app's one balance-visibility preference, not a second one
-  // for this screen: `useBalance` owns it and persists it. Skipped, so mounting
-  // this screen costs no request — only the preference comes back.
-  const showUnverifiedTokens = useUnverifiedTokens();
-
   // The scan is asked for here, so it is waited on and answered here: the sheet
   // opens the moment the user taps "find derived" and shows the wait until the
   // scan has something to say.
   const { rescanningAccountId, sheetVisible, sheetRequested, finds, importFinds, dismiss } =
     useDerivedAccounts();
 
-  const { hiddenBalance, toggleHidden } = useBalance({
-    account: activeBlockchainAccount,
-    networkId: (networkId ?? undefined) as NetworkId | undefined,
-    skip: true,
-  });
-
-  const { totals } = useWalletTotals({
+  // The eye, the aggregated total, the "include in total" set and the
+  // families the screen lists — the shell shared with the DOM twin
+  // (`useWalletsScreen`). The same list Home totals: a wallet whose balance
+  // is mostly unverified tokens must not read differently here than on the
+  // screen it came from.
+  const showUnverifiedTokens = useUnverifiedTokens();
+  const {
+    hiddenBalance,
+    toggleHidden,
+    totals,
+    isIncluded,
+    includedCount,
+    families,
+    aggregated,
+    toggleInclude,
+  } = useWalletsScreen({
     accounts,
-    networkId: (networkId ?? undefined) as NetworkId | undefined,
-    // The same list Home totals: a wallet whose balance is mostly unverified
-    // tokens must not read differently here than on the screen it came from.
+    networkId,
+    activeBlockchainAccount,
     includeSpam: showUnverifiedTokens,
   });
-
-  const isIncluded = useCallback(
-    (walletId: string) => !excludedFromTotal.includes(walletId),
-    [excludedFromTotal]
-  );
-
-  const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
-
-  const families = useMemo(() => groupWalletFamilies(accounts), [accounts]);
-
-  const aggregated = useMemo(
-    () =>
-      sumIncludedTotals(
-        accounts.map((a) => a.id),
-        excludedFromTotal,
-        totals
-      ),
-    [accounts, excludedFromTotal, totals]
-  );
 
   const hiddenValue = '••••';
 
@@ -176,19 +141,17 @@ export default function WalletsScreen() {
 
   const handleToggleInclude = useCallback(
     (walletId: string) => {
-      const included = isIncluded(walletId);
       // The total can never be empty: excluding the last included wallet would
       // leave the card reading a number that belongs to nothing.
-      if (included && includedCount <= 1) {
+      const refused = toggleInclude(walletId);
+      if (refused) {
         Alert.alert(
           t('settings.wallets.total_title', 'Total balance'),
           t('settings.wallets.keep_one_included')
         );
-        return;
       }
-      void setIncludedInTotal(walletId, !included);
     },
-    [includedCount, isIncluded, setIncludedInTotal, t]
+    [t, toggleInclude]
   );
 
   return (
@@ -341,22 +304,11 @@ function WalletCard({
   const shortAddress = getShortAddress(address) ?? '';
   // Only a seed has a derivation tree to look through — an imported key or a
   // watched address has nothing to find, so the action is absent rather than
-  // present and inert.
-  // A derived wallet shares its parent's seed: scanning it would walk the
-  // same tree and find the same paths, so only the parent offers the scan.
-  const canRescan = !!getAccountMnemonic(account) && !account.derivedFrom;
-
-  // The derived accounts this wallet holds on the chain being read. Removed
-  // from Home in 015; this is where a wallet's path indexes live now.
-  const derived = useMemo(() => {
-    const list = networkId ? account.networksAccounts?.[networkId] : undefined;
-    // Null slots are holes in the derivation tree, not accounts: a wallet
-    // created at a derived path sits at that position with empty ones before it.
-    const held = (list ?? []).flatMap((blockchainAccount, index) =>
-      blockchainAccount ? [{ index, address: blockchainAccount.getReceiveAddress?.() ?? '' }] : []
-    );
-    return held.length < 2 ? [] : held;
-  }, [account.networksAccounts, networkId]);
+  // present and inert. The derived accounts this wallet holds on the chain
+  // being read — shared with the DOM twin (`useWalletCardDerived`); removed
+  // from Home in 015, this is where a wallet's path indexes live now.
+  const { derived, canRescanEligible } = useWalletCardDerived({ account, networkId });
+  const canRescan = canRescanEligible;
 
   return (
     // `ListRow` is the card here — its own leading/title/trailing geometry

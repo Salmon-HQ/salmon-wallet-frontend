@@ -351,6 +351,7 @@ export {
   transactionCounterparty,
   transactionStatusDisplayFor,
   transactionTypeDisplayFor,
+  withPlatformGlyphs,
 } from './transactionDisplay';
 export type {
   ConfirmationTone,
@@ -383,3 +384,15 @@ export type {
   NftSection,
   NftsBySection,
 } from './nft';
+export {
+  ACCOUNT_ADD_METHODS,
+  ACCOUNT_ADD_STEP_TITLE_KEYS,
+  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
+} from './accountAddPanelCopy';
+export type { AccountAddMethodId, AccountAddMethodCopy } from './accountAddPanelCopy';
+export { buildTransactionDeveloperSections } from './transactionDeveloperRows';
+export type {
+  TransactionDeveloperRow,
+  TransactionDeveloperSection,
+  TransactionDeveloperTranslate,
+} from './transactionDeveloperRows';

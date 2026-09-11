@@ -260,3 +260,45 @@ export type {
 } from './useAccountAddFlow';
 export { useWaitTips } from './useWaitTips';
 export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';
+
+// Private key / seed reveal panels — reveal/copy/reauth state machines
+export { usePrivateKeyPanelLogic } from './usePrivateKeyPanelLogic';
+export type {
+  UsePrivateKeyPanelLogicParams,
+  UsePrivateKeyPanelLogicResult,
+} from './usePrivateKeyPanelLogic';
+export { useBackupPanelLogic, SEED_WORD_MASK } from './useBackupPanelLogic';
+export type { UseBackupPanelLogicParams, UseBackupPanelLogicResult } from './useBackupPanelLogic';
+export { useSeedPhraseEntryLogic } from './useSeedPhraseEntryLogic';
+export type {
+  FocusableRef,
+  UseSeedPhraseEntryLogicParams,
+  UseSeedPhraseEntryLogicResult,
+} from './useSeedPhraseEntryLogic';
+export { useDeveloperModeToggles } from './useDeveloperModeToggles';
+export type { UseDeveloperModeTogglesResult } from './useDeveloperModeToggles';
+
+// Home Powerups (installed-ids -> sub-tabs, and the catalogue drawer's state)
+export { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';
+export type {
+  UseHomePowerupTabsParams,
+  UseHomePowerupsCatalogParams,
+  UseHomePowerupsCatalogResult,
+} from './useHomePowerups';
+export { useTransactionDetailDerived } from './useTransactionDetailDerived';
+export { useTransactionItemDerived } from './useTransactionItemDerived';
+export type {
+  TransactionItemTranslate,
+  UseTransactionItemDerivedResult,
+} from './useTransactionItemDerived';
+
+// Wallets screen (aggregated total, include-in-total set, families) and its
+// per-card derived-path/rescan-eligibility twin
+export { useWalletsScreen, useWalletCardDerived } from './useWalletsScreen';
+export type {
+  UseWalletsScreenParams,
+  UseWalletsScreenResult,
+  UseWalletCardDerivedParams,
+  UseWalletCardDerivedResult,
+  WalletDerivedPath,
+} from './useWalletsScreen';

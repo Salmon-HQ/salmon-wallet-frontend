@@ -10,6 +10,7 @@ import {
   transactionCounterparty,
   transactionStatusDisplayFor,
   transactionTypeDisplayFor,
+  withPlatformGlyphs,
 } from './transactionDisplay';
 
 const amount = (
@@ -88,5 +89,22 @@ describe('transactionDisplay', () => {
     const short = describeTransactionRow(sent).values?.address as string;
     expect(short.length).toBeLessThan(ALICE.length);
     expect(describeTransactionRow(tx({ type: 'swap' })).key).not.toContain('sendTo');
+  });
+});
+
+describe('withPlatformGlyphs', () => {
+  it("resolves each entry's glyph name to the platform icon for that name", () => {
+    const semantic = createSemantic('light');
+    const glyphs = { checkCircle: 'CheckCircleIcon', xCircle: 'XCircleIcon', clock: 'ClockIcon' };
+
+    const resolved = withPlatformGlyphs(transactionStatusDisplayFor(semantic), glyphs);
+
+    expect(resolved.completed).toEqual({
+      label: 'Completed',
+      color: semantic.status.success,
+      icon: 'CheckCircleIcon',
+    });
+    expect(resolved.failed.icon).toBe('XCircleIcon');
+    expect(resolved.pending.icon).toBe('ClockIcon');
   });
 });

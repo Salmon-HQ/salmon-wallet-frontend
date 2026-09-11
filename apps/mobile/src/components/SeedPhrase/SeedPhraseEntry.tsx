@@ -24,9 +24,8 @@
  * Screenshot protection rides on `SeedWordInput`'s `useSecretScreen`, so it
  * cannot be lost by composing the boxes differently.
  */
-import { useCallback, useRef } from 'react';
 import { StyleSheet, View, type TextInput } from 'react-native';
-import { distributePhrase, LONG_PHRASE, SHORT_PHRASE, spacing } from '@salmon/shared';
+import { spacing, useSeedPhraseEntryLogic } from '@salmon/shared';
 
 import { SeedWordInput } from './SeedWordInput';
 import type { SeedPhraseEntryProps } from './types';
@@ -40,8 +39,6 @@ export function SeedPhraseEntry({
   onPasteRejected,
   testID = 'recover',
 }: SeedPhraseEntryProps) {
-  const refs = useRef<(TextInput | null)[]>([]);
-
   // Twenty-four words have to live in the band twelve live in: four columns
   // instead of three and a shorter box, rather than twice the rows. A grid
   // that grew would push the layout around, which is the jump this whole
@@ -50,68 +47,12 @@ export function SeedPhraseEntry({
   // `body` band, so nothing outside the grid moves, but the two are not
   // pixel-identical. Closing the last 68 would take the box under a 44pt
   // touch target; do it only if the band itself ever gets tighter.
-  const dense = words.length > SHORT_PHRASE;
-  const columns = dense ? 4 : 3;
+  const { dense, columns, setRef, focus, handleChange, handleBackspace } =
+    useSeedPhraseEntryLogic<TextInput>({ words, onChange, onLengthChange, onPasteRejected });
 
-  const focus = useCallback((index: number) => {
-    refs.current[index]?.focus();
-  }, []);
-
-  /** Distributes a whole phrase across the boxes, growing the grid to 24 if
-   * that is what was pasted. */
-  const fill = useCallback(
-    (text: string) => {
-      const { words: filled, fits, count } = distributePhrase(text);
-      onLengthChange(filled.length);
-      onChange(filled);
-      // Reported *after* `onChange`, not before. The screen clears any previous
-      // rejection whenever the words change — that is what makes the notice go
-      // away as soon as someone starts fixing it — so reporting first would
-      // have the paste's own `onChange` immediately wipe the message it just
-      // raised, and a short paste would land silently.
-      if (!fits) onPasteRejected?.(count);
-    },
-    [onChange, onLengthChange, onPasteRejected]
-  );
-
-  const handleChange = useCallback(
-    (index: number, text: string) => {
-      // More than one word arrived at once: that is a paste, wherever it
-      // landed, and it fills the grid rather than stuffing one box.
-      if (/\s/.test(text.trim())) {
-        fill(text);
-        return;
-      }
-
-      // A trailing space is the commit gesture. The word stays in this box.
-      if (text.endsWith(' ')) {
-        const next = words.slice();
-        next[index] = text.trim();
-        // Typing past the twelfth word is how a 24-word phrase is entered by
-        // hand; there is no length picker to get wrong first.
-        if (index === words.length - 1 && words.length === SHORT_PHRASE && next[index]) {
-          onChange([...next, ...Array<string>(LONG_PHRASE - SHORT_PHRASE).fill('')]);
-          onLengthChange(LONG_PHRASE);
-        } else {
-          onChange(next);
-        }
-        focus(index + 1);
-        return;
-      }
-
-      const next = words.slice();
-      next[index] = text;
-      onChange(next);
-    },
-    [fill, focus, onChange, onLengthChange, words]
-  );
-
-  const handleKeyPress = useCallback(
-    (index: number, key: string) => {
-      if (key === 'Backspace' && !words[index] && index > 0) focus(index - 1);
-    },
-    [focus, words]
-  );
+  const handleKeyPress = (index: number, key: string) => {
+    if (key === 'Backspace') handleBackspace(index);
+  };
 
   return (
     <View style={styles.grid}>
@@ -131,9 +72,7 @@ export function SeedPhraseEntry({
             onKeyPress={(event) => handleKeyPress(index, event.nativeEvent.key)}
             onSubmitEditing={() => focus(index + 1)}
             returnKeyType={index === words.length - 1 ? 'done' : 'next'}
-            inputRef={(input) => {
-              refs.current[index] = input;
-            }}
+            inputRef={setRef(index)}
           />
         </View>
       ))}

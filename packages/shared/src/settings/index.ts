@@ -20,5 +20,10 @@ export {
   toLanguageItems,
   toTrustedAppItems,
 } from './items';
-export { ACCOUNT_EDIT_SECTIONS } from './accountEdit';
-export type { AccountEditAction, AccountEditIconName, AccountEditSection } from './accountEdit';
+export { ACCOUNT_EDIT_SECTIONS, buildAccountEditActions } from './accountEdit';
+export type {
+  AccountEditAction,
+  AccountEditIconName,
+  AccountEditSection,
+  AccountEditActionHandlers,
+} from './accountEdit';

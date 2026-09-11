@@ -21,6 +21,7 @@ const mockActiveAccount: { secret: { kind: string; mnemonic?: string } } = {
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useBackupPanelLogic'),
   ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
   // The real design tokens: the panel composes kit blocks that read far more
   // of them than a hand-listed subset can keep up with.

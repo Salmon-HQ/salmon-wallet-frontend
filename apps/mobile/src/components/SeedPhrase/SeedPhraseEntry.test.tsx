@@ -32,6 +32,7 @@ jest.mock('../../../../../packages/shared/src/crypto/mnemonic', () => ({
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../../packages/shared/src/utils/seed-phrase'),
+  ...jest.requireActual('../../../../../packages/shared/src/hooks/useSeedPhraseEntryLogic'),
 }));
 
 jest.mock('../../../hooks/useSecretScreen', () => ({

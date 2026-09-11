@@ -50,6 +50,25 @@ const ACCOUNTS = [
   { id: OTHER_ID, name: 'Cold', secret: { kind: 'watchOnly' }, networksAccounts: {} },
 ];
 
+// `useWalletsScreen` (real, pulled in below through `importOriginal`) calls
+// `useBalance`/`useUserConfig`/`useWalletTotals` by its own relative import,
+// which a `@salmon/shared` package mock does not intercept — real
+// `useBalance` reaches `useQuery`, which needs a `QueryClientProvider` this
+// suite does not mount. Mocked here by the resolved file path (this
+// package's vitest config has no `@salmon/shared/hooks/*` alias, so the mock
+// has to target the same relative path `useWalletsScreen.ts` itself uses).
+vi.mock('../../../../shared/src/hooks/useBalance', () => ({
+  useBalance: () => ({ hiddenBalance: false, toggleHidden: vi.fn() }),
+}));
+vi.mock('../../../../shared/src/hooks/useUserConfig', () => ({
+  useUserConfig: () => ({ excludedFromTotal: [OTHER_ID], setIncludedInTotal }),
+}));
+vi.mock('../../../../shared/src/hooks/useWalletTotals', () => ({
+  useWalletTotals: () => ({ totals: { [PARENT_ID]: 10, [CHILD_ID]: 5, [OTHER_ID]: 100 } }),
+  sumIncludedTotals: (walletIds: string[], excluded: string[], totals: Record<string, number>) =>
+    walletIds.reduce((sum, id) => (excluded.includes(id) ? sum : sum + (totals[id] ?? 0)), 0),
+}));
+
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
   getAccountAddress: (account: { id: string }) => `${account.id}-address-11111111`,
@@ -67,9 +86,6 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
     { changeAccount, changePathIndex: vi.fn() },
   ],
   useCurrencyContext: () => [{ currency: 'usd' }, { formatValue: (v?: number) => `$${v ?? 0}` }],
-  useUserConfig: () => ({ excludedFromTotal: [OTHER_ID], setIncludedInTotal }),
-  useBalance: () => ({ hiddenBalance: false, toggleHidden: vi.fn() }),
-  useWalletTotals: () => ({ totals: { [PARENT_ID]: 10, [CHILD_ID]: 5, [OTHER_ID]: 100 } }),
 }));
 
 function renderScreen(mode: 'dark' | 'light' = 'dark') {

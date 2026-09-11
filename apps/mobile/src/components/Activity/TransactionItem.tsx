@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { ClockIcon, XCircleIcon, iconSize } from '../../icons';
@@ -10,14 +10,14 @@ import {
   fontScaleCap,
   formatRawAmount,
   formatRelativeTimeCompact,
-  describeTransactionRow,
   lineHeight,
   spacing,
   tabularNums,
+  useTransactionItemDerived,
   type Semantic,
 } from '@salmon/shared';
 import { ListRow } from '../ListRow';
-import { transactionTypeConfigFor, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
+import { transactionTypeConfigFor, TransactionMark } from './transactionTypes';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { TransactionItemProps, TransactionTokenAmount } from './types';
 
@@ -108,25 +108,17 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   const { status: statusTokens } = semanticTokens;
   const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semanticTokens);
-  const config = typeConfig[type] || typeConfig.unknown;
-
-  // Calculate if we should show collapsed view
-  const totalAmounts = inputs.length + outputs.length;
-  const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
+  const { totalAmounts, isComplex, descriptionText, typeLabel } = useTransactionItemDerived(
+    transaction,
+    contacts,
+    t,
+    typeConfig,
+    MAX_VISIBLE_AMOUNTS
+  );
 
   const handlePress = useCallback(() => {
     onPress?.(transaction);
   }, [onPress, transaction]);
-
-  // What the row says under the verb — one derivation for both platforms
-  // (`describeTransactionRow`): "To/From <name>" for a transfer, the shared
-  // description for everything else.
-  const descriptionText = useMemo(() => {
-    const said = describeTransactionRow(transaction, contacts);
-    return t(said.key, said.values);
-  }, [transaction, contacts, t]);
-
-  const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 
   // Helper to render token amounts
   const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') =>

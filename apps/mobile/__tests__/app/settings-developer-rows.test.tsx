@@ -28,19 +28,10 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 let mockThemePreference: 'system' | 'light' | 'dark' = 'system';
-const mockChangeNetwork = jest.fn(async () => {});
-const mockToggleDeveloperNetworks = jest.fn(async () => {});
-const mockSetShowUnverifiedTokens = jest.fn(async () => {});
+const mockChangeNetwork = jest.fn(async (_id: string) => {});
+const mockToggleDeveloperNetworks = jest.fn(async (_options?: unknown) => {});
+const mockSetShowUnverifiedTokens = jest.fn(async (_show: boolean) => {});
 const developerModeState = { developerNetworks: false, showUnverifiedTokens: false };
-
-jest.mock('../../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperModeSettings: () => ({
-    developerNetworks: developerModeState.developerNetworks,
-    showUnverifiedTokens: developerModeState.showUnverifiedTokens,
-    toggleDeveloperNetworks: mockToggleDeveloperNetworks,
-    setShowUnverifiedTokens: mockSetShowUnverifiedTokens,
-  }),
-}));
 
 jest.mock('@salmon/shared', () => ({
   // Removing a wallet asks the vault for key material; the screen only decides
@@ -49,6 +40,22 @@ jest.mock('@salmon/shared', () => ({
     requiresPassword: false,
     validatePassword: jest.fn(),
     remove: jest.fn(),
+  }),
+  // The devnet-to-mainnet passage is `useDeveloperModeToggles`'s own concern
+  // (tested there); this fakes it wired to the same two spies so the row's
+  // wiring is still checked here.
+  useDeveloperModeToggles: () => ({
+    developerNetworks: developerModeState.developerNetworks,
+    showUnverifiedTokens: developerModeState.showUnverifiedTokens,
+    handleToggleDeveloperNetworks: () => {
+      void mockToggleDeveloperNetworks({
+        activeNetworkId: 'solana-devnet',
+        changeNetwork: mockChangeNetwork,
+      });
+    },
+    handleToggleUnverifiedTokens: (show: boolean) => {
+      void mockSetShowUnverifiedTokens(show);
+    },
   }),
   fontFamilyNative: { regular: 'System', bold: 'System' },
   fontSize: { body: 15 },

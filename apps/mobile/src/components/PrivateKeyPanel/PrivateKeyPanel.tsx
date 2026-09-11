@@ -26,6 +26,7 @@ import {
   s,
   spacing,
   useAccountsContext,
+  usePrivateKeyPanelLogic,
   type Account,
   type AccountKeyInfo,
   type PrivateKeyPanelPropsBase,
@@ -43,7 +44,6 @@ import { RevealCover } from '../RevealCover';
 import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
-import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 // ============================================================================
@@ -113,18 +113,31 @@ export function PrivateKeyPanel({
     networks.length === 1 ? networks[0].id : null
   );
 
-  // Track which account indexes have been revealed (by index)
-  const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
-  const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
-  // Which key the password sheet is currently standing in front of.
-  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
-
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
     () => getAccountKeysForNetwork(activeAccount, selectedNetworkId),
     [selectedNetworkId, activeAccount]
   );
+
+  // A private key is worse than the phrase: one tap copies full spending
+  // control of the account. Reveal/copy/reauth state lives in shared so the
+  // DOM twin's step-2 behavior cannot drift from this one.
+  const {
+    revealedIndexes,
+    copiedIndex,
+    copyFailedIndex,
+    reauthIndex,
+    setReauthIndex,
+    resetRevealState,
+    handleReveal,
+    handleReauthenticated,
+    handleCopy,
+  } = usePrivateKeyPanelLogic({
+    copyToClipboard: (privateKey) => Clipboard.setStringAsync(privateKey),
+    onCopyError: (error) => console.error('Failed to copy private key:', error),
+    biometricAvailable,
+    verifyBiometric,
+  });
 
   /**
    * Handle network selection
@@ -132,72 +145,9 @@ export function PrivateKeyPanel({
   const handleSelectNetwork = useCallback(
     (networkId: string) => {
       setSelectedNetworkId(networkId);
-      setRevealedIndexes(new Set());
-      resetCopied();
-      setCopyFailedIndex(null);
-      setReauthIndex(null);
+      resetRevealState();
     },
-    [resetCopied]
-  );
-
-  const revealKey = useCallback((index: number) => {
-    setRevealedIndexes((prev) => {
-      const next = new Set(prev);
-      next.add(index);
-      return next;
-    });
-  }, []);
-
-  /**
-   * Handle tap-to-reveal. An unlocked session is not proof of identity — it
-   * only proves the phone was left open. Biometrics count as the same proof as
-   * the password, so a device with Face ID keeps its one-prompt flow; a device
-   * without one now falls back to typing the password rather than to nothing
-   * at all. A private key is worse than the phrase: one tap copies full
-   * spending control of the account.
-   */
-  const handleReveal = useCallback(
-    async (index: number) => {
-      if (biometricAvailable) {
-        const verified = await verifyBiometric();
-        if (!verified) {
-          // Cancelled, unavailable, or the enrolment is gone. Rather than
-          // leave the user staring at a tap that did nothing, fall through to
-          // the password gate — the same proof, typed.
-          setReauthIndex(index);
-          return;
-        }
-        revealKey(index);
-        return;
-      }
-
-      setReauthIndex(index);
-    },
-    [biometricAvailable, verifyBiometric, revealKey]
-  );
-
-  const handleReauthenticated = useCallback(async () => {
-    if (reauthIndex !== null) revealKey(reauthIndex);
-  }, [reauthIndex, revealKey]);
-
-  /**
-   * Copy private key to clipboard
-   */
-  const handleCopy = useCallback(
-    async (privateKey: string, index: number) => {
-      if (!revealedIndexes.has(index)) return;
-
-      try {
-        await Clipboard.setStringAsync(privateKey);
-        setCopyFailedIndex(null);
-        showCopied(index);
-      } catch (error) {
-        // Surface the failure — a silent no-op looks like a successful copy.
-        console.error('Failed to copy private key:', error);
-        setCopyFailedIndex(index);
-      }
-    },
-    [revealedIndexes, showCopied]
+    [resetRevealState]
   );
 
   /**
@@ -205,11 +155,8 @@ export function PrivateKeyPanel({
    */
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
-    setRevealedIndexes(new Set());
-    resetCopied();
-    setCopyFailedIndex(null);
-    setReauthIndex(null);
-  }, [resetCopied]);
+    resetRevealState();
+  }, [resetRevealState]);
   const currentBackAction =
     selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;
 

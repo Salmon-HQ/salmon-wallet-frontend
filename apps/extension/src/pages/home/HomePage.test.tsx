@@ -25,6 +25,7 @@ function stub(testID: string) {
 }
 
 vi.mock('../../components', () => ({
+  useReducedMotion: () => false,
   WalletHeader: ({ onWalletPress }: { onWalletPress?: () => void }) => (
     <div data-testid="wallet-header-bar">
       <button type="button" data-testid="open-wallets" onClick={onWalletPress} />
@@ -132,6 +133,9 @@ const derivedScanState = vi.hoisted(() => ({}) as Record<string, unknown>);
 vi.mock('@salmon/shared', async () => {
   const homeShell = await vi.importActual<typeof import('@salmon/shared/hooks/useHomeShell')>(
     '@salmon/shared/hooks/useHomeShell'
+  );
+  const homePowerups = await vi.importActual<typeof import('@salmon/shared/hooks/useHomePowerups')>(
+    '@salmon/shared/hooks/useHomePowerups'
   );
   const settings =
     await vi.importActual<typeof import('@salmon/shared/settings')>('@salmon/shared/settings');
@@ -270,6 +274,8 @@ vi.mock('@salmon/shared', async () => {
     }),
     ...settings,
     useHomeShell: homeShell.useHomeShell,
+    useHomePowerupTabs: homePowerups.useHomePowerupTabs,
+    useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
     useInstalledPowerups: () => ({
       installed: [],
       isInstalled: () => false,

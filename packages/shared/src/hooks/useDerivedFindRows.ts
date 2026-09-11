@@ -26,6 +26,8 @@ export interface UseDerivedFindRowsResult {
   checked: number[];
   /** Takes a find, or puts it back. */
   toggle: (index: number) => void;
+  /** The sheet's own title — the wait's, while `scanning`, or the found count's. */
+  title: string;
 }
 
 /**
@@ -34,11 +36,14 @@ export interface UseDerivedFindRowsResult {
  *                           from there, exactly as the add-account panel names.
  * @param t                - Passed in rather than read from `i18next` here, so
  *                           the sheet renames itself when the language changes.
+ * @param scanning         - Whether the scan is still running; picks `title`
+ *                           between the wait's copy and the found count's.
  */
 export function useDerivedFindRows(
   finds: DerivedAccountFind[],
   heldAccountCount: number,
-  t: (key: string, options: { number?: number; count?: number }) => string
+  t: (key: string, options?: { number?: number; count?: number }) => string,
+  scanning = false
 ): UseDerivedFindRowsResult {
   // Every find arrives taken: a funded path is almost always the user's own
   // money, and unchecking is cheaper than hunting for the same accounts by hand.
@@ -68,5 +73,10 @@ export function useDerivedFindRows(
     );
   }, []);
 
-  return { rows, checked, toggle };
+  // While the scan runs the sheet names the wait, not the finds it has none of.
+  const title = scanning
+    ? t('wallet.derived.scanning_title')
+    : t('wallet.derived.found_title', { count: finds.length });
+
+  return { rows, checked, toggle, title };
 }

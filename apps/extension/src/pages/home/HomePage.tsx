@@ -1,4 +1,5 @@
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   useAccountsContext,
@@ -8,9 +9,10 @@ import {
   useTransactions,
   useDerivedAccountsScan,
   useHomeShell,
+  useHomePowerupTabs,
+  useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
-  type HomePowerupTab,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
@@ -45,16 +47,11 @@ import {
   ScalesBackground,
   SendPage,
   PowerupsFab,
+  useReducedMotion,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
-import {
-  POWERUPS,
-  POWERUPS_ENABLED,
-  PowerupsCatalog,
-  SwapPage,
-  getPowerupCatalog,
-} from '@salmon/ui/powerups';
+import { POWERUPS_ENABLED, PowerupsCatalog, SwapPage } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
 import { PortfolioColumn } from './PortfolioColumn';
@@ -65,7 +62,9 @@ import {
   contentRegionStyle,
   fillColumnStyle,
   pinnedHeaderStyle,
-  pinnedSubTabsStyle,
+  risenSubTabsStyle,
+  subTabsStyle,
+  balanceBlockStyle,
   screenStyle,
   topSeamFadeStyle,
 } from './homeStyles';
@@ -147,10 +146,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Sheet visibility state
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
-  // The Powerups catalogue, and the ceiling it rises to: the bottom of the
-  // Send / Receive / Activity row, so the balance and those buttons stay
-  // visible above the sheet.
-  const [catalogVisible, setCatalogVisible] = useState(false);
+  // The ceiling the Powerups catalogue rises to: the bottom of the Send /
+  // Receive / Activity row, so the balance and those buttons stay visible
+  // above the sheet. `catalogVisible` itself is `useHomePowerupsCatalog`'s
+  // state, set up further down with the rest of the Powerups slice.
   const [catalogHeight, setCatalogHeight] = useState<number | undefined>(undefined);
   const subTabsRef = useRef<HTMLDivElement>(null);
 
@@ -368,18 +367,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     }
   }, []);
 
-  // The installed Powerups, as Home surfaces. The registry and the copy come
-  // through `@salmon/ui/powerups`, the entry the build flag aliases, so a
-  // build with Powerups off passes an empty list.
-  const powerupTabs = useMemo<HomePowerupTab[]>(
-    () =>
-      POWERUPS.filter((entry) => installed.includes(entry.id)).map((entry) => ({
-        key: entry.id as HomeSubTabKey,
-        label: t(entry.nameKey),
-        networks: entry.networks,
-      })),
-    [installed, t]
-  );
+  // The installed Powerups, as Home surfaces — the registry and the copy
+  // come through the shared registry (aliased out with the build flag off),
+  // so a build with Powerups off passes an empty list
+  // (`useHomePowerupTabs`, shared with mobile's HomeScreen).
+  const powerupTabs = useHomePowerupTabs({ installed });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -420,12 +412,30 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Each sub-tab has its own scroller, so the offset the seam fade reads must
   // start over with it.
+  const isPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+
+  // A sub-tab change may move the header (focus mode, below): the DOM plays
+  // it as a same-document view transition — the row's position interpolates,
+  // the balance cross-fades out — with `flushSync` so the DOM is already in
+  // its new layout when the snapshot is taken. No API, or reduce motion: the
+  // change is a cut, which is the fallback the API itself prescribes.
+  const isReduceMotionEnabled = useReducedMotion();
   const handleSubTabChange = useCallback(
     (key: string) => {
-      resetSeamFade();
-      setActiveSubTab(key as SubTabKey);
+      const apply = () => {
+        resetSeamFade();
+        setActiveSubTab(key as SubTabKey);
+      };
+      const { startViewTransition } = document as Document & {
+        startViewTransition?: (update: () => void) => unknown;
+      };
+      if (isReduceMotionEnabled || typeof startViewTransition !== 'function') {
+        apply();
+        return;
+      }
+      startViewTransition.call(document, () => flushSync(apply));
     },
-    [resetSeamFade, setActiveSubTab]
+    [isReduceMotionEnabled, resetSeamFade, setActiveSubTab]
   );
 
   // BE handles spam/unknown filtering via `includeSpam` above; the rows are
@@ -451,29 +461,26 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // reads the page swap as a push (depth 1 over Home's 0) or a pop. A Powerup
   // is not one of them: the catalogue is a sheet over Home and an installed
   // Powerup is a sub-tab of it (spec 027).
-  const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
-  const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
-  const catalogEntries = useMemo(
-    () =>
-      getPowerupCatalog({
-        includeMocks: developerNetworks,
-        networkId: currentNetworkId,
-        installedIds: installed,
-      }),
-    [developerNetworks, currentNetworkId, installed]
-  );
-  // Only a real Powerup can be installed: the mocks advertise nothing the
-  // wallet can open, so the catalogue refuses to give them a tab.
-  const handleInstall = useCallback((id: string) => {
-    if (POWERUPS.some((entry) => entry.id === id)) install(id);
-    // `install` is stable; the registry is a module constant.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // Removing a tab in the arrangement sheet is the same act as uninstalling.
-  const removableTabKeys = useMemo(
-    () => powerupTabs.map((tab) => tab.key as string),
-    [powerupTabs]
-  );
+  // The catalogue drawer's own state and entries — shared with mobile's
+  // HomeScreen (`useHomePowerupsCatalog`). Entries are the registry's for
+  // the active network plus the developer-only mocks; an installed one
+  // keeps its place in its tier and says it is installed there. Only a real
+  // Powerup can be installed: the mocks advertise nothing the wallet can
+  // open, so the catalogue refuses to give them a tab.
+  const {
+    catalogVisible,
+    handleCatalogToggle,
+    handleCatalogClose,
+    catalogEntries,
+    handleInstall,
+    removableTabKeys,
+  } = useHomePowerupsCatalog({
+    powerupTabs,
+    installed,
+    install,
+    developerNetworks,
+    networkId: currentNetworkId,
+  });
 
   // The catalogue's height, measured off the live layout: the room under the
   // top of the Portfolio / NFTs row (owner, 2026-09-11). The side panel can be
@@ -682,21 +689,26 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
             <div style={pinnedHeaderStyle}>
-              <div>
-                <BalanceHeader
-                  testID="balance-header"
-                  blockchains={blockchainBalances}
-                  hiddenBalance={hiddenBalance}
-                  onToggleVisibility={toggleHidden}
-                  onBlockchainChange={handleBlockchainChange}
-                  activeIndex={activeBlockchainIndex}
-                  onSendPress={handleSendPress}
-                  onReceivePress={handleReceivePress}
-                  onActivityPress={handleActivityPress}
-                  sendDisabled={isWatchOnly}
-                />
-              </div>
-              <div ref={subTabsRef} style={pinnedSubTabsStyle}>
+              {/* Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the
+                  balance block leaves and the sub-tab row rises to where the
+                  chain selector stood; Portfolio or NFTs bring it back. */}
+              {isPowerupMode ? null : (
+                <div data-testid="home-balance-block" style={balanceBlockStyle}>
+                  <BalanceHeader
+                    testID="balance-header"
+                    blockchains={blockchainBalances}
+                    hiddenBalance={hiddenBalance}
+                    onToggleVisibility={toggleHidden}
+                    onBlockchainChange={handleBlockchainChange}
+                    activeIndex={activeBlockchainIndex}
+                    onSendPress={handleSendPress}
+                    onReceivePress={handleReceivePress}
+                    onActivityPress={handleActivityPress}
+                    sendDisabled={isWatchOnly}
+                  />
+                </div>
+              )}
+              <div ref={subTabsRef} style={isPowerupMode ? risenSubTabsStyle : subTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
                   tabs={subTabs}

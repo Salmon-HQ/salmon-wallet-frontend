@@ -11,16 +11,15 @@
  * The gate itself is unchanged: an unlocked session is not proof of
  * identity, so the password is asked again before the phrase comes into view.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
   fontSize,
-  getAccountMnemonic,
   lineHeight,
   spacing,
   useAccountsContext,
-  useCopyFeedback,
+  useBackupPanelLogic,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -32,53 +31,30 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
 
-/** What a covered cell shows. Same character count for every word, so the
- *  covered grid gives away nothing about the phrase's shape. */
-const MASK = '••••••';
-
 export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const { text } = useSemantic();
   const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
-  const [showSeedPhrase, setShowSeedPhrase] = useState(false);
-  const [reauthOpen, setReauthOpen] = useState(false);
-  const { copied, trigger: showCopied } = useCopyFeedback();
-  const [copyFailed, setCopyFailed] = useState(false);
-
-  // An account imported from a private key has no seed phrase to back up.
-  const mnemonic = useMemo(() => getAccountMnemonic(activeAccount) ?? '', [activeAccount]);
-  const words = useMemo(() => mnemonic.split(' ').filter(Boolean), [mnemonic]);
-  const hasNoMnemonic = words.length === 0;
-  const shownWords = useMemo(
-    () => (showSeedPhrase ? words : words.map(() => MASK)),
-    [showSeedPhrase, words]
-  );
-
-  const handleReveal = useCallback(() => {
-    if (showSeedPhrase) {
-      setShowSeedPhrase(false);
-      return;
-    }
-    setReauthOpen(true);
-  }, [showSeedPhrase]);
-
-  const handleReauthenticated = useCallback(async () => {
-    setShowSeedPhrase(true);
-  }, []);
-
-  const handleCopy = useCallback(async () => {
-    if (!showSeedPhrase || !mnemonic) return;
-    try {
-      await navigator.clipboard.writeText(mnemonic);
-      setCopyFailed(false);
-      showCopied();
-    } catch {
-      // A silent copy failure here means the user thinks the seed is saved.
-      setCopyFailed(true);
-    }
-  }, [showSeedPhrase, mnemonic, showCopied]);
+  // The DOM twin never passes biometric options, so `handleReveal` always
+  // falls through to the password gate — the same behavior this had before
+  // the reveal/copy/reauth state moved into shared.
+  const {
+    hasNoMnemonic,
+    shownWords,
+    showSeedPhrase,
+    reauthVisible: reauthOpen,
+    setReauthVisible: setReauthOpen,
+    copied,
+    copyFailed,
+    handleReveal,
+    handleReauthenticated,
+    handleCopy,
+  } = useBackupPanelLogic({
+    activeAccount,
+    copyToClipboard: (mnemonic) => navigator.clipboard.writeText(mnemonic),
+  });
 
   return (
     <SettingsPanelContent

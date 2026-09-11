@@ -61,6 +61,7 @@ export {
   visuallyHidden,
   TaskChromeProvider,
   useTaskChrome,
+  useReducedMotion,
 } from '@salmon/ui';
 
 export type { PanelRegistry, ReceiveSheetProps } from '@salmon/ui';

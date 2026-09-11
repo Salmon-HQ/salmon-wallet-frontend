@@ -62,12 +62,7 @@ export function DerivedAccountsSheet({
   const semantic = useSemantic();
   const [{ accounts }] = useAccountsContext();
 
-  const { rows, checked, toggle } = useDerivedFindRows(finds, accounts.length, t);
-
-  // The wait has its own title: the count is not known until the scan answers.
-  const title = scanning
-    ? t('wallet.derived.scanning_title')
-    : t('wallet.derived.found_title', { count: finds.length });
+  const { rows, checked, toggle, title } = useDerivedFindRows(finds, accounts.length, t, scanning);
 
   return (
     <BottomSheetContainer

@@ -72,6 +72,19 @@ export const pinnedSubTabsStyle: React.CSSProperties = {
   marginTop: spacing.xl,
 };
 
+/**
+ * The two elements the view transition names, so the browser can carry the
+ * sub-tab row from one position to the other and cross-fade the balance
+ * block out; `viewTransitionName` is not in React's CSS typings yet.
+ */
+export const balanceBlockStyle = { viewTransitionName: 'home-balance' } as React.CSSProperties;
+export const subTabsStyle = {
+  ...pinnedSubTabsStyle,
+  viewTransitionName: 'home-sub-tabs',
+} as React.CSSProperties;
+/** Focus mode: the row stands where the chain selector stood, no seam above. */
+export const risenSubTabsStyle = { ...subTabsStyle, marginTop: 0 } as React.CSSProperties;
+
 /** The content region: the only part of Home that scrolls. */
 export const contentRegionStyle: React.CSSProperties = {
   position: 'relative',

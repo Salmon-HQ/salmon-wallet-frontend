@@ -33,8 +33,7 @@ import {
   motionMs,
   spacing,
   SETTINGS_GROUPS,
-  useAccountsContext,
-  useDeveloperModeSettings,
+  useDeveloperModeToggles,
   useSettingsPanelStack,
   useWaitExit,
   type IconGlyphProps,
@@ -205,30 +204,15 @@ export function SettingsPanelStack({
   const tokens = useSemantic();
   const reduced = useReducedMotion();
   const { stack, push, pop, reset, canGoBack } = useSettingsPanelStack();
-  // The two "show me more" settings come from the provider the root mounts —
-  // the same instance the carousel and the network panel read (mobile's
+  // The two "show me more" settings and their toggle handlers are the same
+  // shape on both platforms — hoisted to `useDeveloperModeToggles` (mobile's
   // settings/index.tsx does the same).
-  const [{ networkId }, accountActions] = useAccountsContext();
   const {
     developerNetworks,
     showUnverifiedTokens,
-    toggleDeveloperNetworks,
-    setShowUnverifiedTokens,
-  } = useDeveloperModeSettings();
-  // Turning the flag off while the session stands on devnet moves it to the
-  // mainnet sibling first — the shared toggle owns that passage.
-  const handleToggleDeveloperNetworks = useCallback(() => {
-    void toggleDeveloperNetworks({
-      activeNetworkId: networkId,
-      changeNetwork: accountActions.changeNetwork,
-    });
-  }, [toggleDeveloperNetworks, networkId, accountActions]);
-  const handleToggleUnverifiedTokens = useCallback(
-    (show: boolean) => {
-      void setShowUnverifiedTokens(show);
-    },
-    [setShowUnverifiedTokens]
-  );
+    handleToggleDeveloperNetworks,
+    handleToggleUnverifiedTokens,
+  } = useDeveloperModeToggles();
 
   // Track animation state for the top panel
   const [animating, setAnimating] = useState(false);

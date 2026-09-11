@@ -23,19 +23,18 @@ vi.mock('../LoadingScreen', () => ({
   LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
 }));
 
-// The two "show me more" toggles read the DeveloperMode provider, not props;
-// the stack is rendered without the provider tree, so its slice is faked.
-const mockToggleDeveloperNetworks = vi.fn();
-const mockSetShowUnverifiedTokens = vi.fn();
-const mockChangeNetwork = vi.fn();
+// The two "show me more" toggles read the DeveloperMode provider (via
+// `useDeveloperModeToggles`), not props; the stack is rendered without the
+// provider tree, so its slice is faked.
+const mockHandleToggleDeveloperNetworks = vi.fn();
+const mockHandleToggleUnverifiedTokens = vi.fn();
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
-  useAccountsContext: () => [{ networkId: 'solana-devnet' }, { changeNetwork: mockChangeNetwork }],
-  useDeveloperModeSettings: () => ({
+  useDeveloperModeToggles: () => ({
     developerNetworks: false,
     showUnverifiedTokens: false,
-    toggleDeveloperNetworks: mockToggleDeveloperNetworks,
-    setShowUnverifiedTokens: mockSetShowUnverifiedTokens,
+    handleToggleDeveloperNetworks: mockHandleToggleDeveloperNetworks,
+    handleToggleUnverifiedTokens: mockHandleToggleUnverifiedTokens,
   }),
 }));
 
@@ -151,19 +150,17 @@ describe('SettingsPanelStack — a toggle row announces once', () => {
     expect(screen.getByTestId(testId)).toBeTruthy();
   });
 
-  it('writes each toggle to the shared setting, handing the session over on the way', () => {
+  it('flips each switch through the shared toggle handlers', () => {
     renderStack();
 
-    // The developer-networks toggle carries the session's network and the
-    // switch, so turning it off on devnet lands the user on mainnet first.
+    // The session/network plumbing behind these handlers is
+    // `useDeveloperModeToggles`'s own concern (tested there); this only
+    // checks the row wires the switch to it.
     fireEvent.click(screen.getByTestId('settings-developer-networks-toggle'));
-    expect(mockToggleDeveloperNetworks).toHaveBeenCalledWith({
-      activeNetworkId: 'solana-devnet',
-      changeNetwork: mockChangeNetwork,
-    });
+    expect(mockHandleToggleDeveloperNetworks).toHaveBeenCalled();
 
     fireEvent.click(screen.getByTestId('settings-unverified-tokens-toggle'));
-    expect(mockSetShowUnverifiedTokens).toHaveBeenCalledWith(true);
+    expect(mockHandleToggleUnverifiedTokens).toHaveBeenCalledWith(true);
   });
 });
 

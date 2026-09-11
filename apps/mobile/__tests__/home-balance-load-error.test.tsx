@@ -39,6 +39,7 @@ jest.mock('react-native-reanimated', () => {
   return {
     __esModule: true,
     default: { View },
+    LinearTransition: { duration: () => undefined },
     useReducedMotion: () => false,
   };
 });
@@ -67,6 +68,7 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 
 jest.mock('@salmon/shared', () => ({
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
+  motionMs: { drift: 280 },
   colors: {
     accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },
@@ -141,6 +143,10 @@ jest.mock('@salmon/shared', () => ({
   // cover the logic, and Home is rendered here with what they hand back.
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+    .useHomePowerupTabs,
+  useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+    .useHomePowerupsCatalog,
   // Nothing installed: the Powerup tabs are their own suite.
   useInstalledPowerups: () => ({
     installed: [],

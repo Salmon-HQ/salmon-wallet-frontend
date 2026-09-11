@@ -28,9 +28,10 @@ import {
   CONFIRMATION_CONFIG,
   CONFIRMATION_LABEL_KEYS,
   STATUS_LABEL_KEYS,
-  conversionRateFor,
   transactionStatusDisplayFor,
   useDeveloperMode,
+  useTransactionDetailDerived,
+  withPlatformGlyphs,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -62,12 +63,7 @@ const STATUS_GLYPHS = { checkCircle: CheckCircleIcon, xCircle: XCircleIcon, cloc
 
 /** The shared status table with this platform's icons. */
 const statusConfigFor = (t: Semantic) =>
-  Object.fromEntries(
-    Object.entries(transactionStatusDisplayFor(t)).map(([status, display]) => [
-      status,
-      { label: display.label, color: display.color, icon: STATUS_GLYPHS[display.glyph] },
-    ])
-  ) as Record<
+  withPlatformGlyphs(transactionStatusDisplayFor(t), STATUS_GLYPHS) as Record<
     'completed' | 'failed' | 'pending',
     { label: string; color: string; icon: IconComponent }
   >;
@@ -96,17 +92,11 @@ export function TransactionDetail({
     if (transaction && onShare) onShare(transaction);
   }, [transaction, onShare]);
 
-  const typeConfig = useMemo(() => {
-    if (!transaction) return TRANSACTION_TYPE_CONFIG.unknown;
-    return TRANSACTION_TYPE_CONFIG[transaction.type] || TRANSACTION_TYPE_CONFIG.unknown;
-  }, [transaction, TRANSACTION_TYPE_CONFIG]);
-
-  const statusConfig = useMemo(() => {
-    if (!transaction) return STATUS_CONFIG.completed;
-    return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
-  }, [transaction, STATUS_CONFIG]);
-
-  const conversionRate = useMemo(() => conversionRateFor(transaction), [transaction]);
+  const { typeConfig, statusConfig, conversionRate } = useTransactionDetailDerived(
+    transaction,
+    TRANSACTION_TYPE_CONFIG,
+    STATUS_CONFIG
+  );
 
   if (!transaction) return null;
 

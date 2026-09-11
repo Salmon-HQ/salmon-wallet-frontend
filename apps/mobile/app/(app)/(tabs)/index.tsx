@@ -35,7 +35,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Reanimated, { useReducedMotion } from 'react-native-reanimated';
+import Reanimated, { LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import {
   useAccountsContext,
@@ -44,14 +44,16 @@ import {
   usePrefetchBalances,
   useCurrencyContext,
   useHomeShell,
+  useHomePowerupTabs,
+  useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
-  type HomePowerupTab,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
   getHeldNetworkIds,
   type NetworkId,
+  motionMs,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
@@ -71,13 +73,7 @@ import {
   WarningNotice,
   type BlockchainId,
 } from '../../../src/components';
-import {
-  POWERUPS,
-  POWERUPS_ENABLED,
-  PowerupsCatalog,
-  getPowerupCatalog,
-  getPowerupTab,
-} from '../../../src/powerups';
+import { POWERUPS_ENABLED, PowerupsCatalog, getPowerupTab } from '../../../src/powerups';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
@@ -132,11 +128,12 @@ export default function HomeScreen() {
   // The sheet where the sub-tabs are arranged
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
 
-  // The Powerups catalogue, and the height it rises to: the top of the
-  // Portfolio / NFTs row in window coordinates (owner, 2026-09-11), so the
-  // sheet stands exactly on that row and the balance and the Send / Receive /
-  // Activity buttons stay visible above it.
-  const [catalogVisible, setCatalogVisible] = useState(false);
+  // The height the Powerups catalogue rises to: the top of the Portfolio /
+  // NFTs row in window coordinates (owner, 2026-09-11), so the sheet stands
+  // exactly on that row and the balance and the Send / Receive / Activity
+  // buttons stay visible above it. `catalogVisible` itself is
+  // `useHomePowerupsCatalog`'s state, set up further down with the rest of
+  // the Powerups slice.
   const [subTabsTop, setSubTabsTop] = useState(0);
   const subTabsRef = useRef<View>(null);
   const handleSubTabsLayout = useCallback(() => {
@@ -158,9 +155,14 @@ export default function HomeScreen() {
     if (!accountState.locked) return;
 
     setReceiveSheetVisible(false);
-    setCatalogVisible(false);
+    handleCatalogClose();
     // Token detail is a route (spec 019) — it sits above the tab shell that
     // mounts the lock overlay, so it closes itself.
+    // `handleCatalogClose` is declared later in this component
+    // (`useHomePowerupsCatalog`); it is a stable useCallback with an empty
+    // dep array, same as `setReceiveSheetVisible` above, so omitting it here
+    // is safe and avoids a temporal-dead-zone read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountState.locked]);
 
   // Unverified tokens — its own setting now (spec 026 D4). Developer Networks
@@ -257,18 +259,11 @@ export default function HomeScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
 
-  // The installed Powerups, as Home surfaces. The registry and the copy come
-  // through `src/powerups`, the entry the build flag aliases, so a build with
-  // Powerups off passes an empty list and the shell never hears of them.
-  const powerupTabs = useMemo<HomePowerupTab[]>(
-    () =>
-      POWERUPS.filter((entry) => installed.includes(entry.id)).map((entry) => ({
-        key: entry.id as HomeSubTabKey,
-        label: t(entry.nameKey),
-        networks: entry.networks,
-      })),
-    [installed, t]
-  );
+  // The installed Powerups, as Home surfaces — the registry and the copy come
+  // through the shared registry (aliased out with the build flag off), so a
+  // build with Powerups off passes an empty list and the shell never hears
+  // of them (`useHomePowerupTabs`, shared with the extension's HomePage).
+  const powerupTabs = useHomePowerupTabs({ installed });
 
   // The shell's state — page index, per-page balances, the network the screen
   // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
@@ -412,34 +407,26 @@ export default function HomeScreen() {
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
   const handleOrderSheetClose = useCallback(() => setOrderSheetVisible(false), []);
 
-  // The catalogue. Its entries are the registry's for the active network plus
-  // the developer-only mocks; an installed one keeps its place in its tier and
-  // says it is installed there.
-  const catalogEntries = useMemo(
-    () =>
-      getPowerupCatalog({
-        includeMocks: developerNetworks,
-        networkId: currentNetworkId,
-        installedIds: installed,
-      }),
-    [developerNetworks, currentNetworkId, installed]
-  );
-  const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
-  const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
-  // Only a real Powerup can be installed: the mocks advertise nothing the
-  // wallet can open, so the catalogue refuses to give them a tab.
-  const isRealPowerup = useCallback((id: string) => POWERUPS.some((entry) => entry.id === id), []);
-  const handleInstall = useCallback(
-    (id: string) => {
-      if (isRealPowerup(id)) install(id);
-    },
-    [install, isRealPowerup]
-  );
-  // Removing a tab in the arrangement sheet is the same act as uninstalling.
-  const removableTabKeys = useMemo(
-    () => powerupTabs.map((tab) => tab.key as string),
-    [powerupTabs]
-  );
+  // The catalogue drawer's own state and entries — shared with the
+  // extension's HomePage (`useHomePowerupsCatalog`). Entries are the
+  // registry's for the active network plus the developer-only mocks; an
+  // installed one keeps its place in its tier and says it is installed
+  // there. Only a real Powerup can be installed: the mocks advertise
+  // nothing the wallet can open, so the catalogue refuses to give them a tab.
+  const {
+    catalogVisible,
+    handleCatalogToggle,
+    handleCatalogClose,
+    catalogEntries,
+    handleInstall,
+    removableTabKeys,
+  } = useHomePowerupsCatalog({
+    powerupTabs,
+    installed,
+    install,
+    developerNetworks,
+    networkId: currentNetworkId,
+  });
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -497,6 +484,16 @@ export default function HomeScreen() {
   }
 
   // `address` is defined above, next to the account state it comes from.
+
+  // Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the balance block
+  // — chain selector, total, Send / Receive / Activity — leaves, and the
+  // sub-tab row rises to where the chain selector stood. Portfolio or NFTs
+  // bring it all back. A container transform: the row is one element whose
+  // position interpolates; the balance sinks out under it.
+  const isPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+  const headerLayout = isReduceMotionEnabled
+    ? undefined
+    : LinearTransition.duration(motionMs.drift);
 
   // The block above the content. It is fixed on both sub-tabs — nothing above
   // the sub-tab row scrolls (owner, 2026-09-01).
@@ -605,17 +602,26 @@ export default function HomeScreen() {
           {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
               is the same instance across a switch: `UnderlineTabs` only slides
               its underline if it is not remounted. */}
-          <View style={styles.pinnedHeader}>
-            {balanceBlock}
+          <Reanimated.View layout={headerLayout} style={styles.pinnedHeader}>
+            {isPowerupMode ? null : (
+              <Reanimated.View
+                key="home-balance"
+                testID="home-balance-block"
+                entering={floatEntering(isReduceMotionEnabled)}
+                exiting={sinkExiting(isReduceMotionEnabled)}
+              >
+                {balanceBlock}
+              </Reanimated.View>
+            )}
             <View
               ref={subTabsRef}
               onLayout={handleSubTabsLayout}
               collapsable={false}
-              style={styles.pinnedSubTabs}
+              style={[styles.pinnedSubTabs, isPowerupMode && styles.pinnedSubTabsRisen]}
             >
               {subTabsRow}
             </View>
-          </View>
+          </Reanimated.View>
 
           {/* The content region plays the verb on a sub-tab change: the
               outgoing list sinks, the incoming one floats — NFTs used to

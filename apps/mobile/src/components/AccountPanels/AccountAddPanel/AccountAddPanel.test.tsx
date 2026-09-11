@@ -135,6 +135,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireMock('@salmon/shared/src/hooks/useImportPrivateKey'),
   ...jest.requireMock('@salmon/shared/src/hooks/useImportWatchOnly'),
   ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
+  ...jest.requireActual('@salmon/shared/src/utils/accountAddPanelCopy'),
   useAccountAddFlow: jest.requireActual('@salmon/shared/src/hooks/useAccountAddFlow')
     .useAccountAddFlow,
   SHORT_PHRASE: 12,

@@ -5,10 +5,12 @@
  * Only reachable with developer mode on, so it stays out of the shell. The
  * mobile twin is
  * `apps/mobile/src/components/TransactionDetail/TransactionDetailDeveloper.tsx`.
+ * The sections/rows come from `buildTransactionDeveloperSections` (shared
+ * with that twin) — this file only renders them.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { getShortAddress, spacing } from '@salmon/shared';
+import { buildTransactionDeveloperSections, spacing } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { CodeIcon, iconSize } from '../../icons';
@@ -24,6 +26,7 @@ export interface TransactionDetailDeveloperProps {
 export function TransactionDetailDeveloper({ transaction }: TransactionDetailDeveloperProps) {
   const { t } = useTranslation();
   const { text } = useSemantic();
+  const sections = buildTransactionDeveloperSections(transaction, t);
 
   return (
     <Card padding="lg" gap={spacing.md} testID="tx-detail-developer">
@@ -34,84 +37,20 @@ export function TransactionDetailDeveloper({ transaction }: TransactionDetailDev
         </SectionLabel>
       </div>
 
-      {transaction.heliusType && (
-        <KeyValueRow
-          label={t('transactions.detail.heliusType', 'Type')}
-          value={transaction.heliusType}
-          labelWeight={600}
-        />
-      )}
-
-      {transaction.accountsInvolved != null && (
-        <KeyValueRow
-          label={t('transactions.detail.accountsInvolved', 'Accounts Involved')}
-          value={String(transaction.accountsInvolved)}
-          labelWeight={600}
-        />
-      )}
-
-      {transaction.instructions && transaction.instructions.length > 0 && (
-        <>
-          <SectionLabel variant="caps">
-            {t('transactions.detail.programs', 'Programs')}
-          </SectionLabel>
-          {transaction.instructions.map((ix, index) => (
+      {sections.map((section) => (
+        <React.Fragment key={section.key}>
+          {section.title && <SectionLabel variant="caps">{section.title}</SectionLabel>}
+          {section.rows.map((row) => (
             <KeyValueRow
-              key={`ix-${index}`}
-              label={getShortAddress(ix.programId, 6) ?? ''}
-              value={
-                ix.innerInstructionsCount > 0
-                  ? t('transactions.detail.innerCount', {
-                      count: ix.innerInstructionsCount,
-                      defaultValue: '{{count}} inner',
-                    })
-                  : ''
-              }
-              valueTone="secondary"
+              key={row.key}
+              label={row.label}
+              value={row.value}
+              valueTone={row.valueTone}
+              labelWeight={row.labelWeight}
             />
           ))}
-        </>
-      )}
-
-      {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
-        <>
-          <SectionLabel variant="caps">
-            {t('transactions.detail.innerSwaps', 'Inner Swaps')}
-          </SectionLabel>
-          {transaction.innerSwaps.map((swap, index) => (
-            <KeyValueRow
-              key={`inner-${index}`}
-              label={swap.programInfo.source}
-              value={`${swap.programInfo.programName} / ${swap.programInfo.instructionName}`}
-              valueTone="secondary"
-            />
-          ))}
-        </>
-      )}
-
-      {transaction.swapFees && (
-        <>
-          <SectionLabel variant="caps">
-            {t('transactions.detail.swapFees', 'Swap Fees')}
-          </SectionLabel>
-          {transaction.swapFees.nativeFees.map((fee, index) => (
-            <KeyValueRow
-              key={`nfee-${index}`}
-              label={getShortAddress(fee.account, 6) ?? ''}
-              value={`${fee.amount} SOL`}
-              valueTone="secondary"
-            />
-          ))}
-          {transaction.swapFees.tokenFees.map((fee, index) => (
-            <KeyValueRow
-              key={`tfee-${index}`}
-              label={getShortAddress(fee.account, 6) ?? ''}
-              value={`${fee.amount} (${getShortAddress(fee.mint, 4) ?? ''})`}
-              valueTone="secondary"
-            />
-          ))}
-        </>
-      )}
+        </React.Fragment>
+      ))}
     </Card>
   );
 }

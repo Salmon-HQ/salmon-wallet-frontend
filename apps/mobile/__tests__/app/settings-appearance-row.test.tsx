@@ -31,11 +31,11 @@ jest.mock('@salmon/shared', () => ({
     remove: jest.fn(),
   }),
   // Developer mode lives in shared now; the screen reads it through the barrel.
-  useDeveloperModeSettings: () => ({
+  useDeveloperModeToggles: () => ({
     developerNetworks: false,
     showUnverifiedTokens: false,
-    toggleDeveloperNetworks: jest.fn(),
-    setShowUnverifiedTokens: jest.fn(),
+    handleToggleDeveloperNetworks: jest.fn(),
+    handleToggleUnverifiedTokens: jest.fn(),
   }),
   fontFamilyNative: { regular: 'System', bold: 'System' },
   fontSize: { body: 15 },

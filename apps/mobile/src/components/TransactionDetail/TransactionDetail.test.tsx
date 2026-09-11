@@ -48,6 +48,8 @@ jest.mock('@salmon/shared', () => ({
   // The display tables and derivations are real: the verb, the status ink
   // and the swap rate are what this detail is built from.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionDetailDerived'),
+  ...jest.requireActual('@salmon/shared/src/utils/transactionDeveloperRows'),
   useDeveloperMode: () => mockDeveloperMode,
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,

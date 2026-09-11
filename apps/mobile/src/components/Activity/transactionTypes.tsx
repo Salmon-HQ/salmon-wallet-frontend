@@ -28,6 +28,7 @@ import {
   s,
   spacing,
   transactionTypeDisplayFor,
+  withPlatformGlyphs,
   type Semantic,
   type TransactionTypeGlyph,
 } from '@salmon/shared';
@@ -66,12 +67,10 @@ const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
 export const transactionTypeConfigFor = (
   t: Semantic
 ): Record<TransactionType, { label: string; icon: IconComponent; color: string }> =>
-  Object.fromEntries(
-    Object.entries(transactionTypeDisplayFor(t)).map(([type, display]) => [
-      type,
-      { label: display.label, color: display.color, icon: GLYPHS[display.glyph] },
-    ])
-  ) as Record<TransactionType, { label: string; icon: IconComponent; color: string }>;
+  withPlatformGlyphs(transactionTypeDisplayFor(t), GLYPHS) as Record<
+    TransactionType,
+    { label: string; icon: IconComponent; color: string }
+  >;
 
 export { TYPE_LABEL_KEYS };
 

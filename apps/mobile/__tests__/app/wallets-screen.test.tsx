@@ -105,6 +105,25 @@ jest.mock('react-i18next', () => {
   };
 });
 
+// `useWalletsScreen`/`useWalletCardDerived` (mocked below, via the real
+// modules) internally import `useBalance`, `useUserConfig` and
+// `useWalletTotals` by relative path — those three are mocked here at their
+// own file path, the same treatment `utils/account` gets, because their real
+// implementations reach `@solana/kit` / `@tanstack/react-query` machinery
+// jest-expo will not transform. Jest's module registry keys mocks by
+// resolved path, so this intercepts them regardless of how a caller spells
+// the relative import.
+jest.mock('../../../../packages/shared/src/hooks/useBalance', () => ({
+  useBalance: () => ({ hiddenBalance: false, toggleHidden: jest.fn() }),
+}));
+jest.mock('../../../../packages/shared/src/hooks/useUserConfig', () => ({
+  useUserConfig: () => ({ excludedFromTotal: [], setIncludedInTotal: jest.fn() }),
+}));
+jest.mock('../../../../packages/shared/src/hooks/useWalletTotals', () => ({
+  useWalletTotals: () => ({ totals: { w1: 10, w2: 5, w3: 3 } }),
+  sumIncludedTotals: () => 18,
+}));
+
 jest.mock('@salmon/shared', () => {
   // `account-secret` is pure type-level work, so the real predicates can run;
   // `utils/account` cannot be required here (it reaches @solana/kit, which
@@ -121,6 +140,9 @@ jest.mock('@salmon/shared', () => {
     ...jest.requireActual('../../../../packages/shared/src/hooks/useDerivedFindRows'),
     // The card order is real: parent, then its derived wallets, is what this suite reads.
     ...jest.requireActual('../../../../packages/shared/src/utils/walletCards'),
+    // The screen's own aggregation and per-card derived logic — real, composed
+    // on top of the three hooks mocked above.
+    ...jest.requireActual('../../../../packages/shared/src/hooks/useWalletsScreen'),
     getAccountMnemonic: actualSecret.getAccountMnemonic,
     isWatchOnlyAccount: actualSecret.isWatchOnlyAccount,
     getAccountAddress: (account: {
@@ -132,17 +154,10 @@ jest.mock('@salmon/shared', () => {
       mockAccountState,
       { changeAccount: mockChangeAccount, changePathIndex: mockChangePathIndex },
     ],
-    useBalance: () => ({ hiddenBalance: false, toggleHidden: jest.fn() }),
     useCurrencyContext: () => [
       {},
       { formatValue: (value: number | undefined) => `$${value ?? 0}` },
     ],
-    useUserConfig: () => ({
-      excludedFromTotal: [],
-      setIncludedInTotal: jest.fn(),
-    }),
-    useWalletTotals: () => ({ totals: { w1: 10, w2: 5, w3: 3 } }),
-    sumIncludedTotals: () => 18,
     ContentLoader: () => null,
     Rect: () => null,
   };

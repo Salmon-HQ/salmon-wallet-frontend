@@ -8,7 +8,7 @@
  * address otherwise); the protocol shows in the detail, where a program name
  * belongs.
  */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
@@ -16,17 +16,17 @@ import {
   fontWeight,
   formatRawAmount,
   formatRelativeTimeCompact,
-  describeTransactionRow,
   lineHeight,
   spacing,
   tabularNums,
+  useTransactionItemDerived,
   type TransactionTokenAmount,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ClockIcon, XCircleIcon, iconSize } from '../../icons';
 import { ListRow } from '../ListRow';
-import { TYPE_LABEL_KEYS, TransactionMark, transactionTypeConfigFor } from './transactionTypes';
+import { TransactionMark, transactionTypeConfigFor } from './transactionTypes';
 import type { TransactionItemProps } from './types';
 
 const HIDDEN_VALUE = '****';
@@ -88,24 +88,17 @@ export function TransactionItem({
   const { status: statusTokens, text } = semantic;
   const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semantic);
-  const config = typeConfig[type] || typeConfig.unknown;
-
-  const totalAmounts = inputs.length + outputs.length;
-  const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
+  const { totalAmounts, isComplex, descriptionText, typeLabel } = useTransactionItemDerived(
+    transaction,
+    contacts,
+    t,
+    typeConfig,
+    MAX_VISIBLE_AMOUNTS
+  );
 
   const handlePress = useCallback(() => {
     onPress?.(transaction);
   }, [onPress, transaction]);
-
-  // What the row says under the verb — one derivation for both platforms
-  // (`describeTransactionRow`): "To/From <name>" for a transfer, the shared
-  // description for everything else.
-  const descriptionText = useMemo(() => {
-    const said = describeTransactionRow(transaction, contacts);
-    return t(said.key, said.values);
-  }, [transaction, contacts, t]);
-
-  const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 
   const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') =>
     tokens.map((token, i) => (

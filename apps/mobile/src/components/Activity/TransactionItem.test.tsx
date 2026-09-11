@@ -30,6 +30,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
   // The row's verb table and its sentence are real — they are the row.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionItemDerived'),
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   formatRelativeTimeCompact: () => '2h',

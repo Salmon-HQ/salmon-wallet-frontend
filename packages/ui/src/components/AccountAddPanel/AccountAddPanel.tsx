@@ -26,7 +26,10 @@ import {
   spacing,
   useAccountsContext,
   useAccountAddFlow,
-  type AccountAddStep,
+  ACCOUNT_ADD_METHODS,
+  ACCOUNT_ADD_STEP_TITLE_KEYS,
+  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
+  type AccountAddMethodId,
   type IconGlyphProps,
 } from '@salmon/shared';
 
@@ -157,46 +160,27 @@ export function AccountAddPanel({
   /** The inside of one step: 12 binds a label to its field and a field to its hint. */
   const stack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: spacing.md };
 
-  const methods: {
-    id: string;
-    icon: React.ComponentType<IconGlyphProps>;
-    titleKey: string;
-    descriptionKey: string;
-    onPress: () => void;
-  }[] = [
-    ...(flow.canDerive
-      ? [
-          {
-            id: 'derive',
-            icon: TreeStructureIcon,
-            titleKey: 'settings.account_add.create_new',
-            descriptionKey: 'settings.account_add.create_new_description',
-            onPress: () => void flow.selectDerive(),
-          },
-        ]
-      : []),
-    {
-      id: 'import',
-      icon: FileTextIcon,
-      titleKey: 'settings.account_add.import_seed',
-      descriptionKey: 'settings.account_add.import_seed_description',
-      onPress: flow.selectImport,
-    },
-    {
-      id: 'private-key',
-      icon: KeyIcon,
-      titleKey: 'settings.account_add.import_private_key',
-      descriptionKey: 'settings.account_add.import_private_key_description',
-      onPress: flow.selectImportPrivateKey,
-    },
-    {
-      id: 'watch-only',
-      icon: EyeIcon,
-      titleKey: 'settings.account_add.import_watch_only',
-      descriptionKey: 'settings.account_add.import_watch_only_description',
-      onPress: flow.selectImportWatchOnly,
-    },
-  ];
+  // Copy (id/titleKey/descriptionKey) is the shared `ACCOUNT_ADD_METHODS`
+  // table; only the icon and the flow selector are platform-local.
+  const methodIcons: Record<AccountAddMethodId, React.ComponentType<IconGlyphProps>> = {
+    derive: TreeStructureIcon,
+    import: FileTextIcon,
+    'private-key': KeyIcon,
+    'watch-only': EyeIcon,
+  };
+  const methodHandlers: Record<AccountAddMethodId, () => void> = {
+    derive: () => void flow.selectDerive(),
+    import: flow.selectImport,
+    'private-key': flow.selectImportPrivateKey,
+    'watch-only': flow.selectImportWatchOnly,
+  };
+  const methods = ACCOUNT_ADD_METHODS.filter(
+    (method) => method.id !== 'derive' || flow.canDerive
+  ).map((method) => ({
+    ...method,
+    icon: methodIcons[method.id],
+    onPress: methodHandlers[method.id],
+  }));
 
   const renderSelectMethod = () =>
     methods.map((method) => (
@@ -455,51 +439,11 @@ export function AccountAddPanel({
     </div>
   );
 
-  const stepTitles: Record<AccountAddStep, string> = {
-    'select-method': t('settings.account_add.title'),
-    'derive-scan': t('settings.account_add.create_new'),
-    'import-seed': t('settings.account_add.import_seed'),
-    'import-private-key': t('wallet.import.title'),
-    'import-watch-only': t('wallet.watchOnly.title'),
-    'set-name': t('settings.account_add.set_name'),
-    reauth: t('settings.account_add.reauth_title'),
-    complete: t('settings.account_add.title'),
-  };
-
-  const stepSubtitles: Record<AccountAddStep, string> = {
-    'select-method': t(
-      'settings.account_add.select_method_subtitle',
-      'Choose how you want to add this account.'
-    ),
-    'derive-scan': t(
-      'settings.account_add.create_new_description',
-      'Derive a new account from your existing seed phrase'
-    ),
-    'import-seed': t(
-      'settings.account_add.import_seed_description',
-      'Import an account using a different seed phrase'
-    ),
-    'import-private-key': t(
-      'settings.account_add.import_private_key_description',
-      'Add a wallet you already own using its private key'
-    ),
-    'import-watch-only': t(
-      'settings.account_add.watch_only_subtitle',
-      "Follow a wallet's address without moving its funds"
-    ),
-    'set-name': t(
-      'settings.account_add.set_name_subtitle',
-      "Give this account a name you'll recognize"
-    ),
-    reauth: t('settings.account_add.reauth_subtitle', 'Enter your password to keep going.'),
-    complete: t('settings.account_add.title'),
-  };
-
   return (
     <>
       <SettingsPanelContent
-        title={stepTitles[step]}
-        subtitle={stepSubtitles[step]}
+        title={t(ACCOUNT_ADD_STEP_TITLE_KEYS[step])}
+        subtitle={t(...ACCOUNT_ADD_STEP_SUBTITLE_KEYS[step])}
         onBack={flow.stepBack}
       >
         {step === 'select-method' && renderSelectMethod()}
