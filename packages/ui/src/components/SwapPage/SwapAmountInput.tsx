@@ -20,7 +20,6 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { CaretDownIcon } from '../../icons';
 import { AmountEntryCard } from '../AmountEntryCard';
 import type { SwapAmountInputProps } from './types';
 
@@ -124,7 +123,6 @@ export function SwapAmountInput({
         >
           <TokenMark uri={token?.logo} symbol={token?.symbol} />
           <span>{token?.symbol ?? t('actions.select', 'Select')}</span>
-          <CaretDownIcon size={componentSizes.iconSizeSmall} color={semantic.text.secondary} />
         </button>
 
         {availableText !== undefined && (

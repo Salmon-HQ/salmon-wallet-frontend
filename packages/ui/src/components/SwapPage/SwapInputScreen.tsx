@@ -8,6 +8,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
@@ -162,9 +163,22 @@ export function SwapInputScreen({
           which sits on the bottom edge of Home's content region. */}
       <div style={{ paddingTop: spacing.lg }} />
 
-      <PrimaryButton testID="swap-submit-button" onPress={onSwap} disabled={!canSwap}>
-        {t('swap.swap_now', 'Swap')}
-      </PrimaryButton>
+      {/* One fixed width, in both states, centred — the mobile twin's rule: a
+          control pinned to both edges reads as a bar, and sizing it to its
+          label made the geometry a function of its state. */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <PrimaryButton
+          testID="swap-submit-button"
+          onPress={onSwap}
+          disabled={!canSwap}
+          style={{
+            width: componentSizes.copyButtonWidth,
+            height: componentSizes.buttonHeightCompact,
+          }}
+        >
+          {t('swap.swap_now', 'Swap')}
+        </PrimaryButton>
+      </div>
     </div>
   );
 }

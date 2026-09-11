@@ -110,7 +110,8 @@ export function AmountEntryCard({
           data-testid={testID ? `${testID}-fiat` : undefined}
           style={{
             ...tabularNums.css,
-            alignSelf: 'center',
+            display: 'block',
+            textAlign: 'center',
             fontSize: fontSize.mono,
             fontFamily: fontFamily.sans,
             fontWeight: fontWeight.medium,
