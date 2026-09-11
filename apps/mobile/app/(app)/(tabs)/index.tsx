@@ -649,14 +649,20 @@ export default function HomeScreen() {
                 {balanceBlock}
               </Reanimated.View>
             )}
-            <View
+            {/* The row carries its own `layout`: Reanimated animates the frame
+                of the view that holds the prop, so a parent's `layout` never
+                moves a child — and an exiting sibling leaves the layout at
+                once. Without this the row cut to its risen place while the
+                balance was still sinking (owner, on device, 2026-09-11). */}
+            <Reanimated.View
               ref={subTabsRef}
               onLayout={handleSubTabsLayout}
               collapsable={false}
+              layout={headerLayout}
               style={[styles.pinnedSubTabs, isPowerupMode && styles.pinnedSubTabsRisen]}
             >
               {subTabsRow}
-            </View>
+            </Reanimated.View>
           </Reanimated.View>
 
           {/* The content region plays the verb on a sub-tab change: the
