@@ -19,6 +19,26 @@ interface Props {
   onDismiss: (approved: boolean) => void;
 }
 
+// Direct injected-provider callers can supply cluster names instead of wallet
+// network IDs. Only known Solana aliases are equivalent; preserve unknown IDs
+// so the approval guard still rejects them.
+function canonicalSolanaNetwork(network: string): string {
+  switch (network) {
+    case 'mainnet':
+    case 'mainnet-beta':
+    case 'solana:mainnet':
+      return 'solana-mainnet';
+    case 'devnet':
+    case 'solana:devnet':
+      return 'solana-devnet';
+    case 'testnet':
+    case 'solana:testnet':
+      return 'solana-testnet';
+    default:
+      return network;
+  }
+}
+
 export function DAppTransactionApprovalPage({
   origin,
   request,
@@ -51,7 +71,7 @@ export function DAppTransactionApprovalPage({
   const requestedNetwork = request.params?.network;
   const networkMismatch = useMemo(
     () =>
-      requestedNetwork && networkId && requestedNetwork !== networkId
+      requestedNetwork && networkId && canonicalSolanaNetwork(requestedNetwork) !== networkId
         ? { requested: requestedNetwork, active: networkId }
         : null,
     [networkId, requestedNetwork]

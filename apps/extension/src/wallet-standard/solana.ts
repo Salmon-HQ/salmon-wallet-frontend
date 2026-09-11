@@ -29,17 +29,17 @@ export function isSolanaChain(chain: IdentifierString): chain is SolanaChain {
 }
 
 /**
- * Map supported Solana clusters to supported Salmon networks.
+ * Map Wallet Standard chains to canonical Salmon network IDs used by approval.
  */
 export function getNetworkForChain(chain: SolanaChain): string {
   switch (chain) {
     case SOLANA_MAINNET_CHAIN:
-      return 'mainnet';
+      return 'solana-mainnet';
     case SOLANA_DEVNET_CHAIN:
-      return 'devnet';
+      return 'solana-devnet';
     case SOLANA_TESTNET_CHAIN:
-      return 'testnet';
+      return 'solana-testnet';
     default:
-      return 'mainnet';
+      return 'solana-mainnet';
   }
 }
