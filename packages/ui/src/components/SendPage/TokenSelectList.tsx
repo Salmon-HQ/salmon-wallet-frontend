@@ -6,7 +6,7 @@
  * balance), 20 between every sibling. The "Select Token" heading is the
  * sheet's own title, drawn by the container.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
@@ -16,6 +16,7 @@ import {
   lineHeight,
   spacing,
   tabularNums,
+  useTokenSearch,
   useUnverifiedTokens,
   type SendToken,
 } from '@salmon/shared';
@@ -39,33 +40,39 @@ function balanceLabel(token: SendToken): string {
   return `${formatTokenAmount(amount)} ${token.symbol}`;
 }
 
-export function TokenSelectList({ tokens, onSelectToken, loading }: TokenSelectListProps) {
+export function TokenSelectList({
+  tokens,
+  onSelectToken,
+  loading,
+  showBalances = true,
+  verifiedOnly = true,
+  onSearch,
+}: TokenSelectListProps) {
   const { t } = useTranslation();
   // Spec 026 D4: the unverified-tokens toggle owns this, read where it is used.
   const showUnverifiedTokens = useUnverifiedTokens();
   const semantic = useSemantic();
-  const [searchQuery, setSearchQuery] = useState('');
 
   const verifiedTokens = useMemo(
     () =>
-      tokens.filter((token) => {
-        const hasMeaningfulTags =
-          token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
-        return hasMeaningfulTags || !!showUnverifiedTokens;
-      }),
-    [tokens, showUnverifiedTokens]
+      verifiedOnly
+        ? tokens.filter((token) => {
+            const hasMeaningfulTags =
+              token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
+            return hasMeaningfulTags || !!showUnverifiedTokens;
+          })
+        : tokens,
+    [tokens, showUnverifiedTokens, verifiedOnly]
   );
 
-  const filteredTokens = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return verifiedTokens;
-    return verifiedTokens.filter(
-      (token) =>
-        token.name.toLowerCase().includes(query) ||
-        token.symbol.toLowerCase().includes(query) ||
-        token.address.toLowerCase().includes(query)
-    );
-  }, [verifiedTokens, searchQuery]);
+  // Local filter over the list in hand; with `onSearch`, a query of three
+  // characters or more asks the catalogue instead (debounced, latest wins).
+  const {
+    searchQuery,
+    setSearchQuery,
+    displayTokens: filteredTokens,
+    isSearching,
+  } = useTokenSearch(verifiedTokens, onSearch);
 
   return (
     <div
@@ -96,7 +103,7 @@ export function TokenSelectList({ tokens, onSelectToken, loading }: TokenSelectL
           paddingBottom: spacing.screenGutter,
         }}
       >
-        {loading ? (
+        {loading || isSearching ? (
           <SkeletonRow
             count={SKELETON_COUNT}
             leadingSize={LOGO_SIZE}
@@ -106,13 +113,13 @@ export function TokenSelectList({ tokens, onSelectToken, loading }: TokenSelectL
           />
         ) : (
           filteredTokens.map((token) => {
-            const balance = balanceLabel(token);
+            const trailing = showBalances ? balanceLabel(token) : token.symbol;
             return (
               <ListRow
                 key={token.address}
                 testID={`send-token-row-${token.symbol}`}
                 onPress={() => onSelectToken(token)}
-                accessibilityLabel={`${token.name}, ${balance}`}
+                accessibilityLabel={`${token.name}, ${trailing}`}
                 leading={
                   <TokenLogo
                     uri={token.logo || undefined}
@@ -134,7 +141,7 @@ export function TokenSelectList({ tokens, onSelectToken, loading }: TokenSelectL
                       ...tabularNums.css,
                     }}
                   >
-                    {balance}
+                    {trailing}
                   </span>
                 }
               />

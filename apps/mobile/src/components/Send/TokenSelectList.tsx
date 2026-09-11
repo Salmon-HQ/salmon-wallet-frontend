@@ -6,7 +6,7 @@
  * balance), 20 between every sibling per DESIGN.md's component gap. The
  * "Select Token" heading is the sheet's own title, drawn by the container.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,6 +18,7 @@ import {
   spacing,
   tabularNums,
   vs,
+  useTokenSearch,
   useUnverifiedTokens,
   type Semantic,
 } from '@salmon/shared';
@@ -51,54 +52,56 @@ export const TokenSelectList: React.FC<TokenSelectListProps> = ({
   tokens,
   onSelectToken,
   loading,
+  showBalances = true,
+  verifiedOnly = true,
+  onSearch,
 }) => {
   const { t } = useTranslation();
   // Spec 026 D4: the unverified-tokens toggle owns this, read where it is used.
   const showUnverifiedTokens = useUnverifiedTokens();
   const styles = useThemedStyles(stylesFor);
-  const [searchQuery, setSearchQuery] = useState('');
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
 
   const verifiedTokens = useMemo(
     () =>
-      tokens.filter((token) => {
-        const hasMeaningfulTags =
-          token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
-        return hasMeaningfulTags || !!showUnverifiedTokens;
-      }),
-    [tokens, showUnverifiedTokens]
+      verifiedOnly
+        ? tokens.filter((token) => {
+            const hasMeaningfulTags =
+              token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
+            return hasMeaningfulTags || !!showUnverifiedTokens;
+          })
+        : tokens,
+    [tokens, showUnverifiedTokens, verifiedOnly]
   );
 
-  const filteredTokens = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return verifiedTokens;
-    return verifiedTokens.filter(
-      (token) =>
-        token.name.toLowerCase().includes(query) ||
-        token.symbol.toLowerCase().includes(query) ||
-        token.address.toLowerCase().includes(query)
-    );
-  }, [verifiedTokens, searchQuery]);
+  // Local filter over the list in hand; with `onSearch`, a query of three
+  // characters or more asks the catalogue instead (debounced, latest wins).
+  const {
+    searchQuery,
+    setSearchQuery,
+    displayTokens: filteredTokens,
+    isSearching,
+  } = useTokenSearch(verifiedTokens, onSearch);
 
   const renderItem = useCallback(
     ({ item }: { item: SendToken }) => {
-      const balance = balanceLabel(item);
+      const trailing = showBalances ? balanceLabel(item) : item.symbol;
       return (
         <ListRow
           testID={`send-token-row-${item.symbol}`}
           onPress={() => onSelectToken(item)}
-          accessibilityLabel={`${item.name}, ${balance}`}
+          accessibilityLabel={`${item.name}, ${trailing}`}
           leading={<TokenLogo uri={item.logo || undefined} symbol={item.symbol} size={LOGO_SIZE} />}
           title={item.name}
           trailing={
             <Text style={styles.balance} numberOfLines={1}>
-              {balance}
+              {trailing}
             </Text>
           }
         />
       );
     },
-    [onSelectToken, styles]
+    [onSelectToken, styles, showBalances]
   );
 
   const keyExtractor = useCallback((item: SendToken) => item.address, []);
@@ -112,7 +115,7 @@ export const TokenSelectList: React.FC<TokenSelectListProps> = ({
         placeholder={t('actions.search_placeholder', 'Search...')}
       />
 
-      {loading ? (
+      {loading || isSearching ? (
         <View style={styles.list} accessibilityLabel={t('accessibility.loading_token_list')}>
           {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
             <View key={index} style={styles.skeletonRow}>
