@@ -39,6 +39,8 @@ export interface ProposalDisplay {
   advancedRows?: ConfirmationRow[];
   /** Provider attribution rendered verbatim, e.g. "Powered by 0x". */
   attribution?: string;
+  /** Who made the Powerup, shown beside the attribution (spec 029 §5.1). */
+  contributor?: { name: string; url: string };
   warning?: ConfirmationWarning;
   /**
    * What the receipt shows once core has signed: its own title and the two

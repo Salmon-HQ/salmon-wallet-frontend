@@ -97,6 +97,11 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
               {display.attribution}
             </Text>
           ) : null}
+          {display.contributor ? (
+            <Text style={styles.attribution} testID="confirmation-contributor">
+              {t('powerups.detail.made_by')}: {display.contributor.name}
+            </Text>
+          ) : null}
         </Animated.View>
 
         {/* Warning box — band 3 */}

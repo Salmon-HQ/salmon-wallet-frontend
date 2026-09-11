@@ -709,7 +709,9 @@
       "malformed": "Esta transacción no es válida en esta red. Si la armó un sitio, avisales.",
       "watchOnlyAccount": "Esta es una billetera de solo lectura, así que no puede firmar.",
       "cancelled": "La transacción no se firmó.",
-      "confirmationBusy": "Ya hay otra confirmación abierta."
+      "confirmationBusy": "Ya hay otra confirmación abierta.",
+      "buildFailed": "No se pudo preparar la transacción. Probá de nuevo.",
+      "simulationFailed": "Esta transacción fallaría en la red, así que no se envió."
     },
     "viewOnExplorer": "Ver en Explorer",
     "continue": "Volver a la billetera"

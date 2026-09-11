@@ -709,7 +709,9 @@
       "malformed": "This transaction is not valid on this network. If a site built it, report it to them.",
       "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign.",
       "cancelled": "The transaction was not signed.",
-      "confirmationBusy": "Another confirmation is already open."
+      "confirmationBusy": "Another confirmation is already open.",
+      "buildFailed": "Couldn't prepare the transaction. Try again.",
+      "simulationFailed": "This transaction would fail on-chain, so it wasn't sent."
     },
     "viewOnExplorer": "View on Explorer",
     "continue": "Back to wallet"

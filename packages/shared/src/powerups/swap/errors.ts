@@ -1,24 +1,14 @@
 /**
- * What a failed build means to the user. The backend's error codes are the
- * contract (backend spec 012); everything else falls to the generic quote
- * failure or, for transport, to the busy-network copy.
+ * What a failed swap build means to the user: the shared Powerup table
+ * (spec 029 §5.3) plus the codes the swap backend declares of its own.
  */
-import { ApiError } from '../../api/client';
-import type { SwapErrorMessage, SwapUnavailableReason } from './types';
+import { describePowerupBuildError, type PowerupBuildFailure } from '../backend/errors';
 
-export type SwapBuildFailure =
-  | { kind: 'unavailable'; reason: SwapUnavailableReason }
-  | { kind: 'message'; message: SwapErrorMessage };
+export type SwapBuildFailure = PowerupBuildFailure;
 
-const CODE_TO_KEY: Record<string, string> = {
-  no_route: 'transaction.errors.noRoute',
+const SWAP_CODES: Record<string, string> = {
   token_not_supported: 'swap.errors.tokenNotSupported',
   swap_misconfigured: 'swap.errors.quoteFailed',
-  upstream_rate_limited: 'transaction.errors.networkBusy',
-  // The backend's limiter: a circuit open on the provider, or the request's
-  // time budget spent. Both read as "try again shortly", like a rate limit.
-  upstream_unavailable: 'transaction.errors.networkBusy',
-  request_budget_exhausted: 'transaction.errors.networkBusy',
   unknown_mint: 'swap.errors.unknownToken',
   provider_fee_mismatch: 'swap.errors.quoteFailed',
   invalid_parameter: 'swap.errors.quoteFailed',
@@ -26,17 +16,8 @@ const CODE_TO_KEY: Record<string, string> = {
 };
 
 export function describeSwapBuildError(error: unknown): SwapBuildFailure {
-  if (error instanceof ApiError) {
-    if (error.code === 'region_restricted') return { kind: 'unavailable', reason: 'region' };
-    if (error.code === 'wallet_restricted') return { kind: 'unavailable', reason: 'wallet' };
-    if (error.isNetworkError()) {
-      return { kind: 'message', message: 'transaction.errors.networkBusy' };
-    }
-    const key = error.code ? CODE_TO_KEY[error.code] : undefined;
-    if (key) return { kind: 'message', message: key };
-    if (error.isServerError()) {
-      return { kind: 'message', message: 'transaction.errors.networkBusy' };
-    }
-  }
-  return { kind: 'message', message: 'swap.errors.quoteFailed' };
+  return describePowerupBuildError(error, {
+    codes: SWAP_CODES,
+    fallback: 'swap.errors.quoteFailed',
+  });
 }

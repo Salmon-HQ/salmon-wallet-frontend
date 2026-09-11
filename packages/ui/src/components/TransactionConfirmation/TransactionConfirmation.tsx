@@ -143,6 +143,21 @@ export function TransactionConfirmation({
               {display.attribution}
             </span>
           ) : null}
+          {display.contributor ? (
+            <span
+              data-testid="confirmation-contributor"
+              style={{
+                fontFamily: fontFamily.sans,
+                fontSize: fontSize.sm,
+                fontWeight: fontWeight.medium,
+                color: semantic.text.tertiary,
+                opacity: opacity.soft,
+                textAlign: 'center',
+              }}
+            >
+              {t('powerups.detail.made_by')}: {display.contributor.name}
+            </span>
+          ) : null}
         </Band>
 
         {display.warning && (
