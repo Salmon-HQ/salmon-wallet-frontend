@@ -17,6 +17,7 @@ import type {
 } from '../types/transaction';
 import type { BlockchainType } from '../types/blockchain';
 import { getShortAddress } from './address';
+import { normalizeIpfsUrl } from './url';
 import { SOL_CONSTANTS } from './balance';
 import { ETH_CONSTANTS, ETH_ADDRESS } from './tokens';
 
@@ -109,7 +110,9 @@ function normalizeTokenAmount(
     decimals: token.decimals ?? (nativeToken ? native.DECIMALS : 0),
     symbol: token.symbol || (nativeToken ? native.SYMBOL : (getShortAddress(token.contract) ?? '')),
     name: token.name || (nativeToken ? native.NAME : undefined),
-    logo: token.logo ?? (nativeToken ? native.LOGO : undefined),
+    // An NFT leg's image can arrive as `ipfs://` or `ar://`, which no image
+    // view loads; the NFT list already routes those through a gateway.
+    logo: normalizeIpfsUrl(token.logo) ?? (nativeToken ? native.LOGO : undefined),
     contract: token.contract || (nativeToken ? native.ADDRESS : ''),
   };
 }

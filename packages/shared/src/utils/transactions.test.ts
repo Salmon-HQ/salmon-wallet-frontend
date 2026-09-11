@@ -210,3 +210,32 @@ describe('transaction utils', () => {
     expect(tx.swapRoute).toBeUndefined();
   });
 });
+
+describe('transformSolanaTransaction — token leg images', () => {
+  it('routes an ipfs:// leg image through the gateway so the row can draw it', () => {
+    const tx = transformSolanaTransaction({
+      id: 'sig-nft',
+      timestamp: 1_700_000_000,
+      status: 'completed',
+      type: 'receive',
+      description: 'NFT',
+      source: 'TOKEN_PROGRAM',
+      fee: { amount: 5000, decimals: 9, symbol: 'SOL' },
+      inputs: [
+        {
+          amount: '1',
+          decimals: 0,
+          symbol: 'MNDFLK',
+          name: 'Mindfolk',
+          contract: 'Mint111111111111111111111111111111111111111',
+          logo: 'ipfs://bafyimage',
+          isNft: true,
+        },
+      ],
+      outputs: [],
+    } as any);
+
+    expect(tx.inputs[0].logo).toMatch(/^https:\/\//);
+    expect(tx.inputs[0].logo).toContain('bafyimage');
+  });
+});
