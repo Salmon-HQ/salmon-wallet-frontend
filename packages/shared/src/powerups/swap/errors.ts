@@ -15,6 +15,10 @@ const CODE_TO_KEY: Record<string, string> = {
   token_not_supported: 'swap.errors.tokenNotSupported',
   swap_misconfigured: 'swap.errors.quoteFailed',
   upstream_rate_limited: 'transaction.errors.networkBusy',
+  // The backend's limiter: a circuit open on the provider, or the request's
+  // time budget spent. Both read as "try again shortly", like a rate limit.
+  upstream_unavailable: 'transaction.errors.networkBusy',
+  request_budget_exhausted: 'transaction.errors.networkBusy',
   unknown_mint: 'swap.errors.unknownToken',
   provider_fee_mismatch: 'swap.errors.quoteFailed',
   invalid_parameter: 'swap.errors.quoteFailed',

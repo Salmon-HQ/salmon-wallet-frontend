@@ -75,6 +75,12 @@ describe('describeSwapBuildError', () => {
     ['token_not_supported', 422, { kind: 'message', message: 'swap.errors.tokenNotSupported' }],
     ['swap_misconfigured', 500, { kind: 'message', message: 'swap.errors.quoteFailed' }],
     ['upstream_rate_limited', 503, { kind: 'message', message: 'transaction.errors.networkBusy' }],
+    ['upstream_unavailable', 503, { kind: 'message', message: 'transaction.errors.networkBusy' }],
+    [
+      'request_budget_exhausted',
+      503,
+      { kind: 'message', message: 'transaction.errors.networkBusy' },
+    ],
     ['unknown_mint', 400, { kind: 'message', message: 'swap.errors.unknownToken' }],
     ['invalid_parameter', 400, { kind: 'message', message: 'swap.errors.quoteFailed' }],
     ['provider_fee_mismatch', 502, { kind: 'message', message: 'swap.errors.quoteFailed' }],
