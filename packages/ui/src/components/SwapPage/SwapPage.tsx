@@ -13,7 +13,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { spacing } from '@salmon/shared';
-import { useSwapScreenLogic } from '@salmon/shared/powerups';
+import { useSwapCatalog, useSwapScreenLogic } from '@salmon/shared/powerups';
 
 import { StateBlock } from '../StateBlock';
 import { TokenPickerSheet } from '../SendPage/TokenPickerSheet';
@@ -23,7 +23,9 @@ import type { SwapPageProps } from './types';
 
 export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageProps) {
   const { t } = useTranslation();
-  const logic = useSwapScreenLogic(logicParams);
+  // The catalogue and its search are the page's own, on both twins.
+  const catalog = useSwapCatalog();
+  const logic = useSwapScreenLogic({ ...logicParams, ...catalog });
 
   const body = (() => {
     if (watchOnly) {
@@ -86,7 +88,9 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          padding: `0 ${spacing.screenGutter}px ${spacing.screenGutter}px`,
+          // The mobile form's frame: `2xl` above the first label, the header
+          // padding at the sides.
+          padding: `${spacing['2xl']}px ${spacing.headerPadding}px ${spacing.screenGutter}px`,
         }}
       >
         {body}

@@ -17,17 +17,12 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import {
-  mapToSwapToken,
-  searchTokens,
   unifiedToSwapToken,
   useAccountsContext,
   useCurrencyContext,
-  useTokenCatalog,
   useMultiChainTokens,
-  type SwapNetworkId,
   type SwapToken,
 } from '@salmon/shared';
-import { SWAP_NETWORK_ID } from '@salmon/shared/powerups';
 import type { PowerupTabProps } from '../powerups';
 import { StateBlock } from '../components';
 import { SwapScreen } from '../components/SwapScreen';
@@ -49,21 +44,6 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
     [multiChainTokens]
   );
 
-  // The verified catalogue for the output side (shared React Query hook).
-  const { tokens: catalogTokens } = useTokenCatalog({
-    networkId: SWAP_NETWORK_ID as SwapNetworkId,
-  });
-
-  const handleSearchTokens = useCallback(async (query: string): Promise<SwapToken[]> => {
-    try {
-      const results = await searchTokens(query, SWAP_NETWORK_ID);
-      return results.map((token) => mapToSwapToken(token));
-    } catch (error) {
-      console.error('Token search failed:', error);
-      return [];
-    }
-  }, []);
-
   const formatUsd = useCallback((value: number) => `~${formatValue(value)}`, [formatValue]);
 
   if (!ready || !activeAccount || !activeBlockchainAccount) {
@@ -77,11 +57,9 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
   return (
     <SwapScreen
       tokens={swapTokens}
-      catalogTokens={catalogTokens}
       loading={loading}
       publicKey={activeBlockchainAccount.getReceiveAddress()}
       networkId={networkId ?? null}
-      onSearchTokens={handleSearchTokens}
       initialInToken={swapTokens[0]}
       formatUsd={formatUsd}
       onNavigateHome={onNavigateHome}

@@ -54,8 +54,15 @@ export interface SwapInputScreenPropsBase<TStyle> {
   style?: TStyle;
 }
 
-/** The whole Powerup screen: the host's inputs to the shared logic. */
-export interface SwapScreenPropsBase<TStyle> extends Omit<UseSwapScreenLogicParams, 'buildSwap'> {
+/**
+ * The whole Powerup screen: the host's inputs to the shared logic. The
+ * catalogue and its search are the screen's own (`useSwapCatalog`), so a
+ * host passes the wallet's tokens and the account, nothing more.
+ */
+export interface SwapScreenPropsBase<TStyle> extends Omit<
+  UseSwapScreenLogicParams,
+  'buildSwap' | 'catalogTokens' | 'onSearchTokens'
+> {
   style?: TStyle;
 }
 

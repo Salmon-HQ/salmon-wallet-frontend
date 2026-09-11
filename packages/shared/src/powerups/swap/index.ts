@@ -18,3 +18,5 @@ export type {
 } from './types';
 export { useSwapScreenLogic } from './useSwapScreenLogic';
 export type { UseSwapScreenLogicParams, UseSwapScreenLogicResult } from './useSwapScreenLogic';
+export { useSwapCatalog } from './useSwapCatalog';
+export type { UseSwapCatalogResult } from './useSwapCatalog';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useAccountsContext, isWatchOnlyAccount, spacing } from '@salmon/shared';
-import { useSwapScreenLogic } from '@salmon/shared/powerups';
+import { useSwapCatalog, useSwapScreenLogic } from '@salmon/shared/powerups';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { StateBlock } from '../StateBlock';
@@ -29,7 +29,9 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const [{ activeAccount }] = useAccountsContext();
   const isWatchOnly = isWatchOnlyAccount(activeAccount);
 
-  const logic = useSwapScreenLogic(logicParams);
+  // The catalogue and its search are the screen's own, on both twins.
+  const catalog = useSwapCatalog();
+  const logic = useSwapScreenLogic({ ...logicParams, ...catalog });
 
   // Same refusal the home screen shows beside its disabled Send: one
   // explanation, not a tooltip per control.

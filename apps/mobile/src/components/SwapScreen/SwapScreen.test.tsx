@@ -19,6 +19,7 @@ jest.mock('@salmon/shared', () => ({
 }));
 jest.mock('@salmon/shared/powerups', () => ({
   useSwapScreenLogic: () => mockLogic,
+  useSwapCatalog: () => ({ catalogTokens: [], onSearchTokens: async () => [] }),
 }));
 
 jest.mock('./SwapInputScreen', () => {

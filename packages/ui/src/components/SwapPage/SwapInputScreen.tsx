@@ -153,6 +153,7 @@ export function SwapInputScreen({
             fontSize: fontSize.micro,
             color: semantic.text.tertiary,
             textAlign: 'center',
+            marginTop: spacing.xs,
           }}
         >
           {attribution ?? t('swap.fee_disclaimer')}

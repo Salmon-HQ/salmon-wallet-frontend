@@ -1,13 +1,11 @@
 /**
  * The Swap Powerup's Home sub-tab: what it hands the Powerup — Solana tokens
- * only, the taker, the active network, the catalogue. There is nowhere to
+ * only, the taker, the active network. There is nowhere to
  * navigate afterwards: the tab stays where it is. The Powerup's own behaviour
  * is the shared hook's suite.
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-
-const mockSearchTokens = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
@@ -40,7 +38,6 @@ jest.mock('@salmon/shared', () => ({
     loading: false,
     refresh: jest.fn(),
   }),
-  searchTokens: (...args: unknown[]) => mockSearchTokens(...args),
   mapToSwapToken: (token: unknown) => token,
   unifiedToSwapToken: (token: unknown) => token,
 }));
@@ -65,23 +62,19 @@ jest.mock('../../src/components/SwapScreen', () => {
   return {
     SwapScreen: (props: {
       tokens: { symbol: string }[];
-      catalogTokens: { symbol: string }[];
       publicKey: string;
       networkId: string;
       initialInToken?: { symbol: string };
       formatUsd: (value: number) => string;
       onNavigateHome: () => void;
-      onSearchTokens: (query: string) => Promise<unknown[]>;
     }) => (
       <View>
         <Text>{`tokens:${props.tokens.map((t) => t.symbol).join(',')}`}</Text>
-        <Text>{`catalog:${props.catalogTokens.map((t) => t.symbol).join(',')}`}</Text>
         <Text>{`taker:${props.publicKey}`}</Text>
         <Text>{`network:${props.networkId}`}</Text>
         <Text>{`initial:${props.initialInToken?.symbol}`}</Text>
         <Text>{`usd:${props.formatUsd(84.65)}`}</Text>
         <View testID="navigate-home" onPress={props.onNavigateHome} />
-        <View testID="search" onPress={() => void props.onSearchTokens('usd')} />
       </View>
     ),
   };
@@ -113,7 +106,7 @@ describe('SwapTab', () => {
     );
   });
 
-  it('hands the Powerup Solana tokens only, the taker, the network and the catalogue', () => {
+  it('hands the Powerup Solana tokens only, the taker and the network', () => {
     useAccountsContext.mockReturnValue([
       {
         ready: true,
@@ -125,14 +118,10 @@ describe('SwapTab', () => {
     render(<SwapTab />);
 
     expect(screen.getByText('tokens:SOL')).toBeTruthy();
-    expect(screen.getByText('catalog:USDC')).toBeTruthy();
     expect(screen.getByText('taker:wallet-1')).toBeTruthy();
     // The active network as it is: the Powerup decides what it can serve.
     expect(screen.getByText('network:solana-devnet')).toBeTruthy();
     expect(screen.getByText('initial:SOL')).toBeTruthy();
     expect(screen.getByText('usd:~$84.65')).toBeTruthy();
-
-    fireEvent.press(screen.getByTestId('search'));
-    expect(mockSearchTokens).toHaveBeenCalledWith('usd', 'solana-mainnet');
   });
 });

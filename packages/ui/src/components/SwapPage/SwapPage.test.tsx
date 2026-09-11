@@ -15,7 +15,10 @@ vi.mock('react-i18next', () => ({
 }));
 
 const mockLogic: Record<string, unknown> = {};
-vi.mock('@salmon/shared/powerups', () => ({ useSwapScreenLogic: () => mockLogic }));
+vi.mock('@salmon/shared/powerups', () => ({
+  useSwapScreenLogic: () => mockLogic,
+  useSwapCatalog: () => ({ catalogTokens: [], onSearchTokens: async () => [] }),
+}));
 vi.mock('@salmon/shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@salmon/shared')>()),
   useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (v?: number) => `${v ?? 0}` }],
