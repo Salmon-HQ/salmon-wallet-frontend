@@ -452,7 +452,9 @@ export function useSwapScreenLogic({
     const remaining = catalogTokens.filter(
       (t) => t.swappable !== false && !userAddresses.has(t.address.toLowerCase())
     );
-    return [...userSolanaTokens, ...remaining];
+    // A token cannot be swapped for itself: the side already chosen leaves.
+    const chosen = inToken.address.toLowerCase();
+    return [...userSolanaTokens, ...remaining].filter((t) => t.address.toLowerCase() !== chosen);
   }, [inToken, tokens, catalogTokens]);
 
   useEffect(() => {
@@ -520,7 +522,9 @@ export function useSwapScreenLogic({
       }
     : undefined;
 
-  const modalInTokens = tokens.map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
+  const modalInTokens = tokens
+    .filter((t) => t.address.toLowerCase() !== outToken?.address.toLowerCase())
+    .map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
   const modalFeaturedTokens = featuredTokens.map((t) => ({
     ...t,
     mint: t.address,

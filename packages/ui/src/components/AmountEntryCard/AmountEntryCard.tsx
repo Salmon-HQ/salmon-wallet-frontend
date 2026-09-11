@@ -53,11 +53,14 @@ export function AmountEntryCard({
         style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}
       >
         {loading ? (
-          <PendingValue pending style={{ flex: 1 }}>
+          <PendingValue pending style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+            {/* The wait stands where the number will: centred, at the number's size. */}
             <span
               style={{
+                display: 'block',
                 fontFamily: fontFamily.sans,
-                fontSize: fontSize.bodyLg,
+                fontSize: AMOUNT_ENTRY_FONT,
+                lineHeight: `${AMOUNT_ENTRY_FONT * lineHeight.snug}px`,
                 fontWeight: fontWeight.bold,
                 color: semantic.text.secondary,
               }}

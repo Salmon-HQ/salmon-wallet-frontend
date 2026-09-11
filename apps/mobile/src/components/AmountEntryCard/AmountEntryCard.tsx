@@ -54,7 +54,7 @@ export function AmountEntryCard({
       <View style={styles.row}>
         {loading ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="small" color={semantic.text.secondary} />
+            <ActivityIndicator size="large" color={semantic.text.secondary} />
           </View>
         ) : (
           <TextInput
@@ -91,9 +91,13 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'baseline',
       gap: s(spacing.sm),
     },
+    // The wait stands where the number will: centred, on the number's line.
     loading: {
       flex: 1,
-      alignItems: 'flex-end',
+      minWidth: s(80),
+      height: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     input: {
       ...TABULAR,
