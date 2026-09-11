@@ -1,17 +1,35 @@
 /**
  * SwapInputScreen — the Swap Powerup's form, on the DOM: pair, amounts, the
- * notice slot and the swap control. The next screen is core's confirmation,
- * not the Powerup's. The mobile twin is
+ * notice slot and the swap control, drawn with the same amount-card and
+ * percent-pill row Send's amount step uses (CORE 05). The next screen is
+ * core's confirmation, not the Powerup's. The mobile twin is
  * `apps/mobile/src/components/SwapScreen/SwapInputScreen.tsx`.
  */
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
+import {
+  fontFamily,
+  fontSize,
+  fontWeight,
+  formatTokenBalance,
+  lineHeight,
+  spacing,
+} from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
+import { ChipGroup } from '../Chip';
+import { KeyValueRow } from '../KeyValueRow';
 import { SwapAmountInput } from './SwapAmountInput';
 import type { SwapInputScreenProps } from './types';
+
+/** The four fills Send's amount step draws (CORE 05). `1` is MAX. */
+const SHORTCUTS = [
+  { key: '25', value: 0.25 },
+  { key: '50', value: 0.5 },
+  { key: '75', value: 0.75 },
+  { key: 'max', value: 1 },
+] as const;
 
 export function SwapInputScreen({
   inToken,
@@ -36,6 +54,27 @@ export function SwapInputScreen({
   const notice = (message: typeof swapError) =>
     !message ? null : typeof message === 'string' ? t(message) : t(message.key, message.params);
 
+  const handleShortcut = useCallback(
+    (key: string) => {
+      const option = SHORTCUTS.find((shortcut) => shortcut.key === key);
+      if (!option || !inToken || inToken.balance === undefined) return;
+      const decimals = inToken.decimals ?? 9;
+      const truncated =
+        Math.floor(inToken.balance * option.value * 10 ** decimals) / 10 ** decimals;
+      onInAmountChange(truncated > 0 ? truncated.toString() : '0');
+    },
+    [inToken, onInAmountChange]
+  );
+
+  const shortcutOptions = useMemo(
+    () =>
+      SHORTCUTS.map((shortcut) => ({
+        key: shortcut.key,
+        label: shortcut.key === 'max' ? t('general.max') : `${shortcut.key}%`,
+      })),
+    [t]
+  );
+
   return (
     <div
       data-testid="swap-input-screen"
@@ -55,6 +94,14 @@ export function SwapInputScreen({
           overflowY: 'auto',
         }}
       >
+        {inToken && inToken.balance !== undefined && (
+          <KeyValueRow
+            testID="swap-available"
+            label={t('send.screens.available')}
+            value={`${formatTokenBalance(inToken.balance)} ${inToken.symbol}`}
+          />
+        )}
+
         <SwapAmountInput
           testID="swap-from"
           label={t('swap.you_send', 'You Send')}
@@ -63,10 +110,20 @@ export function SwapInputScreen({
           token={inToken}
           onTokenPress={onInTokenPress}
           usdValue={inUsdValue}
-          availableBalance={inToken?.balance}
           editable
           placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
+
+        {inToken && inToken.balance !== undefined && (
+          <ChipGroup
+            testID="swap-shortcuts"
+            options={shortcutOptions}
+            // A shortcut is an action, not a selection: nothing stays lit.
+            value=""
+            onChange={handleShortcut}
+            size="md"
+          />
+        )}
 
         {/* The notice slot, reserved: one line of height from the first
             frame, filled when there is something to say, so the "You

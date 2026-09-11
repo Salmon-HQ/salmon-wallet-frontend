@@ -371,6 +371,9 @@ export type { AboutPanelProps } from './AboutPanel';
 export { Card } from './Card';
 export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
 
+export { AmountEntryCard } from './AmountEntryCard';
+export type { AmountEntryCardProps } from './AmountEntryCard';
+
 // ListRow - a Card laid out as leading mark / title stack / trailing slot
 export { ListRow, RowPress, StopPress } from './ListRow';
 export type { ListRowEmphasis, ListRowPadding, ListRowProps } from './ListRow';

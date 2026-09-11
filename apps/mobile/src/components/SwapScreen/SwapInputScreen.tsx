@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -6,6 +6,7 @@ import {
   spacing,
   componentSizes,
   fontFamilyNative,
+  formatTokenBalance,
   vs,
   s,
   fontSize,
@@ -13,14 +14,26 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
+import { ChipGroup } from '../Chip';
+import { KeyValueRow } from '../KeyValueRow';
 import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { SwapInputScreenProps } from './types';
 
+/** The four fills Send's amount step draws (CORE 05). `1` is MAX. */
+const SHORTCUTS = [
+  { key: '25', value: 0.25 },
+  { key: '50', value: 0.5 },
+  { key: '75', value: 0.75 },
+  { key: 'max', value: 1 },
+] as const;
+
 /**
  * SwapInputScreen - the Swap Powerup's form: pair, amounts and the swap
- * control. The next screen is core's confirmation, not the Powerup's.
+ * control, drawn with the same amount-card and percent-pill row Send's
+ * amount step uses (CORE 05). The next screen is core's confirmation, not
+ * the Powerup's.
  */
 export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   inToken,
@@ -50,6 +63,27 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   const ctaBottomOffset =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
+  const handleShortcut = useCallback(
+    (key: string) => {
+      const option = SHORTCUTS.find((shortcut) => shortcut.key === key);
+      if (!option || !inToken || inToken.balance === undefined) return;
+      const decimals = inToken.decimals ?? 9;
+      const truncated =
+        Math.floor(inToken.balance * option.value * 10 ** decimals) / 10 ** decimals;
+      onInAmountChange(truncated > 0 ? truncated.toString() : '0');
+    },
+    [inToken, onInAmountChange]
+  );
+
+  const shortcutOptions = useMemo(
+    () =>
+      SHORTCUTS.map((shortcut) => ({
+        key: shortcut.key,
+        label: shortcut.key === 'max' ? t('general.max') : `${shortcut.key}%`,
+      })),
+    [t]
+  );
+
   return (
     <Pressable style={[styles.container, style]} onPress={Keyboard.dismiss} accessible={false}>
       {/* The form lives in Home's content region now, under the balance block
@@ -62,6 +96,14 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {inToken && inToken.balance !== undefined && (
+          <KeyValueRow
+            testID="swap-available"
+            label={t('send.screens.available')}
+            value={`${formatTokenBalance(inToken.balance)} ${inToken.symbol}`}
+          />
+        )}
+
         {/* You Send */}
         <SwapAmountInput
           testID="swap-from"
@@ -71,10 +113,24 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           token={inToken}
           onTokenPress={onInTokenPress}
           usdValue={inUsdValue}
-          availableBalance={inToken?.balance}
           editable={true}
           placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
+
+        {inToken && inToken.balance !== undefined && (
+          <ChipGroup
+            testID="swap-shortcuts"
+            options={shortcutOptions}
+            // A shortcut is an action, not a selection: nothing stays lit
+            // after the fill, so the group never carries a value.
+            value=""
+            onChange={handleShortcut}
+            size="md"
+            fill
+            variant="outline"
+            style={styles.shortcuts}
+          />
+        )}
 
         {/* The notice slot, reserved. Every message that can appear here does
             so while the user is still typing the amount — a minimum-amount
@@ -143,6 +199,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.headerPadding),
     paddingTop: vs(spacing['2xl']),
     gap: vs(spacing['2xl']),
+  },
+  shortcuts: {
+    flexGrow: 0,
   },
   buttonContainer: {
     position: 'absolute',

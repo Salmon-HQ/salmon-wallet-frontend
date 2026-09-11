@@ -10,6 +10,9 @@
 
 export { Card } from './Card';
 
+export { AmountEntryCard } from './AmountEntryCard';
+export type { AmountEntryCardProps } from './AmountEntryCard';
+
 // TextField - the plain text field: a Card holding a TextInput
 export { TextField } from './TextInput';
 export type { TextFieldProps } from './TextInput';

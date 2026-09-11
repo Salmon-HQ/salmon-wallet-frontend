@@ -24,7 +24,7 @@
  * transaction-path change and is not made here. See the spec report.
  */
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,17 +36,15 @@ import {
   getShortAddress,
   getSolShortfall,
   useFieldFocus,
-  lineHeight,
   s,
-  sanitizeDecimalInput,
   spacing,
-  tabularNums,
   useCurrencyContext,
   vs,
   type Semantic,
 } from '@salmon/shared';
 
 import {
+  AmountEntryCard,
   Card,
   ChipGroup,
   DepthBackground,
@@ -57,23 +55,9 @@ import {
 } from '../../../src/components';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
-import { useThemedStyles, useSemantic } from '../../../src/theme/useThemedStyles';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
-
-// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
-// mutable one.
-const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
-
-/**
- * The amount being typed, at the size the frames draw it (CORE 05, 46/700).
- *
- * Deliberately a local constant rather than a new step in `fontSize`: the
- * scale tops out at the balance's 38 and this is the one number in the app
- * larger than the total balance — a size this screen owns, not a role the
- * type system offers.
- */
-const AMOUNT_ENTRY_FONT = 46;
 
 /** How long the fee estimate waits before firing, in ms. */
 const FEE_DEBOUNCE_MS = 300;
@@ -95,7 +79,6 @@ export default function SendAmountScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
-  const semantic = useSemantic();
   const amountFocus = useFieldFocus();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
@@ -222,30 +205,16 @@ export default function SendAmountScreen() {
         />
 
         {/* The amount. Tabular, so a repoll never reflows the digits. */}
-        <Card
-          padding="lg"
-          gap={spacing.base}
-          style={[styles.amountCard, amountFocus.focused && { borderColor: semantic.accent.ink }]}
-        >
-          <View style={styles.amountRow}>
-            <TextInput
-              testID="send-amount-input"
-              style={styles.amountInput}
-              placeholder="0"
-              placeholderTextColor={semantic.text.tertiary}
-              onFocus={amountFocus.onFocus}
-              onBlur={amountFocus.onBlur}
-              value={amount}
-              onChangeText={(text) => setAmount(sanitizeDecimalInput(text))}
-              keyboardType="decimal-pad"
-              autoCorrect={false}
-            />
-            <Text style={styles.ticker}>{token?.symbol ?? ''}</Text>
-          </View>
-          <Text style={styles.fiat} testID="send-amount-fiat">
-            {fiatDisplay}
-          </Text>
-        </Card>
+        <AmountEntryCard
+          testID="send-amount"
+          value={amount}
+          onChangeValue={setAmount}
+          trailing={<Text style={styles.ticker}>{token?.symbol ?? ''}</Text>}
+          subtext={fiatDisplay}
+          focused={amountFocus.focused}
+          onFocus={amountFocus.onFocus}
+          onBlur={amountFocus.onBlur}
+        />
 
         <ChipGroup
           testID="send-shortcuts"
@@ -309,33 +278,9 @@ const stylesFor = (t: Semantic) =>
       paddingBottom: vs(spacing.screenGutter),
       gap: vs(spacing.screenGutter),
     },
-    amountCard: {
-      alignItems: 'center',
-    },
-    amountRow: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: s(spacing.sm),
-    },
-    amountInput: {
-      ...TABULAR,
-      minWidth: s(80),
-      fontSize: s(AMOUNT_ENTRY_FONT),
-      lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.primary,
-      textAlign: 'right',
-      paddingVertical: 0,
-    },
     ticker: {
       fontSize: s(fontSize.body),
       fontFamily: fontFamilyNative.bold,
-      color: t.text.secondary,
-    },
-    fiat: {
-      ...TABULAR,
-      fontSize: s(fontSize.mono),
-      fontFamily: fontFamilyNative.medium,
       color: t.text.secondary,
     },
     shortcuts: {

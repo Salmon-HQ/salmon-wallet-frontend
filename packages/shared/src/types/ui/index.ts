@@ -204,6 +204,9 @@ export type {
 export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
 export { valueInkFor } from './key-value-row';
 
+// Amount Entry Card
+export type { AmountEntryCardPropsBase } from './amount-entry-card';
+
 // Section Label
 export type { SectionLabelVariant, SectionLabelPropsBase } from './section-label';
 

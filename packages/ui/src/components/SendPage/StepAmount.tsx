@@ -17,10 +17,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
-  lineHeight,
-  sanitizeDecimalInput,
   spacing,
-  tabularNums,
   useCurrencyContext,
   type BlockchainType,
   type SendRecipient,
@@ -28,7 +25,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { FIELD_SHELL_CLASS, focusRingNone } from '../../theme';
+import { AmountEntryCard } from '../AmountEntryCard';
 import { PrimaryButton } from '../Button';
 import { Card } from '../Card';
 import { ChipGroup } from '../Chip';
@@ -36,12 +33,6 @@ import { KeyValueRow } from '../KeyValueRow';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
 
-/**
- * The amount being typed, at the size the frames draw it (CORE 05, 46/700).
- * A local constant, as on mobile: the scale tops out at the balance's 38 and
- * this is the one number in the app larger than the total balance.
- */
-const AMOUNT_ENTRY_FONT = 46;
 /** How long the fee estimate waits before firing, in ms. */
 const FEE_DEBOUNCE_MS = 300;
 
@@ -181,42 +172,11 @@ export function StepAmount({
       />
 
       {/* The amount. Tabular, so a repoll never reflows the digits. */}
-      {/* The card owns the field's shape, so it wears the shared focus shell
-          like every other field. */}
-      <Card
-        padding="lg"
-        gap={spacing.base}
-        className={FIELD_SHELL_CLASS}
-        style={{ alignItems: 'center' }}
-      >
-        <div
-          style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm }}
-        >
-          <input
-            data-testid="send-amount-input"
-            inputMode="decimal"
-            placeholder="0"
-            value={amount}
-            onChange={(event) => setAmount(sanitizeDecimalInput(event.target.value))}
-            autoCorrect="off"
-            autoComplete="off"
-            style={{
-              ...tabularNums.css,
-              minWidth: 80,
-              width: `${Math.max(1, amount.length)}ch`,
-              maxWidth: '100%',
-              border: 'none',
-              ...focusRingNone,
-              background: 'transparent',
-              padding: 0,
-              fontSize: AMOUNT_ENTRY_FONT,
-              lineHeight: `${AMOUNT_ENTRY_FONT * lineHeight.snug}px`,
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.bold,
-              color: semantic.text.primary,
-              textAlign: 'right',
-            }}
-          />
+      <AmountEntryCard
+        testID="send-amount"
+        value={amount}
+        onChangeValue={setAmount}
+        trailing={
           <span
             style={{
               fontSize: fontSize.body,
@@ -227,20 +187,9 @@ export function StepAmount({
           >
             {token.symbol}
           </span>
-        </div>
-        <span
-          data-testid="send-amount-fiat"
-          style={{
-            ...tabularNums.css,
-            fontSize: fontSize.mono,
-            fontFamily: fontFamily.sans,
-            fontWeight: fontWeight.medium,
-            color: semantic.text.secondary,
-          }}
-        >
-          {fiatDisplay}
-        </span>
-      </Card>
+        }
+        subtext={fiatDisplay}
+      />
 
       <ChipGroup
         testID="send-shortcuts"
