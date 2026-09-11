@@ -23,9 +23,9 @@ export interface PowerupsCatalogEntry {
  * where a single control installs it (which adds its Home sub-tab) or takes
  * it away again.
  *
- * The sheet rises only as far as `maxHeight` — Home measures the bottom of
- * its Send / Receive / Activity row and passes it — so the balance and those
- * buttons stay visible above the catalogue.
+ * The sheet rises exactly to `height` — Home measures the top of its
+ * Portfolio / NFTs row and passes the room below it — so the balance and the
+ * Send / Receive / Activity buttons stay visible above the catalogue.
  */
 export interface PowerupsCatalogPropsBase extends Testable {
   visible: boolean;
@@ -34,6 +34,6 @@ export interface PowerupsCatalogPropsBase extends Testable {
   entries: readonly PowerupsCatalogEntry[];
   onInstall: (id: string) => void;
   onUninstall: (id: string) => void;
-  /** The tallest the sheet may rise, in pixels. */
-  maxHeight?: number;
+  /** The sheet's fixed height, in pixels: the room under the sub-tab row. */
+  height?: number;
 }

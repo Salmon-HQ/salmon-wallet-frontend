@@ -7,10 +7,14 @@
  * there. Tapping an entry opens its detail in the same sheet, where one
  * control adds it to Home or takes it away again.
  *
- * The sheet rises only to `maxHeight`, which Home measures from the bottom of
- * its Send / Receive / Activity row: the balance and those buttons stay
- * visible above the catalogue, so it reads as a drawer of Home rather than as
- * a screen that replaced it.
+ * The sheet rises exactly to `height`, which Home measures as the room under
+ * the top of its Portfolio / NFTs row: the balance and the Send / Receive /
+ * Activity buttons stay visible above the catalogue, so it reads as a drawer
+ * of Home rather than as a screen that replaced it.
+ *
+ * The detail keeps the sheet's own grammar: the standard title header with
+ * its back caret, then the entry as the same row the list drew it as, with
+ * the install / uninstall control where the row's trailing slot is.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -19,7 +23,6 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
-  lineHeight,
   s,
   spacing,
   vs,
@@ -30,7 +33,6 @@ import {
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import {
   ArrowsLeftRightIcon,
-  CaretLeftIcon,
   ImageIcon,
   LightningIcon,
   MinusIcon,
@@ -41,6 +43,7 @@ import {
 } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { IconBubble, type IconGlyphProps } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { PowerupBadge } from '../PowerupBadge';
@@ -50,9 +53,7 @@ import type { PowerupsCatalogProps } from './types';
 
 /** The catalogue row's mark. */
 const ROW_BUBBLE_SIZE = 44;
-/** The detail's mark, one size up. */
-const DETAIL_BUBBLE_SIZE = 76;
-/** The install / uninstall control, and the way back out of a detail. */
+/** The install / uninstall control in the detail row's trailing slot. */
 const CONTROL_SIZE = 42;
 const CONTROL_ICON_SIZE = 22;
 
@@ -77,7 +78,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   entries,
   onInstall,
   onUninstall,
-  maxHeight,
+  height,
   style,
   testID = 'powerups-catalog',
 }) => {
@@ -104,37 +105,41 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   );
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {
-    const Icon = ICONS[entry.id] ?? LightningIcon;
     const name = t(entry.nameKey);
     return (
-      <View testID={`powerups-detail-${entry.id}`} style={styles.detail}>
-        <View style={styles.detailTop}>
-          <IconBubble
-            size={DETAIL_BUBBLE_SIZE}
-            shape="rounded"
-            tone="accent"
-            icon={Icon}
-            iconWeight="bold"
-          />
-          <IconBubble
-            testID={`powerups-toggle-${entry.id}`}
-            size={CONTROL_SIZE}
-            tone={entry.installed ? 'outline' : 'accent'}
-            icon={entry.installed ? MinusIcon : PlusIcon}
-            iconWeight="bold"
-            iconSize={CONTROL_ICON_SIZE}
-            onPress={() => handleToggle(entry)}
-            accessibilityLabel={t(
-              entry.installed ? 'accessibility.uninstall_powerup' : 'accessibility.install_powerup',
-              { name }
-            )}
-          />
-        </View>
-        <View style={styles.detailText}>
-          <Text style={styles.detailTitle}>{name}</Text>
-          <PowerupBadge tier={entry.tier} />
-          <Text style={styles.description}>{t(entry.descriptionKey)}</Text>
-        </View>
+      <View testID={`powerups-detail-${entry.id}`}>
+        <ListRow
+          padding="lg"
+          leading={
+            <IconBubble
+              size={ROW_BUBBLE_SIZE}
+              shape="rounded"
+              tone="accent-tint"
+              icon={ICONS[entry.id] ?? LightningIcon}
+              iconWeight="bold"
+            />
+          }
+          title={name}
+          titleAccessory={<PowerupBadge tier={entry.tier} />}
+          subtitle={t(entry.descriptionKey)}
+          trailing={
+            <IconBubble
+              testID={`powerups-toggle-${entry.id}`}
+              size={CONTROL_SIZE}
+              tone={entry.installed ? 'outline' : 'accent'}
+              icon={entry.installed ? MinusIcon : PlusIcon}
+              iconWeight="bold"
+              iconSize={CONTROL_ICON_SIZE}
+              onPress={() => handleToggle(entry)}
+              accessibilityLabel={t(
+                entry.installed
+                  ? 'accessibility.uninstall_powerup'
+                  : 'accessibility.install_powerup',
+                { name }
+              )}
+            />
+          }
+        />
       </View>
     );
   };
@@ -190,26 +195,20 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      maxHeight={maxHeight}
+      height={height}
       testID={testID}
       style={style}
       headerContent={
-        <View style={styles.header}>
-          {detail ? (
-            <IconBubble
-              testID="powerups-detail-back"
-              size={CONTROL_SIZE}
-              tone="outline"
-              icon={CaretLeftIcon}
-              iconSize={CONTROL_ICON_SIZE}
-              onPress={() => setDetailId(null)}
-              accessibilityLabel={t('accessibility.go_back', 'Go back')}
-            />
-          ) : (
+        detail ? (
+          // The detail is a page of the sheet: the standard title header, its
+          // back caret where every sheet page keeps it.
+          <BottomSheetTitleHeader title={t(detail.nameKey)} onBack={() => setDetailId(null)} />
+        ) : (
+          <View style={styles.header}>
             <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
-          )}
-          <SheetTitle>{detail ? t(detail.nameKey) : t('powerups.browse_title')}</SheetTitle>
-        </View>
+            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+          </View>
+        )
       }
     >
       <ScrollView
@@ -248,30 +247,6 @@ const stylesFor = (t: Semantic) =>
     },
     section: {
       gap: vs(spacing.xl),
-    },
-    detail: {
-      gap: vs(spacing.xl),
-    },
-    detailTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    detailText: {
-      gap: vs(spacing.sm),
-      alignItems: 'flex-start',
-    },
-    detailTitle: {
-      fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.heading),
-      lineHeight: s(fontSize.heading) * lineHeight.snug,
-      color: t.text.primary,
-    },
-    description: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.relaxed,
-      color: t.text.secondary,
     },
     installed: {
       fontFamily: fontFamilyNative.medium,

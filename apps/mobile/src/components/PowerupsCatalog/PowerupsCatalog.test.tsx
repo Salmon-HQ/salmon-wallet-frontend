@@ -50,19 +50,19 @@ jest.mock('../BottomSheetContainer', () => {
       visible,
       children,
       headerContent,
-      maxHeight,
+      height,
       testID,
     }: {
       visible: boolean;
       children: React.ReactNode;
       headerContent?: React.ReactNode;
-      maxHeight?: number;
+      height?: number;
       testID?: string;
     }) =>
       visible
         ? ReactActual.createElement(
             View,
-            { testID, accessibilityLabel: String(maxHeight ?? '') },
+            { testID, accessibilityLabel: String(height ?? '') },
             headerContent,
             children
           )
@@ -101,7 +101,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof PowerupsCatalog>> 
       entries={entries}
       onInstall={onInstall}
       onUninstall={onUninstall}
-      maxHeight={420}
+      height={420}
       {...overrides}
     />
   );

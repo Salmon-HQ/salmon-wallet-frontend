@@ -8,16 +8,19 @@
  * there. Tapping an entry opens its detail in the same sheet, where one
  * control adds it to Home or takes it away again.
  *
- * The sheet rises only to `maxHeight`, which Home measures from the bottom of
- * its Send / Receive / Activity row.
+ * The sheet rises exactly to `height`, which Home measures as the room under
+ * the top of its Portfolio / NFTs row. The detail keeps the sheet's own
+ * grammar: the title with its back caret on the left, then the entry as the
+ * same row the list drew it as, with the install / uninstall control in the
+ * row's trailing slot.
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
-  lineHeight,
   spacing,
   type PowerupsCatalogEntry,
 } from '@salmon/shared';
@@ -44,9 +47,7 @@ import type { PowerupsCatalogProps } from './types';
 
 /** The catalogue row's mark. */
 const ROW_BUBBLE_SIZE = 44;
-/** The detail's mark, one size up. */
-const DETAIL_BUBBLE_SIZE = 76;
-/** The install / uninstall control, and the way back out of a detail. */
+/** The install / uninstall control in the detail row's trailing slot. */
 const CONTROL_SIZE = 42;
 const CONTROL_ICON_SIZE = 22;
 
@@ -70,7 +71,7 @@ export function PowerupsCatalog({
   entries,
   onInstall,
   onUninstall,
-  maxHeight,
+  height,
   style,
   testID = 'powerups-catalog',
 }: PowerupsCatalogProps) {
@@ -92,66 +93,38 @@ export function PowerupsCatalog({
   };
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {
-    const Icon = ICONS[entry.id] ?? LightningIcon;
     const name = t(entry.nameKey);
     return (
-      <div
-        data-testid={`powerups-detail-${entry.id}`}
-        style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <IconBubble size={DETAIL_BUBBLE_SIZE} shape="rounded" tone="accent" icon={Icon} />
-          <IconBubble
-            testID={`powerups-toggle-${entry.id}`}
-            size={CONTROL_SIZE}
-            tone={entry.installed ? 'outline' : 'accent'}
-            icon={entry.installed ? MinusIcon : PlusIcon}
-            iconSize={CONTROL_ICON_SIZE}
-            onPress={() => handleToggle(entry)}
-            accessibilityLabel={t(
-              entry.installed ? 'accessibility.uninstall_powerup' : 'accessibility.install_powerup',
-              { name }
-            )}
-          />
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: spacing.sm,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.bold,
-              fontSize: fontSize.heading,
-              lineHeight: `${fontSize.heading * lineHeight.snug}px`,
-              color: semantic.text.primary,
-            }}
-          >
-            {name}
-          </span>
-          <PowerupBadge tier={entry.tier} />
-          <span
-            style={{
-              fontFamily: fontFamily.sans,
-              fontWeight: fontWeight.medium,
-              fontSize: fontSize.body,
-              lineHeight: `${fontSize.body * lineHeight.relaxed}px`,
-              color: semantic.text.secondary,
-            }}
-          >
-            {t(entry.descriptionKey)}
-          </span>
-        </div>
+      <div data-testid={`powerups-detail-${entry.id}`}>
+        <ListRow
+          leading={
+            <IconBubble
+              size={ROW_BUBBLE_SIZE}
+              shape="rounded"
+              tone="accent-tint"
+              icon={ICONS[entry.id] ?? LightningIcon}
+            />
+          }
+          title={name}
+          titleAccessory={<PowerupBadge tier={entry.tier} />}
+          subtitle={t(entry.descriptionKey)}
+          trailing={
+            <IconBubble
+              testID={`powerups-toggle-${entry.id}`}
+              size={CONTROL_SIZE}
+              tone={entry.installed ? 'outline' : 'accent'}
+              icon={entry.installed ? MinusIcon : PlusIcon}
+              iconSize={CONTROL_ICON_SIZE}
+              onPress={() => handleToggle(entry)}
+              accessibilityLabel={t(
+                entry.installed
+                  ? 'accessibility.uninstall_powerup'
+                  : 'accessibility.install_powerup',
+                { name }
+              )}
+            />
+          }
+        />
       </div>
     );
   };
@@ -212,34 +185,59 @@ export function PowerupsCatalog({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      maxHeight={maxHeight}
+      height={height}
       testID={testID}
       style={style}
       headerContent={
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: spacing.sm,
-            padding: `0 ${spacing.screenGutter}px`,
-          }}
-        >
-          {detail ? (
-            <IconBubble
-              testID="powerups-detail-back"
-              size={CONTROL_SIZE}
-              tone="outline"
-              icon={CaretLeftIcon}
-              iconSize={CONTROL_ICON_SIZE}
-              onPress={() => setDetailId(null)}
-              accessibilityLabel={t('accessibility.go_back', 'Go back')}
-            />
-          ) : (
+        detail ? (
+          // The detail is a page of the sheet: the title centred, the back
+          // caret on the left where the mobile title header keeps it.
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: componentSizes.iconSizeMedium,
+              padding: `0 ${spacing.xl + componentSizes.iconSizeMedium}px`,
+            }}
+          >
+            <button
+              type="button"
+              data-testid="screen-header-back-button"
+              aria-label={t('general.back', 'Back')}
+              onClick={() => setDetailId(null)}
+              style={{
+                position: 'absolute',
+                left: spacing.xl,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'inline-flex',
+                padding: 0,
+                border: 'none',
+                background: 'transparent',
+                color: semantic.text.primary,
+                cursor: 'pointer',
+              }}
+            >
+              <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
+            </button>
+            <SheetTitle>{t(detail.nameKey)}</SheetTitle>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: spacing.sm,
+              padding: `0 ${spacing.screenGutter}px`,
+            }}
+          >
             <LightningIcon size={CONTROL_ICON_SIZE} color={semantic.accent.ink} />
-          )}
-          <SheetTitle>{detail ? t(detail.nameKey) : t('powerups.browse_title')}</SheetTitle>
-        </div>
+            <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+          </div>
+        )
       }
     >
       <div

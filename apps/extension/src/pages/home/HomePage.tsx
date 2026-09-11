@@ -151,8 +151,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Send / Receive / Activity row, so the balance and those buttons stay
   // visible above the sheet.
   const [catalogVisible, setCatalogVisible] = useState(false);
-  const [catalogMaxHeight, setCatalogMaxHeight] = useState<number | undefined>(undefined);
-  const balanceBlockRef = useRef<HTMLDivElement>(null);
+  const [catalogHeight, setCatalogHeight] = useState<number | undefined>(undefined);
+  const subTabsRef = useRef<HTMLDivElement>(null);
 
   // What this device has installed. Nothing is installed out of the box, so
   // Home starts with Portfolio and NFTs and gains a tab only when the user
@@ -475,15 +475,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [powerupTabs]
   );
 
-  // The catalogue's ceiling, measured off the live layout: the side panel can
-  // be resized, and the balance block's height changes with the figures in it.
+  // The catalogue's height, measured off the live layout: the room under the
+  // top of the Portfolio / NFTs row (owner, 2026-09-11). The side panel can be
+  // resized, and the block above the row changes height with the figures in it.
   useLayoutEffect(() => {
-    const node = balanceBlockRef.current;
+    const node = subTabsRef.current;
     if (!node) return undefined;
     const measure = () =>
-      setCatalogMaxHeight(
-        Math.max(window.innerHeight - node.getBoundingClientRect().bottom - spacing.md, 0)
-      );
+      setCatalogHeight(Math.max(window.innerHeight - node.getBoundingClientRect().top, 0));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
@@ -683,7 +682,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
             <div style={pinnedHeaderStyle}>
-              <div ref={balanceBlockRef}>
+              <div>
                 <BalanceHeader
                   testID="balance-header"
                   blockchains={blockchainBalances}
@@ -697,7 +696,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   sendDisabled={isWatchOnly}
                 />
               </div>
-              <div style={pinnedSubTabsStyle}>
+              <div ref={subTabsRef} style={pinnedSubTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
                   tabs={subTabs}
@@ -802,7 +801,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           entries={catalogEntries}
           onInstall={handleInstall}
           onUninstall={uninstall}
-          maxHeight={catalogMaxHeight}
+          height={catalogHeight}
         />
       )}
 

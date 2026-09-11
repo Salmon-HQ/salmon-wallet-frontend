@@ -31,9 +31,14 @@ export interface BottomSheetContainerPropsBase extends Testable {
   dismissible?: boolean;
   /**
    * The tallest the sheet may rise, in pixels. Left out, it hugs its content
-   * up to the platform's own ceiling. Home's catalogue measures the bottom of
-   * the Send / Receive / Activity row and passes it here, so the balance and
-   * those buttons stay visible above the sheet.
+   * up to the platform's own ceiling.
    */
   maxHeight?: number;
+  /**
+   * A fixed height, in pixels: the sheet fills to it whatever its content.
+   * Home's catalogue measures the top of the Portfolio / NFTs row and passes
+   * the room below it, so the sheet always rises exactly to that row and the
+   * balance and the Send / Receive / Activity buttons stay visible above it.
+   */
+  height?: number;
 }

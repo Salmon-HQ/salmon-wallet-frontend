@@ -41,7 +41,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof PowerupsCatalog>> 
       entries={entries}
       onInstall={onInstall}
       onUninstall={onUninstall}
-      maxHeight={420}
+      height={420}
       {...overrides}
     />
   );

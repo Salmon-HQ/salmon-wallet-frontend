@@ -52,8 +52,6 @@ import {
   getNetworkLabel,
   getHeldNetworkIds,
   type NetworkId,
-  spacing,
-  vs,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
@@ -134,19 +132,17 @@ export default function HomeScreen() {
   // The sheet where the sub-tabs are arranged
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
 
-  // The Powerups catalogue, and the ceiling it rises to: the bottom of the
-  // Send / Receive / Activity row in window coordinates, so the balance and
-  // those buttons stay visible above the sheet.
+  // The Powerups catalogue, and the height it rises to: the top of the
+  // Portfolio / NFTs row in window coordinates (owner, 2026-09-11), so the
+  // sheet stands exactly on that row and the balance and the Send / Receive /
+  // Activity buttons stay visible above it.
   const [catalogVisible, setCatalogVisible] = useState(false);
-  const [actionsBottom, setActionsBottom] = useState(0);
-  const balanceBlockRef = useRef<View>(null);
-  const handleBalanceBlockLayout = useCallback(() => {
-    balanceBlockRef.current?.measureInWindow((_x, y, _width, height) =>
-      setActionsBottom(y + height)
-    );
+  const [subTabsTop, setSubTabsTop] = useState(0);
+  const subTabsRef = useRef<View>(null);
+  const handleSubTabsLayout = useCallback(() => {
+    subTabsRef.current?.measureInWindow((_x, y) => setSubTabsTop(y));
   }, []);
-  const catalogMaxHeight =
-    actionsBottom > 0 ? Math.max(WINDOW_HEIGHT - actionsBottom - vs(spacing.md), 0) : undefined;
+  const catalogHeight = subTabsTop > 0 ? Math.max(WINDOW_HEIGHT - subTabsTop, 0) : undefined;
 
   // What this device has installed. Nothing is installed out of the box, so
   // Home starts with Portfolio and NFTs and gains a tab only when the user
@@ -505,7 +501,7 @@ export default function HomeScreen() {
   // The block above the content. It is fixed on both sub-tabs — nothing above
   // the sub-tab row scrolls (owner, 2026-09-01).
   const balanceBlock = (
-    <View ref={balanceBlockRef} onLayout={handleBalanceBlockLayout} collapsable={false}>
+    <View>
       <BalanceHeader
         blockchains={blockchainBalances}
         hiddenBalance={hiddenBalance}
@@ -611,7 +607,14 @@ export default function HomeScreen() {
               its underline if it is not remounted. */}
           <View style={styles.pinnedHeader}>
             {balanceBlock}
-            <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
+            <View
+              ref={subTabsRef}
+              onLayout={handleSubTabsLayout}
+              collapsable={false}
+              style={styles.pinnedSubTabs}
+            >
+              {subTabsRow}
+            </View>
           </View>
 
           {/* The content region plays the verb on a sub-tab change: the
@@ -752,7 +755,7 @@ export default function HomeScreen() {
           entries={catalogEntries}
           onInstall={handleInstall}
           onUninstall={uninstall}
-          maxHeight={catalogMaxHeight}
+          height={catalogHeight}
         />
       )}
 

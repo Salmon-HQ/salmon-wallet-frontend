@@ -77,6 +77,7 @@ export function BottomSheetContainer({
   dismissible = true,
   contentGutter = true,
   maxHeight,
+  height,
   style,
   className,
   testID,
@@ -210,6 +211,9 @@ export function BottomSheetContainer({
     // stops just below the Send / Receive / Activity row instead of covering
     // it.
     maxHeight: maxHeight != null ? maxHeight : '92%',
+    // A fixed height, when the caller measured one: Home's catalogue rises
+    // exactly to the sub-tab row however little it has to show.
+    ...(height != null ? { height } : null),
     boxShadow: shadowsCSS.lg,
     overflow: 'hidden',
     transform: isOpen ? 'translateY(0)' : 'translateY(100%)',

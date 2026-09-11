@@ -157,6 +157,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   dragAreaStyle,
   dismissible = true,
   maxHeight,
+  height,
   testID,
 }) => {
   const styles = useThemedStyles(stylesFor);
@@ -329,6 +330,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
               // catalogue stops just below the Send / Receive / Activity row
               // instead of covering it.
               maxHeight != null && { maxHeight },
+              // A fixed height, when the caller measured one: Home's
+              // catalogue rises exactly to the sub-tab row however little it
+              // has to show.
+              height != null && { height },
               sheetAnimatedStyle,
               style,
             ]}
