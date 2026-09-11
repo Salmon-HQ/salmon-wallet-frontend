@@ -43,11 +43,6 @@ jest.mock('./SwapAmountInput', () => {
   return { SwapAmountInput: ({ testID }: { testID?: string }) => <View testID={testID} /> };
 });
 
-jest.mock('../KeyValueRow', () => {
-  const { View } = require('react-native');
-  return { KeyValueRow: ({ testID }: { testID?: string }) => <View testID={testID} /> };
-});
-
 jest.mock('../Chip', () => {
   const { View } = require('react-native');
   return { ChipGroup: ({ testID }: { testID?: string }) => <View testID={testID} /> };

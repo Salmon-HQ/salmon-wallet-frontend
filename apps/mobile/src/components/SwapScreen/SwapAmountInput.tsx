@@ -7,6 +7,7 @@ import {
   componentSizes,
   fontSize,
   fontFamilyNative,
+  formatTokenBalance,
   letterSpacing,
   lineHeight,
   ms,
@@ -23,9 +24,10 @@ import type { SwapAmountInputProps } from './types';
 
 /**
  * SwapAmountInput — "You Send" / "You Receive", drawn with the same
- * `AmountEntryCard` Send's amount step uses (CORE 05). The token control
- * beside the number is a pressable chip here, not the static text Send
- * shows — Swap lets the user change either side.
+ * `AmountEntryCard` Send's amount step uses (CORE 05): the card holds the
+ * number alone, centred. The token chip and that block's own "Available"
+ * line sit in a header row above the card — left and right — not inside it,
+ * since Swap lets the user change either side.
  */
 export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   label,
@@ -35,7 +37,6 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   onTokenPress,
   usdValue,
   editable = true,
-  placeholder,
   style,
   isLoading = false,
   testID,
@@ -48,29 +49,45 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
       ? `${formatPrecise(Math.floor(usdValue * 100) / 100)} ${currency.toUpperCase()}`
       : undefined;
 
+  const availableText = token
+    ? `${t('send.screens.available')} ${formatTokenBalance(token.balance ?? 0)} ${token.symbol}`
+    : undefined;
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
+
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          testID={testID ? `${testID}-token` : undefined}
+          style={styles.tokenDropdown}
+          onPress={onTokenPress}
+          activeOpacity={0.7}
+        >
+          <TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={ms(22)} />
+          <Text style={styles.tokenSymbol}>{token?.symbol || t('actions.select', 'Select')}</Text>
+        </TouchableOpacity>
+
+        {availableText !== undefined && (
+          <Text
+            testID={testID ? `${testID}-available` : undefined}
+            style={styles.availableText}
+            numberOfLines={1}
+          >
+            {availableText}
+          </Text>
+        )}
+      </View>
+
       <AmountEntryCard
         testID={testID}
         value={value}
         onChangeValue={onChangeValue}
         editable={editable}
-        placeholder={placeholder ?? t('swap.enter_amount')}
+        placeholder="0"
         loading={isLoading}
         subtext={subtext}
         style={style}
-        trailing={
-          <TouchableOpacity
-            testID={testID ? `${testID}-token` : undefined}
-            style={styles.tokenDropdown}
-            onPress={onTokenPress}
-            activeOpacity={0.7}
-          >
-            <TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={ms(22)} />
-            <Text style={styles.tokenSymbol}>{token?.symbol || t('actions.select', 'Select')}</Text>
-          </TouchableOpacity>
-        }
       />
     </View>
   );
@@ -86,6 +103,12 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     letterSpacing: letterSpacing.normal,
     lineHeight: ms(fontSize.base * lineHeight.condensed),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: s(spacing.sm),
   },
   tokenDropdown: {
     flexDirection: 'row',
@@ -107,6 +130,15 @@ const styles = StyleSheet.create({
     opacity: opacity.soft,
     letterSpacing: letterSpacing.normal,
     lineHeight: ms(fontSize.base * lineHeight.condensed),
+  },
+  availableText: {
+    flexShrink: 1,
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.regular,
+    color: colors.text.secondary,
+    letterSpacing: letterSpacing.normal,
+    lineHeight: ms(fontSize.sm * lineHeight.normal),
+    textAlign: 'right',
   },
 });
 

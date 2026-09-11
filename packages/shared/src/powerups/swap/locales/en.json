@@ -11,7 +11,6 @@
     "uses": "Your address and token balances go to the Salmon API to build the route. No third party sees your keys."
   },
   "you_send": "You Send",
-  "enter_amount": "Enter an amount",
   "you_receive": "You Receive",
   "slippage_tolerance": "Slippage Tolerance",
   "minimum_received": "Minimum Received",

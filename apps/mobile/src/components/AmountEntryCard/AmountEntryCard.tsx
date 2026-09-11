@@ -60,7 +60,7 @@ export function AmountEntryCard({
         ) : (
           <TextInput
             testID={testID ? `${testID}-input` : undefined}
-            style={styles.input}
+            style={[styles.input, !trailing && styles.inputCentered]}
             placeholder={placeholder}
             placeholderTextColor={semantic.text.tertiary}
             value={value}
@@ -107,6 +107,11 @@ const stylesFor = (t: Semantic) =>
       color: t.text.primary,
       textAlign: 'right',
       paddingVertical: 0,
+    },
+    // No trailing control: the card holds the number alone, so it centres
+    // rather than right-aligning next to nothing.
+    inputCentered: {
+      textAlign: 'center',
     },
     subtext: {
       ...TABULAR,

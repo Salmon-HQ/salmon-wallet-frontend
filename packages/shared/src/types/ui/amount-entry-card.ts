@@ -15,8 +15,12 @@ export interface AmountEntryCardPropsBase<TStyle> extends Testable {
   onChangeValue: (value: string) => void;
   editable?: boolean;
   placeholder?: string;
-  /** Drawn beside the number on its baseline — a symbol or a token chip. */
-  trailing: ReactNode;
+  /**
+   * Drawn beside the number on its baseline — a symbol or a token chip.
+   * Omitted, the number alone is centred (Swap's cards: the token chip
+   * moved to a header row above the card).
+   */
+  trailing?: ReactNode;
   /** The line under the number, e.g. "≈ 0.00 USD". Omitted when there is none. */
   subtext?: string;
   /** True while the amount waits on something else (Swap's quote). */

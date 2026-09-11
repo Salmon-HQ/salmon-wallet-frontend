@@ -6,7 +6,6 @@ import {
   spacing,
   componentSizes,
   fontFamilyNative,
-  formatTokenBalance,
   vs,
   s,
   fontSize,
@@ -15,7 +14,6 @@ import {
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { ChipGroup } from '../Chip';
-import { KeyValueRow } from '../KeyValueRow';
 import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
@@ -96,14 +94,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {inToken && inToken.balance !== undefined && (
-          <KeyValueRow
-            testID="swap-available"
-            label={t('send.screens.available')}
-            value={`${formatTokenBalance(inToken.balance)} ${inToken.symbol}`}
-          />
-        )}
-
         {/* You Send */}
         <SwapAmountInput
           testID="swap-from"
@@ -114,7 +104,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           onTokenPress={onInTokenPress}
           usdValue={inUsdValue}
           editable={true}
-          placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
 
         {inToken && inToken.balance !== undefined && (

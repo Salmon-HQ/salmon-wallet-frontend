@@ -89,7 +89,9 @@ export function AmountEntryCard({
               fontFamily: fontFamily.sans,
               fontWeight: fontWeight.bold,
               color: semantic.text.primary,
-              textAlign: 'right',
+              // No trailing control: the card holds the number alone, so it
+              // centres rather than right-aligning next to nothing.
+              textAlign: trailing ? 'right' : 'center',
             }}
           />
         )}

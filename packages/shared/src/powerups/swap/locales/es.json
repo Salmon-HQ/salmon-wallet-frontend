@@ -11,7 +11,6 @@
     "uses": "Tu dirección y tus saldos de tokens van a la API de Salmon para armar la ruta. Ningún tercero ve tus claves."
   },
   "you_send": "Enviás",
-  "enter_amount": "Ingresá un monto",
   "you_receive": "Recibís",
   "slippage_tolerance": "Tolerancia de Deslizamiento",
   "minimum_received": "Mínimo a Recibir",

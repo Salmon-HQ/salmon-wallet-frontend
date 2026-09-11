@@ -7,19 +7,11 @@
  */
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  fontFamily,
-  fontSize,
-  fontWeight,
-  formatTokenBalance,
-  lineHeight,
-  spacing,
-} from '@salmon/shared';
+import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
 import { ChipGroup } from '../Chip';
-import { KeyValueRow } from '../KeyValueRow';
 import { SwapAmountInput } from './SwapAmountInput';
 import type { SwapInputScreenProps } from './types';
 
@@ -94,14 +86,6 @@ export function SwapInputScreen({
           overflowY: 'auto',
         }}
       >
-        {inToken && inToken.balance !== undefined && (
-          <KeyValueRow
-            testID="swap-available"
-            label={t('send.screens.available')}
-            value={`${formatTokenBalance(inToken.balance)} ${inToken.symbol}`}
-          />
-        )}
-
         <SwapAmountInput
           testID="swap-from"
           label={t('swap.you_send', 'You Send')}
@@ -111,7 +95,6 @@ export function SwapInputScreen({
           onTokenPress={onInTokenPress}
           usdValue={inUsdValue}
           editable
-          placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
 
         {inToken && inToken.balance !== undefined && (

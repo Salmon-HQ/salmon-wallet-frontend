@@ -1,8 +1,9 @@
 /**
  * SwapAmountInput — "You Send" / "You Receive", on the DOM: drawn with the
- * same `AmountEntryCard` Send's amount step uses (CORE 05). The token
- * control beside the number is a pressable chip, not the static text Send
- * shows — Swap lets the user change either side. Mobile twin:
+ * same `AmountEntryCard` Send's amount step uses (CORE 05): the card holds
+ * the number alone, centred. The token chip and that block's own
+ * "Available" line sit in a header row above the card — left and right —
+ * not inside it, since Swap lets the user change either side. Mobile twin:
  * `apps/mobile/src/components/SwapScreen/SwapAmountInput.tsx`.
  */
 import React, { useState } from 'react';
@@ -13,6 +14,7 @@ import {
   fontFamily,
   fontSize,
   fontWeight,
+  formatTokenBalance,
   spacing,
   useCurrencyContext,
 } from '@salmon/shared';
@@ -60,7 +62,6 @@ export function SwapAmountInput({
   onTokenPress,
   usdValue,
   editable = true,
-  placeholder,
   style,
   isLoading = false,
   testID,
@@ -73,6 +74,10 @@ export function SwapAmountInput({
     usdValue !== undefined
       ? `${formatPrecise(Math.floor(usdValue * 100) / 100)} ${currency.toUpperCase()}`
       : undefined;
+
+  const availableText = token
+    ? `${t('send.screens.available')} ${formatTokenBalance(token.balance ?? 0)} ${token.symbol}`
+    : undefined;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, ...style }}>
@@ -87,41 +92,66 @@ export function SwapAmountInput({
         {label}
       </span>
 
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: spacing.sm,
+        }}
+      >
+        <button
+          type="button"
+          data-testid={testID ? `${testID}-token` : undefined}
+          onClick={onTokenPress}
+          aria-label={token?.symbol ?? t('actions.select', 'Select')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: spacing.xs,
+            padding: `${spacing.xxs}px ${spacing.sm}px`,
+            minWidth: componentSizes.swapSelectorMinWidth,
+            border: 'none',
+            borderRadius: borderRadius.sm,
+            background: semantic.surface.raised,
+            color: semantic.text.primary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.base,
+            fontWeight: fontWeight.bold,
+            cursor: 'pointer',
+          }}
+        >
+          <TokenMark uri={token?.logo} symbol={token?.symbol} />
+          <span>{token?.symbol ?? t('actions.select', 'Select')}</span>
+          <CaretDownIcon size={componentSizes.iconSizeSmall} color={semantic.text.secondary} />
+        </button>
+
+        {availableText !== undefined && (
+          <span
+            data-testid={testID ? `${testID}-available` : undefined}
+            style={{
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.sm,
+              color: semantic.text.secondary,
+              textAlign: 'right',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {availableText}
+          </span>
+        )}
+      </div>
+
       <AmountEntryCard
         testID={testID}
         value={value}
         onChangeValue={onChangeValue}
         editable={editable}
-        placeholder={placeholder ?? t('swap.enter_amount')}
+        placeholder="0"
         loading={isLoading}
         subtext={subtext}
-        trailing={
-          <button
-            type="button"
-            data-testid={testID ? `${testID}-token` : undefined}
-            onClick={onTokenPress}
-            aria-label={token?.symbol ?? t('actions.select', 'Select')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: spacing.xs,
-              padding: `${spacing.xxs}px ${spacing.sm}px`,
-              minWidth: componentSizes.swapSelectorMinWidth,
-              border: 'none',
-              borderRadius: borderRadius.sm,
-              background: semantic.surface.raised,
-              color: semantic.text.primary,
-              fontFamily: fontFamily.sans,
-              fontSize: fontSize.base,
-              fontWeight: fontWeight.bold,
-              cursor: 'pointer',
-            }}
-          >
-            <TokenMark uri={token?.logo} symbol={token?.symbol} />
-            <span>{token?.symbol ?? t('actions.select', 'Select')}</span>
-            <CaretDownIcon size={componentSizes.iconSizeSmall} color={semantic.text.secondary} />
-          </button>
-        }
       />
     </div>
   );
