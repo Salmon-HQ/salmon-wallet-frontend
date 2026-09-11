@@ -39,11 +39,7 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
 
-  const {
-    tokens: multiChainTokens,
-    featuredTokens: topTokens,
-    loading,
-  } = useMultiChainTokens({
+  const { tokens: multiChainTokens, loading } = useMultiChainTokens({
     activeAccount,
     skip: !ready || !activeAccount,
   });
@@ -51,10 +47,6 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
   const swapTokens: SwapToken[] = useMemo(
     () => multiChainTokens.filter((token) => token.chain === 'solana').map(unifiedToSwapToken),
     [multiChainTokens]
-  );
-  const featuredTokens: SwapToken[] = useMemo(
-    () => topTokens.filter((token) => token.chain === 'solana').map(unifiedToSwapToken),
-    [topTokens]
   );
 
   // The verified catalogue for the output side (shared React Query hook).
@@ -85,7 +77,6 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
   return (
     <SwapScreen
       tokens={swapTokens}
-      featuredTokens={featuredTokens}
       catalogTokens={catalogTokens}
       loading={loading}
       publicKey={activeBlockchainAccount.getReceiveAddress()}

@@ -197,13 +197,6 @@ export type { PowerupsCatalogProps } from './PowerupsCatalog';
 export { TokenList, TokenListItem } from './TokenList';
 export type { TokenListProps, TokenListItemProps } from './TokenList';
 
-export { TokenSelectorModal, useTokenSearch } from './TokenSelector';
-export type {
-  TokenSelectorToken,
-  TokenSelectorModalProps,
-  UseTokenSearchResult,
-} from './TokenSelector';
-
 export { TokenLogo } from './TokenLogo';
 
 // ---------------------------------------------------------------------------

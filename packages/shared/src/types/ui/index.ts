@@ -15,12 +15,6 @@ export type { Testable } from './testable';
 export type { DataAttributionPropsBase } from './data-attribution';
 
 // Token Selector
-export type {
-  TokenSelectorToken,
-  TokenSelectorPropsBase,
-  TokenSelectorModalPropsBase,
-  UseTokenSearchResult,
-} from './token-selector';
 
 // Token Market Data
 export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';

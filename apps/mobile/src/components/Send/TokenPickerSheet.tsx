@@ -21,10 +21,8 @@ export type { TokenPickerSheetProps };
 export function TokenPickerSheet({
   visible,
   onClose,
-  tokens,
-  loading,
-  onSelectToken,
   testID = 'send-token-picker',
+  ...list
 }: TokenPickerSheetProps) {
   const { t } = useTranslation();
   return (
@@ -38,7 +36,7 @@ export function TokenPickerSheet({
       // material Receive rides.
       background={<Thermocline tier="thick" style={styles.thermocline} />}
     >
-      <TokenSelectList tokens={tokens} loading={loading} onSelectToken={onSelectToken} />
+      <TokenSelectList {...list} />
     </BottomSheetContainer>
   );
 }

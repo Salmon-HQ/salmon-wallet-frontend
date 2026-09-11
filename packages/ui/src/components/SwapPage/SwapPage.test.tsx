@@ -74,9 +74,8 @@ function setLogic(overrides: Record<string, unknown>) {
       reviewWarning: null,
       priceImpact: null,
       attribution: 'Powered by 0x',
-      modalInTokens: [{ ...SOL, mint: 'sol', uiAmount: 2 }],
-      modalFeaturedTokens: [],
-      modalOutTokens: [{ ...USDC, mint: 'usdc', uiAmount: 0 }],
+      pickerInTokens: [{ ...SOL, mint: 'sol', uiAmount: 2 }],
+      pickerOutTokens: [{ ...USDC, mint: 'usdc', uiAmount: 0 }],
       setInAmount: vi.fn(),
       setShowInTokenModal: vi.fn(),
       setShowOutTokenModal: vi.fn(),
@@ -114,7 +113,7 @@ describe('SwapPage', () => {
     expect(mockLogic.setShowInTokenModal).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByTestId('swap-out-token-picker-USDC'));
     expect(mockLogic.handleOutTokenModalSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ mint: 'usdc', symbol: 'USDC' })
+      expect.objectContaining({ address: 'usdc', symbol: 'USDC' })
     );
   });
 

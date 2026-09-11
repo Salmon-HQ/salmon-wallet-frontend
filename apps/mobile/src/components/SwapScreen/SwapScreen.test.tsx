@@ -41,10 +41,10 @@ jest.mock('../WarningNotice', () => {
   const { View } = require('react-native');
   return { WarningNotice: () => <View testID="warning-notice" /> };
 });
-jest.mock('../TokenSelector', () => {
+jest.mock('../Send', () => {
   const { View } = require('react-native');
   return {
-    TokenSelectorModal: ({
+    TokenPickerSheet: ({
       visible,
       showBalances = true,
     }: {
@@ -52,7 +52,7 @@ jest.mock('../TokenSelector', () => {
       showBalances?: boolean;
     }) => (
       <View
-        testID="token-selector-modal"
+        testID="token-picker-sheet"
         accessibilityState={{ selected: visible }}
         accessibilityLabel={showBalances ? 'balances' : 'no-balances'}
       />
@@ -83,9 +83,8 @@ function setLogic(overrides: Record<string, unknown>) {
       reviewWarning: null,
       priceImpact: null,
       attribution: 'Powered by 0x',
-      modalInTokens: [],
-      modalFeaturedTokens: [],
-      modalOutTokens: [],
+      pickerInTokens: [],
+      pickerOutTokens: [],
       setInAmount: jest.fn(),
       setShowInTokenModal: jest.fn(),
       setShowOutTokenModal: jest.fn(),
@@ -117,7 +116,7 @@ describe('SwapScreen', () => {
   it('keeps balances on the You Send selector and hides them on You Receive', () => {
     setLogic({});
     render(<SwapScreen {...props} />);
-    const [send, receive] = screen.getAllByTestId('token-selector-modal');
+    const [send, receive] = screen.getAllByTestId('token-picker-sheet');
     expect(send.props.accessibilityLabel).toBe('balances');
     expect(receive.props.accessibilityLabel).toBe('no-balances');
   });

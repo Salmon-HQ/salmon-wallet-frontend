@@ -12,7 +12,7 @@
  */
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { SwapToken } from '../../types/swap';
-import type { TokenSelectorToken } from '../../types/ui/token-selector';
+import type { SendToken } from '../../types/ui/send-sheet';
 import {
   SignatureRequestCancelledError,
   type TransactionProposal,
@@ -27,6 +27,19 @@ import { describeSwapBuildError } from './errors';
 import { buildSwapProposal, toDisplayAmount } from './proposal';
 import { SWAP_NETWORK_ID } from './types';
 import type { SwapBuildResponse, SwapErrorMessage, SwapUnavailableReason } from './types';
+
+/** A swap token in the picker sheet's shape — Send's `SendToken`. */
+function toPickerToken(token: SwapToken): SendToken {
+  return {
+    address: token.address,
+    name: token.name ?? token.symbol,
+    symbol: token.symbol,
+    logo: token.logo,
+    price: token.usdPrice,
+    uiAmount: token.balance ?? 0,
+    decimals: token.decimals,
+  };
+}
 
 // ============================================================================
 // Constants
@@ -98,8 +111,6 @@ function hasTokenSnapshotChanged(
 export interface UseSwapScreenLogicParams {
   /** User's tokens for selection */
   tokens: SwapToken[];
-  /** Featured tokens for quick selection */
-  featuredTokens?: SwapToken[];
   /** The verified catalogue for the output side */
   catalogTokens?: SwapToken[];
   /** Whether tokens are still loading */
@@ -144,17 +155,17 @@ export interface UseSwapScreenLogicResult {
   /** The provider's attribution from the current build, e.g. "Powered by 0x". */
   attribution: string | null;
   outputTokens: SwapToken[];
-  modalInTokens: (SwapToken & { mint: string; uiAmount: number })[];
-  modalFeaturedTokens: (SwapToken & { mint: string; uiAmount: number })[];
-  modalOutTokens: (SwapToken & { mint: string; uiAmount: number; network?: string })[];
   setInAmount: (v: string) => void;
   setShowInTokenModal: (v: boolean) => void;
   setShowOutTokenModal: (v: boolean) => void;
   handleInTokenSelect: (token: SwapToken) => void;
   handleOutTokenSelect: (token: SwapToken) => void;
-  handleInTokenModalSelect: (token: TokenSelectorToken) => void;
-  handleOutTokenModalSelect: (token: TokenSelectorToken) => void;
-  handleSearchTokens: ((query: string) => Promise<TokenSelectorToken[]>) | undefined;
+  /** The pickers' rows, in the token picker sheet's shape (Send's). */
+  pickerInTokens: SendToken[];
+  pickerOutTokens: SendToken[];
+  handleInTokenModalSelect: (token: SendToken) => void;
+  handleOutTokenModalSelect: (token: SendToken) => void;
+  handleSearchTokens: ((query: string) => Promise<SendToken[]>) | undefined;
   /** Hand the current build to core's confirmation. */
   handleSwap: () => Promise<void>;
 }
@@ -165,7 +176,6 @@ export interface UseSwapScreenLogicResult {
 
 export function useSwapScreenLogic({
   tokens,
-  featuredTokens = [],
   catalogTokens = [],
   loading = false,
   publicKey,
@@ -354,16 +364,16 @@ export function useSwapScreenLogic({
   );
 
   const handleInTokenModalSelect = useCallback(
-    (token: TokenSelectorToken) => {
-      const originalToken = tokens.find((t) => t.address === (token.mint || token.address));
+    (token: SendToken) => {
+      const originalToken = tokens.find((t) => t.address === token.address);
       handleInTokenSelect({
-        address: token.mint || token.address || '',
-        symbol: token.symbol || '',
+        address: token.address,
+        symbol: token.symbol,
         name: token.name,
-        decimals: originalToken?.decimals || 9,
-        logo: token.logo,
-        balance: token.uiAmount,
-        usdPrice: originalToken?.usdPrice,
+        decimals: token.decimals ?? originalToken?.decimals ?? 9,
+        logo: token.logo ?? undefined,
+        balance: Number(token.uiAmount) || 0,
+        usdPrice: originalToken?.usdPrice ?? token.price,
         chain: originalToken?.chain,
         networkId: originalToken?.networkId,
       });
@@ -505,48 +515,40 @@ export function useSwapScreenLogic({
   }, [outToken, outputTokens]);
 
   const handleOutTokenModalSelect = useCallback(
-    (token: TokenSelectorToken) => {
-      const originalToken = outputTokens.find(
-        (t) => t.address === (token.mint || token.address) || t.symbol === token.symbol
-      );
+    (token: SendToken) => {
+      const originalToken = outputTokens.find((t) => t.address === token.address);
       handleOutTokenSelect({
-        address: token.mint || token.address || '',
-        symbol: token.symbol || '',
+        address: token.address,
+        symbol: token.symbol,
         name: token.name,
-        decimals: originalToken?.decimals || 9,
-        logo: token.logo,
-        balance: token.uiAmount,
-        usdPrice: originalToken?.usdPrice,
+        decimals: token.decimals ?? originalToken?.decimals ?? 9,
+        logo: token.logo ?? undefined,
+        balance: Number(token.uiAmount) || 0,
+        usdPrice: originalToken?.usdPrice ?? token.price,
         chain: originalToken?.chain,
-        networkId: originalToken?.networkId || token.network,
+        networkId: originalToken?.networkId ?? SWAP_NETWORK_ID,
       });
     },
     [outputTokens, handleOutTokenSelect]
   );
 
   const handleSearchTokens = onSearchTokens
-    ? async (query: string): Promise<TokenSelectorToken[]> => {
+    ? async (query: string): Promise<SendToken[]> => {
         const results = await onSearchTokens(query);
-        return results
-          .filter((t) => t.swappable !== false)
-          .map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
+        return results.filter((t) => t.swappable !== false).map(toPickerToken);
       }
     : undefined;
 
-  const modalInTokens = tokens
-    .filter((t) => t.address.toLowerCase() !== outToken?.address.toLowerCase())
-    .map((t) => ({ ...t, mint: t.address, uiAmount: t.balance || 0 }));
-  const modalFeaturedTokens = featuredTokens.map((t) => ({
-    ...t,
-    mint: t.address,
-    uiAmount: t.balance || 0,
-  }));
-  const modalOutTokens = outputTokens.map((t) => ({
-    ...t,
-    mint: t.address,
-    uiAmount: t.balance || 0,
-    network: t.networkId,
-  }));
+  // Both pickers are Send's token picker sheet, so both twins draw the same
+  // rows from the same list.
+  const pickerInTokens = useMemo(
+    () =>
+      tokens
+        .filter((t) => t.address.toLowerCase() !== outToken?.address.toLowerCase())
+        .map(toPickerToken),
+    [tokens, outToken]
+  );
+  const pickerOutTokens = useMemo(() => outputTokens.map(toPickerToken), [outputTokens]);
 
   return {
     unavailable,
@@ -568,9 +570,8 @@ export function useSwapScreenLogic({
     priceImpact,
     attribution: build?.attribution ?? null,
     outputTokens,
-    modalInTokens,
-    modalFeaturedTokens,
-    modalOutTokens,
+    pickerInTokens,
+    pickerOutTokens,
     setInAmount: handleInAmountChange,
     setShowInTokenModal,
     setShowOutTokenModal,

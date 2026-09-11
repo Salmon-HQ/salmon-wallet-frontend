@@ -5,7 +5,7 @@ import { useSwapScreenLogic } from '@salmon/shared/powerups';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { StateBlock } from '../StateBlock';
-import { TokenSelectorModal } from '../TokenSelector';
+import { TokenPickerSheet } from '../Send';
 import { WarningNotice } from '../WarningNotice';
 import type { SwapScreenProps } from './types';
 
@@ -84,26 +84,28 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         onSwap={() => void logic.handleSwap()}
       />
 
-      <TokenSelectorModal
+      {/* Both pickers are Send's token picker sheet — the same thermocline,
+          search and rows as every other sheet. You Receive lists the
+          catalogue without balances and searches past it. */}
+      <TokenPickerSheet
+        testID="swap-in-token-picker"
         visible={logic.showInTokenModal}
         onClose={() => logic.setShowInTokenModal(false)}
-        tokens={logic.modalInTokens}
-        featuredTokens={logic.modalFeaturedTokens}
-        onSelect={logic.handleInTokenModalSelect}
-        onSearch={logic.handleSearchTokens}
-        showNetworkChip={true}
+        tokens={logic.pickerInTokens}
         loading={logic.tokensLoading}
+        verifiedOnly={false}
+        onSelectToken={logic.handleInTokenModalSelect}
       />
-
-      <TokenSelectorModal
+      <TokenPickerSheet
+        testID="swap-out-token-picker"
         visible={logic.showOutTokenModal}
         onClose={() => logic.setShowOutTokenModal(false)}
-        tokens={logic.modalOutTokens}
-        onSelect={logic.handleOutTokenModalSelect}
-        showNetworkChip={true}
-        // You Receive: what you already hold is noise when choosing what to get.
-        showBalances={false}
+        tokens={logic.pickerOutTokens}
         loading={logic.tokensLoading}
+        showBalances={false}
+        verifiedOnly={false}
+        onSearch={logic.handleSearchTokens}
+        onSelectToken={logic.handleOutTokenModalSelect}
       />
     </View>
   );

@@ -10,9 +10,9 @@
  * broadcasts and shows the receipt there. Closing it ends the swap and Home
  * returns to Portfolio (spec 027 §2, owner ruling 2026-09-11).
  */
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { spacing, type SendToken, type SwapToken } from '@salmon/shared';
+import { spacing } from '@salmon/shared';
 import { useSwapScreenLogic } from '@salmon/shared/powerups';
 
 import { StateBlock } from '../StateBlock';
@@ -21,31 +21,9 @@ import { WarningNotice } from '../WarningNotice';
 import { SwapInputScreen } from './SwapInputScreen';
 import type { SwapPageProps } from './types';
 
-/** The picker reads the send flow's token shape; a swap token is a subset of it. */
-function toPickerToken(token: SwapToken & { mint: string; uiAmount: number }): SendToken {
-  return {
-    address: token.address,
-    name: token.name ?? token.symbol,
-    symbol: token.symbol,
-    logo: token.logo,
-    price: token.usdPrice,
-    uiAmount: token.uiAmount,
-    decimals: token.decimals,
-  };
-}
-
 export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageProps) {
   const { t } = useTranslation();
   const logic = useSwapScreenLogic(logicParams);
-
-  const inPickerTokens = useMemo(
-    () => logic.modalInTokens.map(toPickerToken),
-    [logic.modalInTokens]
-  );
-  const outPickerTokens = useMemo(
-    () => logic.modalOutTokens.map(toPickerToken),
-    [logic.modalOutTokens]
-  );
 
   const body = (() => {
     if (watchOnly) {
@@ -114,39 +92,28 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
         {body}
       </div>
 
+      {/* Both pickers are Send's token picker sheet — the same thermocline,
+          search and rows as every other sheet. You Receive lists the
+          catalogue without balances and searches past it. */}
       <TokenPickerSheet
         testID="swap-in-token-picker"
         visible={logic.showInTokenModal}
         onClose={() => logic.setShowInTokenModal(false)}
-        tokens={inPickerTokens}
+        tokens={logic.pickerInTokens}
         loading={logic.tokensLoading}
-        onSelectToken={(token) =>
-          logic.handleInTokenModalSelect({
-            mint: token.address,
-            address: token.address,
-            symbol: token.symbol,
-            name: token.name,
-            logo: token.logo,
-            uiAmount: Number(token.uiAmount),
-          })
-        }
+        verifiedOnly={false}
+        onSelectToken={logic.handleInTokenModalSelect}
       />
       <TokenPickerSheet
         testID="swap-out-token-picker"
         visible={logic.showOutTokenModal}
         onClose={() => logic.setShowOutTokenModal(false)}
-        tokens={outPickerTokens}
+        tokens={logic.pickerOutTokens}
         loading={logic.tokensLoading}
-        onSelectToken={(token) =>
-          logic.handleOutTokenModalSelect({
-            mint: token.address,
-            address: token.address,
-            symbol: token.symbol,
-            name: token.name,
-            logo: token.logo,
-            uiAmount: Number(token.uiAmount),
-          })
-        }
+        showBalances={false}
+        verifiedOnly={false}
+        onSearch={logic.handleSearchTokens}
+        onSelectToken={logic.handleOutTokenModalSelect}
       />
     </div>
   );

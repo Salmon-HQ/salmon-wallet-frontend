@@ -58,6 +58,15 @@ export interface TokenSelectListPropsBase {
   onSelectToken: (token: SendToken) => void;
   /** Whether token data is still loading (shows skeleton when true) */
   loading?: boolean;
+  /** Trailing cell: the balance (default) or, for a catalogue, the symbol alone. */
+  showBalances?: boolean;
+  /**
+   * Hide tokens without a meaningful tag unless the developer toggle shows
+   * them (default). Off when the caller already curated the list (Swap).
+   */
+  verifiedOnly?: boolean;
+  /** Remote search past the list in hand — a catalogue the list does not carry whole. */
+  onSearch?: (query: string) => Promise<SendToken[]>;
 }
 
 /** @deprecated Read `TokenSelectListPropsBase`. */

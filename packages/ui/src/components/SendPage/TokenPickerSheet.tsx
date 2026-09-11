@@ -16,10 +16,8 @@ import type { TokenPickerSheetProps } from './types';
 export function TokenPickerSheet({
   visible,
   onClose,
-  tokens,
-  loading,
-  onSelectToken,
   testID = 'send-token-picker',
+  ...list
 }: TokenPickerSheetProps) {
   const { t } = useTranslation();
   return (
@@ -34,7 +32,7 @@ export function TokenPickerSheet({
       // fills whatever it is given. So this one sheet is given a height.
       style={{ height: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
     >
-      <TokenSelectList tokens={tokens} loading={loading} onSelectToken={onSelectToken} />
+      <TokenSelectList {...list} />
     </BottomSheetContainer>
   );
 }

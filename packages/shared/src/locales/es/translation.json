@@ -62,11 +62,9 @@
     "done": "Listo",
     "send": "Enviar",
     "search_placeholder": "Buscar...",
-    "view_more": "Ver más",
     "continue": "Continuar",
     "follow_us": "¡Seguinos!",
     "retry": "Reintentar",
-    "searching": "Buscando...",
     "activity": "Actividad",
     "copied": "¡Copiado!",
     "edit": "Editar",
@@ -527,7 +525,6 @@
     "loading_wallet": "Cargando billetera...",
     "tokens_empty_subtitle": "Tus tokens van a aparecer acá cuando recibas alguno",
     "unnamed_account": "Cuenta",
-    "token_search_failed": "La búsqueda no está disponible en este momento. Intentá de nuevo.",
     "import": {
       "title": "Importar clave privada",
       "label": "Clave privada",
@@ -741,7 +738,6 @@
     "view_activity": "Ver actividad",
     "show_balance": "Mostrar balance",
     "hide_balance": "Ocultar balance",
-    "token_on_network": "{{token}} en {{network}}",
     "loading_token_info": "Cargando información del token",
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
@@ -896,8 +892,5 @@
     "confirm": "Confirmar",
     "confirmCountdown": "Confirmar ({{seconds}})",
     "refreshQuote": "Actualizar cotización"
-  },
-  "tokenSelector": {
-    "showing_verified_tokens": "Mostrando tokens verificados. Buscá para encontrar otros tokens."
   }
 }

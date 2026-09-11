@@ -89,7 +89,6 @@ export const MOBILE_ONLY = {
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',
   InputAddress: 'the DOM twin is RecipientInput inside InputAddress (mapped from Send)',
-  TokenSelector: 'the DOM picker is TokenPickerSheet inside SendPage',
 };
 
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */

@@ -1,6 +1,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { TokenSelectorToken, UseTokenSearchResult } from '../types/ui/token-selector';
-import { filterTokensLocally } from '../utils/tokens';
+import { filterTokensLocally, type TokenSelectorToken } from '../utils/tokens';
+
+export interface UseTokenSearchResult<T extends TokenSelectorToken = TokenSelectorToken> {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  displayTokens: T[];
+  isSearching: boolean;
+  paginatedTokens: T[];
+  hasMore: boolean;
+  loadMore: () => void;
+  reset: () => void;
+  retry: () => void;
+  error: string | null;
+  isError: boolean;
+}
 
 const PAGE_SIZE = 20;
 const DEBOUNCE_DELAY = 300;
@@ -13,12 +26,12 @@ const MIN_SEARCH_LENGTH = 3;
  * @param onSearch - Optional async search function for external search
  * @returns Search state and controls
  */
-export function useTokenSearch(
-  tokens: TokenSelectorToken[],
-  onSearch?: (query: string) => Promise<TokenSelectorToken[]>
-): UseTokenSearchResult {
+export function useTokenSearch<T extends TokenSelectorToken>(
+  tokens: T[],
+  onSearch?: (query: string) => Promise<T[]>
+): UseTokenSearchResult<T> {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<TokenSelectorToken[]>([]);
+  const [searchResults, setSearchResults] = useState<T[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);

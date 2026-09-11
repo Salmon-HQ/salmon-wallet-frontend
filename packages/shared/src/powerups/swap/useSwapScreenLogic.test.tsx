@@ -119,7 +119,7 @@ describe('useSwapScreenLogic — the picker leaves out what the router cannot tr
   it('drops a non-swappable catalogue token from the output picker, keeps the rest', () => {
     const { view } = setup({ catalogTokens: [USDC, HOOKED] });
 
-    const symbols = view.result.current.logic.modalOutTokens.map((t) => t.symbol);
+    const symbols = view.result.current.logic.pickerOutTokens.map((t) => t.symbol);
     expect(symbols).toContain('USDC');
     expect(symbols).not.toContain('HOOK');
   });

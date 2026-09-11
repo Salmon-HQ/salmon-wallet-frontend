@@ -37,8 +37,6 @@ jest.mock('@salmon/shared', () => ({
         usdPrice: 100,
       },
     ],
-    // A non-Solana featured token has no swap route: it never reaches the form.
-    featuredTokens: [{ symbol: 'BTC', address: 'mint-btc', decimals: 8, chain: 'bitcoin' }],
     loading: false,
     refresh: jest.fn(),
   }),
@@ -67,7 +65,6 @@ jest.mock('../../src/components/SwapScreen', () => {
   return {
     SwapScreen: (props: {
       tokens: { symbol: string }[];
-      featuredTokens: { symbol: string }[];
       catalogTokens: { symbol: string }[];
       publicKey: string;
       networkId: string;
@@ -78,7 +75,6 @@ jest.mock('../../src/components/SwapScreen', () => {
     }) => (
       <View>
         <Text>{`tokens:${props.tokens.map((t) => t.symbol).join(',')}`}</Text>
-        <Text>{`featured:${props.featuredTokens.map((t) => t.symbol).join(',')}`}</Text>
         <Text>{`catalog:${props.catalogTokens.map((t) => t.symbol).join(',')}`}</Text>
         <Text>{`taker:${props.publicKey}`}</Text>
         <Text>{`network:${props.networkId}`}</Text>
@@ -129,7 +125,6 @@ describe('SwapTab', () => {
     render(<SwapTab />);
 
     expect(screen.getByText('tokens:SOL')).toBeTruthy();
-    expect(screen.getByText('featured:')).toBeTruthy();
     expect(screen.getByText('catalog:USDC')).toBeTruthy();
     expect(screen.getByText('taker:wallet-1')).toBeTruthy();
     // The active network as it is: the Powerup decides what it can serve.
