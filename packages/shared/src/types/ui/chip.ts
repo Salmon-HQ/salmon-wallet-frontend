@@ -7,7 +7,9 @@ export type ChipSize = 'sm' | 'md';
 
 /**
  * `filter` carries a selected state — the ink well the frames draw when a
- * filter is on. `outline` never fills: it is a label wearing an edge.
+ * filter is on. `outline` never fills: it is a label wearing an edge; when
+ * selected, the edge and the label take the accent (the lit amount fill,
+ * owner ruling 2026-09-11).
  *
  * A chip is for actions and badges, never for selection state in a row of
  * mutually exclusive options — that is `UnderlineTabs` (DESIGN.md

@@ -12,6 +12,7 @@ jest.mock('react-i18next', () => ({
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
 // Only the layout tokens this screen reads are needed here.
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('../../../../../packages/shared/src/hooks/useAmountShortcuts'),
   colors: { text: { tertiary: '#888' } },
   spacing: { xs: 4, sm: 8, base: 16, md: 12, lg: 20, '2xl': 32, '3xl': 40, headerPadding: 20 },
   borderRadius: { md: 12 },

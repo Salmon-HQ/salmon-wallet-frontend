@@ -39,6 +39,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   editable = true,
   style,
   isLoading = false,
+  highlighted = false,
   testID,
 }) => {
   const { t } = useTranslation();
@@ -86,6 +87,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
         editable={editable}
         placeholder="0"
         loading={isLoading}
+        focused={highlighted}
         subtext={subtext}
         style={style}
       />

@@ -64,6 +64,7 @@ export function SwapAmountInput({
   editable = true,
   style,
   isLoading = false,
+  highlighted = false,
   testID,
 }: SwapAmountInputProps) {
   const { t } = useTranslation();
@@ -151,6 +152,7 @@ export function SwapAmountInput({
         editable={editable}
         placeholder="0"
         loading={isLoading}
+        focused={highlighted}
         subtext={subtext}
       />
     </div>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,6 +11,7 @@ import {
   fontSize,
   lineHeight,
   semantic,
+  useAmountShortcuts,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { ChipGroup } from '../Chip';
@@ -18,14 +19,6 @@ import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { SwapInputScreenProps } from './types';
-
-/** The four fills Send's amount step draws (CORE 05). `1` is MAX. */
-const SHORTCUTS = [
-  { key: '25', value: 0.25 },
-  { key: '50', value: 0.5 },
-  { key: '75', value: 0.75 },
-  { key: 'max', value: 1 },
-] as const;
 
 /**
  * SwapInputScreen - the Swap Powerup's form: pair, amounts and the swap
@@ -62,26 +55,14 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   const ctaBottomOffset =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
-  const handleShortcut = useCallback(
-    (key: string) => {
-      const option = SHORTCUTS.find((shortcut) => shortcut.key === key);
-      if (!option || !inToken || inToken.balance === undefined) return;
-      const decimals = inToken.decimals ?? 9;
-      const truncated =
-        Math.floor(inToken.balance * option.value * 10 ** decimals) / 10 ** decimals;
-      onInAmountChange(truncated > 0 ? truncated.toString() : '0');
-    },
-    [inToken, onInAmountChange]
-  );
-
-  const shortcutOptions = useMemo(
-    () =>
-      SHORTCUTS.map((shortcut) => ({
-        key: shortcut.key,
-        label: shortcut.key === 'max' ? t('general.max') : `${shortcut.key}%`,
-      })),
-    [t]
-  );
+  // The balance fills; a fill stays lit until the user types over it.
+  const shortcuts = useAmountShortcuts({
+    balance: inToken?.balance,
+    decimals: inToken?.decimals,
+    setAmount: onInAmountChange,
+    maxLabel: t('general.max'),
+  });
+  const isFillLit = shortcuts.selected !== '';
 
   return (
     <Pressable style={[styles.container, style]} onPress={Keyboard.dismiss} accessible={false}>
@@ -100,21 +81,20 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           testID="swap-from"
           label={t('swap.you_send', 'You Send')}
           value={inAmount}
-          onChangeValue={onInAmountChange}
+          onChangeValue={shortcuts.onAmountChange}
           token={inToken}
           onTokenPress={onInTokenPress}
           usdValue={inUsdValue}
+          highlighted={isFillLit}
           editable={true}
         />
 
         {inToken && inToken.balance !== undefined && (
           <ChipGroup
             testID="swap-shortcuts"
-            options={shortcutOptions}
-            // A shortcut is an action, not a selection: nothing stays lit
-            // after the fill, so the group never carries a value.
-            value=""
-            onChange={handleShortcut}
+            options={shortcuts.options}
+            value={shortcuts.selected}
+            onChange={shortcuts.select}
             size="md"
             fill
             variant="outline"
@@ -155,6 +135,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           token={outToken}
           onTokenPress={onOutTokenPress}
           usdValue={outAmount && outUsdValue != null ? outUsdValue : undefined}
+          highlighted={isFillLit}
           editable={false}
           placeholder="0"
           isLoading={isLoadingQuote}

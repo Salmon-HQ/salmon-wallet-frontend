@@ -25,6 +25,8 @@ export interface SwapAmountInputPropsBase<TStyle> {
   style?: TStyle;
   /** Show loading state for amount */
   isLoading?: boolean;
+  /** The card wears the accent edge — a balance fill is lit under it. */
+  highlighted?: boolean;
 }
 
 /** The form: pair, amounts, the notice slot and the swap control. */

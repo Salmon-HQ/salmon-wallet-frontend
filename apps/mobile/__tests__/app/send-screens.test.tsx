@@ -137,6 +137,8 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
   // The recipient groups are real: recents, address book and own wallets.
   ...jest.requireActual('../../../../packages/shared/src/utils/recipientOptions'),
+  // The balance fills are real: the suite exercises their truncation.
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useAmountShortcuts'),
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
   sanitizeDecimalInput: (value: string) => value,

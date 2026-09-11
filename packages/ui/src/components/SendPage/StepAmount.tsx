@@ -7,7 +7,7 @@
  * subtracted a fee), and "valid" is the same predicate. The fee is one
  * estimate for the whole flow, asked for here and read again by review.
  */
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   SOL_CONSTANTS,
@@ -19,6 +19,7 @@ import {
   type BlockchainType,
   type SendRecipient,
   type SendToken,
+  useAmountShortcuts,
 } from '@salmon/shared';
 
 import { AmountEntryCard } from '../AmountEntryCard';
@@ -31,14 +32,6 @@ import { SendScreen } from './SendScreen';
 
 /** How long the fee estimate waits before firing, in ms. */
 const FEE_DEBOUNCE_MS = 300;
-
-/** The four fills the frames draw. `1` is MAX — the whole balance, as today. */
-const SHORTCUTS = [
-  { key: '25', value: 0.25 },
-  { key: '50', value: 0.5 },
-  { key: '75', value: 0.75 },
-  { key: 'max', value: 1 },
-] as const;
 
 /** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
 function formatSolAmount(value: number): string {
@@ -96,32 +89,19 @@ export function StepAmount({
     return amountValid && !solShortfall;
   }, [amount, tokenBalance, solShortfall]);
 
-  const handleShortcut = useCallback(
-    (key: string) => {
-      const option = SHORTCUTS.find((shortcut) => shortcut.key === key);
-      if (!option) return;
-      const fillAmount = tokenBalance * option.value;
-      const decimals = token.decimals ?? 9;
-      const truncated = Math.floor(fillAmount * 10 ** decimals) / 10 ** decimals;
-      setAmount(truncated > 0 ? truncated.toString() : '0');
-    },
-    [tokenBalance, token.decimals, setAmount]
-  );
+  // The balance fills; a fill stays lit until the user types over it.
+  const shortcuts = useAmountShortcuts({
+    balance: tokenBalance,
+    decimals: token.decimals,
+    setAmount,
+    maxLabel: t('general.max'),
+  });
 
   const fiatDisplay = useMemo(() => {
     const numAmount = parseFloat(amount) || 0;
     const fiat = !token.price || numAmount === 0 ? 0 : numAmount * token.price;
     return `≈ ${formatPrecise(fiat)} ${currency.toUpperCase()}`;
   }, [amount, token.price, formatPrecise, currency]);
-
-  const shortcutOptions = useMemo(
-    () =>
-      SHORTCUTS.map((shortcut) => ({
-        key: shortcut.key,
-        label: shortcut.key === 'max' ? t('general.max') : `${shortcut.key}%`,
-      })),
-    [t]
-  );
 
   const recipientShort =
     getShortAddress(recipient.resolvedAddress || recipient.address, 4) ??
@@ -170,16 +150,16 @@ export function StepAmount({
       <AmountEntryCard
         testID="send-amount"
         value={amount}
-        onChangeValue={setAmount}
+        onChangeValue={shortcuts.onAmountChange}
+        focused={shortcuts.selected !== ''}
         subtext={fiatDisplay}
       />
 
       <ChipGroup
         testID="send-shortcuts"
-        options={shortcutOptions}
-        // A shortcut is an action, not a selection: nothing stays lit.
-        value=""
-        onChange={handleShortcut}
+        options={shortcuts.options}
+        value={shortcuts.selected}
+        onChange={shortcuts.select}
         size="md"
         fill
         variant="outline"

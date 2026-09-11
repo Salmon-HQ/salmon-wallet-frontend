@@ -36,6 +36,8 @@ const SIZES: Record<
 /** Ground and edge, filter idle/selected and outline — the mobile record, unchanged. */
 const tonesFor = (t: Semantic) => ({
   outline: { background: 'transparent', border: t.border.raised },
+  // The lit outline is the amount fill the user chose — see Chip.tsx (mobile).
+  outlineLit: { background: 'transparent', border: t.accent.ink },
   filterIdle: { background: 'transparent', border: t.border.hairline },
   // The selected filter is the inverse well, not a louder fill — see Chip.tsx (mobile).
   filterSelected: { background: t.depth.abyss, border: t.border.strong },
@@ -57,9 +59,16 @@ export function Chip({
   const { pressed, handlers } = usePressed();
   const metrics = SIZES[size];
   const isSelected = variant === 'filter' && selected;
+  const isOutlineLit = variant === 'outline' && selected;
   const tones = tonesFor(t);
   const tone =
-    variant === 'outline' ? tones.outline : isSelected ? tones.filterSelected : tones.filterIdle;
+    variant === 'outline'
+      ? isOutlineLit
+        ? tones.outlineLit
+        : tones.outline
+      : isSelected
+        ? tones.filterSelected
+        : tones.filterIdle;
 
   const box: React.CSSProperties = {
     boxSizing: 'border-box',
@@ -85,7 +94,7 @@ export function Chip({
     fontWeight: fontWeight.bold,
     fontSize: metrics.font,
     letterSpacing: letterSpacing.label,
-    color: isSelected ? t.text.primary : t.text.secondary,
+    color: isOutlineLit ? t.accent.ink : isSelected ? t.text.primary : t.text.secondary,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -111,7 +120,7 @@ export function Chip({
       type="button"
       data-testid={testID}
       aria-label={accessibilityLabel ?? label}
-      aria-pressed={isSelected}
+      aria-pressed={isSelected || isOutlineLit}
       onClick={onPress}
       className={className}
       {...handlers}
