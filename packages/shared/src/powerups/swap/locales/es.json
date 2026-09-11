@@ -7,8 +7,7 @@
       "quote": "Pedí una cotización en vivo entre dos tokens del catálogo",
       "review": "Revisá la tasa, las comisiones y el mínimo que recibís antes de firmar",
       "receipt": "Guardá un recibo con la firma on-chain cuando se confirma"
-    },
-    "uses": "Tu dirección y tus saldos de tokens van a la API de Salmon para armar la ruta. Ningún tercero ve tus claves."
+    }
   },
   "you_send": "Enviás",
   "you_receive": "Recibís",

@@ -871,8 +871,7 @@
         "description": "Track collection floor prices"
       },
       "mock": {
-        "about": "A preview from the design frames. It does not exist yet.",
-        "uses": "Nothing leaves your device."
+        "about": "A preview from the design frames. It does not exist yet."
       }
     },
     "detail": {
@@ -886,6 +885,11 @@
       "region": "This Powerup isn't available in your region.",
       "maintenance": "This Powerup is paused for maintenance. Check back soon.",
       "deprecated": "This Powerup has been retired. You can remove it from Home."
+    },
+    "disclosure": {
+      "address_to": "Sends your address to {{host}}.",
+      "balances_to": "Sends your token balances to {{host}}.",
+      "sends_nothing": "Sends nothing off your device."
     },
     "author": {
       "salmon": "Salmon",

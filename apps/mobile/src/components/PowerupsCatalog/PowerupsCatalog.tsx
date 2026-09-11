@@ -186,7 +186,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
         <View style={styles.block}>
           <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
           <Text style={styles.body} testID="powerups-detail-uses">
-            {t(details.usesKey)}
+            {details.disclosure.map((line) => t(line.key, line.params)).join(' ')}
           </Text>
         </View>
 

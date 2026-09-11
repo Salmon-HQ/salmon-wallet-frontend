@@ -190,7 +190,7 @@ export function PowerupsPage({
           <div style={blockStyle}>
             <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
             <span style={bodyStyle} data-testid="powerups-detail-uses">
-              {t(details.usesKey)}
+              {details.disclosure.map((line) => t(line.key, line.params)).join(' ')}
             </span>
           </div>
 

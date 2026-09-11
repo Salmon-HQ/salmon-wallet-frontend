@@ -13,6 +13,16 @@ describe('powerups registry', () => {
     expect(isPowerupOnNetwork(swap!, null)).toBe(false);
   });
 
+  // Spec 029 §1: the registry is a list of manifests, each from its own folder.
+  it('carries every manifest field a reviewer and the disclosure need', () => {
+    for (const entry of POWERUPS) {
+      expect(entry.permissions.length).toBeGreaterThan(0);
+      expect(Array.isArray(entry.endpoints)).toBe(true);
+      expect(entry.locales).toBe(entry.id);
+      if (entry.permissions.includes('none')) expect(entry.permissions).toEqual(['none']);
+    }
+  });
+
   it('resolves copy through translation keys, never literal strings', () => {
     for (const entry of POWERUPS) {
       expect(entry.nameKey).toMatch(/^[a-z_]+(\.[a-zA-Z_]+)+$/);

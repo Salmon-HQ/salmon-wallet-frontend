@@ -8,13 +8,14 @@
  * would be a promise, not a product, so the mocks are developer-only.
  */
 import type { PowerupsCatalogEntry, PowerupsCatalogEntryDetails } from '../types/ui/index';
+import { describeDisclosure } from './disclosure';
 import { POWERUPS, isPowerupOnNetwork } from './registry';
 
 /** What every mock says in its detail: a placeholder, not a promise. */
 const mockDetails = (tier: PowerupsCatalogEntry['tier']): PowerupsCatalogEntryDetails => ({
   aboutKey: 'powerups.catalog.mock.about',
   actionKeys: [],
-  usesKey: 'powerups.catalog.mock.uses',
+  disclosure: [{ key: 'powerups.disclosure.sends_nothing' }],
   authorKey: tier === 'core' ? 'powerups.author.salmon' : 'powerups.author.community',
   networks: ['solana-mainnet'],
 });
@@ -82,7 +83,7 @@ export function getPowerupCatalog({
     details: {
       aboutKey: entry.aboutKey,
       actionKeys: entry.actionKeys,
-      usesKey: entry.usesKey,
+      disclosure: describeDisclosure(entry),
       authorKey: entry.authorKey,
       networks: entry.networks,
     },

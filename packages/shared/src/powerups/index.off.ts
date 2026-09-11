@@ -8,7 +8,7 @@
  * is dead behind `POWERUPS_ENABLED`.
  */
 import type { PowerupsCatalogEntry } from '../types/ui/index';
-import type { PowerupEntry, PowerupId } from './registry';
+import type { PowerupEntry, PowerupId } from './manifest';
 import type { PowerupCatalogParams } from './catalog';
 
 export const POWERUPS_ENABLED = false;

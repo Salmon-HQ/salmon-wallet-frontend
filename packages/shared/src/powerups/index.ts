@@ -13,6 +13,14 @@ export const POWERUPS_ENABLED = true;
 export { POWERUPS, getPowerup, isPowerupOnNetwork } from './registry';
 export { getPowerupCatalog, MOCK_POWERUPS } from './catalog';
 export type { PowerupCatalogParams } from './catalog';
-export type { PowerupEntry, PowerupId, PowerupTier } from './registry';
+export type {
+  PowerupEntry,
+  PowerupId,
+  PowerupManifest,
+  PowerupPermission,
+  PowerupTier,
+} from './registry';
+export { describeDisclosure } from './disclosure';
+export type { PowerupDisclosureLine } from './disclosure';
 export { powerupTranslations } from './locales';
 export * from './swap';

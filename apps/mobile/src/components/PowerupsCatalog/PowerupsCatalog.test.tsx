@@ -88,7 +88,7 @@ const entries = [
     details: {
       aboutKey: 'swap.catalog.about',
       actionKeys: ['swap.catalog.actions.quote'],
-      usesKey: 'swap.catalog.uses',
+      disclosure: [{ key: 'powerups.disclosure.address_to', params: { host: 'Salmon' } }],
       authorKey: 'powerups.author.salmon',
       networks: ['solana-mainnet'],
     },
@@ -102,7 +102,7 @@ const entries = [
     details: {
       aboutKey: 'powerups.catalog.mock.about',
       actionKeys: [],
-      usesKey: 'powerups.catalog.mock.uses',
+      disclosure: [{ key: 'powerups.disclosure.sends_nothing' }],
       authorKey: 'powerups.author.community',
       networks: ['solana-mainnet'],
     },

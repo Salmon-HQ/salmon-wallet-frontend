@@ -7,8 +7,7 @@
       "quote": "Get a live quote between any two tokens in the catalogue",
       "review": "Review the rate, the fees and the minimum you receive before signing",
       "receipt": "Keep a receipt with the on-chain signature once it lands"
-    },
-    "uses": "Your address and token balances go to the Salmon API to build the route. No third party sees your keys."
+    }
   },
   "you_send": "You Send",
   "you_receive": "You Receive",

@@ -162,6 +162,7 @@ export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-ord
 export type {
   PowerupsCatalogEntry,
   PowerupsCatalogEntryDetails,
+  PowerupsCatalogDisclosureLine,
   PowerupsCatalogPropsBase,
 } from './powerups-catalog';
 export type { PowerupsFabPropsBase } from './powerups-fab';

@@ -24,13 +24,22 @@ export interface PowerupsCatalogEntry {
  * with it, what leaves the device and where, who made it, where it acts. All
  * copy is translation keys; the network ids are formatted at render.
  */
+/** One line of the generated disclosure: a key and what it interpolates. */
+export interface PowerupsCatalogDisclosureLine {
+  key: string;
+  params?: Record<string, string>;
+}
+
 export interface PowerupsCatalogEntryDetails {
   /** Translation key for the paragraph under "About". */
   aboutKey: string;
   /** Translation keys, one per thing the user can do with it. */
   actionKeys: readonly string[];
-  /** Translation key for what leaves the device, and to whom. */
-  usesKey: string;
+  /**
+   * What leaves the device and where it goes — generated from the manifest's
+   * `permissions` + `endpoints`, never written per Powerup (spec 029 §2.1).
+   */
+  disclosure: readonly PowerupsCatalogDisclosureLine[];
   /** Translation key for who made it. */
   authorKey: string;
   /** The network ids it acts on. */

@@ -871,8 +871,7 @@
         "description": "Seguimiento del precio piso de colecciones"
       },
       "mock": {
-        "about": "Una vista previa de los diseños. Todavía no existe.",
-        "uses": "Nada sale de tu dispositivo."
+        "about": "Una vista previa de los diseños. Todavía no existe."
       }
     },
     "detail": {
@@ -886,6 +885,11 @@
       "region": "Este Powerup no está disponible en tu región.",
       "maintenance": "Este Powerup está en pausa por mantenimiento. Volvé a probar en un rato.",
       "deprecated": "Este Powerup fue retirado. Podés quitarlo de Home."
+    },
+    "disclosure": {
+      "address_to": "Envía tu dirección a {{host}}.",
+      "balances_to": "Envía tus saldos de tokens a {{host}}.",
+      "sends_nothing": "No envía nada fuera de tu dispositivo."
     },
     "author": {
       "salmon": "Salmon",
