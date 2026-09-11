@@ -23,8 +23,8 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
+  ArrowDownLeftIcon,
+  ArrowUpRightIcon,
   ArrowsLeftRightIcon,
   CubeIcon,
   FireIcon,
@@ -52,8 +52,8 @@ const TYPE_BADGE_GLYPH = 10;
 
 /** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
 const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
-  arrowUp: ArrowUpIcon,
-  arrowDown: ArrowDownIcon,
+  arrowUpRight: ArrowUpRightIcon,
+  arrowDownLeft: ArrowDownLeftIcon,
   arrowsLeftRight: ArrowsLeftRightIcon,
   plusCircle: PlusCircleIcon,
   fire: FireIcon,
@@ -122,7 +122,7 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
 
-  if (type === 'swap' && inputs[0]?.logo && outputs[0]?.logo) {
+  if (type === 'swap' && inputs[0] && outputs[0]) {
     return (
       <span
         data-testid="tx-mark-swap"
@@ -134,7 +134,7 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
         }}
       >
         <TokenLogo
-          uri={outputs[0].logo}
+          uri={outputs[0].logo ?? undefined}
           symbol={outputs[0].symbol}
           size={SWAP_LOGO_SIZE}
           borderRadius={borderRadius.full}
@@ -149,7 +149,7 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
           }}
         >
           <TokenLogo
-            uri={inputs[0].logo}
+            uri={inputs[0].logo ?? undefined}
             symbol={inputs[0].symbol}
             size={SWAP_LOGO_SIZE}
             borderRadius={borderRadius.full}
@@ -160,8 +160,11 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
     );
   }
 
+  // The token that moved is always the mark (owner, 2026-09-11): its logo, or
+  // its initials while the backend has no logo for it. Only a transaction
+  // with no token at all falls back to the type's own well.
   const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
-  if (primaryToken?.logo) {
+  if (primaryToken) {
     return (
       <span
         data-testid="tx-mark-token"
@@ -173,7 +176,7 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
         }}
       >
         <TokenLogo
-          uri={primaryToken.logo}
+          uri={primaryToken.logo ?? undefined}
           symbol={primaryToken.symbol}
           size={LEADING_SIZE}
           borderRadius={borderRadius.full}

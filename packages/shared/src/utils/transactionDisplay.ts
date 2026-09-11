@@ -20,8 +20,8 @@ import { getTransactionDescription } from './transactions';
 
 /** The glyph a platform draws for a transaction type — a name, not a component. */
 export type TransactionTypeGlyph =
-  | 'arrowUp'
-  | 'arrowDown'
+  | 'arrowUpRight'
+  | 'arrowDownLeft'
   | 'arrowsLeftRight'
   | 'plusCircle'
   | 'fire'
@@ -58,8 +58,9 @@ export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
 export const transactionTypeDisplayFor = (
   t: Semantic
 ): Record<TransactionType, TransactionTypeDisplay> => ({
-  send: { label: 'Sent', glyph: 'arrowUp', color: t.change.negative },
-  receive: { label: 'Received', glyph: 'arrowDown', color: t.change.positive },
+  // The same arrows the Home Send / Receive buttons wear (owner, 2026-09-11).
+  send: { label: 'Sent', glyph: 'arrowUpRight', color: t.change.negative },
+  receive: { label: 'Received', glyph: 'arrowDownLeft', color: t.change.positive },
   swap: { label: 'Swapped', glyph: 'arrowsLeftRight', color: chainMarks.purple },
   mint: { label: 'Minted', glyph: 'plusCircle', color: chainMarks.cyan },
   burn: { label: 'Burned', glyph: 'fire', color: chainMarks.orange },

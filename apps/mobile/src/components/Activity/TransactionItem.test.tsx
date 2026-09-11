@@ -217,9 +217,11 @@ describe('TransactionItem — the leading mark is the token, badged with the typ
     expect(screen.getByTestId('token-logo-SOL')).toBeTruthy();
   });
 
-  it('falls back to the kit well when the token has no logo', () => {
+  it('keeps the token as the mark when it has no logo — its initials stand in', () => {
     render(<TransactionItem transaction={LOGOLESS_TRANSACTION} />);
 
-    expect(screen.queryByTestId('token-logo-USDC')).toBeNull();
+    // The token that moved is always the mark (owner, 2026-09-11); TokenLogo
+    // draws the initials when there is no image, never the type's bare well.
+    expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
   });
 });

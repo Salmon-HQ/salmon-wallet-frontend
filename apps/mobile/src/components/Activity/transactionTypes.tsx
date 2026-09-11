@@ -8,8 +8,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
+  ArrowDownLeftIcon,
+  ArrowUpRightIcon,
   ArrowsLeftRightIcon,
   CubeIcon,
   FireIcon,
@@ -49,8 +49,8 @@ const SWAP_LOGO_SIZE = 30;
 
 /** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
 const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
-  arrowUp: ArrowUpIcon,
-  arrowDown: ArrowDownIcon,
+  arrowUpRight: ArrowUpRightIcon,
+  arrowDownLeft: ArrowDownLeftIcon,
   arrowsLeftRight: ArrowsLeftRightIcon,
   plusCircle: PlusCircleIcon,
   fire: FireIcon,
@@ -101,23 +101,38 @@ export const TransactionMark: React.FC<{ transaction: Transaction }> = ({ transa
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
 
-  if (type === 'swap' && inputs[0]?.logo && outputs[0]?.logo) {
+  if (type === 'swap' && inputs[0] && outputs[0]) {
     return (
       <View style={styles.swapPair}>
-        <TokenLogo uri={outputs[0].logo} symbol={outputs[0].symbol} size={SWAP_LOGO_SIZE} />
+        <TokenLogo
+          uri={outputs[0].logo ?? undefined}
+          symbol={outputs[0].symbol}
+          size={SWAP_LOGO_SIZE}
+        />
         <View style={styles.swapOverlap}>
-          <TokenLogo uri={inputs[0].logo} symbol={inputs[0].symbol} size={SWAP_LOGO_SIZE} />
+          <TokenLogo
+            uri={inputs[0].logo ?? undefined}
+            symbol={inputs[0].symbol}
+            size={SWAP_LOGO_SIZE}
+          />
         </View>
         <TypeBadge icon={config.icon} color={config.color} />
       </View>
     );
   }
 
+  // The token that moved is always the mark (owner, 2026-09-11): its logo, or
+  // its initials while the backend has no logo for it. Only a transaction
+  // with no token at all falls back to the type's own well.
   const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
-  if (primaryToken?.logo) {
+  if (primaryToken) {
     return (
       <View style={styles.singleMark}>
-        <TokenLogo uri={primaryToken.logo} symbol={primaryToken.symbol} size={LEADING_SIZE} />
+        <TokenLogo
+          uri={primaryToken.logo ?? undefined}
+          symbol={primaryToken.symbol}
+          size={LEADING_SIZE}
+        />
         <TypeBadge icon={config.icon} color={config.color} single />
       </View>
     );
