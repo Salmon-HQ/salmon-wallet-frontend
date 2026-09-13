@@ -65,7 +65,7 @@ jest.mock('../ListRow', () => {
   };
 });
 
-jest.mock('../Skeleton', () => {
+jest.mock('../SkeletonRow', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
   return {

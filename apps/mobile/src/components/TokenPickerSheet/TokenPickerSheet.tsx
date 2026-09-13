@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { Thermocline } from '../Thermocline';
-import { TokenSelectList } from './TokenSelectList';
+import { TokenSelectList } from '../TokenSelectList';
 import type { TokenPickerSheetProps } from './types';
 
 export type { TokenPickerSheetProps };

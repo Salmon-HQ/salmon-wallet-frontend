@@ -37,7 +37,7 @@ import { SectionLabel } from '../SectionLabel';
 import { TokenLogo } from '../TokenList';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
-import { TokenPickerSheet } from './TokenPickerSheet';
+import { TokenPickerSheet } from '../TokenPickerSheet';
 
 /** How many past counterparties the "Recent" section offers. */
 /** The validator's debounce, mobile's number. */

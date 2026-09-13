@@ -136,6 +136,8 @@ export type {
 
 // Token search hook (used by TokenSelector in ui and ui-extension)
 export { useTokenSearch } from './useTokenSearch';
+export { tokenBalanceLabel, useTokenSelectList } from './useTokenSelectList';
+export type { UseTokenSelectListOptions } from './useTokenSelectList';
 export type { UseTokenSearchResult } from './useTokenSearch';
 
 // Address validation hook (used by InputAddress in ui and ui-extension)

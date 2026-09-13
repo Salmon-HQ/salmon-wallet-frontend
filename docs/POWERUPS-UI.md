@@ -139,8 +139,8 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 
 |          |                                                                                                                                        |
 | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile   | `apps/mobile/src/components/Send/TokenPickerSheet` (+ `TokenSelectList`)                                                               |
-| DOM      | `packages/ui/src/components/SendPage/TokenPickerSheet` (+ `TokenSelectList`)                                                           |
+| Mobile   | `apps/mobile/src/components/TokenPickerSheet` (+ `TokenSelectList`)                                                                    |
+| DOM      | `packages/ui/src/components/TokenPickerSheet` (+ `TokenSelectList`)                                                                    |
 | Contract | `TokenPickerSheetPropsBase`: `tokens`, `onSelectToken`, `visible`, `onClose`, `loading`, `showBalances?`, `verifiedOnly?`, `onSearch?` |
 
 - **Mandatory** for any pick among tokens. It is a sheet (one state: one

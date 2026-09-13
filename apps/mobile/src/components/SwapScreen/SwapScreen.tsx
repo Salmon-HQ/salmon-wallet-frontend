@@ -5,7 +5,7 @@ import { useSwapCatalog, useSwapScreenLogic } from '@salmon/shared/powerups';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { StateBlock } from '../StateBlock';
-import { TokenPickerSheet } from '../Send';
+import { TokenPickerSheet } from '../TokenPickerSheet';
 import { WarningNotice } from '../WarningNotice';
 import type { SwapScreenProps } from './types';
 

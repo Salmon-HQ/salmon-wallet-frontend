@@ -191,7 +191,7 @@ jest.mock('../../src/components/BottomSheetContainer', () => ({
 }));
 // A working stub, not a null one: the picker sheet's only job worth testing
 // here is that a tap on one of its rows reaches `onSelectToken`.
-jest.mock('../../src/components/Send/TokenSelectList', () => {
+jest.mock('../../src/components/TokenSelectList', () => {
   const ReactActual = require('react');
   const { TouchableOpacity, Text } = require('react-native');
   return {

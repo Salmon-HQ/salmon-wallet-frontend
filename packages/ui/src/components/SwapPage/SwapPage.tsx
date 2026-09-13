@@ -16,7 +16,7 @@ import { spacing } from '@salmon/shared';
 import { useSwapCatalog, useSwapScreenLogic } from '@salmon/shared/powerups';
 
 import { StateBlock } from '../StateBlock';
-import { TokenPickerSheet } from '../SendPage/TokenPickerSheet';
+import { TokenPickerSheet } from '../TokenPickerSheet';
 import { WarningNotice } from '../WarningNotice';
 import { SwapInputScreen } from './SwapInputScreen';
 import type { SwapPageProps } from './types';

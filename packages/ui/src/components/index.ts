@@ -206,15 +206,13 @@ export type {
 } from './TransactionHistoryPage';
 
 // SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
-export { SendFailure, SendPage, TokenPickerSheet, TokenSelectList } from './SendPage';
-export type {
-  SendFailureProps,
-  SendPageProps,
-  SendStep,
-  SendToken,
-  TokenPickerSheetProps,
-  TokenSelectListProps,
-} from './SendPage';
+export { SendFailure, SendPage } from './SendPage';
+// The token picker: Send's, Swap's, and any Powerup's that picks a token.
+export { TokenPickerSheet } from './TokenPickerSheet';
+export type { TokenPickerSheetProps } from './TokenPickerSheet';
+export { TokenSelectList } from './TokenSelectList';
+export type { TokenSelectListProps } from './TokenSelectList';
+export type { SendFailureProps, SendPageProps, SendStep, SendToken } from './SendPage';
 
 // TransactionConfirmation - core's confirmation screen and the cover it opens in
 // (spec 027 §2). The Powerup pages (SwapPage, PowerupsPage) are NOT exported

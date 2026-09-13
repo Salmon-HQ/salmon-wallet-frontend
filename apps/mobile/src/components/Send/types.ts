@@ -1,9 +1,4 @@
-import type {
-  RecipientInputPropsBase,
-  SendFailurePropsBase,
-  TokenPickerSheetPropsBase,
-  TokenSelectListPropsBase,
-} from '@salmon/shared';
+import type { RecipientInputPropsBase, SendFailurePropsBase } from '@salmon/shared';
 
 /** The mobile half of `RecipientInputPropsBase`: the contract plus the QR scan affordance. */
 export interface RecipientInputProps extends RecipientInputPropsBase {
@@ -16,7 +11,3 @@ export interface SendFailureProps extends SendFailurePropsBase {
   /** Bottom safe-area inset — the actions sit on the bottom edge. */
   bottomInset: number;
 }
-
-export type TokenPickerSheetProps = TokenPickerSheetPropsBase;
-
-export type TokenSelectListProps = TokenSelectListPropsBase;

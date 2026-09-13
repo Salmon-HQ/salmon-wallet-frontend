@@ -27,7 +27,7 @@ import {
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import { WarningNotice } from '../WarningNotice';
 import type { KaminoPositionsScreenProps } from './types';

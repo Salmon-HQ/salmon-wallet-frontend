@@ -6,8 +6,6 @@ import type {
   SendFailurePropsBase,
   SendStep,
   SendToken,
-  TokenPickerSheetPropsBase,
-  TokenSelectListPropsBase,
 } from '@salmon/shared';
 
 export type { SendStep, SendToken, BlockchainType };
@@ -47,7 +45,3 @@ export interface SendPageProps {
 
 /** The DOM half of `SendFailurePropsBase`: nothing platform-specific to add. */
 export type SendFailureProps = SendFailurePropsBase;
-
-export type TokenPickerSheetProps = TokenPickerSheetPropsBase;
-
-export type TokenSelectListProps = TokenSelectListPropsBase;

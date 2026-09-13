@@ -28,7 +28,7 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
-import { TokenPickerSheet } from './TokenPickerSheet';
+import { TokenPickerSheet } from '../TokenPickerSheet';
 
 export interface StepReviewProps {
   recipient: SendRecipient;

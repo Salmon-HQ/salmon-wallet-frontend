@@ -12,7 +12,6 @@ import {
   ms,
   vs,
   s,
-  fontSize,
   spacing,
   borderRadius,
   fontFamilyNative,

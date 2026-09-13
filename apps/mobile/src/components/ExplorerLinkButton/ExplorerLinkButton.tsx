@@ -21,8 +21,6 @@ import {
   vs,
   useExplorerLink,
   useParentSheetHeight,
-  type Blockchain,
-  type NetworkEnvironment,
   type Semantic,
 } from '@salmon/shared';
 import { SecondaryButton } from '../Button';

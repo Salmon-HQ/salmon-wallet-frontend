@@ -42,7 +42,7 @@ jest.mock('../WarningNotice', () => {
   const { View } = require('react-native');
   return { WarningNotice: () => <View testID="warning-notice" /> };
 });
-jest.mock('../Send', () => {
+jest.mock('../TokenPickerSheet', () => {
   const { View } = require('react-native');
   return {
     TokenPickerSheet: ({

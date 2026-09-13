@@ -87,8 +87,8 @@ export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
 
-export { SkeletonRow } from './Skeleton';
-export type { SkeletonRowProps } from './Skeleton';
+export { SkeletonRow } from './SkeletonRow';
+export type { SkeletonRowProps } from './SkeletonRow';
 
 export { SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
@@ -288,8 +288,13 @@ export type {
 
 // The send flow is four screens under `app/(app)/send` (spec 018); what is
 // left here are the pieces those screens share.
-export { RecipientInput, SendFailure, TokenPickerSheet, TokenSelectList } from './Send';
-export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } from './Send';
+export { RecipientInput, SendFailure } from './Send';
+export type { RecipientInputProps, SendFailureProps } from './Send';
+// The token picker: Send's, Swap's, and any Powerup's that picks a token.
+export { TokenPickerSheet } from './TokenPickerSheet';
+export type { TokenPickerSheetProps } from './TokenPickerSheet';
+export { TokenSelectList } from './TokenSelectList';
+export type { TokenSelectListProps } from './TokenSelectList';
 
 // The Swap Powerup's screens are NOT exported here: the swap route imports
 // them through `src/powerups`, the entry the build flag aliases, so a build

@@ -25,7 +25,7 @@ import { ArrowSquareOutIcon, CheckIcon, CopyIcon, GlobeIcon, iconSize } from '..
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { AboutCardProps } from './types';

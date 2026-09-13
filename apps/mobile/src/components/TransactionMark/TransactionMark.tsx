@@ -38,7 +38,7 @@ import {
 import { IconBubble } from '../IconBubble';
 import { TokenLogo } from '../TokenLogo';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-import type { Transaction, TransactionType } from '@salmon/shared';
+import type { TransactionType } from '@salmon/shared';
 import type { TransactionMarkProps } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */

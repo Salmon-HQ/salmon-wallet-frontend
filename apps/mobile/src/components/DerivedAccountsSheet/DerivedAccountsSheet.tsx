@@ -37,7 +37,7 @@ import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import type { DerivedAccountsSheetProps } from './types';
 

@@ -1,24 +1,22 @@
 /**
  * TokenSelectList — the send flow's token picker, one pick per opening.
  *
- * The mobile twin is `apps/mobile/src/components/Send/TokenSelectList.tsx`:
+ * The mobile twin is `apps/mobile/src/components/TokenSelectList.tsx`:
  * the `SearchField` pill, then a `ListRow` per token (its logo, its name, its
  * balance), 20 between every sibling. The "Select Token" heading is the
  * sheet's own title, drawn by the container.
  */
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
   fontSize,
   fontWeight,
-  formatTokenAmount,
   lineHeight,
   spacing,
   tabularNums,
-  useTokenSearch,
-  useUnverifiedTokens,
-  type SendToken,
+  tokenBalanceLabel,
+  useTokenSelectList,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -33,13 +31,6 @@ const LOGO_SIZE = 40;
 /** How many placeholder rows stand in while the balances load. */
 const SKELETON_COUNT = 5;
 
-function balanceLabel(token: SendToken): string {
-  const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
-  if (amount === 0) return `0 ${token.symbol}`;
-  if (amount < 0.0001) return `<${formatTokenAmount(0.0001)} ${token.symbol}`;
-  return `${formatTokenAmount(amount)} ${token.symbol}`;
-}
-
 export function TokenSelectList({
   tokens,
   onSelectToken,
@@ -49,30 +40,15 @@ export function TokenSelectList({
   onSearch,
 }: TokenSelectListProps) {
   const { t } = useTranslation();
-  // Spec 026 D4: the unverified-tokens toggle owns this, read where it is used.
-  const showUnverifiedTokens = useUnverifiedTokens();
   const semantic = useSemantic();
 
-  const verifiedTokens = useMemo(
-    () =>
-      verifiedOnly
-        ? tokens.filter((token) => {
-            const hasMeaningfulTags =
-              token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
-            return hasMeaningfulTags || !!showUnverifiedTokens;
-          })
-        : tokens,
-    [tokens, showUnverifiedTokens, verifiedOnly]
-  );
-
-  // Local filter over the list in hand; with `onSearch`, a query of three
-  // characters or more asks the catalogue instead (debounced, latest wins).
+  // The verified filter and the search — local, or the catalogue with `onSearch`.
   const {
     searchQuery,
     setSearchQuery,
     displayTokens: filteredTokens,
     isSearching,
-  } = useTokenSearch(verifiedTokens, onSearch);
+  } = useTokenSelectList(tokens, { verifiedOnly, onSearch });
 
   return (
     <div
@@ -113,7 +89,7 @@ export function TokenSelectList({
           />
         ) : (
           filteredTokens.map((token) => {
-            const trailing = showBalances ? balanceLabel(token) : token.symbol;
+            const trailing = showBalances ? tokenBalanceLabel(token) : token.symbol;
             return (
               <ListRow
                 key={token.address}

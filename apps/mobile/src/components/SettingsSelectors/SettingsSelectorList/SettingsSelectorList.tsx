@@ -24,7 +24,7 @@ import {
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import { IconBubble } from '../../IconBubble';
 import { ListRow } from '../../ListRow';
-import { SkeletonRow } from '../../Skeleton';
+import { SkeletonRow } from '../../SkeletonRow';
 
 /** Mirrors a rendered card row, so the loading state does not jump on swap. */
 const SKELETON_ROW_COUNT = 3;

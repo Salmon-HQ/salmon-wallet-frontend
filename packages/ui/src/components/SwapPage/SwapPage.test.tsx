@@ -25,7 +25,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 }));
 vi.mock('../DepthBackground', () => ({ DepthBackground: () => null }));
 vi.mock('../ScalesBackground', () => ({ ScalesBackground: () => null }));
-vi.mock('../SendPage/TokenPickerSheet', () => ({
+vi.mock('../TokenPickerSheet', () => ({
   TokenPickerSheet: ({
     visible,
     testID,

@@ -9,8 +9,27 @@ import { render, screen } from '@testing-library/react-native';
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../../packages/shared/src/hooks/useTokenSearch'),
-  formatTokenAmount: (v: number) => String(v),
-  useUnverifiedTokens: () => false,
+  // The list's own hook, over the real search: the verified filter with the
+  // developer toggle off (the real module pulls the developer-mode context,
+  // whose ESM dependency Jest does not transform), and the plain label.
+  useTokenSelectList: (
+    tokens: Array<{ tags?: string[] }>,
+    { verifiedOnly = true, onSearch }: { verifiedOnly?: boolean; onSearch?: unknown } = {}
+  ) => {
+    const { useTokenSearch } = jest.requireActual(
+      '../../../../../packages/shared/src/hooks/useTokenSearch'
+    );
+    const offered = verifiedOnly
+      ? tokens.filter((token) => token.tags?.some((tag) => tag !== 'unknown'))
+      : tokens;
+    return useTokenSearch(offered, onSearch);
+  },
+  tokenBalanceLabel: (token: { uiAmount: string | number; symbol: string }) => {
+    const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
+    if (amount === 0) return `0 ${token.symbol}`;
+    if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
+    return `${amount} ${token.symbol}`;
+  },
 }));
 jest.mock('react-native-reanimated', () => {
   const ReactActual = require('react');

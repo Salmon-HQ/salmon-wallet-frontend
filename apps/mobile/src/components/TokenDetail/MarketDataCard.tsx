@@ -22,7 +22,7 @@ import {
 
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { MarketDataCardProps } from './types';
 
