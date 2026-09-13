@@ -40,6 +40,7 @@ import {
   vs,
   type Semantic,
   useAmountShortcuts,
+  motionMs,
 } from '@salmon/shared';
 
 import {
@@ -57,9 +58,6 @@ import { useSendFlow } from '../../../src/contexts/SendFlowContext';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
-
-/** How long the fee estimate waits before firing, in ms. */
-const FEE_DEBOUNCE_MS = 300;
 
 /** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
 function formatSolAmount(value: number): string {
@@ -139,7 +137,7 @@ export default function SendAmountScreen() {
   const hasAmount = parseFloat(amount) > 0;
   useEffect(() => {
     if (!hasAmount) return undefined;
-    const timer = setTimeout(estimateFee, FEE_DEBOUNCE_MS);
+    const timer = setTimeout(estimateFee, motionMs.feeDebounce);
     return () => clearTimeout(timer);
   }, [estimateFee, hasAmount]);
 

@@ -37,6 +37,8 @@ import {
   shadowsCSS,
   spacing,
   SheetHeightContext,
+  SHEET_EXIT_MS,
+  SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -49,11 +51,7 @@ import type { BottomSheetContainerProps } from './types';
 const HANDLE_WIDTH = 44;
 const HANDLE_HEIGHT = 5;
 
-/** How long the sheet takes to leave — the mobile twin's `SHEET_EXIT_MS`. */
-export const SHEET_EXIT_MS = motionMs.ebb;
-
-/** Slack before the watchdog decides the exit's transitionend is not coming. */
-const EXIT_WATCHDOG_GRACE_MS = 120;
+export { SHEET_EXIT_MS };
 
 /**
  * The browser's default `::backdrop` paints its own dim behind `<dialog>`.
@@ -155,7 +153,7 @@ export function BottomSheetContainer({
     if (isRendered) {
       setIsOpen(false);
       const exitMs = isReduceMotionEnabled ? 0 : SHEET_EXIT_MS;
-      const watchdog = setTimeout(completeClose, exitMs + EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(completeClose, exitMs + SHEET_EXIT_WATCHDOG_GRACE_MS);
       return () => clearTimeout(watchdog);
     }
 

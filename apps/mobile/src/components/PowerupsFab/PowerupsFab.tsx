@@ -11,7 +11,7 @@ import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { motionMs, s, shadows, spacing } from '@salmon/shared';
+import { motionMs, s, shadows, spacing, glyphTurnDeg } from '@salmon/shared';
 import { PlusIcon } from '../../icons';
 import { curve, timing } from '../../utils/motion';
 import { IconBubble } from '../IconBubble';
@@ -19,8 +19,6 @@ import type { PowerupsFabProps } from './types';
 
 const FAB_SIZE = 42;
 const FAB_ICON_SIZE = 22;
-/** The plus becomes the close mark by turning an eighth of a turn. */
-const OPEN_ROTATION = 45;
 
 export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   onPress,
@@ -51,7 +49,7 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   // this control, so the turn plays as the sheet arrives.
   const rotation = useSharedValue(0);
   useEffect(() => {
-    rotation.value = withTiming(open ? OPEN_ROTATION : 0, rotateTiming);
+    rotation.value = withTiming(open ? glyphTurnDeg.fabOpen : 0, rotateTiming);
   }, [open, rotateTiming, rotation]);
 
   return (

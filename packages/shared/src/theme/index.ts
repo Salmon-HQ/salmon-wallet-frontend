@@ -142,6 +142,10 @@ export {
   duration,
   durationMs,
   easing,
+  SHEET_EXIT_MS,
+  SHEET_EXIT_WATCHDOG_GRACE_MS,
+  CHART_PULSE_MS,
+  glyphTurnDeg,
 } from './durations';
 export type {
   MotionMs,

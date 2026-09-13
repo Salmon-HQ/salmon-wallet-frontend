@@ -102,6 +102,12 @@ export const motionMs = {
   feedbackHold: 1500,
   /** 500ms — input debounce before firing a search or a quote request. */
   debounce: 500,
+  /**
+   * 300ms — how long a fee estimate waits after the amount stops changing.
+   * Shorter than `debounce`: the fee is a small read the user is about to
+   * need, not a search they may abandon.
+   */
+  feeDebounce: 300,
   /** 24ms — per-item delay in a staggered list enter. Six items maximum. */
   stagger: 24,
 
@@ -393,3 +399,29 @@ export type ReducedMotion = typeof reducedMotion;
 export type Duration = typeof duration;
 export type DurationMs = typeof durationMs;
 export type Easing = typeof easing;
+
+/**
+ * A bottom sheet's exit, on both twins: the `ebb`, plus the slack the exit
+ * watchdog allows before it decides the platform's end-of-animation callback
+ * is not coming. Declared once so the two containers cannot disagree.
+ */
+export const SHEET_EXIT_MS = motionMs.ebb;
+export const SHEET_EXIT_WATCHDOG_GRACE_MS = 120;
+
+/**
+ * The price chart's endpoint halo breathes on the water's long clock, not on
+ * `pulseCycle` (a placeholder's breath): it is a live mark, and it keeps time
+ * with the wait. One constant so both twins choose the same clock.
+ */
+export const CHART_PULSE_MS = motionMs.tide;
+
+/**
+ * The turns a glyph makes in place, in degrees, once for both twins: the
+ * Powerups plus becomes the close mark by an eighth of a turn; the plus /
+ * minus control's bar stands at 90° for a plus and lies at 180° for a minus.
+ */
+export const glyphTurnDeg = {
+  fabOpen: 45,
+  plus: 90,
+  minus: 180,
+} as const;

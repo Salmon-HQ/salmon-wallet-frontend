@@ -10,7 +10,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { motionEasing, motionMs, shadowsCSS, spacing } from '@salmon/shared';
+import { motionEasing, motionMs, shadowsCSS, spacing, glyphTurnDeg } from '@salmon/shared';
 
 import { useReducedMotion } from '../../motion';
 import { PlusIcon } from '../../icons';
@@ -19,8 +19,6 @@ import type { PowerupsFabProps } from './types';
 
 const FAB_SIZE = 42;
 const FAB_ICON_SIZE = 22;
-/** The plus becomes the close mark by turning an eighth of a turn. */
-const OPEN_ROTATION = 45;
 
 export function PowerupsFab({
   onPress,
@@ -51,7 +49,7 @@ export function PowerupsFab({
         bottom: spacing.screenGutter,
         zIndex: 2,
         boxShadow: shadowsCSS.lg,
-        transform: `rotate(${open ? OPEN_ROTATION : 0}deg)`,
+        transform: `rotate(${open ? glyphTurnDeg.fabOpen : 0}deg)`,
         transition: reducedMotion
           ? undefined
           : `transform ${motionMs.drift}ms ${motionEasing.current.css}`,

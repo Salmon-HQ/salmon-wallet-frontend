@@ -21,6 +21,7 @@ import {
   type Semantic,
   getDataBounds,
   resampleYs,
+  CHART_PULSE_MS,
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
 import type { PriceChartPeriod } from '@salmon/shared';
@@ -40,7 +41,7 @@ const ENDPOINT_HALO_RADIUS = 9;
  * `Easing` instance, and constructing it inside a worklet crashes.
  */
 // Reduce motion is handled by not looping at all, so the flag is false here.
-const PULSE_TIMING = timing(motionMs.tide, false, curve.settle);
+const PULSE_TIMING = timing(CHART_PULSE_MS, false, curve.settle);
 
 /**
  * Default colors for positive/negative performance

@@ -37,6 +37,8 @@ import {
   type Semantic,
   type BottomSheetContainerPropsBase,
   SheetHeightContext,
+  SHEET_EXIT_MS,
+  SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
@@ -78,10 +80,7 @@ const SPRING_CONFIG = {
  * mean guessing — `SendSheet` carried its own `ANIMATION_DURATION = 300`,
  * which did not match this at all.
  */
-export const SHEET_EXIT_MS = motionMs.ebb;
-
-/** Slack before the watchdog decides the exit callback is not coming. */
-const EXIT_WATCHDOG_GRACE_MS = 120;
+export { SHEET_EXIT_MS };
 
 export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
@@ -236,7 +235,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       // cancelled mid-exit — a re-show, a shared-value reassignment — used to
       // leave the sheet mounted with no way back. The watchdog closes it
       // anyway, a beat after the exit was due.
-      const watchdog = setTimeout(completeClose, SHEET_EXIT_MS + EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(completeClose, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
       return () => clearTimeout(watchdog);
     }
     return undefined;

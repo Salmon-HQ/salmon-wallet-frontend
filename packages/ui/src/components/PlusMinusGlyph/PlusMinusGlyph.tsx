@@ -10,7 +10,7 @@
  * pair of stacked rectangles.
  */
 import React from 'react';
-import { motionEasing, motionMs } from '@salmon/shared';
+import { motionEasing, motionMs, glyphTurnDeg } from '@salmon/shared';
 
 import { useReducedMotion } from '../../motion';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -19,9 +19,6 @@ import type { PlusMinusGlyphProps } from './types';
 const DEFAULT_SIZE = 22;
 /** Phosphor bold's own stroke-to-glyph ratio. */
 const STROKE_RATIO = 1 / 11;
-/** Vertical at rest (a plus); a further 90° lands it flat on the fixed bar. */
-const PLUS_ROTATION = 90;
-const MINUS_ROTATION = 180;
 
 export function PlusMinusGlyph({ minus, size = DEFAULT_SIZE, color }: PlusMinusGlyphProps) {
   const t = useSemantic();
@@ -48,7 +45,7 @@ export function PlusMinusGlyph({ minus, size = DEFAULT_SIZE, color }: PlusMinusG
         data-testid="plus-minus-glyph-turning-bar"
         style={{
           ...bar,
-          transform: `rotate(${minus ? MINUS_ROTATION : PLUS_ROTATION}deg)`,
+          transform: `rotate(${minus ? glyphTurnDeg.minus : glyphTurnDeg.plus}deg)`,
           transition: reducedMotion
             ? undefined
             : `transform ${motionMs.drift}ms ${motionEasing.current.css}`,

@@ -17,7 +17,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { motionMs, s } from '@salmon/shared';
+import { motionMs, s, glyphTurnDeg } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
 import { useSemantic } from '../../theme/useThemedStyles';
 import type { PlusMinusGlyphProps } from './types';
@@ -25,9 +25,6 @@ import type { PlusMinusGlyphProps } from './types';
 const DEFAULT_SIZE = 22;
 /** Phosphor bold's own stroke-to-glyph ratio. */
 const STROKE_RATIO = 1 / 11;
-/** Vertical at rest (a plus); a further 90° lands it flat on the fixed bar. */
-const PLUS_ROTATION = 90;
-const MINUS_ROTATION = 180;
 
 export const PlusMinusGlyph: React.FC<PlusMinusGlyphProps> = ({
   minus,
@@ -45,9 +42,9 @@ export const PlusMinusGlyph: React.FC<PlusMinusGlyphProps> = ({
     () => timing(motionMs.drift, isReduceMotionEnabled, curve.current),
     [isReduceMotionEnabled]
   );
-  const rotation = useSharedValue(minus ? MINUS_ROTATION : PLUS_ROTATION);
+  const rotation = useSharedValue(minus ? glyphTurnDeg.minus : glyphTurnDeg.plus);
   useEffect(() => {
-    rotation.value = withTiming(minus ? MINUS_ROTATION : PLUS_ROTATION, rotateTiming);
+    rotation.value = withTiming(minus ? glyphTurnDeg.minus : glyphTurnDeg.plus, rotateTiming);
   }, [minus, rotateTiming, rotation]);
 
   const turningBarStyle = useAnimatedStyle(() => ({

@@ -23,7 +23,6 @@ import {
   isPositivePerformance,
   motionDuration,
   motionEasing,
-  motionMs,
   opacity,
   PRICE_CHART_PERIODS,
   resolveMotionDuration,
@@ -33,6 +32,7 @@ import {
   buildLinePath,
   getDataBounds,
   resampleYs,
+  CHART_PULSE_MS,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -201,7 +201,7 @@ export function PriceChart({
                 transition: `cy ${morph}`,
                 animation: reduceMotion
                   ? 'none'
-                  : `${PULSE_KEYFRAMES} ${motionMs.tide}ms ${motionEasing.settle.css} infinite alternate`,
+                  : `${PULSE_KEYFRAMES} ${CHART_PULSE_MS}ms ${motionEasing.settle.css} infinite alternate`,
               }}
             />
             <circle
