@@ -14,6 +14,7 @@ jest.mock('@salmon/shared', () => ({
   ms: (value: number) => value,
   // Real derivation, not a stub: it is what each tab's label is built on.
   getChainSelectorTabs: jest.requireActual('@salmon/shared/src/utils/network').getChainSelectorTabs,
+  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
 }));
 
 jest.mock('react-i18next', () => ({
