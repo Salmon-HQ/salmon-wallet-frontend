@@ -24,5 +24,6 @@ export { describeDisclosure } from './disclosure';
 export type { PowerupDisclosureLine } from './disclosure';
 export { powerupTranslations } from './locales';
 export * from './backend';
+export * from './kamino-positions';
 export * from './memo';
 export * from './swap';

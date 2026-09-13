@@ -1,8 +1,8 @@
 /**
  * Kamino Positions — the community, read-only fixture Powerup (spec 029
  * §2.1, joint test T2). It exists to prove the catalogue, the generated
- * disclosure and the kill switch end to end for a third-party entry; it
- * mounts no Home surface yet.
+ * disclosure and the kill switch end to end for a third-party entry. Its
+ * Home tab lists the address's Kamino loans, read from Kamino's own API.
  */
 import type { PowerupManifest } from '../manifest';
 
@@ -19,5 +19,5 @@ export const kaminoPositionsManifest: PowerupManifest = {
   permissions: ['address'],
   endpoints: ['https://api.kamino.finance'],
   locales: 'kamino-positions',
-  entries: {},
+  entries: { tab: 'kamino-positions' },
 };

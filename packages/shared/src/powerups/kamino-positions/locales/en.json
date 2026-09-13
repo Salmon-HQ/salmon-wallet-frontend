@@ -6,5 +6,19 @@
     "actions": {
       "positions": "See every Kamino position of the active wallet"
     }
+  },
+  "screen": {
+    "empty_title": "No positions on Kamino",
+    "empty_body": "Loans this address opens on Kamino will show up here.",
+    "error_title": "Kamino did not answer",
+    "error_body": "Your positions could not be read right now.",
+    "retry": "Try again",
+    "partial": "{{count}} market did not answer, so the list may be short.",
+    "partial_plural": "{{count}} markets did not answer, so the list may be short.",
+    "deposited": "Deposited",
+    "borrowed": "Borrowed",
+    "net_value": "Net value",
+    "ltv": "Loan to value",
+    "ltv_value": "{{ltv}} of {{liquidation}}"
   }
 }

@@ -68,6 +68,7 @@ import {
   SwapPage,
   getPowerupCatalog,
   MemoPage,
+  KaminoPositionsPage,
 } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
@@ -868,6 +869,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
                     title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
                   />
+                ) : KaminoPositionsPage &&
+                  effectiveSubTab === 'kamino-positions' &&
+                  activeBlockchainAccount ? (
+                  <KaminoPositionsPage publicKey={activeBlockchainAccount.getReceiveAddress()} />
                 ) : MemoPage && effectiveSubTab === 'memo' && activeBlockchainAccount ? (
                   <MemoPage
                     publicKey={activeBlockchainAccount.getReceiveAddress()}

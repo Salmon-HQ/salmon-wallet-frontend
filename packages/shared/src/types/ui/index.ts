@@ -290,6 +290,7 @@ export type {
   SwapScreenLogic,
 } from './swap-screen';
 export type { MemoScreenPropsBase } from './memo-screen';
+export type { KaminoPositionsScreenPropsBase } from './kamino-positions-screen';
 
 // Core's confirmation screen (spec 027 §2)
 export type {

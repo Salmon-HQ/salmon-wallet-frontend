@@ -6,5 +6,19 @@
     "actions": {
       "positions": "Ver todas las posiciones en Kamino de la billetera activa"
     }
+  },
+  "screen": {
+    "empty_title": "Sin posiciones en Kamino",
+    "empty_body": "Los préstamos que esta dirección abra en Kamino van a aparecer acá.",
+    "error_title": "Kamino no respondió",
+    "error_body": "No se pudieron leer tus posiciones en este momento.",
+    "retry": "Reintentar",
+    "partial": "{{count}} mercado no respondió, así que la lista puede estar incompleta.",
+    "partial_plural": "{{count}} mercados no respondieron, así que la lista puede estar incompleta.",
+    "deposited": "Depositado",
+    "borrowed": "Prestado",
+    "net_value": "Valor neto",
+    "ltv": "Préstamo sobre valor",
+    "ltv_value": "{{ltv}} de {{liquidation}}"
   }
 }

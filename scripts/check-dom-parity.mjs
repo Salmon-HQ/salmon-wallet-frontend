@@ -69,6 +69,7 @@ export const MAP = {
   Send: ['SendPage', 'InputAddress'],
   SwapScreen: ['SwapPage'],
   MemoScreen: ['MemoPage'],
+  KaminoPositionsScreen: ['KaminoPositionsPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
   SettingsSelectors: [
