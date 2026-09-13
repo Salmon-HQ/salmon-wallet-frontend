@@ -28,6 +28,7 @@ export type TransactionTypeGlyph =
   | 'lock'
   | 'money'
   | 'cube'
+  | 'note'
   | 'question';
 
 export interface TransactionTypeDisplay {
@@ -48,6 +49,7 @@ export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
   stake: 'transactions.detail.staked',
   loan: 'transactions.detail.loan',
   interaction: 'transactions.detail.interaction',
+  memo: 'transactions.detail.memo',
   unknown: 'transactions.detail.unknown',
 };
 
@@ -67,6 +69,7 @@ export const transactionTypeDisplayFor = (
   stake: { label: 'Staked', glyph: 'lock', color: chainMarks.green },
   loan: { label: 'Loan', glyph: 'money', color: chainMarks.amber },
   interaction: { label: 'Interaction', glyph: 'cube', color: chainMarks.blue },
+  memo: { label: 'Memo', glyph: 'note', color: chainMarks.pink },
   unknown: { label: 'Unknown', glyph: 'question', color: t.text.secondary },
 });
 
@@ -204,9 +207,13 @@ export interface TransactionSentence {
  * description.
  */
 export function describeTransactionRow(
-  transaction: Pick<Transaction, 'type' | 'inputs' | 'outputs' | 'source' | 'description'>,
+  transaction: Pick<Transaction, 'type' | 'inputs' | 'outputs' | 'source' | 'description' | 'memo'>,
   contacts?: Record<string, string>
 ): TransactionSentence {
+  // A memo's sentence is the note itself — the one thing the user wrote.
+  if (transaction.type === 'memo' && transaction.memo) {
+    return { key: 'transactions.description.memoNote', values: { note: transaction.memo } };
+  }
   const counterparty = transactionCounterparty(transaction);
   if (counterparty) {
     const name =

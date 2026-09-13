@@ -44,6 +44,24 @@ describe('transaction utils', () => {
     });
   });
 
+  it('keeps a memo transaction as its own type and carries the note through', () => {
+    const tx = transformSolanaTransaction({
+      id: 'sig-memo',
+      timestamp: 1,
+      status: 'completed',
+      type: 'memo',
+      inputs: [],
+      outputs: [],
+      source: 'MEMO_PROGRAM',
+      memo: 'gm',
+    } as any);
+    expect(tx.type).toBe('memo');
+    expect(tx.memo).toBe('gm');
+    expect(getTransactionDescription('memo', [], [])).toEqual({
+      key: 'transactions.description.memo',
+    });
+  });
+
   it('normalizes native multichain tokens and coerces fee amounts', () => {
     const tx = transformMultichainTransaction(
       {

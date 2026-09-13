@@ -240,6 +240,8 @@ export function getTransactionDescription(
       return { key: 'transactions.description.loan' };
     case 'interaction':
       return { key: 'transactions.description.interaction' };
+    case 'memo':
+      return { key: 'transactions.description.memo' };
     default:
       return { key: 'transactions.description.fallback' };
   }
@@ -271,6 +273,7 @@ export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
     source: tx.source,
     heliusType: tx.heliusType,
     swapRoute: tx.swapRoute,
+    memo: tx.memo ?? undefined,
   };
 }
 

@@ -12,7 +12,16 @@
  * Covers all blockchain transaction categories
  */
 export type TransactionType =
-  'send' | 'receive' | 'swap' | 'mint' | 'burn' | 'stake' | 'loan' | 'interaction' | 'unknown';
+  | 'send'
+  | 'receive'
+  | 'swap'
+  | 'mint'
+  | 'burn'
+  | 'stake'
+  | 'loan'
+  | 'interaction'
+  | 'memo'
+  | 'unknown';
 
 /**
  * Transaction display status for history views
@@ -166,6 +175,12 @@ export interface Transaction {
   heliusType?: string;
   /** Swap route information for multi-hop swaps */
   swapRoute?: SwapRoute;
+  /**
+   * The SPL Memo note the transaction carries, when it carries one. A
+   * transaction that moves nothing and carries a note is `type: 'memo'`; a
+   * note riding a swap or a transfer keeps that type and carries it here.
+   */
+  memo?: string | null;
   /** Block slot number where the transaction was included */
   slot?: number;
   /** Block timestamp (Unix timestamp in seconds) */
@@ -475,6 +490,8 @@ export interface SolanaTransaction {
   heliusType?: string;
   /** Swap route — populated server-side for SWAP transactions */
   swapRoute?: SwapRoute;
+  /** The SPL Memo note, when the transaction carries one (backend 015). */
+  memo?: string | null;
 }
 
 /**

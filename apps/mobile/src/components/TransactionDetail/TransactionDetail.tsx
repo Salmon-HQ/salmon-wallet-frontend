@@ -173,6 +173,14 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
               labelWeight={600}
             />
           )}
+          {transaction.memo ? (
+            <KeyValueRow
+              testID="tx-detail-memo"
+              label={t('transactions.detail.note', 'Note')}
+              value={transaction.memo}
+              labelWeight={600}
+            />
+          ) : null}
         </Card>
 
         {transaction.type === 'swap' ? (

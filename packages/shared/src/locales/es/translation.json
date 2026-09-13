@@ -576,6 +576,8 @@
       "staked": "En Staking",
       "loan": "Préstamo",
       "interaction": "Interacción",
+      "memo": "Memo",
+      "note": "Nota",
       "unknown": "Desconocido",
       "completed": "Completado",
       "failed": "Fallido",
@@ -629,6 +631,8 @@
       "stake": "Operación de staking",
       "loan": "Operación de préstamo",
       "interaction": "Interacción con contrato",
+      "memo": "Nota en cadena",
+      "memoNote": "{{note}}",
       "fallback": "Transacción"
     }
   },

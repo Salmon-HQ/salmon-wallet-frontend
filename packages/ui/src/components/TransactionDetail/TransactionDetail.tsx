@@ -220,6 +220,14 @@ export function TransactionDetail({
               labelWeight={600}
             />
           )}
+          {transaction.memo ? (
+            <KeyValueRow
+              testID="tx-detail-memo"
+              label={translate('transactions.detail.note', 'Note')}
+              value={transaction.memo}
+              labelWeight={600}
+            />
+          ) : null}
         </Card>
 
         {transaction.type === 'swap' ? (

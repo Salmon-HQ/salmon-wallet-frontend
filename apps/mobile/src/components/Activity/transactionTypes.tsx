@@ -12,6 +12,7 @@ import {
   ArrowUpRightIcon,
   ArrowsLeftRightIcon,
   CubeIcon,
+  FileTextIcon,
   FireIcon,
   LockIcon,
   MoneyIcon,
@@ -58,6 +59,7 @@ const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
   lock: LockIcon,
   money: MoneyIcon,
   cube: CubeIcon,
+  note: FileTextIcon,
   question: QuestionIcon,
 };
 

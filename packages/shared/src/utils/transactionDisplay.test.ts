@@ -82,6 +82,17 @@ describe('transactionDisplay', () => {
     expect(transactionCounterparty(tx({ type: 'swap' }))).toBeUndefined();
   });
 
+  it('says the note itself under a memo, and the generic sentence when the note is missing', () => {
+    expect(describeTransactionRow(tx({ type: 'memo', memo: 'gm' }))).toEqual({
+      key: 'transactions.description.memoNote',
+      values: { note: 'gm' },
+    });
+    expect(describeTransactionRow(tx({ type: 'memo', memo: null }))).toEqual({
+      key: 'transactions.description.memo',
+      values: undefined,
+    });
+  });
+
   it('says "To <name>" from the address book, the short address without it, and defers otherwise', () => {
     const sent = tx({ type: 'send', outputs: [amount('SOL', '1', 9, { destination: ALICE })] });
     expect(describeTransactionRow(sent, { [ALICE]: 'Alice' })).toEqual({
