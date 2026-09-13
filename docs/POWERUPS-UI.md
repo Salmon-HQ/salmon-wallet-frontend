@@ -164,11 +164,11 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 
 ### 1.5 Sheets
 
-|          |                                                                                                                                          |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile   | `apps/mobile/src/components/BottomSheetContainer` (+ `SheetTitle`, `BottomSheetTitleHeader`)                                             |
-| DOM      | `packages/ui/src/components/BottomSheetContainer` (+ `SheetTitle`)                                                                       |
-| Contract | `BottomSheetContainerPropsBase`: `visible`, `onClose`, `onClosed?`, `title?` / `headerContent?`, `dismissible?`, `maxHeight?`, `height?` |
+|          |                                                                                                                                                      |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile   | `apps/mobile/src/components/BottomSheetContainer` (+ `SheetTitle`, `BottomSheetTitleHeader`)                                                         |
+| DOM      | `packages/ui/src/components/BottomSheetContainer` (+ `SheetTitle`)                                                                                   |
+| Contract | `BottomSheetContainerPropsBase`: `visible`, `onClose`, `children`, `onClosed?`, `title?` / `headerContent?`, `dismissible?`, `maxHeight?`, `height?` |
 
 - **Mandatory** for any sheet. One state per sheet; a second tap that changes
   what the surface is means a screen, not a sheet (DESIGN.md §Sheets).
@@ -274,21 +274,21 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 
 ### 1.10 Form fields, buttons, rows, cards, labels
 
-| Block            | Mobile                               | DOM                  | Contract                                                                                                                                      |
-| ---------------- | ------------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Text field       | `TextField` (`components/TextInput`) | `TextInput`          | `TextInputPropsBase`: `value`, `onChangeText`, `placeholder?`, `error?`, `maxLength?`, `mono?`, `disabled?`, `autoFocus?`, `onSubmitEditing?` |
-| Search           | `SearchField`                        | `SearchField`        | `SearchFieldPropsBase`                                                                                                                        |
-| Primary action   | `PrimaryButton`                      | `PrimaryButton`      | `ButtonPropsBase`: `onPress`, `children: string`, `disabled?`, `loading?`                                                                     |
-| Secondary action | `SecondaryButton`                    | `SecondaryButton`    | `ButtonPropsBase` (+ `icon` / `trailingIcon` per platform)                                                                                    |
-| Row              | `ListRow`                            | `ListRow`            | `ListRowPropsBase`: `leading`, `title`, `subtitle?`, `trailing?`, `onPress?`, `padding?`, `emphasis?`                                         |
-| Fact             | `KeyValueRow`                        | `KeyValueRow`        | `KeyValueRowPropsBase`: `label`, `value`, `valueTone?`, `labelWeight?`, `layout?`, `valueFont?`                                               |
-| Facts block      | `FactsCard`                          | `FactsCard`          | `FactsCardPropsBase`: `title?`, `rows` (`FactsCardRow` = a `KeyValueRow`'s props plus `key`)                                                  |
-| Container        | `Card`                               | `Card`               | `CardPropsBase`: `tone?`, `padding?`, `gap?`, `radius?`, `onPress?`                                                                           |
-| Section label    | `SectionLabel`                       | `SectionLabel`       | `SectionLabelPropsBase`: `variant: 'caps' \| 'group' \| 'title'`                                                                              |
-| Mark             | `IconBubble`                         | `IconBubble`         | `IconBubblePropsBase`: `size`, `tone`, `icon?`, `shape?`                                                                                      |
-| Chips            | `Chip` / `ChipGroup`                 | `Chip` / `ChipGroup` | `ChipPropsBase` / `ChipGroupPropsBase`                                                                                                        |
-| Token mark       | `TokenLogo`                          | `TokenLogo`          | `uri`, `symbol`, `size`                                                                                                                       |
-| Recalculating    | `PendingValue`                       | `PendingValue`       | `PendingValuePropsBase`: `pending` — a value being refetched breathes in place. NOT a countdown (§Gaps, G11)                                  |
+| Block            | Mobile                               | DOM                  | Contract                                                                                                                                                                       |
+| ---------------- | ------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Text field       | `TextField` (`components/TextInput`) | `TextInput`          | `TextInputPropsBase`: `value`, `onChangeText`, `placeholder?`, `error?`, `maxLength?`, `mono?`, `disabled?`, `autoFocus?`, `onSubmitEditing?`                                  |
+| Search           | `SearchField`                        | `SearchField`        | `SearchFieldPropsBase`                                                                                                                                                         |
+| Primary action   | `PrimaryButton`                      | `PrimaryButton`      | `ButtonPropsBase`: `onPress`, `children: string`, `disabled?`, `loading?`                                                                                                      |
+| Secondary action | `SecondaryButton`                    | `SecondaryButton`    | `ButtonPropsBase` (+ `icon` / `trailingIcon` per platform)                                                                                                                     |
+| Row              | `ListRow`                            | `ListRow`            | `ListRowPropsBase`: `leading`, `title`, `subtitle?`, `titleAccessory?`, `trailing?`, `onPress?`, `tone?`, `padding?`, `emphasis?`, `accessibilityRole?`, `accessibilityLabel?` |
+| Fact             | `KeyValueRow`                        | `KeyValueRow`        | `KeyValueRowPropsBase`: `label`, `value`, `valueTone?`, `labelWeight?`, `action?`, `labelAction?`, `layout?`, `valueFont?`                                                     |
+| Facts block      | `FactsCard`                          | `FactsCard`          | `FactsCardPropsBase`: `title?`, `rows` (`FactsCardRow` = a `KeyValueRow`'s props plus `key`)                                                                                   |
+| Container        | `Card`                               | `Card`               | `CardPropsBase`: `tone?`, `padding?`, `gap?`, `radius?`, `onPress?`                                                                                                            |
+| Section label    | `SectionLabel`                       | `SectionLabel`       | `SectionLabelPropsBase`: `variant: 'caps' \| 'group' \| 'title'`                                                                                                               |
+| Mark             | `IconBubble`                         | `IconBubble`         | `IconBubblePropsBase`: `size`, `tone`, `icon?`, `shape?`                                                                                                                       |
+| Chips            | `Chip` / `ChipGroup`                 | `Chip` / `ChipGroup` | `ChipPropsBase` / `ChipGroupPropsBase`                                                                                                                                         |
+| Token mark       | `TokenLogo`                          | `TokenLogo`          | `uri`, `symbol`, `size`                                                                                                                                                        |
+| Recalculating    | `PendingValue`                       | `PendingValue`       | `PendingValuePropsBase`: `pending` — a value being refetched breathes in place. NOT a countdown (§Gaps, G11)                                                                   |
 
 - **Fixed:** a primary is the flesh button, 56 tall, bold label, its geometry
   never a function of state; a commit inside a live form takes a fixed
