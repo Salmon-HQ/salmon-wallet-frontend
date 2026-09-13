@@ -10,6 +10,7 @@ import {
   Animated,
   StyleProp,
   ViewStyle,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
@@ -35,6 +36,7 @@ import {
   withAlpha,
   type Semantic,
   type BottomSheetContainerPropsBase,
+  SheetHeightContext,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
@@ -164,6 +166,13 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const { surface } = useSemantic();
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
+
+  // What this sheet is drawn at, for the sheets it opens: a nested sheet
+  // reads it and rises to exactly this (`useParentSheetHeight`).
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const handleSheetLayout = useCallback((event: LayoutChangeEvent) => {
+    setMeasuredHeight(event.nativeEvent.layout.height);
+  }, []);
 
   // The thermocline is the sheet material: every sheet whose caller passes
   // no explicit `background` grounds on the thick tier — same fill-and-clip
@@ -337,6 +346,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
               sheetAnimatedStyle,
               style,
             ]}
+            onLayout={handleSheetLayout}
           >
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
@@ -346,23 +356,25 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                   words, inputs and amounts at once. */}
             </BlurTargetView>
 
-            <BlurTargetProvider value={blurTargetRef}>
-              {/* Draggable area: handle + header content */}
-              <GestureDetector gesture={panGesture}>
-                <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
-                  {/* Drag handle bar */}
-                  <View style={styles.handleContainer}>
-                    <View style={styles.handle} />
-                  </View>
+            <SheetHeightContext.Provider value={height ?? measuredHeight}>
+              <BlurTargetProvider value={blurTargetRef}>
+                {/* Draggable area: handle + header content */}
+                <GestureDetector gesture={panGesture}>
+                  <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
+                    {/* Drag handle bar */}
+                    <View style={styles.handleContainer}>
+                      <View style={styles.handle} />
+                    </View>
 
-                  {/* Header: custom content wins, otherwise plain title */}
-                  {headerContent ?? title ?? null}
-                </Reanimated.View>
-              </GestureDetector>
+                    {/* Header: custom content wins, otherwise plain title */}
+                    {headerContent ?? title ?? null}
+                  </Reanimated.View>
+                </GestureDetector>
 
-              {/* Sheet body */}
-              {children}
-            </BlurTargetProvider>
+                {/* Sheet body */}
+                {children}
+              </BlurTargetProvider>
+            </SheetHeightContext.Provider>
 
             {/* Top fade gradient for scrollable content */}
             {showFadeGradient && scrollOffsetValue && (

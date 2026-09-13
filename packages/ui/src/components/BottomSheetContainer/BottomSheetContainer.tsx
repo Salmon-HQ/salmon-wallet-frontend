@@ -36,6 +36,7 @@ import {
   motionMs,
   shadowsCSS,
   spacing,
+  SheetHeightContext,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -86,6 +87,20 @@ export function BottomSheetContainer({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isRendered, setIsRendered] = useState(visible);
   const [isOpen, setIsOpen] = useState(false);
+  // What this sheet is drawn at, for the sheets it opens: a nested sheet
+  // reads it and rises to exactly this (`useParentSheetHeight`).
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const node = sheetRef.current;
+    if (!node) return undefined;
+    setMeasuredHeight(node.offsetHeight);
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => setMeasuredHeight(node.offsetHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
+    // Re-armed when the sheet mounts; content changes reach it through the observer.
+  }, [isRendered]);
   const isReduceMotionEnabled = useReducedMotion();
   const closedReportedRef = useRef(false);
 
@@ -230,48 +245,50 @@ export function BottomSheetContainer({
       data-testid={testID}
     >
       <div style={backdrop} onClick={handleBackdropClick} />
-      <div style={sheetContainer} onTransitionEnd={handleSheetTransitionEnd}>
-        {resolvedBackground}
+      <div ref={sheetRef} style={sheetContainer} onTransitionEnd={handleSheetTransitionEnd}>
+        <SheetHeightContext.Provider value={height ?? measuredHeight}>
+          {resolvedBackground}
 
-        <div style={{ position: 'relative' }}>
-          {/* Drag handle bar — decorative on the DOM, no gesture attached. */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              paddingTop: spacing.md,
-              paddingBottom: spacing.sm,
-            }}
-          >
+          <div style={{ position: 'relative' }}>
+            {/* Drag handle bar — decorative on the DOM, no gesture attached. */}
             <div
               style={{
-                width: HANDLE_WIDTH,
-                height: HANDLE_HEIGHT,
-                borderRadius: borderRadius.full,
-                backgroundColor: t.sheet.handle,
-                opacity: componentSizes.sheetHandleOpacity,
+                display: 'flex',
+                justifyContent: 'center',
+                paddingTop: spacing.md,
+                paddingBottom: spacing.sm,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: HANDLE_WIDTH,
+                  height: HANDLE_HEIGHT,
+                  borderRadius: borderRadius.full,
+                  backgroundColor: t.sheet.handle,
+                  opacity: componentSizes.sheetHandleOpacity,
+                }}
+              />
+            </div>
+
+            {headerContent ?? title ?? null}
           </div>
 
-          {headerContent ?? title ?? null}
-        </div>
-
-        {/* The gutter every sheet shares, held once here rather than
+          {/* The gutter every sheet shares, held once here rather than
             re-declared by each body: a sheet's content starts one screen
             gutter in from its edge, as mobile's sheet bodies each do with
             `spacing.screenGutter`. A body that must bleed to the edge opts
             out with `contentGutter={false}`. */}
-        <div
-          style={{
-            position: 'relative',
-            overflow: 'auto',
-            paddingLeft: contentGutter ? spacing.screenGutter : 0,
-            paddingRight: contentGutter ? spacing.screenGutter : 0,
-          }}
-        >
-          {children}
-        </div>
+          <div
+            style={{
+              position: 'relative',
+              overflow: 'auto',
+              paddingLeft: contentGutter ? spacing.screenGutter : 0,
+              paddingRight: contentGutter ? spacing.screenGutter : 0,
+            }}
+          >
+            {children}
+          </div>
+        </SheetHeightContext.Provider>
       </div>
     </dialog>
   );

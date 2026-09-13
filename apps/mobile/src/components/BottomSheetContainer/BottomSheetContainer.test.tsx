@@ -34,6 +34,8 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('@salmon/shared', () => ({
+  SheetHeightContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
+    .SheetHeightContext,
   // The mobile motion wrapper reads the real motion vocabulary.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,

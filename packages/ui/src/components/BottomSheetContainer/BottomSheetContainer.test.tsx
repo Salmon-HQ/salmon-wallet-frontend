@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createSemantic, ThemeProvider } from '@salmon/shared';
+import { createSemantic, ThemeProvider, useParentSheetHeight } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
@@ -38,6 +38,22 @@ describe('BottomSheetContainer', () => {
 
     expect(screen.getByTestId('sheet').tagName).toBe('DIALOG');
     expect(screen.getByText('sheet body')).toBeTruthy();
+  });
+
+  it('tells the sheets it opens what height it is drawn at', () => {
+    const Probe = () => {
+      const height = useParentSheetHeight();
+      return <span data-testid="probe">{height === null ? 'none' : String(height)}</span>;
+    };
+    expect(renderInMode('dark', <Probe />).getByTestId('probe').textContent).toBe('none');
+    cleanup();
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={() => {}} height={420}>
+        <Probe />
+      </BottomSheetContainer>
+    );
+    expect(screen.getByTestId('probe').textContent).toBe('420');
   });
 
   it('renders nothing when not visible', () => {

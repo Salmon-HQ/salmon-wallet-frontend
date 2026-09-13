@@ -13,7 +13,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { spacing, useExplorerLink } from '@salmon/shared';
+import { spacing, useExplorerLink, useParentSheetHeight } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
@@ -42,6 +42,8 @@ export function ExplorerLinkButton({
 }: ExplorerLinkButtonProps) {
   const { t } = useTranslation();
   const { text } = useSemantic();
+  // The picker is the detail's own drawer one level deeper: as tall as it.
+  const parentSheetHeight = useParentSheetHeight();
   const {
     buttonText,
     hasMenu,
@@ -79,6 +81,7 @@ export function ExplorerLinkButton({
       <BottomSheetContainer
         visible={menuVisible}
         onClose={closeMenu}
+        height={parentSheetHeight ?? undefined}
         title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
         testID="tx-detail-explorer-menu"
       >

@@ -21,6 +21,7 @@ import {
   s,
   vs,
   useExplorerLink,
+  useParentSheetHeight,
   type Blockchain,
   type NetworkEnvironment,
   type Semantic,
@@ -79,6 +80,8 @@ export function ExplorerLinkButton({
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
   const { standardContentBottomPadding } = useBottomSheetChrome();
+  // The picker is the detail's own drawer one level deeper: as tall as it.
+  const parentSheetHeight = useParentSheetHeight();
   const {
     buttonText,
     hasMenu,
@@ -119,6 +122,7 @@ export function ExplorerLinkButton({
       <BottomSheetContainer
         visible={menuVisible}
         onClose={closeMenu}
+        height={parentSheetHeight ?? undefined}
         title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
         testID="tx-detail-explorer-menu"
       >
