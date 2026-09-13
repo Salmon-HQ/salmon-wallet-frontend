@@ -3,7 +3,7 @@
  * confirmation labels, its swap rate and the sentence the activity row says.
  *
  * Shared because the mobile Activity/TransactionDetail and the DOM
- * TransactionHistoryPage/TransactionDetail draw the same facts — the two
+ * ActivityPage/TransactionDetail draw the same facts — the two
  * tables used to live once per platform, which is how "Swapped" here and
  * "Swap" there happen. Glyphs are names: each platform maps a name to its own
  * icon component; ink is resolved here from the active tokens.
@@ -102,7 +102,7 @@ export const transactionStatusDisplayFor = (
 /**
  * Resolves a display table's glyph *names* to a platform's icon
  * *components* — the one step `transactionTypeConfigFor` (Activity /
- * TransactionHistoryPage) and the TransactionDetail twins' `statusConfigFor`
+ * ActivityPage) and the TransactionDetail twins' `statusConfigFor`
  * each reimplemented once per platform. The glyph map is the only thing that
  * differs between platforms, so it stays the caller's argument.
  */

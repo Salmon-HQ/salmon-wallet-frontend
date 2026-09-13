@@ -1,10 +1,10 @@
 /**
- * MarketDataCard — the "Market data" `Card` of `KeyValueRow`s.
+ * TokenMarketData — the "Market data" `Card` of `KeyValueRow`s.
  *
  * Lifted out of `token/[id].tsx` (spec 019 D2) so Home's Bitcoin column can
- * render the same card instead of the legacy `BlurContainer`-based
- * `TokenMarketData`. Kit-composed only; no `data` renders nothing, same as
- * the route did inline.
+ * render the same card instead of the legacy `BlurContainer`-based card of
+ * the same name. Kit-composed only; no `data` renders nothing, same as the
+ * route did inline.
  */
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
@@ -24,16 +24,16 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SkeletonRow } from '../SkeletonRow';
 import { useThemedStyles } from '../../theme/useThemedStyles';
-import type { MarketDataCardProps } from './types';
+import type { TokenMarketDataProps } from './types';
 
-export type { MarketDataCardProps };
+export type { TokenMarketDataProps };
 
-export function MarketDataCard({
+export function TokenMarketData({
   data,
   symbol,
   loading = false,
   testID = 'token-detail-market-data',
-}: MarketDataCardProps) {
+}: TokenMarketDataProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const [, { formatValue }] = useCurrencyContext();

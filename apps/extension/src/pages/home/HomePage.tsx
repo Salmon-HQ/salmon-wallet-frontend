@@ -45,7 +45,7 @@ import {
   SlideStack,
   TokenDetailPage,
   NftDetailPage,
-  TransactionHistoryPage,
+  ActivityPage,
   ReceiveSheet,
   useTaskChrome,
   WalletsScreen,
@@ -698,7 +698,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
       case 'activity':
         return (
-          <TransactionHistoryPage
+          <ActivityPage
             onBack={handleActivityBack}
             transactions={transactions}
             loading={transactionsLoading}

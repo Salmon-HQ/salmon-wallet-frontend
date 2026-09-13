@@ -2,12 +2,12 @@
  * Activity — the pieces CORE 08 (the Activity screen) and CORE 09 (the
  * transaction detail) share, on the DOM.
  */
-export { TransactionHistoryPage } from './TransactionHistoryPage';
+export { ActivityPage } from './ActivityPage';
 export { TransactionItem } from './TransactionItem';
 export { ActivityEmptyState, ActivityErrorState, TransactionListSkeleton } from './ActivityStates';
 
 export type {
-  TransactionHistoryPageProps,
+  ActivityPageProps,
   TransactionItemProps,
   Transaction,
   TransactionType,

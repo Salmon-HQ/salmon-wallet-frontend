@@ -129,9 +129,9 @@ jest.mock('../../src/components', () => {
       ReactActual.createElement(View, { testID }, children),
     DepthBackground: () => null,
     DataAttribution: () => null,
-    MarketDataCard: ({ testID }: { testID?: string }) =>
+    TokenMarketData: ({ testID }: { testID?: string }) =>
       ReactActual.createElement(View, { testID: testID ?? 'token-detail-market-data' }),
-    AboutCard: ({ testID }: { testID?: string }) =>
+    TokenAbout: ({ testID }: { testID?: string }) =>
       ReactActual.createElement(View, { testID: testID ?? 'token-detail-about' }),
     ScalesBackground: () => null,
     IconBubble: () => null,

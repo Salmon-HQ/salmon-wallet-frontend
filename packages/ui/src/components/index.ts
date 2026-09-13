@@ -189,19 +189,19 @@ export type { TransactionMarkProps } from './TransactionMark';
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 
-// TransactionHistoryPage - the Activity page: list and detail steps
-export { TransactionHistoryPage, TransactionItem } from './TransactionHistoryPage';
+// ActivityPage - the Activity page: list and detail steps
+export { ActivityPage, TransactionItem } from './ActivityPage';
 export type {
   SwapRoute,
   SwapRouteHop,
   Transaction,
   TransactionFee,
-  TransactionHistoryPageProps,
+  ActivityPageProps,
   TransactionItemProps,
   TransactionTokenAmount,
   TransactionStatus as TxStatus,
   TransactionType as TxType,
-} from './TransactionHistoryPage';
+} from './ActivityPage';
 
 // SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
 export { SendFailure, SendPage } from './SendPage';

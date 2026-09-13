@@ -26,7 +26,7 @@ vi.mock('../TransactionDetail', () => ({
 
 import { createSemantic } from '@salmon/shared';
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
-import { TransactionHistoryPage } from './TransactionHistoryPage';
+import { ActivityPage } from './ActivityPage';
 
 const NOW_SECONDS = Math.floor(Date.now() / 1000);
 const YESTERDAY_SECONDS = NOW_SECONDS - 60 * 60 * 24 * 2;
@@ -68,15 +68,15 @@ afterEach(() => {
   cleanup();
 });
 
-describe('TransactionHistoryPage', () => {
+describe('ActivityPage', () => {
   it('is titled Activity, with the subtitle mobile shows', () => {
-    render(<TransactionHistoryPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
+    render(<ActivityPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
     expect(screen.getByText('actions.activity')).toBeTruthy();
     expect(screen.getByText('transactions.tapToViewDetails')).toBeTruthy();
   });
 
   it('offers the four filters and keeps only the matching rows', () => {
-    render(<TransactionHistoryPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
+    render(<ActivityPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
     expect(screen.getAllByTestId('activity-tx-row')).toHaveLength(2);
 
     fireEvent.click(screen.getByTestId('activity-filters-send'));
@@ -91,7 +91,7 @@ describe('TransactionHistoryPage', () => {
 
   it('says the filter is the reason when a filtered slice is empty', () => {
     render(
-      <TransactionHistoryPage
+      <ActivityPage
         onBack={vi.fn()}
         transactions={TRANSACTIONS.filter((tx) => (tx as { type: string }).type === 'send')}
       />
@@ -102,13 +102,13 @@ describe('TransactionHistoryPage', () => {
   });
 
   it('groups the rows by day', () => {
-    render(<TransactionHistoryPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
+    render(<ActivityPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
     expect(screen.getByTestId('activity-group-today')).toBeTruthy();
     expect(screen.getByTestId('activity-group-earlier')).toBeTruthy();
   });
 
   it('opens a row as a sheet over the list, and the list stays', () => {
-    render(<TransactionHistoryPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
+    render(<ActivityPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
     fireEvent.click(screen.getAllByTestId('activity-tx-row')[0]);
 
     expect(screen.getByTestId('tx-detail').textContent).toBe('tx-send');
@@ -118,21 +118,17 @@ describe('TransactionHistoryPage', () => {
 
   it('shows the skeleton while loading and the retry when it failed', () => {
     const onRetry = vi.fn();
-    const { rerender } = render(
-      <TransactionHistoryPage onBack={vi.fn()} transactions={[]} loading />
-    );
+    const { rerender } = render(<ActivityPage onBack={vi.fn()} transactions={[]} loading />);
     expect(screen.getByTestId('activity-skeleton')).toBeTruthy();
 
-    rerender(
-      <TransactionHistoryPage onBack={vi.fn()} transactions={[]} error="boom" onRetry={onRetry} />
-    );
+    rerender(<ActivityPage onBack={vi.fn()} transactions={[]} error="boom" onRetry={onRetry} />);
     fireEvent.click(screen.getByTestId('activity-retry-button'));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it('reads the live mode: the ground takes the light ramp', () => {
     const light = createSemantic('light');
-    renderInMode('light', <TransactionHistoryPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
+    renderInMode('light', <ActivityPage onBack={vi.fn()} transactions={TRANSACTIONS} />);
 
     expect(screen.getByTestId('activity-screen').style.backgroundColor).toBe(
       asRenderedColor(light.water.gradient[1])

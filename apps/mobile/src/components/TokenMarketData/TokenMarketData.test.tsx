@@ -1,5 +1,5 @@
 /**
- * MarketDataCard — the route's own decisions (loading vs data vs empty),
+ * TokenMarketData — the route's own decisions (loading vs data vs empty),
  * not the kit primitives it composes (each has its own suite, per the
  * repo convention `token-detail-screen.test.tsx` already follows).
  */
@@ -47,18 +47,18 @@ jest.mock('../SkeletonRow', () => {
   };
 });
 
-import { MarketDataCard } from './MarketDataCard';
+import { TokenMarketData } from './TokenMarketData';
 
-describe('MarketDataCard', () => {
+describe('TokenMarketData', () => {
   it('renders a skeleton row while loading', () => {
-    render(<MarketDataCard data={undefined} loading />);
+    render(<TokenMarketData data={undefined} loading />);
     expect(screen.getByTestId('token-detail-market-data')).toBeTruthy();
     expect(screen.queryByText(/Market Cap/)).toBeNull();
   });
 
   it('renders the known fields as KeyValueRows once data arrives', () => {
     render(
-      <MarketDataCard
+      <TokenMarketData
         data={{ marketCap: 1000, volume24h: 200, circulatingSupply: 50, totalSupply: 100, ath: 5 }}
         symbol="SOL"
       />
@@ -72,7 +72,7 @@ describe('MarketDataCard', () => {
   });
 
   it('renders nothing when there is no data and it is not loading', () => {
-    render(<MarketDataCard data={undefined} />);
+    render(<TokenMarketData data={undefined} />);
     expect(screen.queryByTestId('token-detail-market-data')).toBeNull();
   });
 });

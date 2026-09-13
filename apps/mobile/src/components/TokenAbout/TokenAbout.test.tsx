@@ -1,5 +1,5 @@
 /**
- * AboutCard — the route's own decisions (loading vs description vs contract
+ * TokenAbout — the route's own decisions (loading vs description vs contract
  * row vs website row), not the kit primitives it composes.
  */
 import React from 'react';
@@ -73,18 +73,18 @@ jest.mock('../SkeletonRow', () => {
   };
 });
 
-import { AboutCard } from './AboutCard';
+import { TokenAbout } from './TokenAbout';
 
-describe('AboutCard', () => {
+describe('TokenAbout', () => {
   it('renders a skeleton row while loading', () => {
-    render(<AboutCard loading />);
+    render(<TokenAbout loading />);
     expect(screen.getByTestId('token-detail-about')).toBeTruthy();
     expect(screen.queryByText('Contract Address')).toBeNull();
   });
 
   it('renders the description and the contract copy row', () => {
     render(
-      <AboutCard
+      <TokenAbout
         description="Solana is a fast blockchain."
         contractAddress="So1111111111111111111111111111111111111111"
         contractAddressShort="So11…1111"
@@ -101,7 +101,7 @@ describe('AboutCard', () => {
   });
 
   it('renders nothing when there is nothing to show', () => {
-    render(<AboutCard />);
+    render(<TokenAbout />);
     expect(screen.queryByTestId('token-detail-about')).toBeNull();
   });
 });

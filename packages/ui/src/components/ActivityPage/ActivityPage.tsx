@@ -1,5 +1,5 @@
 /**
- * TransactionHistoryPage — Activity, CORE 08, on the DOM.
+ * ActivityPage — Activity, CORE 08, on the DOM.
  *
  * The mobile twin is the route `apps/mobile/app/(app)/activity.tsx`. The list
  * is a screen because the second tap inside it changes what it is
@@ -32,12 +32,12 @@ import { TransactionDetail } from '../TransactionDetail';
 import { UnderlineTabs } from '../UnderlineTabs';
 import { ActivityEmptyState, ActivityErrorState, TransactionListSkeleton } from './ActivityStates';
 import { TransactionItem } from './TransactionItem';
-import type { TransactionHistoryPageProps } from './types';
+import type { ActivityPageProps } from './types';
 
 /** Trigger load more when within this many px of the bottom. */
 const LOAD_MORE_THRESHOLD = 100;
 
-export function TransactionHistoryPage({
+export function ActivityPage({
   onBack,
   transactions,
   loading = false,
@@ -55,7 +55,7 @@ export function TransactionHistoryPage({
   onRetry,
   className,
   style,
-}: TransactionHistoryPageProps): React.ReactElement {
+}: ActivityPageProps): React.ReactElement {
   const { t } = useTranslation();
   const { accent } = useSemantic();
 

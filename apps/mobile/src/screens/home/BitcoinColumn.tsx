@@ -3,8 +3,8 @@ import { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-nativ
 import type { BalanceLoadState, PriceChartPeriod } from '@salmon/shared';
 
 import {
-  AboutCard,
-  MarketDataCard,
+  TokenAbout,
+  TokenMarketData,
   PriceChart,
   SkeletonRow,
   TokenListItem,
@@ -87,14 +87,14 @@ export function BitcoinColumn({
       )}
 
       {/* Market Data */}
-      <MarketDataCard
+      <TokenMarketData
         data={bitcoin.marketData}
         symbol="BTC"
         loading={bitcoin.dataLoading && !bitcoin.coinInfo}
       />
 
       {/* About Section - at the end */}
-      <AboutCard
+      <TokenAbout
         description={bitcoin.coinInfo?.description}
         loading={bitcoin.dataLoading && !bitcoin.coinInfo}
       />

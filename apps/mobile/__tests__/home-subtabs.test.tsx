@@ -322,10 +322,10 @@ jest.mock('../src/components', () => {
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SkeletonRow: () => <View />,
-    AboutCard: () => <View />,
+    TokenAbout: () => <View />,
     TokenList: () => <View testID="token-list" />,
     TokenListItem: () => <View />,
-    MarketDataCard: () => <View />,
+    TokenMarketData: () => <View />,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
   };
 });

@@ -2,7 +2,7 @@
  * TokenAbout — the "About" `Card`: description, contract address copy row,
  * website link, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/TokenDetail/AboutCard.tsx`,
+ * The mobile twin is `apps/mobile/src/components/TokenAbout/TokenAbout.tsx`,
  * on the same `TokenAboutPropsBase`. Copy feedback is the shared
  * `useCopyFeedback` hold, drawn by `CopyTick` — the same object the wallet
  * header copies with. The contract row has no data dependency of its own (the

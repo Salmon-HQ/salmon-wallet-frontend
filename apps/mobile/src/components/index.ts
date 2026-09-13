@@ -211,13 +211,16 @@ export { TokenLogo } from './TokenLogo';
 //
 // TokenInformationSheet is gone (spec 019 — token detail is a screen,
 // `app/(app)/token/[id].tsx`, not a sheet, DESIGN.md §Sheets' state rule).
-// MarketDataCard/AboutCard are kit-composed and shared with Home's Bitcoin
+// TokenMarketData/TokenAbout are kit-composed and shared with Home's Bitcoin
 // column (spec 019 D2/D3, research-mobile.md §2 D2) — the legacy
-// BlurContainer-based TokenMarketData/TokenAbout pair is gone.
+// BlurContainer-based pair of the same name is gone.
 // ---------------------------------------------------------------------------
 
-export { MarketDataCard, AboutCard } from './TokenDetail';
-export type { MarketDataCardProps, AboutCardProps, MarketData } from './TokenDetail';
+export { TokenMarketData } from './TokenMarketData';
+export type { TokenMarketDataProps, MarketData } from './TokenMarketData';
+
+export { TokenAbout } from './TokenAbout';
+export type { TokenAboutProps } from './TokenAbout';
 
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';

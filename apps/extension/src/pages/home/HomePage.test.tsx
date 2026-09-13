@@ -60,7 +60,7 @@ vi.mock('../../components', () => ({
   ),
   TokenDetailPage: () => null,
   NftDetailPage: () => null,
-  TransactionHistoryPage: () => null,
+  ActivityPage: () => null,
   ReceiveSheet: () => null,
   useTaskChrome: () => ({
     isTaskEngaged: false,

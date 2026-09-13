@@ -64,7 +64,7 @@ export const MAP = {
     'AccountNamePanel',
     'AccountsPanel',
   ],
-  Activity: ['TransactionHistoryPage'],
+  Activity: ['ActivityPage'],
   AddressPanels: ['AddressAddPanel', 'AddressBookPanel', 'AddressEditPanel'],
   ConfirmSheet: ['ConfirmDialog'],
   Icon: ['Icon'],
@@ -82,7 +82,6 @@ export const MAP = {
     'ExplorerSelector',
     'LanguageSelector',
   ],
-  TokenDetail: ['TokenAbout', 'TokenMarketData'],
 };
 
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
@@ -117,7 +116,7 @@ export const DOM_ONLY = {
 export const SCREENS = {
   '(app)/(tabs)/index': 'apps/extension/src/pages/home/HomePage.tsx',
   '(app)/wallets': 'packages/ui/src/components/WalletsScreen/WalletsScreen.tsx',
-  '(app)/activity': 'packages/ui/src/components/TransactionHistoryPage/TransactionHistoryPage.tsx',
+  '(app)/activity': 'packages/ui/src/components/ActivityPage/ActivityPage.tsx',
   '(app)/send/index': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/send/amount': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/send/review': 'packages/ui/src/components/SendPage/SendPage.tsx',

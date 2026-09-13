@@ -28,13 +28,13 @@ export interface TransactionItemProps extends TransactionItemPropsBase<CSSProper
 }
 
 /**
- * Props for TransactionHistoryPage (DOM).
+ * Props for ActivityPage (DOM).
  *
  * Mobile's Activity is a route that reads its data from the hooks directly;
  * the DOM page is fed by the side panel's Home, which already holds the
  * transactions, so the page stays presentational.
  */
-export interface TransactionHistoryPageProps {
+export interface ActivityPageProps {
   /** Callback to navigate back */
   onBack: () => void;
   /** Transactions to display */

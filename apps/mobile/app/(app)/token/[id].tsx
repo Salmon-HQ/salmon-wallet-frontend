@@ -48,11 +48,11 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import {
-  AboutCard,
+  TokenAbout,
   DataAttribution,
   DepthBackground,
   KeyValueRow,
-  MarketDataCard,
+  TokenMarketData,
   PriceChart,
   ScalesBackground,
   ScreenHeader,
@@ -229,14 +229,14 @@ export default function TokenDetailScreen() {
 
         {/* Market data — spec 019 D2 ruling: kept as a Card of KeyValueRows,
             shared with Home's Bitcoin column. */}
-        <MarketDataCard data={marketData} symbol={token.symbol} />
+        <TokenMarketData data={marketData} symbol={token.symbol} />
 
         {/* About — spec 019 D3 ruling: description, contract address copy
             row and website link, kept as today, shared with Home's Bitcoin
             column. The contract row has no data dependency of its own (the
             mint is always known), so the card always renders even for a
             token CoinGecko has nothing to say about. */}
-        <AboutCard
+        <TokenAbout
           description={coinInfo?.description}
           contractAddress={token.address}
           contractAddressShort={getShortAddress(token.address, 6) ?? token.address}

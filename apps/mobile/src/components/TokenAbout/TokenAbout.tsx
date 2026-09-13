@@ -1,11 +1,11 @@
 /**
- * AboutCard — the "About" `Card`: description, contract address copy row,
+ * TokenAbout — the "About" `Card`: description, contract address copy row,
  * website link.
  *
  * Lifted out of `token/[id].tsx` (spec 019 D3) so Home's Bitcoin column can
- * render the same card instead of the legacy `BlurContainer`-based
- * `TokenAbout`. Copy feedback is self-contained (`useCopyFeedback`) so every
- * consumer gets the tick animation for free.
+ * render the same card instead of the legacy `BlurContainer`-based card of
+ * the same name. Copy feedback is self-contained (`useCopyFeedback`) so
+ * every consumer gets the tick animation for free.
  */
 import React, { useCallback } from 'react';
 import { Animated, Linking, StyleSheet, Text, View } from 'react-native';
@@ -28,18 +28,18 @@ import { ListRow } from '../ListRow';
 import { SkeletonRow } from '../SkeletonRow';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
-import type { AboutCardProps } from './types';
+import type { TokenAboutProps } from './types';
 
-export type { AboutCardProps };
+export type { TokenAboutProps };
 
-export function AboutCard({
+export function TokenAbout({
   description,
   contractAddress,
   contractAddressShort,
   website,
   loading = false,
   testID = 'token-detail-about',
-}: AboutCardProps) {
+}: TokenAboutProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text, status } = useSemantic();

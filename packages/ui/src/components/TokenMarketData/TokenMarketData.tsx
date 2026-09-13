@@ -1,7 +1,7 @@
 /**
  * TokenMarketData — the "Market data" `Card` of `KeyValueRow`s, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/TokenDetail/MarketDataCard.tsx`,
+ * The mobile twin is `apps/mobile/src/components/TokenMarketData/TokenMarketData.tsx`,
  * on the same `TokenMarketDataPropsBase`. Kit-composed only; no `data`
  * renders nothing, `loading` renders the skeleton.
  */

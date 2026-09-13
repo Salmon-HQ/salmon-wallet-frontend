@@ -53,7 +53,7 @@ export function useHomeBitcoinMarket({
   const chartData: PriceDataPoint[] = chartDataRaw ?? [];
   const chartError = !!dataError && chartData.length === 0;
 
-  // Transform CoinInfo to MarketData for MarketDataCard
+  // Transform CoinInfo to MarketData for TokenMarketData
   const marketData: MarketData | undefined = useMemo(() => {
     if (!coinInfo) return undefined;
     return coinInfoToMarketData(coinInfo);
