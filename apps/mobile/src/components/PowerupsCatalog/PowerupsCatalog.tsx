@@ -38,19 +38,12 @@ import {
 } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import {
-  ArrowsLeftRightIcon,
-  ImageIcon,
-  LightningIcon,
-  ShieldCheckIcon,
-  StackIcon,
-  TrendUpIcon,
-} from '../../icons';
+import { powerupIcons } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { Card } from '../Card';
-import { IconBubble, type IconGlyphProps } from '../IconBubble';
+import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { PlusMinusGlyph } from '../PlusMinusGlyph';
@@ -65,19 +58,6 @@ const ROW_BUBBLE_SIZE = 44;
 /** The install / uninstall control in the detail row's trailing slot. */
 const CONTROL_SIZE = 42;
 const CONTROL_ICON_SIZE = 22;
-
-/**
- * The mark each entry wears here. A Powerup the platform has no icon for —
- * a community one, later — falls back to the catalogue's own lightning
- * rather than to an empty circle.
- */
-const ICONS: Record<string, React.ComponentType<IconGlyphProps>> = {
-  swap: ArrowsLeftRightIcon,
-  'wallet-guard': ShieldCheckIcon,
-  staking: StackIcon,
-  'auto-compound': TrendUpIcon,
-  'nft-floor-watch': ImageIcon,
-};
 
 const TIERS = ['core', 'community'] as const;
 
@@ -130,7 +110,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
               size={ROW_BUBBLE_SIZE}
               shape="rounded"
               tone="accent-tint"
-              icon={ICONS[entry.id] ?? LightningIcon}
+              icon={powerupIcons[entry.iconName]}
               iconWeight="bold"
             />
           }
@@ -234,7 +214,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                       size={ROW_BUBBLE_SIZE}
                       shape="rounded"
                       tone="accent-tint"
-                      icon={ICONS[entry.id] ?? LightningIcon}
+                      icon={powerupIcons[entry.iconName]}
                       iconWeight="bold"
                     />
                   }

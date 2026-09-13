@@ -9,6 +9,7 @@
  * is generated from them, so it cannot drift from what the folder declares.
  */
 import type { SolanaNetworkId } from '../types/blockchain';
+import type { PowerupIconName } from '../types/ui/powerup-icon';
 
 /** Origin only: who wrote it. It never decides the disclosure (spec 029 §4). */
 export type PowerupTier = 'core' | 'community';
@@ -26,6 +27,11 @@ export interface PowerupManifest {
   tier: PowerupTier;
   /** The networks the Powerup acts on; hidden elsewhere. */
   networks: readonly SolanaNetworkId[];
+  /**
+   * The glyph it wears in the catalogue, from the kit's allow-list. A Powerup
+   * ships no art: each twin resolves this name against its own icon module.
+   */
+  iconName: PowerupIconName;
   /** Translation key for the display name. */
   nameKey: string;
   /** Translation key for the one-line description. */

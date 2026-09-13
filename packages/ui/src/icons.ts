@@ -28,6 +28,16 @@
  */
 
 import { createElement } from 'react';
+import type { PowerupIconName } from '@salmon/shared';
+import type { Icon as IconComponent } from '@phosphor-icons/react/dist/lib/types';
+import { ArrowsLeftRightIcon } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
+import { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
+import { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
+import { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
+import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
+import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
+import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
+import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
 import type { ReactNode } from 'react';
 import { IconContext } from '@phosphor-icons/react/dist/lib/context';
 
@@ -170,3 +180,20 @@ export function IconDefaults({ children }: { children: ReactNode }) {
 }
 
 const ICON_DEFAULTS = { size: iconSize.lg, weight: 'regular' } as const;
+
+/**
+ * The glyph each Powerup wears, by the name its manifest declares
+ * (`PowerupIconName`). Exhaustive by construction: a name added to the shared
+ * union fails to compile here until this twin draws it, which is what lets a
+ * Powerup ship no art and the catalogue keep no table of Powerup ids.
+ */
+export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsLeftRight: ArrowsLeftRightIcon,
+  ChartPie: ChartPieIcon,
+  Image: ImageIcon,
+  Lightning: LightningIcon,
+  PencilSimple: PencilSimpleIcon,
+  ShieldCheck: ShieldCheckIcon,
+  Stack: StackIcon,
+  TrendUp: TrendUpIcon,
+};

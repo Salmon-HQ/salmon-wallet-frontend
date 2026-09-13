@@ -6,6 +6,7 @@ import type { PowerupManifest } from '../manifest';
 
 export const swapManifest = {
   id: 'swap',
+  iconName: 'ArrowsLeftRight',
   tier: 'core',
   networks: ['solana-mainnet'],
   nameKey: 'swap.catalog.name',

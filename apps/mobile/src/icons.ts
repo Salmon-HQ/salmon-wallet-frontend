@@ -133,3 +133,31 @@ export { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
 export { XLogoIcon } from 'phosphor-react-native/src/icons/XLogo';
 
 export type { Icon as IconComponent, IconProps } from 'phosphor-react-native';
+
+import type { PowerupIconName } from '@salmon/shared';
+import type { Icon as IconComponent } from 'phosphor-react-native';
+import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
+import { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
+import { ImageIcon } from 'phosphor-react-native/src/icons/Image';
+import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
+import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
+import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
+import { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
+
+/**
+ * The glyph each Powerup wears, by the name its manifest declares
+ * (`PowerupIconName`). Exhaustive by construction: a name added to the shared
+ * union fails to compile here until this twin draws it, which is what lets a
+ * Powerup ship no art and the catalogue keep no table of Powerup ids.
+ */
+export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsLeftRight: ArrowsLeftRightIcon,
+  ChartPie: ChartPieIcon,
+  Image: ImageIcon,
+  Lightning: LightningIcon,
+  PencilSimple: PencilSimpleIcon,
+  ShieldCheck: ShieldCheckIcon,
+  Stack: StackIcon,
+  TrendUp: TrendUpIcon,
+};

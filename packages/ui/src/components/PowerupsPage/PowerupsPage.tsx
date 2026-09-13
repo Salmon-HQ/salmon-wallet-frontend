@@ -24,14 +24,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import {
-  ArrowsLeftRightIcon,
-  ImageIcon,
-  LightningIcon,
-  ShieldCheckIcon,
-  StackIcon,
-  TrendUpIcon,
-} from '../../icons';
+import { powerupIcons } from '../../icons';
 import { SlideStack } from '../../motion';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
@@ -50,18 +43,6 @@ const ROW_BUBBLE_SIZE = 44;
 /** The install / uninstall control in the detail row's trailing slot. */
 const CONTROL_SIZE = 42;
 const CONTROL_ICON_SIZE = 22;
-
-/**
- * The mark each entry wears here. A Powerup the platform has no icon for —
- * a community one, later — falls back to the catalogue's own lightning.
- */
-const ICONS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
-  swap: ArrowsLeftRightIcon,
-  'wallet-guard': ShieldCheckIcon,
-  staking: StackIcon,
-  'auto-compound': TrendUpIcon,
-  'nft-floor-watch': ImageIcon,
-};
 
 const TIERS = ['core', 'community'] as const;
 
@@ -137,7 +118,7 @@ export function PowerupsPage({
                 size={ROW_BUBBLE_SIZE}
                 shape="rounded"
                 tone="accent-tint"
-                icon={ICONS[entry.id] ?? LightningIcon}
+                icon={powerupIcons[entry.iconName]}
               />
             }
             title={name}
@@ -249,7 +230,7 @@ export function PowerupsPage({
                         size={ROW_BUBBLE_SIZE}
                         shape="rounded"
                         tone="accent-tint"
-                        icon={ICONS[entry.id] ?? LightningIcon}
+                        icon={powerupIcons[entry.iconName]}
                       />
                     }
                     title={t(entry.nameKey)}

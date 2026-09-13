@@ -8,6 +8,7 @@ import type { PowerupManifest } from '../manifest';
 
 export const kaminoPositionsManifest = {
   id: 'kamino-positions',
+  iconName: 'ChartPie',
   tier: 'community',
   networks: ['solana-mainnet'],
   nameKey: 'kamino-positions.catalog.name',

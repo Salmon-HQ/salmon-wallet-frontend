@@ -8,6 +8,7 @@ import type { PowerupManifest } from '../manifest';
 
 export const memoManifest = {
   id: 'memo',
+  iconName: 'PencilSimple',
   tier: 'core',
   networks: ['solana-mainnet', 'solana-devnet'],
   nameKey: 'memo.catalog.name',

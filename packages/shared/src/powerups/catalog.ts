@@ -3,9 +3,10 @@
  * network, plus the design frames' mock entries behind the developer flag.
  *
  * It lives here rather than in either app because it is the same list on both
- * — only the icon is platform code, and that is resolved by id inside each
- * twin. A catalogue that advertised four things the wallet cannot install
- * would be a promise, not a product, so the mocks are developer-only.
+ * — only the icon's renderer is platform code, and each twin resolves the
+ * name the manifest declares. A catalogue that advertised four things the
+ * wallet cannot install would be a promise, not a product, so the mocks are
+ * developer-only.
  */
 import type { PowerupsCatalogEntry, PowerupsCatalogEntryDetails } from '../types/ui/index';
 import { describeDisclosure } from './disclosure';
@@ -24,6 +25,7 @@ const mockDetails = (tier: PowerupsCatalogEntry['tier']): PowerupsCatalogEntryDe
 export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [
   {
     id: 'wallet-guard',
+    iconName: 'ShieldCheck',
     nameKey: 'powerups.catalog.wallet_guard.name',
     descriptionKey: 'powerups.catalog.wallet_guard.description',
     tier: 'core',
@@ -31,6 +33,7 @@ export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] =
   },
   {
     id: 'staking',
+    iconName: 'Stack',
     nameKey: 'powerups.catalog.staking.name',
     descriptionKey: 'powerups.catalog.staking.description',
     tier: 'core',
@@ -38,6 +41,7 @@ export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] =
   },
   {
     id: 'auto-compound',
+    iconName: 'TrendUp',
     nameKey: 'powerups.catalog.auto_compound.name',
     descriptionKey: 'powerups.catalog.auto_compound.description',
     tier: 'community',
@@ -45,6 +49,7 @@ export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] =
   },
   {
     id: 'nft-floor-watch',
+    iconName: 'Image',
     nameKey: 'powerups.catalog.nft_floor_watch.name',
     descriptionKey: 'powerups.catalog.nft_floor_watch.description',
     tier: 'community',
@@ -85,6 +90,7 @@ export function getPowerupCatalog({
     nameKey: entry.nameKey,
     descriptionKey: entry.descriptionKey,
     tier: entry.tier,
+    iconName: entry.iconName,
     installed: installedIds.includes(entry.id),
     disabledReason: disabledReasons[entry.id],
     details: {

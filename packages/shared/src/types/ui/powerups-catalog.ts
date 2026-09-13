@@ -1,3 +1,4 @@
+import type { PowerupIconName } from './powerup-icon';
 import type { Testable } from './testable';
 
 /**
@@ -13,6 +14,11 @@ export interface PowerupsCatalogEntry {
   descriptionKey: string;
   /** `core` is what Salmon ships; `community` is what people may add later. */
   tier: 'core' | 'community';
+  /**
+   * The glyph the row and the detail wear, as the manifest names it. Each
+   * twin resolves it against its own icon module; a Powerup ships no art.
+   */
+  iconName: PowerupIconName;
   /** Whether this device has it installed — the detail shows `−` instead of `+`. */
   installed: boolean;
   /**

@@ -84,6 +84,7 @@ const entries = [
     nameKey: 'swap.catalog.name',
     descriptionKey: 'swap.catalog.description',
     tier: 'core' as const,
+    iconName: 'ArrowsLeftRight' as const,
     installed: false,
     details: {
       aboutKey: 'swap.catalog.about',
@@ -98,6 +99,7 @@ const entries = [
     nameKey: 'powerups.catalog.auto_compound.name',
     descriptionKey: 'powerups.catalog.auto_compound.description',
     tier: 'community' as const,
+    iconName: 'ChartPie' as const,
     installed: false,
     details: {
       aboutKey: 'powerups.catalog.mock.about',

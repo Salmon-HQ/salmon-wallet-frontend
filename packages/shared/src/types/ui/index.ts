@@ -172,6 +172,7 @@ export type {
   PowerupsCatalogDisclosureLine,
   PowerupsCatalogPropsBase,
 } from './powerups-catalog';
+export type { PowerupIconName } from './powerup-icon';
 export type { PowerupsFabPropsBase } from './powerups-fab';
 export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 export type { PlusMinusGlyphPropsBase } from './plus-minus-glyph';

@@ -223,10 +223,17 @@ export function useHomeShell({
   // when the block comes back to Solana.
   const nftsOffered = currentChain === 'solana';
 
-  const defaultTabKeys = useMemo(
-    () => [...HOME_CORE_TAB_KEYS, ...(allPowerupKeys ?? [])] as HomeSubTabKey[],
-    [allPowerupKeys]
-  );
+  // Core's keys, then every Powerup's — the registry's for the arrangement,
+  // plus any offered tab the caller did not list, so an offered Powerup can
+  // never fall out of the order and vanish from the row.
+  const offeredPowerupKeys = powerupTabs?.map((tab) => tab.key).join(',') ?? '';
+  const defaultTabKeys = useMemo(() => {
+    const keys: string[] = [...HOME_CORE_TAB_KEYS, ...(allPowerupKeys ?? [])];
+    for (const key of offeredPowerupKeys ? offeredPowerupKeys.split(',') : []) {
+      if (!keys.includes(key)) keys.push(key);
+    }
+    return keys as HomeSubTabKey[];
+  }, [allPowerupKeys, offeredPowerupKeys]);
   const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(defaultTabKeys);
   // The array arrives as a fresh literal on every render, so the memo keys on
   // its contents rather than on its identity.
