@@ -206,16 +206,19 @@ describe('UnderlineTabs', () => {
     );
 
     // Mounted alongside its fade (so it can fade in), but invisible and
-    // unclickable before the row is hovered.
-    const trailingBeforeHover = screen.getByTestId('sub-tabs-scroll-trailing') as HTMLButtonElement;
-    expect(trailingBeforeHover.style.opacity).toBe('0');
-    expect(trailingBeforeHover.style.pointerEvents).toBe('none');
+    // unclickable before the row is hovered. The fade and the pointer gate
+    // live on the slot that carries the well, not on the well itself: the
+    // kit's bubble draws its own transform.
+    const trailingSlot = screen.getByTestId('sub-tabs-scroll-trailing')
+      .parentElement as HTMLElement;
+    expect(trailingSlot.style.opacity).toBe('0');
+    expect(trailingSlot.style.pointerEvents).toBe('none');
     expect(screen.queryByTestId('sub-tabs-scroll-leading')).toBeNull();
 
     fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
     expect(screen.queryByTestId('sub-tabs-scroll-leading')).toBeNull();
-    expect(trailingBeforeHover.style.opacity).toBe('1');
-    expect(trailingBeforeHover.style.pointerEvents).toBe('auto');
+    expect(trailingSlot.style.opacity).toBe('1');
+    expect(trailingSlot.style.pointerEvents).toBe('auto');
   });
 
   it('shows both arrows once the row has scrolled past the start', () => {

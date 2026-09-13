@@ -46,8 +46,10 @@ import { IconBubble } from '../IconBubble';
 import type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './types';
 
 const UNDERLINE_HEIGHT = 2;
+/** What the row keeps under its labels for the sliding underline. */
+const UNDERLINE_RESERVE = spacing.xxs + UNDERLINE_HEIGHT;
 /** The trailing cut in overflow mode — at most one section step. */
-const OVERFLOW_FADE_WIDTH = spacing['2xl'];
+const OVERFLOW_FADE_WIDTH = componentSizes.iconBubbleSm + spacing.md;
 /** How much of the previous tab stays visible when one is scrolled into view. */
 const SCROLL_INTO_VIEW_MARGIN = spacing.md;
 /** Sub-pixel slack before a row counts as overrunning its container, px. */
@@ -269,13 +271,22 @@ export function UnderlineTabs({
   // In on `swell`, out on `ebb` — a state change in place, per §1.11.
   const arrowTransition = `opacity ${resolveMotionMs(isHovered ? motionMs.swell : motionMs.ebb, isReduceMotionEnabled)}ms ${motionEasing.current.css}`;
 
-  // The kit's well draws itself; this only places it over the fade and fades
-  // it with the pointer.
-  const arrowStyle = (edge: 'leading' | 'trailing'): React.CSSProperties => ({
+  /**
+   * The arrow's ground: the fade's own width, and the label's line box rather
+   * than the whole row, so the chevron sits on the labels' line and not on the
+   * underline below them. The slot centres the kit's well and carries the
+   * fade, because the well draws its own transform and would drop a
+   * `translateY` of ours.
+   */
+  const arrowSlotStyle = (edge: 'leading' | 'trailing'): React.CSSProperties => ({
     position: 'absolute',
-    top: '50%',
+    top: 0,
+    bottom: UNDERLINE_RESERVE,
     [edge === 'leading' ? 'left' : 'right']: 0,
-    transform: 'translateY(-50%)',
+    width: OVERFLOW_FADE_WIDTH,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     opacity: isHovered ? 1 : 0,
     pointerEvents: isHovered ? 'auto' : 'none',
     transition: arrowTransition,
@@ -293,7 +304,7 @@ export function UnderlineTabs({
     display: 'flex',
     alignItems: 'flex-start',
     gap: metrics.gap,
-    paddingBottom: spacing.xxs + UNDERLINE_HEIGHT,
+    paddingBottom: UNDERLINE_RESERVE,
     width: 'max-content',
   };
 
@@ -407,28 +418,30 @@ export function UnderlineTabs({
       )}
 
       {isOverflowing && edges.leading && (
-        <IconBubble
-          decorative
-          size={SCROLL_ARROW_SIZE}
-          tone="surface"
-          icon={CaretLeftIcon}
-          iconSize={SCROLL_ARROW_ICON_SIZE}
-          onPress={() => handleScrollArrow('leading')}
-          testID={testID ? `${testID}-scroll-leading` : undefined}
-          style={arrowStyle('leading')}
-        />
+        <div style={arrowSlotStyle('leading')}>
+          <IconBubble
+            decorative
+            size={SCROLL_ARROW_SIZE}
+            tone="surface"
+            icon={CaretLeftIcon}
+            iconSize={SCROLL_ARROW_ICON_SIZE}
+            onPress={() => handleScrollArrow('leading')}
+            testID={testID ? `${testID}-scroll-leading` : undefined}
+          />
+        </div>
       )}
       {isOverflowing && edges.trailing && (
-        <IconBubble
-          decorative
-          size={SCROLL_ARROW_SIZE}
-          tone="surface"
-          icon={CaretRightIcon}
-          iconSize={SCROLL_ARROW_ICON_SIZE}
-          onPress={() => handleScrollArrow('trailing')}
-          testID={testID ? `${testID}-scroll-trailing` : undefined}
-          style={arrowStyle('trailing')}
-        />
+        <div style={arrowSlotStyle('trailing')}>
+          <IconBubble
+            decorative
+            size={SCROLL_ARROW_SIZE}
+            tone="surface"
+            icon={CaretRightIcon}
+            iconSize={SCROLL_ARROW_ICON_SIZE}
+            onPress={() => handleScrollArrow('trailing')}
+            testID={testID ? `${testID}-scroll-trailing` : undefined}
+          />
+        </div>
       )}
     </div>
   );
