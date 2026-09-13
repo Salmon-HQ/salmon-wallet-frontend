@@ -6,6 +6,7 @@
 
 // Components
 export * from './components';
+export { useOpenExternalLink } from './hooks';
 
 // Layouts
 

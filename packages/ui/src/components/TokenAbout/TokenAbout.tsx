@@ -27,6 +27,8 @@ import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
+import { WarningNotice } from '../WarningNotice';
+import { useOpenExternalLink } from '../../hooks';
 import { SkeletonRow } from '../SkeletonRow';
 import type { TokenAboutProps } from './types';
 
@@ -43,6 +45,7 @@ export function TokenAbout({
   const { t } = useTranslation();
   const semantic = useSemantic();
   const { copied, trigger: showCopied } = useCopyFeedback();
+  const { openLink, errorText } = useOpenExternalLink();
 
   const handleCopyAddress = useCallback(async () => {
     if (!contractAddress) return;
@@ -53,11 +56,6 @@ export function TokenAbout({
       console.warn('[TokenAbout] Failed to copy contract address:', error);
     }
   }, [contractAddress, showCopied]);
-
-  const handleOpenWebsite = useCallback(() => {
-    if (!website) return;
-    window.open(website, '_blank', 'noopener,noreferrer');
-  }, [website]);
 
   if (loading) {
     return (
@@ -108,7 +106,7 @@ export function TokenAbout({
       {website && (
         <ListRow
           testID="token-detail-website"
-          onPress={handleOpenWebsite}
+          onPress={() => void openLink(website)}
           accessibilityRole="link"
           accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', {
             url: website,
@@ -118,6 +116,8 @@ export function TokenAbout({
           trailing={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />}
         />
       )}
+
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
     </Card>
   );
 }

@@ -149,6 +149,7 @@ export type {
 
 // Open link hook (used by settings screens)
 export { useOpenLink } from './useOpenLink';
+export type { UseOpenLinkParams, UseOpenLinkResult } from './useOpenLink';
 export { useDataAttribution } from './useDataAttribution';
 
 // NFT transfer hook (shared between mobile & extension)

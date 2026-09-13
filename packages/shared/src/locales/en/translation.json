@@ -769,6 +769,7 @@
     "no_explorers": "No explorers available for this network"
   },
   "errors": {
+    "linkOpenFailed": "The link didn’t open",
     "invalid_password": "Invalid password",
     "password_check_failed": "Failed to verify password",
     "password_required": "Password is required"
@@ -866,10 +867,6 @@
       "wallet_guard": {
         "name": "Wallet Guard",
         "description": "Simulate transactions and flag risky signatures."
-      },
-      "staking": {
-        "name": "Staking",
-        "description": "Built and maintained by Salmon"
       },
       "auto_compound": {
         "name": "Auto-compound",

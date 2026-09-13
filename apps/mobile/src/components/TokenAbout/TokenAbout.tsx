@@ -8,7 +8,7 @@
  * every consumer gets the tick animation for free.
  */
 import React, { useCallback } from 'react';
-import { Animated, Linking, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
 import {
@@ -25,6 +25,8 @@ import { ArrowSquareOutIcon, CheckIcon, CopyIcon, GlobeIcon, iconSize } from '..
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
+import { WarningNotice } from '../WarningNotice';
+import { useOpenExternalLink } from '../../../hooks/useOpenExternalLink';
 import { SkeletonRow } from '../SkeletonRow';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
@@ -42,6 +44,7 @@ export function TokenAbout({
 }: TokenAboutProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
+  const { openLink, errorText } = useOpenExternalLink();
   const { text, status } = useSemantic();
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
@@ -50,12 +53,6 @@ export function TokenAbout({
     await Clipboard.setStringAsync(contractAddress);
     showCopied();
   }, [contractAddress, showCopied]);
-
-  const handleOpenWebsite = useCallback(async () => {
-    if (!website) return;
-    const supported = await Linking.canOpenURL(website);
-    if (supported) await Linking.openURL(website);
-  }, [website]);
 
   if (loading) {
     return (
@@ -104,7 +101,7 @@ export function TokenAbout({
       {website && (
         <ListRow
           testID="token-detail-website"
-          onPress={handleOpenWebsite}
+          onPress={() => void openLink(website)}
           accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', {
             url: website,
           })}
@@ -113,6 +110,8 @@ export function TokenAbout({
           trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.secondary} />}
         />
       )}
+
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
     </Card>
   );
 }

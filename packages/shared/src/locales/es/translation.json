@@ -769,6 +769,7 @@
     "no_explorers": "No hay explorers disponibles para esta red"
   },
   "errors": {
+    "linkOpenFailed": "No se pudo abrir el enlace",
     "invalid_password": "Contraseña incorrecta",
     "password_check_failed": "No se pudo verificar la contraseña",
     "password_required": "La contraseña es obligatoria"
@@ -866,10 +867,6 @@
       "wallet_guard": {
         "name": "Wallet Guard",
         "description": "Simula transacciones y marca firmas riesgosas."
-      },
-      "staking": {
-        "name": "Staking",
-        "description": "Creado y mantenido por Salmon"
       },
       "auto_compound": {
         "name": "Auto-compound",

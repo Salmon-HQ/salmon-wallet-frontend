@@ -11,7 +11,7 @@ let mockAttribution: { text: string; url: string } | null = null;
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
   useDataAttribution: () => mockAttribution,
-  useOpenLink: () => mockOpenLink,
+  useOpenLink: () => ({ openLink: mockOpenLink, errorText: null }),
 }));
 
 import { DataAttribution } from './DataAttribution';

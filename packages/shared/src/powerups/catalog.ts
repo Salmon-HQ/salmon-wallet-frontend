@@ -21,21 +21,17 @@ const mockDetails = (tier: PowerupsCatalogEntry['tier']): PowerupsCatalogEntryDe
   networks: ['solana-mainnet'],
 });
 
-/** The `.pen` frames' catalogue. Developer mode only — none of these exist. */
+/**
+ * The `.pen` frames' catalogue. Developer mode only — none of these exist,
+ * and none of them names a capability the product has not announced: this
+ * repo is public, and a mock row is still a statement about what is coming.
+ */
 export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [
   {
     id: 'wallet-guard',
     iconName: 'ShieldCheck',
     nameKey: 'powerups.catalog.wallet_guard.name',
     descriptionKey: 'powerups.catalog.wallet_guard.description',
-    tier: 'core',
-    details: mockDetails('core'),
-  },
-  {
-    id: 'staking',
-    iconName: 'Stack',
-    nameKey: 'powerups.catalog.staking.name',
-    descriptionKey: 'powerups.catalog.staking.description',
     tier: 'core',
     details: mockDetails('core'),
   },

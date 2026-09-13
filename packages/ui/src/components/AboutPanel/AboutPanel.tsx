@@ -15,6 +15,7 @@ import {
   lineHeight,
   spacing,
   type IconGlyphProps,
+  SALMON_LINKS,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -34,17 +35,10 @@ import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { WarningNotice } from '../WarningNotice';
+import { useOpenExternalLink } from '../../hooks';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
-
-const LINKS = {
-  website: 'https://www.salmonwallet.io',
-  twitter: 'https://x.com/salmonwallet',
-  github: 'https://github.com/salmon-wallet',
-  medium: 'https://medium.com/@salmonwallet',
-  privacy: 'https://www.salmonwallet.io/privacy',
-  terms: 'https://www.salmonwallet.io/terms',
-} as const;
 
 /** The leading well every link row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
@@ -55,9 +49,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const { text } = useSemantic();
 
-  const openLink = useCallback((url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
+  const { openLink, errorText } = useOpenExternalLink();
 
   const renderLinkRow = useCallback(
     (Icon: React.ComponentType<IconGlyphProps>, label: string, url: string, id: string) => (
@@ -111,9 +103,9 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
           {t('actions.follow_us')}
         </SectionLabel>
         <div style={{ display: 'flex', justifyContent: 'center', gap: spacing.lg }}>
-          {renderSocialButton(XLogoIcon, LINKS.twitter, 'twitter', 'X')}
-          {renderSocialButton(GithubLogoIcon, LINKS.github, 'github', 'GitHub')}
-          {renderSocialButton(BookOpenIcon, LINKS.medium, 'medium', 'Medium')}
+          {renderSocialButton(XLogoIcon, SALMON_LINKS.twitter, 'twitter', 'X')}
+          {renderSocialButton(GithubLogoIcon, SALMON_LINKS.github, 'github', 'GitHub')}
+          {renderSocialButton(BookOpenIcon, SALMON_LINKS.medium, 'medium', 'Medium')}
         </div>
       </div>
 
@@ -122,17 +114,22 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
       </Card>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.screenGutter }}>
-        {renderLinkRow(GlobeIcon, t('settings.about_website', 'Website'), LINKS.website, 'website')}
+        {renderLinkRow(
+          GlobeIcon,
+          t('settings.about_website', 'Website'),
+          SALMON_LINKS.website,
+          'website'
+        )}
         {renderLinkRow(
           ShieldCheckIcon,
           t('settings.about_privacy', 'Privacy Policy'),
-          LINKS.privacy,
+          SALMON_LINKS.privacy,
           'privacy'
         )}
         {renderLinkRow(
           FileTextIcon,
           t('settings.about_terms', 'Terms of Service'),
-          LINKS.terms,
+          SALMON_LINKS.terms,
           'terms'
         )}
       </div>
@@ -149,6 +146,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
       >
         {t('settings.about_copyright', { year: new Date().getFullYear() })}
       </p>
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
     </SettingsPanelContent>
   );
 }

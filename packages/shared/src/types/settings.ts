@@ -239,6 +239,13 @@ export interface SupportSelectorBaseProps {
   options: SupportOptionItem[];
   /** Called when the user taps a support link */
   onOpenLink: (url: string) => void;
+  /**
+   * Set when the last link did not open — the caller owns the opening, so it
+   * owns the failure too. Drawn as an inline notice under the list, because a
+   * tap that opens nothing and says nothing is indistinguishable from a tap
+   * that was not registered.
+   */
+  errorText?: string | null;
   /** Called when the user navigates back */
   onBack: () => void;
 }

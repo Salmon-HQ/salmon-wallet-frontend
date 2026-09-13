@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
+  useOpenLink: () => ({ openLink: jest.fn(), errorText: null }),
   spacing: { md: 14, sm: 8 },
   fontFamilyNative: { bold: 'Font-Bold', regular: 'Font-Regular' },
   fontSize: { bodyLg: 16, body: 14 },

@@ -17,11 +17,11 @@ import {
   opacity,
   spacing,
   useDataAttribution,
-  useOpenLink,
   vs,
 } from '@salmon/shared';
 
 import type { DataAttributionProps } from './types';
+import { useOpenExternalLink } from '../../../hooks/useOpenExternalLink';
 
 export function DataAttribution({
   networkId,
@@ -29,7 +29,7 @@ export function DataAttribution({
   testID = 'data-attribution',
 }: DataAttributionProps) {
   const attribution = useDataAttribution(networkId);
-  const openLink = useOpenLink();
+  const { openLink } = useOpenExternalLink();
 
   if (!attribution) return null;
 
