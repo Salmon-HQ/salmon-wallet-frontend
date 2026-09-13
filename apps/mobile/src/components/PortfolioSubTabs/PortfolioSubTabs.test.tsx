@@ -5,6 +5,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 // theme modules the component draws from are runtime-agnostic, so they are
 // loaded directly (the FleshBackground test's convention).
 jest.mock('@salmon/shared', () => ({
+  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
   ...jest.requireActual('@salmon/shared/src/theme/spacing'),
   ...jest.requireActual('@salmon/shared/src/theme/typography'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),

@@ -35,6 +35,7 @@ import {
   spacing,
   withAlpha,
   type Semantic,
+  overflowEdges,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -82,6 +83,7 @@ export function UnderlineTabs({
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const [isOverflowing, setIsOverflowing] = useState(false);
+  const [edges, setEdges] = useState({ leading: false, trailing: false });
   const hasMeasuredActive = useRef(false);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
@@ -99,13 +101,28 @@ export function UnderlineTabs({
     const measure = () => {
       const overrun = row.scrollWidth > scroller.clientWidth + OVERFLOW_TOLERANCE;
       setIsOverflowing((prev) => (prev === overrun ? prev : overrun));
+      // A fade only where content is hidden: none at the start while the
+      // row rests on its first tab, none at the end once the last is in view.
+      const next = overflowEdges({
+        offset: scroller.scrollLeft,
+        contentWidth: row.scrollWidth,
+        containerWidth: scroller.clientWidth,
+        tolerance: OVERFLOW_TOLERANCE,
+      });
+      setEdges((prev) =>
+        prev.leading === next.leading && prev.trailing === next.trailing ? prev : next
+      );
     };
+    scroller.addEventListener('scroll', measure, { passive: true });
 
     const observer = new ResizeObserver(measure);
     observer.observe(scroller);
     observer.observe(row);
     measure();
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      scroller.removeEventListener('scroll', measure);
+    };
   }, [tabs.length]);
 
   // The travelling underline: measured off the active tab's own box each time
@@ -308,7 +325,21 @@ export function UnderlineTabs({
         </div>
       </div>
 
-      {isOverflowing && (
+      {isOverflowing && edges.leading && (
+        <div
+          data-testid={testID ? `${testID}-fade-leading` : undefined}
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: OVERFLOW_FADE_WIDTH,
+            pointerEvents: 'none',
+            background: `linear-gradient(to right, ${gradientStop}, ${withAlpha(gradientStop, 0)})`,
+          }}
+        />
+      )}
+      {isOverflowing && edges.trailing && (
         <div
           data-testid={testID ? `${testID}-fade` : undefined}
           style={{

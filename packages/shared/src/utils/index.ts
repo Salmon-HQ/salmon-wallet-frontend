@@ -406,3 +406,5 @@ export {
   toPowerupAllowlist,
 } from './powerupSwitches';
 export type { PowerupAllowlist } from './powerupSwitches';
+export { overflowEdges } from './overflowEdges';
+export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';

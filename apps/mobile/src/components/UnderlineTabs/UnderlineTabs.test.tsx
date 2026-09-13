@@ -8,6 +8,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
+  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
   ...jest.requireActual('@salmon/shared/src/theme/spacing'),
   ...jest.requireActual('@salmon/shared/src/theme/typography'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
@@ -168,6 +169,32 @@ describe('UnderlineTabs', () => {
       // The underline travels inside the scrolled content, so the selection
       // idiom is the same one at both widths.
       expect(screen.getByTestId('sub-tab-nfts')).toBeTruthy();
+    });
+
+    it('fades only toward hidden tabs: none at the start, none at the end', () => {
+      renderRow();
+
+      measureContainer(100);
+      measureTab('portfolio', 0, 60);
+      measureTab('nfts', 80, 60);
+
+      // At rest on the first tab: only the trailing fade.
+      expect(screen.queryByTestId('sub-tabs-fade-leading')).toBeNull();
+      expect(screen.getByTestId('sub-tabs-fade')).toBeTruthy();
+
+      const scrollTo = (x: number) =>
+        fireEvent.scroll(screen.getByTestId('sub-tabs-scroll'), {
+          nativeEvent: { contentOffset: { x, y: 0 } },
+        });
+
+      scrollTo(20);
+      expect(screen.getByTestId('sub-tabs-fade-leading')).toBeTruthy();
+      expect(screen.getByTestId('sub-tabs-fade')).toBeTruthy();
+
+      // Content is 140 wide in a 100 container: 40 is the end.
+      scrollTo(40);
+      expect(screen.getByTestId('sub-tabs-fade-leading')).toBeTruthy();
+      expect(screen.queryByTestId('sub-tabs-fade')).toBeNull();
     });
 
     it('scrolls the newly active tab into view in overflow mode', () => {

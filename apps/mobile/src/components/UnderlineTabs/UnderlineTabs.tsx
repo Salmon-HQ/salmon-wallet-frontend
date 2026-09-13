@@ -32,6 +32,8 @@ import {
   ScrollView,
   StyleSheet,
   type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, {
   interpolateColor,
@@ -54,6 +56,7 @@ import {
   vs,
   withAlpha,
   type Semantic,
+  overflowEdges,
 } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
@@ -196,6 +199,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
 
   const [layouts, setLayouts] = useState<Record<string, TabLayoutMeasure>>({});
   const [containerWidth, setContainerWidth] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const hasMeasuredActive = useRef(false);
   const underlineX = useSharedValue(0);
@@ -266,6 +270,19 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     scrollRef.current?.scrollTo({ x: target, animated: !isReduceMotionEnabled });
   }, [activeKey, layouts, isOverflowing, contentWidth, containerWidth, isReduceMotionEnabled]);
 
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrollOffset(event.nativeEvent.contentOffset.x);
+  }, []);
+
+  // A fade only where content is hidden: none at the start while the row
+  // rests on its first tab, none at the end once the last one is in view.
+  const edges = overflowEdges({
+    offset: scrollOffset,
+    contentWidth,
+    containerWidth,
+    tolerance: OVERFLOW_TOLERANCE,
+  });
+
   const handlePress = useCallback(
     (key: string) => {
       if (key !== activeKey) {
@@ -324,6 +341,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
         scrollEnabled={isOverflowing}
         bounces={false}
         showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         testID={testID ? `${testID}-scroll` : undefined}
@@ -336,7 +355,17 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
           near the top of the water ramp, so the ground it fades into is the
           ramp's top stop (spec 022: what tops the ground reads stop 0),
           never the flat `depth.column`. */}
-      {isOverflowing && (
+      {isOverflowing && edges.leading && (
+        <LinearGradient
+          testID={testID ? `${testID}-fade-leading` : undefined}
+          colors={[water.gradient[0], withAlpha(water.gradient[0], 0)]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.leadingFade}
+          pointerEvents="none"
+        />
+      )}
+      {isOverflowing && edges.trailing && (
         <LinearGradient
           testID={testID ? `${testID}-fade` : undefined}
           colors={[withAlpha(water.gradient[0], 0), water.gradient[0]]}
@@ -387,6 +416,13 @@ const stylesFor = (t: Semantic) =>
       top: 0,
       bottom: 0,
       right: 0,
+      width: s(OVERFLOW_FADE_WIDTH),
+    },
+    leadingFade: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
       width: s(OVERFLOW_FADE_WIDTH),
     },
   });
