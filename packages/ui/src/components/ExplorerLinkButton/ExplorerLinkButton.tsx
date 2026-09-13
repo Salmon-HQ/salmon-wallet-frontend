@@ -2,7 +2,7 @@
  * ExplorerLinkButton — the outlined control that opens a block explorer, or a
  * picker of them, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/Activity/ExplorerLinkButton.tsx`:
+ * The mobile twin is `apps/mobile/src/components/ExplorerLinkButton/ExplorerLinkButton.tsx`:
  * the kit's `SecondaryButton` with the "off to the web" mark and, when there
  * is a choice, a caret; the picker is a sheet of `ListRow`s (spec 028's DOM
  * alternative to mobile's modal — Escape and the backdrop dismiss it). The

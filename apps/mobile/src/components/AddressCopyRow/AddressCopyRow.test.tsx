@@ -30,6 +30,12 @@ jest.mock('@salmon/shared', () => ({
   // `Dimensions`-backed scalers.
   ...jest.requireActual('../../../test-utils/themeTokens'),
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+  // The row prints the address through the shared helper now; same shape as the stub above.
+  truncatedAddress: (value: string, truncate: 'short' | 'medium' | 'long' | false) => {
+    if (truncate === false) return value;
+    const size = { short: 4, medium: 6, long: 8 }[truncate];
+    return `${value.slice(0, size)}...${value.slice(-size)}`;
+  },
 }));
 
 // No worklets runtime in Jest: `IconBubble`'s animated touchable and its

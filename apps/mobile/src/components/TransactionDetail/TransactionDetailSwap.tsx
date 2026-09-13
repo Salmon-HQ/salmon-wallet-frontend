@@ -28,8 +28,8 @@ import {
 import { Card } from '../Card';
 import { Chip } from '../Chip';
 import { TokenLogo } from '../TokenLogo';
-import { ConversionRateDisplay } from '../Activity/ConversionRateDisplay';
-import { PriceImpactBadge } from '../Activity/PriceImpactBadge';
+import { ConversionRateDisplay } from '../ConversionRateDisplay';
+import { PriceImpactBadge } from '../PriceImpactBadge';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { SwapConversionRate, Transaction } from './types';
 

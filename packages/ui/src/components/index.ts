@@ -175,24 +175,25 @@ export type { TokenDetailContentProps, TokenDetailPageProps } from './TokenDetai
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
 
+// The transaction-display things Activity and the detail share — filed by what they are.
+export { AddressCopyRow } from './AddressCopyRow';
+export type { AddressCopyRowProps } from './AddressCopyRow';
+export { ConversionRateDisplay } from './ConversionRateDisplay';
+export type { ConversionRateDisplayProps } from './ConversionRateDisplay';
+export { ExplorerLinkButton } from './ExplorerLinkButton';
+export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
+export { PriceImpactBadge } from './PriceImpactBadge';
+export type { PriceImpactBadgeProps } from './PriceImpactBadge';
+export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
+export type { TransactionMarkProps } from './TransactionMark';
+
 // TransactionDetail - one transaction's facts, as a step inside the Activity page
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 
 // TransactionHistoryPage - the Activity page: list and detail steps
-export {
-  AddressCopyRow,
-  ConversionRateDisplay,
-  ExplorerLinkButton,
-  PriceImpactBadge,
-  TransactionHistoryPage,
-  TransactionItem,
-} from './TransactionHistoryPage';
+export { TransactionHistoryPage, TransactionItem } from './TransactionHistoryPage';
 export type {
-  AddressCopyRowProps,
-  ConversionRateDisplayProps,
-  ExplorerLinkButtonProps,
-  PriceImpactBadgeProps,
   SwapRoute,
   SwapRouteHop,
   Transaction,

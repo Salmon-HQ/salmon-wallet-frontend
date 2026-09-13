@@ -6,14 +6,7 @@
  */
 
 import type { CSSProperties } from 'react';
-import type {
-  AddressCopyRowPropsBase,
-  ConversionRateDisplayPropsBase,
-  ExplorerLinkButtonPropsBase,
-  PriceImpactBadgePropsBase,
-  Transaction,
-  TransactionItemPropsBase,
-} from '@salmon/shared';
+import type { Transaction, TransactionItemPropsBase } from '@salmon/shared';
 
 // Re-export shared types for convenience
 export type {
@@ -77,22 +70,5 @@ export interface TransactionHistoryPageProps {
   /** Optional custom styles */
   style?: CSSProperties;
   /** Additional CSS class for the container */
-  className?: string;
-}
-
-export interface PriceImpactBadgeProps extends PriceImpactBadgePropsBase {
-  style?: CSSProperties;
-  className?: string;
-}
-
-export interface ConversionRateDisplayProps extends ConversionRateDisplayPropsBase<CSSProperties> {
-  className?: string;
-}
-
-export interface AddressCopyRowProps extends AddressCopyRowPropsBase<CSSProperties> {
-  className?: string;
-}
-
-export interface ExplorerLinkButtonProps extends ExplorerLinkButtonPropsBase<CSSProperties> {
   className?: string;
 }

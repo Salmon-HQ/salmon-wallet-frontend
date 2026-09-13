@@ -3,7 +3,7 @@
  * picker of them.
  *
  * The DOM twin is
- * `packages/ui/src/components/TransactionHistoryPage/ExplorerLinkButton.tsx`:
+ * `packages/ui/src/components/ExplorerLinkButton/ExplorerLinkButton.tsx`:
  * the kit's `SecondaryButton` with the "off to the web" mark and, when there
  * is a choice, a caret; the picker is the shared `BottomSheetContainer` with
  * a list of `ListRow`s, same as every other sheet in the app. The whole of
@@ -14,7 +14,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, View } from 'react-native';
-import type { ViewStyle } from 'react-native';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
   spacing,
@@ -32,27 +31,11 @@ import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import type { ExplorerLinkButtonProps } from './types';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface ExplorerLinkButtonProps {
-  /** Transaction hash/signature */
-  txHash: string;
-  /** Blockchain type */
-  blockchain?: Blockchain;
-  /** Network environment */
-  environment?: NetworkEnvironment;
-  /** Which explorer to use (if single button mode) */
-  explorerKey?: string;
-  /** Whether to show as menu with multiple options */
-  showMenu?: boolean;
-  /** Callback when explorer is opened */
-  onPress?: (url: string, explorerName: string) => void;
-  /** Custom style */
-  style?: ViewStyle;
-}
 
 /** The explorer row's leading well — the settings-row step. */
 const EXPLORER_BUBBLE_SIZE = 36;

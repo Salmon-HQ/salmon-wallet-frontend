@@ -2,7 +2,7 @@
  * ConversionRateDisplay — the rate of a swap, on the DOM.
  *
  * The mobile twin is
- * `apps/mobile/src/components/Activity/ConversionRateDisplay.tsx`: the full
+ * `apps/mobile/src/components/ConversionRateDisplay/ConversionRateDisplay.tsx`: the full
  * "1 SOL = 150.25 USDC", or the compact "1:150.25" at the small size.
  */
 import React, { useMemo } from 'react';

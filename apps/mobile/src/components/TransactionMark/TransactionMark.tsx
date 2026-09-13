@@ -2,27 +2,11 @@
  * What a transaction type looks like: its verb, its glyph, its mark ink, and
  * the leading mark the activity row and the detail both put it behind.
  *
- * The mobile twin is `apps/mobile/src/components/Activity/transactionTypes.tsx`
- * — same table, same mark anatomy (the token that moved, badged with the
- * type; the pair for a swap; the kit's own well when there is no logo).
+ * The row and the detail used to carry two copies of this table, which is how
+ * a "Swapped" in one place and a "Swap" in the other happen.
  */
 import React from 'react';
-import {
-  TYPE_LABEL_KEYS,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  pickSwapLegs,
-  spacing,
-  transactionTypeDisplayFor,
-  withPlatformGlyphs,
-  type Semantic,
-  type Transaction,
-  type TransactionType,
-  type TransactionTypeGlyph,
-} from '@salmon/shared';
-
-import { useSemantic } from '../../theme/ThemeProvider';
+import { View, StyleSheet } from 'react-native';
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
@@ -35,10 +19,27 @@ import {
   PlusCircleIcon,
   QuestionIcon,
   iconSize,
-  type IconComponent,
 } from '../../icons';
+import type { IconComponent } from '../../icons';
+import {
+  TYPE_LABEL_KEYS,
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  pickSwapLegs,
+  s,
+  spacing,
+  transactionTypeDisplayFor,
+  withPlatformGlyphs,
+  type Semantic,
+  type TransactionTypeGlyph,
+} from '@salmon/shared';
+
 import { IconBubble } from '../IconBubble';
-import { TokenLogo } from '../TokenList/TokenLogo';
+import { TokenLogo } from '../TokenLogo';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { Transaction, TransactionType } from '@salmon/shared';
+import type { TransactionMarkProps } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
 export const LEADING_SIZE = componentSizes.iconSize2XL;
@@ -48,9 +49,6 @@ const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 
 /** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
 const SWAP_LOGO_SIZE = 30;
-
-/** The glyph inside the type badge. */
-const TYPE_BADGE_GLYPH = 10;
 
 /** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
 const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
@@ -81,45 +79,27 @@ export const transactionTypeConfigFor = (
 export { TYPE_LABEL_KEYS };
 
 /** The type badge that rides the leading mark's corner. */
-function TypeBadge({
+const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean }> = ({
   icon: Icon,
   color,
   single = false,
-}: {
-  icon: IconComponent;
-  color: string;
-  single?: boolean;
-}) {
-  const t = useSemantic();
-  const inset = single ? -2 : -4;
+}) => {
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   return (
-    <span
-      style={{
-        position: 'absolute',
-        top: inset,
-        right: inset,
-        width: TYPE_BADGE_SIZE,
-        height: TYPE_BADGE_SIZE,
-        borderRadius: borderRadius.full,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxSizing: 'border-box',
-        border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
-        backgroundColor: color,
-      }}
-    >
-      <Icon size={TYPE_BADGE_GLYPH} color={t.text.primary} />
-    </span>
+    <View style={[styles.typeBadge, single && styles.typeBadgeSingle, { backgroundColor: color }]}>
+      <Icon size={10} color={text.primary} />
+    </View>
   );
-}
+};
 
 /**
  * The row's leading mark: the token that moved, badged with the type — or,
  * for a swap, the pair — falling back to the kit's own well when the token
  * has no logo.
  */
-export function TransactionMark({ transaction }: { transaction: Transaction }) {
+export const TransactionMark: React.FC<TransactionMarkProps> = ({ transaction }) => {
+  const styles = useThemedStyles(stylesFor);
   const t = useSemantic();
   const { type, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(t);
@@ -129,39 +109,21 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
     const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
     if (primaryInput && primaryOutput) {
       return (
-        <span
-          data-testid="tx-mark-swap"
-          style={{
-            position: 'relative',
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: LEADING_SIZE,
-          }}
-        >
+        <View style={styles.swapPair}>
           <TokenLogo
             uri={primaryOutput.logo ?? undefined}
             symbol={primaryOutput.symbol}
             size={SWAP_LOGO_SIZE}
-            borderRadius={borderRadius.full}
           />
-          <span
-            style={{
-              display: 'inline-flex',
-              marginLeft: -spacing.md,
-              borderRadius: borderRadius.full,
-              boxSizing: 'content-box',
-              border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
-            }}
-          >
+          <View style={styles.swapOverlap}>
             <TokenLogo
               uri={primaryInput.logo ?? undefined}
               symbol={primaryInput.symbol}
               size={SWAP_LOGO_SIZE}
-              borderRadius={borderRadius.full}
             />
-          </span>
+          </View>
           <TypeBadge icon={config.icon} color={config.color} />
-        </span>
+        </View>
       );
     }
   }
@@ -172,29 +134,19 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
   const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
   if (primaryToken) {
     return (
-      <span
-        data-testid="tx-mark-token"
-        style={{
-          position: 'relative',
-          display: 'inline-flex',
-          width: LEADING_SIZE,
-          height: LEADING_SIZE,
-        }}
-      >
+      <View style={styles.singleMark}>
         <TokenLogo
           uri={primaryToken.logo ?? undefined}
           symbol={primaryToken.symbol}
           size={LEADING_SIZE}
-          borderRadius={borderRadius.full}
         />
         <TypeBadge icon={config.icon} color={config.color} single />
-      </span>
+      </View>
     );
   }
 
   return (
     <IconBubble
-      testID="tx-mark-well"
       size={LEADING_SIZE}
       shape="circle"
       tone="surface"
@@ -203,4 +155,39 @@ export function TransactionMark({ transaction }: { transaction: Transaction }) {
       iconColor={config.color}
     />
   );
-}
+};
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    swapPair: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: LEADING_SIZE,
+    },
+    swapOverlap: {
+      marginLeft: -s(spacing.md),
+      borderWidth: borderWidth.medium,
+      borderColor: t.depth.abyss,
+      borderRadius: borderRadius.full,
+    },
+    singleMark: {
+      width: LEADING_SIZE,
+      height: LEADING_SIZE,
+    },
+    typeBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      width: TYPE_BADGE_SIZE,
+      height: TYPE_BADGE_SIZE,
+      borderRadius: borderRadius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: borderWidth.medium,
+      borderColor: t.depth.abyss,
+    },
+    typeBadgeSingle: {
+      top: -2,
+      right: -2,
+    },
+  });

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { ArrowsLeftRightIcon } from '../../icons';
 import {
   ms,
@@ -11,6 +11,7 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { ConversionRateDisplayProps } from './types';
 
 // ============================================================================
 // Constants
@@ -19,19 +20,6 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface ConversionRateDisplayProps {
-  /** Input token symbol */
-  fromSymbol: string;
-  /** Output token symbol */
-  toSymbol: string;
-  /** The conversion rate (how many toTokens per 1 fromToken) */
-  rate: string;
-  /** Optional size variant */
-  size?: 'small' | 'medium';
-  /** Custom style */
-  style?: ViewStyle;
-}
 
 // ============================================================================
 // Helper Functions

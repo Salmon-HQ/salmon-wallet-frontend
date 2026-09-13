@@ -47,10 +47,12 @@ import { fileURLToPath } from 'node:url';
  * 2962 after the settings-panel data hoist, 2641 after hoisting
  * ExplorerLinkButton's press routing and row data into useExplorerLink and
  * KeyValueRow's tone-ink mapping (valueInkFor) into packages/shared/src/types/ui;
+ * 2461 after the address truncation and the price-impact tables moved into
+ * the shared contracts (2026-09-13);
  * every lot that hoists logic into packages/shared lowers it to the new
  * measurement. It may only go down.
  */
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2504;
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2461;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

@@ -113,7 +113,7 @@ jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
-jest.mock('../Activity/AddressCopyRow', () => ({
+jest.mock('../AddressCopyRow', () => ({
   AddressCopyRow: ({ label, address }: { label: string; address: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -121,7 +121,7 @@ jest.mock('../Activity/AddressCopyRow', () => ({
   },
 }));
 
-jest.mock('../Activity/ExplorerLinkButton', () => ({
+jest.mock('../ExplorerLinkButton', () => ({
   ExplorerLinkButton: ({
     onPress,
     ...props
@@ -146,7 +146,7 @@ jest.mock('../Activity/ExplorerLinkButton', () => ({
   },
 }));
 
-jest.mock('../Activity/PriceImpactBadge', () => ({
+jest.mock('../PriceImpactBadge', () => ({
   PriceImpactBadge: ({ value }: { value: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -154,7 +154,7 @@ jest.mock('../Activity/PriceImpactBadge', () => ({
   },
 }));
 
-jest.mock('../Activity/ConversionRateDisplay', () => ({
+jest.mock('../ConversionRateDisplay', () => ({
   ConversionRateDisplay: ({
     fromSymbol,
     toSymbol,

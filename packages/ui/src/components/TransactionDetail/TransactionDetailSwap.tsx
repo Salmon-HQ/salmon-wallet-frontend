@@ -25,8 +25,8 @@ import { ArrowRightIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
 import { TokenLogo } from '../TokenList/TokenLogo';
-import { ConversionRateDisplay } from '../TransactionHistoryPage/ConversionRateDisplay';
-import { PriceImpactBadge } from '../TransactionHistoryPage/PriceImpactBadge';
+import { ConversionRateDisplay } from '../ConversionRateDisplay';
+import { PriceImpactBadge } from '../PriceImpactBadge';
 import { cardTitleStyle } from './detailStyles';
 import type { SwapConversionRate, Transaction } from './types';
 

@@ -25,7 +25,7 @@ import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
 import { KeyValueRow } from '../KeyValueRow';
-import { AddressCopyRow } from '../TransactionHistoryPage/AddressCopyRow';
+import { AddressCopyRow } from '../AddressCopyRow';
 import type { Transaction } from './types';
 
 /** How much of the signature is shown before it elides. */

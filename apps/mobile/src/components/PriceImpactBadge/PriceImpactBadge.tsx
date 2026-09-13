@@ -2,6 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CheckCircleIcon, WarningCircleIcon, WarningIcon } from '../../icons';
 import type { IconComponent } from '../../icons';
+
+const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
+  safe: CheckCircleIcon,
+  warning: WarningIcon,
+  high: WarningCircleIcon,
+};
 import {
   ms,
   vs,
@@ -11,86 +17,12 @@ import {
   borderRadius,
   fontFamilyNative,
   getPriceImpactSeverity,
+  priceImpactInkFor,
+  PRICE_IMPACT_SIZES,
   type PriceImpactSeverity,
-  type Semantic,
 } from '@salmon/shared';
 import { useSemantic } from '../../theme/useThemedStyles';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Size variants for the PriceImpactBadge
- */
-type PriceImpactSize = 'small' | 'medium' | 'large';
-
-/**
- * Props for the PriceImpactBadge component
- */
-export interface PriceImpactBadgeProps {
-  /** Price impact as a string percentage (e.g., "0.5", "1.2") */
-  value: string;
-  /** Size variant */
-  size?: PriceImpactSize;
-  /** Whether to show the warning/check icon */
-  showIcon?: boolean;
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/**
- * Price impact thresholds
- * - Safe: < 0.5%
- * - Warning: 0.5% - 1%
- * - High: > 1%
- */
-/**
- * Icon mapping for each severity level
- */
-const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
-  safe: CheckCircleIcon,
-  warning: WarningIcon,
-  high: WarningCircleIcon,
-};
-
-/**
- * Color mapping for each severity level
- */
-const severityColorsFor = (t: Semantic): Record<PriceImpactSeverity, string> => ({
-  safe: t.status.success,
-  warning: t.status.warning,
-  high: t.status.danger,
-});
-
-/**
- * Size configurations for each variant
- */
-const SIZE_CONFIG: Record<
-  PriceImpactSize,
-  { iconSize: number; fontSize: number; paddingH: number; paddingV: number }
-> = {
-  small: {
-    iconSize: 12,
-    fontSize: fontSize.micro,
-    paddingH: spacing.xs,
-    paddingV: 2,
-  },
-  medium: {
-    iconSize: 14,
-    fontSize: fontSize.caption,
-    paddingH: spacing.sm,
-    paddingV: 4,
-  },
-  large: {
-    iconSize: 16,
-    fontSize: fontSize.bodyLg,
-    paddingH: spacing.md,
-    paddingV: 6,
-  },
-};
+import type { PriceImpactBadgeProps } from './types';
 
 // ============================================================================
 // Component
@@ -124,9 +56,9 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
 }) => {
   const t = useSemantic();
   const severity = getPriceImpactSeverity(value);
-  const color = severityColorsFor(t)[severity];
+  const color = priceImpactInkFor(t)[severity];
   const SeverityIcon = SEVERITY_ICONS[severity];
-  const sizeConfig = SIZE_CONFIG[size];
+  const sizeConfig = PRICE_IMPACT_SIZES[size];
 
   return (
     <View

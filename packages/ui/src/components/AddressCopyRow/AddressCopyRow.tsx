@@ -2,7 +2,7 @@
  * AddressCopyRow — a label, a truncated address, and the copy control beside
  * it, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/Activity/AddressCopyRow.tsx`:
+ * The mobile twin is `apps/mobile/src/components/AddressCopyRow/AddressCopyRow.tsx`:
  * the kit's `KeyValueRow` with the address as a monospace value and a bare
  * copy affordance as its action — the same control the transaction hash row
  * draws (`TransactionDetailReceipt`), not a contained well: accent for the
@@ -15,7 +15,7 @@ import {
   copyToClipboard,
   fontFamily,
   fontSize,
-  getShortAddress,
+  truncatedAddress,
   useCopyFeedback,
 } from '@salmon/shared';
 
@@ -24,21 +24,6 @@ import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { CopyTick } from '../CopyTick';
 import { KeyValueRow } from '../KeyValueRow';
 import type { AddressCopyRowProps } from './types';
-
-/** Character counts for each truncation mode */
-const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
-  short: 4,
-  medium: 6,
-  long: 8,
-};
-
-function getTruncatedAddress(
-  address: string,
-  truncate: 'short' | 'medium' | 'long' | false
-): string {
-  if (truncate === false) return address;
-  return getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address;
-}
 
 export function AddressCopyRow({
   label,
@@ -51,7 +36,7 @@ export function AddressCopyRow({
   const { status, text } = useSemantic();
   const { copied, trigger: showCopied } = useCopyFeedback();
 
-  const displayAddress = getTruncatedAddress(address, truncate);
+  const displayAddress = truncatedAddress(address, truncate);
 
   const handleCopy = useCallback(async () => {
     try {

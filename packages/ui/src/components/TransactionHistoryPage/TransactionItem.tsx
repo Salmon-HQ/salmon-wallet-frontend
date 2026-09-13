@@ -27,7 +27,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ClockIcon, XCircleIcon, iconSize } from '../../icons';
 import { ListRow } from '../ListRow';
-import { TransactionMark, transactionTypeConfigFor } from './transactionTypes';
+import { TransactionMark, transactionTypeConfigFor } from '../TransactionMark';
 import type { TransactionItemProps } from './types';
 
 const HIDDEN_VALUE = '****';

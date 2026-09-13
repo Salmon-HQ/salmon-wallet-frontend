@@ -18,7 +18,7 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import { ListRow } from '../ListRow';
-import { transactionTypeConfigFor, TransactionMark } from './transactionTypes';
+import { transactionTypeConfigFor, TransactionMark } from '../TransactionMark';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { TransactionItemProps, TransactionTokenAmount } from './types';
 

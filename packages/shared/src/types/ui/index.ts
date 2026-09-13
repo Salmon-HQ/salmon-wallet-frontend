@@ -60,7 +60,11 @@ export type {
   ConversionRateDisplayPropsBase,
   AddressCopyRowPropsBase,
   ExplorerLinkButtonPropsBase,
+  TransactionMarkPropsBase,
+  AddressTruncate,
+  PriceImpactSizeConfig,
 } from './transaction-history';
+export { PRICE_IMPACT_SIZES, priceImpactInkFor, truncatedAddress } from './transaction-history';
 
 // Wallet Init Error Screen
 export type { WalletInitErrorScreenPropsBase } from './wallet-init-error-screen';

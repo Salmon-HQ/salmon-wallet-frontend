@@ -47,11 +47,8 @@ import { TextButton } from '../Button';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
-import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
-import {
-  TYPE_LABEL_KEYS,
-  transactionTypeConfigFor,
-} from '../TransactionHistoryPage/transactionTypes';
+import { ExplorerLinkButton } from '../ExplorerLinkButton';
+import { TYPE_LABEL_KEYS, transactionTypeConfigFor } from '../TransactionMark';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
 import { TransactionDetailSwap } from './TransactionDetailSwap';

@@ -259,6 +259,18 @@ export type {
   TransactionFee,
 } from './Activity';
 
+// The transaction-display things Activity and the detail share — filed by what they are.
+export { AddressCopyRow } from './AddressCopyRow';
+export type { AddressCopyRowProps } from './AddressCopyRow';
+export { ConversionRateDisplay } from './ConversionRateDisplay';
+export type { ConversionRateDisplayProps } from './ConversionRateDisplay';
+export { ExplorerLinkButton } from './ExplorerLinkButton';
+export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
+export { PriceImpactBadge } from './PriceImpactBadge';
+export type { PriceImpactBadgeProps } from './PriceImpactBadge';
+export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
+export type { TransactionMarkProps } from './TransactionMark';
+
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 

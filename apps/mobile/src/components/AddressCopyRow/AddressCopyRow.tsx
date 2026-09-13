@@ -1,57 +1,14 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { Animated, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import { fontFamilyNative, fontSize, getShortAddress, ms, type Semantic } from '@salmon/shared';
+import { fontFamilyNative, fontSize, ms, truncatedAddress, type Semantic } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { KeyValueRow } from '../KeyValueRow';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface AddressCopyRowProps {
-  /** Label for the address (e.g., "From", "To", "Contract") */
-  label: string;
-  /** The full address to display and copy */
-  address: string;
-  /** How to truncate the address */
-  truncate?: 'short' | 'medium' | 'long' | false;
-  /** Custom style */
-  style?: ViewStyle;
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-/** Character counts for each truncation mode */
-const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
-  short: 4,
-  medium: 6,
-  long: 8,
-};
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Get truncated address based on truncation mode
- */
-function getTruncatedAddress(
-  address: string,
-  truncate: 'short' | 'medium' | 'long' | false
-): string {
-  if (truncate === false) {
-    return address;
-  }
-  const chars = TRUNCATE_CHARS[truncate];
-  return getShortAddress(address, chars) ?? address;
-}
+import type { AddressCopyRowProps } from './types';
 
 // ============================================================================
 // Component
@@ -88,7 +45,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   const { status, text } = useSemantic();
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
-  const displayAddress = getTruncatedAddress(address, truncate);
+  const displayAddress = truncatedAddress(address, truncate);
 
   const handleCopy = useCallback(async () => {
     try {

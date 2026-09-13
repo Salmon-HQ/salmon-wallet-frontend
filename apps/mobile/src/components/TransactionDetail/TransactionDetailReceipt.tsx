@@ -26,7 +26,7 @@ import * as Haptics from '../../utils/haptics';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
-import { AddressCopyRow } from '../Activity/AddressCopyRow';
+import { AddressCopyRow } from '../AddressCopyRow';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { Transaction } from './types';
 
