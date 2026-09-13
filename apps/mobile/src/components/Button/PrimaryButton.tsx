@@ -7,7 +7,7 @@
  * ink sat on a muddy red and read as neither alive nor disabled. The salmon
  * is either alive or absent — and so is the flesh inside it.
  */
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   componentSizes,
@@ -24,6 +24,7 @@ import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
 import type { PrimaryButtonProps } from './types';
+import { Spinner } from '../Spinner';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -59,7 +60,7 @@ export function PrimaryButton({
           budget. Absent when the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ActivityIndicator color={isDisabled ? text.disabled : accent.onFill} />
+        <Spinner color={isDisabled ? text.disabled : accent.onFill} />
       ) : (
         <Text
           style={[styles.text, isDisabled && styles.textDisabled]}

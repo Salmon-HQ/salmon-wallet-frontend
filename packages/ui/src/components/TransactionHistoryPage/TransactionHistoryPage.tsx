@@ -25,7 +25,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { BottomSheetContainer } from '../BottomSheetContainer';
-import { ButtonSpinner } from '../Button/ButtonSpinner';
+import { Spinner } from '../Spinner';
 import { SectionLabel } from '../SectionLabel';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { TransactionDetail } from '../TransactionDetail';
@@ -160,7 +160,7 @@ export function TransactionHistoryPage({
               data-testid="activity-loading-more"
               style={{ display: 'flex', justifyContent: 'center', padding: `${spacing.lg}px 0` }}
             >
-              <ButtonSpinner color={accent.fill} />
+              <Spinner color={accent.fill} />
             </div>
           )}
         </div>

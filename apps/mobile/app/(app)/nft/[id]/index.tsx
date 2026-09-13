@@ -15,14 +15,7 @@
 import React, { useCallback, useState } from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -61,6 +54,7 @@ import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
 import { useTabChrome } from '../../../../hooks/useTabChrome';
 import { useCopyFeedback } from '../../../../hooks/useCopyFeedback';
 import { useSemantic, useThemedStyles } from '../../../../src/theme/useThemedStyles';
+import { Spinner } from '../../../../src/components/Spinner';
 
 /** The fallback the media falls back to — the primary fill, drawn flat. */
 const FALLBACK_GRADIENT = {
@@ -196,7 +190,7 @@ export default function NftDetailScreen() {
                         end={FALLBACK_GRADIENT.end}
                         style={StyleSheet.absoluteFill}
                       />
-                      <ActivityIndicator size="small" color={semantic.text.primary} />
+                      <Spinner color={semantic.text.primary} />
                     </View>
                   )}
                 </>

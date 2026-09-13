@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -38,6 +37,7 @@ import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
 import { UnderlineTabs } from '../../UnderlineTabs';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
+import { Spinner } from '../../Spinner';
 
 // ============================================================================
 // Constants
@@ -212,7 +212,7 @@ export function AccountAvatarPanel({
           />
         ) : nftsLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={accent.ink} />
+            <Spinner size={32} color={accent.ink} />
           </View>
         ) : nfts.length === 0 ? (
           <View style={styles.emptyContainer}>

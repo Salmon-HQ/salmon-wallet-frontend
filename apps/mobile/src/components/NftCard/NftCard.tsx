@@ -25,7 +25,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
@@ -35,6 +35,7 @@ import { Card } from '../Card';
 import { PressSpecular } from '../PressSpecular';
 import { ShimmerRect } from '../ShimmerRect';
 import type { NftCardProps, NftCardSkeletonProps } from './types';
+import { Spinner } from '../Spinner';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -113,7 +114,7 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
                   end={FALLBACK_GRADIENT.end}
                   style={styles.fill}
                 />
-                <ActivityIndicator size="small" color={accent.onFill} />
+                <Spinner color={accent.onFill} />
               </View>
             )}
           </>

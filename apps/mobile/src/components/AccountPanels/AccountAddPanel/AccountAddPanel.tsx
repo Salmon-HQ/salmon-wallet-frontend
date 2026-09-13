@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text } from 'react-native';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -57,6 +57,7 @@ import { useWaitPassage } from '../../../utils/useWaitPassage';
 import { useSemantic, useThemedStyles } from '../../../theme/useThemedStyles';
 import { stylesFor } from './styles';
 import type { AccountAddPanelProps } from './types';
+import { Spinner } from '../../Spinner';
 
 // ============================================================================
 // Component
@@ -189,7 +190,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     if (flow.scanning) {
       return (
         <View style={styles.scanState}>
-          <ActivityIndicator size="large" color={accent.ink} />
+          <Spinner size={32} color={accent.ink} />
           <Text style={styles.scanStateText}>{t('settings.account_add.scanning')}</Text>
         </View>
       );

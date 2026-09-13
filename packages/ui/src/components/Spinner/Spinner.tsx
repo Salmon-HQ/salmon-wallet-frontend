@@ -1,29 +1,25 @@
 /**
- * The DOM's answer to `ActivityIndicator` — a bordered ring spun on
- * `motionMs.spinCycle`, shared by all three button variants so the keyframe
- * rule is injected once.
+ * Spinner — the DOM's small inline wait: a bordered ring spun on
+ * `motionMs.spinCycle`. The mobile twin is `apps/mobile/src/components/Spinner`.
  */
-import { motionMs } from '@salmon/shared';
+import { SPINNER_DEFAULT_SIZE, motionMs } from '@salmon/shared';
 import { injectKeyframes } from '../../utils/injectKeyframes';
+import type { SpinnerProps } from './types';
 
-const SPIN_KEYFRAMES = 'sw-button-spin';
+const SPIN_KEYFRAMES = 'sw-spinner-spin';
 injectKeyframes(
   SPIN_KEYFRAMES,
   `@keyframes ${SPIN_KEYFRAMES} { to { transform: rotate(360deg); } }`
 );
 
-export interface ButtonSpinnerProps {
-  color: string;
-  /** @default 20 */
-  size?: number;
-}
-
-export function ButtonSpinner({ color, size = 20 }: ButtonSpinnerProps) {
+export function Spinner({ color, size = SPINNER_DEFAULT_SIZE, testID }: SpinnerProps) {
   return (
     <span
       role="status"
+      data-testid={testID}
       style={{
         position: 'relative',
+        display: 'inline-block',
         width: size,
         height: size,
         borderRadius: '50%',

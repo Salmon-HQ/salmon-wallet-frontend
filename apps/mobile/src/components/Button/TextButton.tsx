@@ -4,7 +4,7 @@
  * Used for tertiary actions or links. `text.accent` ink per DESIGN.md
  * §Buttons — a ghost control that reads as body copy is not a control.
  */
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import {
   componentSizes,
   fontFamilyNative,
@@ -16,6 +16,7 @@ import {
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { TextButtonProps } from './types';
+import { Spinner } from '../Spinner';
 
 export function TextButton({
   onPress,
@@ -43,7 +44,7 @@ export function TextButton({
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator color={color || text.accent} />
+        <Spinner color={color || text.accent} />
       ) : (
         <>
           {icon}

@@ -12,7 +12,7 @@
  * the screen, which is also what decides whether Continue is live.
  */
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 import {
   borderWidth,
   useFieldFocus,
@@ -29,6 +29,7 @@ import { QrCodeIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import type { RecipientInputProps } from './types';
+import { Spinner } from '../Spinner';
 
 export type { RecipientInputProps };
 
@@ -90,9 +91,7 @@ export function RecipientInput({
         onFocus={onFocus}
         onBlur={onBlur}
       />
-      {value.length > 0 && isValidating && (
-        <ActivityIndicator size="small" color={semantic.text.secondary} />
-      )}
+      {value.length > 0 && isValidating && <Spinner color={semantic.text.secondary} />}
       {mark && (
         <Text style={[styles.mark, { color: mark.color }]} testID="send-recipient-mark">
           {mark.glyph}

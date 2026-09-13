@@ -21,7 +21,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
-import { ButtonSpinner } from './ButtonSpinner';
+import { Spinner } from '../Spinner';
 import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { SecondaryButtonProps } from './types';
 
@@ -105,7 +105,7 @@ export function SecondaryButton({
       }}
     >
       {loading ? (
-        <ButtonSpinner color={isDangerFill ? status.onFill : text.primary} />
+        <Spinner color={isDangerFill ? status.onFill : text.primary} />
       ) : (
         <>
           {icon}

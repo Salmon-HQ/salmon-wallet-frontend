@@ -29,7 +29,7 @@ import {
   iconSize,
   type IconComponent,
 } from '../../icons';
-import { ButtonSpinner } from '../Button/ButtonSpinner';
+import { Spinner } from '../Spinner';
 import type { PendingActivityBannerProps } from './types';
 
 /** The banner sits over every screen. */
@@ -105,7 +105,7 @@ export function PendingActivityBanner({ items, onDismiss, style }: PendingActivi
             {Icon ? (
               <Icon size={iconSize.md} color={tone.color} />
             ) : (
-              <ButtonSpinner color={tone.color} size={iconSize.sm} />
+              <Spinner color={tone.color} size={iconSize.sm} />
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div

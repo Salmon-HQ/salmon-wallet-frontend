@@ -22,6 +22,8 @@ export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 // Token List
 export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
 export type { TokenLogoPropsBase } from './token-logo';
+export type { SpinnerPropsBase } from './spinner';
+export { SPINNER_DEFAULT_SIZE, SPINNER_LARGE_FROM } from './spinner';
 
 // NFT Card
 export type { NftCardPropsBase, NftCardSkeletonPropsBase } from './nft-card';

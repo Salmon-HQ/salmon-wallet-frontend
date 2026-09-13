@@ -25,6 +25,8 @@ export { ListRow } from './ListRow';
 export type { ListRowPadding, ListRowProps } from './ListRow';
 
 export { IconBubble } from './IconBubble';
+export { Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
 export { PressSpecular } from './PressSpecular';
 export type { PressSpecularProps } from './PressSpecular';
 export { PlusMinusGlyph } from './PlusMinusGlyph';

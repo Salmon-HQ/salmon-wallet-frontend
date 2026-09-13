@@ -391,6 +391,10 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 export { SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
 
+// Spinner - the small inline wait (a field, a row, a working button); a whole surface waits with LoadingScreen
+export { Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
+
 // PressSpecular - the light a press puts on a surface; PlusMinusGlyph - the install control's mark
 export { PressSpecular, setSpecularOrigin } from './PressSpecular';
 export type { PressSpecularProps } from './PressSpecular';

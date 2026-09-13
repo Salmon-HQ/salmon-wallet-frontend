@@ -18,7 +18,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
 import { FleshBackground } from '../FleshBackground';
-import { ButtonSpinner } from './ButtonSpinner';
+import { Spinner } from '../Spinner';
 import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { PrimaryButtonProps } from './types';
 
@@ -86,7 +86,7 @@ export function PrimaryButton({
           the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ButtonSpinner color={isDisabled ? text.disabled : accent.onFill} size={24} />
+        <Spinner color={isDisabled ? text.disabled : accent.onFill} size={24} />
       ) : (
         <span
           style={{

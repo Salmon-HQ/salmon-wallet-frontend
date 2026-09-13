@@ -5,7 +5,7 @@
  * ink. It carried an opaque slate fill, which read as a second filled
  * button competing with the salmon one beside it.
  */
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   borderWidth,
@@ -21,6 +21,7 @@ import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
 import type { SecondaryButtonProps } from './types';
+import { Spinner } from '../Spinner';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -64,7 +65,7 @@ export function SecondaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isDangerFill ? status.onFill : text.primary} />
+        <Spinner color={isDangerFill ? status.onFill : text.primary} />
       ) : (
         <>
           {icon}

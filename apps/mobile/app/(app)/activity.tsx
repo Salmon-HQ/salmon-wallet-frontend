@@ -11,7 +11,7 @@
  * fewer rows in it. The selection is screen state and leaves with the screen.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Share, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,6 +48,7 @@ import {
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
 import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic } from '../../src/theme/useThemedStyles';
+import { Spinner } from '../../src/components/Spinner';
 
 // ============================================================================
 // Screen
@@ -160,7 +161,7 @@ export default function ActivityScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color={semantic.accent.fill} />
+        <Spinner color={semantic.accent.fill} />
       </View>
     );
   }, [loadingMore, semantic]);

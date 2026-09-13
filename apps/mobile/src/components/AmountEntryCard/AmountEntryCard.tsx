@@ -5,7 +5,7 @@
  * DOM twin: `packages/ui/src/components/AmountEntryCard/AmountEntryCard.tsx`.
  */
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   fontFamilyNative,
   fontSize,
@@ -20,6 +20,7 @@ import {
 import { Card } from '../Card';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { AmountEntryCardProps } from './types';
+import { Spinner } from '../Spinner';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one.
@@ -75,7 +76,7 @@ export function AmountEntryCard({
             pointerEvents="none"
             testID={testID ? `${testID}-loading` : undefined}
           >
-            <ActivityIndicator size="large" color={semantic.text.secondary} />
+            <Spinner size={32} color={semantic.text.secondary} />
           </View>
         )}
       </View>
