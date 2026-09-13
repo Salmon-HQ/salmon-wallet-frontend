@@ -69,15 +69,19 @@ const OVERFLOW_TOLERANCE = 1;
  */
 const SCROLL_ARROW_SIZE = componentSizes.iconBubbleSm;
 /**
- * The ground an arrow stands on. The scroller is held this far in from an
- * edge that carries one, so a tab can never travel under an arrow and a
- * chevron never covers something the user meant to press.
+ * The ground an arrow stands on, and the scroller's `scroll-padding-inline`.
  *
- * The trailing side owes its gutter as soon as the row overruns. The leading
- * side owes nothing until the row has actually been scrolled — at rest the
- * first tab is whole and no arrow will ever stand there, so the row begins
- * flush. The gutter is born on the first scroll and the same frame pays for
- * it (see `leadingReserved`), so the content does not jump to make room.
+ * No layout space is reserved for it: the arrows overlay the row. What keeps
+ * a tab from coming to rest under one is scroll snapping — the row snaps by
+ * the inline axis, each tab is a snap point, and `scroll-padding` insets the
+ * *optical* viewport the browser snaps against. A tab therefore always halts
+ * this far in from whichever edge carries an arrow.
+ *
+ * The ends need no special case, and that is the point: a snap position
+ * outside the scroll range clamps, so at rest the first tab sits flush at the
+ * left (with no arrow there to cover it) and at the end the last tab sits
+ * flush at the right (with no arrow there either). Flush start, nothing
+ * clickable under a chevron, no layout jump, no leftover indent.
  */
 const SCROLL_ARROW_GUTTER = componentSizes.iconBubbleSm;
 const SCROLL_ARROW_ICON_SIZE = componentSizes.iconSizeXSmall;
@@ -120,10 +124,6 @@ export function UnderlineTabs({
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [edges, setEdges] = useState({ leading: false, trailing: false });
   const [isHovered, setIsHovered] = useState(false);
-  // Whether the leading gutter has been earned: false until the row is
-  // scrolled off its start, true from then on while it still overruns.
-  const [leadingReserved, setLeadingReserved] = useState(false);
-  const leadingReservePaidRef = useRef(false);
   const hasMeasuredActive = useRef(false);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
@@ -152,8 +152,6 @@ export function UnderlineTabs({
       setEdges((prev) =>
         prev.leading === next.leading && prev.trailing === next.trailing ? prev : next
       );
-      if (!overrun) setLeadingReserved(false);
-      else if (scroller.scrollLeft > OVERFLOW_TOLERANCE) setLeadingReserved(true);
     };
     scroller.addEventListener('scroll', measure, { passive: true });
 
@@ -166,24 +164,6 @@ export function UnderlineTabs({
       scroller.removeEventListener('scroll', measure);
     };
   }, [tabs.length]);
-
-  /**
-   * Paying for the leading gutter: the scroller's left edge moves in by the
-   * gutter's width, so everything inside would slide the same distance right.
-   * Push the scroll on by exactly that much, before the paint, and the row
-   * holds still while the ground appears under the arrow.
-   */
-  useLayoutEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    if (!leadingReserved) {
-      leadingReservePaidRef.current = false;
-      return;
-    }
-    if (leadingReservePaidRef.current) return;
-    leadingReservePaidRef.current = true;
-    scroller.scrollLeft += SCROLL_ARROW_GUTTER;
-  }, [leadingReserved]);
 
   // The travelling underline: measured off the active tab's own box each time
   // the selection or the layout changes, animated with WAAPI on the same
@@ -336,13 +316,14 @@ export function UnderlineTabs({
 
   const containerStyle: React.CSSProperties = { position: 'relative', ...style };
 
-  // The tabs never enter the ground an arrow stands on, so nothing clickable
-  // is ever behind a chevron.
+  // Nothing is reserved and nothing is pushed: the row occupies the full
+  // width and the arrows overlay it. Snapping is what keeps a tab from
+  // resting under a chevron, and `scroll-padding-inline` is where it stops.
   const scrollerStyle: React.CSSProperties = {
-    marginLeft: isOverflowing && leadingReserved ? SCROLL_ARROW_GUTTER : 0,
-    marginRight: isOverflowing ? SCROLL_ARROW_GUTTER : 0,
     overflowX: isOverflowing ? 'auto' : 'hidden',
     scrollbarWidth: 'none',
+    scrollSnapType: isOverflowing ? 'inline mandatory' : 'none',
+    scrollPaddingInline: isOverflowing ? SCROLL_ARROW_GUTTER : 0,
   };
 
   const rowStyle: React.CSSProperties = {
@@ -400,6 +381,9 @@ export function UnderlineTabs({
                   padding: 0,
                   cursor: 'pointer',
                   flexShrink: 0,
+                  // Each tab is a snap point; it comes to rest at the padded
+                  // start of the scroller, never under the leading chevron.
+                  scrollSnapAlign: 'start',
                   fontFamily: fontFamily.sans,
                   fontWeight: isActive ? fontWeight.bold : fontWeight.semibold,
                   fontSize: metrics.font,

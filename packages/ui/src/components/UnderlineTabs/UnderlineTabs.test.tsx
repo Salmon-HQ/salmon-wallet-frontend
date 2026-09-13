@@ -197,38 +197,48 @@ describe('UnderlineTabs', () => {
     expect(screen.queryByTestId('sub-tabs-scroll-trailing')).toBeNull();
   });
 
-  it('keeps the tabs out of the ground the arrows stand on, and owes none at rest', () => {
+  it('snaps the tabs clear of the arrows instead of reserving room for them', () => {
     stubDom();
     stubOverflowMetrics(false);
     const { unmount } = renderInMode(
       'dark',
       <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
     );
-    // A row that fits owes nothing: there is no arrow to stand anywhere.
+    // A row that fits neither snaps nor insets: there is no arrow anywhere.
     const fitting = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
-    expect(fitting.style.marginLeft).toBe('0px');
-    expect(fitting.style.marginRight).toBe('0px');
+    expect(fitting.style.scrollSnapType).toBe('none');
+    expect(parseFloat(fitting.style.scrollPaddingInline)).toBe(0);
     unmount();
 
     stubOverflowMetrics(true);
     renderInMode(
       'dark',
-      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+      <UnderlineTabs
+        testID="sub-tabs"
+        tabTestIDPrefix="sub-tab"
+        tabs={TABS}
+        activeKey="portfolio"
+        onChange={vi.fn()}
+      />
     );
     const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
-    // At rest the first tab is whole and no arrow will ever stand to its
-    // left, so the row begins flush; only the trailing side owes ground.
-    expect(scroller.style.marginLeft).toBe('0px');
-    expect(parseFloat(scroller.style.marginRight)).toBeGreaterThan(0);
+    // No layout reserved on either side — the arrows overlay the row.
+    expect(scroller.style.marginLeft).toBe('');
+    expect(scroller.style.marginRight).toBe('');
+    // What keeps a tab from resting under a chevron is the snap, halting at
+    // the padded edge of the scroller rather than at its real one.
+    expect(scroller.style.scrollSnapType).toBe('inline mandatory');
+    expect(parseFloat(scroller.style.scrollPaddingInline)).toBeGreaterThan(0);
+    expect((screen.getByTestId('sub-tab-portfolio') as HTMLElement).style.scrollSnapAlign).toBe(
+      'start'
+    );
 
-    // The leading gutter is earned on the first scroll, and the same frame
-    // pays for it: the scroll offset moves on by exactly the ground taken,
-    // so nothing the eye is holding slides sideways.
+    // Scrolling changes nothing about the row's box: no gutter is born, so
+    // nothing the eye is holding slides sideways.
     scroller.scrollLeft = 100;
     fireEvent.scroll(scroller);
-    const earned = parseFloat(scroller.style.marginLeft);
-    expect(earned).toBeGreaterThan(0);
-    expect(scroller.scrollLeft).toBe(100 + earned);
+    expect(scroller.style.marginLeft).toBe('');
+    expect(scroller.scrollLeft).toBe(100);
   });
 
   it('hovering an overflowing row at rest shows only the trailing arrow', () => {
