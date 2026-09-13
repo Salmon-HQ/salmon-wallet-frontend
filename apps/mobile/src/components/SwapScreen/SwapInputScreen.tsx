@@ -169,7 +169,6 @@ const styles = StyleSheet.create({
   },
   inputsContainer: {
     paddingHorizontal: s(spacing.headerPadding),
-    paddingTop: vs(spacing['2xl']),
     gap: vs(spacing['2xl']),
   },
   shortcuts: {

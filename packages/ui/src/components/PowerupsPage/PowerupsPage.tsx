@@ -225,6 +225,7 @@ export function PowerupsPage({
     <SettingsPanelContent
       testID={testID}
       title={t('powerups.browse_title')}
+      subtitle={t('powerups.browse_subtitle')}
       onBack={onBack}
       style={style}
       className={className}

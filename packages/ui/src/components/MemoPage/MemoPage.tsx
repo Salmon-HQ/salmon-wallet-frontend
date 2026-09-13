@@ -35,7 +35,7 @@ export function MemoPage({ style, ...logicParams }: MemoPageProps) {
         flex: 1,
         minHeight: 0,
         gap: spacing.md,
-        padding: `${spacing['2xl']}px ${spacing.headerPadding}px ${spacing.screenGutter}px`,
+        padding: `0 ${spacing.headerPadding}px ${spacing.screenGutter}px`,
         ...style,
       }}
     >

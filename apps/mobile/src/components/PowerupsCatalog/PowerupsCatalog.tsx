@@ -272,8 +272,8 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
       style={style}
       headerContent={
         <View style={styles.header}>
-          <LightningIcon weight="bold" size={s(CONTROL_ICON_SIZE)} color={semantic.accent.ink} />
           <SheetTitle>{t('powerups.browse_title')}</SheetTitle>
+          <Text style={styles.subtitle}>{t('powerups.browse_subtitle')}</Text>
         </View>
       }
     >
@@ -300,6 +300,9 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
         // whole catalogue (owner, 2026-09-11): the user is done, not one
         // level back. Only the back caret returns to the list.
         onClose={handleDismissAll}
+        // As tall as the catalogue under it: the detail is the same drawer,
+        // one level deeper, never a shorter sheet peeking over a taller one.
+        height={height}
         testID={detail ? `powerups-detail-sheet-${detail.id}` : 'powerups-detail-sheet'}
         headerContent={
           detail ? (
@@ -326,11 +329,17 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     header: {
-      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: s(spacing.sm),
+      gap: vs(spacing.xs),
       paddingHorizontal: s(spacing.screenGutter),
+    },
+    // The screen header's subtitle, centred under the sheet's title.
+    subtitle: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+      textAlign: 'center',
     },
     scroll: {
       flexGrow: 0,

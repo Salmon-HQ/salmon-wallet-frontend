@@ -845,6 +845,7 @@
   },
   "powerups": {
     "browse_title": "Powerups",
+    "browse_subtitle": "Add-ons that give your wallet new abilities.",
     "installed": "Installed",
     "empty_section": "Nothing here yet",
     "badge": {

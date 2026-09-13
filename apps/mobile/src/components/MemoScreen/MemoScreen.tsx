@@ -70,7 +70,6 @@ const stylesFor = (t: Semantic) =>
     container: {
       flex: 1,
       paddingHorizontal: s(spacing.headerPadding),
-      paddingTop: vs(spacing['2xl']),
       gap: vs(spacing.md),
     },
     label: {

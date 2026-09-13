@@ -88,9 +88,10 @@ export function SwapPage({ watchOnly = false, style, ...logicParams }: SwapPageP
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          // The mobile form's frame: `2xl` above the first label, the header
-          // padding at the sides.
-          padding: `${spacing['2xl']}px ${spacing.headerPadding}px ${spacing.screenGutter}px`,
+          // The mobile form's frame: the header padding at the sides and no
+          // room of its own above — the seam under the sub-tabs is Home's, the
+          // same one Portfolio and NFTs start on.
+          padding: `0 ${spacing.headerPadding}px ${spacing.screenGutter}px`,
         }}
       >
         {body}
