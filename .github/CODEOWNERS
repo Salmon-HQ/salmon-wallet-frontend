@@ -38,3 +38,9 @@
 # Wallet Standard surface and dApp approval flows.
 /apps/extension/src/wallet-standard/  @Luquish
 /apps/extension/src/entrypoints/      @Luquish
+
+# Powerups — a contributed folder is reviewed by a maintainer, always. The
+# reviewer checklist is docs/POWERUPS-UI.md §3.
+/packages/shared/src/powerups/  @Luquish
+/packages/ui/src/powerups.ts    @Luquish
+/apps/mobile/src/powerups/      @Luquish
