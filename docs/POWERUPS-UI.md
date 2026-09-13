@@ -206,7 +206,9 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   draws `SkeletonRow` (one per expected row, `lines={2}`); a whole surface
   that must wait draws `LoadingScreen` with `visible` and a `title`. No
   spinner, no custom pulse, no `ActivityIndicator`. A field's own wait is the
-  amount card's `loading`; a button's is `PrimaryButton loading`.
+  amount card's `loading`; a button's is `PrimaryButton loading`; a row's or
+  a field's is `Spinner` (`SpinnerPropsBase`: `color` from a token, `size` in
+  points) — never `ActivityIndicator` or a hand-drawn ring.
 - **Fixed:** the timing (`packages/shared/src/motion/wavefront.ts`,
   `wait.ts`), the mark, the crest paint, `waitDelay` / `waitMinVisible`
   gates, the tip cadence, the sink of the mark, the reduce-motion mapping.
