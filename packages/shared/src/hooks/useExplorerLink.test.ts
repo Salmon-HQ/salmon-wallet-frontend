@@ -117,4 +117,30 @@ describe('useExplorerLink', () => {
     expect(onPress).toHaveBeenCalledWith(url, secondRow.title);
     expect(result.current.menuVisible).toBe(false);
   });
+
+  it('says so when the press never reaches a browser, and clears it on the next one', async () => {
+    const failing = vi.fn(() => Promise.reject(new Error('no browser')));
+    const { result, rerender } = renderHook(
+      ({ open }: { open: (url: string) => Promise<void> }) =>
+        useExplorerLink({ txHash: 'tx-1', blockchain: 'SOLANA', t, openUrl: open }),
+      { initialProps: { open: failing as unknown as (url: string) => Promise<void> } }
+    );
+
+    expect(result.current.errorText).toBeNull();
+
+    await act(async () => {
+      result.current.onPress();
+      await flush();
+    });
+    expect(result.current.errorText).toBe('transactions.detail.explorerOpenFailed');
+    // The press is not reported as an open when no browser took it.
+    expect(onPress).not.toHaveBeenCalled();
+
+    rerender({ open: openUrl as unknown as (url: string) => Promise<void> });
+    await act(async () => {
+      result.current.onPress();
+      await flush();
+    });
+    expect(result.current.errorText).toBeNull();
+  });
 });

@@ -71,4 +71,22 @@ describe('ExplorerLinkButton', () => {
       'noopener,noreferrer'
     );
   });
+
+  it('says the open failed, under the button that was pressed', async () => {
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => {
+        throw new Error('popup blocked');
+      })
+    );
+    render(<ExplorerLinkButton txHash="tx-123" />);
+    expect(screen.queryByTestId('tx-detail-explorer-error')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('tx-detail-explorer-link'));
+    });
+
+    expect(screen.getByTestId('tx-detail-explorer-error')).toBeTruthy();
+    expect(screen.getByText('transactions.detail.explorerOpenFailed')).toBeTruthy();
+  });
 });

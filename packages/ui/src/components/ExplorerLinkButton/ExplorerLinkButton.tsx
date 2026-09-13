@@ -21,6 +21,7 @@ import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { SecondaryButton } from '../Button';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
+import { WarningNotice } from '../WarningNotice';
 import type { ExplorerLinkButtonProps } from './types';
 
 /** The explorer row's leading well. */
@@ -46,6 +47,7 @@ export function ExplorerLinkButton({
   const parentSheetHeight = useParentSheetHeight();
   const {
     buttonText,
+    errorText,
     hasMenu,
     onPress: handlePress,
     menuVisible,
@@ -104,6 +106,12 @@ export function ExplorerLinkButton({
           ))}
         </div>
       </BottomSheetContainer>
+      {/* A press that never reached a browser says so. Last in the tree, yet
+          under the button on screen: the sheet above draws out of the flow
+          (a modal on native, a fixed dialog on the DOM) or not at all. */}
+      {errorText ? (
+        <WarningNotice tone="error" testID="tx-detail-explorer-error" title={errorText} />
+      ) : null}
     </>
   );
 }

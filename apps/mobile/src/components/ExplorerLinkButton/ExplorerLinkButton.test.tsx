@@ -93,4 +93,16 @@ describe('ExplorerLinkButton', () => {
     // Compared as a boolean so a failure reads "false", not a serialised module.
     expect(receivers.map((receiver) => receiver === Linking)).toEqual([true]);
   });
+
+  it('says the open failed, under the button that was pressed', async () => {
+    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no browser'));
+
+    render(<ExplorerLinkButton txHash={TX} blockchain="SOLANA" environment="solana-mainnet" />);
+    expect(screen.queryByTestId('tx-detail-explorer-error')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('tx-detail-explorer-link'));
+
+    await waitFor(() => expect(screen.getByTestId('tx-detail-explorer-error')).toBeTruthy());
+    expect(screen.getByText('transactions.detail.explorerOpenFailed')).toBeTruthy();
+  });
 });

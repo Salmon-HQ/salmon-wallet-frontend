@@ -615,6 +615,7 @@
       "copyAddressLabel": "Copy {{label}} address",
       "innerCount": "{{count}} inner",
       "copyTransactionHash": "Copy transaction hash",
+      "explorerOpenFailed": "Couldn’t open the explorer",
       "chooseExplorer": "Choose Explorer",
       "nftMediaAlt": "NFT media"
     },
