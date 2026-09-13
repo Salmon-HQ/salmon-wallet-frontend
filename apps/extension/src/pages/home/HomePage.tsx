@@ -66,13 +66,11 @@ import {
   POWERUP_TAB_KEYS,
   POWERUPS_ENABLED,
   PowerupsPage,
-  SwapPage,
   getPowerupCatalog,
-  MemoPage,
-  KaminoPositionsPage,
 } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
+import { renderPowerupBody } from './powerupBodies';
 import { PortfolioColumn } from './PortfolioColumn';
 import {
   TOP_FADE_SCROLL_RANGE,
@@ -880,30 +878,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     testID="home-powerup-no-account"
                     title={t('powerups.no_account')}
                   />
-                ) : KaminoPositionsPage && effectiveSubTab === 'kamino-positions' ? (
-                  <KaminoPositionsPage publicKey={activeBlockchainAccount.getReceiveAddress()} />
-                ) : MemoPage && effectiveSubTab === 'memo' ? (
-                  <MemoPage
-                    publicKey={activeBlockchainAccount.getReceiveAddress()}
-                    networkId={networkId ?? null}
-                    onNavigateHome={() => setActiveSubTab('portfolio')}
-                  />
-                ) : SwapPage && effectiveSubTab === 'swap' ? (
-                  // The Swap Powerup's own surface. The confirmation is core's
-                  // and covers the whole panel when the user signs (§2).
-                  <SwapPage
-                    tokens={swapTokens}
-                    publicKey={activeBlockchainAccount.getReceiveAddress()}
-                    networkId={networkId ?? null}
-                    loading={balanceState === 'loading'}
-                    initialInToken={swapTokens[0]}
-                    formatUsd={formatSwapUsd}
-                    watchOnly={isWatchOnly}
-                    // The swap ends on Home's own ground: when core's receipt
-                    // is closed, the portfolio the new balances belong to.
-                    onNavigateHome={() => setActiveSubTab('portfolio')}
-                  />
-                ) : null}
+                ) : (
+                  // Which surface this id draws is `powerupBodies.tsx`'s, the
+                  // DOM's counterpart to mobile's `getPowerupTab` — Home
+                  // decides whether a Powerup is mounted, not which.
+                  renderPowerupBody(effectiveSubTab, {
+                    publicKey: activeBlockchainAccount.getReceiveAddress(),
+                    networkId: networkId ?? null,
+                    onNavigateHome: () => setActiveSubTab('portfolio'),
+                    swapTokens,
+                    tokensLoading: balanceState === 'loading',
+                    formatUsd: formatSwapUsd,
+                    watchOnly: isWatchOnly,
+                  })
+                )}
               </SinkFloat>
 
               {/* The seam between the fixed row above and whatever scrolls
