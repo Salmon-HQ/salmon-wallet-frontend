@@ -197,6 +197,31 @@ describe('UnderlineTabs', () => {
     expect(screen.queryByTestId('sub-tabs-scroll-trailing')).toBeNull();
   });
 
+  it('keeps the tabs out of the ground the arrows stand on', () => {
+    stubDom();
+    stubOverflowMetrics(false);
+    const { unmount } = renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+    // A row that fits owes no gutter: there is no arrow to stand anywhere.
+    const fitting = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
+    expect(fitting.style.marginLeft).toBe('0px');
+    expect(fitting.style.marginRight).toBe('0px');
+    unmount();
+
+    stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+    // Once it overruns, both sides are held back, so a tab can never travel
+    // under a chevron and be covered by it.
+    const overrunning = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
+    expect(parseFloat(overrunning.style.marginLeft)).toBeGreaterThan(0);
+    expect(overrunning.style.marginRight).toBe(overrunning.style.marginLeft);
+  });
+
   it('hovering an overflowing row at rest shows only the trailing arrow', () => {
     stubDom();
     stubOverflowMetrics(true);

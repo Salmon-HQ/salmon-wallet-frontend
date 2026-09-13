@@ -48,7 +48,13 @@ import type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './type
 const UNDERLINE_HEIGHT = 2;
 /** What the row keeps under its labels for the sliding underline. */
 const UNDERLINE_RESERVE = spacing.xxs + UNDERLINE_HEIGHT;
-/** The trailing cut in overflow mode — at most one section step. */
+/**
+ * The cut at an edge that still hides tabs. A hard edge reads as the end of
+ * the set; a fade reads as "there is more this way". Longer here than on the
+ * mobile twin for one reason: on the DOM it straddles the arrow's gutter and
+ * the content beyond it, so the chevron stands on its own ground while the
+ * tabs still fade as they leave.
+ */
 const OVERFLOW_FADE_WIDTH = componentSizes.iconBubbleSm + spacing.md;
 /** How much of the previous tab stays visible when one is scrolled into view. */
 const SCROLL_INTO_VIEW_MARGIN = spacing.md;
@@ -62,6 +68,12 @@ const OVERFLOW_TOLERANCE = 1;
  * `decorative`: out of the accessibility tree and out of the tab order.
  */
 const SCROLL_ARROW_SIZE = componentSizes.iconBubbleSm;
+/**
+ * The ground each arrow stands on. While the row overruns, the scroller is
+ * held this far in from both edges, so a tab can never travel under an arrow
+ * and a chevron never covers something the user meant to press.
+ */
+const SCROLL_ARROW_GUTTER = componentSizes.iconBubbleSm;
 const SCROLL_ARROW_ICON_SIZE = componentSizes.iconSizeXSmall;
 /** A click moves about two thirds of the visible row — enough to feel
  * purposeful without jumping past the neighboring tabs. */
@@ -283,7 +295,7 @@ export function UnderlineTabs({
     top: 0,
     bottom: UNDERLINE_RESERVE,
     [edge === 'leading' ? 'left' : 'right']: 0,
-    width: OVERFLOW_FADE_WIDTH,
+    width: SCROLL_ARROW_GUTTER,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -294,7 +306,14 @@ export function UnderlineTabs({
 
   const containerStyle: React.CSSProperties = { position: 'relative', ...style };
 
+  // The tabs never enter the gutters the arrows stand on, so nothing
+  // clickable is ever behind a chevron. Both are reserved at once: toggling
+  // one with the scroll position would resize the scroller mid-gesture.
+  const gutter = isOverflowing ? SCROLL_ARROW_GUTTER : 0;
+
   const scrollerStyle: React.CSSProperties = {
+    marginLeft: gutter,
+    marginRight: gutter,
     overflowX: isOverflowing ? 'auto' : 'hidden',
     scrollbarWidth: 'none',
   };
