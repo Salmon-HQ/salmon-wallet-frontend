@@ -1,10 +1,7 @@
+import type { ReactNode } from 'react';
 import type { Testable } from './testable';
 
-/**
- * The one button contract the three variants share — primary (the salmon
- * fill), secondary (the outlined well) and text (label only). The label is a
- * string, not a node: a button says one thing.
- */
+/** What every button takes: the press, a string label, and the two states. */
 export interface ButtonPropsBase extends Testable {
   onPress: () => void;
   children: string;
@@ -12,7 +9,27 @@ export interface ButtonPropsBase extends Testable {
   loading?: boolean;
 }
 
-/** `text` alone may take an ink override, for a destructive inline action. */
+/**
+ * The secondary's inks: the quiet default, danger as an outline, or danger as
+ * a fill — the third one for the destructive action that is the only action.
+ */
+export type SecondaryButtonTone = 'default' | 'danger' | 'danger-fill';
+
+export interface SecondaryButtonPropsBase extends ButtonPropsBase {
+  tone?: SecondaryButtonTone;
+  /** Announced consequence — the third channel a destructive control needs. */
+  accessibilityHint?: string;
+  /** Optional glyph before the label. The label stays the accessible name. */
+  icon?: ReactNode;
+  /**
+   * Optional glyph after the label — a caret when the control opens a picker
+   * rather than acting directly.
+   */
+  trailingIcon?: ReactNode;
+}
+
 export interface TextButtonPropsBase extends ButtonPropsBase {
   color?: string;
+  /** Optional glyph rendered before the label. The label stays the accessible name. */
+  icon?: ReactNode;
 }

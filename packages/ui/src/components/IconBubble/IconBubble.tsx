@@ -8,7 +8,7 @@
  * differs:
  * - the press scale + specular that `usePressMotion` + `PressSpecular` give
  *   mobile through Reanimated are a CSS `transform` transition here, plus the
- *   DOM `PressSpecular` (from `../Button/PressSpecular`) driven by
+ *   DOM `PressSpecular` (from `../PressSpecular`) driven by
  *   `usePressed()` and `setSpecularOrigin`;
  * - the flesh texture reuses the existing DOM `FleshBackground` (an inline
  *   SVG pattern built from the same `fleshTile`/`fleshFills` data mobile
@@ -33,7 +33,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
 import { FleshBackground } from '../FleshBackground';
-import { PressSpecular, setSpecularOrigin } from '../Button/PressSpecular';
+import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { IconBubbleProps, IconBubbleRadius, IconBubbleTone } from './types';
 
 /** Ground + ink per tone. The ink is not a choice the call site gets to make. */

@@ -24,7 +24,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { ArrowRightIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { Chip } from '../Chip';
-import { TokenLogo } from '../TokenList/TokenLogo';
+import { TokenLogo } from '../TokenLogo';
 import { ConversionRateDisplay } from '../ConversionRateDisplay';
 import { PriceImpactBadge } from '../PriceImpactBadge';
 import { cardTitleStyle } from './detailStyles';

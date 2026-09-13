@@ -83,7 +83,6 @@ export const MAP = {
     'LanguageSelector',
   ],
   TokenDetail: ['TokenAbout', 'TokenMarketData'],
-  PressSpecular: ['Button'],
 };
 
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
@@ -91,7 +90,6 @@ export const MOBILE_ONLY = {
   QRScanner: 'camera — the side panel has no scanner; paste is the DOM path',
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
-  TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',
   InputAddress: 'the DOM twin is RecipientInput inside InputAddress (mapped from Send)',
 };
 

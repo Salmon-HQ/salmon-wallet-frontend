@@ -5,8 +5,7 @@
  * ink. It carried an opaque slate fill, which read as a second filled
  * button competing with the salmon one beside it.
  */
-import type { ReactNode } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   borderWidth,
@@ -17,38 +16,13 @@ import {
   spacing,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
+import type { SecondaryButtonProps } from './types';
+
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-/**
- * `danger` is the destructive variant: the same outlined control, drawn in
- * danger ink with a danger edge. It exists so a destructive action can be the
- * secondary of a pair without borrowing the salmon fill or reading as a peer
- * of the primary beside it.
- */
-type SecondaryButtonTone = 'default' | 'danger' | 'danger-fill';
-
-interface SecondaryButtonProps extends Testable {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
-  tone?: SecondaryButtonTone;
-  style?: ViewStyle;
-  /** Announced consequence — the third channel a destructive control needs. */
-  accessibilityHint?: string;
-  /** Optional glyph before the label. The label stays the accessible name. */
-  icon?: ReactNode;
-  /**
-   * Optional glyph after the label — a caret when the control opens a picker
-   * rather than acting directly.
-   */
-  trailingIcon?: ReactNode;
-}
 
 export function SecondaryButton({
   onPress,

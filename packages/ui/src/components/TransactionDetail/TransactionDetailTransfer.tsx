@@ -23,7 +23,7 @@ import { CheckCircleIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SectionLabel } from '../SectionLabel';
-import { TokenLogo } from '../TokenList/TokenLogo';
+import { TokenLogo } from '../TokenLogo';
 import { cardTitleStyle, dividerStyle } from './detailStyles';
 import type { NftAttribute, Transaction, TransactionTokenAmount } from './types';
 

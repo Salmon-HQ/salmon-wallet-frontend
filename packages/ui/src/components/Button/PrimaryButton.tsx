@@ -19,7 +19,7 @@ import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
 import { FleshBackground } from '../FleshBackground';
 import { ButtonSpinner } from './ButtonSpinner';
-import { PressSpecular, setSpecularOrigin } from './PressSpecular';
+import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { PrimaryButtonProps } from './types';
 
 /** Mobile's `PRESS_SCALE` — DESIGN.md §Motion's `scale(0.985)`. */

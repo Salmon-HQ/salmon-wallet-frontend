@@ -21,6 +21,7 @@ export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
 // Token List
 export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+export type { TokenLogoPropsBase } from './token-logo';
 
 // NFT Card
 export type { NftCardPropsBase, NftCardSkeletonPropsBase } from './nft-card';
@@ -219,7 +220,12 @@ export type { SearchFieldPropsBase } from './search-field';
 export type { StateBlockTone, StateBlockPropsBase } from './state-block';
 
 // Button
-export type { ButtonPropsBase, TextButtonPropsBase } from './button';
+export type {
+  ButtonPropsBase,
+  TextButtonPropsBase,
+  SecondaryButtonPropsBase,
+  SecondaryButtonTone,
+} from './button';
 
 // Screen Header
 export type { ScreenHeaderPropsBase } from './screen-header';

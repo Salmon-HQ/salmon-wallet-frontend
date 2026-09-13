@@ -40,7 +40,7 @@ import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
 import { DataAttribution } from '../DataAttribution';
 import { TokenAbout } from '../TokenAbout';
-import { TokenLogo } from '../TokenList';
+import { TokenLogo } from '../TokenLogo';
 import { TokenMarketData } from '../TokenMarketData';
 import type { TokenDetailContentProps } from './types';
 

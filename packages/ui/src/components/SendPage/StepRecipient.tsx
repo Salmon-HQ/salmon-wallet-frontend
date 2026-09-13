@@ -34,7 +34,7 @@ import { IconBubble } from '../IconBubble';
 import { RecipientInput } from '../InputAddress';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
-import { TokenLogo } from '../TokenList';
+import { TokenLogo } from '../TokenLogo';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
 import { TokenPickerSheet } from '../TokenPickerSheet';

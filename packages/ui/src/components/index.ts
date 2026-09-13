@@ -18,13 +18,11 @@ export { WalletHeader } from './WalletHeader';
 export type { WalletHeaderProps } from './WalletHeader';
 
 // TokenList - Token list display components
-export { TokenList, TokenListItem, TokenListSkeleton, TokenLogo } from './TokenList';
-export type {
-  TokenListItemProps,
-  TokenListProps,
-  TokenListSkeletonProps,
-  TokenLogoProps,
-} from './TokenList';
+export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
+// TokenLogo - a token's mark, the same one the list, the picker, the detail and the receipt draw
+export { TokenLogo } from './TokenLogo';
+export type { TokenLogoProps } from './TokenLogo';
+export type { TokenListItemProps, TokenListProps, TokenListSkeletonProps } from './TokenList';
 
 // LoadingScreen - Animated loading overlay
 export { LoadingScreen } from './LoadingScreen';
@@ -392,6 +390,12 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 // SearchField - the one search input the kit draws
 export { SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
+
+// PressSpecular - the light a press puts on a surface; PlusMinusGlyph - the install control's mark
+export { PressSpecular, setSpecularOrigin } from './PressSpecular';
+export type { PressSpecularProps } from './PressSpecular';
+export { PlusMinusGlyph } from './PlusMinusGlyph';
+export type { PlusMinusGlyphProps } from './PlusMinusGlyph';
 
 // IconBubble - the well every glyph in the redesign sits inside
 export { IconBubble } from './IconBubble';

@@ -22,7 +22,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
 import { ButtonSpinner } from './ButtonSpinner';
-import { PressSpecular, setSpecularOrigin } from './PressSpecular';
+import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { SecondaryButtonProps } from './types';
 
 /** Mobile's `PRESS_SCALE` — DESIGN.md §Motion's `scale(0.985)`. */

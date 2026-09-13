@@ -21,7 +21,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { AmountEntryCard } from '../AmountEntryCard';
-import { TokenLogo } from '../TokenList';
+import { TokenLogo } from '../TokenLogo';
 import type { SwapAmountInputProps } from './types';
 
 export function SwapAmountInput({

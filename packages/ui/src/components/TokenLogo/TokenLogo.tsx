@@ -9,13 +9,7 @@ import React, { useState } from 'react';
 import { fontFamily, fontSize, fontWeight, type Semantic } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-
-export interface TokenLogoProps {
-  uri?: string;
-  symbol?: string;
-  size: number;
-  borderRadius: number;
-}
+import type { TokenLogoProps } from './types';
 
 export function TokenLogo({ uri, symbol, size, borderRadius }: TokenLogoProps) {
   const semantic = useSemantic();

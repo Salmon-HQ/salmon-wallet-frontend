@@ -37,7 +37,7 @@ import {
   type IconComponent,
 } from '../../icons';
 import { IconBubble } from '../IconBubble';
-import { TokenLogo } from '../TokenList/TokenLogo';
+import { TokenLogo } from '../TokenLogo';
 import type { TransactionMarkProps } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */

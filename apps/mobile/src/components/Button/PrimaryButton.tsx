@@ -7,7 +7,7 @@
  * ink sat on a muddy red and read as neither alive nor disabled. The salmon
  * is either alive or absent — and so is the flesh inside it.
  */
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   componentSizes,
@@ -17,22 +17,15 @@ import {
   shadowsCSS,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FleshBackground } from '../FleshBackground';
 import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+import type { PrimaryButtonProps } from './types';
 
-interface PrimaryButtonProps extends Testable {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: ViewStyle;
-}
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export function PrimaryButton({
   onPress,

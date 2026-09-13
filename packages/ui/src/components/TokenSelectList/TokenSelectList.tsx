@@ -23,7 +23,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { ListRow } from '../ListRow';
 import { SearchField } from '../SearchField';
 import { SkeletonRow } from '../SkeletonRow';
-import { TokenLogo } from '../TokenList';
+import { TokenLogo } from '../TokenLogo';
 import type { TokenSelectListProps } from './types';
 
 /** The row's identity mark — the 40 every list row in the kit carries. */

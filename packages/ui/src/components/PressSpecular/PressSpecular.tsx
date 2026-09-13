@@ -19,7 +19,7 @@
  */
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import { motionEasing, motionMs, SPECULAR_OPACITY, SPECULAR_RADIUS } from '@salmon/shared';
-import type { PressSpecularPropsBase } from '@salmon/shared';
+import type { PressSpecularProps } from './types';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 
@@ -36,14 +36,6 @@ export function setSpecularOrigin(event: ReactPointerEvent<HTMLElement>): void {
   const rect = event.currentTarget.getBoundingClientRect();
   event.currentTarget.style.setProperty('--specular-x', `${event.clientX - rect.left}px`);
   event.currentTarget.style.setProperty('--specular-y', `${event.clientY - rect.top}px`);
-}
-
-export interface PressSpecularProps extends PressSpecularPropsBase {
-  /** `usePressed().pressed` from the control that mounts this. */
-  pressed: boolean;
-  /** Mobile keeps the specular under reduce motion but drops its fade to a
-   * step — the same parallel mapping this prop drives here. */
-  reducedMotion: boolean;
 }
 
 export function PressSpecular({ pressed, reducedMotion }: PressSpecularProps) {

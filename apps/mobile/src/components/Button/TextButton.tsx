@@ -4,8 +4,7 @@
  * Used for tertiary actions or links. `text.accent` ink per DESIGN.md
  * §Buttons — a ghost control that reads as body copy is not a control.
  */
-import type { ReactNode } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import {
   componentSizes,
   fontFamilyNative,
@@ -14,20 +13,9 @@ import {
   letterSpacing,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-
-interface TextButtonProps extends Testable {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: ViewStyle;
-  color?: string;
-  /** Optional glyph rendered before the label. The label stays the accessible name. */
-  icon?: ReactNode;
-}
+import type { TextButtonProps } from './types';
 
 export function TextButton({
   onPress,

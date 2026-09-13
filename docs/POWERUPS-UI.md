@@ -259,19 +259,19 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 
 ### 1.10 Form fields, buttons, rows, cards, labels
 
-| Block            | Mobile                               | DOM                                  | Contract                                                                                                                                      |
-| ---------------- | ------------------------------------ | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Text field       | `TextField` (`components/TextInput`) | `TextInput`                          | `TextInputPropsBase`: `value`, `onChangeText`, `placeholder?`, `error?`, `maxLength?`, `mono?`, `disabled?`, `autoFocus?`, `onSubmitEditing?` |
-| Search           | `SearchField`                        | `SearchField`                        | `SearchFieldPropsBase`                                                                                                                        |
-| Primary action   | `PrimaryButton`                      | `PrimaryButton`                      | `ButtonPropsBase`: `onPress`, `children: string`, `disabled?`, `loading?`                                                                     |
-| Secondary action | `SecondaryButton`                    | `SecondaryButton`                    | `ButtonPropsBase` (+ `icon` / `trailingIcon` per platform)                                                                                    |
-| Row              | `ListRow`                            | `ListRow`                            | `ListRowPropsBase`: `leading`, `title`, `subtitle?`, `trailing?`, `onPress?`, `padding?`, `emphasis?`                                         |
-| Fact             | `KeyValueRow`                        | `KeyValueRow`                        | `KeyValueRowPropsBase`: `label`, `value`, `valueTone?`, `labelWeight?`, `layout?`, `valueFont?`                                               |
-| Container        | `Card`                               | `Card`                               | `CardPropsBase`: `tone?`, `padding?`, `gap?`, `radius?`, `onPress?`                                                                           |
-| Section label    | `SectionLabel`                       | `SectionLabel`                       | `SectionLabelPropsBase`: `variant: 'caps' \| 'group' \| 'title'`                                                                              |
-| Mark             | `IconBubble`                         | `IconBubble`                         | `IconBubblePropsBase`: `size`, `tone`, `icon?`, `shape?`                                                                                      |
-| Chips            | `Chip` / `ChipGroup`                 | `Chip` / `ChipGroup`                 | `ChipPropsBase` / `ChipGroupPropsBase`                                                                                                        |
-| Token mark       | `TokenLogo`                          | `TokenLogo` (`components/TokenList`) | `uri`, `symbol`, `size`                                                                                                                       |
+| Block            | Mobile                               | DOM                  | Contract                                                                                                                                      |
+| ---------------- | ------------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Text field       | `TextField` (`components/TextInput`) | `TextInput`          | `TextInputPropsBase`: `value`, `onChangeText`, `placeholder?`, `error?`, `maxLength?`, `mono?`, `disabled?`, `autoFocus?`, `onSubmitEditing?` |
+| Search           | `SearchField`                        | `SearchField`        | `SearchFieldPropsBase`                                                                                                                        |
+| Primary action   | `PrimaryButton`                      | `PrimaryButton`      | `ButtonPropsBase`: `onPress`, `children: string`, `disabled?`, `loading?`                                                                     |
+| Secondary action | `SecondaryButton`                    | `SecondaryButton`    | `ButtonPropsBase` (+ `icon` / `trailingIcon` per platform)                                                                                    |
+| Row              | `ListRow`                            | `ListRow`            | `ListRowPropsBase`: `leading`, `title`, `subtitle?`, `trailing?`, `onPress?`, `padding?`, `emphasis?`                                         |
+| Fact             | `KeyValueRow`                        | `KeyValueRow`        | `KeyValueRowPropsBase`: `label`, `value`, `valueTone?`, `labelWeight?`, `layout?`, `valueFont?`                                               |
+| Container        | `Card`                               | `Card`               | `CardPropsBase`: `tone?`, `padding?`, `gap?`, `radius?`, `onPress?`                                                                           |
+| Section label    | `SectionLabel`                       | `SectionLabel`       | `SectionLabelPropsBase`: `variant: 'caps' \| 'group' \| 'title'`                                                                              |
+| Mark             | `IconBubble`                         | `IconBubble`         | `IconBubblePropsBase`: `size`, `tone`, `icon?`, `shape?`                                                                                      |
+| Chips            | `Chip` / `ChipGroup`                 | `Chip` / `ChipGroup` | `ChipPropsBase` / `ChipGroupPropsBase`                                                                                                        |
+| Token mark       | `TokenLogo`                          | `TokenLogo`          | `uri`, `symbol`, `size`                                                                                                                       |
 
 - **Fixed:** a primary is the flesh button, 56 tall, bold label, its geometry
   never a function of state; a commit inside a live form takes a fixed

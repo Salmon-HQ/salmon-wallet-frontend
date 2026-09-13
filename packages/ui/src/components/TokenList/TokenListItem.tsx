@@ -31,7 +31,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ListRow } from '../ListRow';
-import { TokenLogo } from './TokenLogo';
+import { TokenLogo } from '../TokenLogo';
 import type { TokenListItemProps } from './types';
 
 /** The card's own logo size — pinned by the redesign, not the legacy token. */

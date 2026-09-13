@@ -25,6 +25,11 @@ export { ListRow } from './ListRow';
 export type { ListRowPadding, ListRowProps } from './ListRow';
 
 export { IconBubble } from './IconBubble';
+export { PressSpecular } from './PressSpecular';
+export type { PressSpecularProps } from './PressSpecular';
+export { PlusMinusGlyph } from './PlusMinusGlyph';
+export type { PlusMinusGlyphProps } from './PlusMinusGlyph';
+export { WalletInitErrorScreen } from './WalletInitErrorScreen';
 export type {
   IconBubbleProps,
   IconBubbleShape,

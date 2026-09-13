@@ -4,14 +4,7 @@ import { type ImageStyle, type ViewStyle } from 'react-native';
 
 import { IconBubble } from '../IconBubble';
 import type { IconBubbleSize } from '../IconBubble/types';
-
-interface TokenLogoProps {
-  uri?: string;
-  symbol?: string;
-  size: number;
-  borderRadius?: number;
-  style?: ViewStyle;
-}
+import type { TokenLogoProps } from './types';
 
 // `IconBubble` takes a closed size union; `TokenLogo`'s callers pass whatever
 // pixel value their layout measured. The fallback rounds to the nearest kit
@@ -24,7 +17,7 @@ function nearestBubbleSize(size: number): IconBubbleSize {
   );
 }
 
-const TokenLogo: React.FC<TokenLogoProps> = ({ uri, symbol, size, borderRadius, style }) => {
+export const TokenLogo: React.FC<TokenLogoProps> = ({ uri, symbol, size, borderRadius, style }) => {
   const [error, setError] = useState(false);
 
   const handleError = useCallback(() => {
