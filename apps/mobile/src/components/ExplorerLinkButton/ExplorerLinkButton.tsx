@@ -77,7 +77,12 @@ export function ExplorerLinkButton({
     explorerKey,
     showMenu,
     t,
-    openUrl: Linking.openURL,
+    // Wrapped, never passed bare: `Linking` is an instance and `openURL` is a
+    // prototype method that calls `this._validateURL(url)`. A bare reference
+    // loses `this`, throws inside the hook's `try`, and the press does
+    // nothing at all — the sheet closes over a browser that never opened
+    // (owner, on an iPhone 16, 2026-09-13).
+    openUrl: (url: string) => Linking.openURL(url),
     onPress,
   });
 
