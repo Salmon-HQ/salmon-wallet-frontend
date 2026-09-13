@@ -57,15 +57,7 @@ export const CROSS_PLATFORM_CLONE_LINES_MAX = 2443;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
-  AccountPanels: [
-    'AccountAddPanel',
-    'AccountAvatarPanel',
-    'AccountEditPanel',
-    'AccountNamePanel',
-    'AccountsPanel',
-  ],
   Activity: ['ActivityPage'],
-  AddressPanels: ['AddressAddPanel', 'AddressBookPanel', 'AddressEditPanel'],
   ConfirmSheet: ['ConfirmDialog'],
   Icon: ['Icon'],
   LockOverlay: ['LockScreen'],
@@ -75,13 +67,6 @@ export const MAP = {
   KaminoPositionsScreen: ['KaminoPositionsPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
-  SettingsSelectors: [
-    'SettingsSelectorList',
-    'AppearanceSelector',
-    'CurrencySelector',
-    'ExplorerSelector',
-    'LanguageSelector',
-  ],
 };
 
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
@@ -90,11 +75,14 @@ export const MOBILE_ONLY = {
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   InputAddress: 'the DOM twin is RecipientInput inside InputAddress (mapped from Send)',
+  NetworkSelector: 'RN network switcher; the DOM side panel has no network-switch surface',
 };
 
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */
 export const DOM_ONLY = {
   DAppApproval: 'extension-only surface (lot 5)',
+  HoldToApproveButton:
+    'no mobile twin; mobile Button/HoldToCopyButton is a different control (copy, not approve)',
   AuthFlow: 'onboarding screens are routes on mobile (app/(auth)); components on the DOM',
   WaterColumn:
     'the DOM ground composer; mobile mounts DepthBackground + ScalesBackground in the tab shell',

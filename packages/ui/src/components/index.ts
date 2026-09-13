@@ -246,6 +246,10 @@ export type {
   DAppTransactionApprovalViewProps,
 } from './DAppApproval';
 
+// HoldToApproveButton - generic press-and-hold confirm control
+export { HoldToApproveButton } from './HoldToApproveButton';
+export type { HoldToApproveButtonProps } from './HoldToApproveButton';
+
 // AuthFlow - the onboarding screens, on the slot grid
 export {
   AnalyticsConsentPage,

@@ -1,25 +1,29 @@
 /**
- * CurrencySelector — the display currency panel, on the DOM. The mobile twin
- * is `apps/mobile/src/components/CurrencySelector`.
+ * CurrencySelector - Display currency selection component for mobile
+ *
+ * Displays a list of supported currencies and allows the user
+ * to select their preferred display currency.
  */
+
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type CurrencySelectorItem } from '@salmon/shared';
 
+import { type CurrencySelectorItem } from '@salmon/shared';
 import { IconBubble } from '../IconBubble';
-import { SettingsPanelContent } from '../SettingsPanelContent';
+import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { CurrencySelectorProps } from './types';
 
-/** The leading well every option row carries — Settings' own row bubble size. */
-const ROW_BUBBLE_SIZE = 40;
+// ============================================================================
+// Component
+// ============================================================================
 
 export function CurrencySelector({
   currencies,
   activeCurrencyCode,
   onSelectCurrency,
   onBack,
-}: CurrencySelectorProps): React.ReactElement {
+}: CurrencySelectorProps) {
   const { t } = useTranslation();
 
   const handleSelect = useCallback(
@@ -29,7 +33,7 @@ export function CurrencySelector({
 
   const renderSymbol = useCallback(
     (item: CurrencySelectorItem) => (
-      <IconBubble size={ROW_BUBBLE_SIZE} tone="surface">
+      <IconBubble size={40} tone="surface">
         {item.symbol}
       </IconBubble>
     ),
@@ -37,7 +41,7 @@ export function CurrencySelector({
   );
 
   return (
-    <SettingsPanelContent
+    <SettingsScreenLayout
       title={t('settings.currency', 'Display Currency')}
       subtitle={t('settings.currency_subtitle', 'Choose the currency balances show in.')}
       onBack={onBack}
@@ -52,6 +56,8 @@ export function CurrencySelector({
         renderLeadingElement={renderSymbol}
         testIdPrefix="currency-option"
       />
-    </SettingsPanelContent>
+    </SettingsScreenLayout>
   );
 }
+
+export default CurrencySelector;

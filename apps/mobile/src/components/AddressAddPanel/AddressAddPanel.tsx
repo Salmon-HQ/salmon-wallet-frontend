@@ -1,14 +1,14 @@
 /**
- * AddressAddPanel — add a contact, on the DOM.
+ * AddressAddPanel - Add new contact to address book (mobile)
  *
- * The mobile twin is `apps/mobile/src/components/AddressAddPanel`.
  * The fields are `AddressForm`'s; this panel only names the screen and
- * commits a new contact.
+ * commits a new contact on the active network.
  */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAddressAddPanel } from '@salmon/shared';
 
+import { useAddressAddPanel, type BlockchainType } from '@salmon/shared';
 import { AddressForm } from '../AddressForm';
 import type { AddressAddPanelProps } from './types';
 
@@ -18,8 +18,7 @@ export function AddressAddPanel({
   activeBlockchain,
   onSave,
   onBack,
-  errorText,
-}: AddressAddPanelProps): React.ReactElement {
+}: AddressAddPanelProps) {
   const { t } = useTranslation();
   const { form, save } = useAddressAddPanel({ networkId: activeNetworkId, onSave });
 
@@ -31,7 +30,13 @@ export function AddressAddPanel({
       form={form}
       onSave={save}
       onBack={onBack}
-      errorText={errorText}
+      blockchain={activeBlockchain as BlockchainType}
+      addressPlaceholder={t('general.name_or_address', {
+        token: activeBlockchain,
+        defaultValue: 'Enter address or domain',
+      })}
     />
   );
 }
+
+export default AddressAddPanel;

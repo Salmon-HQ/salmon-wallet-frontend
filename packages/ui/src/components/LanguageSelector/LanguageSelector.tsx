@@ -1,6 +1,6 @@
 /**
  * LanguageSelector — the display language panel, on the DOM. The mobile twin
- * is `apps/mobile/src/components/SettingsSelectors/LanguageSelector`.
+ * is `apps/mobile/src/components/LanguageSelector`.
  */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

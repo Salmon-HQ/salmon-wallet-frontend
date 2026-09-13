@@ -50,7 +50,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize, SparkleIcon, WarningIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
-import { HoldToApproveButton } from '../DAppApproval/HoldToApproveButton';
+import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';

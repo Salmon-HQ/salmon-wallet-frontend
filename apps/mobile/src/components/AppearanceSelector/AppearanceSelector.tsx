@@ -1,26 +1,29 @@
 /**
- * AppearanceSelector — the theme preference panel, on the DOM.
+ * AppearanceSelector - Theme preference selection component for mobile
  *
- * The mobile twin is `apps/mobile/src/components/AppearanceSelector`:
- * three rows (System, Light, Dark), each led by its glyph — a mode is a
- * picture, not a pair of letters (owner, 2026-09-02) — on the same shared
- * contract (`AppearanceSelectorBaseProps`). The caller owns the preference
- * and its persistence (`useTheme().setPreference`).
+ * Displays the three appearance choices (System, Light, Dark) and lets the
+ * user pick which one drives the active mode.
  */
+
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { APPEARANCE_OPTIONS, type AppearancePreference, type IconGlyphProps } from '@salmon/shared';
 
+import { APPEARANCE_OPTIONS, type AppearancePreference } from '@salmon/shared';
 import { CircleHalfIcon, MoonIcon, SunIcon, iconSize } from '../../icons';
-import { IconBubble } from '../IconBubble';
-import { SettingsPanelContent } from '../SettingsPanelContent';
+import { IconBubble, type IconGlyphProps } from '../IconBubble';
+import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 import type { AppearanceSelectorProps } from './types';
+
+// ============================================================================
+// Component
+// ============================================================================
 
 interface AppearanceOption {
   preference: AppearancePreference;
   label: string;
   hint?: string;
+  /** The option's glyph — a mode is a picture, not a pair of letters (owner, 2026-09-02). */
   icon: React.ComponentType<IconGlyphProps>;
 }
 
@@ -31,14 +34,14 @@ const GLYPHS: Record<'circleHalf' | 'sun' | 'moon', React.ComponentType<IconGlyp
   moon: MoonIcon,
 };
 
-/** The leading well every option row carries — the same size as mobile's. */
+/** The leading well every option row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
 export function AppearanceSelector({
   activePreference,
   onSelectPreference,
   onBack,
-}: AppearanceSelectorProps): React.ReactElement {
+}: AppearanceSelectorProps) {
   const { t } = useTranslation();
 
   const options: AppearanceOption[] = useMemo(
@@ -61,7 +64,7 @@ export function AppearanceSelector({
   );
 
   return (
-    <SettingsPanelContent
+    <SettingsScreenLayout
       title={t('settings.appearance', 'Appearance')}
       subtitle={t('settings.appearance_subtitle', 'Choose light, dark, or system.')}
       onBack={onBack}
@@ -84,6 +87,8 @@ export function AppearanceSelector({
         )}
         testIdPrefix="appearance-option"
       />
-    </SettingsPanelContent>
+    </SettingsScreenLayout>
   );
 }
+
+export default AppearanceSelector;

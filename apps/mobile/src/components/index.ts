@@ -335,13 +335,13 @@ export { SettingsScreenLayout } from './SettingsScreenLayout';
 export type { SettingsScreenLayoutProps } from './SettingsScreenLayout';
 
 // Settings Selectors
-export { LanguageSelector } from './SettingsSelectors/LanguageSelector';
-export { AppearanceSelector } from './SettingsSelectors/AppearanceSelector';
-export { NetworkSelector } from './SettingsSelectors/NetworkSelector';
-export { CurrencySelector } from './SettingsSelectors/CurrencySelector';
-export { ExplorerSelector } from './SettingsSelectors/ExplorerSelector';
-export { SettingsSelectorList } from './SettingsSelectors/SettingsSelectorList';
-export type { SettingsSelectorListProps } from './SettingsSelectors/SettingsSelectorList';
+export { LanguageSelector } from './LanguageSelector';
+export { AppearanceSelector } from './AppearanceSelector';
+export { NetworkSelector } from './NetworkSelector';
+export { CurrencySelector } from './CurrencySelector';
+export { ExplorerSelector } from './ExplorerSelector';
+export { SettingsSelectorList } from './SettingsSelectorList';
+export type { SettingsSelectorListProps } from './SettingsSelectorList';
 
 export { TrustedAppsSelector } from './TrustedAppsSelector';
 export { SupportSelector } from './SupportSelector';
@@ -350,8 +350,8 @@ export { SupportSelector } from './SupportSelector';
 // Account Management
 // ---------------------------------------------------------------------------
 
-export { AccountsPanel } from './AccountPanels/AccountsPanel';
-export type { AccountsPanelProps } from './AccountPanels/AccountsPanel';
+export { AccountsPanel } from './AccountsPanel';
+export type { AccountsPanelProps } from './AccountsPanel';
 
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
@@ -360,26 +360,26 @@ export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 export { WalletFamily } from './WalletFamily';
 export type { WalletFamilyProps } from './WalletFamily';
 
-export { AccountEditPanel } from './AccountPanels/AccountEditPanel';
-export type { AccountEditPanelProps } from './AccountPanels/AccountEditPanel';
+export { AccountEditPanel } from './AccountEditPanel';
+export type { AccountEditPanelProps } from './AccountEditPanel';
 
-export { AccountNamePanel } from './AccountPanels/AccountNamePanel';
-export type { AccountNamePanelProps } from './AccountPanels/AccountNamePanel';
+export { AccountNamePanel } from './AccountNamePanel';
+export type { AccountNamePanelProps } from './AccountNamePanel';
 
-export { AccountAddPanel } from './AccountPanels/AccountAddPanel';
-export type { AccountAddPanelProps } from './AccountPanels/AccountAddPanel';
+export { AccountAddPanel } from './AccountAddPanel';
+export type { AccountAddPanelProps } from './AccountAddPanel';
 
-export { AccountAvatarPanel } from './AccountPanels/AccountAvatarPanel';
-export type { AccountAvatarPanelProps } from './AccountPanels/AccountAvatarPanel';
+export { AccountAvatarPanel } from './AccountAvatarPanel';
+export type { AccountAvatarPanelProps } from './AccountAvatarPanel';
 
 // ---------------------------------------------------------------------------
 // Address Book
 // ---------------------------------------------------------------------------
 
-export { AddressBookPanel } from './AddressPanels/AddressBookPanel';
+export { AddressBookPanel } from './AddressBookPanel';
 export { AddressForm } from './AddressForm';
-export { AddressAddPanel } from './AddressPanels/AddressAddPanel';
-export { AddressEditPanel } from './AddressPanels/AddressEditPanel';
+export { AddressAddPanel } from './AddressAddPanel';
+export { AddressEditPanel } from './AddressEditPanel';
 
 // ---------------------------------------------------------------------------
 // Security

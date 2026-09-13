@@ -10,7 +10,7 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { AppIdentity } from './AppIdentity';
 import { CardHead, bodyText, cardColumn } from './common';
-import { HoldToApproveButton } from './HoldToApproveButton';
+import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
 

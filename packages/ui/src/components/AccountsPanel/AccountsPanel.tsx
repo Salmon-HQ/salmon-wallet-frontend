@@ -1,7 +1,7 @@
 /**
  * AccountsPanel — account management list, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AccountPanels/AccountsPanel`,
+ * The mobile twin is `apps/mobile/src/components/AccountsPanel`,
  * which mirrors the CORE 10 wallet row: a `Card` per account with an avatar
  * bubble, an inline rename pencil beside the name, the short address in
  * mono, a `WatchOnlyBadge` when it applies, and a trailing cluster of

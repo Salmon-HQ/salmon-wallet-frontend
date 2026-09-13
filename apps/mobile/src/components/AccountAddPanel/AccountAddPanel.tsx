@@ -1,39 +1,19 @@
 /**
- * AccountAddPanel — the multi-step add-account flow, on the DOM.
+ * AccountAddPanel - Multi-step account creation flow for mobile
  *
- * The mobile twin is `apps/mobile/src/components/AccountAddPanel`:
- * the method list as `ListRow`s, the derived scan on `DerivedAccountCard`,
- * the seed grid, the private-key and watch-only fields, the name step and
- * the re-auth step, each a stack of kit blocks under a title and a subtitle.
- * The flow itself is the shared `useAccountAddFlow`, the same machine the
- * mobile twin runs; this file renders it and raises the wait.
+ * The flow itself — steps, the derived scan, the seed grid, the imports, the
+ * name, the re-auth and both confirms — is the shared `useAccountAddFlow`,
+ * the same machine the DOM twin runs. This file renders it and owns the wait.
  *
  * Steps:
- * 1. select-method: derive, import seed, import private key, watch an address
- * 2. derive-scan: scan the active seed's paths
- * 3. import-*: the credential
- * 4. set-name: the name
- * 5. reauth: the password, when the vault key has lapsed
+ * 1. select-method: Choose between deriving or importing
+ * 2. derive-scan: Scan for derived accounts using DerivedAccountCard
+ * 3. import-seed: Enter seed phrase using SeedPhrase component
+ * 4. set-name: Choose account name
  */
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  fontFamily,
-  fontSize,
-  getShortAddress,
-  lineHeight,
-  NETWORK_DISPLAY,
-  spacing,
-  useAccountsContext,
-  useAccountAddFlow,
-  ACCOUNT_ADD_METHODS,
-  ACCOUNT_ADD_STEP_TITLE_KEYS,
-  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
-  type AccountAddMethodId,
-  type IconGlyphProps,
-} from '@salmon/shared';
 
-import { useSemantic } from '../../theme/ThemeProvider';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { View, Text } from 'react-native';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -42,79 +22,97 @@ import {
   TreeStructureIcon,
   iconSize,
 } from '../../icons';
+import { useTranslation } from 'react-i18next';
+import * as Clipboard from 'expo-clipboard';
+
+import {
+  spacing,
+  useAccountsContext,
+  useAccountAddFlow,
+  getShortAddress,
+  NETWORK_DISPLAY,
+  ACCOUNT_ADD_METHODS,
+  ACCOUNT_ADD_STEP_TITLE_KEYS,
+  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
+  type AccountAddMethodId,
+  type DerivedAccountInfo,
+} from '@salmon/shared';
+import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
+// Direct, not the barrel: the layout's own motion has no place in a panel.
+import { ReservedSlot } from '../OnboardingLayout/ReservedSlot';
 import { Card } from '../Card';
-import { ConfirmDialog } from '../ConfirmDialog';
-import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
+import { TextField } from '../TextInput';
+import { ConfirmSheet } from '../ConfirmSheet';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
-import { ReservedSlot } from '../OnboardingLayout';
-import { PasswordInput } from '../PasswordInput';
 import { SectionLabel } from '../SectionLabel';
-import { SeedPhraseEntry } from '../SeedPhrase';
-import { SettingsPanelContent } from '../SettingsPanelContent';
-import { TextInput } from '../TextInput';
+import { DerivedAccountCard } from '../DerivedAccountCard';
+import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
+import { SeedPhraseEntry } from '../SeedPhrase';
+import { PasswordInput } from '../PasswordInput';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useWaitPassage } from '../../utils/useWaitPassage';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { stylesFor } from './styles';
 import type { AccountAddPanelProps } from './types';
+import { Spinner } from '../Spinner';
+
+// ============================================================================
+// Component
+// ============================================================================
 
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
-/** Mirrors the cards a scan lists, so the wait does not jump on swap. */
-const SCAN_SKELETON_COUNT = 3;
 
-export function AccountAddPanel({
-  onComplete,
-  onBack,
-  onWait,
-  onCloseSettings,
-}: AccountAddPanelProps): React.ReactElement {
+export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const { text, status } = useSemantic();
-  const [{ counter }] = useAccountsContext();
+  const styles = useThemedStyles(stylesFor);
+  const { text, accent } = useSemantic();
+  const [{ accounts }] = useAccountsContext();
 
-  // Creation-failure notice, surfaced as a sheet rather than inline.
+  // The imported seed lives in this panel's memory for its whole lifetime,
+  // not just while the grid is mounted (`SeedWordInput` covers those frames).
+  useSecretScreen('account-add-panel');
+
+  // Loading state
+  const [loading, setLoading] = useState(false);
+
+  // Creation-failure notice, surfaced as a sheet rather than an OS alert.
+  // Title and body together: the failure is named in the heading rather than
+  // filed under "unexpected", which is wrong for a cause the code detected on
+  // purpose and leaves the user with nothing to act on.
   const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
     null
   );
 
-  // A wait this panel raised may not outlive the panel unnoticed. Read
-  // through a ref so only unmount — never a new `onWait` identity — lowers it.
-  const onWaitRef = useRef(onWait);
-  useEffect(() => {
-    onWaitRef.current = onWait;
-  }, [onWait]);
-  useEffect(() => () => onWaitRef.current(null), []);
+  // The wait's passage: the panel keeps the wait mounted until its closing
+  // wave has left, and the completion handoff is parked behind that report —
+  // completing earlier unmounts the wait mid-wave. LoadingScreen's watchdog
+  // guarantees the report, so the handoff cannot be stranded.
+  const { onExited: waitExited } = useWaitPassage(loading);
+  const pendingCompleteRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    waitExited();
+    if (!pendingCompleteRef.current) return;
+    pendingCompleteRef.current = false;
+    onComplete();
+  }, [waitExited, onComplete]);
 
   const defaultName = useMemo(
-    () => t('settings.account_add.default_name', { number: counter + 1 }),
-    [counter, t]
+    () => t('settings.account_add.default_name', { number: accounts.length + 1 }),
+    [accounts.length, t]
   );
 
-  // The wait's title names the flow, which the hook knows and this panel does
-  // not until it asks — so the raise reads the flow's selection at call time.
-  const selectedDerivedRef = useRef(false);
-  /**
-   * The wait is **not rendered here**. This panel lives inside the settings
-   * stack, and the add finishes by closing it — a wait mounted in here would
-   * be torn down with it and its closing wave would play nowhere. The panel
-   * raises the wait on the stack (`onWait`), which hosts it outside.
-   */
-  const onWaitStart = useCallback(() => {
-    onWait({
-      title: selectedDerivedRef.current
-        ? t('settings.account_add.confirm_create')
-        : t('settings.account_add.confirm_import'),
-      subtitle: t('general.loading'),
-    });
-  }, [onWait, t]);
-  const onWaitEnd = useCallback(() => onWait(null), [onWait]);
-  // The account has landed: the wait is lowered and settings closes under
-  // it, so the last wave crosses the screen the user is returned to.
+  const onWaitStart = useCallback(() => setLoading(true), []);
+  const onWaitEnd = useCallback(() => setLoading(false), []);
+  // Parked, not fired: dropping `loading` starts the wait's exit, and
+  // `handleWaitExited` completes once the last wave has left the screen.
   const onPersisted = useCallback(() => {
-    onWait(null);
-    onComplete();
-    onCloseSettings();
-  }, [onWait, onComplete, onCloseSettings]);
+    pendingCompleteRef.current = true;
+    setLoading(false);
+  }, []);
   const onFailure = useCallback(
     (err: unknown) => {
       console.error('Failed to add account:', err);
@@ -135,41 +133,26 @@ export function AccountAddPanel({
     onFailure,
   });
   const { step, privateKeyImport, watchOnlyImport, selectedDerived } = flow;
-  useEffect(() => {
-    selectedDerivedRef.current = !!selectedDerived;
-  }, [selectedDerived]);
 
   // ========================================================================
   // Render helpers
   // ========================================================================
 
-  const hintStyle: React.CSSProperties = {
-    margin: 0,
-    color: text.secondary,
-    fontFamily: fontFamily.sans,
-    fontSize: fontSize.caption,
-    padding: `0 ${spacing.xs}px`,
-  };
-  const errorStyle: React.CSSProperties = { ...hintStyle, color: status.danger };
-  const addressStyle: React.CSSProperties = {
-    margin: 0,
-    color: text.primary,
-    fontFamily: fontFamily.mono,
-    fontSize: fontSize.mono,
-  };
-  /** The inside of one step: 12 binds a label to its field and a field to its hint. */
-  const stack: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: spacing.md };
-
-  // Copy (id/titleKey/descriptionKey) is the shared `ACCOUNT_ADD_METHODS`
-  // table; only the icon and the flow selector are platform-local.
-  const methodIcons: Record<AccountAddMethodId, React.ComponentType<IconGlyphProps>> = {
+  // Deriving is offered only when there is a phrase to derive from, so the
+  // list is built per render rather than declared at module scope. Copy
+  // (id/titleKey/descriptionKey) is the shared `ACCOUNT_ADD_METHODS` table;
+  // only the icon and the flow selector are platform-local.
+  const methodIcons: Record<
+    AccountAddMethodId,
+    React.ComponentType<{ size?: number; color?: string }>
+  > = {
     derive: TreeStructureIcon,
     import: FileTextIcon,
     'private-key': KeyIcon,
     'watch-only': EyeIcon,
   };
   const methodHandlers: Record<AccountAddMethodId, () => void> = {
-    derive: () => void flow.selectDerive(),
+    derive: flow.selectDerive,
     import: flow.selectImport,
     'private-key': flow.selectImportPrivateKey,
     'watch-only': flow.selectImportWatchOnly,
@@ -206,40 +189,34 @@ export function AccountAddPanel({
   const renderDeriveScan = () => {
     if (flow.scanning) {
       return (
-        <div style={stack} aria-busy="true" aria-label={t('settings.account_add.scanning')}>
-          {Array.from({ length: SCAN_SKELETON_COUNT }, (_, i) => (
-            <DerivedAccountCardSkeleton key={i} />
-          ))}
-          <p style={{ ...hintStyle, textAlign: 'center' }}>{t('settings.account_add.scanning')}</p>
-        </div>
+        <View style={styles.scanState}>
+          <Spinner size={32} color={accent.ink} />
+          <Text style={styles.scanStateText}>{t('settings.account_add.scanning')}</Text>
+        </View>
       );
     }
 
     if (flow.derivedAccounts.length === 0 && flow.failedNetworks.length > 0) {
       return (
-        <div style={stack} data-testid="derived-scan-error">
+        <View style={styles.stack} testID="derived-scan-error">
           <WarningNotice tone="error" title={t('wallet.derived.scan_failed_title')}>
             {t('wallet.derived.scan_failed_body')}
           </WarningNotice>
-          <PrimaryButton
-            onPress={() => void flow.selectDerive()}
-            testID="derived-scan-retry-button"
-          >
+          <PrimaryButton onPress={flow.selectDerive} testID="derived-scan-retry-button">
             {t('transactions.tapToRetry')}
           </PrimaryButton>
-        </div>
+        </View>
       );
     }
 
     return (
-      <div style={stack}>
+      <View style={styles.stack}>
         {flow.failedNetworks.length > 0 && (
           <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
         )}
-        {flow.derivedAccounts.map((item) => (
+        {flow.derivedAccounts.map((item: DerivedAccountInfo) => (
           <DerivedAccountCard
             key={`${item.networkId}-${item.address}`}
-            testID={`account-add-derived-${item.address}`}
             address={item.address}
             networkName={item.networkName}
             path={item.path}
@@ -257,20 +234,20 @@ export function AccountAddPanel({
         >
           {t('actions.continue')}
         </PrimaryButton>
-      </div>
+      </View>
     );
   };
 
   const handlePasteSeed = useCallback(async () => {
     try {
-      flow.pasteSeed(await navigator.clipboard.readText());
+      flow.pasteSeed(await Clipboard.getStringAsync());
     } catch (error) {
       console.error('Failed to paste from clipboard:', error);
     }
   }, [flow]);
 
   const renderImportSeed = () => (
-    <div style={stack}>
+    <View style={styles.stack}>
       <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
       <SeedPhraseEntry
         testID="account-add-seed"
@@ -280,33 +257,27 @@ export function AccountAddPanel({
         onPasteRejected={flow.setPastedCount}
       />
       {flow.pastedCount !== null ? (
-        <p style={errorStyle}>{t('wallet.recover.pastedWordCount', { count: flow.pastedCount })}</p>
+        <Text style={styles.errorText}>
+          {t('wallet.recover.pastedWordCount', { count: flow.pastedCount })}
+        </Text>
       ) : flow.seedError ? (
-        <p style={errorStyle}>{t(flow.seedError)}</p>
+        <Text style={styles.errorText}>{t(flow.seedError)}</Text>
       ) : null}
-      {/* The recover page's rule: paste is the one action on offer, and
+      {/* The recover screen's rule: paste is the one action on offer, and
           Continue takes its reserved place only once the phrase checks out. */}
-      <SecondaryButton
-        onPress={() => void handlePasteSeed()}
-        fullWidth
-        testID="account-add-seed-paste-button"
-      >
+      <SecondaryButton onPress={handlePasteSeed} testID="account-add-seed-paste-button">
         {t('wallet.recover.pasteSeed')}
       </SecondaryButton>
       <ReservedSlot visible={flow.seedValid}>
-        <PrimaryButton
-          onPress={flow.submitSeed}
-          fullWidth
-          testID="account-add-seed-continue-button"
-        >
+        <PrimaryButton onPress={flow.submitSeed} testID="account-add-seed-continue-button">
           {t('actions.continue')}
         </PrimaryButton>
       </ReservedSlot>
-    </div>
+    </View>
   );
 
   const renderImportPrivateKey = () => (
-    <div style={stack}>
+    <View style={styles.stack}>
       <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
         {t('wallet.import.warning_body')}
       </WarningNotice>
@@ -317,38 +288,34 @@ export function AccountAddPanel({
         onChangeText={privateKeyImport.setValue}
         placeholder={t('wallet.import.placeholder')}
         error={privateKeyImport.error ? t(privateKeyImport.error) : undefined}
-        onSubmitEditing={() => void flow.submitPrivateKey()}
+        onSubmitEditing={flow.submitPrivateKey}
         autoFocus
       />
-      {/* One slot under the field: the hint stands where the error will
-          stand, so the layout does not shift when a message replaces it. */}
-      {!privateKeyImport.error && <p style={hintStyle}>{t('wallet.import.help')}</p>}
+      {/* One slot under the field: the hint stands where the error will stand,
+          so the layout does not shift when a message replaces it. */}
+      {!privateKeyImport.error && <Text style={styles.hintText}>{t('wallet.import.help')}</Text>}
       {privateKeyImport.address && (
-        <Card
-          padding="md"
-          gap={spacing.xxs}
-          style={{ flexDirection: 'column' }}
-          testID="account-add-private-key-address"
-        >
-          <p style={hintStyle}>{t('wallet.import.resolved_address')}</p>
-          <p style={addressStyle}>{getShortAddress(privateKeyImport.address)}</p>
+        <Card padding="md" gap={spacing.xxs} testID="account-add-private-key-address">
+          <Text style={styles.hintText}>{t('wallet.import.resolved_address')}</Text>
+          <Text style={styles.addressText}>{getShortAddress(privateKeyImport.address)}</Text>
         </Card>
       )}
       <PrimaryButton
-        onPress={() => void flow.submitPrivateKey()}
+        onPress={flow.submitPrivateKey}
         disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
         testID="account-add-private-key-continue-button"
       >
         {t('actions.continue')}
       </PrimaryButton>
-    </div>
+    </View>
   );
 
   const renderImportWatchOnly = () => (
-    <div style={stack}>
-      {/* No warning notice and no masked field: an address is public. */}
+    <View style={styles.stack}>
+      {/* No warning notice and no masked field: an address is public. The
+          private-key step's PasswordInput would imply otherwise. */}
       <SectionLabel variant="caps">{t('wallet.watchOnly.label')}</SectionLabel>
-      <TextInput
+      <TextField
         testID="account-add-watch-only-input"
         value={watchOnlyImport.value}
         onChangeText={watchOnlyImport.setValue}
@@ -358,21 +325,18 @@ export function AccountAddPanel({
         mono
         onSubmitEditing={flow.submitWatchOnly}
       />
-      <p
-        data-testid="account-add-watch-only-message"
-        style={watchOnlyImport.error ? errorStyle : hintStyle}
+      {/* One slot under the field: the hint stands where the error will
+          stand, so the layout does not shift when a message replaces it. */}
+      <Text
+        testID="account-add-watch-only-message"
+        style={watchOnlyImport.error ? styles.errorText : styles.hintText}
       >
         {watchOnlyImport.error ? t(watchOnlyImport.error) : t('wallet.watchOnly.help')}
-      </p>
+      </Text>
       {watchOnlyImport.address && (
-        <Card
-          padding="md"
-          gap={spacing.xxs}
-          style={{ flexDirection: 'column' }}
-          testID="account-add-watch-only-address"
-        >
-          <p style={hintStyle}>{t('wallet.watchOnly.resolved_address')}</p>
-          <p style={addressStyle}>{getShortAddress(watchOnlyImport.address)}</p>
+        <Card padding="md" gap={spacing.xxs} testID="account-add-watch-only-address">
+          <Text style={styles.hintText}>{t('wallet.watchOnly.resolved_address')}</Text>
+          <Text style={styles.addressText}>{getShortAddress(watchOnlyImport.address)}</Text>
         </Card>
       )}
       <PrimaryButton
@@ -382,22 +346,12 @@ export function AccountAddPanel({
       >
         {t('actions.continue')}
       </PrimaryButton>
-    </div>
+    </View>
   );
 
   const renderReauth = () => (
-    <div style={stack}>
-      <p
-        style={{
-          margin: 0,
-          color: text.secondary,
-          fontFamily: fontFamily.sans,
-          fontSize: fontSize.body,
-          lineHeight: `${fontSize.body * lineHeight.snug}px`,
-        }}
-      >
-        {t('settings.account_add.reauth_body')}
-      </p>
+    <View style={styles.stack}>
+      <Text style={styles.bodyText}>{t('settings.account_add.reauth_body')}</Text>
       <SectionLabel variant="caps">{t('lock.password_label', 'Password')}</SectionLabel>
       <PasswordInput
         testID="account-add-reauth-password"
@@ -405,23 +359,23 @@ export function AccountAddPanel({
         onChangeText={flow.setReauthPassword}
         placeholder={t('lock.password_placeholder')}
         error={flow.reauthError ? t(flow.reauthError) : undefined}
-        onSubmitEditing={() => void flow.confirmReauth()}
+        onSubmitEditing={flow.confirmReauth}
         autoFocus
       />
       <PrimaryButton
-        onPress={() => void flow.confirmReauth()}
+        onPress={flow.confirmReauth}
         disabled={!flow.reauthPassword || flow.reauthChecking}
         testID="account-add-reauth-confirm-button"
       >
         {t('settings.account_add.reauth_confirm')}
       </PrimaryButton>
-    </div>
+    </View>
   );
 
   const renderSetName = () => (
-    <div style={stack}>
+    <View style={styles.stack}>
       <SectionLabel variant="caps">{t('settings.account_add.set_name')}</SectionLabel>
-      <TextInput
+      <TextField
         testID="account-add-name-input"
         value={flow.accountName}
         onChangeText={flow.setAccountName}
@@ -429,23 +383,37 @@ export function AccountAddPanel({
         accessibilityLabel={t('settings.account_add.set_name')}
         autoFocus
         maxLength={32}
-        onSubmitEditing={() => void flow.confirm()}
+        onSubmitEditing={flow.confirm}
       />
-      <PrimaryButton onPress={() => void flow.confirm()} testID="account-add-confirm-button">
-        {selectedDerived
-          ? t('settings.account_add.confirm_create')
-          : t('settings.account_add.confirm_import')}
+      <PrimaryButton onPress={flow.confirm} testID="account-add-confirm-button">
+        {t('settings.account_add.confirm')}
       </PrimaryButton>
-    </div>
+    </View>
   );
+
+  // ========================================================================
+  // Main render
+  // ========================================================================
+
+  const currentTitle = t(ACCOUNT_ADD_STEP_TITLE_KEYS[step]);
+  const currentSubtitle = t(...ACCOUNT_ADD_STEP_SUBTITLE_KEYS[step]);
 
   return (
     <>
-      <SettingsPanelContent
-        title={t(ACCOUNT_ADD_STEP_TITLE_KEYS[step])}
-        subtitle={t(...ACCOUNT_ADD_STEP_SUBTITLE_KEYS[step])}
-        onBack={flow.stepBack}
-      >
+      <LoadingScreen
+        visible={loading}
+        // Its own window: rendered inline it sits under the gate's header, so
+        // the chevron and close button stayed tappable over a flow in flight.
+        fullScreen
+        title={
+          selectedDerived
+            ? t('settings.account_add.confirm_create')
+            : t('settings.account_add.confirm_import')
+        }
+        subtitle={t('general.loading')}
+        onExited={handleWaitExited}
+      />
+      <SettingsScreenLayout title={currentTitle} subtitle={currentSubtitle} onBack={flow.stepBack}>
         {step === 'select-method' && renderSelectMethod()}
         {step === 'derive-scan' && renderDeriveScan()}
         {step === 'import-seed' && renderImportSeed()}
@@ -453,10 +421,12 @@ export function AccountAddPanel({
         {step === 'import-watch-only' && renderImportWatchOnly()}
         {step === 'set-name' && renderSetName()}
         {step === 'reauth' && renderReauth()}
-      </SettingsPanelContent>
+      </SettingsScreenLayout>
 
-      {/* Failure notice as a sheet: nothing to confirm, one dismiss button. */}
-      <ConfirmDialog
+      {/* Failure notice as a sheet: there is nothing to confirm here, so it
+          carries one dismiss button instead of a cancel/confirm pair that both
+          did the same thing. */}
+      <ConfirmSheet
         visible={creationError !== null}
         onClose={() => setCreationError(null)}
         title={creationError?.title ?? ''}
@@ -464,7 +434,6 @@ export function AccountAddPanel({
         acknowledgeOnly
         confirmText={t('actions.close')}
         onConfirm={async () => {}}
-        confirmTestID="account-add-error-close"
       />
     </>
   );
