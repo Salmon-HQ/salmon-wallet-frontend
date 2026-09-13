@@ -745,7 +745,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onSettingsPress={flowLocked ? undefined : handleSettingsPress}
             onWalletPress={flowLocked ? undefined : handleWalletPress}
             avatarUrl={activeAccount?.avatar}
-            accountId={activeAccount?.id}
           />
         </div>
 

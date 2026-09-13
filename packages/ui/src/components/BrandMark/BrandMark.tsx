@@ -21,10 +21,7 @@ import type { BrandMarkPropsBase } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 
-export interface BrandMarkProps extends BrandMarkPropsBase {
-  /** Accessible name. Omit for a decorative mark, which is the usual case. */
-  title?: string;
-}
+export type BrandMarkProps = BrandMarkPropsBase;
 
 export function BrandMark({
   size,

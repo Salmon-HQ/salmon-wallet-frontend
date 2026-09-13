@@ -633,7 +633,6 @@ export default function HomeScreen() {
         onWalletPress={() => router.push('/wallets')}
         networkId={currentNetworkId}
         avatarUrl={activeAccount?.avatar}
-        accountId={activeAccount?.id}
       />
       {/* The balance, the sub-tabs, the content and the FAB are CONTENT, not
           chrome: when a task engages the shell they leave with the verb at

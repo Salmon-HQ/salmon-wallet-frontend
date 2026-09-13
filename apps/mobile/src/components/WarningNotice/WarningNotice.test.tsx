@@ -18,6 +18,14 @@ describe('WarningNotice', () => {
     expect(screen.getByTestId('warning').props.accessibilityRole).toBe('alert');
   });
 
+  it('announces `info` politely, not as an alert — it states a fact, not a fault', () => {
+    render(<WarningNotice testID="notice" tone="info" title="No balance changes" />);
+
+    const banner = screen.getByTestId('notice');
+    expect(banner.props.accessibilityRole).toBeUndefined();
+    expect(banner.props.accessibilityLiveRegion).toBe('polite');
+  });
+
   it('forwards testID to the banner it renders', () => {
     render(<WarningNotice testID="scan-failure-warning" title="Scan failed" />);
 

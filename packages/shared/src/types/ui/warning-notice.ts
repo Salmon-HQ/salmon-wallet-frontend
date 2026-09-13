@@ -9,6 +9,12 @@ export type WarningNoticeTone = 'error' | 'warning' | 'info';
  *
  * An icon-led alert banner used wherever a security or failure state must be
  * impossible to miss (approval screens, scan failures, stalled settlements).
+ *
+ * Tone -> a11y role mapping, identical on both twins: `error` and `warning`
+ * are assertive (DOM `role="alert"`; mobile `accessibilityRole="alert"` +
+ * `accessibilityLiveRegion="assertive"`) — they belong to a fault. `info`
+ * is polite (DOM `role="status"`; mobile no `accessibilityRole` +
+ * `accessibilityLiveRegion="polite"`) — it states a fact, not an emergency.
  */
 export interface WarningNoticePropsBase {
   /** Visual tone of the banner. Defaults to `error`. */

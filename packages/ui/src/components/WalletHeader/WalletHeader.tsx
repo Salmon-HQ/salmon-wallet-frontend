@@ -170,6 +170,7 @@ export function WalletHeader({
               stay mounted. Keyed on the address, so a chain switch and an
               account switch ride the same gesture. */}
           <SinkFloat
+            testID="wallet-header-account-text"
             transitionKey={address}
             distance={accountLineVerb.distance}
             scale={accountLineVerb.scale}

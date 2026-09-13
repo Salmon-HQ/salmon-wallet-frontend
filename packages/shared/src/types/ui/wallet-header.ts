@@ -20,8 +20,6 @@ export interface WalletHeaderPropsBase<TStyle> {
   onWalletPress?: () => void;
   /** Avatar image URL for the active account */
   avatarUrl?: string;
-  /** Account ID (used for deterministic fallback color) */
-  accountId?: string;
   /** Callback when refresh button is pressed (extension only) */
   onRefreshPress?: () => void;
   /** Whether a balance refresh is in progress */

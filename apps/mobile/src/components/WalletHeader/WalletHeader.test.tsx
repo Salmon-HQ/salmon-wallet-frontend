@@ -250,7 +250,6 @@ describe('WalletHeader touch targets', () => {
       <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-        accountId="acct-1"
       />
     );
 

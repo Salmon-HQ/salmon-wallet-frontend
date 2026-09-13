@@ -35,12 +35,17 @@ export function WarningNotice({
     tone === 'warning' ? status.warning : tone === 'info' ? text.secondary : status.danger;
   const background =
     tone === 'warning' ? status.warningTint : tone === 'info' ? surface.shelf : status.dangerTint;
+  // `info` states a fact, not a fault: it announces politely, like the DOM
+  // twin's `role="status"`. `error`/`warning` stay assertive alerts — see the
+  // tone->role mapping on `WarningNoticePropsBase`.
+  const isAssertive = tone !== 'info';
 
   return (
     <View
       testID={testID}
       style={[styles.container, { backgroundColor: background, borderColor: accent }, style]}
-      accessibilityRole="alert"
+      accessibilityRole={isAssertive ? 'alert' : undefined}
+      accessibilityLiveRegion={isAssertive ? 'assertive' : 'polite'}
     >
       <WarningIcon size={iconSize.md} color={accent} style={styles.icon} />
       <View style={styles.textColumn}>

@@ -21,7 +21,7 @@ import type { BrandMarkProps } from './types';
 
 export type { BrandMarkProps };
 
-export function BrandMark({ size, color, testID }: BrandMarkProps) {
+export function BrandMark({ size, color, title, testID }: BrandMarkProps) {
   // The default ink is the mode's, resolved at render: a default parameter
   // would freeze the dark palette's white at import.
   const { text } = useSemantic();
@@ -32,7 +32,13 @@ export function BrandMark({ size, color, testID }: BrandMarkProps) {
       width={size}
       height={size / markAspectRatio}
       viewBox={markViewBoxAttr}
-      accessibilityRole="image"
+      // Same switch as the DOM twin: named image when `title` is given,
+      // decorative (hidden from assistive tech) otherwise.
+      accessible={!!title}
+      accessibilityRole={title ? 'image' : undefined}
+      accessibilityLabel={title}
+      accessibilityElementsHidden={!title}
+      importantForAccessibility={title ? 'yes' : 'no-hide-descendants'}
     >
       {markPaths.map((d) => (
         <Path key={d.slice(0, 24)} d={d} fill={ink} />

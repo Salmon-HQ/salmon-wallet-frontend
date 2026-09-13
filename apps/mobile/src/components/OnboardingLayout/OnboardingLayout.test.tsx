@@ -265,12 +265,17 @@ describe('OnboardingLayout', () => {
     // The first pass drew 80 everywhere and it read as a badge floating in a
     // void. On the screens where the mark *is* the screen it is the hero; on
     // the seed screens the words are, and the mark gets out of their way.
+    // Decorative (no `title`), so it is hidden from assistive tech — the
+    // same switch the DOM twin makes on `aria-hidden`.
     const identity = render(<OnboardingLayout variant="identity" />);
-    const identityMark = screen.getByTestId('brand-mark').props.width;
+    const identityMark = screen.getByTestId('brand-mark', {
+      includeHiddenElements: true,
+    }).props.width;
     identity.unmount();
 
     render(<OnboardingLayout variant="content" />);
-    const contentMark = screen.getByTestId('brand-mark').props.width;
+    const contentMark = screen.getByTestId('brand-mark', { includeHiddenElements: true }).props
+      .width;
 
     expect(identityMark).toBe(onboardingIdentityGridFull.markSize);
     expect(contentMark).toBe(onboardingContentGridFull.markSize);
