@@ -10,7 +10,6 @@ import {
   componentSizes,
   fontFamilyNative,
   fontSize,
-  lineHeight,
   s,
   spacing,
   vs,
@@ -20,6 +19,7 @@ import { MEMO_MAX_BYTES, useMemoScreenLogic } from '@salmon/shared/powerups';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton } from '../Button';
+import { SectionLabel } from '../SectionLabel';
 import { TextField } from '../TextInput';
 import type { MemoScreenProps } from './types';
 
@@ -28,10 +28,15 @@ export const MemoScreen: React.FC<MemoScreenProps> = ({ style, ...logicParams })
   const styles = useThemedStyles(stylesFor);
   const logic = useMemoScreenLogic(logicParams);
   const error = logic.error;
+  const errorText = error
+    ? typeof error === 'string'
+      ? t(error)
+      : t(error.key, error.params)
+    : undefined;
 
   return (
     <View style={[styles.container, style]} testID="memo-screen">
-      <Text style={styles.label}>{t('memo.note_label')}</Text>
+      <SectionLabel variant="caps">{t('memo.note_label')}</SectionLabel>
       <TextField
         testID="memo-note-input"
         value={logic.note}
@@ -39,23 +44,19 @@ export const MemoScreen: React.FC<MemoScreenProps> = ({ style, ...logicParams })
         placeholder={t('memo.note_placeholder')}
         maxLength={MEMO_MAX_BYTES}
         disabled={logic.isConfirming}
+        error={errorText}
       />
+      {/* ponytail: the byte count is a hand-drawn supporting line; the kit has
+          no field hint yet (docs/POWERUPS-UI.md G1). */}
       <Text style={styles.hint} testID="memo-note-bytes">
         {t('memo.review.bytes', { count: logic.noteBytes })}
       </Text>
-      {/* One line of the notice type, reserved: nothing moves when it fills. */}
-      <View style={styles.noticeSlot}>
-        {error ? (
-          <Text style={styles.errorText} testID="memo-error-text">
-            {typeof error === 'string' ? t(error) : t(error.key, error.params)}
-          </Text>
-        ) : null}
-      </View>
       <View style={styles.action}>
         <PrimaryButton
           testID="memo-submit-button"
           onPress={() => void logic.submit()}
           disabled={!logic.canSubmit}
+          loading={logic.isConfirming}
           style={styles.button}
         >
           {t('memo.sign')}
@@ -72,28 +73,11 @@ const stylesFor = (t: Semantic) =>
       paddingHorizontal: s(spacing.headerPadding),
       gap: vs(spacing.md),
     },
-    label: {
-      fontSize: fontSize.base,
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.primary,
-      lineHeight: fontSize.base * lineHeight.condensed,
-    },
     hint: {
       fontSize: fontSize.sm,
       fontFamily: fontFamilyNative.regular,
       color: t.text.secondary,
       textAlign: 'right',
-    },
-    noticeSlot: {
-      minHeight: vs(fontSize.sm * lineHeight.normal),
-      justifyContent: 'center',
-    },
-    errorText: {
-      fontSize: fontSize.sm,
-      lineHeight: fontSize.sm * lineHeight.normal,
-      fontFamily: fontFamilyNative.medium,
-      color: t.status.danger,
-      textAlign: 'center',
     },
     action: {
       alignItems: 'center',

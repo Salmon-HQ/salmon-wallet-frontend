@@ -5,18 +5,12 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  componentSizes,
-  fontFamily,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  spacing,
-} from '@salmon/shared';
+import { componentSizes, fontFamily, fontSize, spacing } from '@salmon/shared';
 import { MEMO_MAX_BYTES, useMemoScreenLogic } from '@salmon/shared/powerups';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
+import { SectionLabel } from '../SectionLabel';
 import { TextInput } from '../TextInput';
 import type { MemoPageProps } from './types';
 
@@ -25,6 +19,11 @@ export function MemoPage({ style, ...logicParams }: MemoPageProps) {
   const semantic = useSemantic();
   const logic = useMemoScreenLogic(logicParams);
   const error = logic.error;
+  const errorText = error
+    ? typeof error === 'string'
+      ? t(error)
+      : t(error.key, error.params)
+    : undefined;
 
   return (
     <div
@@ -39,17 +38,7 @@ export function MemoPage({ style, ...logicParams }: MemoPageProps) {
         ...style,
       }}
     >
-      <span
-        style={{
-          fontFamily: fontFamily.sans,
-          fontSize: fontSize.base,
-          fontWeight: fontWeight.bold,
-          color: semantic.text.primary,
-          lineHeight: `${fontSize.base * lineHeight.condensed}px`,
-        }}
-      >
-        {t('memo.note_label')}
-      </span>
+      <SectionLabel variant="caps">{t('memo.note_label')}</SectionLabel>
       <TextInput
         testID="memo-note-input"
         value={logic.note}
@@ -57,7 +46,10 @@ export function MemoPage({ style, ...logicParams }: MemoPageProps) {
         placeholder={t('memo.note_placeholder')}
         maxLength={MEMO_MAX_BYTES}
         disabled={logic.isConfirming}
+        error={errorText}
       />
+      {/* ponytail: the byte count is a hand-drawn supporting line; the kit has
+          no field hint yet (docs/POWERUPS-UI.md G1). */}
       <span
         data-testid="memo-note-bytes"
         style={{
@@ -69,35 +61,12 @@ export function MemoPage({ style, ...logicParams }: MemoPageProps) {
       >
         {t('memo.review.bytes', { count: logic.noteBytes })}
       </span>
-      {/* One line of the notice type, reserved: nothing moves when it fills. */}
-      <div
-        style={{
-          minHeight: fontSize.sm * lineHeight.normal,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {error ? (
-          <span
-            data-testid="memo-error-text"
-            style={{
-              fontFamily: fontFamily.sans,
-              fontSize: fontSize.sm,
-              fontWeight: fontWeight.medium,
-              color: semantic.status.danger,
-              textAlign: 'center',
-            }}
-          >
-            {typeof error === 'string' ? t(error) : t(error.key, error.params)}
-          </span>
-        ) : null}
-      </div>
       <div style={{ display: 'flex', justifyContent: 'center', paddingTop: spacing.lg }}>
         <PrimaryButton
           testID="memo-submit-button"
           onPress={() => void logic.submit()}
           disabled={!logic.canSubmit}
+          loading={logic.isConfirming}
           style={{
             width: componentSizes.copyButtonWidth,
             height: componentSizes.buttonHeightCompact,
