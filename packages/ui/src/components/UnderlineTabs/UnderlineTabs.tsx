@@ -69,9 +69,15 @@ const OVERFLOW_TOLERANCE = 1;
  */
 const SCROLL_ARROW_SIZE = componentSizes.iconBubbleSm;
 /**
- * The ground each arrow stands on. While the row overruns, the scroller is
- * held this far in from both edges, so a tab can never travel under an arrow
- * and a chevron never covers something the user meant to press.
+ * The ground an arrow stands on. The scroller is held this far in from an
+ * edge that carries one, so a tab can never travel under an arrow and a
+ * chevron never covers something the user meant to press.
+ *
+ * The trailing side owes its gutter as soon as the row overruns. The leading
+ * side owes nothing until the row has actually been scrolled — at rest the
+ * first tab is whole and no arrow will ever stand there, so the row begins
+ * flush. The gutter is born on the first scroll and the same frame pays for
+ * it (see `leadingReserved`), so the content does not jump to make room.
  */
 const SCROLL_ARROW_GUTTER = componentSizes.iconBubbleSm;
 const SCROLL_ARROW_ICON_SIZE = componentSizes.iconSizeXSmall;
@@ -114,6 +120,10 @@ export function UnderlineTabs({
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [edges, setEdges] = useState({ leading: false, trailing: false });
   const [isHovered, setIsHovered] = useState(false);
+  // Whether the leading gutter has been earned: false until the row is
+  // scrolled off its start, true from then on while it still overruns.
+  const [leadingReserved, setLeadingReserved] = useState(false);
+  const leadingReservePaidRef = useRef(false);
   const hasMeasuredActive = useRef(false);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
@@ -142,6 +152,8 @@ export function UnderlineTabs({
       setEdges((prev) =>
         prev.leading === next.leading && prev.trailing === next.trailing ? prev : next
       );
+      if (!overrun) setLeadingReserved(false);
+      else if (scroller.scrollLeft > OVERFLOW_TOLERANCE) setLeadingReserved(true);
     };
     scroller.addEventListener('scroll', measure, { passive: true });
 
@@ -154,6 +166,24 @@ export function UnderlineTabs({
       scroller.removeEventListener('scroll', measure);
     };
   }, [tabs.length]);
+
+  /**
+   * Paying for the leading gutter: the scroller's left edge moves in by the
+   * gutter's width, so everything inside would slide the same distance right.
+   * Push the scroll on by exactly that much, before the paint, and the row
+   * holds still while the ground appears under the arrow.
+   */
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    if (!leadingReserved) {
+      leadingReservePaidRef.current = false;
+      return;
+    }
+    if (leadingReservePaidRef.current) return;
+    leadingReservePaidRef.current = true;
+    scroller.scrollLeft += SCROLL_ARROW_GUTTER;
+  }, [leadingReserved]);
 
   // The travelling underline: measured off the active tab's own box each time
   // the selection or the layout changes, animated with WAAPI on the same
@@ -306,14 +336,11 @@ export function UnderlineTabs({
 
   const containerStyle: React.CSSProperties = { position: 'relative', ...style };
 
-  // The tabs never enter the gutters the arrows stand on, so nothing
-  // clickable is ever behind a chevron. Both are reserved at once: toggling
-  // one with the scroll position would resize the scroller mid-gesture.
-  const gutter = isOverflowing ? SCROLL_ARROW_GUTTER : 0;
-
+  // The tabs never enter the ground an arrow stands on, so nothing clickable
+  // is ever behind a chevron.
   const scrollerStyle: React.CSSProperties = {
-    marginLeft: gutter,
-    marginRight: gutter,
+    marginLeft: isOverflowing && leadingReserved ? SCROLL_ARROW_GUTTER : 0,
+    marginRight: isOverflowing ? SCROLL_ARROW_GUTTER : 0,
     overflowX: isOverflowing ? 'auto' : 'hidden',
     scrollbarWidth: 'none',
   };

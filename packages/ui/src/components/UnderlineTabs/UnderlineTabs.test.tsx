@@ -197,14 +197,14 @@ describe('UnderlineTabs', () => {
     expect(screen.queryByTestId('sub-tabs-scroll-trailing')).toBeNull();
   });
 
-  it('keeps the tabs out of the ground the arrows stand on', () => {
+  it('keeps the tabs out of the ground the arrows stand on, and owes none at rest', () => {
     stubDom();
     stubOverflowMetrics(false);
     const { unmount } = renderInMode(
       'dark',
       <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
     );
-    // A row that fits owes no gutter: there is no arrow to stand anywhere.
+    // A row that fits owes nothing: there is no arrow to stand anywhere.
     const fitting = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
     expect(fitting.style.marginLeft).toBe('0px');
     expect(fitting.style.marginRight).toBe('0px');
@@ -215,11 +215,20 @@ describe('UnderlineTabs', () => {
       'dark',
       <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
     );
-    // Once it overruns, both sides are held back, so a tab can never travel
-    // under a chevron and be covered by it.
-    const overrunning = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
-    expect(parseFloat(overrunning.style.marginLeft)).toBeGreaterThan(0);
-    expect(overrunning.style.marginRight).toBe(overrunning.style.marginLeft);
+    const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLElement;
+    // At rest the first tab is whole and no arrow will ever stand to its
+    // left, so the row begins flush; only the trailing side owes ground.
+    expect(scroller.style.marginLeft).toBe('0px');
+    expect(parseFloat(scroller.style.marginRight)).toBeGreaterThan(0);
+
+    // The leading gutter is earned on the first scroll, and the same frame
+    // pays for it: the scroll offset moves on by exactly the ground taken,
+    // so nothing the eye is holding slides sideways.
+    scroller.scrollLeft = 100;
+    fireEvent.scroll(scroller);
+    const earned = parseFloat(scroller.style.marginLeft);
+    expect(earned).toBeGreaterThan(0);
+    expect(scroller.scrollLeft).toBe(100 + earned);
   });
 
   it('hovering an overflowing row at rest shows only the trailing arrow', () => {
