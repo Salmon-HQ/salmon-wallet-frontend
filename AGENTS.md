@@ -226,10 +226,11 @@ rework, and they are product decisions rather than engineering ones:
 - The Spanish copy, from the owner. Never guessed (see i18n above).
 
 **3. Decide what core owes, before the Powerup exists.** If the position the
-capability manages exists on chain whether or not the Powerup is installed —
-a stake account does, a swap does not — then the wallet must show it either
-way, or turning a capability off would hide funds, which is the one failure a
-self-custodial wallet exists to prevent. That surface is core code, not
+capability manages exists on chain whether or not the Powerup is installed,
+then the wallet must show it either way, or turning a capability off would
+hide funds, which is the one failure a self-custodial wallet exists to
+prevent. Not every capability has this shape: one that only exchanges assets
+leaves nothing behind, while one that parks them somewhere does. That surface is core code, not
 `powerups/**`: the off build aliases the whole folder away. It is a separate
 PR, and it lands first.
 
