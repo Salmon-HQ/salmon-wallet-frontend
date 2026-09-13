@@ -22,27 +22,30 @@ import type { CoinInfo } from '../types/price';
 import type { Token } from '../types/ui';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
 import { useHomeTabOrder } from './useHomeTabOrder';
+// Type-only: erased before any bundler runs, so a Powerups-off build still
+// reaches no manifest. The ids themselves arrive at runtime as
+// `allPowerupKeys`, read by the app through the aliased Powerups entry.
+import type { PowerupId } from '../powerups/registry';
 
 /**
  * The in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered` — and
  * `swap` only once the Swap Powerup is installed on this device and the
  * screen stands on a network it acts on (`powerupTabs`).
  */
-export type HomeSubTabKey = 'portfolio' | 'nfts' | 'swap' | 'memo' | 'kamino-positions';
+export type HomeSubTabKey = HomeCoreTabKey | PowerupId;
+
+/** The two tabs Home draws with no Powerup installed at all. */
+export type HomeCoreTabKey = 'portfolio' | 'nfts';
 
 /**
- * Every key Home can draw, in the order it would use if the user had never
- * arranged anything. A Powerup's key lives here so its place in the stored
- * arrangement survives an uninstall; whether it is OFFERED is decided per
- * render from `powerupTabs`.
+ * Core's own keys, first in the order Home uses if the user never arranged
+ * anything. The Powerups' keys follow, supplied by the app as
+ * `allPowerupKeys` (`POWERUP_TAB_KEYS`) — a Powerup's key belongs to the
+ * default arrangement so its place survives an uninstall, and deriving it
+ * from the registry keeps the ids written in one place: the manifests.
+ * Whether a tab is OFFERED is decided per render from `powerupTabs`.
  */
-export const HOME_TAB_KEYS: HomeSubTabKey[] = [
-  'portfolio',
-  'nfts',
-  'swap',
-  'memo',
-  'kamino-positions',
-];
+export const HOME_CORE_TAB_KEYS: HomeCoreTabKey[] = ['portfolio', 'nfts'];
 
 /** An installed Powerup's Home surface, as the app hands it to the shell. */
 export interface HomePowerupTab {
@@ -90,6 +93,13 @@ export interface UseHomeShellParams {
    * Powerups off simply passes none and the shell knows nothing about them.
    */
   powerupTabs?: readonly HomePowerupTab[];
+  /**
+   * Every Powerup id that carries a tab, installed or not, in the registry's
+   * order — `POWERUP_TAB_KEYS` from the aliased Powerups entry. It fixes the
+   * default arrangement; a build with Powerups off passes none. Pass a stable
+   * reference: it keys the stored order.
+   */
+  allPowerupKeys?: readonly string[];
 }
 
 export interface UseHomeShellResult {
@@ -142,6 +152,7 @@ export function useHomeShell({
   surfaceKey,
   changeNetwork,
   powerupTabs,
+  allPowerupKeys,
 }: UseHomeShellParams): UseHomeShellResult {
   const { t } = useTranslation();
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
@@ -212,7 +223,11 @@ export function useHomeShell({
   // when the block comes back to Solana.
   const nftsOffered = currentChain === 'solana';
 
-  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
+  const defaultTabKeys = useMemo(
+    () => [...HOME_CORE_TAB_KEYS, ...(allPowerupKeys ?? [])] as HomeSubTabKey[],
+    [allPowerupKeys]
+  );
+  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(defaultTabKeys);
   // The array arrives as a fresh literal on every render, so the memo keys on
   // its contents rather than on its identity.
   const powerupTabsKey = (powerupTabs ?? [])

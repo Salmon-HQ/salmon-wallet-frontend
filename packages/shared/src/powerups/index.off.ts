@@ -8,12 +8,18 @@
  * is dead behind `POWERUPS_ENABLED`.
  */
 import type { PowerupsCatalogEntry } from '../types/ui/index';
-import type { PowerupEntry, PowerupId } from './manifest';
+import type { PowerupEntry } from './manifest';
+// Type-only, so it is erased before the bundler sees it: the off build still
+// never reaches the registry or a manifest.
+import type { PowerupId } from './registry';
 import type { PowerupCatalogParams } from './catalog';
 
 export const POWERUPS_ENABLED = false;
 
 export const POWERUPS: readonly PowerupEntry[] = [];
+
+/** No Powerup ships, so Home's default arrangement is Portfolio and NFTs. */
+export const POWERUP_TAB_KEYS: readonly string[] = [];
 
 export function getPowerup(_id: PowerupId): PowerupEntry | undefined {
   return undefined;

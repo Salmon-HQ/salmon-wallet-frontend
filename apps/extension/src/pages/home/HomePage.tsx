@@ -63,6 +63,7 @@ import {
 import { SettingsPage } from '../settings';
 import {
   POWERUPS,
+  POWERUP_TAB_KEYS,
   POWERUPS_ENABLED,
   PowerupsPage,
   SwapPage,
@@ -419,6 +420,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     surfaceKey,
     changeNetwork: actions.changeNetwork,
     powerupTabs,
+    allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
   // A page change on the balance block. The incoming chain's list starts at

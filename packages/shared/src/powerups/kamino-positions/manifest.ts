@@ -6,7 +6,7 @@
  */
 import type { PowerupManifest } from '../manifest';
 
-export const kaminoPositionsManifest: PowerupManifest = {
+export const kaminoPositionsManifest = {
   id: 'kamino-positions',
   tier: 'community',
   networks: ['solana-mainnet'],
@@ -20,4 +20,4 @@ export const kaminoPositionsManifest: PowerupManifest = {
   endpoints: ['https://api.kamino.finance'],
   locales: 'kamino-positions',
   entries: { tab: 'kamino-positions' },
-};
+} as const satisfies PowerupManifest;

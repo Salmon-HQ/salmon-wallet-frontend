@@ -4,7 +4,7 @@
  */
 import type { PowerupManifest } from '../manifest';
 
-export const swapManifest: PowerupManifest = {
+export const swapManifest = {
   id: 'swap',
   tier: 'core',
   networks: ['solana-mainnet'],
@@ -23,4 +23,4 @@ export const swapManifest: PowerupManifest = {
   endpoints: [],
   locales: 'swap',
   entries: { tab: 'swap' },
-};
+} as const satisfies PowerupManifest;

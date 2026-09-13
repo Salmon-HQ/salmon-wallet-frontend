@@ -11,6 +11,7 @@ import type { SwapPageProps } from './components/SwapPage';
 export {
   POWERUPS_ENABLED,
   POWERUPS,
+  POWERUP_TAB_KEYS,
   getPowerupCatalog,
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';

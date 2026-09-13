@@ -240,12 +240,13 @@ export type { UseChangePasswordParams } from './useChangePassword';
 // Home shell (page index, per-page balances, offered sub-tabs, the swap's owner)
 export {
   useHomeShell,
-  HOME_TAB_KEYS,
+  HOME_CORE_TAB_KEYS,
   blockchainIdOf,
   mapBalanceToToken,
   buildBitcoinToken,
 } from './useHomeShell';
 export type {
+  HomeCoreTabKey,
   HomePowerupTab,
   HomeSubTabKey,
   HomeSwapCause,

@@ -104,6 +104,7 @@ vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
 vi.mock('@salmon/ui/powerups', () => ({
   POWERUPS_ENABLED: true,
   POWERUPS: [],
+  POWERUP_TAB_KEYS: [],
   isPowerupOnNetwork: () => false,
   getPowerupCatalog: () => [],
   PowerupsPage: () => null,

@@ -6,7 +6,7 @@
  */
 import type { PowerupManifest } from '../manifest';
 
-export const memoManifest: PowerupManifest = {
+export const memoManifest = {
   id: 'memo',
   tier: 'core',
   networks: ['solana-mainnet', 'solana-devnet'],
@@ -19,4 +19,4 @@ export const memoManifest: PowerupManifest = {
   endpoints: [],
   locales: 'memo',
   entries: { tab: 'memo' },
-};
+} as const satisfies PowerupManifest;

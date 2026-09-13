@@ -83,6 +83,7 @@ import {
   PowerupsCatalog,
   getPowerupCatalog,
   getPowerupTab,
+  POWERUP_TAB_KEYS,
 } from '../../../src/powerups';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
@@ -317,6 +318,7 @@ export default function HomeScreen() {
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
     powerupTabs,
+    allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
   // Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the balance block

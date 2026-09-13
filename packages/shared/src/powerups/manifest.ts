@@ -10,8 +10,6 @@
  */
 import type { SolanaNetworkId } from '../types/blockchain';
 
-export type PowerupId = 'swap' | 'kamino-positions' | 'memo';
-
 /** Origin only: who wrote it. It never decides the disclosure (spec 029 §4). */
 export type PowerupTier = 'core' | 'community';
 
@@ -19,8 +17,12 @@ export type PowerupTier = 'core' | 'community';
 export type PowerupPermission = 'address' | 'balances' | 'none';
 
 export interface PowerupManifest {
-  /** The folder name, the catalogue key and the Home sub-tab key. */
-  id: PowerupId;
+  /**
+   * The folder name, the catalogue key and the Home sub-tab key. A manifest
+   * is the ONE place an id is written: the registry derives `PowerupId` from
+   * the ids its manifests declare, so nothing else lists them by hand.
+   */
+  id: string;
   tier: PowerupTier;
   /** The networks the Powerup acts on; hidden elsewhere. */
   networks: readonly SolanaNetworkId[];

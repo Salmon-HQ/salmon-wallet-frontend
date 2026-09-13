@@ -13,6 +13,7 @@ import SwapTabImpl from '../screens/SwapTab';
 export {
   POWERUPS_ENABLED,
   POWERUPS,
+  POWERUP_TAB_KEYS,
   getPowerupCatalog,
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';

@@ -10,7 +10,7 @@
  */
 export const POWERUPS_ENABLED = true;
 
-export { POWERUPS, getPowerup, isPowerupOnNetwork } from './registry';
+export { POWERUPS, POWERUP_TAB_KEYS, getPowerup, isPowerupOnNetwork } from './registry';
 export { getPowerupCatalog, MOCK_POWERUPS } from './catalog';
 export type { PowerupCatalogParams } from './catalog';
 export type {
