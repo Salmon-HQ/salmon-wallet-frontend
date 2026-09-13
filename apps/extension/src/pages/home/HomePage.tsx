@@ -870,17 +870,25 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
                     title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
                   />
-                ) : KaminoPositionsPage &&
-                  effectiveSubTab === 'kamino-positions' &&
-                  activeBlockchainAccount ? (
+                ) : !activeBlockchainAccount ? (
+                  // The account is Home's business, not each Powerup's: with
+                  // none on this network the surface is that state, and a
+                  // Powerup is mounted only with an address already resolved
+                  // (`docs/POWERUPS-UI.md` §1.1).
+                  <StateBlock
+                    tone="empty"
+                    testID="home-powerup-no-account"
+                    title={t('powerups.no_account')}
+                  />
+                ) : KaminoPositionsPage && effectiveSubTab === 'kamino-positions' ? (
                   <KaminoPositionsPage publicKey={activeBlockchainAccount.getReceiveAddress()} />
-                ) : MemoPage && effectiveSubTab === 'memo' && activeBlockchainAccount ? (
+                ) : MemoPage && effectiveSubTab === 'memo' ? (
                   <MemoPage
                     publicKey={activeBlockchainAccount.getReceiveAddress()}
                     networkId={networkId ?? null}
                     onNavigateHome={() => setActiveSubTab('portfolio')}
                   />
-                ) : SwapPage && effectiveSubTab === 'swap' && activeBlockchainAccount ? (
+                ) : SwapPage && effectiveSubTab === 'swap' ? (
                   // The Swap Powerup's own surface. The confirmation is core's
                   // and covers the whole panel when the user signs (§2).
                   <SwapPage

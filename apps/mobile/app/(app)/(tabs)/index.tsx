@@ -101,10 +101,19 @@ type SubTabKey = HomeSubTabKey;
 /** The catalogue's ceiling is measured against the window, once. */
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
+/** The "no account" state fills the content region, like every other state. */
+const powerupBodyStyles = StyleSheet.create({
+  noAccount: { flex: 1, justifyContent: 'center' },
+});
+
 /**
  * The active Powerup's surface, resolved through the aliased entry so Home
  * never names a Powerup itself. Nothing when the id owns no surface — a build
  * with Powerups off, or a stored tab whose Powerup is gone.
+ *
+ * The account is Home's business, not each Powerup's: with no account on the
+ * active network the surface is that state, and a Powerup is mounted only
+ * with an address already resolved (`docs/POWERUPS-UI.md` §1.1).
  */
 function PowerupTabBody({
   tabKey,
@@ -113,8 +122,26 @@ function PowerupTabBody({
   tabKey: string;
   onNavigateHome: () => void;
 }) {
+  const { t } = useTranslation();
+  const [{ ready, activeAccount, activeBlockchainAccount, networkId }] = useAccountsContext();
   const body = getPowerupTab(tabKey);
-  return body ? React.createElement(body, { onNavigateHome }) : null;
+  if (!body) return null;
+  if (!ready || !activeAccount || !activeBlockchainAccount) {
+    return (
+      <View style={powerupBodyStyles.noAccount}>
+        <StateBlock
+          tone="empty"
+          testID="home-powerup-no-account"
+          title={t('powerups.no_account')}
+        />
+      </View>
+    );
+  }
+  return React.createElement(body, {
+    publicKey: activeBlockchainAccount.getReceiveAddress(),
+    networkId: networkId ?? null,
+    onNavigateHome,
+  });
 }
 
 export default function HomeScreen() {

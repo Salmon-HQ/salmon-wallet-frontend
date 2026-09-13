@@ -17,7 +17,7 @@ import {
   fontFamily,
   fontSize,
   fontWeight,
-  getNetworkName,
+  powerupFactRows,
   lineHeight,
   spacing,
   type PowerupsCatalogEntry,
@@ -26,9 +26,8 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { powerupIcons } from '../../icons';
 import { SlideStack } from '../../motion';
-import { Card } from '../Card';
+import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
-import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { PlusMinusGlyph } from '../PlusMinusGlyph';
 import { WarningNotice } from '../WarningNotice';
@@ -186,17 +185,7 @@ export function PowerupsPage({
             </span>
           </div>
 
-          <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
-            <KeyValueRow
-              testID="powerups-detail-author"
-              label={t('powerups.detail.made_by')}
-              value={t(details.authorKey)}
-            />
-            <KeyValueRow
-              label={t('powerups.detail.networks')}
-              value={details.networks.map(getNetworkName).join(', ')}
-            />
-          </Card>
+          <FactsCard testID={`powerups-facts-${entry.id}`} rows={powerupFactRows(details, t)} />
         </div>
       </SettingsPanelContent>
     );

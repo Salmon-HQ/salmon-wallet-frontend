@@ -19,8 +19,16 @@ export {
 } from '@salmon/shared/powerups';
 export type { PowerupsCatalogProps };
 
-/** What Home hands an installed Powerup's surface. */
+/**
+ * What Home hands an installed Powerup's surface. Home mounts one only with
+ * an account on the active network — the "no account" state is Home's, not
+ * each Powerup's — so the address arrives already resolved.
+ */
 export interface PowerupTabProps {
+  /** The active account's receive address on `networkId`. */
+  publicKey: string;
+  /** The network the screen stands on. */
+  networkId: string | null;
   /** The Powerup's way back: Home returns to Portfolio when its task is done. */
   onNavigateHome?: () => void;
 }

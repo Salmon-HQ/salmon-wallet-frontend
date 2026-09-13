@@ -6,27 +6,13 @@
  * The DOM twin is `packages/ui/src/components/KaminoPositionsPage`.
  */
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  fontFamilyNative,
-  fontSize,
-  lineHeight,
-  s,
-  spacing,
-  useCurrencyContext,
-  vs,
-  type Semantic,
-} from '@salmon/shared';
-import {
-  kaminoPositionRows,
-  kaminoPositionTitle,
-  useKaminoPositions,
-} from '@salmon/shared/powerups';
+import { s, spacing, useCurrencyContext, vs } from '@salmon/shared';
+import { describeKaminoBody, useKaminoPositions } from '@salmon/shared/powerups';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
-import { Card } from '../Card';
-import { KeyValueRow } from '../KeyValueRow';
+import { FactsCard } from '../FactsCard';
 import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import { WarningNotice } from '../WarningNotice';
@@ -43,47 +29,20 @@ export const KaminoPositionsScreen: React.FC<KaminoPositionsScreenProps> = ({
   const [, { formatValue }] = useCurrencyContext();
   const { positions, loading, error, failedMarkets, refresh } = useKaminoPositions({ publicKey });
 
+  const body = describeKaminoBody({ positions, loading, error }, t, formatValue, i18n.language);
+
   const renderBody = () => {
-    if (loading) {
+    if (body.kind === 'loading') {
       return Array.from({ length: SKELETON_ROWS }, (_, index) => (
         <SkeletonRow key={index} lines={2} trailingWidth={s(spacing['4xl'])} />
       ));
     }
-    if (error) {
+    if (body.kind === 'state') {
       return (
-        <StateBlock
-          testID="kamino-positions-error"
-          tone="error"
-          title={t('kamino-positions.screen.error_title')}
-          body={t('kamino-positions.screen.error_body')}
-          onRetry={() => void refresh()}
-          retryLabel={t('kamino-positions.screen.retry')}
-        />
+        <StateBlock {...body.props} onRetry={body.retryable ? () => void refresh() : undefined} />
       );
     }
-    if (positions.length === 0) {
-      return (
-        <StateBlock
-          testID="kamino-positions-empty"
-          tone="empty"
-          title={t('kamino-positions.screen.empty_title')}
-          body={t('kamino-positions.screen.empty_body')}
-        />
-      );
-    }
-    return positions.map((position) => (
-      <Card
-        key={position.id}
-        padding="lg"
-        gap={spacing.md}
-        testID={`kamino-position-${position.id}`}
-      >
-        <Text style={styles.title}>{kaminoPositionTitle(position)}</Text>
-        {kaminoPositionRows(position, t, formatValue, i18n.language).map(({ key, ...row }) => (
-          <KeyValueRow key={key} {...row} />
-        ))}
-      </Card>
-    ));
+    return body.cards.map((card) => <FactsCard key={card.id} {...card} />);
   };
 
   return (
@@ -105,7 +64,7 @@ export const KaminoPositionsScreen: React.FC<KaminoPositionsScreenProps> = ({
   );
 };
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = () =>
   StyleSheet.create({
     scroll: {
       flex: 1,
@@ -117,12 +76,6 @@ const stylesFor = (t: Semantic) =>
     },
     list: {
       gap: vs(spacing.md),
-    },
-    title: {
-      fontSize: s(fontSize.base),
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.primary,
-      lineHeight: s(fontSize.base) * lineHeight.condensed,
     },
   });
 

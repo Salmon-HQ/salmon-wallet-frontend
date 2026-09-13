@@ -16,6 +16,8 @@ export type { PowerupsCatalogProps };
 
 /** What Home hands an installed Powerup's surface. */
 export interface PowerupTabProps {
+  publicKey: string;
+  networkId: string | null;
   onNavigateHome?: () => void;
 }
 

@@ -94,6 +94,8 @@ export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
 
+export { FactsCard } from './FactsCard';
+export type { FactsCardProps } from './FactsCard';
 export { SkeletonRow } from './SkeletonRow';
 export type { SkeletonRowProps } from './SkeletonRow';
 

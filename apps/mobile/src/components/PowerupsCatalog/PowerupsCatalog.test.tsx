@@ -13,6 +13,7 @@ jest.mock('@salmon/shared', () => ({
   ms: (value: number) => value,
   getNetworkName: (network: string) => network,
   ...jest.requireActual('@salmon/shared/src/types/ui/key-value-row'),
+  ...jest.requireActual('@salmon/shared/src/utils/powerupFacts'),
 }));
 
 jest.mock('react-i18next', () => ({

@@ -13,8 +13,6 @@
  * not offered on any other network (the registry's `networks`).
  */
 import React, { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
 
 import {
   unifiedToSwapToken,
@@ -24,19 +22,17 @@ import {
   type SwapToken,
 } from '@salmon/shared';
 import type { PowerupTabProps } from '../powerups';
-import { StateBlock } from '../components';
 import { SwapScreen } from '../components/SwapScreen';
 
-export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
-  const { t } = useTranslation();
+export default function SwapTab({ publicKey, networkId, onNavigateHome }: PowerupTabProps) {
   const [, { formatValue }] = useCurrencyContext();
 
-  const [accountState] = useAccountsContext();
-  const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
+  // The account is Home's gate; this reads it only for the token list.
+  const [{ activeAccount }] = useAccountsContext();
 
   const { tokens: multiChainTokens, loading } = useMultiChainTokens({
     activeAccount,
-    skip: !ready || !activeAccount,
+    skip: !activeAccount,
   });
 
   const swapTokens: SwapToken[] = useMemo(
@@ -46,30 +42,15 @@ export default function SwapTab({ onNavigateHome }: PowerupTabProps) {
 
   const formatUsd = useCallback((value: number) => `~${formatValue(value)}`, [formatValue]);
 
-  if (!ready || !activeAccount || !activeBlockchainAccount) {
-    return (
-      <View style={styles.centered}>
-        <StateBlock tone="empty" title={t('swap.errors.noAccount')} />
-      </View>
-    );
-  }
-
   return (
     <SwapScreen
       tokens={swapTokens}
       loading={loading}
-      publicKey={activeBlockchainAccount.getReceiveAddress()}
-      networkId={networkId ?? null}
+      publicKey={publicKey}
+      networkId={networkId}
       initialInToken={swapTokens[0]}
       formatUsd={formatUsd}
       onNavigateHome={onNavigateHome}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-});

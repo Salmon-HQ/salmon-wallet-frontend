@@ -5,5 +5,10 @@ export { summarizeKaminoObligations } from './positions';
 export type { KaminoObligationsByMarket, KaminoPosition } from './positions';
 export { loadKaminoPositions, useKaminoPositions } from './useKaminoPositions';
 export type { UseKaminoPositionsParams, UseKaminoPositionsResult } from './useKaminoPositions';
-export { kaminoLtvParams, kaminoPositionRows, kaminoPositionTitle } from './format';
-export type { KaminoPositionRow } from './format';
+export {
+  describeKaminoBody,
+  kaminoLtvParams,
+  kaminoPositionRows,
+  kaminoPositionTitle,
+} from './format';
+export type { KaminoBody, KaminoPositionRow } from './format';

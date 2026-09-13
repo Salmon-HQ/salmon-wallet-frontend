@@ -419,6 +419,8 @@ export type {
 // ShimmerRect / SkeletonRow - the placeholder atoms, and the row they compose
 export { ShimmerRect } from './ShimmerRect';
 export type { ShimmerRectProps } from './ShimmerRect';
+export { FactsCard } from './FactsCard';
+export type { FactsCardProps } from './FactsCard';
 export { SkeletonRow } from './SkeletonRow';
 export type { SkeletonRowProps } from './SkeletonRow';
 

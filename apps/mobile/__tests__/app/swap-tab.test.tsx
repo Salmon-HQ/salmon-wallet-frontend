@@ -91,21 +91,6 @@ describe('SwapTab', () => {
     jest.clearAllMocks();
   });
 
-  it('states the absence of an account instead of rendering the form', () => {
-    useAccountsContext.mockReturnValue([
-      {
-        ready: false,
-        activeAccount: null,
-        activeBlockchainAccount: null,
-        networkId: 'solana-mainnet',
-      },
-    ]);
-    render(<SwapTab />);
-    expect(screen.getByTestId('state-block').props.accessibilityLabel).toBe(
-      'swap.errors.noAccount'
-    );
-  });
-
   it('hands the Powerup Solana tokens only, the taker and the network', () => {
     useAccountsContext.mockReturnValue([
       {
@@ -115,7 +100,7 @@ describe('SwapTab', () => {
         networkId: 'solana-devnet',
       },
     ]);
-    render(<SwapTab />);
+    render(<SwapTab publicKey="wallet-1" networkId="solana-devnet" />);
 
     expect(screen.getByText('tokens:SOL')).toBeTruthy();
     expect(screen.getByText('taker:wallet-1')).toBeTruthy();

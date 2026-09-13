@@ -28,7 +28,7 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
-  getNetworkName,
+  powerupFactRows,
   lineHeight,
   s,
   spacing,
@@ -42,9 +42,8 @@ import { powerupIcons } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
-import { Card } from '../Card';
+import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
-import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { PlusMinusGlyph } from '../PlusMinusGlyph';
 import { WarningNotice } from '../WarningNotice';
@@ -181,17 +180,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           </Text>
         </View>
 
-        <Card padding="lg" gap={spacing.md} testID={`powerups-facts-${entry.id}`}>
-          <KeyValueRow
-            testID="powerups-detail-author"
-            label={t('powerups.detail.made_by')}
-            value={t(details.authorKey)}
-          />
-          <KeyValueRow
-            label={t('powerups.detail.networks')}
-            value={details.networks.map(getNetworkName).join(', ')}
-          />
-        </Card>
+        <FactsCard testID={`powerups-facts-${entry.id}`} rows={powerupFactRows(details, t)} />
       </View>
     );
   };

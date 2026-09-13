@@ -852,6 +852,7 @@
     "browse_subtitle": "Add-ons that give your wallet new abilities.",
     "installed": "Installed",
     "empty_section": "Nothing here yet",
+    "no_account": "No account found",
     "badge": {
       "core": "Core",
       "community": "Community"

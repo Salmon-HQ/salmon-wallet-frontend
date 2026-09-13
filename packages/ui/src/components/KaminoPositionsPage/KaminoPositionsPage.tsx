@@ -7,23 +7,10 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  fontFamily,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  spacing,
-  useCurrencyContext,
-} from '@salmon/shared';
-import {
-  kaminoPositionRows,
-  kaminoPositionTitle,
-  useKaminoPositions,
-} from '@salmon/shared/powerups';
+import { spacing, useCurrencyContext } from '@salmon/shared';
+import { describeKaminoBody, useKaminoPositions } from '@salmon/shared/powerups';
 
-import { useSemantic } from '../../theme/ThemeProvider';
-import { Card } from '../Card';
-import { KeyValueRow } from '../KeyValueRow';
+import { FactsCard } from '../FactsCard';
 import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import { WarningNotice } from '../WarningNotice';
@@ -33,59 +20,23 @@ const SKELETON_ROWS = 2;
 
 export function KaminoPositionsPage({ publicKey, style }: KaminoPositionsPageProps) {
   const { t, i18n } = useTranslation();
-  const semantic = useSemantic();
   const [, { formatValue }] = useCurrencyContext();
   const { positions, loading, error, failedMarkets, refresh } = useKaminoPositions({ publicKey });
 
-  const titleStyle: React.CSSProperties = {
-    fontFamily: fontFamily.sans,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: semantic.text.primary,
-    lineHeight: `${fontSize.base * lineHeight.condensed}px`,
-  };
+  const body = describeKaminoBody({ positions, loading, error }, t, formatValue, i18n.language);
 
   const renderBody = () => {
-    if (loading) {
+    if (body.kind === 'loading') {
       return Array.from({ length: SKELETON_ROWS }, (_, index) => (
         <SkeletonRow key={index} lines={2} trailingWidth={spacing['4xl']} />
       ));
     }
-    if (error) {
+    if (body.kind === 'state') {
       return (
-        <StateBlock
-          testID="kamino-positions-error"
-          tone="error"
-          title={t('kamino-positions.screen.error_title')}
-          body={t('kamino-positions.screen.error_body')}
-          onRetry={() => void refresh()}
-          retryLabel={t('kamino-positions.screen.retry')}
-        />
+        <StateBlock {...body.props} onRetry={body.retryable ? () => void refresh() : undefined} />
       );
     }
-    if (positions.length === 0) {
-      return (
-        <StateBlock
-          testID="kamino-positions-empty"
-          tone="empty"
-          title={t('kamino-positions.screen.empty_title')}
-          body={t('kamino-positions.screen.empty_body')}
-        />
-      );
-    }
-    return positions.map((position) => (
-      <Card
-        key={position.id}
-        padding="lg"
-        gap={spacing.md}
-        testID={`kamino-position-${position.id}`}
-      >
-        <span style={titleStyle}>{kaminoPositionTitle(position)}</span>
-        {kaminoPositionRows(position, t, formatValue, i18n.language).map(({ key, ...row }) => (
-          <KeyValueRow key={key} {...row} />
-        ))}
-      </Card>
-    ));
+    return body.cards.map((card) => <FactsCard key={card.id} {...card} />);
   };
 
   return (
