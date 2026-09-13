@@ -258,13 +258,22 @@ export function BalanceHeader({
     if (blinkedForRef.current === currentBlockchainId) return;
     blinkedForRef.current = currentBlockchainId;
     if (reducedMotion || !canAnimate(eyeRef.current)) return;
+    // Two curves, not one: the close is `sink` (the amount's own exit above
+    // rides it) and the reopen is `settle`, the same pair the mobile twin
+    // uses for this blink. One animation carries both — a keyframe's easing
+    // governs the interval that starts at it — so nothing is left filling
+    // the eye shut after the blink has played.
     eyeRef.current.animate(
       [
-        { transform: 'scaleY(1)' },
-        { transform: 'scaleY(0.05)', offset: motionMs.flick / (motionMs.flick + motionMs.swell) },
+        { transform: 'scaleY(1)', easing: motionEasing.sink.css },
+        {
+          transform: 'scaleY(0.05)',
+          offset: motionMs.flick / (motionMs.flick + motionMs.swell),
+          easing: motionEasing.settle.css,
+        },
         { transform: 'scaleY(1)' },
       ],
-      { duration: motionMs.flick + motionMs.swell, easing: motionEasing.settle.css }
+      { duration: motionMs.flick + motionMs.swell }
     );
   }, [currentBlockchainId, reducedMotion]);
 

@@ -63,6 +63,13 @@ const BACKDROP_OPACITY = 0.8;
 const HANDLE_WIDTH = 44;
 const HANDLE_HEIGHT = 5;
 const DRAG_THRESHOLD = 150;
+/**
+ * The drag-release spring — the one animation in the app with no `motionMs`
+ * duration at all, and a deliberate exception to the duration vocabulary
+ * rather than an oversight. A gesture release has to follow the finger's
+ * velocity at the moment it lets go, which a fixed duration cannot express:
+ * a spring is the only model that takes that velocity as an input.
+ */
 const SPRING_CONFIG = {
   damping: 20,
   stiffness: 200,

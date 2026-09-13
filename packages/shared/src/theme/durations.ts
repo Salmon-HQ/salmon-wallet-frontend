@@ -425,3 +425,11 @@ export const glyphTurnDeg = {
   plus: 90,
   minus: 180,
 } as const;
+
+/**
+ * The one frame the interface needs to commit before the JS thread is taken
+ * by key derivation. This is NOT an animation and carries no motion vocabulary
+ * — it is a bare `setTimeout` yield so a `LoadingScreen` can paint before a
+ * blocking crypto operation starts, on both password-entry twins.
+ */
+export const YIELD_TO_PAINT_MS = 100;

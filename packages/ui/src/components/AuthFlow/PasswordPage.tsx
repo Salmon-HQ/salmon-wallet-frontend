@@ -23,6 +23,7 @@ import {
   getPasswordIssue,
   componentSizes,
   useWaitExit,
+  YIELD_TO_PAINT_MS,
 } from '@salmon/shared';
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
@@ -164,7 +165,8 @@ export function PasswordPage({
 
     setIsLoading(true);
     setError(null);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
+    await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
 
     try {
       const accountName = generateAccountName(state.counter, t('wallet.name_template'));

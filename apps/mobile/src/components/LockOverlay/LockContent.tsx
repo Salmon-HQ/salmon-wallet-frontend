@@ -59,6 +59,12 @@ export type { LockContentProps };
  *
  * iOS reports `active` a moment before the view is presented, and a prompt
  * raised in that gap silently never appears. Device-calibrated, not derived.
+ *
+ * This equals `motionMs.waitDelay` (400) by coincidence, not by relationship —
+ * one is how long before the biometric prompt is asked for, the other is how
+ * long a wait must last before a waiting screen may show. Do not alias it to
+ * `motionMs.waitDelay`; a future edit to `waitDelay` must not silently move
+ * the biometric prompt.
  */
 const PROMPT_SETTLE_MS = 400;
 
