@@ -192,12 +192,16 @@ the issue or the spec, with links, so the reviewer reads the same facts:
 - How two or three established wallets present the same capability: what they
   ask before committing, what they show while it is pending, how they let the
   user out. Borrow the questions they ask, never their look.
-- The backend's build endpoint for it, which must exist and be reviewed first
-  (`../salmon-wallet-backend`): a Powerup consumes it, it is not designed here.
-  Check `src/services/solana/powerups/registry.js` for an adapter with this
-  id before anything else — if there is none, the answer is a backend ticket,
-  not a client branch, and finding that out costs two minutes rather than a
-  day of planning.
+- The backend's build endpoint for it: a Powerup consumes it, it is never
+  designed in the client. Check `../salmon-wallet-backend`,
+  `src/services/solana/powerups/registry.js`, for an adapter with this id
+  before anything else — two minutes that decide the shape of the work.
+  What follows from the answer depends on the tier: a **core** Powerup is
+  written by a maintainer who owns both repos, so a missing adapter is the
+  first half of the same piece of work and lands in the backend first; a
+  **community** one cannot touch the backend at all, so a missing adapter is
+  a blocked contribution and the client branch waits. Either way the client
+  PR is reviewed against an endpoint that already exists.
 
 **2. Ask the human, and wait.** These are the answers a wrong guess turns into
 rework, and they are product decisions rather than engineering ones:

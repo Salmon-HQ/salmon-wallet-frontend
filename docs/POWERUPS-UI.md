@@ -395,7 +395,9 @@ Apply in order; a "no" on any line blocks.
 9. **Bundle.** A marker string in `scripts/check-powerups-bundle.mjs`
    `MARKERS`; a Powerups-off build proves the Powerup absent.
 10. **Backend first** for a builder: the endpoint exists and was reviewed
-    before the client PR; the client PR only consumes it.
+    before the client PR; the client PR only consumes it. For a core Powerup
+    that backend half is the same author's, and lands first; for a community
+    one it is not theirs to write, so the contribution waits on it.
 11. **No new dependency, no remote asset, no seed material anywhere**
     (`pnpm check:no-secrets`).
 
