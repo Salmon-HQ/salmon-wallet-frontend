@@ -194,6 +194,10 @@ the issue or the spec, with links, so the reviewer reads the same facts:
   user out. Borrow the questions they ask, never their look.
 - The backend's build endpoint for it, which must exist and be reviewed first
   (`../salmon-wallet-backend`): a Powerup consumes it, it is not designed here.
+  Check `src/services/solana/powerups/registry.js` for an adapter with this
+  id before anything else — if there is none, the answer is a backend ticket,
+  not a client branch, and finding that out costs two minutes rather than a
+  day of planning.
 
 **2. Ask the human, and wait.** These are the answers a wrong guess turns into
 rework, and they are product decisions rather than engineering ones:
@@ -206,15 +210,26 @@ rework, and they are product decisions rather than engineering ones:
   `endpoints`, and it generates the disclosure — it cannot be approximate.
 - A Home sub-tab or an action inside an existing screen? A tab is for
   something that holds state the user owns and returns to.
-- Can it be enabled from its catalogue row, or only from its detail screen
-  after the user has read the disclosure? Anything with custody exposure is
-  the latter.
+- Does it take a Salmon fee? If so, say who builds the fee leg — the generic
+  build path nulls it today, so that is a backend change that lands first.
+  (Installation needs no question: the catalogue row only ever opens the
+  detail, and the control that installs lives there, under the disclosure.)
 - What happens when the counterparty degrades or disappears, given that
   removing the capability would remove the only surface that can unwind a
   position?
+- Does it build more than one kind of transaction? They share one id and one
+  catalogue row; the build call distinguishes them.
 - The Spanish copy, from the owner. Never guessed (see i18n above).
 
-**3. Then follow `docs/POWERUPS-UI.md`.** It is the building-block inventory:
+**3. Decide what core owes, before the Powerup exists.** If the position the
+capability manages exists on chain whether or not the Powerup is installed —
+a stake account does, a swap does not — then the wallet must show it either
+way, or turning a capability off would hide funds, which is the one failure a
+self-custodial wallet exists to prevent. That surface is core code, not
+`powerups/**`: the off build aliases the whole folder away. It is a separate
+PR, and it lands first.
+
+**4. Then follow `docs/POWERUPS-UI.md`.** It is the building-block inventory:
 what every Powerup must reuse, what it must not modify, what it may add, and
 the reviewer checklist in its §3 that a PR is measured against. A Powerup
 composes those blocks; it never draws its own. When a block it needs does not
