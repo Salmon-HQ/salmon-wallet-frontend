@@ -25,7 +25,6 @@ function flatten(obj, prefix = '', out = {}) {
 // under its namespace at runtime; the check reads it the same way.
 const POWERUP_LOCALES = [
   ['swap', 'packages/shared/src/powerups/swap/locales'],
-  ['kamino-positions', 'packages/shared/src/powerups/kamino-positions/locales'],
   ['memo', 'packages/shared/src/powerups/memo/locales'],
 ];
 function loadLocale(lang) {

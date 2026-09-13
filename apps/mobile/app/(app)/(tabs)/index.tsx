@@ -509,7 +509,6 @@ export default function HomeScreen() {
     powerupTabs,
     installed,
     install,
-    developerNetworks,
     networkId: currentNetworkId,
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,

@@ -320,8 +320,8 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   A position, a review block and a fact list are the same object: an optional
   bold title, then the rows. The title's type, the padding, the gap and the
   radius are fixed there. When both twins would pass the same rows, the
-  derivation is hoisted into shared and each twin only renders it —
-  `powerupFactRows` and `kaminoPositionRows` are the two that exist.
+  derivation is hoisted into shared and each twin only renders it, the way
+  `powerupFactRows` builds the detail's two facts for both.
 
 ### 1.11 Motion — what a Powerup may animate
 
@@ -395,8 +395,8 @@ Apply in order; a "no" on any line blocks.
    origin only; the generated disclosure reads true.
 3. **Twins.** `pnpm check:parity` green with no new `MOBILE_ONLY` /
    `DOM_ONLY` entry; one `XPropsBase`; both `types.ts` extend it; the
-   duplication ceiling did not rise (hoist rows and derivations into
-   shared, as `kaminoPositionRows` does).
+   duplication ceiling did not rise (hoist rows and derivations into shared,
+   so each twin renders a list it did not build).
 4. **Blocks only.** Every visible element is a §1 block or a folder-local
    composition of them: no `<Text style={{color:'#…'}}>`, no MUI, no custom
    modal, no spinner, no icon asset, no literal spacing / size / duration /

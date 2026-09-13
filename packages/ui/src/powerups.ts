@@ -7,11 +7,9 @@
  */
 import type { ComponentType } from 'react';
 import { PowerupsPage as PowerupsPageImpl } from './components/PowerupsPage';
-import { KaminoPositionsPage as KaminoPositionsPageImpl } from './components/KaminoPositionsPage';
 import { MemoPage as MemoPageImpl } from './components/MemoPage';
 import { SwapPage as SwapPageImpl } from './components/SwapPage';
 import type { PowerupsPageProps } from './components/PowerupsPage';
-import type { KaminoPositionsPageProps } from './components/KaminoPositionsPage';
 import type { MemoPageProps } from './components/MemoPage';
 import type { SwapPageProps } from './components/SwapPage';
 
@@ -23,7 +21,6 @@ export {
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';
 export type { PowerupEntry } from '@salmon/shared/powerups';
-export type { KaminoPositionsPageProps, MemoPageProps, PowerupsPageProps, SwapPageProps };
 
 /** The catalogue page of Home's stack; `null` in a build with Powerups off. */
 export const PowerupsPage: ComponentType<PowerupsPageProps> | null = PowerupsPageImpl;
@@ -33,7 +30,3 @@ export const SwapPage: ComponentType<SwapPageProps> | null = SwapPageImpl;
 
 /** The Memo Powerup's Home sub-tab; `null` in a build with Powerups off. */
 export const MemoPage: ComponentType<MemoPageProps> | null = MemoPageImpl;
-
-/** The Kamino Positions Powerup's Home sub-tab; `null` in a build with Powerups off. */
-export const KaminoPositionsPage: ComponentType<KaminoPositionsPageProps> | null =
-  KaminoPositionsPageImpl;

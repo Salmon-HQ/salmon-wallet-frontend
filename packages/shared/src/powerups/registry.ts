@@ -6,7 +6,6 @@
  * a screen of its own.
  */
 import type { PowerupEntry } from './manifest';
-import { kaminoPositionsManifest } from './kamino-positions/manifest';
 import { memoManifest } from './memo/manifest';
 import { swapManifest } from './swap/manifest';
 
@@ -17,7 +16,7 @@ export type { PowerupEntry, PowerupManifest, PowerupPermission, PowerupTier } fr
  * tier in this order, and `POWERUP_TAB_KEYS` gives Home its default sub-tab
  * arrangement from it, so the two can never disagree.
  */
-const MANIFESTS = [swapManifest, memoManifest, kaminoPositionsManifest] as const;
+const MANIFESTS = [swapManifest, memoManifest] as const;
 
 export const POWERUPS: readonly PowerupEntry[] = MANIFESTS;
 

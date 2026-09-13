@@ -9,13 +9,16 @@ import type { PowerupManifest } from '../manifest';
 export const memoManifest = {
   id: 'memo',
   iconName: 'PencilSimple',
-  tier: 'core',
+  // Community, though Salmon wrote it: memo is the fixture that exercises the
+  // contributed path end to end — the badge, the generated disclosure and the
+  // review a community entry gets. A core tier would test the easy half.
+  tier: 'community',
   networks: ['solana-mainnet', 'solana-devnet'],
   nameKey: 'memo.catalog.name',
   descriptionKey: 'memo.catalog.description',
   aboutKey: 'memo.catalog.about',
   actionKeys: ['memo.catalog.actions.write'],
-  authorKey: 'powerups.author.salmon',
+  authorKey: 'powerups.author.community',
   permissions: ['address'],
   endpoints: [],
   locales: 'memo',

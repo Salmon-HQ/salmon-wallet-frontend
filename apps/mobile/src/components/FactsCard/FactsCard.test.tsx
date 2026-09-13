@@ -1,6 +1,6 @@
 /**
- * The facts block both the Kamino position and the Powerups detail are made
- * of: the title is optional, and a row's own testID has to survive so a
+ * The facts block a position card and the Powerups detail are both made of:
+ * the title is optional, and a row's own testID has to survive so a
  * single fact stays selectable from a flow.
  */
 import React from 'react';

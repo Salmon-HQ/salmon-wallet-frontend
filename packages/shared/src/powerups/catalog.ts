@@ -1,61 +1,18 @@
 /**
  * The catalogue both platforms draw: the registry's entries for the active
- * network, plus the design frames' mock entries behind the developer flag.
+ * network.
  *
  * It lives here rather than in either app because it is the same list on both
  * — only the icon's renderer is platform code, and each twin resolves the
- * name the manifest declares. A catalogue that advertised four things the
- * wallet cannot install would be a promise, not a product, so the mocks are
- * developer-only.
+ * name the manifest declares. It lists what the wallet can actually install
+ * and nothing else: a row for something that does not exist is a promise,
+ * not a product — and in a public repo it is also an announcement.
  */
-import type { PowerupsCatalogEntry, PowerupsCatalogEntryDetails } from '../types/ui/index';
+import type { PowerupsCatalogEntry } from '../types/ui/index';
 import { describeDisclosure } from './disclosure';
 import { POWERUPS, isPowerupOnNetwork } from './registry';
 
-/** What every mock says in its detail: a placeholder, not a promise. */
-const mockDetails = (tier: PowerupsCatalogEntry['tier']): PowerupsCatalogEntryDetails => ({
-  aboutKey: 'powerups.catalog.mock.about',
-  actionKeys: [],
-  disclosure: [{ key: 'powerups.disclosure.sends_nothing' }],
-  authorKey: tier === 'core' ? 'powerups.author.salmon' : 'powerups.author.community',
-  networks: ['solana-mainnet'],
-});
-
-/**
- * The `.pen` frames' catalogue. Developer mode only — none of these exist,
- * and none of them names a capability the product has not announced: this
- * repo is public, and a mock row is still a statement about what is coming.
- */
-export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [
-  {
-    id: 'wallet-guard',
-    iconName: 'ShieldCheck',
-    nameKey: 'powerups.catalog.wallet_guard.name',
-    descriptionKey: 'powerups.catalog.wallet_guard.description',
-    tier: 'core',
-    details: mockDetails('core'),
-  },
-  {
-    id: 'auto-compound',
-    iconName: 'TrendUp',
-    nameKey: 'powerups.catalog.auto_compound.name',
-    descriptionKey: 'powerups.catalog.auto_compound.description',
-    tier: 'community',
-    details: mockDetails('community'),
-  },
-  {
-    id: 'nft-floor-watch',
-    iconName: 'Image',
-    nameKey: 'powerups.catalog.nft_floor_watch.name',
-    descriptionKey: 'powerups.catalog.nft_floor_watch.description',
-    tier: 'community',
-    details: mockDetails('community'),
-  },
-];
-
 export interface PowerupCatalogParams {
-  /** Developer mode: the mock entries join the real ones. */
-  includeMocks: boolean;
   /** The network the screen stands on; a Powerup is offered only where it acts. */
   networkId: string | null;
   /** What this device has installed — an installed entry stays in its tier. */
@@ -70,7 +27,6 @@ export interface PowerupCatalogParams {
 }
 
 export function getPowerupCatalog({
-  includeMocks,
   networkId,
   installedIds,
   allowedIds,
@@ -97,6 +53,5 @@ export function getPowerupCatalog({
       networks: entry.networks,
     },
   }));
-  if (!includeMocks) return real;
-  return [...real, ...MOCK_POWERUPS.map((entry) => ({ ...entry, installed: false }))];
+  return real;
 }

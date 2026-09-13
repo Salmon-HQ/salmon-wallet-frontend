@@ -53,7 +53,7 @@ import { fileURLToPath } from 'node:url';
  * every lot that hoists logic into packages/shared lowers it to the new
  * measurement. It may only go down.
  */
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2424;
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2401;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -64,7 +64,6 @@ export const MAP = {
   Send: ['SendPage', 'InputAddress'],
   SwapScreen: ['SwapPage'],
   MemoScreen: ['MemoPage'],
-  KaminoPositionsScreen: ['KaminoPositionsPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
 };

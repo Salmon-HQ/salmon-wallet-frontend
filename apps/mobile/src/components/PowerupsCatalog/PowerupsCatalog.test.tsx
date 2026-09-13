@@ -96,14 +96,14 @@ const entries = [
     },
   },
   {
-    id: 'auto-compound',
-    nameKey: 'powerups.catalog.auto_compound.name',
-    descriptionKey: 'powerups.catalog.auto_compound.description',
+    id: 'fixture-community',
+    nameKey: 'memo.catalog.name',
+    descriptionKey: 'memo.catalog.description',
     tier: 'community' as const,
     iconName: 'ChartPie' as const,
     installed: false,
     details: {
-      aboutKey: 'powerups.catalog.mock.about',
+      aboutKey: 'memo.catalog.about',
       actionKeys: [],
       disclosure: [{ key: 'powerups.disclosure.sends_nothing' }],
       authorKey: 'powerups.author.community',
@@ -140,7 +140,7 @@ describe('PowerupsCatalog', () => {
     expect(screen.queryByTestId('powerups-filters')).toBeNull();
     expect(screen.queryByTestId('powerups-search-input')).toBeNull();
     expect(screen.getByTestId('powerups-row-swap')).toBeTruthy();
-    expect(screen.getByTestId('powerups-row-auto-compound')).toBeTruthy();
+    expect(screen.getByTestId('powerups-row-fixture-community')).toBeTruthy();
   });
 
   it('rises no higher than the ceiling Home measured', () => {
@@ -157,7 +157,7 @@ describe('PowerupsCatalog', () => {
     expect(screen.getByTestId('powerups-detail-swap')).toBeTruthy();
     // The detail is its own sheet over the catalogue: the list stays underneath.
     expect(screen.getByTestId('powerups-detail-sheet-swap')).toBeTruthy();
-    expect(screen.getByTestId('powerups-row-auto-compound')).toBeTruthy();
+    expect(screen.getByTestId('powerups-row-fixture-community')).toBeTruthy();
     // The facts under the row: who made it, where it acts, what it uses.
     expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
     expect(screen.getByTestId('powerups-facts-swap')).toBeTruthy();

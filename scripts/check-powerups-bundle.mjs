@@ -27,7 +27,6 @@ const MARKERS = [
   'swap.catalog',
   'Swap Review',
   'Tolerancia de Deslizamiento',
-  'kamino-positions.catalog',
   'memo.catalog',
 ];
 

@@ -863,23 +863,6 @@
       "core": "CORE",
       "community": "COMUNIDAD"
     },
-    "catalog": {
-      "wallet_guard": {
-        "name": "Wallet Guard",
-        "description": "Simula transacciones y marca firmas riesgosas."
-      },
-      "auto_compound": {
-        "name": "Auto-compound",
-        "description": "Automatiza las recompensas de staking"
-      },
-      "nft_floor_watch": {
-        "name": "NFT Floor Watch",
-        "description": "Seguimiento del precio piso de colecciones"
-      },
-      "mock": {
-        "about": "Una vista previa de los diseños. Todavía no existe."
-      }
-    },
     "detail": {
       "about": "Acerca de",
       "what_you_can_do": "Qué podés hacer",

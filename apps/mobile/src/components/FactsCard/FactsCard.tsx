@@ -1,8 +1,8 @@
 /**
  * FactsCard — a card of facts under an optional bold title.
  *
- * The DOM twin is `packages/ui/src/components/FactsCard`. A Kamino position,
- * a review's data block and a receipt's fine print are the same object: one
+ * The DOM twin is `packages/ui/src/components/FactsCard`. A position, a
+ * review's data block and a receipt's fine print are the same object: one
  * heading line, then `KeyValueRow`s. Whoever composes facts passes them;
  * nobody draws the title line again.
  */

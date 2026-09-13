@@ -551,7 +551,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     powerupTabs,
     installed,
     install,
-    developerNetworks,
     networkId: currentNetworkId,
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,

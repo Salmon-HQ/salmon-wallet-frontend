@@ -20,10 +20,10 @@ describe('describeDisclosure — generated from the manifest, never written', ()
     expect(
       describeDisclosure({
         permissions: ['address'],
-        endpoints: ['https://api.kamino.finance/v2', 'https://price.jup.ag'],
+        endpoints: ['https://api.example.com/v2', 'https://price.jup.ag'],
       })
     ).toEqual([
-      { key: 'powerups.disclosure.address_to', params: { host: 'api.kamino.finance' } },
+      { key: 'powerups.disclosure.address_to', params: { host: 'api.example.com' } },
       { key: 'powerups.disclosure.address_to', params: { host: 'price.jup.ag' } },
     ]);
   });

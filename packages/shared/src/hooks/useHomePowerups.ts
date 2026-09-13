@@ -75,7 +75,6 @@ export interface UseHomePowerupsCatalogParams {
   /** What this device has installed. */
   installed: readonly string[];
   install: (id: string) => void;
-  developerNetworks: boolean;
   /** The network the screen stands on (`useHomeShell`'s `currentNetworkId`). */
   networkId: string;
   /** The registry, from the platform's Powerups entry (empty with Powerups off). */
@@ -91,7 +90,7 @@ export interface UseHomePowerupsCatalogResult {
   handleCatalogToggle: () => void;
   handleCatalogClose: () => void;
   catalogEntries: PowerupsCatalogEntry[];
-  /** Only a real Powerup can be installed — the mocks advertise nothing to open. */
+  /** Only a Powerup the registry holds and the backend allows can be installed. */
   handleInstall: (id: string) => void;
   removableTabKeys: string[];
 }
@@ -101,7 +100,6 @@ export function useHomePowerupsCatalog({
   powerupTabs,
   installed,
   install,
-  developerNetworks,
   networkId,
   powerups,
   getCatalog,
@@ -114,13 +112,12 @@ export function useHomePowerupsCatalog({
   const catalogEntries = useMemo(
     () =>
       getCatalog({
-        includeMocks: developerNetworks,
         networkId,
         installedIds: installed,
         allowedIds: allowlist.enabled,
         disabledReasons: allowlist.disabled,
       }),
-    [getCatalog, developerNetworks, networkId, installed, allowlist]
+    [getCatalog, networkId, installed, allowlist]
   );
 
   const handleInstall = useCallback(

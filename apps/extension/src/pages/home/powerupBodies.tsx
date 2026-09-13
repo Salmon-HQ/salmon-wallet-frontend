@@ -14,7 +14,7 @@
  * queries, so they arrive as `PowerupBodyContext` instead.
  */
 import React from 'react';
-import { KaminoPositionsPage, MemoPage, SwapPage } from '@salmon/ui/powerups';
+import { MemoPage, SwapPage } from '@salmon/ui/powerups';
 import type { SwapToken } from '@salmon/shared';
 
 export interface PowerupBodyContext {
@@ -36,9 +36,6 @@ export interface PowerupBodyContext {
  * Powerup is gone.
  */
 export function renderPowerupBody(id: string, ctx: PowerupBodyContext): React.ReactElement | null {
-  if (id === 'kamino-positions' && KaminoPositionsPage) {
-    return <KaminoPositionsPage publicKey={ctx.publicKey} />;
-  }
   if (id === 'memo' && MemoPage) {
     return (
       <MemoPage

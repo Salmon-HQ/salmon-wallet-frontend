@@ -6,7 +6,6 @@
 import type { ComponentType } from 'react';
 import type { PowerupsCatalogProps } from '../components/PowerupsCatalog';
 import { PowerupsCatalog as PowerupsCatalogImpl } from '../components/PowerupsCatalog';
-import KaminoPositionsTabImpl from '../screens/KaminoPositionsTab';
 import MemoTabImpl from '../screens/MemoTab';
 import SwapTabImpl from '../screens/SwapTab';
 
@@ -40,6 +39,5 @@ export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = Power
 export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null {
   if (id === 'swap') return SwapTabImpl;
   if (id === 'memo') return MemoTabImpl;
-  if (id === 'kamino-positions') return KaminoPositionsTabImpl;
   return null;
 }

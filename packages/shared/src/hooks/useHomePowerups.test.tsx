@@ -73,25 +73,19 @@ describe('useHomePowerupsCatalog', () => {
   function setup(installed: string[] = []) {
     const install = vi.fn();
     const hook = renderHook(
-      (props: {
-        installed: string[];
-        networkId: string;
-        developerNetworks: boolean;
-        allowlist?: PowerupAllowlist;
-      }) =>
+      (props: { installed: string[]; networkId: string; allowlist?: PowerupAllowlist }) =>
         useHomePowerupsCatalog({
           powerupTabs: props.installed.includes('swap')
             ? [{ key: 'swap', label: 'Swap', networks: ['solana-mainnet'] }]
             : [],
           installed: props.installed,
           install,
-          developerNetworks: props.developerNetworks,
           networkId: props.networkId,
           powerups: POWERUPS,
           getCatalog: getPowerupCatalog,
           allowlist: props.allowlist ?? SWAP_ON,
         }),
-      { initialProps: { installed, networkId: 'solana-mainnet', developerNetworks: false } }
+      { initialProps: { installed, networkId: 'solana-mainnet' } }
     );
     return { ...hook, install };
   }
@@ -116,7 +110,6 @@ describe('useHomePowerupsCatalog', () => {
           powerupTabs: [],
           installed: [],
           install: vi.fn(),
-          developerNetworks: false,
           networkId,
           powerups: POWERUPS,
           getCatalog: getPowerupCatalog,
@@ -140,7 +133,6 @@ describe('useHomePowerupsCatalog', () => {
         powerupTabs: [],
         installed: [],
         install,
-        developerNetworks: false,
         networkId: 'solana-mainnet',
         powerups: POWERUPS,
         getCatalog: getPowerupCatalog,
@@ -159,7 +151,6 @@ describe('useHomePowerupsCatalog', () => {
         powerupTabs: [],
         installed: ['swap'],
         install: vi.fn(),
-        developerNetworks: false,
         networkId: 'solana-mainnet',
         powerups: POWERUPS,
         getCatalog: getPowerupCatalog,

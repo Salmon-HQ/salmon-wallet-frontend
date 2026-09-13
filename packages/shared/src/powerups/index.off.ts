@@ -29,8 +29,6 @@ export function isPowerupOnNetwork(_entry: PowerupEntry, _networkId: string | nu
   return false;
 }
 
-export const MOCK_POWERUPS: readonly Omit<PowerupsCatalogEntry, 'installed'>[] = [];
-
 export function getPowerupCatalog(_params: PowerupCatalogParams): PowerupsCatalogEntry[] {
   return [];
 }
