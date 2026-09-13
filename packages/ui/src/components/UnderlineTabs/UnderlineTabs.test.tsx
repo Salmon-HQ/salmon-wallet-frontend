@@ -42,6 +42,39 @@ function stubDom(): { animate: ReturnType<typeof vi.fn> } {
   return { animate };
 }
 
+/**
+ * Controls whether the row overflows (`row.scrollWidth` vs.
+ * `scroller.clientWidth`, both read off `HTMLElement.prototype` since jsdom's
+ * real values are always 0) and stubs `scrollBy`/`scrollTo`, which jsdom does
+ * not implement (the latter is called by the existing
+ * scroll-active-tab-into-view effect once overflowing is true). Always call
+ * this explicitly — the stubbed getters are prototype-wide and persist
+ * across tests in this file. `scrollLeft` is jsdom's own plain stored
+ * property — set it directly, then fire `scroll` to re-run `measure()`.
+ */
+function stubOverflowMetrics(overflowing = true): { scrollBy: ReturnType<typeof vi.fn> } {
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    get: () => 100,
+  });
+  Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+    configurable: true,
+    get: () => (overflowing ? 300 : 100),
+  });
+  const scrollBy = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, 'scrollBy', {
+    configurable: true,
+    writable: true,
+    value: scrollBy,
+  });
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+  });
+  return { scrollBy };
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -149,5 +182,117 @@ describe('UnderlineTabs', () => {
 
     const tab = screen.getByTestId('tab-portfolio') as HTMLButtonElement;
     expect(tab.style.lineHeight).toMatch(/^\d+(\.\d+)?px$/);
+  });
+
+  it('shows no scroll arrows when the row fits, even while hovered', () => {
+    stubDom();
+    stubOverflowMetrics(false);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+    expect(screen.queryByTestId('sub-tabs-scroll-leading')).toBeNull();
+    expect(screen.queryByTestId('sub-tabs-scroll-trailing')).toBeNull();
+  });
+
+  it('hovering an overflowing row at rest shows only the trailing arrow', () => {
+    stubDom();
+    stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    // Mounted alongside its fade (so it can fade in), but invisible and
+    // unclickable before the row is hovered.
+    const trailingBeforeHover = screen.getByTestId('sub-tabs-scroll-trailing') as HTMLButtonElement;
+    expect(trailingBeforeHover.style.opacity).toBe('0');
+    expect(trailingBeforeHover.style.pointerEvents).toBe('none');
+    expect(screen.queryByTestId('sub-tabs-scroll-leading')).toBeNull();
+
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+    expect(screen.queryByTestId('sub-tabs-scroll-leading')).toBeNull();
+    expect(trailingBeforeHover.style.opacity).toBe('1');
+    expect(trailingBeforeHover.style.pointerEvents).toBe('auto');
+  });
+
+  it('shows both arrows once the row has scrolled past the start', () => {
+    stubDom();
+    stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLDivElement;
+    scroller.scrollLeft = 100;
+    fireEvent.scroll(scroller);
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+
+    expect(screen.getByTestId('sub-tabs-scroll-leading')).toBeTruthy();
+    expect(screen.getByTestId('sub-tabs-scroll-trailing')).toBeTruthy();
+  });
+
+  it('shows only the leading arrow once the row rests at the end', () => {
+    stubDom();
+    stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLDivElement;
+    scroller.scrollLeft = 200; // maxOffset = contentWidth(300) - containerWidth(100)
+    fireEvent.scroll(scroller);
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+
+    expect(screen.getByTestId('sub-tabs-scroll-leading')).toBeTruthy();
+    expect(screen.queryByTestId('sub-tabs-scroll-trailing')).toBeNull();
+  });
+
+  it('clicking an arrow scrolls the row toward that edge', () => {
+    stubDom();
+    const { scrollBy } = stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+    fireEvent.click(screen.getByTestId('sub-tabs-scroll-trailing'));
+    expect(scrollBy).toHaveBeenCalledWith(
+      expect.objectContaining({ left: expect.any(Number), behavior: 'smooth' })
+    );
+    expect(scrollBy.mock.calls[0][0].left).toBeGreaterThan(0);
+
+    scrollBy.mockClear();
+    const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLDivElement;
+    scroller.scrollLeft = 200;
+    fireEvent.scroll(scroller);
+    fireEvent.click(screen.getByTestId('sub-tabs-scroll-leading'));
+    expect(scrollBy.mock.calls[0][0].left).toBeLessThan(0);
+  });
+
+  it('keeps the scroll arrows out of the accessibility tree and the tab order', () => {
+    stubDom();
+    stubOverflowMetrics(true);
+    renderInMode(
+      'dark',
+      <UnderlineTabs testID="sub-tabs" tabs={TABS} activeKey="portfolio" onChange={vi.fn()} />
+    );
+
+    const scroller = screen.getByTestId('sub-tabs-scroll') as HTMLDivElement;
+    scroller.scrollLeft = 100;
+    fireEvent.scroll(scroller);
+    fireEvent.mouseEnter(screen.getByTestId('sub-tabs'));
+
+    const leading = screen.getByTestId('sub-tabs-scroll-leading');
+    const trailing = screen.getByTestId('sub-tabs-scroll-trailing');
+    for (const arrow of [leading, trailing]) {
+      expect(arrow.getAttribute('aria-hidden')).toBe('true');
+      expect((arrow as HTMLButtonElement).tabIndex).toBe(-1);
+    }
   });
 });

@@ -24,6 +24,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   borderRadius,
+  componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
@@ -40,6 +41,8 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
+import { CaretLeftIcon, CaretRightIcon } from '../../icons';
+import { IconBubble } from '../IconBubble';
 import type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './types';
 
 const UNDERLINE_HEIGHT = 2;
@@ -49,6 +52,18 @@ const OVERFLOW_FADE_WIDTH = spacing['2xl'];
 const SCROLL_INTO_VIEW_MARGIN = spacing.md;
 /** Sub-pixel slack before a row counts as overrunning its container, px. */
 const OVERFLOW_TOLERANCE = 1;
+/**
+ * Hover-only scroll arrows: the kit's own well at the size `PortfolioSubTabs`'
+ * order button already wears beside this row, with the glyph size that call
+ * site pairs it with. They are a pointer convenience — the keyboard moves
+ * through the tabs with the roving tabindex below — so the well is
+ * `decorative`: out of the accessibility tree and out of the tab order.
+ */
+const SCROLL_ARROW_SIZE = componentSizes.iconBubbleSm;
+const SCROLL_ARROW_ICON_SIZE = componentSizes.iconSizeXSmall;
+/** A click moves about two thirds of the visible row — enough to feel
+ * purposeful without jumping past the neighboring tabs. */
+const SCROLL_STEP_RATIO = 2 / 3;
 
 type SizeMetrics = { font: number; gap: number; uppercase: boolean; letterSpacing: number };
 
@@ -84,6 +99,7 @@ export function UnderlineTabs({
 
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [edges, setEdges] = useState({ leading: false, trailing: false });
+  const [isHovered, setIsHovered] = useState(false);
   const hasMeasuredActive = useRef(false);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
@@ -235,6 +251,36 @@ export function UnderlineTabs({
     [isOverflowing]
   );
 
+  // A pointer-only convenience toward one edge, about two thirds of the
+  // visible row — the same idiom the active tab's own scroll-into-view uses.
+  const handleScrollArrow = useCallback(
+    (edge: 'leading' | 'trailing') => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+      const distance = scroller.clientWidth * SCROLL_STEP_RATIO;
+      scroller.scrollBy({
+        left: edge === 'leading' ? -distance : distance,
+        behavior: isReduceMotionEnabled ? 'auto' : 'smooth',
+      });
+    },
+    [isReduceMotionEnabled]
+  );
+
+  // In on `swell`, out on `ebb` — a state change in place, per §1.11.
+  const arrowTransition = `opacity ${resolveMotionMs(isHovered ? motionMs.swell : motionMs.ebb, isReduceMotionEnabled)}ms ${motionEasing.current.css}`;
+
+  // The kit's well draws itself; this only places it over the fade and fades
+  // it with the pointer.
+  const arrowStyle = (edge: 'leading' | 'trailing'): React.CSSProperties => ({
+    position: 'absolute',
+    top: '50%',
+    [edge === 'leading' ? 'left' : 'right']: 0,
+    transform: 'translateY(-50%)',
+    opacity: isHovered ? 1 : 0,
+    pointerEvents: isHovered ? 'auto' : 'none',
+    transition: arrowTransition,
+  });
+
   const containerStyle: React.CSSProperties = { position: 'relative', ...style };
 
   const scrollerStyle: React.CSSProperties = {
@@ -255,7 +301,13 @@ export function UnderlineTabs({
   const activeTab = tabs.find((tab) => tab.key === activeKey);
 
   return (
-    <div data-testid={testID} className={className} style={containerStyle}>
+    <div
+      data-testid={testID}
+      className={className}
+      style={containerStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div
         ref={scrollerRef}
         role="tablist"
@@ -351,6 +403,31 @@ export function UnderlineTabs({
             pointerEvents: 'none',
             background: `linear-gradient(to right, ${withAlpha(gradientStop, 0)}, ${gradientStop})`,
           }}
+        />
+      )}
+
+      {isOverflowing && edges.leading && (
+        <IconBubble
+          decorative
+          size={SCROLL_ARROW_SIZE}
+          tone="surface"
+          icon={CaretLeftIcon}
+          iconSize={SCROLL_ARROW_ICON_SIZE}
+          onPress={() => handleScrollArrow('leading')}
+          testID={testID ? `${testID}-scroll-leading` : undefined}
+          style={arrowStyle('leading')}
+        />
+      )}
+      {isOverflowing && edges.trailing && (
+        <IconBubble
+          decorative
+          size={SCROLL_ARROW_SIZE}
+          tone="surface"
+          icon={CaretRightIcon}
+          iconSize={SCROLL_ARROW_ICON_SIZE}
+          onPress={() => handleScrollArrow('trailing')}
+          testID={testID ? `${testID}-scroll-trailing` : undefined}
+          style={arrowStyle('trailing')}
         />
       )}
     </div>

@@ -75,6 +75,7 @@ export function IconBubble({
   iconColor,
   children,
   onPress,
+  decorative,
   disabled = false,
   flesh,
   style,
@@ -160,6 +161,8 @@ export function IconBubble({
       data-testid={testID}
       aria-label={accessibilityLabel}
       aria-description={accessibilityHint}
+      aria-hidden={decorative || undefined}
+      tabIndex={decorative ? -1 : undefined}
       disabled={isDisabled}
       onClick={onPress}
       onPointerDown={(event) => {
