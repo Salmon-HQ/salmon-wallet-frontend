@@ -35,7 +35,12 @@ export interface UseExplorerLinkParams {
   showMenu?: boolean;
   /** `useTranslation()`'s `t`, for the button's own label. */
   t: ExplorerLinkTranslate;
-  /** Opens a resolved URL — `window.open` on the DOM, `Linking.openURL` on native. */
+  /**
+   * Opens a resolved URL — `window.open` on the DOM, `Linking.openURL` on
+   * native. Pass a wrapper, never a bare method reference: RN's `Linking` is
+   * an instance whose `openURL` reads `this`, so `openUrl: Linking.openURL`
+   * throws before reaching the native module and the press does nothing.
+   */
   openUrl: (url: string) => void | Promise<void>;
   /** Reported once a row's URL has actually opened. */
   onPress?: (url: string, explorerName: string) => void;
