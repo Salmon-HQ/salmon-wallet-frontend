@@ -96,9 +96,12 @@ export function useNftTransfer({
             account.getNetworkId() as SolanaNetworkId
           );
 
+          // The backend built it; the mint and the destination are what this
+          // transfer is for, so the transaction has to name both.
           const signatures = await signAndSendPreparedSolanaTransactions(
             account as SolanaAccount,
-            prepared
+            prepared,
+            { mustName: [solanaNft.mint, recipientAddress] }
           );
 
           const txId = signatures[signatures.length - 1];

@@ -2,12 +2,44 @@ import { address } from '@solana/kit';
 import type { Address, Commitment } from '@solana/kit';
 import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
 import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
+import { LOOKUP_TABLE_STEP_PROGRAMS, NFT_TRANSACTION_PROGRAMS } from '../../core/verify';
+import type { SolanaTransactionExpectation } from '../../core/verify';
 import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
 import type { SolanaRpc } from './networks';
 
 export interface SignAndSendPreparedSolanaTransactionsOptions {
   commitment?: Commitment;
+  /**
+   * Accounts the flow's own transaction must name — the mint it acts on, the
+   * destination the user typed. The lookup-table steps never name them, so the
+   * requirement is applied to the work step alone.
+   */
+  mustName?: readonly string[];
+}
+
+/** A step that only builds the table the work step will read. */
+function isLookupTableStep(step: PreparedNftTransaction['step']): boolean {
+  return step === 'lookup_table_create' || step === 'lookup_table_extend';
+}
+
+/**
+ * What each step of a prepared flow may do.
+ *
+ * The table steps touch the lookup-table program and nothing else; the work
+ * step is an NFT transfer or burn, and it is the one that has to name the mint
+ * and the destination.
+ */
+function expectationForStep(
+  preparedTransaction: PreparedNftTransaction,
+  feePayer: string,
+  mustName: readonly string[]
+): SolanaTransactionExpectation {
+  if (isLookupTableStep(preparedTransaction.step)) {
+    return { feePayer, allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS };
+  }
+
+  return { feePayer, allowedPrograms: NFT_TRANSACTION_PROGRAMS, requiredAccounts: mustName };
 }
 
 const LOOKUP_TABLE_POLL_INTERVAL_MS = 400;
@@ -135,6 +167,10 @@ export async function signAndSendPreparedSolanaTransactions(
   }
 
   const commitment = options.commitment ?? 'confirmed';
+  // The key that is about to sign: a transaction paying from anything else is
+  // not this wallet's to sign, whichever account the screen was showing.
+  const feePayer = String(account.signer.address);
+  const mustName = options.mustName ?? [];
   const signatures: string[] = [];
 
   for (const preparedTransaction of preparedTransactions) {
@@ -144,6 +180,7 @@ export async function signAndSendPreparedSolanaTransactions(
       const signature = await signAndSendSolanaTransaction(
         account,
         preparedTransaction.transaction,
+        expectationForStep(preparedTransaction, feePayer, mustName),
         { commitment }
       );
       signatures.push(signature);

@@ -65,7 +65,11 @@ export function useNftBurn({
       setError(null);
 
       try {
-        const signatures = await signAndSendPreparedSolanaTransactions(account, prepared);
+        // A burn destroys one asset and nothing else: the transaction has to
+        // name the mint the screen showed.
+        const signatures = await signAndSendPreparedSolanaTransactions(account, prepared, {
+          mustName: removedMint ? [removedMint] : [],
+        });
 
         setStatus('success');
         setSettling(true);

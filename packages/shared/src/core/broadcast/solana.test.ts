@@ -7,6 +7,7 @@ import {
   SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED,
 } from '@solana/kit';
 import { signAndSendSolanaTransaction } from './solana';
+import { SolanaTransactionMismatchError, SYSTEM_PROGRAM, UNVERIFIED } from '../verify';
 
 /** Unsigned v0 transaction carrying one address-table lookup (shared with prepared-transactions). */
 const FIXTURE_B64 =
@@ -71,7 +72,7 @@ describe('signAndSendSolanaTransaction', () => {
     const rpc = createRpc();
     const account = await createAccount(rpc);
 
-    const signature = await signAndSendSolanaTransaction(account, FIXTURE_B64);
+    const signature = await signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED);
 
     expect(signature).toBe('signature-1');
     const [wire, config] = rpc.sendTransaction.mock.calls[0];
@@ -89,7 +90,7 @@ describe('signAndSendSolanaTransaction', () => {
   it('propagates a confirmation failure instead of returning the signature', async () => {
     const account = await createAccount(createRpc(), createRpcSubscriptions(failedNotification));
 
-    await expect(signAndSendSolanaTransaction(account, FIXTURE_B64)).rejects.toThrow();
+    await expect(signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED)).rejects.toThrow();
   });
 
   it('reports the transaction expired once the network passes its last valid block height', async () => {
@@ -109,7 +110,9 @@ describe('signAndSendSolanaTransaction', () => {
     });
     const account = await createAccount(rpc, createRpcSubscriptions(pending, pastTheWindow));
 
-    const outcome = await signAndSendSolanaTransaction(account, FIXTURE_B64).catch((e) => e);
+    const outcome = await signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED).catch(
+      (e) => e
+    );
     // The verdict the error decoder maps to `transaction.errors.expired`.
     expect(isSolanaError(outcome, SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED)).toBe(true);
   });
@@ -118,7 +121,7 @@ describe('signAndSendSolanaTransaction', () => {
     const rpc = createRpc();
     const account = await createAccount(rpc);
 
-    await signAndSendSolanaTransaction(account, FIXTURE_B64, {
+    await signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED, {
       commitment: 'processed',
       skipPreflight: true,
     });
@@ -128,5 +131,32 @@ describe('signAndSendSolanaTransaction', () => {
       preflightCommitment: 'processed',
       skipPreflight: true,
     });
+  });
+
+  it('refuses a transaction that disagrees with the flow, before any RPC call', async () => {
+    const rpc = createRpc();
+    const account = await createAccount(rpc);
+
+    await expect(
+      signAndSendSolanaTransaction(account, FIXTURE_B64, {
+        feePayer: 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9',
+        allowedPrograms: ['metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'],
+      })
+    ).rejects.toThrow(SolanaTransactionMismatchError);
+
+    expect(rpc.getLatestBlockhash).not.toHaveBeenCalled();
+    expect(rpc.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('signs and sends when the declaration holds', async () => {
+    const rpc = createRpc();
+    const account = await createAccount(rpc);
+
+    const signature = await signAndSendSolanaTransaction(account, FIXTURE_B64, {
+      feePayer: 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9',
+      allowedPrograms: [SYSTEM_PROGRAM],
+    });
+
+    expect(signature).toBe('signature-1');
   });
 });

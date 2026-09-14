@@ -2,9 +2,14 @@
  * core/broadcast — the one place a Solana transaction is signed and sent.
  *
  * Every flow that carries a backend-built transaction (NFT burn and transfer,
- * the swap Powerup) comes through here: decode, put a fresh blockhash on the
- * message, sign the wallet's own slot, send, and wait for the cluster's word.
- * Nothing outside `core/` calls `sendTransaction` (spec 027 §2).
+ * the swap Powerup) comes through here: check the transaction against what the
+ * flow declared, put a fresh blockhash on the message, sign the wallet's own
+ * slot, send, and wait for the cluster's word. Nothing outside `core/` calls
+ * `sendTransaction` (spec 027 §2).
+ *
+ * The check comes first, before any RPC call, so a transaction that disagrees
+ * with its flow costs nothing. Every caller states an expectation or passes
+ * `UNVERIFIED` — the choice is in the call, never in a default.
  */
 import {
   getBase64EncodedWireTransaction,
@@ -16,6 +21,8 @@ import {
 import type { Commitment, KeyPairSigner, Signature, TransactionMessageBytes } from '@solana/kit';
 import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
+import { assertSolanaTransactionMatches, UNVERIFIED } from '../verify';
+import type { SolanaTransactionExpectation, Unverified } from '../verify';
 
 /** What broadcasting needs from an account: its signer and its RPC clients. */
 export interface SolanaBroadcaster {
@@ -53,14 +60,23 @@ export interface SolanaBroadcastOptions {
  *
  * @param account - The signing account and its RPC clients.
  * @param transactionBase64 - The unsigned transaction, base64 wire format.
+ * @param expectation - What the flow declares the transaction is for, or
+ *   `UNVERIFIED` when the flow has not declared it yet.
  * @returns The confirmed signature.
+ * @throws SolanaTransactionMismatchError - When the transaction disagrees with
+ *   the expectation; nothing is signed or sent.
  * @throws The RPC's or the confirmation's error, unchanged.
  */
 export async function signAndSendSolanaTransaction(
   account: SolanaBroadcaster,
   transactionBase64: string,
+  expectation: SolanaTransactionExpectation | Unverified,
   options: SolanaBroadcastOptions = {}
 ): Promise<Signature> {
+  if (expectation !== UNVERIFIED) {
+    assertSolanaTransactionMatches(transactionBase64, expectation);
+  }
+
   const rpc = account.getRpc();
   const commitment = options.commitment ?? 'confirmed';
 

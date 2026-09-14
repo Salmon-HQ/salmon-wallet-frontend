@@ -85,7 +85,11 @@ describe('useNftTransfer', () => {
       },
       'solana-mainnet'
     );
-    expect(mockSignAndSend).toHaveBeenCalledWith(account, PREPARED);
+    // The mint and the destination travel with the call: the transaction the
+    // backend built has to name both before the wallet signs it.
+    expect(mockSignAndSend).toHaveBeenCalledWith(account, PREPARED, {
+      mustName: ['mint-1', 'recipient-address'],
+    });
     // A plain SPL transfer would fail on a programmable NFT, so it must not run.
     expect(account.transfer).not.toHaveBeenCalled();
     expect(transferResult).toEqual({ txId: 'nft-tx-1' });

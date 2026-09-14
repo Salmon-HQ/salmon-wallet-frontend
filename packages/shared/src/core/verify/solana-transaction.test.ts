@@ -1,0 +1,90 @@
+import { describe, expect, it } from 'vitest';
+import {
+  assertSolanaTransactionMatches,
+  SolanaTransactionMismatchError,
+} from './solana-transaction';
+import { SYSTEM_PROGRAM, TOKEN_METADATA_PROGRAM } from './solana-programs';
+
+/** The owner that pays and signs in both fixtures. */
+const OWNER = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
+/** A second account the no-lookup fixture names. */
+const NAMED = 'So11111111111111111111111111111111111111112';
+
+/**
+ * A v0 transaction with one System-program instruction and no table lookups,
+ * so its static list is the whole account set and absence proves something.
+ */
+const NO_LOOKUPS =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQACA4qI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cBpuIV/6rgYT7aH9jRhjANdrEOdwa6ztVmKDwAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOMy2vkvq+zotj/3pEAF5f39mvoVh1a2HFqV+QSzuNCBAQICAAEEAgAAAAA=';
+
+/** The same shape with one address-table lookup (shared with core/broadcast). */
+const WITH_LOOKUPS =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
+
+describe('assertSolanaTransactionMatches', () => {
+  it('accepts a transaction whose payer and programs are the declared ones', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+      })
+    ).not.toThrow();
+  });
+
+  it('refuses a transaction that pays from another account', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: NAMED,
+        allowedPrograms: [SYSTEM_PROGRAM],
+      })
+    ).toThrow(SolanaTransactionMismatchError);
+  });
+
+  it('refuses a program the flow did not declare', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [TOKEN_METADATA_PROGRAM],
+      })
+    ).toThrow(/invokes 11111111111111111111111111111111/);
+  });
+
+  it('requires the accounts the flow named', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        requiredAccounts: [NAMED],
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        requiredAccounts: [TOKEN_METADATA_PROGRAM],
+      })
+    ).toThrow(/does not name/);
+  });
+
+  it('skips the named-account check when the message resolves addresses through a table', () => {
+    // The static list is partial here, so a missing account proves nothing.
+    // The payer and program checks still apply.
+    expect(() =>
+      assertSolanaTransactionMatches(WITH_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        requiredAccounts: [NAMED],
+      })
+    ).not.toThrow();
+  });
+
+  it('still refuses an undeclared program when a table is in play', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(WITH_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [TOKEN_METADATA_PROGRAM],
+      })
+    ).toThrow(SolanaTransactionMismatchError);
+  });
+});
