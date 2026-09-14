@@ -26,12 +26,13 @@ Every Powerup — core or community — is the folder set `powerups/<id>/`:
 - `nameKey` / `descriptionKey` — translation key paths, resolved at render.
 - `permissions` — what leaves the device: `'address' | 'balances' | 'none'`, as a list. This is a **declaration the reviewer checks**, not something the runtime can enforce.
 - `endpoints` — every external origin the Powerup calls directly (empty for one that only talks to the Salmon backend).
+- `programs` — every Solana program the Powerup's own transaction may invoke. Unlike `permissions`, this one **is** enforced: `core/verify` decodes the built transaction before the user signs and refuses it when it calls a program the manifest does not name. A program reached by cross-program invocation is not an instruction and is not declared. Empty for a Powerup that builds no transaction.
 - `locales` — the locale namespace it contributes (EN + ES, under its own folder).
 - `entries` — the component keys each platform mounts (catalogue tile, Home sub-tab), resolved per platform by id inside each twin.
 
 `registry.ts` becomes a list of manifests instead of a list of inline entries. Nothing else about the registry changes: `getPowerup`, `isPowerupOnNetwork` and `catalog.ts` keep their signatures and read the manifest fields.
 
-**Rationale.** The registry already carries `id`, copy keys, `tier` and `networks`; the manifest is that record moved next to the code it describes and widened by the three fields a reviewer and a disclosure need (`permissions`, `endpoints`, `locales`). One file per Powerup means a contributor's pull request is readable in one place and a reviewer's checklist has a single subject.
+**Rationale.** The registry already carries `id`, copy keys, `tier` and `networks`; the manifest is that record moved next to the code it describes and widened by the fields a reviewer, a disclosure and the confirmation need (`permissions`, `endpoints`, `programs`, `locales`). `programs` is the one the machine reads: everything else on that list is checked by a person, and this one is checked before every signature. One file per Powerup means a contributor's pull request is readable in one place and a reviewer's checklist has a single subject.
 
 ### What does not change
 
@@ -115,7 +116,7 @@ Reusing the swap codes unchanged (`ApiError` shape `{ error, error_description }
 
 A community Powerup PR is complete when all of these are in it:
 
-- [ ] `packages/shared/src/powerups/<id>/manifest.ts` with every field of §1 filled, `endpoints` exhaustive, `permissions` honest.
+- [ ] `packages/shared/src/powerups/<id>/manifest.ts` with every field of §1 filled, `endpoints` exhaustive, `permissions` honest, `programs` exact — a missing program is a refused signature, not a warning.
 - [ ] Twins: a mobile component and a DOM component on **one contract** in `packages/shared/src/types/ui/<id>-*.ts` (`XPropsBase`), each platform's `types.ts` extending it. `pnpm check:parity` passes with no new `MOBILE_ONLY` / `DOM_ONLY` entry unless the PR argues for one.
 - [ ] `locales/en.json` + `locales/es.json` under the Powerup's folder, registered in `powerups/locales.ts`. Every user-facing string via `t('<id>.…')`; no hardcoded copy. Spanish is written by a speaker, never guessed.
 - [ ] Tests in the owning packages: Vitest for shared logic and the DOM twin, Jest for the mobile twin. Coverage thresholds of the touched packages do not drop.
@@ -134,6 +135,8 @@ Swap becomes `powerups/swap` **with a manifest** — and nothing else moves:
 id: 'swap', tier: 'core', networks: ['solana-mainnet'],
 nameKey: 'swap.catalog.name', descriptionKey: 'swap.catalog.description',
 permissions: ['address', 'balances'], endpoints: [],  // Salmon backend only
+programs: [SWAP_SETTLER_PROGRAM, COMPUTE_BUDGET_PROGRAM, TOKEN_PROGRAM,
+           TOKEN_2022_PROGRAM, ASSOCIATED_TOKEN_PROGRAM, SYSTEM_PROGRAM],
 locales: 'swap', entries: { tab: 'swap' }
 ```
 
