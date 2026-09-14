@@ -77,10 +77,13 @@ describe('buildSwapProposal', () => {
       label: 'swap.review.provider',
       value: '0x',
     });
-    expect(proposal.display.rows.map((row) => row.label)).not.toContain('swap.review.routeFee');
+    expect(proposal.display.rows).toContainEqual({
+      label: 'swap.review.routeFee',
+      value: 'swap.review.routeFeeNone',
+    });
   });
 
-  it('adds the route fee line only when the provider charges one', () => {
+  it('names the route fee when the provider charges one', () => {
     const proposal = buildSwapProposal(
       build({
         routeFee: {

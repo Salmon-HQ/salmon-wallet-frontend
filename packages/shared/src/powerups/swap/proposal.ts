@@ -5,7 +5,9 @@
  *
  * Every fee is its own line; the Salmon fee is never folded into the quote
  * (the backend already nets it out of `output.amount`, so the line names what
- * was taken). Attribution is the provider's own string, rendered verbatim.
+ * was taken). The route provider's fee keeps its line even when it is zero,
+ * which is a disclosure duty rather than a layout choice. Attribution is the
+ * provider's own string, rendered verbatim.
  */
 import i18n from 'i18next';
 import type { TransactionProposal, ConfirmationRow } from '../../core/confirmation/types';
@@ -55,9 +57,14 @@ export function buildSwapProposal(
   if (build.salmonFee) {
     rows.push({ label: t('swap.review.salmonFee'), value: formatFeeLine(build.salmonFee) });
   }
-  if (build.routeFee) {
-    rows.push({ label: t('swap.review.routeFee'), value: formatFeeLine(build.routeFee) });
-  }
+  // The route provider's fee is a line whether or not this route carries one:
+  // 0x's licence obliges Salmon to tell the user the 0x Swap Fee exists before
+  // every use, and a row that appears only when an amount is charged says
+  // nothing on the routes that charge none.
+  rows.push({
+    label: t('swap.review.routeFee'),
+    value: build.routeFee ? formatFeeLine(build.routeFee) : t('swap.review.routeFeeNone'),
+  });
   rows.push({
     label: t('swap.slippage_tolerance'),
     value: formatPercent(build.slippageBps / 100),
