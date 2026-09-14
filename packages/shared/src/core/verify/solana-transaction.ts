@@ -39,6 +39,14 @@ export interface SolanaTransactionExpectation {
 }
 
 /**
+ * What a flow declares about its own transaction.
+ *
+ * The fee payer is not here: core fills it from the key that is about to sign,
+ * because a flow saying who pays would be a flow saying whose key this is.
+ */
+export type DeclaredTransactionEffects = Omit<SolanaTransactionExpectation, 'feePayer'>;
+
+/**
  * A flow that has not declared what its transaction may do.
  *
  * Passing this is a decision, not an oversight: it says the caller knows the

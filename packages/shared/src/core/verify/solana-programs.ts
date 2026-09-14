@@ -40,6 +40,18 @@ export const COMPUTE_BUDGET_PROGRAM = 'ComputeBudget1111111111111111111111111111
 /** Address Lookup Table — the create and extend steps of a multi-step flow. */
 export const ADDRESS_LOOKUP_TABLE_PROGRAM = 'AddressLookupTab1e1111111111111111111111111';
 
+/** SPL Memo — a note carried on chain, and nothing else. */
+export const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+
+/**
+ * The routing provider's settler — the program a swap's instructions call.
+ *
+ * Read from the backend's own `AGGREGATOR_ROUTER_PROGRAM_IDS`, current entry
+ * first. The venues a route passes through are reached by cross-program
+ * invocation from here, so they are not instructions and are not listed.
+ */
+export const SWAP_SETTLER_PROGRAM = 'Sett1erwx2eqT5A8uvu8GBxDFT2W5TNnhirL7hLmb8m';
+
 /**
  * What an NFT transfer or burn may invoke.
  *

@@ -5,6 +5,7 @@
  * the smallest thing that exercises every step a real Powerup will take.
  */
 import type { PowerupManifest } from '../manifest';
+import { COMPUTE_BUDGET_PROGRAM, MEMO_PROGRAM } from '../../core/verify';
 
 export const memoManifest = {
   id: 'memo',
@@ -21,6 +22,7 @@ export const memoManifest = {
   authorKey: 'powerups.author.community',
   permissions: ['address'],
   endpoints: [],
+  programs: [MEMO_PROGRAM, COMPUTE_BUDGET_PROGRAM],
   locales: 'memo',
   entries: { tab: 'memo' },
 } as const satisfies PowerupManifest;

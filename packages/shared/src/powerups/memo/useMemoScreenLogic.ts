@@ -14,6 +14,7 @@ import { buildPowerup, type BuildPowerupFn } from '../backend/api';
 import { describePowerupBuildError, type PowerupErrorMessage } from '../backend/errors';
 import { toPowerupProposal } from '../backend/proposal';
 import type { PowerupBuildEnvelope } from '../backend/types';
+import { memoManifest } from './manifest';
 
 export const MEMO_MAX_BYTES = 256;
 
@@ -37,6 +38,7 @@ export function buildMemoProposal(
   const t = (key: string, options?: Record<string, unknown>) => i18n.t(key, options) as string;
   return toPowerupProposal(envelope, {
     networkId,
+    expect: { allowedPrograms: memoManifest.programs },
     display: {
       title: t('memo.review.title'),
       rows: [

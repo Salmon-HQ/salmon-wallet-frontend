@@ -8,17 +8,15 @@
  */
 import { signAndSendSolanaTransaction } from '../broadcast';
 import type { SolanaBroadcaster } from '../broadcast';
-import { UNVERIFIED } from '../verify';
+
 import type { SignedResult, TransactionProposal } from '../confirmation/types';
 
 /**
  * Signs and broadcasts a confirmed proposal.
  *
- * The proposal is signed `UNVERIFIED`: the confirmation screen renders the
- * typed rows the Powerup supplied, and nothing yet checks those rows against
- * the transaction's own instructions. A Powerup that declared the programs it
- * uses could be checked here the way the NFT flows are — until it declares
- * them, this call trusts the build response.
+ * The proposal's own declaration decides what the transaction may do; the fee
+ * payer is added here, from the key about to sign, because that is the one
+ * part of the expectation a Powerup has no business stating.
  *
  * @param account - The signing account for the proposal's network.
  * @param proposal - The proposal the user confirmed.
@@ -28,7 +26,10 @@ export async function signProposal(
   account: SolanaBroadcaster,
   proposal: TransactionProposal
 ): Promise<SignedResult> {
-  const signature = await signAndSendSolanaTransaction(account, proposal.transaction, UNVERIFIED);
+  const signature = await signAndSendSolanaTransaction(account, proposal.transaction, {
+    feePayer: String(account.signer.address),
+    ...proposal.expect,
+  });
   return { signature: String(signature) };
 }
 

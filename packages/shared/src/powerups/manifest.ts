@@ -49,6 +49,18 @@ export interface PowerupManifest {
    * Empty when it only talks to the Salmon backend.
    */
   endpoints: readonly string[];
+  /**
+   * Every Solana program the Powerup's own transaction may invoke.
+   *
+   * Core checks the built transaction against this list before the user signs,
+   * so a backend that returns something other than what the confirmation
+   * screen describes is refused rather than signed. A program reached by
+   * cross-program invocation is not an instruction and is not listed: what is
+   * declared is what the transaction says it will call.
+   *
+   * Empty for a Powerup that builds no transaction.
+   */
+  programs: readonly string[];
   /** The locale namespace it contributes (`powerups/<id>/locales`). */
   locales: string;
   /** The component keys each platform mounts, resolved by id inside each twin. */

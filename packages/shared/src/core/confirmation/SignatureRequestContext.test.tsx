@@ -28,6 +28,7 @@ function proposal(overrides: Partial<TransactionProposal> = {}): TransactionProp
     id: 'p-1',
     networkId: 'solana-mainnet',
     transaction: 'AQ==',
+    expect: { allowedPrograms: [] },
     display: { title: 'Swap Review', rows: [], pendingTitle: 'Processing swap' },
     ...overrides,
   };

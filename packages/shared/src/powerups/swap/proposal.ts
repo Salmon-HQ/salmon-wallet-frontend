@@ -14,6 +14,7 @@ import type { TransactionProposal, ConfirmationRow } from '../../core/confirmati
 import { formatAmountWithSymbol, formatEffectiveRate, formatPercent } from '../../utils/formatting';
 import type { SwapToken } from '../../types/swap';
 import { SWAP_NETWORK_ID } from './types';
+import { swapManifest } from './manifest';
 import type { SwapBuildResponse, SwapFeeLine } from './types';
 
 export interface SwapProposalContext {
@@ -52,6 +53,15 @@ export function buildSwapProposal(
   const inLabel = formatAmountWithSymbol(inAmount, build.input.symbol);
   const outLabel = formatAmountWithSymbol(outAmount, build.output.symbol);
   const usd = (value: number | null) => (value != null && formatUsd ? formatUsd(value) : undefined);
+
+  // What core checks the bytes against: the programs this Powerup declares,
+  // and the two mints the screen is about. With a route's lookup tables in
+  // play the mints are usually resolved through a table, and the account check
+  // steps aside there — the programs are the part that always holds.
+  const expect = {
+    allowedPrograms: swapManifest.programs,
+    requiredAccounts: [inToken.address, outToken.address],
+  };
 
   const rows: ConfirmationRow[] = [];
   if (build.salmonFee) {
@@ -105,6 +115,7 @@ export function buildSwapProposal(
 
   return {
     id: swapProposalId(build),
+    expect,
     networkId: SWAP_NETWORK_ID,
     transaction: build.transaction,
     expiresAt: build.expiresAt,

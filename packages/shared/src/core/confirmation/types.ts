@@ -10,6 +10,7 @@
  */
 import type { SolanaNetworkId } from '../../types/blockchain';
 import type { SwapReviewExchangeSide } from '../../types/swap';
+import type { DeclaredTransactionEffects } from '../verify';
 
 /** One row of the confirmation's detail card. */
 export interface ConfirmationRow {
@@ -72,6 +73,13 @@ export interface TransactionProposal {
   networkId: SolanaNetworkId;
   /** Base64 unsigned transaction, wire format. */
   transaction: string;
+  /**
+   * What this transaction may do: the programs the Powerup's manifest declares
+   * and, where the flow knows them, the accounts it must name. Core checks the
+   * bytes against this before signing, so a build that disagrees with the
+   * screen is refused rather than confirmed.
+   */
+  expect: DeclaredTransactionEffects;
   /** ISO timestamp after which the transaction must be rebuilt. */
   expiresAt?: string;
   refresh?: () => Promise<TransactionProposal>;
