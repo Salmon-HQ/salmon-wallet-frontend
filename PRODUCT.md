@@ -14,7 +14,7 @@ Three shipped surfaces from one monorepo:
 
 | Surface           | Form                                     | Notes                                                                                                         |
 | ----------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| iOS               | React Native / Expo app                  | In App Store review at the time of writing; one Guideline 2.1 rejection recorded (v1.0.3, first review round) |
+| iOS               | React Native / Expo app                  | In App Store review at the time of writing |
 | Android           | React Native / Expo app                  | Live, labelled Beta                                                                                           |
 | Browser extension | Chrome (MV3) and Firefox, built with WXT | Opens as a **side panel**                                                                                     |
 
@@ -87,13 +87,13 @@ The flagship roadmap concept. A Powerup is an installable capability module. The
 
 > "Powerups can propose actions. Salmon core validates, explains, requests approval, signs, and broadcasts."
 
-The three named first official Powerups were **Swap**, **Bridge**, and **Explore**. Swap ships today as a core tab; the Powerups model retroactively reframes it as a module. Bridge shipped as a core tab until its removal (2026-09, Apple Guideline 3.1.5(iii)). Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
+The three named first official Powerups were **Swap**, **Bridge**, and **Explore**. Neither Swap nor Bridge is offered in any app today; the Powerups model reframes what Swap was as a module, and the code sits parked behind the closed surface. Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
 
 Two tiers: **Official** (built and maintained by Salmon) and **Community** (external developers on a restricted SDK). "Community-built does not mean trusted by default."
 
 Surfaces Powerups will require that do not exist today: a marketplace/directory, a detail page carrying roughly eleven trust signals at once (official/community, review status, security score, reliability score, rating, monthly active users, successful-action count, last-updated date, open-source status, builder identity, known risks), a permission review sheet, a Powerup manager, a changelog and re-consent flow with a three-way choice, and a report-abuse affordance. Lifecycle states: installed / not installed / enabled / disabled / update-available / update-pending-consent / revoked.
 
-**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; how security and reliability scores are visualized; and whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art. Resolved since: the concept is called "Powerups" — "Skills" is retired as a synonym across the knowledge base; Swap ships as a Powerup enabled by default and can be turned off; "Bridge" is an internal engineering term with no user-facing surface of its own (its UI is Swap); Powerup activation state lives per device, never per wallet; and the tab bar tops out at five tabs.
+**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; how security and reliability scores are visualized; and whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art. Resolved since: the concept is called "Powerups" — "Skills" is retired as a synonym across the knowledge base; Swap, if it returns, returns as a Powerup enabled by default that can be turned off; "Bridge" is an internal engineering term with no user-facing surface of its own (its UI is Swap); Powerup activation state lives per device, never per wallet; and the tab bar tops out at five tabs.
 
 ### Other planned concepts
 
@@ -112,13 +112,13 @@ A **SALMON** token exists only as a "proposed ownership coin, not a live token".
 
 ### Platform fees — resolved: the rate is disclosed
 
-Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all).
+No app charges a platform fee today, because the only feature that carried one is closed. The rate a returning Swap would carry is a **0.5% Jupiter referral**, taken server-side; the frontend has no referral logic at all.
 
-The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. The swap review screen names the rate: it shows "Salmon fee" with the percentage the backend reports.
+The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**: the parked swap review screen names the rate, showing "Salmon fee" with the percentage the backend reports.
 
 Resolved engineering note: the backend's `calculateFee` used to label non-SOL fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which denominates the swap order fee in the input token.
 
-Historical: the wallet previously shipped a StealthEX cross-chain bridge with its own 0.4% partner fee. It was removed 2026-09 after Apple's App Store Guideline 3.1.5(iii) rejection; the backend's `/v1/bridge/*` endpoints are gone.
+No cross-chain bridge exists in any app: the StealthEX integration that once carried a 0.4% partner fee is gone, and so are the backend's `/v1/bridge/*` endpoints.
 
 ## Brand Commitments
 
