@@ -51,7 +51,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "fast-check": "^4.9.0",
     "jsdom": "^27.4.0",
-    "typescript": "~5.9.2",
+    "typescript": "~7.0.2",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
