@@ -12,11 +12,11 @@ adaptive
 
 Three shipped surfaces from one monorepo:
 
-| Surface           | Form                                     | Notes                                                                                                         |
-| ----------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Surface           | Form                                     | Notes                                      |
+| ----------------- | ---------------------------------------- | ------------------------------------------ |
 | iOS               | React Native / Expo app                  | In App Store review at the time of writing |
-| Android           | React Native / Expo app                  | Live, labelled Beta                                                                                           |
-| Browser extension | Chrome (MV3) and Firefox, built with WXT | Opens as a **side panel**                                                                                     |
+| Android           | React Native / Expo app                  | Live, labelled Beta                        |
+| Browser extension | Chrome (MV3) and Firefox, built with WXT | Opens as a **side panel**                  |
 
 `adaptive`, not `web`: the same business logic ships to a native runtime and to a browser runtime, and each is expected to respect its own platform conventions rather than render one design language everywhere. (A standalone web wallet was the third surface until it was retired on 2026-09-02; the extension is the only browser surface now.)
 
