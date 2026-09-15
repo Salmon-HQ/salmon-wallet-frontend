@@ -1,3 +1,4 @@
+import type { TransferRequest } from '../../blockchain/solana/transfer-request';
 import type { Token } from '../index';
 import type { ValidationState } from '../validation';
 
@@ -24,6 +25,17 @@ export interface SendRecipient {
   resolvedAddress?: string;
   /** The address book's or the wallet list's name for it, when there is one. */
   name?: string;
+}
+
+/**
+ * What Send carries when it was started from a Solana Pay transfer request:
+ * the request as read, the token it resolved to, and which fields the payer
+ * may not edit (spec 033). `locked.amount` is false when the request named none.
+ */
+export interface SendRequest {
+  request: TransferRequest;
+  token: SendToken;
+  locked: { recipient: true; token: true; amount: boolean };
 }
 
 /**

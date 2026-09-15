@@ -214,8 +214,14 @@ export function useSendTransaction({
           effectiveRecipientAddress,
           params.token.address,
           params.amount,
-          // Pass token metadata for Ethereum ERC20/NFT transfers
-          { decimals: params.token.decimals, symbol: params.token.symbol }
+          // Token metadata for Ethereum ERC20/NFT transfers; memo and references
+          // for a Solana Pay request (other chains ignore them).
+          {
+            decimals: params.token.decimals,
+            symbol: params.token.symbol,
+            memo: params.memo,
+            references: params.references,
+          }
         );
 
         setStatus('success');

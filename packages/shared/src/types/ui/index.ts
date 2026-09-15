@@ -42,6 +42,7 @@ export type {
   SendStep,
   SendToken,
   SendRecipient,
+  SendRequest,
   RecipientInputPropsBase,
   TokenSelectListPropsBase,
   StepTokenSelectProps,

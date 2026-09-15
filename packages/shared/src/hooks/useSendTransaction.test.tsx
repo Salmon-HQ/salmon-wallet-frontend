@@ -209,6 +209,34 @@ describe('useSendTransaction', () => {
     expect(result.current.feeEstimateFailed).toBe(false);
   });
 
+  it('forwards a Solana Pay memo and references to the transfer', async () => {
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.sendTransaction({
+        token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+        recipientAddress: RAW_RECIPIENT,
+        amount: AMOUNT,
+        memo: 'pr_1',
+        references: ['ref-1'],
+      });
+    });
+
+    expect(mockAccount.transfer).toHaveBeenCalledWith(RAW_RECIPIENT, TOKEN_ADDRESS, AMOUNT, {
+      decimals: 6,
+      symbol: 'USDC',
+      memo: 'pr_1',
+      references: ['ref-1'],
+    });
+  });
+
   it('uses the resolved recipient address for transfer execution when provided', async () => {
     const { result } = renderHook(
       () =>

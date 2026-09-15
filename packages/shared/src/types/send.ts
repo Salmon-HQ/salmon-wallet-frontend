@@ -28,6 +28,10 @@ export interface SendTransactionParams {
   resolvedRecipientAddress?: string;
   /** Amount in human-readable format */
   amount: number;
+  /** Memo instruction placed immediately before the transfer (Solana only) */
+  memo?: string;
+  /** Solana Pay references the transfer instruction carries as read-only keys, in order */
+  references?: readonly string[];
 }
 
 /**

@@ -82,4 +82,91 @@ describe('useSendFlowState', () => {
     expect(result.current.amount).toBe('');
     expect(reset).toHaveBeenCalled();
   });
+
+  describe('a Send started from a transfer request', () => {
+    const request = {
+      recipient: 'dest',
+      amount: '2.5',
+      splToken: 'USDC',
+      references: ['ref-1', 'ref-2'],
+      label: 'Cafe',
+      message: 'Table 4',
+      memo: 'pr_1',
+    };
+
+    it('locks recipient, token and amount, lands on the review, and the transfer carries the keys', async () => {
+      const { result } = renderHook(() => useSendFlowState(params));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+
+      let started;
+      act(() => {
+        started = result.current.startFromRequest(request, params.tokens);
+      });
+      expect(started).toEqual({ ok: true, next: 'review' });
+      expect(result.current.recipient).toEqual({ address: 'dest', name: 'Cafe' });
+      expect(result.current.token).toBe(usdc);
+      expect(result.current.amount).toBe('2.5');
+      expect(result.current.request?.locked).toEqual({
+        recipient: true,
+        token: true,
+        amount: true,
+      });
+
+      await act(() => result.current.submit());
+      expect(sendTransaction).toHaveBeenCalledWith({
+        token: { address: 'USDC', decimals: 6, symbol: 'USDC' },
+        recipientAddress: 'dest',
+        resolvedRecipientAddress: undefined,
+        amount: 2.5,
+        memo: 'pr_1',
+        references: ['ref-1', 'ref-2'],
+      });
+    });
+
+    it('asks for the amount when the request names none, and pays SOL when it names no token', async () => {
+      const { result } = renderHook(() => useSendFlowState(params));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+
+      let started;
+      act(() => {
+        started = result.current.startFromRequest(
+          { recipient: 'dest', references: [] },
+          params.tokens
+        );
+      });
+      expect(started).toEqual({ ok: true, next: 'amount' });
+      expect(result.current.token).toBe(sol);
+      expect(result.current.request?.locked.amount).toBe(false);
+    });
+
+    it('refuses a token the account does not hold, and never substitutes another', async () => {
+      const { result } = renderHook(() => useSendFlowState(params));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+
+      let started;
+      act(() => {
+        started = result.current.startFromRequest({ ...request, splToken: 'BONK' }, params.tokens);
+      });
+      expect(started).toEqual({ ok: false, reason: 'tokenNotHeld' });
+      expect(result.current.request).toBeNull();
+      expect(result.current.recipient).toBeNull();
+    });
+
+    it('reset and clearRequest both drop the request', async () => {
+      const { result } = renderHook(() => useSendFlowState(params));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+
+      act(() => {
+        result.current.startFromRequest(request, params.tokens);
+      });
+      act(() => result.current.clearRequest());
+      expect(result.current.request).toBeNull();
+
+      act(() => {
+        result.current.startFromRequest(request, params.tokens);
+      });
+      act(() => result.current.reset());
+      expect(result.current.request).toBeNull();
+    });
+  });
 });

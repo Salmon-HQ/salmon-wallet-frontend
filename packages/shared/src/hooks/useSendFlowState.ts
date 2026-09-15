@@ -13,10 +13,15 @@
  * params; haptics, routing and keyboards stay with the caller.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { TransferRequest } from '../blockchain/solana/transfer-request';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
-import type { SendRecipient, SendToken } from '../types/ui/send-sheet';
+import type { SendRecipient, SendRequest, SendToken } from '../types/ui/send-sheet';
 import { SOL_CONSTANTS } from '../utils/balance';
 import { useSendTransaction } from './useSendTransaction';
+
+/** Where a request-started Send lands, or why it could not start. */
+export type StartFromRequestResult =
+  { ok: true; next: 'review' | 'amount' } | { ok: false; reason: 'tokenNotHeld' };
 
 /** Reads a token balance the way every send surface has always read it. */
 function toNumber(value: number | string | undefined): number | undefined {
@@ -35,6 +40,9 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
   const [recipient, setRecipient] = useState<SendRecipient | null>(null);
   const [amount, setAmount] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
+  // Set when Send was started from a scanned or pasted Solana Pay request:
+  // the review locks what the request fixed and the transfer carries its keys.
+  const [request, setRequest] = useState<SendRequest | null>(null);
 
   const sendHook = useSendTransaction({ account, blockchain });
 
@@ -100,8 +108,37 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
     setRecipient(null);
     setAmount('');
     setTxId(null);
+    setRequest(null);
     sendHook.reset();
   }, [sendHook]);
+
+  /**
+   * Start from a Solana Pay transfer request: the recipient, the token and
+   * (when named) the amount are the request's, and the caller navigates to
+   * `next`. The token must be one the account holds — the wallet never
+   * substitutes another (spec 033 FR-023).
+   */
+  const startFromRequest = useCallback(
+    (transferRequest: TransferRequest, holdings: readonly SendToken[]): StartFromRequestResult => {
+      const mint = transferRequest.splToken ?? SOL_CONSTANTS.ADDRESS;
+      const held = holdings.find((tok) => tok.address === mint);
+      if (!held) return { ok: false, reason: 'tokenNotHeld' };
+
+      const hasAmount = transferRequest.amount !== undefined;
+      setRecipient({ address: transferRequest.recipient, name: transferRequest.label });
+      setToken(held);
+      setAmount(transferRequest.amount ?? '');
+      setRequest({
+        request: transferRequest,
+        token: held,
+        locked: { recipient: true, token: true, amount: hasAmount },
+      });
+      return { ok: true, next: hasAmount ? 'review' : 'amount' };
+    },
+    []
+  );
+
+  const clearRequest = useCallback(() => setRequest(null), []);
 
   /** Commit the transfer. The hook's `failed` status is the report. */
   const submit = useCallback(async () => {
@@ -112,12 +149,13 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
         recipientAddress: recipient.address,
         resolvedRecipientAddress: recipient.resolvedAddress,
         amount: parseFloat(amount),
+        ...(request ? { memo: request.request.memo, references: request.request.references } : {}),
       });
       setTxId(result.txId);
     } catch {
       // The hook's `failed` status is the report; the failure surface renders it.
     }
-  }, [sendHook, token, recipient, amount]);
+  }, [sendHook, token, recipient, amount, request]);
 
   return {
     token,
@@ -134,6 +172,9 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
     txId,
     submit,
     reset,
+    request,
+    startFromRequest,
+    clearRequest,
   };
 }
 
