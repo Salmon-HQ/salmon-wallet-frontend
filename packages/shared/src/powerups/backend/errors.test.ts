@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../api/client';
 import { describePowerupBuildError } from './errors';
-import { describeSwapBuildError } from '../swap/errors';
 
 const api = (status: number, code?: string) => new ApiError('x', status, code);
 
@@ -45,16 +44,5 @@ describe('describePowerupBuildError — spec 029 §5.3', () => {
     expect(
       describePowerupBuildError(new Error('?'), { fallback: 'memo.errors.buildFailed' })
     ).toEqual({ kind: 'message', message: 'memo.errors.buildFailed' });
-  });
-
-  it('keeps the swap reading its own codes over the shared ones', () => {
-    expect(describeSwapBuildError(api(400, 'invalid_parameter'))).toEqual({
-      kind: 'message',
-      message: 'swap.errors.quoteFailed',
-    });
-    expect(describeSwapBuildError(new Error('?'))).toEqual({
-      kind: 'message',
-      message: 'swap.errors.quoteFailed',
-    });
   });
 });

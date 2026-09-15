@@ -131,7 +131,7 @@ describe('the app stack', () => {
     // An installed Powerup is a sub-tab of Home and the catalogue is a sheet
     // over Home: a route for either would be a second place to reach them.
     expect('powerups' in screensByName).toBe(false);
-    expect('swap' in screensByName).toBe(false);
+    expect('memo' in screensByName).toBe(false);
   });
 
   it('gives the settings sub-stack the same right slide', () => {

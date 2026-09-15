@@ -203,9 +203,9 @@ describe('HomeTabOrderSheet', () => {
       <HomeTabOrderSheet
         visible
         onClose={jest.fn()}
-        tabs={[...TABS, { key: 'swap', label: 'Swap' }]}
+        tabs={[...TABS, { key: 'memo', label: 'Memo' }]}
         onOrderChange={jest.fn()}
-        removableKeys={['swap']}
+        removableKeys={['memo']}
         onRemove={onRemove}
       />
     );
@@ -214,7 +214,7 @@ describe('HomeTabOrderSheet', () => {
     expect(screen.queryByTestId('home-tab-order-row-portfolio-remove')).toBeNull();
     expect(screen.queryByTestId('home-tab-order-row-nfts-remove')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('home-tab-order-row-swap-remove'));
-    expect(onRemove).toHaveBeenCalledWith('swap');
+    fireEvent.press(screen.getByTestId('home-tab-order-row-memo-remove'));
+    expect(onRemove).toHaveBeenCalledWith('memo');
   });
 });

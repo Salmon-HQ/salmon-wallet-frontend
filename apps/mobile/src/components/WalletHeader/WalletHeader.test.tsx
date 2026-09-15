@@ -183,7 +183,7 @@ describe('WalletHeader copy address', () => {
   });
 });
 
-describe('WalletHeader chain swap', () => {
+describe('WalletHeader chain change', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -206,7 +206,7 @@ describe('WalletHeader chain swap', () => {
 
     const mountIdBefore = screen.getByTestId('wallet-header-account-text').props.mountId;
 
-    // Arm the copy feedback: if the swap remounted the button's subtree,
+    // Arm the copy feedback: if the change remounted the button's subtree,
     // this state would be wiped mid-hold.
     fireEvent.press(screen.getByTestId('wallet-header-copy-address'));
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
@@ -222,7 +222,7 @@ describe('WalletHeader chain swap', () => {
     const mountIdAfter = screen.getByTestId('wallet-header-account-text').props.mountId;
     expect(mountIdAfter).not.toBe(mountIdBefore);
 
-    // Copy feedback survived the swap — the button was never remounted.
+    // Copy feedback survived the change — the button was never remounted.
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
   });
 
@@ -330,7 +330,7 @@ describe('WalletHeader identity block', () => {
   });
 });
 
-describe('WalletHeader identity swap', () => {
+describe('WalletHeader identity change', () => {
   const renderHeader = (avatarUrl?: string) =>
     render(
       <WalletHeader

@@ -70,7 +70,7 @@ describe('PriceChart', () => {
     }
   );
 
-  it('resamples every series to one point count so two periods morph, not swap', () => {
+  it('resamples every series to one point count so two periods morph, not cut', () => {
     const short = resampleYs(SERIES, 100, { min: 10, max: 13 });
     const long = resampleYs([...SERIES, ...SERIES, ...SERIES], 100, { min: 10, max: 13 });
     expect(short.length).toBe(long.length);

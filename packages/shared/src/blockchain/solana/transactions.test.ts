@@ -11,7 +11,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getRecentTransactions,
   isTransferTransaction,
-  isSwapTransaction,
   isNftTransaction,
   isSuccessful,
   isFailed,
@@ -92,16 +91,16 @@ const MOCK_RECEIVE_TX: SolanaTransaction = {
 };
 
 /**
- * Mock swap transaction
+ * Mock exchange transaction (a type this build does not name)
  */
-const MOCK_SWAP_TX: SolanaTransaction = {
-  signature: 'swap-signature-123',
-  id: 'swap-signature-123',
+const MOCK_EXCHANGE_TX: SolanaTransaction = {
+  signature: 'exchange-signature-123',
+  id: 'exchange-signature-123',
   timestamp: 1640001000,
   status: 'completed',
   fee: { amount: 10000, decimals: 9, symbol: 'SOL' },
-  type: 'swap',
-  description: 'Swap SOL for USDC',
+  type: 'unknown',
+  description: 'Exchange SOL for USDC',
   source: 'RAYDIUM',
   inputs: [
     {
@@ -123,7 +122,7 @@ const MOCK_SWAP_TX: SolanaTransaction = {
       destination: 'RaydiumProgram',
     },
   ],
-  heliusType: 'SWAP',
+  heliusType: 'UNKNOWN',
 };
 
 /**
@@ -270,7 +269,7 @@ describe('Solana Transaction History Service', () => {
 
     it('should fetch transactions with paging parameters', async () => {
       const mockResponse = {
-        transactions: [MOCK_SWAP_TX],
+        transactions: [MOCK_EXCHANGE_TX],
         oldestSignature: null,
         hasMore: false,
       };
@@ -287,7 +286,7 @@ describe('Solana Transaction History Service', () => {
         mockGetSolanaTransactions
       );
 
-      expect(result.data).toEqual([MOCK_SWAP_TX]);
+      expect(result.data).toEqual([MOCK_EXCHANGE_TX]);
       expect(result.pageToken).toBeUndefined();
       expect(mockGetSolanaTransactions).toHaveBeenCalledWith('solana-mainnet', TEST_ADDRESS, {
         before: 'page-token-123',
@@ -309,18 +308,8 @@ describe('Solana Transaction History Service', () => {
       expect(isTransferTransaction(MOCK_RECEIVE_TX)).toBe(true);
     });
 
-    it('should return false for swap transactions', () => {
-      expect(isSwapTransaction(MOCK_SEND_TX)).toBe(false);
-    });
-  });
-
-  describe('isSwapTransaction', () => {
-    it('should return true for swap transactions', () => {
-      expect(isSwapTransaction(MOCK_SWAP_TX)).toBe(true);
-    });
-
-    it('should return false for non-swap transactions', () => {
-      expect(isSwapTransaction(MOCK_SEND_TX)).toBe(false);
+    it('should return false for non-transfer transactions', () => {
+      expect(isTransferTransaction(MOCK_EXCHANGE_TX)).toBe(false);
     });
   });
 
@@ -384,7 +373,7 @@ describe('Solana Transaction History Service', () => {
 
   describe('getInvolvedTokens', () => {
     it('should return all unique token contracts', () => {
-      const result = getInvolvedTokens(MOCK_SWAP_TX);
+      const result = getInvolvedTokens(MOCK_EXCHANGE_TX);
 
       expect(result).toContain(SOL_CONTRACT);
       expect(result).toContain(USDC_CONTRACT);

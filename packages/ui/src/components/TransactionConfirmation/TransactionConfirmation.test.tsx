@@ -16,7 +16,7 @@ vi.mock('react-i18next', () => ({
 afterEach(cleanup);
 
 const display: ProposalDisplay = {
-  title: 'Swap Review',
+  title: 'Memo Review',
   exchange: {
     send: { label: 'You Send', symbol: 'USDC', amount: '1 USDC', usdValue: '~$1.00' },
     receive: { label: 'You Receive', symbol: 'SOL', amount: '0.0197 SOL' },
@@ -31,7 +31,7 @@ const display: ProposalDisplay = {
   ],
   attribution: 'Powered by 0x',
   warning: { title: 'Please Note', body: 'Rates are estimates.' },
-  pendingTitle: 'Processing swap',
+  pendingTitle: 'Sending memo',
 };
 
 function renderScreen(

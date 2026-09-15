@@ -93,7 +93,7 @@ describe('PendingTransactionsProvider', () => {
     act(() => {
       result.current.trackPendingTransaction({
         signature: 'sig-done',
-        kind: 'swap',
+        kind: 'send',
         networkId: NET,
         submittedAt: Date.now(),
         status: 'confirmed',
@@ -200,7 +200,7 @@ describe('PendingTransactionsProvider', () => {
     await setStorageItem(STORAGE_KEYS.PENDING_TRANSACTIONS, [
       {
         signature: 'sig-resumed',
-        kind: 'swap',
+        kind: 'send',
         networkId: NET,
         accountId: ACCT,
         submittedAt: Date.now() - 60_000,

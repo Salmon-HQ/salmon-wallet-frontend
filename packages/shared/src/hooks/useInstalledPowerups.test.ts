@@ -38,26 +38,26 @@ describe('useInstalledPowerups', () => {
     const { result } = renderHook(() => useInstalledPowerups());
     await waitFor(() => expect(mockStorage.getItem).toHaveBeenCalled());
     expect(result.current.installed).toEqual([]);
-    expect(result.current.isInstalled('swap')).toBe(false);
+    expect(result.current.isInstalled('memo')).toBe(false);
   });
 
   it('reads back what was stored', async () => {
-    mockStorage.getItem.mockResolvedValue(['swap']);
+    mockStorage.getItem.mockResolvedValue(['memo']);
     const { result } = renderHook(() => useInstalledPowerups());
-    await waitFor(() => expect(result.current.isInstalled('swap')).toBe(true));
+    await waitFor(() => expect(result.current.isInstalled('memo')).toBe(true));
   });
 
   it('persists an install and an uninstall', async () => {
     const { result } = renderHook(() => useInstalledPowerups());
     await waitFor(() => expect(mockStorage.getItem).toHaveBeenCalled());
 
-    act(() => result.current.install('swap'));
-    expect(result.current.installed).toEqual(['swap']);
+    act(() => result.current.install('memo'));
+    expect(result.current.installed).toEqual(['memo']);
     await waitFor(() =>
-      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_installed_powerups', ['swap'])
+      expect(mockStorage.setItem).toHaveBeenCalledWith('salmon_installed_powerups', ['memo'])
     );
 
-    act(() => result.current.uninstall('swap'));
+    act(() => result.current.uninstall('memo'));
     expect(result.current.installed).toEqual([]);
   });
 
@@ -66,8 +66,8 @@ describe('useInstalledPowerups', () => {
     const sheet = renderHook(() => useInstalledPowerups());
     await waitFor(() => expect(mockStorage.getItem).toHaveBeenCalled());
 
-    act(() => sheet.result.current.install('swap'));
+    act(() => sheet.result.current.install('memo'));
 
-    expect(row.result.current.installed).toEqual(['swap']);
+    expect(row.result.current.installed).toEqual(['memo']);
   });
 });

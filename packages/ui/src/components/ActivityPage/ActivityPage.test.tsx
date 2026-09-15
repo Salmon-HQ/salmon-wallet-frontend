@@ -41,8 +41,8 @@ const TRANSACTIONS = [
     outputs: [{ symbol: 'SOL', amount: '1000000000', decimals: 9, destination: 'DestAddr1234' }],
   },
   {
-    id: 'tx-swap',
-    type: 'swap',
+    id: 'tx-stake',
+    type: 'stake',
     status: 'completed',
     timestamp: YESTERDAY_SECONDS,
     inputs: [{ symbol: 'USDC', amount: '5000000', decimals: 6 }],
@@ -82,11 +82,11 @@ describe('ActivityPage', () => {
     fireEvent.click(screen.getByTestId('activity-filters-send'));
     expect(screen.getAllByTestId('activity-tx-row')).toHaveLength(1);
 
-    // "Other" is by exclusion: the swap is in it, the send is not.
+    // "Other" is by exclusion: the stake is in it, the send is not.
     fireEvent.click(screen.getByTestId('activity-filters-other'));
     const rows = screen.getAllByTestId('activity-tx-row');
     expect(rows).toHaveLength(1);
-    expect(within(rows[0]).getByText('Swapped')).toBeTruthy();
+    expect(within(rows[0]).getByText('Staked')).toBeTruthy();
   });
 
   it('says the filter is the reason when a filtered slice is empty', () => {

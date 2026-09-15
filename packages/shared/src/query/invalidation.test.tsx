@@ -231,7 +231,7 @@ describe('useInvalidateAfterTx', () => {
 
   it("forces refetch of inactive queries via refetchType: 'all'", async () => {
     // Regression: tab navigators preserve home screen instances, so refetch
-    // on mount alone never fires after a swap success modal closes. Without
+    // on mount alone never fires after a Powerup's success modal closes. Without
     // refetchType: 'all', invalidated-but-inactive balance queries stay
     // stale until full page reload.
     const client = makeClient();

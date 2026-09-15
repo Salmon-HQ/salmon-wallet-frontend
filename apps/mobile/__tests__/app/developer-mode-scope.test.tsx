@@ -96,7 +96,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/contexts/DeveloperModeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
   // Nothing installed: the Powerup tabs are their own suite.
-  useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
+  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,

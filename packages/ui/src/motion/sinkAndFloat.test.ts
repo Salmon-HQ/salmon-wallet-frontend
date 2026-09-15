@@ -78,7 +78,7 @@ describe('the sink and the float on the DOM', () => {
     expect(options.delay).toBe(20);
   });
 
-  it('animates nothing under reduce motion — the swap is a cut', () => {
+  it('animates nothing under reduce motion — the change is a cut', () => {
     const { element, animate } = elementWithAnimate();
 
     expect(floatEntering(element, true)).toBeUndefined();

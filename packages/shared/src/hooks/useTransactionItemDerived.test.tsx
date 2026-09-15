@@ -9,7 +9,7 @@ import type { Transaction } from '../types/transaction';
 
 const typeConfigTable = {
   send: { label: 'Sent' },
-  swap: { label: 'Swapped' },
+  mint: { label: 'Minted' },
   unknown: { label: 'Unknown' },
 };
 
@@ -38,36 +38,29 @@ describe('useTransactionItemDerived', () => {
         tx({ type: 'stake' } as Partial<Transaction>),
         undefined,
         t,
-        typeConfigTable,
-        2
+        typeConfigTable
       )
     );
 
     expect(result.current.config).toBe(typeConfigTable.unknown);
   });
 
-  it('is complex only for a swap past the visible-amount ceiling', () => {
-    const swapTx = tx({
-      type: 'swap',
+  it('counts the amounts on both sides', () => {
+    const multiLeg = tx({
+      type: 'unknown',
       inputs: [amount('A')],
       outputs: [amount('B'), amount('C')],
     });
 
-    const { result: over } = renderHook(() =>
-      useTransactionItemDerived(swapTx, undefined, t, typeConfigTable, 2)
+    const { result } = renderHook(() =>
+      useTransactionItemDerived(multiLeg, undefined, t, typeConfigTable)
     );
-    expect(over.current.isComplex).toBe(true);
-    expect(over.current.totalAmounts).toBe(3);
-
-    const { result: notSwap } = renderHook(() =>
-      useTransactionItemDerived(tx({ type: 'send' }), undefined, t, typeConfigTable, 0)
-    );
-    expect(notSwap.current.isComplex).toBe(false);
+    expect(result.current.totalAmounts).toBe(3);
   });
 
   it('translates the type label with the config label as the default', () => {
     const { result } = renderHook(() =>
-      useTransactionItemDerived(tx({ type: 'send' }), undefined, t, typeConfigTable, 2)
+      useTransactionItemDerived(tx({ type: 'send' }), undefined, t, typeConfigTable)
     );
 
     expect(result.current.typeLabel).toBe('Sent');

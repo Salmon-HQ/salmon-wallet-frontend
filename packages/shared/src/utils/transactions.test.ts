@@ -2,14 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getTransactionDescription,
-  pickSwapLegs,
   transformMultichainTransaction,
   transformSolanaTransaction,
 } from './transactions';
-import type { TransactionTokenAmount } from '../types/transaction';
 
 describe('transaction utils', () => {
-  it('normalizes native Solana token data and infers swap from unknown type', () => {
+  it('normalizes native Solana token data and keeps an unknown type unknown', () => {
     const tx = transformSolanaTransaction({
       id: 'sig-1',
       timestamp: 1,
@@ -31,10 +29,10 @@ describe('transaction utils', () => {
       ],
       description: 'Unknown',
       source: 'RAYDIUM',
-      heliusType: 'SWAP',
+      heliusType: 'UNKNOWN',
     } as any);
 
-    expect(tx.type).toBe('swap');
+    expect(tx.type).toBe('unknown');
     expect(tx.outputs[0]).toMatchObject({
       amount: '1000000000',
       decimals: 9,
@@ -99,7 +97,7 @@ describe('transaction utils', () => {
     });
   });
 
-  it('names send receive and swap descriptions with the parts to interpolate', () => {
+  it('names send and receive descriptions with the parts to interpolate', () => {
     expect(
       getTransactionDescription(
         'send',
@@ -128,17 +126,6 @@ describe('transaction utils', () => {
     ).toEqual({
       key: 'transactions.description.receiveFrom',
       values: { address: expect.any(String) },
-    });
-
-    expect(
-      getTransactionDescription(
-        'swap',
-        [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'sol' }],
-        [{ amount: '2', decimals: 6, symbol: 'USDC', contract: 'usdc' }]
-      )
-    ).toEqual({
-      key: 'transactions.description.swap',
-      values: { from: 'USDC', to: 'SOL' },
     });
   });
 
@@ -170,7 +157,6 @@ describe('transaction utils', () => {
     expect(esKeys).toEqual(enKeys);
     expect(enKeys).toEqual(
       expect.arrayContaining([
-        'swap',
         'sendTo',
         'send',
         'receiveFrom',
@@ -183,50 +169,6 @@ describe('transaction utils', () => {
         'fallback',
       ])
     );
-  });
-
-  it('passes through swapRoute from the backend SolanaTransaction unchanged', () => {
-    const swapRoute = {
-      hops: [
-        {
-          dex: 'RAYDIUM',
-          percent: 100,
-          inputToken: { symbol: 'SOL', amount: '1000000000', decimals: 9 },
-          outputToken: { symbol: 'USDC', amount: '120000000', decimals: 6 },
-        },
-      ],
-      inputAmount: '1000000000',
-      outputAmount: '120000000',
-      conversionRate: { fromSymbol: 'SOL', toSymbol: 'USDC', rate: '120.000000' },
-    };
-
-    const tx = transformSolanaTransaction({
-      id: 'sig-2',
-      signature: 'sig-2',
-      timestamp: 100,
-      status: 'completed',
-      type: 'swap',
-      inputs: [],
-      outputs: [],
-      swapRoute,
-    } as any);
-
-    expect(tx.swapRoute).toBe(swapRoute);
-    expect(tx.swapRoute?.conversionRate?.rate).toBe('120.000000');
-  });
-
-  it('leaves swapRoute undefined when the backend does not provide it', () => {
-    const tx = transformSolanaTransaction({
-      id: 'sig-3',
-      signature: 'sig-3',
-      timestamp: 100,
-      status: 'completed',
-      type: 'send',
-      inputs: [],
-      outputs: [],
-    } as any);
-
-    expect(tx.swapRoute).toBeUndefined();
   });
 });
 
@@ -256,53 +198,5 @@ describe('transformSolanaTransaction — token leg images', () => {
 
     expect(tx.inputs[0].logo).toMatch(/^https:\/\//);
     expect(tx.inputs[0].logo).toContain('bafyimage');
-  });
-});
-
-describe('pickSwapLegs', () => {
-  const leg = (overrides: Partial<TransactionTokenAmount>): TransactionTokenAmount => ({
-    amount: '0',
-    decimals: 6,
-    symbol: 'TOK',
-    contract: 'mint',
-    ...overrides,
-  });
-
-  it('passes through a plain one-in/one-out swap unchanged', () => {
-    const inputs = [leg({ amount: '1338100', decimals: 6, symbol: 'USDC' })];
-    const outputs = [leg({ amount: '40000000', decimals: 9, symbol: 'SOL' })];
-
-    const result = pickSwapLegs({ inputs, outputs });
-
-    expect(result.primaryInput).toBe(inputs[0]);
-    expect(result.primaryOutput).toBe(outputs[0]);
-    expect(result.residual).toEqual([]);
-  });
-
-  it('trusts the backend order — inputs[0]/outputs[0] are always primary, the rest is residual', () => {
-    // The SOL -> PYUSD -> USDC bug case: the backend nets pass-through hops
-    // to zero and puts the chosen pair first, so a real leg can still be
-    // followed by a small extra leg (e.g. unspent route change) — that
-    // extra leg is residual, never re-ranked ahead of inputs[0]/outputs[0].
-    const chosen = leg({ amount: '1338100', decimals: 6, symbol: 'USDC' });
-    const change = leg({ amount: '40087', decimals: 6, symbol: 'PYUSD' });
-    const inputs = [chosen, change];
-    const outputs = [leg({ amount: '40000000', decimals: 9, symbol: 'SOL' })];
-
-    const result = pickSwapLegs({ inputs, outputs });
-
-    expect(result.primaryInput).toBe(chosen);
-    expect(result.primaryOutput).toBe(outputs[0]);
-    expect(result.residual).toEqual([change]);
-  });
-
-  it('never compares amounts across mints — a bigger raw amount later in the array stays residual', () => {
-    const first = leg({ amount: '1', decimals: 0, symbol: 'A' });
-    const biggerButLater = leg({ amount: '1000000', decimals: 0, symbol: 'B' });
-
-    const result = pickSwapLegs({ inputs: [], outputs: [first, biggerButLater] });
-
-    expect(result.primaryOutput).toBe(first);
-    expect(result.residual).toEqual([biggerButLater]);
   });
 });

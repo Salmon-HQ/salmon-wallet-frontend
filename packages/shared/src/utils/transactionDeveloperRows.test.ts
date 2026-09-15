@@ -12,7 +12,7 @@ const t = vi.fn((key: string, optionsOrDefault?: string | Record<string, unknown
 const baseTx = {
   id: 'tx-1',
   timestamp: 0,
-  type: 'swap',
+  type: 'send',
   status: 'completed',
 } as unknown as Transaction;
 
@@ -22,14 +22,14 @@ describe('buildTransactionDeveloperSections', () => {
   });
 
   it('groups heliusType and accountsInvolved into one untitled top section', () => {
-    const tx = { ...baseTx, heliusType: 'SWAP', accountsInvolved: 4 } as Transaction;
+    const tx = { ...baseTx, heliusType: 'TRANSFER', accountsInvolved: 4 } as Transaction;
 
     const sections = buildTransactionDeveloperSections(tx, t);
 
     expect(sections).toHaveLength(1);
     expect(sections[0].title).toBeUndefined();
     expect(sections[0].rows).toEqual([
-      { key: 'heliusType', label: 'Type', value: 'SWAP', labelWeight: 600 },
+      { key: 'heliusType', label: 'Type', value: 'TRANSFER', labelWeight: 600 },
       { key: 'accountsInvolved', label: 'Accounts Involved', value: '4', labelWeight: 600 },
     ]);
   });
@@ -49,29 +49,5 @@ describe('buildTransactionDeveloperSections', () => {
     expect(sections[0].title).toBe('Programs');
     expect(sections[0].rows[0].value).toBe('');
     expect(sections[0].rows[1].value).toBe('2 inner');
-  });
-
-  it('builds one Swap Fees section combining native and token fees', () => {
-    const tx = {
-      ...baseTx,
-      swapFees: {
-        nativeFees: [{ account: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU', amount: '0.01' }],
-        tokenFees: [
-          {
-            account: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-            amount: '1.5',
-            mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          },
-        ],
-      },
-    } as unknown as Transaction;
-
-    const sections = buildTransactionDeveloperSections(tx, t);
-
-    expect(sections).toHaveLength(1);
-    expect(sections[0].key).toBe('swapFees');
-    expect(sections[0].rows).toHaveLength(2);
-    expect(sections[0].rows[0].value).toBe('0.01 SOL');
-    expect(sections[0].rows[1].value).toContain('1.5 (');
   });
 });

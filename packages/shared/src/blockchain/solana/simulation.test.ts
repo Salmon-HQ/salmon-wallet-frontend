@@ -207,7 +207,7 @@ describe('deriveEffects', () => {
     expect(result.tokens[0]?.amount).toBe(-6n);
   });
 
-  it('derives a swap touching several token accounts and ignores accounts it does not own', () => {
+  it('derives an exchange touching several token accounts and ignores accounts it does not own', () => {
     const result = deriveEffects(
       derivationInput({
         before: new Map([
@@ -387,7 +387,7 @@ describe('deriveEffects approvals', () => {
     expect(result.approvals[0]?.scope).toBe('unlimited');
   });
 
-  it('reports a delegation swapped to a different spender for the same amount', () => {
+  it('reports a delegation moved to a different spender for the same amount', () => {
     const result = deriveEffects(
       derivationInput({
         before: new Map([

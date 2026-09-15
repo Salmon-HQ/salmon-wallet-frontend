@@ -2,13 +2,13 @@
  * @vitest-environment jsdom
  *
  * A wait is a screen, so a wait stands in the water. This is the one screen
- * where the seam was visible without looking for it: the wait before a swap
+ * where the seam was visible without looking for it: the wait before a signed proposal
  * settles is followed in the same second by the receipt, which has the ground,
  * and a flat wait next to a grounded receipt reads as two applications.
  *
  * The ground is asserted here rather than at each call site because every
  * full-screen wait in web and extension — boot, unlock, wallet creation,
- * add-account, and the pending state of swap and send — is this one
+ * add-account, and the pending state of a proposal and a send — is this one
  * component. The exception is asserted with it: `bedrock` is the dApp approval
  * flow's opt-out, and it is a security rule rather than a preference.
  */
@@ -84,7 +84,7 @@ describe('the ground under a full-screen wait', () => {
   afterEach(cleanup);
 
   it('stands the wait in the same water as the screen that follows it', () => {
-    render(<LoadingScreen visible title="Processing swap" />);
+    render(<LoadingScreen visible title="Sending memo" />);
 
     expect(screen.getByTestId('water-column')).toBeTruthy();
   });
@@ -134,7 +134,7 @@ describe('the wave', () => {
   });
 
   it('gives the wave a visible source — the mark that emits it', () => {
-    render(<LoadingScreen visible waves title="Processing swap" />);
+    render(<LoadingScreen visible waves title="Sending memo" />);
 
     expect(screen.getByTestId('loading-emitter')).toBeTruthy();
   });
@@ -158,7 +158,7 @@ describe('the wave', () => {
     // también, cuando te dije que no debería." The riders were not damped, they
     // were removed — there is no longer anything on the screen the front can
     // pick up, and `[data-wave-rider]` was the contract that said otherwise.
-    const { container } = render(<LoadingScreen visible showTips title="Processing swap" />);
+    const { container } = render(<LoadingScreen visible showTips title="Sending memo" />);
 
     expect(container.querySelector('[data-wave-rider]')).toBeNull();
   });
@@ -166,7 +166,7 @@ describe('the wave', () => {
   it('shows no progress track — this screen has never known a percentage', () => {
     // The descent read as a progress bar and there has never been a `progress`
     // prop to fill it. A bar that cannot be right must not be drawn.
-    render(<LoadingScreen visible title="Processing swap" />);
+    render(<LoadingScreen visible title="Sending memo" />);
 
     expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
@@ -187,10 +187,10 @@ describe('the wave', () => {
     // calm-water hold from double-counting.
     const onExited = vi.fn();
     const { rerender } = render(
-      <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
+      <LoadingScreen visible waves title="Sending memo" onExited={onExited} />
     );
 
-    rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
+    rerender(<LoadingScreen visible={false} waves title="Sending memo" onExited={onExited} />);
 
     act(() => {
       vi.advanceTimersByTime(5000 + 1579);
@@ -207,18 +207,18 @@ describe('the wave', () => {
     // Reversal (owner): the default was off, so only unlock and recovery had
     // anything to read while they waited. Every wait shows them now; the prop
     // survives as the exception rather than the rule.
-    render(<LoadingScreen visible title="Processing swap" />);
+    render(<LoadingScreen visible title="Sending memo" />);
     expect(screen.getByText('tips.one')).toBeTruthy();
 
     cleanup();
-    render(<LoadingScreen visible title="Processing swap" showTips={false} />);
+    render(<LoadingScreen visible title="Sending memo" showTips={false} />);
     expect(screen.queryByText('tips.one')).toBeNull();
   });
 
   it('holds until the front in flight has left the screen, then ebbs', () => {
     const onExited = vi.fn();
     const { rerender } = render(
-      <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
+      <LoadingScreen visible waves title="Sending memo" onExited={onExited} />
     );
 
     // Past the landing: the float precedes the impact, so the loop — and the
@@ -227,7 +227,7 @@ describe('the wave', () => {
       vi.advanceTimersByTime(CONTENT_LANDS_MS + 1);
     });
 
-    rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
+    rerender(<LoadingScreen visible={false} waves title="Sending memo" onExited={onExited} />);
 
     // The owner's floor first, with the crest still looping and the exit not
     // yet planned; then one whole crossing plus an ebb, so the front is not
@@ -248,10 +248,10 @@ describe('the wave', () => {
     setReducedMotion(true);
     const onExited = vi.fn();
     const { rerender } = render(
-      <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
+      <LoadingScreen visible waves title="Sending memo" onExited={onExited} />
     );
 
-    rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
+    rerender(<LoadingScreen visible={false} waves title="Sending memo" onExited={onExited} />);
 
     // The floor is a *hold*, not a transition: reduced motion does not shorten
     // it, exactly as the copy-feedback hold is not shortened. What reduced
@@ -270,9 +270,9 @@ describe('the wave', () => {
 
   it('leaves the words to carry the state under reduced motion', () => {
     setReducedMotion(true);
-    render(<LoadingScreen visible waves title="Processing swap" />);
+    render(<LoadingScreen visible waves title="Sending memo" />);
 
-    expect(screen.getByText('Processing swap')).toBeTruthy();
+    expect(screen.getByText('Sending memo')).toBeTruthy();
     expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 });

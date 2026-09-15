@@ -1,12 +1,12 @@
 /**
  * The sink-and-float contract. What matters is not the pixels but the
  * decisions that are easy to regress silently: the depth reading (both halves
- * recede on scale, and the travel stays a small accent so the swap never
+ * recede on scale, and the travel stays a small accent so the change never
  * relapses into a Y-slide), exit sinks *down* and enter floats *up* over the
  * same named distance, the durations are derived from the water's clock
  * (drift×2 in, tide/2 out — exit faster than enter), the light runs on its own
  * Beer–Lambert curve while the travel settles, and reduce motion gets no
- * layout animation at all — the swap stays a cut.
+ * layout animation at all — the change stays a cut.
  */
 import * as shared from '@salmon/shared';
 import { motionEasing, motionMs } from '@salmon/shared';
@@ -107,7 +107,7 @@ describe('sinkAndFloat', () => {
     expect(animation.animations.opacity.toValue).toBe(0);
     expect(animation.animations.opacity.config.duration).toBe(SINK_OUT_MS);
     expect(animation.animations.transform[0].translateY?.toValue).toBe(SINK_FLOAT_TRAVEL);
-    // The recession is the point of the exit: without it the swap read as a
+    // The recession is the point of the exit: without it the change read as a
     // Y-slide, which is the regression this assertion exists to catch.
     expect(animation.animations.transform[1].scale?.toValue).toBe(SINK_EXIT_SCALE);
     expect(SINK_OUT_MS).toBeLessThan(FLOAT_IN_MS);
@@ -143,10 +143,10 @@ describe('sinkAndFloat', () => {
   });
 
   it('takes per-call distance and duration overrides — the owner tunes by eye', () => {
-    const entering = floatEntering(false, { distance: 16, durationMs: motionMs.contentSwap });
+    const entering = floatEntering(false, { distance: 16, durationMs: motionMs.contentChange });
     const animation = (entering as unknown as () => StubAnimation)();
     expect(animation.initialValues.transform[0].translateY).toBe(16);
-    expect(animation.animations.opacity.config.duration).toBe(motionMs.contentSwap);
+    expect(animation.animations.opacity.config.duration).toBe(motionMs.contentChange);
   });
 
   it('floats without delay by default — an arrival with no prior sink must not lag', () => {

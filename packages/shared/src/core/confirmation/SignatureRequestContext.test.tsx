@@ -29,7 +29,7 @@ function proposal(overrides: Partial<TransactionProposal> = {}): TransactionProp
     networkId: 'solana-mainnet',
     transaction: 'AQ==',
     expect: { allowedPrograms: [] },
-    display: { title: 'Swap Review', rows: [], pendingTitle: 'Processing swap' },
+    display: { title: 'Memo Review', rows: [], pendingTitle: 'Sending memo' },
     ...overrides,
   };
 }
@@ -108,7 +108,7 @@ describe('SignatureRequestProvider', () => {
 
     act(() => {
       void view.result.current.ctx.requestSignature(
-        proposal({ pending: { kind: 'swap', summary: '1 SOL → 200 USDC' } })
+        proposal({ pending: { kind: 'send', summary: '1 SOL → 200 USDC' } })
       );
     });
     await act(async () => {
@@ -119,7 +119,7 @@ describe('SignatureRequestProvider', () => {
     expect(view.result.current.pending.pendingTransactions).toEqual([
       expect.objectContaining({
         signature: 'sig-1',
-        kind: 'swap',
+        kind: 'send',
         networkId: 'solana-mainnet',
         summary: '1 SOL → 200 USDC',
         status: 'confirmed',

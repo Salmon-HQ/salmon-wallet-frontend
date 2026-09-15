@@ -55,7 +55,7 @@ describe('PrimaryButton', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('swaps to the disabled ground and drops the flesh/specular when disabled', () => {
+  it('switches to the disabled ground and drops the flesh/specular when disabled', () => {
     renderInMode(
       'dark',
       <PrimaryButton testID="btn" onPress={() => {}} disabled>

@@ -10,13 +10,6 @@ import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper
 vi.mock('../api/services', () => ({
   getTokenList: vi.fn(),
 }));
-vi.mock('../utils/swap', async () => {
-  const actual: any = await vi.importActual('../utils/swap');
-  return {
-    ...actual,
-    mapToSwapToken: (t: any) => ({ address: t.address, symbol: t.symbol, name: t.name }) as any,
-  };
-});
 
 import { getTokenList } from '../api/services';
 import { useTokenCatalog } from './useTokenCatalog';

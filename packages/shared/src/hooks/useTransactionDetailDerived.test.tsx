@@ -35,7 +35,6 @@ describe('useTransactionDetailDerived', () => {
 
     expect(result.current.typeConfig).toBe(typeConfigTable.unknown);
     expect(result.current.statusConfig).toBe(statusConfigTable.completed);
-    expect(result.current.conversionRate).toBeNull();
   });
 
   it('picks the config matching the transaction type and status', () => {

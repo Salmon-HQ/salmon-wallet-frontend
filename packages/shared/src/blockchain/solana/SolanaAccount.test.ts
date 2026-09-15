@@ -133,7 +133,7 @@ describe('SolanaAccount', () => {
     expect(account.getReceiveAddress()).toBe(account.signer.address);
   });
 
-  it('throws exact method_not_supported errors for deprecated swap/token methods', async () => {
+  it('throws exact method_not_supported errors for deprecated token methods', async () => {
     const account = await createAccount();
 
     await expect(account.getAvailableTokens()).rejects.toThrow(
@@ -141,12 +141,6 @@ describe('SolanaAccount', () => {
     );
     await expect(account.getFeaturedTokens()).rejects.toThrow(
       'method_not_supported: Use token list service directly'
-    );
-    await expect(account.getBestSwapQuote()).rejects.toThrow(
-      'method_not_supported: Use swap service directly'
-    );
-    await expect(account.createSwapTransaction()).rejects.toThrow(
-      'method_not_supported: Use swap service directly'
     );
   });
 

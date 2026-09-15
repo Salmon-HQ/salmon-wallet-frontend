@@ -168,7 +168,7 @@ jest.mock('@salmon/shared', () => ({
   useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
     .useHomePowerupsCatalog,
   // Nothing installed: the Powerup tabs are their own suite.
-  useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
+  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,
@@ -359,7 +359,7 @@ describe('home content vs an engaged task', () => {
 
   it('drops the beat when a task hand-back is followed by a surfacing', () => {
     // Leaving a task records 'task', which buys the screen a beat of empty
-    // water. A surfacing that follows is not that swap: the wait already held
+    // water. A surfacing that follows is not that change: the wait already held
     // the screen, so the float owes no pause (owner, 2026-09-02).
     mockTaskChrome.isTaskEngaged = true;
     const { rerender } = renderScreen(<HomeScreen />);

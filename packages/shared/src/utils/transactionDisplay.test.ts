@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createSemantic } from '../theme/semantic';
-import { chainMarks } from '../theme/brand';
 import type { Transaction } from '../types/transaction';
 import {
   CONFIRMATION_CONFIG,
   TYPE_LABEL_KEYS,
-  conversionRateFor,
   describeTransactionRow,
   transactionCounterparty,
   transactionStatusDisplayFor,
@@ -36,36 +34,9 @@ describe('transactionDisplay', () => {
       }
       expect(display.send.color).toBe(t.change.negative);
       expect(display.receive.color).toBe(t.change.positive);
-      expect(display.swap.color).toBe(chainMarks.purple);
       expect(transactionStatusDisplayFor(t).failed.color).toBe(t.status.danger);
     }
     expect(CONFIRMATION_CONFIG.finalized.tone).toBe('success');
-  });
-
-  it('rates a swap from the route, else from the primary (first) pair, else not at all', () => {
-    expect(conversionRateFor(null)).toBeNull();
-    expect(
-      conversionRateFor(
-        tx({
-          swapRoute: { conversionRate: { fromSymbol: 'A', toSymbol: 'B', rate: '2' } },
-        } as never)
-      )
-    ).toEqual({ fromSymbol: 'A', toSymbol: 'B', rate: '2' });
-    expect(
-      conversionRateFor(
-        tx({ outputs: [amount('SOL', '1000000000', 9)], inputs: [amount('USDC', '150000000', 6)] })
-      )
-    ).toEqual({ fromSymbol: 'SOL', toSymbol: 'USDC', rate: '150.000000' });
-    expect(
-      conversionRateFor(tx({ outputs: [amount('SOL', '0', 9)], inputs: [amount('USDC', '1', 6)] }))
-    ).toBeNull();
-    // Extra legs (route dust, pass-through hops) sit after the chosen pair —
-    // the rate still comes from outputs[0]/inputs[0], not the trailing ones.
-    expect(
-      conversionRateFor(
-        tx({ outputs: [amount('A', '1', 0), amount('B', '1', 0)], inputs: [amount('C', '1', 0)] })
-      )
-    ).toEqual({ fromSymbol: 'A', toSymbol: 'C', rate: '1.000000' });
   });
 
   it('finds the other side of a transfer, and nothing for anything else', () => {
@@ -79,7 +50,7 @@ describe('transactionDisplay', () => {
         tx({ type: 'receive', inputs: [amount('SOL', '1', 9, { source: ALICE })] })
       )
     ).toBe(ALICE);
-    expect(transactionCounterparty(tx({ type: 'swap' }))).toBeUndefined();
+    expect(transactionCounterparty(tx({ type: 'stake' }))).toBeUndefined();
   });
 
   it('says the note itself under a memo, and the generic sentence when the note is missing', () => {
@@ -101,7 +72,7 @@ describe('transactionDisplay', () => {
     });
     const short = describeTransactionRow(sent).values?.address as string;
     expect(short.length).toBeLessThan(ALICE.length);
-    expect(describeTransactionRow(tx({ type: 'swap' })).key).not.toContain('sendTo');
+    expect(describeTransactionRow(tx({ type: 'stake' })).key).not.toContain('sendTo');
   });
 });
 

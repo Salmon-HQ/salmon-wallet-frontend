@@ -217,7 +217,7 @@ jest.mock('@salmon/shared', () => ({
   useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
     .useHomePowerupsCatalog,
   // Nothing installed: the Powerup tabs are their own suite.
-  useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
+  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,
@@ -422,7 +422,7 @@ describe('home sub-tabs', () => {
     expect(screen.getByTestId('home-chain-content')).toBeTruthy();
     // The row swapped, so it is a different instance carrying the verb.
     expect(screen.getByTestId('portfolio-tabs-region')).not.toBe(tabsRegion);
-    // The content region owns the swap; the chain wrapper inside it does not.
+    // The content region owns the change; the chain wrapper inside it does not.
     expect(screen.getByTestId('home-subtab-content').props.entering).toBeTruthy();
     expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();
   });
@@ -498,7 +498,7 @@ describe('home sub-tabs', () => {
   it('hands a chain change to the chain wrapper alone, never to the screen', () => {
     // One depth per gesture (DESIGN.md rule 5). `home-content` is not keyed on
     // the chain, so a chain change cannot remount it — the screen stays put
-    // and only the list inside it swaps.
+    // and only the list inside it changes.
     networksState.networkId = 'solana-mainnet';
     networksState.allNetworks = [
       { id: 'solana-mainnet', name: 'Solana' },
@@ -626,7 +626,7 @@ describe('home developer networks', () => {
 
 /**
  * The screen surfacing — a wait ending, the lock overlay leaving — is not a
- * swap. Home is never unmounted while the wait is up, so the user's last
+ * change. Home is never unmounted while the wait is up, so the user's last
  * gesture is still recorded when the water clears; replaying it inside the
  * screen's own float is one gesture at two depths, which the verb never does
  * (DESIGN.md §The balance block's motion, rule five).

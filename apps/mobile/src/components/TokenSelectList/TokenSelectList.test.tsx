@@ -1,5 +1,5 @@
 /**
- * TokenSelectList — the rows the picker sheet lists. The swap's regression:
+ * TokenSelectList — the rows the picker sheet lists. The picker's regression:
  * a caller that curated its list passes `verifiedOnly={false}`, and the
  * sheet must list every token it was given, not hide the untagged ones.
  */

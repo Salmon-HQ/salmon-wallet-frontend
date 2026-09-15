@@ -36,7 +36,7 @@ jest.mock('@salmon/shared', () => ({
   },
   valueInkFor: () => ({ primary: '#fff', success: '#0f0', danger: '#f00', secondary: '#aaa' }),
   fontScaleCap: { dense: 1.2, chrome: 1.2 },
-  componentSizes: { swapDetailRowHeight: 38 },
+  componentSizes: { confirmationDetailRowHeight: 38 },
   fontSize: { sm: 14, body: 14, bodyLg: 16, headline: 24 },
   fontFamilyNative: { semiBold: 'System', medium: 'System', bold: 'System', extraBold: 'System' },
   borderRadius: { md: 12 },
@@ -136,7 +136,7 @@ import { TransactionConfirmation } from './TransactionConfirmation';
 import type { ProposalDisplay } from './types';
 
 const display: ProposalDisplay = {
-  title: 'Swap Review',
+  title: 'Memo Review',
   exchange: {
     send: { label: 'You Send', symbol: 'USDC', amount: '1 USDC' },
     receive: { label: 'You Receive', symbol: 'SOL', amount: '0.0197 SOL' },
@@ -152,7 +152,7 @@ const display: ProposalDisplay = {
   ],
   attribution: 'Powered by 0x',
   warning: { title: 'Please Note', body: 'Rates are estimates.' },
-  pendingTitle: 'Processing swap',
+  pendingTitle: 'Sending memo',
 };
 
 function renderScreen(
@@ -241,7 +241,7 @@ describe('TransactionConfirmation — every fee is its own line, the provider is
 describe('TransactionConfirmation title typography', () => {
   it('sets the screen title in the headline role, not a bold wide one', () => {
     const { getByText } = renderScreen();
-    const title = StyleSheet.flatten(getByText('Swap Review').props.style);
+    const title = StyleSheet.flatten(getByText('Memo Review').props.style);
     expect(title.fontSize).toBe(24);
     expect(title.fontFamily).toBe('System');
     expect(title.letterSpacing).toBe(-0.12);

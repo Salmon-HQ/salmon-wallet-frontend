@@ -181,7 +181,7 @@ describe('describeTransactionError — plain messages', () => {
   });
 
   it('maps a missing route to the no-route message', () => {
-    expect(classifyTransactionError(new Error('No routes found for this swap'))).toBe(
+    expect(classifyTransactionError(new Error('No routes found for this pair'))).toBe(
       'transaction.errors.noRoute'
     );
   });

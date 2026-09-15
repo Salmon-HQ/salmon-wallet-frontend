@@ -4,13 +4,13 @@ import * as off from './index.off';
 import * as on from './index';
 
 describe('powerups registry', () => {
-  it('lists swap as a core Powerup on Solana mainnet only', () => {
-    const swap = getPowerup('swap');
-    expect(swap).toBeDefined();
-    expect(swap?.tier).toBe('core');
-    expect(isPowerupOnNetwork(swap!, 'solana-mainnet')).toBe(true);
-    expect(isPowerupOnNetwork(swap!, 'solana-devnet')).toBe(false);
-    expect(isPowerupOnNetwork(swap!, null)).toBe(false);
+  it('lists memo as a community Powerup on Solana only', () => {
+    const memo = getPowerup('memo');
+    expect(memo).toBeDefined();
+    expect(memo?.tier).toBe('community');
+    expect(isPowerupOnNetwork(memo!, 'solana-mainnet')).toBe(true);
+    expect(isPowerupOnNetwork(memo!, 'bitcoin-mainnet')).toBe(false);
+    expect(isPowerupOnNetwork(memo!, null)).toBe(false);
   });
 
   // Spec 029 §1: the registry is a list of manifests, each from its own folder.
@@ -37,7 +37,7 @@ describe('powerups registry', () => {
     expect(on.POWERUPS_ENABLED).toBe(true);
     expect(off.POWERUPS_ENABLED).toBe(false);
     expect(off.POWERUPS).toEqual([]);
-    expect(off.getPowerup('swap')).toBeUndefined();
+    expect(off.getPowerup('memo')).toBeUndefined();
     expect(off.powerupTranslations).toEqual({ en: {}, es: {} });
     expect(Object.keys(on.powerupTranslations.en).sort()).toEqual(
       POWERUPS.map((entry) => entry.locales).sort()

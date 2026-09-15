@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  *
- * The install/uninstall control turns one glyph instead of swapping two
+ * The install/uninstall control turns one glyph instead of switching between two
  * icons — the mobile twin's suite is
  * `apps/mobile/src/components/PlusMinusGlyph/PlusMinusGlyph.test.tsx`. This
  * pins that the turning bar's rotation flips with `minus`, landing on the

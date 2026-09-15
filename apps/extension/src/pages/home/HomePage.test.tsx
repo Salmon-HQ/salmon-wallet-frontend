@@ -108,7 +108,6 @@ vi.mock('@salmon/ui/powerups', () => ({
   isPowerupOnNetwork: () => false,
   getPowerupCatalog: () => [],
   PowerupsPage: () => null,
-  SwapPage: () => null,
   MemoPage: () => null,
 }));
 
@@ -288,7 +287,7 @@ vi.mock('@salmon/shared', async () => {
     useHomeShell: homeShell.useHomeShell,
     useHomePowerupTabs: homePowerups.useHomePowerupTabs,
     useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
-    useNetworkPowerups: () => ({ enabled: ['swap'], disabled: {} }),
+    useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
     useInstalledPowerups: () => ({
       installed: [],
       isInstalled: () => false,
@@ -334,15 +333,14 @@ describe('HomePage shell', () => {
     expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
   });
 
-  it('offers the NFTs tab on Solana — and no Home / Collectibles / Swap tab bar', () => {
+  it('offers the NFTs tab on Solana — and no Home / Collectibles tab bar', () => {
     render(<HomePage onAddAccount={vi.fn()} />);
 
     expect(screen.getByTestId('home-sub-tabs').textContent).toBe('portfolio|nfts');
-    // Swap is a powerup now, not a tab, and Collectibles is a surface inside
-    // Home rather than a screen beside it (spec 028).
+    // A Powerup is a sub-tab of Home, not a tab, and Collectibles is a surface
+    // inside Home rather than a screen beside it (spec 028).
     expect(screen.queryByTestId('tab-home')).toBeNull();
     expect(screen.queryByTestId('tab-collectibles')).toBeNull();
-    expect(screen.queryByTestId('tab-swap')).toBeNull();
   });
 });
 

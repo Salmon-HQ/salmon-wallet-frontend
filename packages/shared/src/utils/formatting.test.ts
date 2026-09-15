@@ -3,8 +3,6 @@ import i18n from 'i18next';
 import {
   formatAmountWithSymbol,
   formatBaseUnits,
-  formatConversionRate,
-  formatEffectiveRate,
   formatLargeNumber,
   formatPercent,
   formatPercentage,
@@ -131,24 +129,6 @@ describe('formatTokenBalance', () => {
   });
 });
 
-describe('formatEffectiveRate', () => {
-  it('derives the unit rate from the two amounts', () => {
-    expect(formatEffectiveRate('1.1', 'USDC', '0.014', 'SOL')).toBe('1 USDC ≈ 0.0127273 SOL');
-  });
-
-  it('handles rates above one and thousands compaction', () => {
-    expect(formatEffectiveRate('0.014', 'SOL', '1.1', 'USDC')).toBe('1 SOL ≈ 78.5714 USDC');
-    expect(formatEffectiveRate('1', 'SOL', '2500000', 'BONK')).toBe('1 SOL ≈ 2500000 BONK');
-  });
-
-  it('returns null rather than printing a made-up rate', () => {
-    expect(formatEffectiveRate('', 'USDC', '0.014', 'SOL')).toBeNull();
-    expect(formatEffectiveRate('0', 'USDC', '0.014', 'SOL')).toBeNull();
-    expect(formatEffectiveRate('1.1', 'USDC', 'abc', 'SOL')).toBeNull();
-    expect(formatEffectiveRate('1.1', '', '0.014', 'SOL')).toBeNull();
-  });
-});
-
 describe('formatBaseUnits', () => {
   it('renders whole and fractional parts without trailing zeros', () => {
     expect(formatBaseUnits(1_500_000_000n, 9)).toBe('1.5');
@@ -226,30 +206,6 @@ describe('formatPercent', () => {
   it('shares the zero and empty forms with the signed renderer', () => {
     expect(formatPercent(0, 'en')).toBe('0%');
     expect(formatPercent(null, 'en')).toBe('-');
-  });
-});
-
-describe('formatConversionRate', () => {
-  it('renders a rate at six significant digits in the app language', () => {
-    expect(formatConversionRate(78.571428, 'en')).toBe('78.5714');
-    expect(formatConversionRate(78.571428, 'es')).toBe('78,5714');
-    expect(formatConversionRate(0.0127272727, 'en')).toBe('0.0127273');
-  });
-
-  it('does not group a rate, which is a token quantity', () => {
-    expect(formatConversionRate(2500000, 'en')).toBe('2500000');
-    expect(formatConversionRate(2500000, 'es')).toBe('2500000');
-  });
-
-  it('localizes the bounded form for rates below the display floor', () => {
-    expect(formatConversionRate(0.00001, 'en')).toBe('<0.0001');
-    expect(formatConversionRate(0.00001, 'es')).toBe('<0,0001');
-  });
-
-  it("still reads the backend's numeric strings", () => {
-    expect(formatConversionRate('78.571428', 'en')).toBe('78.5714');
-    expect(formatConversionRate('0', 'en')).toBe('0');
-    expect(formatConversionRate('abc', 'en')).toBe('0');
   });
 });
 

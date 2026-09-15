@@ -115,7 +115,7 @@ describe('IconBubble', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('swaps a disabled control to the crest ground instead of dimming the fill', () => {
+  it('switches a disabled control to the crest ground instead of dimming the fill', () => {
     const onPress = vi.fn();
     renderInMode(
       'dark',

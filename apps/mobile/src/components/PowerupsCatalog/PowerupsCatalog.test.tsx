@@ -81,15 +81,15 @@ import { PowerupsCatalog } from './PowerupsCatalog';
 
 const entries = [
   {
-    id: 'swap',
-    nameKey: 'swap.catalog.name',
-    descriptionKey: 'swap.catalog.description',
+    id: 'memo',
+    nameKey: 'memo.catalog.name',
+    descriptionKey: 'memo.catalog.description',
     tier: 'core' as const,
     iconName: 'ArrowsLeftRight' as const,
     installed: false,
     details: {
-      aboutKey: 'swap.catalog.about',
-      actionKeys: ['swap.catalog.actions.quote'],
+      aboutKey: 'memo.catalog.about',
+      actionKeys: ['memo.catalog.actions.write'],
       disclosure: [{ key: 'powerups.disclosure.address_to', params: { host: 'Salmon' } }],
       authorKey: 'powerups.author.salmon',
       networks: ['solana-mainnet'],
@@ -139,7 +139,7 @@ describe('PowerupsCatalog', () => {
     // catalogue, and an installed Powerup stays in its own tier.
     expect(screen.queryByTestId('powerups-filters')).toBeNull();
     expect(screen.queryByTestId('powerups-search-input')).toBeNull();
-    expect(screen.getByTestId('powerups-row-swap')).toBeTruthy();
+    expect(screen.getByTestId('powerups-row-memo')).toBeTruthy();
     expect(screen.getByTestId('powerups-row-fixture-community')).toBeTruthy();
   });
 
@@ -152,26 +152,26 @@ describe('PowerupsCatalog', () => {
   it('opens an entry’s detail in the same sheet and installs from it', () => {
     const { onInstall } = setup();
 
-    fireEvent.press(screen.getByTestId('powerups-row-swap'));
+    fireEvent.press(screen.getByTestId('powerups-row-memo'));
 
-    expect(screen.getByTestId('powerups-detail-swap')).toBeTruthy();
+    expect(screen.getByTestId('powerups-detail-memo')).toBeTruthy();
     // The detail is its own sheet over the catalogue: the list stays underneath.
-    expect(screen.getByTestId('powerups-detail-sheet-swap')).toBeTruthy();
+    expect(screen.getByTestId('powerups-detail-sheet-memo')).toBeTruthy();
     expect(screen.getByTestId('powerups-row-fixture-community')).toBeTruthy();
     // The facts under the row: who made it, where it acts, what it uses.
     expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
-    expect(screen.getByTestId('powerups-facts-swap')).toBeTruthy();
+    expect(screen.getByTestId('powerups-facts-memo')).toBeTruthy();
 
-    fireEvent.press(screen.getByTestId('powerups-toggle-swap'));
-    expect(onInstall).toHaveBeenCalledWith('swap');
+    fireEvent.press(screen.getByTestId('powerups-toggle-memo'));
+    expect(onInstall).toHaveBeenCalledWith('memo');
   });
 
   it('dismissing the detail sheet leaves the whole catalogue, not one level', () => {
     const onClose = jest.fn();
     setup({ onClose });
 
-    fireEvent.press(screen.getByTestId('powerups-row-swap'));
-    fireEvent(screen.getByTestId('powerups-detail-sheet-swap'), 'touchEnd');
+    fireEvent.press(screen.getByTestId('powerups-row-memo'));
+    fireEvent(screen.getByTestId('powerups-detail-sheet-memo'), 'touchEnd');
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -181,10 +181,10 @@ describe('PowerupsCatalog', () => {
       entries: [{ ...entries[0], installed: true }, entries[1]],
     });
 
-    fireEvent.press(screen.getByTestId('powerups-row-swap'));
-    fireEvent.press(screen.getByTestId('powerups-toggle-swap'));
+    fireEvent.press(screen.getByTestId('powerups-row-memo'));
+    fireEvent.press(screen.getByTestId('powerups-toggle-memo'));
 
-    expect(onUninstall).toHaveBeenCalledWith('swap');
+    expect(onUninstall).toHaveBeenCalledWith('memo');
     expect(onInstall).not.toHaveBeenCalled();
   });
 });

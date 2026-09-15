@@ -195,7 +195,7 @@ const TRANSACTIONS = [
     inputs: [],
     outputs: [],
   },
-  { id: 'tx-swap', type: 'swap', status: 'completed', timestamp: 1, inputs: [], outputs: [] },
+  { id: 'tx-stake', type: 'stake', status: 'completed', timestamp: 1, inputs: [], outputs: [] },
 ];
 
 beforeEach(() => {
@@ -213,7 +213,7 @@ beforeEach(() => {
 
 describe('matchesFilter', () => {
   it('lets everything through on ALL', () => {
-    for (const type of ['send', 'receive', 'swap', 'stake', 'whatever-is-next']) {
+    for (const type of ['send', 'receive', 'mint', 'stake', 'whatever-is-next']) {
       expect(matchesFilter(type, 'all')).toBe(true);
     }
   });
@@ -225,7 +225,7 @@ describe('matchesFilter', () => {
   });
 
   it('defines OTHER by exclusion, so a type this build has never seen lands in it', () => {
-    expect(matchesFilter('swap', 'other')).toBe(true);
+    expect(matchesFilter('mint', 'other')).toBe(true);
     expect(matchesFilter('stake', 'other')).toBe(true);
     expect(matchesFilter('whatever-is-next', 'other')).toBe(true);
     expect(matchesFilter('send', 'other')).toBe(false);
@@ -262,7 +262,7 @@ describe('Activity screen', () => {
 
     expect(screen.getByTestId('activity-tx-row-tx-send')).toBeTruthy();
     expect(screen.queryByTestId('activity-tx-row-tx-receive')).toBeNull();
-    expect(screen.queryByTestId('activity-tx-row-tx-swap')).toBeNull();
+    expect(screen.queryByTestId('activity-tx-row-tx-stake')).toBeNull();
     // No refetch: the pages are already here.
     expect(mockTransactionsState.refresh).not.toHaveBeenCalled();
     expect(mockTransactionsState.loadMore).not.toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe('Activity screen', () => {
 
     fireEvent.press(screen.getByTestId('activity-filters-other'));
 
-    expect(screen.getByTestId('activity-tx-row-tx-swap')).toBeTruthy();
+    expect(screen.getByTestId('activity-tx-row-tx-stake')).toBeTruthy();
     expect(screen.queryByTestId('activity-tx-row-tx-send')).toBeNull();
   });
 
@@ -299,9 +299,9 @@ describe('Activity screen', () => {
 
     expect(screen.queryByTestId('activity-detail')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('activity-tx-row-tx-swap'));
+    fireEvent.press(screen.getByTestId('activity-tx-row-tx-stake'));
 
-    expect(screen.getByTestId('activity-detail').props.children).toBe('tx-swap');
+    expect(screen.getByTestId('activity-detail').props.children).toBe('tx-stake');
     // The list is still mounted underneath: the sheet covers it, the router
     // never moved.
     expect(screen.getByTestId('activity-list')).toBeTruthy();

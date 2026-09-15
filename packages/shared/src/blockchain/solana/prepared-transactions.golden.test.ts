@@ -32,7 +32,7 @@ const testSigner = (seed: number) =>
 const FIXTURE_V0_WITH_LUT_B64 =
   'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
-/** The blockhash the flow swaps in, standing in for a `getLatestBlockhash` result. */
+/** The blockhash the flow substitutes, standing in for a `getLatestBlockhash` result. */
 const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 
 /**
@@ -45,7 +45,7 @@ const GOLDEN_SIGNED_TX_B64 =
   'AQP0u3pM3IOmDbpifVx/KGvkAGFpoW2/IffEexm7QUJ+uZ7MlHGPH8XToXo5eNbS6OPIAbFCe3sX5J4HDzx6BwyAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADjMtr5L6vs6LY/96RABeX9/Zr6FYdWthxalfkEs7jQgQEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
 describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
-  it('pins the bytes of a blockhash-swapped v0 transaction with lookup tables', async () => {
+  it('pins the bytes of a blockhash-substituted v0 transaction with lookup tables', async () => {
     // Only the RPC is stubbed; the transaction codec and the signer are real.
     const sendTransaction = vi.fn().mockReturnValue({ send: async () => 'sig' });
     const rpc = {

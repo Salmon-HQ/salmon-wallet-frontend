@@ -28,14 +28,13 @@ describe('isAddressLike', () => {
 
 describe('validateEvent', () => {
   it('accepts a known event with allow-listed categorical props', () => {
-    const result = validateEvent('swap_completed', {
-      from_chain: 'solana',
-      to_chain: 'ethereum',
+    const result = validateEvent('send_completed', {
+      chain: 'solana',
       success: true,
     });
     expect(result).toEqual({
-      event: 'swap_completed',
-      props: { from_chain: 'solana', to_chain: 'ethereum', success: true },
+      event: 'send_completed',
+      props: { chain: 'solana', success: true },
     });
   });
 

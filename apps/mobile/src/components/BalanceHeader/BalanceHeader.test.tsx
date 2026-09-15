@@ -161,7 +161,7 @@ jest.mock('./ChainSelector', () => {
 
 import { Dimensions } from 'react-native';
 
-import { DRAG_FOLLOW, LATERAL_SWAP_TRAVEL, SINK_FLOAT_TRAVEL } from '@salmon/shared';
+import { DRAG_FOLLOW, LATERAL_CHANGE_TRAVEL, SINK_FLOAT_TRAVEL } from '@salmon/shared';
 import { useReducedMotion, withTiming } from 'react-native-reanimated';
 
 import { BalanceHeader } from './BalanceHeader';
@@ -245,7 +245,7 @@ describe('BalanceHeader', () => {
     expect(view.getByText('•••• · ••••')).toBeTruthy();
   });
 
-  it('keeps the chain selector and the money controls out of the value swap', () => {
+  it('keeps the chain selector and the money controls out of the value change', () => {
     // Regression (owner, first device run): the whole block used to slide off
     // screen on a chain change, taking the selector, the History pill and
     // Send/Receive with it. Only the values may travel.
@@ -276,7 +276,7 @@ describe('BalanceHeader', () => {
   });
 });
 
-describe('BalanceHeader value swap', () => {
+describe('BalanceHeader value change', () => {
   it('does not play the float on mount, only on a real chain change', () => {
     // Home moves this block between the pinned wrapper and the NFT grid's list
     // header, so switching sub-tabs unmounts and remounts it. With an entering
@@ -297,7 +297,7 @@ describe('BalanceHeader value swap', () => {
 
   it('owes the change a float and never a second sink', () => {
     // The change sinks on the gesture, in place, while the amount travels —
-    // so by the time the value swaps it has already left. A keyed `exiting`
+    // so by the time the value changes it has already left. A keyed `exiting`
     // here would sink the outgoing number twice.
     const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
     view.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
@@ -415,7 +415,7 @@ describe('BalanceHeader amount travel', () => {
     release(-(SWIPE_THRESHOLD + 1));
     // Heading left, so it finishes leaving to the left.
     expect(mockWithTiming).toHaveBeenCalledWith(
-      -LATERAL_SWAP_TRAVEL,
+      -LATERAL_CHANGE_TRAVEL,
       expect.anything(),
       expect.any(Function)
     );
@@ -425,7 +425,7 @@ describe('BalanceHeader amount travel', () => {
     mockWithTiming.mockClear();
     release(SWIPE_THRESHOLD + 1);
     expect(mockWithTiming).toHaveBeenCalledWith(
-      LATERAL_SWAP_TRAVEL,
+      LATERAL_CHANGE_TRAVEL,
       expect.anything(),
       expect.any(Function)
     );

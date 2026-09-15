@@ -166,7 +166,7 @@ describe('LoadingScreen', () => {
   it('shows no progress track — this screen has never known a percentage', () => {
     // The descent read as a progress bar and there has never been a `progress`
     // prop to fill it. A bar that cannot be right must not be drawn.
-    render(<LoadingScreen visible title="Processing swap" />);
+    render(<LoadingScreen visible title="Sending memo" />);
 
     expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
@@ -175,11 +175,11 @@ describe('LoadingScreen', () => {
     // Reversal (owner): the default was off, so only unlock and recovery had
     // anything to read while they waited. Every wait shows them now; the prop
     // survives as the exception rather than the rule.
-    render(<LoadingScreen visible title="Processing swap" />);
+    render(<LoadingScreen visible title="Sending memo" />);
     expect(screen.getByText('general.tips.1')).toBeTruthy();
 
     screen.unmount();
-    render(<LoadingScreen visible title="Processing swap" showTips={false} />);
+    render(<LoadingScreen visible title="Sending memo" showTips={false} />);
     expect(screen.queryByText('general.tips.1')).toBeNull();
   });
 
@@ -187,14 +187,14 @@ describe('LoadingScreen', () => {
     // A parallel mapping, not a hole: nothing moves, and the title is what says
     // the wait is still going.
     mockReduceMotion = true;
-    render(<LoadingScreen visible title="Processing swap" waves />);
+    render(<LoadingScreen visible title="Sending memo" waves />);
 
-    expect(screen.getByText('Processing swap')).toBeTruthy();
+    expect(screen.getByText('Sending memo')).toBeTruthy();
     expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 
   it('gives the wave a visible source — the mark that emits it', () => {
-    render(<LoadingScreen visible title="Processing swap" waves />);
+    render(<LoadingScreen visible title="Sending memo" waves />);
 
     // Hidden from assistive technology on purpose — the overlay already
     // announces the wait, and a second narrated thing is noise.
@@ -211,9 +211,9 @@ describe('LoadingScreen', () => {
     it('centres mark and words as one column, however many lines the caller passes', () => {
       // The mark used to be pinned to `top: 50%` with the words hanging below
       // it, which centred the *emitter* and left the thing the eye reads
-      // sitting under the middle of the phone — worst on the swap wait, which
+      // sitting under the middle of the phone — worst on the exchange wait, which
       // passes both a title and a subtitle.
-      render(<LoadingScreen visible title="Processing swap" subtitle="1.1 USDC → 0.0132 SOL" />);
+      render(<LoadingScreen visible title="Sending memo" subtitle="1.1 USDC → 0.0132 SOL" />);
 
       const cluster = StyleSheet.flatten(
         screen.getByTestId('loading-cluster', { includeHiddenElements: true }).props.style
@@ -234,7 +234,7 @@ describe('LoadingScreen', () => {
     it('keeps the water out of the cluster, so the ground never travels with it', () => {
       // The ground is the ground: the departing transform lives on the
       // cluster, and anything under it would sink with the words on exit.
-      render(<LoadingScreen visible title="Processing swap" />);
+      render(<LoadingScreen visible title="Sending memo" />);
 
       const cluster = screen.getByTestId('loading-cluster', { includeHiddenElements: true });
       expect(screen.getByTestId('depth-background')).toBeTruthy();
@@ -334,10 +334,10 @@ describe('LoadingScreen', () => {
     it('holds until the front in flight has left the screen, then ebbs', () => {
       const onExited = jest.fn();
       const { rerender } = render(
-        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+        <LoadingScreen visible title="Sending memo" waves onExited={onExited} />
       );
 
-      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+      rerender(<LoadingScreen visible={false} title="Sending memo" waves onExited={onExited} />);
 
       // The owner's floor is spent first and nothing is planned inside it: the
       // wave is still looping and the exit has not been decided yet.
@@ -364,10 +364,10 @@ describe('LoadingScreen', () => {
       mockReduceMotion = true;
       const onExited = jest.fn();
       const { rerender } = render(
-        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+        <LoadingScreen visible title="Sending memo" waves onExited={onExited} />
       );
 
-      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+      rerender(<LoadingScreen visible={false} title="Sending memo" waves onExited={onExited} />);
 
       // The floor is a *hold*, not a transition: reduced motion does not
       // shorten it, exactly as the copy-feedback hold is not shortened. What
@@ -392,7 +392,7 @@ describe('LoadingScreen', () => {
       const wait = (visible: boolean) => (
         <TaskChromeProvider>
           <SurfaceProbe />
-          <LoadingScreen visible={visible} title="Processing swap" waves />
+          <LoadingScreen visible={visible} title="Sending memo" waves />
         </TaskChromeProvider>
       );
       const { rerender } = render(wait(true));
@@ -409,10 +409,10 @@ describe('LoadingScreen', () => {
     it('hands off exactly once, however many clocks reach the end first', () => {
       const onExited = jest.fn();
       const { rerender } = render(
-        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+        <LoadingScreen visible title="Sending memo" waves onExited={onExited} />
       );
 
-      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+      rerender(<LoadingScreen visible={false} title="Sending memo" waves onExited={onExited} />);
 
       act(() => {
         jest.advanceTimersByTime(5000 + 5000);

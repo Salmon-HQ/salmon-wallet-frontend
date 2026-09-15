@@ -78,7 +78,7 @@ describe('WalletHeader', () => {
 
     expect(screen.getByTestId('copy-tick')).toBe(tick);
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
-    // The outgoing address is held while it sinks — the swap waits out the beat.
+    // The outgoing address is held while it sinks — the change waits out the beat.
     expect(screen.getByText('7xKX...gAsU')).toBeTruthy();
 
     act(() => {

@@ -177,7 +177,7 @@ describe('ReceiptScreen — exchange tone', () => {
     render(
       <ReceiptScreen
         tone="exchange"
-        title="Swap Complete"
+        title="Memo sent"
         summary="1 SOL → 200 USDC"
         explorerUrl="https://solscan.io/tx/abc"
         onContinue={onContinue}
@@ -185,7 +185,7 @@ describe('ReceiptScreen — exchange tone', () => {
     );
 
     expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
-    expect(screen.getByText('Swap Complete')).toBeTruthy();
+    expect(screen.getByText('Memo sent')).toBeTruthy();
     expect(screen.getByText('1 SOL → 200 USDC')).toBeTruthy();
     expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
     expect(screen.getByTestId('tx-success-explorer-link')).toBeTruthy();

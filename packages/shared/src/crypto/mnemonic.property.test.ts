@@ -83,7 +83,7 @@ describe('BIP39 checksum property invariants', () => {
     );
   });
 
-  it('never silently accepts a swapped word as the same wallet', () => {
+  it('never silently accepts a transposed word as the same wallet', () => {
     // A 12-word checksum is only 4 bits, so ~1 in 16 single-word typos still
     // passes validation. What must never happen is a typo that validates AND
     // maps back to the original entropy — that would restore a wallet the user

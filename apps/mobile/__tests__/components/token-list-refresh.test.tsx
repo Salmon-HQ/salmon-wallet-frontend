@@ -1,7 +1,7 @@
 /**
- * The home is left with a spinner on it after a swap.
+ * The home is left with a spinner on it after a Powerup's task.
  *
- * Leaving a swap fires a balance invalidation and navigates home in the same
+ * Leaving a Powerup's task fires a balance invalidation and navigates home in the same
  * tick, so the home paints while a refetch nobody asked for is in flight. When
  * the token list's refresh affordance was driven by that background flag, the
  * pull-to-refresh control came up over a list the user had never pulled — and
@@ -31,7 +31,7 @@ function renderList(onRefresh: () => Promise<void>) {
 describe('token list refresh affordance', () => {
   it('does not spin for a refresh the user never asked for', () => {
     // A background refetch is in flight for the whole of this render — the
-    // state the home is in the instant it paints after a swap.
+    // state the home is in the instant it paints after a Powerup's task.
     const onRefresh = jest.fn().mockReturnValue(new Promise<void>(() => {}));
     const view = renderList(onRefresh);
 

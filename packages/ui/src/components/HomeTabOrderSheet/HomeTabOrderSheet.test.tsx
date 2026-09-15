@@ -98,9 +98,9 @@ describe('HomeTabOrderSheet', () => {
       <HomeTabOrderSheet
         visible
         onClose={vi.fn()}
-        tabs={[...TABS, { key: 'swap', label: 'Swap' }]}
+        tabs={[...TABS, { key: 'memo', label: 'Memo' }]}
         onOrderChange={vi.fn()}
-        removableKeys={['swap']}
+        removableKeys={['memo']}
         onRemove={onRemove}
       />
     );
@@ -109,7 +109,7 @@ describe('HomeTabOrderSheet', () => {
     expect(screen.queryByTestId('home-tab-order-row-portfolio-remove')).toBeNull();
     expect(screen.queryByTestId('home-tab-order-row-nfts-remove')).toBeNull();
 
-    fireEvent.click(screen.getByTestId('home-tab-order-row-swap-remove'));
-    expect(onRemove).toHaveBeenCalledWith('swap');
+    fireEvent.click(screen.getByTestId('home-tab-order-row-memo-remove'));
+    expect(onRemove).toHaveBeenCalledWith('memo');
   });
 });

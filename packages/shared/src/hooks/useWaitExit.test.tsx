@@ -5,7 +5,7 @@
  * The hold, tested as behaviour rather than as timing.
  *
  * The bug it exists for is a one-line one and it was in five files: a surface
- * that renders `if (loading) return <LoadingScreen />` swaps branches the frame
+ * that renders `if (loading) return <LoadingScreen />` switches branches the frame
  * `loading` flips, unmounting the wait mid-wave. What has to hold is that the
  * wait stays rendered *past* that flip and until it says it has gone.
  */

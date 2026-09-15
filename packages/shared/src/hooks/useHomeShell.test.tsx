@@ -3,7 +3,7 @@
  *
  * The Home shell's state, pinned once for both platforms: which page the
  * block stands on, what each page carries, which sub-tabs are offered there,
- * and which wrapper owns a swap.
+ * and which wrapper owns a change.
  */
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -145,76 +145,76 @@ describe('useHomeShell', () => {
     expect(result.current.tabsHasPrior).toBe(true);
   });
 
-  it('hands a swap to exactly one owner: task over sub-tab over chain', () => {
+  it('hands a change to exactly one owner: task over sub-tab over chain', () => {
     const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
       initialProps: params(),
     });
-    expect(result.current.swapCause).toBe('none');
+    expect(result.current.changeCause).toBe('none');
 
     act(() => {
       result.current.selectBlockchain(1);
     });
-    expect(result.current.swapCause).toBe('chain');
+    expect(result.current.changeCause).toBe('chain');
 
     act(() => result.current.setActiveSubTab('portfolio'));
     act(() => {
       result.current.selectBlockchain(0);
     });
     act(() => result.current.setActiveSubTab('nfts'));
-    expect(result.current.swapCause).toBe('subtab');
+    expect(result.current.changeCause).toBe('subtab');
 
     // Leaving Solana drops NFTs and changes the chain in one render: the
     // sub-tab wins, so the chain wrapper inside stays silent.
     act(() => {
       result.current.selectBlockchain(1);
     });
-    expect(result.current.swapCause).toBe('subtab');
+    expect(result.current.changeCause).toBe('subtab');
     expect(result.current.chainHasPrior).toBe(false);
 
     rerender(params({ isTaskEngaged: true }));
-    expect(result.current.swapCause).toBe('task');
+    expect(result.current.changeCause).toBe('task');
   });
 
-  it('a surfacing silences every wrapper — it is not a swap', () => {
+  it('a surfacing silences every wrapper — it is not a change', () => {
     const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
       initialProps: params(),
     });
     act(() => {
       result.current.selectBlockchain(1);
     });
-    expect(result.current.swapCause).toBe('chain');
+    expect(result.current.changeCause).toBe('chain');
     expect(result.current.tabsHasPrior).toBe(true);
     rerender(params({ surfaceKey: 1 }));
-    expect(result.current.swapCause).toBe('none');
+    expect(result.current.changeCause).toBe('none');
     expect(result.current.tabsHasPrior).toBe(false);
   });
 
   it('offers an installed Powerup as a sub-tab, only where it acts', () => {
-    const swapTab = { key: 'swap' as const, label: 'Swap', networks: ['solana-mainnet'] };
+    const memoTab = { key: 'memo' as const, label: 'Memo', networks: ['solana-mainnet'] };
 
-    const onSolana = renderHook(() => useHomeShell(params({ powerupTabs: [swapTab] })));
+    const onSolana = renderHook(() => useHomeShell(params({ powerupTabs: [memoTab] })));
     expect(onSolana.result.current.subTabs.map((tab) => tab.key)).toEqual([
       'portfolio',
       'nfts',
-      'swap',
+      'memo',
     ]);
 
     // Off the network it acts on the tab is not offered, exactly as NFTs are
     // not offered off Solana. The stored arrangement is untouched.
     const onBitcoin = renderHook(() =>
-      useHomeShell(params({ networkId: 'bitcoin-mainnet', powerupTabs: [swapTab] }))
+      useHomeShell(params({ networkId: 'bitcoin-mainnet', powerupTabs: [memoTab] }))
     );
     expect(onBitcoin.result.current.subTabs.map((tab) => tab.key)).toEqual(['portfolio']);
   });
 
   it('does not offer a Powerup that is not installed, and falls back when one leaves', () => {
-    const swapTab = { key: 'swap' as const, label: 'Swap', networks: ['solana-mainnet'] };
+    const memoTab = { key: 'memo' as const, label: 'Memo', networks: ['solana-mainnet'] };
     const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
-      initialProps: params({ powerupTabs: [swapTab] }),
+      initialProps: params({ powerupTabs: [memoTab] }),
     });
 
-    act(() => result.current.setActiveSubTab('swap'));
-    expect(result.current.effectiveSubTab).toBe('swap');
+    act(() => result.current.setActiveSubTab('memo'));
+    expect(result.current.effectiveSubTab).toBe('memo');
 
     // Uninstalled mid-session: the tab it was standing on is gone, so Home
     // falls back to Portfolio rather than rendering nothing.

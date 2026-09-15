@@ -57,7 +57,7 @@ describe('AnalyticsClient consent gating', () => {
     await client.whenReady();
 
     await client.setConsent(true);
-    client.track('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
+    client.track('send_completed', { chain: 'solana', success: true });
     await client.flush();
 
     expect(transport.batches).toHaveLength(1);
@@ -65,8 +65,8 @@ describe('AnalyticsClient consent gating', () => {
     expect(batch.context.platform).toBe('mobile');
     expect(batch.context.installId).toBeTruthy();
     expect(batch.events[0]).toMatchObject({
-      event: 'swap_completed',
-      props: { from_chain: 'solana', to_chain: 'solana', success: true },
+      event: 'send_completed',
+      props: { chain: 'solana', success: true },
     });
   });
 

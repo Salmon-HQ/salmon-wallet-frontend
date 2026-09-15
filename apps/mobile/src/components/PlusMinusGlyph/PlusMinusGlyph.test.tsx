@@ -1,5 +1,5 @@
 /**
- * The install/uninstall control turns one glyph instead of swapping two
+ * The install/uninstall control turns one glyph instead of switching between two
  * icons: the vertical bar rotates onto the fixed one to read as a minus, and
  * back to read as a plus. This pins that the turning bar's rotation flips
  * with `minus`, landing on the fixed bar's own angle.

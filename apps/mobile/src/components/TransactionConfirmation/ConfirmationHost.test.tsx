@@ -112,7 +112,7 @@ jest.mock('./TransactionConfirmation', () => {
 
 import { ConfirmationHost } from './ConfirmationHost';
 
-const proposal = { display: { title: 'Swap Review', pendingTitle: 'Processing swap' } };
+const proposal = { display: { title: 'Memo Review', pendingTitle: 'Sending memo' } };
 
 describe('ConfirmationHost', () => {
   beforeEach(() => {
@@ -158,10 +158,10 @@ describe('ConfirmationHost', () => {
       proposal: {
         networkId: 'solana-mainnet',
         display: {
-          title: 'Swap Review',
-          pendingTitle: 'Processing swap',
+          title: 'Memo Review',
+          pendingTitle: 'Sending memo',
           pendingSubtitle: '1 SOL → 150 USDC',
-          receipt: { title: 'Swap complete', fee: '0.85%' },
+          receipt: { title: 'Memo sent', fee: '0.85%' },
         },
       },
       signature: 'sig-1',
@@ -171,7 +171,7 @@ describe('ConfirmationHost', () => {
 
     expect(queryByTestId('transaction-confirmation')).toBeNull();
     const label = getByTestId('confirmation-receipt').props.accessibilityLabel as string;
-    expect(label.startsWith('exchange:Swap complete:')).toBe(true);
+    expect(label.startsWith('exchange:Memo sent:')).toBe(true);
     expect(label).toContain('sig-1');
 
     fireEvent.press(getByTestId('confirmation-receipt'));
