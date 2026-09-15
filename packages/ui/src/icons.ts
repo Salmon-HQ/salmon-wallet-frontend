@@ -35,6 +35,7 @@ import { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
 import { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
 import { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
+import { QrCodeIcon } from '@phosphor-icons/react/dist/csr/QrCode';
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
@@ -192,6 +193,7 @@ export const powerupIcons: Record<PowerupIconName, IconComponent> = {
   Image: ImageIcon,
   Lightning: LightningIcon,
   PencilSimple: PencilSimpleIcon,
+  QrCode: QrCodeIcon,
   ShieldCheck: ShieldCheckIcon,
   Stack: StackIcon,
   TrendUp: TrendUpIcon,

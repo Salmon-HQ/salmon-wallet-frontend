@@ -160,8 +160,8 @@ describe('ReceiveSheet QR brand mark', () => {
     render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
 
     // The mark hides modules, so the code must carry level-H redundancy.
-    expect(screen.getByTestId('qr-code').props.ecLevel).toBe('H');
-    expect(screen.getByTestId('receive-qr-logo')).toBeTruthy();
-    expect(screen.getByTestId('brand-mark')).toBeTruthy();
+    // The mark and its level-H redundancy are the kit's (`QRCode brandKnockout`);
+    // the sheet's job is to ask for them.
+    expect(screen.getByTestId('qr-code').props.brandKnockout).toBe(true);
   });
 });

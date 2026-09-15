@@ -13,7 +13,7 @@
  * queries, so they arrive as `PowerupBodyContext` instead.
  */
 import React from 'react';
-import { MemoPage } from '@salmon/ui/powerups';
+import { MemoPage, PaymentsPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
   /** The active account's receive address on `networkId`; never null here. */
@@ -32,6 +32,15 @@ export function renderPowerupBody(id: string, ctx: PowerupBodyContext): React.Re
   if (id === 'memo' && MemoPage) {
     return (
       <MemoPage
+        publicKey={ctx.publicKey}
+        networkId={ctx.networkId}
+        onNavigateHome={ctx.onNavigateHome}
+      />
+    );
+  }
+  if (id === 'payments' && PaymentsPage) {
+    return (
+      <PaymentsPage
         publicKey={ctx.publicKey}
         networkId={ctx.networkId}
         onNavigateHome={ctx.onNavigateHome}

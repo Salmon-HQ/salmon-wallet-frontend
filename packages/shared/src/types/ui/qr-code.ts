@@ -1,7 +1,9 @@
 /**
  * Props for the QRCode component (base - platform-agnostic)
  */
-export interface QRCodePropsBase<TStyle> {
+import type { Testable } from './testable';
+
+export interface QRCodePropsBase<TStyle> extends Testable {
   /** The value to encode in the QR code (e.g., wallet address, URL) */
   value: string;
   /** The size of the QR code in pixels */
@@ -16,6 +18,11 @@ export interface QRCodePropsBase<TStyle> {
    * receive sheet passes `depth.abyss`, the module ink on both platforms.
    */
   color?: string;
+  /**
+   * Draw the brand mark on a centred knockout over the code (the receive
+   * sheet's mark). Forces level-H redundancy so the hidden modules recover.
+   */
+  brandKnockout?: boolean;
   /** Additional styles */
   style?: TStyle;
 }

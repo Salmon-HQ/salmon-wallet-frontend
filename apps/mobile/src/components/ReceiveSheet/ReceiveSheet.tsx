@@ -27,7 +27,6 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { BrandMark } from '../BrandMark';
 import { Thermocline } from '../Thermocline';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
@@ -36,12 +35,6 @@ import type { ReceiveSheetProps } from './types';
 
 // Layout constants
 const CONTENT_PADDING_HORIZONTAL = 24;
-
-// Brand mark inside the QR: the knockout (quiet zone behind the mark) covers
-// 24% of the code's width — under the ~30% of modules a level-H code can lose
-// and still scan — and the mark sits inside it with breathing room.
-const QR_LOGO_KNOCKOUT_RATIO = 0.24;
-const QR_LOGO_MARK_RATIO = 0.66; // of the knockout, so the mark never touches modules
 
 /**
  * ReceiveSheet - Bottom sheet modal for receiving tokens
@@ -82,7 +75,6 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
   // Calculate QR size: full width minus padding and border
   const qrSize = screenWidth - CONTENT_PADDING_HORIZONTAL * 2 - componentSizes.qrBorderWidth * 2;
-  const qrLogoKnockoutSize = Math.round(qrSize * QR_LOGO_KNOCKOUT_RATIO);
 
   // Reset copied state when sheet closes
   useEffect(() => {
@@ -141,35 +133,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
               accent belongs on the control that acts. Neutral also maximises
               module contrast for a scanner: 16.37:1 instead of 6.50:1. */}
             <QRCode
+              testID="receive-qr"
               value={address}
               size={qrSize}
               backgroundColor={text.primary}
               color={depth.abyss}
-              // The centered mark hides modules, so the code carries level-H
-              // redundancy — a wallet QR must stay scannable before it looks good.
-              ecLevel="H"
+              // The salmon mark on its own knockout, the kit's: the code
+              // carries level-H redundancy so the hidden modules recover.
+              brandKnockout
             />
-            {/* The salmon mark, centered on its own knockout so no module
-              collides with it. Same inks as the code: knockout is the code's
-              ground, mark is the module ink. */}
-            <View style={styles.qrLogoOverlay} pointerEvents="none">
-              <View
-                testID="receive-qr-logo"
-                style={[
-                  styles.qrLogoKnockout,
-                  {
-                    width: qrLogoKnockoutSize,
-                    height: qrLogoKnockoutSize,
-                    borderRadius: qrLogoKnockoutSize / 4,
-                  },
-                ]}
-              >
-                <BrandMark
-                  size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                  color={depth.abyss}
-                />
-              </View>
-            </View>
           </View>
         </View>
 
@@ -258,16 +230,6 @@ const stylesFor = (t: Semantic) =>
       borderWidth: componentSizes.qrBorderWidth,
       borderColor: t.text.primary,
       overflow: 'hidden',
-    },
-    qrLogoOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    qrLogoKnockout: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: t.text.primary,
     },
     chainBadge: {
       backgroundColor: t.surface.raised,

@@ -1,0 +1,62 @@
+{
+  "catalog": {
+    "name": "Payments",
+    "description": "Ask for USDC with a code anyone can scan",
+    "about": "Creates a payment request for a precise amount of USDC, addressed to this account, and shows it as a QR code any Solana wallet can pay. Your wallet reads the network itself to tell you when it was paid. Nothing is sent to a server: the code is the request.",
+    "actions": {
+      "ask": "Ask for an amount of USDC with a QR code",
+      "track": "See when a request was paid, and by whom"
+    }
+  },
+  "form": {
+    "amount": "Amount in USDC",
+    "amountPlaceholder": "0",
+    "note": "Note",
+    "notePlaceholder": "What is it for? (optional)",
+    "expiry": "Open for",
+    "expiryOptions": {
+      "h1": "1 hour",
+      "h24": "24 hours",
+      "d7": "7 days"
+    },
+    "create": "Create request"
+  },
+  "list": {
+    "title": "Requests",
+    "empty": {
+      "title": "No requests yet",
+      "body": "Type an amount above to create your first one."
+    },
+    "noNote": "No note"
+  },
+  "sheet": {
+    "title": "Payment request",
+    "for": "For",
+    "expiresIn": "Expires in",
+    "expired": "Expired",
+    "status": "Status",
+    "paidBy": "Paid by",
+    "paidAt": "Paid",
+    "copy": "Copy request",
+    "copied": "Copied",
+    "share": "Share",
+    "remove": "Remove request"
+  },
+  "status": {
+    "pending": "Waiting for payment",
+    "paid": "Paid",
+    "expired": "Expired",
+    "checkFailed": "Couldn't check the network. Showing the last known state."
+  },
+  "duration": {
+    "days": "{{days}} d {{hours}} h",
+    "hours": "{{hours}} h {{minutes}} min",
+    "minutes": "{{minutes}} min"
+  },
+  "errors": {
+    "usdcUnavailable": "USDC isn't available on this network.",
+    "amountInvalid": "Enter an amount greater than zero.",
+    "amountTooManyDecimals": "USDC has at most six decimals.",
+    "createFailed": "Couldn't create the request. Try again."
+  }
+}

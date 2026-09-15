@@ -141,6 +141,7 @@ import { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
 import { ImageIcon } from 'phosphor-react-native/src/icons/Image';
 import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
 import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
+import { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode';
 import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 import { StackIcon } from 'phosphor-react-native/src/icons/Stack';
 import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
@@ -157,6 +158,7 @@ export const powerupIcons: Record<PowerupIconName, IconComponent> = {
   Image: ImageIcon,
   Lightning: LightningIcon,
   PencilSimple: PencilSimpleIcon,
+  QrCode: QrCodeIcon,
   ShieldCheck: ShieldCheckIcon,
   Stack: StackIcon,
   TrendUp: TrendUpIcon,

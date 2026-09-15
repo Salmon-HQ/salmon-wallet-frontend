@@ -20,7 +20,9 @@ vi.mock('react-i18next', () => ({
 // prop-carrying stand-in so the suite can assert what the sheet asks of the
 // code (e.g. level-H).
 vi.mock('../QRCode', () => ({
-  QRCode: ({ ecLevel }: { ecLevel?: string }) => <div data-testid="qr" data-ec-level={ecLevel} />,
+  QRCode: ({ brandKnockout }: { brandKnockout?: boolean }) => (
+    <div data-testid="qr" data-brand-knockout={brandKnockout ? 'true' : 'false'} />
+  ),
 }));
 
 // The mark reads `markPaths` from the (mocked) shared barrel; the sheet only
@@ -103,7 +105,7 @@ describe('ReceiveSheet environment and mode', () => {
       'light',
       <ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />
     );
-    expect(screen.getByTestId('receive-qr-logo').style.backgroundColor).toBe(
+    expect(screen.getByTestId('receive-qr-code').style.borderColor).toBe(
       asRenderedColor(createSemantic('light').text.primary)
     );
   });
@@ -116,9 +118,8 @@ describe('ReceiveSheet QR brand mark', () => {
       <ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />
     );
 
-    // The mark hides modules, so the code must carry level-H redundancy.
-    expect(screen.getByTestId('qr').getAttribute('data-ec-level')).toBe('H');
-    expect(screen.getByTestId('receive-qr-logo')).toBeTruthy();
-    expect(screen.getByTestId('brand-mark')).toBeTruthy();
+    // The mark and its level-H redundancy are the kit's (`QRCode brandKnockout`);
+    // the sheet's job is to ask for them.
+    expect(screen.getByTestId('qr').getAttribute('data-brand-knockout')).toBe('true');
   });
 });

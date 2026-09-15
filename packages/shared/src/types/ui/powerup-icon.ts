@@ -17,6 +17,7 @@ export type PowerupIconName =
   | 'Image'
   | 'Lightning'
   | 'PencilSimple'
+  | 'QrCode'
   | 'ShieldCheck'
   | 'Stack'
   | 'TrendUp';

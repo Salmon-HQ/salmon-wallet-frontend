@@ -8,8 +8,10 @@
 import type { ComponentType } from 'react';
 import { PowerupsPage as PowerupsPageImpl } from './components/PowerupsPage';
 import { MemoPage as MemoPageImpl } from './components/MemoPage';
+import { PaymentsPage as PaymentsPageImpl } from './components/PaymentsPage';
 import type { PowerupsPageProps } from './components/PowerupsPage';
 import type { MemoPageProps } from './components/MemoPage';
+import type { PaymentsPageProps } from './components/PaymentsPage';
 
 export {
   POWERUPS_ENABLED,
@@ -25,3 +27,6 @@ export const PowerupsPage: ComponentType<PowerupsPageProps> | null = PowerupsPag
 
 /** The Memo Powerup's Home sub-tab; `null` in a build with Powerups off. */
 export const MemoPage: ComponentType<MemoPageProps> | null = MemoPageImpl;
+
+/** The Payments Powerup's Home sub-tab; `null` in a build with Powerups off. */
+export const PaymentsPage: ComponentType<PaymentsPageProps> | null = PaymentsPageImpl;

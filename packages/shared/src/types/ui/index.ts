@@ -294,6 +294,11 @@ export type { BlockchainMarkPropsBase } from './blockchain-mark';
 export type { TextInputPropsBase } from './text-input';
 
 export type { MemoScreenPropsBase } from './memo-screen';
+export type {
+  PaymentRequestSheetPropsBase,
+  PaymentRequestStatusView,
+  PaymentsScreenPropsBase,
+} from './payments-screen';
 
 // Core's confirmation screen (spec 027 §2)
 export type {

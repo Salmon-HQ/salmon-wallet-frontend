@@ -1,0 +1,536 @@
+/**
+ * usePaymentsScreenLogic — the Payments Powerup's screen state, shared by both
+ * twins: the form, the list, the open request and what the network says
+ * about it. The twins render rows they did not build.
+ *
+ * The Powerup owns no storage and no signer: the list lives behind
+ * `usePowerupState`, the reference is a fresh public key, and the settlement
+ * check is a read of the network at `finalized`.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import i18n from 'i18next';
+import { generateKeyPair, getAddressFromPublicKey } from '@solana/kit';
+
+import { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
+import { solanaRpcFor } from '../../blockchain/solana/networks';
+import { findTransferRequestSettlement } from '../../blockchain/solana/transfer-request-settlement';
+import { useAccountsContext } from '../../contexts/AccountsContext';
+import { useCurrencyContext } from '../../contexts/CurrencyContext';
+import { useCopyFeedback } from '../../hooks/useCopyFeedback';
+import { useBalance } from '../../hooks/useBalance';
+import { usePowerupState } from '../../hooks/usePowerupState';
+import type { NetworkId, SolanaNetworkId } from '../../types/blockchain';
+import type { FactsCardRow, PaymentRequestStatusView } from '../../types/ui/index';
+import { copyToClipboard } from '../../utils/clipboard';
+import {
+  DEFAULT_EXPIRY,
+  EXPIRY_OPTIONS,
+  PAYMENTS_COUNTDOWN_TICK_MS,
+  PAYMENTS_ID,
+  PAYMENTS_NOTE_MAX_LENGTH,
+  PAYMENTS_STATUS_POLL_MS,
+} from './constants';
+import {
+  formatAtomic,
+  listKey,
+  remaining,
+  requestIdFor,
+  settlementQueryFor,
+  stateOf,
+  uriFor,
+  validateAmount,
+} from './requests';
+import type { ExpiryKey, PaymentRequest, PaymentsState } from './types';
+
+const EMPTY_STATE: PaymentsState = { requests: {} };
+const NO_REQUESTS: readonly PaymentRequest[] = [];
+
+export type PaymentsErrorKey =
+  | 'payments.errors.usdcUnavailable'
+  | 'payments.errors.amountInvalid'
+  | 'payments.errors.amountTooManyDecimals'
+  | 'payments.errors.createFailed';
+
+/** One list row, derived once for both twins. */
+export interface PaymentRequestRow {
+  id: string;
+  state: 'pending' | 'paid' | 'expired';
+  /** What both twins hand `ListRow`: amount with its symbol, the note, the press. */
+  listRow: {
+    title: string;
+    subtitle: string;
+    padding: 'lg';
+    accessibilityRole: 'button';
+    onPress: () => void;
+  };
+  /** The trailing state, for a `KeyValueRow` with no label. */
+  trailing: { label: ''; value: string; valueTone: 'primary' | 'success' | 'secondary' };
+  /** The leading mark, minus the platform's glyph module. */
+  bubble: { size: 40; shape: 'rounded'; tone: 'accent-tint'; iconWeight: 'bold' };
+}
+
+export interface UsePaymentsScreenLogicParams {
+  publicKey: string;
+  networkId: string | null;
+  onNavigateHome?: () => void;
+  /** Test seams. */
+  findSettlement?: typeof findTransferRequestSettlement;
+  newReference?: () => Promise<string>;
+  now?: () => number;
+}
+
+/**
+ * The props each block takes, composed here so both twins spread them and
+ * neither restates the form (the clone ceiling is the reason this is not
+ * left to the twins).
+ */
+export interface PaymentsFormBindings {
+  amountLabel: string;
+  amountCard: {
+    value: string;
+    onChangeValue: (value: string) => void;
+    placeholder: string;
+    subtext: string;
+  };
+  noteField: {
+    value: string;
+    onChangeText: (value: string) => void;
+    placeholder: string;
+    maxLength: number;
+    error?: string;
+  };
+  expiryLabel: string;
+  expiryChips: {
+    options: { key: string; label: string }[];
+    value: string;
+    onChange: (key: string) => void;
+    size: 'md';
+    fill: true;
+    variant: 'outline';
+  };
+  createButton: { onPress: () => void; disabled: boolean; loading: boolean; label: string };
+  /** A create that failed: a `KeyValueRow` with no label, in the danger ink. */
+  errorRow?: { label: ''; value: string; valueTone: 'danger' };
+}
+
+export interface PaymentRequestSheetBindings {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  /** The encoded transfer request; empty while nothing is open. */
+  uri: string;
+  /** The code and the copy/share controls show only while the request can still be paid. */
+  showCode: boolean;
+  amountLabel: string;
+  status: PaymentRequestStatusView | null;
+  /** The notice under the facts when the last check failed; empty otherwise. */
+  checkFailedNotice?: string;
+  copyButton: { onPress: () => void; label: string };
+  shareLabel: string;
+  removeButton: { onPress: () => void; label: string };
+}
+
+export interface PaymentsListBindings {
+  title: string;
+  empty: { title: string; body: string };
+  rows: readonly PaymentRequestRow[];
+}
+
+export interface UsePaymentsScreenLogicResult {
+  form: PaymentsFormBindings;
+  list: PaymentsListBindings;
+  /** Everything the request sheet takes but the platform's share handler. */
+  sheet: PaymentRequestSheetBindings;
+  /** The whole surface is unavailable (no USDC on this network), already translated. */
+  unavailable: string | null;
+  /** The list, and the open request, for tests and for the platform share. */
+  requests: readonly PaymentRequestRow[];
+  open: PaymentRequest | null;
+  openRequest: (id: string) => void;
+  closeRequest: () => void;
+  remove: (id: string) => void;
+  create: () => Promise<void>;
+  openUri: string;
+  openStatus: PaymentRequestStatusView | null;
+}
+
+async function freshReference(): Promise<string> {
+  // A reference is only ever looked up; the private half is dropped on the floor.
+  const pair = await generateKeyPair();
+  return getAddressFromPublicKey(pair.publicKey);
+}
+
+// The key itself stands in until the resources are loaded, so nothing renders blank.
+const t = (key: string, options?: Record<string, unknown>): string => {
+  const value: unknown = i18n.t(key, options);
+  return typeof value === 'string' ? value : key;
+};
+
+function durationLabel(expiresAt: number, now: number): string {
+  const { days, hours, minutes } = remaining(expiresAt, now);
+  if (days > 0) return t('payments.duration.days', { days, hours });
+  if (hours > 0) return t('payments.duration.hours', { hours, minutes });
+  return t('payments.duration.minutes', { minutes });
+}
+
+/** The sheet's facts, built once for both twins. */
+export function statusViewFor(request: PaymentRequest, now: number): PaymentRequestStatusView {
+  const state = stateOf(request, now);
+  const rows: FactsCardRow[] = [];
+  if (request.note) rows.push({ key: 'for', label: t('payments.sheet.for'), value: request.note });
+  if (state === 'pending') {
+    rows.push({
+      key: 'expiresIn',
+      label: t('payments.sheet.expiresIn'),
+      value: durationLabel(request.expiresAt, now),
+    });
+  }
+  rows.push({
+    key: 'status',
+    label: t('payments.sheet.status'),
+    value: t(`payments.status.${state}`),
+    valueTone: state === 'paid' ? 'success' : state === 'expired' ? 'secondary' : 'primary',
+  });
+  const settlement = request.settlement;
+  if (state === 'paid' && settlement) {
+    rows.push({
+      key: 'paidBy',
+      label: t('payments.sheet.paidBy'),
+      value: settlement.payer,
+      valueFont: 'mono',
+      layout: 'stacked',
+    });
+    if (settlement.blockTime !== null) {
+      rows.push({
+        key: 'paidAt',
+        label: t('payments.sheet.paidAt'),
+        value: new Date(settlement.blockTime * 1000).toLocaleString(),
+      });
+    }
+  }
+  return {
+    state,
+    rows,
+    signature: settlement?.signature,
+    explorer: settlement
+      ? { txHash: settlement.signature, blockchain: 'SOLANA', environment: request.networkId }
+      : undefined,
+    checkFailed: !!request.lastCheckError,
+  };
+}
+
+export function usePaymentsScreenLogic({
+  publicKey,
+  networkId,
+  findSettlement = findTransferRequestSettlement,
+  newReference = freshReference,
+  now = Date.now,
+}: UsePaymentsScreenLogicParams): UsePaymentsScreenLogicResult {
+  // The seams are read through refs so a caller passing fresh closures never
+  // re-arms the poll on every render.
+  const seams = useRef({ findSettlement, newReference, now });
+  seams.current = { findSettlement, newReference, now };
+  const [{ accountId, activeAccount, activeBlockchainAccount }] = useAccountsContext();
+  const [{ currency }, { formatPrecise }] = useCurrencyContext();
+  const [state, setState] = usePowerupState<PaymentsState>(PAYMENTS_ID, EMPTY_STATE);
+
+  const solanaNetworkId = (networkId ?? null) as SolanaNetworkId | null;
+  const mint = solanaNetworkId ? USDC_MINT_BY_NETWORK[solanaNetworkId] : undefined;
+  const token = useMemo(() => (mint ? { symbol: 'USDC', decimals: USDC_DECIMALS } : null), [mint]);
+
+  // The fiat line reads the holding's price when there is one. USDC is the
+  // dollar by construction, so a wallet holding none still gets a line.
+  const { tokens } = useBalance({
+    account: activeBlockchainAccount ?? undefined,
+    networkId: (networkId ?? undefined) as NetworkId | undefined,
+    skip: !activeBlockchainAccount,
+  });
+  const usdcPrice = tokens.find((held) => held.address === mint)?.price ?? 1;
+
+  const [amount, setAmount] = useState('');
+  const [note, setNoteRaw] = useState('');
+  const [expiry, setExpiry] = useState<ExpiryKey>(DEFAULT_EXPIRY);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<PaymentsErrorKey | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [clock, setClock] = useState(() => seams.current.now());
+
+  const setNote = useCallback(
+    (value: string) => setNoteRaw(value.slice(0, PAYMENTS_NOTE_MAX_LENGTH)),
+    []
+  );
+
+  const key = accountId && solanaNetworkId ? listKey(accountId, solanaNetworkId) : null;
+  const list = key ? (state.requests[key] ?? NO_REQUESTS) : NO_REQUESTS;
+
+  const validation = useMemo(
+    () => (token ? validateAmount(amount, token.decimals) : null),
+    [amount, token]
+  );
+  const amountError: PaymentsErrorKey | null =
+    amount.trim() === '' || !validation || validation.ok
+      ? null
+      : validation.reason === 'tooManyDecimals'
+        ? 'payments.errors.amountTooManyDecimals'
+        : 'payments.errors.amountInvalid';
+
+  const fiatLine = useMemo(() => {
+    const numeric = validation?.ok ? Number(validation.display) : 0;
+    return `≈ ${formatPrecise(numeric * usdcPrice)} ${currency.toUpperCase()}`;
+  }, [validation, usdcPrice, formatPrecise, currency]);
+
+  const update = useCallback(
+    (id: string, patch: Partial<PaymentRequest>) => {
+      if (!key) return;
+      setState((previous) => ({
+        requests: {
+          ...previous.requests,
+          [key]: (previous.requests[key] ?? NO_REQUESTS).map((request) =>
+            request.id === id ? { ...request, ...patch } : request
+          ),
+        },
+      }));
+    },
+    [key, setState]
+  );
+
+  const create = useCallback(async () => {
+    if (!key || !token || !mint || !solanaNetworkId || !accountId || !validation?.ok) return;
+    setIsCreating(true);
+    setError(null);
+    try {
+      const reference = await seams.current.newReference();
+      const createdAt = seams.current.now();
+      const option =
+        EXPIRY_OPTIONS.find((candidate) => candidate.key === expiry) ?? EXPIRY_OPTIONS[1];
+      const request: PaymentRequest = {
+        id: requestIdFor(reference),
+        accountId,
+        networkId: solanaNetworkId,
+        recipient: publicKey,
+        mint,
+        decimals: token.decimals,
+        symbol: token.symbol,
+        amountAtomic: validation.atomic,
+        note: note.trim(),
+        reference,
+        createdAt,
+        expiresAt: createdAt + option.ms,
+        status: 'pending',
+      };
+      setState((previous) => ({
+        requests: {
+          ...previous.requests,
+          [key]: [request, ...(previous.requests[key] ?? NO_REQUESTS)],
+        },
+      }));
+      setAmount('');
+      setNoteRaw('');
+      setOpenId(request.id);
+    } catch (caught) {
+      console.error('[payments] Failed to create the request:', caught);
+      setError('payments.errors.createFailed');
+    } finally {
+      setIsCreating(false);
+    }
+  }, [key, token, mint, solanaNetworkId, accountId, validation, expiry, publicKey, note, setState]);
+
+  const remove = useCallback(
+    (id: string) => {
+      if (!key) return;
+      setOpenId((current) => (current === id ? null : current));
+      setState((previous) => ({
+        requests: {
+          ...previous.requests,
+          [key]: (previous.requests[key] ?? NO_REQUESTS).filter((request) => request.id !== id),
+        },
+      }));
+    },
+    [key, setState]
+  );
+
+  const open = useMemo(() => list.find((request) => request.id === openId) ?? null, [list, openId]);
+
+  // One check of a pending request; a failure keeps the last known state.
+  const check = useCallback(
+    async (request: PaymentRequest) => {
+      if (!solanaNetworkId) return;
+      try {
+        const settlement = await seams.current.findSettlement(
+          solanaRpcFor(solanaNetworkId),
+          settlementQueryFor(request)
+        );
+        const lastCheckedAt = seams.current.now();
+        update(
+          request.id,
+          settlement
+            ? { status: 'paid', settlement, lastCheckedAt, lastCheckError: false }
+            : { lastCheckedAt, lastCheckError: false }
+        );
+      } catch {
+        update(request.id, { lastCheckError: true });
+      }
+    },
+    [solanaNetworkId, update]
+  );
+
+  // The open, pending request polls on its own clock; nothing else does. The
+  // check is read through a ref: the poll is armed by which request is open,
+  // never by a re-created callback.
+  const checkRef = useRef(check);
+  checkRef.current = check;
+  const openRef = useRef(open);
+  openRef.current = open;
+  const openIsPending = !!open && stateOf(open, clock) === 'pending';
+  const pollId = openIsPending ? open.id : null;
+  useEffect(() => {
+    if (!pollId) return undefined;
+    const tick = () => {
+      const current = openRef.current;
+      if (current?.id === pollId) void checkRef.current(current);
+    };
+    tick();
+    const timer = setInterval(tick, PAYMENTS_STATUS_POLL_MS);
+    return () => clearInterval(timer);
+  }, [pollId]);
+
+  // The countdown row recomputes on its own interval while a request is open.
+  const openId2 = open?.id ?? null;
+  useEffect(() => {
+    if (!openId2) return undefined;
+    setClock(seams.current.now());
+    const timer = setInterval(() => setClock(seams.current.now()), PAYMENTS_COUNTDOWN_TICK_MS);
+    return () => clearInterval(timer);
+  }, [openId2]);
+
+  // The list refreshes its pending rows once when it mounts, so a payment
+  // that landed while the app was away is reflected without opening each one.
+  const listRef = useRef(list);
+  listRef.current = list;
+  useEffect(() => {
+    if (!key) return;
+    const at = seams.current.now();
+    for (const request of listRef.current) {
+      if (stateOf(request, at) === 'pending') void checkRef.current(request);
+    }
+  }, [key]);
+
+  const requests = useMemo<readonly PaymentRequestRow[]>(() => {
+    const at = seams.current.now();
+    return list.map((request) => {
+      const state = stateOf(request, at);
+      return {
+        id: request.id,
+        state,
+        listRow: {
+          title: `${formatAtomic(request.amountAtomic, request.decimals)} ${request.symbol}`,
+          subtitle: request.note || t('payments.list.noNote'),
+          padding: 'lg',
+          accessibilityRole: 'button',
+          onPress: () => setOpenId(request.id),
+        },
+        trailing: {
+          label: '',
+          value: t(`payments.status.${state}`),
+          valueTone: state === 'paid' ? 'success' : state === 'expired' ? 'secondary' : 'primary',
+        },
+        bubble: { size: 40, shape: 'rounded', tone: 'accent-tint', iconWeight: 'bold' },
+      };
+    });
+    // `clock` re-judges expiry while a sheet is open; opening or closing one
+    // re-judges the list, so a request that expired meanwhile reads as such.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, clock, openId]);
+
+  const accountLabel = activeAccount?.name ?? '';
+  const openUri = open ? uriFor(open, accountLabel) : '';
+  const openStatus = useMemo(() => (open ? statusViewFor(open, clock) : null), [open, clock]);
+
+  const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
+  useEffect(() => {
+    if (!open) resetCopied();
+  }, [open, resetCopied]);
+  const copyOpen = useCallback(async () => {
+    if (!openUri) return;
+    try {
+      if (await copyToClipboard(openUri)) showCopied();
+    } catch {
+      // Copy failed — the label stays honest.
+    }
+  }, [openUri, showCopied]);
+
+  const canCreate = !!token && !!key && !!validation?.ok && !isCreating;
+  const openAmountLabel = open
+    ? `${formatAtomic(open.amountAtomic, open.decimals)} ${open.symbol}`
+    : '';
+
+  return {
+    form: {
+      amountLabel: t('payments.form.amount'),
+      amountCard: {
+        value: amount,
+        onChangeValue: setAmount,
+        placeholder: t('payments.form.amountPlaceholder'),
+        subtext: fiatLine,
+      },
+      noteField: {
+        value: note,
+        onChangeText: setNote,
+        placeholder: t('payments.form.notePlaceholder'),
+        maxLength: PAYMENTS_NOTE_MAX_LENGTH,
+        error: amountError ? t(amountError) : undefined,
+      },
+      expiryLabel: t('payments.form.expiry'),
+      expiryChips: {
+        options: EXPIRY_OPTIONS.map((option) => ({ key: option.key, label: t(option.labelKey) })),
+        value: expiry,
+        onChange: (next) => setExpiry(next as ExpiryKey),
+        size: 'md',
+        fill: true,
+        variant: 'outline',
+      },
+      createButton: {
+        onPress: () => void create(),
+        disabled: !canCreate,
+        loading: isCreating,
+        label: t('payments.form.create'),
+      },
+      errorRow: error ? { label: '', value: t(error), valueTone: 'danger' } : undefined,
+    },
+    list: {
+      title: t('payments.list.title'),
+      empty: { title: t('payments.list.empty.title'), body: t('payments.list.empty.body') },
+      rows: requests,
+    },
+    sheet: {
+      visible: open !== null,
+      onClose: () => setOpenId(null),
+      title: t('payments.sheet.title'),
+      uri: openUri,
+      showCode: openStatus?.state === 'pending',
+      amountLabel: openAmountLabel,
+      status: openStatus,
+      checkFailedNotice: openStatus?.checkFailed ? t('payments.status.checkFailed') : undefined,
+      copyButton: {
+        onPress: () => void copyOpen(),
+        label: t(copied ? 'payments.sheet.copied' : 'payments.sheet.copy'),
+      },
+      shareLabel: t('payments.sheet.share'),
+      removeButton: {
+        onPress: () => {
+          if (open) remove(open.id);
+        },
+        label: t('payments.sheet.remove'),
+      },
+    },
+    unavailable: token ? null : t('payments.errors.usdcUnavailable'),
+    requests,
+    open,
+    openRequest: setOpenId,
+    closeRequest: () => setOpenId(null),
+    remove,
+    create,
+    openUri,
+    openStatus,
+  };
+}

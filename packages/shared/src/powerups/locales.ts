@@ -5,8 +5,10 @@
  */
 import memoEn from './memo/locales/en.json';
 import memoEs from './memo/locales/es.json';
+import paymentsEn from './payments/locales/en.json';
+import paymentsEs from './payments/locales/es.json';
 
 export const powerupTranslations = {
-  en: { memo: memoEn },
-  es: { memo: memoEs },
+  en: { memo: memoEn, payments: paymentsEn },
+  es: { memo: memoEs, payments: paymentsEs },
 } as const;

@@ -63,6 +63,7 @@ export const MAP = {
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
   MemoScreen: ['MemoPage'],
+  PaymentsScreen: ['PaymentsPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
 };
