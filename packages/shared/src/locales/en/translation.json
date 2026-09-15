@@ -787,6 +787,21 @@
     "fee_estimate_failed": "Fee could not be estimated",
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",
+    "request": {
+      "paste": "Paste a payment request",
+      "requestedBy": "Requested by",
+      "for": "For",
+      "tokenNotHeld": "You don't hold the token this request asks for",
+      "errors": {
+        "notSolanaPay": "This is not a payment request",
+        "transactionRequest": "This kind of payment request is not supported yet",
+        "recipient": "The request names an invalid recipient",
+        "amount": "The request names an invalid amount",
+        "splToken": "The request names an invalid token",
+        "reference": "The request carries an invalid reference",
+        "memoTooLong": "The request carries a memo that is too long"
+      }
+    },
     "screens": {
       "recipientSubtitle": "Choose who will receive your assets.",
       "amountSubtitle": "Enter the amount to send.",
