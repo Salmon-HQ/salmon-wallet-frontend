@@ -110,6 +110,26 @@ describe('createSolTransaction', () => {
     expect(rpc.getLatestBlockhash).toHaveBeenCalledTimes(1);
   });
 
+  it('carries a memo and Solana Pay references on a SOL transfer too', async () => {
+    const signer = await testSigner(1);
+    const ref = Keypair.generate().publicKey.toBase58();
+    const transaction = await createSolTransaction(
+      createRpc(),
+      signer,
+      address(Keypair.generate().publicKey.toBase58()),
+      1,
+      { memo: 'pr_2', references: [ref] }
+    );
+
+    expect(transaction.instructions).toHaveLength(2);
+    expect(transaction.instructions[0].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
+    const transfer = transaction.instructions[1];
+    expect(transfer.programAddress).toBe(SYSTEM_PROGRAM_ADDRESS);
+    // source, destination — then the reference.
+    expect(transfer.accounts).toHaveLength(3);
+    expect(transfer.accounts![2]).toEqual({ address: ref, role: AccountRole.READONLY });
+  });
+
   it('should handle different amounts correctly', async () => {
     const signer = await testSigner(1);
     const recipient = address(Keypair.generate().publicKey.toBase58());
@@ -284,6 +304,32 @@ describe('createSplTransaction', () => {
     expect(memoInstruction.accounts).toHaveLength(1);
     expect(memoInstruction.accounts![0].address).toBe(signer.address);
     expect(memoInstruction.accounts![0].role).toBe(AccountRole.READONLY_SIGNER);
+  });
+
+  it('carries Solana Pay references on the transfer instruction, after the memo', async () => {
+    const signer = await testSigner(1);
+    const ref1 = Keypair.generate().publicKey.toBase58();
+    const ref2 = Keypair.generate().publicKey.toBase58();
+    const transaction = await createSplTransaction(
+      createRpc(),
+      signer,
+      address(Keypair.generate().publicKey.toBase58()),
+      USDC_MINT,
+      50,
+      { decimals: 6, memo: 'pr_1', references: [ref1, ref2] }
+    );
+
+    // ATA creation, then the memo immediately before the transfer.
+    expect(transaction.instructions).toHaveLength(3);
+    expect(transaction.instructions[1].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
+    const transfer = transaction.instructions[2];
+    expect(transfer.programAddress).toBe(TOKEN_PROGRAM_ADDRESS);
+    // source, destination, authority — then the references, in order, read-only and unsigned.
+    expect(transfer.accounts).toHaveLength(5);
+    expect(transfer.accounts!.slice(3)).toEqual([
+      { address: ref1, role: AccountRole.READONLY },
+      { address: ref2, role: AccountRole.READONLY },
+    ]);
   });
 
   it('should throw error if token mint not found', async () => {

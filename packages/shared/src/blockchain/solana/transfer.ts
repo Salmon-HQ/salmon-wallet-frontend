@@ -20,6 +20,7 @@
  */
 
 import {
+  AccountRole,
   address,
   appendTransactionMessageInstructions,
   compileTransaction,
@@ -84,10 +85,15 @@ export interface TransferOptions {
   simulate?: boolean;
   /** Message version to build; defaults to 0 (see `SOLANA_TRANSACTION_VERSION`) */
   version?: TransferTransactionVersion;
-  /** Memo to attach to the transaction (for Token-2022) */
+  /** Memo instruction placed immediately before the transfer instruction */
   memo?: string;
   /** Token decimals (used as fallback if mint lookup fails) */
   decimals?: number;
+  /**
+   * Solana Pay references: keys the transfer instruction carries as read-only
+   * non-signers, in order, so the receiver's wallet finds the payment by them.
+   */
+  references?: readonly string[];
 }
 
 /** Payload returned by `simulateTransaction` when `TransferOptions.simulate` is set. */
@@ -171,6 +177,28 @@ function calculateFee(transferFee: TransferFee, preFeeAmount: bigint): bigint {
 const V0_COMPUTE_UNITS_PER_INSTRUCTION = 200_000;
 const MAX_COMPUTE_UNIT_LIMIT = 1_400_000;
 const V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT = 64 * 1024 * 1024;
+
+/**
+ * The Solana Pay wire shape: references ride on the transfer instruction as
+ * read-only non-signer metas, appended after the program's own accounts. The
+ * kit builders take no extra metas, so they are added to the built instruction.
+ */
+function withReferences<T extends Instruction>(
+  instruction: T,
+  references: readonly string[] | undefined
+): T {
+  if (!references || references.length === 0) return instruction;
+  return {
+    ...instruction,
+    accounts: [
+      ...(instruction.accounts ?? []),
+      ...references.map((reference) => ({
+        address: address(reference),
+        role: AccountRole.READONLY,
+      })),
+    ],
+  };
+}
 
 /** The v1 header equivalent of what a v0 transaction with `instructions` is granted. */
 export function v1ResourceBudget(instructions: readonly Instruction[]): V1TransactionConfig {
@@ -270,7 +298,7 @@ export async function createTransfer(
  * @param signer - Sender's transaction signer
  * @param to - Recipient's address
  * @param amount - Amount in SOL
- * @param opts - Transfer options (only `version` applies)
+ * @param opts - Transfer options (`version`, `memo`, `references` apply)
  * @returns Prepared transaction message
  */
 export async function createSolTransaction(
@@ -278,20 +306,23 @@ export async function createSolTransaction(
   signer: TransactionSigner,
   to: Address,
   amount: number,
-  opts: Pick<TransferOptions, 'version'> = {}
+  opts: Pick<TransferOptions, 'version' | 'memo' | 'references'> = {}
 ) {
-  return buildTransactionMessage(
-    rpc,
-    signer,
-    [
+  const instructions: Instruction[] = [];
+  if (opts.memo) {
+    instructions.push(getAddMemoInstruction({ memo: opts.memo, signers: [signer] }));
+  }
+  instructions.push(
+    withReferences(
       getTransferSolInstruction({
         source: signer,
         destination: to,
         amount: BigInt(Math.floor(LAMPORTS_PER_SOL * amount)),
       }),
-    ],
-    opts.version
+      opts.references
+    )
   );
+  return buildTransactionMessage(rpc, signer, instructions, opts.version);
 }
 
 /**
@@ -319,7 +350,7 @@ export async function createSplTransaction(
   amount: number,
   opts: TransferOptions = {}
 ): Promise<TransferTransactionMessage> {
-  const { memo } = opts;
+  const { memo, references } = opts;
 
   const mintAddress = address(tokenAddress);
 
@@ -376,29 +407,35 @@ export async function createSplTransaction(
     const fee = await calculateTransferFee(rpc, tokenAddress, amount);
 
     instructions.push(
-      getTransferCheckedWithFeeInstruction({
-        source: fromTokenAddress,
-        mint: mintAddress,
-        destination: toTokenAddress,
-        // Must be the signer, not its address: a bare Address yields a
-        // READONLY account meta and the authority silently loses isSigner.
-        authority: signer,
-        amount: BigInt(transferAmount),
-        decimals,
-        fee: fee ?? 0n,
-      })
+      withReferences(
+        getTransferCheckedWithFeeInstruction({
+          source: fromTokenAddress,
+          mint: mintAddress,
+          destination: toTokenAddress,
+          // Must be the signer, not its address: a bare Address yields a
+          // READONLY account meta and the authority silently loses isSigner.
+          authority: signer,
+          amount: BigInt(transferAmount),
+          decimals,
+          fee: fee ?? 0n,
+        }),
+        references
+      )
     );
   } else {
     instructions.push(
-      getTransferInstruction(
-        {
-          source: fromTokenAddress,
-          destination: toTokenAddress,
-          // Same signer-vs-address constraint as above.
-          authority: signer,
-          amount: BigInt(transferAmount),
-        },
-        { programAddress: tokenProgram }
+      withReferences(
+        getTransferInstruction(
+          {
+            source: fromTokenAddress,
+            destination: toTokenAddress,
+            // Same signer-vs-address constraint as above.
+            authority: signer,
+            amount: BigInt(transferAmount),
+          },
+          { programAddress: tokenProgram }
+        ),
+        references
       )
     );
   }
