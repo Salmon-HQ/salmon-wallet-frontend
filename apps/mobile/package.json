@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@expo/dom-webview": "55.0.5",
-    "@expo/metro-runtime": "55.0.10",
+    "@expo/metro-runtime": "57.0.15",
     "@expo/vector-icons": "^15.0.3",
     "@noble/hashes": "^1.8.0",
     "@react-native-async-storage/async-storage": "2.2.0",
