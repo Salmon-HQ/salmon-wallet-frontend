@@ -13,6 +13,10 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
 
+## extension 0.15.0 — 2026-09-15
+
+- Sending from the wallet itself builds a v1 transaction on Solana Mainnet, as it already did on Devnet. Transaction V1 (SIMD-0385, up to 4096 bytes) activated on mainnet-beta at the start of epoch 1035, and a cluster that runs it accepts the larger transaction; before that it refused one at preflight.
+
 ## extension 0.14.1 — 2026-09-11
 
 - Signing through Wallet Standard works again. 0.14.0 added a guard that refuses a transaction built for a network the wallet is not on, but it compared the cluster name a dApp sends (`devnet`, `mainnet-beta`, `solana:devnet`) against the wallet's own network ID (`solana-devnet`) and never found a match — every Wallet Standard request was refused as a network mismatch, on every network. The aliases are now recognised as the same network; an unknown or genuinely different network is still refused. Reported and fixed by @mcintyre94 (#128, #129).
