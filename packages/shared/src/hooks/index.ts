@@ -218,6 +218,8 @@ export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext
 export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
 export { useInstalledPowerups, resetInstalledPowerupsForTest } from './useInstalledPowerups';
 export type { UseInstalledPowerupsResult } from './useInstalledPowerups';
+export { usePowerupState, resetPowerupStateForTest } from './usePowerupState';
+export type { PowerupStateUpdater } from './usePowerupState';
 export type { UseHomeTabOrderResult } from './useHomeTabOrder';
 
 // Derived-account scan (finds a seed's funded paths; the user picks)

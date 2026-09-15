@@ -214,6 +214,8 @@ export const STORAGE_KEYS = {
   HOME_TABS_ORDER: 'salmon_home_tabs_order',
   /** The Powerup ids installed on THIS device (useInstalledPowerups) */
   INSTALLED_POWERUPS: 'salmon_installed_powerups',
+  /** Each Powerup's own persisted slice, keyed by Powerup id (usePowerupState) */
+  POWERUP_STATE: 'salmon_powerup_state',
   /** Anonymous usage-analytics consent flag (opt-in, default off) */
   ANALYTICS_CONSENT: 'salmon_analytics_consent',
   /** Random per-install analytics id — NOT derived from any wallet data */
