@@ -87,19 +87,16 @@ export default function SendReviewScreen() {
   // amount is the one thing this screen cannot fix on its own. So: send the
   // user back to `/send/amount` with the new token already selected when it
   // no longer fits, and stay put otherwise.
-  const handleSelectToken = useCallback(
-    (next: SendToken) => {
-      setToken(next);
-      setPickerOpen(false);
-      const numAmount = parseFloat(amount);
-      const nextBalance =
-        typeof next.uiAmount === 'string' ? parseFloat(next.uiAmount) : (next.uiAmount ?? 0);
-      if (!isNaN(numAmount) && numAmount > nextBalance) {
-        router.dismissTo('/send/amount');
-      }
-    },
-    [amount, router, setToken]
-  );
+  const handleSelectToken = (next: SendToken) => {
+    setToken(next);
+    setPickerOpen(false);
+    const numAmount = parseFloat(amount);
+    const nextBalance =
+      typeof next.uiAmount === 'string' ? parseFloat(next.uiAmount) : (next.uiAmount ?? 0);
+    if (!isNaN(numAmount) && numAmount > nextBalance) {
+      router.dismissTo('/send/amount');
+    }
+  };
 
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const confirmDisabled = isSending || insufficient;
