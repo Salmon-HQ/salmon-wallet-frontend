@@ -7,7 +7,7 @@
  * itself is `useSendTransaction`'s, tested where it lives.
  */
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() };
 
@@ -98,7 +98,13 @@ const mockFlow = {
   txId: null,
   submit: jest.fn(),
   reset: jest.fn(),
+  request: null as unknown,
+  startFromRequest: jest.fn(),
+  clearRequest: jest.fn(),
 };
+
+/** The last `onScan` the recipient screen handed the scanner. */
+let scanHandler: ((result: unknown) => void) | null = null;
 
 jest.mock('expo-router', () => {
   const ReactActual = require('react');
@@ -132,6 +138,8 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
+  // What the review shows about a payment request is real: the suite pins it.
+  ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
@@ -179,7 +187,12 @@ jest.mock('../../src/contexts/SendFlowContext', () => ({
 
 jest.mock('../../src/components/DepthBackground', () => ({ DepthBackground: () => null }));
 jest.mock('../../src/components/ScalesBackground', () => ({ ScalesBackground: () => null }));
-jest.mock('../../src/components/QRScanner', () => ({ QRScanner: () => null }));
+jest.mock('../../src/components/QRScanner', () => ({
+  QRScanner: ({ onScan }: { onScan: (result: unknown) => void }) => {
+    scanHandler = onScan;
+    return null;
+  },
+}));
 jest.mock('../../src/components/BottomSheetContainer', () => ({
   BottomSheetContainer: ({
     visible,
@@ -279,7 +292,90 @@ beforeEach(() => {
   mockFlow.estimatedFee = null;
   mockFlow.sendHook.status = 'idle';
   mockFlow.sendHook.settling = false;
+  mockFlow.request = null;
   waitProps = null;
+  scanHandler = null;
+});
+
+/** A scanned USDC request, as the classifier hands it to the screen. */
+const scannedRequest = {
+  data: 'solana:Dest111111111111111111111111111111111111111?amount=1&spl-token=Usdc11111111111111111111111111111111111111',
+  address: 'Dest111111111111111111111111111111111111111',
+  amount: '1',
+  request: {
+    recipient: 'Dest111111111111111111111111111111111111111',
+    amount: '1',
+    splToken: 'Usdc11111111111111111111111111111111111111',
+    references: ['Ref1111111111111111111111111111111111111111'],
+    label: 'Café',
+    message: 'Table 4',
+  },
+};
+
+describe('the recipient screen — a scanned payment request (spec 033 US3)', () => {
+  it('a code that only carries an address fills the field, as it always has', () => {
+    render(<SendRecipientScreen />);
+    act(() => scanHandler?.({ data: 'Dest2', address: 'Dest2' }));
+    expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  it('a request with an amount starts the flow from it and goes straight to review', () => {
+    mockFlow.startFromRequest.mockReturnValue({ ok: true, next: 'review' });
+    render(<SendRecipientScreen />);
+    act(() => scanHandler?.(scannedRequest));
+    expect(mockFlow.startFromRequest).toHaveBeenCalledWith(scannedRequest.request, mockFlow.tokens);
+    expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
+  });
+
+  it('a request without an amount lands on the amount screen', () => {
+    mockFlow.startFromRequest.mockReturnValue({ ok: true, next: 'amount' });
+    render(<SendRecipientScreen />);
+    act(() => scanHandler?.(scannedRequest));
+    expect(mockRouter.push).toHaveBeenCalledWith('/send/amount');
+  });
+
+  it('a request for a token the account does not hold is refused, and says so', () => {
+    mockFlow.startFromRequest.mockReturnValue({ ok: false, reason: 'tokenNotHeld' });
+    render(<SendRecipientScreen />);
+    act(() => scanHandler?.(scannedRequest));
+    expect(mockRouter.push).not.toHaveBeenCalled();
+    expect(screen.getByTestId('send-request-refused')).toBeTruthy();
+    expect(screen.getByText("You don't hold the token this request asks for")).toBeTruthy();
+  });
+});
+
+describe('the review screen — what a payment request locks (spec 033 US3)', () => {
+  const lockedRequest = {
+    request: scannedRequest.request,
+    token: USDC_TOKEN,
+    locked: { recipient: true, token: true, amount: true },
+  };
+
+  it('shows who asked and what for, and offers no token change', () => {
+    mockFlow.request = lockedRequest;
+    mockFlow.token = USDC_TOKEN;
+    mockFlow.amount = '1';
+    mockFlow.liveBalance = 1;
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-requested-by')).toBeTruthy();
+    expect(screen.getByText('Café')).toBeTruthy();
+    expect(screen.getByTestId('send-review-for')).toBeTruthy();
+    expect(screen.getByText('Table 4')).toBeTruthy();
+    expect(screen.queryByTestId('send-review-change-token')).toBeNull();
+    expect(screen.getByTestId('send-confirm-button').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('a balance under the requested amount blocks the commit and never swaps the token', () => {
+    mockFlow.request = lockedRequest;
+    mockFlow.token = USDC_TOKEN;
+    mockFlow.amount = '1';
+    mockFlow.liveBalance = 0.5;
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-insufficient')).toBeTruthy();
+    expect(screen.getByTestId('send-confirm-button').props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByTestId('send-review-change-token')).toBeNull();
+  });
 });
 
 describe('the recipient screen — 04A and 04B', () => {

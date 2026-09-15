@@ -72,18 +72,51 @@ vi.mock('../SinkFloat', () => ({
   },
 }));
 
+/** What the recipient stub's paste reported last. */
+let lastRequestOutcome: { ok: boolean } | null = null;
+
 vi.mock('./StepRecipient', () => ({
   StepRecipient: ({
     onContinue,
+    onRequest,
     nft,
   }: {
     onContinue: (r: { address: string }) => void;
+    onRequest?: (request: {
+      recipient: string;
+      amount?: string;
+      splToken?: string;
+      references: string[];
+    }) => { ok: boolean };
     nft?: unknown;
   }) => (
-    <button
-      data-testid={nft ? 'step-recipient-nft' : 'step-recipient'}
-      onClick={() => onContinue({ address: 'recipient' })}
-    />
+    <>
+      <button
+        data-testid={nft ? 'step-recipient-nft' : 'step-recipient'}
+        onClick={() => onContinue({ address: 'recipient' })}
+      />
+      <button
+        data-testid="step-recipient-request"
+        onClick={() => {
+          lastRequestOutcome =
+            onRequest?.({ recipient: 'r', amount: '1', splToken: 'sol', references: [] }) ?? null;
+        }}
+      />
+      <button
+        data-testid="step-recipient-request-no-amount"
+        onClick={() => {
+          lastRequestOutcome =
+            onRequest?.({ recipient: 'r', splToken: 'sol', references: [] }) ?? null;
+        }}
+      />
+      <button
+        data-testid="step-recipient-request-not-held"
+        onClick={() => {
+          lastRequestOutcome =
+            onRequest?.({ recipient: 'r', amount: '1', splToken: 'usdc', references: [] }) ?? null;
+        }}
+      />
+    </>
   ),
 }));
 
@@ -106,8 +139,21 @@ vi.mock('./StepAmount', () => ({
 }));
 
 vi.mock('./StepReview', () => ({
-  StepReview: ({ onConfirm, nftError }: { onConfirm: () => void; nftError?: string | null }) => (
-    <button data-testid="step-review" data-nft-error={nftError ?? ''} onClick={onConfirm} />
+  StepReview: ({
+    onConfirm,
+    nftError,
+    request,
+  }: {
+    onConfirm: () => void;
+    nftError?: string | null;
+    request?: { locked: { amount: boolean } } | null;
+  }) => (
+    <button
+      data-testid="step-review"
+      data-nft-error={nftError ?? ''}
+      data-request-locked={request ? String(request.locked.amount) : ''}
+      onClick={onConfirm}
+    />
   ),
 }));
 
@@ -158,6 +204,7 @@ const wrapped = () => (
 
 beforeEach(() => {
   verbProps.length = 0;
+  lastRequestOutcome = null;
   sendState.status = 'idle';
   sendState.settling = false;
   sendState.error = null;
@@ -185,6 +232,39 @@ describe('SendPage — four steps, and the verb between them', () => {
     fireEvent.click(screen.getByTestId('step-amount'));
     expect(screen.getByTestId('step-review')).toBeTruthy();
     expect(lastVerb()).toEqual({ transitionKey: 'review', floatMs: undefined });
+  });
+
+  it('a pasted request with an amount goes straight to review, locked (spec 033 US3)', () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('step-recipient-request'));
+    expect(lastRequestOutcome).toEqual({ ok: true, next: 'review' });
+    expect(screen.getByTestId('step-review').getAttribute('data-request-locked')).toBe('true');
+    expect(lastVerb()).toEqual({ transitionKey: 'review', floatMs: undefined });
+  });
+
+  it('a pasted request without an amount lands on the amount step', () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('step-recipient-request-no-amount'));
+    expect(lastRequestOutcome).toEqual({ ok: true, next: 'amount' });
+    expect(screen.getByTestId('step-amount')).toBeTruthy();
+  });
+
+  it('a request for a token the account does not hold stays on the recipient step', () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('step-recipient-request-not-held'));
+    expect(lastRequestOutcome).toEqual({ ok: false, reason: 'tokenNotHeld' });
+    expect(screen.getByTestId('step-recipient')).toBeTruthy();
+    expect(screen.queryByTestId('step-review')).toBeNull();
+  });
+
+  it('the transfer of a pasted request carries its memo and references', async () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('step-recipient-request'));
+    fireEvent.click(screen.getByTestId('step-review'));
+    await vi.waitFor(() => expect(sendTransaction).toHaveBeenCalled());
+    expect(sendTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientAddress: 'r', amount: 1, references: [] })
+    );
   });
 
   it('skips the amount for a collectible — recipient goes straight to review', () => {

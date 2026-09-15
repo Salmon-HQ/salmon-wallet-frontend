@@ -399,4 +399,6 @@ export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
 
 // What a scanned or pasted payload is (the mobile scanner and the DOM paste field)
 export { classifyScanPayload } from './scan-payload';
+export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestReview';
+export type { SendRequestReviewRow } from './sendRequestReview';
 export type { ScanClassification } from './scan-payload';

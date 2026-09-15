@@ -82,11 +82,15 @@ export default function SendRecipientScreen() {
     tokens,
     tokensLoading,
     liveBalance,
+    startFromRequest,
   } = useSendFlow();
 
   const [address, setAddress] = useState(recipient?.address ?? '');
   const [showScanner, setShowScanner] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // A scanned payment request asked for a token this account does not hold.
+  // The wallet never substitutes another (spec 033 FR-023).
+  const [requestRefused, setRequestRefused] = useState(false);
 
   // `liveBalance` already falls back to the token's own amount.
   const tokenBalance = liveBalance ?? 0;
@@ -123,10 +127,28 @@ export default function SendRecipientScreen() {
     [transactions, senderAddress, contacts, ownWallets]
   );
 
-  const handleScan = useCallback((result: QRScanResult) => {
-    setAddress(result.address);
-    setShowScanner(false);
-  }, []);
+  // A code that only carries an address fills the field, as it always has. A
+  // payment request fills the whole flow: the recipient, the token and the
+  // amount are the requester's, and the next screen is whichever the request
+  // left open (spec 033 US3).
+  const handleScan = useCallback(
+    (result: QRScanResult) => {
+      setShowScanner(false);
+      setRequestRefused(false);
+      if (!result.request) {
+        setAddress(result.address);
+        return;
+      }
+      const outcome = startFromRequest(result.request, tokens);
+      if (!outcome.ok) {
+        setAddress(result.address);
+        setRequestRefused(true);
+        return;
+      }
+      router.push(outcome.next === 'review' ? '/send/review' : '/send/amount');
+    },
+    [router, startFromRequest, tokens]
+  );
 
   const handleContinue = useCallback(() => {
     if (!isAddressValid || isValidating) return;
@@ -208,7 +230,10 @@ export default function SendRecipientScreen() {
 
         <RecipientInput
           value={address}
-          onChangeText={setAddress}
+          onChangeText={(next) => {
+            setRequestRefused(false);
+            setAddress(next);
+          }}
           onScanPress={() => setShowScanner(true)}
           scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
           placeholder={t('send.enter_address_or_domain')}
@@ -223,6 +248,15 @@ export default function SendRecipientScreen() {
             tone={addressMessageType === 'warning' ? 'warning' : 'error'}
             title={t(addressMessage)}
             style={styles.notice}
+          />
+        )}
+
+        {requestRefused && (
+          <WarningNotice
+            tone="error"
+            title={t('send.request.tokenNotHeld')}
+            style={styles.notice}
+            testID="send-request-refused"
           />
         )}
 

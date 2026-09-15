@@ -16,9 +16,12 @@ import {
   fontWeight,
   formatTokenAmount,
   getShortAddress,
+  isSendRequestUnderfunded,
+  sendRequestReviewRows,
   spacing,
   type NftData,
   type SendRecipient,
+  type SendRequest,
   type SendToken,
 } from '@salmon/shared';
 
@@ -51,6 +54,10 @@ export interface StepReviewProps {
   nft?: NftData | null;
   /** The collectible's own failure, drawn on the card as mobile does. */
   nftError?: string | null;
+  /** Started from a payment request: what it fixed is not offered for change. */
+  request?: SendRequest | null;
+  /** The live balance of the token, to refuse a request it does not cover. */
+  liveBalance?: number;
 }
 
 export function StepReview({
@@ -69,10 +76,18 @@ export function StepReview({
   onSelectToken,
   nft,
   nftError,
+  request = null,
+  liveBalance,
 }: StepReviewProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // A request fixed the token and the amount; a balance that does not cover
+  // it blocks the commit — the wallet never substitutes another token
+  // (spec 033 FR-021, FR-023).
+  const requestRows = sendRequestReviewRows(request);
+  const insufficient = isSendRequestUnderfunded(request, amount, liveBalance);
 
   // What the transfer will actually pay. When a domain was typed, the
   // resolved address is the destination — showing the domain here would ask
@@ -164,43 +179,60 @@ export function StepReview({
           >
             {t('actions.cancel')}
           </SecondaryButton>
-          <PrimaryButton testID="send-confirm-button" onPress={onConfirm} disabled={isSending}>
+          <PrimaryButton
+            testID="send-confirm-button"
+            onPress={onConfirm}
+            disabled={isSending || insufficient}
+          >
             {t('actions.confirm')}
           </PrimaryButton>
         </>
       }
     >
       <Card padding="lg" gap={spacing.md} testID="send-review-summary">
+        {/* Who asked, and what for — the request's own words, above what it
+            fixed. */}
+        {requestRows.map((row) => (
+          <KeyValueRow
+            key={row.key}
+            testID={row.testID}
+            label={t(row.labelKey)}
+            value={row.value}
+          />
+        ))}
         {/* The one row that carries an action: a wrong token picked on the
             recipient step is fixed here rather than by starting over. The
             action sits beside the label, not the value — a bare, text-sized
             control (not the kit's fixed-height `TextButton`) so the amount
             still right-aligns with every other row's value and this row's
-            height still matches its siblings'. */}
+            height still matches its siblings'. A request fixed the token:
+            no action. */}
         <KeyValueRow
           testID="send-confirm-amount"
           label={t('token.send.amountLabel')}
           value={amountDisplay}
           labelAction={
-            <button
-              type="button"
-              data-testid="send-review-change-token"
-              onClick={() => setPickerOpen(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: 0,
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontFamily: fontFamily.sans,
-                fontSize: fontSize.body,
-                fontWeight: fontWeight.semibold,
-                color: semantic.text.accent,
-              }}
-            >
-              {t('actions.change')}
-            </button>
+            request ? undefined : (
+              <button
+                type="button"
+                data-testid="send-review-change-token"
+                onClick={() => setPickerOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: 0,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontFamily: fontFamily.sans,
+                  fontSize: fontSize.body,
+                  fontWeight: fontWeight.semibold,
+                  color: semantic.text.accent,
+                }}
+              >
+                {t('actions.change')}
+              </button>
+            )
           }
         />
         <KeyValueRow
@@ -237,6 +269,14 @@ export function StepReview({
           tone="warning"
           title={t('send.fee_estimate_failed')}
           testID="send-fee-estimate-failed"
+        />
+      )}
+
+      {insufficient && (
+        <WarningNotice
+          tone="error"
+          title={t('transaction.errors.insufficientFunds')}
+          testID="send-review-insufficient"
         />
       )}
 

@@ -30,6 +30,7 @@ import {
   type SendRecipient,
   type SendStep,
   type SendToken,
+  type TransferRequest,
   sendFailureReport,
 } from '@salmon/shared';
 
@@ -162,6 +163,18 @@ export function SendPage({
     [setRecipient, goToStep, nft]
   );
 
+  // A pasted payment request: the flow starts from what it fixed and lands on
+  // whichever step the request left open (spec 033 US3).
+  const { startFromRequest } = flow;
+  const handleRequest = useCallback(
+    (request: TransferRequest) => {
+      const outcome = startFromRequest(request, tokens);
+      if (outcome.ok) goToStep(outcome.next);
+      return outcome;
+    },
+    [startFromRequest, tokens, goToStep]
+  );
+
   // A token picked on review may not cover the amount already typed: the fee
   // re-estimates itself, but the amount is the one thing review cannot fix.
   const handleReviewSelectToken = useCallback(
@@ -212,6 +225,7 @@ export function SendPage({
             liveBalance={flow.liveBalance}
             onSelectToken={setToken}
             nft={nft}
+            onRequest={handleRequest}
           />
         )}
 
@@ -248,6 +262,8 @@ export function SendPage({
             onSelectToken={handleReviewSelectToken}
             nft={nft}
             nftError={nftError}
+            request={flow.request}
+            liveBalance={flow.liveBalance}
           />
         )}
 

@@ -11,6 +11,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  classifyScanPayload,
   formatTokenAmount,
   getShortAddress,
   isSignableAccount,
@@ -23,6 +24,8 @@ import {
   type NftData,
   type SendRecipient,
   type SendToken,
+  type StartFromRequestResult,
+  type TransferRequest,
   recipientOptions,
   type RecipientOption,
 } from '@salmon/shared';
@@ -34,6 +37,7 @@ import { IconBubble } from '../IconBubble';
 import { RecipientInput } from '../InputAddress';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { TextInput } from '../TextInput';
 import { TokenLogo } from '../TokenLogo';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
@@ -64,6 +68,11 @@ export interface StepRecipientProps {
   onSelectToken: (token: SendToken) => void;
   /** The collectible half. */
   nft?: NftData | null;
+  /**
+   * A pasted Solana Pay transfer request starts the flow from what it fixed
+   * (spec 033 FR-026). The side panel has no camera, so paste is its scan.
+   */
+  onRequest?: (request: TransferRequest) => StartFromRequestResult;
 }
 
 export function StepRecipient({
@@ -78,11 +87,14 @@ export function StepRecipient({
   liveBalance,
   onSelectToken,
   nft,
+  onRequest,
 }: StepRecipientProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
   const [address, setAddress] = useState(recipient?.address ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pasted, setPasted] = useState('');
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   const senderAddress = account.getReceiveAddress();
   const { contacts, ownWallets } = useSendContacts(senderAddress);
@@ -105,6 +117,34 @@ export function StepRecipient({
       setAddress(value);
     },
     [markDirty]
+  );
+
+  // The paste field reads what a scanner would: a bare address fills the
+  // recipient as if typed; a request starts the flow from what it fixed; a
+  // request that cannot be read says which part (spec 033 FR-020).
+  const handlePaste = useCallback(
+    (value: string) => {
+      setPasted(value);
+      setPasteError(null);
+      if (value.trim().length === 0) return;
+      const outcome = classifyScanPayload(value, 'solana');
+      if (outcome.kind === 'invalidRequest') {
+        setPasteError(t(`send.request.errors.${outcome.reason}`));
+        return;
+      }
+      if (outcome.kind !== 'valid') {
+        setPasteError(t('send.request.errors.notSolanaPay'));
+        return;
+      }
+      if (!outcome.request || !onRequest) {
+        handleChangeText(outcome.address);
+        setPasted('');
+        return;
+      }
+      const started = onRequest(outcome.request);
+      if (!started.ok) setPasteError(t('send.request.tokenNotHeld'));
+    },
+    [handleChangeText, onRequest, t]
   );
 
   // `liveBalance` already falls back to the token's own amount.
@@ -227,6 +267,17 @@ export function StepRecipient({
         <WarningNotice
           tone={addressMessageType === 'warning' ? 'warning' : 'error'}
           title={t(addressMessage)}
+        />
+      )}
+
+      {!nft && onRequest && (
+        <TextInput
+          testID="send-request-paste"
+          mono
+          value={pasted}
+          onChangeText={handlePaste}
+          placeholder={t('send.request.paste')}
+          error={pasteError ?? undefined}
         />
       )}
 
