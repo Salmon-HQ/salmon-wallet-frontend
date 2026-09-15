@@ -1,3 +1,4 @@
+import { createSolanaRpc } from '@solana/kit';
 import type { Rpc, RpcSubscriptions, SolanaRpcApi, SolanaRpcSubscriptionsApi } from '@solana/kit';
 import type { SolanaNetwork, SolanaNetworkId } from '../../types/blockchain';
 
@@ -32,6 +33,24 @@ export const SOLANA_NETWORKS: Record<string, SolanaNetwork> = {
     },
   },
 };
+
+const rpcByNodeUrl = new Map<string, SolanaRpc>();
+
+/**
+ * A read client for a network, without an account in hand.
+ *
+ * Reads the same runtime-merged config `SolanaReadAccount.getLatestConfig`
+ * reads, so a backend-supplied RPC URL is honoured here too. `createSolanaRpc`
+ * performs no I/O; the cache only keeps one client per URL.
+ */
+export function solanaRpcFor(networkId: SolanaNetworkId): SolanaRpc {
+  const { nodeUrl } = SOLANA_NETWORKS[networkId].config;
+  const cached = rpcByNodeUrl.get(nodeUrl);
+  if (cached) return cached;
+  const rpc = createSolanaRpc(nodeUrl);
+  rpcByNodeUrl.set(nodeUrl, rpc);
+  return rpc;
+}
 
 /**
  * The transaction version the wallet's own Send builds on each cluster.

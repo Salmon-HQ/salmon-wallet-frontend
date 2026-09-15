@@ -3,8 +3,16 @@ import {
   SOLANA_TRANSACTION_VERSION,
   deriveSolanaWsUrl,
   resolveSolanaWsUrl,
+  solanaRpcFor,
   transactionVersionFor,
 } from './networks';
+
+describe('solanaRpcFor', () => {
+  it('keeps one client per network and never shares one across networks', () => {
+    expect(solanaRpcFor('solana-devnet')).toBe(solanaRpcFor('solana-devnet'));
+    expect(solanaRpcFor('solana-devnet')).not.toBe(solanaRpcFor('solana-mainnet'));
+  });
+});
 
 describe('deriveSolanaWsUrl', () => {
   it.each([

@@ -21,7 +21,26 @@ export {
 export type { CreateSolanaAccountOptions, DeriveSolanaAccountsOptions } from './factory';
 
 // Networks
-export { SOLANA_TRANSACTION_VERSION, transactionVersionFor } from './networks';
+export { SOLANA_TRANSACTION_VERSION, solanaRpcFor, transactionVersionFor } from './networks';
+export { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from './known-mints';
+
+// Solana Pay transfer requests (the wallet asks and pays on the standard)
+export {
+  TRANSFER_REQUEST_MEMO_MAX_BYTES,
+  encodeTransferRequest,
+  isTransferRequestUri,
+  parseTransferRequest,
+} from './transfer-request';
+export type {
+  TransferRequest,
+  TransferRequestParseReason,
+  TransferRequestParseResult,
+} from './transfer-request';
+export { findTransferRequestSettlement } from './transfer-request-settlement';
+export type {
+  TransferRequestSettlement,
+  TransferRequestSettlementQuery,
+} from './transfer-request-settlement';
 
 // Transfer functions
 export {
