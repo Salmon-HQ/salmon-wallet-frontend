@@ -396,3 +396,7 @@ export type { PowerupAllowlist } from './powerupSwitches';
 export { powerupFactRows } from './powerupFacts';
 export { overflowEdges } from './overflowEdges';
 export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
+
+// What a scanned or pasted payload is (the mobile scanner and the DOM paste field)
+export { classifyScanPayload } from './scan-payload';
+export type { ScanClassification } from './scan-payload';

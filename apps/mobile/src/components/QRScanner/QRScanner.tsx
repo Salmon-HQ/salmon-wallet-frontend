@@ -28,7 +28,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const [appActive, setAppActive] = useState(
     AppState.currentState !== 'background' && AppState.currentState !== 'inactive'
   );
-  const [rejection, setRejection] = useState<'notAddress' | 'wrongChain' | null>(null);
+  const [rejection, setRejection] = useState<Exclude<
+    ReturnType<typeof classifyScanPayload>,
+    { kind: 'valid' }
+  > | null>(null);
   const scannedRef = useRef(false);
 
   useEffect(() => {
@@ -61,9 +64,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       const result = classifyScanPayload(data, blockchain);
       if (result.kind === 'valid') {
         scannedRef.current = true;
-        onScan({ data, address: result.address, amount: result.amount });
+        onScan({ data, address: result.address, amount: result.amount, request: result.request });
       } else {
-        setRejection(result.kind);
+        setRejection(result);
       }
     },
     [blockchain, onScan]
@@ -130,9 +133,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           {rejection && (
             <View style={styles.rejectionContainer}>
               <Text testID="qr-scanner-error" style={styles.rejectionText}>
-                {rejection === 'wrongChain'
+                {rejection.kind === 'wrongChain'
                   ? t('qrScanner.wrongNetwork', 'This address belongs to a different network')
-                  : t('qrScanner.notAddress', 'This code is not a valid address')}
+                  : rejection.kind === 'invalidRequest'
+                    ? t(`send.request.errors.${rejection.reason}`)
+                    : t('qrScanner.notAddress', 'This code is not a valid address')}
               </Text>
             </View>
           )}

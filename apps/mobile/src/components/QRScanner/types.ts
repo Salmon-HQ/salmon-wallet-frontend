@@ -1,4 +1,4 @@
-import type { BlockchainType } from '@salmon/shared';
+import type { BlockchainType, TransferRequest } from '@salmon/shared';
 
 /**
  * Data returned when a QR code is scanned and validated for the active chain
@@ -10,6 +10,8 @@ export interface QRScanResult {
   address: string;
   /** Amount carried by a payment URI, when present */
   amount?: string;
+  /** The Solana Pay transfer request the code carried, when it asked for more than an address */
+  request?: TransferRequest;
 }
 
 /**

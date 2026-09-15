@@ -97,6 +97,35 @@ describe('QRScanner', () => {
     expect(openSettings).toHaveBeenCalled();
   });
 
+  it('names the part of a transfer request it could not read', () => {
+    const onScan = jest.fn();
+    mockClassify.mockReturnValueOnce({ kind: 'invalidRequest', reason: 'amount' });
+
+    render(<QRScanner visible blockchain="solana" onScan={onScan} onClose={jest.fn()} />);
+
+    scanFrame('solana:addr?amount=abc');
+
+    expect(onScan).not.toHaveBeenCalled();
+    expect(screen.getByText('send.request.errors.amount')).toBeTruthy();
+  });
+
+  it('hands the transfer request it read to the caller', () => {
+    const onScan = jest.fn();
+    const request = { recipient: 'addr', amount: '5', references: [] };
+    mockClassify.mockReturnValueOnce({ kind: 'valid', address: 'addr', amount: '5', request });
+
+    render(<QRScanner visible blockchain="solana" onScan={onScan} onClose={jest.fn()} />);
+
+    scanFrame('solana:addr?amount=5');
+
+    expect(onScan).toHaveBeenCalledWith({
+      data: 'solana:addr?amount=5',
+      address: 'addr',
+      amount: '5',
+      request,
+    });
+  });
+
   it('rejects an invalid payload, keeps scanning, then accepts a valid one', () => {
     const onScan = jest.fn();
     mockClassify.mockReturnValueOnce({ kind: 'notAddress' });
