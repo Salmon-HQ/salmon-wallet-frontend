@@ -78,7 +78,7 @@ export async function findTransferRequestSettlement(
       .getTransaction(entry.signature as Signature, {
         encoding: 'jsonParsed',
         commitment: 'finalized',
-        maxSupportedTransactionVersion: 0,
+        maxSupportedTransactionVersion: 1,
       })
       .send();
     if (!transaction?.meta || transaction.meta.err) continue;
