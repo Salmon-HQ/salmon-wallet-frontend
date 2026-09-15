@@ -112,7 +112,7 @@ flex, never fixed 390-wide assumptions.
 
 - `GlassTabBar/` (all files + test). `Tabs` navigator stays but renders no
   tab bar (`tabBar: () => null`); `collectibles` route deleted (content moves
-  into `NftsTab`); `swap` route kept but `href: null` (becomes a powerup in
+  into `NftsTab`); the Powerup route dropped (a Powerup is a surface of Home in
   lote 2); `settings` route already `href: null`.
 - `SubAccountSelector` usage removed from Home. Component files stay (they
   move into the wallet switcher in lote 4).
@@ -122,8 +122,8 @@ flex, never fixed 390-wide assumptions.
   screen must keep looking the same minus the snow). Delete
   `packages/shared/src/theme/depthField.ts`, `depthFieldBlizzard.ts`, their
   tests, `depthParallaxScroll` (and its writers in `index.tsx`, `SendSheet`,
-  `SwapScreen`, `LockContent`), and the `water.snow` token once nothing uses
-  it. Check every consumer (`LockContent`, `SwapScreen`, `SendSheet`,
+  `LockContent`), and the `water.snow` token once nothing uses
+  it. Check every consumer (`LockContent`, `SendSheet`,
   `EdgeLight`, `motion/wavefront.ts`, `spacing.ts`, `controlRadius.test.ts`)
   and remove only snow-related code. `ScalesBackground` and the depth
   gradient stay.
@@ -131,7 +131,7 @@ flex, never fixed 390-wide assumptions.
   `floatingBottomOffset` → recompute from safe-area only), keep header
   metrics.
 - Maestro flows / Playwright that reference `tab-home`, `tab-collectibles`,
-  `tab-swap` need updating (search `apps/mobile/.maestro`).
+  the old tab ids need updating (search `apps/mobile/.maestro`).
 
 ## Contracts
 
@@ -201,7 +201,7 @@ on device — do not automate device interaction.
    slide the whole block (dots, hint, actions) off-screen and back. Dots, the
    "→ BTC" hint, the label and the action circles stay fixed; only the values
    (amount, change, hint text, active dot) transition in place (crossfade /
-   the existing value swap motion). Keep the pan gesture.
+   the existing value change motion). Keep the pan gesture.
 3. **Balance size**: use `fontSize.display` (36) instead of `balance` (60) +
    `adjustsFontSizeToFit`. The `.pen` uses 38.
 4. **FAB icon**: `+` (plus), not lightning — the launcher heading keeps the

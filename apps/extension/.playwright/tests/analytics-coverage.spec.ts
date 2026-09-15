@@ -7,8 +7,8 @@
  * the same thing the Maestro suite does for mobile.
  *
  * Scope is the six events reachable without spending money on-chain. The
- * remaining five (send_completed, first_send_completed, swap_completed,
- * first_swap_completed, nft_sent) need a real mainnet transaction and live in
+ * remaining three (send_completed, first_send_completed, nft_sent) need a
+ * real mainnet transaction and live in
  * analytics-coverage-onchain.spec.ts.
  *
  * Runs on a FRESH profile: the `first_*` events burn a per-install flag, so a

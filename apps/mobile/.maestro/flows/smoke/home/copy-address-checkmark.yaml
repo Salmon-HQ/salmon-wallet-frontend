@@ -5,7 +5,7 @@ appId: io.salmonwallet.app
 # app/(app)/(tabs)/_layout.tsx), not just in a component-level Jest render.
 #
 # Jest cannot catch this class of bug — a prior fix (de0be9f1) passed its
-# unit test while, on device, the icon swap silently failed to paint for
+# unit test while, on device, the icon change silently failed to paint for
 # the entire feedback hold, even though the underlying `copied` state
 # flipped and held correctly. Only a real mount + real screenshot proves
 # the pixel actually changes.

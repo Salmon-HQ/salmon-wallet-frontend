@@ -1,7 +1,7 @@
 <!--
 Title must be a Conventional Commit (CI checks it):
   feat | fix | refactor | docs | test | chore | perf | ci
-Example: fix(swap): surface slippage errors in the user's language
+Example: fix(send): surface network errors in the user's language
 -->
 
 ## What changes

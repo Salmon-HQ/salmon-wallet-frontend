@@ -99,7 +99,7 @@ never skip.
 
 ## Sensitive workflows — guardrails
 
-Before any irreversible action (send, swap, burn, remove wallet) the
+Before any irreversible action (send, burn, remove wallet) the
 script must confirm context:
 
 - **Send / NFT transfer:** verify the destination address came from

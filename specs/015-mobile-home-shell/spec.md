@@ -136,7 +136,7 @@ documented variants; Home and the Powerups sheet are built only from them.
   overflows horizontally.
 - Reduced motion enabled: chain switch and sink/float transitions respect it as
   today.
-- Task engaged (send/swap flow takes the screen): Home content sinks and floats
+- Task engaged (a send or a Powerup's flow takes the screen): Home content sinks and floats
   back exactly as before; the FAB sinks with it.
 
 ## Requirements _(mandatory)_

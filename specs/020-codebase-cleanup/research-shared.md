@@ -203,7 +203,7 @@ No other mobile-local counterpart exists for `useBalance`, `useMultiChainTokens`
 
 - `semantic`: `text.onGlass`, `state.loadingOpacity`, `accent.inkOnMembrane`, `scales.deepFieldHeight` (already self-documented `@deprecated` at `semantic.ts:205-211`).
 - `spacing`: `lockScreenGap`, `lockScreenSectionGap`, `lockScreenPadding`, `paginationGap`, `tabBarPadding`.
-- `componentSizes`: **19 of 102** — `actionButtonWidth`, `logoSizeLarge`, `successCircleSize`, `blockchainIcon`, `headerInnerHeight`, `tabBarRadius`, `tabBarPaddingTop`, `tabBarMinBottomPadding`, `tabBarItemHeight`, `tabBarHeight`, `sheetHandleWidth`, `sheetHandleHeight`, `descentTrackWidth`, `descentTrackHeight`, `descentSegmentHeight`, `swapReviewCardMinHeight`, `lockScreenLogoSize`, `lockScreenLogoSizeExtension`, `biometricButtonSize`. A further 43 have no _mobile_ consumer but are live in web/`packages/ui` (`sheetWidth*`, `dialogWidth*`, `scrollbarWidth*`, `breakpointDesktop`, `drawerWidth`…) — those are correctly DOM-only and should stay.
+- `componentSizes`: **19 of 102** — `actionButtonWidth`, `logoSizeLarge`, `successCircleSize`, `blockchainIcon`, `headerInnerHeight`, `tabBarRadius`, `tabBarPaddingTop`, `tabBarMinBottomPadding`, `tabBarItemHeight`, `tabBarHeight`, `sheetHandleWidth`, `sheetHandleHeight`, `descentTrackWidth`, `descentTrackHeight`, `descentSegmentHeight`, `lockScreenLogoSize`, `lockScreenLogoSizeExtension`, `biometricButtonSize`. A further 43 have no _mobile_ consumer but are live in web/`packages/ui` (`sheetWidth*`, `dialogWidth*`, `scrollbarWidth*`, `breakpointDesktop`, `drawerWidth`…) — those are correctly DOM-only and should stay.
 - `shadows`: `imageHero`, `topSheet`. `shadowsCSS.card` is dead; the other 9 `shadowsCSS` entries are web/ext-only and correct.
 - `gradients`: the 9 listed in §1.4.
 - `fontSize.iconMd`; `borderWidth.accent`/`thick`; `blur.lg`; `letterSpacing.tight`/`loose`/`header`.
@@ -217,7 +217,7 @@ No other mobile-local counterpart exists for `useBalance`, `useMultiChainTokens`
 
 `settings.about_build`, `settings.wallets.your_wallets`, `settings.wallets.add_new_wallet`, `settings.wallets.delete_account`, `settings.wallets.cannot_delete_last`, `tabs.settings`, `general.ok`, `transactions.detail.explorerHint`, `powerups.title`.
 
-The five `settings.*` look like leftovers from a naming that was superseded by `settings.wallets.screen_title` / `add_wallet` / `delete_confirm_title`. Caveat: 31 call sites pass a runtime-resolved key variable (`sendError`, `swapError.key`, `labelKey`, `powerup.name`…) which no static scan can trace — treat 9 as an upper bound and verify each before deleting.
+The five `settings.*` look like leftovers from a naming that was superseded by `settings.wallets.screen_title` / `add_wallet` / `delete_confirm_title`. Caveat: 31 call sites pass a runtime-resolved key variable (`sendError`, `labelKey`, `powerup.name`…) which no static scan can trace — treat 9 as an upper bound and verify each before deleting.
 
 **EN↔ES drift: zero.** Both files carry exactly 901 keys, fully in sync. The i18n discipline in this repo is working.
 

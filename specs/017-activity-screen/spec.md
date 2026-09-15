@@ -17,11 +17,10 @@ Tapping the "Activity" pill on Home pushes the Activity screen from the right.
 
 ### US2 — Read the list (P1)
 
-Rows grouped by day (Today / Earlier), each row: token mark + type badge, verb ("Sent"/"Received"/"Swapped"), subtitle "To/From {short address}" (contact name when the address book knows it), amount coloured by sign, relative date. No program pill.
+Rows grouped by day (Today / Earlier), each row: token mark + type badge, verb ("Sent"/"Received"/"Staked"), subtitle "To/From {short address}" (contact name when the address book knows it), amount coloured by sign, relative date. No program pill.
 
 1. **Given** rows, **Then** no row shows a program/protocol chip; addresses render as `9mpJ…SAd3`.
-2. **Given** a swap, **Then** two amounts (−/+) stack in the trailing column.
-3. Failed / pending states, hidden-balance masking, pagination (load more), pull-to-refresh, error + retry, empty state all keep working as today.
+2. Failed / pending states, hidden-balance masking, pagination (load more), pull-to-refresh, error + retry, empty state all keep working as today.
 
 ### US3 — Filter (P2)
 
@@ -56,5 +55,5 @@ Very long contact names truncate; hidden balance masks amounts and a11y labels; 
 ## Assumptions
 
 - Filters are client-side over loaded pages (the API has no type filter today).
-- "OTHER" = everything that is neither send nor receive (swaps, stake, unknown).
+- "OTHER" = everything that is neither send nor receive (stake, mint, unknown).
 - Detail as a full screen (CORE 09) is a later feature.

@@ -1,6 +1,6 @@
 # Feature Specification: Community Powerups — a manifest, a pull request, no plugin runtime
 
-**Spec dir** `029-community-powerups` · **Created** 2026-09-11 · **Status**: Owner-approved 2026-09-11 (§8 answers), not scheduled — build hold stands. Builds on `027-powerups-boundary` (implemented for §1–3 on `feat/swap-0x`); does not restate it.
+**Spec dir** `029-community-powerups` · **Created** 2026-09-11 · **Status**: Owner-approved 2026-09-11 (§8 answers), not scheduled — build hold stands. Builds on `027-powerups-boundary` (implemented for §1–3 on `feat/powerups-foundations`); does not restate it.
 
 Source of intent: the owner's model, approved verbatim. This document records that model; it does not redesign it. Backend counterpart: the `salmon-wallet-backend` session mirrors §5 before either side implements.
 
@@ -52,7 +52,7 @@ Install is the user's act: the disclosure is the gate, and the catalogue's `inst
 
 ### 2.2 Transaction-building
 
-**Anything that builds a transaction goes through the Salmon backend.** A Powerup that produces a transaction does not call a third-party endpoint for it, ever — it calls one Salmon endpoint (§5), gets an unsigned transaction back, and proposes it through `requestSignature`. The backend validates what it builds, and the same envelope the Swap uses carries it.
+**Anything that builds a transaction goes through the Salmon backend.** A Powerup that produces a transaction does not call a third-party endpoint for it, ever — it calls one Salmon endpoint (§5), gets an unsigned transaction back, and proposes it through `requestSignature`. The backend validates what it builds, and one envelope carries it.
 
 **Rationale.** Transaction bytes from a third party, reviewed once at PR time, are still bytes the wallet would sign at runtime against a server the Salmon team does not control. Routing every build through the backend means the party that can change the bytes is the party that also carries the kill switch.
 
@@ -72,7 +72,7 @@ Tier does **not** decide disclosure. Custody and data exposure do: a community r
 
 ### 5.1 Build
 
-`GET /v1/{networkId}/powerups/{id}/build` — query parameters are the Powerup's own (documented in its PR); the backend validates them per id. Response is the **same envelope as the swap build**:
+`GET /v1/{networkId}/powerups/{id}/build` — query parameters are the Powerup's own (documented in its PR); the backend validates them per id. Response is the **build envelope**:
 
 | Field                                      | Meaning                                                                                                                                                             |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -83,9 +83,9 @@ Tier does **not** decide disclosure. Custody and data exposure do: a community r
 | `attribution`                              | Rendered verbatim, e.g. "Powered by X"                                                                                                                              |
 | `provider`, `providerDisplayName`          | Data, never a UI branch                                                                                                                                             |
 
-The client maps this to `TransactionProposal` exactly as `powerups/swap/proposal.ts` does today, and hands it to `requestSignature`. There is no execute step: the backend never receives signed bytes.
+The client maps this to `TransactionProposal` through `powerups/backend/proposal.ts`, and hands it to `requestSignature`. There is no execute step: the backend never receives signed bytes.
 
-**Decided (owner, 2026-09-11)**: the CLIENT builds the confirmation rows from typed response fields, exactly as `powerups/swap/proposal.ts` does; the backend sends no translation keys. The `display` row above is therefore read as "the typed fields the rows are built from", not as pre-shaped rows.
+**Decided (owner, 2026-09-11)**: the CLIENT builds the confirmation rows from typed response fields; the backend sends no translation keys. The `display` row above is therefore read as "the typed fields the rows are built from", not as pre-shaped rows.
 
 The response also carries **`contributor: { name, url } | null`** — who authored the Powerup, from the registry entry Salmon maintainers keep — rendered next to the data-provider `attribution` on the confirmation.
 
@@ -100,7 +100,7 @@ The response also carries **`contributor: { name, url } | null`** — who author
 
 ### 5.3 Errors
 
-Reusing the swap codes unchanged (`ApiError` shape `{ error, error_description }`):
+The error codes (`ApiError` shape `{ error, error_description }`):
 
 | Status | Code                 | Client behavior                                                                                           |
 | ------ | -------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -110,7 +110,7 @@ Reusing the swap codes unchanged (`ApiError` shape `{ error, error_description }
 | 422    | validation codes     | Generic build-failure copy; the specific code is logged, not shown                                        |
 | 503    | upstream unavailable | Busy-network copy, retryable                                                                              |
 
-`describeSwapBuildError` generalises to `describePowerupBuildError` with the same mapping table; per-Powerup codes may extend the table from the Powerup's own folder.
+`describePowerupBuildError` carries the mapping table; per-Powerup codes may extend the table from the Powerup's own folder.
 
 ## 6. What a contributor must deliver
 
@@ -126,25 +126,9 @@ A community Powerup PR is complete when all of these are in it:
 
 Reviewer's gate: manifest declarations match the code (grep the folder for every network call and compare against `endpoints`), the ESLint boundary passes, the disclosure the manifest generates is accurate, and no Powerup code reaches core paths.
 
-## 7. What changes in the Swap Powerup
+## 7. Decisions (owner, 2026-09-11, relayed by the backend session)
 
-Swap becomes `powerups/swap` **with a manifest** — and nothing else moves:
-
-```ts
-// packages/shared/src/powerups/swap/manifest.ts
-id: 'swap', tier: 'core', networks: ['solana-mainnet'],
-nameKey: 'swap.catalog.name', descriptionKey: 'swap.catalog.description',
-permissions: ['address', 'balances'], endpoints: [],  // Salmon backend only
-programs: [SWAP_SETTLER_PROGRAM, COMPUTE_BUDGET_PROGRAM, TOKEN_PROGRAM,
-           TOKEN_2022_PROGRAM, ASSOCIATED_TOKEN_PROGRAM, SYSTEM_PROGRAM],
-locales: 'swap', entries: { tab: 'swap' }
-```
-
-`registry.ts` imports it instead of declaring the entry inline. Files, tests, locales, the API service, the proposal builder and both twins stay exactly where they are. Swap keeps calling `GET /v1/{networkId}/ft/swap/build` — §5.1's generic path is for new Powerups; migrating Swap onto it buys nothing and is explicitly not in scope.
-
-## 8. Decisions (owner, 2026-09-11, relayed by the backend session)
-
-1. Confirmation rows: the client builds them from typed fields, as Swap does. The backend sends no i18n keys.
+1. Confirmation rows: the client builds them from typed fields. The backend sends no i18n keys.
 2. A disabled Powerup carries a reason code; the allowlist is `powerups: [{ id, enabled, reason? }]` (§5.2).
 3. Contributor attribution: the build response carries `contributor: { name, url }` from the registry entry, shown beside the data-provider attribution (§5.1); the catalogue detail's "Made by" row reads the same source.
 4. Install scope: per device (local storage), as today. No server-side persistence per public key for now.
@@ -157,7 +141,6 @@ Under discussion backend-side, nothing to change here yet: contributors should n
 - A plugin runtime, remote code loading, a sandbox, or a marketplace (SOT Model C stays closed).
 - CLA, CODEOWNERS, governance, and the review SLA — separate documents.
 - Revenue sharing or paid Powerups.
-- Migrating Swap onto the generic build path (§7).
 - Stake and Ramp Powerups — the build hold stands.
 - Runtime enforcement of `permissions`: it is a reviewed declaration, not a capability system.
 - Any change to spec 027's boundary, build flag, or `requestSignature` contract.
@@ -172,4 +155,3 @@ Under discussion backend-side, nothing to change here yet: contributors should n
 6. A fixture Powerup importing `core/signing`, `crypto` or `storage` fails lint (existing `boundary.test.ts` extended to the new folder shape).
 7. `GET /v1/networks` without `powerups` yields an empty catalogue, not a full one.
 8. `403 wallet_restricted`, `403 region_restricted`, `404 no_route`, `422` and `503` each render their own state from the shared mapping, with no generic swallow.
-9. `pnpm check:parity` and the i18n check pass with the Swap manifest in place and no other Swap change.

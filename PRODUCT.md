@@ -71,7 +71,7 @@ Two positioning cautions the product must respect:
 - **Approval is the product's centre of gravity.** Every sensitive action must explain what will happen, what can go wrong, what it costs, and what is being approved.
 - **Off-chain message signing (OCMS)** is shipped — a Solana Foundation standard, with Salmon listed as an early adopter. A v1 OCMS message begins with `0xff` plus the literal domain `"solana offchain"`, which can never begin a valid transaction, closing the transaction-lookalike blind-signing attack. Shipped on web v1.1.0 and extension 0.11.1/0.11.2. Mobile carries only the WebCrypto polyfill and has no dApp surface at all.
 - **Mobile Wallet Adapter is Android-only, permanently.** iOS suspends backgrounded apps, which kills the socket MWA depends on. dApp connectivity is therefore an Android-and-extension capability, and the iOS build must present that absence as a platform reality rather than a missing or broken feature.
-- **Third-party dependencies with user-visible failure modes**: 0x (same-chain swap), CoinGecko (prices and the token list), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on both platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
+- **Third-party dependencies with user-visible failure modes**: CoinGecko (prices and the token list), Triton One (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity (Bitcoin). A Triton DAS outage surfaces as an _empty_ NFT list, so "you have none" and "we couldn't load this" must be distinguishable states. **Enforced** (1981e8ee): the home token list and the collectibles views on both platforms gate their empty state on the absence of a load error, and the error state carries an explicit retry — an outage may no longer masquerade as an empty wallet.
 
 ## Capabilities and Constraints
 
@@ -79,7 +79,7 @@ Two positioning cautions the product must respect:
 
 Solana and Bitcoin accounts (mainnet plus devnet/testnet), send, receive, NFTs/collectibles, a spam filter, OCMS and Sign-in-with-Solana on the extension.
 
-Swap shipped on its first provider and was then withdrawn; it returns as the Swap Powerup on 0x behind the Powerups boundary (spec 027): the backend builds an unsigned transaction, core signs and broadcasts it.
+A transaction-building Powerup follows the Powerups boundary (spec 027): the backend builds an unsigned transaction, core signs and broadcasts it.
 
 ### Powerups — planned, not built
 
@@ -87,13 +87,13 @@ The flagship roadmap concept. A Powerup is an installable capability module. The
 
 > "Powerups can propose actions. Salmon core validates, explains, requests approval, signs, and broadcasts."
 
-The three named first official Powerups were **Swap**, **Bridge**, and **Explore**. Swap ships today as a core tab; the Powerups model retroactively reframes it as a module. Bridge shipped as a core tab until its removal (2026-09, Apple Guideline 3.1.5(iii)). Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
+The named first official Powerups were **Bridge** and **Explore**. Bridge shipped as a core tab until its removal (2026-09, Apple Guideline 3.1.5(iii)). Explore has no code equivalent. Announcement tagline: "A smaller core. A wallet that can do more."
 
 Two tiers: **Official** (built and maintained by Salmon) and **Community** (external developers on a restricted SDK). "Community-built does not mean trusted by default."
 
 Surfaces Powerups will require that do not exist today: a marketplace/directory, a detail page carrying roughly eleven trust signals at once (official/community, review status, security score, reliability score, rating, monthly active users, successful-action count, last-updated date, open-source status, builder identity, known risks), a permission review sheet, a Powerup manager, a changelog and re-consent flow with a three-way choice, and a report-abuse affordance. Lifecycle states: installed / not installed / enabled / disabled / update-available / update-pending-consent / revoked.
 
-**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; how security and reliability scores are visualized; and whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art. Resolved since: the concept is called "Powerups" — "Skills" is retired as a synonym across the knowledge base; Swap ships as a Powerup enabled by default and can be turned off; "Bridge" is an internal engineering term with no user-facing surface of its own (its UI is Swap); Powerup activation state lives per device, never per wallet; and the tab bar tops out at five tabs.
+**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; how security and reliability scores are visualized; and whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art. Resolved since: the concept is called "Powerups" — "Skills" is retired as a synonym across the knowledge base; "Bridge" is an internal engineering term with no user-facing surface of its own; Powerup activation state lives per device, never per wallet; and the tab bar tops out at five tabs.
 
 ### Other planned concepts
 
@@ -112,11 +112,11 @@ A **SALMON** token exists only as a "proposed ownership coin, not a live token".
 
 ### Platform fees — resolved: the rate is disclosed
 
-Salmon takes a **swap fee the backend sets and reports on every build** (server-side; the frontend has no fee logic at all).
+Salmon takes a **fee the backend sets and reports on every build** (server-side; the frontend has no fee logic at all).
 
-The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. The swap review screen names the rate: it shows "Salmon fee" with the percentage the backend reports.
+The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. The review screen names the rate: it shows "Salmon fee" with the percentage the backend reports.
 
-Resolved engineering note: the backend's `calculateFee` used to label non-SOL fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which denominates the swap order fee in the input token.
+Resolved engineering note: the backend's `calculateFee` used to label non-SOL fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which denominates the order fee in the input token.
 
 Historical: the wallet previously shipped a StealthEX cross-chain bridge with its own 0.4% partner fee. It was removed 2026-09 after Apple's App Store Guideline 3.1.5(iii) rejection; the backend's `/v1/bridge/*` endpoints are gone.
 
@@ -139,7 +139,7 @@ Historical: the wallet previously shipped a StealthEX cross-chain bridge with it
 ## Evidence on Hand
 
 - **Real assets**: the shipped theme tokens in `packages/shared/src/theme`, the brand mark as vector path data in `theme/brand.ts`, the seigaiha `ScalesBackground` component in `packages/ui`, and the DM Sans / Geist Mono binaries in `packages/assets/src/fonts` (SIL OFL 1.1, cleared for embedding).
-- **Real product docs**: OCMS overview and approval-UI notes, the swap fee spec, the frontend analytics/privacy model, and the frontend error-handling contract.
+- **Real product docs**: OCMS overview and approval-UI notes, the fee spec, the frontend analytics/privacy model, and the frontend error-handling contract.
 - **Absent, and not to be fabricated**: user research of any kind; personas; testimonials; usage or retention numbers; competitor teardowns; a Figma or any other design-file reference; specs for Explore, seedless wallet, watch mode, onboarding rework, portfolio view, or notifications; and the provenance of the `Bool`/`BoolSplashLogo` asset, which appears in the codebase and nowhere in the knowledge base.
 
 ## Product Principles

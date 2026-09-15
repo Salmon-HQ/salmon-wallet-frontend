@@ -46,7 +46,7 @@ updates:
       - dependency-name: i18next
         update-types: [version-update:semver-major]
       # @testing-library/react-native 14 makes render/fireEvent async and
-      # swaps react-test-renderer for the new test-renderer peer — a test
+      # replaces react-test-renderer with the new test-renderer peer — a test
       # suite migration, not a bump.
       - dependency-name: '@testing-library/react-native'
         update-types: [version-update:semver-major]

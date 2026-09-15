@@ -14,7 +14,6 @@ Keys are organized by feature namespace, using nested objects:
 {
   "tabs": {
     "wallet": "Wallet",
-    "swap": "Swap",
     "collectibles": "Collectibles",
     "settings": "Settings"
   },
@@ -37,7 +36,7 @@ Keys are organized by feature namespace, using nested objects:
 ## Key naming conventions
 
 - Use camelCase for key names: `"addressValidation"`, not `"address-validation"`
-- Group by feature: `send.*`, `swap.*`, `settings.*`, `transactions.*`
+- Group by feature: `send.*`, `settings.*`, `transactions.*`
 - Use `general.*` for strings shared across features
 - Nest logically but avoid more than 3 levels deep
 

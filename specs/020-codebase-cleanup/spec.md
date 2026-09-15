@@ -3,7 +3,7 @@
 **Feature Branch**: `feat/redesign-mobile-home` (spec dir `020-codebase-cleanup`)
 **Created**: 2026-09-01 · **Status**: In progress (owner away; rulings marked ⚠ need review on return)
 
-Owner's brief (2026-09-01): "pasar en limpio los componentes y unificar los similares con props, para tener una codebase ordenada, limpia y evitar estilos hardcodeados". Scope: `apps/mobile` + `packages/shared` only; extension/web later (owner allows breaking exports only they consume, **but CI must stay green**, and CI typechecks/tests every package — so web/extension keep compiling). Swap/bridge are off-limits (listed, untouched). Maestro is deprecated: flows are neither run nor maintained. The light theme (spec 021) lands last and depends on this spec.
+Owner's brief (2026-09-01): "pasar en limpio los componentes y unificar los similares con props, para tener una codebase ordenada, limpia y evitar estilos hardcodeados". Scope: `apps/mobile` + `packages/shared` only; extension/web later (owner allows breaking exports only they consume, **but CI must stay green**, and CI typechecks/tests every package — so web/extension keep compiling). The legacy exchange/bridge screens are off-limits (listed, untouched). Maestro is deprecated: flows are neither run nor maintained. The light theme (spec 021) lands last and depends on this spec.
 
 Sources: `research-shared.md`, `research-mobile.md` (two read-only audits, 2026-09-01).
 
@@ -13,7 +13,7 @@ Sources: `research-shared.md`, `research-mobile.md` (two read-only audits, 2026-
 - FR-002 The legacy `colors.*` palette has zero mobile consumers; `semantic` is the single colour layer mobile reads. Groups the legacy palette covered and `semantic` did not get semantic tokens (see rulings).
 - FR-003 One implementation per job: skeletons, sheet titles, empty/error states, receipts, rows, token-detail cards, address inputs.
 - FR-004 Dead code deleted (zero-consumer components, tokens, contracts, locale keys, barrel exports), preserving every Ethereum-named surface (AGENTS.md rule 5) and the contract surfaces DESIGN.md names as needing human sign-off.
-- FR-005 Behaviour unchanged everywhere; security-sensitive components (`SeedPhrase`, `QRScanner` camera path, panels) get token swaps only.
+- FR-005 Behaviour unchanged everywhere; security-sensitive components (`SeedPhrase`, `QRScanner` camera path, panels) get token substitutions only.
 - FR-006 Verification per package: `pnpm turbo run typecheck lint test` on shared/ui/mobile after each package; the full CI set (`format:check`, all-package `typecheck lint test`, `scripts/check-i18n.mjs`) at the end.
 
 ## Rulings taken while the owner was away ⚠

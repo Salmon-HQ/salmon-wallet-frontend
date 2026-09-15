@@ -116,7 +116,7 @@ export default function MemoTab({ publicKey, networkId, onNavigateHome }: Poweru
 | DOM      | `packages/ui/src/components/AmountEntryCard`                                                                                                                   |
 | Contract | `AmountEntryCardPropsBase<TStyle>`: `value`, `onChangeValue`, `editable?`, `placeholder?`, `subtext?`, `loading?`, `focused?`, `onFocus?`, `onBlur?`, `style?` |
 
-- **Mandatory** wherever a Powerup asks for an amount (Send and Swap are the
+- **Mandatory** wherever a Powerup asks for an amount (Send is the
   reference). `subtext` is the fiat line under the number, formatted by the
   caller from `useCurrencyContext()` (`formatValue` / `formatPrecise`), never
   by the card. `loading` keeps the field mounted, hides the value and centres
@@ -124,7 +124,7 @@ export default function MemoTab({ publicKey, networkId, onNavigateHome }: Poweru
   edge; the Powerup passes it from its own focus state.
 - **Fixed:** the card's shape, the centred number and placeholder, the
   overlay, the accent edge, no trailing ticker. The token beside it is the
-  Swap's token chip (`SwapAmountInput`), the only sanctioned way to put a
+  a token chip, the only sanctioned way to put a
   token on the card.
 - **Shortcuts:** the percentage row is `ChipGroup variant="outline"` driven by
   `useAmountShortcuts({ balance, decimals, setAmount, maxLabel })` →
@@ -148,9 +148,9 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 - **Mandatory** for any pick among tokens. It is a sheet (one state: one
   pick), with the thermocline, the search field and the same rows as every
   other sheet. `onSearch` plugs a remote search (`useTokenSearch`) — the
-  Swap's catalogue comes from `useSwapCatalog()`.
+  the verified catalogue comes from `useTokenCatalog()`.
 - **Fixed:** everything visible. A Powerup never hand-rolls a modal or a list
-  of tokens (DESIGN.md §Sheets — the swap's old selector is the cautionary
+  of tokens (DESIGN.md §Sheets — the old token selector is the cautionary
   tale).
 - **A pick among things that are NOT tokens** — a validator, a provider, a
   payment method — is `BottomSheetContainer` + `SettingsSelectorList`
@@ -189,7 +189,7 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   `buildPowerup(id, networkId, params)` (GET `/v1/{networkId}/powerups/{id}/build`),
   maps the envelope to a `ProposalDisplay` — `title`, `rows` (label/value,
   already translated and formatted), optional `exchange` (send/receive sides
-  for a swap-like screen), `advancedRows`, `warning`, `receipt { title, rate?, fee? }`,
+  for an exchange-like screen), `advancedRows`, `warning`, `receipt { title, rate?, fee? }`,
   `pendingTitle`, `pendingSubtitle` — and awaits `requestSignature(proposal)`.
 - **Fixed:** the whole screen: the Salmon fee as its own line, the provider
   attribution and the `contributor` ("Made by") slot filled from the
@@ -300,7 +300,7 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 - **Fixed:** a primary is the flesh button, 56 tall, bold label, its geometry
   never a function of state; a commit inside a live form takes a fixed
   narrower step (`componentSizes.copyButtonWidth` × `buttonHeightCompact`,
-  as Memo and Swap do), full-width only on a terminal screen. A field is the
+  as Memo does), full-width only on a terminal screen. A field is the
   control radius with the accent focus edge and the danger error edge; error
   outranks focus. Icons come from `icons.ts` (Phosphor) on both twins, take
   a text token, never their own colour; a Powerup ships no icon assets.

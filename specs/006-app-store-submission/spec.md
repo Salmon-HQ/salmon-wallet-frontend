@@ -32,15 +32,15 @@ The team completes the declarations App Store Connect requires before a submissi
 
 ### User Story 2 - Give the reviewer what they need to test a wallet (Priority: P1)
 
-A reviewer opens the app and can complete a swap and a bridge without obtaining crypto themselves.
+A reviewer opens the app and can complete an exchange and a bridge without obtaining crypto themselves.
 
-**Why this priority**: Equal to P1 above. "The reviewer could not test it" is one of the most common rejections for this class of app, and it is entirely self-inflicted: an empty wallet cannot swap. Apple's own guidance is explicit about including demo credentials and turning the backend on.
+**Why this priority**: Equal to P1 above. "The reviewer could not test it" is one of the most common rejections for this class of app, and it is entirely self-inflicted: an empty wallet cannot exchange. Apple's own guidance is explicit about including demo credentials and turning the backend on.
 
-**Independent Test**: Hand the review notes and the test wallet to someone who has never seen the app and ask them to complete a swap.
+**Independent Test**: Hand the review notes and the test wallet to someone who has never seen the app and ask them to complete an exchange.
 
 **Acceptance Scenarios**:
 
-1. **Given** the review notes, **When** a reviewer follows them, **Then** they can restore a funded test wallet and complete both a swap and a bridge.
+1. **Given** the review notes, **When** a reviewer follows them, **Then** they can restore a funded test wallet and complete both an exchange and a bridge.
 2. **Given** the review notes, **When** a reviewer reads them, **Then** they state that the app is non-custodial, that keys never leave the device, and that there are no user accounts.
 3. **Given** guideline 2.3.1(a)'s requirement that notes describe changes specifically, **When** the notes are reviewed, **Then** they contain no generic descriptions.
 
@@ -48,9 +48,9 @@ A reviewer opens the app and can complete a swap and a bridge without obtaining 
 
 ### User Story 3 - Answer the crypto-exchange question before it is asked (Priority: P1)
 
-The team has a written answer to why a swap and a bridge are not an unlicensed exchange, and a territory list it can defend.
+The team has a written answer to why an exchange and a bridge are not an unlicensed exchange, and a territory list it can defend.
 
-**Why this priority**: This is the question that decides the outcome. Guideline 3.1.5(iii) permits facilitating cryptocurrency transactions "on an approved exchange" and only where the app holds "appropriate licensing", and defines neither term. Two documented cases of non-custodial apps — both with _less_ exchange-like surface than a Jupiter swap plus a cross-chain bridge — were rejected and asked for licensing evidence covering every territory they shipped to.
+**Why this priority**: This is the question that decides the outcome. Guideline 3.1.5(iii) permits facilitating cryptocurrency transactions "on an approved exchange" and only where the app holds "appropriate licensing", and defines neither term. Two documented cases of non-custodial apps — both with _less_ exchange-like surface than an exchange plus a cross-chain bridge — were rejected and asked for licensing evidence covering every territory they shipped to.
 
 **Independent Test**: Read the prepared answer as if you were a reviewer who has just asked "what licenses do you hold, and where".
 
@@ -76,7 +76,7 @@ The team has a written answer to why a swap and a bridge are not an unlicensed e
 
 - **FR-001**: Every App Store Connect declaration that blocks submission MUST be completed before a submission is attempted.
 - **FR-002**: The territory list MUST be a deliberate, defensible choice, not the default.
-- **FR-003**: Review notes MUST include credentials for a funded test wallet sufficient to complete a swap and a bridge.
+- **FR-003**: Review notes MUST include credentials for a funded test wallet sufficient to complete an exchange and a bridge.
 - **FR-004**: Review notes MUST state the non-custodial architecture and the absence of user accounts.
 - **FR-005**: Review notes MUST pre-empt the 3.1.5(iii) licensing question.
 - **FR-006**: The privacy policy MUST be reachable both from the listing and from inside the app. [Shared with spec 005.]
@@ -100,5 +100,5 @@ The team has a written answer to why a swap and a bridge are not an unlicensed e
 - The app is free with no in-app purchases, so the paid-apps agreement and banking details do not apply.
 - Guideline 5.1.1(v) account deletion does not apply, because the app creates no accounts. This is stated in the notes as insurance, not because the rule is thought to bite.
 - The privacy manifest requirement is already satisfied — it is enforced at upload, and builds are processing.
-- The swap referral commission is a server-side rebate rather than a payment from the user inside the app, and therefore not in-app-purchase territory. No Apple guideline addresses this directly; the reasoning is recorded here so it can be defended rather than re-derived.
+- The exchange referral commission is a server-side rebate rather than a payment from the user inside the app, and therefore not in-app-purchase territory. No Apple guideline addresses this directly; the reasoning is recorded here so it can be defended rather than re-derived.
 - Legal questions — territory licensing, MiCA scope for the bridge, US registration — are for counsel and the tech lead. This spec records that they are open, not how to answer them.

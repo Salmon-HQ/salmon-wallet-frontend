@@ -10,7 +10,7 @@
 //   - the Send CTA on home (a primary call-to-action)
 //   - the Copy address pill in the Receive sheet (the smallest salmon fill)
 //
-// Read-only: it never sends, swaps, or signs anything.
+// Read-only: it never sends or signs anything.
 import fs from 'node:fs';
 import path from 'node:path';
 import {

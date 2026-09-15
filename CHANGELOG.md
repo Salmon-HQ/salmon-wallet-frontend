@@ -10,7 +10,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A Face ID prompt you dismiss no longer costs you the enrolment, and one the system destroys (a re-enrolment, a new fingerprint) now says so and points at where to turn it back on, instead of failing silently.
 - The unlock wait no longer stutters: the wave used to be restarted from the beginning by any relayout behind it — the keyboard leaving, the Face ID sheet dismissing — so it went blank for about a second, twice, before settling.
 - Unlocking no longer plays the same arrival twice. The screen behind the lock used to appear finished for one frame and only then float in.
-- A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
+- A send or exchange that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
 
 ## extension 0.14.0 — 2026-09-10 — Solana v1 transactions
@@ -38,7 +38,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
 - Derived accounts are wallets of their own, and you choose which to import.
 - Developer mode returns: the screen follows the network you are standing on.
-- The swap surface and the Powerups browser are closed for this release.
+- The Powerups browser is closed for this release.
 
 ## extension 0.13.1 — 2026-09-03
 
@@ -53,7 +53,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - NFT images that live on hotlink-guarded IPFS gateways now load on the extension.
 - Send on Bitcoin broadcasts the signed transaction from the device to public relays (mempool.space, blockstream.info); an unknown outcome reads "Send unconfirmed", never "failed".
 - Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
-- The web wallet is retired. The StealthEX bridge and the swap surface are removed from every app pending the Powerups boundary work.
+- The web wallet is retired. The StealthEX bridge and the exchange surface are removed from every app pending the Powerups boundary work.
 - Under the hood: MUI left the codebase; the extension kit is emotion on the shared tokens; screen logic lives once in `packages/shared` for both platforms; a parity gate in CI keeps the two apps in step.
 
 ## 1.2.0 — 2026-08-12 (web)

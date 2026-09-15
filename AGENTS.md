@@ -81,7 +81,7 @@ sign-off, and give changes near them extra scrutiny:
 Never log, echo, screenshot, or commit seed phrases, private keys, or
 passwords — including in tests and E2E flows (test secrets live in
 gitignored `.env.test` files). Never perform irreversible on-chain actions
-(send, swap, burn) or credential operations (e.g. mobile keystore changes)
+(send, burn) or credential operations (e.g. mobile keystore changes)
 autonomously; confirm with the human first.
 
 ## When in doubt, ask the human

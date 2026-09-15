@@ -73,12 +73,6 @@ await step('home — Collectibles tab', async () => {
   await capture(popup, 'home', '03-collectibles');
 });
 
-await step('home — Swap tab', async () => {
-  await popup.getByTestId('tab-swap').click({ timeout: 6000 });
-  await sleep(3500);
-  await capture(popup, 'swap', '01-swap-tab');
-});
-
 let resetCount = 0;
 async function gotoHomeTab() {
   resetCount++;
@@ -154,7 +148,7 @@ await step('NFT detail (first NFT)', async () => {
   for (const h of allHandles) {
     const txt = await h.innerText().catch(() => '');
     // NFT card text usually has the NFT name (not "Home"/"Send"/etc)
-    if (txt && !/Home|Collectibles|Swap|Send|Receive|Activity/i.test(txt)) {
+    if (txt && !/Home|Collectibles|Send|Receive|Activity/i.test(txt)) {
       await h.click().catch(() => {});
       await sleep(2500);
       // verify we navigated to detail

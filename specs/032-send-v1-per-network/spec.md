@@ -62,7 +62,6 @@ On activation day, whoever ships the flip changes exactly one value in one place
 - **Devnet RPC that lags activation** (a private node on an older release): the send fails with the existing `transaction.errors.unsupportedVersion` message from PR #118. No new copy.
 - **Fee estimate for v1**: `getFeeForMessage` receives a v1 message. The live suite proves the public devnet RPC answers; if a provider does not, the estimate falls back to `null` as it does for any estimation failure today, and the send still goes.
 - **Activity / history**: the backend's parser (Triton/Helius) must read v1 for the send to show in Activity. That is a backend concern, verified by the owner on devnet after this ships; the wallet does not wait for it.
-- **Swap** is out of scope: Jupiter builds that transaction. **dApp transactions** are out of scope: already v1-capable (DEV-42). `supportedTransactionVersions` is DEV-46.
 
 ## Requirements _(mandatory)_
 

@@ -101,7 +101,7 @@ async function testDappSignMessage() {
   // Create a minimal dApp page on a benign domain that exercises wallet-standard
   const dapp = await ctx.newPage();
   errors.push(...tapConsole(dapp, 'dapp'));
-  await dapp.goto('https://raydium.io/swap/');
+  await dapp.goto('https://raydium.io/');
   await sleep(8000);
   await capture(dapp, 'dapp-sign', '01-dapp');
 

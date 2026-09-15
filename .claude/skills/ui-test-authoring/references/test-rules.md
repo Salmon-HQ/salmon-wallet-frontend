@@ -54,7 +54,7 @@ For components like `ConfirmDialog` or `WalletHeader`:
 - Render-only: `StepIndicator`
 - Callback/a11y: `WalletHeader`
 - Conditional rendering and async interaction: `ConfirmDialog`
-- Complex flows that deserve selective coverage: `SendPage`, `SwapScreen`
+- Complex flows that deserve selective coverage: `SendPage`, `ActivityPage`
 
 ## Smells
 

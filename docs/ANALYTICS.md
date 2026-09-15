@@ -71,21 +71,19 @@ Events are wired **in the shared hook when one exists**, so a single call covers
 
 ### Activation (once per install)
 
-These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first swap _before_ opting in is still counted on their first swap _after_ opting in.
+These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first send _before_ opting in is still counted on their first send _after_ opting in.
 
 | Event                  | Props | Fires on            | Wired in                                          |
 | ---------------------- | ----- | ------------------- | ------------------------------------------------- |
 | `first_send_completed` | —     | 1st successful send | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `first_swap_completed` | —     | 1st successful swap | `useSwap.ts`                                      |
 
 ### Recurring use
 
-| Event            | Props                               | Fires on                                                   | Wired in                                                                   |
-| ---------------- | ----------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                  | `packages/shared/src/hooks/useSendTransaction.ts`                          |
-| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome (Solana↔Solana), fires once the swap confirms | `packages/shared/src/powerups/swap/useSwapScreenLogic.ts`                  |
-| `nft_viewed`     | `chain`                             | Open NFT detail                                            | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
-| `nft_sent`       | `chain`                             | Successful NFT transfer                                    | `packages/shared/src/hooks/useNftTransfer.ts`                              |
+| Event            | Props              | Fires on                                  | Wired in                                                                   |
+| ---------------- | ------------------ | ----------------------------------------- | -------------------------------------------------------------------------- |
+| `send_completed` | `chain`, `success` | Transfer outcome (success **or** failure) | `packages/shared/src/hooks/useSendTransaction.ts`                          |
+| `nft_viewed`     | `chain`            | Open NFT detail                           | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
+| `nft_sent`       | `chain`            | Successful NFT transfer                   | `packages/shared/src/hooks/useNftTransfer.ts`                              |
 
 ### Feature adoption
 
@@ -101,21 +99,19 @@ What we will compute with each one.
 
 ### Activation and time-to-value
 
-| Metric                    | How it is computed                                                            |
-| ------------------------- | ----------------------------------------------------------------------------- |
-| Send activation rate      | `installs with first_send_completed / consented installs`                     |
-| Swap activation rate      | `installs with first_swap_completed / consented installs`                     |
-| Time-to-first-send / swap | `ts` of the `first_*` − `ts` of that `install_id`'s first event               |
-| Activation order          | Which `first_*` happens first per `install_id` (do they swap before sending?) |
+| Metric               | How it is computed                                              |
+| -------------------- | --------------------------------------------------------------- |
+| Send activation rate | `installs with first_send_completed / consented installs`       |
+| Time-to-first-send   | `ts` of the `first_*` − `ts` of that `install_id`'s first event |
+| Activation order     | Which `first_*` happens first per `install_id`                  |
 
 ### Recurring use and engagement
 
 | Metric                | How it is computed                                                      |
 | --------------------- | ----------------------------------------------------------------------- |
-| Send / swap volume    | `count(send_completed)`, `count(swap_completed)` by `dt`                |
+| Send volume           | `count(send_completed)` by `dt`                                         |
 | Chain mix             | `count(send_completed) group by chain` — which chains actually get used |
 | Sends per active user | `count(send_completed) / count(distinct install_id)`                    |
-| Send vs swap ratio    | Which operation type dominates                                          |
 | NFT usage             | `nft_viewed` → `nft_sent` (NFT view-to-send), by `chain`                |
 
 ### Retention
@@ -159,13 +155,13 @@ This is correct by design (real opt-in: you cannot measure someone who has not y
 
 ### 2. Outcome rate yes, attempt funnel no
 
-`send_completed` and `swap_completed` now fire on **both** paths — `success: true` on completion and `success: false` on failure (send/swap error path). So a completion-vs-failure rate **is** computable.
+`send_completed` now fires on **both** paths — `success: true` on completion and `success: false` on failure (send error path). So a completion-vs-failure rate **is** computable.
 
 What is still missing is an _attempt_ event: a user who abandons before submitting the operation is never counted. So `success` gives you the outcome rate among **submitted** operations, not a full funnel conversion rate. Add attempt events to the catalog if you need the latter.
 
 ### 3. `amount_bucket` is defined but not emitted
 
-The prop exists in the allow-list and the `toAmountBucket()` helper is already in `events.ts`, but **no event sends it today**. You cannot segment send/swap by operation size until it is passed in `useSendTransaction` / `useSwap`.
+The prop exists in the allow-list and the `toAmountBucket()` helper is already in `events.ts`, but **no event sends it today**. You cannot segment sends by operation size until it is passed in `useSendTransaction`.
 
 ### 4. No identity, no value
 
@@ -177,13 +173,13 @@ By design there is no way to: attribute to a real user, cohort by wallet, measur
 
 ```json
 {"event":"send_completed","props":{"chain":"solana","success":true}}
-{"event":"swap_completed","props":{"from_chain":"solana","to_chain":"solana","success":true}}
+{"event":"send_completed","props":{"chain":"solana","success":true}}
 {"event":"network_switched","props":{"chain":"bitcoin"}}
 {"event":"nft_sent","props":{"chain":"solana"}}
 {"event":"nft_viewed","props":{"chain":"solana"}}
 ```
 
-This includes real on-chain transactions (send, swap, and NFT transfer).
+This includes real on-chain transactions (send and NFT transfer).
 
 > Verifying `nft_sent` uncovered a real bug: the wallet sent a plain SPL transfer, which **always** fails on a programmable NFT (pNFT) with `Account is frozen` (error 0x11) — pNFTs keep their token account frozen on purpose. It was fixed by building the transaction on the backend with Metaplex `transferV1`. The event was not being emitted because the transfer genuinely failed: the instrumentation was correct, it did not invent successes.
 
@@ -194,8 +190,6 @@ Platforms:
 - **Extension** and **Web**: verified end-to-end against the local ingest, with Playwright. All 11 land in the NDJSON with a single `install_id` per run — 6 non-on-chain (`analytics-coverage.spec.ts`) and 5 with real mainnet transactions (`analytics-coverage-onchain.spec.ts`, gated by `SALMON_E2E_ONCHAIN=1`).
 - **iOS**: verified via Maestro (`apps/mobile/.maestro/`) against the previous catalog; the 4 removed events simply stop firing. Not re-run after the trim.
 - **Android**: shares the JS bundle; not re-verified this round.
-
-> The web on-chain spec does **one** swap leg, not a round-trip: `swap_completed` and `first_swap_completed` both fire on the first leg, and the return leg only added fragility (the form balance does not refresh within the session after a swap, and the just-bought token takes time to index). It is a **manual** spec: before running it, look at the holdings and size the leg to the $1 minimum (the same criterion the extension spec already documents).
 
 Events fire from the committed flows in `apps/mobile/.maestro/`. Since consent is _declined_ by default in `subflows/onboard-walletA.yaml`, for the suite to emit events you must opt in: use `subflows/enable-analytics.yaml` (Settings toggle) or, for a verification run, temporarily change that `tapOn` to `analytics-consent-accept`.
 

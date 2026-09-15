@@ -44,7 +44,6 @@ Nine sites, all reading `signer` or `seed` off a `SolanaAccount`:
 | #   | Site                                                                                      | Reached by                                                              |
 | --- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | 1   | `blockchain/solana/transfer.ts:359` `signTransactionMessageWithSigners`, broadcast `:371` | Send (3 apps), **Bridge deposit**                                       |
-| 2   | `blockchain/solana/swap.ts:244` `partiallySignTransaction([signer.keyPair, …])`           | Swap                                                                    |
 | 3   | `blockchain/solana/prepared-transactions.ts:172`, broadcast `:177-182`                    | NFT send, NFT burn                                                      |
 | 4   | `utils/dapp-approval.ts:87` `signApprovedMessage`                                         | dApp `signTransaction`, `signAllTransactions`, `signAndSendTransaction` |
 | 5   | `utils/dapp-approval.ts:485` + broadcast `:486`, `:493`                                   | dApp `signAndSendTransaction`                                           |
@@ -55,9 +54,9 @@ Nine sites, all reading `signer` or `seed` off a `SolanaAccount`:
 
 Instance wrappers on top: `SolanaAccount.transfer()` (`:462`, passes `this.signer` at `:470`) and `SolanaAccount.estimateTransferFee()` (`:488`, `:496` — builds a real message, so it throws on a signer-less account even though it broadcasts nothing).
 
-Caller layer: `useSendTransaction.ts:190` (`account.transfer`), `useSwap.ts:221-226` (`account.signer`), `useNftTransfer.ts:91`, `useNftBurn.ts:68`, `utils/account.ts:365` (`retrieveSecurePrivateKey`).
+Caller layer: `useSendTransaction.ts:190` (`account.transfer`), `useNftTransfer.ts:91`, `useNftBurn.ts:68`, `utils/account.ts:365` (`retrieveSecurePrivateKey`).
 
-**Bridge has no signing path of its own.** `useBridge.ts:163` only creates the StealthEX exchange; the deposit is an ordinary transfer — `apps/mobile/app/(app)/(tabs)/swap.tsx:356`, `apps/web/src/pages/home/SwapTab.tsx:299`, `apps/extension/src/pages/swap/SwapPage.tsx:322`. Blocking `transfer` blocks bridge for free.
+**Bridge has no signing path of its own.** `useBridge.ts:163` only creates the StealthEX exchange; the deposit is an ordinary transfer — the legacy exchange screens. Blocking `transfer` blocks bridge for free.
 
 ### Two things the ticket asks for that do not exist to be disabled
 
@@ -141,7 +140,6 @@ Derived from the audit; each line is verifiable at the cited site.
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Send (quick action)              | `packages/ui/src/components/ActionButtonRow/ActionButtonRow.tsx:169` — **a `sendDisabled` prop already exists at `:140` and is unused**; mobile `apps/mobile/src/components/ActionButtonRow/ActionButtonRow.tsx:89`, prop `:61`. Feed it from `apps/web/src/pages/home/HomePage.tsx:969`, `apps/extension/src/pages/home/HomePage.tsx:1436`, `apps/mobile/app/(app)/(tabs)/index.tsx:751` |
 | Send (flows)                     | `apps/web/src/router.tsx:165`, `SendRoute.tsx:107`; `apps/extension/.../HomePage.tsx:1333`; `packages/ui/.../SendPage/StepConfirmation.tsx:257`; mobile `index.tsx:1011`, `SendSheet/StepAddressAmount.tsx:437`, `StepConfirmation.tsx:178`                                                                                                                                               |
-| Swap + Bridge (one tab)          | tabs `apps/web/.../HomePage.tsx:942`, `apps/extension/.../HomePage.tsx:1406`, mobile `_layout.tsx:905` (`href: null` precedent already used at `:908`); screens `SwapTab.tsx:316,323`, `SwapPage.tsx:352,359`, `swap.tsx:161,319,369`; controls `SwapTabSelector.tsx:35,57`, `SwapInputScreen.tsx:156`, `SwapReviewButtons.tsx:51`, `BridgeReviewScreen.tsx:125`                          |
 | NFT send / burn                  | `packages/ui/.../NftDetailPage.tsx:589,623,564`; wired `NftDetailRoute.tsx:193`, `apps/extension/.../HomePage.tsx:1277,1290`; mobile `NftDetailSheet.tsx:535,570,655,745,870`                                                                                                                                                                                                             |
 | dApp approve (web+ext)           | `DAppConnectApprovalView.tsx:113`, `DAppTransactionApprovalView.tsx:189,199`, `DAppSignMessageApprovalView.tsx:193`, `DAppSignInApprovalView.tsx:314` (has a `canApprove` lever), `HoldToApproveButton.tsx:127`; routes `apps/web/src/router.tsx:95,102,109,116`, `apps/extension/.../popup/App.tsx:523,532,544,562`                                                                      |
 | Export private key / show phrase | menus `SettingsPanelStack.tsx:105,106` (dispatch `:357-361`), mobile `SettingsSheet.tsx:109,110` (`:208-211`); rows `AccountEditPanel.tsx:118,124,177` and mobile `:67,73,88-90`. Precedent for the empty state: `BackupPanel.tsx:109` (`backup-no-seed-phrase`)                                                                                                                          |
@@ -155,7 +153,7 @@ Read paths need no change: `useAccountsSelection.ts:54,106,142`, `usePrefetchBal
 
 ### Will break unless narrowed
 
-`utils/account.ts:365` (`getAccountKeysForNetwork` → `retrieveSecurePrivateKey` on every non-null entry, consumed by both `PrivateKeyPanel` twins); `utils/account.ts:309-344`; `useSwap.ts:223`; `useSendTransaction.ts:190`; `useNftTransfer.ts:91-93`; `useNftBurn.ts:68`; `utils/legacy-migration.ts:260`; `useAccountsMutations.ts:143-153` (`editAccount` merging derived accounts — a watcher has nothing to derive).
+`utils/account.ts:365` (`getAccountKeysForNetwork` → `retrieveSecurePrivateKey` on every non-null entry, consumed by both `PrivateKeyPanel` twins); `utils/account.ts:309-344`; `useSendTransaction.ts:190`; `useNftTransfer.ts:91-93`; `useNftBurn.ts:68`; `utils/legacy-migration.ts:260`; `useAccountsMutations.ts:143-153` (`editAccount` merging derived accounts — a watcher has nothing to derive).
 
 ## 5. Tests
 
@@ -169,7 +167,7 @@ Per AGENTS.md: functional coverage in the owning package first, E2E last.
 - Public-key validation rejects: non-base58, wrong length, off-curve, an address already held, and never echoes the input — mirroring `private-key.test.ts:124`.
 - `removeAccount` deletes a watcher and leaves the remaining vault decryptable.
 
-**`packages/ui` / `apps/mobile`:** the badge renders for a watcher and not for others; Send/Swap/NFT actions render disabled; the add-panel step validates and shows the resolved address.
+**`packages/ui` / `apps/mobile`:** the badge renders for a watcher and not for others; Send/NFT actions render disabled; the add-panel step validates and shows the resolved address.
 
 **E2E:** one flow per suite at most, and only after the unit layer is green. `apps/extension/.playwright/` is the interesting one — a watcher connected to a dApp must have `signTransaction` refused.
 
@@ -190,7 +188,7 @@ Follows the DEV-7 diff exactly, which is the precedent to copy — those commits
 | `packages/shared`             | `types/account.ts`, `types/blockchain.ts`, `types/ui/account-add.ts`, `blockchain/solana/{WatchOnlySolanaAccount.ts,factory.ts}`, `factories/account-factory.ts`, `utils/{account.ts,account-secret.ts}`, `hooks/{useAccounts.ts,useAccountsMutations.ts,useAccountsLoader.ts}`, a new `hooks/useImportWatcher.ts`, `crypto/public-key.ts`, both locales |
 | `packages/ui`                 | `AccountAddPanel`, `AccountsPanel`, `WalletSwitcherSheet`, `WalletHeader`, `ActionButtonRow`, `NftDetailPage`, the four `DAppApproval` views                                                                                                                                                                                                             |
 | `apps/mobile`                 | the hand-mirrored twins of each of the above — there is no shared render between DOM and RN                                                                                                                                                                                                                                                              |
-| `apps/web` / `apps/extension` | wiring only: pass the new disabled state into `ActionButtonRow`, hide the swap tab                                                                                                                                                                                                                                                                       |
+| `apps/web` / `apps/extension` | wiring only: pass the new disabled state into `ActionButtonRow`                                                                                                                                                                                                                                                                                          |
 
 Verification: `pnpm turbo run typecheck lint test --filter=@salmon/shared` then `@salmon/ui`, `@salmon/mobile`, `@salmon/web`, `@salmon/extension`.
 

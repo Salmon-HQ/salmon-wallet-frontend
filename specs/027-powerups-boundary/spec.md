@@ -1,7 +1,7 @@
 # Feature Specification: The Powerups boundary — a Powerup never signs
 
 **Feature Branch**: to be created from `main` after the iOS submission (not `feat/redesign-mobile-home`) · spec dir `027-powerups-boundary`
-**Created**: 2026-09-02 · **Status**: Draft for owner sign-off. **Not to be implemented from this session**: the owner schedules it on its own branch, first job after the iOS ship and before Swap returns, so Swap v2 is written inside the new structure instead of migrated twice.
+**Created**: 2026-09-02 · **Status**: Draft for owner sign-off. **Not to be implemented from this session**: the owner schedules it on its own branch, first job after the iOS ship, so the first transaction-building Powerup is written inside the new structure instead of migrated.
 
 Source of intent: SOT "Powerups — Contribution Model" and the 2026-09-02 Apple / legal research. Backend counterpart: the salmon-wallet-backend session mirrors the contract below (allowlist shape, error codes, provider field) before either side implements.
 
@@ -20,7 +20,7 @@ core/
   confirmation/    the confirmation screen contract: counterparty, fee lines, typed data the Powerup fed it
 powerups/
   registry.ts      one entry per Powerup per platform: id, title key, icon, routes (mobile / extension / web), `sections` it requires, activation rules
-  swap/            screens, quote hooks, types, locales — moved AS-IS from today's SwapScreen/useSwapScreenLogic, marked "to be rewritten against the v2 contract"
+  <powerup>/       screens, hooks, types, locales — one folder per Powerup
   <next>/
 ```
 
@@ -36,9 +36,9 @@ Placement rules stay AGENTS.md's: cross-platform logic in shared, DOM in `packag
 
 ## 3. Compile-time exclusion
 
-- Build flag `EXPO_PUBLIC_POWERUPS` (`'on' | 'off'`, default `'off'` for the `production` EAS profile, `'on'` for dev/preview): when off, `powerups/**` is excluded from the bundle — a Metro/Babel alias to an empty registry, not a runtime `if` — so the submission `.ipa` carries **no swap / Jupiter strings, routes or locales**. The current runtime flag (`POWERUPS_SURFACE_ENABLED`, spec: submission build) stays for dev toggling and is removed once the build flag exists.
+- Build flag `EXPO_PUBLIC_POWERUPS` (`'on' | 'off'`, default `'off'` for the `production` EAS profile, `'on'` for dev/preview): when off, `powerups/**` is excluded from the bundle — a Metro/Babel alias to an empty registry, not a runtime `if` — so the submission `.ipa` carries **no Powerup strings, routes or locales**. The current runtime flag (`POWERUPS_SURFACE_ENABLED`, spec: submission build) stays for dev toggling and is removed once the build flag exists.
 - The extension and web builds honour the same flag through their bundlers (WXT / Vite `define`).
-- Verification: a script greps the built bundle for `jupiter` / `swap` and fails when the flag is off.
+- Verification: a script greps the built bundle for Powerup markers and fails when the flag is off.
 
 ## 4. Kill switch and region gating (backend-driven, fail-closed)
 
@@ -57,15 +57,7 @@ App Store Connect per-country availability is kept in sync with the allowlist by
 
 The backend screens the wallet address against sanctions lists before quoting (Jupiter license §7.3). The client handles `403 wallet_restricted` as a state distinct from the region one (its own copy, no retry loop). No KYC, no identity collection, nothing stored client-side about the result beyond the current session's state.
 
-## 6. Swap: moved now, rewritten later
-
-> **Implemented 2026-09-10 on `feat/swap-0x`** (§1–3 and the Swap v2 rewrite, see `plan.md`). The provider became **0x**, not Jupiter: the backend serves `GET /v1/solana-mainnet/ft/swap/build` (mainnet only, unsigned v0 transaction, blockhash + priority fee set server-side, `salmonFee` with its `side`, `routeFee` always `null` on 0x); the client signs through §2, broadcasts through `core/broadcast`, rebuilds on `expiresAt`. The attribution and the API in use are rendered from the response (§7). The text below is the pre-implementation plan, kept for the record.
-
-- `powerups/swap/` receives today's swap module unchanged in logic, behind the boundary, marked `@deprecated — rewrite against the v2 contract`.
-- The backend is deleting `GET /v1/solana-{env}/ft/swap/order` and `POST …/ft/swap/execute` (Jupiter Ultra deprecated; `/execute` was the last place the backend accepted signed bytes). Swap v2 will be a new endpoint backed by Jupiter `GET /swap/v2/build`: the backend sets `platformFeeBps` + `feeAccount` server-side and returns an **unsigned** transaction (or instructions); the client signs through §2, broadcasts through `core/broadcast`, and confirms the signature itself. No execute step; the shape differs from today's `order` / `requestId`. That rewrite is its own later spec.
-- Jupiter license requirements the screen must meet when it returns: "Powered by Jupiter" and the API in use named on the swap screen; the Salmon fee shown as a separate line, never folded into the quote.
-
-## 7. Multi-provider
+## 6. Multi-provider
 
 The backend chooses the routing provider per request (Jupiter by default; 0x or DFlow are candidates for the US later, pending 0x's source list / pricing and a legal opinion). The client treats the provider as **data returned with the quote**: `provider: 'jupiter' | '0x' | 'dflow'` plus `providerDisplayName` and `attribution` strings, and renders attribution from them. No provider-specific UI branches, no provider API keys or calls from the device.
 
@@ -77,8 +69,8 @@ The backend chooses the routing provider per request (Jupiter by default; 0x or 
 
 ## Out of scope
 
-Marketplace / third-party runtime (SOT Model C stays closed); CLA / CODEOWNERS / governance (separate); the Swap v2 rewrite itself; Stake / Ramp Powerups (build hold stands).
+Marketplace / third-party runtime (SOT Model C stays closed); CLA / CODEOWNERS / governance (separate); Stake / Ramp Powerups (build hold stands).
 
 ## Verification (when implemented)
 
-Lint fixture fails; bundle grep clean with the flag off; kill-switch and region/wallet 403 states covered by shared tests; mobile and extension navigation render from the registry; existing swap tests pass unchanged after the move.
+Lint fixture fails; bundle grep clean with the flag off; kill-switch and region/wallet 403 states covered by shared tests; mobile and extension navigation render from the registry; existing Powerup tests pass unchanged after the move.

@@ -50,4 +50,4 @@ Owner rulings (2026-09-01): the product ships two modes, deep-water first; the l
 
 ## Out of scope
 
-packages/ui, web and extension (they keep the static dark `semantic`); swap/bridge; the underwater material's light re-tune beyond the flat-ground first landing.
+packages/ui, web and extension (they keep the static dark `semantic`); the legacy exchange/bridge screens; the underwater material's light re-tune beyond the flat-ground first landing.
