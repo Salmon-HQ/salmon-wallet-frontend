@@ -23,7 +23,7 @@
  * The task-chrome claim is deliberately gone (spec 018 FR-007). The sheet held
  * it so the home would sink out from under a flow that was about to cover it
  * with an opaque window; a pushed screen already covers Home completely, and
- * there is nothing behind it to disassemble. Swap keeps its own claim — the
+ * there is nothing behind it to disassemble. A Powerup's review keeps its own claim — the
  * context counts claims per publisher, so dropping this one changes nothing
  * for it.
  */

@@ -4,10 +4,10 @@
  * Home is the same screen on mobile (`apps/mobile/app/(app)/(tabs)/index.tsx`)
  * and on the side panel (`apps/extension/src/pages/home/HomePage.tsx`): the
  * balance block paging through the wallet's networks, the Portfolio | NFTs
- * row in the user's order, a content region that swaps with the sink/float
+ * row in the user's order, a content region that changes with the sink/float
  * verb. This hook holds what is not platform-bound in that — the page index,
  * the balances per page, which network the screen stands on, which sub-tabs
- * are offered there, and WHICH wrapper owns the current swap so the verb
+ * are offered there, and WHICH wrapper owns the current change so the verb
  * never nests (DESIGN.md §The balance block's motion, rule five). Each
  * platform keeps its own rendering, its own fade reset, haptics and routing.
  *
@@ -29,8 +29,8 @@ import type { PowerupId } from '../powerups/registry';
 
 /**
  * The in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered` — and
- * `swap` only once the Swap Powerup is installed on this device and the
- * screen stands on a network it acts on (`powerupTabs`).
+ * a Powerup's only once it is installed on this device and the screen
+ * stands on a network it acts on (`powerupTabs`).
  */
 export type HomeSubTabKey = HomeCoreTabKey | PowerupId;
 
@@ -62,8 +62,8 @@ export interface HomePowerupTab {
   networks: readonly string[];
 }
 
-/** What can swap Home's content, and therefore which wrapper plays the verb. */
-export type HomeSwapCause = 'none' | 'chain' | 'subtab' | 'task';
+/** What can change Home's content, and therefore which wrapper plays the verb. */
+export type HomeChangeCause = 'none' | 'chain' | 'subtab' | 'task';
 
 export interface UseHomeShellParams {
   /** The networks the balance block offers, in page order. */
@@ -123,8 +123,8 @@ export interface UseHomeShellResult {
   subTabsKey: string;
   /** False on first mount and after a surfacing; true when the tab set changed. */
   tabsHasPrior: boolean;
-  /** Who owns the current swap; exactly one wrapper animates. */
-  swapCause: HomeSwapCause;
+  /** Who owns the current change; exactly one wrapper animates. */
+  changeCause: HomeChangeCause;
   taskHasPrior: boolean;
   subTabHasPrior: boolean;
   chainHasPrior: boolean;
@@ -276,31 +276,31 @@ export function useHomeShell({
   // same set, so the underline keeps sliding. First mount owes no verb, and a
   // surfacing silences the row like it silences the content wrappers.
   // Render-time setState: refs cannot be read during render.
-  const [tabsSwap, setTabsSwap] = useState({
+  const [tabsChange, setTabsChange] = useState({
     key: subTabsKey,
     surface: surfaceKey,
     hasPrior: false,
   });
-  if (tabsSwap.surface !== surfaceKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
-  } else if (tabsSwap.key !== subTabsKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
+  if (tabsChange.surface !== surfaceKey) {
+    setTabsChange({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
+  } else if (tabsChange.key !== subTabsKey) {
+    setTabsChange({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
   }
 
-  // Three causes can swap the content and they must never speak at once: a
+  // Three causes can change the content and they must never speak at once: a
   // task taking or releasing the screen owns the screen wrapper, a sub-tab
   // change owns the content region, a chain change owns the chain wrapper
-  // inside it. The cause of the current swap is recorded and only the wrapper
-  // that owns it animates. A SURFACING is not a swap: Home is never unmounted
+  // inside it. The cause of the current change is recorded and only the wrapper
+  // that owns it animates. A SURFACING is not a change: Home is never unmounted
   // while the wait is up, so the last gesture is still recorded when the
   // water clears — the surfacing wins, the cause goes back to 'none', and only
   // the screen wrapper speaks, with no beat.
-  const [contentSwap, setContentSwap] = useState<{
+  const [contentChange, setContentChange] = useState<{
     chain: string;
     subTab: HomeSubTabKey;
     engaged: boolean;
     surface: number;
-    cause: HomeSwapCause;
+    cause: HomeChangeCause;
   }>({
     chain: currentNetworkId,
     subTab: effectiveSubTab,
@@ -308,8 +308,8 @@ export function useHomeShell({
     surface: surfaceKey,
     cause: 'none',
   });
-  if (contentSwap.surface !== surfaceKey) {
-    setContentSwap({
+  if (contentChange.surface !== surfaceKey) {
+    setContentChange({
       chain: currentNetworkId,
       subTab: effectiveSubTab,
       engaged: isTaskEngaged,
@@ -317,11 +317,11 @@ export function useHomeShell({
       cause: 'none',
     });
   } else if (
-    contentSwap.chain !== currentNetworkId ||
-    contentSwap.subTab !== effectiveSubTab ||
-    contentSwap.engaged !== isTaskEngaged
+    contentChange.chain !== currentNetworkId ||
+    contentChange.subTab !== effectiveSubTab ||
+    contentChange.engaged !== isTaskEngaged
   ) {
-    setContentSwap({
+    setContentChange({
       chain: currentNetworkId,
       subTab: effectiveSubTab,
       engaged: isTaskEngaged,
@@ -329,9 +329,9 @@ export function useHomeShell({
       // Leaving Solana can change the chain AND drop NFTs in the same render.
       // The sub-tab wins: the content region is the one wrapper that speaks.
       cause:
-        contentSwap.engaged !== isTaskEngaged
+        contentChange.engaged !== isTaskEngaged
           ? 'task'
-          : contentSwap.subTab !== effectiveSubTab
+          : contentChange.subTab !== effectiveSubTab
             ? 'subtab'
             : 'chain',
     });
@@ -365,11 +365,11 @@ export function useHomeShell({
     setSubTabOrder,
     subTabs,
     subTabsKey,
-    tabsHasPrior: tabsSwap.hasPrior,
-    swapCause: contentSwap.cause,
-    taskHasPrior: contentSwap.cause === 'task',
-    subTabHasPrior: contentSwap.cause === 'subtab',
-    chainHasPrior: contentSwap.cause === 'chain',
+    tabsHasPrior: tabsChange.hasPrior,
+    changeCause: contentChange.cause,
+    taskHasPrior: contentChange.cause === 'task',
+    subTabHasPrior: contentChange.cause === 'subtab',
+    chainHasPrior: contentChange.cause === 'chain',
     selectBlockchain,
   };
 }

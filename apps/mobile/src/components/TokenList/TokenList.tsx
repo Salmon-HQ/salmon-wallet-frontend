@@ -77,7 +77,7 @@ const TokenList: React.FC<TokenListProps> = ({
   // The pull's own state — see the refresh control below for why it is not the
   // caller's. Declared before any conditional return to comply with the Rules
   // of Hooks. `mounted` guards the late resolution of a refresh whose list has
-  // already gone (a chain switch swaps this component out mid-request).
+  // already gone (a chain switch changes this component out mid-request).
   const [pulling, setPulling] = React.useState(false);
   const mounted = React.useRef(true);
   React.useEffect(() => {

@@ -1,7 +1,7 @@
 /**
  * The developer-mode card's row data: the raw shape of the transaction as
- * the indexer reported it — Helius type, account count, programs, inner
- * swaps, fees — turned into plain sections and rows.
+ * the indexer reported it — Helius type, account count, programs, fees —
+ * turned into plain sections and rows.
  *
  * Shared because both `TransactionDetailDeveloper` twins (mobile and DOM)
  * draw the exact same groups from the exact same transaction fields; only
@@ -74,40 +74,6 @@ export function buildTransactionDeveloperSections(
             : '',
         valueTone: 'secondary',
       })),
-    });
-  }
-
-  if (transaction.innerSwaps && transaction.innerSwaps.length > 0) {
-    sections.push({
-      key: 'innerSwaps',
-      title: t('transactions.detail.innerSwaps', 'Inner Swaps'),
-      rows: transaction.innerSwaps.map((swap, index) => ({
-        key: `inner-${index}`,
-        label: swap.programInfo.source,
-        value: `${swap.programInfo.programName} / ${swap.programInfo.instructionName}`,
-        valueTone: 'secondary',
-      })),
-    });
-  }
-
-  if (transaction.swapFees) {
-    sections.push({
-      key: 'swapFees',
-      title: t('transactions.detail.swapFees', 'Swap Fees'),
-      rows: [
-        ...transaction.swapFees.nativeFees.map((fee, index) => ({
-          key: `nfee-${index}`,
-          label: getShortAddress(fee.account, 6) ?? '',
-          value: `${fee.amount} SOL`,
-          valueTone: 'secondary' as const,
-        })),
-        ...transaction.swapFees.tokenFees.map((fee, index) => ({
-          key: `tfee-${index}`,
-          label: getShortAddress(fee.account, 6) ?? '',
-          value: `${fee.amount} (${getShortAddress(fee.mint, 4) ?? ''})`,
-          valueTone: 'secondary' as const,
-        })),
-      ],
     });
   }
 

@@ -22,10 +22,8 @@ export const ANALYTICS_EVENTS = [
   'wallet_recovered',
   // Activation
   'first_send_completed',
-  'first_swap_completed',
   // Recurring use
   'send_completed',
-  'swap_completed',
   'nft_viewed',
   'nft_sent',
   // Feature adoption

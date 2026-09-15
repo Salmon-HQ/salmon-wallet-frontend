@@ -7,7 +7,6 @@
  */
 import type { PowerupEntry } from './manifest';
 import { memoManifest } from './memo/manifest';
-import { swapManifest } from './swap/manifest';
 
 export type { PowerupEntry, PowerupManifest, PowerupPermission, PowerupTier } from './manifest';
 
@@ -16,7 +15,7 @@ export type { PowerupEntry, PowerupManifest, PowerupPermission, PowerupTier } fr
  * tier in this order, and `POWERUP_TAB_KEYS` gives Home its default sub-tab
  * arrangement from it, so the two can never disagree.
  */
-const MANIFESTS = [swapManifest, memoManifest] as const;
+const MANIFESTS = [memoManifest] as const;
 
 export const POWERUPS: readonly PowerupEntry[] = MANIFESTS;
 

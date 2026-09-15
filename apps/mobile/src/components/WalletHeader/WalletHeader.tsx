@@ -103,13 +103,13 @@ export function WalletHeader({
 
   // Chrome-scale sink and float for the account text: when the active chain
   // switches, the address half of the line changes, so the text is keyed on
-  // `address` and speaks the same verb as home's chain swap — half the
+  // `address` and speaks the same verb as home's chain change — half the
   // travel, shorter clock, because this is chrome, not content. On first
   // mount nothing sinks, so the float takes no delay (same render-time
-  // pattern as home's `chainSwap`).
-  const [addressSwap, setAddressSwap] = useState({ address, hasPrior: false });
-  if (addressSwap.address !== address) {
-    setAddressSwap({ address, hasPrior: true });
+  // pattern as home's `chainChange`).
+  const [addressChange, setAddressChange] = useState({ address, hasPrior: false });
+  if (addressChange.address !== address) {
+    setAddressChange({ address, hasPrior: true });
   }
 
   const handleCopyPress = useCallback(() => {
@@ -188,7 +188,7 @@ export function WalletHeader({
                   distance: SINK_FLOAT_TRAVEL / 2,
                   scale: CHROME_SCALE,
                   durationMs: motionMs.drift,
-                  delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+                  delayMs: addressChange.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
                 })}
                 exiting={sinkExiting(isReduceMotionEnabled, {
                   distance: SINK_FLOAT_TRAVEL / 2,
@@ -252,7 +252,7 @@ export function WalletHeader({
               >
                 {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-                {/* UNRESOLVED: this swap does not paint on device.
+                {/* UNRESOLVED: this change does not paint on device.
                 Instrumented on the real mount path: the handler fires,
                 `copied` flips true and reverts 1519ms later, matching
                 `motionMs.feedbackHold` almost exactly — so the state and the

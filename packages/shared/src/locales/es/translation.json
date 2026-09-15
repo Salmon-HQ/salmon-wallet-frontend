@@ -68,8 +68,7 @@
     "activity": "Actividad",
     "copied": "¡Copiado!",
     "edit": "Editar",
-    "reveal": "Revelar",
-    "select": "Seleccionar"
+    "reveal": "Revelar"
   },
   "dapp": {
     "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
@@ -549,7 +548,6 @@
       "help": "Vas a ver el saldo y la actividad de esta billetera. No vas a poder mover nada de lo que tenga.",
       "resolved_address": "Billetera a seguir",
       "badge": "Solo lectura",
-      "disabled_action": "Esta es una billetera de solo lectura. Se agregó solo con una dirección, así que Salmon no tiene ninguna clave suya y no puede firmar.",
       "errors": {
         "empty": "Ingresá una dirección para continuar.",
         "format": "Eso no es una dirección de Solana. Fijate que la hayas copiado entera.",
@@ -570,7 +568,6 @@
     "detail": {
       "sent": "Enviado",
       "received": "Recibido",
-      "swapped": "Intercambiado",
       "minted": "Acuñado",
       "burned": "Quemado",
       "staked": "En Staking",
@@ -591,24 +588,17 @@
       "dateTime": "Fecha y Hora",
       "confirmation": "Confirmación",
       "block": "Bloque",
-      "conversion": "Conversión",
-      "alsoMoved": "También se movió",
-      "swapRoute": "Ruta del Swap",
       "networkFee": "Comisión de Red",
-      "swapFee": "Comisión de Swap",
       "transactionHash": "Hash de Transacción",
       "developerInfo": "Info de Desarrollador",
       "heliusType": "Tipo",
       "accountsInvolved": "Cuentas Involucradas",
       "programs": "Programas",
-      "innerSwaps": "Swaps Internos",
-      "swapFees": "Comisiones de Swap",
       "sentLabel": "Enviado",
       "receivedLabel": "Recibido",
       "rate": "Tasa",
       "feePayer": "Pagador de Comisión",
       "share": "Compartir",
-      "nMore": "+{{count}} más",
       "time": "Hora",
       "viewOnExplorer": "Ver en Explorer",
       "viewOn": "Ver en {{name}}",
@@ -622,7 +612,6 @@
     "tapToViewDetails": "Tocá para ver los detalles de la transacción",
     "share_message": "Mirá esta transacción: {{url}}",
     "description": {
-      "swap": "{{from}} a {{to}}",
       "sendTo": "A {{address}}",
       "send": "Tokens enviados",
       "receiveFrom": "De {{address}}",
@@ -689,10 +678,8 @@
   "transaction": {
     "sendFailed": "No se pudo enviar",
     "sendUnconfirmed": "Envío sin confirmar",
-    "swapComplete": "Swap Completado",
     "pendingSend": "Enviando fondos",
     "sendSummary": "{{amount}} {{symbol}} a {{recipient}}",
-    "pendingSwap": "Procesando swap",
     "errors": {
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
       "insufficientFunds": "Saldo insuficiente para esta transacción.",
@@ -719,7 +706,8 @@
       "simulationFailed": "Esta transacción fallaría en la red, así que no se envió."
     },
     "viewOnExplorer": "Ver en Explorer",
-    "continue": "Volver a la billetera"
+    "continue": "Volver a la billetera",
+    "salmonFee": "Comisión Salmon"
   },
   "qrScanner": {
     "title": "Escanear código QR",
@@ -833,12 +821,6 @@
       "failed": "El envío falló",
       "expired": "El envío venció"
     },
-    "swap": {
-      "pending": "Swap en curso",
-      "confirmed": "Swap confirmado",
-      "failed": "El swap falló",
-      "expired": "El swap venció"
-    },
     "expiredHint": "Nunca llegó a la red. No salió nada de tu billetera.",
     "dismiss": "Descartar"
   },
@@ -883,6 +865,11 @@
     "author": {
       "salmon": "Salmon",
       "community": "Colaborador de la comunidad"
+    },
+    "unavailable": {
+      "network": "Este Powerup solo está disponible en Solana mainnet.",
+      "region": "Este Powerup no está disponible en tu región.",
+      "wallet": "Este Powerup no está disponible para esta billetera."
     }
   },
   "confirmation": {

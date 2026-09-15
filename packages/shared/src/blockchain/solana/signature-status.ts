@@ -2,7 +2,7 @@
  * Cold-start-safe signature status lookup for the pending-transaction poller.
  *
  * `sendAndConfirmTransaction` / `createRecentSignatureConfirmationPromiseFactory`
- * (used on the foreground happy path in `swap.ts`) are built on
+ * (used on the foreground happy path) are built on
  * `signatureSubscribe`, which is a **one-shot** subscription: it fires a single
  * terminal notification and cannot be replayed. A socket that dies — or an app
  * that is closed, backgrounded or locked — loses the verdict with nothing left

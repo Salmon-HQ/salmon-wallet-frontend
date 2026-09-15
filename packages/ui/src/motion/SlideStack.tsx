@@ -2,8 +2,8 @@
  * SlideStack — a screen enters from the right and leaves to the right, on the
  * DOM, where there is no navigator to do it.
  *
- * Mobile's `Stack` plays `slide_from_right` for free; the side panel swaps one
- * screen for another in state. This wrapper reads that swap as navigation: a
+ * Mobile's `Stack` plays `slide_from_right` for free; the side panel changes one
+ * screen for another in state. This wrapper reads that change as navigation: a
  * change of `screenKey` with a higher `depth` is a push — the new screen slides
  * in over the old one, which holds still under it — and a lower `depth` is a
  * pop — the old screen slides out over the new one, already in place beneath.

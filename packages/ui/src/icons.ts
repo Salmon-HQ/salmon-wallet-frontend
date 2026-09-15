@@ -3,7 +3,7 @@
  *
  * One icon name, one import. Every DOM component pulls its glyphs from here
  * rather than from an icon vendor directly, so the set stays small, auditable,
- * and swappable. Mobile keeps its own module against `phosphor-react-native` —
+ * and replaceable. Mobile keeps its own module against `phosphor-react-native` —
  * same drawings, same names, a different renderer.
  *
  * Rules (DESIGN.md §Iconography):
@@ -144,7 +144,6 @@ export { SquaresFourIcon } from '@phosphor-icons/react/dist/csr/SquaresFour';
 export { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 export { StarIcon } from '@phosphor-icons/react/dist/csr/Star';
 export { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
-export { SwapIcon } from '@phosphor-icons/react/dist/csr/Swap';
 export { TagIcon } from '@phosphor-icons/react/dist/csr/Tag';
 export { TextTIcon } from '@phosphor-icons/react/dist/csr/TextT';
 export { TranslateIcon } from '@phosphor-icons/react/dist/csr/Translate';

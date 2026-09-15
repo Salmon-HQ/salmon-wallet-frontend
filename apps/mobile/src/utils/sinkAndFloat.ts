@@ -1,5 +1,5 @@
 /**
- * The sink and the float — the mobile expression of a content swap, spoken in
+ * The sink and the float — the mobile expression of a content change, spoken in
  * the water's own vertical.
  *
  * The verb: **leaving is sinking** — the outgoing content recedes to
@@ -17,7 +17,7 @@
  * Recalibrated against the water's own clock: the verb used to run on
  * generic-UI numbers (`ebb` 180 / `drift` 280, 12dp) while the water in this
  * system runs at 700–2000ms — the logo's return is 720, the wavefront's
- * crossing 2000. At that ratio the swap read as a fade with a direction, not
+ * crossing 2000. At that ratio the change read as a fade with a direction, not
  * as something leaving and entering water. The acceptance bar: *"tiene que
  * parecer que sale del agua."* So the clock, the distance and the opacity are
  * all re-derived from The Surfacing
@@ -42,7 +42,7 @@
  * the device, so distance and duration are also per-call overrides.
  *
  * Reduce motion: both helpers return `undefined`, which hands Reanimated no
- * layout animation at all — the swap is an instant cut.
+ * layout animation at all — the change is an instant cut.
  */
 import {
   CHROME_SCALE,
@@ -50,7 +50,7 @@ import {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
@@ -76,7 +76,7 @@ export {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,

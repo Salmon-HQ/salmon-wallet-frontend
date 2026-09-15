@@ -16,13 +16,13 @@
  * outgoing content was for the whole length of the float's delay. So this
  * component holds the outgoing subtree itself: on a key change it keeps
  * rendering the previous children while they sink, waits out the beat, and
- * only then swaps to the new ones and floats them in. One child is on screen
+ * only then changes to the new ones and floats them in. One child is on screen
  * at a time — no overlap, no absolute positioning, no layout jump — which
- * costs one snapshot of the outgoing nodes in state and one timer per swap,
+ * costs one snapshot of the outgoing nodes in state and one timer per change,
  * and means the new children are mounted `holdMs` late.
  *
  * Reduce motion is a parallel mapping, not a hole: no travel and no depth
- * either way, no hold, no animation — and the swap still happens, immediately.
+ * either way, no hold, no animation — and the change still happens, immediately.
  */
 import { useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -133,41 +133,41 @@ export function SinkFloat({
   // `held` is the last committed children — the subtree the DOM is about to
   // throw away — kept in state and written from an effect, never a ref read
   // during render.
-  const [swap, setSwap] = useState<{ key: string; sinking: boolean; held: ReactNode }>({
+  const [hold, setHold] = useState<{ key: string; sinking: boolean; held: ReactNode }>({
     key: transitionKey,
     sinking: false,
     held: children,
   });
 
   useEffect(() => {
-    if (swap.sinking || swap.held === children) return;
-    setSwap((current) => ({ ...current, held: children }));
-  }, [swap.sinking, swap.held, children]);
+    if (hold.sinking || hold.held === children) return;
+    setHold((current) => ({ ...current, held: children }));
+  }, [hold.sinking, hold.held, children]);
 
-  if (swap.key !== transitionKey && !swap.sinking) {
-    setSwap(
+  if (hold.key !== transitionKey && !hold.sinking) {
+    setHold(
       isReduceMotionEnabled
         ? { key: transitionKey, sinking: false, held: children }
-        : { key: swap.key, sinking: true, held: swap.held }
+        : { key: hold.key, sinking: true, held: hold.held }
     );
   }
 
   useEffect(() => {
-    if (!swap.sinking) return;
+    if (!hold.sinking) return;
     const timer = setTimeout(
-      () => setSwap((current) => ({ ...current, key: transitionKey, sinking: false })),
+      () => setHold((current) => ({ ...current, key: transitionKey, sinking: false })),
       holdMs
     );
     return () => clearTimeout(timer);
-  }, [swap.sinking, transitionKey, holdMs]);
+  }, [hold.sinking, transitionKey, holdMs]);
 
-  const phase = isReduceMotionEnabled ? 'cut' : swap.sinking ? 'sink' : 'float';
+  const phase = isReduceMotionEnabled ? 'cut' : hold.sinking ? 'sink' : 'float';
 
   return (
     <Frame
       // A fresh node per shown phase is what makes CSS play the animation
       // again — the same reason FadeThrough keys its frame.
-      key={`${swap.key}:${phase}`}
+      key={`${hold.key}:${phase}`}
       $phase={phase}
       data-testid={testID}
       className={className}
@@ -183,7 +183,7 @@ export function SinkFloat({
         } as CSSProperties
       }
     >
-      {swap.sinking ? swap.held : children}
+      {hold.sinking ? hold.held : children}
     </Frame>
   );
 }

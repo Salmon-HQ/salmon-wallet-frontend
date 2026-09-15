@@ -1,9 +1,20 @@
 /**
  * The envelope every transaction-building Powerup receives from the Salmon
- * backend (spec 029 §5.1): the same shape the swap build carries, flat, with
- * the Powerup's own typed display fields spread beside it.
+ * backend (spec 029 §5.1), flat, with the Powerup's own typed display fields
+ * spread beside it.
  */
-import type { SwapFeeLine } from '../swap/types';
+
+/** A fee the build charges, as the backend states it. */
+export interface PowerupFeeLine {
+  amount: string;
+  mint: string;
+  /**
+   * `output`: taken from the output token, `output.amount` already net of it.
+   * `input`: deducted from the input token before routing — the user's debit
+   * is `input.amount`, of which `amount` goes to Salmon.
+   */
+  side: 'input' | 'output';
+}
 
 /** Who authored the Powerup, from the registry entry Salmon maintainers keep. */
 export interface PowerupContributor {
@@ -20,8 +31,8 @@ export interface PowerupBuildEnvelope {
   transaction: string;
   /** ISO; request a fresh build after this. */
   expiresAt: string;
-  salmonFee: SwapFeeLine | null;
-  routeFee: SwapFeeLine | null;
+  salmonFee: PowerupFeeLine | null;
+  routeFee: PowerupFeeLine | null;
   contributor: PowerupContributor | null;
   priorityFeeMicroLamports?: number;
   computeUnitLimit?: number | null;

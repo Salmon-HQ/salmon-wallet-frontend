@@ -3,7 +3,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/PowerupsFab`: the same accent
  * bubble floating in the same corner. A plus turned 45 degrees IS the close
- * mark — the same glyph, not a swap — so the launcher's open state is legible
+ * mark — the same glyph, not a change — so the launcher's open state is legible
  * on the control that opened it. Mobile turns it with Reanimated; here the
  * whole circle turns on a CSS transition, which comes to the same thing on a
  * round button.

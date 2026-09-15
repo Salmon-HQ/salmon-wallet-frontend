@@ -4,7 +4,7 @@
  * `useSignatureRequestHost()`; one contract, two twins.
  */
 import type { ConfirmationRow, ProposalDisplay } from '../../core/confirmation/types';
-import type { SwapReviewExchangeSide } from '../swap';
+import type { ExchangeSide } from '../../core/confirmation/types';
 
 /** The grouped detail rows; advanced rows fold behind a "Details" disclosure. */
 export interface ConfirmationDetailsCardPropsBase<TStyle> {
@@ -15,8 +15,8 @@ export interface ConfirmationDetailsCardPropsBase<TStyle> {
 
 /** Sent logo → arrow → received logo, amounts and USD values underneath. */
 export interface ConfirmationExchangePropsBase<TStyle> {
-  send: SwapReviewExchangeSide;
-  receive: SwapReviewExchangeSide;
+  send: ExchangeSide;
+  receive: ExchangeSide;
   style?: TStyle;
 }
 

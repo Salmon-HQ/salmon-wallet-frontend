@@ -95,11 +95,11 @@ export type { StepIndicatorProps } from './StepIndicator';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
-// FadeThrough - keyed top-level content swap under a persistent frame
+// FadeThrough - keyed top-level content change under a persistent frame
 export { FadeThrough } from './FadeThrough';
 export type { FadeThroughProps } from './FadeThrough';
 
-// SinkFloat - keyed content swap that speaks the transition verb: sink, beat, float
+// SinkFloat - keyed content change that speaks the transition verb: sink, beat, float
 export { SinkFloat } from './SinkFloat';
 export type { SinkFloatProps } from './SinkFloat';
 
@@ -176,12 +176,8 @@ export type { ReceiveSheetProps } from './ReceiveSheet';
 // The transaction-display things Activity and the detail share — filed by what they are.
 export { AddressCopyRow } from './AddressCopyRow';
 export type { AddressCopyRowProps } from './AddressCopyRow';
-export { ConversionRateDisplay } from './ConversionRateDisplay';
-export type { ConversionRateDisplayProps } from './ConversionRateDisplay';
 export { ExplorerLinkButton } from './ExplorerLinkButton';
 export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
-export { PriceImpactBadge } from './PriceImpactBadge';
-export type { PriceImpactBadgeProps } from './PriceImpactBadge';
 export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
 export type { TransactionMarkProps } from './TransactionMark';
 
@@ -192,8 +188,6 @@ export type { TransactionDetailProps } from './TransactionDetail';
 // ActivityPage - the Activity page: list and detail steps
 export { ActivityPage, TransactionItem } from './ActivityPage';
 export type {
-  SwapRoute,
-  SwapRouteHop,
   Transaction,
   TransactionFee,
   ActivityPageProps,
@@ -205,7 +199,7 @@ export type {
 
 // SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
 export { SendFailure, SendPage } from './SendPage';
-// The token picker: Send's, Swap's, and any Powerup's that picks a token.
+// The token picker: Send's, and any Powerup's that picks a token.
 export { TokenPickerSheet } from './TokenPickerSheet';
 export type { TokenPickerSheetProps } from './TokenPickerSheet';
 export { TokenSelectList } from './TokenSelectList';
@@ -213,7 +207,7 @@ export type { TokenSelectListProps } from './TokenSelectList';
 export type { SendFailureProps, SendPageProps, SendStep, SendToken } from './SendPage';
 
 // TransactionConfirmation - core's confirmation screen and the cover it opens in
-// (spec 027 §2). The Powerup pages (SwapPage, PowerupsPage) are NOT exported
+// (spec 027 §2). The Powerup pages (MemoPage, PowerupsPage) are NOT exported
 // here: the extension imports them through `@salmon/ui/powerups`, the entry
 // the build flag aliases.
 export {

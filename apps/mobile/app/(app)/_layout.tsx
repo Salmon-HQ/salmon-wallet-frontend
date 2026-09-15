@@ -70,7 +70,7 @@ export default function AppLayout() {
   // early. It leaves, the water column holds for `FLOAT_DELAY_MS` with nothing
   // on it, and then the overlay goes and Home floats up through the same
   // ground it was standing on all along — the passage the owner asked for
-  // (2026-09-07), and the one every other step swap in the app already
+  // (2026-09-07), and the one every other step change in the app already
   // speaks. Every wait with no overlay over it still surfaces itself.
   //
   // It is bumped from `release` below, NOT from an effect on `isLocked`. An

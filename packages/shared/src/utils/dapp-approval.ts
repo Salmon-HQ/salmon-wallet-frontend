@@ -311,7 +311,7 @@ export async function loadSolanaTransactionApprovalDetails(
  *
  * This is the answer to blind signing: fee, instruction count and blockhash
  * describe the *shape* of a transaction, and an unlimited USDC approval to an
- * attacker has the same shape as a swap. The preview describes the *effect*.
+ * attacker has the same shape as an exchange. The preview describes the *effect*.
  *
  * The transaction is assembled with every signature slot empty and simulated
  * with `sigVerify: false`, so no key is touched and nothing is broadcast.

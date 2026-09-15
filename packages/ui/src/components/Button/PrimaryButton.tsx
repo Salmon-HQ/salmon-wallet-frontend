@@ -3,7 +3,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/Button/PrimaryButton.tsx`.
  * A salmon fill carrying `accent.onFill` ink at 6.50:1 — the only legal ink
- * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
+ * on a salmon fill. Disabled changes the whole object to `surface.crest` with
  * disabled ink rather than dimming the fill: the salmon is either alive or
  * absent, and so is the flesh inside it.
  *

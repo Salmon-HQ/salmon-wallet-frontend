@@ -3,7 +3,7 @@
  *
  * DOM counterpart of mobile's `useCopyFeedback` scale animation: the tick
  * fades in over `swell` on `current` when `copied` turns true, and fades
- * back out to the copy icon when the `feedbackHold` expires — so the swap
+ * back out to the copy icon when the `feedbackHold` expires — so the change
  * reads as a state change instead of a hard cut. Nothing bounces.
  *
  * Both icons stay mounted, stacked on one grid cell; only opacity moves
@@ -11,7 +11,7 @@
  * without a double-mount state machine). The hidden layer is aria-hidden.
  *
  * Reduce motion: the transition collapses (`reducedMotion.css`) and the
- * swap becomes the instant step it used to be — feedback preserved.
+ * change becomes the instant step it used to be — feedback preserved.
  *
  * Internal to `packages/ui` — not exported from the public barrel.
  */

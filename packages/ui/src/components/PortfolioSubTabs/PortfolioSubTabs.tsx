@@ -10,7 +10,7 @@
  * Mobile plays `tabsEntering`/`tabsExiting` — the sink/float verb — on the
  * tabs region alone, remounted on `tabsKey`, when a reorder changes it. Here
  * the same region is one persistent element: on a `tabsKey` change it plays
- * `sinkExiting`, swaps to the reordered tabs once that finishes (or
+ * `sinkExiting`, changes to the reordered tabs once that finishes (or
  * immediately under reduce motion / no WAAPI), then plays `floatEntering`.
  * A plain tab switch (same `tabsKey`) never triggers the verb — the
  * underline just slides, `UnderlineTabs`' own job.
@@ -58,12 +58,12 @@ export function PortfolioSubTabs({
     prevTabsKeyRef.current = tabsKey;
 
     const sink = sinkExiting(regionRef.current, reducedMotion);
-    const swap = () => {
+    const commit = () => {
       setDisplayed({ tabs, activeKey });
       floatEntering(regionRef.current, reducedMotion);
     };
-    if (sink) sink.finished.then(swap).catch(swap);
-    else swap();
+    if (sink) sink.finished.then(commit).catch(commit);
+    else commit();
   }, [tabsKey, tabs, activeKey, reducedMotion]);
 
   return (

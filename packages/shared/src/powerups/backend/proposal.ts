@@ -1,7 +1,7 @@
 /**
  * A build envelope → the `TransactionProposal` core signs (spec 029 §5.1).
  * The client builds the rows from typed fields — the Powerup passes them in
- * already translated, exactly as `powerups/swap/proposal.ts` does — and the
+ * already translated — and the
  * envelope supplies what every Powerup shares: the bytes, the expiry, the
  * data-provider attribution and who made the Powerup.
  */

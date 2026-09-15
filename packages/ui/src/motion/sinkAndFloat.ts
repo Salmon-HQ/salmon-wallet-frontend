@@ -53,7 +53,7 @@ function canAnimate(element: Element | null | undefined): element is Element {
  * is `fill: 'backwards'` — its effect is removed when it ends — so a float
  * played over a finished sink ends by handing the element back to the sink,
  * invisible (the side panel's blank amount, change line and tab row after the
- * first swap, 2026-09-02). Cancelling first is what a remount does for free on
+ * first change, 2026-09-02). Cancelling first is what a remount does for free on
  * mobile.
  */
 export function clearAnimations(element: Element | null | undefined): void {

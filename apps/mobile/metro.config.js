@@ -50,7 +50,7 @@ config.resolver.sourceExts = [...config.resolver.sourceExts, 'cjs'];
 // `@salmon/shared/powerups`, `packages/shared/src/powerups`, `src/powerups` —
 // resolves to its `index.off.ts` twin: an empty registry, no screens, no
 // locales. A Metro alias, not a runtime `if`, so the submission bundle
-// carries no swap code or copy. On for dev unless the profile says
+// carries no Powerup code or copy. On for dev unless the profile says
 // otherwise (`eas.json` sets it per profile).
 const POWERUPS_ON = (process.env.EXPO_PUBLIC_POWERUPS ?? 'on') === 'on';
 const POWERUPS_ENTRIES = [

@@ -9,8 +9,30 @@
  * its own copy, core only lays it out.
  */
 import type { SolanaNetworkId } from '../../types/blockchain';
-import type { SwapReviewExchangeSide } from '../../types/swap';
 import type { DeclaredTransactionEffects } from '../verify';
+
+/** One side of the exchange graphic: the token being sent or received. */
+export interface ExchangeSide {
+  /** Microcopy above the side (e.g., "You Send", "You Receive (estimated)") */
+  label: string;
+  /** Token logo URL; the symbol renders as fallback when missing */
+  logo?: string;
+  /** Token symbol, used for the logo fallback */
+  symbol: string;
+  /** Amount with symbol (e.g., "0.009 SOL") */
+  amount: string;
+  /** USD equivalent (e.g., "~$84.65") */
+  usdValue?: string;
+  /** Whether the amount is being recalculated */
+  pendingAmount?: boolean;
+  /** Whether the USD equivalent is being recalculated */
+  pendingUsdValue?: boolean;
+  /**
+   * Render this side's amount one rank up (success receipts give the
+   * received amount the greater hierarchy).
+   */
+  emphasis?: boolean;
+}
 
 /** One row of the confirmation's detail card. */
 export interface ConfirmationRow {
@@ -27,14 +49,14 @@ export interface ConfirmationWarning {
 
 /** What the confirmation screen shows. */
 export interface ProposalDisplay {
-  /** The screen title, e.g. "Swap Review". */
+  /** The screen title, e.g. "Memo Review". */
   title: string;
   /** Sent → received graphic; the protagonist of an exchange. */
   exchange?: {
-    send: SwapReviewExchangeSide;
-    receive: SwapReviewExchangeSide;
+    send: ExchangeSide;
+    receive: ExchangeSide;
   };
-  /** Always-visible rows: the Salmon fee, the route's fee, slippage, minimum received. */
+  /** Always-visible rows: the Salmon fee, the route's fee, and whatever the Powerup adds. */
   rows: ConfirmationRow[];
   /** Rows folded behind the "Details" disclosure. */
   advancedRows?: ConfirmationRow[];
@@ -56,7 +78,7 @@ export interface ProposalDisplay {
     /** The Salmon fee as a rate, e.g. "0.85%". */
     fee?: string;
   };
-  /** The wave wait's title while core signs and broadcasts, e.g. "Processing swap". */
+  /** The wave wait's title while core signs and broadcasts, e.g. "Sending memo". */
   pendingTitle: string;
   /** Amounts and symbols only, e.g. `1.5 SOL → 210 USDC`. */
   pendingSubtitle?: string;
@@ -90,7 +112,7 @@ export interface TransactionProposal {
    * without this, the signature is not reported in the banner at all.
    */
   pending?: {
-    kind: 'send' | 'swap';
+    kind: 'send';
     /** Amounts and symbols only — rendered verbatim beside translated copy. */
     summary?: string;
   };

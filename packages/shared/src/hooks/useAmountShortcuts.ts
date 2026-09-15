@@ -1,6 +1,6 @@
 /**
  * useAmountShortcuts — the 25 / 50 / 75 / Max fills under an amount card
- * (CORE 05), on Send and on Swap, both twins. One hook so the four call
+ * (CORE 05), on Send, both twins. One hook so the call
  * sites share the truncation and the selection rule:
  *
  * A fill stays lit — the chip and the amount card take the accent — until

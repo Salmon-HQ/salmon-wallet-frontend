@@ -2,7 +2,7 @@
  * TransactionDetail — CORE 09.
  *
  * The shell: a status block, the meta card, whichever variant the type calls
- * for (swap or transfer), the receipt, and the two actions. Every block below
+ * for (the transfer), the receipt, and the two actions. Every block below
  * it is a `Card` from the kit, so this file owns almost no drawing of its own.
  */
 import React, { useCallback, useMemo } from 'react';
@@ -48,7 +48,6 @@ import { ExplorerLinkButton } from '../ExplorerLinkButton';
 import { transactionTypeConfigFor, TYPE_LABEL_KEYS } from '../TransactionMark';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
-import { TransactionDetailSwap } from './TransactionDetailSwap';
 import { TransactionDetailTransfer } from './TransactionDetailTransfer';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { TransactionDetailProps } from './types';
@@ -90,7 +89,7 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
     }
   }, [transaction, onShare]);
 
-  const { typeConfig, statusConfig, conversionRate } = useTransactionDetailDerived(
+  const { typeConfig, statusConfig } = useTransactionDetailDerived(
     transaction,
     TRANSACTION_TYPE_CONFIG,
     STATUS_CONFIG
@@ -183,11 +182,7 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
           ) : null}
         </Card>
 
-        {transaction.type === 'swap' ? (
-          <TransactionDetailSwap transaction={transaction} conversionRate={conversionRate} />
-        ) : (
-          <TransactionDetailTransfer transaction={transaction} />
-        )}
+        <TransactionDetailTransfer transaction={transaction} />
 
         <TransactionDetailReceipt transaction={transaction} onCopyHash={onCopyHash} />
 

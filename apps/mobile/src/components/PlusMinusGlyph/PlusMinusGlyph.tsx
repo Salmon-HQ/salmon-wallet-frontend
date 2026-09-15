@@ -1,6 +1,6 @@
 /**
  * PlusMinusGlyph — the two-bar glyph the Powerup install/uninstall control
- * turns instead of swapping.
+ * turns instead of changing.
  *
  * Two identical bars, drawn once as a horizontal rectangle. The fixed one
  * never moves; the other starts rotated a quarter turn to stand vertical, so

@@ -12,7 +12,7 @@
  *
  * initAnalytics({ platform: 'mobile', appVersion: APP_VERSION });
  * // ...after the user opts in via Settings...
- * trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
+ * trackEvent('send_completed', { chain: 'solana', success: true });
  * ```
  */
 
@@ -53,7 +53,7 @@ export {
   type AnalyticsClient,
 } from './client';
 
-export { trackFirstSwapCompleted, trackFirstTime } from './first-time';
+export { trackFirstTime } from './first-time';
 
 export {
   trackOnboardingEvent,

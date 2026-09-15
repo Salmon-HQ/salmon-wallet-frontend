@@ -3,11 +3,7 @@
  * the row, and the four pieces the row and the detail share.
  */
 import type { Blockchain, NetworkEnvironment } from '../../config/explorers';
-import type { Semantic } from '../../theme/semantic';
-import { fontSize } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
 import { getShortAddress } from '../../utils/address';
-import type { PriceImpactSeverity } from '../../utils/formatting';
 import type { Transaction } from '../index';
 
 /**
@@ -27,53 +23,6 @@ export interface TransactionItemPropsBase<TStyle> {
    */
   contacts?: Record<string, string>;
   /** Custom styles */
-  style?: TStyle;
-}
-
-export type PriceImpactSize = 'small' | 'medium' | 'large';
-
-/** The badge's ink per severity, from the active tokens — the same on both twins. */
-export const priceImpactInkFor = (t: Semantic): Record<PriceImpactSeverity, string> => ({
-  safe: t.status.success,
-  warning: t.status.warning,
-  high: t.status.danger,
-});
-
-export interface PriceImpactSizeConfig {
-  iconSize: number;
-  fontSize: number;
-  paddingH: number;
-  paddingV: number;
-}
-
-/** The badge's geometry per size, in unscaled points; mobile scales at render. */
-export const PRICE_IMPACT_SIZES: Record<PriceImpactSize, PriceImpactSizeConfig> = {
-  small: { iconSize: 12, fontSize: fontSize.micro, paddingH: spacing.xs, paddingV: 2 },
-  medium: { iconSize: 14, fontSize: fontSize.caption, paddingH: spacing.sm, paddingV: 4 },
-  large: { iconSize: 16, fontSize: fontSize.bodyLg, paddingH: spacing.md, paddingV: 6 },
-};
-
-/** Price impact with colour coding by severity — safe, warning, high. */
-export interface PriceImpactBadgePropsBase {
-  /** Price impact as a string percentage (e.g., "0.5", "1.2") */
-  value: string;
-  /** Size variant */
-  size?: PriceImpactSize;
-  /** Whether to show the warning/check icon */
-  showIcon?: boolean;
-}
-
-/** "1 SOL = 150.25 USDC", or the compact "1:150.25". */
-export interface ConversionRateDisplayPropsBase<TStyle> {
-  /** Input token symbol */
-  fromSymbol: string;
-  /** Output token symbol */
-  toSymbol: string;
-  /** The conversion rate (how many toTokens per 1 fromToken) */
-  rate: string;
-  /** Optional size variant */
-  size?: 'small' | 'medium';
-  /** Custom style */
   style?: TStyle;
 }
 
@@ -105,7 +54,7 @@ export interface AddressCopyRowPropsBase<TStyle> {
 }
 
 /** The outlined control that opens a block explorer, or a picker of them. */
-/** TransactionMark — the token that moved, badged with the type; a swap shows the pair. */
+/** TransactionMark — the token that moved, badged with the type. */
 export interface TransactionMarkPropsBase {
   transaction: Transaction;
 }

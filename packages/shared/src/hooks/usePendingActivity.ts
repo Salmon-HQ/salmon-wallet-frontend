@@ -14,7 +14,7 @@ import {
   type PendingTransactionStatus,
 } from '../contexts/PendingTransactionsContext';
 
-export type PendingActivityKind = 'send' | 'swap';
+export type PendingActivityKind = 'send';
 
 export interface PendingActivityItem {
   /** Stable identity: a signature. */

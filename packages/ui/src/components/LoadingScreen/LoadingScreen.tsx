@@ -383,7 +383,7 @@ export const LoadingScreen = memo(function LoadingScreen({
       data-testid="loading-screen"
     >
       {/* A wait is a screen like any other, and a screen is water. This one is
-          the seam the ground has to close: the wait before a swap confirms is
+          the seam the ground has to close: the wait before a proposal confirms is
           followed immediately by the receipt, which stands in the column, and
           two grounds one behind the other in the same second reads as two
           apps. Nothing here is redrawn — the spinner, the logo and the tips

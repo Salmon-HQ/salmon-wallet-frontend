@@ -285,7 +285,7 @@ export function ExchangeReceipt({
                 <KeyValueRow label={t('transactions.detail.rate', 'Rate')} value={exchangeRate} />
               ) : null}
               {exchangeFee ? (
-                <KeyValueRow label={t('swap.review.salmonFee', 'Salmon fee')} value={exchangeFee} />
+                <KeyValueRow label={t('transaction.salmonFee', 'Salmon fee')} value={exchangeFee} />
               ) : null}
               <KeyValueRow label={t('transactions.detail.time', 'Time')} value={receiptTime} />
             </Card>

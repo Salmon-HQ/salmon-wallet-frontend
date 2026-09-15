@@ -59,7 +59,7 @@ import type { AccountAddPanelProps } from './types';
 
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
-/** Mirrors the cards a scan lists, so the wait does not jump on swap. */
+/** Mirrors the cards a scan lists, so the wait does not jump on change. */
 const SCAN_SKELETON_COUNT = 3;
 
 export function AccountAddPanel({

@@ -193,7 +193,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
     progress.value = 0;
     // A period change is an in-place layout change of the same element, so it
     // takes `drift` on the default curve. Reduce motion resolves it to 0ms —
-    // the previous hard swap.
+    // the previous hard change.
     progress.value = withTiming(1, timing(motionMs.drift, isReduceMotionEnabled));
   }, [targetYs, isReduceMotionEnabled, fromYs, toYs, progress]);
 

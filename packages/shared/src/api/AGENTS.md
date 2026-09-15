@@ -30,7 +30,7 @@ response assumptions.
 
 Some test files (`bitcoin.test.ts`, `solana.test.ts`, `solana-nft.test.ts`,
 `dapp.test.ts`, `transactions.test.ts`, `network.test.ts`,
-`price.test.ts`, `swap.test.ts`) probe a local salmon-api via
+`price.test.ts`) probe a local salmon-api via
 `getReachableBackendBaseUrl()` (`src/api/test-backend.ts`) and only exercise
 the live contract when the backend is reachable on one of the candidate URLs.
 

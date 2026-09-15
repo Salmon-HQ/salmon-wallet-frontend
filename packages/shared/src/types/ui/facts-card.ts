@@ -16,7 +16,7 @@ export interface FactsCardRow extends KeyValueRowPropsBase {
  * the title's type are fixed here for both twins.
  *
  * A card with no title is the plain fact list — the Powerups detail's "made
- * by / networks" card, the swap receipt's fine print.
+ * by / networks" card, a receipt's fine print.
  */
 export interface FactsCardPropsBase extends Testable {
   /** The bold line over the facts. Omitted, the card is only the facts. */

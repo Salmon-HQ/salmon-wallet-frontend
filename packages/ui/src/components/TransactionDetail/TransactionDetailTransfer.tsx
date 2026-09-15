@@ -1,5 +1,5 @@
 /**
- * The non-swap half of the transaction detail: the tokens that moved, and an
+ * The transfer half of the transaction detail: the tokens that moved, and an
  * NFT's metadata when one of them is a collectible.
  *
  * The mobile twin is

@@ -144,7 +144,7 @@ export const componentSizes = {
   buttonHeight: 56,
   buttonHeightMedium: 48,
   buttonHeightSmall: 44,
-  /** 42px - Compact action buttons (swap, receive, success) */
+  /** 42px - Compact action buttons (receive, success) */
   buttonHeightCompact: 42,
   /**
    * The control radius. It was 28, which on a 56px control is a pill, and the
@@ -192,7 +192,7 @@ export const componentSizes = {
 
   // Inputs
   inputHeight: 56,
-  /** 58px - Swap amount input */
+  /** 58px - Amount input */
   inputHeightLg: 58,
   /** The control radius — see `buttonRadius`. Already 12; now bound to it. */
   inputRadius: borderRadius.lg,
@@ -240,7 +240,7 @@ export const componentSizes = {
   iconSizeXSmall: 18,
   /** 20px */
   iconSizeSmall: 20,
-  /** 22px - Compact token icons (swap selector) */
+  /** 22px - Compact token icons (token selector) */
   iconSizeCompact: 22,
   /** 24px */
   iconSizeMedium: 24,
@@ -258,7 +258,7 @@ export const componentSizes = {
   iconSize3XL: 48,
   /** 52px - NFT action buttons height */
   iconSize4XL: 52,
-  /** 54px - Swap logo container width */
+  /** 54px - Exchange logo container width */
   iconSize5XL: 54,
   /** 100px - Large token icons (confirmation step) */
   tokenIconXL: 100,
@@ -280,7 +280,7 @@ export const componentSizes = {
    * band is 36-40; tune here and every review screen moves together). The
    * per-row pill it replaces sat at `backButtonSize` + 9px of gap each.
    */
-  swapDetailRowHeight: 38,
+  confirmationDetailRowHeight: 38,
 
   // Balance card elements
   logoContainer: 35,
@@ -353,9 +353,6 @@ export const componentSizes = {
   // screen is allowed.
   /** 3px — wave displacement. Perceptible if you look, invisible if you don't. */
   waveAmplitude: 3,
-
-  // Swap
-  swapSelectorMinWidth: 100,
 
   // Badge
   badgeMinWidth: 55,

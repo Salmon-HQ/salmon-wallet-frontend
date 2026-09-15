@@ -16,7 +16,7 @@
  * return <Receipt />;
  * ```
  *
- * swaps branches the instant `loading` flips, unmounting the wait mid-wave. The
+ * switches branches the instant `loading` flips, unmounting the wait mid-wave. The
  * closing wave then plays nowhere, on exactly the screens where it matters most.
  *
  * This hook inverts the condition: the wait stays mounted with `visible={false}`

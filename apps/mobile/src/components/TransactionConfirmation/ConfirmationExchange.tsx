@@ -14,7 +14,7 @@ import {
   tabularNums,
   type Semantic,
 } from '@salmon/shared';
-import type { SwapReviewExchangeSide } from '@salmon/shared';
+import type { ExchangeSide } from '@salmon/shared';
 import { ArrowRightIcon, iconSize } from '../../icons';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PendingValue } from '../PendingValue';
@@ -52,7 +52,7 @@ function stripApprox(raw: string): string {
  * One half of the exchange graphic: microcopy label, token logo, amount in
  * the token, USD value underneath.
  */
-const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
+const Side: React.FC<ExchangeSide> = ({
   label,
   logo,
   symbol,
@@ -99,9 +99,9 @@ export const ConfirmationExchange: React.FC<ConfirmationExchangeProps> = ({
   const { accent } = useSemantic();
   return (
     <View style={[styles.row, style]} testID="confirmation-exchange">
-      <ExchangeSide {...send} />
+      <Side {...send} />
       <ArrowRightIcon size={iconSize.md} color={accent.ink} weight="bold" />
-      <ExchangeSide {...receive} />
+      <Side {...receive} />
     </View>
   );
 };

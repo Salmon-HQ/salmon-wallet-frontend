@@ -127,13 +127,6 @@ function inferTransactionType(
   if (inputs.length > 0 && outputs.length === 0) return 'receive';
   if (outputs.length > 0 && inputs.length === 0) return 'send';
 
-  if (inputs.length > 0 && outputs.length > 0) {
-    const inputContracts = new Set(inputs.map((t) => t.contract));
-    const outputContracts = new Set(outputs.map((t) => t.contract));
-    const hasDistinctContracts = [...outputContracts].some((c) => !inputContracts.has(c));
-    if (hasDistinctContracts) return 'swap';
-  }
-
   return 'unknown';
 }
 
@@ -162,33 +155,6 @@ export interface TransactionDescription {
   values?: Record<string, string | number>;
 }
 
-export interface SwapLegSelection {
-  /** The swap's primary received leg — the backend's `inputs[0]`. */
-  primaryInput?: TransactionTokenAmount;
-  /** The swap's primary sent leg — the backend's `outputs[0]`. */
-  primaryOutput?: TransactionTokenAmount;
-  /** Every other leg on either side (pass-through route hops that net to zero). */
-  residual: TransactionTokenAmount[];
-}
-
-/**
- * Picks a swap's primary input/output pair and returns every other leg as
- * `residual`. The backend guarantees `inputs[0]`/`outputs[0]` are the pair
- * the user chose — route hops that open and close inside the transaction
- * net to zero, and any genuine pass-through leg is ordered after them — so
- * this trusts array order rather than ranking legs itself: there is no
- * price data in transaction history, and comparing raw amounts across
- * different mints/decimals is meaningless.
- */
-export function pickSwapLegs(
-  transaction: Pick<Transaction, 'inputs' | 'outputs'>
-): SwapLegSelection {
-  const { inputs, outputs } = transaction;
-  const [primaryInput, ...residualInputs] = inputs;
-  const [primaryOutput, ...residualOutputs] = outputs;
-  return { primaryInput, primaryOutput, residual: [...residualInputs, ...residualOutputs] };
-}
-
 /**
  * Describes a transaction for its history row.
  */
@@ -199,14 +165,6 @@ export function getTransactionDescription(
   _source?: string,
   description?: string
 ): TransactionDescription {
-  if (type === 'swap') {
-    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
-    return {
-      key: 'transactions.description.swap',
-      values: { from: primaryOutput?.symbol ?? '', to: primaryInput?.symbol ?? '' },
-    };
-  }
-
   // The indexer's own wording, which we cannot translate and should not
   // discard — it is more specific than any label below.
   if (description && description.length > 0 && !description.includes('Unknown')) {
@@ -272,7 +230,6 @@ export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
     description: tx.description,
     source: tx.source,
     heliusType: tx.heliusType,
-    swapRoute: tx.swapRoute,
     memo: tx.memo ?? undefined,
   };
 }

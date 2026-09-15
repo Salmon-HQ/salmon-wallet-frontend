@@ -19,7 +19,7 @@
  *   gives a tap.
  *
  * The verb is unchanged and every number comes from `@salmon/shared`: the
- * outgoing amount slides `LATERAL_SWAP_TRAVEL` toward the edge it is heading
+ * outgoing amount slides `LATERAL_CHANGE_TRAVEL` toward the edge it is heading
  * for and loses its light on `sink`; the incoming one starts at the opposite
  * edge and comes to rest on `settle`. The 24h change never moves sideways — it
  * has neighbours on both sides — so it plays the sink *in place*, the same
@@ -29,7 +29,7 @@
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
   componentSizes,
@@ -158,7 +158,7 @@ export function BalanceHeader({
       const slide = amountRef.current.animate(
         [
           { opacity: 1, transform: 'translateX(0px)' },
-          { opacity: 0, transform: `translateX(${direction * LATERAL_SWAP_TRAVEL}px)` },
+          { opacity: 0, transform: `translateX(${direction * LATERAL_CHANGE_TRAVEL}px)` },
         ],
         exit
       );
@@ -188,7 +188,7 @@ export function BalanceHeader({
       [
         {
           opacity: 0,
-          transform: `translateX(${(fromRight ? 1 : -1) * LATERAL_SWAP_TRAVEL}px)`,
+          transform: `translateX(${(fromRight ? 1 : -1) * LATERAL_CHANGE_TRAVEL}px)`,
         },
         { opacity: 1, transform: 'translateX(0px)' },
       ],

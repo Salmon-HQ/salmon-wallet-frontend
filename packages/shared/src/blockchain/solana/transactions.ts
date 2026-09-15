@@ -123,15 +123,6 @@ export function isTransferTransaction(tx: SolanaTransaction): boolean {
 }
 
 /**
- * Check if a transaction is a swap
- * @param tx - Transaction to check
- * @returns True if the transaction is a swap
- */
-export function isSwapTransaction(tx: SolanaTransaction): boolean {
-  return tx.type === 'swap';
-}
-
-/**
  * Check if a transaction is NFT-related
  * Uses heliusType to check for NFT operations
  * @param tx - Transaction to check

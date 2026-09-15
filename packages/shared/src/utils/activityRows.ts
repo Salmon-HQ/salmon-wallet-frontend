@@ -18,7 +18,7 @@ export type ActivityFilter = 'all' | 'send' | 'receive' | 'other';
 export const ACTIVITY_FILTER_KEYS: ActivityFilter[] = ['all', 'send', 'receive', 'other'];
 
 /**
- * "Other" is defined by exclusion on purpose: a swap, a stake, a mint and a
+ * "Other" is defined by exclusion on purpose: a stake, a mint and a
  * type this build has never seen all belong in it, and enumerating the known
  * ones would silently drop whatever the indexer adds next.
  */

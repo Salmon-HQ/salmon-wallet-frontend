@@ -17,7 +17,7 @@ import {
   spacing,
   tabularNums,
   type Semantic,
-  type SwapReviewExchangeSide,
+  type ExchangeSide,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -90,7 +90,7 @@ function TokenMark({ uri, symbol }: { uri?: string; symbol: string }) {
   );
 }
 
-function ExchangeSide({
+function Side({
   label,
   logo,
   symbol,
@@ -99,7 +99,7 @@ function ExchangeSide({
   pendingAmount = false,
   pendingUsdValue = false,
   emphasis = false,
-}: SwapReviewExchangeSide) {
+}: ExchangeSide) {
   const t = useSemantic();
   const styles = sideStyles(t);
   return (
@@ -143,14 +143,14 @@ export function ConfirmationExchange({ send, receive, style }: ConfirmationExcha
         ...style,
       }}
     >
-      <ExchangeSide {...send} />
+      <Side {...send} />
       <ArrowRightIcon
         size={componentSizes.iconSizeMedium}
         color={t.accent.ink}
         weight="bold"
         aria-hidden
       />
-      <ExchangeSide {...receive} />
+      <Side {...receive} />
     </div>
   );
 }

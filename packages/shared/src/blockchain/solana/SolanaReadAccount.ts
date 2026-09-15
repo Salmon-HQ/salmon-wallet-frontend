@@ -407,24 +407,6 @@ export class SolanaReadAccount {
   }
 
   /**
-   * Gets the best swap quote for a token pair.
-   * @deprecated Use swap service directly
-   * @throws Error indicating method is not supported
-   */
-  async getBestSwapQuote(): Promise<never> {
-    throw new Error('method_not_supported: Use swap service directly');
-  }
-
-  /**
-   * Creates a swap transaction.
-   * @deprecated Use swap service directly
-   * @throws Error indicating method is not supported
-   */
-  async createSwapTransaction(): Promise<never> {
-    throw new Error('method_not_supported: Use swap service directly');
-  }
-
-  /**
    * Gets all NFTs for this account.
    * Uses Helius DAS API with backend fallback via injected fetchNfts.
    *

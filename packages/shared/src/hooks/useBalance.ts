@@ -126,8 +126,8 @@ async function fetchSolanaBalance(
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
-      // Native SOL has no mint; swap routers identify it by the wrapped-SOL
-      // pubkey. The previous literal 'solana' propagated to swap requests as
+      // Native SOL has no mint; routers identify it by the wrapped-SOL
+      // pubkey. The previous literal 'solana' propagated to build requests as
       // outputMint=solana and the router rejected it → 404 No route found.
       address: item.mint || SOL_CONSTANTS.ADDRESS,
       // Native SOL is the coin page `solana`, never the wrapped mint's

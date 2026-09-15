@@ -71,7 +71,7 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   // the colons are stripped because they are not valid in an SVG fragment id.
   // The field crosses into light as **coral** (owner, 2026-09-01): the stroke
   // is `salmon-500` at 0.06 rather than the cold near-white at 0.03, because a
-  // pale ink on a pale ground is nothing at all. The swap lives in
+  // pale ink on a pale ground is nothing at all. The change lives in
   // `scales.deepFieldStroke` — this component only ever asks for the token, so
   // it draws the same geometry in both modes over whatever ground
   // `DepthBackground` painted (flat `depth.column` in light, the ramp in

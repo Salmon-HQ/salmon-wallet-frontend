@@ -17,7 +17,6 @@ import {
   formatRawAmount,
   formatRelativeTimeCompact,
   lineHeight,
-  pickSwapLegs,
   spacing,
   tabularNums,
   useTransactionItemDerived,
@@ -33,7 +32,6 @@ import type { TransactionItemProps } from './types';
 const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
-const MAX_VISIBLE_AMOUNTS = 2;
 
 /** The amount column reserves this width, so the chip can never reach it */
 const AMOUNT_COLUMN_MIN_WIDTH = 104;
@@ -89,12 +87,11 @@ export function TransactionItem({
   const { status: statusTokens, text } = semantic;
   const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semantic);
-  const { totalAmounts, isComplex, descriptionText, typeLabel } = useTransactionItemDerived(
+  const { descriptionText, typeLabel } = useTransactionItemDerived(
     transaction,
     contacts,
     t,
-    typeConfig,
-    MAX_VISIBLE_AMOUNTS
+    typeConfig
   );
 
   const handlePress = useCallback(() => {
@@ -131,37 +128,6 @@ export function TransactionItem({
               : t('transactions.detail.pending', 'Pending')}
           </span>
         </span>
-      );
-    }
-
-    // Complex swap: the row states the first leg of each side and how many
-    // more there are. The rest is one tap away, in the detail.
-    if (isComplex) {
-      const { primaryOutput: firstOutput, primaryInput: firstInput } = pickSwapLegs({
-        inputs,
-        outputs,
-      });
-
-      return (
-        <>
-          {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
-          {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
-          {/* One Living Thing Rule: a remainder is chrome — it reads in quiet ink. */}
-          <span
-            style={{
-              fontFamily: fontFamily.sans,
-              fontSize: fontSize.micro,
-              fontWeight: fontWeight.medium,
-              color: text.secondary,
-              textAlign: 'right',
-            }}
-          >
-            {t('transactions.detail.nMore', {
-              count: totalAmounts - 2,
-              defaultValue: '+{{count}} more',
-            })}
-          </span>
-        </>
       );
     }
 

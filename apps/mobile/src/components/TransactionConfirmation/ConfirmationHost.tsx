@@ -3,7 +3,7 @@
  *
  * Mounted once above the whole `(app)` stack. While core holds a signature
  * request it opens its own window — an RN Modal, the same task window Send
- * and Swap always used — over whatever screen proposed, renders
+ * always used — over whatever screen proposed, renders
  * `TransactionConfirmation` from the proposal, and on confirm shows the wave
  * wait while core signs, broadcasts and confirms. The wait leaves on its own
  * last wave, and the receipt floats in behind it — in this same window, on

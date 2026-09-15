@@ -30,7 +30,7 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   const { t } = useTranslation();
   const isReduceMotionEnabled = useReducedMotion();
 
-  // A plus turned 45 degrees IS the close mark — the same glyph, not a swap,
+  // A plus turned 45 degrees IS the close mark — the same glyph, not a change,
   // so the launcher's open state is legible on the control that opened it.
   // The catalogue rises under it at the same time, so the turn runs on
   // `drift` — an element enter / in-place layout change, the same window as

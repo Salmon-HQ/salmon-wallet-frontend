@@ -155,7 +155,7 @@ export function LockScreen({
     void onMount?.();
   }, [onMount]);
 
-  // The control and the notice swap in the same band. Whichever arrives takes
+  // The control and the notice change in the same band. Whichever arrives takes
   // focus, so nobody is left focused on a node that no longer exists.
   const wasThrottled = useRef(throttled);
   useEffect(() => {

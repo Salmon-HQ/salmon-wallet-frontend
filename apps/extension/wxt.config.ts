@@ -16,7 +16,7 @@ const uiSrc = path.resolve(__dirname, '../../packages/ui/src');
  * `@salmon/shared/powerups`, `@salmon/ui/powerups`, and the same files reached
  * by a relative import — resolves to its `.off` twin: an empty registry, no
  * pages, no locales. A bundler alias, not a runtime `if`, so the production
- * zip carries no swap code or copy.
+ * zip carries no Powerup code or copy.
  */
 const POWERUPS_ENTRIES: Record<string, string> = {
   [path.join(sharedSrc, 'powerups/index.ts')]: path.join(sharedSrc, 'powerups/index.off.ts'),

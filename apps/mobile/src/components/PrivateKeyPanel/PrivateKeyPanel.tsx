@@ -51,7 +51,7 @@ import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons
 // ============================================================================
 
 // The chain marks the rest of the app already uses for identity (BalanceCard,
-// DerivedAccountCard, the swap's token selector) — the icon migration's
+// DerivedAccountCard, the token selector) — the icon migration's
 // declared exception. Four identical globes told the reader nothing about
 // which chain's key they were about to expose.
 const CHAIN_MARKS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {

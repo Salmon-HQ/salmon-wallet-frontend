@@ -3,8 +3,8 @@
  *
  * The mobile twin is `apps/mobile/src/components/ReceiptScreen/ReceiptScreen.tsx`.
  * `transfer` is CORE 07's composition (a seal, a sentence, and a receipt card
- * of rows under two actions); `exchange` is the graphic receipt swap has
- * always rendered. The two tones do not share a prop shape, exactly as on
+ * of rows under two actions); `exchange` is core's graphic receipt after a
+ * signed proposal. The two tones do not share a prop shape, exactly as on
  * mobile — see `types.ts`.
  *
  * Both tones are static-imported here rather than lazily required as mobile

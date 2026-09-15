@@ -504,47 +504,6 @@ export class EthereumAccount {
   }
 
   /**
-   * Gets best swap quote.
-   * Will be implemented in a separate service.
-   *
-   * @param _tokenInAddress - Input token address (unused)
-   * @param _tokenOutAddress - Output token address (unused)
-   * @param _amount - Amount to swap (unused)
-   * @param _slippage - Slippage tolerance (unused)
-   * @throws 'method_not_supported'
-   */
-  async getBestSwapQuote(
-    _tokenInAddress: string,
-    _tokenOutAddress: string,
-    _amount: number,
-    _slippage?: number
-  ): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Expires a swap quote.
-   * Will be implemented in a separate service.
-   *
-   * @param _quote - Quote to expire (unused)
-   * @throws 'method_not_supported'
-   */
-  async expireSwapQuote(_quote: unknown): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Creates a swap transaction.
-   * Will be implemented in a separate service.
-   *
-   * @param _quote - Swap quote (unused)
-   * @throws 'method_not_supported'
-   */
-  async createSwapTransaction(_quote: unknown): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
    * Calculates transfer fee.
    * Returns null for Ethereum (gas is calculated at transaction creation time).
    *

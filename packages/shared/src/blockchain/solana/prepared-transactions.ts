@@ -176,7 +176,7 @@ export async function signAndSendPreparedSolanaTransactions(
   for (const preparedTransaction of preparedTransactions) {
     try {
       // Blockhash refresh, signing, send and confirmation are core/broadcast's
-      // — the same path the swap Powerup's proposals take.
+      // — the same path a Powerup's proposals take.
       const signature = await signAndSendSolanaTransaction(
         account,
         preparedTransaction.transaction,

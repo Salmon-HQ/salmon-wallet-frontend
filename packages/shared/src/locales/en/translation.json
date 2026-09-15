@@ -68,8 +68,7 @@
     "activity": "Activity",
     "copied": "Copied!",
     "edit": "Edit",
-    "reveal": "Reveal",
-    "select": "Select"
+    "reveal": "Reveal"
   },
   "dapp": {
     "decode_error": "This transaction could not be decoded. Do not approve unless you trust this site.",
@@ -549,7 +548,6 @@
       "help": "You will see this wallet’s balance and activity. You will not be able to move anything in it.",
       "resolved_address": "Wallet to watch",
       "badge": "Watch-only",
-      "disabled_action": "This is a watch-only wallet. It was added with an address only, so Salmon holds no key for it and cannot sign.",
       "errors": {
         "empty": "Enter a wallet address to continue.",
         "format": "That is not a Solana address. Check you copied all of it.",
@@ -570,7 +568,6 @@
     "detail": {
       "sent": "Sent",
       "received": "Received",
-      "swapped": "Swapped",
       "minted": "Minted",
       "burned": "Burned",
       "staked": "Staked",
@@ -591,24 +588,17 @@
       "dateTime": "Date & Time",
       "confirmation": "Confirmation",
       "block": "Block",
-      "conversion": "Conversion",
-      "alsoMoved": "Also moved",
-      "swapRoute": "Swap Route",
       "networkFee": "Network Fee",
-      "swapFee": "Swap Fee",
       "transactionHash": "Transaction Hash",
       "developerInfo": "Developer Info",
       "heliusType": "Type",
       "accountsInvolved": "Accounts Involved",
       "programs": "Programs",
-      "innerSwaps": "Inner Swaps",
-      "swapFees": "Swap Fees",
       "sentLabel": "Sent",
       "receivedLabel": "Received",
       "rate": "Rate",
       "feePayer": "Fee Payer",
       "share": "Share",
-      "nMore": "+{{count}} more",
       "time": "Time",
       "viewOnExplorer": "View on Explorer",
       "viewOn": "View on {{name}}",
@@ -622,7 +612,6 @@
     "tapToViewDetails": "Tap to view transaction details",
     "share_message": "Check out this transaction: {{url}}",
     "description": {
-      "swap": "{{from}} to {{to}}",
       "sendTo": "To {{address}}",
       "send": "Sent tokens",
       "receiveFrom": "From {{address}}",
@@ -689,10 +678,8 @@
   "transaction": {
     "sendFailed": "Send failed",
     "sendUnconfirmed": "Send unconfirmed",
-    "swapComplete": "Swap Complete",
     "pendingSend": "Sending funds",
     "sendSummary": "{{amount}} {{symbol}} to {{recipient}}",
-    "pendingSwap": "Processing swap",
     "errors": {
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
       "insufficientFunds": "Insufficient balance for this transaction.",
@@ -701,7 +688,7 @@
       "inputUnavailable": "We could not read one of your Bitcoin inputs right now. Nothing was sent — please try again in a moment.",
       "quoteExpired": "The quote changed before it could execute. Review and confirm again.",
       "slippage": "The price moved beyond your slippage tolerance. Try again or adjust the amount.",
-      "noRoute": "No swap route is available for this pair right now. Try a different amount or token.",
+      "noRoute": "No route is available for this pair right now. Try a different amount or token.",
       "generic": "The transaction failed. Please try again.",
       "insufficientRent": "This transfer would leave an account below the minimum SOL it needs to stay open. Send a little less, or add SOL.",
       "alreadyProcessed": "This transaction was already processed. Check your activity before sending again.",
@@ -719,7 +706,8 @@
       "simulationFailed": "This transaction would fail on-chain, so it wasn't sent."
     },
     "viewOnExplorer": "View on Explorer",
-    "continue": "Back to wallet"
+    "continue": "Back to wallet",
+    "salmonFee": "Salmon fee"
   },
   "qrScanner": {
     "title": "Scan QR Code",
@@ -833,12 +821,6 @@
       "failed": "Send failed",
       "expired": "Send expired"
     },
-    "swap": {
-      "pending": "Swap in progress",
-      "confirmed": "Swap confirmed",
-      "failed": "Swap failed",
-      "expired": "Swap expired"
-    },
     "expiredHint": "It never reached the network. Nothing left your wallet.",
     "dismiss": "Dismiss"
   },
@@ -883,6 +865,11 @@
     "author": {
       "salmon": "Salmon",
       "community": "Community contributor"
+    },
+    "unavailable": {
+      "network": "This Powerup is available on Solana mainnet only.",
+      "region": "This Powerup is not available in your region.",
+      "wallet": "This Powerup is not available for this wallet."
     }
   },
   "confirmation": {

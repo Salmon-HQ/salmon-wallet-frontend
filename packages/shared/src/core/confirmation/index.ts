@@ -18,6 +18,7 @@ export { NoSigningAccountError, SignatureRequestCancelledError } from './types';
 export type {
   ConfirmationRow,
   ConfirmationWarning,
+  ExchangeSide,
   ProposalDisplay,
   SignedResult,
   TransactionProposal,

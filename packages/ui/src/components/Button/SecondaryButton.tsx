@@ -3,7 +3,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/Button/SecondaryButton.tsx`.
  * Transparent fill, `border.raised` stroke, primary ink. `tone="danger"`
- * swaps to danger ink and a danger edge for a destructive action that must
+ * changes to danger ink and a danger edge for a destructive action that must
  * not borrow the salmon fill; `tone="danger-fill"` is the filled destructive
  * plane, whose only ink that clears AA in both modes is `status.onFill`.
  */

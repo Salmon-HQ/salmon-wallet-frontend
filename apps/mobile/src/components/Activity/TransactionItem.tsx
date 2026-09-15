@@ -11,7 +11,6 @@ import {
   formatRawAmount,
   formatRelativeTimeCompact,
   lineHeight,
-  pickSwapLegs,
   spacing,
   tabularNums,
   useTransactionItemDerived,
@@ -33,7 +32,6 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
-const MAX_VISIBLE_AMOUNTS = 2;
 
 /** The amount column reserves this width, so the chip can never reach it */
 const AMOUNT_COLUMN_MIN_WIDTH = 104;
@@ -109,12 +107,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   const { status: statusTokens } = semanticTokens;
   const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semanticTokens);
-  const { totalAmounts, isComplex, descriptionText, typeLabel } = useTransactionItemDerived(
+  const { descriptionText, typeLabel } = useTransactionItemDerived(
     transaction,
     contacts,
     t,
-    typeConfig,
-    MAX_VISIBLE_AMOUNTS
+    typeConfig
   );
 
   const handlePress = useCallback(() => {
@@ -143,28 +140,6 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
               : t('transactions.detail.pending', 'Pending')}
           </Text>
         </View>
-      );
-    }
-
-    // Complex swap: the row states the first leg of each side and how many
-    // more there are. The rest is one tap away, in the detail.
-    if (isComplex) {
-      const { primaryOutput: firstOutput, primaryInput: firstInput } = pickSwapLegs({
-        inputs,
-        outputs,
-      });
-
-      return (
-        <>
-          {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
-          {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
-          <Text style={styles.moreText}>
-            {t('transactions.detail.nMore', {
-              count: totalAmounts - 2,
-              defaultValue: '+{{count}} more',
-            })}
-          </Text>
-        </>
       );
     }
 
@@ -250,7 +225,7 @@ const stylesFor = (t: Semantic) =>
     },
     /**
      * One Living Thing Rule: the accent is a budget, and a count that repeats
-     * once per complex swap would spend it four times a screen. A remainder is
+     * once per multi-leg row would spend it four times a screen. A remainder is
      * chrome — it reads in quiet ink.
      */
     moreText: {

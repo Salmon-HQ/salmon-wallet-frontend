@@ -52,7 +52,7 @@ import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon }
 import { curve, timing } from '../../utils/motion';
 import {
   DRAG_FOLLOW,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
   floatEntering,
@@ -110,7 +110,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // The eye's own cue that the chain under it changed — a blink, not a
   // report: `scaleY` shuts fast (`sink`/`flick`, same feel the exit above
   // has) and reopens slower (`settle`/`swell`), independent of the amount's
-  // own swap so it reads on every chain change, not only a swipe's.
+  // own change so it reads on every chain change, not only a swipe's.
   const blinkScale = useSharedValue(1);
 
   // Both halves of the blink are built here, on the JS thread: the reopen runs
@@ -151,7 +151,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     const direction = newIndex > activeIndex ? -1 : 1;
     // Never walk the value back: a long drag is already further out than the
     // exit distance, and the exit only has to finish what the finger started.
-    const target = direction * Math.max(Math.abs(dragX.value), LATERAL_SWAP_TRAVEL);
+    const target = direction * Math.max(Math.abs(dragX.value), LATERAL_CHANGE_TRAVEL);
     sinkProgress.value = withTiming(1, leaveTiming);
     dragX.value = withTiming(target, leaveTiming, (finished) => {
       if (finished) runOnJS(updateIndex)(newIndex);
@@ -169,7 +169,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     const fromRight = activeIndex > enteredIndex.current;
     enteredIndex.current = activeIndex;
     sinkProgress.value = 0;
-    dragX.value = fromRight ? LATERAL_SWAP_TRAVEL : -LATERAL_SWAP_TRAVEL;
+    dragX.value = fromRight ? LATERAL_CHANGE_TRAVEL : -LATERAL_CHANGE_TRAVEL;
     dragX.value = withTiming(0, arriveTiming);
   }, [activeIndex, arriveTiming, dragX, sinkProgress]);
 
@@ -216,7 +216,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
       const goNext = event.translationX < -SWIPE_THRESHOLD && activeIndex < blockchains.length - 1;
       const goPrevious = event.translationX > SWIPE_THRESHOLD && activeIndex > 0;
       if (!goNext && !goPrevious) {
-        // Short of the threshold nothing changed, so nothing swaps: the amount
+        // Short of the threshold nothing changed, so nothing changes: the amount
         // springs back to rest and the change un-sinks on the same beat.
         dragX.value = withTiming(0, arriveTiming);
         sinkProgress.value = withTiming(0, arriveTiming);
@@ -285,25 +285,25 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
   const changeColor = hasChange ? change[getLabelValue(changePercent)] : text.secondary;
 
-  // The value swap: everything that reports the active chain is keyed on it,
+  // The value change: everything that reports the active chain is keyed on it,
   // so a switch remounts exactly those nodes and the sink/float plays in
   // place. The beat before the float is owed only once a chain has really
   // changed — on first mount nothing sank.
-  const [chainSwap, setChainSwap] = React.useState({
+  const [chainChange, setChainChange] = React.useState({
     chain: currentBlockchainId,
     hasPrior: false,
   });
-  if (chainSwap.chain !== currentBlockchainId) {
-    setChainSwap({ chain: currentBlockchainId, hasPrior: true });
+  if (chainChange.chain !== currentBlockchainId) {
+    setChainChange({ chain: currentBlockchainId, hasPrior: true });
   }
 
   // The change is the one value whose sink has already been played by the
-  // time it swaps — the gesture sank it in place on the way out (see
+  // time it changes — the gesture sank it in place on the way out (see
   // `changeSinkStyle`), so the keyed node owes only the float, and owes it
   // with no beat: the amount's own exit was the beat. Handing it a second
   // `exiting` here would sink the old value twice.
   const changeMotion = {
-    entering: chainSwap.hasPrior ? floatEntering(isReduceMotionEnabled) : undefined,
+    entering: chainChange.hasPrior ? floatEntering(isReduceMotionEnabled) : undefined,
   };
 
   return (
@@ -465,7 +465,7 @@ const stylesFor = (t: Semantic) =>
       letterSpacing: letterSpacing.balance,
       ...TABULAR,
     },
-    // The swap wrapper may shrink; nothing else sits beside it any more.
+    // The change wrapper may shrink; nothing else sits beside it any more.
     changeText: {
       flexShrink: 1,
     },

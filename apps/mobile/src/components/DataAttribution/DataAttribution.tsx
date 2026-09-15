@@ -1,6 +1,6 @@
 /**
  * DataAttribution — the data provider's credit, once per screen that shows
- * its prices or token list (Portfolio, the swap picker, the confirmation).
+ * its prices or token list (Portfolio, the token picker, the confirmation).
  * Text and link come from the backend's network entry and are drawn
  * verbatim; the provider's terms fix the floor at 10pt, and `fontSize.sm`
  * sits above it. Nothing is drawn for a network that owes no credit.

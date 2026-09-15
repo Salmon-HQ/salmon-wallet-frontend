@@ -1,6 +1,6 @@
 /**
  * PlusMinusGlyph — the two-bar glyph the Powerup install/uninstall control
- * turns instead of swapping, on the DOM.
+ * turns instead of changing, on the DOM.
  *
  * The mobile twin is `apps/mobile/src/components/PlusMinusGlyph`: two
  * identical bars, one fixed, one starting vertical (a plus). `minus` turns

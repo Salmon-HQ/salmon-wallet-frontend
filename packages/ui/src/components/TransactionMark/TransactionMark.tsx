@@ -4,7 +4,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/TransactionMark/TransactionMark.tsx`
  * — same table, same mark anatomy (the token that moved, badged with the
- * type; the pair for a swap; the kit's own well when there is no logo).
+ * type; the kit's own well when there is no logo).
  */
 import React from 'react';
 import {
@@ -12,8 +12,6 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
-  pickSwapLegs,
-  spacing,
   transactionTypeDisplayFor,
   withPlatformGlyphs,
   type Semantic,
@@ -25,7 +23,6 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
-  ArrowsLeftRightIcon,
   CubeIcon,
   FileTextIcon,
   FireIcon,
@@ -46,9 +43,6 @@ export const LEADING_SIZE = componentSizes.iconSize2XL;
 /** The type badge riding the token logo — a mark on a mark, not a bubble. */
 const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 
-/** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
-const SWAP_LOGO_SIZE = 30;
-
 /** The glyph inside the type badge. */
 const TYPE_BADGE_GLYPH = 10;
 
@@ -56,7 +50,6 @@ const TYPE_BADGE_GLYPH = 10;
 const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
   arrowUpRight: ArrowUpRightIcon,
   arrowDownLeft: ArrowDownLeftIcon,
-  arrowsLeftRight: ArrowsLeftRightIcon,
   plusCircle: PlusCircleIcon,
   fire: FireIcon,
   lock: LockIcon,
@@ -115,56 +108,14 @@ function TypeBadge({
 }
 
 /**
- * The row's leading mark: the token that moved, badged with the type — or,
- * for a swap, the pair — falling back to the kit's own well when the token
- * has no logo.
+ * The row's leading mark: the token that moved, badged with the type —
+ * falling back to the kit's own well when the token has no logo.
  */
 export function TransactionMark({ transaction }: TransactionMarkProps) {
   const t = useSemantic();
   const { type, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
-
-  if (type === 'swap') {
-    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
-    if (primaryInput && primaryOutput) {
-      return (
-        <span
-          data-testid="tx-mark-swap"
-          style={{
-            position: 'relative',
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: LEADING_SIZE,
-          }}
-        >
-          <TokenLogo
-            uri={primaryOutput.logo ?? undefined}
-            symbol={primaryOutput.symbol}
-            size={SWAP_LOGO_SIZE}
-            borderRadius={borderRadius.full}
-          />
-          <span
-            style={{
-              display: 'inline-flex',
-              marginLeft: -spacing.md,
-              borderRadius: borderRadius.full,
-              boxSizing: 'content-box',
-              border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
-            }}
-          >
-            <TokenLogo
-              uri={primaryInput.logo ?? undefined}
-              symbol={primaryInput.symbol}
-              size={SWAP_LOGO_SIZE}
-              borderRadius={borderRadius.full}
-            />
-          </span>
-          <TypeBadge icon={config.icon} color={config.color} />
-        </span>
-      );
-    }
-  }
 
   // The token that moved is always the mark (owner, 2026-09-11): its logo, or
   // its initials while the backend has no logo for it. Only a transaction

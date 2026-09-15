@@ -96,7 +96,7 @@ export function ExchangeReceipt({
   );
 
   const showWait = useWaitGate(settling);
-  // And the wait is not merely unmounted when it ends: this branch swaps the
+  // And the wait is not merely unmounted when it ends: this branch switches the
   // instant `settling` flips, so the closing wave used to play nowhere on the
   // one screen it matters most. `held` keeps the wait rendered — with
   // `visible={false}`, which is what starts its exit — until the last front has
@@ -266,7 +266,7 @@ export function ExchangeReceipt({
                 <KeyValueRow label={t('transactions.detail.rate', 'Rate')} value={exchangeRate} />
               ) : null}
               {exchangeFee ? (
-                <KeyValueRow label={t('swap.review.salmonFee', 'Salmon fee')} value={exchangeFee} />
+                <KeyValueRow label={t('transaction.salmonFee', 'Salmon fee')} value={exchangeFee} />
               ) : null}
               <KeyValueRow label={t('transactions.detail.time', 'Time')} value={receiptTime} />
             </Card>

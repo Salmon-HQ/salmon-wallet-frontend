@@ -122,7 +122,7 @@ export type {
   MarketChartPoint,
 } from './useCoinMarketData';
 
-// Verified token catalogue hook (shared between the swap entries)
+// Verified token catalogue hook
 export { useTokenCatalog } from './useTokenCatalog';
 export type { UseTokenCatalogParams, UseTokenCatalogResult } from './useTokenCatalog';
 
@@ -238,7 +238,7 @@ export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswo
 export { useChangePassword } from './useChangePassword';
 export type { UseChangePasswordParams } from './useChangePassword';
 
-// Home shell (page index, per-page balances, offered sub-tabs, the swap's owner)
+// Home shell (page index, per-page balances, offered sub-tabs, the change's owner)
 export {
   useHomeShell,
   HOME_CORE_TAB_KEYS,
@@ -250,7 +250,7 @@ export type {
   HomeCoreTabKey,
   HomePowerupTab,
   HomeSubTabKey,
-  HomeSwapCause,
+  HomeChangeCause,
   UseHomeShellParams,
   UseHomeShellResult,
 } from './useHomeShell';

@@ -62,7 +62,7 @@ export interface TokenSelectListPropsBase {
   showBalances?: boolean;
   /**
    * Hide tokens without a meaningful tag unless the developer toggle shows
-   * them (default). Off when the caller already curated the list (Swap).
+   * them (default). Off when the caller already curated the list.
    */
   verifiedOnly?: boolean;
   /** Remote search past the list in hand — a catalogue the list does not carry whole. */

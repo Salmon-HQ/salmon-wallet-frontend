@@ -3,7 +3,7 @@
  *
  * One icon name, one import. Every mobile component pulls its glyphs from
  * here rather than from an icon vendor directly, so the set stays small,
- * auditable, and swappable. This module mirrors `packages/ui/src/icons.ts` —
+ * auditable, and replaceable. This module mirrors `packages/ui/src/icons.ts` —
  * same drawings, same names, a different renderer (`phosphor-react-native`,
  * riding `react-native-svg`).
  *

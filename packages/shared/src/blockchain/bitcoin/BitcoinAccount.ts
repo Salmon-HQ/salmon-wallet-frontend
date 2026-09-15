@@ -538,55 +538,6 @@ export class BitcoinAccount {
   }
 
   /**
-   * Gets best swap quote.
-   * Not supported for Bitcoin.
-   *
-   * @param _tokenInId - Input token ID (unused)
-   * @param _tokenOutId - Output token ID (unused)
-   * @param _amount - Amount to swap (unused)
-   * @param _slippage - Slippage tolerance (unused)
-   * @throws 'method_not_supported'
-   */
-  async getBestSwapQuote(
-    _tokenInId: string,
-    _tokenOutId: string,
-    _amount: number,
-    _slippage?: number
-  ): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Expires a swap quote.
-   * Not supported for Bitcoin.
-   *
-   * @param _quote - Quote to expire (unused)
-   * @throws 'method_not_supported'
-   */
-  async expireSwapQuote(_quote: unknown): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
-   * Creates a swap transaction.
-   * Not supported for Bitcoin.
-   *
-   * @param _quote - Swap quote (unused)
-   * @param _tokenInId - Input token ID (unused)
-   * @param _tokenOutId - Output token ID (unused)
-   * @param _amount - Amount to swap (unused)
-   * @throws 'method_not_supported'
-   */
-  async createSwapTransaction(
-    _quote: unknown,
-    _tokenInId: string,
-    _tokenOutId: string,
-    _amount: number
-  ): Promise<never> {
-    throw 'method_not_supported';
-  }
-
-  /**
    * Calculates transfer fee.
    * Returns null for Bitcoin (fee is calculated at transaction creation time).
    *

@@ -19,7 +19,7 @@ import type { NetworkCapabilities } from './settings';
  *
  * Previously duplicated as `BlockchainType` (useAddressValidation, useAddressbook,
  * useBalance, useTransactions), `ChainType` (useMultiChainTokens),
- * `SendBlockchainType` (useSendTransaction), and `SwapChainType` (types/swap).
+ * `SendBlockchainType` (useSendTransaction).
  */
 export type BlockchainType = 'solana' | 'bitcoin' | 'ethereum';
 

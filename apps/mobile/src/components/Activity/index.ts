@@ -22,6 +22,4 @@ export type {
   TransactionStatus,
   TransactionTokenAmount,
   TransactionFee,
-  SwapRouteHop,
-  SwapRoute,
 } from './types';

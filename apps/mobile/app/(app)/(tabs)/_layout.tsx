@@ -79,10 +79,9 @@ export default function TabLayout() {
           }}
         >
           <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
-          {/* Swap had a hidden entry here (`href: null`). Hiding a tab from the
-              bar does not unregister its route, so the deep link still opened
-              it; the screen is parked in `src/screens/SwapRoute.tsx` until
-              spec 027 and there is no route left to register. */}
+          {/* A Powerup never gets a hidden entry here (`href: null`): hiding a
+              tab from the bar does not unregister its route, so a deep link
+              would still open it. A Powerup is a surface of Home (spec 027). */}
         </Tabs>
       </BlurTargetProvider>
     </View>

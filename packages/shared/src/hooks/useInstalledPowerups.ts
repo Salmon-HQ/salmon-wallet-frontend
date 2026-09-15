@@ -4,7 +4,7 @@
  * Installation is per device and persisted (nothing about it is on-chain or
  * on the account): the catalogue installs, the Home tab row and the tab-order
  * sheet read, and uninstalling takes the tab away again. Nothing is installed
- * out of the box — Swap included.
+ * out of the box.
  *
  * It lives in `hooks/`, not under `powerups/`, because it touches storage and
  * the Powerups boundary forbids that (spec 027 §2). Two surfaces read it at

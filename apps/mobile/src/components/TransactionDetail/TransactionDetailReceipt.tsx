@@ -60,31 +60,27 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
 
   return (
     <Card padding="lg" gap={spacing.md} testID="tx-detail-addresses">
-      {transaction.type !== 'swap' && (
-        <>
-          {transaction.inputs.map((token, index) =>
-            token.source ? (
-              <AddressCopyRow
-                key={`from-${index}`}
-                label={t('transactions.from', 'From')}
-                address={token.source}
-                truncate="medium"
-                style={styles.addressRow}
-              />
-            ) : null
-          )}
-          {transaction.outputs.map((token, index) =>
-            token.destination ? (
-              <AddressCopyRow
-                key={`to-${index}`}
-                label={t('transactions.to', 'To')}
-                address={token.destination}
-                truncate="medium"
-                style={styles.addressRow}
-              />
-            ) : null
-          )}
-        </>
+      {transaction.inputs.map((token, index) =>
+        token.source ? (
+          <AddressCopyRow
+            key={`from-${index}`}
+            label={t('transactions.from', 'From')}
+            address={token.source}
+            truncate="medium"
+            style={styles.addressRow}
+          />
+        ) : null
+      )}
+      {transaction.outputs.map((token, index) =>
+        token.destination ? (
+          <AddressCopyRow
+            key={`to-${index}`}
+            label={t('transactions.to', 'To')}
+            address={token.destination}
+            truncate="medium"
+            style={styles.addressRow}
+          />
+        ) : null
       )}
 
       {transaction.feePayer && (
@@ -99,14 +95,6 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
         <KeyValueRow
           label={t('transactions.detail.networkFee', 'Network Fee')}
           value={`${formatRawAmount(transaction.fee.amount, transaction.fee.decimals)} ${transaction.fee.symbol}`}
-          labelWeight={600}
-        />
-      )}
-
-      {transaction.swapRoute?.totalFee && (
-        <KeyValueRow
-          label={t('transactions.detail.swapFee', 'Swap Fee')}
-          value={`${transaction.swapRoute.totalFee.amount} ${transaction.swapRoute.totalFee.symbol}`}
           labelWeight={600}
         />
       )}

@@ -318,7 +318,7 @@ export default function HomeScreen() {
   });
 
   // The shell's state — page index, per-page balances, the network the screen
-  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // stands on, the offered sub-tabs and which wrapper owns a change — lives once
   // in shared; this screen renders it (`useHomeShell`).
   const {
     activeBlockchainIndex,
@@ -596,7 +596,7 @@ export default function HomeScreen() {
       activeKey={effectiveSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
-      // A reorder swaps the tabs on the verb — old arrangement sinks, new one
+      // A reorder changes the tabs on the verb — old arrangement sinks, new one
       // floats — while the order button beside them holds still. Keyed by the
       // arrangement, so a tab switch never remounts them.
       tabsKey={subTabsKey}
@@ -666,7 +666,7 @@ export default function HomeScreen() {
           chrome: when a task engages the shell they leave with the verb at
           full depth (the chrome's half depth is the header row's business, not
           theirs). Conditional render is the mechanism — the same one the
-          swap's step changes use — so unmount plays the sink and remount plays
+          a review's step changes use — so unmount plays the sink and remount plays
           the float. The wrapper sits inside the screen, which is itself a
           sibling of the mounted ground in `(tabs)/_layout.tsx`: the water
           never travels with it. */}
@@ -740,7 +740,7 @@ export default function HomeScreen() {
           {/* The content region plays the verb on a sub-tab change: the
               outgoing list sinks, the incoming one floats — NFTs used to
               appear from nothing (owner, on device). Keyed by sub-tab so the
-              swap is a remount, the same mechanism the chain swap uses; the
+              change is a remount, the same mechanism the chain change uses; the
               block above it holds still (rule four). */}
           <Reanimated.View
             key={effectiveSubTab}
@@ -775,11 +775,11 @@ export default function HomeScreen() {
                 )}
 
                 {/* Scrollable Token List or Bitcoin View.
-                  Keyed by chain so switching chains swaps the whole container
+                  Keyed by chain so switching chains replaces the whole container
                   with the sink and the float: the outgoing chain's content
                   sinks 12dp as its light goes, the incoming one floats up into
                   place. The frame above holds still; only the content travels.
-                  Under reduce motion both props are undefined and the swap
+                  Under reduce motion both props are undefined and the change
                   stays instant. */}
                 <View style={styles.listContainer}>
                   <Reanimated.View

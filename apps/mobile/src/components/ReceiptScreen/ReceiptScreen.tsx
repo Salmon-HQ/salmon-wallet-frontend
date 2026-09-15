@@ -3,15 +3,15 @@
  *
  * `transfer` is CORE 07's composition (a seal, a sentence, and a receipt
  * card of rows under two actions) — what `send/success.tsx` first drew and
- * `nft/[id]/success.tsx` now shares. `exchange` is the graphic receipt swap
- * has always rendered (token-mark hero, arrow, rate/fee block) under its
- * `tx-success-*` e2e vocabulary, now core's receipt after a signed proposal.
+ * `nft/[id]/success.tsx` now shares. `exchange` is the graphic receipt
+ * (token-mark hero, arrow, rate/fee block) under its `tx-success-*` e2e
+ * vocabulary — core's receipt after a signed proposal.
  * The two tones do not share a prop shape: `exchange` takes
  * `ExchangeReceiptScreenPropsBase`; `transfer` takes the CORE 07 shape (rows,
  * primary/secondary actions) new callers compose against.
  *
  * `TransferReceipt` is required lazily rather than imported: it pulls in
- * `Card`/`IconBubble`, which `ExchangeReceipt` (and every swap render) has no
+ * `Card`/`IconBubble`, which `ExchangeReceipt` has no
  * business loading. A static import would load both subtrees for every
  * consumer of either tone.
  */

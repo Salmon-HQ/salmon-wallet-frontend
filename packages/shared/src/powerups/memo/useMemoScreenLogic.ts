@@ -73,6 +73,13 @@ export interface UseMemoScreenLogicResult {
   submit: () => Promise<void>;
 }
 
+/** The copy for a build the backend refuses, by reason — the same three every Powerup reads. */
+const UNAVAILABLE_KEYS = {
+  network: 'powerups.unavailable.network',
+  region: 'powerups.unavailable.region',
+  wallet: 'powerups.unavailable.wallet',
+} as const;
+
 export function useMemoScreenLogic({
   publicKey,
   networkId,
@@ -113,9 +120,7 @@ export function useMemoScreenLogic({
           codes: MEMO_CODES,
           fallback: 'memo.errors.buildFailed',
         });
-        setError(
-          failure.kind === 'message' ? failure.message : `swap.unavailable.${failure.reason}`
-        );
+        setError(failure.kind === 'message' ? failure.message : UNAVAILABLE_KEYS[failure.reason]);
       }
     } finally {
       setIsConfirming(false);

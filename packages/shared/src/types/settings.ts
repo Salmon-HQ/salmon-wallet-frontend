@@ -510,7 +510,6 @@ export interface NetworkCapabilities {
     overview: NetworkSection;
     token_detail: NetworkSection;
     collectibles: NetworkSection;
-    swap: { active: boolean };
     exchange: { active: boolean };
     transactions: { active: boolean };
   };

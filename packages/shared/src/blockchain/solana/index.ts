@@ -79,7 +79,6 @@ export type { SignAndSendPreparedSolanaTransactionsOptions } from './prepared-tr
 export {
   getRecentTransactions,
   isTransferTransaction,
-  isSwapTransaction,
   isNftTransaction,
   isSuccessful,
   isFailed,

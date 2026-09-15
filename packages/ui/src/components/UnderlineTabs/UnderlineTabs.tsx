@@ -10,7 +10,7 @@
  * curve, collapsed under `useReducedMotion()`.
  *
  * **One scroller, always.** Unlike mobile's static-row-vs-ScrollView split,
- * the DOM twin never swaps DOM shapes: the tab row always sits inside a
+ * the DOM twin never changes DOM shapes: the tab row always sits inside a
  * horizontal scroller. A `ResizeObserver` compares the scroller's own width
  * against its content's, and only *enables* scrolling (and shows the trailing
  * fade) once the content overruns the scroller — never mounts a second tree.

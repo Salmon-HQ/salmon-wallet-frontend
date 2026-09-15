@@ -20,7 +20,7 @@ import { ListRow } from '../ListRow';
 import { SkeletonRow } from '../SkeletonRow';
 import type { SettingsSelectorListProps } from './types';
 
-/** Mirrors a rendered card row, so the loading state does not jump on swap. */
+/** Mirrors a rendered card row, so the loading state does not jump on change. */
 const SKELETON_ROW_COUNT = 3;
 
 /** The leading well every option row carries when a selector has no art of its own. */

@@ -1,7 +1,7 @@
 /**
  * AmountEntryCard — the big centred amount card, hoisted out of Send's
- * amount step (`StepAmount.tsx`, CORE 05) so Swap's input form
- * (`SwapPage/SwapInputScreen.tsx`) draws the same card instead of its own.
+ * amount step (`StepAmount.tsx`, CORE 05) so any Powerup's input form
+ * draws the same card instead of its own.
  * Mobile twin: `apps/mobile/src/components/AmountEntryCard/AmountEntryCard.tsx`.
  */
 import React from 'react';

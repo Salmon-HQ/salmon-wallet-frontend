@@ -9,13 +9,11 @@
  * not switched it off, an account exists — and this decides WHICH.
  *
  * The props differ per Powerup because the pages do, and they come from what
- * Home already holds: the balance's tokens, the currency formatter, the
- * watch-only flag. A page reading them for itself would repeat Home's own
+ * Home already holds. A page reading them for itself would repeat Home's own
  * queries, so they arrive as `PowerupBodyContext` instead.
  */
 import React from 'react';
-import { MemoPage, SwapPage } from '@salmon/ui/powerups';
-import type { SwapToken } from '@salmon/shared';
+import { MemoPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
   /** The active account's receive address on `networkId`; never null here. */
@@ -23,11 +21,6 @@ export interface PowerupBodyContext {
   networkId: string | null;
   /** Home's way back: the portfolio the result belongs to. */
   onNavigateHome: () => void;
-  /** Solana tokens for the active account, as the Swap surface takes them. */
-  swapTokens: SwapToken[];
-  tokensLoading: boolean;
-  formatUsd: (value: number) => string;
-  watchOnly: boolean;
 }
 
 /**
@@ -41,22 +34,6 @@ export function renderPowerupBody(id: string, ctx: PowerupBodyContext): React.Re
       <MemoPage
         publicKey={ctx.publicKey}
         networkId={ctx.networkId}
-        onNavigateHome={ctx.onNavigateHome}
-      />
-    );
-  }
-  if (id === 'swap' && SwapPage) {
-    // The confirmation is core's and covers the whole panel when the user
-    // signs; the swap ends on Home's own ground once the receipt is closed.
-    return (
-      <SwapPage
-        tokens={ctx.swapTokens}
-        publicKey={ctx.publicKey}
-        networkId={ctx.networkId}
-        loading={ctx.tokensLoading}
-        initialInToken={ctx.swapTokens[0]}
-        formatUsd={ctx.formatUsd}
-        watchOnly={ctx.watchOnly}
         onNavigateHome={ctx.onNavigateHome}
       />
     );

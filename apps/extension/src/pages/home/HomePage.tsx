@@ -104,7 +104,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
   const [{ currency }, { formatValue }] = useCurrencyContext();
-  const formatSwapUsd = useCallback((value: number) => `~${formatValue(value)}`, [formatValue]);
   const { ready, activeAccount, activeBlockchainAccount, networkId } = state;
 
   // The two "show me more" flags come from the provider the side panel root
@@ -393,7 +392,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   });
 
   // The shell's state — page index, per-page balances, the network the screen
-  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // stands on, the offered sub-tabs and which wrapper owns a change — lives once
   // in shared; this page renders it (`useHomeShell`).
   const {
     activeBlockchainIndex,
@@ -539,7 +538,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
-  // reads the page swap as a push (depth 1 over Home's 0) or a pop. The
+  // reads the page change as a push (depth 1 over Home's 0) or a pop. The
   // catalogue is one of them here (owner, 2026-09-11: on the DOM it is a page,
   // not the sheet mobile draws); an installed Powerup is a sub-tab of Home.
   // Its entries are shared with mobile's HomeScreen (`useHomePowerupsCatalog`):
@@ -560,25 +559,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const activePowerupDisabledReason = powerupTabs.find(
     (tab) => tab.key === effectiveSubTab
   )?.disabledReason;
-
-  const swapTokens = useMemo(
-    () =>
-      currentChain === 'solana'
-        ? tokens.map((token) => ({
-            address: token.address,
-            symbol: token.symbol,
-            name: token.name,
-            decimals: token.decimals ?? 9,
-            logo: token.logo ?? undefined,
-            balance:
-              typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount,
-            usdPrice: token.price ?? undefined,
-            chain: 'solana' as const,
-            networkId: networkId ?? undefined,
-          }))
-        : [],
-    [currentChain, tokens, networkId]
-  );
 
   const renderPage = (): React.ReactElement => {
     switch (currentPage) {
@@ -800,7 +780,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   activeKey={effectiveSubTab}
                   onChange={handleSubTabChange}
                   onOrderPress={handleOrderPress}
-                  // A reorder swaps the tabs on the verb — old arrangement
+                  // A reorder switches the tabs on the verb — old arrangement
                   // sinks, new one floats — while the order button beside them
                   // holds still. Keyed by the arrangement, so a tab switch never
                   // remounts them.
@@ -811,7 +791,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
             {/* The content region plays the verb on a sub-tab change: the
                 outgoing list sinks, the incoming one floats. Keyed by sub-tab,
-                the same mechanism the chain swap uses; the block above it holds
+                the same mechanism the chain change uses; the block above it holds
                 still (rule four). */}
             <div style={contentRegionStyle}>
               <SinkFloat
@@ -820,7 +800,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 style={fillColumnStyle}
               >
                 {effectiveSubTab === 'portfolio' ? (
-                  // Keyed by chain so switching chains swaps the whole column
+                  // Keyed by chain so switching chains replaces the whole column
                   // with the sink and the float: the outgoing chain's content
                   // sinks as its light goes, the incoming one floats up into
                   // place. The frame above holds still; only the content travels.
@@ -885,10 +865,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     publicKey: activeBlockchainAccount.getReceiveAddress(),
                     networkId: networkId ?? null,
                     onNavigateHome: () => setActiveSubTab('portfolio'),
-                    swapTokens,
-                    tokensLoading: balanceState === 'loading',
-                    formatUsd: formatSwapUsd,
-                    watchOnly: isWatchOnly,
                   })
                 )}
               </SinkFloat>

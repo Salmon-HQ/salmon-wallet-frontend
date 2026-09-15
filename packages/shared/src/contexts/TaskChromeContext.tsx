@@ -4,7 +4,7 @@
  * mobile's tab shell and the extension's side panel mount the same provider
  * (`apps/mobile/src/contexts` and `packages/ui/src/contexts` re-export it).
  *
- * A task lives in its own window (swap's review modal, the send flow's
+ * A task lives in its own window (a Powerup's review modal, the send flow's
  * full-screen wait), but the verb plays in the shell before that window
  * appears: the wallet header row sinks with the step content and floats back
  * with it. This context is how a deep flow tells the shell-level chrome
@@ -16,7 +16,7 @@
  * begins.
  *
  * Engagement is COUNTED, not a boolean. There is more than one publisher now
- * (swap and send), and a bare flag let whichever flow tore down first pull
+ * (a Powerup and send), and a bare flag let whichever flow tore down first pull
  * the chrome back under a flow that was still running. Each publisher holds
  * its own claim under its own key, and the chrome stays engaged while any
  * claim is open.

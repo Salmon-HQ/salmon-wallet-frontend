@@ -2,7 +2,7 @@
  * TransactionDetail — CORE 09, on the DOM.
  *
  * The shell: a status block, the meta card, whichever variant the type calls
- * for (swap or transfer), the receipt, and the two actions. Every block below
+ * for (the transfer), the receipt, and the two actions. Every block below
  * it is a `Card` from the kit, so this file owns almost no drawing of its own.
  *
  * The mobile twin is
@@ -51,7 +51,6 @@ import { ExplorerLinkButton } from '../ExplorerLinkButton';
 import { TYPE_LABEL_KEYS, transactionTypeConfigFor } from '../TransactionMark';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
-import { TransactionDetailSwap } from './TransactionDetailSwap';
 import { TransactionDetailTransfer } from './TransactionDetailTransfer';
 import type { TransactionDetailProps } from './types';
 
@@ -89,7 +88,7 @@ export function TransactionDetail({
     if (transaction && onShare) onShare(transaction);
   }, [transaction, onShare]);
 
-  const { typeConfig, statusConfig, conversionRate } = useTransactionDetailDerived(
+  const { typeConfig, statusConfig } = useTransactionDetailDerived(
     transaction,
     TRANSACTION_TYPE_CONFIG,
     STATUS_CONFIG
@@ -227,11 +226,7 @@ export function TransactionDetail({
           ) : null}
         </Card>
 
-        {transaction.type === 'swap' ? (
-          <TransactionDetailSwap transaction={transaction} conversionRate={conversionRate} />
-        ) : (
-          <TransactionDetailTransfer transaction={transaction} />
-        )}
+        <TransactionDetailTransfer transaction={transaction} />
 
         <TransactionDetailReceipt transaction={transaction} onCopyHash={onCopyHash} />
 

@@ -144,15 +144,9 @@ export {
   formatPercentageCompact,
   formatPercent,
   formatSolFee,
-  formatConversionRate,
-  formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
   formatPercentChange,
-  // Price impact
-  type PriceImpactSeverity,
-  PRICE_IMPACT_THRESHOLDS,
-  getPriceImpactSeverity,
   // Price performance
   isPositivePerformance,
 } from './formatting';
@@ -273,17 +267,12 @@ export type {
 // Validation utilities
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
 
-// Swap utilities
-export { mapToSwapToken, unifiedToSwapToken } from './swap';
-
 // Transaction transform utilities
 export {
   transformSolanaTransaction,
   transformMultichainTransaction,
   getTransactionDescription,
-  pickSwapLegs,
 } from './transactions';
-export type { SwapLegSelection } from './transactions';
 
 // Content loader (platform-split: native uses react-content-loader/native, web uses SVG)
 export { ContentLoader, Rect, Circle } from './ContentLoader';
@@ -349,7 +338,6 @@ export {
   COUNTERPARTY_ADDRESS_CHARS,
   STATUS_LABEL_KEYS,
   TYPE_LABEL_KEYS,
-  conversionRateFor,
   describeTransactionRow,
   transactionCounterparty,
   transactionStatusDisplayFor,
@@ -358,7 +346,6 @@ export {
 } from './transactionDisplay';
 export type {
   ConfirmationTone,
-  ConversionRate,
   TransactionSentence,
   TransactionStatusDisplay,
   TransactionStatusGlyph,

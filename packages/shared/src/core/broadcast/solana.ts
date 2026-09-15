@@ -2,7 +2,7 @@
  * core/broadcast — the one place a Solana transaction is signed and sent.
  *
  * Every flow that carries a backend-built transaction (NFT burn and transfer,
- * the swap Powerup) comes through here: check the transaction against what the
+ * a Powerup) comes through here: check the transaction against what the
  * flow declared, put a fresh blockhash on the message, sign the wallet's own
  * slot, send, and wait for the cluster's word. Nothing outside `core/` calls
  * `sendTransaction` (spec 027 §2).
@@ -47,7 +47,7 @@ export interface SolanaBroadcastOptions {
  * The compiled message is patched with a fresh blockhash and re-encoded
  * rather than decompiled and rebuilt: decompiling re-derives account ordering
  * and lookup-table indices, which does not reproduce the input bytes.
- * Swapping the one field is the only transformation that round-trips exactly.
+ * Replacing the one field is the only transformation that round-trips exactly.
  *
  * `partiallySignTransaction` preserves signatures already in the map, so a
  * co-signer's signature on a prepared transaction survives; this wallet only

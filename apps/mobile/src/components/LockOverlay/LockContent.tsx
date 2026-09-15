@@ -118,7 +118,7 @@ export function LockContent({
   const [biometricReady, setBiometricReady] = useState(false);
 
   // The passage into the wait: when the unlock wait rises, the lock form
-  // sinks under it — the same verb every step swap in the app speaks. The
+  // sinks under it — the same verb every step change in the app speaks. The
   // wait itself owns the beat on its way in.
   const { exiting: waitExiting } = useWaitPassage(showLoadingScreen);
 
@@ -486,9 +486,9 @@ export function LockContent({
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {/*
         The lock carries the water column (DESIGN.md §the lock screen): the
-        same ground the swap task modal mounts — depth ramp, deep-field
+        same ground the review task modal mounts — depth ramp, deep-field
         scales. It is mounted *outside* the layout, the way the
-        swap task modal mounts it outside its steps, because the ground never
+        review task modal mounts it outside its steps, because the ground never
         travels: when the unlock wait rises, the form below sinks and the
         water stays. The ground color sits under the ramp so nothing behind
         the gate can ever show through while it paints.

@@ -1,6 +1,6 @@
 /**
  * The developer-mode card: the raw shape of the transaction as the indexer
- * reported it — Helius type, account count, programs, inner swaps, fees.
+ * reported it — Helius type, account count, programs, fees.
  *
  * Only reachable with developer mode on, so it stays out of the shell. The
  * mobile twin is

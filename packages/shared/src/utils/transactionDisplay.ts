@@ -1,18 +1,18 @@
 /**
  * How a transaction reads: its verb, its glyph name, its ink, its status and
- * confirmation labels, its swap rate and the sentence the activity row says.
+ * confirmation labels, its conversion rate and the sentence the activity row says.
  *
  * Shared because the mobile Activity/TransactionDetail and the DOM
  * ActivityPage/TransactionDetail draw the same facts — the two
- * tables used to live once per platform, which is how "Swapped" here and
- * "Swap" there happen. Glyphs are names: each platform maps a name to its own
+ * tables used to live once per platform, which is how the wording drifted.
+ * Glyphs are names: each platform maps a name to its own
  * icon component; ink is resolved here from the active tokens.
  */
 import { chainMarks } from '../theme/brand';
 import type { Semantic } from '../theme/semantic';
 import type { Transaction, TransactionType } from '../types/transaction';
 import { getShortAddress } from './address';
-import { getTransactionDescription, pickSwapLegs } from './transactions';
+import { getTransactionDescription } from './transactions';
 
 // ============================================================================
 // Type
@@ -22,7 +22,6 @@ import { getTransactionDescription, pickSwapLegs } from './transactions';
 export type TransactionTypeGlyph =
   | 'arrowUpRight'
   | 'arrowDownLeft'
-  | 'arrowsLeftRight'
   | 'plusCircle'
   | 'fire'
   | 'lock'
@@ -43,7 +42,6 @@ export interface TransactionTypeDisplay {
 export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
   send: 'transactions.detail.sent',
   receive: 'transactions.detail.received',
-  swap: 'transactions.detail.swapped',
   mint: 'transactions.detail.minted',
   burn: 'transactions.detail.burned',
   stake: 'transactions.detail.staked',
@@ -63,7 +61,6 @@ export const transactionTypeDisplayFor = (
   // The same arrows the Home Send / Receive buttons wear (owner, 2026-09-11).
   send: { label: 'Sent', glyph: 'arrowUpRight', color: t.change.negative },
   receive: { label: 'Received', glyph: 'arrowDownLeft', color: t.change.positive },
-  swap: { label: 'Swapped', glyph: 'arrowsLeftRight', color: chainMarks.purple },
   mint: { label: 'Minted', glyph: 'plusCircle', color: chainMarks.cyan },
   burn: { label: 'Burned', glyph: 'fire', color: chainMarks.orange },
   stake: { label: 'Staked', glyph: 'lock', color: chainMarks.green },
@@ -146,37 +143,6 @@ export const CONFIRMATION_LABEL_KEYS: Record<string, string> = {
 // ============================================================================
 // Derivations
 // ============================================================================
-
-export interface ConversionRate {
-  fromSymbol: string;
-  toSymbol: string;
-  /** Six decimals, as the detail prints it. */
-  rate: string;
-}
-
-/**
- * A swap's rate: the route's own when it carries one, otherwise derived from
- * the primary input/output pair (see `pickSwapLegs` — the backend's
- * `inputs[0]`/`outputs[0]`, any other leg is residual). `null` when there is
- * nothing to rate.
- */
-export function conversionRateFor(
-  transaction: Pick<Transaction, 'swapRoute' | 'inputs' | 'outputs'> | null | undefined
-): ConversionRate | null {
-  if (!transaction) return null;
-  const { swapRoute, inputs, outputs } = transaction;
-  if (swapRoute?.conversionRate) return swapRoute.conversionRate;
-  const { primaryInput: toToken, primaryOutput: fromToken } = pickSwapLegs({ inputs, outputs });
-  if (!fromToken || !toToken) return null;
-  const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
-  const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
-  if (!(fromAmount > 0)) return null;
-  return {
-    fromSymbol: fromToken.symbol,
-    toSymbol: toToken.symbol,
-    rate: (toAmount / fromAmount).toFixed(6),
-  };
-}
 
 /**
  * The other side of a transfer, when there is one: who it went to, or who it

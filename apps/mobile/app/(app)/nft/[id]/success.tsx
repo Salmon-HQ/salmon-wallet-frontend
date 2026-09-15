@@ -3,12 +3,12 @@
  *
  * Shares the same CORE 07 composition as `send/success.tsx` now —
  * `ReceiptScreen tone="transfer"` — rather than the exchange-graphic
- * component swap renders. Only the container stays route-owned: its own
+ * component change renders. Only the container stays route-owned: its own
  * water, its own safe area, and no back gesture behind it (the layout takes
  * it off; the hardware back does what the one control does).
  *
  * `successSettling` gates the primary and the explorer link rather than
- * swapping in a separate loader — pressing "Continue" while the indexer has
+ * changing in a separate loader — pressing "Continue" while the indexer has
  * not caught up would send the user home to a stale balance, so the CTA
  * stays disabled until it clears.
  */

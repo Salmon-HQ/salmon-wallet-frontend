@@ -20,9 +20,8 @@ export type TransactionItemTranslate = (key: string, optionsOrDefault?: any) => 
 
 export interface UseTransactionItemDerivedResult<TypeConfig> {
   config: TypeConfig;
-  /** `inputs.length + outputs.length` — what `isComplex` is measured against. */
+  /** `inputs.length + outputs.length`. */
   totalAmounts: number;
-  isComplex: boolean;
   descriptionText: string;
   typeLabel: string;
 }
@@ -31,14 +30,12 @@ export function useTransactionItemDerived<TypeConfig extends { label: string }>(
   transaction: Transaction,
   contacts: Record<string, string> | undefined,
   t: TransactionItemTranslate,
-  typeConfigTable: Record<string, TypeConfig> & { unknown: TypeConfig },
-  maxVisibleAmounts: number
+  typeConfigTable: Record<string, TypeConfig> & { unknown: TypeConfig }
 ): UseTransactionItemDerivedResult<TypeConfig> {
   const { type, inputs, outputs } = transaction;
   const config = typeConfigTable[type] || typeConfigTable.unknown;
 
   const totalAmounts = inputs.length + outputs.length;
-  const isComplex = type === 'swap' && totalAmounts > maxVisibleAmounts;
 
   const descriptionText = useMemo(() => {
     const said = describeTransactionRow(transaction, contacts);
@@ -47,5 +44,5 @@ export function useTransactionItemDerived<TypeConfig extends { label: string }>(
 
   const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 
-  return { config, totalAmounts, isComplex, descriptionText, typeLabel };
+  return { config, totalAmounts, descriptionText, typeLabel };
 }

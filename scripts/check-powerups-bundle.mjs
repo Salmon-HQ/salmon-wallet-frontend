@@ -5,7 +5,7 @@
  *
  * The flag is a bundler alias, not a runtime `if`: with `VITE_POWERUPS=off`
  * (extension) / `EXPO_PUBLIC_POWERUPS=off` (mobile) every Powerups entry
- * resolves to its empty twin, so the swap code, its copy and its endpoint
+ * resolves to its empty twin, so a Powerup's code, its copy and its endpoint
  * must be absent from the output. This greps a built bundle for markers that
  * exist only inside `powerups/**` and fails when one is found.
  *
@@ -22,13 +22,7 @@ import { join } from 'node:path';
  * on purpose: the bundler escapes non-ASCII copy, and the attribution
  * ("Powered by 0x") arrives from the backend at runtime, never in code.
  */
-const MARKERS = [
-  'ft/swap/build',
-  'swap.catalog',
-  'Swap Review',
-  'Tolerancia de Deslizamiento',
-  'memo.catalog',
-];
+const MARKERS = ['memo.catalog', 'memo.review', 'gm desde Salmon'];
 
 const [, , dir, ...flags] = process.argv;
 if (!dir) {

@@ -16,8 +16,8 @@
  *   `InstructionError` variants: `@solana/errors` codes, mirrored from Agave.
  * - Program-specific `Custom(n)` codes: SPL Token (`solana-program/token`,
  *   `interface/src/error.rs`), the System program (`solana-sdk`,
- *   `system-interface/src/error.rs`), the swap aggregator programs earlier
- *   swaps routed through (6001 = slippage).
+ *   `system-interface/src/error.rs`), and the aggregator programs' custom
+ *   slippage code (6001).
  * - Anything that is not a `SolanaError` (Bitcoin, Ethereum, the backend, an
  *   aggregator) still goes by message patterns, as before.
  */
@@ -67,7 +67,7 @@ import {
 
 /** What a failure becomes on screen: the message, and the line under it. */
 export interface TransactionFailure {
-  /** Translation key under `transaction.errors` (or `swap.errors`). */
+  /** Translation key under `transaction.errors`. */
   key: string;
   /**
    * What actually came back, already readable and short — the program and
@@ -86,7 +86,7 @@ const TOKEN_PROGRAMS = new Set([
   'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
 ]);
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
-/** The aggregator programs earlier swaps routed through; kept so their history still decodes. */
+/** The aggregator programs whose custom errors history still has to decode. */
 const AGGREGATOR_PROGRAMS = new Set([
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
   'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB',
@@ -342,7 +342,7 @@ const BUSY_PATTERNS = [
 const BUSY_STATUS = /\b(429|502|503|504)\b/;
 
 /** Message prefixes that are already translation keys — pass them through. */
-const KEY_PREFIXES = ['transaction.errors.', 'swap.errors.'];
+const KEY_PREFIXES = ['transaction.errors.'];
 
 function describeByMessage(message: string, outer: unknown): TransactionFailure {
   const haystack = message.toLowerCase();
@@ -409,7 +409,7 @@ export function describeTransactionError(err: unknown): TransactionFailure {
   return describeByMessage(message, err);
 }
 
-/** The translation key alone — what the swap and NFT flows read. */
+/** The translation key alone — what the NFT flows read. */
 export function classifyTransactionError(err: unknown): string {
   return describeTransactionError(err).key;
 }

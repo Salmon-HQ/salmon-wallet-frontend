@@ -58,16 +58,12 @@ export type { WarningNoticeTone, WarningNoticePropsBase } from './warning-notice
 // Transaction History — the row and the pieces the row and the detail share
 export type {
   TransactionItemPropsBase,
-  PriceImpactSize,
-  PriceImpactBadgePropsBase,
-  ConversionRateDisplayPropsBase,
   AddressCopyRowPropsBase,
   ExplorerLinkButtonPropsBase,
   TransactionMarkPropsBase,
   AddressTruncate,
-  PriceImpactSizeConfig,
 } from './transaction-history';
-export { PRICE_IMPACT_SIZES, priceImpactInkFor, truncatedAddress } from './transaction-history';
+export { truncatedAddress } from './transaction-history';
 
 // Wallet Init Error Screen
 export type { WalletInitErrorScreenPropsBase } from './wallet-init-error-screen';
@@ -296,13 +292,6 @@ export type { BlockchainMarkPropsBase } from './blockchain-mark';
 // The plain text field
 export type { TextInputPropsBase } from './text-input';
 
-// The Swap Powerup's screens (the contract is here; the Powerup is in powerups/)
-export type {
-  SwapAmountInputPropsBase,
-  SwapInputScreenPropsBase,
-  SwapScreenPropsBase,
-  SwapScreenLogic,
-} from './swap-screen';
 export type { MemoScreenPropsBase } from './memo-screen';
 
 // Core's confirmation screen (spec 027 §2)

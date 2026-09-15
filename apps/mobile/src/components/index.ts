@@ -274,12 +274,8 @@ export type {
 // The transaction-display things Activity and the detail share — filed by what they are.
 export { AddressCopyRow } from './AddressCopyRow';
 export type { AddressCopyRowProps } from './AddressCopyRow';
-export { ConversionRateDisplay } from './ConversionRateDisplay';
-export type { ConversionRateDisplayProps } from './ConversionRateDisplay';
 export { ExplorerLinkButton } from './ExplorerLinkButton';
 export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
-export { PriceImpactBadge } from './PriceImpactBadge';
-export type { PriceImpactBadgeProps } from './PriceImpactBadge';
 export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
 export type { TransactionMarkProps } from './TransactionMark';
 
@@ -295,22 +291,22 @@ export type {
 } from './ReceiptScreen';
 
 // ---------------------------------------------------------------------------
-// Send / Swap
+// Send
 // ---------------------------------------------------------------------------
 
 // The send flow is four screens under `app/(app)/send` (spec 018); what is
 // left here are the pieces those screens share.
 export { RecipientInput, SendFailure } from './Send';
 export type { RecipientInputProps, SendFailureProps } from './Send';
-// The token picker: Send's, Swap's, and any Powerup's that picks a token.
+// The token picker: Send's, and any Powerup's that picks a token.
 export { TokenPickerSheet } from './TokenPickerSheet';
 export type { TokenPickerSheetProps } from './TokenPickerSheet';
 export { TokenSelectList } from './TokenSelectList';
 export type { TokenSelectListProps } from './TokenSelectList';
 
-// The Swap Powerup's screens are NOT exported here: the swap route imports
-// them through `src/powerups`, the entry the build flag aliases, so a build
-// with Powerups off carries none of them (spec 027 §3).
+// A Powerup's screens are NOT exported here: Home imports them through
+// `src/powerups`, the entry the build flag aliases, so a build with Powerups
+// off carries none of them (spec 027 §3).
 
 // TransactionConfirmation - core's confirmation screen and its window
 export {

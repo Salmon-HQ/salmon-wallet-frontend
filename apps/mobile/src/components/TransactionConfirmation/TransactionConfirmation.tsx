@@ -173,7 +173,7 @@ const stylesFor = (t: Semantic) =>
       textAlign: 'center',
       opacity: opacity.soft,
       marginBottom: vs(spacing['3xl']),
-      minHeight: vs(componentSizes.swapDetailRowHeight / 2),
+      minHeight: vs(componentSizes.confirmationDetailRowHeight / 2),
     },
     warningBox: {
       marginBottom: vs(spacing.lg),

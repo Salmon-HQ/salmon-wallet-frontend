@@ -1,7 +1,7 @@
 /**
  * The Powerups entry — the ONE module the apps import Powerup code from
  * (`@salmon/shared/powerups`). The root `@salmon/shared` barrel does not
- * re-export it; that is what lets the bundlers swap this file for
+ * re-export it; that is what lets the bundlers alias this file to
  * `index.off.ts` and drop every Powerup from a build (spec 027 §3).
  *
  * A Powerup proposes, core signs: nothing under `powerups/**` imports
@@ -25,4 +25,3 @@ export type { PowerupDisclosureLine } from './disclosure';
 export { powerupTranslations } from './locales';
 export * from './backend';
 export * from './memo';
-export * from './swap';

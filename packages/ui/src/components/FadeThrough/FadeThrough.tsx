@@ -1,14 +1,14 @@
 /**
- * FadeThrough — a top-level content swap under a frame that stays put.
+ * FadeThrough — a top-level content change under a frame that stays put.
  *
  * Web/extension expression of Material Design's "fade through" pattern: when
  * `transitionKey` changes (Home's per-chain content — token list ↔ Bitcoin
  * view), the incoming content fades in and settles from `scale(0.97)` over
- * `contentSwap`, so the swap reads as an arrival instead of a hard cut. The
+ * `contentChange`, so the change reads as an arrival instead of a hard cut. The
  * frame around it — balance card, chain selector, list fades — is not
  * touched, because none of it changed.
  *
- * Reduce motion: no animation is applied and the swap is the instant cut it
+ * Reduce motion: no animation is applied and the change is the instant cut it
  * was before. The signal is read in JS (not only a media query) so the calm
  * variant is a testable decision, same as mobile's helpers.
  *
@@ -44,7 +44,7 @@ const Frame = styled('div', {
   flexDirection: 'column',
   ...(animate
     ? {
-        animation: `${fadeThroughIn} ${motionDuration.contentSwap} ${motionEasing.current.css} both`,
+        animation: `${fadeThroughIn} ${motionDuration.contentChange} ${motionEasing.current.css} both`,
       }
     : undefined),
 }));

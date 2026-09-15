@@ -1,5 +1,5 @@
 import type { KeyValueRowPropsBase } from './key-value-row';
-import type { SwapReviewExchangeSide } from '../swap';
+import type { ExchangeSide } from '../../core/confirmation/types';
 
 export interface ReceiptScreenAction {
   label: string;
@@ -28,8 +28,8 @@ export interface ExchangeReceiptScreenPropsBase {
    * `summary` still feeds the pending loader's subtitle.
    */
   exchange?: {
-    send: SwapReviewExchangeSide;
-    receive: SwapReviewExchangeSide;
+    send: ExchangeSide;
+    receive: ExchangeSide;
   };
   /** Effective rate line (e.g., "1 USDC ≈ 0.0127 SOL") */
   exchangeRate?: string;

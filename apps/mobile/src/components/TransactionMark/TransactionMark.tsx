@@ -3,14 +3,13 @@
  * the leading mark the activity row and the detail both put it behind.
  *
  * The row and the detail used to carry two copies of this table, which is how
- * a "Swapped" in one place and a "Swap" in the other happen.
+ * their wording drifted.
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
-  ArrowsLeftRightIcon,
   CubeIcon,
   FileTextIcon,
   FireIcon,
@@ -26,7 +25,6 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
-  pickSwapLegs,
   s,
   spacing,
   transactionTypeDisplayFor,
@@ -47,14 +45,10 @@ export const LEADING_SIZE = componentSizes.iconSize2XL;
 /** The type badge riding the token logo — a mark on a mark, not a bubble. */
 const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 
-/** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
-const SWAP_LOGO_SIZE = 30;
-
 /** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
 const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
   arrowUpRight: ArrowUpRightIcon,
   arrowDownLeft: ArrowDownLeftIcon,
-  arrowsLeftRight: ArrowsLeftRightIcon,
   plusCircle: PlusCircleIcon,
   fire: FireIcon,
   lock: LockIcon,
@@ -94,9 +88,8 @@ const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean
 };
 
 /**
- * The row's leading mark: the token that moved, badged with the type — or,
- * for a swap, the pair — falling back to the kit's own well when the token
- * has no logo.
+ * The row's leading mark: the token that moved, badged with the type —
+ * falling back to the kit's own well when the token has no logo.
  */
 export const TransactionMark: React.FC<TransactionMarkProps> = ({ transaction }) => {
   const styles = useThemedStyles(stylesFor);
@@ -104,29 +97,6 @@ export const TransactionMark: React.FC<TransactionMarkProps> = ({ transaction })
   const { type, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(t);
   const config = typeConfig[type] || typeConfig.unknown;
-
-  if (type === 'swap') {
-    const { primaryInput, primaryOutput } = pickSwapLegs({ inputs, outputs });
-    if (primaryInput && primaryOutput) {
-      return (
-        <View style={styles.swapPair}>
-          <TokenLogo
-            uri={primaryOutput.logo ?? undefined}
-            symbol={primaryOutput.symbol}
-            size={SWAP_LOGO_SIZE}
-          />
-          <View style={styles.swapOverlap}>
-            <TokenLogo
-              uri={primaryInput.logo ?? undefined}
-              symbol={primaryInput.symbol}
-              size={SWAP_LOGO_SIZE}
-            />
-          </View>
-          <TypeBadge icon={config.icon} color={config.color} />
-        </View>
-      );
-    }
-  }
 
   // The token that moved is always the mark (owner, 2026-09-11): its logo, or
   // its initials while the backend has no logo for it. Only a transaction
@@ -159,17 +129,6 @@ export const TransactionMark: React.FC<TransactionMarkProps> = ({ transaction })
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    swapPair: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: LEADING_SIZE,
-    },
-    swapOverlap: {
-      marginLeft: -s(spacing.md),
-      borderWidth: borderWidth.medium,
-      borderColor: t.depth.abyss,
-      borderRadius: borderRadius.full,
-    },
     singleMark: {
       width: LEADING_SIZE,
       height: LEADING_SIZE,

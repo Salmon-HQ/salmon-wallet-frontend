@@ -30,7 +30,6 @@ interface BackendToken {
   coingeckoId?: string | null;
   tags?: string[];
   /** `false` = a Token-2022 mint with a transfer fee/hook the router cannot trade. */
-  swappable?: boolean;
   // Defensive: legacy responses occasionally surfaced these fields. Accepted
   // here so the normalizer covers both paths without runtime branching.
   icon?: string;
@@ -65,7 +64,6 @@ export function normalizeBackendTokens(tokens: BackendToken[]): TokenMetadata[] 
     coingeckoId: token.coingeckoId ?? undefined,
     tags: token.tags || [],
     // Older backends do not send it; absent means tradeable.
-    swappable: token.swappable ?? true,
   }));
 }
 

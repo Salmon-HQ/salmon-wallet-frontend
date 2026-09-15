@@ -15,9 +15,6 @@ export type {
   NftAttribute,
   TransactionTokenAmount,
   TransactionFee,
-  SwapRouteHop,
-  SwapConversionRate,
-  SwapRoute,
   TransactionConfirmationStatus,
   Transaction,
 } from '@salmon/shared';

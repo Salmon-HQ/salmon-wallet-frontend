@@ -1,9 +1,9 @@
 /**
  * PendingTransactionsContext — global in-flight state for on-chain transactions
- * the wallet submitted itself (send and same-chain swap).
+ * the wallet submitted itself (send).
  *
  * The problem it solves: before this existed, the only surface that ever
- * reported whether a swap or a send landed was the screen the user happened to
+ * reported whether a send landed was the screen the user happened to
  * be on when they signed. `step` is local state and the settle await is owned by
  * the screen, so a tab tap, a lock, a closed side panel or an app restart
  * orphaned the outcome. Leaving a screen cost the user the answer to "did my
@@ -27,7 +27,7 @@
  *
  * **The chain is the answer. The indexer is a stage.** A flow that already
  * waited for the chain records its signature here as `confirmed` (owner
- * ruling, 2026-09-11: the banner appears once the transfer or swap is done,
+ * ruling, 2026-09-11: the banner appears once the transfer is done,
  * never "in progress" beside a receipt). A signature enters as `pending` only
  * when the sender could not wait — and then the poller carries it to a
  * verdict.
@@ -59,7 +59,7 @@ import { useSettleAfterTx } from '../query/invalidation';
 import { getStorageItem, setStorageItem, isStorageInitialized, STORAGE_KEYS } from '../storage';
 
 /** What the user was doing. Drives the banner's label, not its behaviour. */
-export type PendingTransactionKind = 'send' | 'swap';
+export type PendingTransactionKind = 'send';
 
 export type PendingTransactionStatus = SignatureOutcome;
 
@@ -291,7 +291,7 @@ export function usePendingTransactions(): PendingTransactionsContextValue {
 
 /**
  * Non-throwing accessor for call sites that legitimately run outside the
- * provider — the shared send/swap hooks are exercised in app tests that mount
+ * provider — the shared send hooks are exercised in app tests that mount
  * neither app root, and failing to record a pending entry must never break a
  * transaction that already succeeded.
  */

@@ -158,7 +158,7 @@ async function invalidateAfterTx(
           // that's not currently focused). Without this, RQ marks the
           // cache stale but only refetches on next mount — and tab
           // navigators preserve instances, so the home screen never
-          // remounts when the user returns from the swap success
+          // remounts when the user returns from a Powerup's success
           // modal. Result: stale balances until full page reload.
           refetchType: 'all',
         })
@@ -245,7 +245,7 @@ function balanceSignature(queryClient: QueryClient, opts: InvalidationOptions): 
 }
 
 /**
- * Event-driven settlement for same-chain actions (send, swap, NFT
+ * Event-driven settlement for same-chain actions (send, NFT
  * burn/send). Snapshots the balance, then refetches on an interval until the
  * indexer reflects the change — resolving the moment the balance signature
  * differs, or after `maxWaitMs`. A success screen can `await` this so it dwells

@@ -2,7 +2,7 @@
  * "First-time" activation events.
  *
  * Some funnel events matter only the first time they happen per install — the
- * first swap, the first send, the first time the receive screen is opened. This
+ * first send, the first time the receive screen is opened. This
  * helper emits such an event at most once, guarded by a persisted flag, and —
  * like {@link trackEvent} — is a total no-op without consent.
  *
@@ -11,7 +11,7 @@
  * counted on their first action *after* opting in.
  */
 
-import { getStorage, STORAGE_KEYS, type StorageKey } from '../storage';
+import { getStorage, type StorageKey } from '../storage';
 import { getAnalytics, trackEvent } from './client';
 import type { AnalyticsEventName } from './events';
 import type { AnalyticsProps } from './types';
@@ -39,13 +39,4 @@ export async function trackFirstTime(
   } catch {
     // Best-effort: analytics must never surface a failure into the app.
   }
-}
-
-/**
- * The first successful swap, once per install. Wrapped here so the Swap
- * Powerup names the event and nothing else — `powerups/**` cannot import
- * `storage` (spec 027 §2).
- */
-export function trackFirstSwapCompleted(): Promise<void> {
-  return trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
 }
