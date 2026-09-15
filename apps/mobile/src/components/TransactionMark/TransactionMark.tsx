@@ -25,8 +25,6 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
-  s,
-  spacing,
   transactionTypeDisplayFor,
   withPlatformGlyphs,
   type Semantic,
