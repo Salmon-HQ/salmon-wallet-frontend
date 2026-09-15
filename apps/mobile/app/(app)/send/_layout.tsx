@@ -37,9 +37,8 @@ import {
   getShortAddress,
   isWatchOnlyAccount,
   useAccountsContext,
-  useWaitExit,
+  useSendCommitState,
   type Semantic,
-  sendFailureReport,
 } from '@salmon/shared';
 
 import {
@@ -67,26 +66,12 @@ function SendPassage() {
   const isReduceMotionEnabled = useReducedMotion();
   const { sendHook, token, amount, recipient, txId, submit, reset } = useSendFlow();
 
-  const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
-  const sendFailed = sendHook.status === 'failed';
-
-  // What the failure surface says — the heading that does not claim the
-  // money stayed put when the outcome is unknown, the message, the chain's
-  // own words under it — decided once for both platforms.
-  const failure = sendFailureReport(sendHook, t);
-
-  // One wait spans the whole commit, signature through settle, exactly as the
-  // sheet spanned it: gated on `isSending` alone it ended at the signature and
-  // the receipt raised a second wait of its own for the indexer.
-  const isCommitted = isSending || sendHook.settling;
-  // `held` already means "committed, or still leaving", so it IS the render
-  // condition. Gating on `txId` as well collapsed the branch in the same
-  // render a send failed: `visible={false}` was never committed, the exit
-  // effect never ran, the front was cut mid-crossing, and `onWaveGone` never
-  // fired — leaving `useWaitExit` stuck with `held` true for the life of the
-  // flow, so a retry entered on stale state. The failure surface renders over
-  // the wait, so its ebb plays out of sight (spec 031 §4).
-  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  // The commit state — the wait's hold, the failure's words — decided once
+  // for both platforms (spec 031 §4).
+  const { sendFailed, failure, isCommitted, isWaveHeld, onWaveGone } = useSendCommitState(
+    sendHook,
+    t
+  );
 
   const summary =
     token && recipient

@@ -23,7 +23,7 @@
  * field. A memo has to reach the transaction builder, which is a
  * transaction-path change and is not made here. See the spec report.
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -36,11 +36,11 @@ import {
   useFieldFocus,
   s,
   spacing,
-  useCurrencyContext,
+  useFiatLine,
   vs,
   type Semantic,
   useAmountShortcuts,
-  motionMs,
+  useDeferredFeeEstimate,
 } from '@salmon/shared';
 
 import {
@@ -71,7 +71,6 @@ export default function SendAmountScreen() {
   const amountFocus = useFieldFocus();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
-  const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const {
     blockchain,
     token,
@@ -116,12 +115,7 @@ export default function SendAmountScreen() {
     maxLabel: t('general.max'),
   });
 
-  const tokenPrice = token?.price;
-  const fiatDisplay = useMemo(() => {
-    const numAmount = parseFloat(amount) || 0;
-    const fiat = !tokenPrice || numAmount === 0 ? 0 : numAmount * tokenPrice;
-    return `≈ ${formatPrecise(fiat)} ${currency.toUpperCase()}`;
-  }, [amount, tokenPrice, formatPrecise, currency]);
+  const fiatDisplay = useFiatLine(amount, token?.price);
 
   const recipientShort = recipient
     ? (getShortAddress(recipient.resolvedAddress || recipient.address, 4) ??
@@ -129,17 +123,8 @@ export default function SendAmountScreen() {
       recipient.address)
     : '';
 
-  // The fee, asked for once the screen settles. The context no-ops a request
-  // for a pair it already holds, so the debounce only spares the first frames
-  // of a token change — it is not what keeps the request count at one.
-  // `hasAmount` is a dependency because the context refuses to price an
-  // empty amount: the request has to fire again the moment there is one.
-  const hasAmount = parseFloat(amount) > 0;
-  useEffect(() => {
-    if (!hasAmount) return undefined;
-    const timer = setTimeout(estimateFee, motionMs.feeDebounce);
-    return () => clearTimeout(timer);
-  }, [estimateFee, hasAmount]);
+  // The fee, asked for once the screen settles — one estimate for the flow.
+  useDeferredFeeEstimate(estimateFee, amount);
 
   const actionBottomPadding =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;

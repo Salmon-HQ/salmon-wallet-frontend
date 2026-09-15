@@ -19,7 +19,7 @@
  * copy is the validator's own key. Nothing here decides whether an address is
  * good — this screen only draws the verdict.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -29,11 +29,11 @@ import {
   s,
   spacing,
   useAddressValidation,
+  useRecipientOptions,
   useSendContacts,
   useTransactions,
   vs,
   type NetworkId,
-  recipientOptions,
   type RecipientOption,
 } from '@salmon/shared';
 
@@ -117,15 +117,12 @@ export default function SendRecipientScreen() {
     account,
   });
 
-  const contactsByAddress = useMemo(
-    () => Object.fromEntries(contacts.map((contact) => [contact.address, contact.name])),
-    [contacts]
-  );
-
-  const { recents, contactRows, walletRows } = useMemo(
-    () => recipientOptions({ transactions, senderAddress, contacts, ownWallets }),
-    [transactions, senderAddress, contacts, ownWallets]
-  );
+  const { recents, contactRows, walletRows, recipientFor } = useRecipientOptions({
+    transactions,
+    senderAddress,
+    contacts,
+    ownWallets,
+  });
 
   // A code that only carries an address fills the field, as it always has. A
   // payment request fills the whole flow: the recipient, the token and the
@@ -152,22 +149,9 @@ export default function SendRecipientScreen() {
 
   const handleContinue = useCallback(() => {
     if (!isAddressValid || isValidating) return;
-    const trimmed = address.trim();
-    setRecipient({
-      address: trimmed,
-      resolvedAddress: resolvedAddress || undefined,
-      name: contactsByAddress[resolvedAddress || trimmed] ?? contactsByAddress[trimmed],
-    });
+    setRecipient(recipientFor(address, resolvedAddress));
     router.push('/send/amount');
-  }, [
-    isAddressValid,
-    isValidating,
-    address,
-    resolvedAddress,
-    contactsByAddress,
-    setRecipient,
-    router,
-  ]);
+  }, [isAddressValid, isValidating, address, resolvedAddress, recipientFor, setRecipient, router]);
 
   const renderGroup = (labelKey: string, rows: RecipientOption[], groupTestID: string) => {
     if (rows.length === 0) return null;

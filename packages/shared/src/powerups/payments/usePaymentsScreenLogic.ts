@@ -15,8 +15,8 @@ import { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from '../../blockchain/solana/kno
 import { solanaRpcFor } from '../../blockchain/solana/networks';
 import { findTransferRequestSettlement } from '../../blockchain/solana/transfer-request-settlement';
 import { useAccountsContext } from '../../contexts/AccountsContext';
-import { useCurrencyContext } from '../../contexts/CurrencyContext';
 import { useCopyFeedback } from '../../hooks/useCopyFeedback';
+import { useFiatLine } from '../../hooks/useFiatLine';
 import { useBalance } from '../../hooks/useBalance';
 import { usePowerupState } from '../../hooks/usePowerupState';
 import type { NetworkId, SolanaNetworkId } from '../../types/blockchain';
@@ -231,7 +231,6 @@ export function usePaymentsScreenLogic({
   const seams = useRef({ findSettlement, newReference, now });
   seams.current = { findSettlement, newReference, now };
   const [{ accountId, activeAccount, activeBlockchainAccount }] = useAccountsContext();
-  const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const [state, setState] = usePowerupState<PaymentsState>(PAYMENTS_ID, EMPTY_STATE);
 
   const solanaNetworkId = (networkId ?? null) as SolanaNetworkId | null;
@@ -274,10 +273,7 @@ export function usePaymentsScreenLogic({
         ? 'payments.errors.amountTooManyDecimals'
         : 'payments.errors.amountInvalid';
 
-  const fiatLine = useMemo(() => {
-    const numeric = validation?.ok ? Number(validation.display) : 0;
-    return `≈ ${formatPrecise(numeric * usdcPrice)} ${currency.toUpperCase()}`;
-  }, [validation, usdcPrice, formatPrecise, currency]);
+  const fiatLine = useFiatLine(validation?.ok ? validation.display : '', usdcPrice);
 
   const update = useCallback(
     (id: string, patch: Partial<PaymentRequest>) => {

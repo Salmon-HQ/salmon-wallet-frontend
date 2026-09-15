@@ -8,7 +8,7 @@
  * draws the verdict. With a token it also chooses the token up front and
  * offers the wallet's recents, own wallets and address book.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   classifyScanPayload,
@@ -17,6 +17,7 @@ import {
   isSignableAccount,
   useAddressValidation,
   useValidationDirty,
+  useRecipientOptions,
   useSendContacts,
   useTransactions,
   type BlockchainAccount,
@@ -26,7 +27,6 @@ import {
   type SendToken,
   type StartFromRequestResult,
   type TransferRequest,
-  recipientOptions,
   type RecipientOption,
 } from '@salmon/shared';
 
@@ -159,15 +159,12 @@ export function StepRecipient({
     account,
   });
 
-  const contactsByAddress = useMemo(
-    () => Object.fromEntries(contacts.map((contact) => [contact.address, contact.name])),
-    [contacts]
-  );
-
-  const { recents, contactRows, walletRows } = useMemo(
-    () => recipientOptions({ transactions, senderAddress, contacts, ownWallets }),
-    [transactions, senderAddress, contacts, ownWallets]
-  );
+  const { recents, contactRows, walletRows, recipientFor } = useRecipientOptions({
+    transactions,
+    senderAddress,
+    contacts,
+    ownWallets,
+  });
 
   // Ordinals have no transfer path yet, and a watch-only account no key.
   const isOrdinal = nft?.blockchain === 'bitcoin';
@@ -176,13 +173,8 @@ export function StepRecipient({
 
   const handleContinue = useCallback(() => {
     if (!canContinue) return;
-    const trimmed = address.trim();
-    onContinue({
-      address: trimmed,
-      resolvedAddress: resolvedAddress || undefined,
-      name: contactsByAddress[resolvedAddress || trimmed] ?? contactsByAddress[trimmed],
-    });
-  }, [canContinue, address, resolvedAddress, contactsByAddress, onContinue]);
+    onContinue(recipientFor(address, resolvedAddress));
+  }, [canContinue, address, resolvedAddress, recipientFor, onContinue]);
 
   const renderGroup = (labelKey: string, rows: RecipientOption[], groupTestID: string) => {
     if (rows.length === 0) return null;

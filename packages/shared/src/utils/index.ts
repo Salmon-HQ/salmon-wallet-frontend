@@ -401,4 +401,5 @@ export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
 export { classifyScanPayload } from './scan-payload';
 export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestReview';
 export type { SendRequestReviewRow } from './sendRequestReview';
+export { sendReceiptRows } from './sendReceiptRows';
 export type { ScanClassification } from './scan-payload';

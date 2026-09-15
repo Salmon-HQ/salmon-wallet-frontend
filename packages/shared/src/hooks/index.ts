@@ -322,3 +322,11 @@ export type {
 } from './useAmountShortcuts';
 
 export { useNetworkPowerups, resetNetworkPowerupsCache } from './useNetworkPowerups';
+
+// Send derivations both twins render and neither computes
+export { useSendCommitState } from './useSendCommitState';
+export type { SendCommitState } from './useSendCommitState';
+export { useRecipientOptions } from './useRecipientOptions';
+export type { UseRecipientOptionsParams, UseRecipientOptionsResult } from './useRecipientOptions';
+export { useFiatLine } from './useFiatLine';
+export { useDeferredFeeEstimate } from './useDeferredFeeEstimate';

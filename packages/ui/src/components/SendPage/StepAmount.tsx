@@ -7,7 +7,7 @@
  * subtracted a fee), and "valid" is the same predicate. The fee is one
  * estimate for the whole flow, asked for here and read again by review.
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   SOL_CONSTANTS,
@@ -15,12 +15,12 @@ import {
   getShortAddress,
   getSolShortfall,
   spacing,
-  useCurrencyContext,
+  useFiatLine,
   type BlockchainType,
   type SendRecipient,
   type SendToken,
   useAmountShortcuts,
-  motionMs,
+  useDeferredFeeEstimate,
 } from '@salmon/shared';
 
 import { AmountEntryCard } from '../AmountEntryCard';
@@ -64,7 +64,6 @@ export function StepAmount({
   onBack,
 }: StepAmountProps) {
   const { t } = useTranslation();
-  const [{ currency }, { formatPrecise }] = useCurrencyContext();
 
   const tokenBalance = useMemo(() => {
     if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) return liveBalance;
@@ -95,25 +94,15 @@ export function StepAmount({
     maxLabel: t('general.max'),
   });
 
-  const fiatDisplay = useMemo(() => {
-    const numAmount = parseFloat(amount) || 0;
-    const fiat = !token.price || numAmount === 0 ? 0 : numAmount * token.price;
-    return `≈ ${formatPrecise(fiat)} ${currency.toUpperCase()}`;
-  }, [amount, token.price, formatPrecise, currency]);
+  const fiatDisplay = useFiatLine(amount, token.price);
 
   const recipientShort =
     getShortAddress(recipient.resolvedAddress || recipient.address, 4) ??
     recipient.resolvedAddress ??
     recipient.address;
 
-  // The fee, asked for once the screen settles; the flow no-ops a request for
-  // a pair it already holds.
-  const hasAmount = parseFloat(amount) > 0;
-  useEffect(() => {
-    if (!hasAmount) return undefined;
-    const timer = setTimeout(estimateFee, motionMs.feeDebounce);
-    return () => clearTimeout(timer);
-  }, [estimateFee, hasAmount]);
+  // The fee, asked for once the screen settles — one estimate for the flow.
+  useDeferredFeeEstimate(estimateFee, amount);
 
   return (
     <SendScreen

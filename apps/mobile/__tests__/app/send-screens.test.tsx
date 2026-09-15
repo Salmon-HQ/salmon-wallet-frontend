@@ -147,6 +147,14 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/utils/recipientOptions'),
   // The balance fills are real: the suite exercises their truncation.
   ...jest.requireActual('../../../../packages/shared/src/hooks/useAmountShortcuts'),
+  // The derivations both twins render are real: the commit state (over the
+  // real wait exit) and the recipient groups.
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useSendCommitState'),
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useRecipientOptions'),
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useDeferredFeeEstimate'),
+  ...jest.requireActual('../../../../packages/shared/src/utils/sendReceiptRows'),
+  useFiatLine: (amount: string, price?: number) =>
+    `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
   sanitizeDecimalInput: (value: string) => value,
