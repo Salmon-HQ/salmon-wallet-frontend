@@ -17,7 +17,7 @@ vi.mock('./transfer', async (importOriginal) => ({
   estimateFee: vi.fn().mockResolvedValue(5000),
 }));
 
-import { SOLANA_NETWORKS } from './networks';
+import { SOLANA_NETWORKS, transactionVersionFor } from './networks';
 import { createTransfer, estimateFee } from './transfer';
 import { SolanaAccount } from './SolanaAccount';
 import { getDomain, getDomainFromPublicKey, getPublicKeyFromDomain } from './domains';
@@ -160,7 +160,7 @@ describe('SolanaAccount', () => {
   // Spec 032: the account is where the network and the signer meet, so it is
   // the account that says which transaction version the transfer is built in.
   describe('transaction version per network', () => {
-    it('sends v1 on devnet and v0 on mainnet, and estimates the fee the same way', async () => {
+    it('takes each version from the table, and estimates the fee the same way', async () => {
       const devnet = await createAccount(undefined, SOLANA_NETWORKS['solana-devnet']);
       const mainnet = await createAccount();
 
@@ -177,10 +177,16 @@ describe('SolanaAccount', () => {
         1
       );
 
+      // The versions themselves are pinned in networks.test.ts; what this
+      // asserts is that the account asks the table for its own network.
+      const expected = [
+        transactionVersionFor('solana-devnet'),
+        transactionVersionFor('solana-mainnet'),
+      ];
       const versions = (fn: { mock: { calls: unknown[][] } }) =>
         fn.mock.calls.map((call) => (call[5] as { version?: number }).version);
-      expect(versions(vi.mocked(createTransfer))).toEqual([1, 0]);
-      expect(versions(vi.mocked(estimateFee))).toEqual([1, 0]);
+      expect(versions(vi.mocked(createTransfer))).toEqual(expected);
+      expect(versions(vi.mocked(estimateFee))).toEqual(expected);
     });
   });
 });

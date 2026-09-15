@@ -57,12 +57,12 @@ describe('resolveSolanaWsUrl', () => {
 });
 
 describe('SOLANA_TRANSACTION_VERSION', () => {
-  // The version a cluster runs is written down once, here. Devnet activated
-  // SIMD-0296 (v1, 4096-byte transactions); mainnet has not yet. When it does,
-  // flip the mainnet entry and this pin together — nothing else moves.
-  it('sends v1 on devnet and v0 on mainnet', () => {
-    expect(SOLANA_TRANSACTION_VERSION).toEqual({ 'solana-devnet': 1, 'solana-mainnet': 0 });
+  // The version a cluster runs is written down once, here. Devnet and mainnet
+  // both activated SIMD-0296 (v1, 4096-byte transactions). A cluster's entry
+  // and this pin move together — nothing else moves.
+  it('sends v1 on devnet and on mainnet', () => {
+    expect(SOLANA_TRANSACTION_VERSION).toEqual({ 'solana-devnet': 1, 'solana-mainnet': 1 });
     expect(transactionVersionFor('solana-devnet')).toBe(1);
-    expect(transactionVersionFor('solana-mainnet')).toBe(0);
+    expect(transactionVersionFor('solana-mainnet')).toBe(1);
   });
 });

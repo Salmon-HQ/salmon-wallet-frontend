@@ -59,13 +59,14 @@ export function solanaRpcFor(networkId: SolanaNetworkId): SolanaRpc {
  *
  * v1 (SIMD-0296: 4096-byte transactions, resource limits in the header) is
  * accepted only where the feature is active; a cluster that has not activated
- * it refuses a v1 at preflight with VERSION_NUMBER_NOT_SUPPORTED. Devnet runs
- * it; mainnet does not yet. On mainnet activation, confirm on the cluster
- * (a v1 send lands), flip the entry to 1 and move the pin in networks.test.ts.
- * Nothing else changes: the builder in transfer.ts takes whatever is here.
+ * it refuses a v1 at preflight with VERSION_NUMBER_NOT_SUPPORTED. Devnet and
+ * mainnet both run it. A cluster that activates the feature gets its entry
+ * flipped to 1 once a v1 send lands there, together with the pin in
+ * networks.test.ts. Nothing else changes: the builder in transfer.ts takes
+ * whatever is here.
  */
 export const SOLANA_TRANSACTION_VERSION: Readonly<Record<SolanaNetworkId, 0 | 1>> = {
-  'solana-mainnet': 0,
+  'solana-mainnet': 1,
   'solana-devnet': 1,
 };
 
