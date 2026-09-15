@@ -176,6 +176,11 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   the 92% ceiling, hugging content, no Close button. A sheet opened from
   inside another reads `useParentSheetHeight()` and passes it as `height`, so
   it rises exactly as tall as the sheet under it.
+- **A code in a sheet** — a value shown to be scanned (Receive's address,
+  Payments' request) — is `QRCode` with `brandKnockout` inside the sheet,
+  facts under it as `FactsCard` rows. The knockout is the kit's, not the
+  sheet's: `QRCodePropsBase.brandKnockout` draws the mark on both twins, and
+  no sheet draws it by hand (closed as a gap by spec 033).
 
 ### 1.6 Confirmation — core renders it from typed fields
 
@@ -371,6 +376,14 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   registered in `powerups/locales.ts`, Spanish written by a speaker (voseo
   rioplatense), never guessed.
 - **Its own error codes** through `describePowerupBuildError`'s `codes`.
+- **Its own persisted state**, through the one seam core offers:
+  `usePowerupState<T>(id, initial)` from `packages/shared/src/hooks`, a slice
+  of `STORAGE_KEYS.POWERUP_STATE` keyed by the Powerup's id, hydrated once
+  and written through, shared by every mounted surface. A Powerup never
+  imports `storage` (the boundary lint fails), never invents a key of its
+  own, and keys anything per account or per network inside its own slice
+  (Payments: `${accountId}:${networkId}`). Turning the Powerup off leaves the
+  slice where it is.
 - **Direct third-party reads** are about what is read, not about what kind of
   Powerup reads it: a Powerup that builds transactions may still ask a partner
   what it holds or how an order stands. Only to the hosts its manifest's
