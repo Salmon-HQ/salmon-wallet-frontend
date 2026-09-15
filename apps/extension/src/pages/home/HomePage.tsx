@@ -103,7 +103,7 @@ interface HomePageProps {
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const [{ currency }, { formatValue }] = useCurrencyContext();
+  const [{ currency }] = useCurrencyContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = state;
 
   // The two "show me more" flags come from the provider the side panel root
