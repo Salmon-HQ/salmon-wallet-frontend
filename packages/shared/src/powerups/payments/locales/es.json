@@ -1,1 +1,60 @@
-{}
+{
+  "catalog": {
+    "name": "Pagos",
+    "description": "Pedí USDC con un código que cualquiera puede escanear",
+    "about": "Crea una solicitud de pago por un monto exacto de USDC, dirigida a esta cuenta, y la muestra como un código QR que cualquier billetera de Solana puede pagar. Tu billetera lee la red por su cuenta para avisarte cuando la pagaron. Nada se envía a un servidor: el código es la solicitud.",
+    "actions": {
+      "ask": "Pedir un monto de USDC con un código QR",
+      "track": "Ver cuándo pagaron una solicitud, y quién"
+    }
+  },
+  "form": {
+    "amount": "Monto en USDC",
+    "amountPlaceholder": "0",
+    "notePlaceholder": "¿Para qué es? (opcional)",
+    "expiry": "Abierta por",
+    "expiryOptions": {
+      "h1": "1 hora",
+      "h24": "24 horas",
+      "d7": "7 días"
+    },
+    "create": "Crear solicitud"
+  },
+  "list": {
+    "title": "Solicitudes",
+    "empty": {
+      "title": "Todavía no hay solicitudes",
+      "body": "Escribí un monto arriba para crear la primera."
+    },
+    "noNote": "Sin nota"
+  },
+  "sheet": {
+    "title": "Solicitud de pago",
+    "for": "Para",
+    "expiresIn": "Vence en",
+    "status": "Estado",
+    "paidBy": "Pagada por",
+    "paidAt": "Pagada",
+    "copy": "Copiar solicitud",
+    "copied": "Copiada",
+    "share": "Compartir",
+    "remove": "Eliminar solicitud"
+  },
+  "status": {
+    "pending": "Esperando el pago",
+    "paid": "Pagada",
+    "expired": "Vencida",
+    "checkFailed": "No se pudo consultar la red. Se muestra el último estado conocido."
+  },
+  "duration": {
+    "days": "{{days}} d {{hours}} h",
+    "hours": "{{hours}} h {{minutes}} min",
+    "minutes": "{{minutes}} min"
+  },
+  "errors": {
+    "usdcUnavailable": "USDC no está disponible en esta red.",
+    "amountInvalid": "Ingresá un monto mayor a cero.",
+    "amountTooManyDecimals": "USDC tiene como máximo seis decimales.",
+    "createFailed": "No se pudo crear la solicitud. Probá de nuevo."
+  }
+}

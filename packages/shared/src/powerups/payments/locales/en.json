@@ -11,7 +11,6 @@
   "form": {
     "amount": "Amount in USDC",
     "amountPlaceholder": "0",
-    "note": "Note",
     "notePlaceholder": "What is it for? (optional)",
     "expiry": "Open for",
     "expiryOptions": {
@@ -33,7 +32,6 @@
     "title": "Payment request",
     "for": "For",
     "expiresIn": "Expires in",
-    "expired": "Expired",
     "status": "Status",
     "paidBy": "Paid by",
     "paidAt": "Paid",
