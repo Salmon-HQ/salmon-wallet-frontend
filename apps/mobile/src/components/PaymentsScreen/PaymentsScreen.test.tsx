@@ -58,6 +58,7 @@ const mockLogic = {
     visible: false,
     onClose: jest.fn(),
     title: 'New request',
+    description: 'A code for someone to scan.',
     form: {
       amountLabel: 'Amount in USDC',
       amountCard: { value: '', onChangeValue: jest.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },

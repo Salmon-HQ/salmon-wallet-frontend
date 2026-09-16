@@ -52,6 +52,8 @@ export interface PaymentsAskSheetPropsBase<TStyle> extends Testable {
   onClose: () => void;
   onClosed?: () => void;
   title: string;
+  /** One line under the title: what filling the form produces. */
+  description: string;
   form: PaymentsFormView;
   style?: TStyle;
 }

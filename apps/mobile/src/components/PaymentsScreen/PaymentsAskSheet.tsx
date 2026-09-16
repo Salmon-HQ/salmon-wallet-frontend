@@ -5,11 +5,21 @@
  * from the shared hook. DOM twin: `packages/ui/src/components/PaymentsPage/PaymentsAskSheet`.
  */
 import React from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { s, spacing, useFieldFocus, vs } from '@salmon/shared';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  s,
+  spacing,
+  useFieldFocus,
+  vs,
+  type Semantic,
+} from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { AmountEntryCard } from '../AmountEntryCard';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button';
@@ -24,11 +34,13 @@ export function PaymentsAskSheet({
   onClose,
   onClosed,
   title,
+  description,
   form,
   height,
   style,
   testID = 'payments-ask',
 }: PaymentsAskSheetProps) {
+  const styles = useThemedStyles(stylesFor);
   const { actionRowBottomPadding } = useBottomSheetChrome();
   const focus = useFieldFocus();
   // The sheet stands at its full height from the start; the keyboard covers
@@ -44,7 +56,14 @@ export function PaymentsAskSheet({
       onClose={onClose}
       onClosed={onClosed}
       height={height}
-      title={<SheetTitle>{title}</SheetTitle>}
+      headerContent={
+        <View style={styles.header}>
+          <SheetTitle>{title}</SheetTitle>
+          <Text testID="payments-ask-description" style={styles.description}>
+            {description}
+          </Text>
+        </View>
+      }
       testID={testID}
       style={style}
     >
@@ -74,6 +93,22 @@ export function PaymentsAskSheet({
     </BottomSheetContainer>
   );
 }
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    header: {
+      alignItems: 'center',
+      gap: vs(spacing.xs),
+      paddingHorizontal: s(spacing['2xl']),
+    },
+    description: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+      textAlign: 'center',
+    },
+  });
 
 const styles = StyleSheet.create({
   body: {
