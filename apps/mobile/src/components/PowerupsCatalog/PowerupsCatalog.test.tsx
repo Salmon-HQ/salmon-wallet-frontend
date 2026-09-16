@@ -162,8 +162,17 @@ describe('PowerupsCatalog', () => {
     expect(screen.getByTestId('powerups-detail-author')).toBeTruthy();
     expect(screen.getByTestId('powerups-facts-memo')).toBeTruthy();
 
-    fireEvent.press(screen.getByTestId('powerups-toggle-memo'));
+    fireEvent.press(screen.getByTestId('powerups-detail-toggle-memo'));
     expect(onInstall).toHaveBeenCalledWith('memo');
+  });
+
+  it('the row’s own control installs in place, without opening the detail', () => {
+    const { onInstall } = setup();
+
+    fireEvent.press(screen.getByTestId('powerups-row-toggle-memo'));
+
+    expect(onInstall).toHaveBeenCalledWith('memo');
+    expect(screen.queryByTestId('powerups-detail-memo')).toBeNull();
   });
 
   it('dismissing the detail sheet leaves the whole catalogue, not one level', () => {
@@ -182,7 +191,7 @@ describe('PowerupsCatalog', () => {
     });
 
     fireEvent.press(screen.getByTestId('powerups-row-memo'));
-    fireEvent.press(screen.getByTestId('powerups-toggle-memo'));
+    fireEvent.press(screen.getByTestId('powerups-detail-toggle-memo'));
 
     expect(onUninstall).toHaveBeenCalledWith('memo');
     expect(onInstall).not.toHaveBeenCalled();

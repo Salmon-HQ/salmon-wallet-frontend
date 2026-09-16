@@ -99,6 +99,31 @@ export function PowerupsPage({
     backgroundColor: semantic.accent.ink,
   };
 
+  // The `+` / `−` control, the same in the detail and in the row (owner,
+  // 2026-09-16): a row toggles without opening the detail; the detail is
+  // still where the disclosure is read. The row is a button, so the control's
+  // click stops there instead of opening the detail as well.
+  const renderToggle = (entry: PowerupsCatalogEntry, name: string, where: 'row' | 'detail') => (
+    <span onClick={(event) => event.stopPropagation()} style={{ display: 'inline-flex' }}>
+      <IconBubble
+        testID={`powerups-${where}-toggle-${entry.id}`}
+        size={CONTROL_SIZE}
+        tone={entry.installed ? 'outline' : 'accent'}
+        onPress={() => handleToggle(entry)}
+        accessibilityLabel={t(
+          entry.installed ? 'accessibility.uninstall_powerup' : 'accessibility.install_powerup',
+          { name }
+        )}
+      >
+        <PlusMinusGlyph
+          minus={entry.installed}
+          size={CONTROL_ICON_SIZE}
+          color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
+        />
+      </IconBubble>
+    </span>
+  );
+
   const renderDetail = (entry: PowerupsCatalogEntry) => {
     const name = t(entry.nameKey);
     const { details } = entry;
@@ -123,26 +148,7 @@ export function PowerupsPage({
             title={name}
             titleAccessory={<PowerupBadge tier={entry.tier} />}
             subtitle={t(entry.descriptionKey)}
-            trailing={
-              <IconBubble
-                testID={`powerups-toggle-${entry.id}`}
-                size={CONTROL_SIZE}
-                tone={entry.installed ? 'outline' : 'accent'}
-                onPress={() => handleToggle(entry)}
-                accessibilityLabel={t(
-                  entry.installed
-                    ? 'accessibility.uninstall_powerup'
-                    : 'accessibility.install_powerup',
-                  { name }
-                )}
-              >
-                <PlusMinusGlyph
-                  minus={entry.installed}
-                  size={CONTROL_ICON_SIZE}
-                  color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
-                />
-              </IconBubble>
-            }
+            trailing={renderToggle(entry, name, 'detail')}
           />
 
           {/* Switched off by the backend: one state per reason, before anything
@@ -224,20 +230,7 @@ export function PowerupsPage({
                     }
                     title={t(entry.nameKey)}
                     subtitle={t(entry.descriptionKey)}
-                    trailing={
-                      entry.installed ? (
-                        <span
-                          style={{
-                            fontFamily: fontFamily.sans,
-                            fontWeight: fontWeight.medium,
-                            fontSize: fontSize.caption,
-                            color: semantic.text.tertiary,
-                          }}
-                        >
-                          {t('powerups.installed')}
-                        </span>
-                      ) : undefined
-                    }
+                    trailing={renderToggle(entry, t(entry.nameKey), 'row')}
                     onPress={() => setDetailId(entry.id)}
                   />
                 ))

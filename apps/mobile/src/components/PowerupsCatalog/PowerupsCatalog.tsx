@@ -26,7 +26,6 @@ import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
   fontFamilyNative,
-  fontScaleCap,
   fontSize,
   powerupFactRows,
   lineHeight,
@@ -97,6 +96,28 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
     [onInstall, onUninstall]
   );
 
+  // The `+` / `−` control, the same in the detail and in the row (owner,
+  // 2026-09-16): a row toggles without opening the detail; the detail is
+  // still where the disclosure is read.
+  const renderToggle = (entry: PowerupsCatalogEntry, name: string, where: 'row' | 'detail') => (
+    <IconBubble
+      testID={`powerups-${where}-toggle-${entry.id}`}
+      size={CONTROL_SIZE}
+      tone={entry.installed ? 'outline' : 'accent'}
+      onPress={() => handleToggle(entry)}
+      accessibilityLabel={t(
+        entry.installed ? 'accessibility.uninstall_powerup' : 'accessibility.install_powerup',
+        { name }
+      )}
+    >
+      <PlusMinusGlyph
+        minus={entry.installed}
+        size={CONTROL_ICON_SIZE}
+        color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
+      />
+    </IconBubble>
+  );
+
   const renderDetail = (entry: PowerupsCatalogEntry) => {
     const name = t(entry.nameKey);
     const { details } = entry;
@@ -116,26 +137,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           title={name}
           titleAccessory={<PowerupBadge tier={entry.tier} />}
           subtitle={t(entry.descriptionKey)}
-          trailing={
-            <IconBubble
-              testID={`powerups-toggle-${entry.id}`}
-              size={CONTROL_SIZE}
-              tone={entry.installed ? 'outline' : 'accent'}
-              onPress={() => handleToggle(entry)}
-              accessibilityLabel={t(
-                entry.installed
-                  ? 'accessibility.uninstall_powerup'
-                  : 'accessibility.install_powerup',
-                { name }
-              )}
-            >
-              <PlusMinusGlyph
-                minus={entry.installed}
-                size={CONTROL_ICON_SIZE}
-                color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
-              />
-            </IconBubble>
-          }
+          trailing={renderToggle(entry, name, 'detail')}
         />
 
         {/* Switched off by the backend: one state per reason, before anything
@@ -209,13 +211,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                   }
                   title={t(entry.nameKey)}
                   subtitle={t(entry.descriptionKey)}
-                  trailing={
-                    entry.installed ? (
-                      <Text style={styles.installed} maxFontSizeMultiplier={fontScaleCap.chrome}>
-                        {t('powerups.installed')}
-                      </Text>
-                    ) : undefined
-                  }
+                  trailing={renderToggle(entry, t(entry.nameKey), 'row')}
                   onPress={() => setDetailId(entry.id)}
                 />
               ))
@@ -361,11 +357,6 @@ const stylesFor = (t: Semantic) =>
       fontSize: s(fontSize.body),
       lineHeight: s(fontSize.body) * lineHeight.snug,
       color: t.text.secondary,
-    },
-    installed: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.caption),
-      color: t.text.tertiary,
     },
   });
 

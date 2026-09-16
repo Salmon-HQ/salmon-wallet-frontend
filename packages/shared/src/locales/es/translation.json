@@ -848,7 +848,6 @@
   "powerups": {
     "browse_title": "Powerups",
     "browse_subtitle": "Complementos que le dan nuevas habilidades a tu billetera.",
-    "installed": "Instalado",
     "empty_section": "Todavía no hay nada acá",
     "no_account": "No se encontró una cuenta",
     "badge": {
