@@ -19,7 +19,6 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
@@ -29,7 +28,6 @@ import {
   getShortAddress,
   hiddenValue,
   letterSpacing,
-  lineHeight,
   spacing,
   tabularNums,
   useCurrencyContext,
@@ -45,7 +43,6 @@ import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
 import { DataAttribution } from '../DataAttribution';
 import { TokenAbout } from '../TokenAbout';
-import { TokenLogo } from '../TokenLogo';
 import { TokenMarketData } from '../TokenMarketData';
 import type { TokenDetailContentProps } from './types';
 
@@ -135,15 +132,6 @@ export function TokenDetailContent({
           data-testid="token-detail-balance"
           style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0 }}>
-            <TokenLogo
-              uri={token.logo}
-              symbol={token.symbol}
-              size={componentSizes.iconSizeMedium}
-              borderRadius={borderRadius.tokenIcon}
-            />
-            <span style={nameStyle(semantic)}>{token.name}</span>
-          </div>
           <div ref={amountBoxRef} style={{ minWidth: 0 }}>
             <span
               ref={amountRef}
@@ -240,18 +228,6 @@ export function TokenDetailContent({
     </div>
   );
 }
-
-const nameStyle = (t: Semantic): React.CSSProperties => ({
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.bold,
-  fontSize: fontSize.bodyLg,
-  lineHeight: `${fontSize.bodyLg * lineHeight.snug}px`,
-  color: t.text.primary,
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-});
 
 const amountStyle = (t: Semantic): React.CSSProperties => ({
   ...tabularNums.css,

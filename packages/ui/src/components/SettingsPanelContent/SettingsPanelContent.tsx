@@ -22,6 +22,7 @@ import type { SettingsPanelContentProps } from './types';
 
 export function SettingsPanelContent({
   title,
+  titleGlyph,
   subtitle,
   onBack,
   backDisabled,
@@ -66,6 +67,7 @@ export function SettingsPanelContent({
           onBack={onBack}
           backDisabled={backDisabled}
           title={title}
+          titleGlyph={titleGlyph}
           subtitle={subtitle}
         />
 

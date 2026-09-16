@@ -70,6 +70,7 @@ export interface SettingsScreenLayoutProps extends SettingsScreenLayoutPropsBase
 
 export function SettingsScreenLayout({
   title,
+  titleGlyph,
   subtitle,
   children,
   onBack,
@@ -113,6 +114,7 @@ export function SettingsScreenLayout({
               backDisabled={backDisabled}
               backLabel={t('accessibility.go_back', 'Go back')}
               title={title}
+              titleGlyph={titleGlyph}
               subtitle={subtitle}
             />
           )}

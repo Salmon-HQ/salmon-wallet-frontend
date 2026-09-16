@@ -50,6 +50,8 @@ export type AddressEditPanelPropsBase = AddressBookEditBaseProps;
  */
 export interface SettingsScreenLayoutPropsBase extends Testable {
   title: string;
+  /** Drawn between the back well and the title — a token's logo, say. */
+  titleGlyph?: ReactNode;
   /** Supporting line under the title — every screen says what it is for. */
   subtitle?: string;
   onBack: () => void;

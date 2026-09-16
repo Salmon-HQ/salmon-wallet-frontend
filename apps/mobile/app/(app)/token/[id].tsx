@@ -34,7 +34,6 @@ import {
   componentSizes,
   hiddenValue,
   isSignableAccount,
-  lineHeight,
   letterSpacing,
   PERIOD_TO_DAYS,
   ms,
@@ -181,7 +180,13 @@ export default function TokenDetailScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <ScreenHeader onBack={() => router.back()} title={token.name} />
+      <ScreenHeader
+        onBack={() => router.back()}
+        titleGlyph={
+          <TokenLogo uri={token.logo} symbol={token.symbol} size={componentSizes.iconSizeMedium} />
+        }
+        title={token.name}
+      />
 
       <ScrollView
         testID="token-detail-screen"
@@ -191,16 +196,6 @@ export default function TokenDetailScreen() {
       >
         {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
         <View style={styles.balanceBlock} testID="token-detail-balance">
-          <View style={styles.balanceHeader}>
-            <TokenLogo
-              uri={token.logo}
-              symbol={token.symbol}
-              size={componentSizes.iconSizeMedium}
-            />
-            <Text style={styles.tokenName} numberOfLines={1}>
-              {token.name}
-            </Text>
-          </View>
           <Text
             style={styles.amount}
             testID="token-detail-amount"
@@ -304,18 +299,6 @@ const stylesFor = (t: Semantic) =>
     },
     balanceBlock: {
       gap: vs(spacing.sm),
-    },
-    balanceHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(spacing.md),
-    },
-    tokenName: {
-      fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.bodyLg),
-      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-      color: t.text.primary,
-      flexShrink: 1,
     },
     amount: {
       ...TABULAR,
