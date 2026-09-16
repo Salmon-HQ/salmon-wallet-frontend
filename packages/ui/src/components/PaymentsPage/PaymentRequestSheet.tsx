@@ -125,11 +125,9 @@ export function PaymentRequestSheet({
           />
         )}
         {showCode && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: spacing.md }}>
-            <SecondaryButton testID={`${testID}-copy`} {...copyPress}>
-              {copyLabel}
-            </SecondaryButton>
-          </div>
+          <SecondaryButton testID={`${testID}-copy`} {...copyPress}>
+            {copyLabel}
+          </SecondaryButton>
         )}
         <SecondaryButton testID={`${testID}-remove`} tone="danger" {...removePress}>
           {removeLabel}

@@ -168,8 +168,8 @@ describe('PaymentsScreen', () => {
     expect(screen.getByTestId('qr').props.value).toBe('solana:abc?amount=1');
     expect(screen.getByText('1.00 USDC')).toBeTruthy();
     expect(screen.getByText('Waiting')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('payments-sheet-copy'));
-    expect(mockLogic.sheet.copyButton.onPress).toHaveBeenCalled();
+    expect(screen.queryByTestId('payments-sheet-copy')).toBeNull();
+    expect(screen.getByTestId('payments-sheet-share')).toBeTruthy();
     fireEvent.press(screen.getByTestId('payments-sheet-remove'));
     expect(mockLogic.sheet.removeButton.onPress).toHaveBeenCalled();
   });

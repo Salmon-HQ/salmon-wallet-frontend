@@ -136,6 +136,7 @@ describe('PaymentsPage', () => {
     expect(screen.getByTestId('qr').getAttribute('data-value')).toBe('solana:abc?amount=1');
     expect(screen.getByTestId('payments-sheet-amount').textContent).toBe('1.00 USDC');
     expect(screen.getByTestId('payments-sheet-facts').textContent).toContain('Waiting');
+    expect(screen.queryByTestId('payments-sheet-share')).toBeNull();
     fireEvent.click(screen.getByTestId('payments-sheet-copy'));
     expect(logic.sheet.copyButton.onPress).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('payments-sheet-remove'));

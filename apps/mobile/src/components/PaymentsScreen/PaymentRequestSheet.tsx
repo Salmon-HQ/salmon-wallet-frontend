@@ -1,7 +1,7 @@
 /**
  * PaymentRequestSheet — one payment request as a code, on React Native: the
  * QR on the thermocline, the amount, the facts the network gives, and the
- * controls that copy, share or remove it. One state; the second tap only
+ * controls that share or remove it. One state; the second tap only
  * dismisses. Every label and handler arrives composed from the shared hook.
  * DOM twin: `packages/ui/src/components/PaymentsPage/PaymentRequestSheet`.
  */
@@ -42,7 +42,6 @@ export function PaymentRequestSheet({
   amountLabel,
   status,
   checkFailedNotice,
-  copyButton,
   shareLabel,
   removeButton,
   onShare,
@@ -54,7 +53,6 @@ export function PaymentRequestSheet({
   const { width: screenWidth } = useWindowDimensions();
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
   const qrSize = screenWidth - CONTENT_PADDING_HORIZONTAL * 2 - componentSizes.qrBorderWidth * 2;
-  const { label: copyLabel, ...copyPress } = copyButton;
   const { label: removeLabel, ...removePress } = removeButton;
 
   return (
@@ -90,17 +88,10 @@ export function PaymentRequestSheet({
             environment={status.explorer.environment as NetworkEnvironment}
           />
         )}
-        {showCode && (
-          <View style={styles.actions}>
-            <SecondaryButton testID={`${testID}-copy`} {...copyPress}>
-              {copyLabel}
-            </SecondaryButton>
-            {onShare && (
-              <SecondaryButton testID={`${testID}-share`} onPress={onShare}>
-                {shareLabel}
-              </SecondaryButton>
-            )}
-          </View>
+        {showCode && onShare && (
+          <SecondaryButton testID={`${testID}-share`} onPress={onShare}>
+            {shareLabel}
+          </SecondaryButton>
         )}
         <SecondaryButton testID={`${testID}-remove`} tone="danger" {...removePress}>
           {removeLabel}
@@ -139,11 +130,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.bold,
       color: t.text.primary,
       textAlign: 'center',
-    },
-    actions: {
-      flexDirection: 'row',
-      gap: s(spacing.md),
-      justifyContent: 'center',
     },
   });
 
