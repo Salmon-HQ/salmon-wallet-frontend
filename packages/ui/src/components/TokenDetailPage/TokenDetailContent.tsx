@@ -35,6 +35,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
+import { PrimaryButton } from '../Button';
 import { KeyValueRow } from '../KeyValueRow';
 import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
@@ -49,6 +50,7 @@ const TOKEN_LOGO_SIZE = 42;
 
 export function TokenDetailContent({
   token,
+  onSendPress,
   blockchain = 'solana',
   hiddenBalance = false,
   chartData,
@@ -125,6 +127,13 @@ export function TokenDetailContent({
             <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
               {displayFiat}
             </span>
+          )}
+          {/* Send opens on this token (owner, 2026-09-16); the host leaves it
+              out for an account that cannot sign, as the NFT detail does. */}
+          {onSendPress && (
+            <PrimaryButton testID="token-detail-send-button" onPress={onSendPress}>
+              {t('token.action.send')}
+            </PrimaryButton>
           )}
         </div>
       ) : (

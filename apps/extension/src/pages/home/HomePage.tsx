@@ -33,6 +33,7 @@ import {
   useFocusModePhase,
   type FocusModePhase,
   useNetworkPowerups,
+  isSignableAccount,
 } from '@salmon/shared';
 import {
   WalletHeader,
@@ -315,12 +316,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [openSettings]
   );
 
+  // A token's detail opens Send on that token; Home's control opens it on the
+  // chain's own asset. Cleared on the way out so the next Send starts clean.
+  const [sendInitialToken, setSendInitialToken] = useState<string | undefined>(undefined);
+
   const handleSendPress = useCallback(() => {
+    setSendInitialToken(undefined);
     setCurrentPage('send');
   }, []);
 
+  const handleTokenSendPress = useCallback(() => {
+    if (!selectedToken) return;
+    setSendInitialToken(selectedToken.address);
+    setCurrentPage('send');
+  }, [selectedToken]);
+
   const handleSendBack = useCallback(() => {
     clearSendNft();
+    setSendInitialToken(undefined);
     setCurrentPage('home');
   }, [clearSendNft]);
 
@@ -581,6 +594,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               infoLoading={selectedTokenMarket.infoLoading && !selectedTokenMarket.coinInfo}
               chartError={!!selectedTokenMarket.error && selectedTokenMarket.chartData.length === 0}
               onBack={handleTokenDetailBack}
+              onSendPress={
+                activeBlockchainAccount && isSignableAccount(activeBlockchainAccount)
+                  ? handleTokenSendPress
+                  : undefined
+              }
             />
           );
         }
@@ -627,6 +645,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             networkId={networkId as NetworkId | null}
             account={sendAccount}
             nft={sendNft}
+            initialTokenAddress={sendInitialToken}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
             loading={balanceState === 'loading'}

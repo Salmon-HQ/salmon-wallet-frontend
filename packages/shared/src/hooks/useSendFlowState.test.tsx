@@ -41,6 +41,21 @@ describe('useSendFlowState', () => {
     expect(result.current.nativeBalance).toBe(2.5);
   });
 
+  it('opens on the token the host named, when a token detail sent the user here', async () => {
+    const { result } = renderHook(() =>
+      useSendFlowState({ ...params, initialTokenAddress: 'USDC' })
+    );
+    await waitFor(() => expect(result.current.token?.address).toBe('USDC'));
+    expect(result.current.liveBalance).toBe(10);
+  });
+
+  it("falls back to the chain's own asset when the named token is not held", async () => {
+    const { result } = renderHook(() =>
+      useSendFlowState({ ...params, initialTokenAddress: 'NotHeld' })
+    );
+    await waitFor(() => expect(result.current.token?.address).toBe(SOL_CONSTANTS.ADDRESS));
+  });
+
   it('estimates the fee once per (token, recipient) pair, and never without an amount', async () => {
     const { result } = renderHook(() => useSendFlowState(params));
     await waitFor(() => expect(result.current.token).not.toBeNull());

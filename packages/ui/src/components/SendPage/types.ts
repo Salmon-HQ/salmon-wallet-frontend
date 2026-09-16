@@ -29,6 +29,8 @@ export interface SendPageProps {
    * `nft/[id]/send` — recipient, review, receipt — with no amount step.
    */
   nft?: NftData | null;
+  /** The token the flow opens on, when a token's detail sent the user here. */
+  initialTokenAddress?: string;
   /** Leave the flow */
   onBack: () => void;
   /** Callback when the transfer completes and the receipt is acknowledged */

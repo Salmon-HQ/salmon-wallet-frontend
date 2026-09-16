@@ -12,6 +12,8 @@ export type { CoinInfo } from '@salmon/shared';
  * period change), market data card, about card.
  */
 export interface TokenDetailContentProps {
+  /** Send opens on this token; absent for a surface that cannot send (watch-only). */
+  onSendPress?: () => void;
   /** Token to display. Undefined renders the balance-block skeleton. */
   token?: Token;
   /** Which chain's asset this is — Bitcoin has no contract address to copy. */

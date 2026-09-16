@@ -9,7 +9,7 @@
  *    an empty screen.
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockRouter = { back: jest.fn(), push: jest.fn() };
@@ -46,6 +46,8 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+let mockCanSign = true;
+
 const mockAccountState = {
   ready: true,
   activeAccount: { id: 'acct-1' },
@@ -81,6 +83,7 @@ jest.mock('@salmon/shared', () => ({
   getShortAddress: (address: string, chars: number) =>
     `${address.slice(0, chars)}...${address.slice(-chars)}`,
   useAccountsContext: () => [mockAccountState, {}],
+  isSignableAccount: () => mockCanSign,
   useBalance: () => mockBalanceState,
   useCurrencyContext: () => [{ currency: 'usd' }, { formatValue: (value: number) => `$${value}` }],
   // Real implementations — the mocked `api/services` module above is their
@@ -106,7 +109,7 @@ function renderScreen(ui: React.ReactElement) {
 }
 
 jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ scrollBottomPadding: 0 }),
+  useTabChrome: () => ({ scrollBottomPadding: 0, floatingBottomOffset: 0 }),
 }));
 
 jest.mock('../../hooks/useCopyFeedback', () => ({
@@ -155,6 +158,20 @@ jest.mock('../../src/components', () => {
         subtitle ? ReactActual.createElement(Text, null, subtitle) : null
       ),
     PriceChart: () => ReactActual.createElement(View, { testID: 'token-detail-chart' }),
+    PrimaryButton: ({
+      children,
+      onPress,
+      testID,
+    }: {
+      children?: React.ReactNode;
+      onPress?: () => void;
+      testID?: string;
+    }) =>
+      ReactActual.createElement(
+        TouchableOpacity,
+        { testID, onPress },
+        ReactActual.createElement(Text, null, children)
+      ),
     ScreenHeader: ({ title, subtitle }: { title?: string; subtitle?: string }) =>
       ReactActual.createElement(
         View,
@@ -170,6 +187,7 @@ import TokenDetailScreen from '../../app/(app)/token/[id]';
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockCanSign = true;
   mockRouteParams.id = 'MintKnown11111111111111111111111111111111';
   mockAccountState.ready = true;
   mockBalanceState.state = 'ready';
@@ -185,6 +203,23 @@ beforeEach(() => {
 });
 
 describe('token detail screen', () => {
+  it('Send opens the flow on this token', async () => {
+    renderScreen(<TokenDetailScreen />);
+    fireEvent.press(screen.getByTestId('token-detail-send-button'));
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      pathname: '/send',
+      params: { token: 'MintKnown11111111111111111111111111111111' },
+    });
+    await waitFor(() => expect(mockGetTokenMarketChart).toHaveBeenCalled());
+  });
+
+  it('Send is gone, not greyed, for an account that cannot sign', async () => {
+    mockCanSign = false;
+    renderScreen(<TokenDetailScreen />);
+    expect(screen.queryByTestId('token-detail-send-button')).toBeNull();
+    await waitFor(() => expect(mockGetTokenMarketChart).toHaveBeenCalled());
+  });
+
   it('renders the header and the Performance chart for a known id', async () => {
     renderScreen(<TokenDetailScreen />);
 

@@ -33,9 +33,19 @@ export interface UseSendFlowStateParams {
   account: BlockchainAccount;
   blockchain: BlockchainType;
   tokens: SendToken[];
+  /**
+   * The token the flow opens on when the host names one — a token's own
+   * detail screen sends that token. Absent, the chain's own asset.
+   */
+  initialTokenAddress?: string;
 }
 
-export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowStateParams) {
+export function useSendFlowState({
+  account,
+  blockchain,
+  tokens,
+  initialTokenAddress,
+}: UseSendFlowStateParams) {
   const [token, setToken] = useState<SendToken | null>(null);
   const [recipient, setRecipient] = useState<SendRecipient | null>(null);
   const [amount, setAmount] = useState('');
@@ -46,13 +56,17 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
 
   const sendHook = useSendTransaction({ account, blockchain });
 
-  // The flow opens on the chain's own asset, which is what the Send control on
-  // Home means; the picker is how the user says otherwise.
+  // The flow opens on the token the host named, else on the chain's own
+  // asset, which is what the Send control on Home means; the picker is how
+  // the user says otherwise.
   useEffect(() => {
     if (token || tokens.length === 0) return;
+    const named = initialTokenAddress
+      ? tokens.find((tok) => tok.address === initialTokenAddress)
+      : undefined;
     const native = tokens.find((tok) => tok.address === SOL_CONSTANTS.ADDRESS);
-    setToken(native ?? tokens[0]);
-  }, [token, tokens]);
+    setToken(named ?? native ?? tokens[0]);
+  }, [token, tokens, initialTokenAddress]);
 
   const liveBalance = useMemo(() => {
     if (!token) return undefined;

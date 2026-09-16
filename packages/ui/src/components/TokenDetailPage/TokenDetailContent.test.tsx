@@ -8,7 +8,7 @@
  * no contract to copy), and that the inks follow the mode.
  */
 import React from 'react';
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createSemantic } from '@salmon/shared';
 
@@ -81,6 +81,29 @@ function blockOrder(container: HTMLElement): string[] {
 }
 
 describe('TokenDetailContent', () => {
+  it('offers Send on this token only when the host hands it a handler', () => {
+    const onSendPress = vi.fn();
+    renderInMode(
+      'dark',
+      <TokenDetailContent
+        token={SOLANA}
+        blockchain="solana"
+        chartData={CHART}
+        chartPeriod="1M"
+        onChartPeriodChange={() => {}}
+        coinInfo={null}
+        marketData={undefined}
+        onSendPress={onSendPress}
+      />
+    );
+    fireEvent.click(screen.getByTestId('token-detail-send-button'));
+    expect(onSendPress).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    renderContent('dark', SOLANA);
+    expect(screen.queryByTestId('token-detail-send-button')).toBeNull();
+  });
+
   it('gives both assets the same blocks in the same order — mobile’s token/[id]', () => {
     // Bitcoin has nothing for the about card (no contract, and CoinGecko is
     // not loaded here), so the card omits itself — a difference in data, the

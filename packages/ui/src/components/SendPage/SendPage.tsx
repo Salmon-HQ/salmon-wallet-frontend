@@ -61,6 +61,7 @@ export function SendPage({
   networkId,
   account,
   nft = null,
+  initialTokenAddress,
   onBack,
   onSuccess,
   loading = false,
@@ -75,7 +76,7 @@ export function SendPage({
   // screen floats in only once something has actually moved.
   const [stepped, setStepped] = useState(false);
 
-  const flow = useSendFlowState({ account, blockchain, tokens });
+  const flow = useSendFlowState({ account, blockchain, tokens, initialTokenAddress });
   const { token, setToken, recipient, setRecipient, amount, setAmount, sendHook, txId, submit } =
     flow;
 
