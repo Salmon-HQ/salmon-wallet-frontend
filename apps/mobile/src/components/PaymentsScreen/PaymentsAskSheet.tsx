@@ -67,14 +67,14 @@ export function PaymentsAskSheet({
       testID={testID}
       style={style}
     >
-      <View style={styles.body}>
+      <View style={layout.body}>
         <ScrollView
-          style={styles.scroll}
+          style={layout.scroll}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <Pressable onPress={Keyboard.dismiss} accessible={false} style={styles.content}>
+          <Pressable onPress={Keyboard.dismiss} accessible={false} style={layout.content}>
             <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
             <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
             <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
@@ -84,7 +84,7 @@ export function PaymentsAskSheet({
             {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
           </Pressable>
         </ScrollView>
-        <View style={[styles.footer, { paddingBottom: footerBottomInset }]}>
+        <View style={[layout.footer, { paddingBottom: footerBottomInset }]}>
           <PrimaryButton testID="payments-create" {...createButton}>
             {label}
           </PrimaryButton>
@@ -110,7 +110,7 @@ const stylesFor = (t: Semantic) =>
     },
   });
 
-const styles = StyleSheet.create({
+const layout = StyleSheet.create({
   body: {
     flex: 1,
   },
