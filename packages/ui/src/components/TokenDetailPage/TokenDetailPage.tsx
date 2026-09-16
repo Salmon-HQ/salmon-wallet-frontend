@@ -25,7 +25,6 @@ export function TokenDetailPage({
     <SettingsPanelContent
       testID="token-detail-screen"
       title={token.name}
-      subtitle={token.symbol}
       onBack={onBack}
       style={style}
       className={className}

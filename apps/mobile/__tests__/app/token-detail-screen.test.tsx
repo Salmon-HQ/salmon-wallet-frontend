@@ -222,7 +222,7 @@ describe('token detail screen', () => {
 
     expect(screen.getByTestId('token-detail-screen')).toBeTruthy();
     expect(screen.getByTestId('screen-header-title').props.children).toBe('Known Token');
-    expect(screen.getByTestId('screen-header-subtitle').props.children).toBe('KNOWN');
+    expect(screen.getByTestId('screen-header-subtitle').props.children).toBeUndefined();
     expect(screen.getByTestId('token-detail-chart')).toBeTruthy();
     expect(screen.queryByTestId('redirect')).toBeNull();
 

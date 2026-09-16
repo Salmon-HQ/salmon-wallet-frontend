@@ -181,7 +181,7 @@ export default function TokenDetailScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <ScreenHeader onBack={() => router.back()} title={token.name} subtitle={token.symbol} />
+      <ScreenHeader onBack={() => router.back()} title={token.name} />
 
       <ScrollView
         testID="token-detail-screen"
