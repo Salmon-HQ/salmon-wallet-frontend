@@ -6,6 +6,7 @@ import {
   letterSpacing,
   lineHeight,
   ms,
+  s,
   spacing,
   type Semantic,
   type SheetTitlePropsBase,
@@ -35,13 +36,17 @@ export const SheetTitle: React.FC<SheetTitleProps> = ({ leading, children }) => 
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
+    // The gutter keeps a long title off the sheet's edges when it wraps —
+    // the DOM twin holds the same one.
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing.xs,
+      paddingHorizontal: s(spacing.screenGutter),
     },
     title: {
+      paddingHorizontal: s(spacing.screenGutter),
       fontSize: ms(fontSize.headline),
       fontFamily: fontFamilyNative.semiBold,
       color: t.text.primary,
