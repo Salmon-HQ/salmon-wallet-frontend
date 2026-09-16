@@ -20,6 +20,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
+  componentSizes,
   fontFamily,
   fontSize,
   fontWeight,
@@ -35,7 +36,8 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton } from '../Button';
+import { IconBubble } from '../IconBubble';
+import { ArrowUpRightIcon } from '../../icons';
 import { KeyValueRow } from '../KeyValueRow';
 import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
@@ -120,21 +122,30 @@ export function TokenDetailContent({
             />
             <span style={nameStyle(semantic)}>{token.name}</span>
           </div>
-          <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
-            {displayAmount}
-          </span>
-          {displayFiat != null && (
-            <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
-              {displayFiat}
-            </span>
-          )}
-          {/* Send opens on this token (owner, 2026-09-16); the host leaves it
-              out for an account that cannot sign, as the NFT detail does. */}
-          {onSendPress && (
-            <PrimaryButton testID="token-detail-send-button" onPress={onSendPress}>
-              {t('token.action.send')}
-            </PrimaryButton>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0 }}>
+              <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
+                {displayAmount}
+              </span>
+              {displayFiat != null && (
+                <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
+                  {displayFiat}
+                </span>
+              )}
+            </div>
+            {onSendPress && (
+              <IconBubble
+                testID="token-detail-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onSendPress}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
+            )}
+          </div>
         </div>
       ) : (
         <SkeletonRow

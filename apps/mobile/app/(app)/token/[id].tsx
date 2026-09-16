@@ -31,6 +31,7 @@ import {
   formatLargeNumber,
   formatPercentage,
   getShortAddress,
+  componentSizes,
   hiddenValue,
   isSignableAccount,
   lineHeight,
@@ -53,7 +54,7 @@ import {
   DataAttribution,
   DepthBackground,
   KeyValueRow,
-  PrimaryButton,
+  IconBubble,
   TokenMarketData,
   PriceChart,
   ScalesBackground,
@@ -61,14 +62,13 @@ import {
   TokenLogo,
 } from '../../../src/components';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
-import { useTabChrome } from '../../../hooks/useTabChrome';
+import { ArrowUpRightIcon } from '../../../src/icons';
 
 const TOKEN_LOGO_SIZE = 42;
 
 export default function TokenDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { floatingBottomOffset } = useTabChrome();
   const { id } = useLocalSearchParams<{ id: string }>();
   const styles = useThemedStyles(stylesFor);
   const [{ currency }, { formatValue }] = useCurrencyContext();
@@ -156,8 +156,6 @@ export default function TokenDetailScreen() {
 
   const numericAmount =
     typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
-  // Send opens on this token (owner, 2026-09-16). Gone, not greyed, for an
-  // account that can never sign — the NFT detail draws its Send the same way.
   const canSign = isSignableAccount(activeBlockchainAccount);
   const handleSendPress = () => {
     router.push({ pathname: '/send', params: { token: token.address } });
@@ -194,14 +192,30 @@ export default function TokenDetailScreen() {
               {token.name}
             </Text>
           </View>
-          <Text style={styles.amount} testID="token-detail-amount">
-            {displayAmount}
-          </Text>
-          {displayFiat != null && (
-            <Text style={styles.fiat} testID="token-detail-fiat">
-              {displayFiat}
-            </Text>
-          )}
+          <View style={styles.balanceRow}>
+            <View style={styles.balanceValues}>
+              <Text style={styles.amount} testID="token-detail-amount">
+                {displayAmount}
+              </Text>
+              {displayFiat != null && (
+                <Text style={styles.fiat} testID="token-detail-fiat">
+                  {displayFiat}
+                </Text>
+              )}
+            </View>
+            {canSign && (
+              <IconBubble
+                testID="token-detail-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={handleSendPress}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
+            )}
+          </View>
         </View>
 
         {/* Performance — current price, the chart with its own period
@@ -257,14 +271,6 @@ export default function TokenDetailScreen() {
             is credited here, on the one screen that is made of its data. */}
         <DataAttribution networkId={networkId} />
       </ScrollView>
-
-      {canSign && (
-        <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
-          <PrimaryButton testID="token-detail-send-button" onPress={handleSendPress}>
-            {t('token.action.send')}
-          </PrimaryButton>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
@@ -286,9 +292,14 @@ const stylesFor = (t: Semantic) =>
     balanceBlock: {
       gap: vs(spacing.sm),
     },
-    action: {
-      paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.md),
+    balanceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    balanceValues: {
+      flexShrink: 1,
+      gap: vs(spacing.sm),
     },
     balanceHeader: {
       flexDirection: 'row',

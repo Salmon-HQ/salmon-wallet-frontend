@@ -137,7 +137,8 @@ jest.mock('../../src/components', () => {
     TokenAbout: ({ testID }: { testID?: string }) =>
       ReactActual.createElement(View, { testID: testID ?? 'token-detail-about' }),
     ScalesBackground: () => null,
-    IconBubble: () => null,
+    IconBubble: ({ onPress, testID }: { onPress?: () => void; testID?: string }) =>
+      ReactActual.createElement(TouchableOpacity, { testID, onPress }),
     KeyValueRow: ({ label, value, testID }: { label: string; value: string; testID?: string }) =>
       ReactActual.createElement(Text, { testID }, `${label}: ${value}`),
     ListRow: ({
@@ -158,20 +159,6 @@ jest.mock('../../src/components', () => {
         subtitle ? ReactActual.createElement(Text, null, subtitle) : null
       ),
     PriceChart: () => ReactActual.createElement(View, { testID: 'token-detail-chart' }),
-    PrimaryButton: ({
-      children,
-      onPress,
-      testID,
-    }: {
-      children?: React.ReactNode;
-      onPress?: () => void;
-      testID?: string;
-    }) =>
-      ReactActual.createElement(
-        TouchableOpacity,
-        { testID, onPress },
-        ReactActual.createElement(Text, null, children)
-      ),
     ScreenHeader: ({ title, subtitle }: { title?: string; subtitle?: string }) =>
       ReactActual.createElement(
         View,
