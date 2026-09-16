@@ -97,7 +97,13 @@ const DARK_SNAPSHOT = {
   },
   sheet: { handle: '#8B96AD' },
   step: { active: '#FF5C45', inactive: '#58637B' },
-  scanner: { ground: '#070911', frame: '#161C2D', corner: '#8B96AD', hint: '#A7B1C4' },
+  scanner: {
+    ground: '#070911',
+    frame: '#161C2D',
+    corner: '#8B96AD',
+    hint: '#A7B1C4',
+    ink: '#EDF1F7',
+  },
   chain: {
     hintInk: {
       bitcoin: '#F59E0B',
