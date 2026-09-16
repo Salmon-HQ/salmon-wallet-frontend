@@ -8,7 +8,8 @@
  * which the Bitcoin home tab renders too.
  */
 import React from 'react';
-import { spacing } from '@salmon/shared';
+import { borderRadius, componentSizes, spacing } from '@salmon/shared';
+import { TokenLogo } from '../TokenLogo';
 
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { TokenDetailContent } from './TokenDetailContent';
@@ -24,6 +25,14 @@ export function TokenDetailPage({
   return (
     <SettingsPanelContent
       testID="token-detail-screen"
+      titleGlyph={
+        <TokenLogo
+          uri={token.logo}
+          symbol={token.symbol}
+          size={componentSizes.iconSizeMedium}
+          borderRadius={borderRadius.tokenIcon}
+        />
+      }
       title={token.name}
       onBack={onBack}
       style={style}

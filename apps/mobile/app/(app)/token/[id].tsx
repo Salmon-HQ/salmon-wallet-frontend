@@ -180,7 +180,13 @@ export default function TokenDetailScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <ScreenHeader onBack={() => router.back()} title={token.name} />
+      <ScreenHeader
+        onBack={() => router.back()}
+        titleGlyph={
+          <TokenLogo uri={token.logo} symbol={token.symbol} size={componentSizes.iconSizeMedium} />
+        }
+        title={token.name}
+      />
 
       <ScrollView
         testID="token-detail-screen"
@@ -190,7 +196,6 @@ export default function TokenDetailScreen() {
       >
         {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
         <View style={styles.balanceBlock} testID="token-detail-balance">
-          <TokenLogo uri={token.logo} symbol={token.symbol} size={componentSizes.iconSizeMedium} />
           <Text
             style={styles.amount}
             testID="token-detail-amount"
