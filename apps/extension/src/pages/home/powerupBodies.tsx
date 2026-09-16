@@ -21,6 +21,8 @@ export interface PowerupBodyContext {
   networkId: string | null;
   /** Home's way back: the portfolio the result belongs to. */
   onNavigateHome: () => void;
+  /** Home's Send, for a Powerup that pays. */
+  onPay?: () => void;
 }
 
 /**
@@ -44,6 +46,7 @@ export function renderPowerupBody(id: string, ctx: PowerupBodyContext): React.Re
         publicKey={ctx.publicKey}
         networkId={ctx.networkId}
         onNavigateHome={ctx.onNavigateHome}
+        onPay={ctx.onPay}
       />
     );
   }

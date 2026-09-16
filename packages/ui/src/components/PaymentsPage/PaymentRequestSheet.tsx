@@ -13,7 +13,6 @@ import {
   fontSize,
   fontWeight,
   spacing,
-  type NetworkEnvironment,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -118,12 +117,7 @@ export function PaymentRequestSheet({
         </span>
         {status && <FactsCard testID={`${testID}-facts`} rows={status.rows} />}
         {checkFailedNotice && <WarningNotice tone="info" title={checkFailedNotice} />}
-        {status?.explorer && (
-          <ExplorerLinkButton
-            {...status.explorer}
-            environment={status.explorer.environment as NetworkEnvironment}
-          />
-        )}
+        {status?.explorer && <ExplorerLinkButton {...status.explorer} />}
         {showCode && (
           <SecondaryButton testID={`${testID}-copy`} {...copyPress}>
             {copyLabel}

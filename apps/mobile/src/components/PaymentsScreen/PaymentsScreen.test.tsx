@@ -32,25 +32,51 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+import type { PaymentsActionBinding } from '@salmon/shared/powerups';
+
+const bubble = { size: 36, iconWeight: 'bold', iconSize: 18 } as const;
+
 const mockLogic = {
-  form: {
-    amountLabel: 'Amount in USDC',
-    amountCard: { value: '', onChangeValue: jest.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
-    noteLabel: 'Note',
-    noteField: { value: '', onChangeText: jest.fn(), placeholder: 'note', maxLength: 80 },
-    expiryLabel: 'Open for',
-    expiryChips: {
-      options: [
-        { key: 'h1', label: '1 hour' },
-        { key: 'h24', label: '24 hours' },
-      ],
-      value: 'h24',
-      onChange: jest.fn(),
-      size: 'md',
-      fill: true,
-      variant: 'outline',
+  actions: {
+    title: 'Requests',
+    ask: {
+      onPress: jest.fn(),
+      accessibilityLabel: 'Ask for a payment',
+      testID: 'payments-ask-button',
+      ...bubble,
+      tone: 'accent',
     },
-    createButton: { onPress: jest.fn(), disabled: true, loading: false, label: 'Create request' },
+    pay: {
+      onPress: jest.fn(),
+      accessibilityLabel: 'Pay a request',
+      testID: 'payments-pay-button',
+      ...bubble,
+      tone: 'outline',
+    } as PaymentsActionBinding | null,
+  },
+  ask: {
+    visible: false,
+    onClose: jest.fn(),
+    title: 'New request',
+    form: {
+      amountLabel: 'Amount in USDC',
+      amountCard: { value: '', onChangeValue: jest.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
+      noteLabel: 'Note',
+      noteField: { value: '', onChangeText: jest.fn(), placeholder: 'note', maxLength: 80 },
+      expiryLabel: 'Open for',
+      expiryChips: {
+        options: [
+          { key: 'h1', label: '1 hour' },
+          { key: 'h24', label: '24 hours' },
+        ],
+        value: 'h24',
+        onChange: jest.fn(),
+        size: 'md',
+        fill: true,
+        variant: 'outline',
+      },
+      createButton: { onPress: jest.fn(), disabled: true, loading: false, label: 'Create request' },
+    },
   },
   list: {
     title: 'Requests',
@@ -109,26 +135,52 @@ import { PaymentsScreen } from './PaymentsScreen';
 afterEach(() => {
   mockLogic.unavailable = null;
   mockLogic.list.rows = [];
+  mockLogic.ask.visible = false;
   mockLogic.sheet.visible = false;
+  mockLogic.actions.pay = {
+    onPress: jest.fn(),
+    accessibilityLabel: 'Pay a request',
+    testID: 'payments-pay-button',
+    ...bubble,
+    tone: 'outline',
+  };
 });
 
 const renderScreen = () => render(<PaymentsScreen publicKey="8xyz" networkId="solana-devnet" />);
 
 describe('PaymentsScreen', () => {
-  it('renders the form and the empty list', () => {
+  it('renders the two actions over the empty list, and no form', () => {
     renderScreen();
-    expect(screen.getByTestId('payments-amount')).toBeTruthy();
-    expect(screen.getByTestId('payments-note')).toBeTruthy();
-    expect(screen.getByTestId('payments-create')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('payments-ask-button'));
+    expect(mockLogic.actions.ask.onPress).toHaveBeenCalled();
+    fireEvent.press(screen.getByTestId('payments-pay-button'));
+    expect(mockLogic.actions.pay?.onPress).toHaveBeenCalled();
     expect(screen.getByTestId('payments-empty')).toBeTruthy();
+    expect(screen.queryByTestId('payments-amount')).toBeNull();
     expect(screen.queryByTestId('sheet')).toBeNull();
   });
 
-  it('shows the unavailable state instead of the form', () => {
+  it('hides Pay when the hook offers none', () => {
+    mockLogic.actions.pay = null;
+    renderScreen();
+    expect(screen.getByTestId('payments-ask-button')).toBeTruthy();
+    expect(screen.queryByTestId('payments-pay-button')).toBeNull();
+  });
+
+  it('draws the form inside the ask sheet when it is open', () => {
+    mockLogic.ask.visible = true;
+    renderScreen();
+    expect(screen.getByTestId('payments-amount')).toBeTruthy();
+    expect(screen.getByTestId('payments-note')).toBeTruthy();
+    expect(screen.getByTestId('payments-expiry')).toBeTruthy();
+    expect(screen.getByTestId('payments-create')).toBeTruthy();
+  });
+
+  it('shows the unavailable state instead of the actions', () => {
     mockLogic.unavailable = 'USDC is not here';
     renderScreen();
     expect(screen.getByTestId('payments-unavailable')).toBeTruthy();
-    expect(screen.queryByTestId('payments-amount')).toBeNull();
+    expect(screen.queryByTestId('payments-ask-button')).toBeNull();
   });
 
   it('renders rows with their state and opens one on press', () => {

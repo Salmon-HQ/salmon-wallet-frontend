@@ -8,6 +8,13 @@
       "track": "Ver cuándo pagaron una solicitud, y quién"
     }
   },
+  "actions": {
+    "ask": "Pedir un pago",
+    "pay": "Pagar una solicitud"
+  },
+  "ask": {
+    "title": "Nueva solicitud"
+  },
   "form": {
     "amount": "Monto en USDC",
     "amountPlaceholder": "0",
@@ -25,7 +32,7 @@
     "title": "Solicitudes",
     "empty": {
       "title": "Todavía no hay solicitudes",
-      "body": "Escribí un monto arriba para crear la primera."
+      "body": "Pedí una desde el botón del código, arriba."
     },
     "noNote": "Sin nota"
   },

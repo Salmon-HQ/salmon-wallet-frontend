@@ -12,25 +12,51 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+import type { PaymentsActionBinding } from '@salmon/shared/powerups';
+
+const bubble = { size: 36, iconWeight: 'bold', iconSize: 18 } as const;
+
 const logic = {
-  form: {
-    amountLabel: 'Amount in USDC',
-    amountCard: { value: '', onChangeValue: vi.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
-    noteLabel: 'Note',
-    noteField: { value: '', onChangeText: vi.fn(), placeholder: 'note', maxLength: 80 },
-    expiryLabel: 'Open for',
-    expiryChips: {
-      options: [
-        { key: 'h1', label: '1 hour' },
-        { key: 'h24', label: '24 hours' },
-      ],
-      value: 'h24',
-      onChange: vi.fn(),
-      size: 'md',
-      fill: true,
-      variant: 'outline',
+  actions: {
+    title: 'Requests',
+    ask: {
+      onPress: vi.fn(),
+      accessibilityLabel: 'Ask for a payment',
+      testID: 'payments-ask-button',
+      ...bubble,
+      tone: 'accent',
     },
-    createButton: { onPress: vi.fn(), disabled: true, loading: false, label: 'Create request' },
+    pay: {
+      onPress: vi.fn(),
+      accessibilityLabel: 'Pay a request',
+      testID: 'payments-pay-button',
+      ...bubble,
+      tone: 'outline',
+    } as PaymentsActionBinding | null,
+  },
+  ask: {
+    visible: false,
+    onClose: vi.fn(),
+    title: 'New request',
+    form: {
+      amountLabel: 'Amount in USDC',
+      amountCard: { value: '', onChangeValue: vi.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
+      noteLabel: 'Note',
+      noteField: { value: '', onChangeText: vi.fn(), placeholder: 'note', maxLength: 80 },
+      expiryLabel: 'Open for',
+      expiryChips: {
+        options: [
+          { key: 'h1', label: '1 hour' },
+          { key: 'h24', label: '24 hours' },
+        ],
+        value: 'h24',
+        onChange: vi.fn(),
+        size: 'md',
+        fill: true,
+        variant: 'outline',
+      },
+      createButton: { onPress: vi.fn(), disabled: true, loading: false, label: 'Create request' },
+    },
   },
   list: {
     title: 'Requests',
@@ -74,28 +100,53 @@ afterEach(() => {
   cleanup();
   logic.unavailable = null;
   logic.list.rows = [];
+  logic.ask.visible = false;
   logic.sheet.visible = false;
+  logic.actions.pay = {
+    onPress: vi.fn(),
+    accessibilityLabel: 'Pay a request',
+    testID: 'payments-pay-button',
+    ...bubble,
+    tone: 'outline',
+  };
 });
 
 const render = () =>
   renderInMode('dark', <PaymentsPage publicKey="8xyz" networkId="solana-devnet" />);
 
 describe('PaymentsPage', () => {
-  it('renders the form and the empty list', () => {
+  it('renders the two actions over the empty list, and no form', () => {
+    render();
+    fireEvent.click(screen.getByTestId('payments-ask-button'));
+    expect(logic.actions.ask.onPress).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('payments-pay-button'));
+    expect(logic.actions.pay?.onPress).toHaveBeenCalled();
+    expect(screen.getByTestId('payments-empty').textContent).toContain('No requests yet');
+    expect(screen.queryByTestId('payments-amount')).toBeNull();
+    expect(screen.queryByTestId('sheet')).toBeNull();
+  });
+
+  it('hides Pay when the hook offers none', () => {
+    logic.actions.pay = null;
+    render();
+    expect(screen.getByTestId('payments-ask-button')).toBeTruthy();
+    expect(screen.queryByTestId('payments-pay-button')).toBeNull();
+  });
+
+  it('draws the form inside the ask sheet when it is open', () => {
+    logic.ask.visible = true;
     render();
     expect(screen.getByTestId('payments-amount')).toBeTruthy();
     expect(screen.getByTestId('payments-note')).toBeTruthy();
     expect(screen.getByTestId('payments-expiry')).toBeTruthy();
     expect(screen.getByTestId('payments-create')).toBeTruthy();
-    expect(screen.getByTestId('payments-empty').textContent).toContain('No requests yet');
-    expect(screen.queryByTestId('sheet')).toBeNull();
   });
 
-  it('shows the unavailable state instead of the form', () => {
+  it('shows the unavailable state instead of the actions', () => {
     logic.unavailable = 'USDC is not here';
     render();
     expect(screen.getByTestId('payments-unavailable').textContent).toContain('USDC is not here');
-    expect(screen.queryByTestId('payments-amount')).toBeNull();
+    expect(screen.queryByTestId('payments-ask-button')).toBeNull();
   });
 
   it('renders rows with their state and opens one on press', () => {

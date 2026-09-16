@@ -106,8 +106,10 @@ const mockFlow = {
   clearRequest: jest.fn(),
 };
 
-/** The last `onScan` the recipient screen handed the scanner. */
+/** The last `onScan` the recipient screen handed the scanner, and whether it was up. */
 let scanHandler: ((result: unknown) => void) | null = null;
+let scannerVisible = false;
+const mockSearchParams: { scan?: string } = {};
 
 jest.mock('expo-router', () => {
   const ReactActual = require('react');
@@ -115,7 +117,7 @@ jest.mock('expo-router', () => {
   const Stack = ({ children }: { children?: React.ReactNode }) =>
     ReactActual.createElement(ReactActual.Fragment, null, children);
   Stack.Screen = Screen;
-  return { Stack, useRouter: () => mockRouter };
+  return { Stack, useRouter: () => mockRouter, useLocalSearchParams: () => mockSearchParams };
 });
 
 jest.mock('react-native-safe-area-context', () => {
@@ -200,8 +202,9 @@ jest.mock('../../src/contexts/SendFlowContext', () => ({
 jest.mock('../../src/components/DepthBackground', () => ({ DepthBackground: () => null }));
 jest.mock('../../src/components/ScalesBackground', () => ({ ScalesBackground: () => null }));
 jest.mock('../../src/components/QRScanner', () => ({
-  QRScanner: ({ onScan }: { onScan: (result: unknown) => void }) => {
+  QRScanner: ({ onScan, visible }: { onScan: (result: unknown) => void; visible: boolean }) => {
     scanHandler = onScan;
+    scannerVisible = visible;
     return null;
   },
 }));
@@ -325,6 +328,18 @@ const scannedRequest = {
 };
 
 describe('the recipient screen — a scanned payment request (spec 033 US3)', () => {
+  it('keeps the scanner down unless asked for', () => {
+    render(<SendRecipientScreen />);
+    expect(scannerVisible).toBe(false);
+  });
+
+  it('opens the scanner at once when Payments sends the user here to pay', () => {
+    mockSearchParams.scan = '1';
+    render(<SendRecipientScreen />);
+    expect(scannerVisible).toBe(true);
+    delete mockSearchParams.scan;
+  });
+
   it('a code that only carries an address fills the field, as it always has', () => {
     render(<SendRecipientScreen />);
     act(() => scanHandler?.({ data: 'Dest2', address: 'Dest2' }));

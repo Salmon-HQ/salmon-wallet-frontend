@@ -9,9 +9,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useCallback, useState } from 'react';
 
+const accounts = vi.hoisted(() => ({ activeBlockchainAccount: null as unknown }));
 vi.mock('../../contexts/AccountsContext', () => ({
   useAccountsContext: () => [
-    { accountId: 'acc-1', activeAccount: { name: 'Main' }, activeBlockchainAccount: null },
+    {
+      accountId: 'acc-1',
+      activeAccount: { name: 'Main' },
+      activeBlockchainAccount: accounts.activeBlockchainAccount,
+    },
     {},
   ],
 }));
@@ -48,12 +53,17 @@ import { usePaymentsScreenLogic } from './usePaymentsScreenLogic';
 const REFERENCE = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const RECIPIENT = 'mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN';
 
-function setup(findSettlement = vi.fn().mockResolvedValue(null), start = 1_000_000) {
+function setup(
+  findSettlement = vi.fn().mockResolvedValue(null),
+  start = 1_000_000,
+  onPay?: () => void
+) {
   let now = start;
   const hook = renderHook(() =>
     usePaymentsScreenLogic({
       publicKey: RECIPIENT,
       networkId: 'solana-devnet',
+      onPay,
       findSettlement,
       newReference: async () => REFERENCE,
       now: () => now,
@@ -64,17 +74,59 @@ function setup(findSettlement = vi.fn().mockResolvedValue(null), start = 1_000_0
 
 // Only the intervals are faked: `act` flushes through real microtasks.
 beforeEach(() => vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] }));
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  accounts.activeBlockchainAccount = null;
+});
 
 describe('usePaymentsScreenLogic', () => {
+  it('opens the ask sheet from its action, and a dismiss cancels what was typed', () => {
+    const { hook } = setup();
+    expect(hook.result.current.ask.visible).toBe(false);
+    act(() => hook.result.current.actions.ask.onPress());
+    expect(hook.result.current.ask.visible).toBe(true);
+    act(() => {
+      hook.result.current.ask.form.amountCard.onChangeValue('3');
+      hook.result.current.ask.form.noteField.onChangeText('Coffee');
+      hook.result.current.ask.form.expiryChips.onChange('h1');
+    });
+    act(() => hook.result.current.ask.onClose());
+    expect(hook.result.current.ask.visible).toBe(false);
+    expect(hook.result.current.ask.form.amountCard.value).toBe('');
+    expect(hook.result.current.ask.form.noteField.value).toBe('');
+    expect(hook.result.current.ask.form.expiryChips.value).toBe('h24');
+    expect(hook.result.current.requests).toHaveLength(0);
+  });
+
+  it('a create closes the ask sheet and opens the request sheet, never both', async () => {
+    const { hook } = setup();
+    act(() => hook.result.current.actions.ask.onPress());
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('5'));
+    await act(() => hook.result.current.create());
+    expect(hook.result.current.ask.visible).toBe(false);
+    expect(hook.result.current.sheet.visible).toBe(true);
+    expect(hook.result.current.ask.form.amountCard.value).toBe('');
+  });
+
+  it('offers Pay only to an account that can sign, and only when the platform wired it', () => {
+    expect(setup().hook.result.current.actions.pay).toBeNull();
+    const onPay = vi.fn();
+    accounts.activeBlockchainAccount = { getRpc: () => ({}) };
+    expect(setup(undefined, undefined, onPay).hook.result.current.actions.pay).toBeNull();
+    accounts.activeBlockchainAccount = { getRpc: () => ({}), canSign: true };
+    const { hook } = setup(undefined, undefined, onPay);
+    act(() => hook.result.current.actions.pay?.onPress());
+    expect(onPay).toHaveBeenCalled();
+  });
+
   it('creates a request the standard reads back, and opens it', async () => {
     const { hook } = setup();
     act(() => {
-      hook.result.current.form.amountCard.onChangeValue('12,5');
-      hook.result.current.form.noteField.onChangeText('Table 4');
+      hook.result.current.ask.form.amountCard.onChangeValue('12,5');
+      hook.result.current.ask.form.noteField.onChangeText('Table 4');
     });
-    expect(hook.result.current.form.createButton.disabled).toBe(false);
-    expect(hook.result.current.form.amountCard.subtext).toBe('≈ 12.50 USD');
+    expect(hook.result.current.ask.form.createButton.disabled).toBe(false);
+    expect(hook.result.current.ask.form.amountCard.subtext).toBe('≈ 12.50 USD');
     await act(() => hook.result.current.create());
     const { open, openUri, requests } = hook.result.current;
     const openAmountLabel = hook.result.current.sheet.amountLabel;
@@ -97,18 +149,20 @@ describe('usePaymentsScreenLogic', () => {
 
   it('refuses a bad amount with the reason, and zero', () => {
     const { hook } = setup();
-    act(() => hook.result.current.form.amountCard.onChangeValue('0.0000001'));
-    expect(hook.result.current.form.noteField.error).toBe('payments.errors.amountTooManyDecimals');
-    act(() => hook.result.current.form.amountCard.onChangeValue('0'));
-    expect(hook.result.current.form.noteField.error).toBe('payments.errors.amountInvalid');
-    expect(hook.result.current.form.createButton.disabled).toBe(true);
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('0.0000001'));
+    expect(hook.result.current.ask.form.noteField.error).toBe(
+      'payments.errors.amountTooManyDecimals'
+    );
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('0'));
+    expect(hook.result.current.ask.form.noteField.error).toBe('payments.errors.amountInvalid');
+    expect(hook.result.current.ask.form.createButton.disabled).toBe(true);
   });
 
   it('polls the open pending request and flips it to paid on a settlement', async () => {
     const settlement = { signature: 'sig', payer: 'payer', blockTime: 1_700_000_000 };
     const findSettlement = vi.fn().mockResolvedValueOnce(null).mockResolvedValue(settlement);
     const { hook } = setup(findSettlement);
-    act(() => hook.result.current.form.amountCard.onChangeValue('1'));
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
     await act(() => hook.result.current.create());
     // Mount check ran once for the new pending request; the poll ticks next.
     await act(async () => {
@@ -129,8 +183,8 @@ describe('usePaymentsScreenLogic', () => {
     const findSettlement = vi.fn().mockRejectedValue(new Error('rpc down'));
     const { hook, advance } = setup(findSettlement);
     act(() => {
-      hook.result.current.form.amountCard.onChangeValue('1');
-      hook.result.current.form.expiryChips.onChange('h1');
+      hook.result.current.ask.form.amountCard.onChangeValue('1');
+      hook.result.current.ask.form.expiryChips.onChange('h1');
     });
     await act(() => hook.result.current.create());
     await act(async () => {
@@ -145,7 +199,7 @@ describe('usePaymentsScreenLogic', () => {
 
   it('removes a request from the list and closes it if open', async () => {
     const { hook } = setup();
-    act(() => hook.result.current.form.amountCard.onChangeValue('1'));
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
     await act(() => hook.result.current.create());
     const id = hook.result.current.open!.id;
     act(() => hook.result.current.remove(id));

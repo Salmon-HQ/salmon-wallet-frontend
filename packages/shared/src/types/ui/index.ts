@@ -298,6 +298,8 @@ export type { MemoScreenPropsBase } from './memo-screen';
 export type {
   PaymentRequestSheetPropsBase,
   PaymentRequestStatusView,
+  PaymentsAskSheetPropsBase,
+  PaymentsFormView,
   PaymentsScreenPropsBase,
 } from './payments-screen';
 

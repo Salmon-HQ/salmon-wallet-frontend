@@ -1,7 +1,8 @@
 /**
  * usePaymentsScreenLogic — the Payments Powerup's screen state, shared by both
- * twins: the form, the list, the open request and what the network says
- * about it. The twins render rows they did not build.
+ * twins: the two actions over the list, the ask sheet's form, the open
+ * request and what the network says about it. The twins render rows they did
+ * not build.
  *
  * The Powerup owns no storage and no signer: the list lives behind
  * `usePowerupState`, the reference is a fresh public key, and the settlement
@@ -20,7 +21,15 @@ import { useFiatLine } from '../../hooks/useFiatLine';
 import { useBalance } from '../../hooks/useBalance';
 import { usePowerupState } from '../../hooks/usePowerupState';
 import type { NetworkId, SolanaNetworkId } from '../../types/blockchain';
-import type { FactsCardRow, PaymentRequestStatusView } from '../../types/ui/index';
+import type {
+  FactsCardRow,
+  IconBubbleSize,
+  PaymentRequestSheetPropsBase,
+  PaymentRequestStatusView,
+  PaymentsFormView,
+} from '../../types/ui/index';
+import { isSignableAccount } from '../../utils/account';
+import { componentSizes } from '../../theme/spacing';
 import { copyToClipboard } from '../../utils/clipboard';
 import {
   DEFAULT_EXPIRY,
@@ -44,6 +53,11 @@ import type { ExpiryKey, PaymentRequest, PaymentsState } from './types';
 
 const EMPTY_STATE: PaymentsState = { requests: {} };
 const NO_REQUESTS: readonly PaymentRequest[] = [];
+const ACTION_BUBBLE = {
+  size: componentSizes.iconBubbleSm,
+  iconWeight: 'bold',
+  iconSize: componentSizes.iconSizeXSmall,
+} as const;
 
 export type PaymentsErrorKey =
   | 'payments.errors.usdcUnavailable'
@@ -73,63 +87,43 @@ export interface UsePaymentsScreenLogicParams {
   publicKey: string;
   networkId: string | null;
   onNavigateHome?: () => void;
+  onPay?: () => void;
   /** Test seams. */
   findSettlement?: typeof findTransferRequestSettlement;
   newReference?: () => Promise<string>;
   now?: () => number;
 }
 
-/**
- * The props each block takes, composed here so both twins spread them and
- * neither restates the form (the clone ceiling is the reason this is not
- * left to the twins).
- */
-export interface PaymentsFormBindings {
-  amountLabel: string;
-  amountCard: {
-    value: string;
-    onChangeValue: (value: string) => void;
-    placeholder: string;
-    subtext: string;
-  };
-  noteLabel: string;
-  noteField: {
-    value: string;
-    onChangeText: (value: string) => void;
-    placeholder: string;
-    maxLength: number;
-    error?: string;
-  };
-  expiryLabel: string;
-  expiryChips: {
-    options: { key: string; label: string }[];
-    value: string;
-    onChange: (key: string) => void;
-    size: 'md';
-    fill: true;
-    variant: 'outline';
-  };
-  createButton: { onPress: () => void; disabled: boolean; loading: boolean; label: string };
-  /** A create that failed: a `KeyValueRow` with no label, in the danger ink. */
-  errorRow?: { label: ''; value: string; valueTone: 'danger' };
-}
-
-export interface PaymentRequestSheetBindings {
+/** The ask sheet: its form and its open/close, composed here so neither twin restates the form. */
+export interface PaymentsAskBindings {
   visible: boolean;
   onClose: () => void;
   title: string;
-  /** The encoded transfer request; empty while nothing is open. */
-  uri: string;
-  /** The code and the copy/share controls show only while the request can still be paid. */
-  showCode: boolean;
-  amountLabel: string;
-  status: PaymentRequestStatusView | null;
-  /** The notice under the facts when the last check failed; empty otherwise. */
-  checkFailedNotice?: string;
-  copyButton: { onPress: () => void; label: string };
-  shareLabel: string;
-  removeButton: { onPress: () => void; label: string };
+  form: PaymentsFormView;
 }
+
+/** One `IconBubble` over the list, minus the platform's glyph; Pay is null when this account cannot sign. */
+export interface PaymentsActionBinding {
+  onPress: () => void;
+  accessibilityLabel: string;
+  testID: string;
+  size: IconBubbleSize;
+  tone: 'accent' | 'outline';
+  iconWeight: 'bold';
+  iconSize: number;
+}
+
+export interface PaymentsActionsBindings {
+  title: string;
+  ask: PaymentsActionBinding;
+  pay: PaymentsActionBinding | null;
+}
+
+/** The request sheet's contract minus what the platform adds: its share handler and its style. */
+export type PaymentRequestSheetBindings = Omit<
+  PaymentRequestSheetPropsBase<never>,
+  'onShare' | 'style' | 'testID'
+>;
 
 export interface PaymentsListBindings {
   title: string;
@@ -138,7 +132,8 @@ export interface PaymentsListBindings {
 }
 
 export interface UsePaymentsScreenLogicResult {
-  form: PaymentsFormBindings;
+  actions: PaymentsActionsBindings;
+  ask: PaymentsAskBindings;
   list: PaymentsListBindings;
   /** Everything the request sheet takes but the platform's share handler. */
   sheet: PaymentRequestSheetBindings;
@@ -223,6 +218,7 @@ export function statusViewFor(request: PaymentRequest, now: number): PaymentRequ
 export function usePaymentsScreenLogic({
   publicKey,
   networkId,
+  onPay,
   findSettlement = findTransferRequestSettlement,
   newReference = freshReference,
   now = Date.now,
@@ -253,6 +249,7 @@ export function usePaymentsScreenLogic({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<PaymentsErrorKey | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [isAsking, setIsAsking] = useState(false);
   const [clock, setClock] = useState(() => seams.current.now());
 
   const setNote = useCallback(
@@ -323,6 +320,8 @@ export function usePaymentsScreenLogic({
       }));
       setAmount('');
       setNoteRaw('');
+      setExpiry(DEFAULT_EXPIRY);
+      setIsAsking(false);
       setOpenId(request.id);
     } catch (caught) {
       console.error('[payments] Failed to create the request:', caught);
@@ -457,43 +456,76 @@ export function usePaymentsScreenLogic({
   }, [openUri, showCopied]);
 
   const canCreate = !!token && !!key && !!validation?.ok && !isCreating;
+  const canPay = !!onPay && !!activeBlockchainAccount && isSignableAccount(activeBlockchainAccount);
+  // Dismissing the ask sheet is a cancel: the next one starts blank.
+  const closeAsk = () => {
+    setIsAsking(false);
+    setAmount('');
+    setNoteRaw('');
+    setExpiry(DEFAULT_EXPIRY);
+    setError(null);
+  };
   const openAmountLabel = open
     ? `${formatAtomic(open.amountAtomic, open.decimals)} ${open.symbol}`
     : '';
 
   return {
-    form: {
-      amountLabel: t('payments.form.amount'),
-      amountCard: {
-        value: amount,
-        onChangeValue: setAmount,
-        placeholder: t('payments.form.amountPlaceholder'),
-        subtext: fiatLine,
+    actions: {
+      title: t('payments.list.title'),
+      ask: {
+        onPress: () => setIsAsking(true),
+        accessibilityLabel: t('payments.actions.ask'),
+        testID: 'payments-ask-button',
+        tone: 'accent',
+        ...ACTION_BUBBLE,
       },
-      noteLabel: t('payments.form.note'),
-      noteField: {
-        value: note,
-        onChangeText: setNote,
-        placeholder: t('payments.form.notePlaceholder'),
-        maxLength: PAYMENTS_NOTE_MAX_LENGTH,
-        error: amountError ? t(amountError) : undefined,
+      pay: canPay
+        ? {
+            onPress: onPay,
+            accessibilityLabel: t('payments.actions.pay'),
+            testID: 'payments-pay-button',
+            tone: 'outline',
+            ...ACTION_BUBBLE,
+          }
+        : null,
+    },
+    ask: {
+      visible: isAsking,
+      onClose: closeAsk,
+      title: t('payments.ask.title'),
+      form: {
+        amountLabel: t('payments.form.amount'),
+        amountCard: {
+          value: amount,
+          onChangeValue: setAmount,
+          placeholder: t('payments.form.amountPlaceholder'),
+          subtext: fiatLine,
+        },
+        noteLabel: t('payments.form.note'),
+        noteField: {
+          value: note,
+          onChangeText: setNote,
+          placeholder: t('payments.form.notePlaceholder'),
+          maxLength: PAYMENTS_NOTE_MAX_LENGTH,
+          error: amountError ? t(amountError) : undefined,
+        },
+        expiryLabel: t('payments.form.expiry'),
+        expiryChips: {
+          options: EXPIRY_OPTIONS.map((option) => ({ key: option.key, label: t(option.labelKey) })),
+          value: expiry,
+          onChange: (next) => setExpiry(next as ExpiryKey),
+          size: 'md',
+          fill: true,
+          variant: 'outline',
+        },
+        createButton: {
+          onPress: () => void create(),
+          disabled: !canCreate,
+          loading: isCreating,
+          label: t('payments.form.create'),
+        },
+        errorRow: error ? { label: '', value: t(error), valueTone: 'danger' } : undefined,
       },
-      expiryLabel: t('payments.form.expiry'),
-      expiryChips: {
-        options: EXPIRY_OPTIONS.map((option) => ({ key: option.key, label: t(option.labelKey) })),
-        value: expiry,
-        onChange: (next) => setExpiry(next as ExpiryKey),
-        size: 'md',
-        fill: true,
-        variant: 'outline',
-      },
-      createButton: {
-        onPress: () => void create(),
-        disabled: !canCreate,
-        loading: isCreating,
-        label: t('payments.form.create'),
-      },
-      errorRow: error ? { label: '', value: t(error), valueTone: 'danger' } : undefined,
     },
     list: {
       title: t('payments.list.title'),

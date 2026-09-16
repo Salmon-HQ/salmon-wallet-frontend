@@ -16,7 +16,6 @@ import {
   s,
   spacing,
   vs,
-  type NetworkEnvironment,
   type Semantic,
 } from '@salmon/shared';
 
@@ -82,12 +81,7 @@ export function PaymentRequestSheet({
         </Text>
         {status && <FactsCard testID={`${testID}-facts`} rows={status.rows} />}
         {checkFailedNotice && <WarningNotice tone="info" title={checkFailedNotice} />}
-        {status?.explorer && (
-          <ExplorerLinkButton
-            {...status.explorer}
-            environment={status.explorer.environment as NetworkEnvironment}
-          />
-        )}
+        {status?.explorer && <ExplorerLinkButton {...status.explorer} />}
         {showCode && onShare && (
           <SecondaryButton testID={`${testID}-share`} onPress={onShare}>
             {shareLabel}

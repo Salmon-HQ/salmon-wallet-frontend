@@ -21,7 +21,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   classifyScanPayload,
@@ -88,7 +88,9 @@ export default function SendRecipientScreen() {
   } = useSendFlow();
 
   const [address, setAddress] = useState(recipient?.address ?? '');
-  const [showScanner, setShowScanner] = useState(false);
+  // Payments' Pay lands here with the scanner already up.
+  const { scan } = useLocalSearchParams<{ scan?: string }>();
+  const [showScanner, setShowScanner] = useState(scan === '1');
   const [pickerOpen, setPickerOpen] = useState(false);
   // A scanned payment request asked for a token this account does not hold.
   // The wallet never substitutes another (spec 033 FR-023).

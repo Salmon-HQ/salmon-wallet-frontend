@@ -1,23 +1,21 @@
 /**
- * PaymentsPage — the Payments Powerup on the DOM: the form that asks for
- * USDC, the list of what was asked, and the sheet that shows one request as
- * a code. Every prop is composed in the shared hook; this file only renders.
- * Mobile twin: `apps/mobile/src/components/PaymentsScreen`.
+ * PaymentsPage — the Payments Powerup on the DOM: two actions over the list
+ * of what was asked, the sheet that asks, and the sheet that shows one
+ * request as a code. Every prop is composed in the shared hook; this file
+ * only renders. Mobile twin: `apps/mobile/src/components/PaymentsScreen`.
  */
-import React, { useCallback, useState } from 'react';
-import { componentSizes, spacing } from '@salmon/shared';
+import React from 'react';
+import { spacing } from '@salmon/shared';
 import { usePaymentsScreenLogic } from '@salmon/shared/powerups';
 
-import { powerupIcons } from '../../icons';
-import { AmountEntryCard } from '../AmountEntryCard';
-import { PrimaryButton } from '../Button';
-import { ChipGroup } from '../Chip';
+import { QrCodeIcon, ScanIcon, powerupIcons } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
 import { StateBlock } from '../StateBlock';
-import { TextInput } from '../TextInput';
+import { ValueActionsRow } from '../ValueActionsRow';
+import { PaymentsAskSheet } from './PaymentsAskSheet';
 import { PaymentRequestSheet } from './PaymentRequestSheet';
 import type { PaymentsPageProps } from './types';
 
@@ -32,10 +30,7 @@ export function PaymentsPage({
   testID = 'payments-screen',
   ...logicParams
 }: PaymentsPageProps) {
-  const { form, list, sheet, unavailable } = usePaymentsScreenLogic(logicParams);
-  const [focused, setFocused] = useState(false);
-  const onFocus = useCallback(() => setFocused(true), []);
-  const onBlur = useCallback(() => setFocused(false), []);
+  const { actions, ask, list, sheet, unavailable } = usePaymentsScreenLogic(logicParams);
 
   const root: React.CSSProperties = {
     ...column(spacing.screenGutter),
@@ -53,39 +48,18 @@ export function PaymentsPage({
     );
   }
 
-  const { label, ...createButton } = form.createButton;
-
   return (
     <div data-testid={testID} style={root}>
-      <div style={column(spacing.md)}>
-        <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-        <AmountEntryCard
-          testID="payments-amount"
-          {...form.amountCard}
-          focused={focused}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-        <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-        <TextInput testID="payments-note" {...form.noteField} />
-        <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-        <ChipGroup testID="payments-expiry" {...form.expiryChips} />
-        {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: spacing.sm }}>
-          <PrimaryButton
-            testID="payments-create"
-            {...createButton}
-            style={{
-              width: componentSizes.copyButtonWidth,
-              height: componentSizes.buttonHeightCompact,
-            }}
-          >
-            {label}
-          </PrimaryButton>
-        </div>
-      </div>
-
-      <SectionLabel variant="caps">{list.title}</SectionLabel>
+      <ValueActionsRow
+        testID="payments-actions"
+        leading={<SectionLabel variant="caps">{actions.title}</SectionLabel>}
+        actions={
+          <>
+            <IconBubble icon={QrCodeIcon} {...actions.ask} />
+            {actions.pay && <IconBubble icon={ScanIcon} {...actions.pay} />}
+          </>
+        }
+      />
       {list.rows.length === 0 ? (
         <StateBlock tone="empty" testID="payments-empty" {...list.empty} />
       ) : (
@@ -102,6 +76,7 @@ export function PaymentsPage({
         </div>
       )}
 
+      <PaymentsAskSheet testID="payments-ask" {...ask} />
       <PaymentRequestSheet testID="payments-sheet" {...sheet} />
     </div>
   );

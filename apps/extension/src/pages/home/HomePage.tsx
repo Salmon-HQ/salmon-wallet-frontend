@@ -884,6 +884,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     publicKey: activeBlockchainAccount.getReceiveAddress(),
                     networkId: networkId ?? null,
                     onNavigateHome: () => setActiveSubTab('portfolio'),
+                    onPay: handleSendPress,
                   })
                 )}
               </SinkFloat>
