@@ -19,6 +19,7 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  borderRadius,
   componentSizes,
   fontFamily,
   fontSize,
@@ -39,6 +40,7 @@ import { IconBubble } from '../IconBubble';
 import { ValueActionsRow } from '../ValueActionsRow';
 import { ArrowUpRightIcon } from '../../icons';
 import { KeyValueRow } from '../KeyValueRow';
+import { TokenLogo } from '../TokenLogo';
 import { PriceChart } from '../PriceChart';
 import { SkeletonRow } from '../SkeletonRow';
 import { DataAttribution } from '../DataAttribution';
@@ -132,6 +134,12 @@ export function TokenDetailContent({
           data-testid="token-detail-balance"
           style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}
         >
+          <TokenLogo
+            uri={token.logo}
+            symbol={token.symbol}
+            size={componentSizes.iconSizeMedium}
+            borderRadius={borderRadius.tokenIcon}
+          />
           <div ref={amountBoxRef} style={{ minWidth: 0 }}>
             <span
               ref={amountRef}
