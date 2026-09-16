@@ -22,7 +22,6 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  chunkAddress,
   fontFamilyNative,
   fontSize,
   formatTokenAmount,
@@ -184,7 +183,7 @@ export default function SendReviewScreen() {
           <KeyValueRow
             testID="send-confirm-address"
             label={t('send.screens.address')}
-            value={chunkAddress(destinationAddress)}
+            value={getShortAddress(destinationAddress) ?? destinationAddress}
           />
           {resolvedFromDomain !== null && (
             <KeyValueRow

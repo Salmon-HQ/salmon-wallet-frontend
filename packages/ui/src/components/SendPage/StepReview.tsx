@@ -10,7 +10,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  chunkAddress,
   fontFamily,
   fontSize,
   fontWeight,
@@ -244,7 +243,7 @@ export function StepReview({
         <KeyValueRow
           testID="send-confirm-address"
           label={t('send.screens.address')}
-          value={chunkAddress(destinationAddress)}
+          value={getShortAddress(destinationAddress) ?? destinationAddress}
         />
         {resolvedFromDomain !== null && (
           <KeyValueRow
