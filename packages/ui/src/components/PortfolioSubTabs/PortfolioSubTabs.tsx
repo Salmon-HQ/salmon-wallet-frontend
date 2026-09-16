@@ -7,24 +7,18 @@
  * are arranged. The button sits OUTSIDE the tab row, pinned to the right
  * edge, so it holds still when the row itself becomes a scroller.
  *
- * Mobile plays `tabsEntering`/`tabsExiting` — the sink/float verb — on the
- * tabs region alone, remounted on `tabsKey`, when a reorder changes it. Here
- * the same region is one persistent element: on a `tabsKey` change it plays
- * `sinkExiting`, changes to the reordered tabs once that finishes (or
- * immediately under reduce motion / no WAAPI), then plays `floatEntering`.
- * A plain tab switch (same `tabsKey`) never triggers the verb — the
- * underline just slides, `UnderlineTabs`' own job.
+ * A change in the set of tabs — one installed, one removed, a reorder —
+ * moves only the tabs concerned: `UnderlineTabs`' own job, on both twins.
+ * The region here is one persistent element and the button never moves.
  */
-import { useEffect, useRef, useState } from 'react';
 import { spacing, componentSizes } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { useReducedMotion, floatEntering, sinkExiting } from '../../motion';
 import { SlidersIcon } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import { UnderlineTabs } from '../UnderlineTabs';
-import type { PortfolioSubTab, PortfolioSubTabsProps } from './types';
+import type { PortfolioSubTabsProps } from './types';
 
 const ORDER_BUTTON_SIZE = componentSizes.iconBubbleSm;
 const ORDER_GLYPH_SIZE = componentSizes.iconSizeXSmall;
@@ -34,38 +28,12 @@ export function PortfolioSubTabs({
   activeKey,
   onChange,
   onOrderPress,
-  tabsKey,
   style,
   className,
   testID,
 }: PortfolioSubTabsProps) {
   const { t } = useTranslation();
   const { text } = useSemantic();
-  const reducedMotion = useReducedMotion();
-
-  const regionRef = useRef<HTMLDivElement>(null);
-  const prevTabsKeyRef = useRef(tabsKey);
-  const [displayed, setDisplayed] = useState<{ tabs: PortfolioSubTab[]; activeKey: string }>({
-    tabs,
-    activeKey,
-  });
-
-  useEffect(() => {
-    if (tabsKey === prevTabsKeyRef.current) {
-      setDisplayed({ tabs, activeKey });
-      return;
-    }
-    prevTabsKeyRef.current = tabsKey;
-
-    const sink = sinkExiting(regionRef.current, reducedMotion);
-    const commit = () => {
-      setDisplayed({ tabs, activeKey });
-      floatEntering(regionRef.current, reducedMotion);
-    };
-    if (sink) sink.finished.then(commit).catch(commit);
-    else commit();
-  }, [tabsKey, tabs, activeKey, reducedMotion]);
-
   return (
     <div
       data-testid={testID}
@@ -79,10 +47,10 @@ export function PortfolioSubTabs({
         ...style,
       }}
     >
-      <div ref={regionRef} data-testid="portfolio-tabs-region" style={{ flex: 1, minWidth: 0 }}>
+      <div data-testid="portfolio-tabs-region" style={{ flex: 1, minWidth: 0 }}>
         <UnderlineTabs
-          tabs={displayed.tabs}
-          activeKey={displayed.activeKey}
+          tabs={tabs}
+          activeKey={activeKey}
           onChange={onChange}
           size="md"
           tabTestIDPrefix="portfolio-tab"

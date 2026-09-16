@@ -136,45 +136,6 @@ describe('useHomeShell', () => {
     expect(result.current.effectiveSubTab).toBe('nfts');
   });
 
-  it('plays the row verb when the tab SET changes, never on first mount', () => {
-    const { result } = renderHook(() => useHomeShell(params()));
-    expect(result.current.tabsHasPrior).toBe(false);
-    act(() => {
-      result.current.selectBlockchain(1);
-    });
-    expect(result.current.tabsHasPrior).toBe(true);
-  });
-
-  it('hands a change to exactly one owner: task over sub-tab over chain', () => {
-    const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
-      initialProps: params(),
-    });
-    expect(result.current.changeCause).toBe('none');
-
-    act(() => {
-      result.current.selectBlockchain(1);
-    });
-    expect(result.current.changeCause).toBe('chain');
-
-    act(() => result.current.setActiveSubTab('portfolio'));
-    act(() => {
-      result.current.selectBlockchain(0);
-    });
-    act(() => result.current.setActiveSubTab('nfts'));
-    expect(result.current.changeCause).toBe('subtab');
-
-    // Leaving Solana drops NFTs and changes the chain in one render: the
-    // sub-tab wins, so the chain wrapper inside stays silent.
-    act(() => {
-      result.current.selectBlockchain(1);
-    });
-    expect(result.current.changeCause).toBe('subtab');
-    expect(result.current.chainHasPrior).toBe(false);
-
-    rerender(params({ isTaskEngaged: true }));
-    expect(result.current.changeCause).toBe('task');
-  });
-
   it('a surfacing silences every wrapper — it is not a change', () => {
     const { result, rerender } = renderHook((p: UseHomeShellParams) => useHomeShell(p), {
       initialProps: params(),
@@ -183,10 +144,8 @@ describe('useHomeShell', () => {
       result.current.selectBlockchain(1);
     });
     expect(result.current.changeCause).toBe('chain');
-    expect(result.current.tabsHasPrior).toBe(true);
     rerender(params({ surfaceKey: 1 }));
     expect(result.current.changeCause).toBe('none');
-    expect(result.current.tabsHasPrior).toBe(false);
   });
 
   it('offers an installed Powerup as a sub-tab, only where it acts', () => {

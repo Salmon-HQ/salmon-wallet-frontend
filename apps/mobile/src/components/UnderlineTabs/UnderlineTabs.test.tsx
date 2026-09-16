@@ -40,6 +40,8 @@ jest.mock('react-native-reanimated', () => {
     interpolateColor: (value: number, _input: number[], output: string[]) =>
       value >= 1 ? output[1] : output[0],
     Easing: { bezier: (...coefficients: number[]) => coefficients },
+    LinearTransition: { duration: () => ({ easing: () => undefined }) },
+    withDelay: (_ms: number, animation: unknown) => animation,
   };
 });
 

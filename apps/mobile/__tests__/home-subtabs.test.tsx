@@ -297,21 +297,11 @@ jest.mock('../src/components', () => {
     PortfolioSubTabs: ({
       tabs,
       onChange,
-      tabsKey,
-      tabsEntering,
-      tabsExiting,
     }: {
       tabs: Array<{ key: string; label: string }>;
       onChange: (key: string) => void;
-      tabsKey?: string;
-      tabsEntering?: unknown;
-      tabsExiting?: unknown;
     }) => (
-      <View
-        key={tabsKey}
-        testID="portfolio-tabs-region"
-        {...({ entering: tabsEntering, exiting: tabsExiting } as object)}
-      >
+      <View testID="portfolio-tabs-region">
         {tabs.map((tab) => (
           <Text key={tab.key} testID={`portfolio-tab-${tab.key}`} onPress={() => onChange(tab.key)}>
             {tab.label}
@@ -399,8 +389,8 @@ describe('home sub-tabs', () => {
   });
 
   it('sinks the NFTs tab out of the row on Bitcoin and falls back to Portfolio', () => {
-    // Leaving Solana while standing on NFTs: the tabs region plays the verb
-    // (it is keyed on the SET of tabs) and the content region switches to
+    // Leaving Solana while standing on NFTs: the NFTs tab leaves the row (its
+    // own move, inside `UnderlineTabs`) and the content region switches to
     // Portfolio on its own verb. The chain-keyed wrapper inside it stays
     // silent — one wrapper speaks per gesture (DESIGN.md rule five).
     networksState.networkId = 'solana-mainnet';
@@ -412,7 +402,6 @@ describe('home sub-tabs', () => {
     renderScreen(<HomeScreen />);
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
-    const tabsRegion = screen.getByTestId('portfolio-tabs-region');
 
     fireEvent.press(screen.getByTestId('swipe-to-bitcoin'));
 
@@ -420,8 +409,6 @@ describe('home sub-tabs', () => {
     expect(screen.queryByTestId('nfts-tab')).toBeNull();
     // Portfolio's own content region is what took the screen back.
     expect(screen.getByTestId('home-chain-content')).toBeTruthy();
-    // The row swapped, so it is a different instance carrying the verb.
-    expect(screen.getByTestId('portfolio-tabs-region')).not.toBe(tabsRegion);
     // The content region owns the change; the chain wrapper inside it does not.
     expect(screen.getByTestId('home-subtab-content').props.entering).toBeTruthy();
     expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();

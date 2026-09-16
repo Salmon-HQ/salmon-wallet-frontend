@@ -13,7 +13,6 @@
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Reanimated from 'react-native-reanimated';
 import { s, spacing, componentSizes } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
@@ -31,9 +30,6 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
   activeKey,
   onChange,
   onOrderPress,
-  tabsKey,
-  tabsEntering,
-  tabsExiting,
   style,
   testID,
 }) => {
@@ -43,16 +39,10 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
   return (
     <View style={[styles.container, style]} testID={testID}>
       {/* The region takes the width the button leaves it — that constraint
-          is what lets `UnderlineTabs` know whether its labels fit. Only the
-          tabs play the reorder verb; the button at the right holds still —
-          it is the control, not the content it rearranges. */}
-      <Reanimated.View
-        key={tabsKey}
-        testID="portfolio-tabs-region"
-        style={styles.tabsRegion}
-        entering={tabsEntering}
-        exiting={tabsExiting}
-      >
+          is what lets `UnderlineTabs` know whether its labels fit. A change
+          in the set of tabs moves only the tabs concerned (`UnderlineTabs`'
+          own job); the button at the right holds still. */}
+      <View testID="portfolio-tabs-region" style={styles.tabsRegion}>
         <UnderlineTabs
           tabs={tabs}
           activeKey={activeKey}
@@ -61,7 +51,7 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
           tabTestIDPrefix="portfolio-tab"
           underlineTestID="portfolio-tabs-underline"
         />
-      </Reanimated.View>
+      </View>
 
       <IconBubble
         testID="portfolio-order-button"

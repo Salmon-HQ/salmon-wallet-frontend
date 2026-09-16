@@ -127,6 +127,113 @@ export function UnderlineTabs({
   const hasMeasuredActive = useRef(false);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
+  // A change in the SET of tabs moves only the tabs concerned (owner,
+  // 2026-09-16), the same as the mobile twin: a tab that joins grows in where
+  // it lands, one that leaves shrinks out — held in the row for the length of
+  // the exit so the ones after it slide over on the flow — and a reorder
+  // slides each tab from where it was to where it goes (FLIP). Each tab sits
+  // in its own wrapper, which is what the width and the travel animate.
+  const wrapRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
+  const [rendered, setRendered] = useState<{ tabs: UnderlineTab[]; leaving: Set<string> }>({
+    tabs,
+    leaving: new Set(),
+  });
+  const prevLefts = useRef<Map<string, number>>(new Map());
+  const hasMounted = useRef(false);
+  const [measureTick, setMeasureTick] = useState(0);
+  useEffect(() => {
+    const keys = new Set(tabs.map((tab) => tab.key));
+    const gone = rendered.tabs.filter((tab) => !keys.has(tab.key));
+    if (gone.length === 0) {
+      setRendered((prev) =>
+        prev.tabs === tabs && prev.leaving.size === 0 ? prev : { tabs, leaving: new Set() }
+      );
+      return undefined;
+    }
+    // The leaving tabs keep their place while they shrink; the rest take the
+    // new order around them.
+    const merged: UnderlineTab[] = [];
+    const next = [...tabs];
+    rendered.tabs.forEach((tab) => {
+      if (!keys.has(tab.key)) merged.push(tab);
+      else if (next.length) merged.push(next.shift() as UnderlineTab);
+    });
+    merged.push(...next);
+    setRendered({ tabs: merged, leaving: new Set(gone.map((tab) => tab.key)) });
+    const timer = setTimeout(
+      () => setRendered({ tabs, leaving: new Set() }),
+      resolveMotionMs(motionMs.ebb, isReduceMotionEnabled)
+    );
+    return () => clearTimeout(timer);
+    // `rendered` is what this effect writes; reading it here would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabs, isReduceMotionEnabled]);
+
+  useLayoutEffect(() => {
+    const lefts = new Map<string, number>();
+    const canAnimate = !isReduceMotionEnabled && hasMounted.current;
+    let pending = 0;
+    const settle = () => {
+      pending -= 1;
+      if (pending === 0) setMeasureTick((tick) => tick + 1);
+    };
+    const run = (element: HTMLElement, frames: Keyframe[], duration: number, easing: string) => {
+      if (typeof element.animate !== 'function') return;
+      pending += 1;
+      element
+        .animate(frames, { duration, easing, fill: 'backwards' })
+        .addEventListener('finish', settle);
+    };
+    rendered.tabs.forEach((tab, index) => {
+      const wrap = wrapRefs.current.get(tab.key);
+      if (!wrap) return;
+      const box = wrap.getBoundingClientRect();
+      lefts.set(tab.key, box.left);
+      const gapSide = index === 0 ? 'marginRight' : 'marginLeft';
+      if (rendered.leaving.has(tab.key)) {
+        if (!prevLefts.current.has(tab.key) || !canAnimate) return;
+        prevLefts.current.delete(tab.key);
+        run(
+          wrap,
+          [
+            { width: `${box.width}px`, opacity: 1, [gapSide]: '0px' },
+            { width: '0px', opacity: 0, [gapSide]: `${-metrics.gap}px` },
+          ],
+          resolveMotionMs(motionMs.ebb, isReduceMotionEnabled),
+          motionEasing.sink.css
+        );
+        wrap.style.width = '0px';
+        wrap.style.opacity = '0';
+        return;
+      }
+      const before = prevLefts.current.get(tab.key);
+      if (before === undefined) {
+        if (!canAnimate) return;
+        run(
+          wrap,
+          [
+            { width: '0px', opacity: 0, [gapSide]: `${-metrics.gap}px` },
+            { width: `${box.width}px`, opacity: 1, [gapSide]: '0px' },
+          ],
+          resolveMotionMs(motionMs.drift, isReduceMotionEnabled),
+          motionEasing.current.css
+        );
+        return;
+      }
+      const delta = before - box.left;
+      if (delta !== 0 && canAnimate) {
+        run(
+          wrap,
+          [{ transform: `translateX(${delta}px)` }, { transform: 'translateX(0)' }],
+          resolveMotionMs(motionMs.drift, isReduceMotionEnabled),
+          motionEasing.current.css
+        );
+      }
+    });
+    prevLefts.current = lefts;
+    hasMounted.current = true;
+  }, [rendered, metrics.gap, isReduceMotionEnabled]);
+
   useEffect(() => {
     setFocusedKey(activeKey);
   }, [activeKey]);
@@ -208,7 +315,7 @@ export function UnderlineTabs({
         underline.style.transform = `translateX(${x}px)`;
         underline.style.width = `${width}px`;
       });
-  }, [activeKey, tabs, isOverflowing, isReduceMotionEnabled]);
+  }, [activeKey, tabs, isOverflowing, isReduceMotionEnabled, measureTick]);
 
   // Off-screen active tab (including the one restored at mount) is brought
   // into view rather than leaving the underline to travel somewhere unseen.
@@ -356,51 +463,59 @@ export function UnderlineTabs({
         data-scroll-enabled={isOverflowing}
       >
         <div ref={rowRef} style={rowStyle}>
-          {tabs.map((tab: UnderlineTab) => {
+          {rendered.tabs.map((tab: UnderlineTab) => {
             const isActive = tab.key === activeKey;
             return (
-              <button
+              <span
                 key={tab.key}
                 ref={(node) => {
-                  if (node) tabRefs.current.set(tab.key, node);
-                  else tabRefs.current.delete(tab.key);
+                  if (node) wrapRefs.current.set(tab.key, node);
+                  else wrapRefs.current.delete(tab.key);
                 }}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                tabIndex={tab.key === focusedKey ? 0 : -1}
-                data-testid={tabTestIDPrefix ? `${tabTestIDPrefix}-${tab.key}` : undefined}
-                onClick={() => {
-                  focusTab(tab.key);
-                  handlePress(tab.key);
-                }}
-                style={{
-                  font: 'inherit',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  // Each tab is a snap point; it comes to rest at the padded
-                  // start of the scroller, never under the leading chevron.
-                  scrollSnapAlign: 'start',
-                  fontFamily: fontFamily.sans,
-                  fontWeight: isActive ? fontWeight.bold : fontWeight.semibold,
-                  fontSize: metrics.font,
-                  // With a unit: React treats a bare number here as a
-                  // multiplier of the font size, which made every tab
-                  // `font × snug` lines tall and pushed the underline a
-                  // screen below its label (side panel, 2026-09-02).
-                  lineHeight: `${metrics.font * lineHeight.snug}px`,
-                  letterSpacing: metrics.letterSpacing,
-                  textTransform: metrics.uppercase ? 'uppercase' : 'none',
-                  color: isActive ? t.text.primary : t.text.secondary,
-                  whiteSpace: 'nowrap',
-                  transition: `color ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}, font-weight ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}`,
-                }}
+                style={{ display: 'inline-flex', overflow: 'hidden', flexShrink: 0 }}
               >
-                {tab.label}
-              </button>
+                <button
+                  ref={(node) => {
+                    if (node) tabRefs.current.set(tab.key, node);
+                    else tabRefs.current.delete(tab.key);
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  tabIndex={tab.key === focusedKey ? 0 : -1}
+                  data-testid={tabTestIDPrefix ? `${tabTestIDPrefix}-${tab.key}` : undefined}
+                  onClick={() => {
+                    focusTab(tab.key);
+                    handlePress(tab.key);
+                  }}
+                  style={{
+                    font: 'inherit',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    // Each tab is a snap point; it comes to rest at the padded
+                    // start of the scroller, never under the leading chevron.
+                    scrollSnapAlign: 'start',
+                    fontFamily: fontFamily.sans,
+                    fontWeight: isActive ? fontWeight.bold : fontWeight.semibold,
+                    fontSize: metrics.font,
+                    // With a unit: React treats a bare number here as a
+                    // multiplier of the font size, which made every tab
+                    // `font × snug` lines tall and pushed the underline a
+                    // screen below its label (side panel, 2026-09-02).
+                    lineHeight: `${metrics.font * lineHeight.snug}px`,
+                    letterSpacing: metrics.letterSpacing,
+                    textTransform: metrics.uppercase ? 'uppercase' : 'none',
+                    color: isActive ? t.text.primary : t.text.secondary,
+                    whiteSpace: 'nowrap',
+                    transition: `color ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}, font-weight ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}`,
+                  }}
+                >
+                  {tab.label}
+                </button>
+              </span>
             );
           })}
           <div

@@ -364,8 +364,6 @@ export default function HomeScreen() {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
-    tabsHasPrior,
     taskHasPrior,
     subTabHasPrior,
     chainHasPrior,
@@ -631,14 +629,6 @@ export default function HomeScreen() {
       activeKey={effectiveSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
-      // A reorder changes the tabs on the verb — old arrangement sinks, new one
-      // floats — while the order button beside them holds still. Keyed by the
-      // arrangement, so a tab switch never remounts them.
-      tabsKey={subTabsKey}
-      tabsEntering={
-        tabsHasPrior ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS }) : undefined
-      }
-      tabsExiting={tabsHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
     />
   );
 

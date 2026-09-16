@@ -119,10 +119,6 @@ export interface UseHomeShellResult {
   setSubTabOrder: (order: string[]) => void;
   /** The tabs to draw, labelled, in the user's order, minus what is not offered. */
   subTabs: { key: HomeSubTabKey; label: string }[];
-  /** The rendered set — the row plays the verb when THIS changes, not on a switch. */
-  subTabsKey: string;
-  /** False on first mount and after a surfacing; true when the tab set changed. */
-  tabsHasPrior: boolean;
   /** Who owns the current change; exactly one wrapper animates. */
   changeCause: HomeChangeCause;
   taskHasPrior: boolean;
@@ -269,24 +265,6 @@ export function useHomeShell({
   // offered again (spec 026, ruling 3).
   const isOffered = subTabs.some((tab) => tab.key === activeSubTab);
   const effectiveSubTab: HomeSubTabKey = isOffered ? activeSubTab : 'portfolio';
-  const subTabsKey = subTabs.map((tab) => tab.key).join('|');
-
-  // The row plays the verb whenever the SET of tabs changes — a reorder, NFTs
-  // leaving on Bitcoin, floating back on Solana — never on a switch within the
-  // same set, so the underline keeps sliding. First mount owes no verb, and a
-  // surfacing silences the row like it silences the content wrappers.
-  // Render-time setState: refs cannot be read during render.
-  const [tabsChange, setTabsChange] = useState({
-    key: subTabsKey,
-    surface: surfaceKey,
-    hasPrior: false,
-  });
-  if (tabsChange.surface !== surfaceKey) {
-    setTabsChange({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
-  } else if (tabsChange.key !== subTabsKey) {
-    setTabsChange({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
-  }
-
   // Three causes can change the content and they must never speak at once: a
   // task taking or releasing the screen owns the screen wrapper, a sub-tab
   // change owns the content region, a chain change owns the chain wrapper
@@ -364,8 +342,6 @@ export function useHomeShell({
     subTabOrder,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
-    tabsHasPrior: tabsChange.hasPrior,
     changeCause: contentChange.cause,
     taskHasPrior: contentChange.cause === 'task',
     subTabHasPrior: contentChange.cause === 'subtab',

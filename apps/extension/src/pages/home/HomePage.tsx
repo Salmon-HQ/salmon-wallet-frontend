@@ -416,7 +416,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
     subTabHasPrior,
     chainHasPrior,
     selectBlockchain,
@@ -799,11 +798,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   activeKey={effectiveSubTab}
                   onChange={handleSubTabChange}
                   onOrderPress={handleOrderPress}
-                  // A reorder switches the tabs on the verb — old arrangement
-                  // sinks, new one floats — while the order button beside them
-                  // holds still. Keyed by the arrangement, so a tab switch never
-                  // remounts them.
-                  tabsKey={subTabsKey}
                 />
               </div>
             </div>
