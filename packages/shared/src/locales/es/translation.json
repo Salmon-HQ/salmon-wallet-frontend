@@ -802,6 +802,7 @@
     },
     "screens": {
       "recipientSubtitle": "Elegí quién va a recibir tus activos.",
+      "youWillSend": "Vas a enviar",
       "amountSubtitle": "Ingresá el monto a enviar.",
       "reviewTitle": "Revisar envío",
       "reviewSubtitle": "Revisá los detalles antes de firmar.",

@@ -245,15 +245,20 @@ export default function SendRecipientScreen() {
       >
         {/* The token is chosen here, first — amount's row becomes read-only
             once this screen has already asked (owner ruling 2026-09-01). */}
-        <ListRow
-          testID="send-selected-token"
-          onPress={() => setPickerOpen(true)}
-          accessibilityLabel={t('wallet.select_token', 'Select Token')}
-          leading={<TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={s(38)} />}
-          title={token?.name ?? ''}
-          subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
-          trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
-        />
+        <View style={styles.group} testID="send-token-group">
+          <SectionLabel variant="caps">{t('send.screens.youWillSend')}</SectionLabel>
+          <ListRow
+            testID="send-selected-token"
+            onPress={() => setPickerOpen(true)}
+            accessibilityLabel={t('wallet.select_token', 'Select Token')}
+            leading={
+              <TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={s(38)} />
+            }
+            title={token?.name ?? ''}
+            subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
+            trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
+          />
+        </View>
 
         <RecipientInput
           value={address}

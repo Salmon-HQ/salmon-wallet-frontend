@@ -802,6 +802,7 @@
     },
     "screens": {
       "recipientSubtitle": "Choose who will receive your assets.",
+      "youWillSend": "You will send",
       "amountSubtitle": "Enter the amount to send.",
       "reviewTitle": "Review send",
       "reviewSubtitle": "Check the details before signing.",

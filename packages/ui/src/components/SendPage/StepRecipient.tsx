@@ -15,6 +15,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   isSignableAccount,
+  spacing,
   useAddressValidation,
   useValidationDirty,
   useRecipientOptions,
@@ -221,22 +222,28 @@ export function StepRecipient({
       {/* The token is chosen here, first — the amount screen's row becomes
           read-only once this screen has already asked. */}
       {!nft && (
-        <ListRow
-          testID="send-selected-token"
-          onPress={() => setPickerOpen(true)}
-          accessibilityLabel={t('wallet.select_token', 'Select Token')}
-          leading={
-            <TokenLogo
-              uri={token?.logo || undefined}
-              symbol={token?.symbol}
-              size={38}
-              borderRadius={19}
-            />
-          }
-          title={token?.name ?? ''}
-          subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
-          trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
-        />
+        <div
+          data-testid="send-token-group"
+          style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}
+        >
+          <SectionLabel variant="caps">{t('send.screens.youWillSend')}</SectionLabel>
+          <ListRow
+            testID="send-selected-token"
+            onPress={() => setPickerOpen(true)}
+            accessibilityLabel={t('wallet.select_token', 'Select Token')}
+            leading={
+              <TokenLogo
+                uri={token?.logo || undefined}
+                symbol={token?.symbol}
+                size={38}
+                borderRadius={19}
+              />
+            }
+            title={token?.name ?? ''}
+            subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
+            trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
+          />
+        </div>
       )}
 
       {isOrdinal ? (
