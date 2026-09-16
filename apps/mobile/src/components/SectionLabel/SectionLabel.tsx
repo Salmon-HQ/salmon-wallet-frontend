@@ -33,8 +33,8 @@ const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     caps: {
       fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.micro),
-      lineHeight: s(fontSize.micro) * lineHeight.snug,
+      fontSize: s(fontSize.label),
+      lineHeight: s(fontSize.label) * lineHeight.snug,
       letterSpacing: letterSpacing.label,
       color: t.text.secondary,
     },

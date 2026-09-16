@@ -7,6 +7,7 @@ import {
   Platform,
   BackHandler,
   Dimensions,
+  Keyboard,
   Animated,
   StyleProp,
   ViewStyle,
@@ -291,7 +292,13 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       }
     });
 
+  // A tap outside while typing means "put the keyboard away", not "leave":
+  // the sheet closes on the next tap, once the field has let go.
   const handleBackdropPress = useCallback(() => {
+    if (Keyboard.isVisible()) {
+      Keyboard.dismiss();
+      return;
+    }
     if (!dismissible) return;
     onClose();
   }, [onClose, dismissible]);

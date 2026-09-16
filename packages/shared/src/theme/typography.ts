@@ -75,8 +75,8 @@ export const fontSize = {
   // ---------------------------------------------------------------------
   /** 10px - uppercase labels, badges, plane markers, "TESTNET" */
   micro: 10,
-  /** 10px - section and plane labels (600, uppercase, +0.3px); size shared with `micro` */
-  label: 10,
+  /** 12px - section and plane labels (600, uppercase, +0.3px); one step over `micro` (owner, 2026-09-16: the caps read small on a phone) */
+  label: 12,
   /** 12px - dense secondary text: list sublines, metadata, deltas */
   caption: 12,
   /** 13px - mono: addresses, hashes, memos, origin strings */

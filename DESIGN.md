@@ -400,7 +400,7 @@ Rules that hold it together:
 - **Title** (600, 20px, 1.3, −0.12px): card titles.
 - **Body** (400, 16px, 1.5): default copy.
 - **Button** (600, 14.5px, 1.25, no transform): control labels. Never uppercase.
-- **Label** (600, 10px, 1.5, +0.3px, uppercase): section and plane labels, "TESTNET", risk tags.
+- **Label** (600, 12px, 1.5, +0.3px, uppercase): section and plane labels. "TESTNET" and risk tags stay on `micro` (10px).
 - **Mono** (400, 13px, tabular): addresses, hashes, memos, origin strings.
 
 **The row scale, one step up (owner, 2026-09-01: _"las palabras y números están tímidas"_).** The `.pen` draws its rows at 13 and the kit had shipped them at 12; on a phone that left the copy small inside wide cards. The kit's rows now sit one step higher across the board: `KeyValueRow` label and value at `body` (14), `ListRow` title at `bodyLg` (16) — `strong` at `heading` (18) — and its subtitle at `body`, `Chip` `md` at `body`. Every size still goes through `s()`, so the scale keeps tracking screen width; only the step changed. This applies to every screen at once — Settings, Wallets, Activity, Send, token and NFT detail — because a row is one component, not one per screen.

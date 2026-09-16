@@ -33,8 +33,8 @@ const VARIANTS: Record<SectionLabelVariant, React.CSSProperties> = {
   caps: {
     fontFamily: fontFamily.sans,
     fontWeight: fontWeight.bold,
-    fontSize: fontSize.micro,
-    lineHeight: fontSize.micro * lineHeight.snug + 'px',
+    fontSize: fontSize.label,
+    lineHeight: fontSize.label * lineHeight.snug + 'px',
     letterSpacing: letterSpacing.label,
   },
   group: {
