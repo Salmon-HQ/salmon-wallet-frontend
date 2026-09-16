@@ -5,7 +5,14 @@
  * from the shared hook. DOM twin: `packages/ui/src/components/PaymentsPage/PaymentsAskSheet`.
  */
 import React from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { s, spacing, useFieldFocus, vs } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -39,18 +46,28 @@ export function PaymentsAskSheet({
       style={style}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
-          <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-          <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
-          <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-          <TextField testID="payments-note" {...form.noteField} />
-          <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-          <ChipGroup testID="payments-expiry" {...form.expiryChips} />
-          {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
-          <PrimaryButton testID="payments-create" {...createButton} style={styles.create}>
-            {label}
-          </PrimaryButton>
-        </View>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          <Pressable
+            onPress={Keyboard.dismiss}
+            accessible={false}
+            style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}
+          >
+            <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
+            <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
+            <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
+            <TextField testID="payments-note" {...form.noteField} />
+            <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
+            <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+            {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
+            <PrimaryButton testID="payments-create" {...createButton} style={styles.create}>
+              {label}
+            </PrimaryButton>
+          </Pressable>
+        </ScrollView>
       </KeyboardAvoidingView>
     </BottomSheetContainer>
   );
