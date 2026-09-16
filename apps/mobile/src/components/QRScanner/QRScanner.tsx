@@ -165,7 +165,7 @@ const stylesFor = (t: Semantic) =>
       fontSize: fontSize.heading,
       fontFamily: fontFamilyNative.semiBold,
       fontWeight: fontWeight.semibold,
-      color: t.text.primary,
+      color: t.scanner.ink,
     },
     closeButton: {
       padding: spacing.sm,
@@ -190,7 +190,7 @@ const stylesFor = (t: Semantic) =>
       fontSize: fontSize.title,
       fontFamily: fontFamilyNative.semiBold,
       fontWeight: fontWeight.semibold,
-      color: t.text.primary,
+      color: t.scanner.ink,
       marginBottom: spacing.md,
       textAlign: 'center',
     },
@@ -208,7 +208,7 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
     },
     settingsButtonText: {
-      color: t.text.primary,
+      color: t.scanner.ink,
       fontSize: fontSize.bodyLg,
       fontFamily: fontFamilyNative.semiBold,
       fontWeight: fontWeight.semibold,
@@ -223,7 +223,7 @@ const stylesFor = (t: Semantic) =>
       padding: spacing.lg,
     },
     rejectionText: {
-      color: t.text.primary,
+      color: t.scanner.ink,
       fontSize: fontSize.bodyLg,
       textAlign: 'center',
     },

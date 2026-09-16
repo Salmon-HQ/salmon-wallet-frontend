@@ -592,6 +592,12 @@ export function createSemantic(mode: ThemeMode) {
      * two tones collapsed to one) — the instruction copy under the scan window.
      */
     hint: neutral[300],
+    /**
+     * The overlay's own primary ink: the title and the messages over the
+     * camera. `text.primary` follows the mode and goes dark on light, which
+     * on this always-dark ground does not read.
+     */
+    ink: neutral[50],
   } as const;
 
   /**

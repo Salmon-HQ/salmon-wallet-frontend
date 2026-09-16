@@ -297,7 +297,12 @@ export default function SendRecipientScreen() {
         visible={showScanner}
         blockchain={blockchain}
         onScan={handleScan}
-        onClose={() => setShowScanner(false)}
+        onClose={() => {
+          // Payments' Pay opened the scanner over Send: closing it goes back to
+          // where the user was, not to a Send they never asked for.
+          if (scan === '1') router.back();
+          else setShowScanner(false);
+        }}
       />
 
       <TokenPickerSheet
