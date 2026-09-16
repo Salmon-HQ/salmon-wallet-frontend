@@ -5,17 +5,11 @@
  * from the shared hook. DOM twin: `packages/ui/src/components/PaymentsPage/PaymentsAskSheet`.
  */
 import React from 'react';
-import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { s, spacing, useFieldFocus, vs } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import { AmountEntryCard } from '../AmountEntryCard';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button';
@@ -36,6 +30,11 @@ export function PaymentsAskSheet({
 }: PaymentsAskSheetProps) {
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
   const focus = useFieldFocus();
+  // The sheet hugs its content, so padding the scroll by the keyboard's
+  // height is what lifts the form above it: the sheet grows up to its own
+  // ceiling and the rest scrolls. `KeyboardAvoidingView` measured nothing
+  // inside the modal.
+  const keyboardHeight = useKeyboardHeight();
   const { label, ...createButton } = form.createButton;
 
   return (
@@ -47,30 +46,28 @@ export function PaymentsAskSheet({
       testID={testID}
       style={style}
     >
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
+        <Pressable
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          style={[styles.content, { paddingBottom: spaciousContentBottomPadding + keyboardHeight }]}
         >
-          <Pressable
-            onPress={Keyboard.dismiss}
-            accessible={false}
-            style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}
-          >
-            <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-            <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
-            <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-            <TextField testID="payments-note" {...form.noteField} />
-            <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-            <ChipGroup testID="payments-expiry" {...form.expiryChips} />
-            {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
-            <PrimaryButton testID="payments-create" {...createButton} style={styles.create}>
-              {label}
-            </PrimaryButton>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
+          <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
+          <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
+          <TextField testID="payments-note" {...form.noteField} />
+          <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
+          <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+          {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
+          <PrimaryButton testID="payments-create" {...createButton} style={styles.create}>
+            {label}
+          </PrimaryButton>
+        </Pressable>
+      </ScrollView>
     </BottomSheetContainer>
   );
 }
