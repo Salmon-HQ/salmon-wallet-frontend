@@ -4,3 +4,4 @@ export * from './sinkFloat';
 export * from './wavefront';
 export * from './wait';
 export * from './useFocusModePhase';
+export * from './useSettledSubTab';

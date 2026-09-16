@@ -147,6 +147,7 @@ jest.mock('react-native-reanimated', () => {
       out: identity,
       inOut: identity,
     },
+    LinearTransition: { duration: () => ({ easing: () => undefined }) },
     useSharedValue: (value: unknown) => ({ value }),
     useAnimatedStyle: (fn: () => unknown) => fn(),
     useReducedMotion: () => false,

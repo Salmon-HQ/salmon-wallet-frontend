@@ -89,6 +89,9 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 jest.mock('@salmon/shared', () => ({
   // The focus-mode clock is real: the screen reads Home in its resting phases.
   ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
+  // The settle clock is identity here: the content follows the tap at once.
+  // The clock itself is covered in `useSettledSubTab.test.tsx`.
+  useSettledSubTab: ({ target }: { target: string }) => target,
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
   motionMs: { drift: 280 },
   SINK_OUT_MS: 225,
@@ -117,8 +120,30 @@ jest.mock('@salmon/shared', () => ({
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
-  fontSize: { xs: 11, sm: 13, base: 15, md: 16, bodyLg: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, headerPadding: 16 },
+  fontSize: {
+    xs: 11,
+    sm: 13,
+    base: 15,
+    md: 16,
+    bodyLg: 16,
+    subtitle: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 30,
+  },
+  lineHeight: { snug: 1.3 },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 32,
+    headerPadding: 16,
+    screenGutter: 20,
+  },
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
@@ -533,27 +558,6 @@ describe('home sub-tabs', () => {
       .map((tab) => tab.props.testID as string);
     expect(labels).toEqual(['portfolio-tab-nfts', 'portfolio-tab-portfolio']);
   });
-
-  it('plays the verb on a reorder, and only then', () => {
-    // First mount owes no verb; once the arrangement changes the row sinks
-    // and floats, keyed by the arrangement so a tab switch never remounts it.
-    mockStoredTabOrder = ['portfolio', 'nfts'];
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-    const wrapped = () => (
-      <QueryClientProvider client={client}>
-        <HomeScreen />
-      </QueryClientProvider>
-    );
-    const view = render(wrapped());
-    expect(screen.getByTestId('portfolio-tabs-region').props.entering).toBeUndefined();
-
-    mockStoredTabOrder = ['nfts', 'portfolio'];
-    view.rerender(wrapped());
-
-    const row = screen.getByTestId('portfolio-tabs-region');
-    expect(row.props.entering).toBeDefined();
-    expect(row.props.exiting).toBeDefined();
-  });
 });
 
 describe('home developer networks', () => {
@@ -649,9 +653,10 @@ describe('home surfacing', () => {
     // The last gesture before the wait: a sub-tab switch, which the content
     // region owns.
     fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    // No beat before the float: the wait for the row to settle already held it.
     expect(screen.getByTestId('home-subtab-content').props.entering).toEqual({
       verb: 'float',
-      delayMs: 120,
+      delayMs: 0,
     });
     const headerBefore = screen.getByTestId('wallet-header');
 

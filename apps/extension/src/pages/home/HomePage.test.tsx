@@ -152,6 +152,8 @@ vi.mock('@salmon/shared', async () => {
   );
   return {
     ...focusMode,
+    // The settle clock is identity here: the content follows the tap at once.
+    useSettledSubTab: ({ target }: { target: string }) => target,
     colors: {
       background: { primary: '#000', card: '#111', tertiary: '#222' },
       text: { primary: '#fff', secondary: '#aaa', disabled: '#555' },

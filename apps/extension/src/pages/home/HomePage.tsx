@@ -33,6 +33,7 @@ import {
   useFocusModePhase,
   type FocusModePhase,
   useNetworkPowerups,
+  useSettledSubTab,
   isSignableAccount,
 } from '@salmon/shared';
 import {
@@ -511,6 +512,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     commit: commitFocusPhase,
   });
   const isPowerupMode = focusPhase === 'gone';
+  // The content follows the row, never the tap (owner, 2026-09-16): only the
+  // tab that has come to rest has its content drawn; see the mobile twin.
+  const isFocusTab = useCallback(
+    (key: string) => powerupTabs.some((tab) => tab.key === key),
+    [powerupTabs]
+  );
+  const settledSubTab = useSettledSubTab({
+    target: effectiveSubTab,
+    isFocusTab,
+    focusPhase,
+    isReduceMotionEnabled,
+  });
+  const subTabPending = settledSubTab !== effectiveSubTab;
 
   // The block's room: its height, read while shown, holds while it sinks and
   // comes back empty before it floats in. The block itself plays the verbs.
@@ -808,11 +822,22 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 still (rule four). */}
             <div style={contentRegionStyle}>
               <SinkFloat
-                transitionKey={subTabHasPrior ? effectiveSubTab : 'home-subtab-content'}
+                // While the row moves the region is empty under a key of its
+                // own, so the outgoing content sinks at the tap; the settled
+                // key then floats the new content with no beat — the wait for
+                // the row already held it.
+                transitionKey={
+                  !subTabHasPrior
+                    ? 'home-subtab-content'
+                    : subTabPending
+                      ? `${settledSubTab}->${effectiveSubTab}`
+                      : settledSubTab
+                }
+                holdMs={subTabPending ? undefined : 0}
                 testID="home-subtab-content"
                 style={fillColumnStyle}
               >
-                {effectiveSubTab === 'portfolio' ? (
+                {subTabPending ? null : settledSubTab === 'portfolio' ? (
                   // Keyed by chain so switching chains replaces the whole column
                   // with the sink and the float: the outgoing chain's content
                   // sinks as its light goes, the incoming one floats up into
@@ -838,7 +863,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       onScroll={handleContentScroll}
                     />
                   </SinkFloat>
-                ) : effectiveSubTab === 'nfts' ? (
+                ) : settledSubTab === 'nfts' ? (
                   // NFTs: the grid owns the only scroller in the content
                   // region, and everything above it is the same fixed block
                   // Portfolio shows.

@@ -61,6 +61,7 @@ import {
   type Token,
   useFocusModePhase,
   useNetworkPowerups,
+  useSettledSubTab,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -397,6 +398,20 @@ export default function HomeScreen() {
   // clock; this screen draws each phase.
   const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled);
   const isPowerupMode = focusPhase === 'gone';
+  // The content follows the row, never the tap (owner, 2026-09-16): only the
+  // tab that has come to rest — underline slid, or row risen / come down —
+  // has its content drawn. Until then the region is empty: the outgoing
+  // content sinks at the tap, the incoming one floats into a row that stopped.
+  const isFocusTab = useCallback(
+    (key: string) => powerupTabs.some((tab) => tab.key === key),
+    [powerupTabs]
+  );
+  const settledSubTab = useSettledSubTab({
+    target: effectiveSubTab,
+    isFocusTab,
+    focusPhase,
+    isReduceMotionEnabled,
+  });
   // The block's height, measured while shown, so its room can be held while
   // it sinks and given back before it floats in.
   const [balanceHeight, setBalanceHeight] = useState<number | null>(null);
@@ -771,119 +786,118 @@ export default function HomeScreen() {
               appear from nothing (owner, on device). Keyed by sub-tab so the
               change is a remount, the same mechanism the chain change uses; the
               block above it holds still (rule four). */}
-          <Reanimated.View
-            key={effectiveSubTab}
-            testID="home-subtab-content"
-            style={styles.chainContent}
-            // Rides the header's move: as the block above shrinks, the content
-            // follows it up on the same clock instead of jumping.
-            layout={headerLayout}
-            entering={
-              subTabHasPrior
-                ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                : undefined
-            }
-            exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-          >
-            {effectiveSubTab === 'portfolio' ? (
-              <>
-                {/* Partial-load failure: keep whatever data loaded visible;
+          {settledSubTab === effectiveSubTab && (
+            <Reanimated.View
+              key={settledSubTab}
+              testID="home-subtab-content"
+              style={styles.chainContent}
+              // Rides the header's move: as the block above shrinks, the content
+              // follows it up on the same clock instead of jumping.
+              layout={headerLayout}
+              // No beat before the float: the wait for the row already held it.
+              entering={subTabHasPrior ? floatEntering(isReduceMotionEnabled) : undefined}
+              exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+            >
+              {settledSubTab === 'portfolio' ? (
+                <>
+                  {/* Partial-load failure: keep whatever data loaded visible;
                   retry is pull-to-refresh on the token list. Only 'ready'
                   carries data, so a total failure is left to the list's own
                   error state rather than told "shown data may be incomplete". */}
-                {balanceError && balanceState === 'ready' && !switchingNetwork && (
-                  <View style={styles.balanceErrorBanner} testID="balance-load-error">
-                    <WarningNotice
-                      tone="warning"
-                      title={t(
-                        'wallet.partial_load_error',
-                        "Some balances couldn't be loaded. Shown data may be incomplete."
-                      )}
-                    />
-                  </View>
-                )}
+                  {balanceError && balanceState === 'ready' && !switchingNetwork && (
+                    <View style={styles.balanceErrorBanner} testID="balance-load-error">
+                      <WarningNotice
+                        tone="warning"
+                        title={t(
+                          'wallet.partial_load_error',
+                          "Some balances couldn't be loaded. Shown data may be incomplete."
+                        )}
+                      />
+                    </View>
+                  )}
 
-                {/* Scrollable Token List or Bitcoin View.
+                  {/* Scrollable Token List or Bitcoin View.
                   Keyed by chain so switching chains replaces the whole container
                   with the sink and the float: the outgoing chain's content
                   sinks 12dp as its light goes, the incoming one floats up into
                   place. The frame above holds still; only the content travels.
                   Under reduce motion both props are undefined and the change
                   stays instant. */}
+                  <View style={styles.listContainer}>
+                    <Reanimated.View
+                      key={currentNetworkId}
+                      testID="home-chain-content"
+                      style={styles.chainContent}
+                      // Only a chain change moves this wrapper. It remounts on a
+                      // task hand-back too (it lives inside `home-content`), and
+                      // animating there stacked a second sink/float on the one
+                      // the screen was already playing.
+                      entering={
+                        chainHasPrior
+                          ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                          : undefined
+                      }
+                      exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+                    >
+                      {currentChain === 'bitcoin' ? (
+                        // Bitcoin lives inside Portfolio with chart, market data
+                        // and about — it has no asset-detail screen of its own.
+                        <BitcoinColumn
+                          styles={styles}
+                          bitcoin={bitcoin}
+                          chartPeriod={bitcoinChartPeriod}
+                          onChartPeriodChange={handleChartPeriodChange}
+                          balanceState={balanceState}
+                          hiddenBalance={hiddenBalance}
+                          ListEmptyComponent={ListEmptyComponent}
+                          bottomOffset={floatingBottomOffset}
+                          onScroll={handleScroll}
+                        />
+                      ) : (
+                        // Normal token list for Solana/Ethereum
+                        <TokenList
+                          tokens={tokenListItems}
+                          loading={balanceState === 'loading'}
+                          onTokenPress={handleTokenPress}
+                          hiddenBalance={hiddenBalance}
+                          ListEmptyComponent={ListEmptyComponent}
+                          // The price provider's credit closes the list (its
+                          // terms: once per screen that shows its prices).
+                          ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
+                          onRefresh={refresh}
+                          onScroll={handleScroll}
+                          scrollEventThrottle={16}
+                          contentContainerStyle={[
+                            styles.listContent,
+                            styles.tabGutter,
+                            { paddingBottom: floatingBottomOffset },
+                          ]}
+                          blockchain={currentChain}
+                        />
+                      )}
+                    </Reanimated.View>
+                    {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                    {topFade}
+                  </View>
+                </>
+              ) : settledSubTab === 'nfts' ? (
+                // NFTs: the grid owns the only scroll view in the content region,
+                // and everything above it is the same fixed block Portfolio shows.
                 <View style={styles.listContainer}>
-                  <Reanimated.View
-                    key={currentNetworkId}
-                    testID="home-chain-content"
-                    style={styles.chainContent}
-                    // Only a chain change moves this wrapper. It remounts on a
-                    // task hand-back too (it lives inside `home-content`), and
-                    // animating there stacked a second sink/float on the one
-                    // the screen was already playing.
-                    entering={
-                      chainHasPrior
-                        ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                        : undefined
-                    }
-                    exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-                  >
-                    {currentChain === 'bitcoin' ? (
-                      // Bitcoin lives inside Portfolio with chart, market data
-                      // and about — it has no asset-detail screen of its own.
-                      <BitcoinColumn
-                        styles={styles}
-                        bitcoin={bitcoin}
-                        chartPeriod={bitcoinChartPeriod}
-                        onChartPeriodChange={handleChartPeriodChange}
-                        balanceState={balanceState}
-                        hiddenBalance={hiddenBalance}
-                        ListEmptyComponent={ListEmptyComponent}
-                        bottomOffset={floatingBottomOffset}
-                        onScroll={handleScroll}
-                      />
-                    ) : (
-                      // Normal token list for Solana/Ethereum
-                      <TokenList
-                        tokens={tokenListItems}
-                        loading={balanceState === 'loading'}
-                        onTokenPress={handleTokenPress}
-                        hiddenBalance={hiddenBalance}
-                        ListEmptyComponent={ListEmptyComponent}
-                        // The price provider's credit closes the list (its
-                        // terms: once per screen that shows its prices).
-                        ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
-                        onRefresh={refresh}
-                        onScroll={handleScroll}
-                        scrollEventThrottle={16}
-                        contentContainerStyle={[
-                          styles.listContent,
-                          styles.tabGutter,
-                          { paddingBottom: floatingBottomOffset },
-                        ]}
-                        blockchain={currentChain}
-                      />
-                    )}
-                  </Reanimated.View>
-                  {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                  <NftsTab
+                    contentContainerStyle={styles.tabGutter}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
+                  />
                   {topFade}
                 </View>
-              </>
-            ) : effectiveSubTab === 'nfts' ? (
-              // NFTs: the grid owns the only scroll view in the content region,
-              // and everything above it is the same fixed block Portfolio shows.
-              <View style={styles.listContainer}>
-                <NftsTab
-                  contentContainerStyle={styles.tabGutter}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                />
-                {topFade}
-              </View>
-            ) : (
-              // An installed Powerup's own surface. The confirmation is core's
-              // and covers the whole app when the user signs (spec 027 §2).
-              powerupTabContent
-            )}
-          </Reanimated.View>
+              ) : (
+                // An installed Powerup's own surface. The confirmation is core's
+                // and covers the whole app when the user signs (spec 027 §2).
+                powerupTabContent
+              )}
+            </Reanimated.View>
+          )}
         </Reanimated.View>
       )}
 
