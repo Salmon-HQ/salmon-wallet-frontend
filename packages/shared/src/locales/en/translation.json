@@ -785,8 +785,8 @@
     "fee_estimate_failed": "Fee could not be estimated",
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",
+    "enter_address_or_request": "Address, domain or payment request",
     "request": {
-      "paste": "Paste a payment request",
       "requestedBy": "Requested by",
       "for": "For",
       "tokenNotHeld": "You don't hold the token this request asks for",

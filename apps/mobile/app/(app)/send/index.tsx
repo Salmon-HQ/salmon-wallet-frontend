@@ -260,7 +260,7 @@ export default function SendRecipientScreen() {
           onChangeText={handleChangeText}
           onScanPress={() => setShowScanner(true)}
           scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
-          placeholder={t('send.enter_address_or_domain')}
+          placeholder={t('send.enter_address_or_request')}
           validationState={validationState}
           isValidating={isValidating}
         />

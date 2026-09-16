@@ -785,8 +785,8 @@
     "fee_estimate_failed": "No se pudo estimar la comisión",
     "recipient": "Destinatario",
     "enter_address_or_domain": "Ingresá una dirección o dominio",
+    "enter_address_or_request": "Dirección, dominio o solicitud de pago",
     "request": {
-      "paste": "Pegá una solicitud de pago",
       "requestedBy": "Pedida por",
       "for": "Para",
       "tokenNotHeld": "No tenés el token que pide esta solicitud",

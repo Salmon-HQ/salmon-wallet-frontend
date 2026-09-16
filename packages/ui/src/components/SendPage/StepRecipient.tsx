@@ -37,7 +37,6 @@ import { IconBubble } from '../IconBubble';
 import { RecipientInput } from '../InputAddress';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
-import { TextInput } from '../TextInput';
 import { TokenLogo } from '../TokenLogo';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
@@ -93,8 +92,8 @@ export function StepRecipient({
   const semantic = useSemantic();
   const [address, setAddress] = useState(recipient?.address ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pasted, setPasted] = useState('');
-  const [pasteError, setPasteError] = useState<string | null>(null);
+  // A translation key when a pasted payment request could not start the flow.
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   const senderAddress = account.getReceiveAddress();
   const { contacts, ownWallets } = useSendContacts(senderAddress);
@@ -111,40 +110,41 @@ export function StepRecipient({
   // Continue waits for a verdict on the CURRENT text, not the previous one.
   const { dirty, markDirty } = useValidationDirty(isValidating);
 
+  // The same field takes a pasted request: a `solana:` URI is classified
+  // like a scan would be, so a request that arrives as text pays like one
+  // that arrived as a code (spec 033 FR-026; the side panel has no camera).
+  // A request that cannot be read says which part (FR-020). Anything else
+  // is an address the validator judges.
   const handleChangeText = useCallback(
     (value: string) => {
       markDirty();
-      setAddress(value);
-    },
-    [markDirty]
-  );
-
-  // The paste field reads what a scanner would: a bare address fills the
-  // recipient as if typed; a request starts the flow from what it fixed; a
-  // request that cannot be read says which part (spec 033 FR-020).
-  const handlePaste = useCallback(
-    (value: string) => {
-      setPasted(value);
-      setPasteError(null);
-      if (value.trim().length === 0) return;
-      const outcome = classifyScanPayload(value, 'solana');
+      setRequestError(null);
+      const trimmed = value.trim();
+      if (!/^solana:/i.test(trimmed) || !onRequest) {
+        setAddress(value);
+        return;
+      }
+      const outcome = classifyScanPayload(trimmed, 'solana');
       if (outcome.kind === 'invalidRequest') {
-        setPasteError(t(`send.request.errors.${outcome.reason}`));
+        setAddress(value);
+        setRequestError(`send.request.errors.${outcome.reason}`);
         return;
       }
       if (outcome.kind !== 'valid') {
-        setPasteError(t('send.request.errors.notSolanaPay'));
+        setAddress(value);
         return;
       }
-      if (!outcome.request || !onRequest) {
-        handleChangeText(outcome.address);
-        setPasted('');
+      if (!outcome.request) {
+        setAddress(outcome.address);
         return;
       }
       const started = onRequest(outcome.request);
-      if (!started.ok) setPasteError(t('send.request.tokenNotHeld'));
+      if (!started.ok) {
+        setAddress(outcome.address);
+        setRequestError('send.request.tokenNotHeld');
+      }
     },
-    [handleChangeText, onRequest, t]
+    [markDirty, onRequest]
   );
 
   // `liveBalance` already falls back to the token's own amount.
@@ -246,7 +246,7 @@ export function StepRecipient({
           value={address}
           onChangeText={handleChangeText}
           placeholder={
-            nft ? t('nft.send.enterRecipientAddress') : t('send.enter_address_or_domain')
+            nft ? t('nft.send.enterRecipientAddress') : t('send.enter_address_or_request')
           }
           validationState={validationState}
           isValidating={isValidating}
@@ -262,15 +262,8 @@ export function StepRecipient({
         />
       )}
 
-      {!nft && onRequest && (
-        <TextInput
-          testID="send-request-paste"
-          mono
-          value={pasted}
-          onChangeText={handlePaste}
-          placeholder={t('send.request.paste')}
-          error={pasteError ?? undefined}
-        />
+      {requestError && (
+        <WarningNotice tone="error" title={t(requestError)} testID="send-request-refused" />
       )}
 
       {!nft && address.length === 0 && (
