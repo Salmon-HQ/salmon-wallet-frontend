@@ -7,6 +7,6 @@ import type { Testable } from './testable';
  */
 export interface PowerupsFabPropsBase extends Testable {
   onPress: () => void;
-  /** True while the catalogue is open — the plus turns 45 degrees. */
+  /** True while the catalogue is open — the salmon gives way to the close mark. */
   open?: boolean;
 }

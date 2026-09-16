@@ -1,19 +1,20 @@
 /**
- * PowerupsFab — the `+` that opens the Powerups catalogue over Home.
+ * PowerupsFab — the salmon that opens the Powerups catalogue over Home, on
+ * the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/PowerupsFab`: the same accent
- * bubble floating in the same corner. A plus turned 45 degrees IS the close
- * mark — the same glyph, not a change — so the launcher's open state is legible
- * on the control that opened it. Mobile turns it with Reanimated; here the
- * whole circle turns on a CSS transition, which comes to the same thing on a
- * round button.
+ * The mobile twin is `apps/mobile/src/components/PowerupsFab/PowerupsFab.tsx`:
+ * the same accent `IconBubble`, the same leap on a tap (`fabLeap` in the
+ * theme) and the same cross-fade to the close mark while the catalogue is
+ * open. Mobile moves it with Reanimated; here the leap is a two-phase CSS
+ * transform transition and the fade an opacity transition.
  */
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motionEasing, motionMs, shadowsCSS, spacing, glyphTurnDeg } from '@salmon/shared';
-
+import { fabLeap, motionEasing, motionMs, shadowsCSS, spacing } from '@salmon/shared';
 import { useReducedMotion } from '../../motion';
-import { PlusIcon } from '../../icons';
+import { XIcon } from '../../icons';
+import { useSemantic } from '../../theme/ThemeProvider';
+import { BrandMark } from '../BrandMark';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
@@ -27,35 +28,81 @@ export function PowerupsFab({
   testID = 'powerups-fab',
 }: PowerupsFabProps) {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
   const reducedMotion = useReducedMotion();
+  const [leaping, setLeaping] = useState(false);
+  const landing = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => clearTimeout(landing.current ?? undefined), []);
+
+  const handlePress = () => {
+    if (!reducedMotion) {
+      setLeaping(true);
+      clearTimeout(landing.current ?? undefined);
+      landing.current = setTimeout(() => setLeaping(false), motionMs.swell);
+    }
+    onPress();
+  };
+
+  const glyphStyle = (shown: boolean): React.CSSProperties => ({
+    position: 'absolute',
+    display: 'flex',
+    opacity: shown ? 1 : 0,
+    transition: reducedMotion
+      ? undefined
+      : `opacity ${motionMs.drift}ms ${motionEasing.current.css}`,
+  });
 
   return (
-    <IconBubble
-      testID={testID}
-      size={FAB_SIZE}
-      tone="accent"
-      icon={PlusIcon}
-      iconWeight="bold"
-      iconSize={FAB_ICON_SIZE}
-      onPress={onPress}
-      accessibilityLabel={
-        open
-          ? t('accessibility.close_powerups', 'Close Powerups')
-          : t('accessibility.open_powerups', 'Open Powerups')
-      }
+    <div
+      data-testid={`${testID}-leap`}
       style={{
         position: 'absolute',
         right: spacing.screenGutter,
         bottom: spacing.screenGutter,
         zIndex: 2,
-        boxShadow: shadowsCSS.lg,
-        transform: `rotate(${open ? glyphTurnDeg.fabOpen : 0}deg)`,
+        transform: leaping
+          ? `translateY(${-fabLeap.risePx}px) rotate(${-fabLeap.tiltDeg}deg)`
+          : 'translateY(0) rotate(0deg)',
         transition: reducedMotion
           ? undefined
-          : `transform ${motionMs.drift}ms ${motionEasing.current.css}`,
+          : `transform ${leaping ? motionMs.swell : motionMs.ebb}ms ${
+              leaping ? motionEasing.current.css : motionEasing.sink.css
+            }`,
         ...style,
       }}
-    />
+    >
+      <IconBubble
+        testID={testID}
+        size={FAB_SIZE}
+        tone="accent"
+        onPress={handlePress}
+        accessibilityLabel={
+          open
+            ? t('accessibility.close_powerups', 'Close Powerups')
+            : t('accessibility.open_powerups', 'Open Powerups')
+        }
+        style={{ boxShadow: shadowsCSS.lg }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <span style={glyphStyle(!open)}>
+            <BrandMark testID="powerups-fab-mark" size={FAB_ICON_SIZE} color={accent.onFill} />
+          </span>
+          <span data-testid="powerups-fab-close" style={glyphStyle(open)}>
+            <XIcon size={FAB_ICON_SIZE} color={accent.onFill} weight="bold" />
+          </span>
+        </span>
+      </IconBubble>
+    </div>
   );
 }
 

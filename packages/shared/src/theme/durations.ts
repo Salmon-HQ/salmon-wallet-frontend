@@ -417,13 +417,24 @@ export const CHART_PULSE_MS = motionMs.tide;
 
 /**
  * The turns a glyph makes in place, in degrees, once for both twins: the
- * Powerups plus becomes the close mark by an eighth of a turn; the plus /
- * minus control's bar stands at 90° for a plus and lies at 180° for a minus.
+ * plus / minus control's bar stands at 90° for a plus and lies at 180° for a
+ * minus.
  */
 export const glyphTurnDeg = {
-  fabOpen: 45,
   plus: 90,
   minus: 180,
+} as const;
+
+/**
+ * The Powerups launcher's leap (owner, 2026-09-16): the salmon on the FAB
+ * jumps when tapped — up by `risePx`, nose tilted by `tiltDeg` — over `swell`
+ * and lands over `ebb`, shorter than the catalogue's rise so the two never
+ * compete. While the catalogue is open the mark cross-fades to the close
+ * mark over `drift`. Reduce motion: no leap, the glyph cuts.
+ */
+export const fabLeap = {
+  risePx: 6,
+  tiltDeg: 14,
 } as const;
 
 /**

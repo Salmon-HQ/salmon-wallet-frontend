@@ -17,6 +17,7 @@ jest.mock('@salmon/shared', () => ({
   // The plus turns 45 degrees when the launcher opens, so the component now
   // reads the motion vocabulary (`motionMs`, `motionEasing`, `resolveMotionMs`).
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  ...jest.requireActual('@salmon/shared/src/theme/brand'),
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
   s: (value: number) => value,
 }));
@@ -65,6 +66,7 @@ jest.mock('react-native-reanimated', () => {
     useAnimatedStyle: (fn: () => unknown) => fn(),
     useReducedMotion: () => false,
     withTiming: (target: unknown) => target,
+    withSequence: (...steps: unknown[]) => steps[0],
     Easing: { bezier: () => () => 0 },
   };
 });
@@ -91,7 +93,7 @@ jest.mock('../../icons', () => {
   const ReactActual = require('react');
   const { View: RNView } = require('react-native');
   return {
-    PlusIcon: () => ReactActual.createElement(RNView, { testID: 'glyph-plus' }),
+    XIcon: () => ReactActual.createElement(RNView, { testID: 'glyph-x' }),
     LightningIcon: () => ReactActual.createElement(RNView, { testID: 'glyph-lightning' }),
   };
 });
@@ -123,39 +125,37 @@ describe('PowerupsFab', () => {
     expect(getByLabelText('Close Powerups')).toBeTruthy();
   });
 
-  it('draws a plus and turns it into the close mark when the launcher is open', () => {
-    // The lightning stays on the launcher's own heading; the FAB is a plus,
-    // and a plus turned 45 degrees IS the close mark.
-    const flatten = (style: unknown) =>
-      Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
-    const rotationOf = (node: { props: { style: unknown } }) =>
-      (flatten(node.props.style).transform as Array<{ rotate?: string }>)?.find(
-        (part) => part.rotate !== undefined
-      )?.rotate;
+  const flatten = (style: unknown) =>
+    Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
 
+  it('draws the salmon, and trades it for the close mark while the launcher is open', () => {
+    // The lightning stays on the launcher's own heading; the FAB is the brand
+    // mark, and the close mark sits on the same spot at the opposite opacity.
     const { getByTestId, queryByTestId, rerender } = render(
       <PowerupsFab onPress={jest.fn()} bottomOffset={20} />
     );
-    expect(getByTestId('glyph-plus')).toBeTruthy();
+    expect(getByTestId('powerups-fab-mark', { includeHiddenElements: true })).toBeTruthy();
     expect(queryByTestId('glyph-lightning')).toBeNull();
-    expect(rotationOf(getByTestId('powerups-fab'))).toBe('0deg');
+    expect(flatten(getByTestId('powerups-fab-mark-slot').props.style).opacity).toBe(1);
+    expect(flatten(getByTestId('powerups-fab-close-slot').props.style).opacity).toBe(0);
 
     rerender(<PowerupsFab onPress={jest.fn()} bottomOffset={20} open />);
-    expect(rotationOf(getByTestId('powerups-fab'))).toBe('45deg');
+    expect(flatten(getByTestId('powerups-fab-mark-slot').props.style).opacity).toBe(0);
+    expect(flatten(getByTestId('powerups-fab-close-slot').props.style).opacity).toBe(1);
   });
 
-  it('keeps the press scale and the rotation in one transform', () => {
-    // Two styles each writing `transform` do not merge — the last wins. With
-    // the real press motion in play, that dropped the rotation entirely.
-    const flatten = (style: unknown) =>
-      Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
+  it('leaps on a tap: up by the theme’s rise, nose tilted, on the wrapper', () => {
+    const { getByTestId } = render(<PowerupsFab onPress={jest.fn()} bottomOffset={20} />);
+    const transformOf = () =>
+      flatten(getByTestId('powerups-fab-leap').props.style).transform as Array<
+        Record<string, unknown>
+      >;
+    expect(transformOf().some((part) => Number(part.translateY) === 0)).toBe(true);
 
-    const { getByTestId } = render(<PowerupsFab onPress={jest.fn()} bottomOffset={20} open />);
-    const transform = flatten(getByTestId('powerups-fab').props.style).transform as Array<
-      Record<string, unknown>
-    >;
+    fireEvent.press(getByTestId('powerups-fab'));
 
-    expect(transform.some((part) => part.rotate === '45deg')).toBe(true);
-    expect(transform.some((part) => part.scale !== undefined)).toBe(true);
+    // `withSequence` is stubbed to its first step: the top of the leap.
+    expect(transformOf().some((part) => part.translateY === -6)).toBe(true);
+    expect(transformOf().some((part) => part.rotate === '-14deg')).toBe(true);
   });
 });
