@@ -406,7 +406,6 @@
     },
     "detail": {
       "title": "Información del Token",
-      "currentPrice": "Precio actual",
       "periodChange": "Cambio {{period}}"
     },
     "chart": {

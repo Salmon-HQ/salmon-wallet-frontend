@@ -16,7 +16,7 @@
  * The container it sits in *is* the caller's business: the chart bleeds off
  * the left edge of whatever padding that container has, hence `bleed`.
  */
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -28,6 +28,7 @@ import {
   formatPercentage,
   getShortAddress,
   hiddenValue,
+  letterSpacing,
   lineHeight,
   spacing,
   tabularNums,
@@ -37,6 +38,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { IconBubble } from '../IconBubble';
+import { ValueActionsRow } from '../ValueActionsRow';
 import { ArrowUpRightIcon } from '../../icons';
 import { KeyValueRow } from '../KeyValueRow';
 import { PriceChart } from '../PriceChart';
@@ -47,8 +49,7 @@ import { TokenLogo } from '../TokenLogo';
 import { TokenMarketData } from '../TokenMarketData';
 import type { TokenDetailContentProps } from './types';
 
-/** The balance block's own logo size — mobile's `TOKEN_LOGO_SIZE`. */
-const TOKEN_LOGO_SIZE = 42;
+const BALANCE_MIN_FONT_SCALE = 0.6;
 
 export function TokenDetailContent({
   token,
@@ -101,6 +102,25 @@ export function TokenDetailContent({
   const displayPrice = token?.price != null ? formatValue(token.price) : null;
   const fiatLine = [displayFiat, displayPrice].filter((part) => part != null).join(' · ') || null;
 
+  const amountBoxRef = useRef<HTMLDivElement>(null);
+  const amountRef = useRef<HTMLSpanElement>(null);
+  const [amountFit, setAmountFit] = useState(1);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const box = amountBoxRef.current;
+      const span = amountRef.current;
+      if (!box || !span) return;
+      const needed = span.scrollWidth / (amountFit || 1);
+      const available = box.clientWidth;
+      setAmountFit(needed > available ? Math.max(BALANCE_MIN_FONT_SCALE, available / needed) : 1);
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(fit);
+    if (amountBoxRef.current) observer.observe(amountBoxRef.current);
+    return () => observer.disconnect();
+  }, [displayAmount, amountFit]);
+
   // Bitcoin has no on-chain contract to copy; its "address" is the chain id.
   const contractAddress = blockchain === 'bitcoin' ? undefined : token?.address;
 
@@ -119,48 +139,49 @@ export function TokenDetailContent({
             <TokenLogo
               uri={token.logo}
               symbol={token.symbol}
-              size={TOKEN_LOGO_SIZE}
+              size={componentSizes.iconSizeMedium}
               borderRadius={borderRadius.tokenIcon}
             />
             <span style={nameStyle(semantic)}>{token.name}</span>
           </div>
-          <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
-            {displayAmount}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-            {fiatLine != null && (
-              <span
-                data-testid="token-detail-fiat"
-                style={{
-                  ...fiatStyle(semantic),
-                  minWidth: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {fiatLine}
-              </span>
-            )}
-            {onSendPress && (
-              <IconBubble
-                testID="token-detail-send-button"
-                size={componentSizes.iconBubbleSm}
-                tone="accent"
-                icon={ArrowUpRightIcon}
-                iconWeight="bold"
-                iconSize={componentSizes.iconSizeXSmall}
-                onPress={onSendPress}
-                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-              />
-            )}
+          <div ref={amountBoxRef} style={{ minWidth: 0 }}>
+            <span
+              ref={amountRef}
+              data-testid="token-detail-amount"
+              style={{ ...amountStyle(semantic), fontSize: fontSize.balance * amountFit }}
+            >
+              {displayAmount}
+            </span>
           </div>
+          <ValueActionsRow
+            leading={
+              fiatLine != null ? (
+                <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
+                  {fiatLine}
+                </span>
+              ) : null
+            }
+            actions={
+              onSendPress ? (
+                <IconBubble
+                  testID="token-detail-send-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="accent"
+                  icon={ArrowUpRightIcon}
+                  iconWeight="bold"
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onSendPress}
+                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+                />
+              ) : undefined
+            }
+          />
         </div>
       ) : (
         <SkeletonRow
           testID="token-detail-balance"
           lines={2}
-          leadingSize={TOKEN_LOGO_SIZE}
+          leadingSize={componentSizes.iconSizeMedium}
           count={1}
           accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
         />
@@ -174,10 +195,6 @@ export function TokenDetailContent({
         data-testid="token-detail-performance"
         style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}
       >
-        <KeyValueRow
-          label={t('token.detail.currentPrice', 'Current price')}
-          value={token?.price != null ? formatValue(token.price) : '—'}
-        />
         {(chartLoading || chartData.length > 0 || chartError) && (
           <PriceChart
             data={chartData}
@@ -227,8 +244,8 @@ export function TokenDetailContent({
 const nameStyle = (t: Semantic): React.CSSProperties => ({
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.bold,
-  fontSize: fontSize.heading,
-  lineHeight: `${fontSize.heading * lineHeight.snug}px`,
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${fontSize.bodyLg * lineHeight.snug}px`,
   color: t.text.primary,
   minWidth: 0,
   overflow: 'hidden',
@@ -240,16 +257,21 @@ const amountStyle = (t: Semantic): React.CSSProperties => ({
   ...tabularNums.css,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.bold,
-  fontSize: fontSize.display,
-  lineHeight: `${fontSize.display * lineHeight.snug}px`,
+  fontSize: fontSize.balance,
+  letterSpacing: letterSpacing.balance,
   color: t.text.primary,
+  whiteSpace: 'nowrap',
 });
 
 const fiatStyle = (t: Semantic): React.CSSProperties => ({
   ...tabularNums.css,
   fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.medium,
-  fontSize: fontSize.body,
-  lineHeight: `${fontSize.body * lineHeight.snug}px`,
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize.bodyLg,
+  letterSpacing: letterSpacing.change,
   color: t.text.secondary,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 });

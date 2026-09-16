@@ -35,7 +35,9 @@ import {
   hiddenValue,
   isSignableAccount,
   lineHeight,
+  letterSpacing,
   PERIOD_TO_DAYS,
+  ms,
   s,
   spacing,
   tabularNums,
@@ -55,6 +57,7 @@ import {
   DepthBackground,
   KeyValueRow,
   IconBubble,
+  ValueActionsRow,
   TokenMarketData,
   PriceChart,
   ScalesBackground,
@@ -64,7 +67,7 @@ import {
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { ArrowUpRightIcon } from '../../../src/icons';
 
-const TOKEN_LOGO_SIZE = 42;
+const BALANCE_MIN_FONT_SCALE = 0.6;
 
 export default function TokenDetailScreen() {
   const { t } = useTranslation();
@@ -189,33 +192,47 @@ export default function TokenDetailScreen() {
         {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
         <View style={styles.balanceBlock} testID="token-detail-balance">
           <View style={styles.balanceHeader}>
-            <TokenLogo uri={token.logo} symbol={token.symbol} size={TOKEN_LOGO_SIZE} />
+            <TokenLogo
+              uri={token.logo}
+              symbol={token.symbol}
+              size={componentSizes.iconSizeMedium}
+            />
             <Text style={styles.tokenName} numberOfLines={1}>
               {token.name}
             </Text>
           </View>
-          <Text style={styles.amount} testID="token-detail-amount">
+          <Text
+            style={styles.amount}
+            testID="token-detail-amount"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={BALANCE_MIN_FONT_SCALE}
+          >
             {displayAmount}
           </Text>
-          <View style={styles.balanceRow}>
-            {fiatLine != null && (
-              <Text style={styles.fiat} testID="token-detail-fiat" numberOfLines={1}>
-                {fiatLine}
-              </Text>
-            )}
-            {canSign && (
-              <IconBubble
-                testID="token-detail-send-button"
-                size={componentSizes.iconBubbleSm}
-                tone="accent"
-                icon={ArrowUpRightIcon}
-                iconWeight="bold"
-                iconSize={componentSizes.iconSizeXSmall}
-                onPress={handleSendPress}
-                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-              />
-            )}
-          </View>
+          <ValueActionsRow
+            leading={
+              fiatLine != null ? (
+                <Text style={styles.fiat} testID="token-detail-fiat" numberOfLines={1}>
+                  {fiatLine}
+                </Text>
+              ) : null
+            }
+            actions={
+              canSign ? (
+                <IconBubble
+                  testID="token-detail-send-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="accent"
+                  icon={ArrowUpRightIcon}
+                  iconWeight="bold"
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={handleSendPress}
+                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+                />
+              ) : undefined
+            }
+          />
         </View>
 
         {/* Performance — current price, the chart with its own period
@@ -225,10 +242,6 @@ export default function TokenDetailScreen() {
             the right with its pulsing endpoint, the way Home's Bitcoin column
             draws it; a card would clip both. */}
         <View style={styles.performance} testID="token-detail-performance">
-          <KeyValueRow
-            label={t('token.detail.currentPrice', 'Current price')}
-            value={token.price != null ? formatValue(token.price) : '—'}
-          />
           {(loading || chartData.length > 0 || chartError) && (
             <PriceChart
               data={chartData}
@@ -292,11 +305,6 @@ const stylesFor = (t: Semantic) =>
     balanceBlock: {
       gap: vs(spacing.sm),
     },
-    balanceRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(spacing.md),
-    },
     balanceHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -304,24 +312,24 @@ const stylesFor = (t: Semantic) =>
     },
     tokenName: {
       fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.heading),
-      lineHeight: s(fontSize.heading) * lineHeight.snug,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
       color: t.text.primary,
       flexShrink: 1,
     },
     amount: {
       ...TABULAR,
       fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.display),
-      lineHeight: s(fontSize.display) * lineHeight.snug,
+      fontSize: ms(fontSize.balance),
+      letterSpacing: letterSpacing.balance,
       color: t.text.primary,
     },
     fiat: {
       flexShrink: 1,
       ...TABULAR,
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: ms(fontSize.bodyLg),
+      letterSpacing: letterSpacing.change,
       color: t.text.secondary,
     },
     // The block's own anatomy: rows and chart at the in-component step.

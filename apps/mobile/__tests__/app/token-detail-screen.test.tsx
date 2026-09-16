@@ -77,6 +77,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/theme'),
   s: (value: number) => value,
   vs: (value: number) => value,
+  ms: (value: number) => value,
   hiddenValue: '••••',
   formatLargeNumber: (value: number) => String(value),
   formatPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`,
@@ -167,6 +168,15 @@ jest.mock('../../src/components', () => {
         ReactActual.createElement(Text, { testID: 'screen-header-subtitle' }, subtitle)
       ),
     TokenLogo: () => null,
+    ValueActionsRow: ({
+      leading,
+      actions,
+      testID,
+    }: {
+      leading?: React.ReactNode;
+      actions?: React.ReactNode;
+      testID?: string;
+    }) => ReactActual.createElement(View, { testID }, leading, actions),
   };
 });
 
