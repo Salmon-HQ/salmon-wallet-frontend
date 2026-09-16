@@ -57,6 +57,9 @@ let waitProps: { visible: boolean } | null = null;
 // The wait's own entry and exit have their own suite; what this one asserts is
 // the RENDER CONDITION around it — that the layout keeps it rendered while it
 // leaves, rather than unmounting it mid-wave (spec 031 §4).
+/** The classifier the recipient screen runs on pasted text, scripted per test. */
+const mockClassifyScanPayload = jest.fn<unknown, [string, string]>();
+
 jest.mock('../../src/components', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
@@ -140,6 +143,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // What the review shows about a payment request is real: the suite pins it.
   ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
+  classifyScanPayload: (raw: string, chain: string) => mockClassifyScanPayload(raw, chain),
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
@@ -350,6 +354,60 @@ describe('the recipient screen — a scanned payment request (spec 033 US3)', ()
     expect(mockRouter.push).not.toHaveBeenCalled();
     expect(screen.getByTestId('send-request-refused')).toBeTruthy();
     expect(screen.getByText("You don't hold the token this request asks for")).toBeTruthy();
+  });
+});
+
+describe('the recipient screen — a pasted payment request (spec 033 US3, mobile)', () => {
+  const pastedUri =
+    'solana:mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN?amount=1&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=11111111111111111111111111111111&label=Caf%C3%A9';
+
+  const pastedRequest = {
+    recipient: 'mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN',
+    amount: '1',
+    splToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    references: ['11111111111111111111111111111111'],
+    label: 'Café',
+  };
+
+  beforeEach(() => {
+    mockClassifyScanPayload.mockReset();
+    mockClassifyScanPayload.mockImplementation((raw: string) => {
+      if (raw === pastedUri) {
+        return { kind: 'valid', address: pastedRequest.recipient, request: pastedRequest };
+      }
+      if (raw.startsWith('solana:https')) {
+        return { kind: 'invalidRequest', reason: 'transactionRequest' };
+      }
+      return { kind: 'notAddress' };
+    });
+  });
+
+  it('a pasted request starts the flow like a scanned one', () => {
+    mockFlow.startFromRequest.mockReturnValue({ ok: true, next: 'review' });
+    render(<SendRecipientScreen />);
+    fireEvent.changeText(screen.getByTestId('send-recipient-input'), pastedUri);
+    expect(mockClassifyScanPayload).toHaveBeenCalledWith(pastedUri, 'solana');
+    expect(mockFlow.startFromRequest).toHaveBeenCalledWith(pastedRequest, mockFlow.tokens);
+    expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
+  });
+
+  it('a pasted request the wallet cannot read says which part, and starts nothing', () => {
+    render(<SendRecipientScreen />);
+    fireEvent.changeText(
+      screen.getByTestId('send-recipient-input'),
+      'solana:https%3A%2F%2Fexample.com%2Fpay'
+    );
+    expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
+    expect(screen.getByTestId('send-request-refused')).toBeTruthy();
+    expect(screen.getByText('This kind of payment request is not supported yet')).toBeTruthy();
+  });
+
+  it('a pasted plain address is still just an address', () => {
+    render(<SendRecipientScreen />);
+    fireEvent.changeText(screen.getByTestId('send-recipient-input'), 'Dest2');
+    expect(mockClassifyScanPayload).not.toHaveBeenCalled();
+    expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
+    expect(mockRouter.push).not.toHaveBeenCalled();
   });
 });
 

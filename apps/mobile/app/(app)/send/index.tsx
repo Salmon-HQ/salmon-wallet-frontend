@@ -24,6 +24,7 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
+  classifyScanPayload,
   formatTokenAmount,
   getShortAddress,
   s,
@@ -35,6 +36,7 @@ import {
   vs,
   type NetworkId,
   type RecipientOption,
+  type TransferRequest,
 } from '@salmon/shared';
 
 import {
@@ -90,7 +92,9 @@ export default function SendRecipientScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   // A scanned payment request asked for a token this account does not hold.
   // The wallet never substitutes another (spec 033 FR-023).
-  const [requestRefused, setRequestRefused] = useState(false);
+  // A translation key when a payment request could not start the flow: the
+  // token is not held, or the pasted text is a request the wallet cannot read.
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   // `liveBalance` already falls back to the token's own amount.
   const tokenBalance = liveBalance ?? 0;
@@ -124,27 +128,64 @@ export default function SendRecipientScreen() {
     ownWallets,
   });
 
-  // A code that only carries an address fills the field, as it always has. A
-  // payment request fills the whole flow: the recipient, the token and the
+  // A payment request fills the whole flow: the recipient, the token and the
   // amount are the requester's, and the next screen is whichever the request
-  // left open (spec 033 US3).
-  const handleScan = useCallback(
-    (result: QRScanResult) => {
-      setShowScanner(false);
-      setRequestRefused(false);
-      if (!result.request) {
-        setAddress(result.address);
-        return;
-      }
-      const outcome = startFromRequest(result.request, tokens);
+  // left open (spec 033 US3). Scanned or pasted, it is the same door.
+  const startRequest = useCallback(
+    (request: TransferRequest, fallbackAddress: string) => {
+      const outcome = startFromRequest(request, tokens);
       if (!outcome.ok) {
-        setAddress(result.address);
-        setRequestRefused(true);
+        setAddress(fallbackAddress);
+        setRequestError('send.request.tokenNotHeld');
         return;
       }
       router.push(outcome.next === 'review' ? '/send/review' : '/send/amount');
     },
     [router, startFromRequest, tokens]
+  );
+
+  // A code that only carries an address fills the field, as it always has.
+  const handleScan = useCallback(
+    (result: QRScanResult) => {
+      setShowScanner(false);
+      setRequestError(null);
+      if (!result.request) {
+        setAddress(result.address);
+        return;
+      }
+      startRequest(result.request, result.address);
+    },
+    [startRequest]
+  );
+
+  // The same field takes a pasted request: a `solana:` URI is classified like
+  // a scan, so a request that arrived as text on the phone pays like one that
+  // arrived as a code. Anything else is an address the validator judges.
+  const handleChangeText = useCallback(
+    (next: string) => {
+      setRequestError(null);
+      const trimmed = next.trim();
+      if (!/^solana:/i.test(trimmed)) {
+        setAddress(next);
+        return;
+      }
+      const outcome = classifyScanPayload(trimmed, blockchain);
+      if (outcome.kind === 'invalidRequest') {
+        setAddress(next);
+        setRequestError(`send.request.errors.${outcome.reason}`);
+        return;
+      }
+      if (outcome.kind !== 'valid') {
+        setAddress(next);
+        return;
+      }
+      if (!outcome.request) {
+        setAddress(outcome.address);
+        return;
+      }
+      startRequest(outcome.request, outcome.address);
+    },
+    [blockchain, startRequest]
   );
 
   const handleContinue = useCallback(() => {
@@ -214,10 +255,7 @@ export default function SendRecipientScreen() {
 
         <RecipientInput
           value={address}
-          onChangeText={(next) => {
-            setRequestRefused(false);
-            setAddress(next);
-          }}
+          onChangeText={handleChangeText}
           onScanPress={() => setShowScanner(true)}
           scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
           placeholder={t('send.enter_address_or_domain')}
@@ -235,10 +273,10 @@ export default function SendRecipientScreen() {
           />
         )}
 
-        {requestRefused && (
+        {requestError && (
           <WarningNotice
             tone="error"
-            title={t('send.request.tokenNotHeld')}
+            title={t(requestError)}
             style={styles.notice}
             testID="send-request-refused"
           />
