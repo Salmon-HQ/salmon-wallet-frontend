@@ -3,6 +3,7 @@
     "name": "Memo",
     "description": "Write a short note on-chain",
     "about": "Writes a short note to Solana with the Memo program, signed by your wallet. It is the reference Powerup: the simplest transaction Salmon can build for you and you can sign.",
+    "usage": "Write a note and sign it. It is written to Solana under your address.",
     "actions": {
       "write": "Write a note of up to 256 bytes on-chain"
     }

@@ -33,6 +33,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import Reanimated, { Easing, LinearTransition, useReducedMotion } from 'react-native-reanimated';
@@ -60,6 +61,12 @@ import {
   type Token,
   useFocusModePhase,
   useNetworkPowerups,
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  s,
+  spacing,
+  vs,
 } from '@salmon/shared';
 import {
   BalanceHeader,
@@ -81,8 +88,10 @@ import {
   POWERUPS,
   POWERUPS_ENABLED,
   PowerupsCatalog,
+  getPowerup,
   getPowerupCatalog,
   getPowerupTab,
+  type PowerupId,
   POWERUP_TAB_KEYS,
 } from '../../../src/powerups';
 import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
@@ -104,6 +113,15 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 /** The "no account" state fills the content region, like every other state. */
 const powerupBodyStyles = StyleSheet.create({
   noAccount: { flex: 1, justifyContent: 'center' },
+  surface: { flex: 1, gap: vs(spacing.screenGutter) },
+  // How to use the Powerup, left-aligned under the sub-tabs in the header's
+  // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
+  usage: {
+    fontFamily: fontFamilyNative.medium,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
+    paddingHorizontal: s(spacing.headerPadding),
+  },
 });
 
 /**
@@ -125,8 +143,10 @@ function PowerupTabBody({
   sheetHeight?: number;
 }) {
   const { t } = useTranslation();
+  const semantic = useSemantic();
   const [{ ready, activeAccount, activeBlockchainAccount, networkId }] = useAccountsContext();
   const body = getPowerupTab(tabKey);
+  const usageKey = getPowerup(tabKey as PowerupId)?.usageKey;
   if (!body) return null;
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
@@ -139,12 +159,24 @@ function PowerupTabBody({
       </View>
     );
   }
-  return React.createElement(body, {
-    publicKey: activeBlockchainAccount.getReceiveAddress(),
-    networkId: networkId ?? null,
-    onNavigateHome,
-    sheetHeight,
-  });
+  return (
+    <View style={powerupBodyStyles.surface}>
+      {usageKey && (
+        <Text
+          testID={`home-powerup-usage-${tabKey}`}
+          style={[powerupBodyStyles.usage, { color: semantic.text.secondary }]}
+        >
+          {t(usageKey)}
+        </Text>
+      )}
+      {React.createElement(body, {
+        publicKey: activeBlockchainAccount.getReceiveAddress(),
+        networkId: networkId ?? null,
+        onNavigateHome,
+        sheetHeight,
+      })}
+    </View>
+  );
 }
 
 export default function HomeScreen() {

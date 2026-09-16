@@ -16,6 +16,7 @@ export const paymentsManifest = {
   nameKey: 'payments.catalog.name',
   descriptionKey: 'payments.catalog.description',
   aboutKey: 'payments.catalog.about',
+  usageKey: 'payments.catalog.usage',
   actionKeys: ['payments.catalog.actions.ask', 'payments.catalog.actions.track'],
   authorKey: 'powerups.author.salmon',
   permissions: ['address'],

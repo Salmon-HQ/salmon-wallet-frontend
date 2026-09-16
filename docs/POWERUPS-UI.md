@@ -49,6 +49,12 @@ style prop nor wraps the block to change its look. Every block accepts
 
 - **Mandatory** for any Powerup with a surface. A read-only Powerup with
   nothing to show declares no `tab` and is "installed, not tabbed".
+- **Fixed:** the tab opens with one left-aligned line under the sub-tabs,
+  `t(manifest.usageKey)`, in the header's subtitle voice: how to use the
+  Powerup (which control does what), never what it is — the catalogue's
+  description and About already say that. Home draws it (mobile
+  `PowerupTabBody`, extension `powerupBodies.tsx`); the Powerup's root
+  starts under it. Portfolio and NFTs carry none (owner, 2026-09-16).
 - **Fixed:** the row is `PortfolioSubTabs` over `UnderlineTabs`; the label is
   `t(manifest.nameKey)`; the underline, the type, the carousel when the row
   overruns (leading/trailing fades only toward hidden tabs, from

@@ -3,6 +3,7 @@
     "name": "Payments",
     "description": "Ask for USDC with a code anyone can scan",
     "about": "Creates a payment request for a precise amount of USDC, addressed to this account, and shows it as a QR code any Solana wallet can pay. Your wallet reads the network itself to tell you when it was paid. Nothing is sent to a server: the code is the request.",
+    "usage": "Tap + to ask for USDC and share the code. Tap the code icon to pay one you were sent.",
     "actions": {
       "ask": "Ask for an amount of USDC with a QR code",
       "track": "See when a request was paid, and by whom"

@@ -13,9 +13,11 @@ export {
   POWERUPS_ENABLED,
   POWERUPS,
   POWERUP_TAB_KEYS,
+  getPowerup,
   getPowerupCatalog,
   isPowerupOnNetwork,
 } from '@salmon/shared/powerups';
+export type { PowerupId } from '@salmon/shared/powerups';
 export type { PowerupsCatalogProps };
 
 /**

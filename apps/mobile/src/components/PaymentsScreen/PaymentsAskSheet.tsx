@@ -119,6 +119,7 @@ const layout = StyleSheet.create({
   },
   content: {
     paddingHorizontal: s(spacing['2xl']),
+    paddingTop: vs(spacing.screenGutter),
     paddingBottom: vs(spacing.md),
     gap: vs(spacing.md),
   },

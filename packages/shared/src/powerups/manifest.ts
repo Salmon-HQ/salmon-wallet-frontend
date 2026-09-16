@@ -38,6 +38,12 @@ export interface PowerupManifest {
   descriptionKey: string;
   /** Translation key for the detail's "About" paragraph. */
   aboutKey: string;
+  /**
+   * Translation key for the one line Home shows under the sub-tabs on the
+   * Powerup's own tab: how to use it, not what it is (the catalogue's
+   * `descriptionKey` and `aboutKey` say that). Every tab starts with it.
+   */
+  usageKey: string;
   /** Translation keys, one per thing the user can do with it. */
   actionKeys: readonly string[];
   /** Translation key for who made it. */

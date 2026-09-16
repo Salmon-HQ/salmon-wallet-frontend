@@ -3,6 +3,7 @@
     "name": "Pagos",
     "description": "Pedí USDC con un código que cualquiera puede escanear",
     "about": "Crea una solicitud de pago por un monto exacto de USDC, dirigida a esta cuenta, y la muestra como un código QR que cualquier billetera de Solana puede pagar. Tu billetera lee la red por su cuenta para avisarte cuando la pagaron. Nada se envía a un servidor: el código es la solicitud.",
+    "usage": "Tocá + para pedir USDC y compartí el código. Tocá el ícono del código para pagar uno que te mandaron.",
     "actions": {
       "ask": "Pedir un monto de USDC con un código QR",
       "track": "Ver cuándo pagaron una solicitud, y quién"

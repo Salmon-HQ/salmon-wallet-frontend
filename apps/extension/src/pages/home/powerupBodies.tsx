@@ -13,6 +13,10 @@
  * queries, so they arrive as `PowerupBodyContext` instead.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
+import { getPowerup, type PowerupId } from '@salmon/shared/powerups';
+import { useSemantic } from '@salmon/ui';
 import { MemoPage, PaymentsPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
@@ -31,6 +35,51 @@ export interface PowerupBodyContext {
  * Powerup is gone.
  */
 export function renderPowerupBody(id: string, ctx: PowerupBodyContext): React.ReactElement | null {
+  const page = renderPowerupPage(id, ctx);
+  if (!page) return null;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        gap: spacing.screenGutter,
+      }}
+    >
+      <PowerupUsage id={id} />
+      {page}
+    </div>
+  );
+}
+
+/**
+ * How to use the Powerup, left-aligned under the sub-tabs in the header's
+ * own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
+ */
+function PowerupUsage({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const semantic = useSemantic();
+  const usageKey = getPowerup(id as PowerupId)?.usageKey;
+  if (!usageKey) return null;
+  return (
+    <span
+      data-testid={`home-powerup-usage-${id}`}
+      style={{
+        fontFamily: fontFamily.sans,
+        fontWeight: fontWeight.medium,
+        fontSize: fontSize.body,
+        lineHeight: `${fontSize.body * lineHeight.snug}px`,
+        color: semantic.text.secondary,
+        padding: `0 ${spacing.headerPadding}px`,
+      }}
+    >
+      {t(usageKey)}
+    </span>
+  );
+}
+
+function renderPowerupPage(id: string, ctx: PowerupBodyContext): React.ReactElement | null {
   if (id === 'memo' && MemoPage) {
     return (
       <MemoPage

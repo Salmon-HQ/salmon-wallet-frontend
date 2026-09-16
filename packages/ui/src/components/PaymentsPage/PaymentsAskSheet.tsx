@@ -79,6 +79,7 @@ export function PaymentsAskSheet({
         style={{
           display: 'flex',
           flexDirection: 'column',
+          paddingTop: spacing.screenGutter,
           paddingBottom: spacing['2xl'],
           gap: spacing.md,
         }}

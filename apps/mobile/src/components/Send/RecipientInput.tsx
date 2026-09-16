@@ -15,6 +15,7 @@ import React from 'react';
 import { StyleSheet, Text, TextInput } from 'react-native';
 import {
   borderWidth,
+  componentSizes,
   useFieldFocus,
   fontFamilyNative,
   fontSize,
@@ -121,10 +122,13 @@ const stylesFor = (t: Semantic) =>
     input: {
       flex: 1,
       minWidth: 0,
+      // As tall as the bubble beside it: every input whose placeholder shows
+      // on iOS has an explicit height; this one, without it, drew nothing.
+      height: componentSizes.iconBubbleSm,
       fontSize: s(fontSize.mono),
       fontFamily: fontFamilyNative.mono,
       color: t.text.primary,
-      paddingVertical: 0,
+      padding: 0,
     },
     mark: {
       fontSize: s(fontSize.bodyLg),

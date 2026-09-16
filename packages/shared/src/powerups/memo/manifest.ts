@@ -18,6 +18,7 @@ export const memoManifest = {
   nameKey: 'memo.catalog.name',
   descriptionKey: 'memo.catalog.description',
   aboutKey: 'memo.catalog.about',
+  usageKey: 'memo.catalog.usage',
   actionKeys: ['memo.catalog.actions.write'],
   authorKey: 'powerups.author.community',
   permissions: ['address'],
