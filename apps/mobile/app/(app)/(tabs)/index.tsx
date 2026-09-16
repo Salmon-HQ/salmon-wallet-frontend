@@ -118,8 +118,8 @@ const powerupBodyStyles = StyleSheet.create({
   // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
   usage: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
+    fontSize: s(fontSize.subtitle),
+    lineHeight: s(fontSize.subtitle) * lineHeight.snug,
     paddingHorizontal: s(spacing.headerPadding),
   },
 });

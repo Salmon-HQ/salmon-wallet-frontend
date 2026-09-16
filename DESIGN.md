@@ -399,6 +399,7 @@ Rules that hold it together:
 - **Headline** (600, 24px, 1.3, −0.12px): sheet titles, screen headers.
 - **Title** (600, 20px, 1.3, −0.12px): card titles.
 - **Body** (400, 16px, 1.5): default copy.
+- **Subtitle** (500, 16px, 1.3, secondary ink): the line under a screen header, the catalogue sheet's subtitle, a sheet's description, a Powerup tab's usage line. Its own step, so it moves without `body` (owner, 2026-09-16).
 - **Button** (600, 14.5px, 1.25, no transform): control labels. Never uppercase.
 - **Label** (600, 12px, 1.5, +0.3px, uppercase): section and plane labels. "TESTNET" and risk tags stay on `micro` (10px).
 - **Mono** (400, 13px, tabular): addresses, hashes, memos, origin strings.

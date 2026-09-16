@@ -131,8 +131,8 @@ export function ScreenHeader({
               margin: 0,
               fontFamily: fontFamily.sans,
               fontWeight: fontWeight.medium,
-              fontSize: fontSize.body,
-              lineHeight: `${fontSize.body * lineHeight.snug}px`,
+              fontSize: fontSize.subtitle,
+              lineHeight: `${fontSize.subtitle * lineHeight.snug}px`,
               color: tokens.text.secondary,
             }}
           >

@@ -61,8 +61,8 @@ export function PaymentsAskSheet({
             style={{
               fontFamily: fontFamily.sans,
               fontWeight: fontWeight.medium,
-              fontSize: fontSize.body,
-              lineHeight: `${fontSize.body * lineHeight.snug}px`,
+              fontSize: fontSize.subtitle,
+              lineHeight: `${fontSize.subtitle * lineHeight.snug}px`,
               color: t.text.secondary,
               textAlign: 'center',
             }}

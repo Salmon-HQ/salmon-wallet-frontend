@@ -301,8 +301,8 @@ const stylesFor = (t: Semantic) =>
     // The screen header's subtitle, centred under the sheet's title.
     subtitle: {
       fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontSize: s(fontSize.subtitle),
+      lineHeight: s(fontSize.subtitle) * lineHeight.snug,
       color: t.text.secondary,
       textAlign: 'center',
     },

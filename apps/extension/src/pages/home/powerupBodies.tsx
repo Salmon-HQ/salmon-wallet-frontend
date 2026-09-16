@@ -68,8 +68,8 @@ function PowerupUsage({ id }: { id: string }) {
       style={{
         fontFamily: fontFamily.sans,
         fontWeight: fontWeight.medium,
-        fontSize: fontSize.body,
-        lineHeight: `${fontSize.body * lineHeight.snug}px`,
+        fontSize: fontSize.subtitle,
+        lineHeight: `${fontSize.subtitle * lineHeight.snug}px`,
         color: semantic.text.secondary,
         padding: `0 ${spacing.headerPadding}px`,
       }}

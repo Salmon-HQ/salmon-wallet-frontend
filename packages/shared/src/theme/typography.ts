@@ -87,6 +87,13 @@ export const fontSize = {
   body: 14,
   /** 16px - reading text and primary values in a row */
   bodyLg: 16,
+  /**
+   * 16px - the subtitle voice (500, secondary ink): the line under a screen
+   * header, the catalogue sheet's subtitle, a sheet's description, a
+   * Powerup tab's usage line. Its own step so it can move without `body`
+   * (owner, 2026-09-16: it read small at 14).
+   */
+  subtitle: 16,
   /** 18px - minor section headings */
   heading: 18,
   /** 20px - card and sheet titles, confirmation amounts */
