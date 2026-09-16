@@ -36,6 +36,7 @@ export type { PriceChartPropsBase } from './price-chart';
 
 // Pending Value
 export type { PendingValuePropsBase } from './pending-value';
+export type { ValueActionsRowPropsBase } from './value-actions-row';
 
 // Send Sheet
 export type {

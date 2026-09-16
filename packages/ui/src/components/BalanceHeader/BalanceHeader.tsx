@@ -56,6 +56,7 @@ import { clearAnimations, useReducedMotion } from '../../motion';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { ChainSelector } from './ChainSelector';
 import { IconBubble } from '../IconBubble';
+import { ValueActionsRow } from '../ValueActionsRow';
 import { PendingValue } from '../PendingValue';
 import type { BalanceHeaderProps } from './types';
 
@@ -390,72 +391,67 @@ export function BalanceHeader({
             not the row is otherwise empty. Off mainnet nothing priced the
             balance, so this reads as an em-dash rather than disappearing —
             the row stays, only the figure is unknown. */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
-            <PendingValue pending={loading}>
-              <span
-                style={{
-                  fontFamily: fontFamily.sans,
-                  fontWeight: fontWeight.bold,
-                  // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
-                  // at `md`) — one reading size for the block's two
-                  // lateral-choice/status lines.
-                  fontSize: fontSize.bodyLg,
-                  letterSpacing: letterSpacing.change,
-                  color: hiddenBalance ? text.secondary : changeColor,
-                  whiteSpace: 'nowrap',
-                  ...tabularNums.css,
-                }}
-              >
-                {hiddenBalance
-                  ? `${hiddenValue} · ${hiddenValue}`
-                  : hasChange
-                    ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
-                    : EM_DASH}
-              </span>
-            </PendingValue>
-          </div>
-
-          {/* The three controls are the same object as the wallet thumb: one
-              `IconBubble`, differing only in tone, sized like
-              `portfolio-order-button` (36, the secondary-control step)
-              rather than a primary action's 42. Send is the block's single
-              salmon fill (and carries the flesh with it); Receive and
-              Activity are its outline twins. */}
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}
-          >
-            <IconBubble
-              testID="home-activity-button"
-              size={componentSizes.iconBubbleSm}
-              tone="outline"
-              icon={ClockIcon}
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onActivityPress}
-              accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-            />
-            <IconBubble
-              testID="home-send-button"
-              size={componentSizes.iconBubbleSm}
-              tone="accent"
-              icon={ArrowUpRightIcon}
-              iconWeight="bold"
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onSendPress}
-              disabled={sendDisabled}
-              accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-            />
-            <IconBubble
-              testID="home-receive-button"
-              size={componentSizes.iconBubbleSm}
-              tone="outline"
-              icon={ArrowDownLeftIcon}
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onReceivePress}
-              accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-            />
-          </div>
-        </div>
+        <ValueActionsRow
+          leading={
+            <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
+              <PendingValue pending={loading}>
+                <span
+                  style={{
+                    fontFamily: fontFamily.sans,
+                    fontWeight: fontWeight.bold,
+                    // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
+                    // at `md`) — one reading size for the block's two
+                    // lateral-choice/status lines.
+                    fontSize: fontSize.bodyLg,
+                    letterSpacing: letterSpacing.change,
+                    color: hiddenBalance ? text.secondary : changeColor,
+                    whiteSpace: 'nowrap',
+                    ...tabularNums.css,
+                  }}
+                >
+                  {hiddenBalance
+                    ? `${hiddenValue} · ${hiddenValue}`
+                    : hasChange
+                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
+                      : EM_DASH}
+                </span>
+              </PendingValue>
+            </div>
+          }
+          actions={
+            <>
+              <IconBubble
+                testID="home-activity-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ClockIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onActivityPress}
+                accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+              />
+              <IconBubble
+                testID="home-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onSendPress}
+                disabled={sendDisabled}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
+              <IconBubble
+                testID="home-receive-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ArrowDownLeftIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onReceivePress}
+                accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+              />
+            </>
+          }
+        />
       </div>
     </div>
   );

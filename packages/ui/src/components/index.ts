@@ -106,6 +106,9 @@ export type { SinkFloatProps } from './SinkFloat';
 // PendingValue - a value being recalculated inside a container that stays put
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
+// ValueActionsRow - a line of text with the controls that act on it pinned right
+export { ValueActionsRow } from './ValueActionsRow';
+export type { ValueActionsRowProps } from './ValueActionsRow';
 
 // PendingActivityBanner - Global in-flight transaction surface
 export { PendingActivityBanner } from './PendingActivityBanner';

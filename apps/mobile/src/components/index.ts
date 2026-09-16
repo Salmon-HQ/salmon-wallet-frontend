@@ -104,6 +104,8 @@ export type { SearchFieldProps } from './SearchField';
 
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
+export { ValueActionsRow } from './ValueActionsRow';
+export type { ValueActionsRowProps } from './ValueActionsRow';
 
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
