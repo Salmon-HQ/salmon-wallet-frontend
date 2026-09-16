@@ -16,7 +16,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { getPowerup, type PowerupId } from '@salmon/shared/powerups';
-import { useSemantic } from '@salmon/ui';
+import { useSemantic } from '../../components';
 import { MemoPage, PaymentsPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
