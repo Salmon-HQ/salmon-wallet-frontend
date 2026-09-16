@@ -198,7 +198,7 @@ describe('BalanceHeader', () => {
 
     expect(view.getByText('$1200')).toBeTruthy();
     // Amount and percentage, in that order, in one tone.
-    expect(view.getByText('+$61.45 · 2.8% 24h')).toBeTruthy();
+    expect(view.getByText('+$61.45 · 2.8%')).toBeTruthy();
   });
 
   it('asks the screen to toggle visibility when the eye is pressed', () => {
@@ -525,7 +525,7 @@ describe('BalanceHeader unknown values', () => {
 
   it('still reads the change when the data is there', () => {
     const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
-    expect(view.getByText('+$61.45 · 2.8% 24h')).toBeTruthy();
+    expect(view.getByText('+$61.45 · 2.8%')).toBeTruthy();
     expect(view.queryByText('—')).toBeNull();
   });
 });

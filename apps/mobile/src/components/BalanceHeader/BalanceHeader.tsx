@@ -388,7 +388,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                     {hiddenBalance
                       ? `${hiddenValue} · ${hiddenValue}`
                       : hasChange
-                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
+                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
                         : EM_DASH}
                   </Text>
                 </PendingValue>
