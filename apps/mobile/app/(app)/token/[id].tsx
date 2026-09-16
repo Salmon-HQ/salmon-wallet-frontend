@@ -168,6 +168,8 @@ export default function TokenDetailScreen() {
     : token.usdBalance != null
       ? formatValue(token.usdBalance)
       : null;
+  const displayPrice = token.price != null ? formatValue(token.price) : null;
+  const fiatLine = [displayFiat, displayPrice].filter((part) => part != null).join(' · ') || null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -192,17 +194,15 @@ export default function TokenDetailScreen() {
               {token.name}
             </Text>
           </View>
+          <Text style={styles.amount} testID="token-detail-amount">
+            {displayAmount}
+          </Text>
           <View style={styles.balanceRow}>
-            <View style={styles.balanceValues}>
-              <Text style={styles.amount} testID="token-detail-amount">
-                {displayAmount}
+            {fiatLine != null && (
+              <Text style={styles.fiat} testID="token-detail-fiat" numberOfLines={1}>
+                {fiatLine}
               </Text>
-              {displayFiat != null && (
-                <Text style={styles.fiat} testID="token-detail-fiat">
-                  {displayFiat}
-                </Text>
-              )}
-            </View>
+            )}
             {canSign && (
               <IconBubble
                 testID="token-detail-send-button"
@@ -297,10 +297,6 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
       gap: s(spacing.md),
     },
-    balanceValues: {
-      flexShrink: 1,
-      gap: vs(spacing.sm),
-    },
     balanceHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -321,6 +317,7 @@ const stylesFor = (t: Semantic) =>
       color: t.text.primary,
     },
     fiat: {
+      flexShrink: 1,
       ...TABULAR,
       fontFamily: fontFamilyNative.medium,
       fontSize: s(fontSize.body),

@@ -139,7 +139,7 @@ describe('TokenDetailContent', () => {
     // 10 → 12 is +20%, in the success tone.
     expect(screen.getByTestId('token-detail-period-change').textContent).toContain('20');
     expect(screen.getByTestId('token-detail-amount').textContent).toBe('12 SOL');
-    expect(screen.getByTestId('token-detail-fiat').textContent).toBe('$1200.00');
+    expect(screen.getByTestId('token-detail-fiat').textContent).toBe('$1200.00 · $100.00');
   });
 
   it.each(['dark', 'light'] as const)('inks the amount from the %s mode', (mode) => {

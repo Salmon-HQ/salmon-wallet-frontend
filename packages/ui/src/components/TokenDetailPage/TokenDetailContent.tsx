@@ -98,6 +98,8 @@ export function TokenDetailContent({
         ? formatValue(token.usdBalance)
         : null
     : null;
+  const displayPrice = token?.price != null ? formatValue(token.price) : null;
+  const fiatLine = [displayFiat, displayPrice].filter((part) => part != null).join(' · ') || null;
 
   // Bitcoin has no on-chain contract to copy; its "address" is the chain id.
   const contractAddress = blockchain === 'bitcoin' ? undefined : token?.address;
@@ -122,17 +124,24 @@ export function TokenDetailContent({
             />
             <span style={nameStyle(semantic)}>{token.name}</span>
           </div>
+          <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
+            {displayAmount}
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0 }}>
-              <span data-testid="token-detail-amount" style={amountStyle(semantic)}>
-                {displayAmount}
+            {fiatLine != null && (
+              <span
+                data-testid="token-detail-fiat"
+                style={{
+                  ...fiatStyle(semantic),
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {fiatLine}
               </span>
-              {displayFiat != null && (
-                <span data-testid="token-detail-fiat" style={fiatStyle(semantic)}>
-                  {displayFiat}
-                </span>
-              )}
-            </div>
+            )}
             {onSendPress && (
               <IconBubble
                 testID="token-detail-send-button"
