@@ -9,7 +9,7 @@ import { Share, StyleSheet, View } from 'react-native';
 import { s, spacing, vs } from '@salmon/shared';
 import { usePaymentsScreenLogic } from '@salmon/shared/powerups';
 
-import { QrCodeIcon, ScanIcon, powerupIcons } from '../../icons';
+import { PlusIcon, QrCodeIcon, powerupIcons } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
@@ -45,8 +45,8 @@ export function PaymentsScreen({
         leading={<SectionLabel variant="caps">{actions.title}</SectionLabel>}
         actions={
           <>
-            <IconBubble icon={QrCodeIcon} {...actions.ask} />
-            {actions.pay && <IconBubble icon={ScanIcon} {...actions.pay} />}
+            <IconBubble icon={PlusIcon} {...actions.ask} />
+            {actions.pay && <IconBubble icon={QrCodeIcon} {...actions.pay} />}
           </>
         }
       />

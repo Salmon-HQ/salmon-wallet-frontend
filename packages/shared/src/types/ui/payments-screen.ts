@@ -50,6 +50,7 @@ export interface PaymentsFormView {
 export interface PaymentsAskSheetPropsBase<TStyle> extends Testable {
   visible: boolean;
   onClose: () => void;
+  onClosed?: () => void;
   title: string;
   form: PaymentsFormView;
   style?: TStyle;

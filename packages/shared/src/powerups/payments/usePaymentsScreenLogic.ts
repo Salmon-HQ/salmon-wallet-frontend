@@ -99,6 +99,8 @@ export interface UsePaymentsScreenLogicParams {
 export interface PaymentsAskBindings {
   visible: boolean;
   onClose: () => void;
+  /** The ask sheet has left the screen; the request it made opens now, never over its exit. */
+  onClosed: () => void;
   title: string;
   form: PaymentsFormView;
 }
@@ -250,6 +252,7 @@ export function usePaymentsScreenLogic({
   const [error, setError] = useState<PaymentsErrorKey | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [isAsking, setIsAsking] = useState(false);
+  const pendingOpen = useRef<string | null>(null);
   const [clock, setClock] = useState(() => seams.current.now());
 
   const setNote = useCallback(
@@ -321,8 +324,8 @@ export function usePaymentsScreenLogic({
       setAmount('');
       setNoteRaw('');
       setExpiry(DEFAULT_EXPIRY);
+      pendingOpen.current = request.id;
       setIsAsking(false);
-      setOpenId(request.id);
     } catch (caught) {
       console.error('[payments] Failed to create the request:', caught);
       setError('payments.errors.createFailed');
@@ -491,6 +494,11 @@ export function usePaymentsScreenLogic({
     },
     ask: {
       visible: isAsking,
+      onClosed: () => {
+        if (!pendingOpen.current) return;
+        setOpenId(pendingOpen.current);
+        pendingOpen.current = null;
+      },
       onClose: closeAsk,
       title: t('payments.ask.title'),
       form: {
