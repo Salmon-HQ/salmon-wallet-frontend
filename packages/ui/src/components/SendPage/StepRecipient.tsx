@@ -38,6 +38,7 @@ import { IconBubble } from '../IconBubble';
 import { RecipientInput } from '../InputAddress';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { SkeletonRow } from '../SkeletonRow';
 import { TokenLogo } from '../TokenLogo';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
@@ -153,7 +154,7 @@ export function StepRecipient({
 
   // The people this wallet has actually paid — the same field the activity
   // row reads, so the two surfaces agree on who a transfer went to.
-  const { transactions } = useTransactions({
+  const { transactions, loading: recentsLoading } = useTransactions({
     address: senderAddress,
     networkId: (networkId ?? 'solana-mainnet') as NetworkId,
     skip: !senderAddress || !!nft,
@@ -275,7 +276,23 @@ export function StepRecipient({
 
       {!nft && address.length === 0 && (
         <>
-          {renderGroup('send.screens.recent', recents, 'send-recents')}
+          {/* The recents arrive from the network: rows stand in for them
+              until they do, so the list does not appear from nowhere. */}
+          {recentsLoading && recents.length === 0 ? (
+            <div
+              data-testid="send-recents-loading"
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+              <SectionLabel variant="title">{t('send.screens.recent')}</SectionLabel>
+              <SkeletonRow
+                leadingSize={38}
+                count={3}
+                accessibilityLabel={t('accessibility.loading_recents')}
+              />
+            </div>
+          ) : (
+            renderGroup('send.screens.recent', recents, 'send-recents')
+          )}
           {renderGroup('token.send.myWallets', walletRows, 'send-my-wallets')}
           {renderGroup('token.send.addressBook', contactRows, 'send-address-book')}
         </>

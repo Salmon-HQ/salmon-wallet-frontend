@@ -46,6 +46,7 @@ import {
   QRScanner,
   RecipientInput,
   SectionLabel,
+  SkeletonRow,
   SettingsScreenLayout,
   TokenLogo,
   TokenPickerSheet,
@@ -116,7 +117,7 @@ export default function SendRecipientScreen() {
   // The people this wallet has actually paid. The counterparty of a send is
   // the same field the activity row reads, so the two surfaces agree on who a
   // transfer went to.
-  const { transactions } = useTransactions({
+  const { transactions, loading: recentsLoading } = useTransactions({
     address: senderAddress,
     networkId: (networkId ?? 'solana-mainnet') as NetworkId,
     skip: !senderAddress,
@@ -291,7 +292,20 @@ export default function SendRecipientScreen() {
 
         {address.length === 0 && (
           <>
-            {renderGroup('send.screens.recent', recents, 'send-recents')}
+            {/* The recents arrive from the network: rows stand in for them
+                until they do, so the list does not appear from nowhere. */}
+            {recentsLoading && recents.length === 0 ? (
+              <View style={styles.group} testID="send-recents-loading">
+                <SectionLabel variant="title">{t('send.screens.recent')}</SectionLabel>
+                <SkeletonRow
+                  leadingSize={38}
+                  count={3}
+                  accessibilityLabel={t('accessibility.loading_recents')}
+                />
+              </View>
+            ) : (
+              renderGroup('send.screens.recent', recents, 'send-recents')
+            )}
             {renderGroup('token.send.myWallets', walletRows, 'send-my-wallets')}
             {renderGroup('token.send.addressBook', contactRows, 'send-address-book')}
           </>

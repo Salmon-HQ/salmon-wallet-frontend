@@ -733,6 +733,7 @@
     "show_balance": "Mostrar balance",
     "hide_balance": "Ocultar balance",
     "loading_token_info": "Cargando información del token",
+    "loading_recents": "Cargando destinatarios recientes",
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
     "copy_contract_address": "Copiar dirección del contrato",
