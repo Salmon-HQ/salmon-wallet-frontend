@@ -14,8 +14,7 @@
     "pay": "Pay a request"
   },
   "ask": {
-    "title": "New request",
-    "description": "A code for someone to scan. The USDC lands in this account, and the wallet watches for it."
+    "title": "New request"
   },
   "form": {
     "amount": "Amount in USDC",

@@ -38,7 +38,6 @@ const logic = {
     visible: false,
     onClose: vi.fn(),
     title: 'New request',
-    description: 'A code for someone to scan.',
     form: {
       amountLabel: 'Amount in USDC',
       amountCard: { value: '', onChangeValue: vi.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },

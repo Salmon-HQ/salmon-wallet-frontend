@@ -14,8 +14,7 @@
     "pay": "Pagar una solicitud"
   },
   "ask": {
-    "title": "Nueva solicitud",
-    "description": "Un código para que otro lo escanee. Los USDC caen en esta cuenta y la billetera queda atenta al pago."
+    "title": "Nueva solicitud"
   },
   "form": {
     "amount": "Monto en USDC",

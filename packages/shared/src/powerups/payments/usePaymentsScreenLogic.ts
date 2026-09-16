@@ -102,7 +102,6 @@ export interface PaymentsAskBindings {
   /** The ask sheet has left the screen; the request it made opens now, never over its exit. */
   onClosed: () => void;
   title: string;
-  description: string;
   form: PaymentsFormView;
 }
 
@@ -502,7 +501,6 @@ export function usePaymentsScreenLogic({
       },
       onClose: closeAsk,
       title: t('payments.ask.title'),
-      description: t('payments.ask.description'),
       form: {
         amountLabel: t('payments.form.amount'),
         amountCard: {
