@@ -36,6 +36,7 @@ const mockLogic = {
   form: {
     amountLabel: 'Amount in USDC',
     amountCard: { value: '', onChangeValue: jest.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
+    noteLabel: 'Note',
     noteField: { value: '', onChangeText: jest.fn(), placeholder: 'note', maxLength: 80 },
     expiryLabel: 'Open for',
     expiryChips: {

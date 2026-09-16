@@ -16,6 +16,7 @@ const logic = {
   form: {
     amountLabel: 'Amount in USDC',
     amountCard: { value: '', onChangeValue: vi.fn(), placeholder: '0', subtext: '≈ 0.00 USD' },
+    noteLabel: 'Note',
     noteField: { value: '', onChangeText: vi.fn(), placeholder: 'note', maxLength: 80 },
     expiryLabel: 'Open for',
     expiryChips: {

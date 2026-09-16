@@ -58,6 +58,7 @@ export function PaymentsScreen({
           onFocus={onFocus}
           onBlur={onBlur}
         />
+        <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
         <TextField testID="payments-note" {...form.noteField} />
         <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
         <ChipGroup testID="payments-expiry" {...form.expiryChips} />

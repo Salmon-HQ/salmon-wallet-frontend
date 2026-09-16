@@ -11,6 +11,7 @@
   "form": {
     "amount": "Monto en USDC",
     "amountPlaceholder": "0",
+    "note": "Nota",
     "notePlaceholder": "¿Para qué es? (opcional)",
     "expiry": "Abierta por",
     "expiryOptions": {

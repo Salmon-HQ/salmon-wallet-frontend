@@ -92,6 +92,7 @@ export interface PaymentsFormBindings {
     placeholder: string;
     subtext: string;
   };
+  noteLabel: string;
   noteField: {
     value: string;
     onChangeText: (value: string) => void;
@@ -469,6 +470,7 @@ export function usePaymentsScreenLogic({
         placeholder: t('payments.form.amountPlaceholder'),
         subtext: fiatLine,
       },
+      noteLabel: t('payments.form.note'),
       noteField: {
         value: note,
         onChangeText: setNote,

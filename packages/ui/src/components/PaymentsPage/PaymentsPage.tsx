@@ -66,6 +66,7 @@ export function PaymentsPage({
           onFocus={onFocus}
           onBlur={onBlur}
         />
+        <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
         <TextInput testID="payments-note" {...form.noteField} />
         <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
         <ChipGroup testID="payments-expiry" {...form.expiryChips} />
