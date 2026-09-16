@@ -174,6 +174,18 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
+  // The ceiling a sheet opens with is the ceiling it keeps (owner,
+  // 2026-09-16): whatever the app under it does while it is up — Home
+  // leaving focus mode, a balance block floating back — the sheet does not
+  // follow. The caller's `height` / `maxHeight` are read once, on the
+  // render that shows the sheet, and released once it has left, so the next
+  // opening measures afresh. Render-time setState, the same pattern the
+  // shell uses: refs cannot be read during render.
+  const [held, setHeld] = useState<{ height?: number; maxHeight?: number } | null>(null);
+  if (visible && held === null) setHeld({ height, maxHeight });
+  const sheetHeight = held ? held.height : height;
+  const sheetMaxHeight = held ? held.maxHeight : maxHeight;
+
   // What this sheet is drawn at, for the sheets it opens: a nested sheet
   // reads it and rises to exactly this (`useParentSheetHeight`).
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
@@ -215,6 +227,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const closedReportedRef = useRef(false);
   const completeClose = useCallback(() => {
     setIsRendered(false);
+    setHeld(null);
     dragY.value = 0;
     backdropOpacity.value = 0;
     // Reported once per departure: the watchdog below and the animation's own
@@ -351,11 +364,11 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
               // A ceiling in pixels, when the caller measured one: Home's
               // catalogue stops just below the Send / Receive / Activity row
               // instead of covering it.
-              maxHeight != null && { maxHeight },
+              sheetMaxHeight != null && { maxHeight: sheetMaxHeight },
               // A fixed height, when the caller measured one: Home's
               // catalogue rises exactly to the sub-tab row however little it
               // has to show.
-              height != null && { height },
+              sheetHeight != null && { height: sheetHeight },
               sheetAnimatedStyle,
               style,
             ]}
@@ -369,7 +382,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                   words, inputs and amounts at once. */}
             </BlurTargetView>
 
-            <SheetHeightContext.Provider value={height ?? measuredHeight}>
+            <SheetHeightContext.Provider value={sheetHeight ?? measuredHeight}>
               <BlurTargetProvider value={blurTargetRef}>
                 {/* Draggable area: handle + header content */}
                 <GestureDetector gesture={panGesture}>

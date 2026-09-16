@@ -84,6 +84,15 @@ export function BottomSheetContainer({
   const t = useSemantic();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isRendered, setIsRendered] = useState(visible);
+
+  // The ceiling a sheet opens with is the ceiling it keeps (owner,
+  // 2026-09-16), the same rule as the mobile twin: the caller's `height` /
+  // `maxHeight` are read once on the render that shows the sheet and
+  // released once it has left, so nothing the page does underneath moves it.
+  const [held, setHeld] = useState<{ height?: number; maxHeight?: number } | null>(null);
+  if (visible && held === null) setHeld({ height, maxHeight });
+  const sheetHeight = held ? held.height : height;
+  const sheetMaxHeight = held ? held.maxHeight : maxHeight;
   const [isOpen, setIsOpen] = useState(false);
   // What this sheet is drawn at, for the sheets it opens: a nested sheet
   // reads it and rises to exactly this (`useParentSheetHeight`).
@@ -120,6 +129,7 @@ export function BottomSheetContainer({
       else dialog.removeAttribute('open');
     }
     setIsRendered(false);
+    setHeld(null);
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
@@ -223,10 +233,10 @@ export function BottomSheetContainer({
     // A ceiling in pixels, when the caller measured one: Home's catalogue
     // stops just below the Send / Receive / Activity row instead of covering
     // it.
-    maxHeight: maxHeight != null ? maxHeight : '92%',
+    maxHeight: sheetMaxHeight != null ? sheetMaxHeight : '92%',
     // A fixed height, when the caller measured one: Home's catalogue rises
     // exactly to the sub-tab row however little it has to show.
-    ...(height != null ? { height } : null),
+    ...(sheetHeight != null ? { height: sheetHeight } : null),
     boxShadow: shadowsCSS.lg,
     overflow: 'hidden',
     transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
@@ -244,7 +254,7 @@ export function BottomSheetContainer({
     >
       <div style={backdrop} onClick={handleBackdropClick} />
       <div ref={sheetRef} style={sheetContainer} onTransitionEnd={handleSheetTransitionEnd}>
-        <SheetHeightContext.Provider value={height ?? measuredHeight}>
+        <SheetHeightContext.Provider value={sheetHeight ?? measuredHeight}>
           {resolvedBackground}
 
           <div style={{ position: 'relative' }}>
