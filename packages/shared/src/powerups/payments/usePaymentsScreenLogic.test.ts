@@ -159,7 +159,11 @@ describe('usePaymentsScreenLogic', () => {
   });
 
   it('polls the open pending request and flips it to paid on a settlement', async () => {
-    const settlement = { signature: 'sig', payer: 'payer', blockTime: 1_700_000_000 };
+    const settlement = {
+      signature: 'sig',
+      payer: 'mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN',
+      blockTime: 1_700_000_000,
+    };
     const findSettlement = vi.fn().mockResolvedValueOnce(null).mockResolvedValue(settlement);
     const { hook } = setup(findSettlement);
     act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));

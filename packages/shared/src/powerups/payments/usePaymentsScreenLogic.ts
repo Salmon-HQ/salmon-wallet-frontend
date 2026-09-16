@@ -14,6 +14,7 @@ import { generateKeyPair, getAddressFromPublicKey } from '@solana/kit';
 
 import { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
 import { solanaRpcFor } from '../../blockchain/solana/networks';
+import { getShortAddress } from '../../utils/address';
 import { findTransferRequestSettlement } from '../../blockchain/solana/transfer-request-settlement';
 import { useAccountsContext } from '../../contexts/AccountsContext';
 import { useCopyFeedback } from '../../hooks/useCopyFeedback';
@@ -192,9 +193,8 @@ export function statusViewFor(request: PaymentRequest, now: number): PaymentRequ
     rows.push({
       key: 'paidBy',
       label: t('payments.sheet.paidBy'),
-      value: settlement.payer,
+      value: getShortAddress(settlement.payer) ?? settlement.payer,
       valueFont: 'mono',
-      layout: 'stacked',
     });
     if (settlement.blockTime !== null) {
       rows.push({
