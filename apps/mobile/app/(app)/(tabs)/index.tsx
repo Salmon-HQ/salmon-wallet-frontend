@@ -118,9 +118,11 @@ const powerupBodyStyles = StyleSheet.create({
 function PowerupTabBody({
   tabKey,
   onNavigateHome,
+  sheetHeight,
 }: {
   tabKey: string;
   onNavigateHome: () => void;
+  sheetHeight?: number;
 }) {
   const { t } = useTranslation();
   const [{ ready, activeAccount, activeBlockchainAccount, networkId }] = useAccountsContext();
@@ -141,6 +143,7 @@ function PowerupTabBody({
     publicKey: activeBlockchainAccount.getReceiveAddress(),
     networkId: networkId ?? null,
     onNavigateHome,
+    sheetHeight,
   });
 }
 
@@ -621,7 +624,11 @@ export default function HomeScreen() {
           title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
         />
       ) : (
-        <PowerupTabBody tabKey={effectiveSubTab} onNavigateHome={returnToPortfolio} />
+        <PowerupTabBody
+          tabKey={effectiveSubTab}
+          onNavigateHome={returnToPortfolio}
+          sheetHeight={catalogHeight}
+        />
       )}
     </View>
   );

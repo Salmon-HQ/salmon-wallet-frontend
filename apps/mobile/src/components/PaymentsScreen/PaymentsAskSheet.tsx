@@ -5,7 +5,7 @@
  * from the shared hook. DOM twin: `packages/ui/src/components/PaymentsPage/PaymentsAskSheet`.
  */
 import React from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { s, spacing, useFieldFocus, vs } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -25,60 +25,71 @@ export function PaymentsAskSheet({
   onClosed,
   title,
   form,
+  height,
   style,
   testID = 'payments-ask',
 }: PaymentsAskSheetProps) {
-  const { spaciousContentBottomPadding } = useBottomSheetChrome();
+  const { actionRowBottomPadding } = useBottomSheetChrome();
   const focus = useFieldFocus();
-  // The sheet hugs its content, so padding the scroll by the keyboard's
-  // height is what lifts the form above it: the sheet grows up to its own
-  // ceiling and the rest scrolls. `KeyboardAvoidingView` measured nothing
-  // inside the modal.
+  // The sheet stands at its full height from the start; the keyboard covers
+  // the form, and the action row rides on top of it like every CTA in the app.
   const keyboardHeight = useKeyboardHeight();
   const { label, ...createButton } = form.createButton;
+  const footerBottomInset =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : actionRowBottomPadding;
 
   return (
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
       onClosed={onClosed}
+      height={height}
       title={<SheetTitle>{title}</SheetTitle>}
       testID={testID}
       style={style}
     >
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
-      >
-        <Pressable
-          onPress={Keyboard.dismiss}
-          accessible={false}
-          style={[styles.content, { paddingBottom: spaciousContentBottomPadding + keyboardHeight }]}
+      <View style={styles.body}>
+        <ScrollView
+          style={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
         >
-          <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-          <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
-          <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-          <TextField testID="payments-note" {...form.noteField} />
-          <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-          <ChipGroup testID="payments-expiry" {...form.expiryChips} />
-          {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
-          <PrimaryButton testID="payments-create" {...createButton} style={styles.create}>
+          <Pressable onPress={Keyboard.dismiss} accessible={false} style={styles.content}>
+            <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
+            <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
+            <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
+            <TextField testID="payments-note" {...form.noteField} />
+            <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
+            <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+            {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
+          </Pressable>
+        </ScrollView>
+        <View style={[styles.footer, { paddingBottom: footerBottomInset }]}>
+          <PrimaryButton testID="payments-create" {...createButton}>
             {label}
           </PrimaryButton>
-        </Pressable>
-      </ScrollView>
+        </View>
+      </View>
     </BottomSheetContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
   content: {
     paddingHorizontal: s(spacing['2xl']),
+    paddingBottom: vs(spacing.md),
     gap: vs(spacing.md),
   },
-  create: {
-    marginTop: vs(spacing.sm),
+  footer: {
+    paddingHorizontal: s(spacing['2xl']),
+    paddingTop: vs(spacing.sm),
   },
 });
 

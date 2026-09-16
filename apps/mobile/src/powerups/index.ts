@@ -30,6 +30,11 @@ export interface PowerupTabProps {
   networkId: string | null;
   /** The Powerup's way back: Home returns to Portfolio when its task is done. */
   onNavigateHome?: () => void;
+  /**
+   * How tall a sheet may rise from this surface: up to the sub-tab row, the
+   * same ceiling Home gives its catalogue. Undefined until Home has measured.
+   */
+  sheetHeight?: number;
 }
 
 /** The catalogue sheet; `null` in a build with Powerups off. */

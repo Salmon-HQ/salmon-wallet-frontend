@@ -22,6 +22,7 @@ import type { PaymentsScreenProps } from './types';
 
 export function PaymentsScreen({
   style,
+  sheetHeight,
   testID = 'payments-screen',
   ...logicParams
 }: PaymentsScreenProps) {
@@ -66,7 +67,7 @@ export function PaymentsScreen({
         </View>
       )}
 
-      <PaymentsAskSheet testID="payments-ask" {...ask} />
+      <PaymentsAskSheet testID="payments-ask" height={sheetHeight} {...ask} />
       <PaymentRequestSheet testID="payments-sheet" {...sheet} onShare={onShare} />
     </View>
   );

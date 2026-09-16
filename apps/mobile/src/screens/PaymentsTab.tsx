@@ -8,7 +8,12 @@ import { useRouter } from 'expo-router';
 import type { PowerupTabProps } from '../powerups';
 import { PaymentsScreen } from '../components/PaymentsScreen';
 
-export default function PaymentsTab({ publicKey, networkId, onNavigateHome }: PowerupTabProps) {
+export default function PaymentsTab({
+  publicKey,
+  networkId,
+  onNavigateHome,
+  sheetHeight,
+}: PowerupTabProps) {
   const router = useRouter();
   const onPay = useCallback(
     () => router.push({ pathname: '/send', params: { scan: '1' } }),
@@ -20,6 +25,7 @@ export default function PaymentsTab({ publicKey, networkId, onNavigateHome }: Po
       networkId={networkId}
       onNavigateHome={onNavigateHome}
       onPay={onPay}
+      sheetHeight={sheetHeight}
     />
   );
 }
