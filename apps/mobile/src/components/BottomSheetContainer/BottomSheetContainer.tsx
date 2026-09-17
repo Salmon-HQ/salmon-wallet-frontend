@@ -262,20 +262,44 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     parent?.releaseFromChild();
   }, [dragY, backdropOpacity, onClosed, parent]);
 
+  // What the stable handle and the open/close effect read at call time.
+  const latest = useRef({
+    visible,
+    onClose,
+    completeClose,
+    parent,
+    childEnterDelayMs,
+    restingBelow,
+    enter,
+    exit,
+  });
+  latest.current = {
+    visible,
+    onClose,
+    completeClose,
+    parent,
+    childEnterDelayMs,
+    restingBelow,
+    enter,
+    exit,
+  };
+  const completeCloseLatest = useCallback(() => latest.current.completeClose(), []);
+
   // Animate in / out when `visible` changes
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
       dragY.value = 0;
-      parent?.yieldToChild();
-      translateY.value = withDelay(childEnterDelayMs, withTiming(0, enter));
-      if (!parent) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
+      const { parent: parentNow, childEnterDelayMs: delay } = latest.current;
+      parentNow?.yieldToChild();
+      translateY.value = withDelay(delay, withTiming(0, enter));
+      if (!parentNow) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
       // A yielded parent waits for its child to leave (`releaseFromChild`).
       if (yieldedRef.current) return undefined;
       translateY.value = withTiming(restingBelow, exit, (finished) => {
         if (finished) {
-          runOnJS(completeClose)();
+          runOnJS(completeCloseLatest)();
         }
       });
       backdropOpacity.value = withTiming(0, exit);
@@ -284,39 +308,45 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       // cancelled mid-exit — a re-show, a shared-value reassignment — used to
       // leave the sheet mounted with no way back. The watchdog closes it
       // anyway, a beat after the exit was due.
-      const watchdog = setTimeout(completeClose, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(
+        completeCloseLatest,
+        SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS
+      );
       return () => clearTimeout(watchdog);
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, isRendered, completeClose]);
+    // Only the state that opens or closes re-runs this; the rest is read
+    // through `latest`, so a parent render never restarts the rise — a nested
+    // sheet used to rise and fall in a loop that way (owner, 2026-09-17).
+  }, [visible, isRendered]);
 
-  // The parent's side of the handshake, for the sheet this one opens.
-  const visibleRef = useRef(visible);
-  visibleRef.current = visible;
+  // The parent's side of the handshake, for the sheet this one opens. One
+  // object for the sheet's whole life: a child keys its open effect on it,
+  // so it must not change identity with the caller's `onClose`.
   const parentHandle = useMemo<SheetParentHandle>(
     () => ({
       yieldToChild: () => {
         yieldedRef.current = true;
         setYielded(true);
-        translateY.value = withTiming(restingBelow, exit);
+        translateY.value = withTiming(latest.current.restingBelow, latest.current.exit);
       },
       releaseFromChild: () => {
         yieldedRef.current = false;
         setYielded(false);
-        if (visibleRef.current) {
-          translateY.value = withTiming(0, enter);
+        if (latest.current.visible) {
+          translateY.value = withTiming(0, latest.current.enter);
           return;
         }
         // Dismissed while the child was up: the sheet is already down, so
         // only the backdrop has to go.
-        backdropOpacity.value = withTiming(0, exit);
-        setTimeout(completeClose, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
+        backdropOpacity.value = withTiming(0, latest.current.exit);
+        setTimeout(completeCloseLatest, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
       },
-      dismissWithChild: () => onClose(),
+      dismissWithChild: () => latest.current.onClose(),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [completeClose, onClose, isReduceMotionEnabled, restingBelow]
+    []
   );
 
   // Android hardware back button

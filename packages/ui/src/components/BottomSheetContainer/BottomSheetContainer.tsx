@@ -27,7 +27,7 @@
  *   `dragAreaStyle` are RN-only (an `Animated.Value` and a pan gesture) and
  *   have no DOM consumer yet — not mirrored here; see the component report.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   borderRadius,
   borderWidth,
@@ -161,6 +161,47 @@ export function BottomSheetContainer({
     parent?.releaseFromChild();
   }, [onClosed, parent]);
 
+  // The rise is a Web Animation, the one driver of the sheet on its way up.
+  // A CSS transition needs the browser to have seen the closed position
+  // first, and inside the side panel React can commit the open state before
+  // that frame ever paints — the sheet was simply there (owner, 2026-09-17).
+  // An animation has no such dependency, and having only one driver means
+  // no second curve finishing a beat later under it. The transition stays
+  // for the way down (yield, exit), which starts from a painted position.
+  // `motionMs.rise` + `motionEasing.current` is the iOS sheet's own clock and
+  // curve, the pair Ionic and Vaul use for the same reason.
+  const rise = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || isReduceMotionEnabled || typeof sheet.animate !== 'function') return;
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], {
+      duration: motionMs.rise,
+      easing: motionEasing.current.css,
+    });
+  }, [isReduceMotionEnabled]);
+
+  const latest = useRef({
+    visible,
+    onClose,
+    completeClose,
+    rise,
+    parent,
+    childEnterDelayMs,
+    isReduceMotionEnabled,
+  });
+  // Refreshed before any passive effect of this render runs (layout effects
+  // go first), so the open / close effect below always reads this render's
+  // values through it.
+  useLayoutEffect(() => {
+    latest.current = {
+      visible,
+      onClose,
+      completeClose,
+      rise,
+      parent,
+      childEnterDelayMs,
+      isReduceMotionEnabled,
+    };
+  });
   // Open / close the native dialog and flip the transform in on the next
   // frame, so the browser paints the closed position before transitioning to
   // open — the same "start off-screen, then animate in" mobile does with
@@ -182,14 +223,14 @@ export function BottomSheetContainer({
         else dialog.setAttribute('open', '');
         void dialog.getBoundingClientRect();
       }
-      parent?.yieldToChild();
+      latest.current.parent?.yieldToChild();
       let raf = 0;
       const timer = setTimeout(() => {
         raf = requestAnimationFrame(() => {
-          rise();
+          latest.current.rise();
           setIsOpen(true);
         });
-      }, childEnterDelayMs);
+      }, latest.current.childEnterDelayMs);
       return () => {
         clearTimeout(timer);
         cancelAnimationFrame(raf);
@@ -201,35 +242,24 @@ export function BottomSheetContainer({
       if (yieldedRef.current) return undefined;
       setIsOpen(false);
       const exitMs = isReduceMotionEnabled ? 0 : SHEET_EXIT_MS;
-      const watchdog = setTimeout(completeClose, exitMs + SHEET_EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(
+        () => latest.current.completeClose(),
+        exitMs + SHEET_EXIT_WATCHDOG_GRACE_MS
+      );
       return () => clearTimeout(watchdog);
     }
 
     return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, isRendered, isReduceMotionEnabled, completeClose]);
+    // Only the state that opens or closes re-runs this. Everything else is
+    // read through `latest`: a callback whose identity changes on a parent
+    // render used to re-run the open branch — a new rise, a new yield — and a
+    // nested sheet whose parent re-rendered on every yield rose and fell in
+    // a loop, leaving its backdrop behind (owner, 2026-09-17).
+  }, [visible, isRendered, isReduceMotionEnabled]);
 
-  // The rise is a Web Animation, the one driver of the sheet on its way up.
-  // A CSS transition needs the browser to have seen the closed position
-  // first, and inside the side panel React can commit the open state before
-  // that frame ever paints — the sheet was simply there (owner, 2026-09-17).
-  // An animation has no such dependency, and having only one driver means
-  // no second curve finishing a beat later under it. The transition stays
-  // for the way down (yield, exit), which starts from a painted position.
-  // `motionMs.rise` + `motionEasing.current` is the iOS sheet's own clock and
-  // curve, the pair Ionic and Vaul use for the same reason.
-  const rise = useCallback(() => {
-    const sheet = sheetRef.current;
-    if (!sheet || isReduceMotionEnabled || typeof sheet.animate !== 'function') return;
-    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], {
-      duration: motionMs.rise,
-      easing: motionEasing.current.css,
-    });
-  }, [isReduceMotionEnabled]);
-
-  // The parent's side of the handshake, for the sheet this one opens.
-  const visibleRef = useRef(visible);
-  visibleRef.current = visible;
+  // The parent's side of the handshake, for the sheet this one opens. One
+  // object for the sheet's whole life: a child keys its open effect on it,
+  // so it must not change identity with the caller's `onClose`.
   const parentHandle = useMemo<SheetParentHandle>(
     () => ({
       yieldToChild: () => {
@@ -241,16 +271,19 @@ export function BottomSheetContainer({
         setYielded(false);
         // Dismissed while the child was up: the sheet is already down, so no
         // transform transition will end — the backdrop fades on its own clock.
-        if (!visibleRef.current) {
+        if (!latest.current.visible) {
           setIsOpen(false);
-          setTimeout(completeClose, isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
+          setTimeout(
+            () => latest.current.completeClose(),
+            latest.current.isReduceMotionEnabled ? 0 : SHEET_EXIT_MS
+          );
           return;
         }
-        rise();
+        latest.current.rise();
       },
-      dismissWithChild: () => onClose(),
+      dismissWithChild: () => latest.current.onClose(),
     }),
-    [onClose, completeClose, isReduceMotionEnabled, rise]
+    []
   );
 
   const handleBackdropClick = useCallback(() => {
