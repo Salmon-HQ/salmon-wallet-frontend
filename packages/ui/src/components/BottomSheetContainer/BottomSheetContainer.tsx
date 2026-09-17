@@ -68,6 +68,17 @@ injectKeyframes(
   'dialog.sw-sheet::backdrop { background: transparent; }'
 );
 
+// Nothing inside a sheet shows a scrollbar (owner, 2026-09-17): the body's
+// own scroller, a token list's, the catalogue's — one rule for every
+// scroller a sheet will ever hold, rather than one `scrollbarWidth` per
+// component. `scrollbar-width` is the standard; the `::-webkit-scrollbar`
+// rule covers the engines that still draw the legacy one.
+injectKeyframes(
+  'sw-sheet-scrollbars',
+  'dialog.sw-sheet, dialog.sw-sheet * { scrollbar-width: none; } ' +
+    'dialog.sw-sheet ::-webkit-scrollbar, dialog.sw-sheet::-webkit-scrollbar { display: none; }'
+);
+
 export function BottomSheetContainer({
   visible,
   onClose,
@@ -382,9 +393,6 @@ export function BottomSheetContainer({
               style={{
                 position: 'relative',
                 overflow: 'auto',
-                // The body scrolls without showing it: no scrollbar down the
-                // sheet's right edge (owner, 2026-09-17), same as the tab row.
-                scrollbarWidth: 'none',
                 paddingLeft: contentGutter ? spacing.screenGutter : 0,
                 paddingRight: contentGutter ? spacing.screenGutter : 0,
               }}
