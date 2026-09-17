@@ -58,7 +58,11 @@ import { fileURLToPath } from 'node:url';
 // token label, the recents skeleton) — rendering that legitimately exists
 // twice, no screen logic copied; the logic of each lives in packages/shared.
 // See docs/DOM-PARITY.md for when a raise is allowed.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2306;
+// 2026-09-17, later: 2306 → 2330. One more twin pair (Payments'
+// `PaymentRequestList`, the rows the tab and the history screen share) and
+// the history screen itself: rendering only, the scope and the rows are the
+// shared hook's.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2330;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -119,6 +123,7 @@ export const SCREENS = {
   '(app)/nft/[id]/success': 'packages/ui/src/components/NftDetailPage/NftDetailPage.tsx',
   '(app)/nft/[id]/send': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/token/[id]': 'packages/ui/src/components/TokenDetailPage/TokenDetailPage.tsx',
+  '(app)/powerup/[id]/[screen]': 'apps/extension/src/pages/home/powerupBodies.tsx',
   '(app)/settings/index': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(app)/settings/[panel]': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(auth)/index': 'packages/ui/src/components/AuthFlow/SelectOptionsPage.tsx',

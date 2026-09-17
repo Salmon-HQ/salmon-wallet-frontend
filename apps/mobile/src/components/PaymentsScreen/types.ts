@@ -1,7 +1,9 @@
 import type { ViewStyle } from 'react-native';
 import type {
+  PaymentRequestListPropsBase,
   PaymentRequestSheetPropsBase,
   PaymentsAskSheetPropsBase,
+  PaymentsHistoryPropsBase,
   PaymentsScreenPropsBase,
 } from '@salmon/shared';
 
@@ -16,3 +18,7 @@ export interface PaymentsAskSheetProps extends PaymentsAskSheetPropsBase<ViewSty
 }
 
 export interface PaymentRequestSheetProps extends PaymentRequestSheetPropsBase<ViewStyle> {}
+
+export interface PaymentRequestListProps extends PaymentRequestListPropsBase<ViewStyle> {}
+
+export interface PaymentsHistoryScreenProps extends PaymentsHistoryPropsBase<ViewStyle> {}

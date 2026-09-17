@@ -19,12 +19,15 @@ export default function PaymentsTab({
     () => router.push({ pathname: '/send', params: { scan: '1' } }),
     [router]
   );
+  // The history is a pushed screen, hosted by the core Powerup route.
+  const onHistory = useCallback(() => router.push('/powerup/payments/history'), [router]);
   return (
     <PaymentsScreen
       publicKey={publicKey}
       networkId={networkId}
       onNavigateHome={onNavigateHome}
       onPay={onPay}
+      onHistory={onHistory}
       sheetHeight={sheetHeight}
     />
   );

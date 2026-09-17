@@ -14,6 +14,44 @@ export interface PaymentsScreenPropsBase<TStyle> extends Testable {
   onNavigateHome?: () => void;
   /** Opens the platform's Send with its scanner up; absent, the Pay action is not offered. */
   onPay?: () => void;
+  /** Opens the history screen (every request, paid and expired included); absent, the action is not offered. */
+  onHistory?: () => void;
+  style?: TStyle;
+}
+
+/** One request as the list draws it: what both twins hand `ListRow`, `KeyValueRow` and `IconBubble`. */
+export interface PaymentRequestRow {
+  id: string;
+  state: 'pending' | 'paid' | 'expired';
+  listRow: {
+    title: string;
+    subtitle: string;
+    padding: 'lg';
+    accessibilityRole: 'button';
+    onPress: () => void;
+  };
+  /** The trailing state, for a `KeyValueRow` with no label. */
+  trailing: { label: ''; value: string; valueTone: 'primary' | 'success' | 'secondary' };
+  /** The leading mark, minus the platform's glyph module. */
+  bubble: { size: 40; shape: 'rounded'; tone: 'accent-tint'; iconWeight: 'bold' };
+}
+
+/**
+ * The list of requests with the sheet that opens one — the block the tab
+ * (pending only) and the history screen (everything) both draw.
+ */
+export interface PaymentRequestListPropsBase<TStyle> extends Testable {
+  rows: readonly PaymentRequestRow[];
+  empty: { title: string; body: string };
+  sheet: Omit<PaymentRequestSheetPropsBase<TStyle>, 'style' | 'testID'>;
+  style?: TStyle;
+}
+
+/** The history screen: every request this account made on this device, newest first. */
+export interface PaymentsHistoryPropsBase<TStyle> extends Testable {
+  publicKey: string;
+  networkId: string | null;
+  onBack: () => void;
   style?: TStyle;
 }
 

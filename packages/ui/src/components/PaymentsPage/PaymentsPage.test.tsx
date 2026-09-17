@@ -33,6 +33,7 @@ const logic = {
       ...bubble,
       tone: 'outline',
     } as PaymentsActionBinding | null,
+    history: null as PaymentsActionBinding | null,
   },
   ask: {
     visible: false,
@@ -193,5 +194,23 @@ describe('PaymentsPage', () => {
     expect(logic.sheet.copyButton.onPress).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('payments-sheet-remove'));
     expect(logic.sheet.removeButton.onPress).toHaveBeenCalled();
+  });
+
+  it('draws the clock when the hook offers the history, before the other two', () => {
+    logic.actions.history = {
+      onPress: vi.fn(),
+      accessibilityLabel: 'See every request',
+      testID: 'payments-history-button',
+      tone: 'outline',
+      size: 36,
+      iconWeight: 'bold',
+      iconSize: 16,
+    };
+    renderInMode('dark', <PaymentsPage publicKey="me" networkId="solana-devnet" />);
+    const buttons = screen.getByTestId('payments-actions').querySelectorAll('button');
+    expect(buttons[0].getAttribute('data-testid')).toBe('payments-history-button');
+    fireEvent.click(screen.getByTestId('payments-history-button'));
+    expect(logic.actions.history.onPress).toHaveBeenCalledTimes(1);
+    logic.actions.history = null;
   });
 });

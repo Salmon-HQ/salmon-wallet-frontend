@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { getPowerup, type PowerupId } from '@salmon/shared/powerups';
 import { useSemantic } from '../../components';
-import { MemoPage, PaymentsPage } from '@salmon/ui/powerups';
+import { MemoPage, PaymentsHistoryPage, PaymentsPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
   /** The active account's receive address on `networkId`; never null here. */
@@ -27,6 +27,37 @@ export interface PowerupBodyContext {
   onNavigateHome: () => void;
   /** Home's Send, for a Powerup that pays. */
   onPay?: () => void;
+  /** Pushes one of the Powerup's screens onto Home's stack (`renderPowerupScreen`). */
+  onOpenScreen?: (screen: string) => void;
+}
+
+export interface PowerupScreenContext {
+  publicKey: string;
+  networkId: string | null;
+  onBack: () => void;
+}
+
+/**
+ * A Powerup's pushed screen, by id and name — the DOM's counterpart to the
+ * mobile route `app/(app)/powerup/[id]/[screen]`: Home hosts it as the
+ * `powerupScreen` page of its stack, a Powerup registers no page of its own
+ * (`docs/POWERUPS-UI.md` §1.12).
+ */
+export function renderPowerupScreen(
+  id: string,
+  screen: string,
+  ctx: PowerupScreenContext
+): React.ReactElement | null {
+  if (id === 'payments' && screen === 'history' && PaymentsHistoryPage) {
+    return (
+      <PaymentsHistoryPage
+        publicKey={ctx.publicKey}
+        networkId={ctx.networkId}
+        onBack={ctx.onBack}
+      />
+    );
+  }
+  return null;
 }
 
 /**
@@ -96,6 +127,7 @@ function renderPowerupPage(id: string, ctx: PowerupBodyContext): React.ReactElem
         networkId={ctx.networkId}
         onNavigateHome={ctx.onNavigateHome}
         onPay={ctx.onPay}
+        onHistory={ctx.onOpenScreen ? () => ctx.onOpenScreen?.('history') : undefined}
       />
     );
   }

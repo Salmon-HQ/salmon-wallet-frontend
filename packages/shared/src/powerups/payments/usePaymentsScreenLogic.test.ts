@@ -6,6 +6,7 @@
  * judged on read, and removing drops it from the device's list.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { UsePaymentsScreenLogicParams } from './usePaymentsScreenLogic';
 import { act, renderHook } from '@testing-library/react';
 import { useCallback, useState } from 'react';
 
@@ -56,18 +57,22 @@ const RECIPIENT = 'mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN';
 function setup(
   findSettlement = vi.fn().mockResolvedValue(null),
   start = 1_000_000,
-  onPay?: () => void
+  onPay?: () => void,
+  extra: Partial<UsePaymentsScreenLogicParams> = {}
 ) {
   let now = start;
-  const hook = renderHook(() =>
-    usePaymentsScreenLogic({
-      publicKey: RECIPIENT,
-      networkId: 'solana-devnet',
-      onPay,
-      findSettlement,
-      newReference: async () => REFERENCE,
-      now: () => now,
-    })
+  const hook = renderHook(
+    (props: Partial<UsePaymentsScreenLogicParams>) =>
+      usePaymentsScreenLogic({
+        publicKey: RECIPIENT,
+        networkId: 'solana-devnet',
+        onPay,
+        findSettlement,
+        newReference: async () => REFERENCE,
+        now: () => now,
+        ...props,
+      }),
+    { initialProps: extra }
   );
   return { hook, findSettlement, advance: (ms: number) => (now += ms) };
 }
@@ -210,5 +215,38 @@ describe('usePaymentsScreenLogic', () => {
     act(() => hook.result.current.remove(id));
     expect(hook.result.current.open).toBeNull();
     expect(hook.result.current.requests).toEqual([]);
+  });
+
+  it('the tab lists only what is still open; the history lists everything', async () => {
+    const { hook, advance } = setup(undefined, undefined, undefined, { scope: 'pending' });
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('5'));
+    await act(() => hook.result.current.create());
+    expect(hook.result.current.list.rows).toHaveLength(1);
+    const id = hook.result.current.list.rows[0].id;
+
+    // The request expires (24h default): the tab drops it, the history keeps it.
+    advance(25 * 60 * 60 * 1000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAYMENTS_STATUS_POLL_MS + 1);
+    });
+    expect(hook.result.current.list.rows).toHaveLength(0);
+    const pendingEmpty = hook.result.current.list.empty.title;
+
+    hook.rerender({ scope: 'all' });
+    expect(hook.result.current.list.rows.map((row) => [row.id, row.state])).toEqual([
+      [id, 'expired'],
+    ]);
+    expect(hook.result.current.list.empty.title).not.toBe(pendingEmpty);
+  });
+
+  it('offers the history action only when the caller can open one', () => {
+    const onHistory = vi.fn();
+    const { hook } = setup(undefined, undefined, undefined, { onHistory });
+    expect(hook.result.current.actions.history?.testID).toBe('payments-history-button');
+    hook.result.current.actions.history?.onPress();
+    expect(onHistory).toHaveBeenCalledTimes(1);
+
+    hook.rerender({ onHistory: undefined });
+    expect(hook.result.current.actions.history).toBeNull();
   });
 });

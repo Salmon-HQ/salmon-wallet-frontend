@@ -3,7 +3,7 @@
     "name": "Pagos",
     "description": "Pedí USDC con un código QR",
     "about": "Crea una solicitud de pago por un monto exacto de USDC, dirigida a esta cuenta, y la muestra como un código QR que cualquier billetera de Solana puede pagar. Tu billetera lee la red por su cuenta para avisarte cuando la pagaron. Nada se envía a un servidor: el código es la solicitud.",
-    "usage": "Tocá + para pedir USDC y compartí el código. Tocá el ícono del código para pagar uno que te mandaron.",
+    "usage": "Tocá + para pedir USDC y compartí el código. Tocá el ícono del código para pagar uno que te mandaron, y el reloj para ver todas las solicitudes.",
     "actions": {
       "ask": "Pedir un monto de USDC con un código QR",
       "track": "Ver cuándo pagaron una solicitud, y quién"
@@ -11,7 +11,8 @@
   },
   "actions": {
     "ask": "Pedir un pago",
-    "pay": "Pagar una solicitud"
+    "pay": "Pagar una solicitud",
+    "history": "Ver todas las solicitudes"
   },
   "ask": {
     "title": "Nueva solicitud"
@@ -35,7 +36,11 @@
       "title": "Todavía no hay solicitudes",
       "body": "Pedí una desde el botón del código, arriba."
     },
-    "noNote": "Sin nota"
+    "noNote": "Sin nota",
+    "emptyPending": {
+      "title": "Nada pendiente",
+      "body": "Las pagadas y las vencidas están en el historial, detrás del reloj."
+    }
   },
   "sheet": {
     "title": "Solicitud de pago",
@@ -65,5 +70,9 @@
     "amountInvalid": "Ingresá un monto mayor a cero.",
     "amountTooManyDecimals": "USDC tiene como máximo seis decimales.",
     "createFailed": "No se pudo crear la solicitud. Probá de nuevo."
+  },
+  "history": {
+    "title": "Solicitudes",
+    "subtitle": "Todo lo que pediste desde este dispositivo"
   }
 }

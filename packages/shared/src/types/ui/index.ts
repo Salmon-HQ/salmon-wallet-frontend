@@ -299,10 +299,13 @@ export type { TextInputPropsBase } from './text-input';
 
 export type { MemoScreenPropsBase } from './memo-screen';
 export type {
+  PaymentRequestListPropsBase,
+  PaymentRequestRow,
   PaymentRequestSheetPropsBase,
   PaymentRequestStatusView,
   PaymentsAskSheetPropsBase,
   PaymentsFormView,
+  PaymentsHistoryPropsBase,
   PaymentsScreenPropsBase,
 } from './payments-screen';
 

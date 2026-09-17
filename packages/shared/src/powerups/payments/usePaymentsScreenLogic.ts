@@ -8,6 +8,8 @@
  * `usePowerupState`, the reference is a fresh public key, and the settlement
  * check is a read of the network at `finalized`.
  */
+import type { PaymentRequestRow } from '../../types/ui/payments-screen';
+export type { PaymentRequestRow };
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from 'i18next';
 import { generateKeyPair, getAddressFromPublicKey } from '@solana/kit';
@@ -67,28 +69,18 @@ export type PaymentsErrorKey =
   | 'payments.errors.createFailed';
 
 /** One list row, derived once for both twins. */
-export interface PaymentRequestRow {
-  id: string;
-  state: 'pending' | 'paid' | 'expired';
-  /** What both twins hand `ListRow`: amount with its symbol, the note, the press. */
-  listRow: {
-    title: string;
-    subtitle: string;
-    padding: 'lg';
-    accessibilityRole: 'button';
-    onPress: () => void;
-  };
-  /** The trailing state, for a `KeyValueRow` with no label. */
-  trailing: { label: ''; value: string; valueTone: 'primary' | 'success' | 'secondary' };
-  /** The leading mark, minus the platform's glyph module. */
-  bubble: { size: 40; shape: 'rounded'; tone: 'accent-tint'; iconWeight: 'bold' };
-}
-
 export interface UsePaymentsScreenLogicParams {
   publicKey: string;
   networkId: string | null;
   onNavigateHome?: () => void;
   onPay?: () => void;
+  /** Opens the history screen; the tab offers it, the history screen itself does not. */
+  onHistory?: () => void;
+  /**
+   * Which requests the list carries: the tab shows what is still open
+   * (`pending`), the history screen everything (`all`, the default).
+   */
+  scope?: 'pending' | 'all';
   /** Test seams. */
   findSettlement?: typeof findTransferRequestSettlement;
   newReference?: () => Promise<string>;
@@ -118,6 +110,8 @@ export interface PaymentsActionsBindings {
   title: string;
   ask: PaymentsActionBinding;
   pay: PaymentsActionBinding | null;
+  /** Opens the history screen; null where it is not offered (the history screen itself). */
+  history: PaymentsActionBinding | null;
 }
 
 /** The request sheet's contract minus what the platform adds: its share handler and its style. */
@@ -222,6 +216,8 @@ export function usePaymentsScreenLogic({
   publicKey,
   networkId,
   onPay,
+  onHistory,
+  scope = 'all',
   findSettlement = findTransferRequestSettlement,
   newReference = freshReference,
   now = Date.now,
@@ -421,8 +417,9 @@ export function usePaymentsScreenLogic({
 
   const requests = useMemo<readonly PaymentRequestRow[]>(() => {
     const at = seams.current.now();
-    return list.map((request) => {
+    return list.flatMap((request) => {
       const state = stateOf(request, at);
+      if (scope === 'pending' && state !== 'pending') return [];
       return {
         id: request.id,
         state,
@@ -442,12 +439,12 @@ export function usePaymentsScreenLogic({
           valueTone: state === 'paid' ? 'success' : state === 'expired' ? 'secondary' : 'primary',
         },
         bubble: { size: 40, shape: 'rounded', tone: 'accent-tint', iconWeight: 'bold' },
-      };
+      } as PaymentRequestRow;
     });
     // `clock` re-judges expiry while a sheet is open; opening or closing one
     // re-judges the list, so a request that expired meanwhile reads as such.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list, clock, openId]);
+  }, [list, clock, openId, scope]);
 
   const accountLabel = activeAccount?.name ?? '';
   const openUri = open ? uriFor(open, accountLabel) : '';
@@ -499,6 +496,15 @@ export function usePaymentsScreenLogic({
             ...ACTION_BUBBLE,
           }
         : null,
+      history: onHistory
+        ? {
+            onPress: onHistory,
+            accessibilityLabel: t('payments.actions.history'),
+            testID: 'payments-history-button',
+            tone: 'outline',
+            ...ACTION_BUBBLE,
+          }
+        : null,
     },
     ask: {
       visible: isAsking,
@@ -540,7 +546,13 @@ export function usePaymentsScreenLogic({
     },
     list: {
       title: t('payments.list.title'),
-      empty: { title: t('payments.list.empty.title'), body: t('payments.list.empty.body') },
+      empty:
+        scope === 'pending'
+          ? {
+              title: t('payments.list.emptyPending.title'),
+              body: t('payments.list.emptyPending.body'),
+            }
+          : { title: t('payments.list.empty.title'), body: t('payments.list.empty.body') },
       rows: requests,
     },
     sheet: {

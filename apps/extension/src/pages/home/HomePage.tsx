@@ -72,7 +72,7 @@ import {
 } from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
-import { renderPowerupBody } from './powerupBodies';
+import { renderPowerupBody, renderPowerupScreen } from './powerupBodies';
 import { PortfolioColumn } from './PortfolioColumn';
 import {
   TOP_FADE_SCROLL_RANGE,
@@ -357,6 +357,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   const handleActivityBack = useCallback(() => {
     setCurrentPage('home');
+  }, []);
+
+  // A Powerup's pushed screen (Payments' history): which one is up.
+  const [powerupScreen, setPowerupScreen] = useState<{ id: string; screen: string } | null>(null);
+  const handlePowerupScreenBack = useCallback(() => {
+    setCurrentPage('home');
+    setPowerupScreen(null);
   }, []);
 
   const handleTokenPress = useCallback((token: Token) => {
@@ -709,6 +716,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
+      case 'powerupScreen':
+        return powerupScreen && activeBlockchainAccount
+          ? renderPowerupScreen(powerupScreen.id, powerupScreen.screen, {
+              publicKey: activeBlockchainAccount.getReceiveAddress(),
+              networkId: networkId ?? null,
+              onBack: handlePowerupScreenBack,
+            })
+          : null;
       case 'activity':
         return (
           <ActivityPage
@@ -906,6 +921,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     networkId: networkId ?? null,
                     onNavigateHome: () => setActiveSubTab('portfolio'),
                     onPay: handleSendPress,
+                    onOpenScreen: (screen) => {
+                      setPowerupScreen({ id: effectiveSubTab, screen });
+                      setCurrentPage('powerupScreen');
+                    },
                   })
                 )}
               </SinkFloat>

@@ -53,6 +53,7 @@ const mockLogic = {
       ...bubble,
       tone: 'outline',
     } as PaymentsActionBinding | null,
+    history: null,
   },
   ask: {
     visible: false,
