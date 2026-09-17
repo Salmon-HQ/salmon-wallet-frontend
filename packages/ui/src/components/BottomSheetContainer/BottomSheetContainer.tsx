@@ -39,6 +39,7 @@ import {
   SheetHeightContext,
   SheetParentContext,
   useSheetTurn,
+  type SheetTurnMotion,
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
@@ -174,6 +175,14 @@ export function BottomSheetContainer({
   // sink is the `yielded` state itself (the transform derives from it); the
   // rise is the Web Animation; leaving under a child has no transform
   // transition to wait for, so the backdrop fades on its own clock.
+  const turnMotion: SheetTurnMotion = {
+    sink: () => {},
+    rise,
+    leave: () => {
+      setIsOpen(false);
+      setTimeout(() => latest.current.completeClose(), isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
+    },
+  };
   const {
     parent,
     yielded,
@@ -182,14 +191,7 @@ export function BottomSheetContainer({
     parentHandle,
     holdParentTurn,
     releaseParentTurn,
-  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, {
-    sink: () => {},
-    rise,
-    leave: () => {
-      setIsOpen(false);
-      setTimeout(() => latest.current.completeClose(), isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
-    },
-  });
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, turnMotion);
   const releaseParentTurnRef = useRef(releaseParentTurn);
   releaseParentTurnRef.current = releaseParentTurn;
 

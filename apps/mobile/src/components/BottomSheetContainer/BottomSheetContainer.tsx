@@ -41,6 +41,7 @@ import {
   SheetHeightContext,
   SheetParentContext,
   useSheetTurn,
+  type SheetTurnMotion,
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
@@ -258,15 +259,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   // twin): as a child this sheet rises only after the parent has slid down
   // and draws no backdrop of its own; as a parent, `yielded` keeps it
   // mounted, off-screen, backdrop up, while its child is showing.
-  const {
-    parent,
-    yielded,
-    isYielded,
-    childEnterDelayMs,
-    parentHandle,
-    holdParentTurn,
-    releaseParentTurn,
-  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, {
+  const turnMotion: SheetTurnMotion = {
     sink: () => {
       translateY.value = withTiming(restingBelow, exit);
     },
@@ -278,7 +271,16 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       backdropOpacity.value = withTiming(0, exit);
       setTimeout(completeCloseLatest, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
     },
-  });
+  };
+  const {
+    parent,
+    yielded,
+    isYielded,
+    childEnterDelayMs,
+    parentHandle,
+    holdParentTurn,
+    releaseParentTurn,
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, turnMotion);
   const releaseParentTurnRef = useRef(releaseParentTurn);
   releaseParentTurnRef.current = releaseParentTurn;
 

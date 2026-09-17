@@ -19,20 +19,15 @@
  */
 import { createContext, useContext } from 'react';
 
+import type { SheetParentHandle } from '../types/ui/sheet-turn';
+
+export type { SheetParentHandle };
+
 export const SheetHeightContext = createContext<number | null>(null);
 
 /** The enclosing sheet's rendered height in pixels, or `null` outside one. */
 export function useParentSheetHeight(): number | null {
   return useContext(SheetHeightContext);
-}
-
-export interface SheetParentHandle {
-  /** The child is about to rise: slide down, keep the backdrop. */
-  yieldToChild: () => void;
-  /** The child has left: come back — or, if dismissed meanwhile, finish leaving. */
-  releaseFromChild: () => void;
-  /** The backdrop was tapped under the child: leave for good, nothing returns. */
-  dismissWithChild: () => void;
 }
 
 export const SheetParentContext = createContext<SheetParentHandle | null>(null);

@@ -236,6 +236,7 @@ export type { ScreenHeaderPropsBase } from './screen-header';
 
 // Sheet
 export type { SheetTitlePropsBase, BottomSheetContainerPropsBase } from './sheet';
+export type { SheetParentHandle, SheetTurn, SheetTurnMotion } from './sheet-turn';
 
 // Thermocline
 export type { ThermoclineTier, ThermoclinePropsBase } from './thermocline';

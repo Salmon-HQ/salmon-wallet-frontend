@@ -17,33 +17,10 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SHEET_EXIT_MS } from '../theme/durations';
-import { useSheetParent, type SheetParentHandle } from './SheetHeightContext';
+import type { SheetParentHandle, SheetTurn, SheetTurnMotion } from '../types/ui/sheet-turn';
+import { useSheetParent } from './SheetHeightContext';
 
-export interface SheetTurnMotion {
-  /** As a parent: slide down and keep the backdrop — the child is about to rise. */
-  sink: () => void;
-  /** As a parent: come back up — the child has left and this sheet is still wanted. */
-  rise: () => void;
-  /** As a parent dismissed under its child: already down, so fade the backdrop and finish leaving. */
-  leave: () => void;
-}
-
-export interface SheetTurn {
-  /** The enclosing rendered sheet's handle, or `null` at the top. */
-  parent: SheetParentHandle | null;
-  /** This sheet has yielded to a child: mounted, off-screen, backdrop up. */
-  yielded: boolean;
-  /** The same, readable from inside effects and animation callbacks. */
-  isYielded: () => boolean;
-  /** How long a child waits before rising: the parent's exit, or nothing at the top. */
-  childEnterDelayMs: number;
-  /** What this sheet provides to the sheets it opens. */
-  parentHandle: SheetParentHandle;
-  /** Ask the parent to yield; call from the open path. */
-  holdParentTurn: () => void;
-  /** Give the turn back, once; call from the close path. */
-  releaseParentTurn: () => void;
-}
+export type { SheetTurn, SheetTurnMotion };
 
 export function useSheetTurn(
   visible: boolean,
