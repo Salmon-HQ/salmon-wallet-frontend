@@ -38,13 +38,13 @@ import {
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { powerupIcons } from '../../icons';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
-import { PlusMinusGlyph } from '../PlusMinusGlyph';
+import { Toggle } from '../Toggle';
 import { WarningNotice } from '../WarningNotice';
 import { PowerupBadge } from '../PowerupBadge';
 import { SectionLabel } from '../SectionLabel';
@@ -53,9 +53,6 @@ import type { PowerupsCatalogProps } from './types';
 
 /** The catalogue row's mark. */
 const ROW_BUBBLE_SIZE = 44;
-/** The install / uninstall control in the detail row's trailing slot. */
-const CONTROL_SIZE = 42;
-const CONTROL_ICON_SIZE = 22;
 
 const TIERS = ['core', 'community'] as const;
 
@@ -71,7 +68,6 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
 }) => {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const semantic = useSemantic();
   const { standardContentBottomPadding } = useBottomSheetChrome();
 
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -96,26 +92,19 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
     [onInstall, onUninstall]
   );
 
-  // The `+` / `−` control, the same in the detail and in the row (owner,
+  // The kit's toggle, the same in the detail and in the row (owner,
   // 2026-09-16): a row toggles without opening the detail; the detail is
   // still where the disclosure is read.
   const renderToggle = (entry: PowerupsCatalogEntry, name: string, where: 'row' | 'detail') => (
-    <IconBubble
+    <Toggle
       testID={`powerups-${where}-toggle-${entry.id}`}
-      size={CONTROL_SIZE}
-      tone={entry.installed ? 'outline' : 'accent'}
-      onPress={() => handleToggle(entry)}
+      value={entry.installed}
+      onValueChange={() => handleToggle(entry)}
       accessibilityLabel={t(
         entry.installed ? 'accessibility.uninstall_powerup' : 'accessibility.install_powerup',
         { name }
       )}
-    >
-      <PlusMinusGlyph
-        minus={entry.installed}
-        size={CONTROL_ICON_SIZE}
-        color={entry.installed ? semantic.text.primary : semantic.accent.onFill}
-      />
-    </IconBubble>
+    />
   );
 
   const renderDetail = (entry: PowerupsCatalogEntry) => {

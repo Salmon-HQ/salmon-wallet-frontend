@@ -216,7 +216,7 @@ rework, and they are product decisions rather than engineering ones:
   something that holds state the user owns and returns to.
 - Does it take a Salmon fee? If so, say who builds the fee leg — the generic
   build path nulls it today, so that is a backend change that lands first.
-  (Installation needs no question: the `+`/`−` control is the same in the
+  (Installation needs no question: the kit `Toggle` is the same in the
   catalogue row and in the detail, and the detail is where the disclosure
   is read.)
 - What happens when the counterparty degrades or disappears, given that

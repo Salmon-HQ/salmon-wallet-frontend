@@ -145,7 +145,6 @@ export {
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
   CHART_PULSE_MS,
-  glyphTurnDeg,
   fabLeap,
   YIELD_TO_PAINT_MS,
 } from './durations';

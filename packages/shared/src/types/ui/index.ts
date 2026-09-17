@@ -174,7 +174,6 @@ export type { PowerupIconName } from './powerup-icon';
 export type { FactsCardPropsBase, FactsCardRow } from './facts-card';
 export type { PowerupsFabPropsBase } from './powerups-fab';
 export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
-export type { PlusMinusGlyphPropsBase } from './plus-minus-glyph';
 
 // ---------------------------------------------------------------------------
 // The kit — the contracts mobile and the DOM both implement (spec 028, lot 2)
@@ -198,6 +197,9 @@ export type {
 
 // Key Value Row
 export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
+
+// Toggle
+export type { TogglePropsBase } from './toggle';
 export { valueInkFor } from './key-value-row';
 
 // Amount Entry Card

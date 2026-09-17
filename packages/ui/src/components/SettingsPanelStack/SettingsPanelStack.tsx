@@ -29,8 +29,6 @@ import {
   fontSize,
   fontWeight,
   getSettingsItemTestId,
-  motionEasing,
-  motionMs,
   spacing,
   SETTINGS_GROUPS,
   useDeveloperModeToggles,
@@ -45,6 +43,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { screenSlideAnimation, useReducedMotion } from '../../motion';
+import { Toggle } from '../Toggle';
 import {
   AddressBookIcon,
   ArrowSquareOutIcon,
@@ -108,12 +107,6 @@ const SETTINGS_ICONS: Record<SettingsIconName, React.ComponentType<IconGlyphProp
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
 
-/** The switch's geometry — a track two thumbs long. */
-const SWITCH_TRACK_WIDTH = 44;
-const SWITCH_TRACK_HEIGHT = 24;
-const SWITCH_THUMB_SIZE = 20;
-const SWITCH_THUMB_INSET = (SWITCH_TRACK_HEIGHT - SWITCH_THUMB_SIZE) / 2;
-
 // ============================================================================
 // Motion — the screen slide (`motion/screenSlide`): a panel pushes in from the
 // right and pops out the same way, on the one clock every stack reads
@@ -121,70 +114,6 @@ const SWITCH_THUMB_INSET = (SWITCH_TRACK_HEIGHT - SWITCH_THUMB_SIZE) / 2;
 
 const PUSH_MS = SCREEN_PUSH_MS;
 const POP_MS = SCREEN_POP_MS;
-
-// ============================================================================
-// Switch — the toggle row's control, role="switch" on a real button
-// ============================================================================
-
-interface SwitchProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  hint?: string;
-  testID?: string;
-}
-
-function Switch({ checked, onChange, label, hint, testID }: SwitchProps) {
-  const { accent, border, text } = useSemantic();
-  const reduced = useReducedMotion();
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      title={hint}
-      data-testid={testID}
-      onClick={() => onChange(!checked)}
-      style={{
-        position: 'relative',
-        width: SWITCH_TRACK_WIDTH,
-        height: SWITCH_TRACK_HEIGHT,
-        flexShrink: 0,
-        margin: 0,
-        padding: 0,
-        border: 'none',
-        borderRadius: SWITCH_TRACK_HEIGHT / 2,
-        cursor: 'pointer',
-        // Off-track on `border.default`: the card token vanished against the
-        // row's own card ground, leaving the off state invisible.
-        backgroundColor: checked ? accent.ink : border.default,
-        transition: reduced
-          ? undefined
-          : `background-color ${motionMs.flick}ms ${motionEasing.current.css}`,
-      }}
-    >
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: SWITCH_THUMB_INSET,
-          left: SWITCH_THUMB_INSET,
-          width: SWITCH_THUMB_SIZE,
-          height: SWITCH_THUMB_SIZE,
-          borderRadius: '50%',
-          backgroundColor: text.primary,
-          transform: checked
-            ? `translateX(${SWITCH_TRACK_WIDTH - SWITCH_THUMB_SIZE - SWITCH_THUMB_INSET * 2}px)`
-            : 'translateX(0)',
-          transition: reduced
-            ? undefined
-            : `transform ${motionMs.flick}ms ${motionEasing.current.css}`,
-        }}
-      />
-    </button>
-  );
-}
 
 // ============================================================================
 // Component
@@ -328,14 +257,11 @@ export function SettingsPanelStack({
             title={label}
             subtitle={description}
             trailing={
-              // The switch semantics live on the switch itself — a wrapper
-              // carrying role="switch" around a real switch announced twice.
-              <Switch
+              <Toggle
                 testID={row.testId}
-                label={label}
-                hint={description}
-                checked={toggle.checked}
-                onChange={(next) => toggle.onChange?.(next)}
+                accessibilityLabel={label}
+                value={toggle.checked}
+                onValueChange={(next) => toggle.onChange?.(next)}
               />
             }
           />

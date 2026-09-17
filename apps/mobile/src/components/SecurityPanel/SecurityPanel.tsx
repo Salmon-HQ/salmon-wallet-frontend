@@ -9,7 +9,7 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -22,7 +22,7 @@ import {
   type Semantic,
   useChangePassword,
 } from '@salmon/shared';
-import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { FingerprintIcon, KeyIcon, ShieldCheckIcon, SquaresFourIcon, iconSize } from '../../icons';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
@@ -32,6 +32,7 @@ import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { Toggle } from '../Toggle';
 import type { SecurityPanelProps } from './types';
 
 // ============================================================================
@@ -54,7 +55,6 @@ export function SecurityPanel({
 }: SecurityPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { border, accent, text } = useSemantic();
   const [accountState, accountActions] = useAccountsContext();
 
   // Password state
@@ -152,18 +152,15 @@ export function SecurityPanel({
                 )}
                 testID="security-biometric-state"
               />
-              {/* The switch semantics live on the Switch itself — a wrapper
-                  carrying role="switch" around a real Switch announced twice. */}
-              <Switch
+              <Toggle
                 testID="security-biometric-toggle"
                 accessibilityLabel={t('settings.security.biometric_unlock')}
-                accessibilityHint={t('settings.security.biometric_description')}
+                accessibilityHint={t(
+                  'settings.security.biometric_description',
+                  'Use biometrics to unlock your wallet'
+                )}
                 value={isBiometricEnabled}
                 onValueChange={onToggleBiometric}
-                // Off-track on `border.default`: the card token vanished against
-                // the row's own card ground, leaving the off state invisible.
-                trackColor={{ false: border.default, true: accent.ink }}
-                thumbColor={text.primary}
               />
             </View>
           }

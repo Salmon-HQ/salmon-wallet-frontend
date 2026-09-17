@@ -396,11 +396,12 @@ export type { SearchFieldProps } from './SearchField';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
-// PressSpecular - the light a press puts on a surface; PlusMinusGlyph - the install control's mark
+// PressSpecular - the light a press puts on a surface
 export { PressSpecular, setSpecularOrigin } from './PressSpecular';
 export type { PressSpecularProps } from './PressSpecular';
-export { PlusMinusGlyph } from './PlusMinusGlyph';
-export type { PlusMinusGlyphProps } from './PlusMinusGlyph';
+// Toggle - the kit's on/off control (a settings row's switch, a Powerup's install control)
+export { Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';
 
 // IconBubble - the well every glyph in the redesign sits inside
 export { IconBubble } from './IconBubble';

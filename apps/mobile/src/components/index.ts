@@ -29,8 +29,8 @@ export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 export { PressSpecular } from './PressSpecular';
 export type { PressSpecularProps } from './PressSpecular';
-export { PlusMinusGlyph } from './PlusMinusGlyph';
-export type { PlusMinusGlyphProps } from './PlusMinusGlyph';
+export { Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';
 export { WalletInitErrorScreen } from './WalletInitErrorScreen';
 export type {
   IconBubbleProps,

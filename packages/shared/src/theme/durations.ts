@@ -416,16 +416,6 @@ export const SHEET_EXIT_WATCHDOG_GRACE_MS = 120;
 export const CHART_PULSE_MS = motionMs.tide;
 
 /**
- * The turns a glyph makes in place, in degrees, once for both twins: the
- * plus / minus control's bar stands at 90° for a plus and lies at 180° for a
- * minus.
- */
-export const glyphTurnDeg = {
-  plus: 90,
-  minus: 180,
-} as const;
-
-/**
  * The Powerups launcher's leap (owner, 2026-09-16): the salmon on the FAB
  * jumps when tapped — up by `risePx`, nose tilted by `tiltDeg` — over `swell`
  * and lands over `ebb`, shorter than the catalogue's rise so the two never
