@@ -263,3 +263,34 @@ describe('BottomSheetContainer parent and child', () => {
     expect(onParentClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('BottomSheetContainer parent whose content unmounts with the child inside', () => {
+  it('leaves for good when dismissed under a child that never ran its exit', async () => {
+    stubMatchMedia(true);
+    function Host() {
+      const [detail, setDetail] = React.useState<string | null>('tx');
+      return (
+        <ThemeProvider systemScheme="dark">
+          <BottomSheetContainer
+            visible={detail !== null}
+            onClose={() => setDetail(null)}
+            testID="parent"
+          >
+            {detail && (
+              <BottomSheetContainer visible onClose={() => setDetail(null)} testID="child">
+                <div>explorers</div>
+              </BottomSheetContainer>
+            )}
+          </BottomSheetContainer>
+        </ThemeProvider>
+      );
+    }
+    render(<Host />);
+    await waitFor(() => expect(screen.getByTestId('child')).toBeTruthy());
+
+    // The detail's own close: its content — and the child sheet — unmount at once.
+    fireEvent.click(screen.getByTestId('child-backdrop'));
+
+    await waitFor(() => expect(screen.queryByTestId('parent')).toBeNull());
+  });
+});

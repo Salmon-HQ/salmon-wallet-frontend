@@ -134,6 +134,8 @@ export function BottomSheetContainer({
   const parent = useSheetParent();
   const [yielded, setYielded] = useState(false);
   const yieldedRef = useRef(false);
+  // True from asking the parent to yield until giving its turn back.
+  const holdsParentRef = useRef(false);
   const childEnterDelayMs = parent && !isReduceMotionEnabled ? SHEET_EXIT_MS : 0;
 
   const resolvedBackground = background ?? (
@@ -158,7 +160,10 @@ export function BottomSheetContainer({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-    parent?.releaseFromChild();
+    if (holdsParentRef.current) {
+      holdsParentRef.current = false;
+      parent?.releaseFromChild();
+    }
   }, [onClosed, parent]);
 
   // The rise is a Web Animation, the one driver of the sheet on its way up.
@@ -202,6 +207,18 @@ export function BottomSheetContainer({
       isReduceMotionEnabled,
     };
   });
+  // A child that unmounts while it still holds the parent's turn — the
+  // detail sheet drops its content the moment it closes, and the explorer
+  // picker inside it goes without ever running its exit — gives the turn
+  // back on the way out, or the parent stays yielded, backdrop up, with the
+  // dialog still modal over the whole app (owner, 2026-09-17).
+  useEffect(
+    () => () => {
+      if (holdsParentRef.current) latest.current.parent?.releaseFromChild();
+    },
+    []
+  );
+
   // Open / close the native dialog and flip the transform in on the next
   // frame, so the browser paints the closed position before transitioning to
   // open — the same "start off-screen, then animate in" mobile does with
@@ -224,6 +241,7 @@ export function BottomSheetContainer({
         void dialog.getBoundingClientRect();
       }
       latest.current.parent?.yieldToChild();
+      holdsParentRef.current = latest.current.parent !== null;
       let raf = 0;
       const timer = setTimeout(() => {
         raf = requestAnimationFrame(() => {

@@ -241,6 +241,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const parent = useSheetParent();
   const [yielded, setYielded] = useState(false);
   const yieldedRef = useRef(false);
+  // True from asking the parent to yield until giving its turn back.
+  const holdsParentRef = useRef(false);
   const childEnterDelayMs = parent && !isReduceMotionEnabled ? SHEET_EXIT_MS : 0;
 
   // Worklet-safe close reference
@@ -259,7 +261,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-    parent?.releaseFromChild();
+    if (holdsParentRef.current) {
+      holdsParentRef.current = false;
+      parent?.releaseFromChild();
+    }
   }, [dragY, backdropOpacity, onClosed, parent]);
 
   // What the stable handle and the open/close effect read at call time.
@@ -285,6 +290,18 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   };
   const completeCloseLatest = useCallback(() => latest.current.completeClose(), []);
 
+  // A child that unmounts while it still holds the parent's turn — the
+  // detail sheet drops its content the moment it closes, and the explorer
+  // picker inside it goes without ever running its exit — gives the turn
+  // back on the way out, or the parent stays yielded with its backdrop up
+  // (owner, 2026-09-17).
+  useEffect(
+    () => () => {
+      if (holdsParentRef.current) latest.current.parent?.releaseFromChild();
+    },
+    []
+  );
+
   // Animate in / out when `visible` changes
   useEffect(() => {
     if (visible) {
@@ -292,6 +309,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       dragY.value = 0;
       const { parent: parentNow, childEnterDelayMs: delay } = latest.current;
       parentNow?.yieldToChild();
+      holdsParentRef.current = parentNow !== null;
       translateY.value = withDelay(delay, withTiming(0, enter));
       if (!parentNow) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
@@ -315,10 +333,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       return () => clearTimeout(watchdog);
     }
     return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Only the state that opens or closes re-runs this; the rest is read
     // through `latest`, so a parent render never restarts the rise — a nested
     // sheet used to rise and fall in a loop that way (owner, 2026-09-17).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered]);
 
   // The parent's side of the handshake, for the sheet this one opens. One
