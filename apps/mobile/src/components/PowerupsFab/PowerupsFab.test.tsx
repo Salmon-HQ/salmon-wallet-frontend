@@ -89,15 +89,6 @@ jest.mock('../../utils/haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light' },
 }));
 
-jest.mock('../../icons', () => {
-  const ReactActual = require('react');
-  const { View: RNView } = require('react-native');
-  return {
-    XIcon: () => ReactActual.createElement(RNView, { testID: 'glyph-x' }),
-    LightningIcon: () => ReactActual.createElement(RNView, { testID: 'glyph-lightning' }),
-  };
-});
-
 import { PowerupsFab } from './PowerupsFab';
 
 describe('PowerupsFab', () => {
@@ -128,20 +119,14 @@ describe('PowerupsFab', () => {
   const flatten = (style: unknown) =>
     Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
 
-  it('draws the salmon, and trades it for the close mark while the launcher is open', () => {
-    // The lightning stays on the launcher's own heading; the FAB is the brand
-    // mark, and the close mark sits on the same spot at the opposite opacity.
-    const { getByTestId, queryByTestId, rerender } = render(
-      <PowerupsFab onPress={jest.fn()} bottomOffset={20} />
-    );
+  it('draws the salmon mark, and keeps it while the launcher is open', () => {
+    // No cross-fade to a close glyph: the salmon is the icon in both states
+    // (owner, 2026-09-17).
+    const { getByTestId, rerender } = render(<PowerupsFab onPress={jest.fn()} bottomOffset={20} />);
     expect(getByTestId('powerups-fab-mark', { includeHiddenElements: true })).toBeTruthy();
-    expect(queryByTestId('glyph-lightning')).toBeNull();
-    expect(flatten(getByTestId('powerups-fab-mark-slot').props.style).opacity).toBe(1);
-    expect(flatten(getByTestId('powerups-fab-close-slot').props.style).opacity).toBe(0);
 
     rerender(<PowerupsFab onPress={jest.fn()} bottomOffset={20} open />);
-    expect(flatten(getByTestId('powerups-fab-mark-slot').props.style).opacity).toBe(0);
-    expect(flatten(getByTestId('powerups-fab-close-slot').props.style).opacity).toBe(1);
+    expect(getByTestId('powerups-fab-mark', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('leaps on a tap: up by the theme’s rise, nose tilted, on the wrapper', () => {

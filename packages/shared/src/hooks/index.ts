@@ -330,3 +330,4 @@ export { useRecipientOptions } from './useRecipientOptions';
 export type { UseRecipientOptionsParams, UseRecipientOptionsResult } from './useRecipientOptions';
 export { useFiatLine } from './useFiatLine';
 export { useDeferredFeeEstimate } from './useDeferredFeeEstimate';
+export { useHeldSheetSize } from './useHeldSheetSize';

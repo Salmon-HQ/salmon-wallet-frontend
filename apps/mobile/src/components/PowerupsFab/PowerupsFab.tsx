@@ -26,19 +26,9 @@ import { BrandMark } from '../BrandMark';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
-/**
- * The FAB reads as iOS 26's detached tab-bar search button: a round Liquid
- * Glass control at the trailing edge of the band a tab bar occupies, sized
- * to that bar's height (Apple HIG, "Tab bars": the standard iOS tab bar
- * content height is 49pt — https://developer.apple.com/design/human-interface-guidelines/tab-bars —
- * and iOS 26 keeps that height for the floating bar and its detached search
- * tab; Apple has not republished exact new-bar geometry, so this borrows the
- * app's existing 48px control height, `buttonHeightMedium`, one point off
- * rather than minting a near-duplicate token). The glyph keeps the same
- * ratio to the bubble as before (22/42), rounded to the nearest icon token.
- */
-const FAB_SIZE = componentSizes.buttonHeightMedium;
-const FAB_ICON_SIZE = componentSizes.iconSizeMedium;
+// Geometry and its reason: `componentSizes.fabSize` / `fabIconSize`.
+const FAB_SIZE = componentSizes.fabSize;
+const FAB_ICON_SIZE = componentSizes.fabIconSize;
 
 export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   onPress,

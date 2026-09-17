@@ -4,22 +4,29 @@
  *
  * The mobile twin is `apps/mobile/src/components/PowerupsFab/PowerupsFab.tsx`:
  * the same accent `IconBubble`, the same leap on a tap (`fabLeap` in the
- * theme) and the same cross-fade to the close mark while the catalogue is
- * open. Mobile moves it with Reanimated; here the leap is a two-phase CSS
- * transform transition and the fade an opacity transition.
+ * theme), and the same salmon mark in both the open and closed state — no
+ * cross-fade to a close glyph (owner, 2026-09-17). Mobile moves the leap
+ * with Reanimated; here it is a two-phase CSS transform transition.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fabLeap, motionEasing, motionMs, shadowsCSS, spacing } from '@salmon/shared';
+import {
+  componentSizes,
+  fabLeap,
+  motionEasing,
+  motionMs,
+  shadowsCSS,
+  spacing,
+} from '@salmon/shared';
 import { useReducedMotion } from '../../motion';
-import { XIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { BrandMark } from '../BrandMark';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
-const FAB_SIZE = 42;
-const FAB_ICON_SIZE = 22;
+// Geometry and its reason: `componentSizes.fabSize` / `fabIconSize`.
+const FAB_SIZE = componentSizes.fabSize;
+const FAB_ICON_SIZE = componentSizes.fabIconSize;
 
 export function PowerupsFab({
   onPress,
@@ -43,15 +50,6 @@ export function PowerupsFab({
     }
     onPress();
   };
-
-  const glyphStyle = (shown: boolean): React.CSSProperties => ({
-    position: 'absolute',
-    display: 'flex',
-    opacity: shown ? 1 : 0,
-    transition: reducedMotion
-      ? undefined
-      : `opacity ${motionMs.drift}ms ${motionEasing.current.css}`,
-  });
 
   return (
     <div
@@ -94,12 +92,7 @@ export function PowerupsFab({
             justifyContent: 'center',
           }}
         >
-          <span style={glyphStyle(!open)}>
-            <BrandMark testID="powerups-fab-mark" size={FAB_ICON_SIZE} color={accent.onFill} />
-          </span>
-          <span data-testid="powerups-fab-close" style={glyphStyle(open)}>
-            <XIcon size={FAB_ICON_SIZE} color={accent.onFill} weight="bold" />
-          </span>
+          <BrandMark testID="powerups-fab-mark" size={FAB_ICON_SIZE} color={accent.onFill} />
         </span>
       </IconBubble>
     </div>

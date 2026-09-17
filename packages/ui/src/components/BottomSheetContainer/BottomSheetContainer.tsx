@@ -38,6 +38,7 @@ import {
   spacing,
   SheetHeightContext,
   SheetParentContext,
+  useHeldSheetSize,
   useSheetTurn,
   type SheetTurnMotion,
   SHEET_EXIT_MS,
@@ -99,14 +100,12 @@ export function BottomSheetContainer({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
-  // The ceiling a sheet opens with is the ceiling it keeps (owner,
-  // 2026-09-16), the same rule as the mobile twin: the caller's `height` /
-  // `maxHeight` are read once on the render that shows the sheet and
-  // released once it has left, so nothing the page does underneath moves it.
-  const [held, setHeld] = useState<{ height?: number; maxHeight?: number } | null>(null);
-  if (visible && held === null) setHeld({ height, maxHeight });
-  const sheetHeight = held ? held.height : height;
-  const sheetMaxHeight = held ? held.maxHeight : maxHeight;
+  // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).
+  const {
+    sheetHeight,
+    sheetMaxHeight,
+    release: releaseHeld,
+  } = useHeldSheetSize(visible, height, maxHeight);
   const [isOpen, setIsOpen] = useState(false);
   // What this sheet is drawn at, for the sheets it opens: a nested sheet
   // reads it and rises to exactly this (`useParentSheetHeight`).
@@ -143,12 +142,12 @@ export function BottomSheetContainer({
       else dialog.removeAttribute('open');
     }
     setIsRendered(false);
-    setHeld(null);
+    releaseHeld();
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
     releaseParentTurnRef.current();
-  }, [onClosed]);
+  }, [onClosed, releaseHeld]);
 
   // The rise is a Web Animation, the one driver of the sheet on its way up.
   // A CSS transition needs the browser to have seen the closed position

@@ -26,6 +26,7 @@ jest.mock('@salmon/shared', () => ({
   useParentSheetHeight: () => undefined,
   useSheetParent: () => null,
   ...jest.requireActual('@salmon/shared/src/contexts/useSheetTurn'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useHeldSheetSize'),
   SheetParentContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
     .SheetParentContext,
 }));

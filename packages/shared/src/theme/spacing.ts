@@ -147,6 +147,20 @@ export const componentSizes = {
   /** 42px - Compact action buttons (receive, success) */
   buttonHeightCompact: 42,
   /**
+   * 48px — the Powerups FAB, both twins. It reads as iOS 26's detached
+   * tab-bar search button: a round control at the trailing edge of the band
+   * a tab bar occupies, sized to that bar's height (Apple HIG, "Tab bars":
+   * the standard tab bar content height is 49pt —
+   * https://developer.apple.com/design/human-interface-guidelines/tab-bars —
+   * and iOS 26 keeps it for the floating bar and its detached search tab;
+   * Apple publishes no exact new-bar geometry). 48 rather than 49: the
+   * app's existing medium control height, one point off, instead of a
+   * near-duplicate token (owner, 2026-09-17).
+   */
+  fabSize: 48,
+  /** 24px — the FAB's glyph, the bubble's 22/42 ratio rounded to the icon scale. */
+  fabIconSize: 24,
+  /**
    * The control radius. It was 28, which on a 56px control is a pill, and the
    * product owner does not want pills: a button must read with the same
    * roundness as a token list row and a text input. All three now resolve to

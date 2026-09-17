@@ -40,6 +40,7 @@ import {
   type BottomSheetContainerPropsBase,
   SheetHeightContext,
   SheetParentContext,
+  useHeldSheetSize,
   useSheetTurn,
   type SheetTurnMotion,
   SHEET_EXIT_MS,
@@ -180,17 +181,12 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
-  // The ceiling a sheet opens with is the ceiling it keeps (owner,
-  // 2026-09-16): whatever the app under it does while it is up — Home
-  // leaving focus mode, a balance block floating back — the sheet does not
-  // follow. The caller's `height` / `maxHeight` are read once, on the
-  // render that shows the sheet, and released once it has left, so the next
-  // opening measures afresh. Render-time setState, the same pattern the
-  // shell uses: refs cannot be read during render.
-  const [held, setHeld] = useState<{ height?: number; maxHeight?: number } | null>(null);
-  if (visible && held === null) setHeld({ height, maxHeight });
-  const sheetHeight = held ? held.height : height;
-  const sheetMaxHeight = held ? held.maxHeight : maxHeight;
+  // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).
+  const {
+    sheetHeight,
+    sheetMaxHeight,
+    release: releaseHeld,
+  } = useHeldSheetSize(visible, height, maxHeight);
 
   // What this sheet is drawn at, for the sheets it opens: a nested sheet
   // reads it and rises to exactly this (`useParentSheetHeight`).
@@ -241,7 +237,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const closedReportedRef = useRef(false);
   const completeClose = useCallback(() => {
     setIsRendered(false);
-    setHeld(null);
+    releaseHeld();
     dragY.value = 0;
     backdropOpacity.value = 0;
     // Reported once per departure: the watchdog below and the animation's own
@@ -250,7 +246,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     closedReportedRef.current = true;
     onClosed?.();
     releaseParentTurnRef.current();
-  }, [dragY, backdropOpacity, onClosed]);
+  }, [dragY, backdropOpacity, onClosed, releaseHeld]);
   const completeCloseRef = useRef(completeClose);
   completeCloseRef.current = completeClose;
   const completeCloseLatest = useCallback(() => completeCloseRef.current(), []);
