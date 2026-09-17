@@ -716,14 +716,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
-      case 'powerupScreen':
-        return powerupScreen && activeBlockchainAccount
-          ? renderPowerupScreen(powerupScreen.id, powerupScreen.screen, {
-              publicKey: activeBlockchainAccount.getReceiveAddress(),
-              networkId: networkId ?? null,
-              onBack: handlePowerupScreenBack,
-            })
-          : null;
+      case 'powerupScreen': {
+        const page =
+          powerupScreen && activeBlockchainAccount
+            ? renderPowerupScreen(powerupScreen.id, powerupScreen.screen, {
+                publicKey: activeBlockchainAccount.getReceiveAddress(),
+                networkId: networkId ?? null,
+                onBack: handlePowerupScreenBack,
+              })
+            : null;
+        // Nothing to show (the off build, an unknown name): an empty page
+        // rather than a hole in the stack; back still returns home.
+        return page ?? <></>;
+      }
       case 'activity':
         return (
           <ActivityPage

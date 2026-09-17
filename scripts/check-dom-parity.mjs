@@ -123,7 +123,6 @@ export const SCREENS = {
   '(app)/nft/[id]/success': 'packages/ui/src/components/NftDetailPage/NftDetailPage.tsx',
   '(app)/nft/[id]/send': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/token/[id]': 'packages/ui/src/components/TokenDetailPage/TokenDetailPage.tsx',
-  '(app)/powerup/[id]/[screen]': 'apps/extension/src/pages/home/powerupBodies.tsx',
   '(app)/settings/index': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(app)/settings/[panel]': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(auth)/index': 'packages/ui/src/components/AuthFlow/SelectOptionsPage.tsx',

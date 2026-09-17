@@ -2,11 +2,11 @@
  * PaymentsScreen — the Payments Powerup on React Native: three actions over
  * what is still waiting to be paid, the sheet that asks, and the sheet that
  * shows one request as a code. Paid and expired requests live behind the
- * clock, on the history screen (owner, 2026-09-16). Every prop is composed
+ * clock, on the history sheet (owner, 2026-09-16 / 17). Every prop is composed
  * in the shared hook; this file only renders. DOM twin:
  * `packages/ui/src/components/PaymentsPage`.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { s, spacing, vs } from '@salmon/shared';
 import { usePaymentsScreenLogic } from '@salmon/shared/powerups';
@@ -17,6 +17,7 @@ import { SectionLabel } from '../SectionLabel';
 import { StateBlock } from '../StateBlock';
 import { ValueActionsRow } from '../ValueActionsRow';
 import { PaymentsAskSheet } from './PaymentsAskSheet';
+import { PaymentsHistorySheet } from './PaymentsHistorySheet';
 import { PaymentRequestList } from './PaymentRequestList';
 import { PaymentRequestSheet } from './PaymentRequestSheet';
 import type { PaymentsScreenProps } from './types';
@@ -27,9 +28,12 @@ export function PaymentsScreen({
   testID = 'payments-screen',
   ...logicParams
 }: PaymentsScreenProps) {
+  // The history is a sheet here, the tab's own (owner, 2026-09-17).
+  const [historyOpen, setHistoryOpen] = useState(false);
   const { actions, ask, list, sheet, unavailable } = usePaymentsScreenLogic({
     ...logicParams,
     scope: 'pending',
+    onHistory: () => setHistoryOpen(true),
   });
   const { nested, ...request } = sheet;
 
@@ -65,6 +69,13 @@ export function PaymentsScreen({
       <PaymentsAskSheet testID="payments-ask" height={sheetHeight} {...ask}>
         {nested && <PaymentRequestSheet testID="payments-sheet" {...request} />}
       </PaymentsAskSheet>
+      <PaymentsHistorySheet
+        publicKey={logicParams.publicKey}
+        networkId={logicParams.networkId}
+        visible={historyOpen}
+        onBack={() => setHistoryOpen(false)}
+        height={sheetHeight}
+      />
     </View>
   );
 }

@@ -38,10 +38,10 @@ export interface PowerupScreenContext {
 }
 
 /**
- * A Powerup's pushed screen, by id and name — the DOM's counterpart to the
- * mobile route `app/(app)/powerup/[id]/[screen]`: Home hosts it as the
+ * A Powerup's pushed screen, by id and name: Home hosts it as the
  * `powerupScreen` page of its stack, a Powerup registers no page of its own
- * (`docs/POWERUPS-UI.md` §1.12).
+ * (`docs/POWERUPS-UI.md` §1.12). Mobile raises the same surface as a sheet
+ * the tab owns — the catalogue's split (owner, 2026-09-17).
  */
 export function renderPowerupScreen(
   id: string,

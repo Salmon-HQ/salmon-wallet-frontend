@@ -358,26 +358,26 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
 
 ### 1.12 A pushed screen — a surface behind an action on the tab
 
-|          |                                                                                                                                                                                                            |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile   | `apps/mobile/src/powerups/index.ts` → `getPowerupScreen(id, screen)` returns a `ComponentType<PowerupScreenProps>`; the core route `app/(app)/powerup/[id]/[screen].tsx` hosts it and hands it the account |
-| DOM      | `apps/extension/src/pages/home/powerupBodies.tsx` → `renderPowerupScreen(id, screen, ctx)`; Home mounts it as the `powerupScreen` page of its stack, pushed with `SlideStack`, back returns to Home        |
-| Contract | `PowerupScreenProps` / `PowerupScreenContext`: `publicKey`, `networkId`, `onBack`. The tab opens it through `onOpenScreen(screen)` (DOM) or `router.push('/powerup/<id>/<screen>')` (mobile)               |
+|          |                                                                                                                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Mobile   | A sheet the tab raises itself (`PaymentsHistorySheet`: the same rows under `SheetTitle` + subtitle, at the ask sheet's height) — the catalogue's split: sheet on mobile, page on the DOM (owner, 2026-09-17) |
+| DOM      | `apps/extension/src/pages/home/powerupBodies.tsx` → `renderPowerupScreen(id, screen, ctx)`; Home mounts it as the `powerupScreen` page of its stack, pushed with `SlideStack`, back returns to Home          |
+| Contract | `PaymentsHistoryPropsBase`: `publicKey`, `networkId`, `onBack` (the sheet's close on mobile). The DOM tab opens it through `onOpenScreen(screen)`; the mobile tab flips its own sheet                        |
 
 - **When:** a list or a detail the user visits and leaves, not something
   they return to — that is a tab (§1.1) — and not a decision — that is a
   sheet (§1.5). Payments' history (every request, paid and expired
   included) behind the tab's clock is the first (owner, 2026-09-16); the
   tab itself keeps only what is still open.
-- **Fixed:** the chrome. Mobile: `SafeAreaView` with `DepthBackground` and
-  `ScalesBackground variant="deepField"`, then `ScreenHeader` with `onBack`,
-  `title` and `subtitle` — exactly what Activity mounts. DOM:
-  `SettingsPanelContent` with the same three. The Powerup draws its rows
-  under that and nothing above it.
-- **Fixed:** the route and the page are core's, once. A Powerup adds an
-  entry to `getPowerupScreen` / `renderPowerupScreen` — the same way it adds
-  a tab — and never a route, a page name or a `SlideStack` of its own; the
-  off build aliases the entry away and the route redirects home.
+- **Fixed:** the chrome. DOM: `SettingsPanelContent` with `onBack`, `title`
+  and `subtitle` — exactly what Activity mounts. Mobile: `BottomSheetContainer`
+  with `SheetTitle` and the subtitle under it, the catalogue's header. The
+  Powerup draws its rows under that and nothing above it.
+- **Fixed:** the page is core's, once. A Powerup adds an entry to
+  `renderPowerupScreen` — the same way it adds a tab — and never a page name
+  or a `SlideStack` of its own; the off build aliases the entry away. On
+  mobile a Powerup never registers a route (§1.1): what it pushes, it raises
+  as a sheet.
 - **Fixed:** the rows are the tab's own block (`PaymentRequestList` for
   Payments): the screen changes the scope the shared hook is asked for, not
   how a row looks.

@@ -21,4 +21,9 @@ export interface PaymentRequestSheetProps extends PaymentRequestSheetPropsBase<V
 
 export interface PaymentRequestListProps extends PaymentRequestListPropsBase<ViewStyle> {}
 
-export interface PaymentsHistoryScreenProps extends PaymentsHistoryPropsBase<ViewStyle> {}
+/** The DOM's page is a sheet here (owner, 2026-09-17); its `onBack` is this sheet's close. */
+export interface PaymentsHistorySheetProps extends PaymentsHistoryPropsBase<ViewStyle> {
+  visible: boolean;
+  /** A fixed height, up to Home's sub-tab row — the ask sheet's. */
+  height?: number;
+}

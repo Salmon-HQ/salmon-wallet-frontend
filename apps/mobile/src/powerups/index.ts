@@ -8,7 +8,6 @@ import type { PowerupsCatalogProps } from '../components/PowerupsCatalog';
 import { PowerupsCatalog as PowerupsCatalogImpl } from '../components/PowerupsCatalog';
 import MemoTabImpl from '../screens/MemoTab';
 import PaymentsTabImpl from '../screens/PaymentsTab';
-import { PaymentsHistoryScreen } from '../components/PaymentsScreen';
 
 export {
   POWERUPS_ENABLED,
@@ -47,26 +46,5 @@ export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = Power
 export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null {
   if (id === 'memo') return MemoTabImpl;
   if (id === 'payments') return PaymentsTabImpl;
-  return null;
-}
-
-/** What a Powerup's pushed screen receives from the core route that hosts it. */
-export interface PowerupScreenProps {
-  publicKey: string;
-  networkId: string | null;
-  onBack: () => void;
-}
-
-/**
- * A Powerup's pushed screen, by id and name — the surface behind an action
- * on its tab (Payments' history behind the clock). The core route
- * `app/(app)/powerup/[id]/[screen]` hosts it; a Powerup registers no route
- * of its own (`docs/POWERUPS-UI.md` §1.12).
- */
-export function getPowerupScreen(
-  id: string,
-  screen: string
-): ComponentType<PowerupScreenProps> | null {
-  if (id === 'payments' && screen === 'history') return PaymentsHistoryScreen;
   return null;
 }

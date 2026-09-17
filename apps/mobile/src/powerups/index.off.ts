@@ -26,16 +26,3 @@ export const PowerupsCatalog: ComponentType<PowerupsCatalogProps> | null = null;
 export function getPowerupTab(_id: string): ComponentType<PowerupTabProps> | null {
   return null;
 }
-
-export interface PowerupScreenProps {
-  publicKey: string;
-  networkId: string | null;
-  onBack: () => void;
-}
-
-export function getPowerupScreen(
-  _id: string,
-  _screen: string
-): ComponentType<PowerupScreenProps> | null {
-  return null;
-}
