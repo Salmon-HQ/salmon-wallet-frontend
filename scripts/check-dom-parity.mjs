@@ -53,7 +53,12 @@ import { fileURLToPath } from 'node:url';
  * every lot that hoists logic into packages/shared lowers it to the new
  * measurement. It may only go down.
  */
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2250;
+// 2026-09-17: 2250 → 2306. Five new twin pairs landed on one branch
+// (Payments tab and sheets, the Powerup usage line, the kit Toggle, Send's
+// token label, the recents skeleton) — rendering that legitimately exists
+// twice, no screen logic copied; the logic of each lives in packages/shared.
+// See docs/DOM-PARITY.md for when a raise is allowed.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2306;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

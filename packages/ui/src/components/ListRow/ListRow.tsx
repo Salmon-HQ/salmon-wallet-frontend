@@ -26,6 +26,7 @@ export function ListRow({
   titleAccessory,
   subtitle,
   trailing,
+  trailingFill = false,
   onPress,
   accessibilityRole,
   tone,
@@ -80,7 +81,9 @@ export function ListRow({
       </div>
       {/* The trailing slot: as tall as the row, its content centred on both
           axes, the same rule the mobile twin keeps. */}
-      {trailing != null && (
+      {!trailingFill ? (
+        trailing
+      ) : (
         <div
           style={{
             display: 'flex',

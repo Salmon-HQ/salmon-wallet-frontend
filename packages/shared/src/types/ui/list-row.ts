@@ -27,6 +27,12 @@ export interface ListRowPropsBase extends Testable {
   subtitle?: ReactNode;
   /** A value, a chevron, a badge — whatever closes the row on the right. */
   trailing?: ReactNode;
+  /**
+   * The trailing slot stretches to the row's height and centres its content
+   * on both axes — for a control whose frame and drawing disagree (a native
+   * switch). Off by default: an amount column keeps its own alignment.
+   */
+  trailingFill?: boolean;
   onPress?: () => void;
   /** Announced role when pressable. Defaults to `button`; `link` opens a URL. */
   accessibilityRole?: 'button' | 'link';

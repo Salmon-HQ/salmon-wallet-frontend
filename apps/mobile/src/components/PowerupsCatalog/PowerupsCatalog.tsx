@@ -126,6 +126,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           title={name}
           titleAccessory={<PowerupBadge tier={entry.tier} />}
           subtitle={t(entry.descriptionKey)}
+          trailingFill
           trailing={renderToggle(entry, name, 'detail')}
         />
 
@@ -200,6 +201,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                   }
                   title={t(entry.nameKey)}
                   subtitle={t(entry.descriptionKey)}
+                  trailingFill
                   trailing={renderToggle(entry, t(entry.nameKey), 'row')}
                   onPress={() => setDetailId(entry.id)}
                 />

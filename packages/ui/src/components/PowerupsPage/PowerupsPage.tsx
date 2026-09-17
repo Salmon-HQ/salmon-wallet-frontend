@@ -138,6 +138,7 @@ export function PowerupsPage({
             title={name}
             titleAccessory={<PowerupBadge tier={entry.tier} />}
             subtitle={t(entry.descriptionKey)}
+            trailingFill
             trailing={renderToggle(entry, name, 'detail')}
           />
 
@@ -220,6 +221,7 @@ export function PowerupsPage({
                     }
                     title={t(entry.nameKey)}
                     subtitle={t(entry.descriptionKey)}
+                    trailingFill
                     trailing={renderToggle(entry, t(entry.nameKey), 'row')}
                     onPress={() => setDetailId(entry.id)}
                   />
