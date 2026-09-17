@@ -58,16 +58,19 @@ export const motionMs = {
    */
   contentChange: 200,
   /**
-   * 420ms — sheet presentation. translateY 100%→0 with the backdrop blur and
-   * scrim moving over the same window, so the sheet and the water above it are
-   * one gesture instead of two.
+   * 500ms — sheet presentation: translateY 100%→0 with the backdrop moving
+   * over the same window. The clock of the iOS sheet, and the one the web's
+   * drawers copy from it (Ionic, then Vaul: 0.5s with `motionEasing.current`
+   * — a curve that settles, never overshoots). Was 420ms, `route`'s window;
+   * the owner asked for the sheet to be slower and to stop with ease
+   * (2026-09-17).
    */
-  rise: 420,
+  rise: 500,
   /**
-   * 420ms — route transition. Same window as `rise` on purpose: a pushed route
-   * and a presented sheet are the same event to the user (new surface arrives,
-   * old one recedes to `scale(0.97)`), and giving them different lengths only
-   * makes the app feel inconsistent about its own depth.
+   * 420ms — route transition. A pushed route and a presented sheet are the
+   * same event to the user (new surface arrives, old one recedes to
+   * `scale(0.97)`); the sheet is the one that follows the platform's own
+   * sheet clock, a beat longer.
    */
   route: 420,
   /**
@@ -128,7 +131,9 @@ export const motionMs = {
    */
   waitMinVisible: 600,
   /**
-   * 5000ms — **the owner-set floor on a wait, and the one place to dial it.**
+   * 2500ms — **the owner-set floor on a wait, and the one place to dial it.**
+   * One pulse of the wave, not two: it was 5000ms until 2026-09-17, when the
+   * owner halved it.
    * Once a waiting screen is up it stays up at least this long, whether or not
    * the work behind it has already finished, on every wait: unlock, boot,
    * recovery and transactions alike.
@@ -146,7 +151,7 @@ export const motionMs = {
    * and the watchdog that guarantees the handoff is armed at the floor plus
    * `wavefrontExitMs()`, so it still bounds the whole thing.
    */
-  waitFloor: 5000,
+  waitFloor: 2500,
 
   /**
    * Continuous loops. These are cycle lengths, not transitions: they describe
@@ -177,7 +182,7 @@ export const motionDuration = {
   drift: `${motionMs.drift}ms`,
   /** 200ms — the entering half of a fade-through content change */
   contentChange: `${motionMs.contentChange}ms`,
-  /** 420ms — sheet presentation */
+  /** 500ms — sheet presentation */
   rise: `${motionMs.rise}ms`,
   /** 420ms — route transition */
   route: `${motionMs.route}ms`,

@@ -64,7 +64,7 @@ jest.mock('@salmon/shared', () => ({
     stagger: 24,
     shimmerCycle: 1400,
     pulseCycle: 1200,
-    waitFloor: 5000,
+    waitFloor: 2500,
   },
   markPaths: ['M0 0h1v1H0z'],
   markViewBoxAttr: '0 0 253 237',
@@ -342,7 +342,7 @@ describe('LoadingScreen', () => {
       // The owner's floor is spent first and nothing is planned inside it: the
       // wave is still looping and the exit has not been decided yet.
       act(() => {
-        jest.advanceTimersByTime(4999);
+        jest.advanceTimersByTime(2499);
       });
       expect(onExited).not.toHaveBeenCalled();
 
@@ -373,7 +373,7 @@ describe('LoadingScreen', () => {
       // shorten it, exactly as the copy-feedback hold is not shortened. What
       // reduced motion still buys is the wave it does not have to wait out.
       act(() => {
-        jest.advanceTimersByTime(4999);
+        jest.advanceTimersByTime(2499);
       });
       expect(onExited).not.toHaveBeenCalled();
 
@@ -400,7 +400,7 @@ describe('LoadingScreen', () => {
 
       rerender(wait(false));
       act(() => {
-        jest.advanceTimersByTime(5000 + 5000);
+        jest.advanceTimersByTime(2500 + 5000);
       });
 
       expect(screen.getByTestId('surface-key').props.children).toBe('1');
@@ -415,7 +415,7 @@ describe('LoadingScreen', () => {
       rerender(<LoadingScreen visible={false} title="Sending memo" waves onExited={onExited} />);
 
       act(() => {
-        jest.advanceTimersByTime(5000 + 5000);
+        jest.advanceTimersByTime(2500 + 5000);
       });
       expect(onExited).toHaveBeenCalledTimes(1);
     });

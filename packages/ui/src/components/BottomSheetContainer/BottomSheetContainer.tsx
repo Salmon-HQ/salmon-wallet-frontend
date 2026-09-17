@@ -175,19 +175,7 @@ export function BottomSheetContainer({
       let raf = 0;
       const timer = setTimeout(() => {
         raf = requestAnimationFrame(() => {
-          // The rise itself runs on the Web Animations API, not on the CSS
-          // transition alone: a transition needs the browser to have seen
-          // the closed position first, and inside the side panel React can
-          // commit `isOpen` before that frame ever paints — the sheet was
-          // simply there (owner, 2026-09-17). An animation has no such
-          // dependency. The transition stays for yield / release / exit.
-          const sheet = sheetRef.current;
-          if (sheet && !isReduceMotionEnabled && typeof sheet.animate === 'function') {
-            sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], {
-              duration: motionMs.rise,
-              easing: motionEasing.current.css,
-            });
-          }
+          rise();
           setIsOpen(true);
         });
       }, childEnterDelayMs);
@@ -210,6 +198,24 @@ export function BottomSheetContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, isReduceMotionEnabled, completeClose]);
 
+  // The rise is a Web Animation, the one driver of the sheet on its way up.
+  // A CSS transition needs the browser to have seen the closed position
+  // first, and inside the side panel React can commit the open state before
+  // that frame ever paints — the sheet was simply there (owner, 2026-09-17).
+  // An animation has no such dependency, and having only one driver means
+  // no second curve finishing a beat later under it. The transition stays
+  // for the way down (yield, exit), which starts from a painted position.
+  // `motionMs.rise` + `motionEasing.current` is the iOS sheet's own clock and
+  // curve, the pair Ionic and Vaul use for the same reason.
+  const rise = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || isReduceMotionEnabled || typeof sheet.animate !== 'function') return;
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], {
+      duration: motionMs.rise,
+      easing: motionEasing.current.css,
+    });
+  }, [isReduceMotionEnabled]);
+
   // The parent's side of the handshake, for the sheet this one opens.
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
@@ -227,11 +233,13 @@ export function BottomSheetContainer({
         if (!visibleRef.current) {
           setIsOpen(false);
           setTimeout(completeClose, isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
+          return;
         }
+        rise();
       },
       dismissWithChild: () => onClose(),
     }),
-    [onClose, completeClose, isReduceMotionEnabled]
+    [onClose, completeClose, isReduceMotionEnabled, rise]
   );
 
   const handleBackdropClick = useCallback(() => {
@@ -262,8 +270,12 @@ export function BottomSheetContainer({
   if (!isRendered) return null;
 
   const isUp = isOpen && !yielded;
-  const transitionMs = isReduceMotionEnabled ? 0 : isUp ? motionMs.rise : SHEET_EXIT_MS;
-  const easing = isUp ? motionEasing.current.css : motionEasing.sink.css;
+  // The backdrop fades on the sheet's clock both ways; the sheet's own
+  // transition only ever sinks — up is the Web Animation's job (`rise`).
+  const backdropMs = isReduceMotionEnabled ? 0 : isOpen ? motionMs.rise : SHEET_EXIT_MS;
+  const backdropEasing = isOpen ? motionEasing.current.css : motionEasing.sink.css;
+  const transitionMs = isReduceMotionEnabled || isUp ? 0 : SHEET_EXIT_MS;
+  const easing = motionEasing.sink.css;
 
   const overlay: React.CSSProperties = {
     position: 'fixed',
@@ -287,7 +299,7 @@ export function BottomSheetContainer({
     backgroundColor: t.overlay.backdrop,
     // A child draws no backdrop: the parent's stays up through the handoff.
     opacity: isOpen && !parent ? 1 : 0,
-    transition: `opacity ${transitionMs}ms ${easing}`,
+    transition: `opacity ${backdropMs}ms ${backdropEasing}`,
   };
 
   const sheetContainer: React.CSSProperties = {
@@ -370,6 +382,9 @@ export function BottomSheetContainer({
               style={{
                 position: 'relative',
                 overflow: 'auto',
+                // The body scrolls without showing it: no scrollbar down the
+                // sheet's right edge (owner, 2026-09-17), same as the tab row.
+                scrollbarWidth: 'none',
                 paddingLeft: contentGutter ? spacing.screenGutter : 0,
                 paddingRight: contentGutter ? spacing.screenGutter : 0,
               }}
