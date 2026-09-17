@@ -14,6 +14,10 @@
 export type TransactionType =
   'send' | 'receive' | 'mint' | 'burn' | 'stake' | 'loan' | 'interaction' | 'memo' | 'unknown';
 
+/** What an `interaction` was — see `Transaction.action`. */
+export type TransactionAction =
+  'swap' | 'nft_sale' | 'nft_purchase' | 'accounts_closed' | 'program_call';
+
 /**
  * Transaction display status for history views
  * Simplified status for UI display (3 states)
@@ -102,6 +106,16 @@ export interface Transaction {
   source?: string;
   /** Original Helius transaction type */
   heliusType?: string;
+  /**
+   * The verb inside an `interaction`, as a stable key the client translates
+   * (backend 017): `swap`, `nft_sale`, `nft_purchase`, `accounts_closed`,
+   * `program_call`. Absent on every other type.
+   */
+  action?: TransactionAction;
+  /** What the verb needs said: `{ count }` for `accounts_closed`. */
+  actionMeta?: { count?: number };
+  /** The name the user knows the program family by, for the detail. */
+  app?: string;
   /**
    * The SPL Memo note the transaction carries, when it carries one. A
    * transaction that moves nothing and carries a note is `type: 'memo'`; a
@@ -373,6 +387,16 @@ export interface SolanaTransaction {
   events?: Record<string, unknown>;
   /** Original Helius transaction type (uppercase) */
   heliusType?: string;
+  /**
+   * The verb inside an `interaction`, as a stable key the client translates
+   * (backend 017): `swap`, `nft_sale`, `nft_purchase`, `accounts_closed`,
+   * `program_call`. Absent on every other type.
+   */
+  action?: TransactionAction;
+  /** What the verb needs said: `{ count }` for `accounts_closed`. */
+  actionMeta?: { count?: number };
+  /** The name the user knows the program family by, for the detail. */
+  app?: string;
   /** The SPL Memo note, when the transaction carries one (backend 015). */
   memo?: string | null;
 }

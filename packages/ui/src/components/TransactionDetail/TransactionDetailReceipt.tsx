@@ -77,6 +77,15 @@ export function TransactionDetailReceipt({
         ) : null
       )}
 
+      {transaction.app && (
+        <KeyValueRow
+          testID="tx-detail-app"
+          label={translate('transactions.detail.app', 'App')}
+          value={transaction.app}
+          labelWeight={600}
+        />
+      )}
+
       {transaction.feePayer && (
         <KeyValueRow
           label={translate('transactions.detail.feePayer', 'Fee Payer')}

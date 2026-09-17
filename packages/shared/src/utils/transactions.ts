@@ -231,6 +231,9 @@ export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
     source: tx.source,
     heliusType: tx.heliusType,
     memo: tx.memo ?? undefined,
+    action: tx.action,
+    actionMeta: tx.actionMeta,
+    app: tx.app,
   };
 }
 

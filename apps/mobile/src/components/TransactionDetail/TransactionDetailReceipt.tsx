@@ -83,6 +83,15 @@ export const TransactionDetailReceipt: React.FC<TransactionDetailReceiptProps> =
         ) : null
       )}
 
+      {transaction.app && (
+        <KeyValueRow
+          testID="tx-detail-app"
+          label={t('transactions.detail.app', 'App')}
+          value={transaction.app}
+          labelWeight={600}
+        />
+      )}
+
       {transaction.feePayer && (
         <KeyValueRow
           label={t('transactions.detail.feePayer', 'Fee Payer')}

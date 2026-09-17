@@ -606,7 +606,8 @@
       "copyTransactionHash": "Copiar hash de transacción",
       "explorerOpenFailed": "No se pudo abrir el explorador",
       "chooseExplorer": "Elegí un explorador",
-      "nftMediaAlt": "Contenido del NFT"
+      "nftMediaAlt": "Contenido del NFT",
+      "app": "App"
     },
     "tapToViewDetails": "Tocá para ver los detalles de la transacción",
     "share_message": "Mirá esta transacción: {{url}}",
@@ -622,7 +623,14 @@
       "interaction": "Interacción con contrato",
       "memo": "Nota en cadena",
       "memoNote": "{{note}}",
-      "fallback": "Transacción"
+      "fallback": "Transacción",
+      "swap": "{{from}} → {{to}}"
+    },
+    "action": {
+      "swap": "Intercambiado",
+      "nftSale": "NFT vendido",
+      "nftPurchase": "NFT comprado",
+      "accountsClosed": "Cuentas cerradas"
     }
   },
   "nft": {

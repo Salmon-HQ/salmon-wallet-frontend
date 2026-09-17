@@ -10,7 +10,7 @@
  */
 import { chainMarks } from '../theme/brand';
 import type { Semantic } from '../theme/semantic';
-import type { Transaction, TransactionType } from '../types/transaction';
+import type { Transaction, TransactionAction, TransactionType } from '../types/transaction';
 import { getShortAddress } from './address';
 import { getTransactionDescription } from './transactions';
 
@@ -50,6 +50,23 @@ export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
   memo: 'transactions.detail.memo',
   unknown: 'transactions.detail.unknown',
 };
+
+/**
+ * The verb an interaction's action reads as (backend 017); `program_call`
+ * keeps the type's own label. Resolved via `t()` at the call site.
+ */
+export const ACTION_LABEL_KEYS: Partial<Record<TransactionAction, string>> = {
+  swap: 'transactions.action.swap',
+  nft_sale: 'transactions.action.nftSale',
+  nft_purchase: 'transactions.action.nftPurchase',
+  accounts_closed: 'transactions.action.accountsClosed',
+};
+
+/** The row's verb: the action's when it has one, the type's otherwise. */
+export function transactionVerbKey(transaction: Pick<Transaction, 'type' | 'action'>): string {
+  const byAction = transaction.action ? ACTION_LABEL_KEYS[transaction.action] : undefined;
+  return byAction ?? TYPE_LABEL_KEYS[transaction.type] ?? TYPE_LABEL_KEYS.unknown;
+}
 
 /**
  * A function of the active tokens because `send`/`receive`/`unknown` read
@@ -173,12 +190,22 @@ export interface TransactionSentence {
  * description.
  */
 export function describeTransactionRow(
-  transaction: Pick<Transaction, 'type' | 'inputs' | 'outputs' | 'source' | 'description' | 'memo'>,
+  transaction: Pick<
+    Transaction,
+    'type' | 'inputs' | 'outputs' | 'source' | 'description' | 'memo' | 'action'
+  >,
   contacts?: Record<string, string>
 ): TransactionSentence {
   // A memo's sentence is the note itself — the one thing the user wrote.
   if (transaction.type === 'memo' && transaction.memo) {
     return { key: 'transactions.description.memoNote', values: { note: transaction.memo } };
+  }
+  // A swap says what went for what; the verb above it already says "Swapped".
+  if (transaction.action === 'swap' && transaction.outputs[0] && transaction.inputs[0]) {
+    return {
+      key: 'transactions.description.swap',
+      values: { from: transaction.outputs[0].symbol, to: transaction.inputs[0].symbol },
+    };
   }
   const counterparty = transactionCounterparty(transaction);
   if (counterparty) {

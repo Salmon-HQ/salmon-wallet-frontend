@@ -9,6 +9,7 @@ import {
   transactionStatusDisplayFor,
   transactionTypeDisplayFor,
   withPlatformGlyphs,
+  transactionVerbKey,
 } from './transactionDisplay';
 
 const amount = (
@@ -90,5 +91,28 @@ describe('withPlatformGlyphs', () => {
     });
     expect(resolved.failed.icon).toBe('XCircleIcon');
     expect(resolved.pending.icon).toBe('ClockIcon');
+  });
+
+  describe('the verb inside an interaction (backend 017)', () => {
+    const base = { type: 'interaction' as const, inputs: [], outputs: [], source: 'AGGREGATOR' };
+    it('reads the action as the verb, and the type when the action has no verb of its own', () => {
+      expect(transactionVerbKey({ ...base, action: 'swap' })).toBe('transactions.action.swap');
+      expect(transactionVerbKey({ ...base, action: 'program_call' })).toBe(
+        'transactions.detail.interaction'
+      );
+      expect(transactionVerbKey({ type: 'send' })).toBe('transactions.detail.sent');
+    });
+    it('a swap says what went for what', () => {
+      const said = describeTransactionRow({
+        ...base,
+        action: 'swap',
+        outputs: [{ amount: '1', decimals: 6, symbol: 'USDC', contract: 'a' }],
+        inputs: [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'b' }],
+      });
+      expect(said).toEqual({
+        key: 'transactions.description.swap',
+        values: { from: 'USDC', to: 'SOL' },
+      });
+    });
   });
 });

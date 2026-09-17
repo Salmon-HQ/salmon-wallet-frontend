@@ -7,7 +7,7 @@
  */
 import { useMemo } from 'react';
 
-import { TYPE_LABEL_KEYS, describeTransactionRow } from '../utils/transactionDisplay';
+import { describeTransactionRow, transactionVerbKey } from '../utils/transactionDisplay';
 import type { Transaction } from '../types/transaction';
 
 /**
@@ -42,7 +42,7 @@ export function useTransactionItemDerived<TypeConfig extends { label: string }>(
     return t(said.key, said.values);
   }, [transaction, contacts, t]);
 
-  const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
+  const typeLabel = t(transactionVerbKey(transaction), config.label);
 
   return { config, totalAmounts, descriptionText, typeLabel };
 }
