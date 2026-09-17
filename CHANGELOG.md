@@ -6,6 +6,14 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ### mobile
 
+Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
+
+- Payments keeps only what is still waiting to be paid on its tab; every request, paid and expired included, is one tap away behind the clock, in a sheet from below. The + and the code icon stay.
+- Sheets take turns instead of stacking: opening a second one (the explorer picker over a transaction, a Powerup's detail over the catalogue, a request over the ask form), the first slides down, the second rises, on one darker backdrop; closing runs the inverse, and a tap on the backdrop closes both. A sheet leaves by its own height, the way a native sheet does, so short and tall ones read alike.
+- Home's tabs no longer move on launch: installed Powerups and the saved order arrive from storage without animating into place, and the underline lands instead of travelling.
+- The Powerups button is the tab bar's search button: 48pt at the trailing edge, the salmon leaps on a tap and stays the salmon while the catalogue is open.
+- Activity rows say what an interaction was — swapped, an NFT bought or sold, accounts closed for their rent are hidden — and the detail names the app.
+- The wait screen stands for one pulse of the wave, not two.
 - Payments, the first Powerup: ask for an exact amount of USDC from a Home tab. The wallet builds a Solana Pay request on the device, shows it as a QR in a sheet, and tells you it was paid only once the transfer is final on the network with the exact amount in your own account. Requests stay on the device; nothing is sent to Salmon.
 - Send pays a scanned payment request: recipient, token and amount arrive locked, with who asked and what for, and the transfer carries the request's reference and memo so any Solana Pay receiver recognises it. A request for a token you do not hold is refused, never substituted.
 - Face ID unlock works again, and it is the same unlock the password takes. The keychain used to hold a session key tied to the vault, which a password change or a key-derivation upgrade silently orphaned — the switch still read "on" with nothing behind it. It now holds a random key with the password sealed under it, so nothing the wallet does to itself can break the enrolment.
@@ -17,6 +25,12 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ### extension
 
+- Sheets rise smoothly (they used to appear in place), on the iOS sheet's clock and curve, with no scrollbar down their edge; two sheets take turns instead of stacking, and closing the explorer picker no longer leaves the panel dimmed and unusable.
+- Payments keeps only what is still waiting to be paid on its tab; the clock opens a page with every request. The + and the code icon stay.
+- Home's tabs no longer move on load, and the underline waits for the web font before it travels.
+- Bitcoin in Portfolio is the same column as mobile — the chart across the whole panel, Bitcoin's row, market data, About — instead of the token detail's content with the chart stopping three quarters across.
+- An NFT whose image lives on `ipfs.io` (a gateway being shut down) loads again: images are read through a working gateway.
+- Activity rows say what an interaction was, and the detail names the app.
 - Payments, the first Powerup, on the side panel too: ask for USDC, show the request as a QR in a sheet, watch it settle.
 - Send pays a payment request pasted under the recipient field (the side panel has no camera): locked review, who asked and what for, reference and memo on the transfer.
 
