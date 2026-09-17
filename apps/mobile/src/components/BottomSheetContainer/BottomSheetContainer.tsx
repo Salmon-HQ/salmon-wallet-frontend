@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Modal,
@@ -40,8 +40,7 @@ import {
   type BottomSheetContainerPropsBase,
   SheetHeightContext,
   SheetParentContext,
-  useSheetParent,
-  type SheetParentHandle,
+  useSheetTurn,
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
@@ -233,18 +232,6 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (visible) closedReportedRef.current = false;
   }, [visible]);
 
-  // Sequential, never stacked (see `SheetParentContext`): with a parent
-  // sheet, this one rises only after the parent has slid down, draws no
-  // backdrop of its own, and hands the parent back when it leaves. As a
-  // parent, `yielded` keeps this sheet mounted, off-screen, backdrop up,
-  // while its child is showing — even if it is dismissed meanwhile.
-  const parent = useSheetParent();
-  const [yielded, setYielded] = useState(false);
-  const yieldedRef = useRef(false);
-  // True from asking the parent to yield until giving its turn back.
-  const holdsParentRef = useRef(false);
-  const childEnterDelayMs = parent && !isReduceMotionEnabled ? SHEET_EXIT_MS : 0;
-
   // Worklet-safe close reference
   const closeSheet = useCallback(() => {
     onClose();
@@ -261,46 +248,44 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-    if (holdsParentRef.current) {
-      holdsParentRef.current = false;
-      parent?.releaseFromChild();
-    }
-  }, [dragY, backdropOpacity, onClosed, parent]);
+    releaseParentTurnRef.current();
+  }, [dragY, backdropOpacity, onClosed]);
+  const completeCloseRef = useRef(completeClose);
+  completeCloseRef.current = completeClose;
+  const completeCloseLatest = useCallback(() => completeCloseRef.current(), []);
 
-  // What the stable handle and the open/close effect read at call time.
-  const latest = useRef({
-    visible,
-    onClose,
-    completeClose,
+  // Sequential, never stacked (see `useSheetTurn`, shared with the DOM
+  // twin): as a child this sheet rises only after the parent has slid down
+  // and draws no backdrop of its own; as a parent, `yielded` keeps it
+  // mounted, off-screen, backdrop up, while its child is showing.
+  const {
     parent,
+    yielded,
+    isYielded,
     childEnterDelayMs,
-    restingBelow,
-    enter,
-    exit,
-  });
-  latest.current = {
-    visible,
-    onClose,
-    completeClose,
-    parent,
-    childEnterDelayMs,
-    restingBelow,
-    enter,
-    exit,
-  };
-  const completeCloseLatest = useCallback(() => latest.current.completeClose(), []);
-
-  // A child that unmounts while it still holds the parent's turn — the
-  // detail sheet drops its content the moment it closes, and the explorer
-  // picker inside it goes without ever running its exit — gives the turn
-  // back on the way out, or the parent stays yielded with its backdrop up
-  // (owner, 2026-09-17).
-  useEffect(
-    () => () => {
-      if (holdsParentRef.current) latest.current.parent?.releaseFromChild();
+    parentHandle,
+    holdParentTurn,
+    releaseParentTurn,
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, {
+    sink: () => {
+      translateY.value = withTiming(restingBelow, exit);
     },
-    []
-  );
+    rise: () => {
+      translateY.value = withTiming(0, enter);
+    },
+    // Dismissed while the child was up: already down, only the backdrop goes.
+    leave: () => {
+      backdropOpacity.value = withTiming(0, exit);
+      setTimeout(completeCloseLatest, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
+    },
+  });
+  const releaseParentTurnRef = useRef(releaseParentTurn);
+  releaseParentTurnRef.current = releaseParentTurn;
+
+  // Read at call time by the open / close effect, so a callback's identity
+  // never re-runs it (a nested sheet used to rise and fall in a loop that way).
+  const latest = useRef({ parent, childEnterDelayMs, holdParentTurn });
+  latest.current = { parent, childEnterDelayMs, holdParentTurn };
 
   // Animate in / out when `visible` changes
   useEffect(() => {
@@ -308,13 +293,12 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       setIsRendered(true);
       dragY.value = 0;
       const { parent: parentNow, childEnterDelayMs: delay } = latest.current;
-      parentNow?.yieldToChild();
-      holdsParentRef.current = parentNow !== null;
+      latest.current.holdParentTurn();
       translateY.value = withDelay(delay, withTiming(0, enter));
       if (!parentNow) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
       // A yielded parent waits for its child to leave (`releaseFromChild`).
-      if (yieldedRef.current) return undefined;
+      if (isYielded()) return undefined;
       translateY.value = withTiming(restingBelow, exit, (finished) => {
         if (finished) {
           runOnJS(completeCloseLatest)();
@@ -338,34 +322,6 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     // sheet used to rise and fall in a loop that way (owner, 2026-09-17).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered]);
-
-  // The parent's side of the handshake, for the sheet this one opens. One
-  // object for the sheet's whole life: a child keys its open effect on it,
-  // so it must not change identity with the caller's `onClose`.
-  const parentHandle = useMemo<SheetParentHandle>(
-    () => ({
-      yieldToChild: () => {
-        yieldedRef.current = true;
-        setYielded(true);
-        translateY.value = withTiming(latest.current.restingBelow, latest.current.exit);
-      },
-      releaseFromChild: () => {
-        yieldedRef.current = false;
-        setYielded(false);
-        if (latest.current.visible) {
-          translateY.value = withTiming(0, latest.current.enter);
-          return;
-        }
-        // Dismissed while the child was up: the sheet is already down, so
-        // only the backdrop has to go.
-        backdropOpacity.value = withTiming(0, latest.current.exit);
-        setTimeout(completeCloseLatest, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
-      },
-      dismissWithChild: () => latest.current.onClose(),
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
 
   // Android hardware back button
   useEffect(() => {

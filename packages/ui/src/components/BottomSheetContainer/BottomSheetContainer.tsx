@@ -27,7 +27,7 @@
  *   `dragAreaStyle` are RN-only (an `Animated.Value` and a pan gesture) and
  *   have no DOM consumer yet — not mirrored here; see the component report.
  */
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   borderRadius,
   borderWidth,
@@ -38,8 +38,7 @@ import {
   spacing,
   SheetHeightContext,
   SheetParentContext,
-  useSheetParent,
-  type SheetParentHandle,
+  useSheetTurn,
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
@@ -125,19 +124,6 @@ export function BottomSheetContainer({
   const isReduceMotionEnabled = useReducedMotion();
   const closedReportedRef = useRef(false);
 
-  // Sequential, never stacked (see `SheetParentContext`, the mobile twin
-  // has the same shape): with a parent sheet, this one rises only after the
-  // parent has slid down, draws no backdrop of its own, and hands the parent
-  // back when it leaves. As a parent, `yielded` keeps this sheet mounted,
-  // off-screen, backdrop up, while its child is showing — even if it is
-  // dismissed meanwhile.
-  const parent = useSheetParent();
-  const [yielded, setYielded] = useState(false);
-  const yieldedRef = useRef(false);
-  // True from asking the parent to yield until giving its turn back.
-  const holdsParentRef = useRef(false);
-  const childEnterDelayMs = parent && !isReduceMotionEnabled ? SHEET_EXIT_MS : 0;
-
   const resolvedBackground = background ?? (
     <Thermocline tier="thick" style={{ position: 'absolute', inset: 0, borderRadius: 'inherit' }} />
   );
@@ -160,11 +146,8 @@ export function BottomSheetContainer({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-    if (holdsParentRef.current) {
-      holdsParentRef.current = false;
-      parent?.releaseFromChild();
-    }
-  }, [onClosed, parent]);
+    releaseParentTurnRef.current();
+  }, [onClosed]);
 
   // The rise is a Web Animation, the one driver of the sheet on its way up.
   // A CSS transition needs the browser to have seen the closed position
@@ -184,40 +167,39 @@ export function BottomSheetContainer({
     });
   }, [isReduceMotionEnabled]);
 
-  const latest = useRef({
-    visible,
-    onClose,
-    completeClose,
-    rise,
+  // Sequential, never stacked (see `useSheetTurn`, shared with the mobile
+  // twin): as a child this sheet rises only after the parent has slid down
+  // and draws no backdrop of its own; as a parent, `yielded` keeps it
+  // mounted, off-screen, backdrop up, while its child is showing. The DOM's
+  // sink is the `yielded` state itself (the transform derives from it); the
+  // rise is the Web Animation; leaving under a child has no transform
+  // transition to wait for, so the backdrop fades on its own clock.
+  const {
     parent,
+    yielded,
+    isYielded,
     childEnterDelayMs,
-    isReduceMotionEnabled,
-  });
-  // Refreshed before any passive effect of this render runs (layout effects
-  // go first), so the open / close effect below always reads this render's
-  // values through it.
-  useLayoutEffect(() => {
-    latest.current = {
-      visible,
-      onClose,
-      completeClose,
-      rise,
-      parent,
-      childEnterDelayMs,
-      isReduceMotionEnabled,
-    };
-  });
-  // A child that unmounts while it still holds the parent's turn — the
-  // detail sheet drops its content the moment it closes, and the explorer
-  // picker inside it goes without ever running its exit — gives the turn
-  // back on the way out, or the parent stays yielded, backdrop up, with the
-  // dialog still modal over the whole app (owner, 2026-09-17).
-  useEffect(
-    () => () => {
-      if (holdsParentRef.current) latest.current.parent?.releaseFromChild();
+    parentHandle,
+    holdParentTurn,
+    releaseParentTurn,
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, {
+    sink: () => {},
+    rise,
+    leave: () => {
+      setIsOpen(false);
+      setTimeout(() => latest.current.completeClose(), isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
     },
-    []
-  );
+  });
+  const releaseParentTurnRef = useRef(releaseParentTurn);
+  releaseParentTurnRef.current = releaseParentTurn;
+
+  // Read at call time by the open / close effect, so a callback's identity
+  // never re-runs it (a nested sheet used to rise and fall in a loop that
+  // way). Refreshed before any passive effect of this render runs.
+  const latest = useRef({ completeClose, rise, childEnterDelayMs, holdParentTurn });
+  useLayoutEffect(() => {
+    latest.current = { completeClose, rise, childEnterDelayMs, holdParentTurn };
+  });
 
   // Open / close the native dialog and flip the transform in on the next
   // frame, so the browser paints the closed position before transitioning to
@@ -240,8 +222,7 @@ export function BottomSheetContainer({
         else dialog.setAttribute('open', '');
         void dialog.getBoundingClientRect();
       }
-      latest.current.parent?.yieldToChild();
-      holdsParentRef.current = latest.current.parent !== null;
+      latest.current.holdParentTurn();
       let raf = 0;
       const timer = setTimeout(() => {
         raf = requestAnimationFrame(() => {
@@ -257,7 +238,7 @@ export function BottomSheetContainer({
 
     if (isRendered) {
       // A yielded parent waits for its child to leave (`releaseFromChild`).
-      if (yieldedRef.current) return undefined;
+      if (isYielded()) return undefined;
       setIsOpen(false);
       const exitMs = isReduceMotionEnabled ? 0 : SHEET_EXIT_MS;
       const watchdog = setTimeout(
@@ -268,41 +249,9 @@ export function BottomSheetContainer({
     }
 
     return undefined;
-    // Only the state that opens or closes re-runs this. Everything else is
-    // read through `latest`: a callback whose identity changes on a parent
-    // render used to re-run the open branch — a new rise, a new yield — and a
-    // nested sheet whose parent re-rendered on every yield rose and fell in
-    // a loop, leaving its backdrop behind (owner, 2026-09-17).
+    // Only the state that opens or closes re-runs this; see `latest`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, isReduceMotionEnabled]);
-
-  // The parent's side of the handshake, for the sheet this one opens. One
-  // object for the sheet's whole life: a child keys its open effect on it,
-  // so it must not change identity with the caller's `onClose`.
-  const parentHandle = useMemo<SheetParentHandle>(
-    () => ({
-      yieldToChild: () => {
-        yieldedRef.current = true;
-        setYielded(true);
-      },
-      releaseFromChild: () => {
-        yieldedRef.current = false;
-        setYielded(false);
-        // Dismissed while the child was up: the sheet is already down, so no
-        // transform transition will end — the backdrop fades on its own clock.
-        if (!latest.current.visible) {
-          setIsOpen(false);
-          setTimeout(
-            () => latest.current.completeClose(),
-            latest.current.isReduceMotionEnabled ? 0 : SHEET_EXIT_MS
-          );
-          return;
-        }
-        latest.current.rise();
-      },
-      dismissWithChild: () => latest.current.onClose(),
-    }),
-    []
-  );
 
   const handleBackdropClick = useCallback(() => {
     if (!dismissible) return;
@@ -324,9 +273,9 @@ export function BottomSheetContainer({
 
   const handleSheetTransitionEnd = useCallback(
     (event: React.TransitionEvent<HTMLDivElement>) => {
-      if (event.propertyName === 'transform' && !isOpen && !yieldedRef.current) completeClose();
+      if (event.propertyName === 'transform' && !isOpen && !isYielded()) completeClose();
     },
-    [isOpen, completeClose]
+    [isOpen, completeClose, isYielded]
   );
 
   if (!isRendered) return null;

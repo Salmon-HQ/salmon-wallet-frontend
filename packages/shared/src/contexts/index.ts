@@ -57,6 +57,7 @@ export {
   useSheetParent,
   type SheetParentHandle,
 } from './SheetHeightContext';
+export { useSheetTurn, type SheetTurn, type SheetTurnMotion } from './useSheetTurn';
 
 // Developer mode (which networks are offered; whether unverified tokens show)
 export {
