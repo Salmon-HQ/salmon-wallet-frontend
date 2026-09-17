@@ -76,7 +76,11 @@ export function ListRow({
           subtitle
         )}
       </View>
-      {trailing}
+      {/* The trailing slot: as tall as the row, its content centred on both
+          axes, so a native switch whose frame and drawing disagree still
+          sits on the row's centre line. No width of its own — a caret and a
+          switch both fit. */}
+      {trailing != null && <View style={styles.trailing}>{trailing}</View>}
     </Card>
   );
 }
@@ -91,6 +95,11 @@ const stylesFor = (t: Semantic) =>
     text: {
       flex: 1,
       minWidth: 0,
+    },
+    trailing: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     titleRow: {
       flexDirection: 'row',
