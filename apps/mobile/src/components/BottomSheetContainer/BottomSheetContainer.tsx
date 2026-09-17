@@ -205,6 +205,14 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   // still wins.
   const resolvedBackground = background ?? <Thermocline tier="thick" style={styles.thermocline} />;
 
+  // Where "gone" is: one sheet-height below its resting place, the way a
+  // native sheet leaves (UIKit's sheet and Material's bottom sheet both
+  // translate by their own height, so every sheet takes the same time to
+  // go whatever its size — owner, 2026-09-17: the short Activity detail
+  // read faster than the tall catalogue when both crossed the whole screen).
+  // The first-ever rise starts from the screen's edge, before any layout.
+  const restingBelow = sheetHeight ?? measuredHeight ?? SCREEN_HEIGHT;
+
   // Reanimated shared values for the sheet and backdrop
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -265,7 +273,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     } else if (isRendered) {
       // A yielded parent waits for its child to leave (`releaseFromChild`).
       if (yieldedRef.current) return undefined;
-      translateY.value = withTiming(SCREEN_HEIGHT, exit, (finished) => {
+      translateY.value = withTiming(restingBelow, exit, (finished) => {
         if (finished) {
           runOnJS(completeClose)();
         }
@@ -291,7 +299,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       yieldToChild: () => {
         yieldedRef.current = true;
         setYielded(true);
-        translateY.value = withTiming(SCREEN_HEIGHT, exit);
+        translateY.value = withTiming(restingBelow, exit);
       },
       releaseFromChild: () => {
         yieldedRef.current = false;
@@ -308,7 +316,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       dismissWithChild: () => onClose(),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [completeClose, onClose, isReduceMotionEnabled]
+    [completeClose, onClose, isReduceMotionEnabled, restingBelow]
   );
 
   // Android hardware back button
@@ -345,7 +353,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     .onEnd((event) => {
       isDragging.value = false;
       if (event.translationY > DRAG_THRESHOLD || event.velocityY > 500) {
-        translateY.value = withTiming(SCREEN_HEIGHT, exit);
+        translateY.value = withTiming(restingBelow, exit);
         if (!parent) backdropOpacity.value = withTiming(0, exit);
         runOnJS(closeSheet)();
       } else {
