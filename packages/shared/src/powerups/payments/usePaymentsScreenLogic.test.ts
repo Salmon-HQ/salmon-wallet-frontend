@@ -103,9 +103,9 @@ describe('usePaymentsScreenLogic', () => {
     act(() => hook.result.current.actions.ask.onPress());
     act(() => hook.result.current.ask.form.amountCard.onChangeValue('5'));
     await act(() => hook.result.current.create());
-    act(() => hook.result.current.ask.onClosed());
     expect(hook.result.current.ask.visible).toBe(false);
     expect(hook.result.current.sheet.visible).toBe(true);
+    expect(hook.result.current.sheet.nested).toBe(true);
     expect(hook.result.current.ask.form.amountCard.value).toBe('');
   });
 
@@ -129,7 +129,6 @@ describe('usePaymentsScreenLogic', () => {
     expect(hook.result.current.ask.form.createButton.disabled).toBe(false);
     expect(hook.result.current.ask.form.amountCard.subtext).toBe('≈ 12.50 USD');
     await act(() => hook.result.current.create());
-    act(() => hook.result.current.ask.onClosed());
     const { open, openUri, requests } = hook.result.current;
     const openAmountLabel = hook.result.current.sheet.amountLabel;
     expect(open?.id).toBe('pr_EPjFWdd5Aufq');
@@ -170,7 +169,6 @@ describe('usePaymentsScreenLogic', () => {
     const { hook } = setup(findSettlement);
     act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
     await act(() => hook.result.current.create());
-    act(() => hook.result.current.ask.onClosed());
     // Mount check ran once for the new pending request; the poll ticks next.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(PAYMENTS_STATUS_POLL_MS + 1);
@@ -194,7 +192,6 @@ describe('usePaymentsScreenLogic', () => {
       hook.result.current.ask.form.expiryChips.onChange('h1');
     });
     await act(() => hook.result.current.create());
-    act(() => hook.result.current.ask.onClosed());
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
@@ -209,7 +206,6 @@ describe('usePaymentsScreenLogic', () => {
     const { hook } = setup();
     act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
     await act(() => hook.result.current.create());
-    act(() => hook.result.current.ask.onClosed());
     const id = hook.result.current.open!.id;
     act(() => hook.result.current.remove(id));
     expect(hook.result.current.open).toBeNull();

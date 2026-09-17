@@ -24,6 +24,9 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useExplorerLink'),
   ...jest.requireActual('@salmon/shared/src/config/explorers'),
   useParentSheetHeight: () => undefined,
+  useSheetParent: () => null,
+  SheetParentContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
+    .SheetParentContext,
 }));
 
 // No worklets runtime in Jest: the outlined button pulls reanimated in

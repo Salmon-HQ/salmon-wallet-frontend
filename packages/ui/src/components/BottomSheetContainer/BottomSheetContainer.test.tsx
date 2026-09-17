@@ -211,3 +211,55 @@ describe('BottomSheetContainer', () => {
     expect(screen.queryByTestId('sheet')).toBeNull();
   });
 });
+
+describe('BottomSheetContainer parent and child', () => {
+  function Pair({
+    childOpen,
+    onParentClose = vi.fn(),
+    onChildClose = vi.fn(),
+  }: {
+    childOpen: boolean;
+    onParentClose?: () => void;
+    onChildClose?: () => void;
+  }) {
+    return (
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible onClose={onParentClose} testID="parent">
+          <div>list</div>
+          <BottomSheetContainer visible={childOpen} onClose={onChildClose} testID="child">
+            <div>detail</div>
+          </BottomSheetContainer>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+  }
+  const parentSheet = () => screen.getByTestId('parent').querySelector('[data-yielded]');
+
+  it('the parent yields while the child is up, and comes back once it has left', async () => {
+    stubMatchMedia(true);
+    const { rerender } = render(<Pair childOpen={false} />);
+    expect(parentSheet()).toBeNull();
+
+    rerender(<Pair childOpen />);
+    await waitFor(() => expect(parentSheet()).not.toBeNull());
+    // The child draws no backdrop of its own: the parent's stays up.
+    expect(screen.getByTestId('child-backdrop').style.opacity).toBe('0');
+
+    rerender(<Pair childOpen={false} />);
+    await waitFor(() => expect(screen.queryByTestId('child')).toBeNull());
+    expect(parentSheet()).toBeNull();
+  });
+
+  it('a click on the backdrop under the child closes both, nothing returns', async () => {
+    stubMatchMedia(true);
+    const onParentClose = vi.fn();
+    const onChildClose = vi.fn();
+    render(<Pair childOpen onParentClose={onParentClose} onChildClose={onChildClose} />);
+    await waitFor(() => expect(screen.getByTestId('child')).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId('child-backdrop'));
+
+    expect(onChildClose).toHaveBeenCalledTimes(1);
+    expect(onParentClose).toHaveBeenCalledTimes(1);
+  });
+});

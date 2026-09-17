@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { act, render } from '@testing-library/react-native';
+import { act, configure, fireEvent, render, resetToDefaults } from '@testing-library/react-native';
 
 // The material itself is pinned by Thermocline's own tests; here it only has
 // to be identifiable and carry its props through.
@@ -26,6 +26,7 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: (value: unknown) => ({ value }),
     useAnimatedStyle: () => ({}),
     withTiming: (toValue: unknown) => toValue,
+    withDelay: (_ms: number, animation: unknown) => animation,
     withSpring: (toValue: unknown) => toValue,
     runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
     interpolate: () => 0,
@@ -34,8 +35,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('@salmon/shared', () => ({
-  SheetHeightContext: jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext')
-    .SheetHeightContext,
+  ...jest.requireActual('@salmon/shared/src/contexts/SheetHeightContext'),
   // The mobile motion wrapper reads the real motion vocabulary.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
@@ -186,5 +186,84 @@ describe('BottomSheetContainer departure', () => {
     act(() => jest.runAllTimers());
 
     expect(onClosed).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('BottomSheetContainer parent and child', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    // A yielded parent hides its subtree from assistive tech; the queries
+    // still have to see the child riding inside it.
+    configure({ defaultIncludeHiddenElements: true });
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+    resetToDefaults();
+  });
+
+  function Pair({
+    childOpen,
+    parentOpen = true,
+    onParentClose = jest.fn(),
+    onChildClose = jest.fn(),
+  }: {
+    childOpen: boolean;
+    parentOpen?: boolean;
+    onParentClose?: () => void;
+    onChildClose?: () => void;
+  }) {
+    return (
+      <BottomSheetContainer visible={parentOpen} onClose={onParentClose} testID="parent">
+        <Text>list</Text>
+        <BottomSheetContainer visible={childOpen} onClose={onChildClose} testID="child">
+          <Text>detail</Text>
+        </BottomSheetContainer>
+      </BottomSheetContainer>
+    );
+  }
+
+  it('the parent yields while the child is up, and comes back once it has left', () => {
+    const { queryByTestId, rerender } = render(<Pair childOpen={false} />);
+    expect(queryByTestId('sheet-yielded')).toBeNull();
+
+    rerender(<Pair childOpen />);
+    expect(queryByTestId('sheet-yielded')).toBeTruthy();
+
+    rerender(<Pair childOpen={false} />);
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(queryByTestId('sheet-yielded')).toBeNull();
+    expect(queryByTestId('parent')).toBeTruthy();
+  });
+
+  it('a tap on the backdrop under the child closes both, nothing returns', () => {
+    const onParentClose = jest.fn();
+    const onChildClose = jest.fn();
+    const { getByTestId } = render(
+      <Pair childOpen onParentClose={onParentClose} onChildClose={onChildClose} />
+    );
+
+    fireEvent.press(getByTestId('child-backdrop'));
+
+    expect(onChildClose).toHaveBeenCalledTimes(1);
+    expect(onParentClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('a parent dismissed under its child leaves once the child has', () => {
+    const { queryByTestId, rerender } = render(<Pair childOpen />);
+
+    rerender(<Pair childOpen parentOpen={false} />);
+    act(() => {
+      jest.runAllTimers();
+    });
+    // Still mounted: the child is up on its backdrop.
+    expect(queryByTestId('child')).toBeTruthy();
+
+    rerender(<Pair childOpen={false} parentOpen={false} />);
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(queryByTestId('parent')).toBeNull();
   });
 });

@@ -99,8 +99,6 @@ export interface UsePaymentsScreenLogicParams {
 export interface PaymentsAskBindings {
   visible: boolean;
   onClose: () => void;
-  /** The ask sheet has left the screen; the request it made opens now, never over its exit. */
-  onClosed: () => void;
   title: string;
   form: PaymentsFormView;
 }
@@ -126,7 +124,10 @@ export interface PaymentsActionsBindings {
 export type PaymentRequestSheetBindings = Omit<
   PaymentRequestSheetPropsBase<never>,
   'onShare' | 'style' | 'testID'
->;
+> & {
+  /** Opened from the ask sheet: the twin renders it inside that sheet, as its child. */
+  nested: boolean;
+};
 
 export interface PaymentsListBindings {
   title: string;
@@ -252,7 +253,10 @@ export function usePaymentsScreenLogic({
   const [error, setError] = useState<PaymentsErrorKey | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [isAsking, setIsAsking] = useState(false);
-  const pendingOpen = useRef<string | null>(null);
+  // A request born in the ask sheet opens as that sheet's child — the ask
+  // slides down first, then the request rises, on the same backdrop (see
+  // `SheetParentContext`). One opened from the list has no parent.
+  const [nested, setNested] = useState(false);
   const [clock, setClock] = useState(() => seams.current.now());
 
   const setNote = useCallback(
@@ -324,7 +328,8 @@ export function usePaymentsScreenLogic({
       setAmount('');
       setNoteRaw('');
       setExpiry(DEFAULT_EXPIRY);
-      pendingOpen.current = request.id;
+      setNested(true);
+      setOpenId(request.id);
       setIsAsking(false);
     } catch (caught) {
       console.error('[payments] Failed to create the request:', caught);
@@ -426,7 +431,10 @@ export function usePaymentsScreenLogic({
           subtitle: request.note || t('payments.list.noNote'),
           padding: 'lg',
           accessibilityRole: 'button',
-          onPress: () => setOpenId(request.id),
+          onPress: () => {
+            setNested(false);
+            setOpenId(request.id);
+          },
         },
         trailing: {
           label: '',
@@ -494,11 +502,6 @@ export function usePaymentsScreenLogic({
     },
     ask: {
       visible: isAsking,
-      onClosed: () => {
-        if (!pendingOpen.current) return;
-        setOpenId(pendingOpen.current);
-        pendingOpen.current = null;
-      },
       onClose: closeAsk,
       title: t('payments.ask.title'),
       form: {
@@ -541,6 +544,7 @@ export function usePaymentsScreenLogic({
       rows: requests,
     },
     sheet: {
+      nested,
       visible: open !== null,
       onClose: () => setOpenId(null),
       title: t('payments.sheet.title'),

@@ -245,11 +245,12 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
         {renderList()}
       </ScrollView>
 
-      {/* The detail is its own sheet, risen over the catalogue (owner,
-              2026-09-11): the list stays where it was underneath, and the back
-              caret — or the drag — lowers the detail back onto it. Mounted INSIDE
-              the catalogue's sheet: iOS presents one native modal at a time
-              unless the next one is presented from within the first. */}
+      {/* The detail is its own sheet, the catalogue's child (owner,
+              2026-09-11; sequential since 2026-09-17): the catalogue slides down,
+              the detail rises on the same backdrop, and the back caret runs the
+              inverse. Mounted INSIDE the catalogue's sheet: iOS presents one
+              native modal at a time unless the next one is presented from within
+              the first — and that nesting is what makes it the child. */}
       <BottomSheetContainer
         visible={visible && detail !== null}
         // Dismissing the detail — a tap above it, a drag down — leaves the

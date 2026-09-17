@@ -91,7 +91,7 @@ const DARK_SNAPSHOT = {
   skeleton: { base: '#161C2D', highlight: '#2C3547' },
   input: { ground: '#161C2D', edge: '#58637B', placeholder: '#8B96AD' },
   overlay: {
-    backdrop: 'rgba(7, 9, 17, 0.7)',
+    backdrop: 'rgba(7, 9, 17, 0.84)',
     highlight: 'rgba(255, 255, 255, 0.2)',
     scrim: 'rgba(7, 9, 17, 0.9)',
   },

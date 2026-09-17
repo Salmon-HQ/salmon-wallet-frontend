@@ -19,7 +19,7 @@ import type { PaymentsAskSheetProps } from './types';
 export function PaymentsAskSheet({
   visible,
   onClose,
-  onClosed,
+  children,
   title,
   form,
   className,
@@ -33,7 +33,6 @@ export function PaymentsAskSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      onClosed={onClosed}
       title={<SheetTitle>{title}</SheetTitle>}
       testID={testID}
       className={className}
@@ -58,6 +57,7 @@ export function PaymentsAskSheet({
           {label}
         </PrimaryButton>
       </div>
+      {children}
     </BottomSheetContainer>
   );
 }

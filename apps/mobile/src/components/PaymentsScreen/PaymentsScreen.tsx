@@ -27,6 +27,7 @@ export function PaymentsScreen({
   ...logicParams
 }: PaymentsScreenProps) {
   const { actions, ask, list, sheet, unavailable, openUri } = usePaymentsScreenLogic(logicParams);
+  const { nested, ...request } = sheet;
   const onShare = useCallback(() => {
     if (openUri) void Share.share({ message: openUri });
   }, [openUri]);
@@ -67,8 +68,12 @@ export function PaymentsScreen({
         </View>
       )}
 
-      <PaymentsAskSheet testID="payments-ask" height={sheetHeight} {...ask} />
-      <PaymentRequestSheet testID="payments-sheet" {...sheet} onShare={onShare} />
+      {/* A request born in the ask sheet is that sheet's child: the ask
+          slides down, the request rises, one backdrop throughout. */}
+      <PaymentsAskSheet testID="payments-ask" height={sheetHeight} {...ask}>
+        {nested && <PaymentRequestSheet testID="payments-sheet" {...request} onShare={onShare} />}
+      </PaymentsAskSheet>
+      {!nested && <PaymentRequestSheet testID="payments-sheet" {...request} onShare={onShare} />}
     </View>
   );
 }

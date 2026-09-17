@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 /**
  * The Payments Powerup's contracts — both twins extend them
  * (`apps/mobile/src/components/PaymentsScreen`, `packages/ui/src/components/PaymentsPage`).
@@ -50,10 +51,11 @@ export interface PaymentsFormView {
 export interface PaymentsAskSheetPropsBase<TStyle> extends Testable {
   visible: boolean;
   onClose: () => void;
-  onClosed?: () => void;
   title: string;
   form: PaymentsFormView;
   style?: TStyle;
+  /** Rendered inside the sheet: the request sheet a create opens, as this sheet's child. */
+  children?: ReactNode;
 }
 
 /** What the sheet shows about one request, derived once in shared. */

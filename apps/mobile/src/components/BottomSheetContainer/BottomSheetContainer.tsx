@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Modal,
@@ -18,6 +18,7 @@ import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   useReducedMotion,
+  withDelay,
   withTiming,
   withSpring,
   runOnJS,
@@ -38,6 +39,9 @@ import {
   type Semantic,
   type BottomSheetContainerPropsBase,
   SheetHeightContext,
+  SheetParentContext,
+  useSheetParent,
+  type SheetParentHandle,
   SHEET_EXIT_MS,
   SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
@@ -52,7 +56,9 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const BACKDROP_OPACITY = 0.8;
+// The backdrop is drawn at its token's full alpha (`overlay.backdrop`), the
+// same on both twins — the token is the whole effect.
+const BACKDROP_OPACITY = 1;
 
 /**
  * The drag handle, redrawn: 44x5 rather than 70x6.
@@ -219,6 +225,16 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (visible) closedReportedRef.current = false;
   }, [visible]);
 
+  // Sequential, never stacked (see `SheetParentContext`): with a parent
+  // sheet, this one rises only after the parent has slid down, draws no
+  // backdrop of its own, and hands the parent back when it leaves. As a
+  // parent, `yielded` keeps this sheet mounted, off-screen, backdrop up,
+  // while its child is showing — even if it is dismissed meanwhile.
+  const parent = useSheetParent();
+  const [yielded, setYielded] = useState(false);
+  const yieldedRef = useRef(false);
+  const childEnterDelayMs = parent && !isReduceMotionEnabled ? SHEET_EXIT_MS : 0;
+
   // Worklet-safe close reference
   const closeSheet = useCallback(() => {
     onClose();
@@ -235,16 +251,20 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-  }, [dragY, backdropOpacity, onClosed]);
+    parent?.releaseFromChild();
+  }, [dragY, backdropOpacity, onClosed, parent]);
 
   // Animate in / out when `visible` changes
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
       dragY.value = 0;
-      translateY.value = withTiming(0, enter);
-      backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
+      parent?.yieldToChild();
+      translateY.value = withDelay(childEnterDelayMs, withTiming(0, enter));
+      if (!parent) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
+      // A yielded parent waits for its child to leave (`releaseFromChild`).
+      if (yieldedRef.current) return undefined;
       translateY.value = withTiming(SCREEN_HEIGHT, exit, (finished) => {
         if (finished) {
           runOnJS(completeClose)();
@@ -262,6 +282,34 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, completeClose]);
+
+  // The parent's side of the handshake, for the sheet this one opens.
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+  const parentHandle = useMemo<SheetParentHandle>(
+    () => ({
+      yieldToChild: () => {
+        yieldedRef.current = true;
+        setYielded(true);
+        translateY.value = withTiming(SCREEN_HEIGHT, exit);
+      },
+      releaseFromChild: () => {
+        yieldedRef.current = false;
+        setYielded(false);
+        if (visibleRef.current) {
+          translateY.value = withTiming(0, enter);
+          return;
+        }
+        // Dismissed while the child was up: the sheet is already down, so
+        // only the backdrop has to go.
+        backdropOpacity.value = withTiming(0, exit);
+        setTimeout(completeClose, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
+      },
+      dismissWithChild: () => onClose(),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [completeClose, onClose, isReduceMotionEnabled]
+  );
 
   // Android hardware back button
   useEffect(() => {
@@ -286,6 +334,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       // Only allow dragging downward
       if (event.translationY > 0) {
         dragY.value = event.translationY;
+        if (parent) return;
         backdropOpacity.value = interpolate(
           event.translationY,
           [0, SCREEN_HEIGHT * 0.5],
@@ -297,11 +346,11 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       isDragging.value = false;
       if (event.translationY > DRAG_THRESHOLD || event.velocityY > 500) {
         translateY.value = withTiming(SCREEN_HEIGHT, exit);
-        backdropOpacity.value = withTiming(0, exit);
+        if (!parent) backdropOpacity.value = withTiming(0, exit);
         runOnJS(closeSheet)();
       } else {
         dragY.value = withSpring(0, SPRING_CONFIG);
-        backdropOpacity.value = withSpring(BACKDROP_OPACITY, SPRING_CONFIG);
+        if (!parent) backdropOpacity.value = withSpring(BACKDROP_OPACITY, SPRING_CONFIG);
       }
     });
 
@@ -314,7 +363,9 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     }
     if (!dismissible) return;
     onClose();
-  }, [onClose, dismissible]);
+    // Under a child the backdrop is the parent's: a tap on it closes both.
+    parent?.dismissWithChild();
+  }, [onClose, dismissible, parent]);
 
   const handleRequestClose = useCallback(() => {
     if (!dismissible) return;
@@ -353,6 +404,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           <TouchableWithoutFeedback onPress={handleBackdropPress}>
             <Reanimated.View
               style={[styles.backdrop, backdropAnimatedStyle]}
+              testID={testID ? `${testID}-backdrop` : undefined}
               pointerEvents={visible ? 'auto' : 'none'}
             />
           </TouchableWithoutFeedback>
@@ -373,6 +425,9 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
               style,
             ]}
             onLayout={handleSheetLayout}
+            accessibilityElementsHidden={yielded}
+            importantForAccessibility={yielded ? 'no-hide-descendants' : 'auto'}
+            testID={yielded ? 'sheet-yielded' : undefined}
           >
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
@@ -383,23 +438,25 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
             </BlurTargetView>
 
             <SheetHeightContext.Provider value={sheetHeight ?? measuredHeight}>
-              <BlurTargetProvider value={blurTargetRef}>
-                {/* Draggable area: handle + header content */}
-                <GestureDetector gesture={panGesture}>
-                  <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
-                    {/* Drag handle bar */}
-                    <View style={styles.handleContainer}>
-                      <View style={styles.handle} />
-                    </View>
+              <SheetParentContext.Provider value={parentHandle}>
+                <BlurTargetProvider value={blurTargetRef}>
+                  {/* Draggable area: handle + header content */}
+                  <GestureDetector gesture={panGesture}>
+                    <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
+                      {/* Drag handle bar */}
+                      <View style={styles.handleContainer}>
+                        <View style={styles.handle} />
+                      </View>
 
-                    {/* Header: custom content wins, otherwise plain title */}
-                    {headerContent ?? title ?? null}
-                  </Reanimated.View>
-                </GestureDetector>
+                      {/* Header: custom content wins, otherwise plain title */}
+                      {headerContent ?? title ?? null}
+                    </Reanimated.View>
+                  </GestureDetector>
 
-                {/* Sheet body */}
-                {children}
-              </BlurTargetProvider>
+                  {/* Sheet body */}
+                  {children}
+                </BlurTargetProvider>
+              </SheetParentContext.Provider>
             </SheetHeightContext.Provider>
 
             {/* Top fade gradient for scrollable content */}

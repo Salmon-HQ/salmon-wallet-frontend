@@ -50,7 +50,13 @@ export { TaskChromeProvider, useTaskChrome, useTaskChromeClaim } from './TaskChr
 export type { TaskChromeContextValue } from './TaskChromeContext';
 
 // Sheet height (a nested sheet rises to exactly the height of the one under it)
-export { SheetHeightContext, useParentSheetHeight } from './SheetHeightContext';
+export {
+  SheetHeightContext,
+  SheetParentContext,
+  useParentSheetHeight,
+  useSheetParent,
+  type SheetParentHandle,
+} from './SheetHeightContext';
 
 // Developer mode (which networks are offered; whether unverified tokens show)
 export {

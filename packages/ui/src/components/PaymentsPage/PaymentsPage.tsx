@@ -31,6 +31,7 @@ export function PaymentsPage({
   ...logicParams
 }: PaymentsPageProps) {
   const { actions, ask, list, sheet, unavailable } = usePaymentsScreenLogic(logicParams);
+  const { nested, ...request } = sheet;
 
   const root: React.CSSProperties = {
     ...column(spacing.screenGutter),
@@ -76,8 +77,12 @@ export function PaymentsPage({
         </div>
       )}
 
-      <PaymentsAskSheet testID="payments-ask" {...ask} />
-      <PaymentRequestSheet testID="payments-sheet" {...sheet} />
+      {/* A request born in the ask sheet is that sheet's child: the ask
+          slides down, the request rises, one backdrop throughout. */}
+      <PaymentsAskSheet testID="payments-ask" {...ask}>
+        {nested && <PaymentRequestSheet testID="payments-sheet" {...request} />}
+      </PaymentsAskSheet>
+      {!nested && <PaymentRequestSheet testID="payments-sheet" {...request} />}
     </div>
   );
 }
