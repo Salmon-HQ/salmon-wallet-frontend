@@ -51,7 +51,6 @@ vi.mock('../../components', () => ({
   StateBlock: () => <div data-testid="state-block" />,
   WarningNotice: () => null,
   TokenList: () => <div data-testid="token-list" />,
-  TokenDetailContent: () => <div data-testid="bitcoin-column" />,
   SinkFloat: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
     <div data-testid={testID}>{children}</div>
   ),
@@ -97,6 +96,7 @@ vi.mock('../../components', () => ({
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
+vi.mock('./BitcoinColumn', () => ({ BitcoinColumn: () => <div data-testid="bitcoin-column" /> }));
 
 // The Powerups entry is a build-time alias; Home only reads the flag, the
 // registry and the catalogue, so what is behind it is stubbed rather than

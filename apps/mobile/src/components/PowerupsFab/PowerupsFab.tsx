@@ -3,12 +3,13 @@
  * while it is up, closes it).
  *
  * It is a pressable accent `IconBubble` and nothing else: the circle, the
- * flesh, the specular and the press scale all come from the primitive, so this
- * file owns only what makes a FAB a FAB — where it floats, the glow that lifts
- * it off the water column, the leap on a tap and the close mark while the
- * catalogue is open (`fabLeap` in the theme says the numbers).
+ * flesh, the specular and the press scale all come from the primitive, so
+ * this file owns only what makes a FAB a FAB — where it floats, the glow
+ * that lifts it off the water column, and the leap on a tap (`fabLeap` in
+ * the theme says the numbers). The salmon mark is the icon in both the open
+ * and closed state — no cross-fade to a close glyph (owner, 2026-09-17).
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Reanimated, {
@@ -18,16 +19,26 @@ import Reanimated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { fabLeap, motionMs, s, shadows, spacing } from '@salmon/shared';
-import { XIcon } from '../../icons';
+import { componentSizes, fabLeap, motionMs, s, shadows, spacing } from '@salmon/shared';
 import { useSemantic } from '../../theme/useThemedStyles';
 import { curve, timing } from '../../utils/motion';
 import { BrandMark } from '../BrandMark';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
-const FAB_SIZE = 42;
-const FAB_ICON_SIZE = 22;
+/**
+ * The FAB reads as iOS 26's detached tab-bar search button: a round Liquid
+ * Glass control at the trailing edge of the band a tab bar occupies, sized
+ * to that bar's height (Apple HIG, "Tab bars": the standard iOS tab bar
+ * content height is 49pt — https://developer.apple.com/design/human-interface-guidelines/tab-bars —
+ * and iOS 26 keeps that height for the floating bar and its detached search
+ * tab; Apple has not republished exact new-bar geometry, so this borrows the
+ * app's existing 48px control height, `buttonHeightMedium`, one point off
+ * rather than minting a near-duplicate token). The glyph keeps the same
+ * ratio to the bubble as before (22/42), rounded to the nearest icon token.
+ */
+const FAB_SIZE = componentSizes.buttonHeightMedium;
+const FAB_ICON_SIZE = componentSizes.iconSizeMedium;
 
 export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   onPress,
@@ -51,20 +62,9 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
     () => timing(motionMs.ebb, isReduceMotionEnabled, curve.sink),
     [isReduceMotionEnabled]
   );
-  const fadeTiming = useMemo(
-    () => timing(motionMs.drift, isReduceMotionEnabled, curve.current),
-    [isReduceMotionEnabled]
-  );
 
   // 0 at rest, 1 at the top of the leap: the wrapper lifts and tilts by it.
   const leap = useSharedValue(0);
-  // 0 with the salmon showing, 1 with the close mark: the two glyphs sit on
-  // the same spot and trade opacity, so the state is legible on the control
-  // that set it.
-  const openness = useSharedValue(open ? 1 : 0);
-  useEffect(() => {
-    openness.value = withTiming(open ? 1 : 0, fadeTiming);
-  }, [open, fadeTiming, openness]);
 
   // A plain function: the compiler's lint refuses a shared-value write
   // inside a memoised callback, and there is nothing here worth memoising.
@@ -81,8 +81,6 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
       { rotate: `${-leap.value * fabLeap.tiltDeg}deg` },
     ],
   }));
-  const markStyle = useAnimatedStyle(() => ({ opacity: 1 - openness.value }));
-  const closeStyle = useAnimatedStyle(() => ({ opacity: openness.value }));
 
   return (
     <Reanimated.View
@@ -106,12 +104,7 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
         }
       >
         <View style={styles.glyphs} pointerEvents="none">
-          <Reanimated.View testID="powerups-fab-mark-slot" style={[styles.glyph, markStyle]}>
-            <BrandMark testID="powerups-fab-mark" size={s(FAB_ICON_SIZE)} color={accent.onFill} />
-          </Reanimated.View>
-          <Reanimated.View testID="powerups-fab-close-slot" style={[styles.glyph, closeStyle]}>
-            <XIcon size={s(FAB_ICON_SIZE)} color={accent.onFill} weight="bold" />
-          </Reanimated.View>
+          <BrandMark testID="powerups-fab-mark" size={s(FAB_ICON_SIZE)} color={accent.onFill} />
         </View>
       </IconBubble>
     </Reanimated.View>
@@ -127,9 +120,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glyph: {
-    position: 'absolute',
   },
 });
 

@@ -855,7 +855,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       currentNetworkId={currentNetworkId}
                       balanceState={balanceState}
                       balanceError={balanceError}
-                      hasData={hasData}
                       hiddenBalance={hiddenBalance}
                       tokens={formattedTokens}
                       onTokenPress={handleTokenPress}

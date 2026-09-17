@@ -30,6 +30,7 @@ export {
   PortfolioSubTabs,
   SinkFloat,
   SlideStack,
+  SkeletonRow,
   StateBlock,
   PriceChart,
   PrimaryButton,

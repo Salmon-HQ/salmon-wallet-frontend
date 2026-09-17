@@ -9,15 +9,10 @@ import {
   type Token,
 } from '@salmon/shared';
 
-import {
-  DataAttribution,
-  StateBlock,
-  TokenDetailContent,
-  TokenList,
-  WarningNotice,
-} from '../../components';
+import { DataAttribution, StateBlock, TokenList, WarningNotice } from '../../components';
 
 import { scrollColumnStyle } from './homeStyles';
+import { BitcoinColumn } from './BitcoinColumn';
 import type { HomeBitcoinMarketData } from './useHomeMarketData';
 
 interface PortfolioColumnProps {
@@ -25,7 +20,6 @@ interface PortfolioColumnProps {
   currentNetworkId: string;
   balanceState: BalanceLoadState;
   balanceError: string | null;
-  hasData: boolean;
   hiddenBalance: boolean;
   tokens: Token[];
   onTokenPress: (token: Token) => void;
@@ -46,7 +40,6 @@ export function PortfolioColumn({
   currentNetworkId,
   balanceState,
   balanceError,
-  hasData,
   hiddenBalance,
   tokens,
   onTokenPress,
@@ -76,21 +69,22 @@ export function PortfolioColumn({
       )}
 
       {currentChain === 'bitcoin' ? (
-        <TokenDetailContent
-          token={hasData ? bitcoin.token : undefined}
-          blockchain="bitcoin"
-          networkId={currentNetworkId}
-          hiddenBalance={hiddenBalance}
-          chartData={bitcoin.chartData}
+        <BitcoinColumn
+          bitcoin={bitcoin}
           chartPeriod={bitcoinChartPeriod}
           onChartPeriodChange={onBitcoinChartPeriodChange}
-          chartLoading={bitcoin.chartLoading && bitcoin.chartData.length === 0}
-          chartPending={bitcoin.chartPending}
-          chartError={!!bitcoin.error && bitcoin.chartData.length === 0}
-          coinInfo={bitcoin.coinInfo}
-          marketData={bitcoin.marketData}
-          infoLoading={bitcoin.infoLoading && !bitcoin.coinInfo}
-          bleed={spacing.screenGutter}
+          balanceState={balanceState}
+          hiddenBalance={hiddenBalance}
+          listEmpty={
+            <StateBlock
+              tone="error"
+              testID="token-list-error"
+              retryTestID="token-list-retry-button"
+              title={t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
+              onRetry={onRetry}
+              retryLabel={t('actions.retry', 'Retry')}
+            />
+          }
         />
       ) : balanceState === 'loading' || tokens.length > 0 ? (
         <>

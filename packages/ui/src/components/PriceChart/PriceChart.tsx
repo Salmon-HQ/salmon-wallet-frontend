@@ -15,7 +15,15 @@
  * series is still in flight attenuates the drawn one (`pending`) rather than
  * collapsing it to a skeleton. Reduce motion collapses both to a step.
  */
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
@@ -59,11 +67,22 @@ const chartColorsFor = (t: Semantic) => ({
   negative: t.status.danger,
 });
 
-/** The container's width, live — the chart is edge to edge in whatever holds it. */
-function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number {
+/**
+ * The container's width, live — the chart is edge to edge in whatever holds
+ * it. A callback ref rather than an effect over a ref object: the observer
+ * is attached to whichever node React hands over, the moment it does, and
+ * re-attached if the node is replaced — an effect keyed on the ref object
+ * ran once and could stay bound to nothing, leaving the chart at the
+ * placeholder width (the extension's Bitcoin chart stopped three quarters
+ * of the way across; owner, 2026-09-17). Read before paint so the first
+ * frame is already the measured one.
+ */
+function useMeasuredWidth(): [number, (node: HTMLDivElement | null) => void] {
   const [width, setWidth] = useState(UNMEASURED_WIDTH);
-  useEffect(() => {
-    const node = ref.current;
+  const observerRef = useRef<ResizeObserver | null>(null);
+  const attach = useCallback((node: HTMLDivElement | null) => {
+    observerRef.current?.disconnect();
+    observerRef.current = null;
     if (!node) return;
     const measure = () => {
       const next = node.getBoundingClientRect().width;
@@ -73,9 +92,10 @@ function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number {
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     observer.observe(node);
-    return () => observer.disconnect();
-  }, [ref]);
-  return width;
+    observerRef.current = observer;
+  }, []);
+  useLayoutEffect(() => () => observerRef.current?.disconnect(), []);
+  return [width, attach];
 }
 
 export function PriceChart({
@@ -93,8 +113,7 @@ export function PriceChart({
   const { t } = useTranslation();
   const semantic = useSemantic();
   const reduceMotion = useReducedMotion();
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const chartWidth = useMeasuredWidth(wrapperRef);
+  const [chartWidth, wrapperRef] = useMeasuredWidth();
   const gradientId = `${useId().replace(/:/g, '')}-price-chart-fill`;
 
   // The line stops a halo short of the box so the endpoint's glow is not
