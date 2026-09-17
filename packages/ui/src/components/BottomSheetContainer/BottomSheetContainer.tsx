@@ -227,9 +227,10 @@ export function BottomSheetContainer({
     boxSizing: 'border-box',
     borderTopLeftRadius: borderRadius.header,
     borderTopRightRadius: borderRadius.header,
-    borderTopWidth: borderWidth.sheet,
-    borderTopStyle: 'solid',
-    borderTopColor: t.border.default,
+    // The edge follows the two top corners (see the mobile twin): stroke on
+    // top and both sides, none at the bottom where the sheet meets the edge.
+    border: `${borderWidth.sheet}px solid ${t.border.default}`,
+    borderBottom: 'none',
     // A ceiling in pixels, when the caller measured one: Home's catalogue
     // stops just below the Send / Receive / Activity row instead of covering
     // it.

@@ -451,8 +451,13 @@ const stylesFor = (t: Semantic) =>
       // the container itself stays transparent.
       borderTopLeftRadius: borderRadius.header,
       borderTopRightRadius: borderRadius.header,
-      borderTopWidth: borderWidth.sheet,
-      borderTopColor: t.border.default,
+      // The edge follows the two top corners: a one-side border stops where
+      // the curve starts, so the stroke is drawn on top and both sides
+      // (the sides sit on the screen's own edge) and left off the bottom,
+      // where the sheet meets the device (owner, 2026-09-17).
+      borderWidth: borderWidth.sheet,
+      borderBottomWidth: 0,
+      borderColor: t.border.default,
       // No minHeight: a sheet hugs its content (a short receipt ends where it
       // ends); tall content is bounded by maxHeight and scrolls inside.
       maxHeight: '92%',
