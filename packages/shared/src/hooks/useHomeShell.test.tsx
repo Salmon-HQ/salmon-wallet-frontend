@@ -13,7 +13,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./useHomeTabOrder', () => ({
-  useHomeTabOrder: (keys: string[]) => ({ order: keys, setOrder: vi.fn() }),
+  useHomeTabOrder: (keys: string[]) => ({ order: keys, setOrder: vi.fn(), hydrated: true }),
 }));
 
 import {

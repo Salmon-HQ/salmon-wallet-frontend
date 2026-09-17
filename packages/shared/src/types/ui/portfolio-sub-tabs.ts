@@ -11,4 +11,6 @@ export interface PortfolioSubTabsPropsBase extends Testable {
   onChange: (key: string) => void;
   /** Opens the sheet where the user arranges the tabs. */
   onOrderPress?: () => void;
+  /** See `UnderlineTabsPropsBase.settled`: false while the tab set is still being read. */
+  settled?: boolean;
 }

@@ -167,7 +167,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // What this device has installed. Nothing is installed out of the box, so
   // Home starts with Portfolio and NFTs and gains a tab only when the user
   // adds one from the catalogue.
-  const { installed, install, uninstall } = useInstalledPowerups();
+  const { installed, install, uninstall, hydrated: powerupsHydrated } = useInstalledPowerups();
 
   // Which panels Settings opens onto (Wallets opens it already deep), and the
   // screen leaving Settings returns to — the page that pushed it.
@@ -417,6 +417,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
+    subTabsSettled,
     subTabHasPrior,
     chainHasPrior,
     selectBlockchain,
@@ -430,6 +431,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     surfaceKey,
     changeNetwork: actions.changeNetwork,
     powerupTabs,
+    powerupsHydrated,
     allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
@@ -812,6 +814,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   activeKey={effectiveSubTab}
                   onChange={handleSubTabChange}
                   onOrderPress={handleOrderPress}
+                  settled={subTabsSettled}
                 />
               </div>
             </div>

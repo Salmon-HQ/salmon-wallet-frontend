@@ -24,6 +24,10 @@ const EMPTY: readonly string[] = [];
 
 let installed: readonly string[] = EMPTY;
 let loaded = false;
+// True once the stored list has been read — or the read failed and the empty
+// list is what this device has. Until then `installed` is a placeholder, and
+// a surface drawn from it is not yet the one the user will see.
+let hydrated = false;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -39,11 +43,12 @@ function subscribe(listener: () => void): () => void {
         const stored = await getStorage().getItem<string[]>(STORAGE_KEYS.INSTALLED_POWERUPS);
         if (Array.isArray(stored) && stored.every((id) => typeof id === 'string')) {
           installed = stored;
-          emit();
         }
       } catch (error) {
         console.error('[useInstalledPowerups] Failed to read the installed list:', error);
       }
+      hydrated = true;
+      emit();
     })();
   }
   return () => {
@@ -67,12 +72,15 @@ function persist(next: readonly string[]): void {
 export function resetInstalledPowerupsForTest(): void {
   installed = EMPTY;
   loaded = false;
+  hydrated = false;
   listeners.clear();
 }
 
 export interface UseInstalledPowerupsResult {
   /** The installed ids, in the order they were installed. */
   installed: readonly string[];
+  /** The list has been read from storage: what `installed` says is what this device has. */
+  hydrated: boolean;
   isInstalled: (id: string) => boolean;
   install: (id: string) => void;
   uninstall: (id: string) => void;
@@ -83,6 +91,11 @@ export function useInstalledPowerups(): UseInstalledPowerupsResult {
     subscribe,
     () => installed,
     () => EMPTY
+  );
+  const isHydrated = useSyncExternalStore(
+    subscribe,
+    () => hydrated,
+    () => false
   );
 
   const isInstalled = useCallback((id: string) => ids.includes(id), [ids]);
@@ -100,5 +113,5 @@ export function useInstalledPowerups(): UseInstalledPowerupsResult {
     persist(installed.filter((entry) => entry !== id));
   }, []);
 
-  return { installed: ids, isInstalled, install, uninstall };
+  return { installed: ids, hydrated: isHydrated, isInstalled, install, uninstall };
 }

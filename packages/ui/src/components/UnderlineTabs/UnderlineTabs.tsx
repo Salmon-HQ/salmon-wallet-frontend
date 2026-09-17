@@ -108,6 +108,7 @@ export function UnderlineTabs({
   size = 'md',
   tabTestIDPrefix,
   underlineTestID,
+  settled = true,
   style,
   className,
   testID,
@@ -125,6 +126,22 @@ export function UnderlineTabs({
   const [edges, setEdges] = useState({ leading: false, trailing: false });
   const [isHovered, setIsHovered] = useState(false);
   const hasMeasuredActive = useRef(false);
+  // The web font may land after the first paint and change every tab's
+  // width: until it has, the underline is placed, never animated, and one
+  // more measurement follows the fonts (`document.fonts.ready`).
+  const fontsReady = useRef(typeof document === 'undefined' || !('fonts' in document));
+  useEffect(() => {
+    if (fontsReady.current) return undefined;
+    let cancelled = false;
+    void document.fonts.ready.then(() => {
+      if (cancelled) return;
+      fontsReady.current = true;
+      setMeasureTick((tick) => tick + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [focusedKey, setFocusedKey] = useState(activeKey);
 
   // A change in the SET of tabs moves only the tabs concerned (owner,
@@ -171,7 +188,12 @@ export function UnderlineTabs({
 
   useLayoutEffect(() => {
     const lefts = new Map<string, number>();
-    const canAnimate = !isReduceMotionEnabled && hasMounted.current;
+    // A set still being read (`settled` false) changes without motion, the
+    // same as the first mount: hydration owes no verb.
+    const canAnimate = !isReduceMotionEnabled && hasMounted.current && settled;
+    // Positions are the row's, not the viewport's: when the whole row shifts
+    // — content above it grows, the panel resizes — no tab has moved.
+    const rowLeft = rowRef.current?.getBoundingClientRect().left ?? 0;
     let pending = 0;
     const settle = () => {
       pending -= 1;
@@ -188,7 +210,8 @@ export function UnderlineTabs({
       const wrap = wrapRefs.current.get(tab.key);
       if (!wrap) return;
       const box = wrap.getBoundingClientRect();
-      lefts.set(tab.key, box.left);
+      const left = box.left - rowLeft;
+      lefts.set(tab.key, left);
       const gapSide = index === 0 ? 'marginRight' : 'marginLeft';
       if (rendered.leaving.has(tab.key)) {
         if (!prevLefts.current.has(tab.key) || !canAnimate) return;
@@ -220,7 +243,7 @@ export function UnderlineTabs({
         );
         return;
       }
-      const delta = before - box.left;
+      const delta = before - left;
       if (delta !== 0 && canAnimate) {
         run(
           wrap,
@@ -232,7 +255,7 @@ export function UnderlineTabs({
     });
     prevLefts.current = lefts;
     hasMounted.current = true;
-  }, [rendered, metrics.gap, isReduceMotionEnabled]);
+  }, [rendered, metrics.gap, isReduceMotionEnabled, settled]);
 
   useEffect(() => {
     setFocusedKey(activeKey);
@@ -286,12 +309,16 @@ export function UnderlineTabs({
     const x = tabBox.left - rowBox.left;
     const width = tabBox.width;
 
-    if (!hasMeasuredActive.current) {
-      underline.style.transform = `translateX(${x}px)`;
-      underline.style.width = `${width}px`;
+    const nextTransform = `translateX(${x}px)`;
+    const nextWidth = `${width}px`;
+    if (!hasMeasuredActive.current || !settled || !fontsReady.current) {
+      underline.style.transform = nextTransform;
+      underline.style.width = nextWidth;
       hasMeasuredActive.current = true;
       return;
     }
+    // Already there: nothing to travel.
+    if (underline.style.transform === nextTransform && underline.style.width === nextWidth) return;
 
     if (typeof underline.animate !== 'function') {
       underline.style.transform = `translateX(${x}px)`;
@@ -315,7 +342,7 @@ export function UnderlineTabs({
         underline.style.transform = `translateX(${x}px)`;
         underline.style.width = `${width}px`;
       });
-  }, [activeKey, tabs, isOverflowing, isReduceMotionEnabled, measureTick]);
+  }, [activeKey, tabs, isOverflowing, isReduceMotionEnabled, measureTick, settled]);
 
   // Off-screen active tab (including the one restored at mount) is brought
   // into view rather than leaving the underline to travel somewhere unseen.

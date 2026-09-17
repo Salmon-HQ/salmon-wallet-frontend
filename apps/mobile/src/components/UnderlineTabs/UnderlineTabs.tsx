@@ -215,6 +215,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   size = 'md',
   tabTestIDPrefix,
   underlineTestID,
+  settled = true,
   style,
   testID,
 }) => {
@@ -241,15 +242,19 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   useEffect(() => {
     setHasMounted(true);
   }, []);
+  // A set still being read (`settled` false) changes without motion, the
+  // same as the first mount: hydration owes no verb.
   const tabMotion: TabMotion = {
-    layout: isReduceMotionEnabled
-      ? undefined
-      : LinearTransition.duration(motionMs.drift).easing(
-          Easing.bezier(...motionEasing.current.native)
-        ),
-    entering: hasMounted
-      ? floatEntering(isReduceMotionEnabled, { scale: CHROME_SCALE, durationMs: motionMs.drift })
-      : undefined,
+    layout:
+      isReduceMotionEnabled || !settled
+        ? undefined
+        : LinearTransition.duration(motionMs.drift).easing(
+            Easing.bezier(...motionEasing.current.native)
+          ),
+    entering:
+      hasMounted && settled
+        ? floatEntering(isReduceMotionEnabled, { scale: CHROME_SCALE, durationMs: motionMs.drift })
+        : undefined,
     exiting: sinkExiting(isReduceMotionEnabled, { scale: CHROME_SCALE, durationMs: motionMs.ebb }),
   };
 
@@ -292,8 +297,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const activeLayout = layouts[activeKey];
     if (!activeLayout) return;
 
-    if (!hasMeasuredActive.current) {
-      // First measurement: land on it directly, no travel from a stale 0.
+    if (!hasMeasuredActive.current || !settled) {
+      // First measurement — or one during hydration: land on it directly.
       underlineX.value = activeLayout.x;
       underlineWidth.value = activeLayout.width;
       hasMeasuredActive.current = true;
@@ -303,7 +308,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const config = timing(motionMs.drift, isReduceMotionEnabled);
     underlineX.value = withTiming(activeLayout.x, config);
     underlineWidth.value = withTiming(activeLayout.width, config);
-  }, [activeKey, layouts, isReduceMotionEnabled, underlineX, underlineWidth]);
+  }, [activeKey, layouts, isReduceMotionEnabled, underlineX, underlineWidth, settled]);
 
   // In overflow mode the newly active tab may be off-screen — including the
   // one restored at mount — so the row brings it in rather than leaving the

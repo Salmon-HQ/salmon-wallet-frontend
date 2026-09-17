@@ -41,6 +41,13 @@ describe('useInstalledPowerups', () => {
     expect(result.current.isInstalled('memo')).toBe(false);
   });
 
+  it('says when the stored list has been read, even when nothing was stored', async () => {
+    const { result } = renderHook(() => useInstalledPowerups());
+    expect(result.current.hydrated).toBe(false);
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
+    expect(result.current.installed).toEqual([]);
+  });
+
   it('reads back what was stored', async () => {
     mockStorage.getItem.mockResolvedValue(['memo']);
     const { result } = renderHook(() => useInstalledPowerups());

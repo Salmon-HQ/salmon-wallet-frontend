@@ -343,3 +343,35 @@ describe('UnderlineTabs', () => {
     }
   });
 });
+
+describe('UnderlineTabs while the set is still being read', () => {
+  it('a tab that joins before `settled` gets no motion; one that joins after does', () => {
+    const { animate } = stubDom();
+    const onChange = vi.fn();
+    const draw = (tabs: typeof TABS, settled: boolean) => (
+      <UnderlineTabs
+        tabs={tabs}
+        activeKey="portfolio"
+        onChange={onChange}
+        tabTestIDPrefix="sub-tab"
+        settled={settled}
+      />
+    );
+    const { rerender } = renderInMode('dark', draw(TABS, false));
+    animate.mockClear();
+
+    // Hydration lands a third tab: it is simply there.
+    rerender(draw([...TABS, { key: 'payments', label: 'Payments' }], false));
+    expect(screen.getByTestId('sub-tab-payments')).toBeTruthy();
+    expect(animate).not.toHaveBeenCalled();
+
+    rerender(draw([...TABS, { key: 'payments', label: 'Payments' }], true));
+    expect(animate).not.toHaveBeenCalled();
+
+    // The user installs one: it grows in.
+    rerender(
+      draw([...TABS, { key: 'payments', label: 'Payments' }, { key: 'memo', label: 'Memo' }], true)
+    );
+    expect(animate).toHaveBeenCalled();
+  });
+});

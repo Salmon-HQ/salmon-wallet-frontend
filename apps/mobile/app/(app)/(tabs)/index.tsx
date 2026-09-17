@@ -224,7 +224,7 @@ export default function HomeScreen() {
   // What this device has installed. Nothing is installed out of the box, so
   // Home starts with Portfolio and NFTs and gains a tab only when the user
   // adds one from the catalogue.
-  const { installed, install, uninstall } = useInstalledPowerups();
+  const { installed, install, uninstall, hydrated: powerupsHydrated } = useInstalledPowerups();
 
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
@@ -365,6 +365,7 @@ export default function HomeScreen() {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
+    subTabsSettled,
     taskHasPrior,
     subTabHasPrior,
     chainHasPrior,
@@ -379,6 +380,7 @@ export default function HomeScreen() {
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
     powerupTabs,
+    powerupsHydrated,
     allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
@@ -644,6 +646,7 @@ export default function HomeScreen() {
       activeKey={effectiveSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
+      settled={subTabsSettled}
     />
   );
 

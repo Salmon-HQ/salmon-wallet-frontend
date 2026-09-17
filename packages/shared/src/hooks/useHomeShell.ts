@@ -94,6 +94,12 @@ export interface UseHomeShellParams {
    */
   powerupTabs?: readonly HomePowerupTab[];
   /**
+   * The installed list has been read from storage (`useInstalledPowerups().hydrated`).
+   * Until it has, the sub-tabs are a placeholder and must not animate into
+   * their final set. Defaults to true for a build with Powerups off.
+   */
+  powerupsHydrated?: boolean;
+  /**
    * Every Powerup id that carries a tab, installed or not, in the registry's
    * order — `POWERUP_TAB_KEYS` from the aliased Powerups entry. It fixes the
    * default arrangement; a build with Powerups off passes none. Pass a stable
@@ -119,6 +125,12 @@ export interface UseHomeShellResult {
   setSubTabOrder: (order: string[]) => void;
   /** The tabs to draw, labelled, in the user's order, minus what is not offered. */
   subTabs: { key: HomeSubTabKey; label: string }[];
+  /**
+   * The sub-tabs are the set the user will see: the installed list and the
+   * stored order have both been read. A change before this is hydration,
+   * not an event, and the row applies it without motion.
+   */
+  subTabsSettled: boolean;
   /** Who owns the current change; exactly one wrapper animates. */
   changeCause: HomeChangeCause;
   taskHasPrior: boolean;
@@ -148,6 +160,7 @@ export function useHomeShell({
   surfaceKey,
   changeNetwork,
   powerupTabs,
+  powerupsHydrated = true,
   allPowerupKeys,
 }: UseHomeShellParams): UseHomeShellResult {
   const { t } = useTranslation();
@@ -230,7 +243,12 @@ export function useHomeShell({
     }
     return keys as HomeSubTabKey[];
   }, [allPowerupKeys, offeredPowerupKeys]);
-  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(defaultTabKeys);
+  const {
+    order: subTabOrder,
+    setOrder: setSubTabOrder,
+    hydrated: orderHydrated,
+  } = useHomeTabOrder(defaultTabKeys);
+  const subTabsSettled = powerupsHydrated && orderHydrated;
   // The array arrives as a fresh literal on every render, so the memo keys on
   // its contents rather than on its identity.
   const powerupTabsKey = (powerupTabs ?? [])
@@ -342,6 +360,7 @@ export function useHomeShell({
     subTabOrder,
     setSubTabOrder,
     subTabs,
+    subTabsSettled,
     changeCause: contentChange.cause,
     taskHasPrior: contentChange.cause === 'task',
     subTabHasPrior: contentChange.cause === 'subtab',

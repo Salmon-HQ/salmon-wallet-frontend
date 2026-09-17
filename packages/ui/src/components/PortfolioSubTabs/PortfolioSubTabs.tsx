@@ -28,6 +28,7 @@ export function PortfolioSubTabs({
   activeKey,
   onChange,
   onOrderPress,
+  settled,
   style,
   className,
   testID,
@@ -52,6 +53,7 @@ export function PortfolioSubTabs({
           tabs={tabs}
           activeKey={activeKey}
           onChange={onChange}
+          settled={settled}
           size="md"
           tabTestIDPrefix="portfolio-tab"
           underlineTestID="portfolio-tabs-underline"

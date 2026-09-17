@@ -30,6 +30,7 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
   activeKey,
   onChange,
   onOrderPress,
+  settled,
   style,
   testID,
 }) => {
@@ -47,6 +48,7 @@ export const PortfolioSubTabs: React.FC<PortfolioSubTabsProps> = ({
           tabs={tabs}
           activeKey={activeKey}
           onChange={onChange}
+          settled={settled}
           size="md"
           tabTestIDPrefix="portfolio-tab"
           underlineTestID="portfolio-tabs-underline"
