@@ -20,10 +20,12 @@ import {
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
   getTransactionMessageComputeUnitLimit,
+  getTransactionMessagePriorityFeeLamports,
   getTransactionMessageLoadedAccountsDataSizeLimit,
 } from '@solana/kit';
 import type { Address } from '@solana/kit';
 import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
+import { COMPUTE_BUDGET_PROGRAM_ADDRESS } from '@solana-program/compute-budget';
 
 vi.mock('@solana-program/token-2022', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@solana-program/token-2022')>()),
@@ -74,12 +76,30 @@ const thunk = <T>(value: T) => vi.fn().mockReturnValue({ send: async () => value
 function createRpc(overrides: Record<string, unknown> = {}) {
   return {
     getLatestBlockhash: thunk({ value: { blockhash: BLOCKHASH, lastValidBlockHeight: 1000n } }),
+    getRecentPrioritizationFees: thunk([
+      { prioritizationFee: 0n, slot: 1n },
+      { prioritizationFee: 5_000n, slot: 2n },
+      { prioritizationFee: 12_000n, slot: 3n },
+      { prioritizationFee: 50_000n, slot: 4n },
+    ]),
     getAccountInfo: thunk({ value: { owner: TOKEN_PROGRAM_ADDRESS } }),
     getFeeForMessage: thunk({ value: 5000n }),
     getEpochInfo: thunk({ epoch: 10n }),
     ...overrides,
   } as unknown as SolanaRpc;
 }
+
+/**
+ * Every v0 transfer now leads with its priority-fee bid, which is a
+ * ComputeBudget instruction rather than part of what the user asked for.
+ * These assertions are about the transfer, so the bid is taken off first.
+ */
+const payload = <T extends { programAddress: string }>(transaction: {
+  instructions: readonly T[];
+}): readonly T[] =>
+  transaction.instructions.filter(
+    (instruction) => instruction.programAddress !== COMPUTE_BUDGET_PROGRAM_ADDRESS
+  );
 
 const testSigner = (seed: number) =>
   createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(seed), false);
@@ -105,8 +125,8 @@ describe('createSolTransaction', () => {
 
     expect(transaction.lifetimeConstraint.blockhash).toBe(BLOCKHASH);
     expect(transaction.feePayer.address).toBe(signer.address);
-    expect(transaction.instructions).toHaveLength(1);
-    expect(transaction.instructions[0].programAddress).toBe(SYSTEM_PROGRAM_ADDRESS);
+    expect(payload(transaction)).toHaveLength(1);
+    expect(payload(transaction)[0].programAddress).toBe(SYSTEM_PROGRAM_ADDRESS);
     expect(rpc.getLatestBlockhash).toHaveBeenCalledTimes(1);
   });
 
@@ -121,9 +141,9 @@ describe('createSolTransaction', () => {
       { memo: 'pr_2', references: [ref] }
     );
 
-    expect(transaction.instructions).toHaveLength(2);
-    expect(transaction.instructions[0].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
-    const transfer = transaction.instructions[1];
+    expect(payload(transaction)).toHaveLength(2);
+    expect(payload(transaction)[0].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
+    const transfer = payload(transaction)[1];
     expect(transfer.programAddress).toBe(SYSTEM_PROGRAM_ADDRESS);
     // source, destination — then the reference.
     expect(transfer.accounts).toHaveLength(3);
@@ -138,10 +158,10 @@ describe('createSolTransaction', () => {
     const large = await createSolTransaction(createRpc(), signer, recipient, 1000);
 
     // 4-byte discriminator (2) + u64 lamports, little endian.
-    expect(Buffer.from(small.instructions[0].data!).toString('hex')).toBe(
+    expect(Buffer.from(payload(small)[0].data!).toString('hex')).toBe(
       '02000000' + Buffer.from(new BigUint64Array([1_000_000n]).buffer).toString('hex')
     );
-    expect(Buffer.from(large.instructions[0].data!).toString('hex')).toBe(
+    expect(Buffer.from(payload(large)[0].data!).toString('hex')).toBe(
       '02000000' + Buffer.from(new BigUint64Array([1_000_000_000_000n]).buffer).toString('hex')
     );
   });
@@ -158,7 +178,7 @@ describe('createSolTransaction', () => {
     expect(transaction.feePayer.address).toBe(signer.address);
     // The fee payer travels as a signer, not a bare address, so the compiled
     // message marks it WRITABLE_SIGNER.
-    expect(transaction.instructions[0].accounts![0].role).toBe(AccountRole.WRITABLE_SIGNER);
+    expect(payload(transaction)[0].accounts![0].role).toBe(AccountRole.WRITABLE_SIGNER);
   });
 });
 
@@ -188,7 +208,7 @@ describe('transaction version', () => {
     });
     expect(transaction.version).toBe(1);
     expect(transaction.feePayer.address).toBe(signer.address);
-    expect(transaction.instructions).toHaveLength(1);
+    expect(payload(transaction)).toHaveLength(1);
   });
 
   it('builds a v1 SPL transfer on request', async () => {
@@ -199,7 +219,7 @@ describe('transaction version', () => {
     });
     expect(transaction.version).toBe(1);
     // ATA creation + transfer, as for v0.
-    expect(transaction.instructions).toHaveLength(2);
+    expect(payload(transaction)).toHaveLength(2);
   });
 
   it('writes the v0-equivalent resource budget into a v1 header, and nothing into v0', async () => {
@@ -210,14 +230,65 @@ describe('transaction version', () => {
       version: 1,
     });
 
-    // v0 never carried ComputeBudget instructions: the runtime granted 200k CU
-    // per instruction and 64 MiB of account data. v1 grants zero unless told.
+    // v0 sets no compute-unit *limit*: the runtime grants 200k CU per
+    // instruction and 64 MiB of account data on its own. (It does carry a
+    // ComputeBudget instruction now, but for the priority-fee price, which is
+    // a different field.) v1 grants zero unless told.
     expect(getTransactionMessageComputeUnitLimit(v0)).toBeUndefined();
     expect(getTransactionMessageLoadedAccountsDataSizeLimit(v0)).toBeUndefined();
     expect(getTransactionMessageComputeUnitLimit(v1)).toBe(200_000 * v1.instructions.length);
     expect(getTransactionMessageLoadedAccountsDataSizeLimit(v1)).toBe(64 * 1024 * 1024);
     expect(v1ResourceBudget(new Array(10).fill(v1.instructions[0])).computeUnitLimit).toBe(
       1_400_000
+    );
+  });
+
+  it('leads a v0 transfer with its priority-fee bid', async () => {
+    const signer = await testSigner(1);
+    const transaction = await createSolTransaction(createRpc(), signer, recipient(), 1);
+
+    // The base fee buys no priority, so an unpriced transfer waits out its
+    // blockhash whenever the network is busy.
+    const bid = transaction.instructions[0];
+    expect(bid.programAddress).toBe(COMPUTE_BUDGET_PROGRAM_ADDRESS);
+    // Discriminator 3 (SetComputeUnitPrice) + u64 micro-lamports, little
+    // endian. The stubbed node's p75 is 12_000, inside the clamp.
+    expect(Buffer.from(bid.data!).toString('hex')).toBe(
+      '03' + Buffer.from(new BigUint64Array([12_000n]).buffer).toString('hex')
+    );
+  });
+
+  it('puts the same bid in a v1 header instead of an instruction', async () => {
+    const signer = await testSigner(1);
+    const transaction = await createSolTransaction(createRpc(), signer, recipient(), 1, {
+      version: 1,
+    });
+
+    // v1 takes ComputeBudget out of the picture and states one total.
+    expect(
+      transaction.instructions.some((i) => i.programAddress === COMPUTE_BUDGET_PROGRAM_ADDRESS)
+    ).toBe(false);
+    // 12_000 micro-lamports/CU over the 200k budget one instruction gets.
+    if (transaction.version !== 1) throw new Error('expected a v1 message');
+    expect(getTransactionMessagePriorityFeeLamports(transaction)).toBe(2_400n);
+  });
+
+  it('still builds when the node cannot price the block', async () => {
+    const signer = await testSigner(1);
+    const rpc = createRpc({
+      getRecentPrioritizationFees: vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('rpc down');
+        },
+      }),
+    });
+
+    const transaction = await createSolTransaction(rpc, signer, recipient(), 1);
+
+    // The floor, rather than no bid at all: an unpriced transfer is the
+    // failure this exists to prevent.
+    expect(Buffer.from(transaction.instructions[0].data!).toString('hex')).toBe(
+      '03' + Buffer.from(new BigUint64Array([1_000n]).buffer).toString('hex')
     );
   });
 
@@ -256,10 +327,10 @@ describe('createSplTransaction', () => {
     expect(transaction.lifetimeConstraint.blockhash).toBe(BLOCKHASH);
     expect(transaction.feePayer.address).toBe(signer.address);
     // Idempotent ATA creation + transfer.
-    expect(transaction.instructions).toHaveLength(2);
-    expect(transaction.instructions[1].programAddress).toBe(TOKEN_PROGRAM_ADDRESS);
+    expect(payload(transaction)).toHaveLength(2);
+    expect(payload(transaction)[1].programAddress).toBe(TOKEN_PROGRAM_ADDRESS);
     // Transfer instruction: discriminator 3, u64 amount.
-    expect(Buffer.from(transaction.instructions[1].data!).toString('hex')).toBe(
+    expect(Buffer.from(payload(transaction)[1].data!).toString('hex')).toBe(
       '03' + Buffer.from(new BigUint64Array([100_000_000n]).buffer).toString('hex')
     );
   });
@@ -278,7 +349,7 @@ describe('createSplTransaction', () => {
       { decimals: 6 }
     );
 
-    const authority = transaction.instructions[1].accounts![2];
+    const authority = payload(transaction)[1].accounts![2];
     expect(authority.address).toBe(signer.address);
     expect(authority.role).toBe(AccountRole.READONLY_SIGNER);
   });
@@ -295,8 +366,8 @@ describe('createSplTransaction', () => {
     );
 
     // ATA creation + memo + transfer.
-    expect(transaction.instructions).toHaveLength(3);
-    const memoInstruction = transaction.instructions[1];
+    expect(payload(transaction)).toHaveLength(3);
+    const memoInstruction = payload(transaction)[1];
     expect(memoInstruction.programAddress).toBe(MEMO_PROGRAM_ADDRESS);
     expect(Buffer.from(memoInstruction.data!).toString('utf8')).toBe('Test memo');
     // Regression guard: without an explicit `signers` list the memo carries no
@@ -320,9 +391,9 @@ describe('createSplTransaction', () => {
     );
 
     // ATA creation, then the memo immediately before the transfer.
-    expect(transaction.instructions).toHaveLength(3);
-    expect(transaction.instructions[1].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
-    const transfer = transaction.instructions[2];
+    expect(payload(transaction)).toHaveLength(3);
+    expect(payload(transaction)[1].programAddress).toBe(MEMO_PROGRAM_ADDRESS);
+    const transfer = payload(transaction)[2];
     expect(transfer.programAddress).toBe(TOKEN_PROGRAM_ADDRESS);
     // source, destination, authority — then the references, in order, read-only and unsigned.
     expect(transfer.accounts).toHaveLength(5);

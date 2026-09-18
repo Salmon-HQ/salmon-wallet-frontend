@@ -18,6 +18,7 @@
     "@scure/bip39": "~2.2.0",
     "@solana-name-service/sns-sdk-kit": "^1.0.1",
     "@solana-program/address-lookup-table": "^0.14.1",
+    "@solana-program/compute-budget": "^0.18.1",
     "@solana-program/memo": "^0.13.1",
     "@solana-program/system": "^0.14.1",
     "@solana-program/token-2022": "^0.16.1",
