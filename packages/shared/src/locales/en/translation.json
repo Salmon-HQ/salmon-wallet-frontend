@@ -704,6 +704,8 @@
       "signature": "The transaction's signature was rejected. Nothing was sent — try again.",
       "unsupportedVersion": "This network does not accept this transaction format yet.",
       "accountFrozen": "This token account is frozen by the token's issuer, so it cannot be moved.",
+      "memoRequired": "This recipient's token account requires a note on every incoming transfer. Add one and send again.",
+      "nonTransferable": "This token cannot be transferred — its issuer made it non-transferable.",
       "programRejected": "The program refused this transaction. Nothing was sent.",
       "malformed": "This transaction is not valid on this network. If a site built it, report it to them.",
       "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign.",

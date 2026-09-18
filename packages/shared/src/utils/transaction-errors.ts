@@ -114,6 +114,27 @@ const TOKEN_ERROR_NAMES = [
   'AccountFrozen',
   'MintDecimalsMismatch',
   'NonNativeNotSupported',
+  // Token-2022 continues the same numbering for its extension errors
+  // (`token-2022/interface/src/error.rs`).
+  'ExtensionTypeMismatch',
+  'ExtensionBaseMismatch',
+  'ExtensionAlreadyInitialized',
+  'ConfidentialTransferAccountHasBalance',
+  'ConfidentialTransferAccountNotApproved',
+  'ConfidentialTransferDepositsAndTransfersDisabled',
+  'ConfidentialTransferElGamalPubkeyMismatch',
+  'ConfidentialTransferBalanceMismatch',
+  'MintHasSupply',
+  'NoAuthorityExists',
+  'TransferFeeExceedsMaximum',
+  'MintRequiredForTransfer',
+  'FeeMismatch',
+  'FeeParametersMismatch',
+  'ImmutableOwner',
+  'AccountHasWithheldTransferFees',
+  'NoMemo',
+  'NonTransferable',
+  'NonTransferableNeedsImmutableOwnership',
 ];
 
 /** System program `SystemError`, by index (`system-interface/src/error.rs`). */
@@ -137,6 +158,10 @@ function classifyCustom(programId: string | null, code: number): { key: string; 
     if (code === 1) return { key: 'transaction.errors.insufficientFunds', name };
     if (code === 0) return { key: 'transaction.errors.insufficientRent', name };
     if (code === 17) return { key: 'transaction.errors.accountFrozen', name };
+    // Token-2022 extensions the recipient's own account opted into, which no
+    // amount of retrying gets past.
+    if (code === 36) return { key: 'transaction.errors.memoRequired', name };
+    if (code === 37) return { key: 'transaction.errors.nonTransferable', name };
     return { key: 'transaction.errors.programRejected', name };
   }
   if (programId === SYSTEM_PROGRAM) {

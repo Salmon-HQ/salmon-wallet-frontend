@@ -704,6 +704,8 @@
       "signature": "La firma de la transacción fue rechazada. No se envió nada — volvé a intentarlo.",
       "unsupportedVersion": "Esta red todavía no acepta este formato de transacción.",
       "accountFrozen": "Esta cuenta de token está congelada por el emisor del token, así que no se puede mover.",
+      "memoRequired": "La cuenta de token de este destinatario exige una nota en cada transferencia entrante. Agregá una y enviá de nuevo.",
+      "nonTransferable": "Este token no se puede transferir: su emisor lo hizo intransferible.",
       "programRejected": "El programa rechazó esta transacción. No se envió nada.",
       "malformed": "Esta transacción no es válida en esta red. Si la armó un sitio, avisales.",
       "watchOnlyAccount": "Esta es una billetera de solo lectura, así que no puede firmar.",

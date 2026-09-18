@@ -196,6 +196,26 @@ export function useSendTransaction({
         throw new Error('transaction.errors.watchOnlyAccount');
       }
 
+      const effectiveRecipientAddress = params.resolvedRecipientAddress ?? params.recipientAddress;
+
+      // A Token-2022 account can require a note on every transfer it receives
+      // (the MemoTransfer extension). Without one the token program refuses
+      // the transfer. Preflight does catch that before anything is signed or
+      // spent, but it leaves the user reading a failure for a condition the
+      // chain would have told us up front — so ask first, and say why.
+      // Checked here, beside the other preconditions, because the catch below
+      // re-describes anything thrown from the send itself.
+      if (!params.memo && 'requiresMemo' in account) {
+        const memoRequired = await account
+          .requiresMemo(effectiveRecipientAddress, params.token.address)
+          .catch(() => false);
+        if (memoRequired) {
+          setError('transaction.errors.memoRequired');
+          setStatus('failed');
+          throw new Error('transaction.errors.memoRequired');
+        }
+      }
+
       // Claims the shared state for this send: any estimate still in flight is
       // now stale and its late write is dropped.
       beginAttempt();
@@ -206,9 +226,6 @@ export function useSendTransaction({
 
       try {
         setStatus('sending');
-
-        const effectiveRecipientAddress =
-          params.resolvedRecipientAddress ?? params.recipientAddress;
 
         const result = await account.transfer(
           effectiveRecipientAddress,

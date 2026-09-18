@@ -549,4 +549,104 @@ describe('useSendTransaction', () => {
     expect(result.current).toBe(first);
     expect(result.current.reset).toBe(first.reset);
   });
+  describe('memo-required recipients', () => {
+    // A Token-2022 account can carry the MemoTransfer extension, which makes
+    // the token program refuse any incoming transfer that arrives without a
+    // note. Preflight would catch it, but only after the user committed to a
+    // send they cannot complete.
+    const memoAccount = {
+      ...mockAccount,
+      requiresMemo: vi.fn(),
+    };
+
+    type SendFn = (params: {
+      token: { address: string; decimals: number; symbol: string };
+      recipientAddress: string;
+      amount: number;
+      memo?: string;
+    }) => Promise<{ txId: string }>;
+
+    const send = (result: { current: { sendTransaction: SendFn } }, memo?: string) =>
+      result.current.sendTransaction({
+        token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+        recipientAddress: RESOLVED_RECIPIENT,
+        amount: AMOUNT,
+        ...(memo ? { memo } : {}),
+      });
+
+    const mount = () =>
+      renderHook(() => useSendTransaction({ account: memoAccount as any, blockchain: 'solana' }), {
+        wrapper: makeWrapper(),
+      });
+
+    beforeEach(() => {
+      memoAccount.requiresMemo.mockReset();
+      memoAccount.transfer.mockResolvedValue(TX_RESULT);
+    });
+
+    it('refuses to send, naming the reason, when the recipient requires a note', async () => {
+      memoAccount.requiresMemo.mockResolvedValue(true);
+      const { result } = mount();
+
+      await act(async () => {
+        await expect(send(result)).rejects.toThrow('transaction.errors.memoRequired');
+      });
+
+      expect(memoAccount.transfer).not.toHaveBeenCalled();
+      expect(result.current.error).toBe('transaction.errors.memoRequired');
+      expect(result.current.status).toBe('failed');
+    });
+
+    it('sends when the caller already supplied a note', async () => {
+      memoAccount.requiresMemo.mockResolvedValue(true);
+      const { result } = mount();
+
+      await act(async () => {
+        await send(result, 'invoice-42');
+      });
+
+      expect(memoAccount.requiresMemo).not.toHaveBeenCalled();
+      expect(memoAccount.transfer).toHaveBeenCalled();
+      expect(result.current.status).toBe('success');
+    });
+
+    it('sends normally when the recipient requires nothing', async () => {
+      memoAccount.requiresMemo.mockResolvedValue(false);
+      const { result } = mount();
+
+      await act(async () => {
+        await send(result);
+      });
+
+      expect(memoAccount.requiresMemo).toHaveBeenCalledWith(RESOLVED_RECIPIENT, TOKEN_ADDRESS);
+      expect(memoAccount.transfer).toHaveBeenCalled();
+    });
+
+    it('does not block the send when the check itself fails', async () => {
+      // The check is a courtesy. A node that will not answer it must not cost
+      // the user a transfer that would have gone through.
+      memoAccount.requiresMemo.mockRejectedValue(new Error('rpc down'));
+      const { result } = mount();
+
+      await act(async () => {
+        await send(result);
+      });
+
+      expect(memoAccount.transfer).toHaveBeenCalled();
+      expect(result.current.status).toBe('success');
+    });
+
+    it('skips the check for a chain that cannot express it', async () => {
+      const { result } = renderHook(
+        () => useSendTransaction({ account: mockAccount as any, blockchain: 'bitcoin' }),
+        { wrapper: makeWrapper() }
+      );
+
+      await act(async () => {
+        await send(result);
+      });
+
+      expect(mockAccount.transfer).toHaveBeenCalled();
+    });
+  });
 });
