@@ -37,10 +37,16 @@ export type TransferRequestParseReason =
 export type TransferRequestParseResult =
   { ok: true; request: TransferRequest } | { ok: false; reason: TransferRequestParseReason };
 
-/** The memo program accepts more, but a memo is a label, not a document. */
-export const TRANSFER_REQUEST_MEMO_MAX_BYTES = 256;
+/**
+ * What one memo instruction can carry (SPL Memo's own limit). The standard
+ * sets no ceiling, so refusing earlier would refuse requests other wallets
+ * pay; what Salmon *writes* is a short id, which is a separate matter.
+ */
+export const TRANSFER_REQUEST_MEMO_MAX_BYTES = 566;
 
-const SCHEME = /^solana:(.*)$/i;
+// The standard writes `solana:<recipient>`, but producers in the wild emit the
+// authority form too; both name the same request, so both are read.
+const SCHEME = /^solana:(?:\/\/)?(.*)$/i;
 /** Leading zero required, no exponent, no sign; decimals unbounded here (the token bounds them at pay time). */
 const AMOUNT = /^(0|[1-9]\d*)(\.\d+)?$/;
 

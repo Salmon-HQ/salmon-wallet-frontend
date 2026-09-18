@@ -25,7 +25,11 @@ export interface TransferRequestSettlementQuery {
 
 export interface TransferRequestSettlement {
   signature: string;
-  /** The transaction's fee payer — who paid, as far as the chain says. */
+  /**
+   * Whose tokens left: the owner of the token account this mint was debited
+   * from. The fee payer is not that party whenever a relayer or a third
+   * account pays the fee, so it is only the fallback.
+   */
   payer: string;
   /** Seconds, as the RPC reports it; null when the node has none. */
   blockTime: number | null;
@@ -38,6 +42,25 @@ interface TokenBalanceLike {
   mint: string;
   owner?: string;
   uiTokenAmount: { amount: string };
+}
+
+/** The owner whose account this mint was debited from, when the meta names one. */
+function debitedOwner(
+  pre: readonly TokenBalanceLike[] | undefined,
+  post: readonly TokenBalanceLike[] | undefined,
+  mint: string,
+  recipientOwner: string
+): string | null {
+  for (const before of pre ?? []) {
+    if (before.mint !== mint || !before.owner || before.owner === recipientOwner) continue;
+    const after = (post ?? []).find(
+      (balance) => balance.mint === mint && balance.owner === before.owner
+    );
+    const left =
+      BigInt(before.uiTokenAmount.amount) - BigInt(after?.uiTokenAmount.amount ?? '0');
+    if (left > 0n) return before.owner;
+  }
+  return null;
 }
 
 function ownedDelta(
@@ -88,10 +111,17 @@ export async function findTransferRequestSettlement(
       ownedDelta(transaction.meta.preTokenBalances, query.mint, query.recipientOwner);
     if (delta !== wanted) continue;
 
-    const payer = transaction.transaction.message.accountKeys[0]?.pubkey;
+    const feePayer = transaction.transaction.message.accountKeys[0]?.pubkey;
+    const payer =
+      debitedOwner(
+        transaction.meta.preTokenBalances,
+        transaction.meta.postTokenBalances,
+        query.mint,
+        query.recipientOwner
+      ) ?? (feePayer ? String(feePayer) : '');
     return {
       signature: entry.signature,
-      payer: payer ? String(payer) : '',
+      payer,
       blockTime: transaction.blockTime === null ? null : Number(transaction.blockTime),
     };
   }

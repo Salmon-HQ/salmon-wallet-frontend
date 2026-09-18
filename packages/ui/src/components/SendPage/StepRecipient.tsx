@@ -143,7 +143,13 @@ export function StepRecipient({
       const started = onRequest(outcome.request);
       if (!started.ok) {
         setAddress(outcome.address);
-        setRequestError('send.request.tokenNotHeld');
+        // An amount the token cannot hold is an unreadable amount, which is
+        // the string the parser's own `amount` refusal already says.
+        setRequestError(
+          started.reason === 'amountDecimals'
+            ? 'send.request.errors.amount'
+            : 'send.request.tokenNotHeld'
+        );
       }
     },
     [markDirty, onRequest]

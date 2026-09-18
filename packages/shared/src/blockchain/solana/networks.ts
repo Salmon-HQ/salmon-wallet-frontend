@@ -39,9 +39,11 @@ const rpcByNodeUrl = new Map<string, SolanaRpc>();
 /**
  * A read client for a network, without an account in hand.
  *
- * Reads the same runtime-merged config `SolanaReadAccount.getLatestConfig`
- * reads, so a backend-supplied RPC URL is honoured here too. `createSolanaRpc`
- * performs no I/O; the cache only keeps one client per URL.
+ * Reads the same `SOLANA_NETWORKS` entry `SolanaReadAccount.getLatestConfig`
+ * reads, which `fetchAndMergeNetworkConfigs` overwrites at runtime — so this
+ * client talks to the backend-supplied node (a keyed provider), not to the
+ * public fallback above. `createSolanaRpc` performs no I/O; the cache only
+ * keeps one client per URL.
  */
 export function solanaRpcFor(networkId: SolanaNetworkId): SolanaRpc {
   const { nodeUrl } = SOLANA_NETWORKS[networkId].config;

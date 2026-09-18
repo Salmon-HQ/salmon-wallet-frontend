@@ -185,3 +185,35 @@ describe('useSendFlowState', () => {
     });
   });
 });
+
+describe('a request whose amount the token cannot hold', () => {
+  it('refuses more decimals than the token has, rather than rounding at pay time', async () => {
+    const { result } = renderHook(() => useSendFlowState(params));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    let started;
+    act(() => {
+      started = result.current.startFromRequest(
+        { recipient: 'dest', amount: '1.2345678', splToken: 'USDC', references: [] },
+        params.tokens
+      );
+    });
+    expect(started).toEqual({ ok: false, reason: 'amountDecimals' });
+    expect(result.current.request).toBeNull();
+    expect(result.current.recipient).toBeNull();
+  });
+
+  it('accepts exactly as many decimals as the token has', async () => {
+    const { result } = renderHook(() => useSendFlowState(params));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    let started;
+    act(() => {
+      started = result.current.startFromRequest(
+        { recipient: 'dest', amount: '1.234567', splToken: 'USDC', references: [] },
+        params.tokens
+      );
+    });
+    expect(started).toEqual({ ok: true, next: 'review' });
+  });
+});

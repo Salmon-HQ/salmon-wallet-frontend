@@ -8,11 +8,11 @@ The one thing that crosses between devices. Written by the Payments Powerup, rea
 solana:<recipient>[?amount=<decimal>][&spl-token=<mint>][&reference=<key>]*[&label=<text>][&message=<text>][&memo=<text>]
 ```
 
-- `recipient`: base58 Solana address. Refused if invalid (`reason: 'recipient'`).
-- `amount`: decimal in user units. `0` allowed by the grammar but the Powerup never writes it; absent ⇒ the payer is asked. Refused on exponent, missing leading zero, more decimals than the token has (`reason: 'amount'`).
+- `recipient`: base58 Solana address. Refused if invalid (`reason: 'recipient'`). The `solana://<recipient>` form is read too: the standard does not write it, producers do.
+- `amount`: decimal in user units. `0` allowed by the grammar but the Powerup never writes it; absent ⇒ the payer is asked. Refused on exponent or missing leading zero at parse (`reason: 'amount'`). More decimals than the token has is refused where the token's decimals are known — `startFromRequest` (`reason: 'amountDecimals'`), which both twins report with the same `errors.amount` string; the parser has no mint in hand and cannot decide it.
 - `spl-token`: base58 mint. Absent ⇒ native SOL. Refused if not an address (`reason: 'splToken'`).
 - `reference`: repeatable, order kept, base58 32-byte each (`reason: 'reference'`).
-- `label`, `message`, `memo`: percent-decoded UTF-8. `memo` longer than `MEMO_MAX_BYTES` bytes → `reason: 'memoTooLong'`.
+- `label`, `message`, `memo`: percent-decoded UTF-8. `memo` longer than `TRANSFER_REQUEST_MEMO_MAX_BYTES` (566, what one SPL Memo instruction carries) → `reason: 'memoTooLong'`. The standard sets no ceiling, so a lower one would refuse requests other wallets pay.
 - `solana:https://…` (a transaction request) → `reason: 'transactionRequest'` in v1.
 - Anything else (`bitcoin:`, a bare address, garbage) → not a transfer request; the bare-address path of the scanner still applies.
 

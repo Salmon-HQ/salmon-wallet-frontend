@@ -95,3 +95,39 @@ describe('findTransferRequestSettlement', () => {
     await expect(findTransferRequestSettlement(rpc, query)).rejects.toThrow('rpc down');
   });
 });
+
+describe('who paid', () => {
+  const RELAYER = 'GDDMwNyyx8uB6zrqwBFHjLLG3TBYk2F8Az4yrQC5RzMp';
+
+  it('names the account whose tokens left, not whoever paid the fee', async () => {
+    const meta = {
+      preTokenBalances: [
+        { accountIndex: 1, mint: MINT, owner: OWNER, uiTokenAmount: { amount: '0' } },
+        { accountIndex: 2, mint: MINT, owner: PAYER, uiTokenAmount: { amount: '900000' } },
+      ],
+      postTokenBalances: [
+        { accountIndex: 1, mint: MINT, owner: OWNER, uiTokenAmount: { amount: '500000' } },
+        { accountIndex: 2, mint: MINT, owner: PAYER, uiTokenAmount: { amount: '400000' } },
+      ],
+    };
+    const { rpc } = rpcWith([{ signature: 'sig1', err: null }], {
+      sig1: {
+        blockTime: 1_700_000_000n,
+        meta: { err: null, ...meta },
+        transaction: { message: { accountKeys: [{ pubkey: RELAYER }] } },
+      },
+    });
+    await expect(findTransferRequestSettlement(rpc, query)).resolves.toMatchObject({
+      payer: PAYER,
+    });
+  });
+
+  it('falls back to the fee payer when no token account was debited on chain', async () => {
+    const { rpc } = rpcWith([{ signature: 'sig1', err: null }], {
+      sig1: tx(balances('1000000', '1500000')),
+    });
+    await expect(findTransferRequestSettlement(rpc, query)).resolves.toMatchObject({
+      payer: PAYER,
+    });
+  });
+});

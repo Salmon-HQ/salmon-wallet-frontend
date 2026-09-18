@@ -374,15 +374,18 @@ export function usePaymentsScreenLogic({
     [solanaNetworkId, update]
   );
 
-  // The open, pending request polls on its own clock; nothing else does. The
+  // The open, unpaid request polls on its own clock; nothing else does. The
   // check is read through a ref: the poll is armed by which request is open,
-  // never by a re-created callback.
+  // never by a re-created callback. Expiry is the wallet's own deadline and
+  // the chain knows nothing of it, so an expired request keeps being watched
+  // while it is open: a code someone kept can still be paid, and a payment
+  // that landed must never read as unpaid.
   const checkRef = useRef(check);
   checkRef.current = check;
   const openRef = useRef(open);
   openRef.current = open;
-  const openIsPending = !!open && stateOf(open, clock) === 'pending';
-  const pollId = openIsPending ? open.id : null;
+  const openIsUnpaid = !!open && open.status !== 'paid';
+  const pollId = openIsUnpaid ? open.id : null;
   useEffect(() => {
     if (!pollId) return undefined;
     const tick = () => {
@@ -403,15 +406,15 @@ export function usePaymentsScreenLogic({
     return () => clearInterval(timer);
   }, [openId2]);
 
-  // The list refreshes its pending rows once when it mounts, so a payment
-  // that landed while the app was away is reflected without opening each one.
+  // The list refreshes its unpaid rows once when it mounts, so a payment that
+  // landed while the app was away is reflected without opening each one —
+  // including one that landed after the request's own deadline.
   const listRef = useRef(list);
   listRef.current = list;
   useEffect(() => {
     if (!key) return;
-    const at = seams.current.now();
     for (const request of listRef.current) {
-      if (stateOf(request, at) === 'pending') void checkRef.current(request);
+      if (request.status !== 'paid') void checkRef.current(request);
     }
   }, [key]);
 

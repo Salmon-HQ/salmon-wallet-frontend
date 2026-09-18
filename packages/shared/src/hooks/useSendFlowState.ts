@@ -21,7 +21,8 @@ import { useSendTransaction } from './useSendTransaction';
 
 /** Where a request-started Send lands, or why it could not start. */
 export type StartFromRequestResult =
-  { ok: true; next: 'review' | 'amount' } | { ok: false; reason: 'tokenNotHeld' };
+  | { ok: true; next: 'review' | 'amount' }
+  | { ok: false; reason: 'tokenNotHeld' | 'amountDecimals' };
 
 /** Reads a token balance the way every send surface has always read it. */
 function toNumber(value: number | string | undefined): number | undefined {
@@ -130,13 +131,21 @@ export function useSendFlowState({
    * Start from a Solana Pay transfer request: the recipient, the token and
    * (when named) the amount are the request's, and the caller navigates to
    * `next`. The token must be one the account holds — the wallet never
-   * substitutes another (spec 033 FR-023).
+   * substitutes another (spec 033 FR-023) — and the amount must fit that
+   * token's decimals, which is the check the standard asks of a wallet and
+   * the only place with the decimals in hand. Without it the transfer would
+   * round to something other than what was asked.
    */
   const startFromRequest = useCallback(
     (transferRequest: TransferRequest, holdings: readonly SendToken[]): StartFromRequestResult => {
       const mint = transferRequest.splToken ?? SOL_CONSTANTS.ADDRESS;
       const held = holdings.find((tok) => tok.address === mint);
       if (!held) return { ok: false, reason: 'tokenNotHeld' };
+
+      const fraction = transferRequest.amount?.split('.')[1] ?? '';
+      if (fraction.length > (held.decimals ?? SOL_CONSTANTS.DECIMALS)) {
+        return { ok: false, reason: 'amountDecimals' };
+      }
 
       const hasAmount = transferRequest.amount !== undefined;
       setRecipient({ address: transferRequest.recipient, name: transferRequest.label });

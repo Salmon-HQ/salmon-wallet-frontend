@@ -48,7 +48,7 @@ vi.mock('../../hooks/usePowerupState', () => ({
 vi.mock('../../blockchain/solana/networks', () => ({ solanaRpcFor: () => ({}) }));
 
 import { parseTransferRequest } from '../../blockchain/solana/transfer-request';
-import { PAYMENTS_STATUS_POLL_MS } from './constants';
+import { PAYMENTS_COUNTDOWN_TICK_MS, PAYMENTS_STATUS_POLL_MS } from './constants';
 import { usePaymentsScreenLogic } from './usePaymentsScreenLogic';
 
 const REFERENCE = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
@@ -248,5 +248,35 @@ describe('usePaymentsScreenLogic', () => {
 
     hook.rerender({ onHistory: undefined });
     expect(hook.result.current.actions.history).toBeNull();
+  });
+});
+
+describe('a request paid after it expired', () => {
+  it('still flips to paid: the chain does not know about the expiry', async () => {
+    const settlement = { signature: 'sig', payer: RECIPIENT, blockTime: 1_700_000_000 };
+    const findSettlement = vi.fn().mockResolvedValue(null);
+    const { hook, advance } = setup(findSettlement);
+    act(() => {
+      hook.result.current.ask.form.amountCard.onChangeValue('1');
+      hook.result.current.ask.form.expiryChips.onChange('h1');
+    });
+    await act(() => hook.result.current.create());
+
+    // The hour passes unpaid — and the countdown's own clock sees it, which is
+    // what takes the request out of `pending`.
+    advance(2 * 60 * 60 * 1000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAYMENTS_COUNTDOWN_TICK_MS + 1);
+    });
+    expect(hook.result.current.openStatus?.state).toBe('expired');
+
+    // Then someone pays the code they kept: the chain knows no expiry.
+    findSettlement.mockResolvedValue(settlement);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAYMENTS_STATUS_POLL_MS + 1);
+    });
+
+    expect(hook.result.current.open?.status).toBe('paid');
+    expect(hook.result.current.openStatus?.state).toBe('paid');
   });
 });

@@ -128,3 +128,21 @@ describe('isTransferRequestUri', () => {
     expect(isTransferRequestUri(RECIPIENT)).toBe(false);
   });
 });
+
+describe('interoperability with what other producers emit', () => {
+  it('reads the `solana://` form, which the standard does not write but producers do', () => {
+    expect(parseTransferRequest(`solana://${RECIPIENT}?amount=1`)).toEqual({
+      ok: true,
+      request: { recipient: RECIPIENT, amount: '1', references: [] },
+    });
+  });
+
+  it('accepts a memo the memo program can still carry in one instruction', () => {
+    const memo = 'x'.repeat(400);
+    const parsed = parseTransferRequest(`solana:${RECIPIENT}?memo=${memo}`);
+    expect(parsed).toEqual({
+      ok: true,
+      request: { recipient: RECIPIENT, references: [], memo },
+    });
+  });
+});

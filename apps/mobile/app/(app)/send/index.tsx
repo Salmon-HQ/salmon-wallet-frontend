@@ -139,7 +139,13 @@ export default function SendRecipientScreen() {
       const outcome = startFromRequest(request, tokens);
       if (!outcome.ok) {
         setAddress(fallbackAddress);
-        setRequestError('send.request.tokenNotHeld');
+        // An amount the token cannot hold is an unreadable amount, which is
+        // the string the parser's own `amount` refusal already says.
+        setRequestError(
+          outcome.reason === 'amountDecimals'
+            ? 'send.request.errors.amount'
+            : 'send.request.tokenNotHeld'
+        );
         return;
       }
       router.push(outcome.next === 'review' ? '/send/review' : '/send/amount');
