@@ -3,6 +3,7 @@ import type { KeyPairSigner, Signature } from '@solana/kit';
 import bs58 from 'bs58';
 import {
   createTransfer,
+  resendTransaction,
   estimateFee as estimateSolanaFee,
   type TransferOptions as SolanaTransferOptions,
   type EstimateFeeOptions,
@@ -147,10 +148,17 @@ export class SolanaAccount extends SolanaReadAccount {
     // until the chain says so: the receipt behind this must never show for a
     // transaction that did not land.
     if (!opts?.simulate) {
+      const rpc = this.getRpc();
+      const { wireTransaction } = result;
       await confirmSolanaSignature(
-        { rpc: this.getRpc(), rpcSubscriptions: this.getRpcSubscriptions() },
+        { rpc, rpcSubscriptions: this.getRpcSubscriptions() },
         result.txId as Signature,
-        result.lastValidBlockHeight
+        result.lastValidBlockHeight,
+        // A node can accept the transaction and drop it before a leader sees
+        // it, which from here is indistinguishable from waiting. Re-sending
+        // the same signed bytes covers that: same blockhash, same signature,
+        // so it cannot pay twice.
+        wireTransaction ? { resend: () => resendTransaction(rpc, wireTransaction) } : undefined
       );
     }
     return { txId: result.txId as string };

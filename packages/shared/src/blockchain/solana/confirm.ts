@@ -16,6 +16,13 @@
  * Built on `signatureSubscribe`, a one-shot notification: right for the
  * seconds after a send, wrong for a resumed session. The background poller
  * (`signature-status.ts`) is the cold-start counterpart.
+ *
+ * A caller may also hand over a `resend`, which is re-broadcast on an interval
+ * for as long as the wait lasts. An RPC node can accept a transaction and drop
+ * it before it reaches a leader, and nothing about that is visible from here —
+ * the wait simply runs out. Re-broadcasting the identical signed bytes cannot
+ * double-spend: same blockhash, same signature, so the cluster either has the
+ * transaction already or does not.
  */
 import type { Commitment, Signature } from '@solana/kit';
 import {
@@ -26,7 +33,19 @@ import type { SolanaRpc, SolanaRpcSubscriptions } from './networks';
 
 export interface SolanaConfirmOptions {
   commitment?: Commitment;
+  /**
+   * Re-broadcasts the same signed bytes while the wait lasts, covering the
+   * node that accepted the transaction and then dropped it. Failures are
+   * ignored: the send already succeeded once, and a refused re-broadcast is
+   * usually the cluster saying it has the transaction.
+   */
+  resend?: () => Promise<unknown>;
+  /** How often to re-broadcast. */
+  resendIntervalMs?: number;
 }
+
+/** Often enough to outrun a dropped transaction, rarely enough to be polite. */
+const DEFAULT_RESEND_INTERVAL_MS = 2000;
 
 /**
  * Resolves once the cluster reports `signature` at `commitment`; throws the
@@ -47,6 +66,11 @@ export async function confirmSolanaSignature(
   // One controller for both: whichever verdict arrives first cancels the
   // other's subscription, so neither socket outlives the answer.
   const controller = new AbortController();
+  const resendTimer = options.resend
+    ? setInterval(() => {
+        void options.resend?.().catch(() => {});
+      }, options.resendIntervalMs ?? DEFAULT_RESEND_INTERVAL_MS)
+    : undefined;
   try {
     await Promise.race([
       getRecentSignatureConfirmationPromise({
@@ -61,6 +85,7 @@ export async function confirmSolanaSignature(
       }),
     ]);
   } finally {
+    if (resendTimer !== undefined) clearInterval(resendTimer);
     controller.abort();
   }
 }
