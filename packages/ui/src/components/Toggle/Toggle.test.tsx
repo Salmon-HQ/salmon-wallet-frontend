@@ -29,7 +29,12 @@ describe('Toggle', () => {
     const onValueChange = vi.fn();
     renderInMode(
       'dark',
-      <Toggle testID="t" value={false} onValueChange={onValueChange} accessibilityLabel="Analytics" />
+      <Toggle
+        testID="t"
+        value={false}
+        onValueChange={onValueChange}
+        accessibilityLabel="Analytics"
+      />
     );
 
     fireEvent.click(screen.getByTestId('t'));

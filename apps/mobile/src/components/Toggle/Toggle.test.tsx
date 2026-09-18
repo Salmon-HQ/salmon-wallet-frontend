@@ -19,7 +19,12 @@ describe('Toggle', () => {
   it('fires onValueChange with the flipped value', () => {
     const onValueChange = jest.fn();
     render(
-      <Toggle testID="t" value={false} onValueChange={onValueChange} accessibilityLabel="Analytics" />
+      <Toggle
+        testID="t"
+        value={false}
+        onValueChange={onValueChange}
+        accessibilityLabel="Analytics"
+      />
     );
 
     fireEvent(screen.getByTestId('t'), 'valueChange', true);

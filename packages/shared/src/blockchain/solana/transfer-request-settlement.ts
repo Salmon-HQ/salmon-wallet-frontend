@@ -56,8 +56,7 @@ function debitedOwner(
     const after = (post ?? []).find(
       (balance) => balance.mint === mint && balance.owner === before.owner
     );
-    const left =
-      BigInt(before.uiTokenAmount.amount) - BigInt(after?.uiTokenAmount.amount ?? '0');
+    const left = BigInt(before.uiTokenAmount.amount) - BigInt(after?.uiTokenAmount.amount ?? '0');
     if (left > 0n) return before.owner;
   }
   return null;
