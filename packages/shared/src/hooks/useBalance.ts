@@ -28,7 +28,7 @@ import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
 import type { BlockchainAccount, NetworkId } from '../types/blockchain';
 import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/account';
-import { removeDecimals } from '../utils/decimals';
+import { resolveUiAmount } from '../utils/decimals';
 import { isMainnetNetworkId } from '../utils/network';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { queryKeys } from '../query/keys';
@@ -122,7 +122,7 @@ async function fetchSolanaBalance(
       owner: solanaAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
@@ -174,7 +174,7 @@ async function fetchBitcoinBalance(bitcoinAccount: BitcoinAccount): Promise<Wall
       owner: bitcoinAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
@@ -218,7 +218,7 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
       owner: ethereumAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,

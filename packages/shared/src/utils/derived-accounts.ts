@@ -14,7 +14,7 @@ import { SolanaAccount } from '../blockchain/solana';
 import { BitcoinAccount } from '../blockchain/bitcoin';
 import { EthereumAccount } from '../blockchain/ethereum';
 import { SOL_CONSTANTS } from './balance';
-import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
+import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT, resolveUiAmount } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { MIRROR_NETWORK_IDS, getMainnetSibling } from './network';
 import { getAccountMnemonic } from './account-secret';
@@ -120,7 +120,7 @@ export async function getAccountFunds(
       const native = items.find((item) => isNativeSol(item.mint));
       const tokenCount = items.filter((item) => !isNativeSol(item.mint) && item.amount > 0).length;
       return {
-        native: native ? (native.uiAmount ?? native.amount / 10 ** native.decimals) : 0,
+        native: native ? resolveUiAmount(native) : 0,
         tokenCount,
       };
     }

@@ -44,6 +44,32 @@ export function removeDecimals(amount: number | bigint, decimals: number): numbe
 }
 
 /**
+ * The human-readable amount to display for a balance item.
+ *
+ * `amount / 10 ** decimals` is the answer for almost every mint, but a
+ * Token-2022 mint carrying Scaled UI Amount or Interest Bearing stores a
+ * multiplier the token program applies on top — a tokenised equity that split,
+ * a balance accruing interest. No tokens move; only the figure the holder is
+ * meant to see changes. The backend resolves that multiplier and sends the
+ * result as `uiAmount`, a decimal string so the wire loses no precision, and
+ * omits it entirely when the mint scales one to one.
+ *
+ * @param item - Balance item as a backend balance endpoint returns it.
+ * @returns The amount to render.
+ */
+export function resolveUiAmount(item: {
+  amount: string | number | bigint;
+  decimals: number;
+  uiAmount?: number | string | null;
+}): number {
+  if (item.uiAmount) {
+    const scaled = typeof item.uiAmount === 'string' ? Number(item.uiAmount) : item.uiAmount;
+    if (Number.isFinite(scaled)) return scaled;
+  }
+  return removeDecimals(Number(item.amount), item.decimals);
+}
+
+/**
  * Parses a human-readable amount to smallest unit as bigint
  *
  * @param amount - Human-readable amount (e.g., '1.5')

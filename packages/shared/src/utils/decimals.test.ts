@@ -11,6 +11,7 @@ import {
   weiToEthNumber,
   btcToSatoshis,
   satoshisToBtc,
+  resolveUiAmount,
 } from './decimals';
 
 describe('decimals', () => {
@@ -74,6 +75,34 @@ describe('decimals', () => {
       expect(btcToSatoshis(0.00000001)).toBe(1n);
       expect(satoshisToBtc(BigInt(SATOSHIS_PER_BTC))).toBe(1);
       expect(satoshisToBtc(50_000_000)).toBe(0.5);
+    });
+  });
+  describe('resolveUiAmount', () => {
+    it('divides by decimals when the mint does not scale', () => {
+      expect(resolveUiAmount({ amount: '5000000', decimals: 6 })).toBe(5);
+    });
+
+    it('prefers the scaled amount a rebasing mint reports', () => {
+      // Apple xStock as mainnet served it: the raw balance divided by its 8
+      // decimals is 6774.00755573, but the mint's multiplier makes the holder's
+      // position 6796.15187137, which is what every other screen shows.
+      expect(
+        resolveUiAmount({ amount: '677400755573', decimals: 8, uiAmount: '6796.15187137' })
+      ).toBe(6796.15187137);
+    });
+
+    it('accepts a numeric uiAmount unchanged', () => {
+      expect(resolveUiAmount({ amount: '1', decimals: 0, uiAmount: 42 })).toBe(42);
+    });
+
+    it('falls back when uiAmount is absent or unusable', () => {
+      expect(resolveUiAmount({ amount: '5000000', decimals: 6, uiAmount: undefined })).toBe(5);
+      expect(resolveUiAmount({ amount: '5000000', decimals: 6, uiAmount: null })).toBe(5);
+      expect(resolveUiAmount({ amount: '5000000', decimals: 6, uiAmount: 'not-a-number' })).toBe(5);
+    });
+
+    it('keeps the long-standing fallback for a zero uiAmount', () => {
+      expect(resolveUiAmount({ amount: '5000000', decimals: 6, uiAmount: 0 })).toBe(5);
     });
   });
 });
