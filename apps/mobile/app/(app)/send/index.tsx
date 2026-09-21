@@ -167,7 +167,7 @@ export default function SendRecipientScreen() {
       }
       router.push(outcome.next === 'review' ? '/send/review' : '/send/amount');
     },
-    [router, startFromRequest, tokens]
+    [router, setAddress, startFromRequest, tokens]
   );
 
   // A code that only carries an address fills the field, as it always has.
@@ -181,7 +181,7 @@ export default function SendRecipientScreen() {
       }
       startRequest(result.request, result.address);
     },
-    [startRequest]
+    [setAddress, startRequest]
   );
 
   // The same field takes a pasted request: a `solana:` URI is classified like
@@ -211,7 +211,7 @@ export default function SendRecipientScreen() {
       }
       startRequest(outcome.request, outcome.address);
     },
-    [blockchain, startRequest]
+    [blockchain, setAddress, startRequest]
   );
 
   const handleContinue = useCallback(() => {
