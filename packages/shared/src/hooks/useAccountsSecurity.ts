@@ -146,7 +146,16 @@ export function useAccountsSecurity({
           return false;
         }
 
-        await runUpgrades(password);
+        try {
+          // A legacy record still on disk decrypts here, not below, so a wrong
+          // password rejected by the migration has to cost an attempt too —
+          // otherwise the throttle never starts on exactly the installs that
+          // are still carrying a v2 vault.
+          await runUpgrades(password);
+        } catch (err) {
+          await recordFailedUnlock();
+          throw err;
+        }
 
         const storedMnemonics = await getStoredMnemonics();
         if (!storedMnemonics) {
