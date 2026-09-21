@@ -10,7 +10,7 @@
  */
 
 import { get, apiClient, ApiError } from '../client';
-import { removeDecimals } from '../../utils/decimals';
+import { resolveUiAmount } from '../../utils/decimals';
 import type { SolanaNetworkId } from '../../types/blockchain';
 import type {
   SolanaTransaction,
@@ -150,7 +150,11 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
     // Native SOL inherits the canonical tag set so the FE can keep
     // tag-based UI logic uniform across natives + SPL tokens.
     tags: token.mint ? token.tags : (token.tags ?? [...SOL_CONSTANTS.TAGS]),
-    uiAmount: removeDecimals(token.amount, token.decimals),
+    // `resolveUiAmount`, not a bare division: a Token-2022 mint with a scaled
+    // UI amount has a multiplier the raw amount knows nothing about, and the
+    // backend already applied it. Recomputing from `amount / 10 ** decimals`
+    // threw that away and showed the wrong balance for exactly those mints.
+    uiAmount: resolveUiAmount(token),
   }));
 };
 

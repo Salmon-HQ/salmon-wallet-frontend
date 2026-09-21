@@ -36,6 +36,16 @@ import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 export const GAP_LIMIT = 20;
 
 /**
+ * The highest index the scan will derive, whatever the balances say.
+ *
+ * The gap limit bounds only *consecutive* empty indexes, so a balance provider
+ * that reports funds on every path keeps the scan deriving keys from the
+ * cleartext mnemonic for as long as it keeps answering — a loop whose length a
+ * remote service chooses. Two hundred paths is far past any real wallet.
+ */
+export const MAX_SCAN_INDEX = 200;
+
+/**
  * Mainnet networks to scan and create accounts for.
  * Backend catalog decides which of these candidates are actually enabled.
  */
@@ -311,7 +321,7 @@ export async function scanDerivedAccounts(
       let consecutiveEmpty = 0;
       let index = 1;
 
-      while (consecutiveEmpty < GAP_LIMIT) {
+      while (consecutiveEmpty < GAP_LIMIT && index <= MAX_SCAN_INDEX) {
         if (isCancelled?.()) return networkAccounts;
 
         // Yield to the UI thread so the loading state is rendered while scanning

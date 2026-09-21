@@ -161,6 +161,26 @@ describe('solana service', () => {
     });
   });
 
+  // A Token-2022 mint with a scaled UI amount carries a multiplier the raw
+  // amount knows nothing about. The backend applies it; recomputing from
+  // amount / 10 ** decimals threw it away and showed the wrong balance.
+  it('keeps the scaled uiAmount the backend sent rather than recomputing it', async () => {
+    mockGet.mockResolvedValueOnce([
+      {
+        amount: 1000000,
+        decimals: 6,
+        mint: 'scaled-mint',
+        symbol: 'SCALED',
+        name: 'Scaled Token',
+        uiAmount: 10,
+      },
+    ]);
+
+    const [token] = await fetchSolanaAccountBalance('solana-mainnet', 'wallet');
+
+    expect(token.uiAmount).toBe(10);
+  });
+
   it('passes BE balance items through, computing only uiAmount', async () => {
     mockGet.mockResolvedValueOnce([
       {

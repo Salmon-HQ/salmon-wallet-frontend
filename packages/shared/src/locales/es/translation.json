@@ -812,7 +812,8 @@
         "splToken": "La solicitud indica un token inválido",
         "reference": "La solicitud lleva una referencia inválida",
         "memoTooLong": "La solicitud lleva un memo demasiado largo"
-      }
+      },
+      "memo": "Nota en la cadena"
     },
     "screens": {
       "recipientSubtitle": "Elegí quién va a recibir tus activos.",

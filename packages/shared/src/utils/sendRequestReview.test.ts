@@ -3,7 +3,12 @@ import type { SendRequest } from '../types/ui/send-sheet';
 import { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestReview';
 
 const token = { address: 'usdc', symbol: 'USDC', name: 'USD Coin', decimals: 6, uiAmount: 1 };
-const request = (fields: { label?: string; message?: string; amount?: string }): SendRequest => ({
+const request = (fields: {
+  label?: string;
+  message?: string;
+  amount?: string;
+  memo?: string;
+}): SendRequest => ({
   request: { recipient: 'Dest', references: [], splToken: 'usdc', ...fields },
   token,
   locked: { recipient: true, token: true, amount: fields.amount !== undefined },
@@ -20,6 +25,15 @@ describe('sendRequestReviewRows', () => {
     expect(sendRequestReviewRows(request({ message: 'Table 4' })).map((r) => r.key)).toEqual([
       'for',
     ]);
+  });
+
+  // The label and the message stay on the device. The memo is signed: it goes
+  // on chain as an SPL Memo attributed to the payer.
+  it('shows the memo, which is the field that actually gets signed', () => {
+    expect(
+      sendRequestReviewRows(request({ label: 'Café', memo: 'order 12' })).map((r) => r.key)
+    ).toEqual(['requestedBy', 'memo']);
+    expect(sendRequestReviewRows(request({ memo: 'order 12' }))[0].value).toBe('order 12');
   });
 });
 

@@ -812,7 +812,8 @@
         "splToken": "The request names an invalid token",
         "reference": "The request carries an invalid reference",
         "memoTooLong": "The request carries a memo that is too long"
-      }
+      },
+      "memo": "On-chain note"
     },
     "screens": {
       "recipientSubtitle": "Choose who will receive your assets.",

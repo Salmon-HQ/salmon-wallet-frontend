@@ -6,7 +6,7 @@
 import type { SendRequest } from '../types/ui/send-sheet';
 
 export interface SendRequestReviewRow {
-  key: 'requestedBy' | 'for';
+  key: 'requestedBy' | 'for' | 'memo';
   /** Translation key for the row's label. */
   labelKey: string;
   value: string;
@@ -31,6 +31,18 @@ export function sendRequestReviewRows(request: SendRequest | null): SendRequestR
       labelKey: 'send.request.for',
       value: request.request.message,
       testID: 'send-review-for',
+    });
+  }
+  // The memo is the one request field that is signed: it goes on chain as an
+  // SPL Memo instruction attributed to the payer, while the label and the
+  // message above it never leave the device. Showing the two that are not
+  // signed and hiding the one that is had it exactly backwards.
+  if (request.request.memo !== undefined) {
+    rows.push({
+      key: 'memo',
+      labelKey: 'send.request.memo',
+      value: request.request.memo,
+      testID: 'send-review-memo',
     });
   }
   return rows;
