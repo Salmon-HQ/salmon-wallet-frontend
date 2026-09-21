@@ -18,7 +18,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { VersionedTransaction } from '@solana/web3.js';
 import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
-import { signAndSendPreparedSolanaTransactions } from './prepared-transactions';
+import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
+import { SYSTEM_PROGRAM } from '../../core/verify';
 
 // TEST-ONLY deterministic signer. The seed is a constant so golden vectors are
 // reproducible; this key holds no funds and must never be used outside tests.
@@ -82,8 +83,12 @@ describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
       getRpcSubscriptions: () => rpcSubscriptions,
     };
 
-    await signAndSendPreparedSolanaTransactions(account as never, {
-      transaction: FIXTURE_V0_WITH_LUT_B64,
+    // Through core/broadcast directly rather than the NFT flow above it: the
+    // vector pins the codec path, and these bytes are a bare lamport transfer,
+    // which an NFT flow's own rules refuse before they ever reach the codec.
+    await signAndSendSolanaTransaction(account as never, FIXTURE_V0_WITH_LUT_B64, {
+      feePayer: String(account.signer.address),
+      allowedPrograms: [SYSTEM_PROGRAM],
     });
 
     const sent = sendTransaction.mock.calls[0][0] as string;

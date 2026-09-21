@@ -19,9 +19,13 @@ import type { PreparedNftTransactionResponse } from '../../types/nft';
 // Test Constants
 // ============================================================================
 
-/** Unsigned v0 transaction carrying one address-table lookup. */
+/**
+ * Unsigned v0 transaction carrying one address-table lookup and one System
+ * instruction an NFT flow may carry. The instruction code matters: the flow's
+ * expectation refuses the System instructions that move lamports.
+ */
 const FIXTURE_B64 =
-  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAAAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
 const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 const BURN_BLOCKHASH = 'DzfXchZJoLMG3cNftcf2sw7qatkkuwQf4xH15N5wkKAB';
@@ -157,6 +161,24 @@ describe('prepared-transactions', () => {
     expect(getPreparedSolanaTransactions(singleStep)).toEqual([
       { transaction: 'single-step', step: 'transaction' },
     ]);
+  });
+
+  // `step` is a free-form string the response chooses. Reading the policy off
+  // it let the response pick its own verification: label the one transaction
+  // in the flow a table step and the requirement to name the mint was dropped.
+  // Position decides instead — the last transaction is always the work step.
+  it('holds the last transaction to the work-step rules whatever the response calls it', async () => {
+    const rpc = createRpc();
+    const account = await createAccount({ rpc });
+
+    await expect(
+      signAndSendPreparedSolanaTransactions(
+        account as never,
+        { transactions: [{ transaction: FIXTURE_B64, step: 'lookup_table_create' }] },
+        { mustName: [LOOKUP_TABLE_ADDRESS] }
+      )
+    ).rejects.toThrow(/does not name/);
+    expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
   it('refreshes the blockhash and signs before submitting a transaction', async () => {

@@ -19,11 +19,17 @@
  * - **Every invoked program** is one the flow declared. Solana requires a
  *   program to be a static account, never one resolved from a lookup table, so
  *   this check cannot be dodged by hiding the program in a table.
+ * - **Each instruction is one the flow uses.** The program allowlist is a
+ *   vocabulary, not a sentence: SPL Token is on it so a burn can close its
+ *   account, and that same entry would admit an `Approve` that hands a
+ *   delegate every token the wallet holds. Flows that name their instruction
+ *   codes are held to them.
  * - **Named accounts are present**, when the message carries no table lookups.
  *   With lookups the static list is incomplete, and an account missing from it
  *   proves nothing, so the check is skipped rather than made to lie.
  */
 import { getCompiledTransactionMessageDecoder, getTransactionDecoder } from '@solana/kit';
+import type { ReadonlyUint8Array } from '@solana/kit';
 
 /** What a flow declares about the transaction it asked the backend to build. */
 export interface SolanaTransactionExpectation {
@@ -31,6 +37,15 @@ export interface SolanaTransactionExpectation {
   feePayer: string;
   /** The programs this transaction may invoke. Anything else is refused. */
   allowedPrograms: readonly string[];
+  /**
+   * Which instructions of a program the flow uses, by program address.
+   *
+   * A program left out of this map is bound by `allowedPrograms` alone. One
+   * listed here is bound to the codes given: the leading `width` bytes of the
+   * instruction data are read as the little-endian discriminator every Solana
+   * program of this shape puts there, and anything else is refused.
+   */
+  allowedInstructions?: Readonly<Record<string, ProgramInstructionRule>>;
   /**
    * Accounts the transaction must name — a mint, a destination. Checked only
    * when the message resolves no addresses through a lookup table.
@@ -60,24 +75,55 @@ type CompiledMessage = ReturnType<
   ReturnType<typeof getCompiledTransactionMessageDecoder>['decode']
 >;
 
+/** The instruction codes one program may carry, and how wide its code is. */
+export interface ProgramInstructionRule {
+  /** Discriminator width in bytes: 1 for SPL Token, 4 for the System program. */
+  width: 1 | 4;
+  /** The codes the flow uses. Anything else on this program is refused. */
+  codes: readonly number[];
+}
+
+/** One instruction, reduced to what can be checked before signing. */
+interface CompiledInstruction {
+  programAddressIndex: number;
+  data: ReadonlyUint8Array | undefined;
+}
+
 /**
- * Which static account each instruction invokes.
+ * The instructions the message carries: which static account each invokes, and
+ * the data it carries.
  *
- * Legacy and v0 messages carry `instructions`; a v1 message carries
- * `instructionHeaders` instead, and names the same field differently. A shape
- * that is neither is refused rather than waved through: a check that cannot
- * read a transaction has not approved it.
+ * Legacy and v0 messages carry `instructions`; a v1 message splits the same
+ * thing into `instructionHeaders` and `instructionPayloads`. A shape that is
+ * neither is refused rather than waved through: a check that cannot read a
+ * transaction has not approved it.
  */
-function programIndexes(message: CompiledMessage): number[] {
+function compiledInstructions(message: CompiledMessage): CompiledInstruction[] {
   if ('instructions' in message) {
-    return message.instructions.map((instruction) => instruction.programAddressIndex);
+    return message.instructions.map((instruction) => ({
+      programAddressIndex: instruction.programAddressIndex,
+      data: instruction.data,
+    }));
   }
   if ('instructionHeaders' in message) {
-    return message.instructionHeaders.map((header) => header.programAccountIndex);
+    return message.instructionHeaders.map((header, index) => ({
+      programAddressIndex: header.programAccountIndex,
+      data: message.instructionPayloads[index]?.instructionData,
+    }));
   }
   throw new SolanaTransactionMismatchError(
     'Transaction uses a message version this wallet cannot read before signing'
   );
+}
+
+/** The leading little-endian discriminator, or null when the data is too short. */
+function discriminator(data: ReadonlyUint8Array | undefined, width: 1 | 4): number | null {
+  if (!data || data.length < width) return null;
+  let code = 0;
+  for (let byte = width - 1; byte >= 0; byte -= 1) {
+    code = code * 256 + (data[byte] as number);
+  }
+  return code;
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
@@ -113,7 +159,9 @@ export function assertSolanaTransactionMatches(
   }
 
   const allowed = new Set(expectation.allowedPrograms);
-  for (const index of programIndexes(message)) {
+  const instructionRules = expectation.allowedInstructions ?? {};
+  for (const instruction of compiledInstructions(message)) {
+    const index = instruction.programAddressIndex;
     // A program is always a static account: Solana refuses to invoke one
     // resolved through an address table. An index past the static list is
     // therefore not a program this wallet can account for.
@@ -126,6 +174,21 @@ export function assertSolanaTransactionMatches(
     if (!allowed.has(program)) {
       throw new SolanaTransactionMismatchError(
         `Transaction invokes ${program}, which this flow does not use`
+      );
+    }
+
+    const rule = instructionRules[program];
+    if (!rule) continue;
+
+    const code = discriminator(instruction.data, rule.width);
+    if (code === null) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction carries an instruction on ${program} too short to identify`
+      );
+    }
+    if (!rule.codes.includes(code)) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction carries instruction ${code} on ${program}, which this flow does not use`
       );
     }
   }

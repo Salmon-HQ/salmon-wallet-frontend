@@ -2,7 +2,12 @@ import { address } from '@solana/kit';
 import type { Address, Commitment } from '@solana/kit';
 import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
 import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
-import { LOOKUP_TABLE_STEP_PROGRAMS, NFT_TRANSACTION_PROGRAMS } from '../../core/verify';
+import {
+  LOOKUP_TABLE_STEP_INSTRUCTIONS,
+  LOOKUP_TABLE_STEP_PROGRAMS,
+  NFT_TRANSACTION_INSTRUCTIONS,
+  NFT_TRANSACTION_PROGRAMS,
+} from '../../core/verify';
 import type { SolanaTransactionExpectation } from '../../core/verify';
 import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
@@ -29,17 +34,36 @@ function isLookupTableStep(step: PreparedNftTransaction['step']): boolean {
  * The table steps touch the lookup-table program and nothing else; the work
  * step is an NFT transfer or burn, and it is the one that has to name the mint
  * and the destination.
+ *
+ * The position decides, not the label. `step` is a free-form string the
+ * response chooses, so reading the policy off it let the response pick its own
+ * verification: calling a SOL-draining transaction `lookup_table_create`
+ * dropped the requirement to name the mint. The shape a prepared flow actually
+ * has is "zero or more table steps, then exactly one work step, last", which
+ * the array already says.
  */
 function expectationForStep(
   preparedTransaction: PreparedNftTransaction,
+  index: number,
+  count: number,
   feePayer: string,
   mustName: readonly string[]
 ): SolanaTransactionExpectation {
-  if (isLookupTableStep(preparedTransaction.step)) {
-    return { feePayer, allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS };
+  const isWorkStep = index === count - 1;
+  if (!isWorkStep && isLookupTableStep(preparedTransaction.step)) {
+    return {
+      feePayer,
+      allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+      allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+    };
   }
 
-  return { feePayer, allowedPrograms: NFT_TRANSACTION_PROGRAMS, requiredAccounts: mustName };
+  return {
+    feePayer,
+    allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+    allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    requiredAccounts: mustName,
+  };
 }
 
 const LOOKUP_TABLE_POLL_INTERVAL_MS = 400;
@@ -173,14 +197,20 @@ export async function signAndSendPreparedSolanaTransactions(
   const mustName = options.mustName ?? [];
   const signatures: string[] = [];
 
-  for (const preparedTransaction of preparedTransactions) {
+  for (const [index, preparedTransaction] of preparedTransactions.entries()) {
     try {
       // Blockhash refresh, signing, send and confirmation are core/broadcast's
       // — the same path a Powerup's proposals take.
       const signature = await signAndSendSolanaTransaction(
         account,
         preparedTransaction.transaction,
-        expectationForStep(preparedTransaction, feePayer, mustName),
+        expectationForStep(
+          preparedTransaction,
+          index,
+          preparedTransactions.length,
+          feePayer,
+          mustName
+        ),
         { commitment }
       );
       signatures.push(signature);

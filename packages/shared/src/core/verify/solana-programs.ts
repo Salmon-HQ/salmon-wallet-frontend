@@ -62,6 +62,44 @@ export const NFT_TRANSACTION_PROGRAMS = [
 ] as const;
 
 /**
+ * Which instructions of the value-moving programs an NFT flow may carry.
+ *
+ * The program list is a vocabulary, not a sentence. On its own it admits an
+ * SPL Token `Approve` that hands a delegate every token in the wallet, or a
+ * System `Transfer` that empties the SOL balance — both programs are on the
+ * list for closing and creating accounts. Neither would show on the
+ * confirmation screen, which is drawn from the response's own fields.
+ *
+ * The codes below are what `salmon-wallet-backend` builds for these flows:
+ * every move of the asset goes through Token Metadata's `transferV1` or
+ * Bubblegum, never a top-level SPL Token transfer, and the only SPL Token
+ * instruction any burn emits is the `CloseAccount` that reclaims the rent.
+ * Nothing in those services emits a top-level System instruction at all; the
+ * System codes here are the harmless half of the program, kept so a builder
+ * that creates an account still works.
+ *
+ * Programs absent from this map — Token Metadata, Bubblegum, the Associated
+ * Token program, Compute Budget — are bound by the program list alone.
+ */
+export const NFT_TRANSACTION_INSTRUCTIONS = {
+  // SPL Token, u8 codes. Allowed: InitializeAccount(1), Revoke(5), Burn(8),
+  // CloseAccount(9), BurnChecked(15), InitializeAccount2(16), SyncNative(17),
+  // InitializeAccount3(18). Refused, and the reason this list exists:
+  // Transfer(3) and TransferChecked(12) move any balance the wallet holds,
+  // Approve(4) and ApproveChecked(13) grant a delegate over it, SetAuthority(6)
+  // hands the account away, MintTo(7) and FreezeAccount(10) are not this
+  // wallet's to sign.
+  [TOKEN_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
+  [TOKEN_2022_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
+  // System program, u32 codes. Allowed: CreateAccount(0), Assign(1),
+  // CreateAccountWithSeed(3), Allocate(8), AllocateWithSeed(9),
+  // AssignWithSeed(10). Refused: Transfer(2), WithdrawNonceAccount(5) and
+  // TransferWithSeed(11) — the three that move lamports to an account the flow
+  // never named.
+  [SYSTEM_PROGRAM]: { width: 4, codes: [0, 1, 3, 8, 9, 10] },
+} as const;
+
+/**
  * What the lookup-table steps of a multi-step flow may invoke.
  *
  * A compressed-NFT burn can arrive as three transactions: create a table,
@@ -72,3 +110,8 @@ export const LOOKUP_TABLE_STEP_PROGRAMS = [
   SYSTEM_PROGRAM,
   COMPUTE_BUDGET_PROGRAM,
 ] as const;
+
+/** The same bound for the table steps, which build a table and nothing else. */
+export const LOOKUP_TABLE_STEP_INSTRUCTIONS = {
+  [SYSTEM_PROGRAM]: { width: 4, codes: [0, 1, 3, 8, 9, 10] },
+} as const;

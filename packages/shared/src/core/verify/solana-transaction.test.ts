@@ -3,7 +3,12 @@ import {
   assertSolanaTransactionMatches,
   SolanaTransactionMismatchError,
 } from './solana-transaction';
-import { SYSTEM_PROGRAM, TOKEN_METADATA_PROGRAM } from './solana-programs';
+import {
+  NFT_TRANSACTION_INSTRUCTIONS,
+  NFT_TRANSACTION_PROGRAMS,
+  SYSTEM_PROGRAM,
+  TOKEN_METADATA_PROGRAM,
+} from './solana-programs';
 
 /** The owner that pays and signs in both fixtures. */
 const OWNER = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
@@ -38,6 +43,41 @@ describe('assertSolanaTransactionMatches', () => {
         allowedPrograms: [SYSTEM_PROGRAM],
       })
     ).toThrow(SolanaTransactionMismatchError);
+  });
+
+  // The program list is a vocabulary: System is on the NFT list so a builder
+  // can create an account, and that same entry would let a compromised backend
+  // append a transfer that empties the wallet's SOL. Nothing on the
+  // confirmation screen would show it — the screen is drawn from the
+  // response's own fields.
+  it('refuses a System transfer appended to an NFT transaction', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+        allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+      })
+    ).toThrow(/instruction 2 on 11111111111111111111111111111111/);
+  });
+
+  it('leaves a program the flow did not bind to the program list alone', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        allowedInstructions: { [TOKEN_METADATA_PROGRAM]: { width: 1, codes: [] } },
+      })
+    ).not.toThrow();
+  });
+
+  it('accepts an instruction the flow does use', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(NO_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        allowedInstructions: { [SYSTEM_PROGRAM]: { width: 4, codes: [2] } },
+      })
+    ).not.toThrow();
   });
 
   it('refuses a program the flow did not declare', () => {
