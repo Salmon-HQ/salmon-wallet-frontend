@@ -291,6 +291,28 @@ describe('malformed and untrusted input', () => {
     expect(sendResponse).not.toHaveBeenCalled();
   });
 
+  // A sandboxed page has an opaque origin, which arrives as the string "null".
+  // As a trust-store key it is an ordinary string, so every sandboxed page in
+  // every tab would share one entry.
+  it.each(['null', '', 'chrome-extension://abc', 'https://evil.example/path'])(
+    'ignores a request whose origin is %s rather than a web origin',
+    async (origin) => {
+      const { route, windowsCreate } = startBackground();
+      const sendResponse = vi.fn();
+
+      const result = route(
+        dappRequest('connect', 'req-opaque'),
+        { id: fakeBrowser.runtime.id, origin },
+        sendResponse
+      );
+
+      expect(result).toBeUndefined();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(windowsCreate).not.toHaveBeenCalled();
+      expect(sendResponse).not.toHaveBeenCalled();
+    }
+  );
+
   it('ignores messages on an unknown channel without crashing or invoking any approval flow', async () => {
     const { route, windowsCreate } = startBackground();
     const sendResponse = vi.fn();

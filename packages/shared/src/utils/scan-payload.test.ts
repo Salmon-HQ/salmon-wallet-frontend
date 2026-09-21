@@ -96,6 +96,14 @@ describe('classifyScanPayload', () => {
     });
   });
 
+  // This runs inside the camera's frame callback, where a thrown URIError is
+  // caught by nothing. A QR is attacker-supplied by definition.
+  it('survives a malformed percent-escape instead of throwing at the camera', () => {
+    expect(() => classifyScanPayload('bitcoin:%', 'solana')).not.toThrow();
+    expect(classifyScanPayload('bitcoin:%', 'solana')).toEqual({ kind: 'notAddress' });
+    expect(classifyScanPayload('bitcoin:%E0%A4%A', 'bitcoin')).toEqual({ kind: 'notAddress' });
+  });
+
   it('rejects non-address payloads as notAddress', () => {
     expect(classifyScanPayload('https://example.com', 'solana')).toEqual({ kind: 'notAddress' });
     expect(classifyScanPayload('WIFI:T:WPA;S:network;P:password;;', 'solana')).toEqual({

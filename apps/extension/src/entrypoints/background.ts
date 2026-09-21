@@ -258,6 +258,10 @@ export default defineBackground(() => {
   const isApprovedOrigin = (origin: string, { trustedApps }: StorageData): boolean =>
     !!origin && Object.values(trustedApps ?? {}).some((perNetwork) => !!perNetwork?.[origin]);
 
+  /** A concrete web origin — not "null", not an extension page, not empty. */
+  const isWebOrigin = (origin: string | undefined): origin is string =>
+    typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin);
+
   /** The three storage values every trust decision reads. */
   const readStorageData = async (): Promise<StorageData> => {
     const result = await browser.storage.local.get([
@@ -421,6 +425,14 @@ export default defineBackground(() => {
       if (message.channel === 'salmon_contentscript_background_channel') {
         const msg = message as Message;
         if (typeof msg.data?.method !== 'string' || msg.data.id == null) {
+          return;
+        }
+        // A sandboxed page has an opaque origin, which arrives as the string
+        // "null". Used as a trust-store key it is an ordinary string, so every
+        // sandboxed page in every tab shared one entry: approve one iframe and
+        // the next unrelated one is connected. An origin that is not a concrete
+        // web origin cannot be told apart from another, so it is not answered.
+        if (!isWebOrigin(sender.origin)) {
           return;
         }
 

@@ -66,7 +66,17 @@ function parsePayload(raw: string): ParsedPayload {
     }
   }
 
-  return { address: decodeURIComponent(path), amount, chain };
+  // A malformed escape (`bitcoin:%`) makes decodeURIComponent throw, and this
+  // runs inside the camera's frame callback, where an exception is not caught
+  // by anything. A payload that cannot be decoded is simply not an address.
+  let address: string;
+  try {
+    address = decodeURIComponent(path);
+  } catch {
+    return { address: trimmed };
+  }
+
+  return { address, amount, chain };
 }
 
 function belongsToAnotherChain(address: string, activeChain: BlockchainType): boolean {

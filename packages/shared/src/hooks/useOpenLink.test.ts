@@ -22,6 +22,28 @@ describe('useOpenLink', () => {
     expect(result.current.errorText).toBeNull();
   });
 
+  // A token's homepage and a network's attribution link both come from
+  // salmon-api, and both land on a row labelled "Visit Website".
+  it.each([
+    'javascript:alert(1)',
+    'file:///etc/passwd',
+    'intent://evil#Intent;scheme=http;end',
+    'salmon://send?to=attacker',
+    'not a url at all',
+    '',
+  ])('refuses %s instead of handing it to the platform', async (url) => {
+    const openUrl = vi.fn(() => Promise.resolve());
+    const { result } = renderHook(() => useOpenLink({ openUrl, t }));
+
+    await act(async () => {
+      void result.current.openLink(url);
+      await flush();
+    });
+
+    expect(openUrl).not.toHaveBeenCalled();
+    expect(result.current.errorText).toBe('errors.linkOpenFailed');
+  });
+
   it('says the link did not open, and clears it on the next attempt', async () => {
     const openUrl = vi.fn(() => Promise.reject(new Error('no browser')));
     const { result, rerender } = renderHook(

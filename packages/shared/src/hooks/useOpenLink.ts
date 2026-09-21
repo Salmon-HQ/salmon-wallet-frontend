@@ -31,13 +31,30 @@ export interface UseOpenLinkResult {
   errorText: string | null;
 }
 
+/**
+ * Is this a link to the web, and nothing else?
+ *
+ * Some of what reaches here is remote: a token's homepage and a network's
+ * attribution link both come from salmon-api, and a row that says "Visit
+ * Website" must not be able to hand `Linking.openURL` an arbitrary scheme and
+ * launch whichever handler an attacker names.
+ */
+function isWebUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 export function useOpenLink({ openUrl, t }: UseOpenLinkParams): UseOpenLinkResult {
   const [failed, setFailed] = useState(false);
 
   const openLink = useCallback(
     async (url: string) => {
       setFailed(false);
-      if (!url) {
+      if (!isWebUrl(url)) {
         setFailed(true);
         return;
       }
