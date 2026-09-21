@@ -54,6 +54,7 @@ import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';
+import { WarningNotice } from '../WarningNotice';
 import type { CreateWalletPageProps } from './types';
 
 type Step = 'message' | 'seedPhrase' | 'validate';
@@ -264,6 +265,18 @@ function SeedPhraseStep({
           // eating that buffer and leaving the grid flush under the text.
           <div style={{ paddingTop: spacing.xl }}>
             <SeedWordGrid words={words} columns={3} />
+            {/*
+              The same standing warning BackupPanel and PrivateKeyPanel show
+              before either of them lets a secret reach the clipboard. This
+              screen needs it most: there the copy is optional, here advancing
+              depends on it, so the clipboard is the one step the flow makes
+              mandatory — and, without this, the one risk it never names.
+            */}
+            <div style={{ paddingTop: spacing.lg }} data-testid="create-seed-clipboard-warning">
+              <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                {t('settings.clipboard_warning_description')}
+              </WarningNotice>
+            </div>
           </div>
         }
         secondary={

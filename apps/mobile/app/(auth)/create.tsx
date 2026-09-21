@@ -38,6 +38,7 @@ import {
   ScreenHeader,
   SeedWordGrid,
   SeedWordInput,
+  WarningNotice,
 } from '../../src/components';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
@@ -148,6 +149,19 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           // leaving the grid flush under the text. Mirrors the DOM twin.
           <View style={{ paddingTop: spacing.xl }}>
             <SeedWordGrid words={words} columns={3} />
+            {/*
+              The same standing warning BackupPanel and PrivateKeyPanel show
+              before either of them lets a secret reach the clipboard. This
+              screen needs it most: there the copy is optional, here advancing
+              depends on it, so the clipboard is the one step the flow makes
+              mandatory — and, without this, the one risk it never names.
+              Mirrors the DOM twin.
+            */}
+            <View style={{ paddingTop: spacing.lg }} testID="create-seed-clipboard-warning">
+              <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                {t('settings.clipboard_warning_description')}
+              </WarningNotice>
+            </View>
           </View>
         }
         secondary={
