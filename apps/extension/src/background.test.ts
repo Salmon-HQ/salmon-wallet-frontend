@@ -62,6 +62,18 @@ function startBackground() {
   return { route, windowsCreate, windowsRemove, onWindowRemoved };
 }
 
+/**
+ * Storage as it looks after the user approved this origin's connect. Signing
+ * methods are refused without it, so every test that drives one seeds it.
+ */
+async function approveOrigin(origin: string = DAPP_ORIGIN) {
+  await fakeBrowser.storage.local.set({
+    salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'TrustedPubkey111' }),
+    salmon_active_network_id: JSON.stringify('solana-mainnet'),
+    salmon_trusted_apps: JSON.stringify({ 'solana-mainnet': { [origin]: true } }),
+  });
+}
+
 /** Sender shape for a message relayed by our own content script. */
 const ownSender = (origin: string = DAPP_ORIGIN) => ({
   id: fakeBrowser.runtime.id,
@@ -87,7 +99,6 @@ beforeEach(() => {
 
 describe('approval routing', () => {
   it.each([
-    'connect',
     'sign',
     'signTransaction',
     'signIn',
@@ -95,6 +106,7 @@ describe('approval routing', () => {
     'signAllTransactions',
     'signAndSendTransaction',
   ])('routes a %s request to an approval popup carrying the payload and origin', async (method) => {
+    await approveOrigin();
     const { route, windowsCreate } = startBackground();
     const sendResponse = vi.fn();
 
@@ -124,7 +136,9 @@ describe('approval routing', () => {
   it('answers a trusted origin connect from storage without opening any approval UI', async () => {
     await fakeBrowser.storage.local.set({
       salmon_connection: JSON.stringify({
-        blockchain: 'solana',
+        // Upper-case, as the wallet writes it. The gate used to compare against
+        // the lower-case spelling, which made it match nothing in production.
+        blockchain: 'SOLANA',
         address: 'TrustedPubkey111',
       }),
       salmon_active_network_id: JSON.stringify('solana-mainnet'),
@@ -151,6 +165,7 @@ describe('approval routing', () => {
   });
 
   it('relays the approval UI answer back to the origin and closes the popup', async () => {
+    await approveOrigin();
     const { route, windowsCreate, windowsRemove } = startBackground();
     const sendResponse = vi.fn();
 
@@ -170,6 +185,7 @@ describe('approval routing', () => {
   });
 
   it('answers only the protocol error shape when the approval window closes without a response', async () => {
+    await approveOrigin();
     const { route, windowsCreate, onWindowRemoved } = startBackground();
     const sendResponse = vi.fn();
 
@@ -195,6 +211,66 @@ describe('approval routing', () => {
       vi.fn()
     );
     expect(sendResponse).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('what an unapproved origin can make the wallet do', () => {
+  it('refuses a signing request from an origin the user never approved', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-cold'), ownSender(), sendResponse);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-cold' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('still lets signIn through, since connecting is part of what it does', async () => {
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('signIn', 'req-signin'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
+  it('answers a silent reconnect without opening any window', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(
+      dappRequest('connect', 'req-silent', { options: { onlyIfTrusted: true } }),
+      ownSender(),
+      sendResponse
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-silent' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('opens one approval window per origin, however many requests arrive', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    const update = vi.spyOn(fakeBrowser.windows, 'update').mockResolvedValue(undefined as never);
+    const second = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+
+    route(dappRequest('signTransaction', 'req-b'), ownSender(), second);
+
+    await vi.waitFor(() =>
+      expect(second).toHaveBeenCalledWith({
+        error: 'Another approval is already open',
+        id: 'req-b',
+      })
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+    // The window already asking is brought forward instead.
+    expect(update).toHaveBeenCalledWith(POPUP_WINDOW_ID, { focused: true });
   });
 });
 
