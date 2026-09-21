@@ -80,3 +80,14 @@ describe('safeValidateEvent', () => {
     expect(safeValidateEvent('nope')).toBeNull();
   });
 });
+
+describe('the success prop', () => {
+  // Every caller passes a boolean. A string there is either a mistake or a
+  // value smuggled through a key whose name the guardrail trusts.
+  it('takes a boolean and refuses a free-form string', () => {
+    expect(() => validateEvent('send_completed', { success: true })).not.toThrow();
+    expect(() => validateEvent('send_completed', { success: 'user-42-declined' })).toThrow(
+      AnalyticsValidationError
+    );
+  });
+});
