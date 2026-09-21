@@ -215,3 +215,78 @@ describe('useAccountsSecurity — unlock throttling', () => {
     expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
   });
 });
+
+describe('useAccountsSecurity — re-auth throttling', () => {
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    vi.mocked(encryption.unlockAndGetKey).mockRejectedValue(new Error('Decryption failed'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('makes wrong guesses at the re-auth prompt cost the same as at the lock screen', async () => {
+    const { result } = renderSecurity();
+
+    for (let i = 0; i < UNLOCK_FREE_ATTEMPTS + 1; i += 1) {
+      await act(async () => {
+        await result.current.checkPassword(WRONG_PASSWORD);
+      });
+    }
+
+    expect((await getUnlockPenalty()).remainingMs).toBeGreaterThan(0);
+
+    const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
+    let accepted = true;
+    await act(async () => {
+      accepted = await result.current.checkPassword(WRONG_PASSWORD);
+    });
+
+    expect(accepted).toBe(false);
+    // Refused by the throttle, not by decryption: the vault was never opened.
+    expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
+  });
+
+  it('refuses a password change while a penalty stands', async () => {
+    const { result } = renderSecurity();
+
+    for (let i = 0; i < UNLOCK_FREE_ATTEMPTS + 1; i += 1) {
+      await act(async () => {
+        await result.current.checkPassword(WRONG_PASSWORD);
+      });
+    }
+
+    const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
+    let changed = true;
+    await act(async () => {
+      changed = await result.current.changePassword(WRONG_PASSWORD, 'new-password-000');
+    });
+
+    expect(changed).toBe(false);
+    expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
+  });
+
+  it('forgets the failures once the right password arrives at the re-auth prompt', async () => {
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      await result.current.checkPassword(WRONG_PASSWORD);
+    });
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: { 'account-1': 'stub mnemonic value' },
+      keyCache: { key: [1], salt: 'stub-salt', iterations: 210000, digest: 'sha512' },
+    } as never);
+
+    let accepted = false;
+    await act(async () => {
+      accepted = await result.current.checkPassword('right-password-000');
+    });
+
+    expect(accepted).toBe(true);
+    expect(await getUnlockPenalty()).toEqual({ failedAttempts: 0, remainingMs: 0 });
+  });
+});

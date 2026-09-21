@@ -80,7 +80,24 @@ export function useAccountsSecurity({
         return true;
       }
 
-      await resolveMnemonicsWithPassword(storedMnemonics, password);
+      // This gate stands in front of the seed-phrase reveal, the private-key
+      // reveal and account removal, so it is as free to guess at as the unlock
+      // prompt and carries the same penalty.
+      const penalty = await getUnlockPenalty();
+      if (penalty.remainingMs > 0) {
+        return false;
+      }
+
+      try {
+        await resolveMnemonicsWithPassword(storedMnemonics, password);
+      } catch (err) {
+        // Only a rejected password counts against the user — a storage failure
+        // must not lock a legitimate owner out.
+        await recordFailedUnlock();
+        throw err;
+      }
+
+      await clearUnlockPenalty();
 
       return true;
     } catch {
@@ -96,6 +113,13 @@ export function useAccountsSecurity({
           return false;
         }
 
+        // Verify through the throttled path first: changing the password is
+        // another way to ask "is this the right one?", and an unthrottled one
+        // would hand back the free guesses checkPassword denies.
+        if (!(await checkPassword(oldPassword))) {
+          return false;
+        }
+
         await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
 
         return true;
@@ -103,7 +127,7 @@ export function useAccountsSecurity({
         return false;
       }
     },
-    []
+    [checkPassword]
   );
 
   const lockAccounts = useCallback(async (): Promise<void> => {
