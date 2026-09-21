@@ -13,7 +13,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import mapValues from 'lodash-es/mapValues';
 
-import { updateLastActivity } from '../storage';
 import { type DerivedKeyCache } from '../crypto/encryption';
 import { useAccountsLoader } from './useAccountsLoader';
 import { useAccountsConnection } from './useAccountsConnection';
@@ -325,14 +324,6 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [tokens, setTokens] = useState<CustomTokens>({});
   const [switchingNetwork, setSwitchingNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // --------------------------------------------------------------------------
-  // Update activity timestamp on mount
-  // --------------------------------------------------------------------------
-
-  useEffect(() => {
-    updateLastActivity();
-  }, []);
 
   // --------------------------------------------------------------------------
   // Account Loading

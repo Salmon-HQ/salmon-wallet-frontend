@@ -282,9 +282,12 @@ export function useInactivityTimeout(
           onTimeoutRef.current?.();
         } else {
           setIsActive(true);
-          // Record initial activity if session is valid
-          await updateLastActivity();
-          setLastActivity(Date.now());
+          // Mounting is not activity. This runs in every window the wallet
+          // opens, including an approval window a web page asked for, and a
+          // write here resets both this timer and the background auto-lock
+          // alarm — so an unsolicited request from a page the user never
+          // touched kept the wallet unlocked. The timestamp an unlock wrote
+          // stands until the user actually does something.
         }
       } catch (error) {
         console.error('Failed to initialize inactivity timeout:', error);
