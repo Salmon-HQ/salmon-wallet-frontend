@@ -84,8 +84,16 @@ export class SolanaAccount extends SolanaReadAccount {
   /** This account holds key material. */
   override readonly canSign = true as const;
 
-  /** 32-byte ed25519 seed — the only recoverable form of the private key */
-  private readonly seed: Uint8Array;
+  /**
+   * 32-byte ed25519 seed — the only recoverable form of the private key.
+   *
+   * A `#` field, not `private`: TypeScript's `private` is a compile-time
+   * marker and leaves an ordinary enumerable own property, which
+   * `JSON.stringify`, `structuredClone` and a spread all carry. A private name
+   * lives in an internal slot no serializer can reach, so the seed cannot
+   * leave this object by accident.
+   */
+  readonly #seed: Uint8Array;
 
   /**
    * Creates a new SolanaAccount instance
@@ -103,7 +111,7 @@ export class SolanaAccount extends SolanaReadAccount {
       fetchNfts: options.fetchNfts,
     });
     this.signer = options.keyPair.signer;
-    this.seed = options.keyPair.seed;
+    this.#seed = options.keyPair.seed;
   }
 
   /**
@@ -116,7 +124,7 @@ export class SolanaAccount extends SolanaReadAccount {
     // An ed25519 secret key in its 64-byte form is the seed followed by the
     // public key — the same bytes the legacy web3.js keypair exposed.
     const secretKey = new Uint8Array(64);
-    secretKey.set(this.seed);
+    secretKey.set(this.#seed);
     secretKey.set(getAddressEncoder().encode(this.publicKey), 32);
     return bs58.encode(secretKey);
   }
