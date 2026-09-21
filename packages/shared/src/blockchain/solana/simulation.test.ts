@@ -149,6 +149,29 @@ describe('deriveEffects', () => {
     expect(result.kind).toBe('no-effect');
   });
 
+  // SPL SetAuthority(AccountOwner) hands the whole token account to someone
+  // else. The balance and the delegate are untouched, so an amount/delegate
+  // diff sees nothing and the preview used to collapse to `no-effect` — the
+  // approval screen then said the transaction moves none of your balances
+  // while it gave the account away.
+  it('never reports an ownership change as no-effect', () => {
+    const ATTACKER = '8pM1YsWLwCoU4nNGUzgjQZ8iBfTFtfkDfsfnayrHRJrQ' as Address;
+
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: WALLET, amount: 5_000_000_000n })],
+        ]),
+        after: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: ATTACKER, amount: 5_000_000_000n })],
+        ]),
+      })
+    );
+
+    expect(result.kind).not.toBe('no-effect');
+    expect(result.kind).toBe('undetermined');
+  });
+
   it('derives a plain SOL transfer as a negative lamport change including the fee', () => {
     // 1 SOL out plus a 5000 lamport fee, as observed on the account itself.
     const result = deriveEffects(
