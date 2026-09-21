@@ -12,6 +12,7 @@ import { spacing, type TrustedAppItem } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
+import { Hostname } from '../Hostname';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
@@ -66,7 +67,8 @@ export function TrustedAppsSelector({
           </IconBubble>
         }
         title={app.name || app.domain}
-        subtitle={app.name ? app.domain : undefined}
+        subtitle={<Hostname value={app.domain} />}
+        accessibilityLabel={app.name ? `${app.name}, ${app.domain}` : app.domain}
         trailing={
           <IconBubble
             testID={`trusted-apps-revoke-${app.domain}`}

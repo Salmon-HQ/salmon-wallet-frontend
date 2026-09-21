@@ -2,6 +2,7 @@ import React from 'react';
 import { borderRadius } from '@salmon/shared';
 
 import { GlobeIcon } from '../../icons';
+import { Hostname } from '../Hostname';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 
@@ -40,7 +41,11 @@ export function AppIdentity({
     <ListRow
       leading={leading}
       title={appName || displayOrigin}
-      subtitle={appName ? displayOrigin : undefined}
+      // The origin is stated in full whether or not the site sent a name. When
+      // it did not, the bold line repeats it — the row's title cannot wrap, and
+      // the hostname losing its tail is the thing this screen must not do.
+      subtitle={<Hostname value={displayOrigin} testID="dapp-origin" />}
+      accessibilityLabel={appName ? `${appName}, ${displayOrigin}` : displayOrigin}
       tone="shelf"
       padding="md"
       testID="dapp-identity"

@@ -403,6 +403,9 @@ export type { PressSpecularProps } from './PressSpecular';
 export { Toggle } from './Toggle';
 export type { ToggleProps } from './Toggle';
 
+// Hostname - a hostname rendered whole, never clipped at its deciding end
+export { Hostname } from './Hostname';
+
 // IconBubble - the well every glyph in the redesign sits inside
 export { IconBubble } from './IconBubble';
 export type {
