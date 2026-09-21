@@ -3,6 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { normalizeIpfsUrl } from './url';
 
 describe('normalizeIpfsUrl', () => {
+  // Anyone can mint an NFT into someone else's wallet, and the grid fetches
+  // whatever the metadata names, unattended.
+  it.each([
+    'http://art.example/nft.png',
+    'data:image/svg+xml,<svg onload="fetch(1)"/>',
+    'javascript:alert(1)',
+    'file:///etc/passwd',
+    'salmon://drain',
+  ])('does not hand %s to an <img> tag', (url) => {
+    expect(normalizeIpfsUrl(url)).toBeUndefined();
+  });
+
   it('rewrites a subdomain-style IPFS URL to the default gateway, path included', () => {
     const hash = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
 

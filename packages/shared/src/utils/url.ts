@@ -173,7 +173,16 @@ export function normalizeIpfsUrl(url: string | undefined | null): string | undef
     return `${DEFAULT_IPFS_GATEWAY}${hash}${cleanPath}`;
   }
 
-  return url;
+  // Whatever is left is a URL an NFT's own metadata chose, and anyone can mint
+  // an NFT into someone's wallet. Only https is fetched: `http:` would leak the
+  // request in clear, and a `data:`, `javascript:` or app scheme has no
+  // business in an <img> the grid renders unattended.
+  //
+  // Still open, and it needs a backend endpoint that does not exist yet: the
+  // host is still the minter's choice, so a per-victim URL turns the
+  // collectibles grid into a beacon that ties a wallet address to an IP. The
+  // fix is to route unknown hosts through an image proxy on salmon-api.
+  return /^https:\/\//i.test(url) ? url : undefined;
 }
 
 // ============================================================================
