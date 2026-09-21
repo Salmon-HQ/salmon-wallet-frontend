@@ -903,6 +903,7 @@
     "details": "Details",
     "confirm": "Confirm",
     "confirmCountdown": "Confirm ({{seconds}})",
-    "refreshQuote": "Refresh Quote"
+    "refreshQuote": "Refresh Quote",
+    "expiredDismiss": "Expired — Dismiss"
   }
 }

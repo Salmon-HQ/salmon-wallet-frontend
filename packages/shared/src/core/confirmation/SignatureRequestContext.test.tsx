@@ -209,6 +209,31 @@ describe('SignatureRequestProvider', () => {
     await expect(outcome).resolves.toBeInstanceOf(NoSigningAccountError);
   });
 
+  // The one Powerup that builds transactions today passes no `refresh`, so
+  // this is the shipped path: the button relabelled itself and signed the old
+  // bytes anyway, which made the press the user meant as "rebuild this" the
+  // press that authorised it.
+  it('dismisses an expired proposal it cannot rebuild, rather than signing it', async () => {
+    const { view, signProposal } = setup();
+    let outcome: Promise<unknown> | undefined;
+
+    act(() => {
+      outcome = view.result.current.ctx
+        .requestSignature(proposal({ expiresAt: new Date(Date.now() - 1000).toISOString() }))
+        .catch((error) => error);
+    });
+    await waitFor(() => expect(view.result.current.host.secondsLeft).toBe(0));
+    expect(view.result.current.host.confirmLabel).toBe('Expired — Dismiss');
+
+    await act(async () => {
+      await view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(signProposal).not.toHaveBeenCalled();
+    await expect(outcome).resolves.toBeInstanceOf(Error);
+    expect(view.result.current.ctx.pending).toBeNull();
+  });
+
   it('rebuilds an expired proposal on confirm instead of signing stale bytes', async () => {
     const fresh = proposal({
       id: 'p-fresh',

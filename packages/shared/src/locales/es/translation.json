@@ -903,6 +903,7 @@
     "details": "Detalles",
     "confirm": "Confirmar",
     "confirmCountdown": "Confirmar ({{seconds}})",
-    "refreshQuote": "Actualizar cotización"
+    "refreshQuote": "Actualizar cotización",
+    "expiredDismiss": "Expiró — Descartar"
   }
 }

@@ -79,6 +79,12 @@ describe('DAppTransactionApprovalView', () => {
     expect(screen.queryByTestId('batch-first-only')).not.toBeInTheDocument();
   });
 
+  it('cannot be approved while the preview is still running', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effectsLoading effects={null} />);
+
+    expect(screen.getByRole('button', { name: 'APPROVE & SIGN' })).toBeDisabled();
+  });
+
   it('keeps the ordinary button for a transaction the preview understood', () => {
     render(
       <DAppTransactionApprovalView

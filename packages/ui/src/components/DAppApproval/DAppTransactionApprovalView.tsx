@@ -48,7 +48,13 @@ export function DAppTransactionApprovalView({
       effects.kind === 'transaction-would-fail' ||
       (effects.kind === 'effects' && effects.approvals.length > 0));
 
-  const cannotApprove = disabled || loading || !!parsingError || !!networkMismatch;
+  // A preview that has not answered yet is not an absence of warnings. Until it
+  // does, `requiresHold` is false whatever the transaction turns out to do, so
+  // a delegation could be signed on a single reflex tap — and the requesting
+  // site controls how long the wait lasts, by padding the account set the
+  // preview has to resolve.
+  const cannotApprove =
+    disabled || loading || effectsLoading || !!parsingError || !!networkMismatch;
 
   return (
     <OnboardingLayout

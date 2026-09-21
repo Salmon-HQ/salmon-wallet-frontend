@@ -52,7 +52,17 @@ export function useSignatureRequestHost(): SignatureRequestHost {
 
   const confirmOrRefresh = useCallback(async () => {
     if (!pending) return;
-    if (expired && pending.proposal.refresh) {
+    if (expired) {
+      // A build that has run out is not signable. When the Powerup can rebuild
+      // it, the press rebuilds; when it cannot, the press dismisses. What it
+      // must never do is sign the stale transaction — the button said "Refresh
+      // Quote" and signed the old bytes anyway, so the press the user meant as
+      // "rebuild this" was the press that authorised it.
+      if (!pending.proposal.refresh) {
+        cancel();
+        return;
+      }
+
       setRefreshing(true);
       try {
         await refresh();
@@ -62,16 +72,20 @@ export function useSignatureRequestHost(): SignatureRequestHost {
       return;
     }
     await confirm();
-  }, [pending, expired, refresh, confirm]);
+  }, [pending, expired, refresh, confirm, cancel]);
 
   const confirmLabel = useMemo(() => {
-    if (expired) return i18n.t('confirmation.refreshQuote', { defaultValue: 'Refresh Quote' });
+    if (expired) {
+      return pending?.proposal.refresh
+        ? i18n.t('confirmation.refreshQuote', { defaultValue: 'Refresh Quote' })
+        : i18n.t('confirmation.expiredDismiss', { defaultValue: 'Expired — Dismiss' });
+    }
     if (secondsLeft === null) return i18n.t('confirmation.confirm', { defaultValue: 'Confirm' });
     return i18n.t('confirmation.confirmCountdown', {
       seconds: secondsLeft,
       defaultValue: 'Confirm ({{seconds}})',
     });
-  }, [expired, secondsLeft]);
+  }, [expired, pending, secondsLeft]);
 
   return {
     request: pending,
