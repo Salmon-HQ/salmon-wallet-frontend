@@ -30,6 +30,7 @@ import {
   s,
   spacing,
   useAddressValidation,
+  useValidationDirty,
   useRecipientOptions,
   useSendContacts,
   useTransactions,
@@ -88,7 +89,7 @@ export default function SendRecipientScreen() {
     startFromRequest,
   } = useSendFlow();
 
-  const [address, setAddress] = useState(recipient?.address ?? '');
+  const [address, setAddressState] = useState(recipient?.address ?? '');
   // Payments' Pay lands here with the scanner already up.
   const { scan } = useLocalSearchParams<{ scan?: string }>();
   const [showScanner, setShowScanner] = useState(scan === '1');
@@ -113,6 +114,22 @@ export default function SendRecipientScreen() {
     message: addressMessage,
     messageType: addressMessageType,
   } = useAddressValidation(address, account, { debounceMs: 500 });
+
+  // The validator holds the PREVIOUS string's verdict through the debounce, so
+  // a freshly entered address reads as already approved. `dirty` closes that
+  // window. The DOM twin and the NFT send screen both gate on it, and
+  // `useValidationDirty`'s own header says every recipient screen does — this
+  // one did not, so paste-then-Continue or scan-then-Continue inside 500 ms
+  // carried a never-validated address to the signer, skipping the off-curve
+  // warning whose destination burns funds.
+  const { dirty, markDirty } = useValidationDirty(isValidating);
+  const setAddress = useCallback(
+    (next: string) => {
+      markDirty();
+      setAddressState(next);
+    },
+    [markDirty]
+  );
 
   // The people this wallet has actually paid. The counterparty of a send is
   // the same field the activity row reads, so the two surfaces agree on who a
@@ -198,10 +215,19 @@ export default function SendRecipientScreen() {
   );
 
   const handleContinue = useCallback(() => {
-    if (!isAddressValid || isValidating) return;
+    if (!isAddressValid || isValidating || dirty) return;
     setRecipient(recipientFor(address, resolvedAddress));
     router.push('/send/amount');
-  }, [isAddressValid, isValidating, address, resolvedAddress, recipientFor, setRecipient, router]);
+  }, [
+    isAddressValid,
+    isValidating,
+    dirty,
+    address,
+    resolvedAddress,
+    recipientFor,
+    setRecipient,
+    router,
+  ]);
 
   const renderGroup = (labelKey: string, rows: RecipientOption[], groupTestID: string) => {
     if (rows.length === 0) return null;
@@ -244,7 +270,7 @@ export default function SendRecipientScreen() {
           <PrimaryButton
             testID="send-continue-button"
             onPress={handleContinue}
-            disabled={!isAddressValid || isValidating}
+            disabled={!isAddressValid || isValidating || dirty}
           >
             {t('actions.continue')}
           </PrimaryButton>

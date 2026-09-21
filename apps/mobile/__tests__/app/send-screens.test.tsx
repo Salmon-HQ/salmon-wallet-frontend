@@ -170,6 +170,22 @@ jest.mock('@salmon/shared', () => ({
   isWatchOnlyAccount: () => mockIsWatchOnly,
   useAccountsContext: () => [mockAccountState, {}],
   useAddressValidation: () => mockValidation,
+  // Real hook: `dirty` starts false and is set on each edit, so a screen that
+  // gates Continue on `!dirty` behaves here exactly as it does shipped.
+  // Faithful to the real hook (packages/shared/src/hooks/useValidationDirty.ts):
+  // dirty is set on every edit and cleared only when a validation cycle
+  // actually completes. Reproduced rather than imported because requireActual
+  // pulls the whole barrel, which this jest config cannot load.
+  useValidationDirty: (isValidating: boolean) => {
+    const React = require('react');
+    const [dirty, setDirty] = React.useState(false);
+    const wasValidating = React.useRef(false);
+    React.useEffect(() => {
+      if (wasValidating.current && !isValidating) setDirty(false);
+      wasValidating.current = isValidating;
+    }, [isValidating]);
+    return { dirty, markDirty: React.useCallback(() => setDirty(true), []) };
+  },
   useSendContacts: () => ({
     contacts: [
       {
@@ -517,8 +533,19 @@ describe('the recipient screen — 04A and 04B', () => {
       resolvedAddress: null,
     };
 
-    render(<SendRecipientScreen />);
+    const { rerender } = render(<SendRecipientScreen />);
     fireEvent.changeText(screen.getByTestId('send-recipient-input'), '  Dest1  ');
+
+    // Typing marks the verdict stale, and Continue stays shut until a
+    // validation cycle actually completes — the validator holds the previous
+    // string's verdict through the debounce, so pressing before that carries
+    // an unjudged address to the signer. Run the cycle the way the screen
+    // sees it: validating, then settled.
+    mockValidation = { ...mockValidation, isValidating: true };
+    rerender(<SendRecipientScreen />);
+    mockValidation = { ...mockValidation, isValidating: false };
+    rerender(<SendRecipientScreen />);
+
     fireEvent.press(screen.getByTestId('send-continue-button'));
 
     expect(mockFlow.setRecipient).toHaveBeenCalledWith(
