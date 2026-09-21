@@ -73,6 +73,13 @@ function SendPassage() {
     t
   );
 
+  // The failure surface below is an RN `Modal` — its own native window, which
+  // the lock overlay (a plain zIndex View) does not cover — and it carries a
+  // Retry that re-fires the transfer. Same class as the confirmation window
+  // gated in `(app)/_layout.tsx`: keep it down while the wallet is locked so
+  // a transfer cannot be resent from above the lock screen.
+  const [{ locked }] = useAccountsContext();
+
   const summary =
     token && recipient
       ? t('transaction.sendSummary', {
@@ -117,7 +124,7 @@ function SendPassage() {
           transfer does not rewind the passage: retry fires the same transfer
           from here, and the only thing that unwinds it is leaving. */}
       <Modal
-        visible={sendFailed}
+        visible={sendFailed && !locked}
         animationType="none"
         presentationStyle="fullScreen"
         onRequestClose={handleLeave}

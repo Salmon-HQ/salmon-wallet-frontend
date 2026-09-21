@@ -209,8 +209,16 @@ export default function AppLayout() {
             </Stack>
 
             {/* Core's confirmation window, above every screen a Powerup can
-          propose from: the one place a proposal is reviewed and signed. */}
-            <ConfirmationHost />
+          propose from: the one place a proposal is reviewed and signed.
+
+          Not while locked. This is an RN `Modal` — its own native window — so
+          the `LockOverlay` below, a plain `View` with a zIndex, does not cover
+          it. `lockAccounts` flips `locked` and drops the stash key but leaves
+          the accounts and their keypairs live, and `confirm()` never consults
+          the lock, so a proposal left open when the wallet auto-locks could be
+          signed and broadcast from above the lock screen. Unmounting holds the
+          request in context; it is presented again once the wallet is open. */}
+            {!isLocked && <ConfirmationHost />}
 
             {/* The lock screen. It covers every screen this stack can push and
           takes every touch. */}
