@@ -29,6 +29,7 @@ const REASON_KEYS: Record<UndeterminedReason, string> = {
   'simulation-not-executed': 'dapp.effects_reason_not_executed',
   'account-state-unavailable': 'dapp.effects_reason_no_state',
   'batch-not-previewable': 'dapp.effects_reason_batch',
+  'ownership-change': 'dapp.effects_reason_ownership_change',
 };
 
 const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
@@ -39,6 +40,8 @@ const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'simulation-not-executed': 'The network did not run the simulation.',
   'account-state-unavailable': 'The network did not return the balances after execution.',
   'batch-not-previewable': 'This request contains several transactions that run in sequence.',
+  'ownership-change':
+    'This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.',
 };
 
 interface AmountRowProps {

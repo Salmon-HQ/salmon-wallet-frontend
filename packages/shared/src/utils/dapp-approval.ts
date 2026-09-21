@@ -64,6 +64,12 @@ export interface ParsedSolanaTransaction {
 }
 
 export interface SolanaTransactionApprovalDetails {
+  /**
+   * How many transactions the request carries. Everything else in this object
+   * is read off the first one, so anything above 1 must be surfaced: the
+   * numbers do not describe what the user is about to sign in full.
+   */
+  transactionCount: number;
   feeLamports: number | null;
   instructionCount: number | null;
   feePayer: string | null;
@@ -274,10 +280,11 @@ export async function loadSolanaTransactionApprovalDetails(
 ): Promise<SolanaTransactionApprovalDetails> {
   await fetchAndMergeNetworkConfigs();
 
-  const encodedMessage =
+  const encodedMessages =
     request.method === 'signAllTransactions'
-      ? (request.params?.messages?.[0] ?? '')
-      : (request.params?.message ?? '');
+      ? (request.params?.messages ?? [])
+      : [request.params?.message ?? ''];
+  const encodedMessage = encodedMessages[0] ?? '';
 
   if (!encodedMessage) {
     throw new Error(
@@ -294,6 +301,7 @@ export async function loadSolanaTransactionApprovalDetails(
     .send();
 
   return {
+    transactionCount: encodedMessages.length,
     feeLamports: value != null ? Number(value) : null,
     instructionCount:
       'instructions' in parsed.message

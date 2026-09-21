@@ -90,6 +90,7 @@ export function DAppTransactionApprovalPage({
       instructionCount={details?.instructionCount ?? null}
       feePayer={details?.feePayer ?? null}
       recentBlockhash={details?.recentBlockhash ?? null}
+      transactionCount={details?.transactionCount ?? 1}
       parsingError={parsingError}
       networkMismatch={networkMismatch}
       disabled={!account || !networkId}

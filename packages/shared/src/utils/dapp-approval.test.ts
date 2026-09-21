@@ -775,6 +775,25 @@ describe('version 1 transactions', () => {
   const submittedWire = (sendTransaction: ReturnType<typeof vi.fn>) =>
     new Uint8Array(Buffer.from(sendTransaction.mock.calls[0][0] as string, 'base64'));
 
+  it('reports how many transactions a batch carries, not just the one it read', async () => {
+    const fixture = await v1Fixture();
+
+    const details = await loadSolanaTransactionApprovalDetails(
+      (await makeAccount({
+        getFeeForMessage: () => ({ send: async () => ({ value: 5000n }) }),
+      })) as never,
+      {
+        id: 'batch-details',
+        method: 'signAllTransactions',
+        params: { messages: [fixture.encodedMessage, fixture.encodedMessage] },
+      }
+    );
+
+    // Everything else in the object was read off the first message; the count
+    // is what tells the approval screen to say so.
+    expect(details.transactionCount).toBe(2);
+  });
+
   it('reads the v1 resource settings from transactionConfig in the approval details', async () => {
     const fixture = await v1Fixture();
 
@@ -786,6 +805,7 @@ describe('version 1 transactions', () => {
     );
 
     expect(details).toEqual({
+      transactionCount: 1,
       feeLamports: 5000,
       instructionCount: 2,
       feePayer: testKeypair(1).publicKey.toBase58(),

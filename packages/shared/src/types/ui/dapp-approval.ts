@@ -71,6 +71,11 @@ export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
   instructionCount: number | null;
   feePayer: string | null;
   recentBlockhash: string | null;
+  /**
+   * Transactions in the request. Above 1, the fee, instruction count, fee
+   * payer and blockhash describe only the first, and the view says so.
+   */
+  transactionCount?: number;
   parsingError: string | null;
   /**
    * Set when the request names a network other than the one the wallet is

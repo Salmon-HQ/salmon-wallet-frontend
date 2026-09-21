@@ -26,6 +26,7 @@ export function DAppTransactionApprovalView({
   instructionCount,
   feePayer,
   recentBlockhash,
+  transactionCount = 1,
   parsingError,
   networkMismatch = null,
   disabled = false,
@@ -90,6 +91,19 @@ export function DAppTransactionApprovalView({
               label={t('dapp.transaction_overview', 'Transaction overview')}
             />
             <KeyValueRow label={t('dapp.method', 'Method')} value={requestSummary} />
+            {transactionCount > 1 && (
+              <KeyValueRow
+                layout="stacked"
+                label={t('dapp.batch_size', 'Transactions in this request')}
+                value={t(
+                  'dapp.batch_first_only',
+                  '{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.',
+                  { count: transactionCount }
+                )}
+                valueTone="danger"
+                testID="batch-first-only"
+              />
+            )}
             <KeyValueRow
               label={t('dapp.transaction_fee', 'Estimated fee')}
               value={feeSol ? `${feeSol} SOL` : '-'}
