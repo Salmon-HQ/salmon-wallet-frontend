@@ -100,25 +100,47 @@ class AnalyticsClient {
     }
   }
 
-  /** Grants or withdraws consent, persisting the choice. */
+  /**
+   * Grants or withdraws consent, persisting the choice.
+   *
+   * A withdrawal stops collecting before it tries to write anything, and the
+   * write is not allowed to fail quietly. It used to: the persisted flag stayed
+   * `true` and the install id stayed on disk while the in-memory flag read
+   * `false`, so the toggle showed OFF, said nothing, and the next launch read
+   * the stale `true` and resumed sending under the same identity.
+   *
+   * @throws When the choice could not be persisted. The caller surfaces it;
+   * collection has already stopped either way.
+   */
   async setConsent(enabled: boolean): Promise<void> {
     this.consent = enabled;
-    try {
-      const storage = getStorage();
-      await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT, enabled);
 
-      if (enabled) {
-        this.installId = await getOrCreateInstallId();
-        this.startTimer();
-      } else {
-        this.stopTimer();
-        this.queue = [];
-        this.installId = null;
-        await clearInstallId();
-      }
-    } catch {
-      // Persistence best-effort; in-memory consent still reflects the choice.
+    if (!enabled) {
+      this.stopTimer();
+      this.queue = [];
+      this.installId = null;
     }
+
+    const storage = getStorage();
+
+    if (!enabled) {
+      // A withdrawal that cannot be written must not leave `true` on disk: the
+      // next launch would read it, restore the same install id and resume
+      // sending under a toggle that reads OFF. Absent consent is not consent,
+      // so removing the key is a sound second attempt.
+      try {
+        await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT, false);
+      } catch (error) {
+        await storage.removeItem(STORAGE_KEYS.ANALYTICS_CONSENT);
+        console.warn('Analytics consent withdrawal fell back to removing the key:', error);
+      }
+      await clearInstallId();
+      return;
+    }
+
+    await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT, true);
+    this.installId = await getOrCreateInstallId();
+    this.startTimer();
   }
 
   /**

@@ -118,7 +118,9 @@ describe('useSendFlowState', () => {
         started = result.current.startFromRequest(request, params.tokens);
       });
       expect(started).toEqual({ ok: true, next: 'review' });
-      expect(result.current.recipient).toEqual({ address: 'dest', name: 'Cafe' });
+      // The label is not a name: it comes from the QR, and the "To" row holds
+      // an address-book name everywhere else. It is shown as "Requested by".
+      expect(result.current.recipient).toEqual({ address: 'dest' });
       expect(result.current.token).toBe(usdc);
       expect(result.current.amount).toBe('2.5');
       expect(result.current.request?.locked).toEqual({

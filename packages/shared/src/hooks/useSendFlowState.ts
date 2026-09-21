@@ -148,7 +148,12 @@ export function useSendFlowState({
       }
 
       const hasAmount = transferRequest.amount !== undefined;
-      setRecipient({ address: transferRequest.recipient, name: transferRequest.label });
+      // The label is the requester's own words, from a QR anyone can print. It
+      // stays in the "Requested by" row, which says whose words they are. The
+      // "To" row holds an address-book name everywhere else in the wallet, so
+      // putting the label there made a payment to an attacker's address read
+      // as a payment to a saved contact.
+      setRecipient({ address: transferRequest.recipient });
       setToken(held);
       setAmount(transferRequest.amount ?? '');
       setRequest({
