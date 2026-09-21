@@ -69,6 +69,34 @@ const NETWORK_ORDER = {
  *
  * @returns true if the merge succeeded, false if it fell back to defaults
  */
+
+/**
+ * Accepts a backend-supplied endpoint only when it is a well-formed URL on an
+ * expected scheme.
+ *
+ * These values become the wallet's whole view of the chain: `nodeUrl` feeds
+ * `createSolanaRpc`, and from there simulation, blockhash, `sendTransaction`
+ * and confirmation. Written through unchecked, whoever answers `/v1/networks`
+ * chooses which chain the wallet simulates against and where signed
+ * transactions go. A malformed or non-network scheme must leave the compiled
+ * default in place rather than replace it.
+ *
+ * @param value - the candidate endpoint from the catalogue response.
+ * @param schemes - the schemes this field is allowed to use.
+ * @returns the value when it is usable, or null to keep the existing default.
+ */
+function acceptEndpoint(value: unknown, schemes: readonly string[]): string | null {
+  if (typeof value !== 'string' || value.length === 0) return null;
+  try {
+    return schemes.includes(new URL(value).protocol) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+const HTTP_SCHEMES = ['https:', 'http:'] as const;
+const WS_SCHEMES = ['wss:', 'ws:'] as const;
+
 export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
   try {
     const apiNetworks = await getNetworks();
@@ -78,20 +106,16 @@ export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
 
       const chain = blockchain?.toLowerCase();
       if (chain === 'solana' && SOLANA_NETWORKS[id]) {
-        if ('nodeUrl' in cfg && cfg.nodeUrl) {
-          SOLANA_NETWORKS[id].config.nodeUrl = cfg.nodeUrl as string;
-        }
-        if ('wsUrl' in cfg && cfg.wsUrl) {
-          SOLANA_NETWORKS[id].config.wsUrl = cfg.wsUrl as string;
-        }
+        const nodeUrl = 'nodeUrl' in cfg ? acceptEndpoint(cfg.nodeUrl, HTTP_SCHEMES) : null;
+        if (nodeUrl) SOLANA_NETWORKS[id].config.nodeUrl = nodeUrl;
+        const wsUrl = 'wsUrl' in cfg ? acceptEndpoint(cfg.wsUrl, WS_SCHEMES) : null;
+        if (wsUrl) SOLANA_NETWORKS[id].config.wsUrl = wsUrl;
       } else if (chain === 'ethereum' && ETHEREUM_NETWORKS[id]) {
-        if ('rpcUrl' in cfg && cfg.rpcUrl) {
-          ETHEREUM_NETWORKS[id].config.rpcUrl = cfg.rpcUrl as string;
-        }
+        const rpcUrl = 'rpcUrl' in cfg ? acceptEndpoint(cfg.rpcUrl, HTTP_SCHEMES) : null;
+        if (rpcUrl) ETHEREUM_NETWORKS[id].config.rpcUrl = rpcUrl;
       } else if (chain === 'bitcoin' && BITCOIN_NETWORKS[id]) {
-        if ('apiUrl' in cfg && cfg.apiUrl) {
-          BITCOIN_NETWORKS[id].config.apiUrl = cfg.apiUrl as string;
-        }
+        const apiUrl = 'apiUrl' in cfg ? acceptEndpoint(cfg.apiUrl, HTTP_SCHEMES) : null;
+        if (apiUrl) BITCOIN_NETWORKS[id].config.apiUrl = apiUrl;
       }
     }
     return true;

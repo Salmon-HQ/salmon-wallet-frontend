@@ -6,7 +6,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useAvailableNetworks } from './useAvailableNetworks';
+import { fetchAndMergeNetworkConfigs, useAvailableNetworks } from './useAvailableNetworks';
+import { SOLANA_NETWORKS } from '../blockchain/solana/networks';
 import * as useUserConfigModule from './useUserConfig';
 import * as networkService from '../api/services/network';
 import type { ActiveBlockchainAccount } from '../types/account';
@@ -567,5 +568,41 @@ describe('useAvailableNetworks Hook', () => {
 
       expect(result.current.developerNetworks).toBe(true);
     });
+  });
+});
+
+/**
+ * `nodeUrl` becomes the wallet's entire view of the chain: createSolanaRpc,
+ * simulation, blockhash, sendTransaction, confirmation. Written through
+ * unchecked, whoever answers /v1/networks repoints all of it.
+ */
+describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
+  const MAINNET = 'solana-mainnet';
+
+  it.each([
+    ['javascript:', 'javascript:alert(1)'],
+    ['data:', 'data:text/plain,x'],
+    ['file:', 'file:///etc/passwd'],
+    ['not a url', 'definitely not a url'],
+    ['empty', ''],
+  ])('keeps the compiled default when the backend sends a %s nodeUrl', async (_label, nodeUrl) => {
+    const before = SOLANA_NETWORKS[MAINNET].config.nodeUrl;
+    vi.mocked(networkService.getNetworks).mockResolvedValue([
+      { id: MAINNET, blockchain: 'solana', config: { nodeUrl } },
+    ] as any);
+
+    await fetchAndMergeNetworkConfigs();
+
+    expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe(before);
+  });
+
+  it('accepts an https nodeUrl', async () => {
+    vi.mocked(networkService.getNetworks).mockResolvedValue([
+      { id: MAINNET, blockchain: 'solana', config: { nodeUrl: 'https://rpc.example/x' } },
+    ] as any);
+
+    await fetchAndMergeNetworkConfigs();
+
+    expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('https://rpc.example/x');
   });
 });
