@@ -104,16 +104,21 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   // the hold-to-copy has actually fired once, so advancing costs having seen
   // the phrase land somewhere durable, not just having scrolled past it.
   const [copied, setCopied] = useState(false);
+  // A clipboard write can fail, and advancing depends on it here. Swallowing
+  // the failure left the button dead with nothing on screen saying why.
+  const [copyFailed, setCopyFailed] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
+      setCopyFailed(false);
       await Clipboard.setStringAsync(mnemonic);
       setCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+      setCopyFailed(true);
     }
   }, [mnemonic]);
 
@@ -162,6 +167,11 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
                 {t('settings.clipboard_warning_description')}
               </WarningNotice>
             </View>
+            {copyFailed && (
+              <View style={{ paddingTop: spacing.md }} testID="create-seed-copy-failed">
+                <WarningNotice tone="error" title={t('settings.copy_failed')} />
+              </View>
+            )}
           </View>
         }
         secondary={

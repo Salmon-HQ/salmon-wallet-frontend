@@ -280,7 +280,12 @@ function App() {
       void clearSessionKey();
       actions.lockAccounts();
     },
-    enabled: ready && !locked && accounts.length > 0 && !justCreated && !isAddingAccount,
+    // Not suspended while adding an account. Switching it off for the life of
+    // the panel left an unlocked wallet unlocked indefinitely — the background
+    // alarm that fires instead cannot lock a panel that is already open. The
+    // flow generates plenty of real activity, which is what should hold the
+    // timer off.
+    enabled: ready && !locked && accounts.length > 0 && !justCreated,
   });
 
   useEffect(() => {
