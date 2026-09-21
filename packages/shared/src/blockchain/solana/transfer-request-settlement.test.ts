@@ -79,9 +79,51 @@ describe('findTransferRequestSettlement', () => {
     const { rpc } = rpcWith([], {});
     await expect(findTransferRequestSettlement(rpc, query)).resolves.toBeNull();
     expect(rpc.getSignaturesForAddress).toHaveBeenCalledWith(REFERENCE, {
-      limit: 12,
+      limit: 1000,
       commitment: 'finalized',
     });
+  });
+
+  it('finds a payment buried under later transactions that only name the reference', async () => {
+    // Anyone holding the request's QR knows the reference and can post cheap
+    // transactions that name it. A node returns the newest first, so the real
+    // payment is at the far end of the list.
+    const burial = Array.from({ length: 40 }, (_, index) => ({
+      signature: `burial-${index}`,
+      err: null,
+    }));
+    const { rpc, getTransaction } = rpcWith([...burial, { signature: 'paid', err: null }], {
+      ...Object.fromEntries(burial.map((entry) => [entry.signature, tx({})])),
+      paid: tx(balances('0', '500000')),
+    });
+
+    const settlement = await findTransferRequestSettlement(rpc, query);
+
+    expect(settlement?.signature).toBe('paid');
+    // Oldest first: the payment was decided before any burial entry was read.
+    expect(getTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('pages the signature list instead of reading only the first page', async () => {
+    const page = (start: number, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        signature: `sig-${start + index}`,
+        err: null,
+      }));
+    const first = page(0, 1000);
+    const second = page(1000, 1);
+    const getSignaturesForAddress = vi.fn((_reference: string, options: { before?: string }) => ({
+      send: async () => (options.before === 'sig-999' ? second : first),
+    }));
+    const getTransaction = vi.fn((signature: string) => ({
+      send: async () => (signature === 'sig-1000' ? tx(balances('0', '500000')) : tx({})),
+    }));
+    const rpc = { getSignaturesForAddress, getTransaction } as unknown as SolanaRpc;
+
+    const settlement = await findTransferRequestSettlement(rpc, query);
+
+    expect(getSignaturesForAddress).toHaveBeenCalledTimes(2);
+    expect(settlement?.signature).toBe('sig-1000');
   });
 
   it('lets an RPC failure through so the caller keeps its last state', async () => {

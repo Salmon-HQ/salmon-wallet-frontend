@@ -35,8 +35,29 @@ export interface TransferRequestSettlement {
   blockTime: number | null;
 }
 
-/** A fresh reference is touched by the payer alone; twelve leaves room for retries. */
-const SIGNATURE_LIMIT = 12;
+/** One page of the signature list, at the RPC's own maximum. */
+const SIGNATURE_PAGE_LIMIT = 1000;
+
+/**
+ * Pages walked per check. Ten thousand finalized signatures naming one fresh
+ * reference is an attack, not use, and the wallet stops rather than paging
+ * forever on someone else's dime.
+ */
+const MAX_SIGNATURE_PAGES = 10;
+
+/**
+ * Transactions fetched per check. The signature list is one call per thousand
+ * entries, but deciding whether an entry settles the request costs a
+ * `getTransaction` each, so a reference buried under thousands of signatures
+ * would otherwise turn a five-second poll into a flood against the receiver's
+ * own node.
+ *
+ * The ceiling that remains: an attacker who posts more than this many
+ * reference-naming signatures *before* the payer pays still hides the payment.
+ * Posting them afterwards — the cheap, deterministic version — no longer
+ * works, because the search runs oldest first.
+ */
+const MAX_TRANSACTION_LOOKUPS = 60;
 
 interface TokenBalanceLike {
   mint: string;
@@ -77,6 +98,39 @@ function ownedDelta(
 }
 
 /**
+ * Every finalized signature that names the reference, oldest first.
+ *
+ * Reading only the newest page hides a payment from the receiver: anyone who
+ * sees the request's QR knows the reference, and transactions that merely name
+ * it — failed ones included — push the real payment out of the page. Whoever
+ * buries a payment has to do it before that payment is made, so the oldest
+ * entries are examined first.
+ */
+async function referenceSignatures(
+  rpc: SolanaRpc,
+  reference: string
+): Promise<{ signature: string; err: unknown }[]> {
+  const collected: { signature: string; err: unknown }[] = [];
+  let before: Signature | undefined;
+
+  for (let page = 0; page < MAX_SIGNATURE_PAGES; page += 1) {
+    const entries = await rpc
+      .getSignaturesForAddress(address(reference), {
+        limit: SIGNATURE_PAGE_LIMIT,
+        commitment: 'finalized',
+        ...(before ? { before } : {}),
+      })
+      .send();
+
+    collected.push(...entries);
+    if (entries.length < SIGNATURE_PAGE_LIMIT) break;
+    before = entries[entries.length - 1]?.signature as Signature;
+  }
+
+  return collected.reverse();
+}
+
+/**
  * The finalized transfer that settles the request, or null while nothing does.
  * Throws when the RPC does: the caller keeps its last known state.
  */
@@ -84,17 +138,14 @@ export async function findTransferRequestSettlement(
   rpc: SolanaRpc,
   query: TransferRequestSettlementQuery
 ): Promise<TransferRequestSettlement | null> {
-  const signatures = await rpc
-    .getSignaturesForAddress(address(query.reference), {
-      limit: SIGNATURE_LIMIT,
-      commitment: 'finalized',
-    })
-    .send();
-
+  const signatures = await referenceSignatures(rpc, query.reference);
   const wanted = BigInt(query.amountAtomic);
+  let lookups = 0;
 
   for (const entry of signatures) {
     if (entry.err) continue;
+    if (lookups >= MAX_TRANSACTION_LOOKUPS) break;
+    lookups += 1;
 
     const transaction = await rpc
       .getTransaction(entry.signature as Signature, {
