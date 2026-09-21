@@ -142,8 +142,16 @@ export function useAddressValidation(
         return;
       }
 
-      // Create new abort controller for this validation
-      abortControllerRef.current = new AbortController();
+      // Hold this cycle's controller in a local. The guards below must ask
+      // whether THIS validation was superseded, and the ref no longer answers
+      // that: `cleanup` nulls it and the next cycle replaces it, so reading
+      // `abortControllerRef.current` after the await sees either null or a
+      // fresh, un-aborted controller — never the aborted one. The check could
+      // not return true, so a superseded resolution settled anyway and wrote
+      // its `resolvedAddress`, which `useSendTransaction` prefers over the
+      // address the user actually typed.
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       setIsValidating(true);
       setValidationResult(null);
@@ -152,14 +160,14 @@ export function useAddressValidation(
         const result = await account.validateDestinationAccount(addressToValidate);
 
         // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
+        if (controller.signal.aborted) {
           return;
         }
 
         handleResult(result);
       } catch (error) {
         // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
+        if (controller.signal.aborted) {
           return;
         }
 
