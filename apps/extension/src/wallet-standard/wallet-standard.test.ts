@@ -13,7 +13,7 @@ import type { Wallet } from '@wallet-standard/base';
 import { initialize } from './index';
 import { registerWallet } from './register';
 import { SalmonWallet } from './wallet';
-import { SOLANA_CHAINS } from './solana';
+import { getNetworkForChain, SOLANA_CHAINS, type SolanaChain } from './solana';
 import type { Salmon, SalmonEvent, SalmonPublicKey } from './window';
 import { toSalmonAddress } from '../lib/SalmonAddress';
 
@@ -370,5 +370,21 @@ describe('SalmonWallet', () => {
       })
     ).rejects.toThrow('invalid account');
     expect(salmon.signMessage).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The chain a dApp names and the network the approval screen compares it
+ * against have to be the same spelling. They were not: this side said
+ * `mainnet` and the wallet says `solana-mainnet`, so the mismatch guard fired
+ * on every honest Wallet Standard send and never on a dishonest one.
+ */
+describe('the network a chain maps to', () => {
+  it.each([
+    ['solana:mainnet', 'solana-mainnet'],
+    ['solana:devnet', 'solana-devnet'],
+    ['solana:testnet', 'solana-testnet'],
+  ])('maps %s to the wallet id %s', (chain, networkId) => {
+    expect(getNetworkForChain(chain as SolanaChain)).toBe(networkId);
   });
 });

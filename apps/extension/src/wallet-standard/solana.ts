@@ -30,16 +30,22 @@ export function isSolanaChain(chain: IdentifierString): chain is SolanaChain {
 
 /**
  * Map supported Solana clusters to supported Salmon networks.
+ *
+ * The wallet's own ids, not the bare cluster names. The approval screen
+ * compares what the request declares against the network the wallet is on, and
+ * that side is always spelled `solana-mainnet`; returning `mainnet` here made
+ * the two sides disagree for every caller, so the guard fired on an honest
+ * request and said nothing about a dishonest one.
  */
 export function getNetworkForChain(chain: SolanaChain): string {
   switch (chain) {
     case SOLANA_MAINNET_CHAIN:
-      return 'mainnet';
+      return 'solana-mainnet';
     case SOLANA_DEVNET_CHAIN:
-      return 'devnet';
+      return 'solana-devnet';
     case SOLANA_TESTNET_CHAIN:
-      return 'testnet';
+      return 'solana-testnet';
     default:
-      return 'mainnet';
+      return 'solana-mainnet';
   }
 }
