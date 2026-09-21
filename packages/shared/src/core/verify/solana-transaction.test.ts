@@ -67,14 +67,26 @@ describe('assertSolanaTransactionMatches', () => {
     ).toThrow(/does not name/);
   });
 
-  it('skips the named-account check when the message resolves addresses through a table', () => {
-    // The static list is partial here, so a missing account proves nothing.
-    // The payer and program checks still apply.
+  // The static list is partial here, so a missing account proves nothing —
+  // which makes the requirement undecidable, not satisfied. Returning as if it
+  // held let the message's own author decide whether the check ran: including
+  // any lookup entry switched it off, silently.
+  it('refuses rather than skips when a table hides a required account', () => {
     expect(() =>
       assertSolanaTransactionMatches(WITH_LOOKUPS, {
         feePayer: OWNER,
         allowedPrograms: [SYSTEM_PROGRAM],
         requiredAccounts: [NAMED],
+      })
+    ).toThrow(SolanaTransactionMismatchError);
+  });
+
+  it('still passes when the table is present but the required account is named anyway', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(WITH_LOOKUPS, {
+        feePayer: OWNER,
+        allowedPrograms: [SYSTEM_PROGRAM],
+        requiredAccounts: [OWNER],
       })
     ).not.toThrow();
   });

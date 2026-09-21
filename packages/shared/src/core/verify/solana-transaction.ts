@@ -131,16 +131,32 @@ export function assertSolanaTransactionMatches(
   }
 
   const required = expectation.requiredAccounts ?? [];
-  const usesLookupTables =
-    'addressTableLookups' in message && (message.addressTableLookups ?? []).length > 0;
-  if (required.length === 0 || usesLookupTables) {
+  if (required.length === 0) {
     return;
   }
 
+  // Address tables resolve accounts this decoder cannot see, so a required
+  // account missing from the static list may be hiding in one. That makes the
+  // requirement undecidable rather than satisfied — and it used to return as
+  // if satisfied, which handed the response the choice of whether the check
+  // ran at all: including any lookup entry switched it off, silently. Refuse
+  // instead. A flow that needs both a lookup table and a named-account
+  // requirement has to resolve the tables before asserting, which this
+  // verifier deliberately does not do.
   const named = new Set(accounts);
-  for (const account of required) {
-    if (!named.has(account)) {
-      throw new SolanaTransactionMismatchError(`Transaction does not name ${account}`);
-    }
+  const missing = required.filter((account) => !named.has(account));
+  if (missing.length === 0) {
+    return;
   }
+
+  const usesLookupTables =
+    'addressTableLookups' in message && (message.addressTableLookups ?? []).length > 0;
+  if (usesLookupTables) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction does not name ${missing[0]} in its static accounts, and its address table ` +
+        `lookups cannot be resolved here — the requirement cannot be verified`
+    );
+  }
+
+  throw new SolanaTransactionMismatchError(`Transaction does not name ${missing[0]}`);
 }
