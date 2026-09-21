@@ -153,9 +153,35 @@ async function resolveInputs(
     }
   }
 
-  const totalAmountAvailable = inputs.reduce((total, utxo) => total + utxo.satoshis, 0);
+  const totalAmountAvailable = inputs.reduce((total, utxo) => total + utxoValue(utxo), 0);
 
   return { inputs, totalAmountAvailable };
+}
+
+/**
+ * What an input is really worth.
+ *
+ * `satoshis` is the backend's word for it. The previous transaction says it
+ * outright, and it is already on the device — every input is added with its
+ * `nonWitnessUtxo`, so those are the bytes the signature commits to and the
+ * bytes the network reads the fee from. A listing that understates a value
+ * therefore shrinks the change output by the difference and leaves it to the
+ * miner, silently, with nothing reconciling the two numbers.
+ *
+ * The listing is still what selection runs on; the arithmetic that decides how
+ * much comes back runs on this.
+ */
+function utxoValue(utxo: UTXO): number {
+  if (!utxo.rawTx) {
+    return utxo.satoshis;
+  }
+
+  const output = bitcoin.Transaction.fromHex(utxo.rawTx).outs[utxo.vout];
+  if (!output) {
+    throw new Error(`UTXO ${utxo.txid}:${utxo.vout} is not an output of its own transaction`);
+  }
+
+  return Number(output.value);
 }
 
 // ============================================================================
@@ -199,7 +225,7 @@ function buildTransaction(params: {
   const psbt = new bitcoin.Psbt({ network });
 
   // Calculate total input amount
-  const totalInput = inputs.reduce((sum, utxo) => sum + utxo.satoshis, 0);
+  const totalInput = inputs.reduce((sum, utxo) => sum + utxoValue(utxo), 0);
 
   // Add inputs
   for (const utxo of inputs) {
