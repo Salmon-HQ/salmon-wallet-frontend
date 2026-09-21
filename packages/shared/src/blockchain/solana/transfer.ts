@@ -508,12 +508,21 @@ async function executeTransaction(
 
   // skipPreflight: false (default) ensures transactions are simulated before sending.
   // This prevents loss of fees on transactions that would fail.
+  //
+  // maxRetries: 0 hands re-broadcasting to us. The node's own retry loop runs
+  // on a cadence we cannot see or stop, and the confirmation wait already
+  // re-sends these same bytes every couple of seconds
+  // (`confirmSolanaSignature`), so leaving the default would put two
+  // uncoordinated loops on one transaction. Solana's retry guide asks for
+  // exactly this pairing: "set maxRetries to 0 and manually rebroadcast via a
+  // custom algorithm".
   // @see https://solana.com/developers/guides/advanced/retry
   const result = await rpc
     .sendTransaction(wireTransaction, {
       encoding: 'base64',
       skipPreflight: false,
       preflightCommitment: 'confirmed',
+      maxRetries: 0n,
     })
     .send();
   return { result, wireTransaction };
@@ -522,7 +531,8 @@ async function executeTransaction(
 /**
  * Re-broadcasts already-signed bytes. Preflight is skipped: the transaction
  * passed it on the way out, and a re-send exists precisely for the case where
- * the cluster has not seen it, so re-simulating only adds latency.
+ * the cluster has not seen it, so re-simulating only adds latency. `maxRetries`
+ * stays at zero here too — the interval driving this is the retry.
  */
 export function resendTransaction(
   rpc: SolanaRpc,
@@ -533,6 +543,7 @@ export function resendTransaction(
       encoding: 'base64',
       skipPreflight: true,
       preflightCommitment: 'confirmed',
+      maxRetries: 0n,
     })
     .send();
 }

@@ -38,8 +38,10 @@ import {
   calculateTransferFee,
   createSolTransaction,
   createSplTransaction,
+  createTransfer,
   estimateFee,
   requiresMemo,
+  resendTransaction,
   SOL_ADDRESS,
   v1ResourceBudget,
 } from './transfer';
@@ -793,5 +795,66 @@ describe('SolanaAccount.getBalance', () => {
     expect(balance).toBeDefined();
     expect(balance.items.length).toBe(1);
     expect(balance.usdTotal).toBe(0);
+  });
+});
+
+// ============================================================================
+// Who retries
+// ============================================================================
+
+describe('retry ownership', () => {
+  /**
+   * The confirmation wait re-broadcasts these same bytes every couple of
+   * seconds, so the node's own retry loop — which runs on a cadence we can
+   * neither see nor stop — would be a second, uncoordinated loop on one
+   * transaction. Solana's retry guide asks for exactly this pairing: take
+   * `maxRetries` to zero and re-broadcast yourself.
+   */
+  const sendConfigOf = (send: ReturnType<typeof vi.fn>) => send.mock.calls[0][1];
+
+  it('tells the node not to retry the first send', async () => {
+    const send = vi.fn().mockReturnValue({ send: async () => 'a-signature' });
+    const rpc = createRpc({ sendTransaction: send });
+    const signer = await testSigner(1);
+
+    await createTransfer(
+      rpc,
+      signer,
+      address(Keypair.generate().publicKey.toBase58()),
+      SOL_ADDRESS,
+      1
+    );
+
+    expect(sendConfigOf(send)).toMatchObject({ maxRetries: 0n, skipPreflight: false });
+  });
+
+  it('tells the node not to retry a re-broadcast either', async () => {
+    const send = vi.fn().mockReturnValue({ send: async () => 'a-signature' });
+    const rpc = createRpc({ sendTransaction: send });
+
+    await resendTransaction(rpc, 'already-signed-bytes' as never);
+
+    // Preflight is skipped on the repeat: it passed on the way out.
+    expect(sendConfigOf(send)).toMatchObject({ maxRetries: 0n, skipPreflight: true });
+  });
+
+  it('never sends at all when the caller only wanted a simulation', async () => {
+    const send = vi.fn();
+    const rpc = createRpc({
+      sendTransaction: send,
+      simulateTransaction: vi.fn().mockReturnValue({ send: async () => ({ value: {} }) }),
+    });
+    const signer = await testSigner(1);
+
+    await createTransfer(
+      rpc,
+      signer,
+      address(Keypair.generate().publicKey.toBase58()),
+      SOL_ADDRESS,
+      1,
+      { simulate: true }
+    );
+
+    expect(send).not.toHaveBeenCalled();
   });
 });
