@@ -18,6 +18,7 @@ import {
   spacing,
   useAddressValidation,
   useValidationDirty,
+  useSettledPaymentLink,
   useRecipientOptions,
   useSendContacts,
   useTransactions,
@@ -117,27 +118,38 @@ export function StepRecipient({
   // that arrived as a code (spec 033 FR-026; the side panel has no camera).
   // A request that cannot be read says which part (FR-020). Anything else
   // is an address the validator judges.
+  //
+  // The field always shows exactly what was entered, and a link is read only
+  // once it stops changing. Text can arrive a character at a time; reading
+  // each prefix acted on a half-typed link.
   const handleChangeText = useCallback(
     (value: string) => {
       markDirty();
       setRequestError(null);
-      const trimmed = value.trim();
-      if (!/^solana:/i.test(trimmed) || !onRequest) {
-        setAddress(value);
-        return;
-      }
-      const outcome = classifyScanPayload(trimmed, 'solana');
+      setAddress(value);
+    },
+    [markDirty]
+  );
+
+  const handleSettledLink = useCallback(
+    (link: string) => {
+      const outcome = classifyScanPayload(link, 'solana');
       if (outcome.kind === 'invalidRequest') {
-        setAddress(value);
         setRequestError(`send.request.errors.${outcome.reason}`);
         return;
       }
       if (outcome.kind !== 'valid') {
-        setAddress(value);
+        setRequestError('send.request.errors.notSolanaPay');
         return;
       }
       if (!outcome.request) {
         setAddress(outcome.address);
+        return;
+      }
+      // A flow that takes no requests (an NFT send) says so rather than
+      // quietly dropping the amount and memo the link asked for.
+      if (!onRequest) {
+        setRequestError('send.request.errors.transactionRequest');
         return;
       }
       const started = onRequest(outcome.request);
@@ -152,8 +164,9 @@ export function StepRecipient({
         );
       }
     },
-    [markDirty, onRequest]
+    [onRequest]
   );
+  useSettledPaymentLink(address, handleSettledLink);
 
   // `liveBalance` already falls back to the token's own amount.
   const tokenBalance = liveBalance ?? 0;

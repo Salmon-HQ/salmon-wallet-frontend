@@ -199,8 +199,11 @@ export function useAddressValidation(
     // Cleanup previous validation
     cleanup();
 
-    // Reset state if address is empty
-    if (!address || address.trim() === '') {
+    // Reset state if address is empty — or a `solana:` payment link, which is
+    // not an address and not a domain. The recipient screen reads the link
+    // once it stops changing; judging it here meant every half-typed link was
+    // looked up as a name and answered "Could not resolve domain name".
+    if (!address || address.trim() === '' || /^solana:/i.test(address.trim())) {
       setValidationResult(null);
       setResolvedAddress(null);
       setIsDomain(false);

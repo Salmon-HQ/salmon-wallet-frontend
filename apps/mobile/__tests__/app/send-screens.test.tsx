@@ -186,6 +186,11 @@ jest.mock('@salmon/shared', () => ({
     }, [isValidating]);
     return { dirty, markDirty: React.useCallback(() => setDirty(true), []) };
   },
+  // The real hook, loaded from its own file rather than the barrel (which this
+  // jest config cannot load). It only depends on React.
+  useSettledPaymentLink: jest.requireActual(
+    '../../../../packages/shared/src/hooks/useSettledPaymentLink'
+  ).useSettledPaymentLink,
   useSendContacts: () => ({
     contacts: [
       {
@@ -413,10 +418,16 @@ describe('the recipient screen — a pasted payment request (spec 033 US3, mobil
     });
   });
 
+  // A link is read once the text stops changing, so each case lets it settle.
+  const settle = () => act(() => jest.advanceTimersByTime(400));
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
   it('a pasted request starts the flow like a scanned one', () => {
     mockFlow.startFromRequest.mockReturnValue({ ok: true, next: 'review' });
     render(<SendRecipientScreen />);
     fireEvent.changeText(screen.getByTestId('send-recipient-input'), pastedUri);
+    settle();
     expect(mockClassifyScanPayload).toHaveBeenCalledWith(pastedUri, 'solana');
     expect(mockFlow.startFromRequest).toHaveBeenCalledWith(pastedRequest, mockFlow.tokens);
     expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
@@ -428,9 +439,30 @@ describe('the recipient screen — a pasted payment request (spec 033 US3, mobil
       screen.getByTestId('send-recipient-input'),
       'solana:https%3A%2F%2Fexample.com%2Fpay'
     );
+    settle();
     expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
     expect(screen.getByTestId('send-request-refused')).toBeTruthy();
     expect(screen.getByText('This kind of payment request is not supported yet')).toBeTruthy();
+  });
+
+  // Text can arrive a character at a time (a hardware keyboard, the
+  // simulator, someone typing). Reading each prefix acted on a half-typed
+  // link — a request for 1 on the way to 10, one without its memo yet.
+  it('does nothing with a link while it is still arriving, then reads the whole of it', () => {
+    mockFlow.startFromRequest.mockReturnValue({ ok: true, next: 'review' });
+    render(<SendRecipientScreen />);
+    const input = screen.getByTestId('send-recipient-input');
+    for (let end = 'solana:'.length; end <= pastedUri.length; end += 1) {
+      fireEvent.changeText(input, pastedUri.slice(0, end));
+      act(() => jest.advanceTimersByTime(50));
+    }
+    expect(mockClassifyScanPayload).not.toHaveBeenCalled();
+    expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
+
+    settle();
+    expect(mockClassifyScanPayload).toHaveBeenCalledTimes(1);
+    expect(mockClassifyScanPayload).toHaveBeenCalledWith(pastedUri, 'solana');
+    expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
   });
 
   it('a pasted plain address is still just an address', () => {

@@ -184,6 +184,7 @@ export type {
 export { useAddressBookForm } from './useAddressBookForm';
 export { useAddressAddPanel, useAddressEditPanel } from './useAddressBookPanel';
 export { useValidationDirty } from './useValidationDirty';
+export { useSettledPaymentLink, PAYMENT_LINK_SETTLE_MS } from './useSettledPaymentLink';
 export { useAvatarPicker } from './useAvatarPicker';
 export type { AvatarPickerTab } from './useAvatarPicker';
 export type { UseAddressBookPanelResult } from './useAddressBookPanel';

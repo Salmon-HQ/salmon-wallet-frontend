@@ -31,6 +31,7 @@ import {
   spacing,
   useAddressValidation,
   useValidationDirty,
+  useSettledPaymentLink,
   useRecipientOptions,
   useSendContacts,
   useTransactions,
@@ -187,22 +188,28 @@ export default function SendRecipientScreen() {
   // The same field takes a pasted request: a `solana:` URI is classified like
   // a scan, so a request that arrived as text on the phone pays like one that
   // arrived as a code. Anything else is an address the validator judges.
+  //
+  // The field always shows exactly what was entered, and a link is read only
+  // once it stops changing. Text can arrive a character at a time; reading
+  // each prefix acted on a half-typed link, and leaving the controlled value
+  // behind while it did so made iOS drop the characters typed meanwhile.
   const handleChangeText = useCallback(
     (next: string) => {
       setRequestError(null);
-      const trimmed = next.trim();
-      if (!/^solana:/i.test(trimmed)) {
-        setAddress(next);
-        return;
-      }
-      const outcome = classifyScanPayload(trimmed, blockchain);
+      setAddress(next);
+    },
+    [setAddress]
+  );
+
+  const handleSettledLink = useCallback(
+    (link: string) => {
+      const outcome = classifyScanPayload(link, blockchain);
       if (outcome.kind === 'invalidRequest') {
-        setAddress(next);
         setRequestError(`send.request.errors.${outcome.reason}`);
         return;
       }
       if (outcome.kind !== 'valid') {
-        setAddress(next);
+        setRequestError('send.request.errors.notSolanaPay');
         return;
       }
       if (!outcome.request) {
@@ -213,6 +220,7 @@ export default function SendRecipientScreen() {
     },
     [blockchain, setAddress, startRequest]
   );
+  useSettledPaymentLink(address, handleSettledLink);
 
   const handleContinue = useCallback(() => {
     if (!isAddressValid || isValidating || dirty) return;
