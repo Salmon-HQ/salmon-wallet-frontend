@@ -101,7 +101,11 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
   if (!opts.removedNftMintAddresses?.length) return;
 
   const removed = new Set(opts.removedNftMintAddresses);
-  queryClient.setQueriesData<unknown[]>(
+  const keep = (nft: unknown): boolean => {
+    const mintAddress = getRemovedMintAddress(nft);
+    return !mintAddress || !removed.has(mintAddress);
+  };
+  queryClient.setQueriesData<unknown>(
     {
       predicate: (query) => {
         const [head, params] = query.queryKey as [string, Record<string, unknown> | undefined];
@@ -120,12 +124,20 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
         return true;
       },
     },
-    (oldData) => {
-      if (!Array.isArray(oldData)) return oldData;
-      return oldData.filter((nft) => {
-        const mintAddress = getRemovedMintAddress(nft);
-        return !mintAddress || !removed.has(mintAddress);
-      });
+    (oldData: unknown) => {
+      if (Array.isArray(oldData)) return oldData.filter(keep);
+      // The grid caches its page walk, `{ nfts, partial }`, not a bare list.
+      // Passing that through untouched left a sent or burned NFT on screen
+      // until the indexer caught up.
+      if (
+        oldData &&
+        typeof oldData === 'object' &&
+        Array.isArray((oldData as { nfts?: unknown }).nfts)
+      ) {
+        const walk = oldData as { nfts: unknown[] };
+        return { ...walk, nfts: walk.nfts.filter(keep) };
+      }
+      return oldData;
     }
   );
   queryClient.removeQueries({

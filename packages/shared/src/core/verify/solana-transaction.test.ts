@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertSolanaTransactionMatches,
+  bubblegumAssetIds,
   SolanaTransactionMismatchError,
 } from './solana-transaction';
 import {
@@ -138,5 +139,56 @@ describe('assertSolanaTransactionMatches', () => {
         allowedPrograms: [TOKEN_METADATA_PROGRAM],
       })
     ).toThrow(SolanaTransactionMismatchError);
+  });
+});
+
+/** A devnet compressed NFT, and the unsigned Bubblegum V2 burn and transfer built for it. */
+const CNFT_OWNER = '7Q3Hm2QkDLJyy727sNc2AeH2vZxiPgWWXX6vTq8Ras6n';
+const CNFT_ASSET = 'wHK2nJLzSSi6BQNfPa9w58h5coizP5P8Ga7HnCpfxL3';
+const CNFT_RECIPIENT = '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3';
+const CNFT_BURN =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAJDF8NEXtutZJGVXDVDJs/epFozMsVUg0imeV+RH3Rc05f/EU1F/1ZT1CahVT/oPtPqWf4kgNjgJpkisf+CCS2U3zxkf1HhKlL2P10L5bapMglSUIiTtR06p7VDcSOx9xpaZiLgOt5NShpsiR0X1ndv4omWMoT3GiBISY1HK4HwaWlC3lZig+vKLD70iVjIzNBS9A6qyQPcDLR3kdXoKxdxgYLbgFTI0klxAfxgVZ2/NMs9aSPbosWmTdWJLvNXhRyy69UqxC9l6VCoJ73s5iJ3QzTlKTM6d+mzcl+vi0jW6dIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACtMii2dvfTzUKEpUQ/F/GWKzbkkbMKQLJAWEnll7pftbTBGVGVfG+PZCxK9hzWskZA/sbcf8YH7oIGqZ6SQQ0wId25o1aBXD+sECa23sXfMSSvuttIXJulo+M5igS3uoXlh2mzKhvq8eonN1pECVoNH7Zkzi3TWOf8v7eMJqGTRBz2xhwP8Ov3pvc94shXOeteezAplVqpTi7L7OfGsfFJAQMRAQAAAAMCAwMEBQYHBwgJCguXAXPSIvDoj7cQEHOa5hYwxWPKxtrMaZHFRkLV4v6aTpyjfRLD1KCOWQ6l/r73PLxUCovDSvP7o1TZ5Xcin0fnmk4R/yPxf9X46sXSRgGG9yM8kn59stzHA8DlALZTyoInO3v62ARdhaRwAcXSRgGG9yM8kn59stzHA8DlALZTyoInO3v62ARdhaRwAQAAAAAAAAAAAAAAAAAA';
+const CNFT_TRANSFER =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAKDF8NEXtutZJGVXDVDJs/epFozMsVUg0imeV+RH3Rc05f8ZH9R4SpS9j9dC+W2qTIJUlCIk7UdOqe1Q3EjsfcaWmYi4DreTUoabIkdF9Z3b+KJljKE9xogSEmNRyuB8GlpfxFNRf9WU9QmoVU/6D7T6ln+JIDY4CaZIrH/ggktlN8gliLZxrNb9ddLnB7Od3Jy5VJ42xHg0DpoRo12/jmpbYLvA/Au0fKL3TEES6UqxPPo8Y05dwX6ssDzRojzX54fAkqE+6VxBy6CKZ/WsZ+jffh2hFiXh1kE3+PTyODA38UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACtMii2dvfTzUKEpUQ/F/GWKzbkkbMKQLJAWEnll7pftbTBGVGVfG+PZCxK9hzWskZA/sbcf8YH7oIGqZ6SQQ0wId25o1aBXD+sECa23sXfMSSvuttIXJulo+M5igS3uoXlh2mzKhvq8eonN1pECVoNH7Zkzi3TWOf8v7eMJqGTRIf3aJhFeELtY7Efl2Epk7XrTGw7maDiWLw8A51NTRptAQINAwAABAEFBgcHCAkKC3SjNMjnjANFuhBzmuYWMMVjysbazGmRxUZC1eL+mk6co30Sw9SgjlkOpf6+9zy8VAqLw0rz+6NU2eV3Ip9H55pOEf8j8X/V+OrF0kYBhvcjPJJ+fbLcxwPA5QC2U8qCJzt7+tgEXYWkcAAAAAAAAAAAAAAAAAA=';
+
+describe('bubblegumAssetIds', () => {
+  // A compressed NFT is not an account: its id never appears in the message.
+  // Requiring it by listing alone refused every compressed burn and transfer.
+  it('derives the compressed NFT a burn acts on', async () => {
+    expect(await bubblegumAssetIds(CNFT_BURN)).toEqual([CNFT_ASSET]);
+  });
+
+  it('lets a compressed transfer satisfy the asset and the destination it must name', async () => {
+    const expectation = {
+      feePayer: CNFT_OWNER,
+      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+      requiredAccounts: [CNFT_ASSET, CNFT_RECIPIENT],
+    };
+    expect(() => assertSolanaTransactionMatches(CNFT_TRANSFER, expectation)).toThrow(
+      SolanaTransactionMismatchError
+    );
+    const derived = await bubblegumAssetIds(CNFT_TRANSFER);
+    expect(() => assertSolanaTransactionMatches(CNFT_TRANSFER, expectation, derived)).not.toThrow();
+  });
+
+  it('still refuses a compressed burn of an asset other than the one shown', async () => {
+    const derived = await bubblegumAssetIds(CNFT_BURN);
+    expect(() =>
+      assertSolanaTransactionMatches(
+        CNFT_BURN,
+        {
+          feePayer: CNFT_OWNER,
+          allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+          allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+          requiredAccounts: [NAMED],
+        },
+        derived
+      )
+    ).toThrow(SolanaTransactionMismatchError);
+  });
+
+  it('derives nothing from a transaction without Bubblegum', async () => {
+    expect(await bubblegumAssetIds(NO_LOOKUPS)).toEqual([]);
   });
 });

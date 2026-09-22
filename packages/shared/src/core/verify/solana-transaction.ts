@@ -28,8 +28,16 @@
  *   With lookups the static list is incomplete, and an account missing from it
  *   proves nothing, so the check is skipped rather than made to lie.
  */
-import { getCompiledTransactionMessageDecoder, getTransactionDecoder } from '@solana/kit';
+import {
+  address,
+  getAddressEncoder,
+  getCompiledTransactionMessageDecoder,
+  getProgramDerivedAddress,
+  getTransactionDecoder,
+} from '@solana/kit';
 import type { ReadonlyUint8Array } from '@solana/kit';
+
+import { BUBBLEGUM_PROGRAM } from './solana-programs';
 
 /** What a flow declares about the transaction it asked the backend to build. */
 export interface SolanaTransactionExpectation {
@@ -86,6 +94,7 @@ export interface ProgramInstructionRule {
 /** One instruction, reduced to what can be checked before signing. */
 interface CompiledInstruction {
   programAddressIndex: number;
+  accountIndices: readonly number[];
   data: ReadonlyUint8Array | undefined;
 }
 
@@ -102,12 +111,14 @@ function compiledInstructions(message: CompiledMessage): CompiledInstruction[] {
   if ('instructions' in message) {
     return message.instructions.map((instruction) => ({
       programAddressIndex: instruction.programAddressIndex,
+      accountIndices: instruction.accountIndices ?? [],
       data: instruction.data,
     }));
   }
   if ('instructionHeaders' in message) {
     return message.instructionHeaders.map((header, index) => ({
       programAddressIndex: header.programAccountIndex,
+      accountIndices: message.instructionPayloads[index]?.instructionAccountIndices ?? [],
       data: message.instructionPayloads[index]?.instructionData,
     }));
   }
@@ -134,21 +145,82 @@ export class SolanaTransactionMismatchError extends Error {
   }
 }
 
+function decodeMessage(transactionBase64: string): CompiledMessage {
+  const decoded = getTransactionDecoder().decode(
+    new Uint8Array(Buffer.from(transactionBase64, 'base64'))
+  );
+  return getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+}
+
+/** Bubblegum's args end in `nonce: u64, index: u32`, in V1 and V2 alike. */
+const BUBBLEGUM_NONCE_TAIL_BYTES = 12;
+
+/**
+ * The compressed NFTs the transaction's Bubblegum instructions act on.
+ *
+ * A compressed NFT is not an account, so its id never appears in the message:
+ * Bubblegum derives it from the tree and the leaf's nonce. It is derived here
+ * the same way, from the bytes, so a burn or transfer can be held to the asset
+ * the screen showed without trusting the response to say which one it is.
+ *
+ * The tree is the instruction account whose config PDA is the instruction's
+ * first account — Bubblegum refuses any other pairing on chain — so an unused
+ * account listed alongside cannot stand in for it. Accounts resolved through a
+ * lookup table are not visible here and derive nothing.
+ */
+export async function bubblegumAssetIds(transactionBase64: string): Promise<string[]> {
+  const message = decodeMessage(transactionBase64);
+  const accounts = message.staticAccounts.map(String);
+  const program = address(BUBBLEGUM_PROGRAM);
+  const encodeAddress = getAddressEncoder();
+  const ids: string[] = [];
+
+  for (const instruction of compiledInstructions(message)) {
+    const { data, accountIndices } = instruction;
+    if (accounts[instruction.programAddressIndex] !== BUBBLEGUM_PROGRAM) continue;
+    if (!data || data.length < BUBBLEGUM_NONCE_TAIL_BYTES) continue;
+
+    const treeConfig = accounts[accountIndices[0] ?? -1];
+    if (!treeConfig) continue;
+    const nonceStart = data.length - BUBBLEGUM_NONCE_TAIL_BYTES;
+    const nonce = data.slice(nonceStart, nonceStart + 8);
+
+    for (const index of accountIndices.slice(1)) {
+      const candidate = accounts[index];
+      if (!candidate) continue;
+      const [config] = await getProgramDerivedAddress({
+        programAddress: program,
+        seeds: [encodeAddress.encode(address(candidate))],
+      });
+      if (config !== treeConfig) continue;
+
+      const [assetId] = await getProgramDerivedAddress({
+        programAddress: program,
+        seeds: ['asset', encodeAddress.encode(address(candidate)), nonce],
+      });
+      ids.push(assetId);
+      break;
+    }
+  }
+  return ids;
+}
+
 /**
  * Refuses a transaction that disagrees with what the flow declared.
  *
  * @param transactionBase64 - The unsigned transaction, base64 wire format.
  * @param expectation - What the flow says the transaction is for.
+ * @param derivedAccounts - Addresses the transaction acts on without listing
+ *   them, derived from its own bytes (`bubblegumAssetIds`). They satisfy a
+ *   required account the same as a listed one.
  * @throws SolanaTransactionMismatchError - On the first disagreement found.
  */
 export function assertSolanaTransactionMatches(
   transactionBase64: string,
-  expectation: SolanaTransactionExpectation
+  expectation: SolanaTransactionExpectation,
+  derivedAccounts: readonly string[] = []
 ): void {
-  const decoded = getTransactionDecoder().decode(
-    new Uint8Array(Buffer.from(transactionBase64, 'base64'))
-  );
-  const message = getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+  const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
 
   const feePayer = accounts[0];
@@ -206,7 +278,7 @@ export function assertSolanaTransactionMatches(
   // instead. A flow that needs both a lookup table and a named-account
   // requirement has to resolve the tables before asserting, which this
   // verifier deliberately does not do.
-  const named = new Set(accounts);
+  const named = new Set([...accounts, ...derivedAccounts]);
   const missing = required.filter((account) => !named.has(account));
   if (missing.length === 0) {
     return;

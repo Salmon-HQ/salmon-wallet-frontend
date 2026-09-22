@@ -21,7 +21,7 @@ import {
 import type { Commitment, KeyPairSigner, Signature, TransactionMessageBytes } from '@solana/kit';
 import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
-import { assertSolanaTransactionMatches, UNVERIFIED } from '../verify';
+import { assertSolanaTransactionMatches, bubblegumAssetIds, UNVERIFIED } from '../verify';
 import type { SolanaTransactionExpectation, Unverified } from '../verify';
 
 /** What broadcasting needs from an account: its signer and its RPC clients. */
@@ -74,7 +74,11 @@ export async function signAndSendSolanaTransaction(
   options: SolanaBroadcastOptions = {}
 ): Promise<Signature> {
   if (expectation !== UNVERIFIED) {
-    assertSolanaTransactionMatches(transactionBase64, expectation);
+    assertSolanaTransactionMatches(
+      transactionBase64,
+      expectation,
+      await bubblegumAssetIds(transactionBase64)
+    );
   }
 
   const rpc = account.getRpc();
