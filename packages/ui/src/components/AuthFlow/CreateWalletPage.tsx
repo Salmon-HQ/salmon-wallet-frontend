@@ -54,6 +54,7 @@ import { HoldToApproveButton } from '../HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';
+import { Toggle } from '../Toggle';
 import { WarningNotice } from '../WarningNotice';
 import type { CreateWalletPageProps } from './types';
 
@@ -220,16 +221,17 @@ function SeedPhraseStep({
 }) {
   const { surface, text } = useSemantic();
   const [showToast, setShowToast] = useState(false);
-  // Gates "Guardé mi seed-phrase": the owner wants the commit disabled until
-  // the hold-to-copy has actually fired once, so advancing costs having seen
-  // the phrase land somewhere durable, not just having scrolled past it.
-  const [copied, setCopied] = useState(false);
+  // Gates "Guardé mi seed-phrase": advancing costs a deliberate statement that
+  // the phrase is written down, not just having scrolled past it. The copy
+  // used to be that gate, which made the clipboard — readable by any other
+  // app, kept by clipboard histories — the one mandatory step. It is optional
+  // now, with its warning.
+  const [acknowledged, setAcknowledged] = useState(false);
   const words = mnemonic.split(' ');
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(mnemonic);
-      setCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch {
@@ -267,15 +269,38 @@ function SeedPhraseStep({
             <SeedWordGrid words={words} columns={3} />
             {/*
               The same standing warning BackupPanel and PrivateKeyPanel show
-              before either of them lets a secret reach the clipboard. This
-              screen needs it most: there the copy is optional, here advancing
-              depends on it, so the clipboard is the one step the flow makes
-              mandatory — and, without this, the one risk it never names.
+              before either of them lets a secret reach the clipboard.
             */}
             <div style={{ paddingTop: spacing.lg }} data-testid="create-seed-clipboard-warning">
               <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
                 {t('settings.clipboard_warning_description')}
               </WarningNotice>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingTop: spacing.lg,
+              }}
+            >
+              <span
+                style={{
+                  color: text.primary,
+                  fontFamily: fontFamily.sans,
+                  fontSize: fontSize.body,
+                  lineHeight: `${fontSize.body * lineHeight.snug}px`,
+                }}
+              >
+                {t('wallet.create.acknowledge_written_down')}
+              </span>
+              <Toggle
+                value={acknowledged}
+                onValueChange={setAcknowledged}
+                accessibilityLabel={t('wallet.create.acknowledge_written_down')}
+                testID="create-seed-acknowledge"
+              />
             </div>
           </div>
         }
@@ -297,7 +322,7 @@ function SeedPhraseStep({
         action={
           <PrimaryButton
             onPress={onNext}
-            disabled={!copied}
+            disabled={!acknowledged}
             fullWidth
             testID="create-backed-up-button"
           >

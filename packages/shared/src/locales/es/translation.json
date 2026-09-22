@@ -492,7 +492,8 @@
       "biometric_setup_skip": "Quizás Después",
       "biometric_setup_error": "Error al habilitar biometría. Podés configurarlo después en Ajustes.",
       "creating_account": "Creando Cuenta",
-      "securing_wallet": "Esperá mientras aseguramos tu billetera"
+      "securing_wallet": "Esperá mientras aseguramos tu billetera",
+      "acknowledge_written_down": "Anoté mi frase de recuperación en un lugar seguro"
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",

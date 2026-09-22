@@ -492,7 +492,8 @@
       "biometric_setup_skip": "Maybe Later",
       "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
       "creating_account": "Creating Account",
-      "securing_wallet": "Please wait while we secure your wallet"
+      "securing_wallet": "Please wait while we secure your wallet",
+      "acknowledge_written_down": "I wrote my recovery phrase down somewhere safe"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
