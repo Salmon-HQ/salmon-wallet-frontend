@@ -297,6 +297,7 @@ export {
   unlockDelayMs,
   UNLOCK_FREE_ATTEMPTS,
   UNLOCK_DELAY_SCHEDULE_MS,
+  UnlockThrottledError,
 } from './unlock-throttle';
 export type { UnlockPenalty } from './unlock-throttle';
 

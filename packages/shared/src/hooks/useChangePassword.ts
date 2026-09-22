@@ -8,6 +8,7 @@
  */
 import { useCallback, useState } from 'react';
 import { PASSWORD_CONSTRAINTS, getPasswordIssue, validatePassword } from '../crypto/password';
+import { UnlockThrottledError } from '../utils/unlock-throttle';
 
 export interface UseChangePasswordParams {
   changePassword: (current: string, next: string) => Promise<boolean>;
@@ -70,8 +71,12 @@ export function useChangePassword({
       } else {
         setError(t('settings.security.wrong_password'));
       }
-    } catch {
-      setError(t('settings.security.wrong_password'));
+    } catch (err) {
+      setError(
+        err instanceof UnlockThrottledError
+          ? t('errors.password_throttled')
+          : t('settings.security.wrong_password')
+      );
     } finally {
       setLoading(false);
     }

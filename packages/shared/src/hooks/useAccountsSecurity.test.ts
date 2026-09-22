@@ -16,7 +16,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 import { useAccountsSecurity } from './useAccountsSecurity';
-import { getUnlockPenalty, unlockDelayMs, UNLOCK_FREE_ATTEMPTS } from '../utils/unlock-throttle';
+import {
+  getUnlockPenalty,
+  unlockDelayMs,
+  UNLOCK_FREE_ATTEMPTS,
+  UnlockThrottledError,
+} from '../utils/unlock-throttle';
 import * as encryption from '../crypto/encryption';
 
 // ---------------------------------------------------------------------------
@@ -241,12 +246,14 @@ describe('useAccountsSecurity — re-auth throttling', () => {
     expect((await getUnlockPenalty()).remainingMs).toBeGreaterThan(0);
 
     const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
-    let accepted = true;
+    // Refused as a wait, not as a wrong password: the password may be right,
+    // and "wrong password" sends the owner guessing again.
     await act(async () => {
-      accepted = await result.current.checkPassword(WRONG_PASSWORD);
+      await expect(result.current.checkPassword(WRONG_PASSWORD)).rejects.toBeInstanceOf(
+        UnlockThrottledError
+      );
     });
 
-    expect(accepted).toBe(false);
     // Refused by the throttle, not by decryption: the vault was never opened.
     expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
   });
@@ -261,12 +268,12 @@ describe('useAccountsSecurity — re-auth throttling', () => {
     }
 
     const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
-    let changed = true;
     await act(async () => {
-      changed = await result.current.changePassword(WRONG_PASSWORD, 'new-password-000');
+      await expect(
+        result.current.changePassword(WRONG_PASSWORD, 'new-password-000')
+      ).rejects.toBeInstanceOf(UnlockThrottledError);
     });
 
-    expect(changed).toBe(false);
     expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
   });
 

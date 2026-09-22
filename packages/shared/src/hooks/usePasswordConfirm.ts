@@ -9,6 +9,8 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
+import { UnlockThrottledError } from '../utils/unlock-throttle';
+
 export interface UsePasswordConfirmParams {
   /** Resets the gate each time the sheet opens. */
   visible: boolean;
@@ -66,8 +68,15 @@ export function usePasswordConfirm({
           setLoading(false);
           return;
         }
-      } catch {
-        setPasswordError(t('errors.password_check_failed', 'Failed to verify password'));
+      } catch (err) {
+        setPasswordError(
+          err instanceof UnlockThrottledError
+            ? t(
+                'errors.password_throttled',
+                'Too many wrong passwords. Wait a moment and try again — your wallet is untouched.'
+              )
+            : t('errors.password_check_failed', 'Failed to verify password')
+        );
         setLoading(false);
         return;
       }

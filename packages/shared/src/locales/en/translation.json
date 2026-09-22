@@ -773,7 +773,8 @@
     "linkOpenFailed": "The link didn’t open",
     "invalid_password": "Invalid password",
     "password_check_failed": "Failed to verify password",
-    "password_required": "Password is required"
+    "password_required": "Password is required",
+    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched."
   },
   "activity": {
     "emptyFiltered": "No transactions match this filter",

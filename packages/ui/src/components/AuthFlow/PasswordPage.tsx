@@ -24,6 +24,7 @@ import {
   componentSizes,
   useWaitExit,
   YIELD_TO_PAINT_MS,
+  UnlockThrottledError,
 } from '@salmon/shared';
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
@@ -155,8 +156,12 @@ export function PasswordPage({
           setIsChecking(false);
           return;
         }
-      } catch {
-        setError(t('wallet.create.invalid_password') || 'Invalid Password');
+      } catch (err) {
+        setError(
+          err instanceof UnlockThrottledError
+            ? t('errors.password_throttled')
+            : t('wallet.create.invalid_password') || 'Invalid Password'
+        );
         setIsChecking(false);
         return;
       }

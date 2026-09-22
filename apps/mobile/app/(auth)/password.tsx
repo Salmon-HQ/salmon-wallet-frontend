@@ -54,6 +54,7 @@ import {
   componentSizes,
   YIELD_TO_PAINT_MS,
   type Semantic,
+  UnlockThrottledError,
 } from '@salmon/shared';
 import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -230,7 +231,11 @@ export default function PasswordScreen() {
         }
       } catch (err) {
         console.error('Failed to check password:', err);
-        setError(t('wallet.create.invalid_password') || 'Invalid Password');
+        setError(
+          err instanceof UnlockThrottledError
+            ? t('errors.password_throttled')
+            : t('wallet.create.invalid_password') || 'Invalid Password'
+        );
         setIsChecking(false);
         return;
       }

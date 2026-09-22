@@ -3,7 +3,12 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { removeStashItem } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
-import { clearUnlockPenalty, getUnlockPenalty, recordFailedUnlock } from '../utils/unlock-throttle';
+import {
+  clearUnlockPenalty,
+  getUnlockPenalty,
+  recordFailedUnlock,
+  UnlockThrottledError,
+} from '../utils/unlock-throttle';
 import type { Account, AccountSecret, StoredAccount } from '../types/account';
 import type { SecretVault } from '../utils/account-secret';
 import {
@@ -74,18 +79,20 @@ export function useAccountsSecurity({
   );
 
   const checkPassword = useCallback(async (password: string): Promise<boolean> => {
+    // This gate stands in front of the seed-phrase reveal, the private-key
+    // reveal and account removal, so it is as free to guess at as the unlock
+    // prompt and carries the same penalty. A refusal for waiting is thrown, not
+    // answered `false`: the password may be right, and "wrong password" would
+    // send the owner guessing again, which only lengthens the wait.
+    const penalty = await getUnlockPenalty();
+    if (penalty.remainingMs > 0) {
+      throw new UnlockThrottledError(penalty.remainingMs);
+    }
+
     try {
       const storedMnemonics = await getEncryptedStoredMnemonics();
       if (!storedMnemonics) {
         return true;
-      }
-
-      // This gate stands in front of the seed-phrase reveal, the private-key
-      // reveal and account removal, so it is as free to guess at as the unlock
-      // prompt and carries the same penalty.
-      const penalty = await getUnlockPenalty();
-      if (penalty.remainingMs > 0) {
-        return false;
       }
 
       try {
@@ -123,7 +130,9 @@ export function useAccountsSecurity({
         await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
 
         return true;
-      } catch {
+      } catch (err) {
+        // A wait is not a wrong password; the screen says which it was.
+        if (err instanceof UnlockThrottledError) throw err;
         return false;
       }
     },
