@@ -215,7 +215,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     handleNftBurnSuccessContinue,
     clearSendNft,
     settleAfterSend: settleAfterNftSend,
-  } = useHomeNftFlow({ activeAccount, navigate: setCurrentPage });
+  } = useHomeNftFlow({ activeAccount, networkId, navigate: setCurrentPage });
 
   // Bitcoin-specific state
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
