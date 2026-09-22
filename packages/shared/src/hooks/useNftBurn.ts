@@ -29,8 +29,8 @@ export interface UseNftBurnParams {
 }
 
 export interface UseNftBurnResult {
-  /** Execute a prepared burn and settle. `removedMint` hides the NFT optimistically. */
-  burnNft: (prepared: PreparedBurn, removedMint?: string) => Promise<string[]>;
+  /** Execute a prepared burn of `mint` and settle, hiding the NFT optimistically. */
+  burnNft: (prepared: PreparedBurn, mint: string) => Promise<string[]>;
   status: NftBurnStatus;
   /** True while settlement waits for the indexer to drop the burned NFT. */
   settling: boolean;
@@ -56,7 +56,7 @@ export function useNftBurn({
   }, []);
 
   const burnNft = useCallback(
-    async (prepared: PreparedBurn, removedMint?: string): Promise<string[]> => {
+    async (prepared: PreparedBurn, mint: string): Promise<string[]> => {
       if (!account) {
         throw new Error('No account available');
       }
@@ -65,10 +65,9 @@ export function useNftBurn({
       setError(null);
 
       try {
-        // A burn destroys one asset and nothing else: the transaction has to
-        // name the mint the screen showed.
+        // A burn destroys one asset and nothing else: the one the screen showed.
         const signatures = await signAndSendPreparedSolanaTransactions(account, prepared, {
-          mustName: removedMint ? [removedMint] : [],
+          nftAction: { asset: mint },
         });
 
         setStatus('success');
@@ -78,7 +77,7 @@ export function useNftBurn({
           avatarAccountId: activeAccountId,
           networkId: account.getNetworkId(),
           kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
-          removedNftMintAddresses: removedMint ? [removedMint] : undefined,
+          removedNftMintAddresses: [mint],
         })
           .catch((err) => {
             console.warn('[useNftBurn] settleUntilChanged failed:', err);

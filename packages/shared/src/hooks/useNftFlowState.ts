@@ -185,13 +185,13 @@ export function useNftFlowState({
 
   /** Sign and send the prepared burn. */
   const confirmBurn = useCallback(async () => {
-    if (!nft || !account || !burnPreview) return;
+    if (!nft?.mint || !account || !burnPreview) return;
 
     setBurnExecuting(true);
     setBurnError(null);
 
     try {
-      const signatures = await nftBurn.burnNft(burnPreview, nft.mint ?? undefined);
+      const signatures = await nftBurn.burnNft(burnPreview, nft.mint);
       setSuccessKind('burn');
       setSuccessTxId(signatures[signatures.length - 1] ?? '');
     } catch (err) {

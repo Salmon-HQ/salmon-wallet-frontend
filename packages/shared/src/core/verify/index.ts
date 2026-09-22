@@ -1,11 +1,12 @@
 export {
   assertSolanaTransactionMatches,
-  bubblegumAssetIds,
+  bubblegumAssets,
   SolanaTransactionMismatchError,
   UNVERIFIED,
 } from './solana-transaction';
 export type {
   DeclaredTransactionEffects,
+  NftActionExpectation,
   SolanaTransactionExpectation,
   Unverified,
 } from './solana-transaction';

@@ -8,7 +8,7 @@ import {
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
 } from '../../core/verify';
-import type { SolanaTransactionExpectation } from '../../core/verify';
+import type { NftActionExpectation, SolanaTransactionExpectation } from '../../core/verify';
 import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
 import type { SolanaRpc } from './networks';
@@ -16,11 +16,11 @@ import type { SolanaRpc } from './networks';
 export interface SignAndSendPreparedSolanaTransactionsOptions {
   commitment?: Commitment;
   /**
-   * Accounts the flow's own transaction must name — the mint it acts on, the
-   * destination the user typed. The lookup-table steps never name them, so the
-   * requirement is applied to the work step alone.
+   * The NFT the flow acts on and, for a transfer, the destination the user
+   * typed. Every asset-touching instruction of the work step is held to them;
+   * the lookup-table steps touch no asset, so it applies to the work step alone.
    */
-  mustName?: readonly string[];
+  nftAction: NftActionExpectation;
 }
 
 /** A step that only builds the table the work step will read. */
@@ -47,7 +47,7 @@ function expectationForStep(
   index: number,
   count: number,
   feePayer: string,
-  mustName: readonly string[]
+  nftAction: NftActionExpectation
 ): SolanaTransactionExpectation {
   const isWorkStep = index === count - 1;
   if (!isWorkStep && isLookupTableStep(preparedTransaction.step)) {
@@ -62,7 +62,7 @@ function expectationForStep(
     feePayer,
     allowedPrograms: NFT_TRANSACTION_PROGRAMS,
     allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
-    requiredAccounts: mustName,
+    nftAction,
   };
 }
 
@@ -182,7 +182,7 @@ export function getPreparedSolanaTransactions(
 export async function signAndSendPreparedSolanaTransactions(
   account: SolanaAccount,
   response: PreparedNftTransactionResponse,
-  options: SignAndSendPreparedSolanaTransactionsOptions = {}
+  options: SignAndSendPreparedSolanaTransactionsOptions
 ): Promise<string[]> {
   const preparedTransactions = getPreparedSolanaTransactions(response);
 
@@ -194,7 +194,6 @@ export async function signAndSendPreparedSolanaTransactions(
   // The key that is about to sign: a transaction paying from anything else is
   // not this wallet's to sign, whichever account the screen was showing.
   const feePayer = String(account.signer.address);
-  const mustName = options.mustName ?? [];
   const signatures: string[] = [];
 
   for (const [index, preparedTransaction] of preparedTransactions.entries()) {
@@ -209,7 +208,7 @@ export async function signAndSendPreparedSolanaTransactions(
           index,
           preparedTransactions.length,
           feePayer,
-          mustName
+          options.nftAction
         ),
         { commitment }
       );

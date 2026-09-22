@@ -100,6 +100,35 @@ export const NFT_TRANSACTION_INSTRUCTIONS = {
 } as const;
 
 /**
+ * Where an NFT flow's asset-touching instructions keep the asset and its new
+ * owner, so the verifier can hold every one of them to the NFT on screen.
+ *
+ * The program list says which programs may run; this says which of their
+ * instructions may, and which account in each is the asset. Without it a
+ * transaction could name the NFT on screen and, in a second instruction, burn
+ * or move a different one. Layouts are the Metaplex SDKs' (`mpl-bubblegum`,
+ * `mpl-token-metadata`), the ones `salmon-wallet-backend` builds with.
+ */
+export const NFT_ACTION_LAYOUTS = {
+  /** Bubblegum, by 8-byte Anchor discriminator (hex). The asset is derived. */
+  bubblegum: {
+    burn: ['746e1d386bdb2a5d', '73d222f0e88fb710'] as readonly string[], // burn, burnV2
+    /** transfer, transferV2 → index of `newLeafOwner`. */
+    transferNewOwnerIndex: { a334c8e78c0345ba: 3, '772806ebeaddf831': 5 } as Record<string, number>,
+  },
+  /** Token Metadata `burnV1` / `transferV1`: code, then the `V1` variant byte. */
+  tokenMetadata: {
+    burnCode: 41,
+    transferCode: 49,
+    variantV1: 0,
+    mintIndex: 4,
+    transferDestinationOwnerIndex: 3,
+  },
+  /** SPL Token `Burn` / `BurnChecked` name the mint second; `CloseAccount` its rent's destination. */
+  splToken: { burnCodes: [8, 15], burnMintIndex: 1, closeCode: 9, closeDestinationIndex: 1 },
+} as const;
+
+/**
  * What the lookup-table steps of a multi-step flow may invoke.
  *
  * A compressed-NFT burn can arrive as three transactions: create a table,

@@ -64,6 +64,10 @@ describe('useNftBurn', () => {
     });
 
     expect(signAndSendPreparedSolanaTransactions).toHaveBeenCalledTimes(1);
+    // The burn is held to the one NFT the screen showed.
+    expect(vi.mocked(signAndSendPreparedSolanaTransactions).mock.calls[0]?.[2]).toEqual({
+      nftAction: { asset: 'mint-burned' },
+    });
     expect(result.current.status).toBe('success');
     expect(result.current.settling).toBe(true);
 
@@ -94,9 +98,9 @@ describe('useNftBurn', () => {
     });
 
     await act(async () => {
-      await expect(result.current.burnNft({ transaction: 'prepared' } as never)).rejects.toThrow(
-        'boom'
-      );
+      await expect(
+        result.current.burnNft({ transaction: 'prepared' } as never, 'mint-burned')
+      ).rejects.toThrow('boom');
     });
 
     await waitFor(() => expect(result.current.status).toBe('failed'));

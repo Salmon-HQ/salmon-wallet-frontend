@@ -37,7 +37,13 @@ import {
 } from '@solana/kit';
 import type { ReadonlyUint8Array } from '@solana/kit';
 
-import { BUBBLEGUM_PROGRAM } from './solana-programs';
+import {
+  BUBBLEGUM_PROGRAM,
+  NFT_ACTION_LAYOUTS,
+  TOKEN_2022_PROGRAM,
+  TOKEN_METADATA_PROGRAM,
+  TOKEN_PROGRAM,
+} from './solana-programs';
 
 /** What a flow declares about the transaction it asked the backend to build. */
 export interface SolanaTransactionExpectation {
@@ -59,6 +65,18 @@ export interface SolanaTransactionExpectation {
    * when the message resolves no addresses through a lookup table.
    */
   requiredAccounts?: readonly string[];
+  /**
+   * An NFT flow's work step: every asset-touching instruction must be a burn
+   * (no `destination`) or a transfer to `destination`, of `asset` and nothing
+   * else. See `NFT_ACTION_LAYOUTS`.
+   */
+  nftAction?: NftActionExpectation;
+}
+
+/** The one NFT a burn or transfer may act on, and where a transfer sends it. */
+export interface NftActionExpectation {
+  asset: string;
+  destination?: string;
 }
 
 /**
@@ -156,7 +174,7 @@ function decodeMessage(transactionBase64: string): CompiledMessage {
 const BUBBLEGUM_NONCE_TAIL_BYTES = 12;
 
 /**
- * The compressed NFTs the transaction's Bubblegum instructions act on.
+ * The compressed NFT each Bubblegum instruction acts on, by instruction index.
  *
  * A compressed NFT is not an account, so its id never appears in the message:
  * Bubblegum derives it from the tree and the leaf's nonce. It is derived here
@@ -165,17 +183,18 @@ const BUBBLEGUM_NONCE_TAIL_BYTES = 12;
  *
  * The tree is the instruction account whose config PDA is the instruction's
  * first account — Bubblegum refuses any other pairing on chain — so an unused
- * account listed alongside cannot stand in for it. Accounts resolved through a
- * lookup table are not visible here and derive nothing.
+ * account listed alongside cannot stand in for it. An instruction whose
+ * accounts are resolved through a lookup table derives nothing, and the
+ * verifier then refuses it.
  */
-export async function bubblegumAssetIds(transactionBase64: string): Promise<string[]> {
+export async function bubblegumAssets(transactionBase64: string): Promise<Map<number, string>> {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
   const program = address(BUBBLEGUM_PROGRAM);
   const encodeAddress = getAddressEncoder();
-  const ids: string[] = [];
+  const assets = new Map<number, string>();
 
-  for (const instruction of compiledInstructions(message)) {
+  for (const [position, instruction] of compiledInstructions(message).entries()) {
     const { data, accountIndices } = instruction;
     if (accounts[instruction.programAddressIndex] !== BUBBLEGUM_PROGRAM) continue;
     if (!data || data.length < BUBBLEGUM_NONCE_TAIL_BYTES) continue;
@@ -198,11 +217,94 @@ export async function bubblegumAssetIds(transactionBase64: string): Promise<stri
         programAddress: program,
         seeds: ['asset', encodeAddress.encode(address(candidate)), nonce],
       });
-      ids.push(assetId);
+      assets.set(position, assetId);
       break;
     }
   }
-  return ids;
+  return assets;
+}
+
+function hex(data: ReadonlyUint8Array, length: number): string {
+  return Array.from(data.slice(0, length), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Holds every asset-touching instruction to the one NFT the flow is for.
+ *
+ * Presence is not enough: a transaction that names the NFT on screen can burn
+ * or move another one in a second instruction. So each Bubblegum and Token
+ * Metadata instruction must be the flow's own verb on `asset`, a transfer must
+ * hand it to `destination` in the new-owner slot itself, an SPL burn must burn
+ * that mint, and a closed account's rent goes back to the payer.
+ */
+function assertNftAction(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  action: NftActionExpectation,
+  feePayer: string,
+  bubblegum: ReadonlyMap<number, string>
+): void {
+  const { bubblegum: bg, tokenMetadata: tm, splToken: spl } = NFT_ACTION_LAYOUTS;
+  const isTransfer = action.destination !== undefined;
+  const refuse = (why: string): never => {
+    throw new SolanaTransactionMismatchError(why);
+  };
+  // An account read through a lookup table is not visible here: undecidable,
+  // so refused rather than assumed.
+  const accountAt = (instruction: CompiledInstruction, slot: number): string =>
+    accounts[instruction.accountIndices[slot] ?? -1] ??
+    refuse('Transaction resolves an NFT account through a lookup table it cannot verify');
+  let actsOnAsset = false;
+
+  for (const [position, instruction] of instructions.entries()) {
+    const program = accounts[instruction.programAddressIndex];
+    const data = instruction.data ?? new Uint8Array();
+
+    if (program === BUBBLEGUM_PROGRAM) {
+      const code = hex(data, 8);
+      const newOwnerIndex = bg.transferNewOwnerIndex[code];
+      const isVerb = isTransfer ? newOwnerIndex !== undefined : bg.burn.includes(code);
+      if (!isVerb) refuse(`Transaction carries a Bubblegum instruction this flow does not use`);
+      if (bubblegum.get(position) !== action.asset) {
+        refuse(`Transaction acts on a compressed NFT other than ${action.asset}`);
+      }
+      if (isTransfer && accountAt(instruction, newOwnerIndex as number) !== action.destination) {
+        refuse(`Transaction sends the NFT somewhere other than ${action.destination}`);
+      }
+      actsOnAsset = true;
+    } else if (program === TOKEN_METADATA_PROGRAM) {
+      const verb = isTransfer ? tm.transferCode : tm.burnCode;
+      if (data[0] !== verb || data[1] !== tm.variantV1) {
+        refuse('Transaction carries a Token Metadata instruction this flow does not use');
+      }
+      if (accountAt(instruction, tm.mintIndex) !== action.asset) {
+        refuse(`Transaction acts on an NFT other than ${action.asset}`);
+      }
+      if (
+        isTransfer &&
+        accountAt(instruction, tm.transferDestinationOwnerIndex) !== action.destination
+      ) {
+        refuse(`Transaction sends the NFT somewhere other than ${action.destination}`);
+      }
+      actsOnAsset = true;
+    } else if (program === TOKEN_PROGRAM || program === TOKEN_2022_PROGRAM) {
+      const code = data[0];
+      if (code !== undefined && (spl.burnCodes as readonly number[]).includes(code)) {
+        if (isTransfer) refuse('Transaction burns tokens in a transfer');
+        if (accountAt(instruction, spl.burnMintIndex) !== action.asset) {
+          refuse(`Transaction burns a token other than ${action.asset}`);
+        }
+        actsOnAsset = true;
+      } else if (
+        code === spl.closeCode &&
+        accountAt(instruction, spl.closeDestinationIndex) !== feePayer
+      ) {
+        refuse("Transaction sends a closed account's rent to another wallet");
+      }
+    }
+  }
+
+  if (!actsOnAsset) refuse(`Transaction does not act on ${action.asset}`);
 }
 
 /**
@@ -210,15 +312,14 @@ export async function bubblegumAssetIds(transactionBase64: string): Promise<stri
  *
  * @param transactionBase64 - The unsigned transaction, base64 wire format.
  * @param expectation - What the flow says the transaction is for.
- * @param derivedAccounts - Addresses the transaction acts on without listing
- *   them, derived from its own bytes (`bubblegumAssetIds`). They satisfy a
- *   required account the same as a listed one.
+ * @param bubblegum - The compressed NFT each Bubblegum instruction acts on,
+ *   derived from the bytes by `bubblegumAssets`. Needed for `nftAction`.
  * @throws SolanaTransactionMismatchError - On the first disagreement found.
  */
 export function assertSolanaTransactionMatches(
   transactionBase64: string,
   expectation: SolanaTransactionExpectation,
-  derivedAccounts: readonly string[] = []
+  bubblegum: ReadonlyMap<number, string> = new Map()
 ): void {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
@@ -265,6 +366,16 @@ export function assertSolanaTransactionMatches(
     }
   }
 
+  if (expectation.nftAction) {
+    assertNftAction(
+      accounts,
+      compiledInstructions(message),
+      expectation.nftAction,
+      expectation.feePayer,
+      bubblegum
+    );
+  }
+
   const required = expectation.requiredAccounts ?? [];
   if (required.length === 0) {
     return;
@@ -278,7 +389,7 @@ export function assertSolanaTransactionMatches(
   // instead. A flow that needs both a lookup table and a named-account
   // requirement has to resolve the tables before asserting, which this
   // verifier deliberately does not do.
-  const named = new Set([...accounts, ...derivedAccounts]);
+  const named = new Set(accounts);
   const missing = required.filter((account) => !named.has(account));
   if (missing.length === 0) {
     return;

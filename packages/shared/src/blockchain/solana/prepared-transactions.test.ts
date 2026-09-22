@@ -27,6 +27,15 @@ import type { PreparedNftTransactionResponse } from '../../types/nft';
 const FIXTURE_B64 =
   'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAAAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
+/**
+ * The work step: the same lookup, and an SPL Token `Burn` of `NFT_MINT` by the
+ * test wallet — the one asset-touching instruction a print-edition burn carries.
+ */
+const NFT_WORK_B64 =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cYnA++Sfn+NK5erZ+/KkJ3IXo+fOXmjdOH7UcXbtAFq2tgPWYlJIpIMBfTBsowJDtyEOdr7E1002HPQzI4IDK9Qbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAwMBAgAJCAEAAAAAAAAAAe1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAQAA';
+const NFT_MINT = 'CgHasf5U6aaT6oYPrKWHfKByBGeQpiPmac2YKWpE2Mek';
+const BURN_NFT = { nftAction: { asset: NFT_MINT } };
+
 const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 const BURN_BLOCKHASH = 'DzfXchZJoLMG3cNftcf2sw7qatkkuwQf4xH15N5wkKAB';
 const LOOKUP_TABLE_ADDRESS = 'GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse';
@@ -165,7 +174,7 @@ describe('prepared-transactions', () => {
 
   // `step` is a free-form string the response chooses. Reading the policy off
   // it let the response pick its own verification: label the one transaction
-  // in the flow a table step and the requirement to name the mint was dropped.
+  // in the flow a table step and the requirement to act on the mint was dropped.
   // Position decides instead — the last transaction is always the work step.
   it('holds the last transaction to the work-step rules whatever the response calls it', async () => {
     const rpc = createRpc();
@@ -175,9 +184,9 @@ describe('prepared-transactions', () => {
       signAndSendPreparedSolanaTransactions(
         account as never,
         { transactions: [{ transaction: FIXTURE_B64, step: 'lookup_table_create' }] },
-        { mustName: [LOOKUP_TABLE_ADDRESS] }
+        BURN_NFT
       )
-    ).rejects.toThrow(/does not name/);
+    ).rejects.toThrow(/does not act on/);
     expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
@@ -185,9 +194,11 @@ describe('prepared-transactions', () => {
     const rpc = createRpc();
     const account = await createAccount({ rpc });
 
-    const signatures = await signAndSendPreparedSolanaTransactions(account as never, {
-      transaction: FIXTURE_B64,
-    });
+    const signatures = await signAndSendPreparedSolanaTransactions(
+      account as never,
+      { transaction: NFT_WORK_B64 },
+      BURN_NFT
+    );
 
     expect(signatures).toEqual(['signature-1']);
     expect(rpc.getLatestBlockhash).toHaveBeenCalledWith({ commitment: 'confirmed' });
@@ -215,7 +226,11 @@ describe('prepared-transactions', () => {
     });
 
     await expect(
-      signAndSendPreparedSolanaTransactions(account as never, { transaction: FIXTURE_B64 })
+      signAndSendPreparedSolanaTransactions(
+        account as never,
+        { transaction: NFT_WORK_B64 },
+        BURN_NFT
+      )
     ).rejects.toThrow(/Failed during transaction:/);
   });
 
@@ -256,12 +271,13 @@ describe('prepared-transactions', () => {
           lookupTableAddress: LOOKUP_TABLE_ADDRESS,
           expectedLookupTableAddressCount: 20,
         },
-        { transaction: FIXTURE_B64, step: 'burn' },
+        { transaction: NFT_WORK_B64, step: 'burn' },
       ],
     };
 
     const signatures = await signAndSendPreparedSolanaTransactions(account as never, response, {
       commitment: 'confirmed',
+      ...BURN_NFT,
     });
 
     expect(signatures).toEqual(['signature-extend', 'signature-burn']);
@@ -289,9 +305,11 @@ describe('prepared-transactions', () => {
     const account = await createAccount({ rpc });
 
     await expect(
-      signAndSendPreparedSolanaTransactions(account as never, {
-        transactions: [{ transaction: FIXTURE_B64, step: 'burn' }],
-      })
+      signAndSendPreparedSolanaTransactions(
+        account as never,
+        { transactions: [{ transaction: NFT_WORK_B64, step: 'burn' }] },
+        BURN_NFT
+      )
     ).rejects.toThrow('Failed during burn: rpc boom');
   });
 
@@ -307,9 +325,11 @@ describe('prepared-transactions', () => {
     const account = await createAccount({ rpc });
 
     await expect(
-      signAndSendPreparedSolanaTransactions(account as never, {
-        transactions: [{ transaction: FIXTURE_B64, step: 'burn' }],
-      })
+      signAndSendPreparedSolanaTransactions(
+        account as never,
+        { transactions: [{ transaction: NFT_WORK_B64, step: 'burn' }] },
+        BURN_NFT
+      )
     ).rejects.toMatchObject({ cause });
   });
 });

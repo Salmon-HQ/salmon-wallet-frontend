@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getCompiledTransactionMessageDecoder,
+  getCompiledTransactionMessageEncoder,
+  getTransactionDecoder,
+  getTransactionEncoder,
+} from '@solana/kit';
+import {
   assertSolanaTransactionMatches,
-  bubblegumAssetIds,
+  bubblegumAssets,
   SolanaTransactionMismatchError,
 } from './solana-transaction';
 import {
+  BUBBLEGUM_PROGRAM,
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
   SYSTEM_PROGRAM,
@@ -151,44 +158,90 @@ const CNFT_BURN =
 const CNFT_TRANSFER =
   'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAKDF8NEXtutZJGVXDVDJs/epFozMsVUg0imeV+RH3Rc05f8ZH9R4SpS9j9dC+W2qTIJUlCIk7UdOqe1Q3EjsfcaWmYi4DreTUoabIkdF9Z3b+KJljKE9xogSEmNRyuB8GlpfxFNRf9WU9QmoVU/6D7T6ln+JIDY4CaZIrH/ggktlN8gliLZxrNb9ddLnB7Od3Jy5VJ42xHg0DpoRo12/jmpbYLvA/Au0fKL3TEES6UqxPPo8Y05dwX6ssDzRojzX54fAkqE+6VxBy6CKZ/WsZ+jffh2hFiXh1kE3+PTyODA38UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACtMii2dvfTzUKEpUQ/F/GWKzbkkbMKQLJAWEnll7pftbTBGVGVfG+PZCxK9hzWskZA/sbcf8YH7oIGqZ6SQQ0wId25o1aBXD+sECa23sXfMSSvuttIXJulo+M5igS3uoXlh2mzKhvq8eonN1pECVoNH7Zkzi3TWOf8v7eMJqGTRIf3aJhFeELtY7Efl2Epk7XrTGw7maDiWLw8A51NTRptAQINAwAABAEFBgcHCAkKC3SjNMjnjANFuhBzmuYWMMVjysbazGmRxUZC1eL+mk6co30Sw9SgjlkOpf6+9zy8VAqLw0rz+6NU2eV3Ip9H55pOEf8j8X/V+OrF0kYBhvcjPJJ+fbLcxwPA5QC2U8qCJzt7+tgEXYWkcAAAAAAAAAAAAAAAAAA=';
 
-describe('bubblegumAssetIds', () => {
-  // A compressed NFT is not an account: its id never appears in the message.
-  // Requiring it by listing alone refused every compressed burn and transfer.
-  it('derives the compressed NFT a burn acts on', async () => {
-    expect(await bubblegumAssetIds(CNFT_BURN)).toEqual([CNFT_ASSET]);
+/** The CNFT_BURN fixture with its Bubblegum instruction repeated on another leaf. */
+function withSecondLeaf(transactionBase64: string): string {
+  const transaction = getTransactionDecoder().decode(
+    new Uint8Array(Buffer.from(transactionBase64, 'base64'))
+  );
+  const message = getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
+  if (!('instructions' in message)) throw new Error('fixture is not a v0 message');
+  const accounts = message.staticAccounts.map(String);
+  const bubblegum = message.instructions.find(
+    (instruction) => accounts[instruction.programAddressIndex] === BUBBLEGUM_PROGRAM
+  );
+  if (!bubblegum?.data) throw new Error('fixture has no Bubblegum instruction');
+  const data = new Uint8Array(bubblegum.data);
+  data[data.length - 12] ^= 1; // the nonce: a different leaf, a different NFT
+  const messageBytes = getCompiledTransactionMessageEncoder().encode({
+    ...message,
+    instructions: [...message.instructions, { ...bubblegum, data }],
+  });
+  return Buffer.from(
+    getTransactionEncoder().encode({
+      ...transaction,
+      messageBytes: messageBytes as typeof transaction.messageBytes,
+    })
+  ).toString('base64');
+}
+
+describe('nftAction', () => {
+  const expectation = (nftAction: { asset: string; destination?: string }) => ({
+    feePayer: CNFT_OWNER,
+    allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+    allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    nftAction,
+  });
+  const check = async (
+    transactionBase64: string,
+    nftAction: { asset: string; destination?: string }
+  ) =>
+    assertSolanaTransactionMatches(
+      transactionBase64,
+      expectation(nftAction),
+      await bubblegumAssets(transactionBase64)
+    );
+
+  // A compressed NFT is not an account: its id never appears in the message,
+  // so it is derived from the instruction — the tree and the leaf's nonce.
+  it('accepts a compressed burn of the NFT on screen', async () => {
+    await expect(check(CNFT_BURN, { asset: CNFT_ASSET })).resolves.toBeUndefined();
   });
 
-  it('lets a compressed transfer satisfy the asset and the destination it must name', async () => {
-    const expectation = {
-      feePayer: CNFT_OWNER,
-      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
-      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
-      requiredAccounts: [CNFT_ASSET, CNFT_RECIPIENT],
-    };
-    expect(() => assertSolanaTransactionMatches(CNFT_TRANSFER, expectation)).toThrow(
+  it('accepts a compressed transfer of that NFT to the typed destination', async () => {
+    await expect(
+      check(CNFT_TRANSFER, { asset: CNFT_ASSET, destination: CNFT_RECIPIENT })
+    ).resolves.toBeUndefined();
+  });
+
+  // Naming the NFT on screen is not enough: a second instruction could burn
+  // another one of the user's, and the first check only asked for presence.
+  it('refuses a burn that also burns a second NFT', async () => {
+    await expect(check(withSecondLeaf(CNFT_BURN), { asset: CNFT_ASSET })).rejects.toThrow(
+      /other than/
+    );
+  });
+
+  it('refuses a burn of an NFT other than the one on screen', async () => {
+    await expect(check(CNFT_BURN, { asset: NAMED })).rejects.toThrow(
       SolanaTransactionMismatchError
     );
-    const derived = await bubblegumAssetIds(CNFT_TRANSFER);
-    expect(() => assertSolanaTransactionMatches(CNFT_TRANSFER, expectation, derived)).not.toThrow();
   });
 
-  it('still refuses a compressed burn of an asset other than the one shown', async () => {
-    const derived = await bubblegumAssetIds(CNFT_BURN);
-    expect(() =>
-      assertSolanaTransactionMatches(
-        CNFT_BURN,
-        {
-          feePayer: CNFT_OWNER,
-          allowedPrograms: NFT_TRANSACTION_PROGRAMS,
-          allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
-          requiredAccounts: [NAMED],
-        },
-        derived
-      )
-    ).toThrow(SolanaTransactionMismatchError);
+  // The destination must be the new owner itself, not merely an address
+  // mentioned somewhere in the message.
+  it('refuses a transfer whose new owner is not the typed destination', async () => {
+    await expect(
+      check(CNFT_TRANSFER, { asset: CNFT_ASSET, destination: CNFT_OWNER })
+    ).rejects.toThrow(/somewhere other than/);
   });
 
-  it('derives nothing from a transaction without Bubblegum', async () => {
-    expect(await bubblegumAssetIds(NO_LOOKUPS)).toEqual([]);
+  it('refuses a transfer where the flow asked for a burn', async () => {
+    await expect(check(CNFT_TRANSFER, { asset: CNFT_ASSET })).rejects.toThrow(/does not use/);
+  });
+
+  it('refuses a transaction that does not touch the NFT at all', async () => {
+    await expect(check(NO_LOOKUPS, { asset: CNFT_ASSET })).rejects.toThrow(
+      /pays from|does not act on/
+    );
   });
 });
