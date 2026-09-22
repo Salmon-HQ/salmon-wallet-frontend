@@ -176,6 +176,11 @@ export async function getSolanaNfts(
   }
 
   // Backend already drops blacklisted / spamScore>0 NFTs unless `?includeSpam=true`.
-  const normalized = raw.map((nft) => normalizeBackendNft(nft, publicKey));
-  return { nfts: normalized.filter((nft) => nft.media), partial };
+  //
+  // An NFT without usable art is still the user's: it stays in the list and
+  // the card draws an empty surface. Dropping it hid assets the user could then
+  // neither see, send nor burn — and since only https art is fetched, an
+  // `http://` image alone was enough to make an NFT vanish.
+  const nfts = raw.map((nft) => normalizeBackendNft(nft, publicKey));
+  return { nfts, partial };
 }

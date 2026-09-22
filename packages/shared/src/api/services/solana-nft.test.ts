@@ -57,7 +57,9 @@ describe('solana-nft service', () => {
     ]);
   });
 
-  it('filters NFTs that have no usable media after normalization', async () => {
+  // An NFT without usable art is still the user's. Dropping it hid assets
+  // they could then neither see, send nor burn.
+  it('keeps NFTs that have no usable media, with no image', async () => {
     mockApiClientGet.mockResolvedValueOnce({
       data: {
         data: [
@@ -70,7 +72,7 @@ describe('solana-nft service', () => {
           {
             mint: 'Mint222',
             owner: 'Owner111',
-            name: 'Hidden NFT',
+            name: 'Imageless NFT',
             media: null,
           },
         ],
@@ -79,8 +81,10 @@ describe('solana-nft service', () => {
 
     const { nfts: result } = await getSolanaNfts('solana-mainnet', 'Owner111', false);
 
-    expect(result).toHaveLength(1);
+    expect(result).toHaveLength(2);
     expect(result[0]?.mint.address).toBe('Mint111');
+    expect(result[1]?.mint.address).toBe('Mint222');
+    expect(result[1]?.media).toBeNull();
   });
 
   const page = (mints: string[], pagination: Record<string, unknown>) => ({
