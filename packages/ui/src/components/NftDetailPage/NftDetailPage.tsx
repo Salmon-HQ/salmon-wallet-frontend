@@ -96,7 +96,16 @@ export function NftDetailPage({
       <div style={{ ...screenStyle(semantic), ...style }} className={className}>
         <DepthBackground style={{ zIndex: 0 }} />
         <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, minHeight: 0, display: 'flex' }}>
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <ReceiptScreen
             tone="transfer"
             title={t('nft.burn.successTitle', 'NFT burned')}
