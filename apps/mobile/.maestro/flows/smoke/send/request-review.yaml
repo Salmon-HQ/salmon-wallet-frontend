@@ -1,0 +1,48 @@
+appId: io.salmonwallet.app
+---
+# A pasted payment request, reviewed — never sent.
+#
+# Two things the review must get right about a request anyone can print as a
+# QR:
+# - The request's `label` is the requester's own words. It belongs in
+#   "Requested by", never in "To", which everywhere else holds an address-book
+#   name. Putting it there made a payment to any address read as a payment to
+#   a saved contact.
+# - The `memo` is the one request field that is signed: it goes on chain as an
+#   SPL Memo attributed to the payer. It has to be on the screen.
+#
+# Pasted, not typed: the field classifies a `solana:` URI on every change, so
+# typing it navigates as soon as a partial URI parses as a request.
+#
+# Read-only: the flow cancels at the review. The label and memo are fixtures,
+# not secrets; the recipient is Wallet B, which receives nothing.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- tapOn:
+    id: 'home-send-button'
+- extendedWaitUntil:
+    visible:
+      id: 'send-recipient-screen'
+    timeout: 20000
+- setClipboard: 'solana:${SALMON_TEST_WALLET_B_ADDR}?amount=0.0001&label=Salmon%20Treasury&memo=order-12'
+- tapOn:
+    id: 'send-recipient-input'
+- pasteText
+- extendedWaitUntil:
+    visible:
+      id: 'send-review-screen'
+    timeout: 20000
+
+# The memo is shown, and the label is shown as whose words they are.
+# Asserted by text: `childOf` does not reach the value inside a KeyValueRow on
+# iOS. That the label never becomes the recipient's name (the "To" row) is
+# pinned by useSendFlowState.test.tsx, where it can be asserted exactly.
+- assertVisible:
+    id: 'send-review-memo'
+- assertVisible: 'order-12'
+- assertVisible:
+    id: 'send-review-requested-by'
+- assertVisible: 'Salmon Treasury'
+- takeScreenshot: screenshots/smoke/send/request-review
+
+- tapOn:
+    id: 'send-confirm-cancel-button'

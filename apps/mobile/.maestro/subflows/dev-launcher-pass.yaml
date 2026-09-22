@@ -22,6 +22,14 @@ appId: io.salmonwallet.app
 # below evaluate too early, skip every branch, and leave the sheet covering the app.
 - waitForAnimationToEnd:
     timeout: 10000
+# The settle above is not enough on a cold Metro cache (bundling alone takes
+# ~10 s): the sheet arrived after every guard below had already been skipped,
+# and the flow then waited on a welcome screen the sheet was covering. Wait for
+# the sheet itself; optional, because a launch that shows none must not fail.
+- extendedWaitUntil:
+    visible: 'Continue'
+    timeout: 20000
+    optional: true
 
 # A sheet now covers the app. "Continue" does NOT dismiss it — it expands the
 # one-time intro into the full dev menu. Expand it on purpose: the floating

@@ -140,6 +140,7 @@ export function PasswordInput({
       </Wrapper>
       {error && (
         <p
+          data-testid={testID ? `${testID}-error` : undefined}
           style={{
             color: status.danger,
             fontFamily: fontFamily.sans,

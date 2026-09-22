@@ -175,6 +175,7 @@ export default function SendReviewScreen() {
             }
           />
           <KeyValueRow
+            testID="send-review-to"
             label={t('transactions.to')}
             value={recipient?.name ?? getShortAddress(destinationAddress) ?? destinationAddress}
           />
