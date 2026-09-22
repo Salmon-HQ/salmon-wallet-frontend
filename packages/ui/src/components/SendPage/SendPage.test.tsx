@@ -274,12 +274,18 @@ describe('SendPage — four steps, and the verb between them', () => {
     expect(screen.queryByTestId('step-amount')).toBeNull();
   });
 
-  it('sends the collectible through useNftTransfer and lands on the receipt', async () => {
+  it('sends the collectible through useNftTransfer, waits on the wave, then lands on the receipt', async () => {
     renderPage({ nft: { name: 'Fish #1', blockchain: 'solana', mint: 'm' } });
     fireEvent.click(screen.getByTestId('step-recipient-nft'));
     fireEvent.click(screen.getByTestId('step-review'));
 
     expect(sendNft).toHaveBeenCalledTimes(1);
+    // The wait covers the send; the receipt comes only once its last wave leaves.
+    const wave = await screen.findByTestId('send-wave-screen');
+    await vi.waitFor(() => expect(wave.getAttribute('data-visible')).toBe('false'));
+    expect(screen.queryByTestId('step-success')).toBeNull();
+    fireEvent.click(screen.getByTestId('wave-last-front-gone'));
+
     const receipt = await screen.findByTestId('step-success');
     expect(receipt.getAttribute('data-tx')).toBe('nft-tx-1');
     expect(receipt.getAttribute('data-nft')).toBe('yes');

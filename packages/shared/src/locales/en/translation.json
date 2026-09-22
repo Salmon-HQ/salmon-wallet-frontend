@@ -657,6 +657,8 @@
       "mintAddress": "Mint address"
     },
     "send": {
+      "pendingTitle": "Sending NFT",
+      "pendingSummary": "{{name}} to {{address}}",
       "title": "Send NFT",
       "reviewTitle": "Review Send",
       "enterRecipientAddress": "Enter recipient address",
@@ -665,6 +667,7 @@
       "successSummary": "{{name}} sent to {{address}}"
     },
     "burn": {
+      "pendingTitle": "Burning NFT",
       "reviewTitle": "Burn NFT",
       "reviewBody": "This action is irreversible. Confirm only if you want to permanently burn this NFT.",
       "preparing": "Preparing burn...",

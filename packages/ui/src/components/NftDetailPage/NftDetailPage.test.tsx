@@ -4,7 +4,7 @@
 import React from 'react';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createSemantic } from '@salmon/shared';
+import { createSemantic, ThemeProvider } from '@salmon/shared';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
 
@@ -22,6 +22,25 @@ vi.mock('react-i18next', () => ({
       return fallback ?? key;
     },
   }),
+}));
+
+vi.mock('../LoadingScreen', () => ({
+  // Keeps the exit contract without a frame clock: `onExited` fires when the
+  // test says the last wave has left.
+  LoadingScreen: ({
+    visible,
+    title,
+    onExited,
+  }: {
+    visible?: boolean;
+    title?: string;
+    onExited?: () => void;
+  }) => (
+    <div data-testid="burn-wave-screen" data-visible={String(visible)}>
+      {title}
+      <button data-testid="wave-last-front-gone" onClick={() => onExited?.()} />
+    </div>
+  ),
 }));
 
 const receipt = vi.fn(
@@ -153,6 +172,28 @@ describe('NftDetailPage', () => {
     expect(screen.getByText('"Genesis Salmon" has been burned.')).toBeTruthy();
     fireEvent.click(screen.getByText('Continue'));
     expect(onBurnSuccessContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits on the wave while the burn lands, and shows the receipt once it has left', () => {
+    const props = { nft: BASE_NFT, onBack: vi.fn(), burnPreview: { transaction: 'tx' } };
+    const { rerender } = renderInMode(
+      'dark',
+      <NftDetailPage {...props} burnStep="review" burning />
+    );
+    expect(screen.getByTestId('burn-wave-screen').getAttribute('data-visible')).toBe('true');
+    expect(screen.getByText('nft.burn.pendingTitle')).toBeTruthy();
+
+    rerender(
+      <ThemeProvider systemScheme="dark">
+        <NftDetailPage {...props} burnStep="success" burning={false} />
+      </ThemeProvider>
+    );
+    expect(screen.getByTestId('burn-wave-screen').getAttribute('data-visible')).toBe('false');
+    expect(receipt).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId('wave-last-front-gone'));
+    expect(receipt).toHaveBeenCalled();
+    expect(screen.queryByTestId('burn-wave-screen')).toBeNull();
   });
 
   it.each(['dark', 'light'] as const)('paints its own water in the %s mode', (mode) => {

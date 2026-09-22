@@ -254,6 +254,8 @@ export function useNftFlowState({
     burnPreview,
     /** One busy flag for both halves, exactly as the screens were handed it. */
     burnPreparing: burnPreparing || burnExecuting,
+    /** The burn is signing and landing — the wait's cue, apart from preparing. */
+    burning: burnExecuting,
     burnError,
     prepareBurn,
     confirmBurn,

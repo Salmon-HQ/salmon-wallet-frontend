@@ -27,6 +27,7 @@ import {
   useNftTransfer,
   useSendCommitState,
   useSendFlowState,
+  useWaitExit,
   type SendRecipient,
   type SendStep,
   type SendToken,
@@ -94,9 +95,8 @@ export function SendPage({
     setNftError(null);
     try {
       const result = await sendNft(nft, recipient.resolvedAddress ?? recipient.address);
+      // The receipt waits for the wave to leave; see the effect below.
       setNftTxId(result.txId);
-      setStepped(true);
-      setStep('success');
     } catch (err) {
       setNftError(classifyTransactionError(err));
     } finally {
@@ -119,9 +119,19 @@ export function SendPage({
     setStep('success');
   }, [txId, isWaveHeld]);
 
+  // The collectible's wait: the same wave over the signature and the landing,
+  // and the same rule — the receipt comes once its last wave has left.
+  const { held: isNftWaveHeld, onExited: onNftWaveGone } = useWaitExit(nftSending);
+  useEffect(() => {
+    if (!nftTxId || isNftWaveHeld || navigatedRef.current) return;
+    navigatedRef.current = true;
+    setStepped(true);
+    setStep('success');
+  }, [nftTxId, isNftWaveHeld]);
+
   // Once signed, this screen is the only place the user learns whether their
   // money moved, so ambient navigation must not discard it.
-  const ownsScreen = isCommitted || nftSending || step === 'success';
+  const ownsScreen = isCommitted || nftSending || isNftWaveHeld || step === 'success';
   useEffect(() => {
     onFlowLockChange?.(ownsScreen);
     return () => onFlowLockChange?.(false);
@@ -280,6 +290,22 @@ export function SendPage({
           title={t('transaction.pendingSend')}
           subtitle={summary}
           onExited={onWaveGone}
+        />
+      )}
+
+      {isNftWaveHeld && nft && recipient && (
+        <LoadingScreen
+          visible={nftSending}
+          waves
+          title={t('nft.send.pendingTitle')}
+          subtitle={t('nft.send.pendingSummary', {
+            name: nft.name ?? '',
+            address:
+              getShortAddress(recipient.resolvedAddress || recipient.address) ??
+              recipient.resolvedAddress ??
+              recipient.address,
+          })}
+          onExited={onNftWaveGone}
         />
       )}
 

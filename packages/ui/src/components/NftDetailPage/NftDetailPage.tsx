@@ -28,6 +28,7 @@ import {
   spacing,
   trackEvent,
   useCopyFeedback,
+  useWaitExit,
   type NftAttribute,
   type Semantic,
 } from '@salmon/shared';
@@ -39,6 +40,7 @@ import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
 import { DepthBackground } from '../DepthBackground';
 import { KeyValueRow } from '../KeyValueRow';
+import { LoadingScreen } from '../LoadingScreen';
 import { ReceiptScreen } from '../ReceiptScreen';
 import { ScalesBackground } from '../ScalesBackground';
 import { SectionLabel } from '../SectionLabel';
@@ -59,6 +61,7 @@ export function NftDetailPage({
   burnPreview,
   burnPreparing = false,
   burnSettling = false,
+  burning = false,
   burnError,
   onBurnBack,
   onBurnConfirm,
@@ -71,6 +74,7 @@ export function NftDetailPage({
   const semantic = useSemantic();
   const [imageError, setImageError] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
+  const { held: isBurnWaveHeld, onExited: onBurnWaveGone } = useWaitExit(burning);
 
   // Anonymous funnel event: an NFT detail view was opened. Only the coarse
   // chain family — never the mint, name or media. No-op without consent.
@@ -91,7 +95,8 @@ export function NftDetailPage({
   }, [mint, showCopied]);
 
   // ── The receipt ─────────────────────────────────────────────────────────
-  if (burnStep === 'success') {
+  // It waits for the burn's last wave to leave, the review standing beneath.
+  if (burnStep === 'success' && !isBurnWaveHeld) {
     return (
       <div style={{ ...screenStyle(semantic), ...style }} className={className}>
         <DepthBackground style={{ zIndex: 0 }} />
@@ -131,7 +136,7 @@ export function NftDetailPage({
   }
 
   // ── The review ──────────────────────────────────────────────────────────
-  if (burnStep === 'review') {
+  if (burnStep === 'review' || burnStep === 'success') {
     const canConfirm = !burnPreparing && !burnError && !!burnPreview;
     const busyLabel = burnPreview
       ? t('nft.burn.submitting', 'Burning NFT...')
@@ -205,6 +210,16 @@ export function NftDetailPage({
           <div data-testid="nft-burn-error">
             <WarningNotice tone="error" title={t(burnError)} />
           </div>
+        )}
+
+        {isBurnWaveHeld && (
+          <LoadingScreen
+            visible={burning}
+            waves
+            title={t('nft.burn.pendingTitle')}
+            subtitle={nft.name}
+            onExited={onBurnWaveGone}
+          />
         )}
       </SettingsPanelContent>
     );

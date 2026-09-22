@@ -645,6 +645,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               burnPreview={nftFlow.burnPreview}
               burnPreparing={nftFlow.burnPreparing}
               burnSettling={nftFlow.successSettling}
+              burning={nftFlow.burning}
               burnError={nftFlow.burnError}
               onBurnBack={handleNftBurnBack}
               onBurnConfirm={() => void nftFlow.confirmBurn()}
