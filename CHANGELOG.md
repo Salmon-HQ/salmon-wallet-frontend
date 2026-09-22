@@ -34,6 +34,14 @@ Ships as a binary, 1.2.0, never as an update: the native surface moved on this b
 - Payments, the first Powerup, on the side panel too: ask for USDC, show the request as a QR in a sheet, watch it settle.
 - Send pays a payment request pasted under the recipient field (the side panel has no camera): locked review, who asked and what for, reference and memo on the transfer.
 
+## extension 0.15.0 — 2026-09-15
+
+- Sending from the wallet itself builds a v1 transaction on Solana Mainnet, as it already did on Devnet. Transaction V1 (SIMD-0385, up to 4096 bytes) activated on mainnet-beta at the start of epoch 1035, and a cluster that runs it accepts the larger transaction; before that it refused one at preflight.
+
+## extension 0.14.1 — 2026-09-11
+
+- Signing through Wallet Standard works again. 0.14.0 added a guard that refuses a transaction built for a network the wallet is not on, but it compared the cluster name a dApp sends (`devnet`, `mainnet-beta`, `solana:devnet`) against the wallet's own network ID (`solana-devnet`) and never found a match — every Wallet Standard request was refused as a network mismatch, on every network. The aliases are now recognised as the same network; an unknown or genuinely different network is still refused. Reported and fixed by @mcintyre94 (#128, #129).
+
 ## extension 0.14.0 — 2026-09-10 — Solana v1 transactions
 
 - The wallet signs and sends Solana v1 transactions (SIMD-0296, up to 4096 bytes) that a dApp hands it, and advertises `supportedTransactionVersions: ['legacy', 0, 1]` to Wallet Standard apps. A transaction built for a network the wallet is not on is refused instead of signed. Off-chain message signing refuses v1 payloads, as the standard requires.

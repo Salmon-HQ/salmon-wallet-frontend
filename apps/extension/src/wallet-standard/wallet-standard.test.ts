@@ -142,6 +142,41 @@ describe('initialize', () => {
 });
 
 describe('SalmonWallet', () => {
+  it.each([
+    ['solana:mainnet', 'solana-mainnet'],
+    ['solana:devnet', 'solana-devnet'],
+    ['solana:testnet', 'solana-testnet'],
+  ] as const)(
+    'passes canonical network %s to every transaction signing path',
+    async (chain, network) => {
+      const salmon = createMockSalmon(fixedPublicKey(1));
+      const wallet = new SalmonWallet(salmon);
+      const transaction = new Uint8Array([1, 2, 3]);
+      const input = { account: wallet.accounts[0], transaction, chain };
+      vi.mocked(salmon.signTransactionBytes).mockResolvedValue(transaction);
+      vi.mocked(salmon.signAllTransactionsBytes).mockResolvedValue([transaction, transaction]);
+      vi.mocked(salmon.signAndSendTransactionBytes).mockResolvedValue({
+        signature: bs58.encode(new Uint8Array(64).fill(7)),
+      });
+
+      await wallet.features['solana:signTransaction'].signTransaction(input);
+      expect(salmon.signTransactionBytes).toHaveBeenCalledWith(transaction, network);
+
+      await wallet.features['solana:signTransaction'].signTransaction(input, input);
+      expect(salmon.signAllTransactionsBytes).toHaveBeenCalledWith(
+        [transaction, transaction],
+        network
+      );
+
+      await wallet.features['solana:signAndSendTransaction'].signAndSendTransaction(input);
+      expect(salmon.signAndSendTransactionBytes).toHaveBeenCalledWith(
+        transaction,
+        network,
+        expect.any(Object)
+      );
+    }
+  );
+
   it('advertises the Wallet Standard name "Salmon" as a public integration contract (spec 004 FR-006/SC-004)', () => {
     // Arrange & Act
     const wallet = new SalmonWallet(createMockSalmon());
