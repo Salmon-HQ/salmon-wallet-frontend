@@ -21,7 +21,7 @@
  * - there is no shared DOM token mark yet (`TokenLogo` is mobile-only), so
  *   this component keeps a small local mark, built from tokens/hooks.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   componentSizes,
@@ -81,7 +81,9 @@ function Rise({
   const ref = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
-  useEffect(() => {
+  // Before paint, not after: from a passive effect the element painted one
+  // frame at rest and only then jumped to the float's hidden start.
+  useLayoutEffect(() => {
     floatEntering(ref.current, reducedMotion, { delayMs: beat(step) });
   }, [reducedMotion, step]);
 

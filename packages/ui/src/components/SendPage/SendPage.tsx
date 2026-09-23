@@ -19,7 +19,7 @@
  * retry fires the same transfer from there. A broadcast whose outcome could
  * not be established is not a failure: the heading says "Send unconfirmed".
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   classifyTransactionError,
@@ -192,7 +192,9 @@ export function SendPage({
 
   // The failure surface floats up into the space the wave left.
   const failureRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  // Before paint, not after: from a passive effect the element painted one
+  // frame at rest and only then jumped to the float's hidden start.
+  useLayoutEffect(() => {
     if (sendFailed) floatEntering(failureRef.current, reducedMotion);
   }, [sendFailed, reducedMotion]);
 

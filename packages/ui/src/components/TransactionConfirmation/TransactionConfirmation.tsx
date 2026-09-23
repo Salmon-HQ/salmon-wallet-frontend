@@ -6,7 +6,7 @@
  * line, who routed it, the warning, and the pair of controls. The mobile
  * twin is `apps/mobile/src/components/TransactionConfirmation`.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   SINK_FLOAT_STAGGER_MS,
@@ -36,7 +36,9 @@ function Band({
 }: React.HTMLAttributes<HTMLDivElement> & { step: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
-  useEffect(() => {
+  // Before paint, not after: from a passive effect the element painted one
+  // frame at rest and only then jumped to the float's hidden start.
+  useLayoutEffect(() => {
     floatEntering(ref.current, reducedMotion, { delayMs: step * SINK_FLOAT_STAGGER_MS });
   }, [reducedMotion, step]);
   return (
