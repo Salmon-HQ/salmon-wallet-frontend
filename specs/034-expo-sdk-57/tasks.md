@@ -13,13 +13,13 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 ## Phase 1: Setup — baseline on SDK 55
 
-- [ ] T001 Build the current SDK 55 Android dev build (`cd apps/mobile && npx expo run:android`) on the gesture-navigation emulator and keep the APK from `apps/mobile/android/app/build/outputs/apk/debug/` in the scratchpad as the "before" build
-- [ ] T002 On the SDK 55 build, recover the public BIP-39 test phrase and record the first 3 addresses per chain (Solana, Bitcoin, Ethereum) and the recovery time, in the scratchpad (quickstart §3)
-- [ ] T003 On the SDK 55 build, unlock and idle 30 s on Home; record `adb shell dumpsys meminfo io.salmonwallet.app` TOTAL PSS (quickstart §6)
+- [x] T001 Build the current SDK 55 Android dev build (`cd apps/mobile && npx expo run:android`) on the gesture-navigation emulator and keep the APK from `apps/mobile/android/app/build/outputs/apk/debug/` in the scratchpad as the "before" build
+- [x] T002 On the SDK 55 build, recover the devnet test Wallet A (`.maestro/.env.test`) and record the receive address of each chain the app shows (Solana, Bitcoin — decoded from the receive QR) and the `[perf] recovery` timings from logcat, in the scratchpad (quickstart §3). Recorded: Solana `7Q3H…as6n` (= `SALMON_TEST_WALLET_A_ADDR`), Bitcoin `1MU9…URyh`; createAccount 460 ms, TOTAL 1655 ms; idle PSS ≈ 666 MB
+- [x] T003 On the SDK 55 build, unlock and idle 30 s on Home; record `adb shell dumpsys meminfo io.salmonwallet.app` TOTAL PSS (quickstart §6)
 
 ## Phase 2: Foundational — the upgrade itself (blocks every story)
 
-- [ ] T004 Remove `react-native-encrypted-storage` and `react-native-permissions` from `apps/mobile/package.json` dependencies and from `expo.doctor.reactNativeDirectoryCheck.exclude`; `pnpm install`; run the repo gates (quickstart §1); commit
+- [x] T004 Remove `react-native-encrypted-storage` and `react-native-permissions` from `apps/mobile/package.json` dependencies and from `expo.doctor.reactNativeDirectoryCheck.exclude`; `pnpm install`; run the repo gates (quickstart §1); commit
 - [ ] T005 SDK 56: in `apps/mobile/package.json` set `expo` to `^56`, drop `@react-navigation/native` and `react-native-worklets` from `expo.install.exclude`, add `typescript` to it
 - [ ] T006 SDK 56: drop the SDK-55 pins `@expo/dom-webview`, `@expo/log-box`, `@expo/metro-runtime`, `expo-manifests` from root `package.json` `pnpm.overrides`; run `cd apps/mobile && npx expo install --fix`
 - [ ] T007 SDK 56: rebase `patches/expo-camera@55.0.21.patch` onto the installed `expo-camera` version (`pnpm patch expo-camera@<v>`, add `ios/ExpoCameraBarcodeScanning.podspec` to `expo-module.config.json` `podspecPath`, `pnpm patch-commit`), re-key root `package.json` `pnpm.patchedDependencies`, delete the old patch file
@@ -45,8 +45,9 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 **Independent test**: quickstart §3.
 
-- [ ] T016 [US2] On the SDK 57 build, recover the public test phrase; compare the first 3 addresses per chain with T002 (must be identical); time it against T002 (≤ +10%)
-- [ ] T017 [US2] Confirm the native PBKDF2 path ran (no fallback in Metro's log) on the SDK 57 build
+- [ ] T016 [US2] On the SDK 57 build, recover Wallet A the same way; the Solana and Bitcoin receive addresses must equal T002's; `[perf] recovery: createAccount` stays in the same order of magnitude as T002 (hundreds of ms — seconds would mean the JS fallback) and TOTAL ≤ T002 + 10%
+- [ ] T017 [US2] Confirm the native PBKDF2 path ran on the SDK 57 build: `NativeModules.RNFastCrypto` is present and the createAccount timing matches T002
+- [ ] T018a [US2] Fix the stale smoke flow `apps/mobile/.maestro/flows/smoke/receive/sheet.yaml`: it asserts `receive-address`, a testID the receive sheet no longer renders (the address is only in the QR and the copy button)
 - [ ] T018 [US2] Run the Maestro onboarding and recovery flows in `apps/mobile/.maestro` with `./run.sh --device <emulator>` on the gesture and the 3-button emulators
 
 ## Phase 5: User Story 3 — moving money works as before (P1)
