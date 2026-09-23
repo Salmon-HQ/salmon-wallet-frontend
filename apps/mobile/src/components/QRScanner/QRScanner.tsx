@@ -180,7 +180,7 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
     },
     camera: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     messageContainer: {
       alignItems: 'center',

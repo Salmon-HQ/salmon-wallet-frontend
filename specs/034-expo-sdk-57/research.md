@@ -119,3 +119,42 @@ From `bundledNativeModules.json` on `sdk-57`:
   would try to align it.
 - **Decision**: add `typescript` to `expo.install.exclude` so this lot keeps
   TypeScript 5.9; TypeScript moves in its own lot (TS 7).
+
+## R11. `StyleSheet.absoluteFillObject` is gone (found at the SDK 56 checkpoint)
+
+- **Finding**: React Native 0.85 removed `StyleSheet.absoluteFillObject`. The
+  upgrade doc said the repo had no occurrence; it had 17, in mobile
+  components that must cover the screen — `LockOverlay`, `RevealCover` (the
+  seed reveal cover), `QRScanner`, the sheets, the backgrounds. Spread as
+  `undefined`, each lost `position: 'absolute'`. Two existing tests
+  (`LockOverlay`, `OnboardingLayout`) and the typecheck caught it.
+- **Decision**: replace every use with `StyleSheet.absoluteFill`, which in
+  0.85 is a plain frozen object with the same five values, so spreading it is
+  equivalent.
+
+## R12. `standard-navigation` must be transformed under Jest
+
+- **Finding**: expo-router 56 depends on `standard-navigation`, published as
+  ESM only. `jest-expo`'s own preset allows it through babel-jest, but
+  `apps/mobile/jest.config.js` replaces the preset's `transformIgnorePatterns`
+  with its own list.
+- **Decision**: add `standard-navigation` to that list, and drop the
+  `react-navigation` entries nothing imports any more.
+
+## R13. Theme imports come from `expo-router` itself
+
+- **Finding**: `expo-router/react-navigation` re-exports `DarkTheme` and
+  `DefaultTheme` marked deprecated ("Import from `expo-router` instead"); the
+  root `expo-router` export carries `DarkTheme`, `DefaultTheme` and
+  `ThemeProvider`.
+- **Decision**: import all three from `expo-router`.
+
+## Checkpoint result: SDK 56 on Android
+
+- Android dev build compiles; `RNFastCryptoPackage` is autolinked and
+  `libfastcrypto.so` ships in the APK: the interop layer still serves the
+  legacy module on RN 0.85 (R1 answered — no swap).
+- Wallet A recovered: Solana and Bitcoin receive addresses identical to SDK
+  55; `createAccount` 489 ms (SDK 55: 460 ms), TOTAL 1589 ms (SDK 55: 1655 ms).
+- `expo-doctor`: 21/22, the one failure being the known Hermes V1 memory
+  regression of SDK 56, fixed in SDK 57.

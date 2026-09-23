@@ -533,7 +533,7 @@ const stylesFor = (t: Semantic) =>
     // The material fills the sheet and clips itself to the sheet's own top
     // corners.
     thermocline: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderTopLeftRadius: borderRadius.header,
       borderTopRightRadius: borderRadius.header,
     },

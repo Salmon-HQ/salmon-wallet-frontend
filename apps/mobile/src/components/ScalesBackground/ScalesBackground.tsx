@@ -178,6 +178,6 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

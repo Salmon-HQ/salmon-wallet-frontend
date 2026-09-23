@@ -410,11 +410,7 @@ export function OnboardingLayout({
     // indicator. Out here it runs edge to edge, exactly like the DOM twin's.
     <View style={[styles.root, backgroundColor ? { backgroundColor } : null]} testID={testID}>
       {background != null && (
-        <View
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-          testID="onboarding-background"
-        >
+        <View style={StyleSheet.absoluteFill} pointerEvents="none" testID="onboarding-background">
           {background}
         </View>
       )}

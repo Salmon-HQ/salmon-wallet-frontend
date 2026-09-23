@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   thermocline: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });
 

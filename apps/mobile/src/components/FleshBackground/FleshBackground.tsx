@@ -86,6 +86,6 @@ export const FleshBackground: React.FC<FleshBackgroundProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

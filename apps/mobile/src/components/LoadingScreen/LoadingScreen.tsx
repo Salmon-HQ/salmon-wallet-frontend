@@ -683,9 +683,9 @@ export function LoadingScreen({
               honest. */}
           <Animated.View
             testID="loading-cluster"
-            style={[StyleSheet.absoluteFillObject, styles.cluster, clusterFloatStyle]}
+            style={[StyleSheet.absoluteFill, styles.cluster, clusterFloatStyle]}
           >
-            <Animated.View style={[StyleSheet.absoluteFillObject, styles.cluster, departStyle]}>
+            <Animated.View style={[StyleSheet.absoluteFill, styles.cluster, departStyle]}>
               {/* The emitter, and the head of the cluster. It used to be pinned
               to the exact middle of the frame with the words hanging below
               it, which centred the *mark* and left the thing the eye actually

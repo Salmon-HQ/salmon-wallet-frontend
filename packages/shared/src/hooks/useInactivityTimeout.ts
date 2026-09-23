@@ -129,7 +129,7 @@ export interface UseInactivityTimeoutResult {
  * @example
  * ```typescript
  * import { useInactivityTimeout } from '@salmon/shared/hooks';
- * import { useNavigation } from '@react-navigation/native';
+ * import { useNavigation } from 'expo-router';
  *
  * function AppRoot() {
  *   const navigation = useNavigation();

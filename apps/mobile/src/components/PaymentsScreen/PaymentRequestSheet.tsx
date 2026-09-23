@@ -102,7 +102,7 @@ const stylesFor = (t: Semantic) =>
       overflow: 'hidden',
     },
     thermocline: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderTopLeftRadius: borderRadius.card,
       borderTopRightRadius: borderRadius.card,
     },

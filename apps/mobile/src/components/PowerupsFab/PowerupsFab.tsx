@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     ...shadows.button,
   },
   glyphs: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

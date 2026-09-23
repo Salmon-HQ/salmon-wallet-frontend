@@ -173,10 +173,10 @@ const stylesFor = (t: Semantic) =>
       justifyContent: 'flex-end',
     },
     fill: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     loadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: 'center',
       justifyContent: 'center',
     },

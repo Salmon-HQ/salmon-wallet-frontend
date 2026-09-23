@@ -38,6 +38,12 @@ jest.mock('expo-router', () => {
     useSegments: jest.fn(() => ['(app)', '(tabs)']),
     useRootNavigationState: jest.fn(() => ({ key: 'root' })),
     ErrorBoundary: () => null,
+    DarkTheme: jest.requireActual('expo-router/build/react-navigation/native/theming/DarkTheme')
+      .DarkTheme,
+    DefaultTheme: jest.requireActual(
+      'expo-router/build/react-navigation/native/theming/DefaultTheme'
+    ).DefaultTheme,
+    ThemeProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });
 

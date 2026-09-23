@@ -75,7 +75,8 @@
           "image": "./assets/images/splash-blank.png",
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

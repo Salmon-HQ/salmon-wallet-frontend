@@ -63,7 +63,8 @@ describe('Thermocline', () => {
     // thick → the nearest opaque plane is `surface.crest`.
     expect(opaque.backgroundColor).toBe(CREST);
     // The opaque rung must not move the layout by a pixel.
-    const root = StyleSheet.flatten(toJSON()?.props.style);
+    const tree = toJSON();
+    const root = StyleSheet.flatten((Array.isArray(tree) ? tree[0] : tree)?.props.style);
     expect(root.borderRadius).toBe(GEOMETRY.borderRadius);
   });
 

@@ -209,7 +209,7 @@ const stylesFor = (t: Semantic) =>
     // The material fills the sheet and clips itself to the sheet's own top
     // corners; the refraction strip rides its top edge.
     thermocline: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderTopLeftRadius: borderRadius.card,
       borderTopRightRadius: borderRadius.card,
     },

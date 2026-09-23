@@ -2,15 +2,18 @@
 // This ensures they're available BEFORE expo-router loads any modules
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavigationThemeProvider,
-} from '@react-navigation/native';
 import { createSemantic, type ThemeMode } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider as NavigationThemeProvider,
+  router,
+  useSegments,
+  useRootNavigationState,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
