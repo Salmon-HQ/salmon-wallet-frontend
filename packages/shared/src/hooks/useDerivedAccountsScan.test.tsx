@@ -106,11 +106,22 @@ beforeEach(() => {
 });
 
 describe('useDerivedAccountsScan', () => {
+  // The question is asked only when the user asks for the search (owner,
+  // 2026-09-23): nothing scans on its own by default.
+  it('scans nothing on its own by default', async () => {
+    scanMock.mockResolvedValue({ accounts: [find(2, 'sol-2', 0.5)], failedNetworks: [] });
+    arrange();
+
+    renderHook(() => useDerivedAccountsScan());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(scanMock).not.toHaveBeenCalled();
+  });
+
   it('asks about a funded path nobody holds yet', async () => {
     scanMock.mockResolvedValue({ accounts: [find(2, 'sol-2', 0.5)], failedNetworks: [] });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
     // Nobody asked: the surface that shows the automatic pass answers it.
@@ -134,7 +145,7 @@ describe('useDerivedAccountsScan', () => {
       accounts: [wallet(), wallet({ id: 'wallet-2', derivedFrom: 'wallet-1' }, ['sol-2'])],
     });
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
     expect(result.current.finds.map(({ index }) => index)).toEqual([3]);
@@ -144,7 +155,7 @@ describe('useDerivedAccountsScan', () => {
     scanMock.mockResolvedValue({ accounts: [find(1, 'sol-1', 0)], failedNetworks: [] });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(markDerivedScanned).toHaveBeenCalledWith('wallet-1'));
     expect(result.current.sheetVisible).toBe(false);
@@ -157,7 +168,7 @@ describe('useDerivedAccountsScan', () => {
     });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
 
     await act(async () => {
@@ -178,7 +189,7 @@ describe('useDerivedAccountsScan', () => {
     scanMock.mockResolvedValue({ accounts: [find(2, 'sol-2', 0.5)], failedNetworks: [] });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
 
     await act(async () => {
@@ -198,7 +209,7 @@ describe('useDerivedAccountsScan', () => {
       vi.clearAllMocks();
       arrange({ accounts: [wallet({ secret })] });
 
-      renderHook(() => useDerivedAccountsScan());
+      renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
       await waitFor(() => expect(markDerivedScanned).toHaveBeenCalledWith('wallet-1'));
       expect(scanMock).not.toHaveBeenCalled();
@@ -208,7 +219,7 @@ describe('useDerivedAccountsScan', () => {
   it('skips a wallet already asked about', async () => {
     arrange({ scanned: ['wallet-1'] });
 
-    renderHook(() => useDerivedAccountsScan());
+    renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await act(async () => {});
     expect(scanMock).not.toHaveBeenCalled();
@@ -218,7 +229,7 @@ describe('useDerivedAccountsScan', () => {
     scanMock.mockResolvedValue({ accounts: [], failedNetworks: ['solana-mainnet'] });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(scanMock).toHaveBeenCalled());
     await act(async () => {});
@@ -230,7 +241,7 @@ describe('useDerivedAccountsScan', () => {
     scanMock.mockRejectedValue(new Error('rpc down'));
     arrange();
 
-    renderHook(() => useDerivedAccountsScan());
+    renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(scanMock).toHaveBeenCalled());
     await act(async () => {});
@@ -251,7 +262,7 @@ describe('useDerivedAccountsScan', () => {
     );
     arrange();
 
-    const { rerender } = renderHook(() => useDerivedAccountsScan());
+    const { rerender } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
     await waitFor(() => expect(scanMock).toHaveBeenCalled());
 
     // The lock lands mid-scan. The token flips, the scan resolves into a
@@ -269,7 +280,7 @@ describe('useDerivedAccountsScan', () => {
   it('never scans a locked wallet at all', async () => {
     arrange({ locked: true });
 
-    renderHook(() => useDerivedAccountsScan());
+    renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await act(async () => {});
     expect(scanMock).not.toHaveBeenCalled();
@@ -285,7 +296,7 @@ describe('useDerivedAccountsScan', () => {
     );
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(result.current.scanningAccountId).toBe('wallet-1'));
     await act(async () => {
@@ -303,7 +314,7 @@ describe('useDerivedAccountsScan', () => {
     scanMock.mockResolvedValue({ accounts: [find(3, 'sol-3', 0, 2)], failedNetworks: [] });
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(result.current.sheetVisible).toBe(true));
     expect(result.current.finds).toEqual([
@@ -314,7 +325,7 @@ describe('useDerivedAccountsScan', () => {
   it('a rescan that finds nothing still answers — the sheet opens empty', async () => {
     arrange({ scanned: ['wallet-1'] });
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await act(async () => {
       await result.current.rescan('wallet-1');
@@ -336,7 +347,7 @@ describe('useDerivedAccountsScan', () => {
         })
     );
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     let pending: Promise<void> = Promise.resolve();
     act(() => {
@@ -379,7 +390,7 @@ describe('useDerivedAccountsScan', () => {
     );
     arrange();
 
-    const { result } = renderHook(() => useDerivedAccountsScan());
+    const { result } = renderHook(() => useDerivedAccountsScan({ automatic: true }));
 
     await waitFor(() => expect(result.current.scanningAccountId).toBe('wallet-1'));
     expect(result.current.rescanningAccountId).toBeNull();

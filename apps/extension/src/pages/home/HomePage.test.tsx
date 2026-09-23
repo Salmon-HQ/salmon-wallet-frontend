@@ -364,7 +364,9 @@ describe('HomePage — the derived-accounts sheet is mounted where the user is',
     expect(screen.getByTestId('derived-sheet-scanning')).toBeTruthy();
   });
 
-  it('answers the rescan the user asked for on Wallets, and the automatic pass on Home', () => {
+  // Only a search the user asked for is answered, on Wallets where they asked;
+  // Home never raises the question on its own (owner, 2026-09-23).
+  it('answers the rescan the user asked for on Wallets, and nothing on Home', () => {
     Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: true });
     const { unmount } = render(<HomePage onAddAccount={vi.fn()} />);
     expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
@@ -374,6 +376,6 @@ describe('HomePage — the derived-accounts sheet is mounted where the user is',
 
     Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: false });
     render(<HomePage onAddAccount={vi.fn()} />);
-    expect(screen.getByTestId('derived-sheet-answer')).toBeTruthy();
+    expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
   });
 });

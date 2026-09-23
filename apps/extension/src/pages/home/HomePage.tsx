@@ -968,18 +968,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onRemove={uninstall}
       />
 
-      {/* The question the automatic derived-account scan raises: the scan
-          belongs to the unlocked session, so its answer is taken on the first
-          screen the session lands on. A rescan the user asked for on Wallets
-          is answered there, so Home only ever draws the automatic pass's
-          finds — never the wait. */}
-      <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
-        scanning={false}
-        finds={derivedAccounts.finds}
-        onImport={(indexes: number[]) => void derivedAccounts.importFinds(indexes)}
-        onDismiss={() => void derivedAccounts.dismiss()}
-      />
 
       {/* Receive Sheet */}
       <ReceiveSheet

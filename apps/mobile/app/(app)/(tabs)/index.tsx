@@ -73,7 +73,6 @@ import {
 import {
   BalanceHeader,
   DataAttribution,
-  DerivedAccountsSheet,
   HomeTabOrderSheet,
   NftsTab,
   PortfolioSubTabs,
@@ -96,7 +95,6 @@ import {
   type PowerupId,
   POWERUP_TAB_KEYS,
 } from '../../../src/powerups';
-import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
@@ -192,7 +190,6 @@ export default function HomeScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
-  const derivedAccounts = useDerivedAccounts();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
   const { isTaskEngaged, surfaceKey, isCovered } = useTaskChrome();
@@ -975,20 +972,6 @@ export default function HomeScreen() {
         onCopy={handleReceiveSheetCopy}
       />
 
-      {/* The question the automatic derived-account scan raises: the scan
-          belongs to the unlocked session, so its answer is taken on the first
-          screen the session lands on. A native Modal shows through any screen
-          pushed over Home, and Wallets answers the rescans it asks for over
-          itself, so this one only draws the automatic pass's finds. */}
-      <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
-        // The automatic pass is silent: Home only ever draws the answer, never
-        // the wait. A rescan the user asked for is waited on where they asked.
-        scanning={false}
-        finds={derivedAccounts.finds}
-        onImport={(indexes) => void derivedAccounts.importFinds(indexes)}
-        onDismiss={() => void derivedAccounts.dismiss()}
-      />
     </View>
   );
 }
