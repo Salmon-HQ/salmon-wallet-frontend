@@ -74,7 +74,10 @@ export function NftDetailPage({
   const semantic = useSemantic();
   const [imageError, setImageError] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
-  const { held: isBurnWaveHeld, onExited: onBurnWaveGone } = useWaitExit(burning);
+  // The wave covers the burn and its settle: the receipt arrives with its way
+  // home already open.
+  const burnCommitted = burning || burnSettling;
+  const { held: isBurnWaveHeld, onExited: onBurnWaveGone } = useWaitExit(burnCommitted);
 
   // Anonymous funnel event: an NFT detail view was opened. Only the coarse
   // chain family — never the mint, name or media. No-op without consent.
@@ -214,7 +217,7 @@ export function NftDetailPage({
 
         {isBurnWaveHeld && (
           <LoadingScreen
-            visible={burning}
+            visible={burnCommitted}
             waves
             title={t('nft.burn.pendingTitle')}
             subtitle={nft.name}

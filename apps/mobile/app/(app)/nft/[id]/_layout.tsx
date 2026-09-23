@@ -39,17 +39,18 @@ import { NftFlowProvider, useNftFlow } from '../../../../src/contexts/NftFlowCon
  * signed transaction from sitting behind a back gesture.
  *
  * The wait is here for the same reason, and works as the token send's does:
- * the wave covers the signature and the landing, and the receipt waits for its
- * last wave to leave.
+ * the wave covers the signature, the landing and the settle, so the receipt
+ * arrives with its way home already open, once the last wave has left.
  */
 function NftPassage({ mint, query }: { mint: string; query: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { successTxId, sending, burning, nft, recipient, resolvedRecipient } = useNftFlow();
+  const { successTxId, successSettling, sending, burning, nft, recipient, resolvedRecipient } =
+    useNftFlow();
   const navigatedRef = useRef(false);
 
-  const committing = sending || burning;
+  const committing = sending || burning || successSettling;
   const { held, onExited } = useWaitExit(committing);
   // Which wait this is outlives the flag that started it: the wave is still
   // leaving after `burning` drops, and its title must not flip to the send's.

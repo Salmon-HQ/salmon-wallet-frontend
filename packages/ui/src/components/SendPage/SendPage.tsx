@@ -119,9 +119,11 @@ export function SendPage({
     setStep('success');
   }, [txId, isWaveHeld]);
 
-  // The collectible's wait: the same wave over the signature and the landing,
-  // and the same rule — the receipt comes once its last wave has left.
-  const { held: isNftWaveHeld, onExited: onNftWaveGone } = useWaitExit(nftSending);
+  // The collectible's wait: the same wave over the signature, the landing and
+  // the settle, and the same rule — the receipt comes once its last wave has
+  // left, with its way home already open.
+  const nftCommitted = nftSending || nftSettling;
+  const { held: isNftWaveHeld, onExited: onNftWaveGone } = useWaitExit(nftCommitted);
   useEffect(() => {
     if (!nftTxId || isNftWaveHeld || navigatedRef.current) return;
     navigatedRef.current = true;
@@ -295,7 +297,7 @@ export function SendPage({
 
       {isNftWaveHeld && nft && recipient && (
         <LoadingScreen
-          visible={nftSending}
+          visible={nftCommitted}
           waves
           title={t('nft.send.pendingTitle')}
           subtitle={t('nft.send.pendingSummary', {

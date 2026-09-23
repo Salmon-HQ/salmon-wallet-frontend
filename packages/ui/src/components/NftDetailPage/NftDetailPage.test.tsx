@@ -174,7 +174,7 @@ describe('NftDetailPage', () => {
     expect(onBurnSuccessContinue).toHaveBeenCalledTimes(1);
   });
 
-  it('waits on the wave while the burn lands, and shows the receipt once it has left', () => {
+  it('waits on the wave while the burn lands and settles, and shows the receipt once it has left', () => {
     const props = { nft: BASE_NFT, onBack: vi.fn(), burnPreview: { transaction: 'tx' } };
     const { rerender } = renderInMode(
       'dark',
@@ -182,6 +182,15 @@ describe('NftDetailPage', () => {
     );
     expect(screen.getByTestId('burn-wave-screen').getAttribute('data-visible')).toBe('true');
     expect(screen.getByText('nft.burn.pendingTitle')).toBeTruthy();
+
+    // Landed but not yet settled: the way home is not open, so the wave stays.
+    rerender(
+      <ThemeProvider systemScheme="dark">
+        <NftDetailPage {...props} burnStep="success" burning={false} burnSettling />
+      </ThemeProvider>
+    );
+    expect(screen.getByTestId('burn-wave-screen').getAttribute('data-visible')).toBe('true');
+    expect(receipt).not.toHaveBeenCalled();
 
     rerender(
       <ThemeProvider systemScheme="dark">
