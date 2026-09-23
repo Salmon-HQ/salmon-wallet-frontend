@@ -34,6 +34,7 @@ import {
   Card,
   DepthBackground,
   KeyValueRow,
+  NftMedia,
   PrimaryButton,
   ScalesBackground,
   ScreenHeader,
@@ -85,6 +86,15 @@ export default function NftBurnScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {nft && (
+          <NftMedia
+            testID="nft-burn-media"
+            image={nft.image}
+            mint={nft.mint}
+            accessibilityLabel={t('nft.detail.imageAlt', { name: nft.name })}
+            style={styles.media}
+          />
+        )}
         <View testID="nft-burn-irreversible-notice">
           <WarningNotice tone="error" title={t('nft.burn.reviewBody')} style={styles.notice} />
         </View>
@@ -134,6 +144,11 @@ export default function NftBurnScreen() {
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
+    // The piece about to be destroyed, shown above the warning.
+    media: {
+      width: '50%',
+      alignSelf: 'center',
+    },
     container: {
       flex: 1,
     },

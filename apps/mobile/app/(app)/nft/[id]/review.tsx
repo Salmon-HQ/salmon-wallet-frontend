@@ -24,6 +24,7 @@ import { getShortAddress, isSignableAccount, spacing } from '@salmon/shared';
 import {
   Card,
   KeyValueRow,
+  NftMedia,
   PrimaryButton,
   SettingsScreenLayout,
   WarningNotice,
@@ -88,6 +89,15 @@ export default function NftSendReviewScreen() {
         </PrimaryButton>
       }
     >
+      {nft && (
+        <NftMedia
+          testID="nft-send-review-media"
+          image={nft.image}
+          mint={nft.mint}
+          accessibilityLabel={t('nft.detail.imageAlt', { name: nft.name })}
+          style={styles.media}
+        />
+      )}
       <Card padding="lg" gap={spacing.md} testID="nft-send-review-summary">
         <KeyValueRow label={t('nft.detail.title')} value={nft?.name ?? ''} />
         {!!nft?.collectionName && (
@@ -118,6 +128,11 @@ export default function NftSendReviewScreen() {
 }
 
 const styles = StyleSheet.create({
+  // The piece being sent, beside the summary of where it goes.
+  media: {
+    width: '50%',
+    alignSelf: 'center',
+  },
   notice: {
     marginTop: 0,
   },

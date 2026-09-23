@@ -12,9 +12,7 @@
  * promise the wallet cannot keep. An account that is still resolving keeps
  * them, disabled, because it may yet be able to sign.
  */
-import React, { useCallback, useState } from 'react';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +24,6 @@ import {
   fontSize,
   getSatRarityColor,
   getShortAddress,
-  gradients,
   isBitcoinNft,
   isSignableAccount,
   isSolanaNft,
@@ -42,6 +39,7 @@ import {
   Card,
   DepthBackground,
   KeyValueRow,
+  NftMedia,
   PrimaryButton,
   ScalesBackground,
   ScreenHeader,
@@ -54,14 +52,6 @@ import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
 import { useTabChrome } from '../../../../hooks/useTabChrome';
 import { useCopyFeedback } from '../../../../hooks/useCopyFeedback';
 import { useSemantic, useThemedStyles } from '../../../../src/theme/useThemedStyles';
-import { Spinner } from '../../../../src/components/Spinner';
-
-/** The fallback the media falls back to — the primary fill, drawn flat. */
-const FALLBACK_GRADIENT = {
-  colors: [...gradients.primaryButton.colors],
-  start: { x: 0.12, y: 0.5 },
-  end: { x: 0.83, y: 0.5 },
-} as const;
 
 export default function NftDetailScreen() {
   const { t } = useTranslation();
@@ -72,8 +62,6 @@ export default function NftDetailScreen() {
   const semantic = useSemantic();
   const { nft, nftLoading, account, prepareBurn, resetBurn } = useNftFlow();
 
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
 
   // Anonymous funnel event: an NFT detail view was opened. Only the coarse
@@ -157,45 +145,13 @@ export default function NftDetailScreen() {
 
         {nft && (
           <>
-            <View style={styles.hero}>
-              {!nft.image || imageError ? (
-                <LinearGradient
-                  colors={[...FALLBACK_GRADIENT.colors]}
-                  start={FALLBACK_GRADIENT.start}
-                  end={FALLBACK_GRADIENT.end}
-                  style={styles.heroImage}
-                />
-              ) : (
-                <>
-                  <Image
-                    testID="nft-detail-image"
-                    source={nft.image}
-                    style={styles.heroImage}
-                    contentFit="cover"
-                    autoplay
-                    recyclingKey={nft.mint}
-                    accessibilityLabel={t('nft.detail.imageAlt', { name: nft.name })}
-                    onLoadStart={() => setImageLoading(true)}
-                    onLoadEnd={() => setImageLoading(false)}
-                    onError={() => {
-                      setImageLoading(false);
-                      setImageError(true);
-                    }}
-                  />
-                  {imageLoading && (
-                    <View style={[styles.heroImage, styles.heroLoading]}>
-                      <LinearGradient
-                        colors={[...FALLBACK_GRADIENT.colors]}
-                        start={FALLBACK_GRADIENT.start}
-                        end={FALLBACK_GRADIENT.end}
-                        style={StyleSheet.absoluteFill}
-                      />
-                      <Spinner color={semantic.text.primary} />
-                    </View>
-                  )}
-                </>
-              )}
-            </View>
+            <NftMedia
+              testID="nft-detail"
+              image={nft.image}
+              mint={nft.mint}
+              accessibilityLabel={t('nft.detail.imageAlt', { name: nft.name })}
+              style={styles.hero}
+            />
 
             {!!nft.attributes && nft.attributes.length > 0 && (
               <View style={styles.group}>
@@ -348,20 +304,6 @@ const stylesFor = (t: Semantic) =>
     },
     hero: {
       width: '100%',
-      aspectRatio: 1,
-      borderRadius: borderRadius.r4,
-      overflow: 'hidden',
-    },
-    heroImage: {
-      width: '100%',
-      height: '100%',
-      borderRadius: borderRadius.r4,
-    },
-    heroLoading: {
-      position: 'absolute',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
     },
     copyRow: {
       flexDirection: 'row',

@@ -12,7 +12,7 @@
  * never sign, so both are **gone, not greyed** — a disabled control would be a
  * promise the wallet cannot keep.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -40,6 +40,7 @@ import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
 import { DepthBackground } from '../DepthBackground';
 import { KeyValueRow } from '../KeyValueRow';
+import { NftMedia } from '../NftMedia';
 import { LoadingScreen } from '../LoadingScreen';
 import { ReceiptScreen } from '../ReceiptScreen';
 import { ScalesBackground } from '../ScalesBackground';
@@ -72,7 +73,6 @@ export function NftDetailPage({
 }: NftDetailPageProps): React.ReactElement {
   const { t } = useTranslation();
   const semantic = useSemantic();
-  const [imageError, setImageError] = useState(false);
   const { copied, trigger: showCopied } = useCopyFeedback();
   // The wave covers the burn and its settle: the receipt arrives with its way
   // home already open.
@@ -165,6 +165,13 @@ export function NftDetailPage({
           </PrimaryButton>
         }
       >
+        <NftMedia
+          testID="nft-burn-media"
+          image={nft.image}
+          alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
+          style={reviewMediaStyle}
+        />
+
         <div data-testid="nft-burn-irreversible-notice">
           <WarningNotice
             tone="error"
@@ -229,7 +236,6 @@ export function NftDetailPage({
   }
 
   // ── The detail ──────────────────────────────────────────────────────────
-  const showFallback = !nft.image || imageError;
   const renderAttribute = (attribute: NftAttribute, index: number) => (
     <KeyValueRow
       key={`${attribute.trait_type}-${index}`}
@@ -276,20 +282,11 @@ export function NftDetailPage({
         )
       }
     >
-      <div style={heroStyle}>
-        {showFallback ? (
-          <span style={{ ...fillStyle, backgroundColor: semantic.surface.raised }} />
-        ) : (
-          <img
-            data-testid="nft-detail-image"
-            src={nft.image}
-            alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
-            decoding="async"
-            onError={() => setImageError(true)}
-            style={fillStyle}
-          />
-        )}
-      </div>
+      <NftMedia
+        testID="nft-detail"
+        image={nft.image}
+        alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
+      />
 
       {!!nft.attributes && nft.attributes.length > 0 && (
         <div style={groupStyle}>
@@ -413,23 +410,8 @@ const groupStyle: React.CSSProperties = {
   gap: spacing.sm,
 };
 
-const heroStyle: React.CSSProperties = {
-  position: 'relative',
-  width: '100%',
-  aspectRatio: '1 / 1',
-  borderRadius: borderRadius.r4,
-  overflow: 'hidden',
-  flexShrink: 0,
-};
-
-const fillStyle: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  display: 'block',
-};
+/** The piece shown on the burn review, above the warning. */
+const reviewMediaStyle: React.CSSProperties = { width: '50%', marginInline: 'auto' };
 
 const copyButtonStyle: React.CSSProperties = {
   display: 'inline-flex',

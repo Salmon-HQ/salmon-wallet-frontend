@@ -28,6 +28,7 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
+import { NftMedia } from '../NftMedia';
 import { WarningNotice } from '../WarningNotice';
 import { SendScreen } from './SendScreen';
 import { TokenPickerSheet } from '../TokenPickerSheet';
@@ -131,6 +132,12 @@ export function StepReview({
           </PrimaryButton>
         }
       >
+        <NftMedia
+          testID="nft-send-review-media"
+          image={nft.image}
+          alt={t('nft.detail.imageAlt', { name: nft.name })}
+          style={{ width: '50%', marginInline: 'auto' }}
+        />
         <Card padding="lg" gap={spacing.md} testID="nft-send-review-summary">
           <KeyValueRow label={t('nft.detail.title')} value={nft.name ?? ''} />
           {!!nft.collectionName && (

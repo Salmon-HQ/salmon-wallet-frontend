@@ -154,6 +154,23 @@ describe('NftDetailPage', () => {
     expect(onBurnConfirm).toHaveBeenCalledTimes(1);
   });
 
+  // The piece is on the screen that destroys it; without an image the
+  // primary fill stands in, never an empty hole.
+  it('shows the piece on the burn review, filled when it has no image', () => {
+    renderInMode(
+      'dark',
+      <NftDetailPage
+        nft={{ ...BASE_NFT, image: undefined }}
+        onBack={vi.fn()}
+        burnStep="review"
+        burnPreview={{ transaction: 'tx' }}
+      />
+    );
+
+    expect(screen.getByTestId('nft-burn-media')).toBeTruthy();
+    expect(screen.queryByTestId('nft-burn-media-image')).toBeNull();
+  });
+
   it('ends on the receipt, and the one control leaves it', () => {
     const onBurnSuccessContinue = vi.fn();
     renderInMode(

@@ -234,6 +234,8 @@ export type { PriceChartProps } from './PriceChart';
 // ---------------------------------------------------------------------------
 
 export { NftCard, NftCardSkeleton } from './NftCard';
+export { NftMedia } from './NftMedia';
+export type { NftMediaProps } from './NftMedia';
 export type {
   NftCardProps,
   NftCardSkeletonProps,

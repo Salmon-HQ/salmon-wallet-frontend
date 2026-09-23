@@ -269,6 +269,8 @@ describe('the NFT review screen', () => {
     // The name is on the header and on the summary card; the card is the one
     // that carries what the signature will move.
     expect(screen.getByTestId('nft-send-review-summary')).toBeTruthy();
+    // The piece itself, so the user sees what they are sending.
+    expect(screen.getByTestId('nft-send-review-media')).toBeTruthy();
     expect(screen.getAllByText('Blur NFT').length).toBeGreaterThan(0);
     expect(screen.getByText('Blur Collection')).toBeTruthy();
     expect(screen.getByTestId('nft-send-review-recipient')).toBeTruthy();
@@ -346,6 +348,12 @@ describe('the NFT burn screen', () => {
     expect(screen.getByText('12')).toBeTruthy();
     // extendTransactionCount + 1 — the extends plus the burn itself.
     expect(screen.getByText('2')).toBeTruthy();
+  });
+
+  it('shows the piece about to be burned', () => {
+    render(<NftBurnScreen />);
+
+    expect(screen.getByTestId('nft-burn-media')).toBeTruthy();
   });
 
   it('holds the confirm until a preview exists', () => {

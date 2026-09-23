@@ -166,6 +166,8 @@ export type { NftCardProps, NftCardSkeletonProps, NftData } from './NftCard';
 
 // NftDetailPage - Full-page NFT detail view with image, attributes, and actions
 export { NftDetailPage } from './NftDetailPage';
+export { NftMedia } from './NftMedia';
+export type { NftMediaProps } from './NftMedia';
 export type { NftAttribute, NftDetailData, NftDetailPageProps } from './NftDetailPage';
 
 // TokenDetailPage - the token detail screen: balance, chart, market data, about
