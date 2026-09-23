@@ -184,6 +184,11 @@ function withSecondLeaf(transactionBase64: string): string {
   ).toString('base64');
 }
 
+/** A Bubblegum `transferV2` of a leaf-schema v2 cNFT, as the backend builds it. */
+const CNFT_V2_ASSET = '6exX2gnKzMjPxCWjQh3J5vcqeVqnW5cY5SfyCDBYLFWs';
+const CNFT_TRANSFER_V2 =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAKDV8NEXtutZJGVXDVDJs/epFozMsVUg0imeV+RH3Rc05fzZ3A0bTExyo70vF78tTOEp9QUs3pbxFbZ16kUEyWQFb/laJGvE47J0VMXF8bsWVqW9OvOFwdSOaNlW0QnhAJ+JiLgOt5NShpsiR0X1ndv4omWMoT3GiBISY1HK4HwaWlgliLZxrNb9ddLnB7Od3Jy5VJ42xHg0DpoRo12/jmpbYLeVmKD68osPvSJWMjM0FL0DqrJA9wMtHeR1egrF3GBgtuAVMjSSXEB/GBVnb80yz1pI9uixaZN1Yku81eFHLLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACHFoJLL8sGsZ6FfcDtKma8tqf4cBeMfOQPRoMdRsYNea0yKLZ299PNQoSlRD8X8ZYrNuSRswpAskBYSeWXul+1tMEZUZV8b49kLEr2HNayRkD+xtx/xgfuggapnpJBDTAh3bmjVoFcP6wQJrbexd8xJK+620hcm6Wj4zmKBLe6heWHabMqG+rx6ic3WkQJWg0ftmTOLdNY5/y/t4wmoZNEk5/6saGN/oHPqJ2lfuIFLRE9jjjP2+4z3d65gQ3S8lIBAxABAAAAAAQCAwUGBwgJCgsMlwF3KAbr6t34MV4YC9Be6AAt1/qwYoCFmF1pjGsDdj9Zrjhx3/ctH9hSbInOis5g7i5y5RJYN2kP+r9EygSdP/Pf0VeqlnbfbmjF0kYBhvcjPJJ+fbLcxwPA5QC2U8qCJzt7+tgEXYWkcAHF0kYBhvcjPJJ+fbLcxwPA5QC2U8qCJzt7+tgEXYWkcAEAAQAAAAAAAAABAAAAAA==';
+
 describe('nftAction', () => {
   const expectation = (nftAction: { asset: string; destination?: string }) => ({
     feePayer: CNFT_OWNER,
@@ -232,6 +237,15 @@ describe('nftAction', () => {
   it('refuses a transfer whose new owner is not the typed destination', async () => {
     await expect(
       check(CNFT_TRANSFER, { asset: CNFT_ASSET, destination: CNFT_OWNER })
+    ).rejects.toThrow(/somewhere other than/);
+  });
+
+  it('reads the new owner from its own slot in a transferV2', async () => {
+    await expect(
+      check(CNFT_TRANSFER_V2, { asset: CNFT_V2_ASSET, destination: CNFT_RECIPIENT })
+    ).resolves.toBeUndefined();
+    await expect(
+      check(CNFT_TRANSFER_V2, { asset: CNFT_V2_ASSET, destination: CNFT_OWNER })
     ).rejects.toThrow(/somewhere other than/);
   });
 
