@@ -269,13 +269,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
   const currentNetworkId = current?.network.id ?? 'solana-mainnet';
 
-  // Off mainnet there is no price, so there is no USD total to print (the
-  // balance hook strips every fiat figure there) and the block used to sit on
-  // an em-dash forever. The honest total on a test network is the native
-  // quantity, formatted exactly as the token rows format theirs, and a 24h
-  // change is not withheld but absent: nothing priced it. Unknown is still
-  // unknown — a balance that has not been read yet is not a zero.
-  const isTestNetwork = !isMainnetNetworkId(currentNetworkId);
+  // A test network is priced by its native coin at the mainnet price, like a
+  // real wallet. Where that coin has no price, the total falls back to the
+  // native quantity, formatted exactly as the token rows format theirs,
+  // rather than sit on an em-dash forever. Unknown is still unknown — a
+  // balance that has not been read yet is not a zero.
+  const isUnpricedTestNetwork = !isMainnetNetworkId(currentNetworkId) && usdTotal === undefined;
   const nativeSymbol = NETWORK_DISPLAY[currentNetworkId]?.symbol ?? '';
   const nativeTotal =
     nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
@@ -338,7 +337,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 >
                   {hiddenBalance
                     ? hiddenValue
-                    : isTestNetwork
+                    : isUnpricedTestNetwork
                       ? nativeTotal
                       : formatValue(usdTotal)}
                 </Text>

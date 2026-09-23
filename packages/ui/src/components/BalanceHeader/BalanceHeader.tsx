@@ -278,11 +278,10 @@ export function BalanceHeader({
     );
   }, [currentBlockchainId, reducedMotion]);
 
-  // Off mainnet there is no price, so there is no USD total to print and the
-  // block would sit on an em-dash forever. The honest total on a test network
-  // is the native quantity; a 24h change is not withheld but absent, because
-  // nothing priced it.
-  const isTestNetwork = !isMainnetNetworkId(currentNetworkId);
+  // A test network is priced by its native coin at the mainnet price, like a
+  // real wallet. Where that coin has no price, the total falls back to the
+  // native quantity rather than sit on an em-dash forever.
+  const isUnpricedTestNetwork = !isMainnetNetworkId(currentNetworkId) && usdTotal === undefined;
   const nativeSymbol = NETWORK_DISPLAY[currentNetworkId]?.symbol ?? '';
   const nativeTotal =
     nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
@@ -291,7 +290,7 @@ export function BalanceHeader({
 
   const balanceText = hiddenBalance
     ? hiddenValue
-    : isTestNetwork
+    : isUnpricedTestNetwork
       ? nativeTotal
       : formatValue(usdTotal);
   useLayoutEffect(() => {
