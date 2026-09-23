@@ -74,11 +74,36 @@ describe('installAbortSignalGapFill', () => {
     expect(scope.AbortSignal.any([controller.signal]).aborted).toBe(true);
   });
 
-  it('does nothing on a runtime that already implements timeout', () => {
-    const native = { AbortSignal: { timeout: () => null }, AbortController: class {} };
+  // Expo's runtime (SDK 56+) patches AbortSignal.timeout and .any onto React
+  // Native's abort-controller, and nothing else. Keying the whole gap fill on
+  // `timeout` left throwIfAborted undefined, and every transaction
+  // confirmation on mobile threw "undefined is not a function".
+  it('fills only what a partially patched runtime lacks', () => {
+    const expoTimeout = () => null;
+    const expoAny = () => null;
+    scope.AbortSignal.timeout = expoTimeout;
+    scope.AbortSignal.any = expoAny;
+
+    expect(installAbortSignalGapFill(scope)).toBe(true);
+
+    expect(scope.AbortSignal.timeout).toBe(expoTimeout);
+    expect(scope.AbortSignal.any).toBe(expoAny);
+    expect(typeof scope.AbortSignal.abort).toBe('function');
+    expect(typeof scope.AbortSignal.prototype.throwIfAborted).toBe('function');
+  });
+
+  it('does nothing on a runtime that already implements every member', () => {
+    const complete = () => null;
+    class CompleteAbortSignal {
+      throwIfAborted() {}
+    }
+    CompleteAbortSignal.timeout = complete;
+    CompleteAbortSignal.abort = complete;
+    CompleteAbortSignal.any = complete;
+    const native = { AbortSignal: CompleteAbortSignal, AbortController: class {} };
 
     expect(installAbortSignalGapFill(native)).toBe(false);
-    expect(typeof native.AbortSignal.any).toBe('undefined');
+    expect(native.AbortSignal.timeout).toBe(complete);
   });
 
   it('throwIfAborted is a no-op while the signal is live', () => {

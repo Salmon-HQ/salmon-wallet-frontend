@@ -10,16 +10,24 @@
  * confirmation for signed proposals and NFT burns throws "AbortSignal.timeout is not a
  * function" on mobile without this.
  *
- * Feature-detected as a whole: this becomes a no-op the moment React Native
- * ships a compliant polyfill. DOMException is not assumed to exist on Hermes,
+ * Each member is feature-detected on its own: Expo's runtime (SDK 56+) patches
+ * `timeout` and `any` onto the same abort-controller and nothing else, so the
+ * presence of one member says nothing about the rest. This becomes a no-op the
+ * moment every member exists. DOMException is not assumed to exist on Hermes,
  * so aborts carry a plain Error with the spec's `name`, which is what callers
  * branch on.
  */
 function installAbortSignalGapFill(scope = globalThis) {
   const AbortSignalCtor = scope.AbortSignal;
-  if (!AbortSignalCtor || typeof AbortSignalCtor.timeout === 'function') {
+  if (!AbortSignalCtor) {
     return false;
   }
+  let installed = false;
+  const fill = (target, name, value) => {
+    if (typeof target[name] === 'function') return;
+    target[name] = value;
+    installed = true;
+  };
 
   const abortError = (message, name) => {
     const error = new Error(message);
@@ -43,15 +51,17 @@ function installAbortSignalGapFill(scope = globalThis) {
     return controller.signal;
   };
 
-  AbortSignalCtor.timeout = (ms) =>
-    signalWith(abortError('The operation was aborted due to timeout', 'TimeoutError'), ms);
+  fill(AbortSignalCtor, 'timeout', (ms) =>
+    signalWith(abortError('The operation was aborted due to timeout', 'TimeoutError'), ms)
+  );
 
-  AbortSignalCtor.abort = (reason) =>
+  fill(AbortSignalCtor, 'abort', (reason) =>
     signalWith(
       reason === undefined ? abortError('The operation was aborted', 'AbortError') : reason
-    );
+    )
+  );
 
-  AbortSignalCtor.any = (signals) => {
+  fill(AbortSignalCtor, 'any', (signals) => {
     const controller = new scope.AbortController();
     for (const signal of signals) {
       if (signal.aborted) {
@@ -61,17 +71,17 @@ function installAbortSignalGapFill(scope = globalThis) {
       signal.addEventListener('abort', () => abortWith(controller, signal.reason));
     }
     return controller.signal;
-  };
+  });
 
-  AbortSignalCtor.prototype.throwIfAborted = function throwIfAborted() {
+  fill(AbortSignalCtor.prototype, 'throwIfAborted', function throwIfAborted() {
     if (this.aborted) {
       throw this.reason === undefined
         ? abortError('The operation was aborted', 'AbortError')
         : this.reason;
     }
-  };
+  });
 
-  return true;
+  return installed;
 }
 
 module.exports = { installAbortSignalGapFill };
