@@ -93,7 +93,6 @@ const mockLogic = {
     amountLabel: '',
     status: null,
     copyButton: { onPress: jest.fn(), label: 'Copy' },
-    shareLabel: 'Share',
     removeButton: { onPress: jest.fn(), label: 'Remove' },
   },
   unavailable: null as string | null,
@@ -138,6 +137,7 @@ afterEach(() => {
   mockLogic.list.rows = [];
   mockLogic.ask.visible = false;
   mockLogic.sheet.visible = false;
+  (mockLogic.sheet as { nested?: boolean }).nested = false;
   mockLogic.actions.pay = {
     onPress: jest.fn(),
     accessibilityLabel: 'Pay a request',
@@ -222,9 +222,23 @@ describe('PaymentsScreen', () => {
     expect(screen.getByTestId('qr').props.value).toBe('solana:abc?amount=1');
     expect(screen.getByText('1.00 USDC')).toBeTruthy();
     expect(screen.getByText('Waiting')).toBeTruthy();
-    expect(screen.queryByTestId('payments-sheet-copy')).toBeNull();
-    expect(screen.getByTestId('payments-sheet-share')).toBeTruthy();
+    expect(screen.queryByTestId('payments-sheet-share')).toBeNull();
+    fireEvent.press(screen.getByTestId('payments-sheet-copy'));
+    expect(mockLogic.sheet.copyButton.onPress).toHaveBeenCalled();
     fireEvent.press(screen.getByTestId('payments-sheet-remove'));
     expect(mockLogic.sheet.removeButton.onPress).toHaveBeenCalled();
+  });
+
+  // A request born in the ask sheet is drawn there, not by the list: it
+  // carries the same controls.
+  it('offers copy on a request just created in the ask sheet', () => {
+    mockLogic.ask.visible = true;
+    mockLogic.sheet.visible = true;
+    (mockLogic.sheet as { nested?: boolean }).nested = true;
+    mockLogic.sheet.showCode = true;
+    mockLogic.sheet.uri = 'solana:new?amount=2';
+    renderScreen();
+    fireEvent.press(screen.getByTestId('payments-sheet-copy'));
+    expect(mockLogic.sheet.copyButton.onPress).toHaveBeenCalled();
   });
 });

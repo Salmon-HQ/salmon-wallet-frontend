@@ -3,8 +3,8 @@
  * The tab draws it with the pending requests, the history screen with all
  * of them; neither restates a row. DOM twin: `PaymentsPage/PaymentRequestList`.
  */
-import React, { useCallback } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { spacing, vs } from '@salmon/shared';
 
 import { powerupIcons } from '../../icons';
@@ -22,10 +22,6 @@ export function PaymentRequestList({
   style,
   testID = 'payments-list',
 }: PaymentRequestListProps) {
-  const onShare = useCallback(() => {
-    if (sheet.uri) void Share.share({ message: sheet.uri });
-  }, [sheet.uri]);
-
   return (
     <View style={[styles.list, style]} testID={testID}>
       {rows.length === 0 ? (
@@ -41,7 +37,7 @@ export function PaymentRequestList({
           />
         ))
       )}
-      <PaymentRequestSheet testID="payments-sheet" {...sheet} onShare={onShare} />
+      <PaymentRequestSheet testID="payments-sheet" {...sheet} />
     </View>
   );
 }

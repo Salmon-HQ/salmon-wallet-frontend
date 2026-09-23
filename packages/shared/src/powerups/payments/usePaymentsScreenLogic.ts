@@ -572,7 +572,6 @@ export function usePaymentsScreenLogic({
         onPress: () => void copyOpen(),
         label: t(copied ? 'payments.sheet.copied' : 'payments.sheet.copy'),
       },
-      shareLabel: t('payments.sheet.share'),
       removeButton: {
         onPress: () => {
           if (open) remove(open.id);

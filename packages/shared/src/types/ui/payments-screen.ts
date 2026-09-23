@@ -115,16 +115,13 @@ export interface PaymentRequestSheetPropsBase<TStyle> extends Testable {
   title: string;
   /** The encoded transfer request the code carries; empty while nothing is open. */
   uri: string;
-  /** The code and the copy/share controls show only while the request can still be paid. */
+  /** The code and the copy control show only while the request can still be paid. */
   showCode: boolean;
   /** The amount line, already formatted with its symbol. */
   amountLabel: string;
   status: PaymentRequestStatusView | null;
   checkFailedNotice?: string;
   copyButton: { onPress: () => void; label: string };
-  shareLabel: string;
   removeButton: { onPress: () => void; label: string };
-  /** The platform's share sheet; the DOM twin has none. */
-  onShare?: () => void;
   style?: TStyle;
 }

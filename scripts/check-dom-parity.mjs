@@ -68,7 +68,11 @@ import { fileURLToPath } from 'node:url';
 // no logic. Measured after hoisting the two derivations that had crept in
 // (readSettledPaymentLink for the recipient steps, passwordCheckErrorKey for
 // the password screens).
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2344;
+// 2026-09-23, later: 2344 → 2358. The payment request sheet offers Copy and
+// Remove on every platform (owner's call; Share is gone from mobile), so the
+// two sheets and the two request lists now render the same controls — 14
+// more lines of the same JSX, no logic.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2358;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

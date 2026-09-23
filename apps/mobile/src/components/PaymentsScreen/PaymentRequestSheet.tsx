@@ -1,7 +1,7 @@
 /**
  * PaymentRequestSheet — one payment request as a code, on React Native: the
  * QR on the thermocline, the amount, the facts the network gives, and the
- * controls that share or remove it. One state; the second tap only
+ * controls that copy or remove it. One state; the second tap only
  * dismisses. Every label and handler arrives composed from the shared hook.
  * DOM twin: `packages/ui/src/components/PaymentsPage/PaymentRequestSheet`.
  */
@@ -41,9 +41,8 @@ export function PaymentRequestSheet({
   amountLabel,
   status,
   checkFailedNotice,
-  shareLabel,
+  copyButton,
   removeButton,
-  onShare,
   style,
   testID = 'payment-request-sheet',
 }: PaymentRequestSheetProps) {
@@ -53,6 +52,7 @@ export function PaymentRequestSheet({
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
   const qrSize = screenWidth - CONTENT_PADDING_HORIZONTAL * 2 - componentSizes.qrBorderWidth * 2;
   const { label: removeLabel, ...removePress } = removeButton;
+  const { label: copyLabel, ...copyPress } = copyButton;
 
   return (
     <BottomSheetContainer
@@ -82,9 +82,9 @@ export function PaymentRequestSheet({
         {status && <FactsCard testID={`${testID}-facts`} rows={status.rows} />}
         {checkFailedNotice && <WarningNotice tone="info" title={checkFailedNotice} />}
         {status?.explorer && <ExplorerLinkButton {...status.explorer} />}
-        {showCode && onShare && (
-          <SecondaryButton testID={`${testID}-share`} onPress={onShare}>
-            {shareLabel}
+        {showCode && (
+          <SecondaryButton testID={`${testID}-copy`} {...copyPress}>
+            {copyLabel}
           </SecondaryButton>
         )}
         <SecondaryButton testID={`${testID}-remove`} tone="danger" {...removePress}>
