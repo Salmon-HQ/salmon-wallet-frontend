@@ -152,6 +152,7 @@ vi.mock('@salmon/shared', async () => {
     '@salmon/shared/motion/useFocusModePhase'
   );
   return {
+    useAccountActivity: vi.fn(),
     ...focusMode,
     // The settle clock is identity here: the content follows the tap at once.
     useSettledSubTab: ({ target }: { target: string }) => target,

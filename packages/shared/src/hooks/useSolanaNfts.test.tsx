@@ -11,6 +11,7 @@ vi.mock('../api/services/solana-nft', () => ({
 }));
 
 import { useSolanaNfts } from './useSolanaNfts';
+import { useInvalidateAfterTx } from '../query/invalidation';
 import { getSolanaNfts } from '../api/services/solana-nft';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 
@@ -112,7 +113,7 @@ describe('useSolanaNfts (react-query)', () => {
     expect(mockGetSolanaNfts).toHaveBeenCalledTimes(2);
   });
 
-  it('configures staleTime to 60s on the underlying RQ query', async () => {
+  it('treats the list as stale after 15s and refetches it on every mount', async () => {
     mockGetSolanaNfts.mockResolvedValue({ nfts: [sampleNft], partial: false });
 
     const { client, wrapper } = makeWrapper();
@@ -127,7 +128,33 @@ describe('useSolanaNfts (react-query)', () => {
 
     const queries = client.getQueryCache().findAll({ queryKey: ['solana-nfts'] });
     expect(queries.length).toBeGreaterThan(0);
-    expect((queries[0]!.options as { staleTime?: number }).staleTime).toBe(60_000);
+    const options = queries[0]!.options as { staleTime?: number; refetchOnMount?: unknown };
+    expect(options.staleTime).toBe(15_000);
+    expect(options.refetchOnMount).toBe('always');
+  });
+
+  // The indexer can list a sent NFT for a minute more; a refetch in that window
+  // must not put it back on screen.
+  it('keeps an NFT that just left the wallet out of a refetched list', async () => {
+    const heldMint = { ...sampleNft, mint: { address: 'held-mint' } };
+    mockGetSolanaNfts.mockResolvedValue({ nfts: [sampleNft, heldMint], partial: false });
+    const { wrapper } = makeWrapper();
+    const { result: invalidate } = renderHook(() => useInvalidateAfterTx(), { wrapper });
+    await act(() =>
+      invalidate.current({
+        accountId: 'wallet-held',
+        kinds: [],
+        removedNftMintAddresses: ['held-mint'],
+      })
+    );
+
+    const { result } = renderHook(
+      () => useSolanaNfts({ publicKey: 'wallet-held', networkId: 'solana-mainnet' as any }),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.hasData).toBe(true));
+    expect(result.current.nfts.map((n) => n.mint.address)).toEqual([sampleNft.mint.address]);
   });
 
   it('passes includeSpam through to the API', async () => {

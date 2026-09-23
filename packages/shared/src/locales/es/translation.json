@@ -695,6 +695,7 @@
     "pendingSend": "Enviando fondos",
     "sendSummary": "{{amount}} {{symbol}} a {{recipient}}",
     "errors": {
+      "nftNotOwned": "Este NFT ya no está en tu billetera. Lo sacamos de tu lista.",
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
       "insufficientFunds": "Saldo insuficiente para esta transacción.",
       "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",

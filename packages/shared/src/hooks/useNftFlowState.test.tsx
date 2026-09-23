@@ -13,6 +13,7 @@ const mockSendNft = vi.fn();
 const mockBurnNft = vi.fn();
 const mockCreateBurnTransaction = vi.fn();
 const mockSettleAfterTx = vi.fn();
+const mockInvalidateAfterTx = vi.fn().mockResolvedValue(undefined);
 const mockGetCredit = vi.fn();
 
 vi.mock('./useNftTransfer', () => ({
@@ -26,6 +27,7 @@ vi.mock('../api/services/nft-burn', () => ({
 }));
 vi.mock('../query/invalidation', () => ({
   useSettleAfterTx: () => mockSettleAfterTx,
+  useInvalidateAfterTx: () => mockInvalidateAfterTx,
 }));
 vi.mock('../config/explorers', () => ({
   getDefaultExplorer: () => 'solscan',
@@ -71,6 +73,27 @@ describe('useNftFlowState', () => {
     );
     expect(result.current.burnPreview).toEqual({ transaction: 'burn-transaction' });
     expect(result.current.burnError).toBeNull();
+  });
+
+  // The list was stale: the backend says the NFT is held by someone else. The
+  // screen says so, and the NFT leaves the cached lists at once.
+  it('drops an NFT the wallet no longer holds from the lists', async () => {
+    mockCreateBurnTransaction.mockRejectedValueOnce(
+      Object.assign(new Error('Only the current owner can burn this NFT.'), {
+        code: 'nft_not_owned',
+      })
+    );
+    const { result } = renderHook(() => useNftFlowState(params));
+
+    await act(() => result.current.prepareBurn());
+
+    expect(result.current.burnError).toBe('transaction.errors.nftNotOwned');
+    expect(mockInvalidateAfterTx).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removedNftMintAddresses: ['Mint111'],
+        kinds: ['nfts', 'avatar-nfts'],
+      })
+    );
   });
 
   it('flags a preview whose lookup-table rent the wallet cannot pay', async () => {

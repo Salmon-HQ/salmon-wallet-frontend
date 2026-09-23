@@ -1,6 +1,11 @@
 export { createQueryClient } from './query-client';
 export { queryKeys } from './keys';
-export { useInvalidateAfterTx, useSettleAfterTx, useSettleUntilChanged } from './invalidation';
+export {
+  useInvalidateAfterTx,
+  useSettleAfterTx,
+  useSettleUntilChanged,
+  withoutHeldBackNfts,
+} from './invalidation';
 export type {
   InvalidationKind,
   InvalidationOptions,

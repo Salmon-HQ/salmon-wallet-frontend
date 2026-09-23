@@ -14,7 +14,7 @@ import { useState, useCallback } from 'react';
 import type { BlockchainAccount } from '../types/blockchain';
 import { isSignableAccount } from '../utils/account';
 import type { NftData, SolanaNftData } from '../utils/nft';
-import { useSettleUntilChanged } from '../query/invalidation';
+import { useInvalidateAfterTx, useSettleUntilChanged } from '../query/invalidation';
 import { trackEvent } from '../analytics';
 import { createNftTransferTransaction } from '../api/services/nft-transfer';
 import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prepared-transactions';
@@ -53,6 +53,7 @@ export function useNftTransfer({
   const [settling, setSettling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const settleUntilChanged = useSettleUntilChanged();
+  const invalidateAfterTx = useInvalidateAfterTx();
 
   const reset = useCallback(() => {
     setStatus('idle');
@@ -157,12 +158,21 @@ export function useNftTransfer({
           success: false,
         });
         const errorMessage = classifyTransactionError(err);
+        if (errorMessage === 'transaction.errors.nftNotOwned' && nft.blockchain === 'solana') {
+          // The list was stale: drop the NFT now and fetch what is really held.
+          void invalidateAfterTx({
+            accountId: account.getReceiveAddress(),
+            networkId: account.getNetworkId(),
+            kinds: ['nfts', 'avatar-nfts'],
+            removedNftMintAddresses: [(nft as SolanaNftData).mint],
+          });
+        }
         setError(errorMessage);
         setStatus('failed');
         throw err;
       }
     },
-    [account, onTransferSuccess, settleUntilChanged]
+    [account, invalidateAfterTx, onTransferSuccess, settleUntilChanged]
   );
 
   return { sendNft, status, settling, error, isError: error !== null, reset };

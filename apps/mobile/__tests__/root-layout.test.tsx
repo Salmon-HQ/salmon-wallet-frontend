@@ -2,7 +2,12 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
+import { focusManager } from '@salmon/shared';
 import RootLayout from '../app/_layout';
+
+// Registered once, when the layout module loads — captured before any test
+// clears the mocks.
+const registerFocus = (focusManager.setEventListener as jest.Mock).mock.calls[0]?.[0];
 
 const mockLockAccounts = jest.fn();
 const mockUseAccountsContext = jest.fn();
@@ -89,6 +94,7 @@ jest.mock('@salmon/shared', () => {
   };
 
   return {
+    focusManager: { setEventListener: jest.fn() },
     colors: {
       background: { primary: '#000' },
     },
@@ -335,5 +341,27 @@ describe('RootLayout mobile lock lifecycle', () => {
     await Promise.resolve();
 
     expect(mockLockAccounts).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RootLayout query focus', () => {
+  // React Native has no window focus: without this, reopening the app never
+  // refetched and showed whatever was cached.
+  it('tells React Query the app is focused when it comes to the foreground', () => {
+    let appStateListener: ((state: string) => void) | undefined;
+    const remove = jest.fn();
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type: any, listener: any) => {
+      appStateListener = listener;
+      return { remove } as any;
+    });
+    const handleFocus = jest.fn();
+
+    const unsubscribe = registerFocus(handleFocus);
+    appStateListener?.('active');
+    appStateListener?.('background');
+    unsubscribe();
+
+    expect(handleFocus.mock.calls).toEqual([[true], [false]]);
+    expect(remove).toHaveBeenCalled();
   });
 });

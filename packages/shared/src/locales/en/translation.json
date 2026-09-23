@@ -695,6 +695,7 @@
     "pendingSend": "Sending funds",
     "sendSummary": "{{amount}} {{symbol}} to {{recipient}}",
     "errors": {
+      "nftNotOwned": "This NFT is no longer in your wallet. We've removed it from your list.",
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
       "insufficientFunds": "Insufficient balance for this transaction.",
       "expired": "The network took too long to confirm. Try again.",

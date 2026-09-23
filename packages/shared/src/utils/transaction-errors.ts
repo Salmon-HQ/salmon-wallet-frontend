@@ -426,6 +426,12 @@ export function describeTransactionError(err: unknown): TransactionFailure {
     return { key: message, detail: null };
   }
 
+  // The backend's own verdict that the wallet no longer holds the NFT: the
+  // list was stale, not the transaction broken.
+  if ((err as { code?: unknown } | null)?.code === 'nft_not_owned') {
+    return { key: 'transaction.errors.nftNotOwned', detail: null };
+  }
+
   // A preflight failure wraps the transaction error that failed it; that is
   // the one to read. Anything else is read as it is.
   const root = unwrapSimulationError(err);

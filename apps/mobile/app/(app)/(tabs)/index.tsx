@@ -39,6 +39,7 @@ import {
 import Reanimated, { Easing, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import {
+  useAccountActivity,
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
@@ -329,6 +330,9 @@ export default function HomeScreen() {
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
+  // A receive only shows once something asks again; the chain's report of
+  // activity on the account is that cue.
+  useAccountActivity(ready ? activeBlockchainAccount : null, activeAccount?.id);
 
   // Clear switching network flag once new data has loaded
   useEffect(() => {

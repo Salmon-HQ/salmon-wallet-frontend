@@ -84,6 +84,7 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 jest.mock('@salmon/shared', () => ({
   // The focus-mode clock is real: the screen reads Home in its resting phases.
   ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
+  useAccountActivity: jest.fn(),
   // The settle clock is identity here: the content follows the tap at once.
   // The clock itself is covered in `useSettledSubTab.test.tsx`.
   useSettledSubTab: ({ target }: { target: string }) => target,

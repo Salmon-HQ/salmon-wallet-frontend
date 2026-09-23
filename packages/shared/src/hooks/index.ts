@@ -195,6 +195,7 @@ export { useAvatarNfts } from './useAvatarNfts';
 export type { UseAvatarNftsParams, UseAvatarNftsResult } from './useAvatarNfts';
 
 // Solana NFT list hook (shared between mobile, web, extension collectibles screens)
+export { useAccountActivity } from './useAccountActivity';
 export { useSolanaNfts } from './useSolanaNfts';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  useAccountActivity,
   useAccountsContext,
   isWatchOnlyAccount,
   useAvailableNetworks,
@@ -253,6 +254,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
+  // A receive only shows once something asks again; the chain's report of
+  // activity on the account is that cue.
+  useAccountActivity(ready ? activeBlockchainAccount : null, activeAccount?.id);
   // dApp approval settlement is fired in App.tsx.
 
   // Fetch transaction history (only when on activity page)

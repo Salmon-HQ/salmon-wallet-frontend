@@ -32,6 +32,7 @@ import {
   useAccountsContext,
   useInactivityTimeout,
   createQueryClient,
+  focusManager,
   QueryClientProvider,
   PendingTransactionsProvider,
   usePendingActivity,
@@ -51,6 +52,17 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// React Query learns that the user came back from the DOM's focus events, which
+// React Native does not have: without this, `refetchOnWindowFocus` never fires
+// and reopening the app showed whatever was cached — an NFT already sent, a
+// balance from before a receive. Coming to the foreground is the app's focus.
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) =>
+    handleFocus(state === 'active')
+  );
+  return () => subscription.remove();
+});
 
 export default function RootLayout() {
   const [queryClient] = useState(() => createQueryClient());

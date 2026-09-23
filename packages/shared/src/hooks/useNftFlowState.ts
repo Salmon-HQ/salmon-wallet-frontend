@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createBurnTransaction } from '../api/services/nft-burn';
 import { getDefaultExplorer, getTransactionUrl } from '../config/explorers';
 import type { Blockchain, NetworkEnvironment } from '../config/explorers';
-import { useSettleAfterTx } from '../query/invalidation';
+import { useInvalidateAfterTx, useSettleAfterTx } from '../query/invalidation';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
 import type { BlockchainAccount, SolanaNetworkId } from '../types/blockchain';
 import type { PreparedNftTransactionResponse } from '../types/nft';
@@ -91,6 +91,7 @@ export function useNftFlowState({
   const [burnError, setBurnError] = useState<string | null>(null);
 
   const settleAfterTx = useSettleAfterTx();
+  const invalidateAfterTx = useInvalidateAfterTx();
   const nftBurn = useNftBurn({
     account: (account as SolanaAccount | undefined) ?? null,
     activeAccountId,
@@ -177,11 +178,22 @@ export function useNftFlowState({
         }
       }
     } catch (err) {
-      setBurnError(classifyTransactionError(err));
+      const errorKey = classifyTransactionError(err);
+      if (errorKey === 'transaction.errors.nftNotOwned') {
+        // The list was stale: drop the NFT now and fetch what is really held.
+        void invalidateAfterTx({
+          accountId: account.getReceiveAddress(),
+          avatarAccountId: activeAccountId,
+          networkId,
+          kinds: ['nfts', 'avatar-nfts'],
+          removedNftMintAddresses: [nft.mint],
+        });
+      }
+      setBurnError(errorKey);
     } finally {
       setBurnPreparing(false);
     }
-  }, [account, networkId, nft, onBurnUnsupported]);
+  }, [account, activeAccountId, invalidateAfterTx, networkId, nft, onBurnUnsupported]);
 
   /** Sign and send the prepared burn. */
   const confirmBurn = useCallback(async () => {

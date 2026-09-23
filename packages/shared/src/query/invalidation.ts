@@ -82,6 +82,37 @@ function getRemovedMintAddress(item: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * How long a sent or burned NFT stays hidden after it leaves the wallet.
+ *
+ * The indexer can list it for up to a minute more, and every refetch in that
+ * window — the grid mounting, the app coming back to the foreground, activity
+ * on the account — would put it back on screen.
+ * ponytail: fixed window per mint; an NFT received back within it stays
+ * hidden until it ends. Clear the hold on a matching receive if that matters.
+ */
+const REMOVED_NFT_HOLD_MS = 120_000;
+const heldBackNfts = new WeakMap<QueryClient, Map<string, number>>();
+
+function holdBackNfts(queryClient: QueryClient, mints: readonly string[]): void {
+  const held = heldBackNfts.get(queryClient) ?? new Map<string, number>();
+  const until = Date.now() + REMOVED_NFT_HOLD_MS;
+  for (const mint of mints) held.set(mint, until);
+  heldBackNfts.set(queryClient, held);
+}
+
+/** A cached NFT list without the NFTs that just left the wallet. */
+export function withoutHeldBackNfts<T>(queryClient: QueryClient, nfts: readonly T[]): T[] {
+  const held = heldBackNfts.get(queryClient);
+  if (!held?.size) return [...nfts];
+  const now = Date.now();
+  for (const [mint, until] of held) if (until <= now) held.delete(mint);
+  return nfts.filter((nft) => {
+    const mint = getRemovedMintAddress(nft);
+    return !mint || !held.has(mint);
+  });
+}
+
 function matchesInvalidation(opts: InvalidationOptions, kind: InvalidationKind) {
   const prefix = KIND_TO_PREFIX[kind];
   return (query: { queryKey: readonly unknown[] }): boolean => {
@@ -100,6 +131,7 @@ function matchesInvalidation(opts: InvalidationOptions, kind: InvalidationKind) 
 function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOptions): void {
   if (!opts.removedNftMintAddresses?.length) return;
 
+  holdBackNfts(queryClient, opts.removedNftMintAddresses);
   const removed = new Set(opts.removedNftMintAddresses);
   const keep = (nft: unknown): boolean => {
     const mintAddress = getRemovedMintAddress(nft);
