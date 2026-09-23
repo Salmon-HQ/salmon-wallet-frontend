@@ -103,7 +103,12 @@ import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
 import { TOP_FADE_SCROLL_RANGE, stylesFor } from '../../../src/screens/home/homeStyles';
 import { useHomeBitcoinMarket } from '../../../src/screens/home/useHomeBitcoinMarket';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
-import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
+import {
+  FLOAT_DELAY_MS,
+  floatEntering,
+  sinkExiting,
+  useCoverFloat,
+} from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 /** The in-page sub-tabs — the shell's key, kept under its old local name. */
@@ -190,8 +195,12 @@ export default function HomeScreen() {
   const derivedAccounts = useDerivedAccounts();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
-  const { isTaskEngaged, surfaceKey } = useTaskChrome();
+  const { isTaskEngaged, surfaceKey, isCovered } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
+  // Held hidden under the lock and floated in place when it goes: see
+  // `useCoverFloat` for why Home is not remounted for the unlock.
+  const coverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
+  const fabCoverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
   const [{ currency }] = useCurrencyContext();
 
   // Top fade gradient opacity - animated based on scroll position
@@ -729,7 +738,7 @@ export default function HomeScreen() {
           // belongs to the surfacing.
           key={surfaceKey}
           testID="home-content"
-          style={styles.content}
+          style={[styles.content, coverFloatStyle]}
           entering={
             accountState.locked
               ? undefined
@@ -912,11 +921,18 @@ export default function HomeScreen() {
           the catalogue is up the plus turns into the close mark. It leaves
           with the content when a task takes the screen. */}
       {POWERUPS_ENABLED && !isTaskEngaged && (
-        <PowerupsFab
-          open={catalogVisible}
-          onPress={handleCatalogToggle}
-          bottomOffset={floatingBottomOffset}
-        />
+        // Floats in with the content after the lock; a layer of its own, so
+        // the float does not overwrite the button's leap transform.
+        <Reanimated.View
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFill, fabCoverFloatStyle]}
+        >
+          <PowerupsFab
+            open={catalogVisible}
+            onPress={handleCatalogToggle}
+            bottomOffset={floatingBottomOffset}
+          />
+        </Reanimated.View>
       )}
 
       {/* The catalogue: a drawer of Home, stopping just below the Send /

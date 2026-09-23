@@ -62,23 +62,12 @@ export default function AppLayout() {
 
   const isLocked = accountState.locked || unlockHeld;
   // The screen surfaces when the OVERLAY leaves — not when the wait inside it
-  // does. Home keys its content on the count, so the float plays on water the
-  // user can actually see.
-  //
-  // This is the only publisher on the unlock path: the lock's `LoadingScreen`
-  // passes `surfaces={false}` precisely because its departure is one beat too
-  // early. It leaves, the water column holds for `FLOAT_DELAY_MS` with nothing
-  // on it, and then the overlay goes and Home floats up through the same
-  // ground it was standing on all along — the passage the owner asked for
-  // (2026-09-07), and the one every other step change in the app already
-  // speaks. Every wait with no overlay over it still surfaces itself.
-  //
-  // It is bumped from `release` below, NOT from an effect on `isLocked`. An
-  // effect runs after the commit that removed the overlay, so one frame
-  // painted with Home fully assembled and at rest and the float then played on
-  // content the user had already watched arrive — arrival, then arrival again
-  // (spec 031 §D2).
-  const [surfaceKey, setSurfaceKey] = useState(0);
+  // does: the lock's `LoadingScreen` passes `surfaces={false}` because its
+  // departure is one beat too early. Home is not remounted for it. It stays
+  // mounted under the overlay, held hidden while `covered`, and floats in place
+  // when the overlay goes (`useCoverFloat`). Remounting it played the old
+  // copy's sink over the new copy's float, and painted the new copy one frame
+  // at rest before its float took hold — the unlock's "double arrival".
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -104,18 +93,9 @@ export default function AppLayout() {
   // overlay leaves. The beat is `FLOAT_DELAY_MS`, the same pause every sink in
   // this water earns. Under reduce motion the passage is a cut, so the release
   // is immediate.
-  /**
-   * The gate opens and the screen surfaces in ONE commit.
-   *
-   * Both sets are in the same callback, so React batches them: the overlay is
-   * removed and the new `home-content` is mounted in the same tree update.
-   * Reanimated registers a view's entering animation in its constructor, so
-   * that instance's first paint already carries the float's `initialValues` —
-   * there is no at-rest frame to see.
-   */
+  /** The gate opens; `covered` drops with it and Home floats in place. */
   const release = useCallback(() => {
     setUnlockHeld(false);
-    setSurfaceKey((key) => key + 1);
   }, []);
 
   const handleUnlockExited = useCallback(() => {
@@ -165,7 +145,7 @@ export default function AppLayout() {
       : null;
 
   return (
-    <TaskChromeProvider surfaceKey={surfaceKey}>
+    <TaskChromeProvider covered={isLocked}>
       <DerivedAccountsProvider>
         <SignatureRequestProvider account={signingAccount}>
           {/* The developer-mode settings belong to the unlocked session, not to

@@ -63,11 +63,15 @@ function NftPassage({ mint, query }: { mint: string; query: string }) {
   const name = nft?.name ?? '';
   const destination = resolvedRecipient ?? recipient;
 
+  // The receipt takes the review's place while the wave still covers it — the
+  // wait lives here, above the stack, so replacing the screen beneath cuts
+  // nothing. Waiting for the wave to leave first uncovered the review again,
+  // its confirm live, for the moment the receipt took to slide in.
   useEffect(() => {
-    if (!successTxId || held || navigatedRef.current) return;
+    if (!successTxId || committing || navigatedRef.current) return;
     navigatedRef.current = true;
     router.replace(`/nft/${encodeURIComponent(mint)}/success${query}`);
-  }, [successTxId, held, mint, query, router]);
+  }, [successTxId, committing, mint, query, router]);
 
   if (!held) return null;
   return (
@@ -115,7 +119,7 @@ export default function NftLayout() {
         <Stack.Screen name="burn" />
         {/* There is nothing behind a signed transaction. The receipt's only way
             out is "Return home", so the back gesture is taken off it. */}
-        <Stack.Screen name="success" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="success" options={{ gestureEnabled: false, animation: 'none' }} />
       </Stack>
       <NftPassage mint={params.id} query={`?sub=${subAccountIndex}`} />
     </NftFlowProvider>

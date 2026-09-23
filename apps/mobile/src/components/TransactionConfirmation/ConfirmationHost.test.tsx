@@ -50,6 +50,7 @@ jest.mock('../../contexts/TaskChromeContext', () => ({
   useTaskChromeClaim: () => jest.fn(),
 }));
 jest.mock('../../utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   FLOAT_DELAY_MS: 0,
   floatEntering: () => undefined,
   sinkExiting: () => undefined,

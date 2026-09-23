@@ -89,7 +89,7 @@ import { CRESTS, CREST_RASTER, MARK_SIZE } from './constants';
 import { CrestArc, crestBox } from './CrestArc';
 import { stylesFor } from './styles';
 import { curve, timing } from '../../utils/motion';
-import { FLOAT_DELAY_MS, SINK_FLOAT_TRAVEL, floatEntering } from '../../utils/sinkAndFloat';
+import { FLOAT_DELAY_MS, SINK_FLOAT_TRAVEL, useCoverFloat } from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
@@ -168,7 +168,7 @@ export function LoadingScreen({
   /**
    * The wait's own sink-and-float exit: how far the mark, the words and the
    * tips have dropped on the way out, in dp. They float in with the overlay
-   * (`floatEntering` on the content wrapper) and, when the wait resolves, they
+   * (`useCoverFloat` on the content wrapper) and, when the wait resolves, they
    * sink together with the last wave — one gesture, delayed by the same
    * `holdMs` the overlay's ebb waits out, so the content goes down exactly as
    * the screen's light goes. Zero the whole time the wait is up.
@@ -616,6 +616,17 @@ export function LoadingScreen({
     opacity: overlayOpacity.value,
   }));
 
+  // The cluster's float. The beat is intrinsic to the wait: whatever step gave
+  // way to it is still sinking when it shows, so the content always waits out
+  // the sink plus the pause, and callers never delay the wait themselves.
+  // Driven by shared values rather than an `entering` on mount: a mounted
+  // view painted one frame at rest first, so the mark and the words flashed
+  // before they floated in (see `useCoverFloat`).
+  const clusterFloatStyle = useCoverFloat(!isVisible, isReduceMotionEnabled, {
+    delayMs: FLOAT_DELAY_MS,
+    startHidden: true,
+  });
+
   // Don't render if not visible
   if (!isVisible) return null;
 
@@ -672,14 +683,10 @@ export function LoadingScreen({
               honest. */}
           <Animated.View
             testID="loading-cluster"
-            style={[StyleSheet.absoluteFillObject, styles.cluster, departStyle]}
-            // The beat is intrinsic to the wait: whatever step gave way to it
-            // is still sinking when this mounts, so the content always waits
-            // out the sink plus the pause. Callers therefore never delay the
-            // wait themselves — doing so would double-count the beat.
-            entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })}
+            style={[StyleSheet.absoluteFillObject, styles.cluster, clusterFloatStyle]}
           >
-            {/* The emitter, and the head of the cluster. It used to be pinned
+            <Animated.View style={[StyleSheet.absoluteFillObject, styles.cluster, departStyle]}>
+              {/* The emitter, and the head of the cluster. It used to be pinned
               to the exact middle of the frame with the words hanging below
               it, which centred the *mark* and left the thing the eye actually
               reads — mark plus words — sitting under the middle of the phone.
@@ -689,42 +696,43 @@ export function LoadingScreen({
               this box rather than assumed. The mark is the brand accent,
               `accent.fill`, the button's own salmon in both modes — same as the crest it emits (owner
               ruling, 2026-09-01, DESIGN.md §The wait). */}
-            {waves && (
-              <Animated.View
-                style={[styles.emitter, sinkStyle]}
-                onLayout={measureOrigin}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                testID="loading-emitter"
-              >
-                <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
-                  {markPaths.map((d) => (
-                    <Path key={d} d={d} fill={accent.fill} />
-                  ))}
-                </Svg>
-              </Animated.View>
-            )}
+              {waves && (
+                <Animated.View
+                  style={[styles.emitter, sinkStyle]}
+                  onLayout={measureOrigin}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  testID="loading-emitter"
+                >
+                  <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
+                    {markPaths.map((d) => (
+                      <Path key={d} d={d} fill={accent.fill} />
+                    ))}
+                  </Svg>
+                </Animated.View>
+              )}
 
-            {/* The words, the second half of the cluster. They do not move:
+              {/* The words, the second half of the cluster. They do not move:
               product, 2026-08, "Unlocking Wallet sigue moviéndose y el div de
               tip también, cuando te dije que no debería." */}
-            <View style={styles.words} pointerEvents="none">
-              {title && <Text style={styles.title}>{title}</Text>}
+              <View style={styles.words} pointerEvents="none">
+                {title && <Text style={styles.title}>{title}</Text>}
 
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-            </View>
+                {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+              </View>
 
-            {/* The tips, stationary too. They used to be the far-field passenger
+              {/* The tips, stationary too. They used to be the far-field passenger
               that showed the front takes real time to get there; the crest
               itself shows that, and it is the only thing that should. */}
-            {showTips && resolvedTips.length > 0 && (
-              <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
-                <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
-                <Animated.Text style={[styles.tipText, tipStyle]} numberOfLines={MAX_TIP_LINES}>
-                  {resolvedTips[currentTipIndex]}
-                </Animated.Text>
-              </View>
-            )}
+              {showTips && resolvedTips.length > 0 && (
+                <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
+                  <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
+                  <Animated.Text style={[styles.tipText, tipStyle]} numberOfLines={MAX_TIP_LINES}>
+                    {resolvedTips[currentTipIndex]}
+                  </Animated.Text>
+                </View>
+              )}
+            </Animated.View>
           </Animated.View>
         </View>
       </View>

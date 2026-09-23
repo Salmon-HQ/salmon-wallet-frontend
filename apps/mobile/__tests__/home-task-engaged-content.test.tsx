@@ -73,6 +73,7 @@ jest.mock('../hooks/useTabChrome', () => ({
 // The verb itself is covered by its own suite; here the helpers only have to
 // say WHICH wrapper was handed the gesture, and with what beat.
 jest.mock('../src/utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   FLOAT_DELAY_MS: 120,
   floatEntering: (_reduceMotion: boolean, options?: { delayMs?: number }) => ({
     verb: 'float',

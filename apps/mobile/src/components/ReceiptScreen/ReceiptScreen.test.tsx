@@ -45,6 +45,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('../../utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   floatEntering: () => undefined,
 }));
 

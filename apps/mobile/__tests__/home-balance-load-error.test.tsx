@@ -62,6 +62,7 @@ jest.mock('../hooks/useTabChrome', () => ({
   }),
 }));
 jest.mock('../src/utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   FLOAT_DELAY_MS: 0,
   floatEntering: () => undefined,
   sinkExiting: () => undefined,

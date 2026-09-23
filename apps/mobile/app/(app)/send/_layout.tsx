@@ -89,14 +89,17 @@ function SendPassage() {
         })
       : '';
 
-  // The receipt waits for the wave's report, then takes the review screen's
-  // place — `replace`, so the signed transfer is never behind a back gesture.
+  // The receipt takes the review screen's place while the wave still covers it
+  // — `replace`, so the signed transfer is never behind a back gesture. The
+  // wait lives here, above the stack, so the swap beneath cuts nothing; doing
+  // it after the wave left uncovered the review again, its confirm live, for
+  // the moment the receipt took to slide in.
   const navigatedRef = useRef(false);
   useEffect(() => {
-    if (!txId || isWaveHeld || navigatedRef.current) return;
+    if (!txId || isCommitted || navigatedRef.current) return;
     navigatedRef.current = true;
     router.replace('/send/success');
-  }, [txId, isWaveHeld, router]);
+  }, [txId, isCommitted, router]);
 
   /** Leave the flow: drop its state and go back to the wallet. */
   const handleLeave = useCallback(() => {
@@ -180,7 +183,7 @@ export default function SendLayout() {
         <Stack.Screen name="review" />
         {/* There is nothing behind a signed transfer. The receipt's only way
             out is "Back to wallet", so the back gesture is taken off it. */}
-        <Stack.Screen name="success" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="success" options={{ gestureEnabled: false, animation: 'none' }} />
       </Stack>
       <SendPassage />
     </SendFlowProvider>

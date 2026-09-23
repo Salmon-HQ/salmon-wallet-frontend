@@ -56,7 +56,14 @@ import {
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
 } from '@salmon/shared';
-import { withDelay, withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from 'react-native-reanimated';
 
 import { curve, timing } from './motion';
 
@@ -179,4 +186,66 @@ export function sinkExiting(
       },
     };
   };
+}
+
+/**
+ * The float for a view that is already mounted: held hidden while `covered`,
+ * floated in when the cover goes.
+ *
+ * `floatEntering` rides a mount, and on device a freshly mounted view paints
+ * one frame at rest before its entering takes hold: the unlock showed Home
+ * whole for a frame, and every wait flashed its mark and words before they
+ * floated in. Here the hidden state is a shared value set before the view is
+ * ever uncovered, so there is no such frame — and nothing has to remount, so
+ * no old copy sinks over the new one either.
+ */
+export interface CoverFloatOptions extends SinkFloatOptions {
+  /**
+   * Start hidden even when not covered at mount — for a view that is only
+   * rendered once it is due to float in (a wait), so its first frame must
+   * already be the float's starting point.
+   */
+  startHidden?: boolean;
+}
+
+export function useCoverFloat(
+  covered: boolean,
+  isReduceMotionEnabled: boolean,
+  options: CoverFloatOptions = {}
+) {
+  const {
+    durationMs = FLOAT_IN_MS,
+    delayMs = 0,
+    distance = SINK_FLOAT_TRAVEL,
+    scale: enterScale = FLOAT_ENTER_SCALE,
+    startHidden = false,
+  } = options;
+  const hiddenAtMount = covered || startHidden;
+  const light = useSharedValue(hiddenAtMount ? 0 : 1);
+  const travel = useSharedValue(hiddenAtMount ? 0 : 1);
+
+  useEffect(() => {
+    if (covered) {
+      light.value = 0;
+      travel.value = 0;
+      return;
+    }
+    if (isReduceMotionEnabled) {
+      light.value = 1;
+      travel.value = 1;
+      return;
+    }
+    const rise = (config: ReturnType<typeof timing>) =>
+      delayMs > 0 ? withDelay(delayMs, withTiming(1, config)) : withTiming(1, config);
+    light.value = rise(timing(durationMs, false, curve.sink));
+    travel.value = rise(timing(durationMs, false, curve.settle));
+  }, [covered, isReduceMotionEnabled, durationMs, delayMs, light, travel]);
+
+  return useAnimatedStyle(() => ({
+    opacity: light.value,
+    transform: [
+      { translateY: (1 - travel.value) * distance },
+      { scale: enterScale + (1 - enterScale) * travel.value },
+    ],
+  }));
 }

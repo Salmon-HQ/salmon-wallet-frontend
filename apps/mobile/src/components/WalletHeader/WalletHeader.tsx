@@ -49,6 +49,7 @@ import {
   floatEntering,
   sinkExiting,
   SINK_FLOAT_TRAVEL,
+  useCoverFloat,
 } from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
@@ -94,7 +95,13 @@ export function WalletHeader({
   const isReduceMotionEnabled = useReducedMotion();
   const insets = useSafeAreaInsets();
   // The signal a task flow publishes while it owns the screen.
-  const { isTaskEngaged } = useTaskChrome();
+  const { isTaskEngaged, isCovered } = useTaskChrome();
+  // Home's float under the lock, at the chrome's half depth.
+  const coverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled, {
+    distance: SINK_FLOAT_TRAVEL / 2,
+    scale: CHROME_SCALE,
+    durationMs: motionMs.drift,
+  });
 
   // The redesign's screen top: safe area, then `screenTop`, then the row
   // itself. Deliberately unscaled.
@@ -134,7 +141,7 @@ export function WalletHeader({
       {isTaskEngaged ? null : (
         <Reanimated.View
           testID="wallet-header-bar"
-          style={styles.container}
+          style={[styles.container, coverFloatStyle]}
           entering={floatEntering(isReduceMotionEnabled, {
             distance: SINK_FLOAT_TRAVEL / 2,
             scale: CHROME_SCALE,
