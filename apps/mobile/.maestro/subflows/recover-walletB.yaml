@@ -36,5 +36,8 @@ appId: io.salmonwallet.app
     id: 'password-confirm-input'
 - inputText: ${SALMON_TEST_PASSWORD}
 - tapOn: 'Choose a Password'
+# Tapping the title does not close the Android keyboard, and a tap while it
+# is open only dismisses it: close it first so Submit is pressed.
+- hideKeyboard
 - tapOn:
     id: 'password-submit-button'

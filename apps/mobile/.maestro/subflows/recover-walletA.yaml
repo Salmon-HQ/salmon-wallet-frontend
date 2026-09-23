@@ -34,6 +34,9 @@ appId: io.salmonwallet.app
       - inputText: ${SALMON_TEST_SEED_A}
       # Dismiss keyboard by tapping the title.
       - tapOn: 'Recover Existing Account'
+      # The keyboard's close moves the footer: a tap that lands while it is
+      # open only dismisses it, and Next never fires (3-button navigation).
+      - hideKeyboard
 - extendedWaitUntil:
     visible:
       id: 'recover-next-button'
@@ -52,5 +55,8 @@ appId: io.salmonwallet.app
     id: 'password-confirm-input'
 - inputText: ${SALMON_TEST_PASSWORD}
 - tapOn: 'Choose a Password'
+# Tapping the title does not close the Android keyboard, and a tap while it
+# is open only dismisses it: close it first so Submit is pressed.
+- hideKeyboard
 - tapOn:
     id: 'password-submit-button'
