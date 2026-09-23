@@ -17,11 +17,11 @@ source package, in a clean environment.
 
 ## 1. Prerequisites
 
-| Tool    | Exact version                 | Notes                                                                                         |
-| ------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
-| Node.js | **22.12.0** (any 22.12.x LTS) | Pinned in `.nvmrc`. Node 20.19+ also works; **Node 24 is not supported.**                     |
-| pnpm    | **9.x**                       | The only supported package manager. Install with `npm install -g pnpm@9` — not yarn, not npm. |
-| OS      | Linux / macOS                 | A POSIX shell.                                                                                |
+| Tool    | Exact version                      | Notes                                                                                         |
+| ------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| Node.js | **24.21.0** (any 24.x LTS ≥ 24.15) | Pinned in `.nvmrc`. Node 20 and 22 are **not supported**.                                     |
+| pnpm    | **9.x**                            | The only supported package manager. Install with `npm install -g pnpm@9` — not yarn, not npm. |
+| OS      | Linux / macOS                      | A POSIX shell.                                                                                |
 
 > **Why pnpm only:** this is a pnpm-workspace monorepo. The extension depends on
 > `packages/shared` and `packages/ui` through the `workspace:*` protocol, which
@@ -32,7 +32,7 @@ source package, in a clean environment.
 ### Set up the toolchain
 
 ```bash
-# Use the pinned Node version (reads .nvmrc → 22.12.0)
+# Use the pinned Node version (reads .nvmrc → 24.21.0)
 nvm install
 nvm use
 
@@ -40,8 +40,8 @@ nvm use
 npm install -g pnpm@9
 ```
 
-> **Do not use `corepack enable` to provision pnpm.** The Corepack version
-> bundled with Node 22.12.0 ships outdated npm-registry signing keys and fails
+> **Do not use `corepack enable` to provision pnpm.** Corepack versions bundled
+> with Node have shipped outdated npm-registry signing keys that fail
 > to download pnpm with `Error: Cannot find matching keyid: ...`. Installing
 > pnpm via `npm install -g pnpm@9` avoids Corepack entirely and produces the
 > same pinned dependency tree (the tree is fixed by `pnpm-lock.yaml`, not by
@@ -105,7 +105,7 @@ The build is deterministic: repeating steps 2–3 in the same environment yields
 byte-identical output.
 
 > **OS matters for byte-identity.** The published artifact is built on
-> **Linux** (Node 22.12.0). Building this source package on Linux reproduces
+> **Linux** (Node 24.21.0). Building this source package on Linux reproduces
 > it byte-for-byte. Building on macOS yields a functionally identical bundle
 > whose main chunk differs slightly (platform-specific minifier output), so
 > hashes will not match — always compare against a Linux build.

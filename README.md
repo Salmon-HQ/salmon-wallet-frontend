@@ -2,7 +2,7 @@
 
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![React Native 0.83.6](https://img.shields.io/badge/React%20Native-0.83.6-61dafb?logo=react&logoColor=white)
-![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white)
 ![Solana Web3.js 1.98](https://img.shields.io/badge/@solana%2Fweb3.js-1.98-9945FF?logo=solana&logoColor=white)
 ![Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 
@@ -122,7 +122,7 @@ Light and dark come from one `createSemantic(mode)` in `packages/shared/src/them
 
 ## Requirements
 
-- Node.js `^20.19.0` or `^22.12.0`
+- Node.js `^24.15.0` (pinned in `.nvmrc`)
 - pnpm `9.x`
 
 This repository uses `workspace:*` dependencies and requires pnpm.

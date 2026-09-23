@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const SUPPORTED_NODE_MAJORS = [20, 22];
+const SUPPORTED_NODE_MAJORS = [24];
 const DOCS = 'SOURCE_BUILD_INSTRUCTIONS.md';
 
 function fail(message) {
