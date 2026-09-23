@@ -7,16 +7,13 @@
  * so the screen never shows an empty hole.
  */
 import React, { useState } from 'react';
-import { borderRadius } from '@salmon/shared';
+import { borderRadius, type NftMediaPropsBase } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 
-export interface NftMediaProps {
-  /** The image URL; absent draws the fallback. */
-  image?: string | null;
+export interface NftMediaProps extends NftMediaPropsBase {
   alt: string;
   style?: React.CSSProperties;
-  testID?: string;
 }
 
 export function NftMedia({ image, alt, style, testID }: NftMediaProps) {

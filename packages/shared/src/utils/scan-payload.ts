@@ -143,3 +143,32 @@ export function classifyScanPayload(raw: string, activeChain: BlockchainType): S
     ? { kind: 'wrongChain' }
     : { kind: 'notAddress' };
 }
+
+/** What a settled payment link does to the recipient field. */
+export type SettledPaymentLink =
+  | { kind: 'error'; key: string }
+  | { kind: 'address'; address: string }
+  | { kind: 'request'; address: string; request: TransferRequest };
+
+/**
+ * Reads a pasted or scanned link for the send recipient step: the field error
+ * it shows, the bare address it fills, or the transfer request it starts. Both
+ * recipient steps (mobile and the DOM) read a link the same way; what each
+ * does with a request is its own.
+ */
+export function readSettledPaymentLink(
+  link: string,
+  activeChain: BlockchainType
+): SettledPaymentLink {
+  const outcome = classifyScanPayload(link, activeChain);
+  if (outcome.kind === 'invalidRequest') {
+    return { kind: 'error', key: `send.request.errors.${outcome.reason}` };
+  }
+  if (outcome.kind !== 'valid') {
+    return { kind: 'error', key: 'send.request.errors.notSolanaPay' };
+  }
+  if (!outcome.request) {
+    return { kind: 'address', address: outcome.address };
+  }
+  return { kind: 'request', address: outcome.address, request: outcome.request };
+}

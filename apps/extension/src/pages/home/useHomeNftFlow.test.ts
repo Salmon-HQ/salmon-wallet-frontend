@@ -31,7 +31,9 @@ describe('useHomeNftFlow', () => {
       },
     } as never;
 
-    renderHook(() => useHomeNftFlow({ activeAccount, networkId: 'solana-devnet', navigate: vi.fn() }));
+    renderHook(() =>
+      useHomeNftFlow({ activeAccount, networkId: 'solana-devnet', navigate: vi.fn() })
+    );
 
     expect(flowSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({ account: devnet, networkId: 'solana-devnet' })

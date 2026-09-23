@@ -27,6 +27,7 @@ export { SPINNER_DEFAULT_SIZE, SPINNER_LARGE_FROM } from './spinner';
 
 // NFT Card
 export type { NftCardPropsBase, NftCardSkeletonPropsBase } from './nft-card';
+export type { NftMediaPropsBase } from './nft-media';
 
 // NFTs Tab
 export type { NftsTabPropsBase } from './nfts-tab';

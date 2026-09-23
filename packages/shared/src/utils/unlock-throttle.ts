@@ -38,6 +38,14 @@ export class UnlockThrottledError extends Error {
   }
 }
 
+/**
+ * The message key for a password check that threw: "wait" when the throttle
+ * refused it, otherwise the caller's own key for a failed check.
+ */
+export function passwordCheckErrorKey(err: unknown, otherwise: string): string {
+  return err instanceof UnlockThrottledError ? 'errors.password_throttled' : otherwise;
+}
+
 /** Attempts allowed before any delay — fat-fingering a long password is normal. */
 export const UNLOCK_FREE_ATTEMPTS = 3;
 

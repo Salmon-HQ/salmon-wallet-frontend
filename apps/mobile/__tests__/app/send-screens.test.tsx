@@ -58,7 +58,7 @@ let waitProps: { visible: boolean } | null = null;
 // the RENDER CONDITION around it — that the layout keeps it rendered while it
 // leaves, rather than unmounting it mid-wave (spec 031 §4).
 /** The classifier the recipient screen runs on pasted text, scripted per test. */
-const mockClassifyScanPayload = jest.fn<unknown, [string, string]>();
+const mockReadSettledPaymentLink = jest.fn<unknown, [string, string]>();
 
 jest.mock('../../src/components', () => {
   const ReactActual = require('react');
@@ -145,7 +145,7 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // What the review shows about a payment request is real: the suite pins it.
   ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
-  classifyScanPayload: (raw: string, chain: string) => mockClassifyScanPayload(raw, chain),
+  readSettledPaymentLink: (raw: string, chain: string) => mockReadSettledPaymentLink(raw, chain),
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
@@ -406,15 +406,15 @@ describe('the recipient screen — a pasted payment request (spec 033 US3, mobil
   };
 
   beforeEach(() => {
-    mockClassifyScanPayload.mockReset();
-    mockClassifyScanPayload.mockImplementation((raw: string) => {
+    mockReadSettledPaymentLink.mockReset();
+    mockReadSettledPaymentLink.mockImplementation((raw: string) => {
       if (raw === pastedUri) {
-        return { kind: 'valid', address: pastedRequest.recipient, request: pastedRequest };
+        return { kind: 'request', address: pastedRequest.recipient, request: pastedRequest };
       }
       if (raw.startsWith('solana:https')) {
-        return { kind: 'invalidRequest', reason: 'transactionRequest' };
+        return { kind: 'error', key: 'send.request.errors.transactionRequest' };
       }
-      return { kind: 'notAddress' };
+      return { kind: 'error', key: 'send.request.errors.notSolanaPay' };
     });
   });
 
@@ -428,7 +428,7 @@ describe('the recipient screen — a pasted payment request (spec 033 US3, mobil
     render(<SendRecipientScreen />);
     fireEvent.changeText(screen.getByTestId('send-recipient-input'), pastedUri);
     settle();
-    expect(mockClassifyScanPayload).toHaveBeenCalledWith(pastedUri, 'solana');
+    expect(mockReadSettledPaymentLink).toHaveBeenCalledWith(pastedUri, 'solana');
     expect(mockFlow.startFromRequest).toHaveBeenCalledWith(pastedRequest, mockFlow.tokens);
     expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
   });
@@ -456,19 +456,19 @@ describe('the recipient screen — a pasted payment request (spec 033 US3, mobil
       fireEvent.changeText(input, pastedUri.slice(0, end));
       act(() => jest.advanceTimersByTime(50));
     }
-    expect(mockClassifyScanPayload).not.toHaveBeenCalled();
+    expect(mockReadSettledPaymentLink).not.toHaveBeenCalled();
     expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
 
     settle();
-    expect(mockClassifyScanPayload).toHaveBeenCalledTimes(1);
-    expect(mockClassifyScanPayload).toHaveBeenCalledWith(pastedUri, 'solana');
+    expect(mockReadSettledPaymentLink).toHaveBeenCalledTimes(1);
+    expect(mockReadSettledPaymentLink).toHaveBeenCalledWith(pastedUri, 'solana');
     expect(mockRouter.push).toHaveBeenCalledWith('/send/review');
   });
 
   it('a pasted plain address is still just an address', () => {
     render(<SendRecipientScreen />);
     fireEvent.changeText(screen.getByTestId('send-recipient-input'), 'Dest2');
-    expect(mockClassifyScanPayload).not.toHaveBeenCalled();
+    expect(mockReadSettledPaymentLink).not.toHaveBeenCalled();
     expect(mockFlow.startFromRequest).not.toHaveBeenCalled();
     expect(mockRouter.push).not.toHaveBeenCalled();
   });

@@ -968,7 +968,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onRemove={uninstall}
       />
 
-
       {/* Receive Sheet */}
       <ReceiveSheet
         visible={receiveSheetVisible}

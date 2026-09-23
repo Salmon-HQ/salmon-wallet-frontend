@@ -24,7 +24,7 @@ import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
-  classifyScanPayload,
+  readSettledPaymentLink,
   formatTokenAmount,
   getShortAddress,
   s,
@@ -203,20 +203,10 @@ export default function SendRecipientScreen() {
 
   const handleSettledLink = useCallback(
     (link: string) => {
-      const outcome = classifyScanPayload(link, blockchain);
-      if (outcome.kind === 'invalidRequest') {
-        setRequestError(`send.request.errors.${outcome.reason}`);
-        return;
-      }
-      if (outcome.kind !== 'valid') {
-        setRequestError('send.request.errors.notSolanaPay');
-        return;
-      }
-      if (!outcome.request) {
-        setAddress(outcome.address);
-        return;
-      }
-      startRequest(outcome.request, outcome.address);
+      const outcome = readSettledPaymentLink(link, blockchain);
+      if (outcome.kind === 'error') setRequestError(outcome.key);
+      else if (outcome.kind === 'address') setAddress(outcome.address);
+      else startRequest(outcome.request, outcome.address);
     },
     [blockchain, setAddress, startRequest]
   );

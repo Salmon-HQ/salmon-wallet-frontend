@@ -298,6 +298,7 @@ export {
   UNLOCK_FREE_ATTEMPTS,
   UNLOCK_DELAY_SCHEDULE_MS,
   UnlockThrottledError,
+  passwordCheckErrorKey,
 } from './unlock-throttle';
 export type { UnlockPenalty } from './unlock-throttle';
 
@@ -399,8 +400,8 @@ export { overflowEdges } from './overflowEdges';
 export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
 
 // What a scanned or pasted payload is (the mobile scanner and the DOM paste field)
-export { classifyScanPayload } from './scan-payload';
+export { classifyScanPayload, readSettledPaymentLink } from './scan-payload';
 export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestReview';
 export type { SendRequestReviewRow } from './sendRequestReview';
 export { sendReceiptRows } from './sendReceiptRows';
-export type { ScanClassification } from './scan-payload';
+export type { ScanClassification, SettledPaymentLink } from './scan-payload';

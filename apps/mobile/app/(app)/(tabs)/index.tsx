@@ -971,7 +971,6 @@ export default function HomeScreen() {
         networkLabel={getNetworkLabel(currentNetworkId) ?? undefined}
         onCopy={handleReceiveSheetCopy}
       />
-
     </View>
   );
 }

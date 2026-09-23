@@ -62,7 +62,13 @@ import { fileURLToPath } from 'node:url';
 // `PaymentRequestList`, the rows the tab and the history screen share) and
 // the history screen itself: rendering only, the scope and the rows are the
 // shared hook's.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2330;
+// 2026-09-23: 2330 → 2344. The Home screens render the tab-order sheet and
+// the receive sheet back to back on both platforms now that the automatic
+// derived-accounts sheet between them is gone — 19 lines of the same JSX,
+// no logic. Measured after hoisting the two derivations that had crept in
+// (readSettledPaymentLink for the recipient steps, passwordCheckErrorKey for
+// the password screens).
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2344;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -89,6 +95,8 @@ export const MOBILE_ONLY = {
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */
 export const DOM_ONLY = {
   DAppApproval: 'extension-only surface (lot 5)',
+  Hostname:
+    'the unclipped counterparty hostname on dApp signing and trusted-app screens — extension-only surfaces',
   HoldToApproveButton:
     'no mobile twin; mobile Button/HoldToCopyButton is a different control (copy, not approve)',
   AuthFlow: 'onboarding screens are routes on mobile (app/(auth)); components on the DOM',

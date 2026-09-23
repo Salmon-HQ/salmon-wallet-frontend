@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { borderRadius, gradients } from '@salmon/shared';
+import { borderRadius, gradients, type NftMediaPropsBase } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
 import { Spinner } from '../Spinner';
@@ -22,14 +22,11 @@ const FALLBACK_GRADIENT = {
   end: { x: 0.83, y: 0.5 },
 } as const;
 
-export interface NftMediaProps {
-  /** The image URL; absent draws the fallback. */
-  image?: string | null;
+export interface NftMediaProps extends NftMediaPropsBase {
   /** Keys image recycling to the NFT, so a list never shows the previous one. */
   mint: string;
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
-  testID?: string;
 }
 
 export function NftMedia({ image, mint, accessibilityLabel, style, testID }: NftMediaProps) {

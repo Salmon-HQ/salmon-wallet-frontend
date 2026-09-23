@@ -11,7 +11,7 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  classifyScanPayload,
+  readSettledPaymentLink,
   formatTokenAmount,
   getShortAddress,
   isSignableAccount,
@@ -133,16 +133,12 @@ export function StepRecipient({
 
   const handleSettledLink = useCallback(
     (link: string) => {
-      const outcome = classifyScanPayload(link, 'solana');
-      if (outcome.kind === 'invalidRequest') {
-        setRequestError(`send.request.errors.${outcome.reason}`);
+      const outcome = readSettledPaymentLink(link, 'solana');
+      if (outcome.kind === 'error') {
+        setRequestError(outcome.key);
         return;
       }
-      if (outcome.kind !== 'valid') {
-        setRequestError('send.request.errors.notSolanaPay');
-        return;
-      }
-      if (!outcome.request) {
+      if (outcome.kind === 'address') {
         setAddress(outcome.address);
         return;
       }

@@ -3,7 +3,7 @@
  * the Solana Pay transfer request the scanner used to read only partially.
  */
 import { describe, expect, it } from 'vitest';
-import { classifyScanPayload } from './scan-payload';
+import { classifyScanPayload, readSettledPaymentLink } from './scan-payload';
 
 const SOLANA_ADDRESS = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
 const BITCOIN_ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
@@ -119,6 +119,48 @@ describe('classifyScanPayload', () => {
     });
     expect(classifyScanPayload(`solana:${BITCOIN_ADDRESS}?amount=1`, 'solana')).toEqual({
       kind: 'wrongChain',
+    });
+  });
+});
+
+describe('readSettledPaymentLink', () => {
+  it('names the unreadable part of a request as the field error', () => {
+    expect(readSettledPaymentLink(`solana:${SOLANA_ADDRESS}?amount=abc`, 'solana')).toEqual({
+      kind: 'error',
+      key: 'send.request.errors.amount',
+    });
+  });
+
+  it('refuses anything that is not a payment for the active chain', () => {
+    expect(readSettledPaymentLink(`solana:${BITCOIN_ADDRESS}?amount=1`, 'solana')).toEqual({
+      kind: 'error',
+      key: 'send.request.errors.notSolanaPay',
+    });
+    expect(readSettledPaymentLink('hello world', 'solana')).toEqual({
+      kind: 'error',
+      key: 'send.request.errors.notSolanaPay',
+    });
+  });
+
+  it('fills the address when the link asks for nothing more', () => {
+    expect(readSettledPaymentLink(`solana:${SOLANA_ADDRESS}`, 'solana')).toEqual({
+      kind: 'address',
+      address: SOLANA_ADDRESS,
+    });
+  });
+
+  it('hands over the request when the link carries one', () => {
+    const outcome = readSettledPaymentLink(
+      `solana:${SOLANA_ADDRESS}?amount=1.5&spl-token=${USDC}&reference=${REFERENCE}`,
+      'solana'
+    );
+    expect(outcome.kind).toBe('request');
+    if (outcome.kind !== 'request') return;
+    expect(outcome.address).toBe(SOLANA_ADDRESS);
+    expect(outcome.request).toMatchObject({
+      recipient: SOLANA_ADDRESS,
+      amount: '1.5',
+      splToken: USDC,
     });
   });
 });
