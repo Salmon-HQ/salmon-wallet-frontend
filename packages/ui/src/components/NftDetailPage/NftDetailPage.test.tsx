@@ -160,7 +160,7 @@ describe('NftDetailPage', () => {
     renderInMode(
       'dark',
       <NftDetailPage
-        nft={{ ...BASE_NFT, image: undefined }}
+        nft={{ ...(BASE_NFT as object), image: undefined } as typeof BASE_NFT}
         onBack={vi.fn()}
         burnStep="review"
         burnPreview={{ transaction: 'tx' }}

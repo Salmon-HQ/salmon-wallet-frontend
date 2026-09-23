@@ -126,6 +126,8 @@ export function UnderlineTabs({
   const [edges, setEdges] = useState({ leading: false, trailing: false });
   const [isHovered, setIsHovered] = useState(false);
   const hasMeasuredActive = useRef(false);
+  /** The underline's travel in flight, so a newer one can take over from it. */
+  const underlineAnimation = useRef<Animation | null>(null);
   // The web font may land after the first paint and change every tab's
   // width: until it has, the underline is placed, never animated, and one
   // more measurement follows the fonts (`document.fonts.ready`).
@@ -156,6 +158,7 @@ export function UnderlineTabs({
     leaving: new Set(),
   });
   const prevLefts = useRef<Map<string, number>>(new Map());
+  const prevKeys = useRef('');
   const hasMounted = useRef(false);
   const [measureTick, setMeasureTick] = useState(0);
   useEffect(() => {
@@ -190,10 +193,14 @@ export function UnderlineTabs({
     const lefts = new Map<string, number>();
     // A set still being read (`settled` false) changes without motion, the
     // same as the first mount: hydration owes no verb.
-    const canAnimate = !isReduceMotionEnabled && hasMounted.current && settled;
-    // Positions are the row's, not the viewport's: when the whole row shifts
-    // — content above it grows, the panel resizes — no tab has moved.
-    const rowLeft = rowRef.current?.getBoundingClientRect().left ?? 0;
+    // Only a change to the set or its order moves a tab. The parent hands a
+    // new array on every render; measuring then read ancestors mid-animation
+    // as a move and slid a tab that had not changed — Bitcoin trembled when
+    // the sub-tab below changed.
+    const keys = rendered.tabs.map((tab) => tab.key).join('|');
+    const setChanged = keys !== prevKeys.current || rendered.leaving.size > 0;
+    prevKeys.current = keys;
+    const canAnimate = !isReduceMotionEnabled && hasMounted.current && settled && setChanged;
     let pending = 0;
     const settle = () => {
       pending -= 1;
@@ -209,8 +216,10 @@ export function UnderlineTabs({
     rendered.tabs.forEach((tab, index) => {
       const wrap = wrapRefs.current.get(tab.key);
       if (!wrap) return;
-      const box = wrap.getBoundingClientRect();
-      const left = box.left - rowLeft;
+      // Layout positions within the (positioned) row, not painted ones: no
+      // transform on the row or above it reads as a tab moving.
+      const box = { width: wrap.offsetWidth };
+      const left = wrap.offsetLeft;
       lefts.set(tab.key, left);
       const gapSide = index === 0 ? 'marginRight' : 'marginLeft';
       if (rendered.leaving.has(tab.key)) {
@@ -244,7 +253,7 @@ export function UnderlineTabs({
         return;
       }
       const delta = before - left;
-      if (delta !== 0 && canAnimate) {
+      if (Math.abs(delta) >= 0.5 && canAnimate) {
         run(
           wrap,
           [{ transform: `translateX(${delta}px)` }, { transform: 'translateX(0)' }],
@@ -304,13 +313,26 @@ export function UnderlineTabs({
     const activeTab = tabRefs.current.get(activeKey);
     if (!underline || !row || !activeTab) return;
 
-    const rowBox = row.getBoundingClientRect();
-    const tabBox = activeTab.getBoundingClientRect();
-    const x = tabBox.left - rowBox.left;
-    const width = tabBox.width;
+    // The tab's layout box within the row (the row is positioned), not its
+    // painted one: a tab floating in or a row scaling mid-transition reported
+    // a moving, shrunken box, and the underline kept that half-measure.
+    const x = activeTab.offsetLeft;
+    const width = activeTab.offsetWidth;
 
     const nextTransform = `translateX(${x}px)`;
     const nextWidth = `${width}px`;
+    // A travel still in flight is taken over from where it is on screen, and
+    // only the newest travel may commit its end: an older one finishing late
+    // used to write its own target over the newer one, freezing the underline
+    // at a width between two tabs.
+    const inFlight = underlineAnimation.current;
+    if (inFlight) {
+      const onScreen = getComputedStyle(underline);
+      underline.style.transform = onScreen.transform === 'none' ? '' : onScreen.transform;
+      underline.style.width = onScreen.width;
+      inFlight.cancel();
+      underlineAnimation.current = null;
+    }
     if (!hasMeasuredActive.current || !settled || !fontsReady.current) {
       underline.style.transform = nextTransform;
       underline.style.width = nextWidth;
@@ -321,27 +343,30 @@ export function UnderlineTabs({
     if (underline.style.transform === nextTransform && underline.style.width === nextWidth) return;
 
     if (typeof underline.animate !== 'function') {
-      underline.style.transform = `translateX(${x}px)`;
-      underline.style.width = `${width}px`;
+      underline.style.transform = nextTransform;
+      underline.style.width = nextWidth;
       return;
     }
 
     const duration = resolveMotionMs(motionMs.drift, isReduceMotionEnabled);
-    underline
-      .animate(
-        [
-          {
-            transform: underline.style.transform || 'translateX(0px)',
-            width: underline.style.width || '0px',
-          },
-          { transform: `translateX(${x}px)`, width: `${width}px` },
-        ],
-        { duration, easing: motionEasing.current.css, fill: 'forwards' }
-      )
-      .addEventListener('finish', () => {
-        underline.style.transform = `translateX(${x}px)`;
-        underline.style.width = `${width}px`;
-      });
+    const travel = underline.animate(
+      [
+        {
+          transform: underline.style.transform || 'translateX(0px)',
+          width: underline.style.width || '0px',
+        },
+        { transform: nextTransform, width: nextWidth },
+      ],
+      { duration, easing: motionEasing.current.css, fill: 'forwards' }
+    );
+    underlineAnimation.current = travel;
+    travel.addEventListener('finish', () => {
+      if (underlineAnimation.current !== travel) return;
+      underline.style.transform = nextTransform;
+      underline.style.width = nextWidth;
+      travel.cancel();
+      underlineAnimation.current = null;
+    });
   }, [activeKey, tabs, isOverflowing, isReduceMotionEnabled, measureTick, settled]);
 
   // Off-screen active tab (including the one restored at mount) is brought
@@ -537,7 +562,11 @@ export function UnderlineTabs({
                     textTransform: metrics.uppercase ? 'uppercase' : 'none',
                     color: isActive ? t.text.primary : t.text.secondary,
                     whiteSpace: 'nowrap',
-                    transition: `color ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}, font-weight ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}`,
+                    // Colour eases; the weight does not. Tweening the weight widened the
+                    // tab frame by frame and shoved its neighbours along with it —
+                    // the labels trembled — and the underline measured a width the
+                    // label had not reached yet.
+                    transition: `color ${resolveMotionMs(motionMs.drift, isReduceMotionEnabled)}ms ${motionEasing.current.css}`,
                   }}
                 >
                   {tab.label}
