@@ -158,3 +158,46 @@ From `bundledNativeModules.json` on `sdk-57`:
   55; `createAccount` 489 ms (SDK 55: 460 ms), TOTAL 1589 ms (SDK 55: 1655 ms).
 - `expo-doctor`: 21/22, the one failure being the known Hermes V1 memory
   regression of SDK 56, fixed in SDK 57.
+
+## R14. Expo patches `AbortSignal` halfway (found on the SDK 57 build)
+
+- **Finding**: from SDK 56, Expo's runtime (`expo/src/winter/AbortSignal.ts`)
+  adds `AbortSignal.timeout` and `.any` to React Native's abort-controller and
+  nothing else. `apps/mobile/src/polyfills/abort-signal.js` took `timeout` as
+  proof of a complete implementation and installed nothing, so
+  `signal.throwIfAborted` was undefined and every transaction confirmation on
+  mobile threw `undefined is not a function` — after the transaction was
+  already sent. Seen first as a failed NFT burn.
+- **Decision**: fill each member on its own (`timeout`, `abort`, `any`,
+  `throwIfAborted`), whoever installed the others.
+- **EventTarget**: RN 0.86 installs its own `EventTarget` / `CustomEvent`, so
+  `installEventTargetPolyfill` stands down. Subscription-based confirmation
+  completes on the device (burns land and settle), so React Native's
+  implementation delivers what `@solana/subscribable` reads.
+
+## R15. The SDK 57 dev launcher no longer lists local Metro
+
+- **Finding**: the Compose-based launcher shows an empty DEVELOPMENT SERVERS
+  list and "Fetch development servers" finds nothing, so the Maestro subflow's
+  tap on the `http://…:8081` row had nothing to hit.
+- **Decision**: `dev-launcher-pass.yaml` opens the bundle with the dev
+  client's deep link (`salmonwallet://expo-development-client/?url=…localhost:8081`).
+
+## R16. Gradle metaspace on consecutive SDK builds
+
+- **Finding**: building SDK 57 in the Gradle daemon that had just built SDK 56
+  failed with `OutOfMemoryError: Metaspace` in `expo-updates:kspDebugKotlin`;
+  a fresh daemon built it in under a minute. The generated
+  `org.gradle.jvmargs` caps metaspace at 512 MB.
+- **Decision**: no config change; `./gradlew --stop` between SDK switches. EAS
+  builds start from a fresh daemon.
+
+## SDK 57 result on Android
+
+- Wallet A recovered: Solana and Bitcoin addresses identical to SDK 55;
+  `createAccount` 411 ms, TOTAL 1660 ms (SDK 55: 460 / 1655).
+- `expo-doctor` 21/21.
+- Burn works after R14. The owner's walk found the Payments request sheet
+  offering Share only on reopening and, on Android, the share chooser sending
+  the app to background (which locks it). The owner's call: the request sheet
+  offers Copy and Remove on every platform, and no Share.

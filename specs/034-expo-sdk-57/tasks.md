@@ -28,7 +28,7 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 - [x] T010 SDK 56: `npx expo-doctor@latest` in `apps/mobile`; fix every error it reports; run all repo gates (quickstart §1)
 - [x] T011 SDK 56 checkpoint: `rm -rf apps/mobile/ios apps/mobile/android`, Android dev build on the emulator; confirm it compiles (research R1) and the app opens; recover the test phrase and compare with T002; commit "SDK 56 checkpoint" (not released)
 - [x] T012 (not needed — T011 built and recovered on the native path) If T011 fails to build `react-native-fast-crypto` or recovery takes the fallback path: replace it with `react-native-quick-crypto` in `packages/shared/src/crypto/fastCrypto.native.ts` (same exported `pbkdf2.deriveAsync` shape) and `apps/mobile/package.json`; rerun T011; stop for owner review of the diff (constitution §III)
-- [ ] T013 SDK 57: set `expo` to `^57` (resolves ≥ 57.0.17, React Native 0.86.3), `npx expo install --fix`, `npx expo-doctor@latest`; take `@expo/fingerprint ~0.20.13`; re-key the camera patch again if `expo-camera` moved; run all repo gates
+- [x] T013 SDK 57: set `expo` to `^57` (resolves ≥ 57.0.17, React Native 0.86.3), `npx expo install --fix`, `npx expo-doctor@latest`; take `@expo/fingerprint ~0.20.13`; re-key the camera patch again if `expo-camera` moved; run all repo gates
 
 ## Phase 3: User Story 1 — the same wallet after the update (P1)
 
@@ -45,8 +45,8 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 **Independent test**: quickstart §3.
 
-- [ ] T016 [US2] On the SDK 57 build, recover Wallet A the same way; the Solana and Bitcoin receive addresses must equal T002's; `[perf] recovery: createAccount` stays in the same order of magnitude as T002 (hundreds of ms — seconds would mean the JS fallback) and TOTAL ≤ T002 + 10%
-- [ ] T017 [US2] Confirm the native PBKDF2 path ran on the SDK 57 build: `NativeModules.RNFastCrypto` is present and the createAccount timing matches T002
+- [x] T016 [US2] On the SDK 57 build, recover Wallet A the same way; the Solana and Bitcoin receive addresses must equal T002's; `[perf] recovery: createAccount` stays in the same order of magnitude as T002 (hundreds of ms — seconds would mean the JS fallback) and TOTAL ≤ T002 + 10%
+- [x] T017 [US2] Confirm the native PBKDF2 path ran on the SDK 57 build: `NativeModules.RNFastCrypto` is present and the createAccount timing matches T002
 - [ ] T018a [US2] Fix the stale smoke flow `apps/mobile/.maestro/flows/smoke/receive/sheet.yaml`: it asserts `receive-address`, a testID the receive sheet no longer renders (the address is only in the QR and the copy button)
 - [ ] T018 [US2] Run the Maestro onboarding and recovery flows in `apps/mobile/.maestro` with `./run.sh --device <emulator>` on the gesture and the 3-button emulators
 
