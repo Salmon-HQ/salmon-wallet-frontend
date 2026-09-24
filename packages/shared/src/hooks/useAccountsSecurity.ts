@@ -1,7 +1,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
-import { removeStashItem } from '../storage';
+import { removeStashItem, updateLastActivity } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
 import {
   clearUnlockPenalty,
@@ -186,6 +186,11 @@ export function useAccountsSecurity({
 
         await clearUnlockPenalty();
         await finalizeUnlockedAccounts(mnemonics, loadAccounts, setLocked);
+        // Typing the password is the user acting. Unlocking through the cached
+        // key is not: every window the wallet opens does it, including an
+        // approval window a web page asked for, and counting it let a page
+        // postpone the auto-lock indefinitely.
+        await updateLastActivity();
 
         return true;
       } catch (err) {

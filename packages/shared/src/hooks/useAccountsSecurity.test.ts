@@ -297,3 +297,53 @@ describe('useAccountsSecurity — re-auth throttling', () => {
     expect(await getUnlockPenalty()).toEqual({ failedAttempts: 0, remainingMs: 0 });
   });
 });
+
+describe('useAccountsSecurity — what counts as activity', () => {
+  const KEY_CACHE = { key: 'stub-key', salt: 'stub-salt', expiresAt: Number.MAX_SAFE_INTEGER };
+
+  beforeEach(async () => {
+    storageMap.clear();
+    stashMap.clear();
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    vi.mocked(encryption.unlockWithKey).mockReturnValue({ mnemonics: [] } as never);
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: { mnemonics: [] },
+      keyCache: KEY_CACHE,
+    } as never);
+    const { updateLastActivity } = await import('../storage');
+    vi.mocked(updateLastActivity).mockClear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Every window the wallet opens unlocks itself through the cached key,
+  // including an approval window a web page asked for. Writing activity there
+  // let a page postpone the auto-lock by sending a request every few minutes.
+  it('does not count a window unlocking through the cached key as activity', async () => {
+    const { updateLastActivity } = await import('../storage');
+    const { result } = renderSecurity();
+
+    let unlocked = false;
+    await act(async () => {
+      unlocked = await result.current.unlockWithCachedKey(KEY_CACHE as never);
+    });
+
+    expect(unlocked).toBe(true);
+    expect(updateLastActivity).not.toHaveBeenCalled();
+    // Rewriting the cached key re-arms the background auto-lock just the same.
+    expect(stashMap.has('derived_key_cache')).toBe(false);
+  });
+
+  it('counts typing the password as activity', async () => {
+    const { updateLastActivity } = await import('../storage');
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      await result.current.unlockAccounts('obviously-fake-password');
+    });
+
+    expect(updateLastActivity).toHaveBeenCalledTimes(1);
+  });
+});

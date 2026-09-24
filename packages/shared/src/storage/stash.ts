@@ -14,6 +14,7 @@
 
 import type { Stash, Platform } from './types';
 import { STASH_KEYS } from './types';
+import { refreshCachedKey, type DerivedKeyCache } from '../crypto/encryption';
 
 // ============================================================================
 // Constants
@@ -434,12 +435,18 @@ export async function clearStash(): Promise<void> {
 // ============================================================================
 
 /**
- * Updates the last activity timestamp.
+ * Records that the user acted: stamps the last activity and extends the cached
+ * derived key, if one is held, by its lifetime.
  *
- * This is used for auto-lock functionality based on inactivity.
+ * This is the only place the key's life is extended. Opening a wallet window
+ * reads the key without renewing it, because every write of the key — like
+ * every write of the activity stamp — re-arms the background auto-lock, and
+ * windows open on a web page's request as well as on the user's.
  */
 export async function updateLastActivity(): Promise<void> {
   await setStashItem(STASH_KEYS.LAST_ACTIVITY, Date.now());
+  const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+  if (keyCache) await setStashItem(STASH_KEYS.DERIVED_KEY, refreshCachedKey(keyCache));
 }
 
 /**

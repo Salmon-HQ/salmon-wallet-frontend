@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { KEY_CACHE_TTL } from '../crypto/encryption';
 import {
   createExtensionStash,
   createMemoryStash,
@@ -178,6 +179,23 @@ describe('stash', () => {
       await updateLastActivity();
       vi.advanceTimersByTime(TIMEOUT_MS + 1);
       expect(await isSessionTimedOut(TIMEOUT_MS)).toBe(true);
+    });
+
+    // The derived key lives as long as the user keeps acting, and no longer:
+    // the background re-arms the auto-lock whenever it is written, so only
+    // activity may extend it — never a window opening.
+    it('updateLastActivity extends a cached key by the key lifetime', async () => {
+      await setStashItem(STASH_KEYS.DERIVED_KEY, { key: 'k', salt: 's', expiresAt: 0 });
+      await updateLastActivity();
+      expect(await getStashItem<{ expiresAt: number }>(STASH_KEYS.DERIVED_KEY)).toMatchObject({
+        key: 'k',
+        expiresAt: Date.now() + KEY_CACHE_TTL,
+      });
+    });
+
+    it('updateLastActivity caches no key when there is none', async () => {
+      await updateLastActivity();
+      expect(await getStashItem(STASH_KEYS.DERIVED_KEY)).toBeUndefined();
     });
 
     it('updateLastActivity refreshes the timeout window', async () => {
