@@ -2,6 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Global types are named, not picked up from every @types package: that
+    // implicit inclusion is gone from TypeScript 6 on.
+    "types": ["jest", "node"],
     "paths": {
       "@/*": ["./*"],
       "@salmon/shared": ["../../packages/shared/src"],
