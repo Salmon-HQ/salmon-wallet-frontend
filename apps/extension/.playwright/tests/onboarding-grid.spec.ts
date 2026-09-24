@@ -62,16 +62,15 @@ async function slotTops(page: Page): Promise<Tops> {
   return tops;
 }
 
+// Onboarding shows only on a profile with no wallet: wipe it before each run.
+test.use({ profileName: 'onboarding-grid', freshProfile: true });
+
 test('the control bands hold at one Y across the screens the popup can reach', async ({
   popup,
 }) => {
   await popup.setViewportSize({ width: 360, height: 600 });
 
-  const onWelcome = popup.getByTestId('select-create-button');
-  test.skip(
-    (await onWelcome.count()) === 0,
-    'profile already has a wallet; the onboarding entry is not the first screen'
-  );
+  await popup.getByTestId('select-create-button').waitFor({ state: 'visible' });
 
   const welcome = await slotTops(popup);
   // Back to the welcome screen by address, not by history: the tab was born
@@ -104,13 +103,7 @@ test('the primary action stays inside the clipped popup on every reachable scree
   popup,
 }) => {
   await popup.setViewportSize({ width: 360, height: 600 });
-  await popup
-    .getByTestId('onboarding-stack')
-    .waitFor({ state: 'visible' })
-    .catch(() => undefined);
-
-  const stack = popup.getByTestId('onboarding-stack');
-  test.skip((await stack.count()) === 0, 'no onboarding surface on this profile');
+  await popup.getByTestId('onboarding-stack').waitFor({ state: 'visible' });
 
   const action = await popup.getByTestId('onboarding-slot-action').boundingBox();
   expect(action).not.toBeNull();

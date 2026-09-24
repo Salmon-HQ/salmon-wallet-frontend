@@ -60,8 +60,6 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   await unlockOrRecover(popup);
   await waitHome(popup);
 
-  const home = popup.getByTestId('home-screen');
-  test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
 
   const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
   // Settings is a screen, and a screen is left by its header's back control —
