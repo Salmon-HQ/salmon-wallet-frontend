@@ -116,7 +116,7 @@ export async function assertDevnet(page: Page): Promise<void> {
 }
 
 /**
- * The devnet NFT fixture's card on the NFTs tab. scripts/devnet-nft-fixture.cjs
+ * The devnet NFT fixture's card on the NFTs tab. scripts/devnet-fixtures.cjs
  * (run by global-setup) keeps one in Wallet A; it is found by the name it
  * carries, since each run may hold a freshly minted one.
  */

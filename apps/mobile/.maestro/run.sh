@@ -187,11 +187,12 @@ if [[ $IS_ANDROID -eq 1 ]]; then
   ok "installed build opens without the dev menu"
 fi
 
-# ------------------------------------------------------------ devnet NFT ----
-# Every flow that views, sends or burns an NFT does it on devnet with the
-# fixture this keeps in Wallet A (a transfer moves it to B; the next run mints
-# another). The secrets reach it through the environment sourced above.
-FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-nft-fixture.cjs" 2>&1) || die "$FIXTURE_OUT"
+# ------------------------------------------------------------ devnet ------
+# Every flow that sends or views funds or NFTs does it on devnet. This keeps
+# Wallet A funded (topped up from B) and holding the NFT fixture (a transfer
+# moves it to B; the next run mints another), and stops the run, naming the
+# faucet, when B runs low. The secrets reach it through the environment.
+FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
 ok "$FIXTURE_OUT"
 
 # ------------------------------------------------------------------- run -----

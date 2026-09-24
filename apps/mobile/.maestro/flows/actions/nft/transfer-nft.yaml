@@ -5,7 +5,7 @@ appId: io.salmonwallet.app
 # else.
 #
 # One way, on purpose. The fixture ("Salmon Test NFT") is minted to Wallet A by
-# scripts/devnet-nft-fixture.cjs, which run.sh calls before every run: a transfer
+# scripts/devnet-fixtures.cjs, which run.sh calls before every run: a transfer
 # moves it to B, and the next run finds none in A and mints another. Nothing
 # depends on getting it back.
 - runFlow: ../../../subflows/onboard-walletA.yaml

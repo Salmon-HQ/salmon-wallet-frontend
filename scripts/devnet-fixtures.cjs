@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 /**
- * Devnet NFT fixture for the end-to-end suites: makes sure Wallet A holds a
- * test NFT on Solana devnet, minting one (paid by Wallet B) when it does not.
+ * Devnet fixtures for the end-to-end suites: makes sure Wallet A has devnet
+ * SOL to pay fees and send, and holds a test NFT, before a run starts.
+ *
+ * SOL: when A drops below A_MIN_SOL, Wallet B tops it up by A_TOP_UP_SOL —
+ * the flows' sends land in B, so the SOL goes round. When B itself drops below
+ * B_MIN_SOL the run stops here and names the faucet: devnet airdrops are rate
+ * limited and fail at random, so refilling B is left to a person.
+ *
+ * NFT: when A holds none, one is minted to it, paid by B.
  *
  * Every e2e flow that views, sends or burns an NFT runs on devnet against this
  * fixture, never against a mainnet collectible. A transfer moves it to Wallet
  * B, so the next run finds none in A and mints another; flows never depend on
  * getting one back.
  *
- *   node scripts/devnet-nft-fixture.cjs            # mint only if A has none
- *   node scripts/devnet-nft-fixture.cjs --force    # mint one regardless
+ *   node scripts/devnet-fixtures.cjs            # mint only if A has none
+ *   node scripts/devnet-fixtures.cjs --force    # mint one regardless
  *
  * Reads SALMON_TEST_SEED_B, SALMON_TEST_WALLET_A_ADDR and
  * SALMON_TEST_WALLET_B_ADDR from the environment — each suite's runner loads
@@ -22,6 +29,10 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const RPC = 'https://api.devnet.solana.com';
+const A_MIN_SOL = 0.05;
+const A_TOP_UP_SOL = 0.2;
+const B_MIN_SOL = 0.5;
+const LAMPORTS_PER_SOL = 1_000_000_000;
 /** How the suites recognise the fixture: its on-chain name and symbol. */
 const FIXTURE_NAME = 'Salmon Test NFT';
 const FIXTURE_SYMBOL = 'STEST';
@@ -66,9 +77,35 @@ async function main() {
   const { createUmi } = load('@metaplex-foundation/umi-bundle-defaults');
   const { generateSigner, keypairIdentity, percentAmount, publicKey } = load('@metaplex-foundation/umi');
   const { mplTokenMetadata, createNft, fetchAllDigitalAsset } = load('@metaplex-foundation/mpl-token-metadata');
+  const { transferSol } = load('@metaplex-foundation/mpl-toolbox');
+  const { sol } = load('@metaplex-foundation/umi');
 
   const umi = createUmi(RPC).use(mplTokenMetadata());
   const owner = publicKey(addrA);
+
+  // B signs both the top-up and the mint, so it is derived and checked first.
+  const payer = umi.eddsa.createKeypairFromSeed(derive(seedB));
+  if (payer.publicKey.toString() !== addrB) {
+    throw new Error('the seed does not derive Wallet B — nothing was signed');
+  }
+  umi.use(keypairIdentity(payer));
+
+  const balanceOf = async (address) =>
+    Number((await umi.rpc.getBalance(publicKey(address), { commitment: 'confirmed' })).basisPoints) /
+    LAMPORTS_PER_SOL;
+  const balanceB = await balanceOf(addrB);
+  if (balanceB < B_MIN_SOL) {
+    throw new Error(
+      `Wallet B has ${balanceB} devnet SOL (needs ${B_MIN_SOL}); top it up at https://faucet.solana.com — ${addrB}`
+    );
+  }
+  const balanceA = await balanceOf(addrA);
+  if (balanceA < A_MIN_SOL) {
+    await transferSol(umi, { destination: owner, amount: sol(A_TOP_UP_SOL) }).sendAndConfirm(umi);
+    console.log(`topped up Wallet A with ${A_TOP_UP_SOL} devnet SOL from Wallet B (had ${balanceA})`);
+  } else {
+    console.log(`Wallet A has ${balanceA.toFixed(4)} devnet SOL, Wallet B ${balanceB.toFixed(4)}`);
+  }
 
   if (!force) {
     const { value } = await umi.rpc.call('getTokenAccountsByOwner', [
@@ -90,11 +127,6 @@ async function main() {
     }
   }
 
-  const payer = umi.eddsa.createKeypairFromSeed(derive(seedB));
-  if (payer.publicKey.toString() !== addrB) {
-    throw new Error('the seed does not derive Wallet B — nothing was signed');
-  }
-  umi.use(keypairIdentity(payer));
   const mint = generateSigner(umi);
   await createNft(umi, {
     mint,
@@ -108,6 +140,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`devnet NFT fixture FAILED: ${String(error.message).split('\n')[0]}`);
+  console.error(`devnet fixtures FAILED: ${String(error.message).split('\n')[0]}`);
   process.exit(1);
 });

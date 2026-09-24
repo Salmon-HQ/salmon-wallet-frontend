@@ -32,7 +32,7 @@ export const EXTERNAL = new Set([
   // iOS system prompt when the app reads the pasteboard.
   'Allow Paste',
   // Data the flows type themselves, and the on-chain name of the devnet NFT
-  // fixture (scripts/devnet-nft-fixture.cjs).
+  // fixture (scripts/devnet-fixtures.cjs).
   'Wallet B',
   'order-12',
   'Salmon Treasury',

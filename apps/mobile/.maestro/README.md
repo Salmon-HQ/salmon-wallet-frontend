@@ -73,7 +73,7 @@ Per-flow prerequisites:
 | ------------------------------------------------------ | --------------------------------------------------------- |
 | `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below   |
 | `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                         |
-| `actions/nft/*`, `smoke/nft/*`                         | Devnet: the "Salmon Test NFT" fixture in Wallet A, kept there by `scripts/devnet-nft-fixture.cjs` (run.sh calls it) |
+| `actions/nft/*`, `smoke/nft/*`                         | Devnet: the "Salmon Test NFT" fixture in Wallet A, kept there by `scripts/devnet-fixtures.cjs` (run.sh calls it) |
 
 Repo policy: a flow that finds its prerequisite missing skips with a clear
 message, never a cryptic failure. If the backend is reachable but behaves

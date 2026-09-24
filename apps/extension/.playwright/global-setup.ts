@@ -56,17 +56,18 @@ function requireChromium(): void {
 }
 
 /**
- * Every spec that views, sends or burns an NFT does it on devnet with the
- * fixture this script keeps in Wallet A. It reads the secrets from the
- * environment this setup loaded — never from argv.
+ * Every spec that sends or views funds or NFTs does it on devnet. This script
+ * keeps Wallet A funded and holding the NFT fixture, and stops the run when
+ * Wallet B needs the faucet. It reads the secrets from the environment this
+ * setup loaded — never from argv.
  */
-function ensureDevnetNftFixture(): void {
-  const result = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/devnet-nft-fixture.cjs')], {
+function ensureDevnetFixtures(): void {
+  const result = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/devnet-fixtures.cjs')], {
     env: process.env,
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || 'devnet NFT fixture failed');
+    throw new Error(result.stderr.trim() || 'devnet fixtures failed');
   }
   console.log(result.stdout.trim());
 }
@@ -81,5 +82,5 @@ export default function globalSetup(): void {
   ]);
   requireFreshBuild();
   requireChromium();
-  ensureDevnetNftFixture();
+  ensureDevnetFixtures();
 }

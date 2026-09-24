@@ -1,7 +1,7 @@
 appId: io.salmonwallet.app
 ---
 # Send the devnet fixture NFT ("Salmon Test NFT", kept in Wallet A by
-# scripts/devnet-nft-fixture.cjs) from the ACTIVE account to ${DEST_ADDRESS}.
+# scripts/devnet-fixtures.cjs) from the ACTIVE account to ${DEST_ADDRESS}.
 # Fires a real transfer on devnet and dismisses the success screen.
 #
 #   - runFlow:

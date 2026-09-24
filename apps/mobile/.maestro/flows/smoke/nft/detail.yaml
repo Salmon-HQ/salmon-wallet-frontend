@@ -1,7 +1,7 @@
 appId: io.salmonwallet.app
 ---
 # Walk Collectibles → open the NFT detail screen → back. On devnet, against the
-# fixture NFT ("Salmon Test NFT") that scripts/devnet-nft-fixture.cjs keeps in
+# fixture NFT ("Salmon Test NFT") that scripts/devnet-fixtures.cjs keeps in
 # Wallet A — run.sh calls it before every run.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/select-devnet.yaml
