@@ -6,7 +6,7 @@
  * recover-next-button, password-input/confirm, password-submit-button,
  * success-go-to-wallet-button).
  */
-import { type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 const password = (): string => process.env.SALMON_TEST_PASSWORD ?? '';
 const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
@@ -69,4 +69,23 @@ export async function unlockOrRecover(
 
 export async function waitHome(page: Page): Promise<void> {
   await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30_000 });
+}
+
+/**
+ * Close Settings, from any depth, and land back on home.
+ *
+ * Settings is a page with a stack of panels; each panel's back arrow pops one
+ * level and the root's closes the page. Panels below the top one stay mounted,
+ * arrows included, so only the visible arrow is clicked. A pop is ignored while
+ * a panel is still animating, so each click is retried until Settings has
+ * unmounted — which also clears the stack for the next open.
+ */
+export async function closeSettings(page: Page): Promise<void> {
+  const settings = page.getByTestId('settings-screen');
+  await expect(async () => {
+    const back = page.getByTestId('screen-header-back-button').filter({ visible: true });
+    if ((await back.count()) > 0) await back.last().click({ timeout: 2_000 });
+    await expect(settings).toHaveCount(0, { timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 }

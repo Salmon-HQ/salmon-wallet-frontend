@@ -22,7 +22,7 @@
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
-import { unlockOrRecover, waitHome } from '../helpers';
+import { closeSettings, unlockOrRecover, waitHome } from '../helpers';
 import type { Page, Request } from '@playwright/test';
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
@@ -52,25 +52,6 @@ test.beforeAll(async () => {
 });
 
 const openSettings = (popup: Page) => popup.getByTestId('wallet-header-settings-button').click();
-
-/**
- * Close Settings, from any depth, and land back on home.
- *
- * Settings is a page with a stack of panels; each panel's back arrow pops one
- * level and the root's closes the page. A pop is ignored while a panel is still
- * animating, so each click is retried until Settings has unmounted — which also
- * clears the panel stack, so the next `openSettings` lands on the root menu.
- */
-async function closeSettings(popup: Page): Promise<void> {
-  const settings = popup.getByTestId('settings-screen');
-  await expect(async () => {
-    // Panels below the top one stay mounted, arrows included, under it.
-    const back = popup.getByTestId('screen-header-back-button').filter({ visible: true });
-    if ((await back.count()) > 0) await back.last().click({ timeout: 2_000 });
-    await expect(settings).toHaveCount(0, { timeout: 1_000 });
-  }).toPass({ timeout: 30_000 });
-  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
-}
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
 const leaveNftDetail = (popup: Page) =>
