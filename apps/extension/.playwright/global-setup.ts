@@ -33,7 +33,9 @@ function newestSourceMtime(): { file: string; mtimeMs: number } {
 function requireFreshBuild(): void {
   const manifest = path.join(EXT_DIST, 'manifest.json');
   if (!fs.existsSync(manifest)) {
-    throw new Error(`No extension build at ${EXT_DIST}. Run: pnpm --filter @salmon/extension build`);
+    throw new Error(
+      `No extension build at ${EXT_DIST}. Run: pnpm --filter @salmon/extension build`
+    );
   }
   const built = fs.statSync(manifest).mtimeMs;
   const newest = newestSourceMtime();

@@ -60,7 +60,6 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   await unlockOrRecover(popup);
   await waitHome(popup);
 
-
   const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
   // Settings is a screen, and a screen is left by its header's back control —
   // it stopped being a drawer with a close button when lot 4A+4B made it one

@@ -121,4 +121,7 @@ export async function assertDevnet(page: Page): Promise<void> {
  * carries, since each run may hold a freshly minted one.
  */
 export const fixtureNftCard = (page: Page) =>
-  page.getByTestId(/^nft-card-/).filter({ hasText: 'Salmon Test NFT' }).first();
+  page
+    .getByTestId(/^nft-card-/)
+    .filter({ hasText: 'Salmon Test NFT' })
+    .first();

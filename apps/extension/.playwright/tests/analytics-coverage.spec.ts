@@ -27,7 +27,6 @@ import type { Page, Request } from '@playwright/test';
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 
-
 const EXPECTED_EVENTS = [
   'address_book_used',
   'wallet_created',

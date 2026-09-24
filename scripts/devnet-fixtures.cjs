@@ -39,7 +39,13 @@ const FIXTURE_SYMBOL = 'STEST';
 
 /** BIP39 mnemonic → SLIP-0010 ed25519 seed at m/44'/501'/0'/0' (the wallet's first account). */
 function derive(mnemonic) {
-  const seed = crypto.pbkdf2Sync(Buffer.from(mnemonic.normalize('NFKD')), 'mnemonic', 2048, 64, 'sha512');
+  const seed = crypto.pbkdf2Sync(
+    Buffer.from(mnemonic.normalize('NFKD')),
+    'mnemonic',
+    2048,
+    64,
+    'sha512'
+  );
   let I = crypto.createHmac('sha512', 'ed25519 seed').update(seed).digest();
   let key = I.subarray(0, 32);
   let chain = I.subarray(32);
@@ -64,19 +70,27 @@ async function main() {
     SALMON_TEST_WALLET_B_ADDR: addrB,
   } = process.env;
   if (!seedB || !addrA || !addrB) {
-    throw new Error('SALMON_TEST_SEED_B, SALMON_TEST_WALLET_A_ADDR and SALMON_TEST_WALLET_B_ADDR are required');
+    throw new Error(
+      'SALMON_TEST_SEED_B, SALMON_TEST_WALLET_A_ADDR and SALMON_TEST_WALLET_B_ADDR are required'
+    );
   }
 
   const load = (m) => {
     try {
       return require(require.resolve(m, { paths: [backend] }));
     } catch {
-      throw new Error(`${m} not found under ${backend} — set SALMON_BACKEND_DIR to a salmon-wallet-backend checkout`);
+      throw new Error(
+        `${m} not found under ${backend} — set SALMON_BACKEND_DIR to a salmon-wallet-backend checkout`
+      );
     }
   };
   const { createUmi } = load('@metaplex-foundation/umi-bundle-defaults');
-  const { generateSigner, keypairIdentity, percentAmount, publicKey } = load('@metaplex-foundation/umi');
-  const { mplTokenMetadata, createNft, fetchAllDigitalAsset } = load('@metaplex-foundation/mpl-token-metadata');
+  const { generateSigner, keypairIdentity, percentAmount, publicKey } = load(
+    '@metaplex-foundation/umi'
+  );
+  const { mplTokenMetadata, createNft, fetchAllDigitalAsset } = load(
+    '@metaplex-foundation/mpl-token-metadata'
+  );
   const { transferSol } = load('@metaplex-foundation/mpl-toolbox');
   const { sol } = load('@metaplex-foundation/umi');
 
@@ -91,8 +105,9 @@ async function main() {
   umi.use(keypairIdentity(payer));
 
   const balanceOf = async (address) =>
-    Number((await umi.rpc.getBalance(publicKey(address), { commitment: 'confirmed' })).basisPoints) /
-    LAMPORTS_PER_SOL;
+    Number(
+      (await umi.rpc.getBalance(publicKey(address), { commitment: 'confirmed' })).basisPoints
+    ) / LAMPORTS_PER_SOL;
   const balanceB = await balanceOf(addrB);
   if (balanceB < B_MIN_SOL) {
     throw new Error(
@@ -102,7 +117,9 @@ async function main() {
   const balanceA = await balanceOf(addrA);
   if (balanceA < A_MIN_SOL) {
     await transferSol(umi, { destination: owner, amount: sol(A_TOP_UP_SOL) }).sendAndConfirm(umi);
-    console.log(`topped up Wallet A with ${A_TOP_UP_SOL} devnet SOL from Wallet B (had ${balanceA})`);
+    console.log(
+      `topped up Wallet A with ${A_TOP_UP_SOL} devnet SOL from Wallet B (had ${balanceA})`
+    );
   } else {
     console.log(`Wallet A has ${balanceA.toFixed(4)} devnet SOL, Wallet B ${balanceB.toFixed(4)}`);
   }

@@ -34,7 +34,6 @@ import type { Page, Request } from '@playwright/test';
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 const ONCHAIN = process.env.SALMON_E2E_ONCHAIN === '1';
 
-
 const SEND_AMOUNT = '0.0001';
 
 const EXPECTED_EVENTS = ['send_completed', 'first_send_completed', 'nft_sent'] as const;
@@ -80,7 +79,10 @@ async function sendNft(popup: Page, cardTestId: string, destination: string): Pr
 
 test('every on-chain event in the catalog actually fires', async ({ popup }) => {
   test.setTimeout(900_000);
-  test.skip(!ONCHAIN, 'moves devnet SOL and an NFT between the test wallets — set SALMON_E2E_ONCHAIN=1');
+  test.skip(
+    !ONCHAIN,
+    'moves devnet SOL and an NFT between the test wallets — set SALMON_E2E_ONCHAIN=1'
+  );
   test.skip(!backendUp, 'salmon-api not reachable');
   test.skip(!process.env.SALMON_TEST_SEED_A, 'no seeded-wallet fixture (SALMON_TEST_SEED_A)');
 
@@ -133,7 +135,6 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   await popup.getByTestId('portfolio-tab-portfolio').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
   await sendNft(popup, nftCard, walletB);
-
 
   // Batches leave on the client's 30s timer, so the tail of the run is still
   // queued. Poll rather than sleep a fixed interval.
