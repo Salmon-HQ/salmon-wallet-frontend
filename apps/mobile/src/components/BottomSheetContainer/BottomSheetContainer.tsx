@@ -452,7 +452,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                 <BlurTargetProvider value={blurTargetRef}>
                   {/* Draggable area: handle + header content */}
                   <GestureDetector gesture={panGesture}>
-                    <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
+                    <Reanimated.View
+                      testID="sheet-drag-handle"
+                      style={[styles.dragArea, dragAreaStyle]}
+                    >
                       {/* Drag handle bar */}
                       <View style={styles.handleContainer}>
                         <View style={styles.handle} />

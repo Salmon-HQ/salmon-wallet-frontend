@@ -56,3 +56,13 @@ test('a templated prefix resolves the ids a child builds on it', () => {
   assert.equal(idExists('balance-chain-selector-option-bitcoin'), true);
   assert.equal(idExists('balance-chain-selector-bitcoin'), false);
 });
+
+test('a coordinate swipe is a finding unless it is marked as external UI', () => {
+  const opts = { idExists, textExists: () => true };
+  const flow = "- swipe:\n    start: '50%, 20%'\n    end: '50%, 99%'\n";
+  assert.deepEqual(auditMaestroFlow('f.yaml', flow, opts), [
+    "f.yaml:2  point-swipe  start: '50%, 20%'",
+  ]);
+  const external = "- swipe:\n    start: '50%, 85%' # external: Expo dev menu\n";
+  assert.deepEqual(auditMaestroFlow('f.yaml', external, opts), []);
+});

@@ -1,8 +1,13 @@
 appId: io.salmonwallet.app
 ---
-# Drag down to dismiss any open bottom sheet. Long swipe to clear scroll + sheet.
+# Dismiss the open bottom sheet the way a user does on both platforms: drag
+# its handle down. A sheet behind a nested one hides its own handle from
+# accessibility, so the id always names the top sheet.
 - swipe:
-    start: '50%, 20%'
-    end: '50%, 99%'
-- waitForAnimationToEnd:
-    timeout: 3000
+    from:
+      id: 'sheet-drag-handle'
+    direction: DOWN
+- extendedWaitUntil:
+    notVisible:
+      id: 'sheet-drag-handle'
+    timeout: 5000

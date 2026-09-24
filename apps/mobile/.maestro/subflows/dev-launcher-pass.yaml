@@ -5,18 +5,25 @@ appId: io.salmonwallet.app
 #
 # Every step is guarded by `when:`, so this stays safe across iOS and Android
 # even though the two label some of these controls differently.
+# The SDK 57 launcher lists the local Metro only when it can discover it on the
+# network: some runs show a `http://<lan-ip>:8081` row, others an empty list.
+# Tap the row when there is one; if the launcher is still up afterwards, open
+# the bundle by the dev client's deep link on localhost (adb reverse maps it on
+# Android, the simulator shares it on iOS).
 - runFlow:
     when:
       visible: 'Development Build'
     commands:
-      # Open the bundle by the dev client's own deep link instead of tapping
-      # a server row: from SDK 57 the launcher no longer lists the local
-      # Metro on its own (the DEVELOPMENT SERVERS list stays empty, and
-      # "Fetch development servers" finds nothing), so there is no row to
-      # tap. The link names Metro on localhost, which adb reverse maps on
-      # Android and the simulator shares on iOS.
+      - tapOn:
+          text: 'http://.*:8081'
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 60000
+- runFlow:
+    when:
+      visible: 'Development Build'
+    commands:
       - openLink: 'salmonwallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081'
-      # Bundle download takes 5-30s on cold launch.
       - waitForAnimationToEnd:
           timeout: 60000
 
@@ -79,7 +86,7 @@ appId: io.salmonwallet.app
       # the dimmed backdrop ABOVE this bottom sheet — the sheet never moves
       # (observed live). Swipe explicitly inside the sheet instead.
       - swipe:
-          start: '50%, 85%'
+          start: '50%, 85%' # external: Expo dev menu, no ids
           end: '50%, 45%'
       - waitForAnimationToEnd:
           timeout: 2000

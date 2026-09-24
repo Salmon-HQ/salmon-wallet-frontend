@@ -133,6 +133,12 @@ export function auditMaestroFlow(file, text, { idExists, textExists }) {
       findings.push(`${file}:${i + 1}  text  ${t}`);
     }
     if (/^-?\s*point:/.test(line)) findings.push(`${file}:${i + 1}  point-tap  ${line}`);
+    // A coordinate swipe lands wherever the layout puts that pixel — on a
+    // backdrop, a scrim, the wrong card. Swipe from an id instead. UI the app
+    // does not own (the Expo dev menu) has no ids; its line says so.
+    if (/^-?\s*start:/.test(line) && !raw.includes('# external')) {
+      findings.push(`${file}:${i + 1}  point-swipe  ${line}`);
+    }
   });
   return findings;
 }

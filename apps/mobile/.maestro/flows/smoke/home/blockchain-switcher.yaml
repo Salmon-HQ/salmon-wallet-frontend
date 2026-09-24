@@ -1,21 +1,24 @@
 appId: io.salmonwallet.app
 ---
-# Swipe the BalanceHeader between Solana and Bitcoin.
+# Switch the balance between Solana and Bitcoin with the chain selector above
+# the amount.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
-    id: 'wallet-header-account-switcher'
+    id: 'balance-chain-selector-option-solana.*'
 - takeScreenshot: screenshots/smoke/home/chain-solana
-# Swipe directly on the balance card (top of screen). Using "Send tokens"
-# as anchor triggers the action button instead of the carousel.
-- swipe:
-    start: '80%, 25%'
-    end: '20%, 25%'
-- waitForAnimationToEnd:
-    timeout: 1500
+- tapOn:
+    id: 'balance-chain-selector-option-bitcoin.*'
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-bitcoin.*'
+      selected: true
+    timeout: 5000
 - takeScreenshot: screenshots/smoke/home/chain-bitcoin
-- swipe:
-    start: '20%, 25%'
-    end: '80%, 25%'
-- waitForAnimationToEnd:
-    timeout: 1500
+- tapOn:
+    id: 'balance-chain-selector-option-solana.*'
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-solana.*'
+      selected: true
+    timeout: 5000
 - takeScreenshot: screenshots/smoke/home/chain-back-to-solana
