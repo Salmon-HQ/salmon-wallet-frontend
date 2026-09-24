@@ -8,6 +8,8 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
 
+- Built on Expo SDK 57 and React Native 0.86. iOS now needs 16.4 or later (from 15.1); Android is unchanged (7.0, API 24).
+
 - Payments keeps only what is still waiting to be paid on its tab; every request, paid and expired included, is one tap away behind the clock, in a sheet from below. The + and the code icon stay.
 - Sheets take turns instead of stacking: opening a second one (the explorer picker over a transaction, a Powerup's detail over the catalogue, a request over the ask form), the first slides down, the second rises, on one darker backdrop; closing runs the inverse, and a tap on the backdrop closes both. A sheet leaves by its own height, the way a native sheet does, so short and tall ones read alike.
 - Home's tabs no longer move on launch: installed Powerups and the saved order arrive from storage without animating into place, and the underline lands instead of travelling.
@@ -24,6 +26,10 @@ Ships as a binary, 1.2.0, never as an update: the native surface moved on this b
 - Updates are checked at launch and applied before the app opens.
 
 ### extension
+
+- The wallet locks after five idle minutes even when a web page keeps opening approval windows: opening a wallet window no longer counts as activity or renews the unlocked session.
+- An approval request no longer fails with "Operation cancelled" when the browser window sits across two monitors or partly off screen; the approval window opens where Chrome places it.
+- Content scripts can no longer read or write the extension's local storage (the encrypted vault, the trusted sites); only the extension's own pages can.
 
 - Sheets rise smoothly (they used to appear in place), on the iOS sheet's clock and curve, with no scrollbar down their edge; two sheets take turns instead of stacking, and closing the explorer picker no longer leaves the panel dimmed and unusable.
 - Payments keeps only what is still waiting to be paid on its tab; the clock opens a page with every request. The + and the code icon stay.

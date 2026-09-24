@@ -47,7 +47,7 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 - [x] T016 [US2] On the SDK 57 build, recover Wallet A the same way; the Solana and Bitcoin receive addresses must equal T002's; `[perf] recovery: createAccount` stays in the same order of magnitude as T002 (hundreds of ms — seconds would mean the JS fallback) and TOTAL ≤ T002 + 10%
 - [x] T017 [US2] Confirm the native PBKDF2 path ran on the SDK 57 build: `NativeModules.RNFastCrypto` is present and the createAccount timing matches T002
-- [ ] T018a [US2] Fix the stale smoke flow `apps/mobile/.maestro/flows/smoke/receive/sheet.yaml`: it asserts `receive-address`, a testID the receive sheet no longer renders (the address is only in the QR and the copy button)
+- [x] T018a [US2] Fix the stale smoke flow `apps/mobile/.maestro/flows/smoke/receive/sheet.yaml`: it asserts `receive-address`, a testID the receive sheet no longer renders (the address is only in the QR and the copy button)
 - [ ] T018 [US2] Run the Maestro onboarding and recovery flows in `apps/mobile/.maestro` with `./run.sh --device <emulator>` on the gesture and the 3-button emulators
 
 ## Phase 5: User Story 3 — moving money works as before (P1)
@@ -76,8 +76,8 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 ## Phase 8: Polish
 
-- [ ] T026 [P] Rewrite `docs/EXPO-SDK-57-UPGRADE.md` as the record of what was applied (current platform, removed deps, the camera patch still needed, the fast-crypto outcome), correcting the "Bridge removed" claim per research R1
-- [ ] T027 [P] Add the mobile entry to `CHANGELOG.md` under Unreleased: Expo SDK 57 / React Native 0.86, iOS minimum 16.4, binary release
+- [x] T026 [P] Rewrite `docs/EXPO-SDK-57-UPGRADE.md` as the record of what was applied (current platform, removed deps, the camera patch still needed, the fast-crypto outcome), correcting the "Bridge removed" claim per research R1
+- [x] T027 [P] Add the mobile entry to `CHANGELOG.md` under Unreleased: Expo SDK 57 / React Native 0.86, iOS minimum 16.4, binary release
 - [ ] T028 Final gates on Node 24 (quickstart §1), commit and push to `feat/powerups-foundations`; leave `apps/mobile/native-fingerprint.json` for `fingerprint:write` at store-build time
 
 ## Dependencies
