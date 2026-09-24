@@ -1,7 +1,7 @@
 appId: io.salmonwallet.app
 ---
 # Onboard Wallet B from a clean install. Lands on Home with
-# "Switch wallet account" visible.
+# `home-screen` visible.
 - clearState
 - launchApp
 - runFlow: ./dev-launcher-pass.yaml
@@ -20,7 +20,17 @@ appId: io.salmonwallet.app
     timeout: 90000
 - tapOn:
     id: 'success-go-to-wallet-button'
-- runFlow: ./decline-analytics-consent.yaml
+# Let the transition settle before asking what is on screen.
+- waitForAnimationToEnd:
+    timeout: 5000
+# Consent is asked once per install and not on every build (a release build
+# without analytics skips it), so it is handled when it appears.
+- runFlow:
+    when:
+      visible:
+        id: 'analytics-consent-screen'
+    file: ./decline-analytics-consent.yaml
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 30000
