@@ -57,11 +57,13 @@ export function DAppSignMessageApprovalPage({
           ? approveSolanaSignOffchainMessage(
               account as Parameters<typeof approveSolanaSignOffchainMessage>[0],
               data as number[],
-              request.params?.requiredSigners ?? []
+              request.params?.requiredSigners ?? [],
+              origin
             )
           : approveSolanaSignMessage(
               account as Parameters<typeof approveSolanaSignMessage>[0],
-              data as number[]
+              data as number[],
+              origin
             ),
       {
         // Same order as before: the account is checked before the payload.
@@ -73,7 +75,7 @@ export function DAppSignMessageApprovalPage({
         failureError: 'Message signing failed',
       }
     );
-  }, [account, approve, request]);
+  }, [account, approve, origin, request]);
 
   return (
     <DAppSignMessageApprovalView

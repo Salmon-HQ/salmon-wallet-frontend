@@ -35,6 +35,7 @@ import {
   signOffchainMessage,
   signSiwsMessage,
 } from '../blockchain/solana';
+import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
 import type {
   ResolveSymbolFn,
   SolanaAccount,
@@ -391,12 +392,14 @@ export async function previewSolanaApprovalEffects(
 
 export async function approveSolanaSignMessage(
   account: SolanaAccount,
-  data: number[]
+  data: number[],
+  origin: string
 ): Promise<DAppSignMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   if (isTransactionLookalike(messageBytes)) {
     throw new TransactionLookalikeMessageError();
   }
+  assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
   const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
 
   return {
@@ -416,13 +419,16 @@ export async function approveSolanaSignMessage(
  * @param requiredSigners - Required signer addresses, base58-encoded. Validated
  *   here by `address()`, which rejects anything that is not a well-formed
  *   Solana address — same contract as `parseOffchainMessageForApproval`.
+ * @param origin - The real requesting origin; SIWS text for another domain is refused
  */
 export async function approveSolanaSignOffchainMessage(
   account: SolanaAccount,
   data: number[],
-  requiredSigners: string[]
+  requiredSigners: string[],
+  origin: string
 ): Promise<DAppSignOffchainMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
+  assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
   const signers = requiredSigners.map((signer) => address(signer));
   const { signature, buffer } = await signOffchainMessage(account, messageBytes, signers);
 

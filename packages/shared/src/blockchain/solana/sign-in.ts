@@ -81,6 +81,40 @@ export function getSiwsDomain(origin: string): string {
   return host;
 }
 
+const SIWS_HEADER = / wants you to sign in with your Solana account:$/;
+
+/**
+ * Refuses SIWS text that reaches a signature outside `signIn`. Raw
+ * `signMessage` and `signOffchain` sign whatever text a dApp sends, so without
+ * this a page could get a signature over another domain's sign-in, which
+ * verifies there as a login. Line breaks are normalized and leading whitespace
+ * dropped first, so a verifier more lenient than `verifySignIn` is covered too.
+ *
+ * @throws SiwsDomainMismatchError when the header names another domain, and an
+ * Error when the message signs in an account other than the active one.
+ */
+export function assertSiwsTextBoundToOrigin(
+  bytes: Uint8Array,
+  origin: string,
+  walletAddress: string
+): void {
+  const lines = new TextDecoder().decode(bytes).replace(/\r\n?/g, '\n').trimStart().split('\n');
+  const header = lines[0] ?? '';
+  if (!SIWS_HEADER.test(header)) return;
+
+  const requestedDomain = header.replace(SIWS_HEADER, '');
+  const realDomain = getSiwsDomain(origin);
+  if (requestedDomain !== realDomain) {
+    throw new SiwsDomainMismatchError(requestedDomain, realDomain);
+  }
+  const requestedAddress = (lines[1] ?? '').trim();
+  if (requestedAddress !== walletAddress) {
+    throw new Error(
+      `This app asked to sign in with address "${requestedAddress}", which is not the active account.`
+    );
+  }
+}
+
 /**
  * Builds the canonical SIWS message text (ABNF derived from EIP-4361), matching
  * `createSignInMessageText` from `@solana/wallet-standard-util` byte-for-byte so

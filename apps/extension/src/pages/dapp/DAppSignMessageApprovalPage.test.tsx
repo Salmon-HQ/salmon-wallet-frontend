@@ -163,10 +163,13 @@ describe('DAppSignMessageApprovalPage', () => {
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
 
     expect(mockApproveSolanaSignOffchainMessage).toHaveBeenCalledTimes(1);
-    const [accountArg, dataArg, signersArg] = mockApproveSolanaSignOffchainMessage.mock.calls[0];
+    const [accountArg, dataArg, signersArg, originArg] =
+      mockApproveSolanaSignOffchainMessage.mock.calls[0];
     expect(accountArg).toBe(baseProps.account);
     expect(dataArg).toEqual(messageBytes);
     expect(signersArg).toEqual([signer]);
+    // The real origin, so SIWS text for another domain is refused.
+    expect(originArg).toBe(baseProps.origin);
     expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',
@@ -189,7 +192,11 @@ describe('DAppSignMessageApprovalPage', () => {
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
 
-    expect(mockApproveSolanaSignMessage).toHaveBeenCalledWith(baseProps.account, messageBytes);
+    expect(mockApproveSolanaSignMessage).toHaveBeenCalledWith(
+      baseProps.account,
+      messageBytes,
+      baseProps.origin
+    );
     expect(mockApproveSolanaSignOffchainMessage).not.toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',

@@ -26,6 +26,7 @@ import { getAddMemoInstruction } from '@solana-program/memo';
 import { getTransferSolInstruction } from '@solana-program/system';
 import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
+import { buildSiwsMessageText, SiwsDomainMismatchError } from '../blockchain/solana/sign-in';
 import {
   approveSolanaSignMessage,
   approveSolanaSignOffchainMessage,
@@ -49,6 +50,8 @@ const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(s
 
 // TEST-ONLY: the minimal shape the arbitrary-byte signing paths read off a
 // SolanaAccount.
+const ORIGIN = 'https://dapp.example';
+
 async function signingAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
   const signer = await createKeyPairSignerFromPrivateKeyBytes(seed, false);
   return { signer, getReceiveAddress: () => signer.address as string };
@@ -650,7 +653,7 @@ describe('approveSolanaSignMessage', () => {
     const data = Array.from(new TextEncoder().encode(text));
 
     // Act
-    const result = await approveSolanaSignMessage(account as never, data);
+    const result = await approveSolanaSignMessage(account as never, data, ORIGIN);
 
     // Assert
     expect(result.publicKey).toBe(account.getReceiveAddress());
@@ -681,7 +684,7 @@ describe('approveSolanaSignMessage', () => {
     const data = Array.from(message.serialize());
 
     // Act & Assert
-    await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
+    await expect(approveSolanaSignMessage(account as never, data, ORIGIN)).rejects.toThrow(
       TransactionLookalikeMessageError
     );
   });
@@ -692,7 +695,7 @@ describe('approveSolanaSignMessage', () => {
     const data = Array.from((await v1Fixture()).messageBytes);
 
     // Act & Assert
-    await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
+    await expect(approveSolanaSignMessage(account as never, data, ORIGIN)).rejects.toThrow(
       TransactionLookalikeMessageError
     );
   });
@@ -1067,9 +1070,12 @@ describe('approveSolanaSignOffchainMessage', () => {
     const data = Array.from(new TextEncoder().encode(text));
 
     // Act
-    const result = await approveSolanaSignOffchainMessage(account as never, data, [
-      account.signer.address,
-    ]);
+    const result = await approveSolanaSignOffchainMessage(
+      account as never,
+      data,
+      [account.signer.address],
+      ORIGIN
+    );
 
     // Assert
     expect(result.signatureType).toBe('ed25519');
@@ -1089,8 +1095,59 @@ describe('approveSolanaSignOffchainMessage', () => {
     const data = Array.from(new TextEncoder().encode('hello'));
 
     await expect(
-      approveSolanaSignOffchainMessage(account as never, data, ['not-a-valid-address'])
+      approveSolanaSignOffchainMessage(account as never, data, ['not-a-valid-address'], ORIGIN)
     ).rejects.toThrow();
+  });
+});
+
+// signIn binds the SIWS domain to the real origin. The raw paths must not be a
+// way around it: SIWS text for another domain signed as a plain message (or
+// wrapped in OCMS, which is what signIn's useOffchainMessage signs) verifies
+// as a sign-in to that other domain.
+describe('SIWS text on the raw signing paths', () => {
+  const siws = (domain: string, address: string) =>
+    buildSiwsMessageText({ domain, address, statement: 'Log in', nonce: 'n0nce123' });
+  const bytes = (text: string) => Array.from(new TextEncoder().encode(text));
+
+  it('refuses a sign-in for another domain on signMessage and signOffchain', async () => {
+    const account = await signingAccount();
+    const data = bytes(siws('victim.example', account.getReceiveAddress()));
+
+    await expect(approveSolanaSignMessage(account as never, data, ORIGIN)).rejects.toThrow(
+      SiwsDomainMismatchError
+    );
+    await expect(
+      approveSolanaSignOffchainMessage(account as never, data, [account.signer.address], ORIGIN)
+    ).rejects.toThrow(SiwsDomainMismatchError);
+  });
+
+  it('refuses the same sign-in with CRLF line breaks or leading whitespace', async () => {
+    const account = await signingAccount();
+    const text = siws('victim.example', account.getReceiveAddress());
+
+    for (const variant of [text.replace(/\n/g, '\r\n'), `\n  ${text}`]) {
+      await expect(
+        approveSolanaSignMessage(account as never, bytes(variant), ORIGIN)
+      ).rejects.toThrow(SiwsDomainMismatchError);
+    }
+  });
+
+  it('refuses a sign-in for the right domain that names another account', async () => {
+    const account = await signingAccount();
+    const other = (await signingAccount()).getReceiveAddress();
+
+    await expect(
+      approveSolanaSignMessage(account as never, bytes(siws('dapp.example', other)), ORIGIN)
+    ).rejects.toThrow(/not the active account/);
+  });
+
+  it('signs a sign-in for its own domain and the active account', async () => {
+    const account = await signingAccount();
+    const data = bytes(siws('dapp.example', account.getReceiveAddress()));
+
+    const result = await approveSolanaSignMessage(account as never, data, ORIGIN);
+
+    expect(result.publicKey).toBe(account.getReceiveAddress());
   });
 });
 
