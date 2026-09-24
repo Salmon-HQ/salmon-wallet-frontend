@@ -11,18 +11,13 @@
  *
  * Devnet only. The spec switches the wallet to Solana devnet through the
  * developer networks, and every transfer first checks that devnet is the
- * active network and refuses otherwise. Wallets A and B need devnet SOL for
- * fees, and Wallet A needs one devnet NFT — `scripts/mint-devnet-nft.cjs` mints
- * one. It is opt-in via SALMON_E2E_ONCHAIN=1: it moves funds between the test
- * wallets and depends on the public devnet RPC.
+ * active network and refuses otherwise. Wallet A needs devnet SOL for fees and
+ * the devnet NFT fixture, which global-setup keeps there. It is opt-in via
+ * SALMON_E2E_ONCHAIN=1: it moves funds between the test wallets and depends on
+ * the public devnet RPC.
  *
- * The NFT is round-tripped A → B → A rather than sent one way, so Wallet A ends
- * where it started and the spec stays repeatable. `nft_sent` therefore fires
- * twice, which is fine: we assert it fired, not how often.
- *
- * Known defect: the return leg fails. Wallet B owns the NFT on chain after
- * the first leg, but its NFTs tab does not list it, so B has nothing to send
- * back. The cause — devnet index, backend or client — is not yet found.
+ * The NFT goes one way, A → B: the next run's global-setup finds none in A and
+ * mints another, so nothing depends on getting it back.
  *
  * Runs on a FRESH profile: `first_send_completed` burns a once-per-install
  * flag, so a reused profile emits it exactly once ever.
@@ -33,15 +28,12 @@
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
-import { closeSettings, unlockOrRecover, waitHome } from '../helpers';
+import { assertDevnet, fixtureNftCard, selectDevnet, unlockOrRecover, waitHome } from '../helpers';
 import type { Page, Request } from '@playwright/test';
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 const ONCHAIN = process.env.SALMON_E2E_ONCHAIN === '1';
 
-const DEVNET_TAB = 'balance-chain-selector-option-solana-devnet';
-/** The name scripts/mint-devnet-nft.cjs gives the fixture. */
-const FIXTURE_NFT_NAME = 'Salmon Test NFT';
 
 const SEND_AMOUNT = '0.0001';
 
@@ -69,20 +61,6 @@ async function dismissSuccess(popup: Page): Promise<void> {
   await cont.click();
 }
 
-/** Put the active account on Solana devnet. Developer networks must be on. */
-async function selectDevnet(popup: Page): Promise<void> {
-  await popup.getByTestId(DEVNET_TAB).click();
-  await assertDevnet(popup);
-}
-
-/** Every transfer runs only on devnet: anything else fails the spec here. */
-async function assertDevnet(popup: Page): Promise<void> {
-  await expect(popup.getByTestId(DEVNET_TAB), 'refusing to move funds off devnet').toHaveAttribute(
-    'aria-selected',
-    'true'
-  );
-}
-
 /** Send the NFT whose card is `card` from the ACTIVE account to `destination`. */
 async function sendNft(popup: Page, cardTestId: string, destination: string): Promise<void> {
   await assertDevnet(popup);
@@ -105,11 +83,8 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   test.skip(!ONCHAIN, 'moves devnet SOL and an NFT between the test wallets — set SALMON_E2E_ONCHAIN=1');
   test.skip(!backendUp, 'salmon-api not reachable');
   test.skip(!process.env.SALMON_TEST_SEED_A, 'no seeded-wallet fixture (SALMON_TEST_SEED_A)');
-  test.skip(!process.env.SALMON_TEST_SEED_B, 'no second seed fixture (SALMON_TEST_SEED_B)');
 
-  const walletA = process.env.SALMON_TEST_WALLET_A_ADDR ?? '';
   const walletB = process.env.SALMON_TEST_WALLET_B_ADDR ?? '';
-  expect(walletA, 'SALMON_TEST_WALLET_A_ADDR is required').not.toBe('');
   expect(walletB, 'SALMON_TEST_WALLET_B_ADDR is required').not.toBe('');
 
   const batches: Request[] = [];
@@ -128,20 +103,14 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   await waitHome(popup);
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // Developer networks on, then Solana devnet.
-  await popup.getByTestId('wallet-header-settings-button').click();
-  await popup.getByTestId('settings-developer-networks-toggle').click();
-  await closeSettings(popup);
   await selectDevnet(popup);
 
-  // The NFT to round-trip: the fixture scripts/mint-devnet-nft.cjs mints. Not
-  // just any card — the devnet index can still list an NFT Wallet A no longer
-  // owns, and the transfer of that one is refused.
+  // The fixture NFT global-setup keeps in Wallet A. Not just any card: the
+  // devnet index can still list an NFT the wallet no longer owns, and its
+  // transfer is refused.
   await popup.getByTestId('portfolio-tab-nfts').click();
-  const fixtureCard = popup.getByTestId(/^nft-card-/).filter({ hasText: FIXTURE_NFT_NAME }).first();
-  await expect(fixtureCard, 'Wallet A holds no fixture NFT — run scripts/mint-devnet-nft.cjs').toBeVisible({
-    timeout: 60_000,
-  });
+  const fixtureCard = fixtureNftCard(popup);
+  await expect(fixtureCard).toBeVisible({ timeout: 60_000 });
   const nftCard = (await fixtureCard.getAttribute('data-testid')) ?? '';
   await popup.getByTestId('portfolio-tab-portfolio').click();
 
@@ -165,24 +134,6 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
   await sendNft(popup, nftCard, walletB);
 
-  // Load Wallet B alongside A so it can sign the return leg. Importing rather
-  // than clearing state, which would wipe Wallet A.
-  await popup.getByTestId('wallet-header-settings-button').click();
-  await popup.getByTestId('settings-item-accounts').click();
-  await popup.getByTestId('account-add-button').click();
-  await popup.getByTestId('account-add-method-import').click();
-  await popup
-    .getByTestId('account-add-seed-word-input-1')
-    .fill(process.env.SALMON_TEST_SEED_B ?? '');
-  await popup.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
-  await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  // Adding an account closes Settings and lands on Home with it active.
-  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 120_000 });
-  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
-  await selectDevnet(popup);
-
-  // ── nft_sent (2/2) — Wallet B gives it back, restoring the fixture.
-  await sendNft(popup, nftCard, walletA);
 
   // Batches leave on the client's 30s timer, so the tail of the run is still
   // queued. Poll rather than sleep a fixed interval.

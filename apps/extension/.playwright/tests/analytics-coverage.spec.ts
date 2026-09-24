@@ -22,13 +22,11 @@
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
-import { closeSettings, unlockOrRecover, waitHome } from '../helpers';
+import { closeSettings, fixtureNftCard, selectDevnet, unlockOrRecover, waitHome } from '../helpers';
 import type { Page, Request } from '@playwright/test';
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 
-// Mindfolk Founder #5154 — the one NFT the test wallets can actually render.
-const NFT_MINT = 'CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV';
 
 const EXPECTED_EVENTS = [
   'address_book_used',
@@ -90,9 +88,11 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await waitHome(popup);
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // ── nft_viewed — opening an NFT detail page.
+  // ── nft_viewed — opening an NFT detail page, on devnet: the fixture NFT
+  //    global-setup keeps in Wallet A.
+  await selectDevnet(popup);
   await popup.getByTestId('portfolio-tab-nfts').click();
-  const nftCard = popup.getByTestId(`nft-card-${NFT_MINT}`);
+  const nftCard = fixtureNftCard(popup);
   await expect(nftCard).toBeVisible({ timeout: 30_000 });
   await nftCard.click();
   await expect(popup.getByTestId('nft-detail-send-button')).toBeVisible({ timeout: 15_000 });
@@ -162,7 +162,8 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   //    LAST on purpose: it moves the active network off Solana, and the address
   //    book validates a contact against whatever network is active, so a Solana
   //    address would stop validating and Save would never enable.
-  await popup.getByTestId(/^balance-chain-selector-option-bitcoin/).click();
+  // Developer networks are on (the NFT step chose devnet): stay on test networks.
+  await popup.getByTestId('balance-chain-selector-option-bitcoin-testnet').click();
 
   // Batches leave on the client's 30s timer, so the tail of the run is still in
   // the queue. Poll rather than sleep a fixed interval.

@@ -7,7 +7,7 @@
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
-import { unlockOrRecover, waitHome } from '../helpers';
+import { selectDevnet, unlockOrRecover, waitHome } from '../helpers';
 
 let backendUp = false;
 
@@ -22,6 +22,8 @@ test('walks send entry → token → address-amount and cancels (no on-chain tx)
 
   await unlockOrRecover(popup);
   await waitHome(popup);
+  // Send flows run on devnet, even the ones that never confirm.
+  await selectDevnet(popup);
 
   // Entry → the recipient step, the token chosen from its row (spec 028: four steps).
   await popup.getByTestId('home-send-button').click();

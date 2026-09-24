@@ -89,3 +89,36 @@ export async function closeSettings(page: Page): Promise<void> {
   }).toPass({ timeout: 30_000 });
   await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 }
+
+const DEVNET_TAB = 'balance-chain-selector-option-solana-devnet';
+
+/**
+ * From Home, put the active account on Solana devnet: Developer Networks on
+ * (a fresh profile has it off), then the Solana Devnet tab. Every spec that
+ * views, sends or burns funds or NFTs runs through here first.
+ */
+export async function selectDevnet(page: Page): Promise<void> {
+  await page.getByTestId('wallet-header-settings-button').click();
+  const toggle = page.getByTestId('settings-developer-networks-toggle');
+  if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await closeSettings(page);
+  await page.getByTestId(DEVNET_TAB).click();
+  await assertDevnet(page);
+}
+
+/** The guard before anything moves: the active network is Solana devnet. */
+export async function assertDevnet(page: Page): Promise<void> {
+  await expect(page.getByTestId(DEVNET_TAB), 'refusing to move funds off devnet').toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+}
+
+/**
+ * The devnet NFT fixture's card on the NFTs tab. scripts/devnet-nft-fixture.cjs
+ * (run by global-setup) keeps one in Wallet A; it is found by the name it
+ * carries, since each run may hold a freshly minted one.
+ */
+export const fixtureNftCard = (page: Page) =>
+  page.getByTestId(/^nft-card-/).filter({ hasText: 'Salmon Test NFT' }).first();

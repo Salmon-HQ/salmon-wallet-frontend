@@ -7,6 +7,7 @@
  * down, per the repo e2e policy), not here.
  */
 import { chromium } from '@playwright/test';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { EXT_DIST, loadTestEnv, requireSecrets } from './env';
@@ -54,9 +55,31 @@ function requireChromium(): void {
   }
 }
 
+/**
+ * Every spec that views, sends or burns an NFT does it on devnet with the
+ * fixture this script keeps in Wallet A. It reads the secrets from the
+ * environment this setup loaded — never from argv.
+ */
+function ensureDevnetNftFixture(): void {
+  const result = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/devnet-nft-fixture.cjs')], {
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || 'devnet NFT fixture failed');
+  }
+  console.log(result.stdout.trim());
+}
+
 export default function globalSetup(): void {
   loadTestEnv();
-  requireSecrets(['SALMON_TEST_PASSWORD']);
+  requireSecrets([
+    'SALMON_TEST_PASSWORD',
+    'SALMON_TEST_SEED_B',
+    'SALMON_TEST_WALLET_A_ADDR',
+    'SALMON_TEST_WALLET_B_ADDR',
+  ]);
   requireFreshBuild();
   requireChromium();
+  ensureDevnetNftFixture();
 }

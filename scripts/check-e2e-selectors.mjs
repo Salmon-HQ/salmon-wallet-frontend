@@ -31,10 +31,12 @@ export const EXTERNAL = new Set([
   'Refreshing...',
   // iOS system prompt when the app reads the pasteboard.
   'Allow Paste',
-  // Data the flows type themselves.
+  // Data the flows type themselves, and the on-chain name of the devnet NFT
+  // fixture (scripts/devnet-nft-fixture.cjs).
   'Wallet B',
   'order-12',
   'Salmon Treasury',
+  'Salmon Test NFT',
 ]);
 
 const read = (p) => readFileSync(p, 'utf8');
