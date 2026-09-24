@@ -2,10 +2,10 @@ appId: io.salmonwallet.app
 ---
 # Walk the Home shell that replaced the bottom tab bar: the balance block with
 # its eye toggle and money actions, the in-page Portfolio | NFTs sub-tabs, and
-# the powerups FAB with the browse screen it pushes.
+# the Powerups FAB with the catalogue it opens.
 #
 # Read-only: the eye toggle is never tapped (it persists), the sub-tabs only
-# change what is drawn, and the browse screen installs nothing. Everything
+# change what is drawn, and the catalogue installs nothing. Everything
 # is asserted by testID — the labels are localised.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
@@ -40,12 +40,9 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 5000
 
-# The `+` pushes POWERUPS 02 · Browse as a full-height screen. The FAB is
-# mounted ONCE, above the stack (`(app)/_layout.tsx`), so it stays in the same
-# spot across both routes, turned to the close mark, and taps again to dismiss.
-# One mounted instance means `id: powerups-fab` can never match two views —
-# it used to be mounted twice (Home's and the browse screen's) and only the
-# fullScreenModal window kept the two apart.
+# The `+` opens the Powerups catalogue, a sheet over Home. The sheet is its own
+# window, so the FAB underneath is out of reach while it is up: close it the
+# way a person does, by dragging it down.
 - tapOn:
     id: 'powerups-fab'
 - extendedWaitUntil:
@@ -53,13 +50,8 @@ appId: io.salmonwallet.app
       id: 'powerups-row-toggle-.*'
     timeout: 20000
 - takeScreenshot: screenshots/smoke/home/shell-powerups
-- tapOn:
-    id: 'powerups-fab'
-# Home is never unmounted underneath, so its own id proves nothing here: what
-# has to be gone is the screen that covered it.
-- extendedWaitUntil:
-    notVisible:
-      id: 'powerups-row-toggle-.*'
-    timeout: 20000
+- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- assertNotVisible:
+    id: 'powerups-row-toggle-.*'
 - assertVisible:
     id: 'powerups-fab'
