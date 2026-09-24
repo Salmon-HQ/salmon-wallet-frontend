@@ -272,6 +272,35 @@ describe('what an unapproved origin can make the wallet do', () => {
     // The window already asking is brought forward instead.
     expect(update).toHaveBeenCalledWith(POPUP_WINDOW_ID, { focused: true });
   });
+
+  it('opens one approval window per origin when requests arrive together', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    vi.spyOn(fakeBrowser.windows, 'update').mockResolvedValue(undefined as never);
+    const responses = Array.from({ length: 25 }, () => vi.fn());
+
+    // A page calling in a loop: no request waits for the previous window.
+    responses.forEach((sendResponse, i) =>
+      route(dappRequest('signTransaction', `req-${i}`), ownSender(), sendResponse)
+    );
+
+    await vi.waitFor(() =>
+      expect(responses.slice(1).every((r) => r.mock.calls.length === 1)).toBe(true)
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets the origin ask again when its window could not be opened', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    windowsCreate.mockRejectedValueOnce(new Error('no window'));
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+
+    route(dappRequest('signTransaction', 'req-b'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(2));
+  });
 });
 
 describe('malformed and untrusted input', () => {

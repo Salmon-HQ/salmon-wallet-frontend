@@ -68,8 +68,11 @@ export default defineBackground(() => {
   // requestId -> approval popup window id, so the background can close the
   // window once the request is answered.
   const approvalWindows = new Map<string, number>();
-  /** The approval window each origin currently has open, if any. */
-  const approvalWindowOrigins = new Map<string, number>();
+  /**
+   * The approval window each origin currently has open. `null` while that
+   * window is still being created.
+   */
+  const approvalWindowOrigins = new Map<string, number | null>();
 
   // Accept the side panel's persistent port. No messages flow over it now; the
   // open connection just keeps the service worker alive while the side panel is
@@ -152,14 +155,20 @@ export default defineBackground(() => {
     // method in a loop and each call opens another focused OS-level window,
     // which the user cannot get out from under. A second request is refused
     // and the window already asking is brought forward.
-    const openForOrigin = approvalWindowOrigins.get(origin);
-    if (openForOrigin != null) {
-      browser.windows.update(openForOrigin, { focused: true }).catch(() => {
-        /* already closed; its onRemoved listener clears the entry */
-      });
+    if (approvalWindowOrigins.has(origin)) {
+      const openForOrigin = approvalWindowOrigins.get(origin);
+      if (openForOrigin != null) {
+        browser.windows.update(openForOrigin, { focused: true }).catch(() => {
+          /* already closed; its onRemoved listener clears the entry */
+        });
+      }
       sendResponse({ error: 'Another approval is already open', id: message.data.id });
       return;
     }
+    // Claim the origin before the first await: requests fired in one loop
+    // all reach this point before any window exists, so a claim taken after
+    // `windows.create` resolves lets every one of them through.
+    approvalWindowOrigins.set(origin, null);
 
     const searchParams = new URLSearchParams();
     searchParams.set('origin', origin);
@@ -168,19 +177,27 @@ export default defineBackground(() => {
       searchParams.set('network', message.data.params.network);
     }
 
-    const focusedWindow = await browser.windows.getLastFocused();
-    const popup = await browser.windows.create({
-      url: 'popup.html#' + searchParams.toString(),
-      type: 'popup',
-      width: 380,
-      height: 675,
-      top: focusedWindow.top,
-      left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
-      focused: true,
-    });
-
-    const popupId = popup?.id;
-    if (popupId == null) return;
+    let popupId: number | undefined;
+    try {
+      const focusedWindow = await browser.windows.getLastFocused();
+      const popup = await browser.windows.create({
+        url: 'popup.html#' + searchParams.toString(),
+        type: 'popup',
+        width: 380,
+        height: 675,
+        top: focusedWindow.top,
+        left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
+        focused: true,
+      });
+      popupId = popup?.id;
+    } catch {
+      // Falls through: popupId stays undefined and the request is refused below.
+    }
+    if (popupId == null) {
+      approvalWindowOrigins.delete(origin);
+      sendResponse({ error: 'Operation cancelled', id: message.data.id });
+      return;
+    }
     approvalWindows.set(message.data.id, popupId);
     approvalWindowOrigins.set(origin, popupId);
 
