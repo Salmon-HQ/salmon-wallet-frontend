@@ -1,0 +1,23 @@
+appId: io.salmonwallet.app
+---
+# Type a seed phrase one word per box, the way a person does.
+#
+#   - runFlow:
+#       file: ../../../subflows/type-seed.yaml
+#       env:
+#         SEED: ${MAESTRO_SALMON_TEST_SEED_A}
+#         FIELD: 'recover-word-input'   # boxes are <FIELD>-1 … <FIELD>-N
+#
+# Typing the whole phrase into the first box in one inputText drops or garbles
+# characters on a loaded emulator, the phrase stops being valid, and the flow
+# fails far from the cause. A word at a time is a short string per box.
+- evalScript: ${output.seedWords = SEED.trim().split(/\s+/); output.seedIndex = 0}
+- repeat:
+    while:
+      true: ${output.seedIndex < output.seedWords.length}
+    commands:
+      - tapOn:
+          id: ${FIELD + '-' + (output.seedIndex + 1)}
+      - inputText: ${output.seedWords[output.seedIndex]}
+      - evalScript: ${output.seedIndex = output.seedIndex + 1}
+- hideKeyboard

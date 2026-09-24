@@ -31,23 +31,16 @@ appId: io.salmonwallet.app
     visible:
       id: 'account-add-seed-word-input-1'
     timeout: 10000
-- tapOn:
-    id: 'account-add-seed-word-input-1'
-- inputText: ${IMPORT_SEED}
-- waitForAnimationToEnd:
-    timeout: 2000
-# The first tap after inputText lands on the keyboard dismissal, so drive
-# Continue until the name step is reached.
+- runFlow:
+    file: ./type-seed.yaml
+    env:
+      SEED: ${IMPORT_SEED}
+      FIELD: 'account-add-seed-word-input'
 - tapOn:
     id: 'account-add-seed-continue-button'
-- runFlow:
-    when:
-      notVisible: 'Account Name'
-    commands:
-      - tapOn:
-          id: 'account-add-seed-continue-button'
 - extendedWaitUntil:
-    visible: 'Account Name'
+    visible:
+      id: 'account-add-name-input'
     timeout: 25000
 # The name field keeps focus, so the keyboard covers the button and a tap on the
 # "Confirm" text lands on the keyboard instead. Dismiss it and go by testID.

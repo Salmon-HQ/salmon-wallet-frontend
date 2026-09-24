@@ -25,23 +25,16 @@ appId: io.salmonwallet.app
     visible:
       id: 'account-add-seed-word-input-1'
     timeout: 10000
-- tapOn:
-    id: 'account-add-seed-word-input-1'
-- inputText: ${MAESTRO_SALMON_TEST_SEED_B}
-- waitForAnimationToEnd:
-    timeout: 2000
-# The first tap after inputText lands on the keyboard dismissal, so drive
-# Continue until the name step is reached.
+- runFlow:
+    file: ../../../subflows/type-seed.yaml
+    env:
+      SEED: ${MAESTRO_SALMON_TEST_SEED_B}
+      FIELD: 'account-add-seed-word-input'
 - tapOn:
     id: 'account-add-seed-continue-button'
-- runFlow:
-    when:
-      notVisible: 'Account Name'
-    commands:
-      - tapOn:
-          id: 'account-add-seed-continue-button'
 - extendedWaitUntil:
-    visible: 'Account Name'
+    visible:
+      id: 'account-add-name-input'
     timeout: 25000
 - takeScreenshot: screenshots/actions/account/import-seed-name
 - tapOn: 'Confirm'

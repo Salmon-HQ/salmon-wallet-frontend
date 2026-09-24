@@ -32,7 +32,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'account-add-derive-continue-button'
 - extendedWaitUntil:
-    visible: 'Account Name'
+    visible:
+      id: 'account-add-name-input'
     timeout: 20000
 - tapOn: 'Confirm'
 - waitForAnimationToEnd:
