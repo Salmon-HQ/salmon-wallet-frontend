@@ -1,6 +1,6 @@
 appId: io.salmonwallet.app
 ---
-# Walk Collectibles → open the NFT detail sheet → close.
+# Walk Collectibles → open the NFT detail screen → back.
 #
 # Asserts on "Mindfolk Founder #5154" (mint CNM8...), in Wallet A. It is the only
 # collectible either test wallet can actually render; everything else is dropped
@@ -40,7 +40,12 @@ appId: io.salmonwallet.app
 - assertVisible:
     id: 'nft-detail-screen'
 - takeScreenshot: screenshots/smoke/nft/detail-mindfolk
-- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- tapOn:
+    id: 'screen-header-back-button'
+- extendedWaitUntil:
+    visible:
+      id: 'portfolio-tab-nfts'
+    timeout: 10000
 - assertVisible:
     id: 'portfolio-tab-nfts'
 - tapOn:

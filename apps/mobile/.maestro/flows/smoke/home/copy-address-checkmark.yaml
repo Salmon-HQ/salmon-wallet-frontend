@@ -12,10 +12,14 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
     id: 'wallet-header-copy-address'
+# The confirmation is the button's own label while it shows the check, so the
+# assertion is on that button, not on any "Copied!" elsewhere on screen.
 - assertVisible:
+    id: 'wallet-header-copy-address'
     text: 'Copied!'
 - takeScreenshot: screenshots/smoke/home/copy-address-checkmark
 - extendedWaitUntil:
     notVisible:
+      id: 'wallet-header-copy-address'
       text: 'Copied!'
     timeout: 3000

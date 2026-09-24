@@ -120,7 +120,10 @@ export function auditMaestroFlow(file, text, { idExists, textExists }) {
     const line = raw.trim();
     if (line.startsWith('#')) return;
     const id = line.match(ID_LINE)?.[1]?.trim();
-    if (id && !id.includes('${') && !idExists(id)) findings.push(`${file}:${i + 1}  id  ${id}`);
+    // `a|b` waits for whichever appears first: each alternative must exist.
+    for (const alt of id && !id.includes('${') ? id.split('|') : []) {
+      if (!idExists(alt)) findings.push(`${file}:${i + 1}  id  ${alt}`);
+    }
     const t = line.match(TEXT_LINE)?.[1];
     // Regex anchors (`.*`, `(?i)`) are patterns, not strings; checked by hand.
     if (t && !t.includes('${') && !/[.*?|()]/.test(t) && !EXTERNAL.has(t) && !textExists(t)) {

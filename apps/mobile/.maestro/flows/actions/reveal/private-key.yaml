@@ -26,4 +26,5 @@ appId: io.salmonwallet.app
     id: 'private-key-done-button'
 - waitForAnimationToEnd:
     timeout: 2000
-- assertVisible: 'Settings'
+- assertVisible:
+    id: 'settings-screen'

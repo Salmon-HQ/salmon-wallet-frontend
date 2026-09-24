@@ -19,5 +19,7 @@ appId: io.salmonwallet.app
       - tapOn:
           id: ${FIELD + '-' + (output.seedIndex + 1)}
       - inputText: ${output.seedWords[output.seedIndex]}
+      # The keyboard covers the lower boxes; close it so the next one can be
+      # found and tapped.
+      - hideKeyboard
       - evalScript: ${output.seedIndex = output.seedIndex + 1}
-- hideKeyboard

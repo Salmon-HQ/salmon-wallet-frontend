@@ -6,6 +6,15 @@ appId: io.salmonwallet.app
 - launchApp
 - runFlow: ./dev-launcher-pass.yaml
 - runFlow: ./recover-walletA.yaml
+# Key derivation (PBKDF2, 210k iterations) runs after the password screen and
+# takes over 30 s on a cold emulator. What follows it is either the biometric
+# offer or Success: wait for whichever comes, then skip biometrics if offered.
+# Checking for the offer before derivation ends finds nothing, and the offer
+# then covers Success for good.
+- extendedWaitUntil:
+    visible:
+      id: 'biometric-skip-button|success-go-to-wallet-button'
+    timeout: 90000
 - runFlow:
     when:
       visible:
@@ -13,15 +22,10 @@ appId: io.salmonwallet.app
     commands:
       - tapOn:
           id: 'biometric-skip-button'
-# Success comes first; leaving it presents the first-run analytics consent,
-# which is the final onboarding step. Decline to reach Home.
-# (The screen itself is covered by flows/smoke/settings/analytics-prompt.yaml.)
-# Declining is dev-menu-defensive — see the subflow's header.
-# Key derivation (PBKDF2, 210k iterations) runs between the password screen
-# and Success. It takes over 30s on a cold emulator, so the wait outlasts it.
 - extendedWaitUntil:
-    visible: 'Congratulations!'
-    timeout: 90000
+    visible:
+      id: 'success-go-to-wallet-button'
+    timeout: 30000
 - tapOn:
     id: 'success-go-to-wallet-button'
 # Let the transition settle before asking what is on screen.

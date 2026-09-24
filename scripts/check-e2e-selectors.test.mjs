@@ -66,3 +66,10 @@ test('a coordinate swipe is a finding unless it is marked as external UI', () =>
   const external = "- swipe:\n    start: '50%, 85%' # external: Expo dev menu\n";
   assert.deepEqual(auditMaestroFlow('f.yaml', external, opts), []);
 });
+
+test('each alternative of an either-or id must exist', () => {
+  const opts = { idExists, textExists: () => true };
+  assert.deepEqual(auditMaestroFlow('f.yaml', "    id: 'receive-qr|receive-address'\n", opts), [
+    'f.yaml:1  id  receive-address',
+  ]);
+});
