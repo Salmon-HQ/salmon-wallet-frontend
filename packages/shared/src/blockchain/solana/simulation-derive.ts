@@ -76,11 +76,27 @@ function collectOwnedTokenAccounts(input: DerivationInput): readonly Address[] {
  * `previewTransactionEffects`, which calls this.
  *
  * @param input - Before/after snapshots plus the mints they reference.
- * @returns `no-effect` when nothing moved, `effects` otherwise. This function
- * never returns `undetermined` — uncertainty is decided before decoding.
+ * @returns `no-effect` when nothing moved, `effects` otherwise, and
+ * `undetermined` when an account changes owner, which no balance row can show.
+ * Every other kind of uncertainty is decided before decoding.
  */
 export function deriveEffects(input: DerivationInput): NoEffect | Effects | UndeterminedEffects {
   const { account, before, after, mints, resolveSymbol } = input;
+
+  // System Assign moves the wallet's own account to another program, which can
+  // then debit every lamport in it. No lamports move, so every diff below would
+  // report no-effect or the fee alone. Same treatment as a token account
+  // changing owner: undetermined, which the approval screen holds.
+  const ownerBefore = before.get(account)?.owner;
+  const ownerAfter = after.get(account)?.owner;
+  if (ownerBefore && ownerAfter && ownerBefore !== ownerAfter) {
+    return {
+      kind: 'undetermined',
+      account,
+      reason: 'ownership-change',
+      detail: `Account ${account} changes owner program from ${ownerBefore} to ${ownerAfter}.`,
+    };
+  }
 
   const lamportsBefore = before.get(account)?.lamports ?? 0n;
   const lamportsAfter = after.get(account)?.lamports ?? 0n;

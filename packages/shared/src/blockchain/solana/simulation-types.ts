@@ -209,6 +209,8 @@ export interface MintState {
 /** One account, at one point in time. `null` means the account does not exist. */
 export interface AccountState {
   readonly lamports: bigint;
+  /** Program that owns the account. */
+  readonly owner: Address;
   /** Decoded token account, or `null` if this account is not an SPL token account. */
   readonly token: TokenAccountState | null;
 }

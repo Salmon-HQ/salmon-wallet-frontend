@@ -69,7 +69,7 @@ export function toBytes(data: Base64AccountData): Uint8Array {
  * Decodes one RPC account into the snapshot shape the derivation diffs.
  *
  * Only SPL token accounts are decoded further; anything else contributes its
- * lamports and nothing more. Decoding is defensive because the bytes come from
+ * lamports and its owner program and nothing more. Decoding is defensive because the bytes come from
  * an arbitrary transaction's account list.
  *
  * @param account - The account as returned by the RPC, or `null` if absent.
@@ -79,7 +79,11 @@ export function decodeAccountState(account: RawAccount | null): AccountState | n
   if (!account) {
     return null;
   }
-  const state: AccountState = { lamports: BigInt(account.lamports), token: null };
+  const state: AccountState = {
+    lamports: BigInt(account.lamports),
+    owner: account.owner,
+    token: null,
+  };
   if (!isTokenProgram(account.owner)) {
     return state;
   }
@@ -93,6 +97,7 @@ export function decodeAccountState(account: RawAccount | null): AccountState | n
     const token = getTokenDecoder().decode(bytes);
     return {
       lamports: state.lamports,
+      owner: state.owner,
       token: {
         mint: token.mint,
         owner: token.owner,

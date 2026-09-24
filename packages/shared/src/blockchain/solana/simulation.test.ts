@@ -58,6 +58,7 @@ const USDC_ATA: Address = address('2y8ryG1ULFrfrJhg6iEuNbmvbLnKrCbxjfJvpG4PSvHb'
 const WSOL_ATA: Address = address('AeMuAqDcw2nWnCUnkqNXTVfWjRqPZ4uHzHUgBvBmnGXK');
 const POOL_ATA: Address = address('7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj');
 const BLOCKHASH = '11111111111111111111111111111111' as Blockhash;
+const SYSTEM_PROGRAM: Address = address('11111111111111111111111111111111');
 
 /** Builds a decoded token-account snapshot. */
 function tokenAccount(
@@ -66,6 +67,7 @@ function tokenAccount(
 ): AccountState {
   return {
     lamports,
+    owner: TOKEN_PROGRAM_ADDRESS,
     token: {
       amount: 0n,
       delegate: null,
@@ -75,9 +77,9 @@ function tokenAccount(
   };
 }
 
-/** Builds a plain (non-token) account snapshot. */
-function solAccount(lamports: bigint): AccountState {
-  return { lamports, token: null };
+/** Builds a plain (non-token) account snapshot, owned by the System Program unless stated. */
+function solAccount(lamports: bigint, owner: Address = SYSTEM_PROGRAM): AccountState {
+  return { lamports, owner, token: null };
 }
 
 const MINTS: ReadonlyMap<Address, MintState> = new Map([
@@ -170,6 +172,25 @@ describe('deriveEffects', () => {
 
     expect(result.kind).not.toBe('no-effect');
     expect(result.kind).toBe('undetermined');
+  });
+
+  // System Assign hands the wallet's own account to another program, which can
+  // then debit every lamport in it. No lamports move, so a balance diff sees
+  // nothing: the preview said "No balance changes" (dApp pays the fee) or only
+  // the fee, with a one-tap approve.
+  it('never reports a reassignment of the wallet account as no-effect or a plain fee', () => {
+    const ATTACKER_PROGRAM = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' as Address;
+
+    for (const lamportsAfter of [1_000_000n, 995_000n, 2_000_000n]) {
+      const result = deriveEffects(
+        derivationInput({
+          before: new Map([[WALLET, solAccount(1_000_000n)]]),
+          after: new Map([[WALLET, solAccount(lamportsAfter, ATTACKER_PROGRAM)]]),
+        })
+      );
+
+      expect(result).toMatchObject({ kind: 'undetermined', reason: 'ownership-change' });
+    }
   });
 
   it('derives a plain SOL transfer as a negative lamport change including the fee', () => {
@@ -545,7 +566,7 @@ describe('decodeAccountState', () => {
       data: ['', 'base64'],
     });
 
-    expect(state).toEqual({ lamports: 7n, token: null });
+    expect(state).toEqual({ lamports: 7n, owner: SYSTEM_PROGRAM, token: null });
   });
 
   it('returns null for an account that does not exist', () => {
