@@ -52,9 +52,18 @@ export async function unlockOrRecover(
   // first-run consent, the last onboarding step; a build without analytics
   // goes straight Home, so wait for whichever comes.
   await page.getByTestId('success-go-to-wallet-button').click({ timeout: 90_000 });
-  const consentButton = page.getByTestId(`analytics-consent-${consent}`);
+  // On the DOM the decline id names the header; its control is the header's
+  // back arrow. Accept is the button itself.
+  const consentScreen = page.getByTestId('analytics-consent-screen');
+  const consentButton =
+    consent === 'decline'
+      ? page.getByTestId('analytics-consent-decline').getByTestId('screen-header-back-button')
+      : page.getByTestId('analytics-consent-accept');
   await consentButton.or(home).first().waitFor({ timeout: 30_000 });
-  if (await consentButton.isVisible()) await consentButton.click();
+  if (await consentButton.isVisible()) {
+    await consentButton.click();
+    await consentScreen.waitFor({ state: 'detached', timeout: 30_000 });
+  }
   return 'recovered';
 }
 

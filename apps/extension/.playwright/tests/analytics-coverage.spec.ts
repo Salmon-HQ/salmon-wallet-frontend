@@ -54,35 +54,21 @@ test.beforeAll(async () => {
 const openSettings = (popup: Page) => popup.getByTestId('wallet-header-settings-button').click();
 
 /**
- * Close the settings drawer, from any depth, and land back on home.
+ * Close Settings, from any depth, and land back on home.
  *
- * Clicks the MUI backdrop, which fires the Drawer's `onClose` regardless of
- * where focus or the panel stack happen to be. Closing resets the stack, so the
- * next `openSettings` lands on the root menu.
- *
- * Why not the obvious alternatives:
- *  - Walking back panel by panel hangs: `handlePop` is a no-op while a panel
- *    animates, and the back button lives inside the transforming panel, so
- *    clicking it during the transition does nothing and the "count decreased"
- *    wait times out. That is exactly what left this spec stuck at the settings
- *    root after the second account import.
- *  - The close button is covered: the panels are absolutely positioned over the
- *    drawer chrome, so from inside a nested panel it is present and "stable" but
- *    behind the panel, and the click is swallowed.
- *
- * The backdrop covers the whole viewport; the drawer is anchored right, so the
- * top-left corner is always backdrop, never the paper.
+ * Settings is a page with a stack of panels; each panel's back arrow pops one
+ * level and the root's closes the page. A pop is ignored while a panel is still
+ * animating, so each click is retried until Settings has unmounted — which also
+ * clears the panel stack, so the next `openSettings` lands on the root menu.
  */
 async function closeSettings(popup: Page): Promise<void> {
-  await popup
-    .locator('.MuiBackdrop-root')
-    .last()
-    .click({ position: { x: 8, y: 8 } });
-  // Settings unmounts when it is actually gone — a more honest signal than
-  // home-screen visibility, since home sits behind the drawer and reads as
-  // "visible" the whole time it is open. The panel stack lives in that
-  // component, so once it is unmounted the next open starts at the root.
-  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 15_000 });
+  const settings = popup.getByTestId('settings-screen');
+  await expect(async () => {
+    // Panels below the top one stay mounted, arrows included, under it.
+    const back = popup.getByTestId('screen-header-back-button').filter({ visible: true });
+    if ((await back.count()) > 0) await back.last().click({ timeout: 2_000 });
+    await expect(settings).toHaveCount(0, { timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 }
 
@@ -144,7 +130,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await popup.getByTestId('address-book-add-button').click();
   await popup.getByTestId('address-book-label-input').fill('E2E Coverage Contact');
   await popup
-    .getByTestId('address-book-address-input')
+    .getByTestId('address-book-address-recipient-input')
     .fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
   const saveContact = popup.getByTestId('address-book-save-button');
   await expect(saveContact).toBeEnabled({ timeout: 20_000 }); // address validation is async
@@ -167,9 +153,13 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await derived.click();
   await popup.getByTestId('account-add-derive-continue-button').click();
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 60_000 });
+  // Adding an account closes Settings and lands on Home with it active.
+  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 60_000 });
+  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── wallet_recovered — an IMPORTED seed is a recovery.
+  await openSettings(popup);
+  await popup.getByTestId('settings-item-accounts').click();
   await popup.getByTestId('account-add-button').click();
   await popup.getByTestId('account-add-method-import').click();
   await popup
@@ -177,22 +167,21 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
     .fill(process.env.SALMON_TEST_SEED_B ?? '');
   await popup.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
+  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 90_000 });
+  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  await closeSettings(popup);
-
-  // ── wallet_switched — the switcher now holds three accounts; pick another.
-  await popup.getByTestId('wallet-header-account-switcher').first().click();
-  const otherAccount = popup.locator('[data-testid^="wallet-switcher-account-"]').nth(1);
-  await expect(otherAccount).toBeVisible({ timeout: 15_000 });
-  await otherAccount.click();
+  // ── wallet_switched — the wallets screen now holds three accounts; the
+  //    imported one is active, so the first card is another account.
+  await popup.getByTestId('wallet-header-account-switcher').click();
+  await expect(popup.getByTestId('wallets-screen')).toBeVisible({ timeout: 15_000 });
+  await popup.locator('[data-testid^="wallet-card-"]').first().click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── network_switched — the balance carousel drives changeNetwork(). This runs
   //    LAST on purpose: it moves the active network off Solana, and the address
   //    book validates a contact against whatever network is active, so a Solana
   //    address would stop validating and Save would never enable.
-  await popup.getByTestId('balance-chain-selector-option-bitcoin').click();
+  await popup.getByTestId(/^balance-chain-selector-option-bitcoin/).click();
 
   // Batches leave on the client's 30s timer, so the tail of the run is still in
   // the queue. Poll rather than sleep a fixed interval.
