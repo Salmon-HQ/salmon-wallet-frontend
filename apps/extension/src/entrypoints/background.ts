@@ -69,8 +69,8 @@ export default defineBackground(() => {
   // window once the request is answered.
   const approvalWindows = new Map<string, number>();
   /**
-   * The approval window each origin currently has open. `null` while that
-   * window is still being created.
+   * The origin whose approval window is open, and that window's id (`null`
+   * while it is still being created). At most one entry: see launchPopupWindow.
    */
   const approvalWindowOrigins = new Map<string, number | null>();
 
@@ -151,17 +151,13 @@ export default defineBackground(() => {
   ): Promise<void> => {
     const origin = sender.origin || '';
 
-    // One approval window per origin. Without this a page can call a signing
-    // method in a loop and each call opens another focused OS-level window,
-    // which the user cannot get out from under. A second request is refused
-    // and the window already asking is brought forward.
-    if (approvalWindowOrigins.has(origin)) {
-      const openForOrigin = approvalWindowOrigins.get(origin);
-      if (openForOrigin != null) {
-        browser.windows.update(openForOrigin, { focused: true }).catch(() => {
-          /* already closed; its onRemoved listener clears the entry */
-        });
-      }
+    // One approval window at a time, across all origins. Without this a page
+    // can call a method in a loop, or navigate itself through subdomains, and
+    // each call opens another focused OS-level window the user cannot get out
+    // from under. Any other request is refused with no window action: bringing
+    // the open window forward on each refusal let a page pull it to the front
+    // at will.
+    if (approvalWindowOrigins.size > 0) {
       sendResponse({ error: 'Another approval is already open', id: message.data.id });
       return;
     }

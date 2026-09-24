@@ -251,7 +251,7 @@ describe('what an unapproved origin can make the wallet do', () => {
     expect(windowsCreate).not.toHaveBeenCalled();
   });
 
-  it('opens one approval window per origin, however many requests arrive', async () => {
+  it('opens one approval window, however many requests an origin sends', async () => {
     await approveOrigin();
     const { route, windowsCreate } = startBackground();
     const update = vi.spyOn(fakeBrowser.windows, 'update').mockResolvedValue(undefined as never);
@@ -269,14 +269,40 @@ describe('what an unapproved origin can make the wallet do', () => {
       })
     );
     expect(windowsCreate).toHaveBeenCalledTimes(1);
-    // The window already asking is brought forward instead.
-    expect(update).toHaveBeenCalledWith(POPUP_WINDOW_ID, { focused: true });
+    // Refusing has no side effect: re-focusing on every refusal let a page
+    // pull the wallet window to the front in a loop.
+    expect(update).not.toHaveBeenCalled();
   });
 
-  it('opens one approval window per origin when requests arrive together', async () => {
+  // The cap was per origin, so a page navigating itself through subdomains
+  // (no gesture, no trust: connect and signIn reach a window unapproved) got
+  // one more focused OS window per origin.
+  it('opens one approval window in total, whichever origins ask', async () => {
+    const { route, windowsCreate } = startBackground();
+    const responses = Array.from({ length: 10 }, () => vi.fn());
+
+    for (const [i, sendResponse] of responses.entries()) {
+      route(
+        dappRequest(i % 2 ? 'signIn' : 'connect', `req-${i}`),
+        ownSender(`https://s${i}.evil.example`),
+        sendResponse
+      );
+      await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    }
+
+    await vi.waitFor(() =>
+      expect(responses.slice(1).every((r) => r.mock.calls.length === 1)).toBe(true)
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+    expect(responses[1]).toHaveBeenCalledWith({
+      error: 'Another approval is already open',
+      id: 'req-1',
+    });
+  });
+
+  it('opens one approval window when requests arrive together', async () => {
     await approveOrigin();
     const { route, windowsCreate } = startBackground();
-    vi.spyOn(fakeBrowser.windows, 'update').mockResolvedValue(undefined as never);
     const responses = Array.from({ length: 25 }, () => vi.fn());
 
     // A page calling in a loop: no request waits for the previous window.
