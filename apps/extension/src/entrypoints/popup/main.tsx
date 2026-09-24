@@ -1,31 +1,15 @@
 import '../../polyfills/node';
 
-import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 import '../../assets/fonts.css';
 
-// Theme — the provider owns the mode (stored preference + system scheme) and
-// writes the `--sw-*` tokens on the root; the html entry's own reset paints
-// the ground from those tokens, so no MUI baseline is needed.
-import { IconDefaults, SalmonThemeProvider, TaskChromeProvider } from '@salmon/ui';
-
 // Initialize i18n configuration - must be imported before App
-import i18n from '../../i18n/config';
-import { I18nextProvider } from 'react-i18next';
-import { PendingActivityLayer } from '../../components/PendingActivityLayer';
+import '../../i18n/config';
+import App from './App';
+import { AppProviders } from '../../AppProviders';
 
 // Initialize storage and stash for extension platform
-import {
-  APP_VERSION,
-  initStorage,
-  initStash,
-  initAnalytics,
-  AccountsProvider,
-  CurrencyProvider,
-  createQueryClient,
-  QueryClientProvider,
-} from '@salmon/shared';
+import { APP_VERSION, initStorage, initStash, initAnalytics } from '@salmon/shared';
 
 // Initialize storage with Chrome extension adapter
 initStorage({ platform: 'extension' });
@@ -36,29 +20,8 @@ initStash('extension');
 // Anonymous, opt-in usage analytics (no events until the user opts in).
 initAnalytics({ platform: 'extension', appVersion: APP_VERSION });
 
-function Root() {
-  const [queryClient] = React.useState(() => createQueryClient());
-  return (
-    <React.StrictMode>
-      <SalmonThemeProvider>
-        <TaskChromeProvider>
-          <IconDefaults>
-            <QueryClientProvider client={queryClient}>
-              <I18nextProvider i18n={i18n}>
-                <AccountsProvider>
-                  <CurrencyProvider>
-                    <PendingActivityLayer>
-                      <App />
-                    </PendingActivityLayer>
-                  </CurrencyProvider>
-                </AccountsProvider>
-              </I18nextProvider>
-            </QueryClientProvider>
-          </IconDefaults>
-        </TaskChromeProvider>
-      </SalmonThemeProvider>
-    </React.StrictMode>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')!).render(<Root />);
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <AppProviders>
+    <App />
+  </AppProviders>
+);

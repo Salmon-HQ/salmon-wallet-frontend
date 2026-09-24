@@ -1,32 +1,17 @@
 import '../../polyfills/node';
 
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '../../assets/fonts.css';
 
-// Theme — the provider owns the mode (stored preference + system scheme) and
-// writes the `--sw-*` tokens on the root; the html entry's own reset paints
-// the ground from those tokens. It is pulled in below, after layout, because
-// it is exported from the `@salmon/ui` barrel alongside components that read
-// the viewport at module-evaluation time.
+// The provider tree (theme included) is pulled in below, after layout, because
+// `@salmon/ui` exports components that read the viewport at module-evaluation
+// time.
 
 // Initialize i18n configuration - must be imported before App
-import i18n from '../../i18n/config';
-import { PendingActivityLayer } from '../../components/PendingActivityLayer';
-import { I18nextProvider } from 'react-i18next';
+import '../../i18n/config';
 
 // Initialize storage and stash for extension platform
-import {
-  APP_VERSION,
-  initStorage,
-  initStash,
-  initAnalytics,
-  AccountsProvider,
-  DeveloperModeProvider,
-  CurrencyProvider,
-  createQueryClient,
-  QueryClientProvider,
-} from '@salmon/shared';
+import { APP_VERSION, initStorage, initStash, initAnalytics } from '@salmon/shared';
 
 initStorage({ platform: 'extension' });
 initStash('extension');
@@ -60,40 +45,13 @@ const waitForLayout = (): Promise<void> =>
 
   // Dynamic import so styled components see real viewport dimensions
   const { default: App } = await import('../popup/App');
-  const { IconDefaults, SalmonThemeProvider, TaskChromeProvider } = await import('@salmon/ui');
+  const { AppProviders } = await import('../../AppProviders');
 
-  function Root() {
-    const [queryClient] = React.useState(() => createQueryClient());
-    return (
-      <React.StrictMode>
-        <SalmonThemeProvider>
-          <TaskChromeProvider>
-            <IconDefaults>
-              <QueryClientProvider client={queryClient}>
-                <I18nextProvider i18n={i18n}>
-                  <AccountsProvider>
-                    {/* The developer-mode flags belong to the unlocked session,
-                        as on mobile's (app) stack: one provider above every
-                        screen, and an older wallet's mirror addresses derived
-                        the first time the flag asks (spec 026 D2). */}
-                    <DeveloperModeProvider>
-                      <CurrencyProvider>
-                        <PendingActivityLayer>
-                          <App />
-                        </PendingActivityLayer>
-                      </CurrencyProvider>
-                    </DeveloperModeProvider>
-                  </AccountsProvider>
-                </I18nextProvider>
-              </QueryClientProvider>
-            </IconDefaults>
-          </TaskChromeProvider>
-        </SalmonThemeProvider>
-      </React.StrictMode>
-    );
-  }
-
-  ReactDOM.createRoot(document.getElementById('root')!).render(<Root />);
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <AppProviders>
+      <App />
+    </AppProviders>
+  );
 
   // ----------------------------
   // CONNECT SIDE PANEL TO BACKGROUND
