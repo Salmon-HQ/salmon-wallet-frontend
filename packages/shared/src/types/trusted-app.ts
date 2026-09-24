@@ -12,6 +12,8 @@ export interface TrustedApp {
   name?: string;
   /** App icon URL */
   icon?: string;
+  /** The address the user saw and approved when trusting this origin */
+  address?: string;
 }
 
 /**

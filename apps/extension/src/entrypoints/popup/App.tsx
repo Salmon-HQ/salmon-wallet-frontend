@@ -455,7 +455,13 @@ function App() {
         throw new Error('Solana account not available');
       }
 
-      await actions.addTrustedApp(origin, app, solanaApprovalAccount.network.id);
+      // The grant names the address the connect screen showed, so a silent
+      // connect after an account switch does not hand the site the new one.
+      await actions.addTrustedApp(
+        origin,
+        { ...app, address: solanaApprovalAccount.getReceiveAddress() },
+        solanaApprovalAccount.network.id
+      );
     },
     [actions, solanaApprovalAccount]
   );

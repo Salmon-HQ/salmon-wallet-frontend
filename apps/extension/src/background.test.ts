@@ -70,7 +70,9 @@ async function approveOrigin(origin: string = DAPP_ORIGIN) {
   await fakeBrowser.storage.local.set({
     salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'TrustedPubkey111' }),
     salmon_active_network_id: JSON.stringify('solana-mainnet'),
-    salmon_trusted_apps: JSON.stringify({ 'solana-mainnet': { [origin]: true } }),
+    salmon_trusted_apps: JSON.stringify({
+      'solana-mainnet': { [origin]: { address: 'TrustedPubkey111' } },
+    }),
   });
 }
 
@@ -143,7 +145,7 @@ describe('approval routing', () => {
       }),
       salmon_active_network_id: JSON.stringify('solana-mainnet'),
       salmon_trusted_apps: JSON.stringify({
-        'solana-mainnet': { [DAPP_ORIGIN]: true },
+        'solana-mainnet': { [DAPP_ORIGIN]: { address: 'TrustedPubkey111' } },
       }),
     });
     const { route, windowsCreate } = startBackground();
@@ -231,6 +233,41 @@ describe('what an unapproved origin can make the wallet do', () => {
     const { route, windowsCreate } = startBackground();
 
     route(dappRequest('signIn', 'req-signin'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
+  // The connect screen shows one address; the grant it wrote named none, so
+  // after an account switch a trusted site's silent connect returned the new
+  // account's address with no prompt.
+  it('answers a silent connect only for the account the site was approved with', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+    });
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(
+      dappRequest('connect', 'req-switched', { options: { onlyIfTrusted: true } }),
+      ownSender(),
+      sendResponse
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-switched' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('asks again when a site approved with another account connects', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+    });
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('connect', 'req-ask'), ownSender(), vi.fn());
 
     await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
   });

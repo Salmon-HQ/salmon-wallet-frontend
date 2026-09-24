@@ -56,7 +56,8 @@ interface ConnectionData {
 interface StorageData {
   connection: ConnectionData | null;
   networkId: string | null;
-  trustedApps: Record<string, Record<string, boolean>> | null;
+  /** Per network, per origin: the grant, with the address it was approved for. */
+  trustedApps: Record<string, Record<string, { address?: string }>> | null;
 }
 
 type ResponseHandler = (data: unknown, id?: string) => void;
@@ -254,7 +255,11 @@ export default defineBackground(() => {
     if (connection?.blockchain?.toLowerCase() !== 'solana') {
       return null;
     }
-    if (!networkId || !trustedApps?.[networkId]?.[origin]) {
+    // A grant covers the address the user saw on the connect screen. After an
+    // account switch the site is not connected until it asks again; a grant
+    // written before addresses were recorded asks again once.
+    const grant = networkId ? trustedApps?.[networkId]?.[origin] : undefined;
+    if (!grant?.address || grant.address !== connection.address) {
       return null;
     }
     return connection;
