@@ -35,7 +35,6 @@ import { PasswordPage } from '../../pages/auth/PasswordPage';
 import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
-import { sessionArea } from '../../utils/storageCompat';
 import { useLockAcrossWindows } from './useLockAcrossWindows';
 
 // ============================================================================
@@ -151,94 +150,15 @@ function App() {
     }
   }, []);
 
-  // Helper: route a single approval to the right pending state
-  const routeApproval = useCallback(
-    (approval: { origin: string; request: DAppApprovalRequest }) => {
-      const { origin, request } = approval;
-      if (request.method === 'connect' && request.id != null) {
-        setPendingDAppRequest({ origin, request });
-      } else if (
-        (request.method === 'sign' ||
-          request.method === 'signOffchain' ||
-          request.method === 'signIn') &&
-        request.id != null
-      ) {
-        setPendingDAppSignMessageRequest({ origin, request });
-      } else if (
-        (request.method === 'signTransaction' ||
-          request.method === 'signAllTransactions' ||
-          request.method === 'signAndSendTransaction') &&
-        request.id != null
-      ) {
-        setPendingDAppTxRequest({ origin, request });
-      }
-    },
-    []
-  );
 
-  // Listen for approval requests from background via session storage
-  useEffect(() => {
-    // Check for existing pending approvals on mount
-    sessionArea
-      .get('salmon_pending_approval')
-      .then((result) => {
-        const queue = result['salmon_pending_approval'] as
-          | Array<{
-              origin: string;
-              request: DAppApprovalRequest;
-            }>
-          | undefined;
-        if (queue && queue.length > 0) {
-          routeApproval(queue[0]);
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
-
-    // Watch for new approvals written by background.ts
-    const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-      if (areaName !== 'session' && areaName !== 'local') return;
-      const change = changes['salmon_pending_approval'];
-      if (!change) return;
-      const queue = change.newValue as
-        | Array<{
-            origin: string;
-            request: DAppApprovalRequest;
-          }>
-        | undefined;
-      if (queue && queue.length > 0) {
-        routeApproval(queue[0]);
-      }
-    };
-
-    chrome.storage.onChanged.addListener(listener);
-    return () => {
-      chrome.storage.onChanged.removeListener(listener);
-    };
-  }, [routeApproval]);
-
-  // Dismiss the current approval — clear storage entry and all pending states
+  // Dismiss the current approval. Requests arrive only through this window's
+  // URL hash; the session-storage queue that also fed this window had no
+  // producer left, and it accepted the local area, which content scripts can
+  // write, with the origin taken from storage.
   const dismissApproval = useCallback(() => {
     setPendingDAppRequest(null);
     setPendingDAppTxRequest(null);
     setPendingDAppSignMessageRequest(null);
-
-    sessionArea
-      .get('salmon_pending_approval')
-      .then((result) => {
-        const queue = result['salmon_pending_approval'] as unknown[] | undefined;
-        if (queue && queue.length > 1) {
-          // Pop the first item; the storage listener will route the next one
-          const remaining = queue.slice(1);
-          sessionArea.set({ salmon_pending_approval: remaining });
-        } else {
-          sessionArea.remove('salmon_pending_approval');
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
   }, []);
 
   // After a dApp approval, settle balance + transactions for the active account/network
