@@ -77,12 +77,18 @@ export function DAppConnectApprovalView({
         </div>
       }
       secondary={
-        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+        <SecondaryButton
+          testID="dapp-reject-button"
+          onPress={onReject}
+          disabled={loading}
+          fullWidth
+        >
           {t('dapp.deny', 'Deny').toUpperCase()}
         </SecondaryButton>
       }
       action={
         <PrimaryButton
+          testID="dapp-approve-button"
           onPress={onApprove}
           loading={loading}
           disabled={disabled || loading}

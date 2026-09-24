@@ -248,12 +248,23 @@ export function DAppSignInApprovalView({
         </div>
       }
       secondary={
-        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+        <SecondaryButton
+          testID="dapp-reject-button"
+          onPress={onReject}
+          disabled={loading}
+          fullWidth
+        >
           {t('dapp.reject', 'Reject').toUpperCase()}
         </SecondaryButton>
       }
       action={
-        <PrimaryButton onPress={onApprove} loading={loading} disabled={!canApprove} fullWidth>
+        <PrimaryButton
+          testID="dapp-approve-button"
+          onPress={onApprove}
+          loading={loading}
+          disabled={!canApprove}
+          fullWidth
+        >
           {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
         </PrimaryButton>
       }

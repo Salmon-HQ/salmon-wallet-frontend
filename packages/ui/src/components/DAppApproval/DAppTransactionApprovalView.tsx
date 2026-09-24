@@ -183,17 +183,33 @@ export function DAppTransactionApprovalView({
         ) : undefined
       }
       secondary={
-        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+        <SecondaryButton
+          testID="dapp-reject-button"
+          onPress={onReject}
+          disabled={loading}
+          fullWidth
+        >
           {t('dapp.reject', 'Reject').toUpperCase()}
         </SecondaryButton>
       }
       action={
         requiresHold ? (
-          <HoldToApproveButton onApprove={onApprove} loading={loading} disabled={cannotApprove}>
+          <HoldToApproveButton
+            testID="dapp-approve-button"
+            onApprove={onApprove}
+            loading={loading}
+            disabled={cannotApprove}
+          >
             {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
           </HoldToApproveButton>
         ) : (
-          <PrimaryButton onPress={onApprove} loading={loading} disabled={cannotApprove} fullWidth>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            onPress={onApprove}
+            loading={loading}
+            disabled={cannotApprove}
+            fullWidth
+          >
             {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
           </PrimaryButton>
         )
