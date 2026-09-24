@@ -10,8 +10,12 @@ appId: io.salmonwallet.app
 # flipped and held correctly. Only a real mount + real screenshot proves
 # the pixel actually changes.
 - runFlow: ../../../subflows/onboard-walletA.yaml
+# The check shows for 1.5 s. A plain tap waits for the screen to settle, and
+# the tick's spring keeps it moving past that window, so the assertion would
+# land after the check is gone. Assert inside the window.
 - tapOn:
     id: 'wallet-header-copy-address'
+    waitToSettleTimeoutMs: 200
 # The confirmation is the button's own label while it shows the check, so the
 # assertion is on that button, not on any "Copied!" elsewhere on screen.
 - assertVisible:

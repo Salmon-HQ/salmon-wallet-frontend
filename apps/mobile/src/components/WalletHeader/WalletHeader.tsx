@@ -259,26 +259,11 @@ export function WalletHeader({
               >
                 {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-                {/* UNRESOLVED: this change does not paint on device.
-                Instrumented on the real mount path: the handler fires,
-                `copied` flips true and reverts 1519ms later, matching
-                `motionMs.feedbackHold` almost exactly — so the state and the
-                timing are correct and React commits the change. The glyph on
-                screen never changes for the whole hold. Ruled out: the spring
-                and the Animated.View (stripped entirely, still no paint), and
-                the header coming from the navigator's `screenOptions`
-                (`headerShown` is false; this is a plain `headerContent` prop
-                inside the header row). Adding a `key` per branch was tried and
-                removed — the two branches are different component types, so
-                React already unmounts and remounts across them and a key
-                changes nothing.
-                What has NOT been ruled out is a native-side cause, which is
-                where the next attempt should start. `ReceiveSheet` and
-                `TransactionDetailModal` drive the same hook correctly, so the
-                difference is this mount site, not the hook.
+                {/* The check replaces the copy glyph for `motionMs.feedbackHold`.
+                Only a device proves it paints — Jest's renderer does not
+                reproduce native paint — so
                 `.maestro/flows/smoke/home/copy-address-checkmark.yaml` asserts
-                the real behaviour on a device; Jest cannot, because its
-                renderer does not reproduce native paint. */}
+                it on the real mount path. */}
                 {copied ? (
                   <Animated.View style={{ transform: [{ scale: tickScale }] }}>
                     <CheckIcon size={s(23)} color={status.success} />
