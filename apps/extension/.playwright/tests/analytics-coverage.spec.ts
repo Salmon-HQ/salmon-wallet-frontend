@@ -78,16 +78,12 @@ async function closeSettings(popup: Page): Promise<void> {
     .locator('.MuiBackdrop-root')
     .last()
     .click({ position: { x: 8, y: 8 } });
-  // The drawer unmounts its root close button when it is actually gone — a more
-  // honest signal than home-screen visibility, since home sits behind the drawer
-  // and reads as "visible" the whole time it is open.
+  // Settings unmounts when it is actually gone — a more honest signal than
+  // home-screen visibility, since home sits behind the drawer and reads as
+  // "visible" the whole time it is open. The panel stack lives in that
+  // component, so once it is unmounted the next open starts at the root.
   await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 15_000 });
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
-  // The panel stack is reset on a `durationMs.slow` (300ms) timer AFTER the
-  // drawer starts closing — which lands right around when the close button
-  // unmounts, so reopening immediately can catch the pre-reset stack and drop
-  // us back into whatever panel was open. Wait past that timer.
-  await popup.waitForTimeout(500);
 }
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */

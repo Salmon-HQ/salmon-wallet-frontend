@@ -25,45 +25,39 @@ export async function unlockOrRecover(
   page: Page,
   { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {}
 ): Promise<EntryState> {
+  // Wait for whichever entry screen the popup opens on. Counting elements
+  // instead answers before the popup has rendered and reads as "home".
   const passwordInput = page.getByTestId('lock-password-input');
-  if (await passwordInput.count()) {
+  const recoverButton = page.getByTestId('select-recover-button');
+  const home = page.getByTestId('home-screen');
+  await passwordInput.or(recoverButton).or(home).first().waitFor({ timeout: 30_000 });
+
+  if (await passwordInput.isVisible()) {
     await passwordInput.fill(password());
     await page.getByTestId('lock-unlock-button').click();
     // Unlocked once the lock's own field is gone, however long the vault takes.
     await passwordInput.waitFor({ state: 'detached', timeout: 30_000 });
     return 'unlocked';
   }
+  if (!(await recoverButton.isVisible())) return 'home';
 
-  const recoverButton = page.getByTestId('select-recover-button');
-  if (await recoverButton.count()) {
-    await recoverButton.click();
-    // Auto-waiting actions (no fixed sleeps): each step waits for its target
-    // to be actionable. recover-next-button is visibility-toggled until the
-    // seed validates; success appears only after the creation loading screen.
-    await page.getByTestId('recover-word-input-1').fill(seed);
-    await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
-    await page.getByTestId('password-input').fill(password());
-    await page.getByTestId('password-confirm-input').fill(password());
-    await page.getByTestId('password-submit-button').click();
-    // Success comes first; leaving it presents the first-run analytics
-    // consent, which is the final onboarding step.
-    await page
-      .getByTestId('success-go-to-wallet-button')
-      .click({ timeout: 60_000 })
-      .catch(() => {});
-    await page
-      .getByTestId(`analytics-consent-${consent}`)
-      .click({ timeout: 60_000 })
-      .catch(() => {});
-    return 'recovered';
-  }
-
-  return 'home';
+  await recoverButton.click();
+  // recover-next-button shows only once the seed validates.
+  await page.getByTestId('recover-word-input-1').fill(seed);
+  await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
+  await page.getByTestId('password-input').fill(password());
+  await page.getByTestId('password-confirm-input').fill(password());
+  await page.getByTestId('password-submit-button').click();
+  // Key derivation runs before Success. Leaving Success presents the
+  // first-run consent, the last onboarding step; a build without analytics
+  // goes straight Home, so wait for whichever comes.
+  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 90_000 });
+  const consentButton = page.getByTestId(`analytics-consent-${consent}`);
+  await consentButton.or(home).first().waitFor({ timeout: 30_000 });
+  if (await consentButton.isVisible()) await consentButton.click();
+  return 'recovered';
 }
 
 export async function waitHome(page: Page): Promise<void> {
-  await page
-    .getByTestId('home-screen')
-    .waitFor({ state: 'visible', timeout: 15_000 })
-    .catch(() => {});
+  await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30_000 });
 }
