@@ -323,21 +323,17 @@ export function useInactivityTimeout(
       void recordActivity();
     };
 
-    // Add listeners for all activity events
+    // Only input counts. Window focus and blur are not the user acting: the
+    // extension creates and focuses approval windows on a web page's request,
+    // so counting them let a page keep an unattended wallet from locking.
     for (const event of WEB_ACTIVITY_EVENTS) {
       document.addEventListener(event, handleActivity, { passive: true });
     }
-
-    // Also listen on window for better coverage
-    window.addEventListener('focus', handleActivity, { passive: true });
-    window.addEventListener('blur', handleActivity, { passive: true });
 
     return () => {
       for (const event of WEB_ACTIVITY_EVENTS) {
         document.removeEventListener(event, handleActivity);
       }
-      window.removeEventListener('focus', handleActivity);
-      window.removeEventListener('blur', handleActivity);
     };
   }, [enabled, recordActivity]);
 
