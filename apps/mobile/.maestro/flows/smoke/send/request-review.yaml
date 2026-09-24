@@ -23,7 +23,7 @@ appId: io.salmonwallet.app
     visible:
       id: 'send-recipient-screen'
     timeout: 20000
-- setClipboard: 'solana:${SALMON_TEST_WALLET_B_ADDR}?amount=0.0001&label=Salmon%20Treasury&memo=order-12'
+- setClipboard: 'solana:${MAESTRO_SALMON_TEST_WALLET_B_ADDR}?amount=0.0001&label=Salmon%20Treasury&memo=order-12'
 - tapOn:
     id: 'send-recipient-input'
 - pasteText

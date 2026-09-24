@@ -51,6 +51,7 @@
         }
       ],
       "expo-dev-client",
+      "./plugins/withQuietDevMenu",
       "expo-router",
       [
         "expo-secure-store",

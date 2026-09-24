@@ -1,0 +1,24 @@
+appId: io.salmonwallet.app
+---
+# From the lock screen to Home. Relaunching or backgrounding locks the wallet,
+# so any flow that restarts the app comes through here.
+- extendedWaitUntil:
+    visible:
+      id: 'lock-screen'
+    timeout: 60000
+- tapOn:
+    id: 'lock-password-input'
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+# The keyboard's return key can submit on its own; tap Unlock only if the lock
+# screen is still up.
+- runFlow:
+    when:
+      visible:
+        id: 'lock-unlock-button'
+    commands:
+      - tapOn:
+          id: 'lock-unlock-button'
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 30000

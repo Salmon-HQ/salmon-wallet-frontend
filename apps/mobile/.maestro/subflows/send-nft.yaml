@@ -7,7 +7,7 @@ appId: io.salmonwallet.app
 #       file: ../../../subflows/send-nft.yaml
 #       env:
 #         NFT_MINT: CNM8...
-#         DEST_ADDRESS: ${SALMON_TEST_WALLET_B_ADDR}
+#         DEST_ADDRESS: ${MAESTRO_SALMON_TEST_WALLET_B_ADDR}
 #
 # Starts from Home and leaves the app on the in-page NFTs sub-tab: the
 # receipt's Continue dismisses the whole NFT sub-stack back to it.

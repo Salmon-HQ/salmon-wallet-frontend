@@ -26,17 +26,11 @@ import { fileURLToPath } from 'node:url';
 
 /** Strings a flow may anchor on that no Salmon source defines. */
 export const EXTERNAL = new Set([
-  // Expo dev client / dev menu (dev builds only).
+  // Expo dev launcher and its reload banner (dev builds only).
   'Development Build',
-  'Fast refresh',
-  'Toggle Dev Menu',
-  'Tools button',
-  'Continue',
   'Refreshing...',
   // iOS system prompt when the app reads the pasteboard.
   'Allow Paste',
-  // Android system dialog under host memory pressure.
-  'Wait',
   // Data the flows type themselves.
   'Wallet B',
   'order-12',

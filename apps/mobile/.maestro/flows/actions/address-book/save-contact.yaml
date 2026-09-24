@@ -8,7 +8,7 @@ appId: io.salmonwallet.app
 - inputText: 'Wallet B'
 - tapOn:
     id: 'address-book-address-input'
-- inputText: ${SALMON_TEST_WALLET_B_ADDR}
+- inputText: ${MAESTRO_SALMON_TEST_WALLET_B_ADDR}
 # Save stays disabled until the async address validation resolves. Tapping it
 # straight after inputText is a no-op, and the contact is silently not saved.
 - waitForAnimationToEnd:

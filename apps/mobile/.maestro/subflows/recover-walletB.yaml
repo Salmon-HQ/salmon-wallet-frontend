@@ -15,7 +15,7 @@ appId: io.salmonwallet.app
     timeout: 30000
 - tapOn:
     id: 'recover-word-input-1'
-- inputText: ${SALMON_TEST_SEED_B}
+- inputText: ${MAESTRO_SALMON_TEST_SEED_B}
 # Dismiss keyboard by tapping the title.
 - tapOn: 'Recover Existing Account'
 - extendedWaitUntil:
@@ -30,11 +30,11 @@ appId: io.salmonwallet.app
     timeout: 30000
 - tapOn:
     id: 'password-input'
-- inputText: ${SALMON_TEST_PASSWORD}
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
 - tapOn: 'Choose a Password'
 - tapOn:
     id: 'password-confirm-input'
-- inputText: ${SALMON_TEST_PASSWORD}
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
 - tapOn: 'Choose a Password'
 # Tapping the title does not close the Android keyboard, and a tap while it
 # is open only dismisses it: close it first so Submit is pressed.

@@ -28,19 +28,20 @@ appId: io.salmonwallet.app
     file: ../../../subflows/send-nft.yaml
     env:
       NFT_MINT: CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV
-      DEST_ADDRESS: ${SALMON_TEST_WALLET_B_ADDR}
+      DEST_ADDRESS: ${MAESTRO_SALMON_TEST_WALLET_B_ADDR}
 - takeScreenshot: screenshots/actions/nft/nft-sent-to-walletB
 
 # --- Load Wallet B alongside Wallet A; the imported account becomes active ---
 - tapOn:
     id: 'portfolio-tab-portfolio'
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 20000
 - runFlow:
     file: ../../../subflows/import-account.yaml
     env:
-      IMPORT_SEED: ${SALMON_TEST_SEED_B}
+      IMPORT_SEED: ${MAESTRO_SALMON_TEST_SEED_B}
 - takeScreenshot: screenshots/actions/nft/nft-walletB-imported
 
 # --- Leg 2: Wallet B → Wallet A, restoring the fixture ---
@@ -48,5 +49,5 @@ appId: io.salmonwallet.app
     file: ../../../subflows/send-nft.yaml
     env:
       NFT_MINT: CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV
-      DEST_ADDRESS: ${SALMON_TEST_WALLET_A_ADDR}
+      DEST_ADDRESS: ${MAESTRO_SALMON_TEST_WALLET_A_ADDR}
 - takeScreenshot: screenshots/actions/nft/nft-returned-to-walletA

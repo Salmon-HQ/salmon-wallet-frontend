@@ -25,7 +25,7 @@ appId: io.salmonwallet.app
       - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - tapOn:
     id: 'send-recipient-input'
-- inputText: ${SALMON_TEST_WALLET_B_ADDR}
+- inputText: ${MAESTRO_SALMON_TEST_WALLET_B_ADDR}
 # Validation is debounced and hits the RPC; Continue is dead until it answers.
 - extendedWaitUntil:
     visible:

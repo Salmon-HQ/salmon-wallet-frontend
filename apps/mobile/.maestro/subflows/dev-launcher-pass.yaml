@@ -1,10 +1,12 @@
 appId: io.salmonwallet.app
 ---
-# expo-dev-launcher intercepts after clearState/launch. Load the JS bundle, then
-# get the dev-client chrome out of the way before yielding to the caller.
+# Get past expo-dev-launcher to the app's first screen. A release build has no
+# launcher, so every step is guarded.
 #
-# Every step is guarded by `when:`, so this stays safe across iOS and Android
-# even though the two label some of these controls differently.
+# The dev menu itself never shows: plugins/withQuietDevMenu.js turns off its
+# launch sheet and floating button in the build, and run.sh refuses a build
+# without it.
+#
 # The SDK 57 launcher lists the local Metro only when it can discover it on the
 # network: some runs show a `http://<lan-ip>:8081` row, others an empty list.
 # Tap the row when there is one; if the launcher is still up afterwards, open
@@ -27,92 +29,6 @@ appId: io.salmonwallet.app
       - waitForAnimationToEnd:
           timeout: 60000
 
-# The dev-menu sheet is presented after the bundle finishes evaluating, which on
-# iOS lands *after* the app's first screen. Without this settle the `when:` guards
-# below evaluate too early, skip every branch, and leave the sheet covering the app.
-- waitForAnimationToEnd:
-    timeout: 10000
-# The settle above is not enough on a cold Metro cache (bundling alone takes
-# ~10 s): the sheet arrived after every guard below had already been skipped,
-# and the flow then waited on a welcome screen the sheet was covering. Wait for
-# the sheet itself; optional, because a launch that shows none must not fail.
-- extendedWaitUntil:
-    visible: 'Continue'
-    timeout: 20000
-    optional: true
-
-# A sheet now covers the app. "Continue" does NOT dismiss it — it expands the
-# one-time intro into the full dev menu. Expand it on purpose: the floating
-# dev-menu button is toggled from in there, and that button renders exactly on
-# top of the wallet's settings gear, so any flow that opens Settings would tap
-# the dev menu instead. clearState wipes the preference, so it has to be
-# switched off on every single launch, not once by hand.
-- runFlow:
-    when:
-      visible: 'Continue'
-    commands:
-      - tapOn: 'Continue'
-      - waitForAnimationToEnd:
-          timeout: 3000
-# Android only: there the floating dev-menu button defaults to ON and lands on
-# top of the wallet's settings gear. On iOS it defaults to OFF, so tapping this
-# turns it ON and leaves a dev-menu gear floating over every screen.
-- runFlow:
-    when:
-      platform: Android
-      visible: 'Toggle Dev Menu'
-    commands:
-      - tapOn: 'Toggle Dev Menu'
-      - waitForAnimationToEnd:
-          timeout: 2000
-# iOS labels the same switch "Tools button", and it defaults to ON — leaving a
-# dev-menu gear floating over the wallet's own header on every screen. Guarded to
-# iOS: on Android both labels resolve to this one switch, so running both flips
-# it off and straight back on.
-- runFlow:
-    when:
-      platform: iOS
-      visible: 'Tools button'
-    commands:
-      # TRAP, learned the hard way: "Tools button" sits below the sheet's fold
-      # on smaller/denser screens, but the `when:` guard above still passes —
-      # the row exists in the hierarchy, clipped at the very edge (observed on
-      # iPhone 17: bounds ended 12pt past the screen). Any tap against a
-      # clipped row lands on nothing, the switch stays ON, and the floating
-      # gear later swallows the wallet's own header taps. Scroll the row into
-      # view FIRST, then tap the switch anchored to the label (never a
-      # hardcoded point — that was the previous, device-specific bug).
-      # scrollUntilVisible swipes at screen center by default, which lands on
-      # the dimmed backdrop ABOVE this bottom sheet — the sheet never moves
-      # (observed live). Swipe explicitly inside the sheet instead.
-      - swipe:
-          start: '50%, 85%' # external: Expo dev menu, no ids
-          end: '50%, 45%'
-      - waitForAnimationToEnd:
-          timeout: 2000
-      # The switch is NOT an accessible element by name — but iOS exposes a
-      # UISwitch's value as text "1"/"0". Anchoring by text to the right of
-      # the label hits the actual switch (a bare rightOf matched the sheet's
-      # Close button instead — observed live). The follow-up assert proves
-      # the toggle actually flipped; if this fails, the selector broke again.
-      - tapOn:
-          text: '1'
-          rightOf: 'Tools button'
-          below: 'Fast refresh'
-      - waitForAnimationToEnd:
-          timeout: 2000
-      - assertVisible:
-          text: '0'
-          rightOf: 'Tools button'
-          below: 'Fast refresh'
-# Close the sheet with the X in its header (accessibility label "Close").
-- runFlow:
-    when:
-      visible: 'Close'
-    commands:
-      - tapOn: 'Close'
-      - waitForAnimationToEnd:
-          timeout: 3000
 # The door shows the wordmark, not a "Welcome" heading (spec 013/022).
 - extendedWaitUntil:
     visible:

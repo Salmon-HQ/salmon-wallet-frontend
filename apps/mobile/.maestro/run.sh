@@ -29,8 +29,10 @@ API_PORT="${API_URL##*:}"
 command -v maestro >/dev/null 2>&1 || die "maestro not on PATH. Install: curl -Ls https://get.maestro.mobile.dev | bash"
 
 # ---------------------------------------------------------------- secrets ----
-# Maestro does not inherit the shell environment into flows, so every value has
-# to be forwarded with -e. Forgetting one does not fail: the flow interpolates
+# Maestro hands a flow only the shell variables prefixed MAESTRO_, so each value
+# is exported under that prefix — never passed as `-e KEY=value`, which puts
+# seeds and the password in the process list for anything that runs `ps`.
+# Forgetting one does not fail: the flow interpolates
 # the literal string "undefined", types it into the seed field, and dies many
 # steps later on an unrelated selector. Fail here instead, naming the variable.
 [[ -f .env.test ]] || die ".env.test missing. Copy .env.test.example and fill it in."
@@ -49,9 +51,8 @@ for key in "${REQUIRED[@]}"; do
 done
 [[ ${#MISSING[@]} -eq 0 ]] || die "Missing in .env.test: ${MISSING[*]}"
 
-MAESTRO_ENV=()
 for key in "${REQUIRED[@]}"; do
-  MAESTRO_ENV+=(-e "$key=${!key}")
+  export "MAESTRO_$key=${!key}"
 done
 
 # ----------------------------------------------------------------- device ----
@@ -172,18 +173,24 @@ if [[ $IS_ANDROID -eq 1 ]]; then
   [[ -n "$APK_PATH" ]] || die "io.salmonwallet.app is not installed. Build it: pnpm --filter @salmon/mobile android"
   TMP_APK=$(mktemp -t salmon-apk)
   "${ADB[@]}" pull "$APK_PATH" "$TMP_APK" >/dev/null 2>&1
-  INSTALLED_SDK=$(unzip -p "$TMP_APK" assets/app.config 2>/dev/null | sed -n 's/.*"sdkVersion":"\([0-9]*\)\..*/\1/p')
+  INSTALLED_CONFIG=$(unzip -p "$TMP_APK" assets/app.config 2>/dev/null)
   rm -f "$TMP_APK"
+  INSTALLED_SDK=$(sed -n 's/.*"sdkVersion":"\([0-9]*\)\..*/\1/p' <<<"$INSTALLED_CONFIG")
   EXPECTED_SDK=$(node -p "require('$SUITE_DIR/../../../node_modules/expo/package.json').version.split('.')[0]")
   [[ "$INSTALLED_SDK" == "$EXPECTED_SDK" ]] || die "the installed build is for Expo SDK ${INSTALLED_SDK:-unknown}; this checkout is SDK $EXPECTED_SDK.
     Rebuild it: rm -rf apps/mobile/android && pnpm --filter @salmon/mobile android"
   ok "installed build matches Expo SDK $EXPECTED_SDK"
+  # Without the quiet dev menu, a sheet covers the first screen at launch and
+  # a floating tools button covers the settings gear on every screen.
+  [[ "$INSTALLED_CONFIG" == *withQuietDevMenu* ]] || die "the installed build predates the quiet dev menu (plugins/withQuietDevMenu.js).
+    Rebuild it: pnpm --filter @salmon/mobile android"
+  ok "installed build opens without the dev menu"
 fi
 
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)
 [[ -n "$DEVICE" ]] && CMD+=(--device "$DEVICE")
-CMD+=(test "${MAESTRO_ENV[@]}" "${PASSTHROUGH[@]}")
+CMD+=(test "${PASSTHROUGH[@]}")
 
 printf '%s→ maestro test %s%s\n' "$DIM" "${PASSTHROUGH[*]}" "$OFF"
 "${CMD[@]}"

@@ -6,7 +6,7 @@ appId: io.salmonwallet.app
 #   - runFlow:
 #       file: ../../../subflows/import-account.yaml
 #       env:
-#         IMPORT_SEED: ${SALMON_TEST_SEED_A}
+#         IMPORT_SEED: ${MAESTRO_SALMON_TEST_SEED_A}
 #
 # This is the mechanism, not the test: flows/actions/account/import-seed.yaml is
 # what actually covers the import path. Other flows reuse this subflow when they

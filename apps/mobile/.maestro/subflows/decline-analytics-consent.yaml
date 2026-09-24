@@ -1,30 +1,10 @@
 appId: io.salmonwallet.app
 ---
-# Decline the first-run analytics consent, defensively.
-#
-# On a dev build the expo dev-menu sheet can land on top of this screen at
-# any moment (the floating tools button intercepts taps, and the one-time
-# intro can arrive late — see dev-launcher-pass.yaml). When that happens the
-# decline tap "completes" against the sheet instead of the button and the
-# flow dies waiting for Home. Rather than trying to prevent every way the
-# menu can appear, recover from it: if the menu is up after the tap, close
-# it and tap again.
-#
-# The screen follows Success now (leaving Success through "Go to my Account"
-# or the derived-accounts detour is what presents it), so the heavy key
-# derivation has already happened; the generous wait is dev-menu slack.
+# Decline the first-run analytics consent. The screen follows Success, after
+# key derivation has already finished.
 - extendedWaitUntil:
     visible:
       id: 'analytics-consent-screen'
-    timeout: 90000
+    timeout: 30000
 - tapOn:
     id: 'analytics-consent-decline'
-- runFlow:
-    when:
-      visible: 'Fast refresh'
-    commands:
-      - tapOn: 'Close'
-      - waitForAnimationToEnd:
-          timeout: 2000
-      - tapOn:
-          id: 'analytics-consent-decline'
