@@ -36,6 +36,7 @@ import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 import { sessionArea } from '../../utils/storageCompat';
+import { useLockAcrossWindows } from './useLockAcrossWindows';
 
 // ============================================================================
 // Types
@@ -287,6 +288,16 @@ function App() {
     // timer off.
     enabled: ready && !locked && accounts.length > 0 && !justCreated,
   });
+
+  // A lock here locks every other open wallet window, and theirs locks this
+  // one. Declared before the close handler below: that effect clears the
+  // closing flag as soon as this window is locked, and this one must read it
+  // first so closing a window does not lock the rest.
+  const lockThisWindow = useCallback(() => {
+    void clearSessionKey();
+    void actions.lockAccounts();
+  }, [actions]);
+  useLockAcrossWindows({ ready, locked, closing: closeLockTriggeredRef, lock: lockThisWindow });
 
   useEffect(() => {
     if (!ready || locked || accounts.length === 0) {
