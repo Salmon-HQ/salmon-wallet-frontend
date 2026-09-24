@@ -129,12 +129,11 @@ The runner exists because four things here fail quietly rather than loudly:
   only behaves when Maestro runs from `apps/mobile/.maestro/`. Anywhere else
   scatters a stray `screenshots/` folder. The runner anchors to its own
   directory, so it works from anywhere.
-- **`-e` forwarding.** Maestro (verified on 2.4.0) does not inherit the shell
-  environment. Sourcing `.env.test` and running `maestro test` without `-e`
-  does not fail — flows interpolate `${SALMON_TEST_SEED_A}` to the literal
-  string `undefined`, type it into the seed field, and die many steps later on
-  an unrelated selector. The runner forwards all five and names any that are
-  missing before the first tap.
+- **Secrets by environment.** Maestro hands a flow only the shell variables
+  prefixed `MAESTRO_`. The runner exports each `.env.test` value as
+  `MAESTRO_<NAME>` (flows read `${MAESTRO_SALMON_TEST_SEED_A}`) and names any
+  that are missing before the first tap. It never passes them as `-e`, which
+  would put the seeds and the password in the process list.
 - **Android port mapping.** See "Backend reachability" above; the runner
   re-applies `adb reverse` on every run because an emulator reboot drops it.
 - **Backend down.** The runner checks and refuses to start, rather than letting
