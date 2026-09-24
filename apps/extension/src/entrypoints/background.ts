@@ -468,7 +468,17 @@ export default defineBackground(() => {
         }
         // Keep response channel open for async response
         return true;
-      } else if (message.channel === 'salmon_extension_background_channel') {
+      }
+
+      // The approval answers and the stash (which holds the vault key while
+      // unlocked) belong to the extension's own pages. Content scripts share
+      // the extension id, so the id alone would let a content-script context
+      // read the key or answer an approval; a page's URL is what tells them apart.
+      if (!sender.url?.startsWith(browser.runtime.getURL('/'))) {
+        return;
+      }
+
+      if (message.channel === 'salmon_extension_background_channel') {
         const msg = message as Message;
         if (msg.data?.id == null) {
           return;

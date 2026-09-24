@@ -76,6 +76,12 @@ async function approveOrigin(origin: string = DAPP_ORIGIN) {
   });
 }
 
+/** Sender shape for one of the extension's own pages (popup, side panel). */
+const extensionPage = () => ({
+  id: fakeBrowser.runtime.id,
+  url: fakeBrowser.runtime.getURL('/popup.html'),
+});
+
 /** Sender shape for a message relayed by our own content script. */
 const ownSender = (origin: string = DAPP_ORIGIN) => ({
   id: fakeBrowser.runtime.id,
@@ -180,7 +186,7 @@ describe('approval routing', () => {
       method: 'signed',
       result: { signature: 'abc' },
     };
-    route({ channel: EXTENSION_CHANNEL, data: approvalAnswer }, ownSender(), vi.fn());
+    route({ channel: EXTENSION_CHANNEL, data: approvalAnswer }, extensionPage(), vi.fn());
 
     expect(sendResponse).toHaveBeenCalledWith(approvalAnswer, 'req-42');
     await vi.waitFor(() => expect(windowsRemove).toHaveBeenCalledWith(POPUP_WINDOW_ID));
@@ -209,7 +215,7 @@ describe('approval routing', () => {
     // A late answer for the same id must not reach the origin twice.
     route(
       { channel: EXTENSION_CHANNEL, data: { id: 'req-cancelled', method: 'signed' } },
-      ownSender(),
+      extensionPage(),
       vi.fn()
     );
     expect(sendResponse).toHaveBeenCalledTimes(1);
@@ -456,7 +462,7 @@ describe('malformed and untrusted input', () => {
 
     route(
       { channel: EXTENSION_CHANNEL, data: { id: 'never-requested', method: 'signed' } },
-      ownSender(),
+      extensionPage(),
       sendResponse
     );
 
@@ -465,11 +471,61 @@ describe('malformed and untrusted input', () => {
   });
 });
 
+// Content scripts share the extension id with its pages, so the id alone let
+// a content-script context (a compromised renderer controls its own) read the
+// vault key from the stash and answer approvals.
+describe('privileged channels answer only the extension pages', () => {
+  const contentScript = () => ({
+    id: fakeBrowser.runtime.id,
+    url: `${DAPP_ORIGIN}/app`,
+    origin: DAPP_ORIGIN,
+    tab: { id: 9 },
+  });
+
+  it('does not serve the stash to a content script', () => {
+    const { route } = startBackground();
+    route(
+      {
+        channel: 'salmon_extension_stash_channel',
+        data: { method: 'set', key: 'derived_key_cache', value: 'sensitive' },
+      },
+      extensionPage(),
+      vi.fn()
+    );
+    const sendResponse = vi.fn();
+
+    route(
+      { channel: 'salmon_extension_stash_channel', data: { method: 'get', key: 'derived_key_cache' } },
+      contentScript(),
+      sendResponse
+    );
+
+    expect(sendResponse).not.toHaveBeenCalled();
+  });
+
+  it('does not take an approval answer from a content script', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    const pageResponse = vi.fn();
+    route(dappRequest('signTransaction', 'req-forged'), ownSender(), pageResponse);
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+
+    route(
+      { channel: EXTENSION_CHANNEL, data: { id: 'req-forged', result: { signature: 'forged' } } },
+      contentScript(),
+      vi.fn()
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(pageResponse).not.toHaveBeenCalled();
+  });
+});
+
 describe('stash channel session hygiene', () => {
   it('drops the derived key when the lock alarm fires so an unlocked session cannot outlive the timeout', async () => {
     const { route } = startBackground();
     const stash = (data: Record<string, unknown>, sendResponse = vi.fn()) => {
-      route({ channel: 'salmon_extension_stash_channel', data }, ownSender(), sendResponse);
+      route({ channel: 'salmon_extension_stash_channel', data }, extensionPage(), sendResponse);
       return sendResponse;
     };
 
