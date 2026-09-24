@@ -63,6 +63,18 @@ interface StorageData {
 type ResponseHandler = (data: unknown, id?: string) => void;
 
 export default defineBackground(() => {
+  // storage.local holds the encrypted vault and the trusted-apps list, and
+  // Chrome lets content scripts read and write it by default. A compromised
+  // renderer could then copy the vault or mark its own origin trusted and
+  // connect without approval. No content script here uses storage, so only
+  // the extension's own pages keep access. Firefox has no access levels.
+  const localArea = browser.storage.local as typeof browser.storage.local & {
+    setAccessLevel?: (options: { accessLevel: 'TRUSTED_CONTEXTS' }) => Promise<void>;
+  };
+  void Promise.resolve()
+    .then(() => localArea.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' }))
+    .catch(() => undefined);
+
   // Maps to track response handlers and stashed values
   const responseHandlers = new Map<string, ResponseHandler>();
   const stashedValues = new Map<string, unknown>();
@@ -174,18 +186,27 @@ export default defineBackground(() => {
       searchParams.set('network', message.data.params.network);
     }
 
+    const windowOptions = {
+      url: 'popup.html#' + searchParams.toString(),
+      type: 'popup' as const,
+      width: 380,
+      height: 675,
+      focused: true,
+    };
     let popupId: number | undefined;
     try {
+      // Beside the right edge of the focused window. Chrome refuses bounds
+      // less than half on a visible screen — a window straddling two monitors
+      // or dragged off an edge — so that case falls back to Chrome's own
+      // placement instead of refusing the request.
       const focusedWindow = await browser.windows.getLastFocused();
-      const popup = await browser.windows.create({
-        url: 'popup.html#' + searchParams.toString(),
-        type: 'popup',
-        width: 380,
-        height: 675,
-        top: focusedWindow.top,
-        left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
-        focused: true,
-      });
+      const popup = await browser.windows
+        .create({
+          ...windowOptions,
+          top: focusedWindow.top,
+          left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
+        })
+        .catch(() => browser.windows.create(windowOptions));
       popupId = popup?.id;
     } catch {
       // Falls through: popupId stays undefined and the request is refused below.

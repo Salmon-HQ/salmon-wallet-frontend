@@ -362,13 +362,50 @@ describe('what an unapproved origin can make the wallet do', () => {
   it('lets the origin ask again when its window could not be opened', async () => {
     await approveOrigin();
     const { route, windowsCreate } = startBackground();
-    windowsCreate.mockRejectedValueOnce(new Error('no window'));
+    // Both attempts fail: at the focused window's edge, then Chrome's placement.
+    windowsCreate
+      .mockRejectedValueOnce(new Error('no window'))
+      .mockRejectedValueOnce(new Error('no window'));
 
     route(dappRequest('signTransaction', 'req-a'), ownSender(), vi.fn());
-    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(2));
 
     route(dappRequest('signTransaction', 'req-b'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(3));
+  });
+
+  // Chrome refuses bounds less than half on a visible screen (a focused window
+  // straddling monitors); that must not turn every dApp request into a refusal.
+  it('opens the window where Chrome chooses when the edge position is refused', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    windowsCreate.mockRejectedValueOnce(
+      new Error(
+        'Invalid value for bounds. Bounds must be at least 50% within visible screen space.'
+      )
+    );
+    const sendResponse = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), sendResponse);
     await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(2));
+    const fallback = windowsCreate.mock.calls[1][0];
+    expect(fallback).not.toHaveProperty('top');
+    expect(fallback).not.toHaveProperty('left');
+    expect(sendResponse).not.toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Operation cancelled' })
+    );
+  });
+});
+
+describe('storage access', () => {
+  it("restricts storage.local to the extension's own pages", async () => {
+    const setAccessLevel = vi.fn(async () => undefined);
+    Object.assign(fakeBrowser.storage.local, { setAccessLevel });
+    startBackground();
+    await vi.waitFor(() =>
+      expect(setAccessLevel).toHaveBeenCalledWith({ accessLevel: 'TRUSTED_CONTEXTS' })
+    );
+    delete (fakeBrowser.storage.local as { setAccessLevel?: unknown }).setAccessLevel;
   });
 });
 
@@ -495,7 +532,10 @@ describe('privileged channels answer only the extension pages', () => {
     const sendResponse = vi.fn();
 
     route(
-      { channel: 'salmon_extension_stash_channel', data: { method: 'get', key: 'derived_key_cache' } },
+      {
+        channel: 'salmon_extension_stash_channel',
+        data: { method: 'get', key: 'derived_key_cache' },
+      },
       contentScript(),
       sendResponse
     );
