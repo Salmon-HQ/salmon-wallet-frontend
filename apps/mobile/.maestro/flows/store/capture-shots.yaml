@@ -95,7 +95,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
 - extendedWaitUntil:
-    visible: 'Mindfolk Founder #5154'
+    visible:
+      id: 'nft-detail-screen'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 45000

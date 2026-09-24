@@ -29,7 +29,8 @@ export async function unlockOrRecover(
   if (await passwordInput.count()) {
     await passwordInput.fill(password());
     await page.getByTestId('lock-unlock-button').click();
-    await page.waitForTimeout(3000);
+    // Unlocked once the lock's own field is gone, however long the vault takes.
+    await passwordInput.waitFor({ state: 'detached', timeout: 30_000 });
     return 'unlocked';
   }
 

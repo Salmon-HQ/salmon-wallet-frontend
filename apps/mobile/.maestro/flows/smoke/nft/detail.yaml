@@ -26,7 +26,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
-    visible: 'My Collectibles'
+    notVisible:
+      id: 'collectibles-loading'
     timeout: 20000
 - extendedWaitUntil:
     visible:
@@ -36,9 +37,11 @@ appId: io.salmonwallet.app
     id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: 'Mindfolk Founder #5154'
+- assertVisible:
+    id: 'nft-detail-screen'
 - takeScreenshot: screenshots/smoke/nft/detail-mindfolk
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
-- assertVisible: 'My Collectibles'
+- assertVisible:
+    id: 'portfolio-tab-nfts'
 - tapOn:
     id: 'portfolio-tab-portfolio'

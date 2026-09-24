@@ -81,7 +81,7 @@ async function closeSettings(popup: Page): Promise<void> {
   // The drawer unmounts its root close button when it is actually gone — a more
   // honest signal than home-screen visibility, since home sits behind the drawer
   // and reads as "visible" the whole time it is open.
-  await expect(popup.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 15_000 });
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
   // The panel stack is reset on a `durationMs.slow` (300ms) timer AFTER the
   // drawer starts closing — which lands right around when the close button
@@ -128,7 +128,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── nft_viewed — opening an NFT detail page.
-  await popup.getByTestId('tab-collectibles').click();
+  await popup.getByTestId('portfolio-tab-nfts').click();
   const nftCard = popup.getByTestId(`nft-card-${NFT_MINT}`);
   await expect(nftCard).toBeVisible({ timeout: 30_000 });
   await nftCard.click();
@@ -136,7 +136,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   // The detail page replaces the popup view, tab bar included — leave via the
   // header back button, not the tabs.
   await leaveNftDetail(popup);
-  await popup.getByTestId('tab-home').click();
+  await popup.getByTestId('portfolio-tab-portfolio').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
   // Open settings to reach the address-book and accounts panels below.
@@ -155,8 +155,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await saveContact.click();
   // The form neither navigates nor gives feedback, and it does not reset, so
   // there is nothing in the UI to wait on. `address_book_used` landing in the
-  // batch is what proves the contact was actually stored.
-  await popup.waitForTimeout(1_500);
+  // batch — polled at the end — is what proves the contact was stored.
   await closeSettings(popup);
 
   // ── wallet_created — a DERIVED account reuses the active seed, which the
@@ -197,8 +196,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   //    LAST on purpose: it moves the active network off Solana, and the address
   //    book validates a contact against whatever network is active, so a Solana
   //    address would stop validating and Save would never enable.
-  await popup.getByTestId('balance-carousel-next').click();
-  await popup.waitForTimeout(2_000);
+  await popup.getByTestId('balance-chain-selector-option-bitcoin').click();
 
   // Batches leave on the client's 30s timer, so the tail of the run is still in
   // the queue. Poll rather than sleep a fixed interval.

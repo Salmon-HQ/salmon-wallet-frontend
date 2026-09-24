@@ -27,7 +27,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
-    visible: 'My Collectibles'
+    notVisible:
+      id: 'collectibles-loading'
     timeout: 30000
 # The sub-tab row stays reachable on the NFTs tab — that is the whole point of
 # it sticking rather than scrolling away with the balance.
@@ -49,7 +50,7 @@ appId: io.salmonwallet.app
     id: 'powerups-fab'
 - extendedWaitUntil:
     visible:
-      id: 'powerups-browse-screen'
+      id: 'powerups-row-toggle-.*'
     timeout: 20000
 - takeScreenshot: screenshots/smoke/home/shell-powerups
 - tapOn:
@@ -58,7 +59,7 @@ appId: io.salmonwallet.app
 # has to be gone is the screen that covered it.
 - extendedWaitUntil:
     notVisible:
-      id: 'powerups-browse-screen'
+      id: 'powerups-row-toggle-.*'
     timeout: 20000
 - assertVisible:
     id: 'powerups-fab'

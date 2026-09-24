@@ -22,7 +22,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
-    visible: 'My Collectibles'
+    notVisible:
+      id: 'collectibles-loading'
     timeout: 20000
 # Generous timeout: right after a transfer the DAS index needs a moment before
 # it reports the new owner, so the card can take a while to show up.

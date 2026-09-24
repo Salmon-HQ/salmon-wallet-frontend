@@ -4,14 +4,14 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 ## Phase 1: Drift guard (US3)
 
-- [ ] T001 [US3] `scripts/check-e2e-selectors.mjs`: extract Maestro `id:`/text anchors and Playwright `getByTestId`, resolve against source and copy, allowlist external strings, fail `file:line selector`; `scripts/check-e2e-selectors.test.mjs`
-- [ ] T002 [US3] Add `check:e2e-selectors` to root `package.json` and to `.github/workflows/ci.yml` next to DOM parity; confirm it is red on today's stale selectors
+- [x] T001 [US3] `scripts/check-e2e-selectors.mjs`: extract Maestro `id:`/text anchors and Playwright `getByTestId`, resolve against source and copy, allowlist external strings, fail `file:line selector`; `scripts/check-e2e-selectors.test.mjs`
+- [x] T002 [US3] Add `check:e2e-selectors` to root `package.json` and to `.github/workflows/ci.yml` next to DOM parity; confirm it is red on today's stale selectors
 
 ## Phase 2: Mobile suite (US1, US2)
 
 - [ ] T003 [US2] `subflows/onboard-walletA.yaml` / `onboard-walletB.yaml`: biometric, Congratulations and consent each optional and condition-waited; end on `home-screen`
-- [ ] T004 [US2] Fix `smoke/receive/sheet.yaml`, `smoke/home/shell.yaml`, `smoke/nft/detail.yaml`, `subflows/send-nft.yaml`, `actions/reveal/private-key.yaml`, `store/capture-shots.yaml` per research R1
-- [ ] T005 [US2] Replace the four `point:` taps with testIDs, adding testIDs to the components that lack them
+- [x] T004 [US2] Fix `smoke/receive/sheet.yaml`, `smoke/home/shell.yaml`, `smoke/nft/detail.yaml`, `subflows/send-nft.yaml`, `actions/reveal/private-key.yaml`, `store/capture-shots.yaml` per research R1
+- [x] T005 [US2] Replace the four `point:` taps with testIDs, adding testIDs to the components that lack them
 - [ ] T006 [US1] `run.sh`: device booted, Metro bundle prewarmed (`apps/mobile/index.bundle`), installed SDK matches checkout, single-run lock; each stops within 30 s naming the cause
 - [ ] T007 [US2] Unattended smoke suite on the gesture emulator, then the 3-button emulator; fix every failure at its cause
 

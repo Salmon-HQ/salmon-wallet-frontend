@@ -4,15 +4,13 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-profile-picture.yaml
 - assertVisible: 'Profile Picture'
-# Tap pumpkin avatar (row 5 col 5)
+# Any preset other than the current one changes the picture; Save enables
+# only once it has.
 - tapOn:
-    point: '85%,55%'
-- waitForAnimationToEnd:
-    timeout: 1000
-# Tap Save button at bottom
+    id: 'avatar-preset-3'
 - tapOn:
-    point: '50%,91%'
-- waitForAnimationToEnd:
-    timeout: 4000
-- assertVisible: 'Edit Account'
+    id: 'avatar-save-button'
+- extendedWaitUntil:
+    visible: 'Edit Account'
+    timeout: 10000
 - takeScreenshot: screenshots/actions/profile/profile-picture-saved

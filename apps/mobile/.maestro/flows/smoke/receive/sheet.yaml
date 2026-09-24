@@ -13,7 +13,7 @@ appId: io.salmonwallet.app
       id: 'receive-qr-code'
     timeout: 10000
 - assertVisible:
-    id: 'receive-address'
+    id: 'receive-qr'
 - assertVisible:
     id: 'receive-copy-button'
 - takeScreenshot: screenshots/smoke/receive/sheet-default

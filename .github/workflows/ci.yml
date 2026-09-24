@@ -102,6 +102,13 @@ jobs:
           node --test scripts/check-dom-parity.test.mjs
           node scripts/check-dom-parity.mjs
 
+      # Every selector the e2e suites use still exists (spec 035): a flow on a
+      # removed element fails here, naming it, not minutes into a device run.
+      - name: e2e selector audit
+        run: |
+          node --test scripts/check-e2e-selectors.test.mjs
+          node scripts/check-e2e-selectors.mjs
+
   pr-title:
     name: conventional PR title
     if: github.event_name == 'pull_request'

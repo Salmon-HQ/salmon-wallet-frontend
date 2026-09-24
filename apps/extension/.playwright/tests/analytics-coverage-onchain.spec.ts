@@ -66,7 +66,7 @@ async function dismissSuccess(popup: Page): Promise<void> {
 
 /** Send `NFT_MINT` from the ACTIVE account to `destination`. */
 async function sendNft(popup: Page, destination: string): Promise<void> {
-  await popup.getByTestId('tab-collectibles').click();
+  await popup.getByTestId('portfolio-tab-nfts').click();
   // Generous: right after a transfer the DAS index needs a moment to report the
   // new owner, so the card can take a while to show up under the new wallet.
   await expect(popup.getByTestId(`nft-card-${NFT_MINT}`)).toBeVisible({
@@ -126,7 +126,7 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── nft_sent (1/2) — Wallet A hands the NFT to Wallet B.
-  await popup.getByTestId('tab-home').click();
+  await popup.getByTestId('portfolio-tab-portfolio').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
   await sendNft(popup, walletB);
 
