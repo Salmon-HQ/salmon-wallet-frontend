@@ -17,6 +17,7 @@ appId: io.salmonwallet.app
 # Read-only: the flow cancels at the review. The label and memo are fixtures,
 # not secrets; the recipient is Wallet B, which receives nothing.
 - runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/select-devnet.yaml
 - tapOn:
     id: 'home-send-button'
 - extendedWaitUntil:

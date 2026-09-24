@@ -78,12 +78,15 @@ appId: io.salmonwallet.app
     timeout: 20000
 
 # --------------------------------------------------------- 04 collectibles --
-# Mindfolk Founder #5154 is the one NFT the test wallet genuinely holds.
+# The devnet fixture NFT: the store shots never show a mainnet collectible.
+- runFlow: ../../subflows/select-devnet.yaml
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     visible:
-      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
+      id: 'nft-card-.*'
+      containsDescendants:
+        - text: 'Salmon Test NFT'
     timeout: 40000
 # Artwork is a public-CDN fetch; a cold emulator needs the long wait or the
 # tile ships as a flat placeholder with no error.
@@ -93,7 +96,10 @@ appId: io.salmonwallet.app
 
 # ----------------------------------------------------------- 05 nft detail --
 - tapOn:
-    id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
+    id: 'nft-card-.*'
+    containsDescendants:
+      - text: 'Salmon Test NFT'
+    index: 0
 - extendedWaitUntil:
     visible:
       id: 'nft-detail-screen'
@@ -116,7 +122,9 @@ appId: io.salmonwallet.app
           id: 'screen-header-back-button'
 - extendedWaitUntil:
     visible:
-      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
+      id: 'nft-card-.*'
+      containsDescendants:
+        - text: 'Salmon Test NFT'
     timeout: 20000
 - tapOn:
     id: 'portfolio-tab-portfolio'

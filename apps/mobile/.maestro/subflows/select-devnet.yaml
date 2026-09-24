@@ -1,0 +1,32 @@
+appId: io.salmonwallet.app
+---
+# From Home, put the active account on Solana devnet: turn Developer Networks
+# on (a fresh install has it off) and pick the Solana Devnet tab. Every flow
+# that views, sends or burns funds or NFTs runs through here first.
+- runFlow: ./open-settings.yaml
+- scrollUntilVisible:
+    element:
+      id: 'settings-developer-networks-toggle'
+    direction: DOWN
+    centerElement: true
+- runFlow:
+    when:
+      visible:
+        id: 'settings-developer-networks-toggle'
+        checked: false
+    commands:
+      - tapOn:
+          id: 'settings-developer-networks-toggle'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-developer-networks-toggle'
+      checked: true
+    timeout: 5000
+- runFlow: ./settings-close.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 10000
+- tapOn:
+    id: 'balance-chain-selector-option-solana-devnet'
+- runFlow: ./assert-devnet.yaml

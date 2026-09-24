@@ -1,28 +1,10 @@
 appId: io.salmonwallet.app
 ---
-# Walk Collectibles → open the NFT detail screen → back.
-#
-# Asserts on "Mindfolk Founder #5154" (mint CNM8...), in Wallet A. It is the only
-# collectible either test wallet can actually render; everything else is dropped
-# before it reaches the screen:
-#
-#   - the backend drops anything scoring above zero on the spam heuristics, which
-#     takes out every airdrop in both wallets;
-#   - the client drops anything with no image (the `filter(nft => nft.media)` in
-#     packages/shared/src/api/services/solana-nft.ts), which takes out Wallet A's
-#     "Salmon Logo" — its IPFS pin is dead, so there is no image left to load.
-#
-# What is left in Wallet A besides Mindfolk is a phishing "JUP" airdrop, which is
-# not something to hang an assertion on.
-#
-# actions/nft/transfer-nft.yaml round-trips this same NFT (A → B → A) and puts it
-# back where it started, so the two flows stay compatible. A transfer run that
-# dies between its two legs leaves Mindfolk in Wallet B, and this flow will fail
-# until the next run brings it home.
-#
-# The card is tapped by its mint-derived testID rather than by name: Maestro
-# full-matches text, and the phishing NFT's name is padded with zero-width spaces.
+# Walk Collectibles → open the NFT detail screen → back. On devnet, against the
+# fixture NFT ("Salmon Test NFT") that scripts/devnet-nft-fixture.cjs keeps in
+# Wallet A — run.sh calls it before every run.
 - runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/select-devnet.yaml
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
@@ -31,15 +13,20 @@ appId: io.salmonwallet.app
     timeout: 20000
 - extendedWaitUntil:
     visible:
-      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
+      id: 'nft-card-.*'
+      containsDescendants:
+        - text: 'Salmon Test NFT'
     timeout: 30000
 - tapOn:
-    id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
+    id: 'nft-card-.*'
+    containsDescendants:
+      - text: 'Salmon Test NFT'
+    index: 0
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible:
     id: 'nft-detail-screen'
-- takeScreenshot: screenshots/smoke/nft/detail-mindfolk
+- takeScreenshot: screenshots/smoke/nft/detail-fixture
 - tapOn:
     id: 'screen-header-back-button'
 - extendedWaitUntil:

@@ -1,11 +1,14 @@
 appId: io.salmonwallet.app
 ---
-# Send 0.001 SOL → Wallet B Solana address. Fires a real on-chain tx.
+# Send 0.001 devnet SOL → Wallet B. Fires a real transaction, on devnet only:
+# the flow switches to Solana devnet and refuses to start anywhere else.
 #
 # Send is four screens now (spec 018), not a sheet with steps: Home pushes the
 # recipient screen, Continue pushes the amount screen, Review pushes the
 # signature screen, and the receipt replaces it.
 - runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/select-devnet.yaml
+- runFlow: ../../../subflows/assert-devnet.yaml
 - tapOn:
     id: 'home-send-button'
 - extendedWaitUntil:
@@ -70,8 +73,6 @@ appId: io.salmonwallet.app
     id: 'tx-success-continue-button'
 - extendedWaitUntil:
     visible:
-      id: 'wallet-header-account-switcher'
+      id: 'home-screen'
     timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 8000
 - takeScreenshot: screenshots/actions/send/home-after-send

@@ -1,38 +1,39 @@
 appId: io.salmonwallet.app
 ---
-# Send the NFT with mint ${NFT_MINT} from the ACTIVE account to ${DEST_ADDRESS}.
-# Fires a real on-chain transfer and dismisses the success screen.
+# Send the devnet fixture NFT ("Salmon Test NFT", kept in Wallet A by
+# scripts/devnet-nft-fixture.cjs) from the ACTIVE account to ${DEST_ADDRESS}.
+# Fires a real transfer on devnet and dismisses the success screen.
 #
 #   - runFlow:
 #       file: ../../../subflows/send-nft.yaml
 #       env:
-#         NFT_MINT: CNM8...
 #         DEST_ADDRESS: ${MAESTRO_SALMON_TEST_WALLET_B_ADDR}
 #
 # Starts from Home and leaves the app on the in-page NFTs sub-tab: the
 # receipt's Continue dismisses the whole NFT sub-stack back to it.
 #
 # Do not declare an `env:` defaults block in this file. Maestro lets the default
-# win over the value passed by `runFlow`, and the selector silently degrades to
-# `nft-card-` with an empty mint.
-#
-# Cards are tapped by their mint-derived testID (`nft-card-<mint>`), never by
-# name: Maestro full-matches text, and the test wallets hold phishing airdrops
-# whose names are padded with zero-width spaces.
+# win over the value passed by `runFlow`.
+- runFlow: ./assert-devnet.yaml
 - tapOn:
     id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     notVisible:
       id: 'collectibles-loading'
     timeout: 20000
-# Generous timeout: right after a transfer the DAS index needs a moment before
-# it reports the new owner, so the card can take a while to show up.
+# The fixture card, found by the name it carries rather than a mint: each run
+# may hold a freshly minted one.
 - extendedWaitUntil:
     visible:
-      id: 'nft-card-${NFT_MINT}'
+      id: 'nft-card-.*'
+      containsDescendants:
+        - text: 'Salmon Test NFT'
     timeout: 120000
 - tapOn:
-    id: 'nft-card-${NFT_MINT}'
+    id: 'nft-card-.*'
+    containsDescendants:
+      - text: 'Salmon Test NFT'
+    index: 0
 - waitForAnimationToEnd:
     timeout: 6000
 # The detail is a pushed screen now (spec 019 D7). Send and Burn sit on the
@@ -56,7 +57,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'nft-send-confirm-button'
 - extendedWaitUntil:
-    visible: 'NFT sent'
+    visible:
+      id: 'tx-success-continue-button'
     timeout: 120000
 # Continue stays disabled while settlement invalidates and refetches the
 # balance and NFT queries, so a tap that lands during settling is swallowed and

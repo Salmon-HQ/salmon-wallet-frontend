@@ -187,6 +187,13 @@ if [[ $IS_ANDROID -eq 1 ]]; then
   ok "installed build opens without the dev menu"
 fi
 
+# ------------------------------------------------------------ devnet NFT ----
+# Every flow that views, sends or burns an NFT does it on devnet with the
+# fixture this keeps in Wallet A (a transfer moves it to B; the next run mints
+# another). The secrets reach it through the environment sourced above.
+FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-nft-fixture.cjs" 2>&1) || die "$FIXTURE_OUT"
+ok "$FIXTURE_OUT"
+
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)
 [[ -n "$DEVICE" ]] && CMD+=(--device "$DEVICE")
