@@ -1,10 +1,10 @@
 /**
- * PowerupsFab — the salmon that opens the Powerups catalogue over Home, on
+ * PowerupsFab — the + that opens the Powerups catalogue over Home, on
  * the DOM.
  *
  * The mobile twin is `apps/mobile/src/components/PowerupsFab/PowerupsFab.tsx`:
  * the same accent `IconBubble`, the same leap on a tap (`fabLeap` in the
- * theme), and the same salmon mark in both the open and closed state — no
+ * theme), and the same + in both the open and closed state — no
  * cross-fade to a close glyph (owner, 2026-09-17). Mobile moves the leap
  * with Reanimated; here it is a two-phase CSS transform transition.
  */
@@ -20,7 +20,7 @@ import {
 } from '@salmon/shared';
 import { useReducedMotion } from '../../motion';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { BrandMark } from '../BrandMark';
+import { PlusIcon } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
@@ -92,7 +92,7 @@ export function PowerupsFab({
             justifyContent: 'center',
           }}
         >
-          <BrandMark testID="powerups-fab-mark" size={FAB_ICON_SIZE} color={accent.onFill} />
+          <PlusIcon data-testid="powerups-fab-icon" size={FAB_ICON_SIZE} color={accent.onFill} weight="bold" />
         </span>
       </IconBubble>
     </div>

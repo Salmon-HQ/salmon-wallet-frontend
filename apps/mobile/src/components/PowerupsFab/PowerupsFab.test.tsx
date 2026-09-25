@@ -119,14 +119,14 @@ describe('PowerupsFab', () => {
   const flatten = (style: unknown) =>
     Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
 
-  it('draws the salmon mark, and keeps it while the launcher is open', () => {
-    // No cross-fade to a close glyph: the salmon is the icon in both states
+  it('draws a +, and keeps it while the launcher is open', () => {
+    // No cross-fade to a close glyph: the + is the icon in both states
     // (owner, 2026-09-17).
     const { getByTestId, rerender } = render(<PowerupsFab onPress={jest.fn()} bottomOffset={20} />);
-    expect(getByTestId('powerups-fab-mark', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByTestId('powerups-fab-icon', { includeHiddenElements: true })).toBeTruthy();
 
     rerender(<PowerupsFab onPress={jest.fn()} bottomOffset={20} open />);
-    expect(getByTestId('powerups-fab-mark', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByTestId('powerups-fab-icon', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('leaps on a tap: up by the theme’s rise, nose tilted, on the wrapper', () => {

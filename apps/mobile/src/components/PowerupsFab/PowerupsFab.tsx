@@ -1,13 +1,14 @@
 /**
- * PowerupsFab — the salmon that opens the Powerups catalogue over Home (and,
+ * PowerupsFab — the + that opens the Powerups catalogue over Home (and,
  * while it is up, closes it).
  *
  * It is a pressable accent `IconBubble` and nothing else: the circle, the
  * flesh, the specular and the press scale all come from the primitive, so
  * this file owns only what makes a FAB a FAB — where it floats, the glow
  * that lifts it off the water column, and the leap on a tap (`fabLeap` in
- * the theme says the numbers). The salmon mark is the icon in both the open
- * and closed state — no cross-fade to a close glyph (owner, 2026-09-17).
+ * the theme says the numbers). A + is the icon in both the open and closed
+ * state — no cross-fade to a close glyph (owner, 2026-09-17): the button adds
+ * to the wallet, and the salmon stays the app's mark rather than a control.
  */
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -22,7 +23,7 @@ import Reanimated, {
 import { componentSizes, fabLeap, motionMs, s, shadows, spacing } from '@salmon/shared';
 import { useSemantic } from '../../theme/useThemedStyles';
 import { curve, timing } from '../../utils/motion';
-import { BrandMark } from '../BrandMark';
+import { PlusIcon } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
@@ -94,7 +95,9 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
         }
       >
         <View style={styles.glyphs} pointerEvents="none">
-          <BrandMark testID="powerups-fab-mark" size={s(FAB_ICON_SIZE)} color={accent.onFill} />
+          <View testID="powerups-fab-icon">
+            <PlusIcon size={s(FAB_ICON_SIZE)} color={accent.onFill} weight="bold" />
+          </View>
         </View>
       </IconBubble>
     </Reanimated.View>
