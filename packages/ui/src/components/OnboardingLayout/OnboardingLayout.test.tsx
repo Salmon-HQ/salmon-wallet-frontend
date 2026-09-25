@@ -277,8 +277,11 @@ describe('OnboardingLayout', () => {
     const ground = screen.getByTestId('ground');
     const column = screen.getByTestId('onboarding-column');
     expect(column.contains(ground)).toBe(false);
-    expect(getComputedStyle(column).animationName).not.toBe('none');
-    expect(getComputedStyle(ground).animationName).toBeFalsy();
+    // The shorthand, not `animationName`: jsdom computes `animation` but does
+    // not expand it into its longhands, so `animationName` reads its initial
+    // 'none' even while the column is sinking.
+    expect(getComputedStyle(column).animation).toMatch(/^\S+ \d+ms /);
+    expect(getComputedStyle(ground).animation).toMatch(/^(none)?$/);
   });
 
   it('hides a reserved control from assistive tech rather than merely fading it', () => {
