@@ -29,6 +29,7 @@ import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
 import { CardHead, bodyText, cardColumn, monoText } from './common';
 import type { DAppSignInApprovalViewProps } from './types';
+import { useApprovalArming } from './useApprovalArming';
 
 function formatTimestamp(value: string | undefined): string | null {
   if (!value) return null;
@@ -59,6 +60,7 @@ export function DAppSignInApprovalView({
   onReject,
 }: DAppSignInApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const armed = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -74,7 +76,7 @@ export function DAppSignInApprovalView({
     showCopied();
   };
 
-  const canApprove = !disabled && !loading && !domainMismatch && !!siws;
+  const canApprove = !disabled && !loading && armed && !domainMismatch && !!siws;
 
   return (
     <OnboardingLayout

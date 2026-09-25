@@ -27,6 +27,8 @@ Ships as a binary, 1.2.0, never as an update: the native surface moved on this b
 
 ### extension
 
+- Approve in a dApp request window takes a click only once the window has been in front for three quarters of a second, and again after it loses focus. A page could predict where the window opens and time a double click so its second click landed on Approve; Reject is never delayed.
+- The password re-prompt when adding an account no longer says the wallet was idle: closing a dApp approval window also clears the unlocked key.
 - The wallet locks after five idle minutes even when a web page keeps opening approval windows: opening a wallet window no longer counts as activity or renews the unlocked session.
 - An approval request no longer fails with "Operation cancelled" when the browser window sits across two monitors or partly off screen; the approval window opens where Chrome places it.
 - Content scripts can no longer read or write the extension's local storage (the encrypted vault, the trusted sites); only the extension's own pages can.

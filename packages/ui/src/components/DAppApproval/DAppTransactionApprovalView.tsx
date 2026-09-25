@@ -13,6 +13,7 @@ import { CardHead, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
+import { useApprovalArming } from './useApprovalArming';
 
 export function DAppTransactionApprovalView({
   origin,
@@ -35,6 +36,7 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const armed = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -54,7 +56,7 @@ export function DAppTransactionApprovalView({
   // site controls how long the wait lasts, by padding the account set the
   // preview has to resolve.
   const cannotApprove =
-    disabled || loading || effectsLoading || !!parsingError || !!networkMismatch;
+    disabled || loading || !armed || effectsLoading || !!parsingError || !!networkMismatch;
 
   return (
     <OnboardingLayout

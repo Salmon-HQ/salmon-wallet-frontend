@@ -12,6 +12,7 @@ import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
 import { CardHead, bodyText, cardColumn } from './common';
 import type { DAppConnectApprovalViewProps } from './types';
+import { useApprovalArming } from './useApprovalArming';
 
 export function DAppConnectApprovalView({
   origin,
@@ -25,6 +26,7 @@ export function DAppConnectApprovalView({
   onReject,
 }: DAppConnectApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const armed = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
   const shortAddress = address ? (getShortAddress(address, 4) ?? '') : '';
@@ -91,7 +93,7 @@ export function DAppConnectApprovalView({
           testID="dapp-approve-button"
           onPress={onApprove}
           loading={loading}
-          disabled={disabled || loading}
+          disabled={disabled || loading || !armed}
           fullWidth
         >
           {t('dapp.approve', 'Approve').toUpperCase()}
