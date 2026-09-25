@@ -48,12 +48,17 @@ history.
 On an Android dev build: the test wallets recover to the same Solana and
 Bitcoin addresses as on SDK 55, at the same speed, through the native PBKDF2
 module; sends, NFT transfers and burns confirm on devnet; the Maestro smoke
-suite passes unattended on gesture navigation. Gates green on Node 24:
+suite passes unattended on gesture navigation, and on three-button navigation
+but for the copy check, whose 1.5 s window a slow emulator can miss; a wallet
+created on SDK 55 unlocks after SDK 57 is installed over it. Gates green on Node 24:
 typecheck, lint, tests, export, fingerprint, i18n, DOM parity.
 
 ## Open
 
 - iOS: build and walk on a simulator once Xcode ≥ 26.4 is installed.
-- Memory against SDK 55 with release builds on a quiet machine, and an
-  in-place update from an SDK 55 install (spec 034, T014–T015, T024).
+- Biometric unlock after an in-place update from SDK 55 (spec 034, T014–T015);
+  the password path is verified.
+- Memory: on release builds SDK 57 idles at 268 MB against SDK 55's 242 MB
+  (+10.6 %, the spec allows +10 %), from code pages of a larger APK; native heap
+  is lower. Development builds use ~270 MB more native heap under Hermes V1.
 - A short mainnet pass by the owner before the store build.

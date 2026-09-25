@@ -36,8 +36,8 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 
 **Independent test**: quickstart §4.
 
-- [ ] T014 [US1] Install the T001 SDK 55 APK, create a wallet on devnet, enable biometrics (emulator fingerprint); install the SDK 57 dev build over it without uninstalling
-- [ ] T015 [US1] Unlock with the password and with biometrics; addresses match; enter wrong passwords until the throttle engages and confirm the "wait" message
+- [ ] T014 [US1] (Android done on release builds and on dev builds: SDK 55 install → recover Wallet A → SDK 57 installed over it with `install -r`, first-install time kept; biometrics not exercised — the emulator has no enrolled fingerprint) Install the T001 SDK 55 APK, create a wallet on devnet, enable biometrics (emulator fingerprint); install the SDK 57 dev build over it without uninstalling
+- [ ] T015 [US1] (Android: password unlock after the update lands on Home with the same Solana address; wrong passwords engage the throttle and its "wait" notice; biometric unlock pending, as T014) Unlock with the password and with biometrics; addresses match; enter wrong passwords until the throttle engages and confirm the "wait" message
 
 ## Phase 4: User Story 2 — create and recover derive the same keys (P1)
 
@@ -68,7 +68,7 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 **Independent test**: quickstart §5 visual, §6 memory.
 
 - [ ] T023 [US4] Visual walk on the gesture and 3-button emulators: Home, tabs, Powerups catalog and Payments tab, bottom sheets, send amount / password / recover keyboards, wait screen, lock overlay — nothing under system bars, no single-frame flash (screen recording + frame check)
-- [ ] T024 [US4] Memory: repeat T003 on the SDK 57 build; TOTAL PSS ≤ T003 + 10%
+- [ ] T024 [US4] (Android, same emulator and session, TOTAL PSS idle on Home after relaunch + unlock — release: SDK 55 242 MB → HEAD 268 MB, +10.6 %, native heap 81 → 69 MB, the rise is code pages of a larger APK; dev builds: 640 → 940 MB at the SDK 57 bump commit, native heap 440 → 713 MB, stable at idle — Hermes V1 in development mode, not in release. Owner call on the 0.6 % over) Memory: repeat T003 on the SDK 57 build; TOTAL PSS ≤ T003 + 10%
 
 ## Phase 7: iOS (all stories, once Xcode ≥ 26.4 is installed)
 
