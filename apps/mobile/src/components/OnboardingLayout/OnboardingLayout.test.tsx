@@ -19,12 +19,13 @@
  */
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  useSafeAreaInsets: () => ({ top: 0, bottom: mockBottomInset(), left: 0, right: 0 }),
 }));
+const mockBottomInset = jest.fn(() => 0);
 
 // Reanimated pulls the Worklets native module, which does not exist under
 // Jest; the float region only needs a View and the reduce-motion flag.
@@ -100,6 +101,11 @@ describe('OnboardingLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockKeyboardHeight.mockReturnValue(0);
+    mockBottomInset.mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks(); // undoes `jest.replaceProperty(Platform, 'OS', …)`
   });
 
   it.each(['identity', 'content'] as const)(
@@ -444,6 +450,29 @@ describe('OnboardingLayout', () => {
     const flat = (Array.isArray(stackStyle) ? stackStyle : [stackStyle]).filter(Boolean);
     expect(Object.assign({}, ...flat).height).toBe(COLUMN - KEYBOARD);
     expect(grid.stack).toBeGreaterThan(COLUMN - KEYBOARD);
+  });
+
+  it.each([
+    // iOS measures the keyboard from the window's bottom: the bottom inset's
+    // share of it covers nothing.
+    ['ios', 300 - 48],
+    // Android measures it from the top of the navigation bar already; taking
+    // the inset off again left the lock screen's Unlock button half under a
+    // three-button-navigation keyboard.
+    ['android', 300],
+  ] as const)('gives up what the keyboard covers on %s, bottom inset and all', (os, covered) => {
+    jest.replaceProperty(Platform, 'OS', os);
+    mockBottomInset.mockReturnValue(48);
+    const COLUMN = 876;
+
+    const view = render(<OnboardingLayout variant="content" body={<Text>Body</Text>} />);
+    layout(COLUMN);
+    mockKeyboardHeight.mockReturnValue(300);
+    view.rerender(<OnboardingLayout variant="content" body={<Text>Body</Text>} />);
+
+    const stackStyle = screen.getByTestId('onboarding-stack').props.style;
+    const flat = (Array.isArray(stackStyle) ? stackStyle : [stackStyle]).filter(Boolean);
+    expect(Object.assign({}, ...flat).height).toBe(COLUMN - covered);
   });
 
   it('paints `background` behind the stack, absolute-fill and untouchable', () => {

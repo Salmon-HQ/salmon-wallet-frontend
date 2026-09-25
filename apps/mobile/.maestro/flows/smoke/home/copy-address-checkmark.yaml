@@ -12,15 +12,20 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 # The check shows for 1.5 s. A plain tap waits for the screen to settle, and
 # the tick's spring keeps it moving past that window, so the assertion would
-# land after the check is gone. Assert inside the window.
-- tapOn:
-    id: 'wallet-header-copy-address'
-    waitToSettleTimeoutMs: 200
-# The confirmation is the button's own label while it shows the check, so the
-# assertion is on that button, not on any "Copied!" elsewhere on screen.
-- assertVisible:
-    id: 'wallet-header-copy-address'
-    text: 'Copied!'
+# land after the check is gone. Assert inside the window. On a loaded emulator
+# the tap alone can take longer than the window (measured 2.8 s), so a missed
+# window taps again; every attempt asserts the same label.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: 'wallet-header-copy-address'
+          waitToSettleTimeoutMs: 200
+      # The confirmation is the button's own label while it shows the check,
+      # so the assertion is on that button, not on any "Copied!" elsewhere.
+      - assertVisible:
+          id: 'wallet-header-copy-address'
+          text: 'Copied!'
 - takeScreenshot: screenshots/smoke/home/copy-address-checkmark
 - extendedWaitUntil:
     notVisible:

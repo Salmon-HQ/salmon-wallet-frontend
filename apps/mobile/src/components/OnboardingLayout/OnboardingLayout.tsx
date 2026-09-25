@@ -64,9 +64,9 @@
  *   covers, lift by precisely the covered amount and no more.
  * - `body` scrolls the focused field into view within its own band.
  *
- * Android reports a keyboard height of zero on purpose: the manifest declares
- * `windowSoftInputMode="adjustResize"`, so the window shrinks and `onLayout`
- * already sees the smaller height.
+ * The two platforms measure the keyboard from different edges: iOS from the
+ * bottom of the window, Android from the top of the navigation bar. See
+ * `occlusion` below.
  */
 import {
   contentPadding,
@@ -78,7 +78,7 @@ import {
 import type { OnboardingLayoutPropsBase } from '@salmon/shared';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -206,12 +206,17 @@ export function OnboardingLayout({
   const keyboardHeight = useKeyboardHeight();
   const insets = useSafeAreaInsets();
 
-  // How much of the column the keyboard actually covers. The keyboard is
-  // measured from the bottom of the window; the column already stops short of
-  // it by the bottom safe-area inset, so that much of the keyboard overlaps
-  // nothing. Zero whenever the keyboard is down — and zero on Android always,
-  // where `adjustResize` has already shrunk the window `onLayout` measured.
-  const occlusion = Math.max(0, keyboardHeight - insets.bottom);
+  // How much of the column the keyboard actually covers; zero while it is
+  // down. The column stops short of the window's bottom by the bottom
+  // safe-area inset. iOS measures the keyboard from the window's bottom, so
+  // that inset's share of it overlaps nothing and comes off. Android already
+  // measures it from the top of the navigation bar — React Native subtracts
+  // the system bars — so taking the inset off again under-lifts by the bar's
+  // height and buries the action: 126px on three-button navigation.
+  const occlusion = Math.max(
+    0,
+    Platform.OS === 'android' ? keyboardHeight : keyboardHeight - insets.bottom
+  );
   const available = measured === undefined ? undefined : Math.max(0, measured - occlusion);
 
   // The rung is chosen from the *unoccluded* height on purpose. Which grid a

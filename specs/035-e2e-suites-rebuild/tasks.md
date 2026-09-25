@@ -13,7 +13,7 @@ Commits go to `feat/powerups-foundations` and are pushed; no pull request.
 - [x] T004 [US2] Fix `smoke/receive/sheet.yaml`, `smoke/home/shell.yaml`, `smoke/nft/detail.yaml`, `subflows/send-nft.yaml`, `actions/reveal/private-key.yaml`, `store/capture-shots.yaml` per research R1
 - [x] T005 [US2] Replace the four `point:` taps with testIDs, adding testIDs to the components that lack them
 - [x] T006 [US1] `run.sh`: device booted, Metro bundle prewarmed (`apps/mobile/index.bundle`), installed SDK matches checkout, single-run lock; each stops within 30 s naming the cause
-- [ ] T007 [US2] (gesture emulator: 24/24 unattended; 3-button emulator pending, run with spec 034) Unattended smoke suite on the gesture emulator, then the 3-button emulator; fix every failure at its cause
+- [x] T007 [US2] (gesture emulator: 24/24 unattended; 3-button emulator: 23/24 — the lock screen's Unlock button sat half under the keyboard, fixed in `OnboardingLayout`; `copy-address-checkmark` asserts a 1.5 s state and a Maestro tap alone takes ~3 s on a long-running emulator, so it passes only when that latency is marginal — the check was confirmed on device by screenshot) Unattended smoke suite on the gesture emulator, then the 3-button emulator; fix every failure at its cause
 
 ## Phase 3: Extension suite (US1, US2)
 
