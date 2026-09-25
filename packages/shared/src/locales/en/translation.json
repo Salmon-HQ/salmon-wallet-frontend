@@ -321,7 +321,7 @@
       "import_private_key_description": "Add a wallet you already own using its private key",
       "reauth_title": "Confirm your password",
       "reauth_subtitle": "Enter your password to keep going.",
-      "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
+      "reauth_body": "For your security, the key that encrypts your wallet is not held in memory right now. Enter your password to finish adding this account — nothing you entered is lost.",
       "reauth_confirm": "Confirm and add",
       "import_watch_only": "Watch a wallet",
       "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds",
