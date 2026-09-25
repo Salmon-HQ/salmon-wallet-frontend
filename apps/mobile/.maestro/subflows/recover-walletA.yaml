@@ -43,10 +43,10 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'password-input'
 - inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
-- hideKeyboard
+- runFlow: ./hide-keyboard.yaml
 - tapOn:
     id: 'password-confirm-input'
 - inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
-- hideKeyboard
+- runFlow: ./hide-keyboard.yaml
 - tapOn:
     id: 'password-submit-button'
