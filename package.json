@@ -106,7 +106,8 @@
       "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
     },
     "patchedDependencies": {
-      "expo-camera@57.0.5": "patches/expo-camera@57.0.5.patch"
+      "expo-camera@57.0.5": "patches/expo-camera@57.0.5.patch",
+      "micro-key-producer@0.10.2": "patches/micro-key-producer@0.10.2.patch"
     }
   }
 }
