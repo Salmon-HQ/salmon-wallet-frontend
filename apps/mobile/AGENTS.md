@@ -96,7 +96,10 @@ Pre-build checklist — run in order before `eas build --profile production`:
    `app.json` is the only version source; `apps/mobile/package.json` carries none. Then
    `pnpm --filter @salmon/mobile fingerprint:write` so `native-fingerprint.json` records this
    binary, and after the store accepts it, tag the commit `mobile/v<version>` (CI verifies
-   both agree, the way `extension/v*` is verified).
+   both agree, the way `extension/v*` is verified). Write the baseline from a tree with no
+   `ios/` or `android/` directory: a local prebuild output is hashed in even though
+   `.fingerprintignore` lists it, and the hash then differs from the one CI and EAS compute
+   on Linux. When in doubt, take the hash CI prints in "Native fingerprint vs last binary".
    `versionCode` is bumped automatically by EAS via `appVersionSource: "remote"` + `autoIncrement: true`
    on the production profile, so the build needs internet access to reserve the next code.
 4. **Android keystore**: managed by EAS. Inspect with `eas credentials` from `apps/mobile/`.
