@@ -1,5 +1,5 @@
 /**
- * The sink and the float — the mobile expression of a content swap, spoken in
+ * The sink and the float — the mobile expression of a content change, spoken in
  * the water's own vertical.
  *
  * The verb: **leaving is sinking** — the outgoing content recedes to
@@ -17,11 +17,11 @@
  * Recalibrated against the water's own clock: the verb used to run on
  * generic-UI numbers (`ebb` 180 / `drift` 280, 12dp) while the water in this
  * system runs at 700–2000ms — the logo's return is 720, the wavefront's
- * crossing 2000. At that ratio the swap read as a fade with a direction, not
+ * crossing 2000. At that ratio the change read as a fade with a direction, not
  * as something leaving and entering water. The acceptance bar: *"tiene que
  * parecer que sale del agua."* So the clock, the distance and the opacity are
  * all re-derived from The Surfacing
- * (`TransactionSuccessScreen/surfacing.ts`, `packages/shared/src/motion`)
+ * (`packages/shared/src/motion`)
  * rather than from any generic motion spec:
  *
  * - **Viscosity.** The float takes `FLOAT_IN_MS` (drift×2 — the band the
@@ -42,7 +42,7 @@
  * the device, so distance and duration are also per-call overrides.
  *
  * Reduce motion: both helpers return `undefined`, which hands Reanimated no
- * layout animation at all — the swap is an instant cut.
+ * layout animation at all — the change is an instant cut.
  */
 import {
   CHROME_SCALE,
@@ -50,13 +50,20 @@ import {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
 } from '@salmon/shared';
-import { withDelay, withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from 'react-native-reanimated';
 
 import { curve, timing } from './motion';
 
@@ -76,7 +83,7 @@ export {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
@@ -179,4 +186,66 @@ export function sinkExiting(
       },
     };
   };
+}
+
+/**
+ * The float for a view that is already mounted: held hidden while `covered`,
+ * floated in when the cover goes.
+ *
+ * `floatEntering` rides a mount, and on device a freshly mounted view paints
+ * one frame at rest before its entering takes hold: the unlock showed Home
+ * whole for a frame, and every wait flashed its mark and words before they
+ * floated in. Here the hidden state is a shared value set before the view is
+ * ever uncovered, so there is no such frame — and nothing has to remount, so
+ * no old copy sinks over the new one either.
+ */
+export interface CoverFloatOptions extends SinkFloatOptions {
+  /**
+   * Start hidden even when not covered at mount — for a view that is only
+   * rendered once it is due to float in (a wait), so its first frame must
+   * already be the float's starting point.
+   */
+  startHidden?: boolean;
+}
+
+export function useCoverFloat(
+  covered: boolean,
+  isReduceMotionEnabled: boolean,
+  options: CoverFloatOptions = {}
+) {
+  const {
+    durationMs = FLOAT_IN_MS,
+    delayMs = 0,
+    distance = SINK_FLOAT_TRAVEL,
+    scale: enterScale = FLOAT_ENTER_SCALE,
+    startHidden = false,
+  } = options;
+  const hiddenAtMount = covered || startHidden;
+  const light = useSharedValue(hiddenAtMount ? 0 : 1);
+  const travel = useSharedValue(hiddenAtMount ? 0 : 1);
+
+  useEffect(() => {
+    if (covered) {
+      light.value = 0;
+      travel.value = 0;
+      return;
+    }
+    if (isReduceMotionEnabled) {
+      light.value = 1;
+      travel.value = 1;
+      return;
+    }
+    const rise = (config: ReturnType<typeof timing>) =>
+      delayMs > 0 ? withDelay(delayMs, withTiming(1, config)) : withTiming(1, config);
+    light.value = rise(timing(durationMs, false, curve.sink));
+    travel.value = rise(timing(durationMs, false, curve.settle));
+  }, [covered, isReduceMotionEnabled, durationMs, delayMs, light, travel]);
+
+  return useAnimatedStyle(() => ({
+    opacity: light.value,
+    transform: [
+      { translateY: (1 - travel.value) * distance },
+      { scale: enterScale + (1 - enterScale) * travel.value },
+    ],
+  }));
 }

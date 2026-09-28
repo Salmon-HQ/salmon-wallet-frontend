@@ -219,8 +219,8 @@ const stylesFor = (tokens: Semantic) =>
     },
     subtitle: {
       fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontSize: s(fontSize.subtitle),
+      lineHeight: s(fontSize.subtitle) * lineHeight.snug,
       color: tokens.text.secondary,
     },
   });

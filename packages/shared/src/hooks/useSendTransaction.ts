@@ -196,6 +196,26 @@ export function useSendTransaction({
         throw new Error('transaction.errors.watchOnlyAccount');
       }
 
+      const effectiveRecipientAddress = params.resolvedRecipientAddress ?? params.recipientAddress;
+
+      // A Token-2022 account can require a note on every transfer it receives
+      // (the MemoTransfer extension). Without one the token program refuses
+      // the transfer. Preflight does catch that before anything is signed or
+      // spent, but it leaves the user reading a failure for a condition the
+      // chain would have told us up front — so ask first, and say why.
+      // Checked here, beside the other preconditions, because the catch below
+      // re-describes anything thrown from the send itself.
+      if (!params.memo && 'requiresMemo' in account) {
+        const memoRequired = await account
+          .requiresMemo(effectiveRecipientAddress, params.token.address)
+          .catch(() => false);
+        if (memoRequired) {
+          setError('transaction.errors.memoRequired');
+          setStatus('failed');
+          throw new Error('transaction.errors.memoRequired');
+        }
+      }
+
       // Claims the shared state for this send: any estimate still in flight is
       // now stale and its late write is dropped.
       beginAttempt();
@@ -207,15 +227,18 @@ export function useSendTransaction({
       try {
         setStatus('sending');
 
-        const effectiveRecipientAddress =
-          params.resolvedRecipientAddress ?? params.recipientAddress;
-
         const result = await account.transfer(
           effectiveRecipientAddress,
           params.token.address,
           params.amount,
-          // Pass token metadata for Ethereum ERC20/NFT transfers
-          { decimals: params.token.decimals, symbol: params.token.symbol }
+          // Token metadata for Ethereum ERC20/NFT transfers; memo and references
+          // for a Solana Pay request (other chains ignore them).
+          {
+            decimals: params.token.decimals,
+            symbol: params.token.symbol,
+            memo: params.memo,
+            references: params.references,
+          }
         );
 
         setStatus('success');
@@ -227,14 +250,15 @@ export function useSendTransaction({
         });
         // First successful send is an activation milestone — reported once per install.
         void trackFirstTime('first_send_completed', STORAGE_KEYS.ANALYTICS_FIRST_SEND);
-        // Return the txId immediately so the UI can show the success screen,
-        // then settle in the background. `settling` stays true until the
-        // indexer reflects the new balance (or the ceiling is hit), letting the
-        // success screen dwell until the user can return to a fresh balance.
+        // `transfer` resolved only once the chain confirmed the signature, so
+        // the receipt can show now; the indexer settles in the background.
+        // `settling` stays true until it reflects the new balance (or the
+        // ceiling is hit), letting the wait dwell until the user can return to
+        // a fresh balance.
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
-        // Record the signature globally before anything screen-owned runs, so
-        // the outcome survives the user leaving, locking, or killing the app.
+        // The banner reports the transfer as done from this moment — the
+        // chain already said so.
         pendingTransactions?.trackPendingTransaction({
           signature: String(result.txId),
           kind: 'send',
@@ -242,11 +266,8 @@ export function useSendTransaction({
           accountId,
           submittedAt: Date.now(),
           summary: `${params.amount} ${params.token.symbol}`,
+          status: 'confirmed',
         });
-        // This screen is now the one surface reporting this signature; the
-        // banner withholds it until the release below. Same guard as swap —
-        // see PendingTransactionsContext's module doc.
-        const releaseReport = pendingTransactions?.claimForegroundReport(String(result.txId));
         setSettling(true);
         settleUntilChanged({
           accountId,
@@ -258,7 +279,6 @@ export function useSendTransaction({
           })
           .finally(() => {
             setSettling(false);
-            releaseReport?.();
           });
         return result;
       } catch (err) {

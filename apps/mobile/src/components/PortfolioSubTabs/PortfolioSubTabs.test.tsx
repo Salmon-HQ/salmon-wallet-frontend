@@ -5,6 +5,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 // theme modules the component draws from are runtime-agnostic, so they are
 // loaded directly (the FleshBackground test's convention).
 jest.mock('@salmon/shared', () => ({
+  overflowEdges: jest.requireActual('@salmon/shared/src/utils/overflowEdges').overflowEdges,
   ...jest.requireActual('@salmon/shared/src/theme/spacing'),
   ...jest.requireActual('@salmon/shared/src/theme/typography'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
@@ -40,6 +41,8 @@ jest.mock('react-native-reanimated', () => {
     interpolateColor: (value: number, _input: number[], output: string[]) =>
       value >= 1 ? output[1] : output[0],
     Easing: { bezier: (...coefficients: number[]) => coefficients },
+    LinearTransition: { duration: () => ({ easing: () => undefined }) },
+    withDelay: (_ms: number, animation: unknown) => animation,
   };
 });
 
@@ -104,28 +107,6 @@ describe('PortfolioSubTabs', () => {
     fireEvent.press(getByTestId('portfolio-order-button'));
 
     expect(onOrderPress).toHaveBeenCalledTimes(1);
-  });
-
-  it('hands the reorder verb to the tabs region alone, never to the order button', () => {
-    const entering = { verb: 'float' };
-    const exiting = { verb: 'sink' };
-    const { getByTestId } = render(
-      <PortfolioSubTabs
-        tabs={TABS}
-        activeKey="portfolio"
-        onChange={jest.fn()}
-        onOrderPress={jest.fn()}
-        tabsKey="nfts|portfolio"
-        tabsEntering={entering as never}
-        tabsExiting={exiting as never}
-      />
-    );
-    const region = getByTestId('portfolio-tabs-region');
-    expect(region.props.entering).toBe(entering);
-    expect(region.props.exiting).toBe(exiting);
-    const button = getByTestId('portfolio-order-button');
-    expect(button.props.entering).toBeUndefined();
-    expect(button.props.exiting).toBeUndefined();
   });
 
   it('lands the underline on the first measured tab with no travel', () => {

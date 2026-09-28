@@ -1,26 +1,35 @@
 /**
- * PowerupsFab — the `+` floating action button that opens the Powerups
- * browse screen (and, from that screen, closes it).
+ * PowerupsFab — the + that opens the Powerups catalogue over Home (and,
+ * while it is up, closes it).
  *
  * It is a pressable accent `IconBubble` and nothing else: the circle, the
- * flesh, the specular and the press scale all come from the primitive, so this
- * file owns only what makes a FAB a FAB — where it floats and the glow that
- * lifts it off the water column.
+ * flesh, the specular and the press scale all come from the primitive, so
+ * this file owns only what makes a FAB a FAB — where it floats, the glow
+ * that lifts it off the water column, and the leap on a tap (`fabLeap` in
+ * the theme says the numbers). A + is the icon in both the open and closed
+ * state — no cross-fade to a close glyph (owner, 2026-09-17): the button adds
+ * to the wallet, and the salmon stays the app's mark rather than a control.
  */
-import React, { useEffect, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
-import { motionMs, s, shadows, spacing } from '@salmon/shared';
-import { PlusIcon } from '../../icons';
+import Reanimated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { componentSizes, fabLeap, motionMs, s, shadows, spacing } from '@salmon/shared';
+import { useSemantic } from '../../theme/useThemedStyles';
 import { curve, timing } from '../../utils/motion';
+import { PlusIcon } from '../../icons';
 import { IconBubble } from '../IconBubble';
 import type { PowerupsFabProps } from './types';
 
-const FAB_SIZE = 42;
-const FAB_ICON_SIZE = 22;
-/** The plus becomes the close mark by turning an eighth of a turn. */
-const OPEN_ROTATION = 45;
+// Geometry and its reason: `componentSizes.fabSize` / `fabIconSize`.
+const FAB_SIZE = componentSizes.fabSize;
+const FAB_ICON_SIZE = componentSizes.fabIconSize;
 
 export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   onPress,
@@ -30,47 +39,68 @@ export const PowerupsFab: React.FC<PowerupsFabProps> = ({
   testID = 'powerups-fab',
 }) => {
   const { t } = useTranslation();
+  const { accent } = useSemantic();
   const isReduceMotionEnabled = useReducedMotion();
 
-  // A plus turned 45 degrees IS the close mark — the same glyph, not a swap,
-  // so the launcher's open state is legible on the control that opened it.
-  // It is a state change in place, so it runs on `swell` (reduce motion:
-  // `timing` resolves to a cut and the mark still ends up rotated).
-  //
-  // The config is built here, on the JS thread, and only the resulting plain
-  // object crosses into the worklet. Calling `timing()` inside
-  // `useAnimatedStyle` crashed the app at launch: "[Worklets] Tried to
-  // synchronously call a non-worklet function 'timing' on the UI thread".
-  const rotateTiming = useMemo(
-    () => timing(motionMs.swell, isReduceMotionEnabled, curve.settle),
+  // The configs are built here, on the JS thread, and only the resulting
+  // plain objects cross into the worklet: calling `timing()` inside a worklet
+  // crashed the app at launch.
+  const riseTiming = useMemo(
+    () => timing(motionMs.swell, isReduceMotionEnabled, curve.current),
     [isReduceMotionEnabled]
   );
-  // Always starts at zero, even when the FAB mounts already open: the browse
-  // screen renders its OWN instance of this control in the same spot as
-  // Home's, so the turn has to play on mount for the two to read as one
-  // object rotating rather than two buttons swapping.
-  const rotation = useSharedValue(0);
-  useEffect(() => {
-    rotation.value = withTiming(open ? OPEN_ROTATION : 0, rotateTiming);
-  }, [open, rotateTiming, rotation]);
+  const landTiming = useMemo(
+    () => timing(motionMs.ebb, isReduceMotionEnabled, curve.sink),
+    [isReduceMotionEnabled]
+  );
+
+  // 0 at rest, 1 at the top of the leap: the wrapper lifts and tilts by it.
+  const leap = useSharedValue(0);
+
+  // A plain function: the compiler's lint refuses a shared-value write
+  // inside a memoised callback, and there is nothing here worth memoising.
+  const handlePress = () => {
+    if (!isReduceMotionEnabled) {
+      leap.value = withSequence(withTiming(1, riseTiming), withTiming(0, landTiming));
+    }
+    onPress();
+  };
+
+  const leapStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: -leap.value * fabLeap.risePx },
+      { rotate: `${-leap.value * fabLeap.tiltDeg}deg` },
+    ],
+  }));
 
   return (
-    <IconBubble
-      testID={testID}
-      size={FAB_SIZE}
-      tone="accent"
-      icon={PlusIcon}
-      iconWeight="bold"
-      iconSize={FAB_ICON_SIZE}
-      onPress={onPress}
-      accessibilityLabel={
-        open
-          ? t('accessibility.close_powerups', 'Close Powerups')
-          : t('accessibility.open_powerups', 'Open Powerups')
-      }
-      rotation={rotation}
-      style={[styles.fab, { right: s(spacing.screenGutter), bottom: bottomOffset }, style]}
-    />
+    <Reanimated.View
+      testID={`${testID}-leap`}
+      style={[
+        styles.fab,
+        { right: s(spacing.screenGutter), bottom: bottomOffset },
+        leapStyle,
+        style,
+      ]}
+    >
+      <IconBubble
+        testID={testID}
+        size={FAB_SIZE}
+        tone="accent"
+        onPress={handlePress}
+        accessibilityLabel={
+          open
+            ? t('accessibility.close_powerups', 'Close Powerups')
+            : t('accessibility.open_powerups', 'Open Powerups')
+        }
+      >
+        <View style={styles.glyphs} pointerEvents="none">
+          <View testID="powerups-fab-icon">
+            <PlusIcon size={s(FAB_ICON_SIZE)} color={accent.onFill} weight="bold" />
+          </View>
+        </View>
+      </IconBubble>
+    </Reanimated.View>
   );
 };
 
@@ -78,6 +108,11 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     ...shadows.button,
+  },
+  glyphs: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

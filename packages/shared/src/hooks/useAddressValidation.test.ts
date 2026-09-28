@@ -35,6 +35,55 @@ describe('useAddressValidation', () => {
     });
   });
 
+  // A superseded lookup must not write its result. The guard used to read
+  // `abortControllerRef.current`, which the next cycle had already replaced
+  // with a fresh, un-aborted controller — so it could never be true and the
+  // abandoned resolution landed. `useSendTransaction` prefers
+  // `resolvedAddress` over what the user typed, so the wrong address is the
+  // one that gets signed.
+  it('discards a superseded lookup instead of letting it overwrite the current one', async () => {
+    const ATTACKER = 'BADrecipient1111111111111111111111111111111';
+    const settle: Array<(r: ValidationResult) => void> = [];
+    const account = {
+      validateDestinationAccount: vi.fn(
+        () => new Promise<ValidationResult>((resolve) => settle.push(resolve))
+      ),
+    };
+
+    const { result, rerender } = renderHook(
+      ({ value }) => useAddressValidation(value, account as any, { debounceMs: 100 }),
+      { initialProps: { value: 'abandoned.sol' } }
+    );
+
+    // Cycle A reaches the provider, then the user keeps typing.
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+    rerender({ value: VALID_ADDRESS });
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(settle).toHaveLength(2);
+
+    // Cycle A answers last, as a slow domain lookup does.
+    await act(async () => {
+      settle[1]({ type: 'SUCCESS', code: 'valid', addressType: 'ADDRESS' } as ValidationResult);
+      await Promise.resolve();
+      settle[0]({
+        type: 'SUCCESS',
+        code: 'valid',
+        addressType: 'DOMAIN',
+        resolvedAddress: ATTACKER,
+      } as ValidationResult);
+      await Promise.resolve();
+    });
+
+    expect(result.current.resolvedAddress).not.toBe(ATTACKER);
+  });
+
   it('validates after debounce and exposes resolved domain data', async () => {
     const onValidation = vi.fn();
     const validationResult: ValidationResult = {

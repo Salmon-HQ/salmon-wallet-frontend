@@ -19,7 +19,7 @@ import type { NetworkCapabilities } from './settings';
  *
  * Previously duplicated as `BlockchainType` (useAddressValidation, useAddressbook,
  * useBalance, useTransactions), `ChainType` (useMultiChainTokens),
- * `SendBlockchainType` (useSendTransaction), and `SwapChainType` (types/swap).
+ * `SendBlockchainType` (useSendTransaction).
  */
 export type BlockchainType = 'solana' | 'bitcoin' | 'ethereum';
 
@@ -195,6 +195,29 @@ export type EthereumEnvironment = 'mainnet' | 'sepolia';
  *
  * Previously defined in api/client.ts.
  */
+/**
+ * A data provider's mandatory credit, published by the backend on the
+ * network whose prices and token list it serves (CoinGecko's API terms need
+ * "Data provided by CoinGecko" linked to their site wherever that data
+ * shows). Rendered verbatim by `DataAttribution`; `null` where no such data
+ * is served.
+ */
+export interface DataAttribution {
+  text: string;
+  url: string;
+}
+
+/** Why a Powerup the backend lists is switched off (spec 029 §5.2). */
+export type PowerupDisabledReason = 'region' | 'maintenance' | 'deprecated';
+
+/** One entry of a network's Powerups kill switch. */
+export interface NetworkPowerupSwitch {
+  id: string;
+  enabled: boolean;
+  /** Only when `enabled` is false; the copy the disabled surface shows. */
+  reason?: PowerupDisabledReason;
+}
+
 export interface NetworkCatalogBase {
   id: string;
   name: string;
@@ -206,6 +229,13 @@ export interface NetworkCatalogBase {
   };
   enabled: boolean;
   sections: NetworkCapabilities['sections'];
+  /** The credit owed to the network's price/token-list provider, if any. */
+  attribution?: DataAttribution | null;
+  /**
+   * The Powerups kill switch (spec 029 §5.2). Read through
+   * `parsePowerupSwitches`, never directly: absent or malformed means none.
+   */
+  powerups?: NetworkPowerupSwitch[];
 }
 
 export interface SolanaNetworkCatalogEntry extends NetworkCatalogBase {

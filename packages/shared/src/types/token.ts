@@ -83,6 +83,30 @@ export interface TokenToImport extends TokenInfo {
  * Unified token format that works across all chains.
  * Previously defined in useMultiChainTokens.
  */
+/**
+ * A verified-catalogue entry in the shape the token pickers read.
+ */
+export interface CatalogToken {
+  /** Token mint address */
+  address: string;
+  /** Token symbol (e.g., "SOL", "USDC") */
+  symbol: string;
+  /** Token name */
+  name?: string;
+  /** Token decimals */
+  decimals: number;
+  /** Token logo URL */
+  logo?: string;
+  /** User's balance of this token */
+  balance?: number;
+  /** USD price per token */
+  usdPrice?: number;
+  /** Chain this token belongs to */
+  chain?: BlockchainType;
+  /** Network ID (e.g., 'solana-mainnet') */
+  networkId?: string;
+}
+
 export interface UnifiedToken {
   /** Token symbol (e.g., "SOL", "BTC", "ETH", "USDC") */
   symbol: string;

@@ -18,4 +18,11 @@ export type {
 export interface IconBubbleProps extends IconBubblePropsBase {
   style?: CSSProperties;
   className?: string;
+  /**
+   * A pointer-only convenience: out of the accessibility tree and out of the
+   * tab order, for a control that duplicates something the keyboard already
+   * reaches another way. DOM-only — a phone has no pointer to serve and no
+   * tab order to leave.
+   */
+  decorative?: boolean;
 }

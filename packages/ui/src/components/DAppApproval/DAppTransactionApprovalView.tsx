@@ -10,9 +10,10 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { AppIdentity } from './AppIdentity';
 import { CardHead, bodyText, cardColumn } from './common';
-import { HoldToApproveButton } from './HoldToApproveButton';
+import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
+import { useApprovalArming } from './useApprovalArming';
 
 export function DAppTransactionApprovalView({
   origin,
@@ -26,6 +27,7 @@ export function DAppTransactionApprovalView({
   instructionCount,
   feePayer,
   recentBlockhash,
+  transactionCount = 1,
   parsingError,
   networkMismatch = null,
   disabled = false,
@@ -34,6 +36,7 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
+  const armed = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -47,7 +50,13 @@ export function DAppTransactionApprovalView({
       effects.kind === 'transaction-would-fail' ||
       (effects.kind === 'effects' && effects.approvals.length > 0));
 
-  const cannotApprove = disabled || loading || !!parsingError || !!networkMismatch;
+  // A preview that has not answered yet is not an absence of warnings. Until it
+  // does, `requiresHold` is false whatever the transaction turns out to do, so
+  // a delegation could be signed on a single reflex tap — and the requesting
+  // site controls how long the wait lasts, by padding the account set the
+  // preview has to resolve.
+  const cannotApprove =
+    disabled || loading || !armed || effectsLoading || !!parsingError || !!networkMismatch;
 
   return (
     <OnboardingLayout
@@ -90,6 +99,19 @@ export function DAppTransactionApprovalView({
               label={t('dapp.transaction_overview', 'Transaction overview')}
             />
             <KeyValueRow label={t('dapp.method', 'Method')} value={requestSummary} />
+            {transactionCount > 1 && (
+              <KeyValueRow
+                layout="stacked"
+                label={t('dapp.batch_size', 'Transactions in this request')}
+                value={t(
+                  'dapp.batch_first_only',
+                  '{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.',
+                  { count: transactionCount }
+                )}
+                valueTone="danger"
+                testID="batch-first-only"
+              />
+            )}
             <KeyValueRow
               label={t('dapp.transaction_fee', 'Estimated fee')}
               value={feeSol ? `${feeSol} SOL` : '-'}
@@ -163,17 +185,33 @@ export function DAppTransactionApprovalView({
         ) : undefined
       }
       secondary={
-        <SecondaryButton onPress={onReject} disabled={loading} fullWidth>
+        <SecondaryButton
+          testID="dapp-reject-button"
+          onPress={onReject}
+          disabled={loading}
+          fullWidth
+        >
           {t('dapp.reject', 'Reject').toUpperCase()}
         </SecondaryButton>
       }
       action={
         requiresHold ? (
-          <HoldToApproveButton onApprove={onApprove} loading={loading} disabled={cannotApprove}>
+          <HoldToApproveButton
+            testID="dapp-approve-button"
+            onApprove={onApprove}
+            loading={loading}
+            disabled={cannotApprove}
+          >
             {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
           </HoldToApproveButton>
         ) : (
-          <PrimaryButton onPress={onApprove} loading={loading} disabled={cannotApprove} fullWidth>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            onPress={onApprove}
+            loading={loading}
+            disabled={cannotApprove}
+            fullWidth
+          >
             {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
           </PrimaryButton>
         )

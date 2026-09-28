@@ -18,5 +18,6 @@ appId: io.salmonwallet.app
     timeout: 2000
 - runFlow: ./settings-close.yaml
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 20000

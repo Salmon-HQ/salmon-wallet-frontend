@@ -1,7 +1,7 @@
 /**
  * AppearanceSelector — the theme preference panel, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/SettingsSelectors/AppearanceSelector`:
+ * The mobile twin is `apps/mobile/src/components/AppearanceSelector`:
  * three rows (System, Light, Dark), each led by its glyph — a mode is a
  * picture, not a pair of letters (owner, 2026-09-02) — on the same shared
  * contract (`AppearanceSelectorBaseProps`). The caller owns the preference

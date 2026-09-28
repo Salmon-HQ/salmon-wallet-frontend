@@ -82,6 +82,37 @@ function getRemovedMintAddress(item: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * How long a sent or burned NFT stays hidden after it leaves the wallet.
+ *
+ * The indexer can list it for up to a minute more, and every refetch in that
+ * window — the grid mounting, the app coming back to the foreground, activity
+ * on the account — would put it back on screen.
+ * ponytail: fixed window per mint; an NFT received back within it stays
+ * hidden until it ends. Clear the hold on a matching receive if that matters.
+ */
+const REMOVED_NFT_HOLD_MS = 120_000;
+const heldBackNfts = new WeakMap<QueryClient, Map<string, number>>();
+
+function holdBackNfts(queryClient: QueryClient, mints: readonly string[]): void {
+  const held = heldBackNfts.get(queryClient) ?? new Map<string, number>();
+  const until = Date.now() + REMOVED_NFT_HOLD_MS;
+  for (const mint of mints) held.set(mint, until);
+  heldBackNfts.set(queryClient, held);
+}
+
+/** A cached NFT list without the NFTs that just left the wallet. */
+export function withoutHeldBackNfts<T>(queryClient: QueryClient, nfts: readonly T[]): T[] {
+  const held = heldBackNfts.get(queryClient);
+  if (!held?.size) return [...nfts];
+  const now = Date.now();
+  for (const [mint, until] of held) if (until <= now) held.delete(mint);
+  return nfts.filter((nft) => {
+    const mint = getRemovedMintAddress(nft);
+    return !mint || !held.has(mint);
+  });
+}
+
 function matchesInvalidation(opts: InvalidationOptions, kind: InvalidationKind) {
   const prefix = KIND_TO_PREFIX[kind];
   return (query: { queryKey: readonly unknown[] }): boolean => {
@@ -100,8 +131,13 @@ function matchesInvalidation(opts: InvalidationOptions, kind: InvalidationKind) 
 function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOptions): void {
   if (!opts.removedNftMintAddresses?.length) return;
 
+  holdBackNfts(queryClient, opts.removedNftMintAddresses);
   const removed = new Set(opts.removedNftMintAddresses);
-  queryClient.setQueriesData<unknown[]>(
+  const keep = (nft: unknown): boolean => {
+    const mintAddress = getRemovedMintAddress(nft);
+    return !mintAddress || !removed.has(mintAddress);
+  };
+  queryClient.setQueriesData<unknown>(
     {
       predicate: (query) => {
         const [head, params] = query.queryKey as [string, Record<string, unknown> | undefined];
@@ -120,12 +156,20 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
         return true;
       },
     },
-    (oldData) => {
-      if (!Array.isArray(oldData)) return oldData;
-      return oldData.filter((nft) => {
-        const mintAddress = getRemovedMintAddress(nft);
-        return !mintAddress || !removed.has(mintAddress);
-      });
+    (oldData: unknown) => {
+      if (Array.isArray(oldData)) return oldData.filter(keep);
+      // The grid caches its page walk, `{ nfts, partial }`, not a bare list.
+      // Passing that through untouched left a sent or burned NFT on screen
+      // until the indexer caught up.
+      if (
+        oldData &&
+        typeof oldData === 'object' &&
+        Array.isArray((oldData as { nfts?: unknown }).nfts)
+      ) {
+        const walk = oldData as { nfts: unknown[] };
+        return { ...walk, nfts: walk.nfts.filter(keep) };
+      }
+      return oldData;
     }
   );
   queryClient.removeQueries({
@@ -158,7 +202,7 @@ async function invalidateAfterTx(
           // that's not currently focused). Without this, RQ marks the
           // cache stale but only refetches on next mount — and tab
           // navigators preserve instances, so the home screen never
-          // remounts when the user returns from the swap success
+          // remounts when the user returns from a Powerup's success
           // modal. Result: stale balances until full page reload.
           refetchType: 'all',
         })
@@ -245,7 +289,7 @@ function balanceSignature(queryClient: QueryClient, opts: InvalidationOptions): 
 }
 
 /**
- * Event-driven settlement for same-chain actions (send, Jupiter swap, NFT
+ * Event-driven settlement for same-chain actions (send, NFT
  * burn/send). Snapshots the balance, then refetches on an interval until the
  * indexer reflects the change — resolving the moment the balance signature
  * differs, or after `maxWaitMs`. A success screen can `await` this so it dwells

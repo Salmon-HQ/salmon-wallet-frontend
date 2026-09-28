@@ -23,6 +23,7 @@ vi.mock('../storage', () => ({
   STORAGE_KEYS: { HIDDEN_BALANCE: 'hidden_balance' },
 }));
 
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { useBalance } from './useBalance';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 
@@ -171,7 +172,7 @@ describe('useBalance off mainnet', () => {
     );
   }
 
-  it('shows no USD at all for a devnet balance', async () => {
+  it('shows no USD for a devnet token that is not the native coin', async () => {
     const { result } = renderOn('solana-devnet');
 
     await waitFor(() => expect(result.current.tokens).toHaveLength(1));
@@ -181,6 +182,42 @@ describe('useBalance off mainnet', () => {
     expect(result.current.usdTotal).toBeUndefined();
     // The token itself is still there — only its price is unknown.
     expect(result.current.tokens[0].symbol).toBe('TKN');
+  });
+
+  // A test wallet reads like a real one: its native coin at the mainnet price,
+  // the total in dollars and its 24h change. Other tokens stay unpriced.
+  it('prices devnet SOL at the mainnet price, with the total and its 24h change', async () => {
+    const nativeMint = getBlockchainFromNetworkId('solana-devnet' as any);
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(
+      () =>
+        useBalance({
+          account: makeAccount(() =>
+            Promise.resolve({
+              items: [
+                {
+                  ...pricedToken.items[0],
+                  mint: nativeMint,
+                  symbol: 'SOL',
+                  usdBalance: 110,
+                  priceChange24h: 10,
+                },
+                pricedToken.items[0],
+              ],
+              usdTotal: 152,
+              last24HoursChange: 11,
+            })
+          ),
+          networkId: 'solana-devnet' as any,
+        }),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.tokens).toHaveLength(2));
+    expect(result.current.usdTotal).toBe(110);
+    expect(result.current.changePercent).toBe(10);
+    expect(result.current.changeAmount).toBeCloseTo(10);
+    expect(result.current.tokens[1].usdBalance).toBeUndefined();
   });
 
   it('keeps the USD figures on mainnet', async () => {

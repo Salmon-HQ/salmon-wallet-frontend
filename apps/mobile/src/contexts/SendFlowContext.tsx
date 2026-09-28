@@ -13,6 +13,7 @@
  * list (the same React Query cache Home populated) and the unverified-tokens
  * preference.
  */
+import { useLocalSearchParams } from 'expo-router';
 import React, { createContext, useContext, useMemo } from 'react';
 import {
   getBlockchainFromNetworkId,
@@ -61,10 +62,15 @@ export function SendFlowProvider({ children }: { children: React.ReactNode }) {
     includeSpam: showUnverifiedTokens,
   });
 
+  // `/send?token=<address>` — a token's detail screen opens the flow on that
+  // token; Home's Send control passes nothing and gets the chain's own asset.
+  const { token: initialTokenAddress } = useLocalSearchParams<{ token?: string }>();
+
   const flow = useSendFlowState({
     account: activeBlockchainAccount as BlockchainAccount,
     blockchain,
     tokens: tokens as SendToken[],
+    initialTokenAddress: typeof initialTokenAddress === 'string' ? initialTokenAddress : undefined,
   });
 
   const value = useMemo<SendFlowValue>(

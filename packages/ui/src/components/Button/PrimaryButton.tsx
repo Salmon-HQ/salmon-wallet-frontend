@@ -3,7 +3,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/Button/PrimaryButton.tsx`.
  * A salmon fill carrying `accent.onFill` ink at 6.50:1 — the only legal ink
- * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
+ * on a salmon fill. Disabled changes the whole object to `surface.crest` with
  * disabled ink rather than dimming the fill: the salmon is either alive or
  * absent, and so is the flesh inside it.
  *
@@ -18,8 +18,8 @@ import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
 import { FleshBackground } from '../FleshBackground';
-import { ButtonSpinner } from './ButtonSpinner';
-import { PressSpecular, setSpecularOrigin } from './PressSpecular';
+import { Spinner } from '../Spinner';
+import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { PrimaryButtonProps } from './types';
 
 /** Mobile's `PRESS_SCALE` — DESIGN.md §Motion's `scale(0.985)`. */
@@ -86,7 +86,7 @@ export function PrimaryButton({
           the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ButtonSpinner color={isDisabled ? text.disabled : accent.onFill} size={24} />
+        <Spinner color={isDisabled ? text.disabled : accent.onFill} size={24} />
       ) : (
         <span
           style={{

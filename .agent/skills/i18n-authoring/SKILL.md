@@ -22,7 +22,7 @@ Ask 1-3 focused questions if any of these are unclear:
 - What's the Spanish translation for this string? (Don't guess — ask the developer or leave a clear TODO.)
 - Does a similar translation key already exist that could be reused?
 - Is this string truly user-facing, or is it a log message / error code that doesn't need translation?
-- Should this key live under an existing namespace (e.g., `settings`, `send`, `swap`) or does it need a new top-level section?
+- Should this key live under an existing namespace (e.g., `settings`, `send`, `transactions`) or does it need a new top-level section?
 - Is the text temporary debug copy that should not ship?
 
 If you're unsure about the correct Spanish translation, ask. Bad translations are worse than no translation.

@@ -14,7 +14,7 @@ import { SolanaAccount } from '../blockchain/solana';
 import { BitcoinAccount } from '../blockchain/bitcoin';
 import { EthereumAccount } from '../blockchain/ethereum';
 import { SOL_CONSTANTS } from './balance';
-import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
+import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT, resolveUiAmount } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { MIRROR_NETWORK_IDS, getMainnetSibling } from './network';
 import { getAccountMnemonic } from './account-secret';
@@ -34,6 +34,16 @@ import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
  * See: https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#address-gap-limit
  */
 export const GAP_LIMIT = 20;
+
+/**
+ * The highest index the scan will derive, whatever the balances say.
+ *
+ * The gap limit bounds only *consecutive* empty indexes, so a balance provider
+ * that reports funds on every path keeps the scan deriving keys from the
+ * cleartext mnemonic for as long as it keeps answering — a loop whose length a
+ * remote service chooses. Two hundred paths is far past any real wallet.
+ */
+export const MAX_SCAN_INDEX = 200;
 
 /**
  * Mainnet networks to scan and create accounts for.
@@ -120,7 +130,7 @@ export async function getAccountFunds(
       const native = items.find((item) => isNativeSol(item.mint));
       const tokenCount = items.filter((item) => !isNativeSol(item.mint) && item.amount > 0).length;
       return {
-        native: native ? (native.uiAmount ?? native.amount / 10 ** native.decimals) : 0,
+        native: native ? resolveUiAmount(native) : 0,
         tokenCount,
       };
     }
@@ -311,7 +321,7 @@ export async function scanDerivedAccounts(
       let consecutiveEmpty = 0;
       let index = 1;
 
-      while (consecutiveEmpty < GAP_LIMIT) {
+      while (consecutiveEmpty < GAP_LIMIT && index <= MAX_SCAN_INDEX) {
         if (isCancelled?.()) return networkAccounts;
 
         // Yield to the UI thread so the loading state is rendered while scanning

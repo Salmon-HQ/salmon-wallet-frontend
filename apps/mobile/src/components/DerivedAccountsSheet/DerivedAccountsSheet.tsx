@@ -37,7 +37,7 @@ import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 import type { DerivedAccountsSheetProps } from './types';
 
@@ -69,12 +69,7 @@ export function DerivedAccountsSheet({
   const { standardContentBottomPadding } = useBottomSheetChrome();
   const [{ accounts }] = useAccountsContext();
 
-  const { rows, checked, toggle } = useDerivedFindRows(finds, accounts.length, t);
-
-  // While the scan runs the sheet names the wait, not the finds it has none of.
-  const title = scanning
-    ? t('wallet.derived.scanning_title')
-    : t('wallet.derived.found_title', { count: finds.length });
+  const { rows, checked, toggle, title } = useDerivedFindRows(finds, accounts.length, t, scanning);
 
   return (
     <BottomSheetContainer

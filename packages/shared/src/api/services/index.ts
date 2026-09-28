@@ -91,13 +91,8 @@ export {
   // Types - Pagination
   type SolanaPagingParams,
   type SolanaTransactionsResponse,
-  // Note: Swap types (SwapOrderParams, SwapExecuteRequest, ApiSwapExecuteResponse)
-  // are in types/swap.ts - import from @salmon/shared
   // Functions - Transactions
   getSolanaTransactions,
-  // Functions - Swap
-  getSwapOrder,
-  executeSwapApi,
   // DI adapter
   solanaApiFunctions,
 } from './solana';

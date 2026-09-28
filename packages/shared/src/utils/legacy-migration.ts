@@ -135,12 +135,18 @@ export async function migrateLegacyWallets(
   const storedWallets = await getStorageItem<LegacyWallets>(STORAGE_KEYS.WALLETS);
   if (!storedWallets) return { status: 'no-migration' };
 
+  // A password is required whether or not the legacy record had one. The v2
+  // wallet let its owner keep seed phrases with no password at all, and
+  // migrating that state as it stood wrote them to AsyncStorage and
+  // chrome.storage.local in cleartext, where the wallet had no way of ever
+  // encrypting them again. v3 has one rule for stored mnemonics — encrypted or
+  // not written — and the migration is not an exception to it.
+  if (!password) {
+    return { status: 'needs-password' };
+  }
+
   // Handle password-protected wallets
   if (storedWallets.passwordRequired) {
-    if (!password) {
-      return { status: 'needs-password' };
-    }
-
     if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
       // Migrate from old format where mnemonic was in wallet
       const decryptedWallets = await unlock<typeof storedWallets.wallets>(
@@ -295,13 +301,10 @@ export async function migrateLegacyWallets(
     }
   }
 
-  // Encrypt mnemonics if password required
-  if (storedWallets.passwordRequired && password) {
-    const lockedMnemonics = await lock(newMnemonics, password);
-    await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...lockedMnemonics, isEncrypted: true });
-  } else {
-    await setStorageItem(STORAGE_KEYS.MNEMONICS, newMnemonics);
-  }
+  // One write, always encrypted. A record that arrived without a password is
+  // encrypted under the one its owner just chose.
+  const lockedMnemonics = await lock(newMnemonics, password);
+  await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...lockedMnemonics, isEncrypted: true });
 
   // Save migrated data
   await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
@@ -326,6 +329,6 @@ export async function migrateLegacyWallets(
     pathIndex: newPathIndex,
     trustedApps: newTrustedApps,
     tokens: newTokens,
-    requiredLock: !!(storedWallets.passwordRequired && password),
+    requiredLock: true,
   };
 }

@@ -31,3 +31,4 @@ export { ENABLED_BLOCKCHAINS, isBlockchainEnabled } from './blockchains';
 
 // Public Bitcoin relays — the client broadcasts signed transactions directly.
 export { BITCOIN_BROADCAST_RELAYS, getBitcoinBroadcastRelays } from './bitcoin-relays';
+export { SALMON_LINKS } from './links';

@@ -35,6 +35,7 @@ import {
   signOffchainMessage,
   signSiwsMessage,
 } from '../blockchain/solana';
+import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
 import type {
   ResolveSymbolFn,
   SolanaAccount,
@@ -64,6 +65,12 @@ export interface ParsedSolanaTransaction {
 }
 
 export interface SolanaTransactionApprovalDetails {
+  /**
+   * How many transactions the request carries. Everything else in this object
+   * is read off the first one, so anything above 1 must be surfaced: the
+   * numbers do not describe what the user is about to sign in full.
+   */
+  transactionCount: number;
   feeLamports: number | null;
   instructionCount: number | null;
   feePayer: string | null;
@@ -274,10 +281,11 @@ export async function loadSolanaTransactionApprovalDetails(
 ): Promise<SolanaTransactionApprovalDetails> {
   await fetchAndMergeNetworkConfigs();
 
-  const encodedMessage =
+  const encodedMessages =
     request.method === 'signAllTransactions'
-      ? (request.params?.messages?.[0] ?? '')
-      : (request.params?.message ?? '');
+      ? (request.params?.messages ?? [])
+      : [request.params?.message ?? ''];
+  const encodedMessage = encodedMessages[0] ?? '';
 
   if (!encodedMessage) {
     throw new Error(
@@ -294,6 +302,7 @@ export async function loadSolanaTransactionApprovalDetails(
     .send();
 
   return {
+    transactionCount: encodedMessages.length,
     feeLamports: value != null ? Number(value) : null,
     instructionCount:
       'instructions' in parsed.message
@@ -311,7 +320,7 @@ export async function loadSolanaTransactionApprovalDetails(
  *
  * This is the answer to blind signing: fee, instruction count and blockhash
  * describe the *shape* of a transaction, and an unlimited USDC approval to an
- * attacker has the same shape as a swap. The preview describes the *effect*.
+ * attacker has the same shape as an exchange. The preview describes the *effect*.
  *
  * The transaction is assembled with every signature slot empty and simulated
  * with `sigVerify: false`, so no key is touched and nothing is broadcast.
@@ -383,12 +392,14 @@ export async function previewSolanaApprovalEffects(
 
 export async function approveSolanaSignMessage(
   account: SolanaAccount,
-  data: number[]
+  data: number[],
+  origin: string
 ): Promise<DAppSignMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   if (isTransactionLookalike(messageBytes)) {
     throw new TransactionLookalikeMessageError();
   }
+  assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
   const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
 
   return {
@@ -408,13 +419,16 @@ export async function approveSolanaSignMessage(
  * @param requiredSigners - Required signer addresses, base58-encoded. Validated
  *   here by `address()`, which rejects anything that is not a well-formed
  *   Solana address — same contract as `parseOffchainMessageForApproval`.
+ * @param origin - The real requesting origin; SIWS text for another domain is refused
  */
 export async function approveSolanaSignOffchainMessage(
   account: SolanaAccount,
   data: number[],
-  requiredSigners: string[]
+  requiredSigners: string[],
+  origin: string
 ): Promise<DAppSignOffchainMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
+  assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
   const signers = requiredSigners.map((signer) => address(signer));
   const { signature, buffer } = await signOffchainMessage(account, messageBytes, signers);
 

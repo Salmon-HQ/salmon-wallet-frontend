@@ -37,7 +37,6 @@ export type IconName =
   // Wallet
   | 'wallet'
   | 'activity'
-  | 'swap'
   // Status
   | 'checkmark'
   | 'checkmark-circle'

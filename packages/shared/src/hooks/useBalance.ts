@@ -28,7 +28,7 @@ import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
 import type { BlockchainAccount, NetworkId } from '../types/blockchain';
 import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/account';
-import { removeDecimals } from '../utils/decimals';
+import { resolveUiAmount } from '../utils/decimals';
 import { isMainnetNetworkId } from '../utils/network';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { queryKeys } from '../query/keys';
@@ -122,16 +122,17 @@ async function fetchSolanaBalance(
       owner: solanaAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
-      // Native SOL has no mint; Jupiter/SPL programs identify it by the
-      // wrapped-SOL pubkey. The previous literal 'solana' propagated to
-      // swap requests as outputMint=solana and Jupiter rejected with
-      // "Invalid outputMint" → 404 No route found.
+      // Native SOL has no mint; routers identify it by the wrapped-SOL
+      // pubkey. The previous literal 'solana' propagated to build requests as
+      // outputMint=solana and the router rejected it → 404 No route found.
       address: item.mint || SOL_CONSTANTS.ADDRESS,
-      coingeckoId: item.coingeckoId || (!item.mint ? 'solana' : undefined),
+      // Native SOL is the coin page `solana`, never the wrapped mint's
+      // `wrapped-solana` a token-list entry may carry.
+      coingeckoId: !item.mint ? 'solana' : item.coingeckoId || undefined,
       tags: item.tags,
       price: item.price,
       usdBalance: item.usdBalance,
@@ -173,7 +174,7 @@ async function fetchBitcoinBalance(bitcoinAccount: BitcoinAccount): Promise<Wall
       owner: bitcoinAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
@@ -217,7 +218,7 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
       owner: ethereumAccount.getReceiveAddress(),
       amount: item.amount,
       decimals: item.decimals,
-      uiAmount: item.uiAmount || removeDecimals(item.amount, item.decimals),
+      uiAmount: resolveUiAmount(item),
       symbol: item.symbol,
       name: item.name,
       logo: item.logo || undefined,
@@ -258,17 +259,27 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
  * fetcher based on account type.
  */
 /**
- * Drops every USD figure from a balance.
+ * A test network's balance, priced by its native coin alone.
  *
- * A devnet SOL is not SOL, and a testnet token that happens to carry a
- * mainnet symbol is worth nothing at all — showing the mainnet asset's price
- * beside it is the one wrong answer. Unknown is the honest one, and the rows
- * already render an em-dash for it.
+ * Devnet SOL and testnet BTC are shown at the mainnet coin's price, so a test
+ * wallet reads like a real one — the total in dollars and its 24h change.
+ * Every other token loses its figures: anyone can mint a devnet token called
+ * "USDC", and pricing it would show play money as real.
  */
-function withoutUsd(balance: WalletBalance): WalletBalance {
-  return {
-    items: balance.items.map(({ price, usdBalance, priceChange24h, ...item }) => item),
-  };
+function pricedByNativeCoin(balance: WalletBalance, networkId: NetworkId): WalletBalance {
+  const nativeMint = getBlockchainFromNetworkId(networkId);
+  const items = balance.items.map((item): TokenBalanceWithPrice => {
+    if (item.mint === nativeMint) return item;
+    const { price, usdBalance, priceChange24h, ...unpriced } = item;
+    return unpriced;
+  });
+  const native = balance.items.find((item) => item.mint === nativeMint);
+  const usdTotal = native?.usdBalance;
+  const percent = native?.priceChange24h;
+  if (usdTotal === undefined || percent === undefined) return { items, usdTotal };
+  // The change in dollars that `percent` implies for today's value.
+  const last24HoursChange = usdTotal - usdTotal / (1 + percent / 100);
+  return { items, usdTotal, last24HoursChange, last24HoursChangePercent: percent };
 }
 
 export async function fetchBalanceForAccount(
@@ -290,7 +301,7 @@ export async function fetchBalanceForAccount(
     return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
   })();
 
-  return isMainnetNetworkId(networkId) ? balance : withoutUsd(balance);
+  return isMainnetNetworkId(networkId) ? balance : pricedByNativeCoin(balance, networkId);
 }
 
 // ============================================================================

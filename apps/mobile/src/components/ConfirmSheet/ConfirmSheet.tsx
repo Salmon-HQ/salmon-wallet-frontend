@@ -95,6 +95,7 @@ export function ConfirmSheet({
                 placeholder={t('general.password', 'Password')}
                 error={passwordError}
                 editable={!loading}
+                testID="confirm-dialog-password"
                 autoFocus
                 onSubmitEditing={handleConfirm}
               />
@@ -111,28 +112,38 @@ export function ConfirmSheet({
           */}
           <View style={styles.actions}>
             {acknowledgeOnly ? (
-              <PrimaryButton onPress={onClose} disabled={loading}>
+              <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-confirm">
                 {confirmText || t('actions.close', 'Close')}
               </PrimaryButton>
             ) : isDanger ? (
               <>
-                <PrimaryButton onPress={onClose} disabled={loading}>
+                <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </PrimaryButton>
                 <SecondaryButton
                   onPress={handleConfirm}
                   disabled={!canConfirm || loading}
                   tone="danger-fill"
+                  testID="confirm-dialog-confirm"
                 >
                   {confirmText || t('actions.confirm', 'Confirm')}
                 </SecondaryButton>
               </>
             ) : (
               <>
-                <SecondaryButton onPress={onClose} disabled={loading}>
+                <SecondaryButton
+                  onPress={onClose}
+                  disabled={loading}
+                  testID="confirm-dialog-cancel"
+                >
                   {cancelText || t('actions.cancel', 'Cancel')}
                 </SecondaryButton>
-                <PrimaryButton onPress={handleConfirm} disabled={!canConfirm} loading={loading}>
+                <PrimaryButton
+                  onPress={handleConfirm}
+                  disabled={!canConfirm}
+                  loading={loading}
+                  testID="confirm-dialog-confirm"
+                >
                   {confirmText || t('actions.confirm', 'Confirm')}
                 </PrimaryButton>
               </>

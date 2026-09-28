@@ -37,6 +37,11 @@ export const stylesFor = (_t: Semantic) =>
     pinnedSubTabs: {
       marginTop: vs(spacing.xl),
     },
+    // Focus mode: with the balance block gone the row stands where the chain
+    // selector stood, so it owes no seam above itself.
+    pinnedSubTabsRisen: {
+      marginTop: 0,
+    },
     listContainer: {
       flex: 1,
     },

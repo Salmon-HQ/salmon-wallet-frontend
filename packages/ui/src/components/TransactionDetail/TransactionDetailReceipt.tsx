@@ -25,7 +25,7 @@ import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { CopyTick } from '../CopyTick';
 import { KeyValueRow } from '../KeyValueRow';
-import { AddressCopyRow } from '../TransactionHistoryPage/AddressCopyRow';
+import { AddressCopyRow } from '../AddressCopyRow';
 import type { Transaction } from './types';
 
 /** How much of the signature is shown before it elides. */
@@ -56,29 +56,34 @@ export function TransactionDetailReceipt({
 
   return (
     <Card padding="lg" gap={spacing.md} testID="tx-detail-addresses">
-      {transaction.type !== 'swap' && (
-        <>
-          {transaction.inputs.map((token, index) =>
-            token.source ? (
-              <AddressCopyRow
-                key={`from-${index}`}
-                label={translate('transactions.from', 'From')}
-                address={token.source}
-                truncate="medium"
-              />
-            ) : null
-          )}
-          {transaction.outputs.map((token, index) =>
-            token.destination ? (
-              <AddressCopyRow
-                key={`to-${index}`}
-                label={translate('transactions.to', 'To')}
-                address={token.destination}
-                truncate="medium"
-              />
-            ) : null
-          )}
-        </>
+      {transaction.inputs.map((token, index) =>
+        token.source ? (
+          <AddressCopyRow
+            key={`from-${index}`}
+            label={translate('transactions.from', 'From')}
+            address={token.source}
+            truncate="medium"
+          />
+        ) : null
+      )}
+      {transaction.outputs.map((token, index) =>
+        token.destination ? (
+          <AddressCopyRow
+            key={`to-${index}`}
+            label={translate('transactions.to', 'To')}
+            address={token.destination}
+            truncate="medium"
+          />
+        ) : null
+      )}
+
+      {transaction.app && (
+        <KeyValueRow
+          testID="tx-detail-app"
+          label={translate('transactions.detail.app', 'App')}
+          value={transaction.app}
+          labelWeight={600}
+        />
       )}
 
       {transaction.feePayer && (
@@ -93,14 +98,6 @@ export function TransactionDetailReceipt({
         <KeyValueRow
           label={translate('transactions.detail.networkFee', 'Network Fee')}
           value={`${formatRawAmount(transaction.fee.amount, transaction.fee.decimals)} ${transaction.fee.symbol}`}
-          labelWeight={600}
-        />
-      )}
-
-      {transaction.swapRoute?.totalFee && (
-        <KeyValueRow
-          label={translate('transactions.detail.swapFee', 'Swap Fee')}
-          value={`${transaction.swapRoute.totalFee.amount} ${transaction.swapRoute.totalFee.symbol}`}
           labelWeight={600}
         />
       )}

@@ -3,7 +3,7 @@
  * Currency, Explorer and Appearance, on the DOM.
  *
  * The mobile twin is
- * `apps/mobile/src/components/SettingsSelectors/SettingsSelectorList`: a
+ * `apps/mobile/src/components/SettingsSelectorList`: a
  * `ListRow` per choice, the chosen row marked by a trailing check in the
  * accent ink — a state rather than an action, never an accent fill on the
  * row (DESIGN.md §Navigation: a vertical set of exclusive choices does not
@@ -20,7 +20,7 @@ import { ListRow } from '../ListRow';
 import { SkeletonRow } from '../SkeletonRow';
 import type { SettingsSelectorListProps } from './types';
 
-/** Mirrors a rendered card row, so the loading state does not jump on swap. */
+/** Mirrors a rendered card row, so the loading state does not jump on change. */
 const SKELETON_ROW_COUNT = 3;
 
 /** The leading well every option row carries when a selector has no art of its own. */

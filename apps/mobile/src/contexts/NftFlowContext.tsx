@@ -10,7 +10,7 @@
  * already loaded, picks the sub-account that will sign, and hands the flow the
  * route's mint as its identity.
  */
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -74,10 +74,18 @@ export function NftFlowProvider({
     includeSpam: showUnverifiedTokens,
   });
 
-  const nft = useMemo<NftData | null>(() => {
+  const listed = useMemo<NftData | null>(() => {
     const raw = (nfts as Nft[]).find((candidate) => candidate.mint.address === mint);
     return raw ? canonicalNftToSolanaNftData(raw) : null;
   }, [nfts, mint]);
+  // A sent or burned NFT leaves the list the moment it lands, while the
+  // receipt still has to name it and link its transaction. Keep the last one
+  // seen for this mint.
+  const [kept, setKept] = useState<NftData | null>(listed);
+  useEffect(() => {
+    if (listed) setKept(listed);
+  }, [listed]);
+  const nft = listed ?? (kept?.mint === mint ? kept : null);
 
   const { settleAfterSend: _settleAfterSend, ...flow } = useNftFlowState({
     nft,

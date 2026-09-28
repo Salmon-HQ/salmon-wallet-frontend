@@ -19,7 +19,7 @@
  *   gives a tap.
  *
  * The verb is unchanged and every number comes from `@salmon/shared`: the
- * outgoing amount slides `LATERAL_SWAP_TRAVEL` toward the edge it is heading
+ * outgoing amount slides `LATERAL_CHANGE_TRAVEL` toward the edge it is heading
  * for and loses its light on `sink`; the incoming one starts at the opposite
  * edge and comes to rest on `settle`. The 24h change never moves sideways — it
  * has neighbours on both sides — so it plays the sink *in place*, the same
@@ -29,7 +29,7 @@
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
   componentSizes,
@@ -56,6 +56,7 @@ import { clearAnimations, useReducedMotion } from '../../motion';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { ChainSelector } from './ChainSelector';
 import { IconBubble } from '../IconBubble';
+import { ValueActionsRow } from '../ValueActionsRow';
 import { PendingValue } from '../PendingValue';
 import type { BalanceHeaderProps } from './types';
 
@@ -158,7 +159,7 @@ export function BalanceHeader({
       const slide = amountRef.current.animate(
         [
           { opacity: 1, transform: 'translateX(0px)' },
-          { opacity: 0, transform: `translateX(${direction * LATERAL_SWAP_TRAVEL}px)` },
+          { opacity: 0, transform: `translateX(${direction * LATERAL_CHANGE_TRAVEL}px)` },
         ],
         exit
       );
@@ -188,7 +189,7 @@ export function BalanceHeader({
       [
         {
           opacity: 0,
-          transform: `translateX(${(fromRight ? 1 : -1) * LATERAL_SWAP_TRAVEL}px)`,
+          transform: `translateX(${(fromRight ? 1 : -1) * LATERAL_CHANGE_TRAVEL}px)`,
         },
         { opacity: 1, transform: 'translateX(0px)' },
       ],
@@ -258,21 +259,29 @@ export function BalanceHeader({
     if (blinkedForRef.current === currentBlockchainId) return;
     blinkedForRef.current = currentBlockchainId;
     if (reducedMotion || !canAnimate(eyeRef.current)) return;
+    // Two curves, not one: the close is `sink` (the amount's own exit above
+    // rides it) and the reopen is `settle`, the same pair the mobile twin
+    // uses for this blink. One animation carries both — a keyframe's easing
+    // governs the interval that starts at it — so nothing is left filling
+    // the eye shut after the blink has played.
     eyeRef.current.animate(
       [
-        { transform: 'scaleY(1)' },
-        { transform: 'scaleY(0.05)', offset: motionMs.flick / (motionMs.flick + motionMs.swell) },
+        { transform: 'scaleY(1)', easing: motionEasing.sink.css },
+        {
+          transform: 'scaleY(0.05)',
+          offset: motionMs.flick / (motionMs.flick + motionMs.swell),
+          easing: motionEasing.settle.css,
+        },
         { transform: 'scaleY(1)' },
       ],
-      { duration: motionMs.flick + motionMs.swell, easing: motionEasing.settle.css }
+      { duration: motionMs.flick + motionMs.swell }
     );
   }, [currentBlockchainId, reducedMotion]);
 
-  // Off mainnet there is no price, so there is no USD total to print and the
-  // block would sit on an em-dash forever. The honest total on a test network
-  // is the native quantity; a 24h change is not withheld but absent, because
-  // nothing priced it.
-  const isTestNetwork = !isMainnetNetworkId(currentNetworkId);
+  // A test network is priced by its native coin at the mainnet price, like a
+  // real wallet. Where that coin has no price, the total falls back to the
+  // native quantity rather than sit on an em-dash forever.
+  const isUnpricedTestNetwork = !isMainnetNetworkId(currentNetworkId) && usdTotal === undefined;
   const nativeSymbol = NETWORK_DISPLAY[currentNetworkId]?.symbol ?? '';
   const nativeTotal =
     nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
@@ -281,7 +290,7 @@ export function BalanceHeader({
 
   const balanceText = hiddenBalance
     ? hiddenValue
-    : isTestNetwork
+    : isUnpricedTestNetwork
       ? nativeTotal
       : formatValue(usdTotal);
   useLayoutEffect(() => {
@@ -381,72 +390,67 @@ export function BalanceHeader({
             not the row is otherwise empty. Off mainnet nothing priced the
             balance, so this reads as an em-dash rather than disappearing —
             the row stays, only the figure is unknown. */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
-            <PendingValue pending={loading}>
-              <span
-                style={{
-                  fontFamily: fontFamily.sans,
-                  fontWeight: fontWeight.bold,
-                  // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
-                  // at `md`) — one reading size for the block's two
-                  // lateral-choice/status lines.
-                  fontSize: fontSize.bodyLg,
-                  letterSpacing: letterSpacing.change,
-                  color: hiddenBalance ? text.secondary : changeColor,
-                  whiteSpace: 'nowrap',
-                  ...tabularNums.css,
-                }}
-              >
-                {hiddenBalance
-                  ? `${hiddenValue} · ${hiddenValue}`
-                  : hasChange
-                    ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
-                    : EM_DASH}
-              </span>
-            </PendingValue>
-          </div>
-
-          {/* The three controls are the same object as the wallet thumb: one
-              `IconBubble`, differing only in tone, sized like
-              `portfolio-order-button` (36, the secondary-control step)
-              rather than a primary action's 42. Send is the block's single
-              salmon fill (and carries the flesh with it); Receive and
-              Activity are its outline twins. */}
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' }}
-          >
-            <IconBubble
-              testID="home-activity-button"
-              size={componentSizes.iconBubbleSm}
-              tone="outline"
-              icon={ClockIcon}
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onActivityPress}
-              accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-            />
-            <IconBubble
-              testID="home-send-button"
-              size={componentSizes.iconBubbleSm}
-              tone="accent"
-              icon={ArrowUpRightIcon}
-              iconWeight="bold"
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onSendPress}
-              disabled={sendDisabled}
-              accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-            />
-            <IconBubble
-              testID="home-receive-button"
-              size={componentSizes.iconBubbleSm}
-              tone="outline"
-              icon={ArrowDownLeftIcon}
-              iconSize={componentSizes.iconSizeXSmall}
-              onPress={onReceivePress}
-              accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-            />
-          </div>
-        </div>
+        <ValueActionsRow
+          leading={
+            <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
+              <PendingValue pending={loading}>
+                <span
+                  style={{
+                    fontFamily: fontFamily.sans,
+                    fontWeight: fontWeight.bold,
+                    // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
+                    // at `md`) — one reading size for the block's two
+                    // lateral-choice/status lines.
+                    fontSize: fontSize.bodyLg,
+                    letterSpacing: letterSpacing.change,
+                    color: hiddenBalance ? text.secondary : changeColor,
+                    whiteSpace: 'nowrap',
+                    ...tabularNums.css,
+                  }}
+                >
+                  {hiddenBalance
+                    ? `${hiddenValue} · ${hiddenValue}`
+                    : hasChange
+                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
+                      : EM_DASH}
+                </span>
+              </PendingValue>
+            </div>
+          }
+          actions={
+            <>
+              <IconBubble
+                testID="home-activity-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ClockIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onActivityPress}
+                accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+              />
+              <IconBubble
+                testID="home-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onSendPress}
+                disabled={sendDisabled}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
+              <IconBubble
+                testID="home-receive-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ArrowDownLeftIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onReceivePress}
+                accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+              />
+            </>
+          }
+        />
       </div>
     </div>
   );

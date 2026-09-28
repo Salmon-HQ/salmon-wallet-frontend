@@ -38,6 +38,8 @@ export interface NftDetailPageProps {
   burnPreview?: PreparedNftTransactionResponse | null;
   /** Whether the burn preview is being prepared or executed */
   burnPreparing?: boolean;
+  /** The burn is signing and landing: the wave covers the screen until it has. */
+  burning?: boolean;
   /** True while post-burn settlement waits for the indexer (gates the success CTA) */
   burnSettling?: boolean;
   /** Optional burn preparation error */

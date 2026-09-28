@@ -87,6 +87,23 @@ describe('PendingTransactionsProvider', () => {
     expect(result.current.pendingTransactions[0].status).toBe('pending');
   });
 
+  it('records a signature the sender already saw confirmed as resolved, without polling', async () => {
+    const getOutcomes = vi.fn(always('pending'));
+    const { result } = setup(getOutcomes);
+    act(() => {
+      result.current.trackPendingTransaction({
+        signature: 'sig-done',
+        kind: 'send',
+        networkId: NET,
+        submittedAt: Date.now(),
+        status: 'confirmed',
+      });
+    });
+
+    expect(result.current.pendingTransactions[0].status).toBe('confirmed');
+    expect(getOutcomes).not.toHaveBeenCalled();
+  });
+
   it('is idempotent per signature', async () => {
     const { result } = setup(always('pending'));
     await track(result, 'sig-dupe');
@@ -183,7 +200,7 @@ describe('PendingTransactionsProvider', () => {
     await setStorageItem(STORAGE_KEYS.PENDING_TRANSACTIONS, [
       {
         signature: 'sig-resumed',
-        kind: 'swap',
+        kind: 'send',
         networkId: NET,
         accountId: ACCT,
         submittedAt: Date.now() - 60_000,

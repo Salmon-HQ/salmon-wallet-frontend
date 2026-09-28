@@ -43,7 +43,7 @@ export function RevealCover({ label, onPress, testID }: RevealCoverProps): React
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     cover: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       // Declared, not implied by sibling order: a reorder must not uncover the gate.
       zIndex: 10,
       backgroundColor: t.surface.bedrock,

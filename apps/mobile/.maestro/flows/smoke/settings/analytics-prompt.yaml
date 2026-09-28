@@ -37,7 +37,8 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'analytics-consent-decline'
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/settings/analytics-prompt-declined
 
@@ -66,6 +67,7 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'analytics-consent-accept'
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/settings/analytics-prompt-accepted

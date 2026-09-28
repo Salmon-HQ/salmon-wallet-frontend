@@ -1,0 +1,10 @@
+appId: io.salmonwallet.app
+---
+# The guard every fund- or NFT-moving flow runs on Home before it starts: the
+# active network is Solana devnet, or the flow stops here. Mainnet is never
+# touched by the suite.
+- extendedWaitUntil:
+    visible:
+      id: 'balance-chain-selector-option-solana-devnet'
+      selected: true
+    timeout: 10000

@@ -19,7 +19,6 @@ repo, not from memory.
 - `estimateFee` (transfer.ts ~403) builds through `createSolTransaction` / `createSplTransaction`, compiles, and calls `rpc.getFeeForMessage`. Same builder → same version as the send.
 - `SolanaAccount` holds `network: SolanaNetwork` (`SolanaAccount.ts:38`) and is the only consumer of `createTransfer` / `estimateFee`.
 - `useAvailableNetworks.ts` mutates `SOLANA_NETWORKS[id].config.nodeUrl` / `wsUrl` in place from the backend and copies nothing else, so a field on `SolanaNetwork` would survive — but a table keyed by id is simpler and does not touch the `SolanaNetwork` contract, which the backend also shapes.
-- Swap (`swap.ts`) receives a serialized transaction from Jupiter; not touched. dApp path (`dapp-approval.ts`, `prepared-transactions.ts`) already decodes/encodes v1; not touched.
 
 **Decision**: `Record<SolanaNetworkId, 0 | 1>` in `networks.ts`; `SolanaAccount` reads it.
 

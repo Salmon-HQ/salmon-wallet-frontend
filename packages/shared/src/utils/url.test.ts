@@ -3,6 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { normalizeIpfsUrl } from './url';
 
 describe('normalizeIpfsUrl', () => {
+  // Anyone can mint an NFT into someone else's wallet, and the grid fetches
+  // whatever the metadata names, unattended.
+  it.each([
+    'http://art.example/nft.png',
+    'data:image/svg+xml,<svg onload="fetch(1)"/>',
+    'javascript:alert(1)',
+    'file:///etc/passwd',
+    'salmon://drain',
+  ])('does not hand %s to an <img> tag', (url) => {
+    expect(normalizeIpfsUrl(url)).toBeUndefined();
+  });
+
   it('rewrites a subdomain-style IPFS URL to the default gateway, path included', () => {
     const hash = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
 
@@ -10,6 +22,16 @@ describe('normalizeIpfsUrl', () => {
     expect(normalizeIpfsUrl(`https://${hash}.ipfs.dweb.link/1.png?x=1#f`)).toMatch(
       new RegExp(`${hash}/1\\.png$`)
     );
+  });
+
+  it('reads the subdomain form only at the start of the URL', () => {
+    // A minter's https URL that merely mentions an IPFS host further along is
+    // not an IPFS URL: it stays what it is instead of being sent to the
+    // gateway with the wrong hash.
+    const hash = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
+    const mention = `https://art.example/?via=https://${hash}.ipfs.dweb.link/1.png`;
+
+    expect(normalizeIpfsUrl(mention)).toBe(mention);
   });
 
   it('answers a hostile, very long URL without stalling', () => {

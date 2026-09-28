@@ -7,7 +7,7 @@
 // token detail, and a screen with amounts in a column (transaction history) —
 // plus a measured tabular-figures proof written to reports/.
 //
-// Read-only: it never sends, swaps, or signs anything.
+// Read-only: it never sends or signs anything.
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -77,16 +77,6 @@ await step('activity list', async () => {
   await sleep(3500);
   await capture(popup, folder, '04-activity-column');
   await backHome();
-});
-
-// Swap — amounts, rate, fee, slippage in one stack.
-await step('swap', async () => {
-  const tab = popup.getByTestId('tab-swap').first();
-  if (await tab.count()) {
-    await tab.click({ timeout: 6000 });
-    await sleep(3500);
-    await capture(popup, folder, '05-swap');
-  }
 });
 
 // --- Tabular-figures proof -------------------------------------------------

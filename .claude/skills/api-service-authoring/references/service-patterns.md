@@ -195,5 +195,5 @@ After creating a service, export it from:
 - Simple with SmartCache: `services/exchangeRates.ts`
 - Promise-based cache: `services/network.ts`
 - With DI adapters: `services/solana.ts`, `services/bitcoin.ts`
-- With rate limiting: `services/balance.ts` (chunked Jupiter price fetches)
+- With rate limiting: `services/balance.ts` (chunked price fetches)
 - Complex multi-function: `services/tokens.ts` (multi-tier fallback)

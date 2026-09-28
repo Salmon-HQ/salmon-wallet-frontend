@@ -2,7 +2,7 @@
  * TransactionDetail — CORE 09.
  *
  * The shell: a status block, the meta card, whichever variant the type calls
- * for (swap or transfer), the receipt, and the two actions. Every block below
+ * for (the transfer), the receipt, and the two actions. Every block below
  * it is a `Card` from the kit, so this file owns almost no drawing of its own.
  */
 import React, { useCallback, useMemo } from 'react';
@@ -33,9 +33,10 @@ import {
   CONFIRMATION_CONFIG,
   CONFIRMATION_LABEL_KEYS,
   STATUS_LABEL_KEYS,
-  conversionRateFor,
   transactionStatusDisplayFor,
   useDeveloperMode,
+  useTransactionDetailDerived,
+  withPlatformGlyphs,
 } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,11 +44,10 @@ import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { TextButton } from '../Button';
-import { ExplorerLinkButton } from '../Activity/ExplorerLinkButton';
-import { transactionTypeConfigFor, TYPE_LABEL_KEYS } from '../Activity/transactionTypes';
+import { ExplorerLinkButton } from '../ExplorerLinkButton';
+import { transactionTypeConfigFor, TYPE_LABEL_KEYS } from '../TransactionMark';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
-import { TransactionDetailSwap } from './TransactionDetailSwap';
 import { TransactionDetailTransfer } from './TransactionDetailTransfer';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
 import type { TransactionDetailProps } from './types';
@@ -57,12 +57,7 @@ const STATUS_GLYPHS = { checkCircle: CheckCircleIcon, xCircle: XCircleIcon, cloc
 
 /** The shared status table with this platform's icons. */
 const statusConfigFor = (t: Semantic) =>
-  Object.fromEntries(
-    Object.entries(transactionStatusDisplayFor(t)).map(([status, display]) => [
-      status,
-      { label: display.label, color: display.color, icon: STATUS_GLYPHS[display.glyph] },
-    ])
-  ) as Record<
+  withPlatformGlyphs(transactionStatusDisplayFor(t), STATUS_GLYPHS) as Record<
     'completed' | 'failed' | 'pending',
     { label: string; color: string; icon: IconComponent }
   >;
@@ -94,17 +89,11 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
     }
   }, [transaction, onShare]);
 
-  const typeConfig = useMemo(() => {
-    if (!transaction) return TRANSACTION_TYPE_CONFIG.unknown;
-    return TRANSACTION_TYPE_CONFIG[transaction.type] || TRANSACTION_TYPE_CONFIG.unknown;
-  }, [transaction, TRANSACTION_TYPE_CONFIG]);
-
-  const statusConfig = useMemo(() => {
-    if (!transaction) return STATUS_CONFIG.completed;
-    return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
-  }, [transaction, STATUS_CONFIG]);
-
-  const conversionRate = useMemo(() => conversionRateFor(transaction), [transaction]);
+  const { typeConfig, statusConfig } = useTransactionDetailDerived(
+    transaction,
+    TRANSACTION_TYPE_CONFIG,
+    STATUS_CONFIG
+  );
 
   if (!transaction) {
     return null;
@@ -183,13 +172,17 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
               labelWeight={600}
             />
           )}
+          {transaction.memo ? (
+            <KeyValueRow
+              testID="tx-detail-memo"
+              label={t('transactions.detail.note', 'Note')}
+              value={transaction.memo}
+              labelWeight={600}
+            />
+          ) : null}
         </Card>
 
-        {transaction.type === 'swap' ? (
-          <TransactionDetailSwap transaction={transaction} conversionRate={conversionRate} />
-        ) : (
-          <TransactionDetailTransfer transaction={transaction} />
-        )}
+        <TransactionDetailTransfer transaction={transaction} />
 
         <TransactionDetailReceipt transaction={transaction} onCopyHash={onCopyHash} />
 

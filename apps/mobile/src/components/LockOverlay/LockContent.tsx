@@ -59,6 +59,12 @@ export type { LockContentProps };
  *
  * iOS reports `active` a moment before the view is presented, and a prompt
  * raised in that gap silently never appears. Device-calibrated, not derived.
+ *
+ * This equals `motionMs.waitDelay` (400) by coincidence, not by relationship —
+ * one is how long before the biometric prompt is asked for, the other is how
+ * long a wait must last before a waiting screen may show. Do not alias it to
+ * `motionMs.waitDelay`; a future edit to `waitDelay` must not silently move
+ * the biometric prompt.
  */
 const PROMPT_SETTLE_MS = 400;
 
@@ -112,7 +118,7 @@ export function LockContent({
   const [biometricReady, setBiometricReady] = useState(false);
 
   // The passage into the wait: when the unlock wait rises, the lock form
-  // sinks under it — the same verb every step swap in the app speaks. The
+  // sinks under it — the same verb every step change in the app speaks. The
   // wait itself owns the beat on its way in.
   const { exiting: waitExiting } = useWaitPassage(showLoadingScreen);
 
@@ -480,9 +486,9 @@ export function LockContent({
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {/*
         The lock carries the water column (DESIGN.md §the lock screen): the
-        same ground the swap task modal mounts — depth ramp, deep-field
+        same ground the review task modal mounts — depth ramp, deep-field
         scales. It is mounted *outside* the layout, the way the
-        swap task modal mounts it outside its steps, because the ground never
+        review task modal mounts it outside its steps, because the ground never
         travels: when the unlock wait rises, the form below sinks and the
         water stays. The ground color sits under the ramp so nothing behind
         the gate can ever show through while it paints.

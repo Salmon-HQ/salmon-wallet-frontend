@@ -54,7 +54,7 @@ Use this for simple callback-driven components such as `PrimaryButton`.
 - Simple interaction: `Button`, `StepIndicator`
 - Callback + accessibility: `WalletHeader`
 - Platform split behavior: `QRCode`, `QRScanner`, `LoadingScreen`
-- Complex flows that deserve focused slices instead of broad coverage: `SendSheet`, `SwapScreen`
+- Complex flows that deserve focused slices instead of broad coverage: `SendSheet`, `Activity`
 
 ## Smells
 

@@ -91,13 +91,19 @@ const DARK_SNAPSHOT = {
   skeleton: { base: '#161C2D', highlight: '#2C3547' },
   input: { ground: '#161C2D', edge: '#58637B', placeholder: '#8B96AD' },
   overlay: {
-    backdrop: 'rgba(7, 9, 17, 0.7)',
+    backdrop: 'rgba(7, 9, 17, 0.84)',
     highlight: 'rgba(255, 255, 255, 0.2)',
     scrim: 'rgba(7, 9, 17, 0.9)',
   },
   sheet: { handle: '#8B96AD' },
   step: { active: '#FF5C45', inactive: '#58637B' },
-  scanner: { ground: '#070911', frame: '#161C2D', corner: '#8B96AD', hint: '#A7B1C4' },
+  scanner: {
+    ground: '#070911',
+    frame: '#161C2D',
+    corner: '#8B96AD',
+    hint: '#A7B1C4',
+    ink: '#EDF1F7',
+  },
   chain: {
     hintInk: {
       bitcoin: '#F59E0B',

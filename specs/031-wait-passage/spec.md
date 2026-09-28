@@ -82,15 +82,15 @@ ordering-only.
 
 ## Changes
 
-| #   | Change                                                                                              | File                                                 | Twin                                               |
-| --- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------- |
-| 1   | `geometry.origin` leaves the visibility effect's dependencies; the exit reads it from a ref         | `apps/mobile/.../LoadingScreen.tsx`                  | asymmetric — the DOM holds no measurement in state |
-| 2   | The surfacing is bumped in the same callback that releases the overlay; the passive effect goes     | `apps/mobile/app/(app)/_layout.tsx`                  | symmetric-optional, see 7                          |
-| 3   | `measureOrigin` gets the equality guard its two siblings have                                       | `apps/mobile/.../LoadingScreen.tsx`                  | asymmetric — same reason as 1                      |
-| 4   | A failed send/swap lets the wait _leave_ instead of cutting it                                      | `send/_layout.tsx`, `SwapScreen.tsx`, `SendPage.tsx` | symmetric                                          |
-| 5   | `isVisible` is set in the render phase, so the overlay is committed by the render that asked for it | both `LoadingScreen.tsx`                             | symmetric                                          |
-| 6   | The DOM twin gets mobile's `exitArmedRef`, so an exit is planned once                               | `packages/ui/.../LoadingScreen.tsx`                  | asymmetric — mobile already has it                 |
-| 7   | The extension bumps the surfacing on release too                                                    | `popup/App.tsx`                                      | states an invariant it currently inherits by luck  |
+| #   | Change                                                                                              | File                                | Twin                                               |
+| --- | --------------------------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------- |
+| 1   | `geometry.origin` leaves the visibility effect's dependencies; the exit reads it from a ref         | `apps/mobile/.../LoadingScreen.tsx` | asymmetric — the DOM holds no measurement in state |
+| 2   | The surfacing is bumped in the same callback that releases the overlay; the passive effect goes     | `apps/mobile/app/(app)/_layout.tsx` | symmetric-optional, see 7                          |
+| 3   | `measureOrigin` gets the equality guard its two siblings have                                       | `apps/mobile/.../LoadingScreen.tsx` | asymmetric — same reason as 1                      |
+| 4   | A failed send lets the wait _leave_ instead of cutting it                                           | `send/_layout.tsx`, `SendPage.tsx`  | symmetric                                          |
+| 5   | `isVisible` is set in the render phase, so the overlay is committed by the render that asked for it | both `LoadingScreen.tsx`            | symmetric                                          |
+| 6   | The DOM twin gets mobile's `exitArmedRef`, so an exit is planned once                               | `packages/ui/.../LoadingScreen.tsx` | asymmetric — mobile already has it                 |
+| 7   | The extension bumps the surfacing on release too                                                    | `popup/App.tsx`                     | states an invariant it currently inherits by luck  |
 
 ### On 4 — the one change that is not about the unlock
 
@@ -103,7 +103,7 @@ condition is `isWaveHeld` and the failure surface renders over the ebb.
 
 ### On 7 — why the extension does not show D2
 
-`HomePage` mounts fresh on the lock→home swap (it is not rendered behind the
+`HomePage` mounts fresh on the lock→home change (it is not rendered behind the
 lock the way mobile's Home is), and `SinkFloat`'s first phase carries
 `from { opacity: 0 }` as a fill state, so the float plays once in the same
 commit with no at-rest frame. Nothing bumps `surfaceKey` there at all. That is
@@ -124,7 +124,7 @@ branch. Bumping on release costs nothing today and makes the invariant explicit.
   owner's; flagged, not changed.
 - Two DOM-only notes with no user-visible effect: the tip rotation's inner
   `setTimeout` is never cleared on unmount, and `--wave-ring` can be measured
-  against a pre-webfont-swap line box.
+  against a pre-webfont-load line box.
 
 ## Verification
 

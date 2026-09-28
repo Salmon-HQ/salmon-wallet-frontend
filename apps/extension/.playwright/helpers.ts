@@ -6,7 +6,7 @@
  * recover-next-button, password-input/confirm, password-submit-button,
  * success-go-to-wallet-button).
  */
-import { type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 const password = (): string => process.env.SALMON_TEST_PASSWORD ?? '';
 const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
@@ -25,44 +25,103 @@ export async function unlockOrRecover(
   page: Page,
   { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {}
 ): Promise<EntryState> {
+  // Wait for whichever entry screen the popup opens on. Counting elements
+  // instead answers before the popup has rendered and reads as "home".
   const passwordInput = page.getByTestId('lock-password-input');
-  if (await passwordInput.count()) {
+  const recoverButton = page.getByTestId('select-recover-button');
+  const home = page.getByTestId('home-screen');
+  await passwordInput.or(recoverButton).or(home).first().waitFor({ timeout: 30_000 });
+
+  if (await passwordInput.isVisible()) {
     await passwordInput.fill(password());
     await page.getByTestId('lock-unlock-button').click();
-    await page.waitForTimeout(3000);
+    // Unlocked once the lock's own field is gone, however long the vault takes.
+    await passwordInput.waitFor({ state: 'detached', timeout: 30_000 });
     return 'unlocked';
   }
+  if (!(await recoverButton.isVisible())) return 'home';
 
-  const recoverButton = page.getByTestId('select-recover-button');
-  if (await recoverButton.count()) {
-    await recoverButton.click();
-    // Auto-waiting actions (no fixed sleeps): each step waits for its target
-    // to be actionable. recover-next-button is visibility-toggled until the
-    // seed validates; success appears only after the creation loading screen.
-    await page.getByTestId('recover-word-input-1').fill(seed);
-    await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
-    await page.getByTestId('password-input').fill(password());
-    await page.getByTestId('password-confirm-input').fill(password());
-    await page.getByTestId('password-submit-button').click();
-    // Success comes first; leaving it presents the first-run analytics
-    // consent, which is the final onboarding step.
-    await page
-      .getByTestId('success-go-to-wallet-button')
-      .click({ timeout: 60_000 })
-      .catch(() => {});
-    await page
-      .getByTestId(`analytics-consent-${consent}`)
-      .click({ timeout: 60_000 })
-      .catch(() => {});
-    return 'recovered';
+  await recoverButton.click();
+  // recover-next-button shows only once the seed validates.
+  await page.getByTestId('recover-word-input-1').fill(seed);
+  await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
+  await page.getByTestId('password-input').fill(password());
+  await page.getByTestId('password-confirm-input').fill(password());
+  await page.getByTestId('password-submit-button').click();
+  // Key derivation runs before Success. Leaving Success presents the
+  // first-run consent, the last onboarding step; a build without analytics
+  // goes straight Home, so wait for whichever comes.
+  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 90_000 });
+  // On the DOM the decline id names the header; its control is the header's
+  // back arrow. Accept is the button itself.
+  const consentScreen = page.getByTestId('analytics-consent-screen');
+  const consentButton =
+    consent === 'decline'
+      ? page.getByTestId('analytics-consent-decline').getByTestId('screen-header-back-button')
+      : page.getByTestId('analytics-consent-accept');
+  await consentButton.or(home).first().waitFor({ timeout: 30_000 });
+  if (await consentButton.isVisible()) {
+    await consentButton.click();
+    await consentScreen.waitFor({ state: 'detached', timeout: 30_000 });
   }
-
-  return 'home';
+  return 'recovered';
 }
 
 export async function waitHome(page: Page): Promise<void> {
-  await page
-    .getByTestId('home-screen')
-    .waitFor({ state: 'visible', timeout: 15_000 })
-    .catch(() => {});
+  await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30_000 });
 }
+
+/**
+ * Close Settings, from any depth, and land back on home.
+ *
+ * Settings is a page with a stack of panels; each panel's back arrow pops one
+ * level and the root's closes the page. Panels below the top one stay mounted,
+ * arrows included, so only the visible arrow is clicked. A pop is ignored while
+ * a panel is still animating, so each click is retried until Settings has
+ * unmounted — which also clears the stack for the next open.
+ */
+export async function closeSettings(page: Page): Promise<void> {
+  const settings = page.getByTestId('settings-screen');
+  await expect(async () => {
+    const back = page.getByTestId('screen-header-back-button').filter({ visible: true });
+    if ((await back.count()) > 0) await back.last().click({ timeout: 2_000 });
+    await expect(settings).toHaveCount(0, { timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
+}
+
+const DEVNET_TAB = 'balance-chain-selector-option-solana-devnet';
+
+/**
+ * From Home, put the active account on Solana devnet: Developer Networks on
+ * (a fresh profile has it off), then the Solana Devnet tab. Every spec that
+ * views, sends or burns funds or NFTs runs through here first.
+ */
+export async function selectDevnet(page: Page): Promise<void> {
+  await page.getByTestId('wallet-header-settings-button').click();
+  const toggle = page.getByTestId('settings-developer-networks-toggle');
+  if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await closeSettings(page);
+  await page.getByTestId(DEVNET_TAB).click();
+  await assertDevnet(page);
+}
+
+/** The guard before anything moves: the active network is Solana devnet. */
+export async function assertDevnet(page: Page): Promise<void> {
+  await expect(page.getByTestId(DEVNET_TAB), 'refusing to move funds off devnet').toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+}
+
+/**
+ * The devnet NFT fixture's card on the NFTs tab. scripts/devnet-fixtures.cjs
+ * (run by global-setup) keeps one in Wallet A; it is found by the name it
+ * carries, since each run may hold a freshly minted one.
+ */
+export const fixtureNftCard = (page: Page) =>
+  page
+    .getByTestId(/^nft-card-/)
+    .filter({ hasText: 'Salmon Test NFT' })
+    .first();

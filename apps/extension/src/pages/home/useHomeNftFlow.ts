@@ -20,11 +20,13 @@ type ActiveAccount = ReturnType<typeof useAccountsContext>[0]['activeAccount'];
 
 interface UseHomeNftFlowOptions {
   activeAccount: ActiveAccount;
+  /** The network the wallet is on; its Solana account owns the collectibles shown. */
+  networkId?: string | null;
   /** Moves the stack to a page; Home's own `setCurrentPage`. */
   navigate: (page: PageView) => void;
 }
 
-export function useHomeNftFlow({ activeAccount, navigate }: UseHomeNftFlowOptions) {
+export function useHomeNftFlow({ activeAccount, networkId, navigate }: UseHomeNftFlowOptions) {
   // The collectible being sent, when Send was opened from an NFT's detail:
   // the send flow becomes mobile's `nft/[id]/send` (spec 028 lot 4).
   const [sendNft, setSendNft] = useState<NftData | null>(null);
@@ -37,7 +39,12 @@ export function useHomeNftFlow({ activeAccount, navigate }: UseHomeNftFlowOption
     const networksAccounts = activeAccount?.networksAccounts;
     if (!networksAccounts) return undefined;
 
-    const preferredNetworkIds = ['solana-mainnet', 'solana-devnet'] as const;
+    // The active network first: the grid lists that network's collectibles,
+    // so signing with another network's account builds the transaction
+    // against a chain where the NFT does not exist.
+    const preferredNetworkIds = [networkId, 'solana-mainnet', 'solana-devnet'].filter(
+      (id): id is string => Boolean(id)
+    );
     for (const preferredNetworkId of preferredNetworkIds) {
       const account = networksAccounts[preferredNetworkId]?.[0];
       if (account && isSignableSolanaAccount(account)) {
@@ -54,7 +61,7 @@ export function useHomeNftFlow({ activeAccount, navigate }: UseHomeNftFlowOption
     }
 
     return undefined;
-  }, [activeAccount]);
+  }, [activeAccount, networkId]);
 
   // The NFT flow's state — the same hook mobile's `NftFlowProvider` wraps:
   // the burn preview and its confirmation, the receipt, the settle after a

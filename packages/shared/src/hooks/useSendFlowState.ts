@@ -13,10 +13,16 @@
  * params; haptics, routing and keyboards stay with the caller.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { TransferRequest } from '../blockchain/solana/transfer-request';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
-import type { SendRecipient, SendToken } from '../types/ui/send-sheet';
+import type { SendRecipient, SendRequest, SendToken } from '../types/ui/send-sheet';
 import { SOL_CONSTANTS } from '../utils/balance';
 import { useSendTransaction } from './useSendTransaction';
+
+/** Where a request-started Send lands, or why it could not start. */
+export type StartFromRequestResult =
+  | { ok: true; next: 'review' | 'amount' }
+  | { ok: false; reason: 'tokenNotHeld' | 'amountDecimals' };
 
 /** Reads a token balance the way every send surface has always read it. */
 function toNumber(value: number | string | undefined): number | undefined {
@@ -28,23 +34,40 @@ export interface UseSendFlowStateParams {
   account: BlockchainAccount;
   blockchain: BlockchainType;
   tokens: SendToken[];
+  /**
+   * The token the flow opens on when the host names one — a token's own
+   * detail screen sends that token. Absent, the chain's own asset.
+   */
+  initialTokenAddress?: string;
 }
 
-export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowStateParams) {
+export function useSendFlowState({
+  account,
+  blockchain,
+  tokens,
+  initialTokenAddress,
+}: UseSendFlowStateParams) {
   const [token, setToken] = useState<SendToken | null>(null);
   const [recipient, setRecipient] = useState<SendRecipient | null>(null);
   const [amount, setAmount] = useState('');
   const [txId, setTxId] = useState<string | null>(null);
+  // Set when Send was started from a scanned or pasted Solana Pay request:
+  // the review locks what the request fixed and the transfer carries its keys.
+  const [request, setRequest] = useState<SendRequest | null>(null);
 
   const sendHook = useSendTransaction({ account, blockchain });
 
-  // The flow opens on the chain's own asset, which is what the Send control on
-  // Home means; the picker is how the user says otherwise.
+  // The flow opens on the token the host named, else on the chain's own
+  // asset, which is what the Send control on Home means; the picker is how
+  // the user says otherwise.
   useEffect(() => {
     if (token || tokens.length === 0) return;
+    const named = initialTokenAddress
+      ? tokens.find((tok) => tok.address === initialTokenAddress)
+      : undefined;
     const native = tokens.find((tok) => tok.address === SOL_CONSTANTS.ADDRESS);
-    setToken(native ?? tokens[0]);
-  }, [token, tokens]);
+    setToken(named ?? native ?? tokens[0]);
+  }, [token, tokens, initialTokenAddress]);
 
   const liveBalance = useMemo(() => {
     if (!token) return undefined;
@@ -100,8 +123,50 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
     setRecipient(null);
     setAmount('');
     setTxId(null);
+    setRequest(null);
     sendHook.reset();
   }, [sendHook]);
+
+  /**
+   * Start from a Solana Pay transfer request: the recipient, the token and
+   * (when named) the amount are the request's, and the caller navigates to
+   * `next`. The token must be one the account holds — the wallet never
+   * substitutes another (spec 033 FR-023) — and the amount must fit that
+   * token's decimals, which is the check the standard asks of a wallet and
+   * the only place with the decimals in hand. Without it the transfer would
+   * round to something other than what was asked.
+   */
+  const startFromRequest = useCallback(
+    (transferRequest: TransferRequest, holdings: readonly SendToken[]): StartFromRequestResult => {
+      const mint = transferRequest.splToken ?? SOL_CONSTANTS.ADDRESS;
+      const held = holdings.find((tok) => tok.address === mint);
+      if (!held) return { ok: false, reason: 'tokenNotHeld' };
+
+      const fraction = transferRequest.amount?.split('.')[1] ?? '';
+      if (fraction.length > (held.decimals ?? SOL_CONSTANTS.DECIMALS)) {
+        return { ok: false, reason: 'amountDecimals' };
+      }
+
+      const hasAmount = transferRequest.amount !== undefined;
+      // The label is the requester's own words, from a QR anyone can print. It
+      // stays in the "Requested by" row, which says whose words they are. The
+      // "To" row holds an address-book name everywhere else in the wallet, so
+      // putting the label there made a payment to an attacker's address read
+      // as a payment to a saved contact.
+      setRecipient({ address: transferRequest.recipient });
+      setToken(held);
+      setAmount(transferRequest.amount ?? '');
+      setRequest({
+        request: transferRequest,
+        token: held,
+        locked: { recipient: true, token: true, amount: hasAmount },
+      });
+      return { ok: true, next: hasAmount ? 'review' : 'amount' };
+    },
+    []
+  );
+
+  const clearRequest = useCallback(() => setRequest(null), []);
 
   /** Commit the transfer. The hook's `failed` status is the report. */
   const submit = useCallback(async () => {
@@ -112,12 +177,13 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
         recipientAddress: recipient.address,
         resolvedRecipientAddress: recipient.resolvedAddress,
         amount: parseFloat(amount),
+        ...(request ? { memo: request.request.memo, references: request.request.references } : {}),
       });
       setTxId(result.txId);
     } catch {
       // The hook's `failed` status is the report; the failure surface renders it.
     }
-  }, [sendHook, token, recipient, amount]);
+  }, [sendHook, token, recipient, amount, request]);
 
   return {
     token,
@@ -134,6 +200,9 @@ export function useSendFlowState({ account, blockchain, tokens }: UseSendFlowSta
     txId,
     submit,
     reset,
+    request,
+    startFromRequest,
+    clearRequest,
   };
 }
 

@@ -1,16 +1,16 @@
 /**
  * How a transaction reads: its verb, its glyph name, its ink, its status and
- * confirmation labels, its swap rate and the sentence the activity row says.
+ * confirmation labels, its conversion rate and the sentence the activity row says.
  *
  * Shared because the mobile Activity/TransactionDetail and the DOM
- * TransactionHistoryPage/TransactionDetail draw the same facts — the two
- * tables used to live once per platform, which is how "Swapped" here and
- * "Swap" there happen. Glyphs are names: each platform maps a name to its own
+ * ActivityPage/TransactionDetail draw the same facts — the two
+ * tables used to live once per platform, which is how the wording drifted.
+ * Glyphs are names: each platform maps a name to its own
  * icon component; ink is resolved here from the active tokens.
  */
 import { chainMarks } from '../theme/brand';
 import type { Semantic } from '../theme/semantic';
-import type { Transaction, TransactionType } from '../types/transaction';
+import type { Transaction, TransactionAction, TransactionType } from '../types/transaction';
 import { getShortAddress } from './address';
 import { getTransactionDescription } from './transactions';
 
@@ -20,14 +20,14 @@ import { getTransactionDescription } from './transactions';
 
 /** The glyph a platform draws for a transaction type — a name, not a component. */
 export type TransactionTypeGlyph =
-  | 'arrowUp'
-  | 'arrowDown'
-  | 'arrowsLeftRight'
+  | 'arrowUpRight'
+  | 'arrowDownLeft'
   | 'plusCircle'
   | 'fire'
   | 'lock'
   | 'money'
   | 'cube'
+  | 'note'
   | 'question';
 
 export interface TransactionTypeDisplay {
@@ -42,14 +42,31 @@ export interface TransactionTypeDisplay {
 export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
   send: 'transactions.detail.sent',
   receive: 'transactions.detail.received',
-  swap: 'transactions.detail.swapped',
   mint: 'transactions.detail.minted',
   burn: 'transactions.detail.burned',
   stake: 'transactions.detail.staked',
   loan: 'transactions.detail.loan',
   interaction: 'transactions.detail.interaction',
+  memo: 'transactions.detail.memo',
   unknown: 'transactions.detail.unknown',
 };
+
+/**
+ * The verb an interaction's action reads as (backend 017); `program_call`
+ * keeps the type's own label. Resolved via `t()` at the call site.
+ */
+export const ACTION_LABEL_KEYS: Partial<Record<TransactionAction, string>> = {
+  swap: 'transactions.action.swap',
+  nft_sale: 'transactions.action.nftSale',
+  nft_purchase: 'transactions.action.nftPurchase',
+  accounts_closed: 'transactions.action.accountsClosed',
+};
+
+/** The row's verb: the action's when it has one, the type's otherwise. */
+export function transactionVerbKey(transaction: Pick<Transaction, 'type' | 'action'>): string {
+  const byAction = transaction.action ? ACTION_LABEL_KEYS[transaction.action] : undefined;
+  return byAction ?? TYPE_LABEL_KEYS[transaction.type] ?? TYPE_LABEL_KEYS.unknown;
+}
 
 /**
  * A function of the active tokens because `send`/`receive`/`unknown` read
@@ -58,14 +75,15 @@ export const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
 export const transactionTypeDisplayFor = (
   t: Semantic
 ): Record<TransactionType, TransactionTypeDisplay> => ({
-  send: { label: 'Sent', glyph: 'arrowUp', color: t.change.negative },
-  receive: { label: 'Received', glyph: 'arrowDown', color: t.change.positive },
-  swap: { label: 'Swapped', glyph: 'arrowsLeftRight', color: chainMarks.purple },
+  // The same arrows the Home Send / Receive buttons wear (owner, 2026-09-11).
+  send: { label: 'Sent', glyph: 'arrowUpRight', color: t.change.negative },
+  receive: { label: 'Received', glyph: 'arrowDownLeft', color: t.change.positive },
   mint: { label: 'Minted', glyph: 'plusCircle', color: chainMarks.cyan },
   burn: { label: 'Burned', glyph: 'fire', color: chainMarks.orange },
   stake: { label: 'Staked', glyph: 'lock', color: chainMarks.green },
   loan: { label: 'Loan', glyph: 'money', color: chainMarks.amber },
   interaction: { label: 'Interaction', glyph: 'cube', color: chainMarks.blue },
+  memo: { label: 'Memo', glyph: 'note', color: chainMarks.pink },
   unknown: { label: 'Unknown', glyph: 'question', color: t.text.secondary },
 });
 
@@ -95,6 +113,30 @@ export const transactionStatusDisplayFor = (
   pending: { label: 'Pending', color: t.status.warning, glyph: 'clock' },
 });
 
+/**
+ * Resolves a display table's glyph *names* to a platform's icon
+ * *components* — the one step `transactionTypeConfigFor` (Activity /
+ * ActivityPage) and the TransactionDetail twins' `statusConfigFor`
+ * each reimplemented once per platform. The glyph map is the only thing that
+ * differs between platforms, so it stays the caller's argument.
+ */
+export function withPlatformGlyphs<
+  Key extends string,
+  Glyph extends string,
+  IconT,
+  Display extends { label: string; color: string; glyph: Glyph },
+>(
+  displayTable: Record<Key, Display>,
+  glyphs: Record<Glyph, IconT>
+): Record<Key, { label: string; color: string; icon: IconT }> {
+  return Object.fromEntries(
+    Object.entries<Display>(displayTable).map(([key, display]) => [
+      key,
+      { label: display.label, color: display.color, icon: glyphs[display.glyph] },
+    ])
+  ) as Record<Key, { label: string; color: string; icon: IconT }>;
+}
+
 /** The value tones the kit's KeyValueRow offers; confirmation depth is one of them. */
 export type ConfirmationTone = 'primary' | 'secondary' | 'success';
 
@@ -118,36 +160,6 @@ export const CONFIRMATION_LABEL_KEYS: Record<string, string> = {
 // ============================================================================
 // Derivations
 // ============================================================================
-
-export interface ConversionRate {
-  fromSymbol: string;
-  toSymbol: string;
-  /** Six decimals, as the detail prints it. */
-  rate: string;
-}
-
-/**
- * A swap's rate: the route's own when it carries one, otherwise derived from
- * a one-in/one-out pair. `null` when there is nothing to rate.
- */
-export function conversionRateFor(
-  transaction: Pick<Transaction, 'swapRoute' | 'inputs' | 'outputs'> | null | undefined
-): ConversionRate | null {
-  if (!transaction) return null;
-  const { swapRoute, inputs, outputs } = transaction;
-  if (swapRoute?.conversionRate) return swapRoute.conversionRate;
-  if (inputs.length !== 1 || outputs.length !== 1) return null;
-  const fromToken = outputs[0];
-  const toToken = inputs[0];
-  const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
-  const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
-  if (!(fromAmount > 0)) return null;
-  return {
-    fromSymbol: fromToken.symbol,
-    toSymbol: toToken.symbol,
-    rate: (toAmount / fromAmount).toFixed(6),
-  };
-}
 
 /**
  * The other side of a transfer, when there is one: who it went to, or who it
@@ -178,9 +190,23 @@ export interface TransactionSentence {
  * description.
  */
 export function describeTransactionRow(
-  transaction: Pick<Transaction, 'type' | 'inputs' | 'outputs' | 'source' | 'description'>,
+  transaction: Pick<
+    Transaction,
+    'type' | 'inputs' | 'outputs' | 'source' | 'description' | 'memo' | 'action'
+  >,
   contacts?: Record<string, string>
 ): TransactionSentence {
+  // A memo's sentence is the note itself — the one thing the user wrote.
+  if (transaction.type === 'memo' && transaction.memo) {
+    return { key: 'transactions.description.memoNote', values: { note: transaction.memo } };
+  }
+  // A swap says what went for what; the verb above it already says "Swapped".
+  if (transaction.action === 'swap' && transaction.outputs[0] && transaction.inputs[0]) {
+    return {
+      key: 'transactions.description.swap',
+      values: { from: transaction.outputs[0].symbol, to: transaction.inputs[0].symbol },
+    };
+  }
   const counterparty = transactionCounterparty(transaction);
   if (counterparty) {
     const name =

@@ -7,9 +7,13 @@ vi.mock('./domains', () => ({
   getPublicKeyFromDomain: vi.fn(),
 }));
 
+vi.mock('./confirm', () => ({
+  confirmSolanaSignature: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('./transfer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./transfer')>()),
-  createTransfer: vi.fn().mockResolvedValue({ txId: 'sig' }),
+  createTransfer: vi.fn().mockResolvedValue({ txId: 'sig', lastValidBlockHeight: 1n }),
   estimateFee: vi.fn().mockResolvedValue(5000),
 }));
 
@@ -116,6 +120,19 @@ describe('SolanaAccount', () => {
     expect(SolanaAccount.isValidAddress('not-a-solana-address')).toBe(false);
   });
 
+  // TypeScript's `private` is a compile-time marker: the seed was an ordinary
+  // own property, and anything that walks the object — a log line, an error
+  // report, a state serializer — would carry the private key with it.
+  it('keeps the seed out of anything that serializes the account', async () => {
+    const account = await createAccount();
+
+    expect(Object.keys(account)).not.toContain('seed');
+    expect(JSON.stringify(account)).not.toContain('seed');
+    expect(Object.values(account).some((value) => value instanceof Uint8Array)).toBe(false);
+    // Still reachable where it is meant to be.
+    expect(account.retrieveSecurePrivateKey().length).toBeGreaterThan(0);
+  });
+
   it('rebuilds the same key material from the seed as the legacy keypair did', async () => {
     // seed = 0x01 * 32 — a fixed vector, so a change in how the account turns
     // signing key material into a keypair is caught here rather than in the field.
@@ -129,7 +146,7 @@ describe('SolanaAccount', () => {
     expect(account.getReceiveAddress()).toBe(account.signer.address);
   });
 
-  it('throws exact method_not_supported errors for deprecated swap/token methods', async () => {
+  it('throws exact method_not_supported errors for deprecated token methods', async () => {
     const account = await createAccount();
 
     await expect(account.getAvailableTokens()).rejects.toThrow(
@@ -137,12 +154,6 @@ describe('SolanaAccount', () => {
     );
     await expect(account.getFeaturedTokens()).rejects.toThrow(
       'method_not_supported: Use token list service directly'
-    );
-    await expect(account.getBestSwapQuote()).rejects.toThrow(
-      'method_not_supported: Use swap service directly'
-    );
-    await expect(account.createSwapTransaction()).rejects.toThrow(
-      'method_not_supported: Use swap service directly'
     );
   });
 

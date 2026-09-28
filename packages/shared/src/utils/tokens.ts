@@ -1,5 +1,18 @@
 import type { DetectedERC20Token } from '../api/services/ethereum';
-import type { TokenSelectorToken } from '../types/ui/token-selector';
+
+/**
+ * The loose token shape the search filter reads — anything with a name and a
+ * symbol can be filtered; an address or a mint identifies it.
+ */
+export interface TokenSelectorToken {
+  mint?: string;
+  address?: string;
+  name?: string;
+  symbol?: string;
+  logo?: string | null;
+  uiAmount?: number | string;
+  network?: string;
+}
 import { SOL_CONSTANTS } from './balance';
 
 // ============================================================================
@@ -118,10 +131,7 @@ const MIN_SEARCH_LENGTH = 3;
  * Filters tokens locally by name or symbol.
  * Returns all tokens if query is shorter than MIN_SEARCH_LENGTH.
  */
-export function filterTokensLocally(
-  tokens: TokenSelectorToken[],
-  query: string
-): TokenSelectorToken[] {
+export function filterTokensLocally<T extends TokenSelectorToken>(tokens: T[], query: string): T[] {
   if (query.length < MIN_SEARCH_LENGTH) {
     return tokens;
   }

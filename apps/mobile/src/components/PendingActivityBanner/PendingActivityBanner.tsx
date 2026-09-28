@@ -8,7 +8,7 @@
  * also what an unlocking user sees when they come back mid-flight.
  */
 
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, ClockIcon, WarningCircleIcon, XIcon, iconSize } from '../../icons';
 import type { IconComponent } from '../../icons';
@@ -18,6 +18,7 @@ import type { PendingActivityItem } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { PendingActivityBannerProps } from './types';
+import { Spinner } from '../Spinner';
 
 export type { PendingActivityBannerProps };
 
@@ -58,7 +59,7 @@ export function PendingActivityBanner({ items, onDismiss, style }: PendingActivi
             {tone.icon ? (
               <tone.icon size={iconSize.md} color={tone.color} />
             ) : (
-              <ActivityIndicator size="small" color={tone.color} />
+              <Spinner color={tone.color} />
             )}
             <View style={styles.body}>
               <Text style={[styles.title, { color: tone.color }]}>

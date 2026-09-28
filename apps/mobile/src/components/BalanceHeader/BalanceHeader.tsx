@@ -52,13 +52,14 @@ import { ArrowDownLeftIcon, ArrowUpRightIcon, ClockIcon, EyeIcon, EyeSlashIcon }
 import { curve, timing } from '../../utils/motion';
 import {
   DRAG_FOLLOW,
-  LATERAL_SWAP_TRAVEL,
+  LATERAL_CHANGE_TRAVEL,
   SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
   floatEntering,
 } from '../../utils/sinkAndFloat';
 import { ChainSelector } from './ChainSelector';
 import { IconBubble } from '../IconBubble';
+import { ValueActionsRow } from '../ValueActionsRow';
 import { PendingValue } from '../PendingValue';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { BalanceHeaderProps } from './types';
@@ -110,7 +111,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // The eye's own cue that the chain under it changed — a blink, not a
   // report: `scaleY` shuts fast (`sink`/`flick`, same feel the exit above
   // has) and reopens slower (`settle`/`swell`), independent of the amount's
-  // own swap so it reads on every chain change, not only a swipe's.
+  // own change so it reads on every chain change, not only a swipe's.
   const blinkScale = useSharedValue(1);
 
   // Both halves of the blink are built here, on the JS thread: the reopen runs
@@ -151,7 +152,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     const direction = newIndex > activeIndex ? -1 : 1;
     // Never walk the value back: a long drag is already further out than the
     // exit distance, and the exit only has to finish what the finger started.
-    const target = direction * Math.max(Math.abs(dragX.value), LATERAL_SWAP_TRAVEL);
+    const target = direction * Math.max(Math.abs(dragX.value), LATERAL_CHANGE_TRAVEL);
     sinkProgress.value = withTiming(1, leaveTiming);
     dragX.value = withTiming(target, leaveTiming, (finished) => {
       if (finished) runOnJS(updateIndex)(newIndex);
@@ -169,7 +170,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     const fromRight = activeIndex > enteredIndex.current;
     enteredIndex.current = activeIndex;
     sinkProgress.value = 0;
-    dragX.value = fromRight ? LATERAL_SWAP_TRAVEL : -LATERAL_SWAP_TRAVEL;
+    dragX.value = fromRight ? LATERAL_CHANGE_TRAVEL : -LATERAL_CHANGE_TRAVEL;
     dragX.value = withTiming(0, arriveTiming);
   }, [activeIndex, arriveTiming, dragX, sinkProgress]);
 
@@ -216,7 +217,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
       const goNext = event.translationX < -SWIPE_THRESHOLD && activeIndex < blockchains.length - 1;
       const goPrevious = event.translationX > SWIPE_THRESHOLD && activeIndex > 0;
       if (!goNext && !goPrevious) {
-        // Short of the threshold nothing changed, so nothing swaps: the amount
+        // Short of the threshold nothing changed, so nothing changes: the amount
         // springs back to rest and the change un-sinks on the same beat.
         dragX.value = withTiming(0, arriveTiming);
         sinkProgress.value = withTiming(0, arriveTiming);
@@ -268,13 +269,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const { usdTotal, nativeAmount, changePercent, changeAmount, loading = false } = current ?? {};
   const currentNetworkId = current?.network.id ?? 'solana-mainnet';
 
-  // Off mainnet there is no price, so there is no USD total to print (the
-  // balance hook strips every fiat figure there) and the block used to sit on
-  // an em-dash forever. The honest total on a test network is the native
-  // quantity, formatted exactly as the token rows format theirs, and a 24h
-  // change is not withheld but absent: nothing priced it. Unknown is still
-  // unknown — a balance that has not been read yet is not a zero.
-  const isTestNetwork = !isMainnetNetworkId(currentNetworkId);
+  // A test network is priced by its native coin at the mainnet price, like a
+  // real wallet. Where that coin has no price, the total falls back to the
+  // native quantity, formatted exactly as the token rows format theirs,
+  // rather than sit on an em-dash forever. Unknown is still unknown — a
+  // balance that has not been read yet is not a zero.
+  const isUnpricedTestNetwork = !isMainnetNetworkId(currentNetworkId) && usdTotal === undefined;
   const nativeSymbol = NETWORK_DISPLAY[currentNetworkId]?.symbol ?? '';
   const nativeTotal =
     nativeAmount === undefined ? EM_DASH : `${formatLargeNumber(nativeAmount)} ${nativeSymbol}`;
@@ -285,25 +285,25 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
   const changeColor = hasChange ? change[getLabelValue(changePercent)] : text.secondary;
 
-  // The value swap: everything that reports the active chain is keyed on it,
+  // The value change: everything that reports the active chain is keyed on it,
   // so a switch remounts exactly those nodes and the sink/float plays in
   // place. The beat before the float is owed only once a chain has really
   // changed — on first mount nothing sank.
-  const [chainSwap, setChainSwap] = React.useState({
+  const [chainChange, setChainChange] = React.useState({
     chain: currentBlockchainId,
     hasPrior: false,
   });
-  if (chainSwap.chain !== currentBlockchainId) {
-    setChainSwap({ chain: currentBlockchainId, hasPrior: true });
+  if (chainChange.chain !== currentBlockchainId) {
+    setChainChange({ chain: currentBlockchainId, hasPrior: true });
   }
 
   // The change is the one value whose sink has already been played by the
-  // time it swaps — the gesture sank it in place on the way out (see
+  // time it changes — the gesture sank it in place on the way out (see
   // `changeSinkStyle`), so the keyed node owes only the float, and owes it
   // with no beat: the amount's own exit was the beat. Handing it a second
   // `exiting` here would sink the old value twice.
   const changeMotion = {
-    entering: chainSwap.hasPrior ? floatEntering(isReduceMotionEnabled) : undefined,
+    entering: chainChange.hasPrior ? floatEntering(isReduceMotionEnabled) : undefined,
   };
 
   return (
@@ -337,7 +337,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
                 >
                   {hiddenBalance
                     ? hiddenValue
-                    : isTestNetwork
+                    : isUnpricedTestNetwork
                       ? nativeTotal
                       : formatValue(usdTotal)}
                 </Text>
@@ -371,63 +371,70 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               right. Off mainnet nothing priced the balance, so this reads as
               an em-dash rather than disappearing — the row stays, only the
               figure is unknown. */}
-          <View style={styles.changeActionsRow}>
-            <Animated.View
-              testID="balance-change-sink"
-              style={[styles.changeText, changeSinkStyle]}
-            >
+          <ValueActionsRow
+            leading={
               <Animated.View
-                key={`change-${currentBlockchainId}`}
-                testID="balance-change"
-                {...changeMotion}
+                testID="balance-change-sink"
+                style={[styles.changeText, changeSinkStyle]}
               >
-                <PendingValue pending={loading}>
-                  <Text
-                    style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
-                  >
-                    {hiddenBalance
-                      ? `${hiddenValue} · ${hiddenValue}`
-                      : hasChange
-                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)} ${t('home.change_period_24h', '24h')}`
-                        : EM_DASH}
-                  </Text>
-                </PendingValue>
+                <Animated.View
+                  key={`change-${currentBlockchainId}`}
+                  testID="balance-change"
+                  {...changeMotion}
+                >
+                  <PendingValue pending={loading}>
+                    <Text
+                      style={[
+                        styles.change,
+                        { color: hiddenBalance ? text.secondary : changeColor },
+                      ]}
+                    >
+                      {hiddenBalance
+                        ? `${hiddenValue} · ${hiddenValue}`
+                        : hasChange
+                          ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
+                          : EM_DASH}
+                    </Text>
+                  </PendingValue>
+                </Animated.View>
               </Animated.View>
-            </Animated.View>
-            <View style={styles.actions}>
-              <IconBubble
-                testID="home-activity-button"
-                size={componentSizes.iconBubbleSm}
-                tone="outline"
-                icon={ClockIcon}
-                iconSize={componentSizes.iconSizeXSmall}
-                onPress={onActivityPress}
-                accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-              />
+            }
+            actions={
+              <>
+                <IconBubble
+                  testID="home-activity-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="outline"
+                  icon={ClockIcon}
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onActivityPress}
+                  accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+                />
 
-              <IconBubble
-                testID="home-send-button"
-                size={componentSizes.iconBubbleSm}
-                tone="accent"
-                icon={ArrowUpRightIcon}
-                iconWeight="bold"
-                iconSize={componentSizes.iconSizeXSmall}
-                onPress={onSendPress}
-                disabled={sendDisabled}
-                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-              />
+                <IconBubble
+                  testID="home-send-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="accent"
+                  icon={ArrowUpRightIcon}
+                  iconWeight="bold"
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onSendPress}
+                  disabled={sendDisabled}
+                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+                />
 
-              <IconBubble
-                testID="home-receive-button"
-                size={componentSizes.iconBubbleSm}
-                tone="outline"
-                icon={ArrowDownLeftIcon}
-                iconSize={componentSizes.iconSizeXSmall}
-                onPress={onReceivePress}
-                accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-              />
-            </View>
-          </View>
+                <IconBubble
+                  testID="home-receive-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="outline"
+                  icon={ArrowDownLeftIcon}
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onReceivePress}
+                  accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+                />
+              </>
+            }
+          />
         </View>
       </View>
     </GestureDetector>
@@ -439,10 +446,6 @@ const stylesFor = (t: Semantic) =>
     container: {},
     balanceColumn: {
       gap: vs(spacing.xs),
-    },
-    changeActionsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
     },
     amountRow: {
       flexDirection: 'row',
@@ -465,7 +468,7 @@ const stylesFor = (t: Semantic) =>
       letterSpacing: letterSpacing.balance,
       ...TABULAR,
     },
-    // The swap wrapper may shrink; nothing else sits beside it any more.
+    // The change wrapper may shrink; nothing else sits beside it any more.
     changeText: {
       flexShrink: 1,
     },
@@ -476,12 +479,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.bold,
       letterSpacing: letterSpacing.change,
       ...TABULAR,
-    },
-    actions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(spacing.sm),
-      marginLeft: 'auto',
     },
   });
 

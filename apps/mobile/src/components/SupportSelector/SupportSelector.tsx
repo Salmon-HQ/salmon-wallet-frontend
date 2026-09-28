@@ -36,7 +36,7 @@ const ICON_MAP: Record<string, IconComponent> = {
   email: EnvelopeIcon,
 };
 
-export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorProps) {
+export function SupportSelector({ options, onOpenLink, errorText, onBack }: SupportSelectorProps) {
   const { t } = useTranslation();
 
   const renderOption = useCallback(
@@ -72,6 +72,7 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
       onBack={onBack}
     >
       {options.map(renderOption)}
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
 
       <WarningNotice tone="warning" title={t('settings.security_notice_title')}>
         {t('settings.security_notice')}

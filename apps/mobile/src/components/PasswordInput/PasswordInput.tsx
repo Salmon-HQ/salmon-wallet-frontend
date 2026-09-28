@@ -72,7 +72,11 @@ export function PasswordInput({
           )}
         </TouchableOpacity>
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text style={styles.errorText} testID={testID ? `${testID}-error` : undefined}>
+          {error}
+        </Text>
+      )}
     </View>
   );
 }

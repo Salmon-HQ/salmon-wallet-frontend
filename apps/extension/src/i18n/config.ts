@@ -1,7 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { i18nResources, DEFAULT_LANGUAGE, AVAILABLE_LANGUAGES } from '@salmon/shared';
+import {
+  i18nResources,
+  DEFAULT_LANGUAGE,
+  AVAILABLE_LANGUAGES,
+  withPowerupTranslations,
+} from '@salmon/shared';
+import { powerupTranslations } from '@salmon/shared/powerups';
 
 // Initialize i18next
 i18n
@@ -11,7 +17,8 @@ i18n
   .use(initReactI18next)
   // Initialize configuration
   .init({
-    resources: i18nResources,
+    // Powerup copy rides along under its namespace; an off build merges nothing.
+    resources: withPowerupTranslations(i18nResources, powerupTranslations),
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: AVAILABLE_LANGUAGES,
 

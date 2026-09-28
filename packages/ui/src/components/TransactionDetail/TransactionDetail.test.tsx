@@ -52,22 +52,6 @@ const TRANSFER = {
   ],
 } as never;
 
-const SWAP = {
-  id: 'swapsig1234567890',
-  type: 'swap',
-  status: 'completed',
-  timestamp: 1_700_000_000,
-  inputs: [{ symbol: 'USDC', amount: '150000000', decimals: 6 }],
-  outputs: [{ symbol: 'SOL', amount: '1000000000', decimals: 9 }],
-  swapRoute: {
-    priceImpact: '0.3',
-    hops: [
-      { dex: 'Orca', inputToken: { symbol: 'SOL' }, outputToken: { symbol: 'USDC' }, percent: 100 },
-    ],
-  },
-  heliusType: 'SWAP',
-} as never;
-
 function stubMatchMedia() {
   vi.stubGlobal(
     'matchMedia',
@@ -114,26 +98,14 @@ describe('TransactionDetail', () => {
     expect(screen.queryByTestId('tx-detail-conversion')).toBeNull();
   });
 
-  it('draws a swap as a conversion with its rate and route', () => {
-    render(<TransactionDetail transaction={SWAP} />);
-
-    expect(screen.getByTestId('tx-detail-conversion-from').textContent).toContain('SOL');
-    expect(screen.getByTestId('tx-detail-conversion-to').textContent).toContain('USDC');
-    // Derived from the two legs: 150 USDC per SOL.
-    expect(screen.getByTestId('conversion-rate').textContent).toContain('150');
-    expect(screen.getByTestId('price-impact-badge').getAttribute('data-severity')).toBe('safe');
-    expect(within(screen.getByTestId('tx-detail-route')).getByText('Orca')).toBeTruthy();
-    expect(screen.queryByTestId('tx-detail-tokens')).toBeNull();
-  });
-
   it('shows the technical card only under developer mode', () => {
     mockDeveloperMode = false;
-    const { rerender } = render(<TransactionDetail transaction={SWAP} />);
+    const { rerender } = render(<TransactionDetail transaction={TRANSFER} />);
     expect(screen.queryByTestId('tx-detail-developer')).toBeNull();
 
     mockDeveloperMode = true;
-    rerender(<TransactionDetail transaction={SWAP} />);
-    expect(within(screen.getByTestId('tx-detail-developer')).getByText('SWAP')).toBeTruthy();
+    rerender(<TransactionDetail transaction={TRANSFER} />);
+    expect(screen.getByTestId('tx-detail-developer')).toBeTruthy();
     mockDeveloperMode = false;
   });
 

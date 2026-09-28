@@ -20,7 +20,6 @@ import {
   useSettingsPanelData,
   useTheme,
   AddressbookError,
-  useOpenLink,
   buildNetworkListFromAccount,
   CURRENCY_ITEMS,
   SUPPORT_OPTIONS,
@@ -61,10 +60,11 @@ import { useDeveloperMode } from '../contexts/DeveloperModeContext';
 import { useLanguage } from '../i18n';
 import { useBiometric } from '../contexts/BiometricContext';
 import type { MobilePanelRegistry } from './types';
+import { useOpenExternalLink } from '../../hooks/useOpenExternalLink';
 
 export function useSettingsPanelRegistry(): MobilePanelRegistry {
   const { t } = useTranslation();
-  const openLink = useOpenLink();
+  const { openLink, errorText: linkErrorText } = useOpenExternalLink();
 
   const [accountState, accountActions] = useAccountsContext();
   // Removing a wallet re-encrypts the vault that is left: on a cold session
@@ -382,7 +382,12 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
         );
       },
       support: ({ onBack }) => (
-        <SupportSelector options={SUPPORT_OPTIONS} onOpenLink={openLink} onBack={onBack} />
+        <SupportSelector
+          options={SUPPORT_OPTIONS}
+          onOpenLink={openLink}
+          errorText={linkErrorText}
+          onBack={onBack}
+        />
       ),
       accounts: ({ onBack, onNavigate }) => (
         <AccountsPanel
@@ -445,6 +450,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       activeAccount,
       accountActions,
       accountRemoval,
+      linkErrorText,
       accounts,
       accountId,
       networkId,

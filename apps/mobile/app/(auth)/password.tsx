@@ -52,7 +52,9 @@ import {
   validatePassword,
   getPasswordIssue,
   componentSizes,
+  YIELD_TO_PAINT_MS,
   type Semantic,
+  passwordCheckErrorKey,
 } from '@salmon/shared';
 import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -229,7 +231,7 @@ export default function PasswordScreen() {
         }
       } catch (err) {
         console.error('Failed to check password:', err);
-        setError(t('wallet.create.invalid_password') || 'Invalid Password');
+        setError(t(passwordCheckErrorKey(err, 'wallet.create.invalid_password')));
         setIsChecking(false);
         return;
       }
@@ -242,7 +244,7 @@ export default function PasswordScreen() {
     setError(null);
 
     // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, YIELD_TO_PAINT_MS));
 
     try {
       // Get counter from useAccounts state

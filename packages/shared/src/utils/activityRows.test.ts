@@ -10,7 +10,7 @@ describe('matchesFilter', () => {
     expect(matchesFilter('stake', 'all')).toBe(true);
     expect(matchesFilter('send', 'send')).toBe(true);
     expect(matchesFilter('receive', 'send')).toBe(false);
-    expect(matchesFilter('swap', 'other')).toBe(true);
+    expect(matchesFilter('stake', 'other')).toBe(true);
     expect(matchesFilter('never-seen', 'other')).toBe(true);
     expect(matchesFilter('send', 'other')).toBe(false);
   });

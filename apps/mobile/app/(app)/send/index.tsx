@@ -19,22 +19,26 @@
  * copy is the validator's own key. Nothing here decides whether an address is
  * good — this screen only draws the verdict.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
+  readSettledPaymentLink,
   formatTokenAmount,
   getShortAddress,
   s,
   spacing,
   useAddressValidation,
+  useValidationDirty,
+  useSettledPaymentLink,
+  useRecipientOptions,
   useSendContacts,
   useTransactions,
   vs,
   type NetworkId,
-  recipientOptions,
   type RecipientOption,
+  type TransferRequest,
 } from '@salmon/shared';
 
 import {
@@ -44,6 +48,7 @@ import {
   QRScanner,
   RecipientInput,
   SectionLabel,
+  SkeletonRow,
   SettingsScreenLayout,
   TokenLogo,
   TokenPickerSheet,
@@ -82,11 +87,19 @@ export default function SendRecipientScreen() {
     tokens,
     tokensLoading,
     liveBalance,
+    startFromRequest,
   } = useSendFlow();
 
-  const [address, setAddress] = useState(recipient?.address ?? '');
-  const [showScanner, setShowScanner] = useState(false);
+  const [address, setAddressState] = useState(recipient?.address ?? '');
+  // Payments' Pay lands here with the scanner already up.
+  const { scan } = useLocalSearchParams<{ scan?: string }>();
+  const [showScanner, setShowScanner] = useState(scan === '1');
   const [pickerOpen, setPickerOpen] = useState(false);
+  // A scanned payment request asked for a token this account does not hold.
+  // The wallet never substitutes another (spec 033 FR-023).
+  // A translation key when a payment request could not start the flow: the
+  // token is not held, or the pasted text is a request the wallet cannot read.
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   // `liveBalance` already falls back to the token's own amount.
   const tokenBalance = liveBalance ?? 0;
@@ -103,46 +116,113 @@ export default function SendRecipientScreen() {
     messageType: addressMessageType,
   } = useAddressValidation(address, account, { debounceMs: 500 });
 
+  // The validator holds the PREVIOUS string's verdict through the debounce, so
+  // a freshly entered address reads as already approved. `dirty` closes that
+  // window. The DOM twin and the NFT send screen both gate on it, and
+  // `useValidationDirty`'s own header says every recipient screen does — this
+  // one did not, so paste-then-Continue or scan-then-Continue inside 500 ms
+  // carried a never-validated address to the signer, skipping the off-curve
+  // warning whose destination burns funds.
+  const { dirty, markDirty } = useValidationDirty(isValidating);
+  const setAddress = useCallback(
+    (next: string) => {
+      markDirty();
+      setAddressState(next);
+    },
+    [markDirty]
+  );
+
   // The people this wallet has actually paid. The counterparty of a send is
   // the same field the activity row reads, so the two surfaces agree on who a
   // transfer went to.
-  const { transactions } = useTransactions({
+  const { transactions, loading: recentsLoading } = useTransactions({
     address: senderAddress,
     networkId: (networkId ?? 'solana-mainnet') as NetworkId,
     skip: !senderAddress,
     account,
   });
 
-  const contactsByAddress = useMemo(
-    () => Object.fromEntries(contacts.map((contact) => [contact.address, contact.name])),
-    [contacts]
+  const { recents, contactRows, walletRows, recipientFor } = useRecipientOptions({
+    transactions,
+    senderAddress,
+    contacts,
+    ownWallets,
+  });
+
+  // A payment request fills the whole flow: the recipient, the token and the
+  // amount are the requester's, and the next screen is whichever the request
+  // left open (spec 033 US3). Scanned or pasted, it is the same door.
+  const startRequest = useCallback(
+    (request: TransferRequest, fallbackAddress: string) => {
+      const outcome = startFromRequest(request, tokens);
+      if (!outcome.ok) {
+        setAddress(fallbackAddress);
+        // An amount the token cannot hold is an unreadable amount, which is
+        // the string the parser's own `amount` refusal already says.
+        setRequestError(
+          outcome.reason === 'amountDecimals'
+            ? 'send.request.errors.amount'
+            : 'send.request.tokenNotHeld'
+        );
+        return;
+      }
+      router.push(outcome.next === 'review' ? '/send/review' : '/send/amount');
+    },
+    [router, setAddress, startFromRequest, tokens]
   );
 
-  const { recents, contactRows, walletRows } = useMemo(
-    () => recipientOptions({ transactions, senderAddress, contacts, ownWallets }),
-    [transactions, senderAddress, contacts, ownWallets]
+  // A code that only carries an address fills the field, as it always has.
+  const handleScan = useCallback(
+    (result: QRScanResult) => {
+      setShowScanner(false);
+      setRequestError(null);
+      if (!result.request) {
+        setAddress(result.address);
+        return;
+      }
+      startRequest(result.request, result.address);
+    },
+    [setAddress, startRequest]
   );
 
-  const handleScan = useCallback((result: QRScanResult) => {
-    setAddress(result.address);
-    setShowScanner(false);
-  }, []);
+  // The same field takes a pasted request: a `solana:` URI is classified like
+  // a scan, so a request that arrived as text on the phone pays like one that
+  // arrived as a code. Anything else is an address the validator judges.
+  //
+  // The field always shows exactly what was entered, and a link is read only
+  // once it stops changing. Text can arrive a character at a time; reading
+  // each prefix acted on a half-typed link, and leaving the controlled value
+  // behind while it did so made iOS drop the characters typed meanwhile.
+  const handleChangeText = useCallback(
+    (next: string) => {
+      setRequestError(null);
+      setAddress(next);
+    },
+    [setAddress]
+  );
+
+  const handleSettledLink = useCallback(
+    (link: string) => {
+      const outcome = readSettledPaymentLink(link, blockchain);
+      if (outcome.kind === 'error') setRequestError(outcome.key);
+      else if (outcome.kind === 'address') setAddress(outcome.address);
+      else startRequest(outcome.request, outcome.address);
+    },
+    [blockchain, setAddress, startRequest]
+  );
+  useSettledPaymentLink(address, handleSettledLink);
 
   const handleContinue = useCallback(() => {
-    if (!isAddressValid || isValidating) return;
-    const trimmed = address.trim();
-    setRecipient({
-      address: trimmed,
-      resolvedAddress: resolvedAddress || undefined,
-      name: contactsByAddress[resolvedAddress || trimmed] ?? contactsByAddress[trimmed],
-    });
+    if (!isAddressValid || isValidating || dirty) return;
+    setRecipient(recipientFor(address, resolvedAddress));
     router.push('/send/amount');
   }, [
     isAddressValid,
     isValidating,
+    dirty,
     address,
     resolvedAddress,
-    contactsByAddress,
+    recipientFor,
     setRecipient,
     router,
   ]);
@@ -188,7 +268,7 @@ export default function SendRecipientScreen() {
           <PrimaryButton
             testID="send-continue-button"
             onPress={handleContinue}
-            disabled={!isAddressValid || isValidating}
+            disabled={!isAddressValid || isValidating || dirty}
           >
             {t('actions.continue')}
           </PrimaryButton>
@@ -196,22 +276,27 @@ export default function SendRecipientScreen() {
       >
         {/* The token is chosen here, first — amount's row becomes read-only
             once this screen has already asked (owner ruling 2026-09-01). */}
-        <ListRow
-          testID="send-selected-token"
-          onPress={() => setPickerOpen(true)}
-          accessibilityLabel={t('wallet.select_token', 'Select Token')}
-          leading={<TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={s(38)} />}
-          title={token?.name ?? ''}
-          subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
-          trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
-        />
+        <View style={styles.group} testID="send-token-group">
+          <SectionLabel variant="caps">{t('send.screens.youWillSend')}</SectionLabel>
+          <ListRow
+            testID="send-selected-token"
+            onPress={() => setPickerOpen(true)}
+            accessibilityLabel={t('wallet.select_token', 'Select Token')}
+            leading={
+              <TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={s(38)} />
+            }
+            title={token?.name ?? ''}
+            subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
+            trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
+          />
+        </View>
 
         <RecipientInput
           value={address}
-          onChangeText={setAddress}
+          onChangeText={handleChangeText}
           onScanPress={() => setShowScanner(true)}
           scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
-          placeholder={t('send.enter_address_or_domain')}
+          placeholder={t('send.enter_address_or_request')}
           validationState={validationState}
           isValidating={isValidating}
         />
@@ -226,9 +311,31 @@ export default function SendRecipientScreen() {
           />
         )}
 
+        {requestError && (
+          <WarningNotice
+            tone="error"
+            title={t(requestError)}
+            style={styles.notice}
+            testID="send-request-refused"
+          />
+        )}
+
         {address.length === 0 && (
           <>
-            {renderGroup('send.screens.recent', recents, 'send-recents')}
+            {/* The recents arrive from the network: rows stand in for them
+                until they do, so the list does not appear from nowhere. */}
+            {recentsLoading && recents.length === 0 ? (
+              <View style={styles.group} testID="send-recents-loading">
+                <SectionLabel variant="title">{t('send.screens.recent')}</SectionLabel>
+                <SkeletonRow
+                  leadingSize={38}
+                  count={3}
+                  accessibilityLabel={t('accessibility.loading_recents')}
+                />
+              </View>
+            ) : (
+              renderGroup('send.screens.recent', recents, 'send-recents')
+            )}
             {renderGroup('token.send.myWallets', walletRows, 'send-my-wallets')}
             {renderGroup('token.send.addressBook', contactRows, 'send-address-book')}
           </>
@@ -239,7 +346,12 @@ export default function SendRecipientScreen() {
         visible={showScanner}
         blockchain={blockchain}
         onScan={handleScan}
-        onClose={() => setShowScanner(false)}
+        onClose={() => {
+          // Payments' Pay opened the scanner over Send: closing it goes back to
+          // where the user was, not to a Send they never asked for.
+          if (scan === '1') router.back();
+          else setShowScanner(false);
+        }}
       />
 
       <TokenPickerSheet

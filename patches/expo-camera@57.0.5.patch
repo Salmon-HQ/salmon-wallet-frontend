@@ -1,0 +1,13 @@
+diff --git a/expo-module.config.json b/expo-module.config.json
+index 149ee8b961f113b7d3851fa8eb5f1609f8d11569..30e06f8dc03ca6d848ae6a7e4cf5f8391d7ede45 100644
+--- a/expo-module.config.json
++++ b/expo-module.config.json
+@@ -2,7 +2,7 @@
+   "platforms": ["apple", "android", "web"],
+   "apple": {
+     "modules": ["CameraViewModule"],
+-    "podspecPath": ["ios/ExpoCamera.podspec"]
++    "podspecPath": ["ios/ExpoCamera.podspec", "ios/ExpoCameraBarcodeScanning.podspec"]
+   },
+   "android": {
+     "modules": ["expo.modules.camera.CameraViewModule"],

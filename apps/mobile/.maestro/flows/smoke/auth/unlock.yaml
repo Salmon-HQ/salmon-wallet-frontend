@@ -1,29 +1,8 @@
 appId: io.salmonwallet.app
 ---
-# Recover Wallet A then exercise the lock-screen unlock path.
+# Recover Wallet A, relaunch, and unlock from the lock screen.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - launchApp:
     stopApp: true
-- runFlow:
-    when:
-      visible: 'Fast refresh'
-    commands:
-      - tapOn: 'Close'
-- extendedWaitUntil:
-    visible: '(?i)Welcome back|Unlock'
-    timeout: 60000
-- tapOn:
-    id: 'lock-password-input'
-- inputText: ${SALMON_TEST_PASSWORD}
-# inputText sometimes submits via return key on the simulator keyboard.
-# Tap Unlock only if the lock screen is still visible.
-- runFlow:
-    when:
-      visible: 'Unlock'
-    commands:
-      - tapOn:
-          id: 'lock-unlock-button'
-- extendedWaitUntil:
-    visible: 'Switch wallet account'
-    timeout: 30000
+- runFlow: ../../../subflows/unlock.yaml
 - takeScreenshot: screenshots/smoke/auth/unlock-success

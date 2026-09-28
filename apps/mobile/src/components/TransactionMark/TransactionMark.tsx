@@ -1,0 +1,150 @@
+/**
+ * What a transaction type looks like: its verb, its glyph, its mark ink, and
+ * the leading mark the activity row and the detail both put it behind.
+ *
+ * The row and the detail used to carry two copies of this table, which is how
+ * their wording drifted.
+ */
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import {
+  ArrowDownLeftIcon,
+  ArrowUpRightIcon,
+  CubeIcon,
+  FileTextIcon,
+  FireIcon,
+  LockIcon,
+  MoneyIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
+import {
+  TYPE_LABEL_KEYS,
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  transactionTypeDisplayFor,
+  withPlatformGlyphs,
+  type Semantic,
+  type TransactionTypeGlyph,
+} from '@salmon/shared';
+
+import { IconBubble } from '../IconBubble';
+import { TokenLogo } from '../TokenLogo';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { TransactionType } from '@salmon/shared';
+import type { TransactionMarkProps } from './types';
+
+/** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
+export const LEADING_SIZE = componentSizes.iconSize2XL;
+
+/** The type badge riding the token logo — a mark on a mark, not a bubble. */
+const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
+
+/** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
+const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
+  arrowUpRight: ArrowUpRightIcon,
+  arrowDownLeft: ArrowDownLeftIcon,
+  plusCircle: PlusCircleIcon,
+  fire: FireIcon,
+  lock: LockIcon,
+  money: MoneyIcon,
+  cube: CubeIcon,
+  note: FileTextIcon,
+  question: QuestionIcon,
+};
+
+/**
+ * The shared table (`transactionTypeDisplayFor`) with the glyph names resolved
+ * to this platform's icons. Call with `useSemantic()`'s result at render.
+ */
+export const transactionTypeConfigFor = (
+  t: Semantic
+): Record<TransactionType, { label: string; icon: IconComponent; color: string }> =>
+  withPlatformGlyphs(transactionTypeDisplayFor(t), GLYPHS) as Record<
+    TransactionType,
+    { label: string; icon: IconComponent; color: string }
+  >;
+
+export { TYPE_LABEL_KEYS };
+
+/** The type badge that rides the leading mark's corner. */
+const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean }> = ({
+  icon: Icon,
+  color,
+  single = false,
+}) => {
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
+  return (
+    <View style={[styles.typeBadge, single && styles.typeBadgeSingle, { backgroundColor: color }]}>
+      <Icon size={10} color={text.primary} />
+    </View>
+  );
+};
+
+/**
+ * The row's leading mark: the token that moved, badged with the type —
+ * falling back to the kit's own well when the token has no logo.
+ */
+export const TransactionMark: React.FC<TransactionMarkProps> = ({ transaction }) => {
+  const styles = useThemedStyles(stylesFor);
+  const t = useSemantic();
+  const { type, inputs, outputs } = transaction;
+  const typeConfig = transactionTypeConfigFor(t);
+  const config = typeConfig[type] || typeConfig.unknown;
+
+  // The token that moved is always the mark (owner, 2026-09-11): its logo, or
+  // its initials while the backend has no logo for it. Only a transaction
+  // with no token at all falls back to the type's own well.
+  const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
+  if (primaryToken) {
+    return (
+      <View style={styles.singleMark}>
+        <TokenLogo
+          uri={primaryToken.logo ?? undefined}
+          symbol={primaryToken.symbol}
+          size={LEADING_SIZE}
+        />
+        <TypeBadge icon={config.icon} color={config.color} single />
+      </View>
+    );
+  }
+
+  return (
+    <IconBubble
+      size={LEADING_SIZE}
+      shape="circle"
+      tone="surface"
+      icon={config.icon}
+      iconSize={iconSize.md}
+      iconColor={config.color}
+    />
+  );
+};
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    singleMark: {
+      width: LEADING_SIZE,
+      height: LEADING_SIZE,
+    },
+    typeBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      width: TYPE_BADGE_SIZE,
+      height: TYPE_BADGE_SIZE,
+      borderRadius: borderRadius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: borderWidth.medium,
+      borderColor: t.depth.abyss,
+    },
+    typeBadgeSingle: {
+      top: -2,
+      right: -2,
+    },
+  });

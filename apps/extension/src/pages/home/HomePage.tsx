@@ -1,6 +1,8 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  useAccountActivity,
   useAccountsContext,
   isWatchOnlyAccount,
   useAvailableNetworks,
@@ -8,6 +10,9 @@ import {
   useTransactions,
   useDerivedAccountsScan,
   useHomeShell,
+  useHomePowerupTabs,
+  useHomePowerupsCatalog,
+  useInstalledPowerups,
   mapBalanceToToken,
   type HomeSubTabKey,
   getNetworkLabel,
@@ -23,6 +28,14 @@ import {
   usePrefetchBalances,
   useDeveloperModeSettings,
   useSendContacts,
+  FLOAT_IN_MS,
+  SINK_OUT_MS,
+  motionMs,
+  useFocusModePhase,
+  type FocusModePhase,
+  useNetworkPowerups,
+  useSettledSubTab,
+  isSignableAccount,
 } from '@salmon/shared';
 import {
   WalletHeader,
@@ -35,18 +48,32 @@ import {
   SlideStack,
   TokenDetailPage,
   NftDetailPage,
-  TransactionHistoryPage,
+  ActivityPage,
   ReceiveSheet,
   useTaskChrome,
   WalletsScreen,
   DepthBackground,
   ScalesBackground,
   SendPage,
+  PowerupsFab,
+  useReducedMotion,
+  floatEntering,
+  sinkExiting,
+  VIEW_TRANSITION_MS_VAR,
+  StateBlock,
 } from '../../components';
 
 import { SettingsPage } from '../settings';
+import {
+  POWERUPS,
+  POWERUP_TAB_KEYS,
+  POWERUPS_ENABLED,
+  PowerupsPage,
+  getPowerupCatalog,
+} from '@salmon/ui/powerups';
 
 import { PlaceholderPage } from './PlaceholderPage';
+import { renderPowerupBody, renderPowerupScreen } from './powerupBodies';
 import { PortfolioColumn } from './PortfolioColumn';
 import {
   TOP_FADE_SCROLL_RANGE,
@@ -55,7 +82,9 @@ import {
   contentRegionStyle,
   fillColumnStyle,
   pinnedHeaderStyle,
-  pinnedSubTabsStyle,
+  risenSubTabsStyle,
+  subTabsStyle,
+  balanceBlockStyle,
   screenStyle,
   topSeamFadeStyle,
 } from './homeStyles';
@@ -136,6 +165,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // Sheet visibility state
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
+  // What this device has installed. Nothing is installed out of the box, so
+  // Home starts with Portfolio and NFTs and gains a tab only when the user
+  // adds one from the catalogue.
+  const { installed, install, uninstall, hydrated: powerupsHydrated } = useInstalledPowerups();
+
   // Which panels Settings opens onto (Wallets opens it already deep), and the
   // screen leaving Settings returns to — the page that pushed it.
   const [settingsInitialPanels, setSettingsInitialPanels] = useState<
@@ -182,7 +216,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     handleNftBurnSuccessContinue,
     clearSendNft,
     settleAfterSend: settleAfterNftSend,
-  } = useHomeNftFlow({ activeAccount, navigate: setCurrentPage });
+  } = useHomeNftFlow({ activeAccount, networkId, navigate: setCurrentPage });
 
   // Bitcoin-specific state
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
@@ -220,6 +254,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
+  // A receive only shows once something asks again; the chain's report of
+  // activity on the account is that cue.
+  useAccountActivity(ready ? activeBlockchainAccount : null, activeAccount?.id);
   // dApp approval settlement is fired in App.tsx.
 
   // Fetch transaction history (only when on activity page)
@@ -243,6 +280,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId: (networkId || 'solana-mainnet') as NetworkId,
     skip: !ready || !activeBlockchainAccount || currentPage !== 'activity',
     account: activeBlockchainAccount,
+    includeSpam: showUnverifiedTokens,
   });
 
   // Navigation handlers
@@ -283,12 +321,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [openSettings]
   );
 
+  // A token's detail opens Send on that token; Home's control opens it on the
+  // chain's own asset. Cleared on the way out so the next Send starts clean.
+  const [sendInitialToken, setSendInitialToken] = useState<string | undefined>(undefined);
+
   const handleSendPress = useCallback(() => {
+    setSendInitialToken(undefined);
     setCurrentPage('send');
   }, []);
 
+  const handleTokenSendPress = useCallback(() => {
+    if (!selectedToken) return;
+    setSendInitialToken(selectedToken.address);
+    setCurrentPage('send');
+  }, [selectedToken]);
+
   const handleSendBack = useCallback(() => {
     clearSendNft();
+    setSendInitialToken(undefined);
     setCurrentPage('home');
   }, [clearSendNft]);
 
@@ -311,6 +361,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   const handleActivityBack = useCallback(() => {
     setCurrentPage('home');
+  }, []);
+
+  // A Powerup's pushed screen (Payments' history): which one is up.
+  const [powerupScreen, setPowerupScreen] = useState<{ id: string; screen: string } | null>(null);
+  const handlePowerupScreenBack = useCallback(() => {
+    setCurrentPage('home');
+    setPowerupScreen(null);
   }, []);
 
   const handleTokenPress = useCallback((token: Token) => {
@@ -345,8 +402,22 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     }
   }, []);
 
+  // The installed Powerups, as Home surfaces — the registry and the copy
+  // come through the shared registry (aliased out with the build flag off),
+  // so a build with Powerups off passes an empty list
+  // (`useHomePowerupTabs`, shared with mobile's HomeScreen).
+  // The backend's kill switch for the network the account stands on (spec
+  // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
+  // offered, and a switched-off one keeps its tab only to show why.
+  const powerupAllowlist = useNetworkPowerups(state.networkId ?? null);
+  const powerupTabs = useHomePowerupTabs({
+    installed,
+    powerups: POWERUPS,
+    allowlist: powerupAllowlist,
+  });
+
   // The shell's state — page index, per-page balances, the network the screen
-  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // stands on, the offered sub-tabs and which wrapper owns a change — lives once
   // in shared; this page renders it (`useHomeShell`).
   const {
     activeBlockchainIndex,
@@ -357,7 +428,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
+    subTabsSettled,
     subTabHasPrior,
     chainHasPrior,
     selectBlockchain,
@@ -370,6 +441,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     isTaskEngaged,
     surfaceKey,
     changeNetwork: actions.changeNetwork,
+    powerupTabs,
+    powerupsHydrated,
+    allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
   // A page change on the balance block. The incoming chain's list starts at
@@ -391,6 +465,98 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [resetSeamFade, setActiveSubTab]
   );
 
+  // Focus mode, in two beats (owner, on device): the underline reaches the
+  // tab first and stops; one underline-slide later the header moves. The DOM
+  // plays that second beat as a same-document view transition — the row's
+  // position interpolates, the balance cross-fades out — with `flushSync` so
+  // the DOM is already in its new layout when the snapshot is taken. No API,
+  // or reduce motion: a cut, which is the fallback the API itself prescribes.
+  const isReduceMotionEnabled = useReducedMotion();
+
+  // The catalogue is a page of the stack here, so the FAB that opens it
+  // unmounts the moment the push happens — it never sees `open` go true.
+  // This local flag plays the plus→cross turn on press, before the push, so
+  // the button that opens the catalogue still announces it; the FAB remounts
+  // at rest when the page comes back, so it never gets stuck as a cross.
+  const [fabPressed, setFabPressed] = useState(false);
+  const openPowerups = useCallback(() => {
+    if (isReduceMotionEnabled) {
+      setCurrentPage('powerups');
+      return;
+    }
+    setFabPressed(true);
+    setTimeout(() => setCurrentPage('powerups'), motionMs.drift);
+  }, [isReduceMotionEnabled]);
+  // The FAB remounts as soon as `home` is back — this drops it back to
+  // `false` a beat later, so the fresh mount (still reading `true`) plays the
+  // unwind instead of arriving already flat.
+  useEffect(() => {
+    if (currentPage === 'home') setFabPressed(false);
+  }, [currentPage]);
+
+  const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+  // The two moves of the row — up once the block is gone, down before it
+  // returns — are same-document view transitions: the row's position
+  // interpolates, with `flushSync` so the DOM is already in its new layout
+  // when the snapshot is taken. No API, or reduce motion: a cut, which is the
+  // fallback the API itself prescribes. The sink and the float of the block
+  // are the kit's own verbs on the element, played in place.
+  const commitFocusPhase = useCallback(
+    (next: FocusModePhase, apply: () => void) => {
+      const moves = next === 'gone' || next === 'returning';
+      const { startViewTransition } = document as Document & {
+        startViewTransition?: (update: () => void) => unknown;
+      };
+      if (!moves || isReduceMotionEnabled || typeof startViewTransition !== 'function') {
+        apply();
+        return;
+      }
+      // The row travels exactly as long as the balance's verb: the sink's
+      // length going up, the float's coming down.
+      document.documentElement.style.setProperty(
+        VIEW_TRANSITION_MS_VAR,
+        `${next === 'gone' ? SINK_OUT_MS : FLOAT_IN_MS}ms`
+      );
+      startViewTransition.call(document, () => flushSync(apply));
+    },
+    [isReduceMotionEnabled]
+  );
+  const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled, {
+    commit: commitFocusPhase,
+  });
+  const isPowerupMode = focusPhase === 'gone';
+  // The content follows the row, never the tap (owner, 2026-09-16): only the
+  // tab that has come to rest has its content drawn; see the mobile twin.
+  const isFocusTab = useCallback(
+    (key: string) => powerupTabs.some((tab) => tab.key === key),
+    [powerupTabs]
+  );
+  const settledSubTab = useSettledSubTab({
+    target: effectiveSubTab,
+    isFocusTab,
+    focusPhase,
+    isReduceMotionEnabled,
+  });
+  const subTabPending = settledSubTab !== effectiveSubTab;
+
+  // The block's room: its height, read while shown, holds while it sinks and
+  // comes back empty before it floats in. The block itself plays the verbs.
+  const balanceRef = useRef<HTMLDivElement>(null);
+  const [balanceHeight, setBalanceHeight] = useState<number | null>(null);
+  const previousPhase = useRef<FocusModePhase>(focusPhase);
+  useEffect(() => {
+    const was = previousPhase.current;
+    previousPhase.current = focusPhase;
+    const element = balanceRef.current;
+    if (focusPhase === 'sinking' && element) {
+      setBalanceHeight(element.getBoundingClientRect().height);
+      sinkExiting(element, isReduceMotionEnabled);
+    }
+    if (focusPhase === 'shown' && was === 'returning') {
+      floatEntering(element, isReduceMotionEnabled);
+    }
+  }, [focusPhase, isReduceMotionEnabled]);
+
   // BE handles spam/unknown filtering via `includeSpam` above; the rows are
   // mobile's mapping, from shared.
   const formattedTokens = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
@@ -411,7 +577,28 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Every screen over Home enters from the right and leaves to the right
   // (owner, 2026-09-02) — mobile's stack does it natively; here `SlideStack`
-  // reads the page swap as a push (depth 1 over Home's 0) or a pop.
+  // reads the page change as a push (depth 1 over Home's 0) or a pop. The
+  // catalogue is one of them here (owner, 2026-09-11: on the DOM it is a page,
+  // not the sheet mobile draws); an installed Powerup is a sub-tab of Home.
+  // Its entries are shared with mobile's HomeScreen (`useHomePowerupsCatalog`):
+  // the registry's for the active network plus the developer-only mocks; an
+  // installed one keeps its place in its tier and says it is installed there.
+  // Only a real Powerup can be installed: the mocks advertise nothing the
+  // wallet can open, so the catalogue refuses to give them a tab.
+  const { catalogEntries, handleInstall, removableTabKeys } = useHomePowerupsCatalog({
+    powerupTabs,
+    installed,
+    install,
+    networkId: currentNetworkId,
+    powerups: POWERUPS,
+    getCatalog: getPowerupCatalog,
+    allowlist: powerupAllowlist,
+  });
+
+  const activePowerupDisabledReason = powerupTabs.find(
+    (tab) => tab.key === effectiveSubTab
+  )?.disabledReason;
+
   const renderPage = (): React.ReactElement => {
     switch (currentPage) {
       case 'tokenDetail':
@@ -420,6 +607,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             <TokenDetailPage
               token={selectedToken}
               blockchain={currentChain}
+              networkId={currentNetworkId}
               chartData={selectedTokenMarket.chartData}
               chartPeriod={selectedTokenChartPeriod}
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}
@@ -432,6 +620,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               infoLoading={selectedTokenMarket.infoLoading && !selectedTokenMarket.coinInfo}
               chartError={!!selectedTokenMarket.error && selectedTokenMarket.chartData.length === 0}
               onBack={handleTokenDetailBack}
+              onSendPress={
+                activeBlockchainAccount && isSignableAccount(activeBlockchainAccount)
+                  ? handleTokenSendPress
+                  : undefined
+              }
             />
           );
         }
@@ -456,6 +649,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               burnPreview={nftFlow.burnPreview}
               burnPreparing={nftFlow.burnPreparing}
               burnSettling={nftFlow.successSettling}
+              burning={nftFlow.burning}
               burnError={nftFlow.burnError}
               onBurnBack={handleNftBurnBack}
               onBurnConfirm={() => void nftFlow.confirmBurn()}
@@ -478,6 +672,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             networkId={networkId as NetworkId | null}
             account={sendAccount}
             nft={sendNft}
+            initialTokenAddress={sendInitialToken}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
             loading={balanceState === 'loading'}
@@ -485,6 +680,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           />
         );
       }
+      case 'powerups':
+        // The catalogue is a page of the stack on the DOM (owner, 2026-09-11):
+        // a side panel's sheet neither animates well nor fits the detail.
+        return PowerupsPage ? (
+          <PowerupsPage
+            entries={catalogEntries}
+            onInstall={handleInstall}
+            onUninstall={uninstall}
+            onBack={handleBack}
+          />
+        ) : (
+          <></>
+        );
       case 'wallets':
         // Wallets is a page of its own in the stack, not a layer over Home,
         // so the rescans it asks for are waited on and answered here — the
@@ -513,9 +721,22 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'settings':
         return <SettingsPage onClose={handleSettingsClose} initialPanels={settingsInitialPanels} />;
+      case 'powerupScreen': {
+        const page =
+          powerupScreen && activeBlockchainAccount
+            ? renderPowerupScreen(powerupScreen.id, powerupScreen.screen, {
+                publicKey: activeBlockchainAccount.getReceiveAddress(),
+                networkId: networkId ?? null,
+                onBack: handlePowerupScreenBack,
+              })
+            : null;
+        // Nothing to show (the off build, an unknown name): an empty page
+        // rather than a hole in the stack; back still returns home.
+        return page ?? <></>;
+      }
       case 'activity':
         return (
-          <TransactionHistoryPage
+          <ActivityPage
             onBack={handleActivityBack}
             transactions={transactions}
             loading={transactionsLoading}
@@ -562,7 +783,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             onSettingsPress={flowLocked ? undefined : handleSettingsPress}
             onWalletPress={flowLocked ? undefined : handleWalletPress}
             avatarUrl={activeAccount?.avatar}
-            accountId={activeAccount?.id}
           />
         </div>
 
@@ -582,46 +802,71 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
             <div style={pinnedHeaderStyle}>
-              <BalanceHeader
-                testID="balance-header"
-                blockchains={blockchainBalances}
-                hiddenBalance={hiddenBalance}
-                onToggleVisibility={toggleHidden}
-                onBlockchainChange={handleBlockchainChange}
-                activeIndex={activeBlockchainIndex}
-                onSendPress={handleSendPress}
-                onReceivePress={handleReceivePress}
-                onActivityPress={handleActivityPress}
-                sendDisabled={isWatchOnly}
-              />
-              <div style={pinnedSubTabsStyle}>
+              {/* Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the
+                  balance block leaves and the sub-tab row rises to where the
+                  chain selector stood; Portfolio or NFTs bring it back. */}
+              {focusPhase !== 'gone' && (
+                <div
+                  data-testid="home-balance-room"
+                  style={
+                    focusPhase !== 'shown' && balanceHeight !== null
+                      ? { ...balanceBlockStyle, height: balanceHeight, overflow: 'hidden' }
+                      : balanceBlockStyle
+                  }
+                >
+                  {focusPhase !== 'returning' && (
+                    <div ref={balanceRef} data-testid="home-balance-block">
+                      <BalanceHeader
+                        testID="balance-header"
+                        blockchains={blockchainBalances}
+                        hiddenBalance={hiddenBalance}
+                        onToggleVisibility={toggleHidden}
+                        onBlockchainChange={handleBlockchainChange}
+                        activeIndex={activeBlockchainIndex}
+                        onSendPress={handleSendPress}
+                        onReceivePress={handleReceivePress}
+                        onActivityPress={handleActivityPress}
+                        sendDisabled={isWatchOnly}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={isPowerupMode ? risenSubTabsStyle : subTabsStyle}>
                 <PortfolioSubTabs
                   testID="home-sub-tabs"
                   tabs={subTabs}
                   activeKey={effectiveSubTab}
                   onChange={handleSubTabChange}
                   onOrderPress={handleOrderPress}
-                  // A reorder swaps the tabs on the verb — old arrangement
-                  // sinks, new one floats — while the order button beside them
-                  // holds still. Keyed by the arrangement, so a tab switch never
-                  // remounts them.
-                  tabsKey={subTabsKey}
+                  settled={subTabsSettled}
                 />
               </div>
             </div>
 
             {/* The content region plays the verb on a sub-tab change: the
                 outgoing list sinks, the incoming one floats. Keyed by sub-tab,
-                the same mechanism the chain swap uses; the block above it holds
+                the same mechanism the chain change uses; the block above it holds
                 still (rule four). */}
             <div style={contentRegionStyle}>
               <SinkFloat
-                transitionKey={subTabHasPrior ? effectiveSubTab : 'home-subtab-content'}
+                // While the row moves the region is empty under a key of its
+                // own, so the outgoing content sinks at the tap; the settled
+                // key then floats the new content with no beat — the wait for
+                // the row already held it.
+                transitionKey={
+                  !subTabHasPrior
+                    ? 'home-subtab-content'
+                    : subTabPending
+                      ? `${settledSubTab}->${effectiveSubTab}`
+                      : settledSubTab
+                }
+                holdMs={subTabPending ? undefined : 0}
                 testID="home-subtab-content"
                 style={fillColumnStyle}
               >
-                {effectiveSubTab === 'portfolio' ? (
-                  // Keyed by chain so switching chains swaps the whole column
+                {subTabPending ? null : settledSubTab === 'portfolio' ? (
+                  // Keyed by chain so switching chains replaces the whole column
                   // with the sink and the float: the outgoing chain's content
                   // sinks as its light goes, the incoming one floats up into
                   // place. The frame above holds still; only the content travels.
@@ -635,7 +880,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       currentNetworkId={currentNetworkId}
                       balanceState={balanceState}
                       balanceError={balanceError}
-                      hasData={hasData}
                       hiddenBalance={hiddenBalance}
                       tokens={formattedTokens}
                       onTokenPress={handleTokenPress}
@@ -646,7 +890,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       onScroll={handleContentScroll}
                     />
                   </SinkFloat>
-                ) : (
+                ) : settledSubTab === 'nfts' ? (
                   // NFTs: the grid owns the only scroller in the content
                   // region, and everything above it is the same fixed block
                   // Portfolio shows.
@@ -660,6 +904,38 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       paddingBottom: spacing['2xl'],
                     }}
                   />
+                ) : activePowerupDisabledReason ? (
+                  // A Powerup the backend switched off keeps its tab; its
+                  // surface is the reason, never a blank (spec 029 §5.2).
+                  <StateBlock
+                    tone="empty"
+                    testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+                    title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+                  />
+                ) : !activeBlockchainAccount ? (
+                  // The account is Home's business, not each Powerup's: with
+                  // none on this network the surface is that state, and a
+                  // Powerup is mounted only with an address already resolved
+                  // (`docs/POWERUPS-UI.md` §1.1).
+                  <StateBlock
+                    tone="empty"
+                    testID="home-powerup-no-account"
+                    title={t('powerups.no_account')}
+                  />
+                ) : (
+                  // Which surface this id draws is `powerupBodies.tsx`'s, the
+                  // DOM's counterpart to mobile's `getPowerupTab` — Home
+                  // decides whether a Powerup is mounted, not which.
+                  renderPowerupBody(effectiveSubTab, {
+                    publicKey: activeBlockchainAccount.getReceiveAddress(),
+                    networkId: networkId ?? null,
+                    onNavigateHome: () => setActiveSubTab('portfolio'),
+                    onPay: handleSendPress,
+                    onOpenScreen: (screen) => {
+                      setPowerupScreen({ id: effectiveSubTab, screen });
+                      setCurrentPage('powerupScreen');
+                    },
+                  })
                 )}
               </SinkFloat>
 
@@ -669,28 +945,27 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             </div>
           </SinkFloat>
         )}
+
+        {/* The `+`. It floats over the content and opens the catalogue page,
+            turning into the close mark on press so the turn plays before the
+            push takes the FAB off screen. It leaves with the content when a
+            task takes the screen. */}
+        {POWERUPS_ENABLED && !isTaskEngaged && !flowLocked && (
+          <PowerupsFab open={fabPressed} onPress={openPowerups} />
+        )}
       </div>
 
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
-          rows are dropped, and there is nothing to save. */}
+          rows are dropped, and there is nothing to save. Portfolio and NFTs
+          are the wallet itself; a Powerup's tab carries a `−` that uninstalls
+          it. */}
       <HomeTabOrderSheet
         visible={orderSheetVisible}
         onClose={handleOrderSheetClose}
         tabs={subTabs}
         onOrderChange={setSubTabOrder}
-      />
-
-      {/* The question the automatic derived-account scan raises: the scan
-          belongs to the unlocked session, so its answer is taken on the first
-          screen the session lands on. A rescan the user asked for on Wallets
-          is answered there, so Home only ever draws the automatic pass's
-          finds — never the wait. */}
-      <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
-        scanning={false}
-        finds={derivedAccounts.finds}
-        onImport={(indexes: number[]) => void derivedAccounts.importFinds(indexes)}
-        onDismiss={() => void derivedAccounts.dismiss()}
+        removableKeys={removableTabKeys}
+        onRemove={uninstall}
       />
 
       {/* Receive Sheet */}

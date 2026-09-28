@@ -11,22 +11,23 @@
 // Testable (shared test-label contract)
 export type { Testable } from './testable';
 
+// DataAttribution (a data provider's credit, e.g. CoinGecko's)
+export type { DataAttributionPropsBase } from './data-attribution';
+
 // Token Selector
-export type {
-  TokenSelectorToken,
-  TokenSelectorPropsBase,
-  TokenSelectorModalPropsBase,
-  UseTokenSearchResult,
-} from './token-selector';
 
 // Token Market Data
 export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
 // Token List
 export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+export type { TokenLogoPropsBase } from './token-logo';
+export type { SpinnerPropsBase } from './spinner';
+export { SPINNER_DEFAULT_SIZE, SPINNER_LARGE_FROM } from './spinner';
 
 // NFT Card
 export type { NftCardPropsBase, NftCardSkeletonPropsBase } from './nft-card';
+export type { NftMediaPropsBase } from './nft-media';
 
 // NFTs Tab
 export type { NftsTabPropsBase } from './nfts-tab';
@@ -36,12 +37,14 @@ export type { PriceChartPropsBase } from './price-chart';
 
 // Pending Value
 export type { PendingValuePropsBase } from './pending-value';
+export type { ValueActionsRowPropsBase } from './value-actions-row';
 
 // Send Sheet
 export type {
   SendStep,
   SendToken,
   SendRecipient,
+  SendRequest,
   RecipientInputPropsBase,
   TokenSelectListPropsBase,
   StepTokenSelectProps,
@@ -58,12 +61,12 @@ export type { WarningNoticeTone, WarningNoticePropsBase } from './warning-notice
 // Transaction History — the row and the pieces the row and the detail share
 export type {
   TransactionItemPropsBase,
-  PriceImpactSize,
-  PriceImpactBadgePropsBase,
-  ConversionRateDisplayPropsBase,
   AddressCopyRowPropsBase,
   ExplorerLinkButtonPropsBase,
+  TransactionMarkPropsBase,
+  AddressTruncate,
 } from './transaction-history';
+export { truncatedAddress } from './transaction-history';
 
 // Wallet Init Error Screen
 export type { WalletInitErrorScreenPropsBase } from './wallet-init-error-screen';
@@ -122,12 +125,6 @@ export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
 // Security Panel
 export type { SecurityPanelPropsBase } from './security-panel';
 
-// Transaction Success Screen
-export type {
-  TransactionSuccessScreenProps,
-  TransactionSuccessScreenPropsBase,
-} from './transaction-success-screen';
-
 // Backup Panel
 export type { BackupPanelPropsBase } from './backup-panel';
 
@@ -168,6 +165,16 @@ export type {
 
 // Home Tab Order Sheet
 export type { HomeTabOrderTab, HomeTabOrderSheetPropsBase } from './home-tab-order-sheet';
+export type {
+  PowerupsCatalogEntry,
+  PowerupsCatalogEntryDetails,
+  PowerupsCatalogDisclosureLine,
+  PowerupsCatalogPropsBase,
+} from './powerups-catalog';
+export type { PowerupIconName } from './powerup-icon';
+export type { FactsCardPropsBase, FactsCardRow } from './facts-card';
+export type { PowerupsFabPropsBase } from './powerups-fab';
+export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 
 // ---------------------------------------------------------------------------
 // The kit — the contracts mobile and the DOM both implement (spec 028, lot 2)
@@ -191,7 +198,13 @@ export type {
 
 // Key Value Row
 export type { KeyValueTone, KeyValueRowPropsBase } from './key-value-row';
+
+// Toggle
+export type { TogglePropsBase } from './toggle';
 export { valueInkFor } from './key-value-row';
+
+// Amount Entry Card
+export type { AmountEntryCardPropsBase } from './amount-entry-card';
 
 // Section Label
 export type { SectionLabelVariant, SectionLabelPropsBase } from './section-label';
@@ -212,13 +225,19 @@ export type { SearchFieldPropsBase } from './search-field';
 export type { StateBlockTone, StateBlockPropsBase } from './state-block';
 
 // Button
-export type { ButtonPropsBase, TextButtonPropsBase } from './button';
+export type {
+  ButtonPropsBase,
+  TextButtonPropsBase,
+  SecondaryButtonPropsBase,
+  SecondaryButtonTone,
+} from './button';
 
 // Screen Header
 export type { ScreenHeaderPropsBase } from './screen-header';
 
 // Sheet
 export type { SheetTitlePropsBase, BottomSheetContainerPropsBase } from './sheet';
+export type { SheetParentHandle, SheetTurn, SheetTurnMotion } from './sheet-turn';
 
 // Thermocline
 export type { ThermoclineTier, ThermoclinePropsBase } from './thermocline';
@@ -278,3 +297,22 @@ export type { BlockchainMarkPropsBase } from './blockchain-mark';
 
 // The plain text field
 export type { TextInputPropsBase } from './text-input';
+
+export type { MemoScreenPropsBase } from './memo-screen';
+export type {
+  PaymentRequestListPropsBase,
+  PaymentRequestRow,
+  PaymentRequestSheetPropsBase,
+  PaymentRequestStatusView,
+  PaymentsAskSheetPropsBase,
+  PaymentsFormView,
+  PaymentsHistoryPropsBase,
+  PaymentsScreenPropsBase,
+} from './payments-screen';
+
+// Core's confirmation screen (spec 027 §2)
+export type {
+  ConfirmationDetailsCardPropsBase,
+  ConfirmationExchangePropsBase,
+  TransactionConfirmationPropsBase,
+} from './transaction-confirmation';

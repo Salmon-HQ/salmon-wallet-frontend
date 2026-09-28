@@ -2,7 +2,7 @@
  * "First-time" activation events.
  *
  * Some funnel events matter only the first time they happen per install — the
- * first swap, the first send, the first time the receive screen is opened. This
+ * first send, the first time the receive screen is opened. This
  * helper emits such an event at most once, guarded by a persisted flag, and —
  * like {@link trackEvent} — is a total no-op without consent.
  *

@@ -4,8 +4,8 @@
  * The verb's contract on the DOM. The pixels live in CSS keyframes; what is
  * asserted here is the decision — that the outgoing content is held while it
  * sinks (the half the DOM does not give away), that the beat passes before the
- * swap, that one child is on screen at a time, and that reduce motion is a cut
- * that still swaps.
+ * change, that one child is on screen at a time, and that reduce motion is a cut
+ * that still changes.
  */
 import React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 describe('SinkFloat', () => {
-  it('holds the outgoing content while it sinks, then swaps after the beat', () => {
+  it('holds the outgoing content while it sinks, then changes after the beat', () => {
     stubMatchMedia(false);
     const { rerender } = render(
       <SinkFloat transitionKey="solana">
@@ -163,7 +163,7 @@ describe('SinkFloat', () => {
     expect(sinkKeyframes).toContain('scale(var(--salmon-sink-float-scale))');
   });
 
-  it('cuts instantly under reduce motion — and still swaps', () => {
+  it('cuts instantly under reduce motion — and still changes', () => {
     stubMatchMedia(true);
     const { rerender } = render(
       <SinkFloat transitionKey="solana">

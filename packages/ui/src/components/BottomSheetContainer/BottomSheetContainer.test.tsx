@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createSemantic, ThemeProvider } from '@salmon/shared';
+import { createSemantic, ThemeProvider, useParentSheetHeight } from '@salmon/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { asRenderedColor, renderInMode } from '../../test/renderInMode';
@@ -38,6 +38,22 @@ describe('BottomSheetContainer', () => {
 
     expect(screen.getByTestId('sheet').tagName).toBe('DIALOG');
     expect(screen.getByText('sheet body')).toBeTruthy();
+  });
+
+  it('tells the sheets it opens what height it is drawn at', () => {
+    const Probe = () => {
+      const height = useParentSheetHeight();
+      return <span data-testid="probe">{height === null ? 'none' : String(height)}</span>;
+    };
+    expect(renderInMode('dark', <Probe />).getByTestId('probe').textContent).toBe('none');
+    cleanup();
+    renderInMode(
+      'dark',
+      <BottomSheetContainer visible onClose={() => {}} height={420}>
+        <Probe />
+      </BottomSheetContainer>
+    );
+    expect(screen.getByTestId('probe').textContent).toBe('420');
   });
 
   it('renders nothing when not visible', () => {
@@ -193,5 +209,88 @@ describe('BottomSheetContainer', () => {
 
     await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
     expect(screen.queryByTestId('sheet')).toBeNull();
+  });
+});
+
+describe('BottomSheetContainer parent and child', () => {
+  function Pair({
+    childOpen,
+    onParentClose = vi.fn(),
+    onChildClose = vi.fn(),
+  }: {
+    childOpen: boolean;
+    onParentClose?: () => void;
+    onChildClose?: () => void;
+  }) {
+    return (
+      <ThemeProvider systemScheme="dark">
+        <BottomSheetContainer visible onClose={onParentClose} testID="parent">
+          <div>list</div>
+          <BottomSheetContainer visible={childOpen} onClose={onChildClose} testID="child">
+            <div>detail</div>
+          </BottomSheetContainer>
+        </BottomSheetContainer>
+      </ThemeProvider>
+    );
+  }
+  const parentSheet = () => screen.getByTestId('parent').querySelector('[data-yielded]');
+
+  it('the parent yields while the child is up, and comes back once it has left', async () => {
+    stubMatchMedia(true);
+    const { rerender } = render(<Pair childOpen={false} />);
+    expect(parentSheet()).toBeNull();
+
+    rerender(<Pair childOpen />);
+    await waitFor(() => expect(parentSheet()).not.toBeNull());
+    // The child draws no backdrop of its own: the parent's stays up.
+    expect(screen.getByTestId('child-backdrop').style.opacity).toBe('0');
+
+    rerender(<Pair childOpen={false} />);
+    await waitFor(() => expect(screen.queryByTestId('child')).toBeNull());
+    expect(parentSheet()).toBeNull();
+  });
+
+  it('a click on the backdrop under the child closes both, nothing returns', async () => {
+    stubMatchMedia(true);
+    const onParentClose = vi.fn();
+    const onChildClose = vi.fn();
+    render(<Pair childOpen onParentClose={onParentClose} onChildClose={onChildClose} />);
+    await waitFor(() => expect(screen.getByTestId('child')).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId('child-backdrop'));
+
+    expect(onChildClose).toHaveBeenCalledTimes(1);
+    expect(onParentClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BottomSheetContainer parent whose content unmounts with the child inside', () => {
+  it('leaves for good when dismissed under a child that never ran its exit', async () => {
+    stubMatchMedia(true);
+    function Host() {
+      const [detail, setDetail] = React.useState<string | null>('tx');
+      return (
+        <ThemeProvider systemScheme="dark">
+          <BottomSheetContainer
+            visible={detail !== null}
+            onClose={() => setDetail(null)}
+            testID="parent"
+          >
+            {detail && (
+              <BottomSheetContainer visible onClose={() => setDetail(null)} testID="child">
+                <div>explorers</div>
+              </BottomSheetContainer>
+            )}
+          </BottomSheetContainer>
+        </ThemeProvider>
+      );
+    }
+    render(<Host />);
+    await waitFor(() => expect(screen.getByTestId('child')).toBeTruthy());
+
+    // The detail's own close: its content — and the child sheet — unmount at once.
+    fireEvent.click(screen.getByTestId('child-backdrop'));
+
+    await waitFor(() => expect(screen.queryByTestId('parent')).toBeNull());
   });
 });

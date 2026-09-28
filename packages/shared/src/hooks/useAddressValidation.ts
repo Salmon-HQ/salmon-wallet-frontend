@@ -142,8 +142,16 @@ export function useAddressValidation(
         return;
       }
 
-      // Create new abort controller for this validation
-      abortControllerRef.current = new AbortController();
+      // Hold this cycle's controller in a local. The guards below must ask
+      // whether THIS validation was superseded, and the ref no longer answers
+      // that: `cleanup` nulls it and the next cycle replaces it, so reading
+      // `abortControllerRef.current` after the await sees either null or a
+      // fresh, un-aborted controller — never the aborted one. The check could
+      // not return true, so a superseded resolution settled anyway and wrote
+      // its `resolvedAddress`, which `useSendTransaction` prefers over the
+      // address the user actually typed.
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       setIsValidating(true);
       setValidationResult(null);
@@ -152,14 +160,14 @@ export function useAddressValidation(
         const result = await account.validateDestinationAccount(addressToValidate);
 
         // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
+        if (controller.signal.aborted) {
           return;
         }
 
         handleResult(result);
       } catch (error) {
         // Check if request was aborted
-        if (abortControllerRef.current?.signal.aborted) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -191,8 +199,11 @@ export function useAddressValidation(
     // Cleanup previous validation
     cleanup();
 
-    // Reset state if address is empty
-    if (!address || address.trim() === '') {
+    // Reset state if address is empty — or a `solana:` payment link, which is
+    // not an address and not a domain. The recipient screen reads the link
+    // once it stops changing; judging it here meant every half-typed link was
+    // looked up as a name and answered "Could not resolve domain name".
+    if (!address || address.trim() === '' || /^solana:/i.test(address.trim())) {
       setValidationResult(null);
       setResolvedAddress(null);
       setIsDomain(false);

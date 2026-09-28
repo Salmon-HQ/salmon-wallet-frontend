@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -29,6 +29,7 @@ import {
 } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
 import { DAppSignMessageApprovalView } from './DAppSignMessageApprovalView';
+import { APPROVE_ARM_MS } from './useApprovalArming';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -53,6 +54,7 @@ describe('DAppSignMessageApprovalView', () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it('renders the parsed OCMS content and required signers when requiredSigners is set', () => {
@@ -148,11 +150,13 @@ describe('DAppSignMessageApprovalView', () => {
   });
 
   it('does not run the tx-lookalike guard and leaves Sign enabled when no data bytes are provided', () => {
+    vi.useFakeTimers();
     // Arrange & Act
     render(<DAppSignMessageApprovalView {...baseProps} />);
 
     // Assert
     expect(screen.queryByText('Signing blocked')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
     expect(screen.getByRole('button', { name: 'SIGN' })).not.toBeDisabled();
     expect(mockedIsTransactionLookalike).not.toHaveBeenCalled();
   });

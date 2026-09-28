@@ -89,7 +89,11 @@ export type { UseSendTransactionParams, UseSendTransactionResult } from './useSe
 // The send flow's state (token, recipient, amount, fee, submit) — one
 // implementation; mobile wraps it in a provider, the DOM calls it directly.
 export { useSendFlowState } from './useSendFlowState';
-export type { UseSendFlowStateParams, SendFlowState } from './useSendFlowState';
+export type {
+  UseSendFlowStateParams,
+  SendFlowState,
+  StartFromRequestResult,
+} from './useSendFlowState';
 
 // The NFT flow's state (recipient, transfer, burn preview, receipt) — the
 // transaction hooks are the same ones both platforms always called
@@ -104,10 +108,6 @@ export { useImportPrivateKey } from './useImportPrivateKey';
 export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';
 export { useImportWatchOnly } from './useImportWatchOnly';
 export type { UseImportWatchOnlyParams, UseImportWatchOnlyResult } from './useImportWatchOnly';
-
-// Swap hook
-export { useSwap } from './useSwap';
-export type { UseSwapParams, UseSwapResult } from './useSwap';
 
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
@@ -126,9 +126,9 @@ export type {
   MarketChartPoint,
 } from './useCoinMarketData';
 
-// Jupiter token list hook (shared between mobile/web/extension swap entries)
-export { useJupiterTokenList } from './useJupiterTokenList';
-export type { UseJupiterTokenListParams, UseJupiterTokenListResult } from './useJupiterTokenList';
+// Verified token catalogue hook
+export { useTokenCatalog } from './useTokenCatalog';
+export type { UseTokenCatalogParams, UseTokenCatalogResult } from './useTokenCatalog';
 
 // Multi-chain tokens hook
 export { useMultiChainTokens } from './useMultiChainTokens';
@@ -140,6 +140,9 @@ export type {
 
 // Token search hook (used by TokenSelector in ui and ui-extension)
 export { useTokenSearch } from './useTokenSearch';
+export { tokenBalanceLabel, useTokenSelectList } from './useTokenSelectList';
+export type { UseTokenSelectListOptions } from './useTokenSelectList';
+export type { UseTokenSearchResult } from './useTokenSearch';
 
 // Address validation hook (used by InputAddress in ui and ui-extension)
 export { useAddressValidation } from './useAddressValidation';
@@ -150,6 +153,8 @@ export type {
 
 // Open link hook (used by settings screens)
 export { useOpenLink } from './useOpenLink';
+export type { UseOpenLinkParams, UseOpenLinkResult } from './useOpenLink';
+export { useDataAttribution } from './useDataAttribution';
 
 // NFT transfer hook (shared between mobile & extension)
 export { useNftTransfer } from './useNftTransfer';
@@ -161,10 +166,6 @@ export type {
 
 export { useNftBurn } from './useNftBurn';
 export type { UseNftBurnParams, UseNftBurnResult, NftBurnStatus } from './useNftBurn';
-
-// SwapScreen logic hook (shared between mobile & extension)
-export { useSwapScreenLogic } from './useSwapScreenLogic';
-export type { UseSwapScreenLogicParams, UseSwapScreenLogicResult } from './useSwapScreenLogic';
 
 // Send contacts hook (address book + own wallets for send flow)
 export { useSendContacts } from './useSendContacts';
@@ -183,6 +184,7 @@ export type {
 export { useAddressBookForm } from './useAddressBookForm';
 export { useAddressAddPanel, useAddressEditPanel } from './useAddressBookPanel';
 export { useValidationDirty } from './useValidationDirty';
+export { useSettledPaymentLink, PAYMENT_LINK_SETTLE_MS } from './useSettledPaymentLink';
 export { useAvatarPicker } from './useAvatarPicker';
 export type { AvatarPickerTab } from './useAvatarPicker';
 export type { UseAddressBookPanelResult } from './useAddressBookPanel';
@@ -193,6 +195,7 @@ export { useAvatarNfts } from './useAvatarNfts';
 export type { UseAvatarNftsParams, UseAvatarNftsResult } from './useAvatarNfts';
 
 // Solana NFT list hook (shared between mobile, web, extension collectibles screens)
+export { useAccountActivity } from './useAccountActivity';
 export { useSolanaNfts } from './useSolanaNfts';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
@@ -219,6 +222,10 @@ export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext
 
 // Home sub-tab order (persisted arrangement + reconciliation)
 export { useHomeTabOrder, reconcileTabOrder } from './useHomeTabOrder';
+export { useInstalledPowerups, resetInstalledPowerupsForTest } from './useInstalledPowerups';
+export type { UseInstalledPowerupsResult } from './useInstalledPowerups';
+export { usePowerupState, resetPowerupStateForTest } from './usePowerupState';
+export type { PowerupStateUpdater } from './usePowerupState';
 export type { UseHomeTabOrderResult } from './useHomeTabOrder';
 
 // Derived-account scan (finds a seed's funded paths; the user picks)
@@ -239,17 +246,19 @@ export type { PasswordConfirmState, UsePasswordConfirmParams } from './usePasswo
 export { useChangePassword } from './useChangePassword';
 export type { UseChangePasswordParams } from './useChangePassword';
 
-// Home shell (page index, per-page balances, offered sub-tabs, the swap's owner)
+// Home shell (page index, per-page balances, offered sub-tabs, the change's owner)
 export {
   useHomeShell,
-  HOME_TAB_KEYS,
+  HOME_CORE_TAB_KEYS,
   blockchainIdOf,
   mapBalanceToToken,
   buildBitcoinToken,
 } from './useHomeShell';
 export type {
+  HomeCoreTabKey,
+  HomePowerupTab,
   HomeSubTabKey,
-  HomeSwapCause,
+  HomeChangeCause,
   UseHomeShellParams,
   UseHomeShellResult,
 } from './useHomeShell';
@@ -264,3 +273,63 @@ export type {
 } from './useAccountAddFlow';
 export { useWaitTips } from './useWaitTips';
 export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';
+
+// Private key / seed reveal panels — reveal/copy/reauth state machines
+export { usePrivateKeyPanelLogic } from './usePrivateKeyPanelLogic';
+export type {
+  UsePrivateKeyPanelLogicParams,
+  UsePrivateKeyPanelLogicResult,
+} from './usePrivateKeyPanelLogic';
+export { useBackupPanelLogic, SEED_WORD_MASK } from './useBackupPanelLogic';
+export type { UseBackupPanelLogicParams, UseBackupPanelLogicResult } from './useBackupPanelLogic';
+export { useSeedPhraseEntryLogic } from './useSeedPhraseEntryLogic';
+export type {
+  FocusableRef,
+  UseSeedPhraseEntryLogicParams,
+  UseSeedPhraseEntryLogicResult,
+} from './useSeedPhraseEntryLogic';
+export { useDeveloperModeToggles } from './useDeveloperModeToggles';
+export type { UseDeveloperModeTogglesResult } from './useDeveloperModeToggles';
+
+// Home Powerups (installed-ids -> sub-tabs, and the catalogue drawer's state)
+export { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';
+export type {
+  UseHomePowerupTabsParams,
+  UseHomePowerupsCatalogParams,
+  UseHomePowerupsCatalogResult,
+} from './useHomePowerups';
+export { useTransactionDetailDerived } from './useTransactionDetailDerived';
+export { useTransactionItemDerived } from './useTransactionItemDerived';
+export type {
+  TransactionItemTranslate,
+  UseTransactionItemDerivedResult,
+} from './useTransactionItemDerived';
+
+// Wallets screen (aggregated total, include-in-total set, families) and its
+// per-card derived-path/rescan-eligibility twin
+export { useWalletsScreen, useWalletCardDerived } from './useWalletsScreen';
+export type {
+  UseWalletsScreenParams,
+  UseWalletsScreenResult,
+  UseWalletCardDerivedParams,
+  UseWalletCardDerivedResult,
+  WalletDerivedPath,
+} from './useWalletsScreen';
+
+export { useAmountShortcuts, AMOUNT_SHORTCUTS } from './useAmountShortcuts';
+export type {
+  AmountShortcutKey,
+  UseAmountShortcutsParams,
+  UseAmountShortcutsResult,
+} from './useAmountShortcuts';
+
+export { useNetworkPowerups, resetNetworkPowerupsCache } from './useNetworkPowerups';
+
+// Send derivations both twins render and neither computes
+export { useSendCommitState } from './useSendCommitState';
+export type { SendCommitState } from './useSendCommitState';
+export { useRecipientOptions } from './useRecipientOptions';
+export type { UseRecipientOptionsParams, UseRecipientOptionsResult } from './useRecipientOptions';
+export { useFiatLine } from './useFiatLine';
+export { useDeferredFeeEstimate } from './useDeferredFeeEstimate';
+export { useHeldSheetSize } from './useHeldSheetSize';

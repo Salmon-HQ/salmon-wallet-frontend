@@ -5,17 +5,30 @@ appId: io.salmonwallet.app
 # app/(app)/(tabs)/_layout.tsx), not just in a component-level Jest render.
 #
 # Jest cannot catch this class of bug — a prior fix (de0be9f1) passed its
-# unit test while, on device, the icon swap silently failed to paint for
+# unit test while, on device, the icon change silently failed to paint for
 # the entire feedback hold, even though the underlying `copied` state
 # flipped and held correctly. Only a real mount + real screenshot proves
 # the pixel actually changes.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-- tapOn:
-    id: 'wallet-header-copy-address'
-- assertVisible:
-    text: 'Copied!'
+# The check shows for 1.5 s. A plain tap waits for the screen to settle, and
+# the tick's spring keeps it moving past that window, so the assertion would
+# land after the check is gone. Assert inside the window. On a loaded emulator
+# the tap alone can take longer than the window (measured 2.8 s), so a missed
+# window taps again; every attempt asserts the same label.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: 'wallet-header-copy-address'
+          waitToSettleTimeoutMs: 200
+      # The confirmation is the button's own label while it shows the check,
+      # so the assertion is on that button, not on any "Copied!" elsewhere.
+      - assertVisible:
+          id: 'wallet-header-copy-address'
+          text: 'Copied!'
 - takeScreenshot: screenshots/smoke/home/copy-address-checkmark
 - extendedWaitUntil:
     notVisible:
+      id: 'wallet-header-copy-address'
       text: 'Copied!'
     timeout: 3000

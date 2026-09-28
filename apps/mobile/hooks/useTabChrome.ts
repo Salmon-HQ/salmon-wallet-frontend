@@ -9,7 +9,7 @@ const STICKY_CTA_SCROLL_GAP = spacing['2xl'];
  * Shared chrome metrics for the tab shell.
  *
  * `headerChromeHeight` is the top space a screen without its own header row
- * has to reserve so its content clears the system UI — Swap's, today. Home no
+ * has to reserve so its content clears the system UI. Home no
  * longer reads it: its `WalletHeader` is laid out in flow and owns that space
  * itself. Bottom spacing for floating CTAs and scrollable content derives from
  * the safe-area bottom inset alone — there is no bottom tab bar to clear.

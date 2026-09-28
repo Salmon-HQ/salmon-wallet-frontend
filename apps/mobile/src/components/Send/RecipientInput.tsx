@@ -12,9 +12,10 @@
  * the screen, which is also what decides whether Continue is live.
  */
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 import {
   borderWidth,
+  componentSizes,
   useFieldFocus,
   fontFamilyNative,
   fontSize,
@@ -29,6 +30,7 @@ import { QrCodeIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import type { RecipientInputProps } from './types';
+import { Spinner } from '../Spinner';
 
 export type { RecipientInputProps };
 
@@ -90,9 +92,7 @@ export function RecipientInput({
         onFocus={onFocus}
         onBlur={onBlur}
       />
-      {value.length > 0 && isValidating && (
-        <ActivityIndicator size="small" color={semantic.text.secondary} />
-      )}
+      {value.length > 0 && isValidating && <Spinner color={semantic.text.secondary} />}
       {mark && (
         <Text style={[styles.mark, { color: mark.color }]} testID="send-recipient-mark">
           {mark.glyph}
@@ -122,10 +122,13 @@ const stylesFor = (t: Semantic) =>
     input: {
       flex: 1,
       minWidth: 0,
+      // As tall as the bubble beside it: every input whose placeholder shows
+      // on iOS has an explicit height; this one, without it, drew nothing.
+      height: componentSizes.iconBubbleSm,
       fontSize: s(fontSize.mono),
       fontFamily: fontFamilyNative.mono,
       color: t.text.primary,
-      paddingVertical: 0,
+      padding: 0,
     },
     mark: {
       fontSize: s(fontSize.bodyLg),

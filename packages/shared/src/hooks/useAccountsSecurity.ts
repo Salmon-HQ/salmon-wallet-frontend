@@ -1,9 +1,14 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
-import { removeStashItem } from '../storage';
+import { removeStashItem, updateLastActivity } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
-import { clearUnlockPenalty, getUnlockPenalty, recordFailedUnlock } from '../utils/unlock-throttle';
+import {
+  clearUnlockPenalty,
+  getUnlockPenalty,
+  recordFailedUnlock,
+  UnlockThrottledError,
+} from '../utils/unlock-throttle';
 import type { Account, AccountSecret, StoredAccount } from '../types/account';
 import type { SecretVault } from '../utils/account-secret';
 import {
@@ -74,13 +79,32 @@ export function useAccountsSecurity({
   );
 
   const checkPassword = useCallback(async (password: string): Promise<boolean> => {
+    // This gate stands in front of the seed-phrase reveal, the private-key
+    // reveal and account removal, so it is as free to guess at as the unlock
+    // prompt and carries the same penalty. A refusal for waiting is thrown, not
+    // answered `false`: the password may be right, and "wrong password" would
+    // send the owner guessing again, which only lengthens the wait.
+    const penalty = await getUnlockPenalty();
+    if (penalty.remainingMs > 0) {
+      throw new UnlockThrottledError(penalty.remainingMs);
+    }
+
     try {
       const storedMnemonics = await getEncryptedStoredMnemonics();
       if (!storedMnemonics) {
         return true;
       }
 
-      await resolveMnemonicsWithPassword(storedMnemonics, password);
+      try {
+        await resolveMnemonicsWithPassword(storedMnemonics, password);
+      } catch (err) {
+        // Only a rejected password counts against the user — a storage failure
+        // must not lock a legitimate owner out.
+        await recordFailedUnlock();
+        throw err;
+      }
+
+      await clearUnlockPenalty();
 
       return true;
     } catch {
@@ -96,14 +120,23 @@ export function useAccountsSecurity({
           return false;
         }
 
+        // Verify through the throttled path first: changing the password is
+        // another way to ask "is this the right one?", and an unthrottled one
+        // would hand back the free guesses checkPassword denies.
+        if (!(await checkPassword(oldPassword))) {
+          return false;
+        }
+
         await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
 
         return true;
-      } catch {
+      } catch (err) {
+        // A wait is not a wrong password; the screen says which it was.
+        if (err instanceof UnlockThrottledError) throw err;
         return false;
       }
     },
-    []
+    [checkPassword]
   );
 
   const lockAccounts = useCallback(async (): Promise<void> => {
@@ -122,7 +155,16 @@ export function useAccountsSecurity({
           return false;
         }
 
-        await runUpgrades(password);
+        try {
+          // A legacy record still on disk decrypts here, not below, so a wrong
+          // password rejected by the migration has to cost an attempt too —
+          // otherwise the throttle never starts on exactly the installs that
+          // are still carrying a v2 vault.
+          await runUpgrades(password);
+        } catch (err) {
+          await recordFailedUnlock();
+          throw err;
+        }
 
         const storedMnemonics = await getStoredMnemonics();
         if (!storedMnemonics) {
@@ -144,6 +186,11 @@ export function useAccountsSecurity({
 
         await clearUnlockPenalty();
         await finalizeUnlockedAccounts(mnemonics, loadAccounts, setLocked);
+        // Typing the password is the user acting. Unlocking through the cached
+        // key is not: every window the wallet opens does it, including an
+        // approval window a web page asked for, and counting it let a page
+        // postpone the auto-lock indefinitely.
+        await updateLastActivity();
 
         return true;
       } catch (err) {

@@ -1,0 +1,10 @@
+appId: io.salmonwallet.app
+---
+# Dismiss the keyboard where it is in the way. On Android it covers the next
+# field and the submit button; on the iOS simulator Maestro's hideKeyboard
+# fails outright, and the keyboard covers nothing the next step taps.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard

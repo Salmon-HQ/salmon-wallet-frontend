@@ -202,7 +202,7 @@ def build(style: str) -> TTFont:
     return font
 
 
-# Pairs that must shape to the same width. Each swaps digits only, so any
+# Pairs that must shape to the same width. Each substitutes digits only, so any
 # difference is the font moving the line under a value that merely ticked.
 JITTER_PAIRS = (("$17.29", "$17.30"), ("1,234.56", "9,999.99"), ("111111", "000000"))
 

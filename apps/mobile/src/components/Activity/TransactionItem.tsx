@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { ClockIcon, XCircleIcon, iconSize } from '../../icons';
@@ -10,14 +10,14 @@ import {
   fontScaleCap,
   formatRawAmount,
   formatRelativeTimeCompact,
-  describeTransactionRow,
   lineHeight,
   spacing,
   tabularNums,
+  useTransactionItemDerived,
   type Semantic,
 } from '@salmon/shared';
 import { ListRow } from '../ListRow';
-import { transactionTypeConfigFor, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
+import { transactionTypeConfigFor, TransactionMark } from '../TransactionMark';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { TransactionItemProps, TransactionTokenAmount } from './types';
 
@@ -32,7 +32,6 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
-const MAX_VISIBLE_AMOUNTS = 2;
 
 /** The amount column reserves this width, so the chip can never reach it */
 const AMOUNT_COLUMN_MIN_WIDTH = 104;
@@ -108,25 +107,16 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   const { status: statusTokens } = semanticTokens;
   const { type, timestamp, status, inputs, outputs } = transaction;
   const typeConfig = transactionTypeConfigFor(semanticTokens);
-  const config = typeConfig[type] || typeConfig.unknown;
-
-  // Calculate if we should show collapsed view
-  const totalAmounts = inputs.length + outputs.length;
-  const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
+  const { descriptionText, typeLabel } = useTransactionItemDerived(
+    transaction,
+    contacts,
+    t,
+    typeConfig
+  );
 
   const handlePress = useCallback(() => {
     onPress?.(transaction);
   }, [onPress, transaction]);
-
-  // What the row says under the verb — one derivation for both platforms
-  // (`describeTransactionRow`): "To/From <name>" for a transfer, the shared
-  // description for everything else.
-  const descriptionText = useMemo(() => {
-    const said = describeTransactionRow(transaction, contacts);
-    return t(said.key, said.values);
-  }, [transaction, contacts, t]);
-
-  const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 
   // Helper to render token amounts
   const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') =>
@@ -150,26 +140,6 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
               : t('transactions.detail.pending', 'Pending')}
           </Text>
         </View>
-      );
-    }
-
-    // Complex swap: the row states the first leg of each side and how many
-    // more there are. The rest is one tap away, in the detail.
-    if (isComplex) {
-      const firstOutput = outputs[0];
-      const firstInput = inputs[0];
-
-      return (
-        <>
-          {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
-          {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
-          <Text style={styles.moreText}>
-            {t('transactions.detail.nMore', {
-              count: totalAmounts - 2,
-              defaultValue: '+{{count}} more',
-            })}
-          </Text>
-        </>
       );
     }
 
@@ -255,7 +225,7 @@ const stylesFor = (t: Semantic) =>
     },
     /**
      * One Living Thing Rule: the accent is a budget, and a count that repeats
-     * once per complex swap would spend it four times a screen. A remainder is
+     * once per multi-leg row would spend it four times a screen. A remainder is
      * chrome — it reads in quiet ink.
      */
     moreText: {

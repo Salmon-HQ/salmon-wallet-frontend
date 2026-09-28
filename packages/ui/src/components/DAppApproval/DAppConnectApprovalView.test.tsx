@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -18,6 +18,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
 import { DAppConnectApprovalView } from './DAppConnectApprovalView';
+import { APPROVE_ARM_MS } from './useApprovalArming';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -29,9 +30,11 @@ const ADDRESS = 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf';
 describe('DAppConnectApprovalView', () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it('shows the origin, the wallet address in full, and routes both buttons', () => {
+    vi.useFakeTimers();
     const onApprove = vi.fn();
     const onReject = vi.fn();
     render(
@@ -50,6 +53,11 @@ describe('DAppConnectApprovalView', () => {
     expect(screen.getByText('Fg6P...KzXf')).toBeInTheDocument();
     expect(screen.getByText(ADDRESS)).toBeInTheDocument();
     expect(screen.getByText('This origin does not use HTTPS.')).toBeInTheDocument();
+
+    // Approve waits for the window to have been in front a moment; Deny never does.
+    expect(screen.getByRole('button', { name: 'APPROVE' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'DENY' })).not.toBeDisabled();
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
 
     fireEvent.click(screen.getByRole('button', { name: 'APPROVE' }));
     fireEvent.click(screen.getByRole('button', { name: 'DENY' }));

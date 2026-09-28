@@ -29,7 +29,7 @@ type Item = PendingActivityBannerProps['items'][number];
 
 const item = (overrides: Partial<Item> = {}): Item => ({
   id: 'sig-1',
-  kind: 'swap',
+  kind: 'send',
   status: 'pending',
   detail: '1 SOL → 210 USDC',
   dismissible: true,
@@ -55,10 +55,10 @@ describe('PendingActivityBanner', () => {
       />
     );
 
-    expect(screen.getByText('pending.swap.pending')).toBeTruthy();
+    expect(screen.getByText('pending.send.pending')).toBeTruthy();
     expect(screen.getByText('pending.send.confirmed')).toBeTruthy();
     expect(screen.getByText('pending.send.failed')).toBeTruthy();
-    expect(screen.getByText('pending.swap.expired')).toBeTruthy();
+    expect(screen.getByText('pending.send.expired')).toBeTruthy();
     // Expiry means nothing left the wallet — the row says so.
     expect(screen.getByText('pending.expiredHint')).toBeTruthy();
   });

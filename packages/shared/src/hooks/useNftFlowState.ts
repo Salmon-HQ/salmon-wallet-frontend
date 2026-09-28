@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createBurnTransaction } from '../api/services/nft-burn';
 import { getDefaultExplorer, getTransactionUrl } from '../config/explorers';
 import type { Blockchain, NetworkEnvironment } from '../config/explorers';
-import { useSettleAfterTx } from '../query/invalidation';
+import { useInvalidateAfterTx, useSettleAfterTx } from '../query/invalidation';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
 import type { BlockchainAccount, SolanaNetworkId } from '../types/blockchain';
 import type { PreparedNftTransactionResponse } from '../types/nft';
@@ -91,6 +91,7 @@ export function useNftFlowState({
   const [burnError, setBurnError] = useState<string | null>(null);
 
   const settleAfterTx = useSettleAfterTx();
+  const invalidateAfterTx = useInvalidateAfterTx();
   const nftBurn = useNftBurn({
     account: (account as SolanaAccount | undefined) ?? null,
     activeAccountId,
@@ -177,21 +178,32 @@ export function useNftFlowState({
         }
       }
     } catch (err) {
-      setBurnError(classifyTransactionError(err));
+      const errorKey = classifyTransactionError(err);
+      if (errorKey === 'transaction.errors.nftNotOwned') {
+        // The list was stale: drop the NFT now and fetch what is really held.
+        void invalidateAfterTx({
+          accountId: account.getReceiveAddress(),
+          avatarAccountId: activeAccountId,
+          networkId,
+          kinds: ['nfts', 'avatar-nfts'],
+          removedNftMintAddresses: [nft.mint],
+        });
+      }
+      setBurnError(errorKey);
     } finally {
       setBurnPreparing(false);
     }
-  }, [account, networkId, nft, onBurnUnsupported]);
+  }, [account, activeAccountId, invalidateAfterTx, networkId, nft, onBurnUnsupported]);
 
   /** Sign and send the prepared burn. */
   const confirmBurn = useCallback(async () => {
-    if (!nft || !account || !burnPreview) return;
+    if (!nft?.mint || !account || !burnPreview) return;
 
     setBurnExecuting(true);
     setBurnError(null);
 
     try {
-      const signatures = await nftBurn.burnNft(burnPreview, nft.mint ?? undefined);
+      const signatures = await nftBurn.burnNft(burnPreview, nft.mint);
       setSuccessKind('burn');
       setSuccessTxId(signatures[signatures.length - 1] ?? '');
     } catch (err) {
@@ -254,6 +266,8 @@ export function useNftFlowState({
     burnPreview,
     /** One busy flag for both halves, exactly as the screens were handed it. */
     burnPreparing: burnPreparing || burnExecuting,
+    /** The burn is signing and landing — the wait's cue, apart from preparing. */
+    burning: burnExecuting,
     burnError,
     prepareBurn,
     confirmBurn,

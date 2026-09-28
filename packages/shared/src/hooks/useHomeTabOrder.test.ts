@@ -71,7 +71,8 @@ describe('useHomeTabOrder', () => {
   it('starts on the default order when storage is empty', async () => {
     const { result } = renderHook(() => useHomeTabOrder(['portfolio', 'nfts']));
 
-    await waitFor(() => expect(mockStorage.getItem).toHaveBeenCalled());
+    expect(result.current.hydrated).toBe(false);
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     expect(result.current.order).toEqual(['portfolio', 'nfts']);
   });
 

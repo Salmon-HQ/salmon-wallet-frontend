@@ -17,6 +17,7 @@ import {
 import { classifyTransactionError, describeTransactionError } from './transaction-errors';
 
 const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
 
 /** A send rejected at preflight, the way kit hands it back: the cause is the transaction error. */
@@ -90,6 +91,25 @@ describe('describeTransactionError — decoded Solana errors', () => {
     );
   });
 
+  it('names the Token-2022 extension errors a recipient account can raise', () => {
+    // Token-2022 continues the classic program's numbering, so a transfer
+    // refused by the recipient's own extensions used to surface as a bare
+    // "program rejected" with no way for the user to know what to change.
+    const memoLogs = [`Program ${TOKEN_2022_PROGRAM} failed: custom program error: 0x24`];
+    expect(classifyTransactionError(preflight(custom(36), memoLogs))).toBe(
+      'transaction.errors.memoRequired'
+    );
+
+    const nonTransferableLogs = [
+      `Program ${TOKEN_2022_PROGRAM} failed: custom program error: 0x25`,
+    ];
+    expect(classifyTransactionError(preflight(custom(37), nonTransferableLogs))).toBe(
+      'transaction.errors.nonTransferable'
+    );
+
+    expect(describeTransactionError(preflight(custom(36), memoLogs)).detail).toContain('NoMemo');
+  });
+
   it('reads insufficient funds off the token and system programs', () => {
     const tokenLogs = [`Program ${TOKEN_PROGRAM} failed: custom program error: 0x1`];
     expect(classifyTransactionError(preflight(custom(1), tokenLogs))).toBe(
@@ -101,7 +121,7 @@ describe('describeTransactionError — decoded Solana errors', () => {
     );
   });
 
-  it('keeps Jupiter slippage as slippage', () => {
+  it('keeps the aggregator slippage code as slippage', () => {
     expect(classifyTransactionError(preflight(custom(6001)))).toBe('transaction.errors.slippage');
   });
 
@@ -174,14 +194,14 @@ describe('describeTransactionError — plain messages', () => {
     );
   });
 
-  it('maps a Jupiter slippage failure to the slippage message', () => {
+  it('maps an aggregator slippage failure to the slippage message', () => {
     expect(classifyTransactionError(new Error('{"InstructionError":[3,{"Custom":6001}]}'))).toBe(
       'transaction.errors.slippage'
     );
   });
 
   it('maps a missing route to the no-route message', () => {
-    expect(classifyTransactionError(new Error('No routes found for this swap'))).toBe(
+    expect(classifyTransactionError(new Error('No routes found for this pair'))).toBe(
       'transaction.errors.noRoute'
     );
   });

@@ -51,9 +51,9 @@ support, and blanket protection trains people to work around it.
 Agent guardrails:
 
 - Do not launch production builds autonomously — point the human at
-  `pnpm build:aab` / `pnpm build:apk` and walk them through the checklist
-  below. Builds are interactive, long-running, and touch EAS managed
-  credentials.
+  `eas build --platform all --profile production` and walk them through the
+  checklist below. Builds run on EAS servers, are long-running, and touch
+  EAS managed credentials.
 - Never regenerate, overwrite, or "fix" the Android keystore through
   `eas credentials` autonomously — losing a published keystore permanently
   removes the ability to update the Play Store listing. Ask the human first.
@@ -96,24 +96,28 @@ Pre-build checklist — run in order before `eas build --profile production`:
    `app.json` is the only version source; `apps/mobile/package.json` carries none. Then
    `pnpm --filter @salmon/mobile fingerprint:write` so `native-fingerprint.json` records this
    binary, and after the store accepts it, tag the commit `mobile/v<version>` (CI verifies
-   both agree, the way `extension/v*` is verified).
+   both agree, the way `extension/v*` is verified). Write the baseline from a tree with no
+   `ios/` or `android/` directory: a local prebuild output is hashed in even though
+   `.fingerprintignore` lists it, and the hash then differs from the one CI and EAS compute
+   on Linux. When in doubt, take the hash CI prints in "Native fingerprint vs last binary".
    `versionCode` is bumped automatically by EAS via `appVersionSource: "remote"` + `autoIncrement: true`
    on the production profile, so the build needs internet access to reserve the next code.
 4. **Android keystore**: managed by EAS. Inspect with `eas credentials` from `apps/mobile/`.
    **Never regenerate a keystore that is already published to Play Store** — losing it
    means losing the ability to update that listing forever. Keep an out-of-repo backup
    plus a remote backup (password manager, encrypted drive, etc.).
-5. **Resources**: 8+ GB free disk, 8+ GB free RAM. Close heavy apps (IDE, browser, Docker) before a local build.
-6. **Build command** (from `apps/mobile/`):
-   - `.aab` for Play Store: `pnpm build:aab`
-   - `.apk` for sideload: `pnpm build:apk`
+5. **EAS account**: `eas whoami` must list `salmon-wallet`; the project is
+   `@salmon-wallet/salmon-wallet` (`eas project:info`).
+6. **Build command** (from `apps/mobile/`), remote on EAS servers:
+   - both stores: `eas build --platform all --profile production`
+     (`.aab` for Play Store, `.ipa` for App Store)
+   - `.apk` for sideload: `eas build --platform android --profile production-apk`
 
-   Both scripts wrap `eas build ... --local --output` and name the binary
-   `salmon-wallet-<version>-<YYYY-MM-DD>.{aab,apk}` automatically, where
-   `<version>` is read from `app.json` → `expo.version`. The `versionCode`
-   is assigned by EAS during the build and is not included in the filename;
-   read it from the build output or `keytool -printcert -jarfile <file>`
-   when you need it for handoff.
+   Download the artifacts from the EAS build page (or `eas build:list`).
+   The `versionCode` / `buildNumber` is assigned by EAS during the build;
+   read it from the build page or `keytool -printcert -jarfile <file>` when
+   you need it for handoff. `pnpm build:aab` / `pnpm build:apk` are the
+   `--local` fallbacks and need 8+ GB free disk and RAM.
 
 Post-build:
 

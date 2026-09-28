@@ -58,6 +58,9 @@ function assertValidPropValue(key: string, value: AnalyticsPropValue): void {
 
   const allowedValues = PROP_ENUMS[key as keyof typeof PROP_ENUMS];
   if (allowedValues && !allowedValues.includes(value)) {
+    if (allowedValues.length === 0) {
+      throw new AnalyticsValidationError(`prop "${key}" must be a boolean, got a string`);
+    }
     throw new AnalyticsValidationError(
       `prop "${key}" value "${value}" is not one of: ${allowedValues.join(', ')}`
     );

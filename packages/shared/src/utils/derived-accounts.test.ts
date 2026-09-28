@@ -10,7 +10,7 @@ vi.mock('../factories/account-factory', () => ({
 }));
 
 import { deriveBlockchainAccount } from '../factories/account-factory';
-import { ensureMirrorNetworks, scanDerivedAccounts } from './derived-accounts';
+import { ensureMirrorNetworks, MAX_SCAN_INDEX, scanDerivedAccounts } from './derived-accounts';
 
 const MNEMONIC = 'test test test test test test test test test test test junk';
 
@@ -64,6 +64,24 @@ describe('scanDerivedAccounts', () => {
 
     const second = result.accounts.find((a) => a.index === 2);
     expect(second).toMatchObject({ tokenCount: 1, balance: 0, selected: true });
+  });
+
+  // The gap limit bounds consecutive empty indexes only. A provider that says
+  // "funded" every time never produces a gap, so the loop's length was a number
+  // a remote service chose — while it derived keys from the cleartext mnemonic.
+  it('stops at its own ceiling when the balance provider claims every path is funded', async () => {
+    mockDerive.mockImplementation(async (_m, networkId, index) =>
+      makeAccount(networkId, index ?? 0)
+    );
+
+    const result = await scanDerivedAccounts(MNEMONIC, ['solana-mainnet'], async () => ({
+      native: 1,
+      tokenCount: 0,
+    }));
+
+    const indexes = mockDerive.mock.calls.map(([, , index]) => index as number);
+    expect(Math.max(...indexes)).toBe(MAX_SCAN_INDEX);
+    expect(Math.max(...result.accounts.map((a) => a.index))).toBe(MAX_SCAN_INDEX);
   });
 
   it('reports every network once in failedNetworks when all networks throw', async () => {

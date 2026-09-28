@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
-import { Stack, useRouter, usePathname } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 
-import { useAccountsContext } from '@salmon/shared';
-import { LockOverlay, LockContent, PowerupsFab } from '../../src/components';
+import {
+  SignatureRequestProvider,
+  isSignableSolanaAccount,
+  useAccountsContext,
+} from '@salmon/shared';
+import { ConfirmationHost, LockOverlay, LockContent } from '../../src/components';
 import { useBiometric } from '../../src/contexts/BiometricContext';
-import { useTabChrome } from '../../hooks/useTabChrome';
-import { POWERUPS_SURFACE_ENABLED } from '../../src/powerups/surface';
-import { TaskChromeProvider, useTaskChrome } from '../../src/contexts/TaskChromeContext';
+import { TaskChromeProvider } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
@@ -22,14 +24,8 @@ import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
  * exactly the gap this component closes. Rendered as a sibling above
  * `<Stack>`, it covers every screen the stack can ever push.
  *
- * Powerups used to be the one screen this could not cover: as a
- * `fullScreenModal` it had its own native window, stacked above this React
- * tree entirely. It is a plain stack screen now, so the overlay covers it
- * like everything else — and the powerups control below can float above it.
- *
- * `TaskChromeProvider` lives here rather than in the tabs layout: the FAB is
- * app chrome now, mounted outside the tabs, and it has to leave with the Home
- * content when a task takes the screen.
+ * `TaskChromeProvider` lives here rather than in the tabs layout: the screen
+ * chrome has to leave with the Home content when a task takes the screen.
  *
  * `DerivedAccountsProvider` sits beside it for the same reason: the automatic
  * derived-account scan belongs to the unlocked session, not to a screen, so it
@@ -66,23 +62,12 @@ export default function AppLayout() {
 
   const isLocked = accountState.locked || unlockHeld;
   // The screen surfaces when the OVERLAY leaves — not when the wait inside it
-  // does. Home keys its content on the count, so the float plays on water the
-  // user can actually see.
-  //
-  // This is the only publisher on the unlock path: the lock's `LoadingScreen`
-  // passes `surfaces={false}` precisely because its departure is one beat too
-  // early. It leaves, the water column holds for `FLOAT_DELAY_MS` with nothing
-  // on it, and then the overlay goes and Home floats up through the same
-  // ground it was standing on all along — the passage the owner asked for
-  // (2026-09-07), and the one every other step swap in the app already
-  // speaks. Every wait with no overlay over it still surfaces itself.
-  //
-  // It is bumped from `release` below, NOT from an effect on `isLocked`. An
-  // effect runs after the commit that removed the overlay, so one frame
-  // painted with Home fully assembled and at rest and the float then played on
-  // content the user had already watched arrive — arrival, then arrival again
-  // (spec 031 §D2).
-  const [surfaceKey, setSurfaceKey] = useState(0);
+  // does: the lock's `LoadingScreen` passes `surfaces={false}` because its
+  // departure is one beat too early. Home is not remounted for it. It stays
+  // mounted under the overlay, held hidden while `covered`, and floats in place
+  // when the overlay goes (`useCoverFloat`). Remounting it played the old
+  // copy's sink over the new copy's float, and painted the new copy one frame
+  // at rest before its float took hold — the unlock's "double arrival".
 
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
@@ -108,18 +93,9 @@ export default function AppLayout() {
   // overlay leaves. The beat is `FLOAT_DELAY_MS`, the same pause every sink in
   // this water earns. Under reduce motion the passage is a cut, so the release
   // is immediate.
-  /**
-   * The gate opens and the screen surfaces in ONE commit.
-   *
-   * Both sets are in the same callback, so React batches them: the overlay is
-   * removed and the new `home-content` is mounted in the same tree update.
-   * Reanimated registers a view's entering animation in its constructor, so
-   * that instance's first paint already carries the float's `initialValues` —
-   * there is no at-rest frame to see.
-   */
+  /** The gate opens; `covered` drops with it and Home floats in place. */
   const release = useCallback(() => {
     setUnlockHeld(false);
-    setSurfaceKey((key) => key + 1);
   }, []);
 
   const handleUnlockExited = useCallback(() => {
@@ -159,118 +135,87 @@ export default function AppLayout() {
     ]
   );
 
+  // The account core signs with: the active one when it can sign on Solana,
+  // otherwise none — a watch-only wallet reaches the confirmation and is
+  // refused there (spec 027 §2).
+  const signingAccount =
+    accountState.activeBlockchainAccount &&
+    isSignableSolanaAccount(accountState.activeBlockchainAccount)
+      ? accountState.activeBlockchainAccount
+      : null;
+
   return (
-    <TaskChromeProvider surfaceKey={surfaceKey}>
+    <TaskChromeProvider covered={isLocked}>
       <DerivedAccountsProvider>
-        {/* The developer-mode settings belong to the unlocked session, not to
+        <SignatureRequestProvider account={signingAccount}>
+          {/* The developer-mode settings belong to the unlocked session, not to
           a screen. Mounted inside the tabs layout (where they used to live)
           every screen this stack pushes — Activity, Send, NFT detail,
           Powerups — sat ABOVE the provider and read the context default
           instead of the stored flag. */}
-        <DeveloperModeProvider>
-          {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
+          <DeveloperModeProvider>
+            {/* Headers stay hidden app-wide: the wallet chrome is the `WalletHeader`
           row the tabs layout renders, and every pushed screen draws the
           kit's own `ScreenHeader`. A native header would double up on both.
           Direction is set once, here: a pushed screen comes in from the
           right and leaves the way it came, and the horizontal gesture is the
           same motion run by hand. Configuring it per screen is how two
           screens end up arriving from different edges. */}
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-              gestureDirection: 'horizontal',
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="wallets" />
-            <Stack.Screen name="activity" />
-            {/* Settings is a sub-stack too (the list plus one screen per
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureDirection: 'horizontal',
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="wallets" />
+              <Stack.Screen name="activity" />
+              {/* Settings is a sub-stack too (the list plus one screen per
             `SettingsScreen` key). It used to be a `href: null` tab, which is
             why it never slid: a tab switch is not a stack push. On the stack it
             takes the same right slide as everything else — and the lock overlay
             below now covers it, which an overlay above the tabs never did. */}
-            <Stack.Screen name="settings" />
-            {/* The send flow is its own sub-stack (spec 018): four screens that
+              <Stack.Screen name="settings" />
+              {/* The send flow is its own sub-stack (spec 018): four screens that
             share the flow's state, taking this stack's right slide. */}
-            <Stack.Screen name="send" />
-            {/* Token and NFT detail are screens of this stack (spec 019), pushed
+              <Stack.Screen name="send" />
+              {/* Token and NFT detail are screens of this stack (spec 019), pushed
             from the Portfolio and NFT lists with the same right slide. */}
-            <Stack.Screen name="token/[id]" />
-            <Stack.Screen name="nft/[id]" />
-            {/* Powerups rises from the bottom instead of sliding from the right,
-            and swipes down to dismiss. It is a plain screen of THIS stack, not
-            a modal: a modal is its own native window and nothing — not the
-            lock overlay, not the FAB — can float above it. Full cover comes
-            from the screen itself, which paints its own opaque water.
+              <Stack.Screen name="token/[id]" />
+              <Stack.Screen name="nft/[id]" />
+              {/* A Powerup has no route: an installed one is a sub-tab of Home
+            and its catalogue is a sheet over Home (spec 027 §1). */}
+            </Stack>
 
-            The route is registered and its choreography kept, but the screen
-            behind it is closed for this release: `powerups.tsx` redirects Home
-            and the body is parked in `src/screens/PowerupsRoute.tsx`. */}
-            <Stack.Screen
-              name="powerups"
-              options={{
-                animation: 'slide_from_bottom',
-                gestureDirection: 'vertical',
-              }}
-            />
-          </Stack>
+            {/* Core's confirmation window, above every screen a Powerup can
+          propose from: the one place a proposal is reviewed and signed.
 
-          {/* One powerups control for both routes, above the stack: Home and the
-          browse screen are two screens of the same stack, so the button never
-          unmounts between them and the turn plays while the screen rises. */}
-          <PowerupsLayer />
+          Not while locked. This is an RN `Modal` — its own native window — so
+          the `LockOverlay` below, a plain `View` with a zIndex, does not cover
+          it. `lockAccounts` flips `locked` and drops the stash key but leaves
+          the accounts and their keypairs live, and `confirm()` never consults
+          the lock, so a proposal left open when the wallet auto-locks could be
+          signed and broadcast from above the lock screen. Unmounting holds the
+          request in context; it is presented again once the wallet is open. */}
+            {!isLocked && <ConfirmationHost />}
 
-          {/* The lock screen. It covers every screen this stack can push and
-          takes every touch — Powerups included, now that it is a plain
-          screen of this stack. */}
-          {isLocked && (
-            <LockOverlay>
-              <LockContent
-                locked={accountState.locked}
-                onUnlock={handleLockUnlock}
-                onUnlockExited={handleUnlockExited}
-                onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
-                biometric={lockBiometricConfig}
-              />
-            </LockOverlay>
-          )}
-        </DeveloperModeProvider>
+            {/* The lock screen. It covers every screen this stack can push and
+          takes every touch. */}
+            {isLocked && (
+              <LockOverlay>
+                <LockContent
+                  locked={accountState.locked}
+                  onUnlock={handleLockUnlock}
+                  onUnlockExited={handleUnlockExited}
+                  onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
+                  biometric={lockBiometricConfig}
+                />
+              </LockOverlay>
+            )}
+          </DeveloperModeProvider>
+        </SignatureRequestProvider>
       </DerivedAccountsProvider>
     </TaskChromeProvider>
   );
-}
-
-/** The two routes the powerups control belongs to. */
-const POWERUPS_FAB_ROUTES = ['/', '/powerups'];
-
-/**
- * The single `+`. It floats above the stack, so pressing it on Home and
- * pressing it on the browse screen are the same mounted component: the
- * rotation to the close mark plays while the screen slides up under it,
- * instead of two instances swapping places.
- *
- * Visible only where it means something — Home and Powerups — and gone with
- * the Home content while a task owns the screen, which is the same signal the
- * wallet header row already reads.
- */
-function PowerupsLayer() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { isTaskEngaged } = useTaskChrome();
-  // The same bottom math Home's floating content uses — insets only, so it
-  // holds outside the tab shell too.
-  const { floatingBottomOffset } = useTabChrome();
-
-  const open = pathname === '/powerups';
-  const handlePress = useCallback(() => {
-    if (open) router.back();
-    else router.push('/powerups');
-  }, [open, router]);
-
-  if (!POWERUPS_SURFACE_ENABLED || isTaskEngaged || !POWERUPS_FAB_ROUTES.includes(pathname)) {
-    return null;
-  }
-
-  return <PowerupsFab open={open} onPress={handlePress} bottomOffset={floatingBottomOffset} />;
 }

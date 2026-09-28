@@ -60,9 +60,6 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   await unlockOrRecover(popup);
   await waitHome(popup);
 
-  const home = popup.getByTestId('home-screen');
-  test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
-
   const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
   // Settings is a screen, and a screen is left by its header's back control —
   // it stopped being a drawer with a close button when lot 4A+4B made it one
@@ -106,6 +103,7 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
 
   // 1) Consent OFF → a tracked action must not emit anything.
   await switchNetwork();
+  // An absence needs a window to be observed in: this wait is what is tested.
   await popup.waitForTimeout(500);
   expect(eventRequests, 'no events before opt-in').toHaveLength(0);
 

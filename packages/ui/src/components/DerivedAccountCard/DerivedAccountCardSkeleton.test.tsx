@@ -38,7 +38,7 @@ describe('DerivedAccountCard', () => {
 });
 
 describe('DerivedAccountCardSkeleton', () => {
-  it('stands in with the card’s own ground, so the swap does not jump', () => {
+  it('stands in with the card’s own ground, so the handover does not jump', () => {
     const { container } = renderInMode('dark', <DerivedAccountCardSkeleton />);
     const card = container.firstElementChild as HTMLElement;
     expect(card.style.backgroundColor).toBe(asRenderedColor(createSemantic('dark').surface.raised));

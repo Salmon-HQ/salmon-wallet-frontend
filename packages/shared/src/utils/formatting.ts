@@ -61,17 +61,6 @@ export const MINUS_SIGN = '\u2212';
  */
 const PERCENTAGE_FRACTION_DIGITS = 2;
 
-/**
- * Significant digits for an exchange rate, per the ratified number contract.
- */
-const RATE_SIGNIFICANT_DIGITS = 6;
-
-/**
- * Below this, a rate is shown as a bounded "less than" rather than a figure
- * whose digits would all be noise.
- */
-const RATE_MIN_DISPLAY = 0.0001;
-
 // ============================================================================
 // Locale Resolution
 // ============================================================================
@@ -229,6 +218,40 @@ export function formatTokenAmount(amount: number | string, locale?: string): str
       // decimal separator. Grouping is a fiat affordance only.
       useGrouping: false,
     },
+    locale
+  );
+}
+
+/**
+ * Significant digits for a token amount in a review context — the exact
+ * figure is not the point there (e.g. the confirmation screen's exchange
+ * block); the full-precision figure still renders elsewhere (e.g. the
+ * "Minimum Received" row).
+ */
+const AMOUNT_REVIEW_SIGNIFICANT_DIGITS = 6;
+
+/**
+ * Renders a token amount trimmed to a fixed count of significant digits, for
+ * a review context where full precision reads as noise. Grouping is off,
+ * matching `formatTokenAmount`'s "quantity, not money" treatment.
+ *
+ * @param amount - Token amount in UI units (number, or its string form)
+ * @param locale - Override locale; defaults to the active i18next language
+ * @returns The trimmed amount, or the input as-is when not a finite number
+ *
+ * @example
+ * ```typescript
+ * formatTokenAmountSignificant(1234.567891234, 'en') // '1234.57'
+ * formatTokenAmountSignificant(0.000123456789, 'en')  // '0.000123457'
+ * ```
+ */
+export function formatTokenAmountSignificant(amount: number | string, locale?: string): string {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (typeof value !== 'number' || !isFinite(value)) return String(amount);
+  if (value === 0) return '0';
+  return formatNumber(
+    value,
+    { maximumSignificantDigits: AMOUNT_REVIEW_SIGNIFICANT_DIGITS, useGrouping: false },
     locale
   );
 }
@@ -619,56 +642,6 @@ export function formatSolFee(lamports: number, locale?: string): string {
 }
 
 /**
- * Effective rate line for a completed exchange, derived from the amounts the
- * flow already has: "1 USDC ≈ 0.0127 SOL". Returns null when either amount is
- * missing or non-positive — a receipt must not print a made-up rate.
- */
-export function formatEffectiveRate(
-  inAmount: string | number,
-  inSymbol: string,
-  outAmount: string | number,
-  outSymbol: string,
-  locale?: string
-): string | null {
-  const inValue = typeof inAmount === 'string' ? parseFloat(inAmount) : inAmount;
-  const outValue = typeof outAmount === 'string' ? parseFloat(outAmount) : outAmount;
-  if (!isFinite(inValue) || !isFinite(outValue) || inValue <= 0 || outValue <= 0) return null;
-  if (!inSymbol || !outSymbol) return null;
-  // The rate travels as a number, not as a string another function parses
-  // back: a formatted figure is a rendering, and re-reading one is how a
-  // localized separator turns into a wrong amount.
-  return `1 ${inSymbol} ≈ ${formatConversionRate(outValue / inValue, locale)} ${outSymbol}`;
-}
-
-/**
- * Renders an exchange rate at six significant digits, per the ratified number
- * contract: a rate is read across its whole range, so a fixed number of
- * fraction digits either starves the small end or pads the large one.
- *
- * Takes the rate as a number wherever the caller has one. The string overload
- * exists because the backend sends rates as numeric strings; it must never be
- * handed an already-formatted figure, whose separator would parse wrong.
- *
- * Grouping is off: a rate is a token quantity, not a money magnitude.
- *
- * @param rate - The rate, as a number or the backend's numeric string
- * @param locale - Override locale; defaults to the active i18next language
- * @returns The rendered rate, '0' when there is none, or a bounded '<' form
- */
-export function formatConversionRate(rate: number | string, locale?: string): string {
-  const numericRate = typeof rate === 'string' ? parseFloat(rate) : rate;
-  if (!isFinite(numericRate) || numericRate === 0) return '0';
-  const options: Intl.NumberFormatOptions = {
-    maximumSignificantDigits: RATE_SIGNIFICANT_DIGITS,
-    useGrouping: false,
-  };
-  if (numericRate < RATE_MIN_DISPLAY) {
-    return `<${formatNumber(RATE_MIN_DISPLAY, options, locale)}`;
-  }
-  return formatNumber(numericRate, options, locale);
-}
-
-/**
  * Format balance for display
  *
  * @param amount - Balance amount
@@ -729,27 +702,6 @@ export function formatPercentChange(percent: number | undefined): string {
 
   const sign = percent >= 0 ? '+' : '';
   return `${sign}${percent.toFixed(2)}%`;
-}
-
-// ============================================================================
-// Price Impact Severity
-// ============================================================================
-
-export type PriceImpactSeverity = 'safe' | 'warning' | 'high';
-
-export const PRICE_IMPACT_THRESHOLDS = {
-  safe: 0.5,
-  warning: 1,
-} as const;
-
-/**
- * Returns the severity level for a price impact percentage string.
- */
-export function getPriceImpactSeverity(value: string): PriceImpactSeverity {
-  const numericValue = parseFloat(value);
-  if (isNaN(numericValue) || numericValue < PRICE_IMPACT_THRESHOLDS.safe) return 'safe';
-  if (numericValue <= PRICE_IMPACT_THRESHOLDS.warning) return 'warning';
-  return 'high';
 }
 
 // ============================================================================

@@ -5,7 +5,8 @@ appId: io.salmonwallet.app
 # off by default.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
-- assertVisible: 'Settings'
+- assertVisible:
+    id: 'settings-screen'
 # The analytics toggle sits below Developer Networks in the Advanced section.
 - scrollUntilVisible:
     element:

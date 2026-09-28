@@ -121,7 +121,7 @@ require('@solana/webcrypto-ed25519-polyfill').install();
 // signal.throwIfAborted are all undefined, and signals carry no `reason`.
 //
 // @solana/kit's subscription machinery uses every one of those, so signature
-// confirmation for swaps and NFT burns throws "AbortSignal.timeout is not a
+// confirmation for signed proposals and NFT burns throws "AbortSignal.timeout is not a
 // function" on mobile without this. Each patch is feature-detected, so this is
 // a no-op the moment React Native ships a compliant polyfill.
 //

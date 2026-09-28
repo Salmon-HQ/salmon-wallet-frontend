@@ -6,8 +6,6 @@ import type {
   SendFailurePropsBase,
   SendStep,
   SendToken,
-  TokenPickerSheetPropsBase,
-  TokenSelectListPropsBase,
 } from '@salmon/shared';
 
 export type { SendStep, SendToken, BlockchainType };
@@ -31,6 +29,8 @@ export interface SendPageProps {
    * `nft/[id]/send` — recipient, review, receipt — with no amount step.
    */
   nft?: NftData | null;
+  /** The token the flow opens on, when a token's detail sent the user here. */
+  initialTokenAddress?: string;
   /** Leave the flow */
   onBack: () => void;
   /** Callback when the transfer completes and the receipt is acknowledged */
@@ -47,7 +47,3 @@ export interface SendPageProps {
 
 /** The DOM half of `SendFailurePropsBase`: nothing platform-specific to add. */
 export type SendFailureProps = SendFailurePropsBase;
-
-export type TokenPickerSheetProps = TokenPickerSheetPropsBase;
-
-export type TokenSelectListProps = TokenSelectListPropsBase;

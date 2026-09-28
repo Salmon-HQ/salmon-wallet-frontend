@@ -24,7 +24,7 @@ describe('Chip', () => {
   });
 
   it('never fills in the outline variant, selected or not', () => {
-    render(<Chip testID="badge" label="JUPITER" variant="outline" selected size="sm" />);
+    render(<Chip testID="badge" label="RAYDIUM" variant="outline" selected size="sm" />);
 
     expect(flatten(screen.getByTestId('badge').props.style).backgroundColor).toBe('transparent');
   });

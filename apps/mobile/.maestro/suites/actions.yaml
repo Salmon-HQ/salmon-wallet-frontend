@@ -16,9 +16,7 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/actions/account/import-seed.yaml
 - runFlow: ../flows/actions/account/switch-account.yaml
 - runFlow: ../flows/actions/send/sol-transfer.yaml
-- runFlow: ../flows/actions/swap/intra-solana.yaml
 # Intentionally NOT in this suite:
-# - swap/intra-solana-confirm.yaml — executes a REAL swap (spends funds).
 # - security/biometric-enable.yaml — needs biometric enrollment on the host
 #   simulator/emulator first (see the flow header).
 # NFT transfer onboards Wallet B (uses SALMON_TEST_SEED_B)

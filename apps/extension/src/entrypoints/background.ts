@@ -56,18 +56,36 @@ interface ConnectionData {
 interface StorageData {
   connection: ConnectionData | null;
   networkId: string | null;
-  trustedApps: Record<string, Record<string, boolean>> | null;
+  /** Per network, per origin: the grant, with the address it was approved for. */
+  trustedApps: Record<string, Record<string, { address?: string }>> | null;
 }
 
 type ResponseHandler = (data: unknown, id?: string) => void;
 
 export default defineBackground(() => {
+  // storage.local holds the encrypted vault and the trusted-apps list, and
+  // Chrome lets content scripts read and write it by default. A compromised
+  // renderer could then copy the vault or mark its own origin trusted and
+  // connect without approval. No content script here uses storage, so only
+  // the extension's own pages keep access. Firefox has no access levels.
+  const localArea = browser.storage.local as typeof browser.storage.local & {
+    setAccessLevel?: (options: { accessLevel: 'TRUSTED_CONTEXTS' }) => Promise<void>;
+  };
+  void Promise.resolve()
+    .then(() => localArea.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' }))
+    .catch(() => undefined);
+
   // Maps to track response handlers and stashed values
   const responseHandlers = new Map<string, ResponseHandler>();
   const stashedValues = new Map<string, unknown>();
   // requestId -> approval popup window id, so the background can close the
   // window once the request is answered.
   const approvalWindows = new Map<string, number>();
+  /**
+   * The origin whose approval window is open, and that window's id (`null`
+   * while it is still being created). At most one entry: see launchPopupWindow.
+   */
+  const approvalWindowOrigins = new Map<string, number | null>();
 
   // Accept the side panel's persistent port. No messages flow over it now; the
   // open connection just keeps the service worker alive while the side panel is
@@ -144,31 +162,69 @@ export default defineBackground(() => {
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): Promise<void> => {
+    const origin = sender.origin || '';
+
+    // One approval window at a time, across all origins. Without this a page
+    // can call a method in a loop, or navigate itself through subdomains, and
+    // each call opens another focused OS-level window the user cannot get out
+    // from under. Any other request is refused with no window action: bringing
+    // the open window forward on each refusal let a page pull it to the front
+    // at will.
+    if (approvalWindowOrigins.size > 0) {
+      sendResponse({ error: 'Another approval is already open', id: message.data.id });
+      return;
+    }
+    // Claim the origin before the first await: requests fired in one loop
+    // all reach this point before any window exists, so a claim taken after
+    // `windows.create` resolves lets every one of them through.
+    approvalWindowOrigins.set(origin, null);
+
     const searchParams = new URLSearchParams();
-    searchParams.set('origin', sender.origin || '');
+    searchParams.set('origin', origin);
     searchParams.set('request', JSON.stringify(message.data));
     if (message.data.params?.network) {
       searchParams.set('network', message.data.params.network);
     }
 
-    const focusedWindow = await browser.windows.getLastFocused();
-    const popup = await browser.windows.create({
+    const windowOptions = {
       url: 'popup.html#' + searchParams.toString(),
-      type: 'popup',
+      type: 'popup' as const,
       width: 380,
       height: 675,
-      top: focusedWindow.top,
-      left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
       focused: true,
-    });
-
-    const popupId = popup?.id;
-    if (popupId == null) return;
+    };
+    let popupId: number | undefined;
+    try {
+      // Beside the right edge of the focused window. Chrome refuses bounds
+      // less than half on a visible screen — a window straddling two monitors
+      // or dragged off an edge — so that case falls back to Chrome's own
+      // placement instead of refusing the request.
+      const focusedWindow = await browser.windows.getLastFocused();
+      const popup = await browser.windows
+        .create({
+          ...windowOptions,
+          top: focusedWindow.top,
+          left: (focusedWindow.left || 0) + (focusedWindow.width || 380) - 380,
+        })
+        .catch(() => browser.windows.create(windowOptions));
+      popupId = popup?.id;
+    } catch {
+      // Falls through: popupId stays undefined and the request is refused below.
+    }
+    if (popupId == null) {
+      approvalWindowOrigins.delete(origin);
+      sendResponse({ error: 'Operation cancelled', id: message.data.id });
+      return;
+    }
     approvalWindows.set(message.data.id, popupId);
+    approvalWindowOrigins.set(origin, popupId);
 
     const listener = (windowId: number): void => {
       if (windowId === popupId) {
         approvalWindows.delete(message.data.id);
+        if (approvalWindowOrigins.get(origin) === popupId) {
+          approvalWindowOrigins.delete(origin);
+        }
         const responseHandler = responseHandlers.get(message.data.id);
         if (responseHandler) {
           responseHandlers.delete(message.data.id);
@@ -213,13 +269,50 @@ export default defineBackground(() => {
     origin: string,
     { connection, networkId, trustedApps }: StorageData
   ): Promise<ConnectionData | null> => {
-    if (connection?.blockchain !== 'solana') {
+    // The wallet writes this field upper-cased. Comparing it against the
+    // lower-case spelling made the whole trusted-apps gate inert: no origin
+    // ever matched, so every connect opened an approval window and no signing
+    // request could be told apart from one the user had never approved.
+    if (connection?.blockchain?.toLowerCase() !== 'solana') {
       return null;
     }
-    if (!networkId || !trustedApps?.[networkId]?.[origin]) {
+    // A grant covers the address the user saw on the connect screen. After an
+    // account switch the site is not connected until it asks again; a grant
+    // written before addresses were recorded asks again once.
+    const grant = networkId ? trustedApps?.[networkId]?.[origin] : undefined;
+    if (!grant?.address || grant.address !== connection.address) {
       return null;
     }
     return connection;
+  };
+
+  /**
+   * Has the user ever approved this origin?
+   *
+   * Any network counts, unlike `getConnection`, which answers for the network
+   * in use. Switching networks after connecting does not un-approve the site,
+   * and this is only used to tell an approved origin from a page the user has
+   * never seen a prompt for.
+   */
+  const isApprovedOrigin = (origin: string, { trustedApps }: StorageData): boolean =>
+    !!origin && Object.values(trustedApps ?? {}).some((perNetwork) => !!perNetwork?.[origin]);
+
+  /** A concrete web origin — not "null", not an extension page, not empty. */
+  const isWebOrigin = (origin: string | undefined): origin is string =>
+    typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin);
+
+  /** The three storage values every trust decision reads. */
+  const readStorageData = async (): Promise<StorageData> => {
+    const result = await browser.storage.local.get([
+      STORAGE_KEYS.CONNECTION,
+      STORAGE_KEYS.NETWORK_ID,
+      STORAGE_KEYS.TRUSTED_APPS,
+    ]);
+    return {
+      connection: JSON.parse((result[STORAGE_KEYS.CONNECTION] as string) || 'null'),
+      networkId: JSON.parse((result[STORAGE_KEYS.NETWORK_ID] as string) || 'null'),
+      trustedApps: JSON.parse((result[STORAGE_KEYS.TRUSTED_APPS] as string) || 'null'),
+    };
   };
 
   /**
@@ -230,22 +323,12 @@ export default defineBackground(() => {
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): Promise<void> => {
-    const result = await browser.storage.local.get([
-      STORAGE_KEYS.CONNECTION,
-      STORAGE_KEYS.NETWORK_ID,
-      STORAGE_KEYS.TRUSTED_APPS,
-    ]);
+    const data = await readStorageData();
     const tabId = await getActiveTabId();
 
     const callback: ResponseHandler = async (data, id) => {
       await sendResponse(data, id);
       await addConnectedTabId(tabId);
-    };
-
-    const data: StorageData = {
-      connection: JSON.parse((result[STORAGE_KEYS.CONNECTION] as string) || 'null'),
-      networkId: JSON.parse((result[STORAGE_KEYS.NETWORK_ID] as string) || 'null'),
-      trustedApps: JSON.parse((result[STORAGE_KEYS.TRUSTED_APPS] as string) || 'null'),
     };
 
     const connection = await getConnection(sender.origin || '', data);
@@ -257,9 +340,19 @@ export default defineBackground(() => {
         },
         id: message.data.id,
       });
-    } else {
-      routeApproval(message, sender, callback);
+      return;
     }
+
+    // `onlyIfTrusted` is how a page asks "am I still connected?" on load. It is
+    // defined to fail silently, so answering it with a window turns every page
+    // the user visits into one that can open wallet UI without being asked.
+    const options = message.data.params?.options as { onlyIfTrusted?: boolean } | undefined;
+    if (options?.onlyIfTrusted) {
+      await sendResponse({ error: 'Not connected', id: message.data.id });
+      return;
+    }
+
+    routeApproval(message, sender, callback);
   };
 
   /**
@@ -324,6 +417,33 @@ export default defineBackground(() => {
     'signAndSendTransaction',
   ]);
 
+  /**
+   * `signIn` is the one approval method an origin may ask for before it is
+   * approved: connecting is part of what it does. Every other one signs with
+   * the active account, so it belongs to a site the user has already let in.
+   */
+  const CONNECTIONLESS_METHODS = new Set(['signIn']);
+
+  /**
+   * A signing request from an origin the user never approved — or whose
+   * approval they revoked — is refused before any window opens.
+   */
+  const handleApprovalMethod = async (
+    message: Message,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: ResponseHandler
+  ): Promise<void> => {
+    if (!CONNECTIONLESS_METHODS.has(message.data.method)) {
+      const data = await readStorageData();
+      if (!isApprovedOrigin(sender.origin || '', data)) {
+        await sendResponse({ error: 'Not connected', id: message.data.id });
+        return;
+      }
+    }
+
+    routeApproval(message, sender, sendResponse);
+  };
+
   // Main message listener
   browser.runtime.onMessage.addListener(
     (
@@ -346,13 +466,21 @@ export default defineBackground(() => {
         if (typeof msg.data?.method !== 'string' || msg.data.id == null) {
           return;
         }
+        // A sandboxed page has an opaque origin, which arrives as the string
+        // "null". Used as a trust-store key it is an ordinary string, so every
+        // sandboxed page in every tab shared one entry: approve one iframe and
+        // the next unrelated one is connected. An origin that is not a concrete
+        // web origin cannot be told apart from another, so it is not answered.
+        if (!isWebOrigin(sender.origin)) {
+          return;
+        }
 
         if (msg.data.method === 'connect') {
           handleConnect(msg, sender, sendResponse);
         } else if (msg.data.method === 'disconnect') {
           handleDisconnect(msg, sender, sendResponse);
         } else if (APPROVAL_METHODS.has(msg.data.method)) {
-          routeApproval(msg, sender, sendResponse);
+          handleApprovalMethod(msg, sender, sendResponse);
         } else {
           // Fixed protocol string only — never echo the method back to the
           // page (same rule as the approval pages' error responses).
@@ -361,7 +489,17 @@ export default defineBackground(() => {
         }
         // Keep response channel open for async response
         return true;
-      } else if (message.channel === 'salmon_extension_background_channel') {
+      }
+
+      // The approval answers and the stash (which holds the vault key while
+      // unlocked) belong to the extension's own pages. Content scripts share
+      // the extension id, so the id alone would let a content-script context
+      // read the key or answer an approval; a page's URL is what tells them apart.
+      if (!sender.url?.startsWith(browser.runtime.getURL('/'))) {
+        return;
+      }
+
+      if (message.channel === 'salmon_extension_background_channel') {
         const msg = message as Message;
         if (msg.data?.id == null) {
           return;

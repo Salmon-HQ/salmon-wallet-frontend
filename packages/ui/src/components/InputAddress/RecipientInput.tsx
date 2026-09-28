@@ -24,7 +24,7 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { ClipboardIcon, iconSize } from '../../icons';
-import { ButtonSpinner } from '../Button/ButtonSpinner';
+import { Spinner } from '../Spinner';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { FIELD_SHELL_CLASS, FIELD_SHELL_ERROR_CLASS, focusRingNone } from '../../theme';
@@ -111,7 +111,7 @@ export function RecipientInput({
         }}
       />
       {value.length > 0 && isValidating && (
-        <ButtonSpinner color={semantic.text.secondary} size={iconSize.md} />
+        <Spinner color={semantic.text.secondary} size={iconSize.md} />
       )}
       {mark && (
         <span

@@ -212,6 +212,10 @@ export const STORAGE_KEYS = {
   HIDDEN_BALANCE: 'salmon_hidden_balance',
   /** The order Home draws its sub-tabs in (useHomeTabOrder) */
   HOME_TABS_ORDER: 'salmon_home_tabs_order',
+  /** The Powerup ids installed on THIS device (useInstalledPowerups) */
+  INSTALLED_POWERUPS: 'salmon_installed_powerups',
+  /** Each Powerup's own persisted slice, keyed by Powerup id (usePowerupState) */
+  POWERUP_STATE: 'salmon_powerup_state',
   /** Anonymous usage-analytics consent flag (opt-in, default off) */
   ANALYTICS_CONSENT: 'salmon_analytics_consent',
   /** Random per-install analytics id — NOT derived from any wallet data */
@@ -220,8 +224,6 @@ export const STORAGE_KEYS = {
   ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
   /** One-shot flag: the first successful send has been reported (activation) */
   ANALYTICS_FIRST_SEND: 'salmon_analytics_first_send',
-  /** One-shot flag: the first successful swap has been reported (activation) */
-  ANALYTICS_FIRST_SWAP: 'salmon_analytics_first_swap',
   /** Device-only onboarding event ('wallet_created' | 'wallet_recovered') parked until the consent prompt is answered */
   ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
 

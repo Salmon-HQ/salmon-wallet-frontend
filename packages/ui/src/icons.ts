@@ -3,7 +3,7 @@
  *
  * One icon name, one import. Every DOM component pulls its glyphs from here
  * rather than from an icon vendor directly, so the set stays small, auditable,
- * and swappable. Mobile keeps its own module against `phosphor-react-native` —
+ * and replaceable. Mobile keeps its own module against `phosphor-react-native` —
  * same drawings, same names, a different renderer.
  *
  * Rules (DESIGN.md §Iconography):
@@ -28,6 +28,17 @@
  */
 
 import { createElement } from 'react';
+import type { PowerupIconName } from '@salmon/shared';
+import type { Icon as IconComponent } from '@phosphor-icons/react/dist/lib/types';
+import { ArrowsLeftRightIcon } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
+import { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
+import { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
+import { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
+import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
+import { QrCodeIcon } from '@phosphor-icons/react/dist/csr/QrCode';
+import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
+import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
+import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
 import type { ReactNode } from 'react';
 import { IconContext } from '@phosphor-icons/react/dist/lib/context';
 
@@ -97,6 +108,7 @@ export { GraduationCapIcon } from '@phosphor-icons/react/dist/csr/GraduationCap'
 export { HandPalmIcon } from '@phosphor-icons/react/dist/csr/HandPalm';
 export { HeartIcon } from '@phosphor-icons/react/dist/csr/Heart';
 export { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
+export { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
 export { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
 export { KeyIcon } from '@phosphor-icons/react/dist/csr/Key';
 export { LinkIcon } from '@phosphor-icons/react/dist/csr/Link';
@@ -133,7 +145,6 @@ export { SquaresFourIcon } from '@phosphor-icons/react/dist/csr/SquaresFour';
 export { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 export { StarIcon } from '@phosphor-icons/react/dist/csr/Star';
 export { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
-export { SwapIcon } from '@phosphor-icons/react/dist/csr/Swap';
 export { TagIcon } from '@phosphor-icons/react/dist/csr/Tag';
 export { TextTIcon } from '@phosphor-icons/react/dist/csr/TextT';
 export { TranslateIcon } from '@phosphor-icons/react/dist/csr/Translate';
@@ -169,3 +180,21 @@ export function IconDefaults({ children }: { children: ReactNode }) {
 }
 
 const ICON_DEFAULTS = { size: iconSize.lg, weight: 'regular' } as const;
+
+/**
+ * The glyph each Powerup wears, by the name its manifest declares
+ * (`PowerupIconName`). Exhaustive by construction: a name added to the shared
+ * union fails to compile here until this twin draws it, which is what lets a
+ * Powerup ship no art and the catalogue keep no table of Powerup ids.
+ */
+export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsLeftRight: ArrowsLeftRightIcon,
+  ChartPie: ChartPieIcon,
+  Image: ImageIcon,
+  Lightning: LightningIcon,
+  PencilSimple: PencilSimpleIcon,
+  QrCode: QrCodeIcon,
+  ShieldCheck: ShieldCheckIcon,
+  Stack: StackIcon,
+  TrendUp: TrendUpIcon,
+};

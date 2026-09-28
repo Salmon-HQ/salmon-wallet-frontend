@@ -2,7 +2,7 @@
 
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![React Native 0.83.6](https://img.shields.io/badge/React%20Native-0.83.6-61dafb?logo=react&logoColor=white)
-![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
+![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white)
 ![Solana Web3.js 1.98](https://img.shields.io/badge/@solana%2Fweb3.js-1.98-9945FF?logo=solana&logoColor=white)
 ![Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 
@@ -52,10 +52,7 @@ Salmon currently ships as:
 
 - Browser extension (Chrome side panel; Firefox build available)
 - Android app
-
-Coming soon:
-
-- iOS
+- iOS app
 
 The web wallet was retired on 2026-09-02; the extension is the only browser surface.
 
@@ -122,14 +119,14 @@ Light and dark come from one `createSemantic(mode)` in `packages/shared/src/them
 
 ## Requirements
 
-- Node.js `^20.19.0` or `^22.12.0`
-- pnpm `9.x`
+- Node.js `^24.15.0` (pinned in `.nvmrc`)
+- pnpm `10.x`
 
 This repository uses `workspace:*` dependencies and requires pnpm.
 
 ```bash
 corepack enable
-corepack prepare pnpm@9.0.0 --activate
+corepack prepare pnpm@10.34.5 --activate
 pnpm install
 ```
 
@@ -224,6 +221,7 @@ pnpm check:i18n                         # EN/ES keys in sync, no orphans
 pnpm check:parity                       # the extension is the mobile app on the DOM (see docs/ARCHITECTURE.md)
 pnpm check:manifest                     # extension permissions match the reviewed baseline (after an extension build)
 pnpm check:no-secrets                   # nothing that looks like a seed phrase or a keypair in tracked files
+pnpm check:powerups-bundle apps/extension/dist/chrome-mv3   # a Powerups-off build carries no Powerup (after a build with VITE_POWERUPS=off)
 pnpm check:fingerprint                  # mobile native surface unchanged since the last binary, or expo.version bumped
 ```
 

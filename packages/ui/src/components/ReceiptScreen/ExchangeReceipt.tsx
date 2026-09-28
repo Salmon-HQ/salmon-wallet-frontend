@@ -4,28 +4,24 @@
  *
  * The mobile twin is `apps/mobile/src/components/ReceiptScreen/ExchangeReceipt.tsx`;
  * the anatomy, tokens and staged reveal are the same, read from the same
- * `TransactionSuccessScreenProps` contract. DOM alternatives:
+ * `ExchangeReceiptScreenPropsBase` contract. DOM alternatives:
  * - mobile's `Animated.View entering={floatEntering(...)}` (Reanimated) is
  *   the shared kit's own `floatEntering` (`packages/ui/src/motion`), a Web
  *   Animations API call fired from a ref in a `useEffect` — one call per
  *   staged block, same `beat(step)` schedule.
  * - `adjustsFontSizeToFit`/`minimumFontScale` (RN `Text` auto-shrink) has no
  *   DOM text primitive; the amount instead shrinks with a CSS `clamp()` keyed
- *   off a `--amount-chars` custom property, exactly as the legacy MUI
- *   `TransactionSuccessScreen` in this package already solved it.
+ *   off a `--amount-chars` custom property.
  * - `Linking.openURL` becomes `window.open(url, '_blank', 'noopener,noreferrer')`.
  * - `useTabChrome()` (floating tab bar offset, safe-area insets) has no DOM
  *   equivalent — the web app has neither, so the bottom edge is plain
  *   `env(safe-area-inset-bottom, 0px)` and the ending bands are unpadded.
  * - the success haptic (`expo-haptics`) has no DOM equivalent and is
  *   dropped — brief hard rule 4, "No haptics."
- * - there is no shared DOM token mark yet (`TokenLogo` is mobile-only, and
- *   the legacy MUI `TransactionSuccessScreen` keeps its own private copy for
- *   the same reason its own comment gives: consolidating four private copies
- *   is a decision of its own). This component keeps a small local mark for
- *   the same reason, built from tokens/hooks rather than MUI.
+ * - there is no shared DOM token mark yet (`TokenLogo` is mobile-only), so
+ *   this component keeps a small local mark, built from tokens/hooks.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   componentSizes,
@@ -34,8 +30,6 @@ import {
   fontWeight,
   letterSpacing,
   lineHeight,
-  resolveOnboardingBands,
-  resolveOnboardingGrid,
   SINK_FLOAT_STAGGER_MS,
   spacing,
   tabularNums,
@@ -46,35 +40,28 @@ import {
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion, floatEntering } from '../../motion';
-import { ArrowDownIcon, CheckIcon } from '../../icons';
-import { PrimaryButton, TextButton } from '../Button';
+import { ArrowDownIcon } from '../../icons';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import type { ExchangeReceiptScreenProps } from './types';
 
 /** The token marks are the graphic's subject: the icon ramp's largest step. */
 const LOGO_SIZE = componentSizes.iconSize3XL;
-/** The tick and the arrow are chrome-sized glyphs, not illustrations. */
+/** The arrow is a chrome-sized glyph, not an illustration. */
 const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 
 /**
- * Widest per-character advance the amount clamp budgets for, in em — the
- * same figure and the same `clamp()` strategy the legacy MUI
- * `TransactionSuccessScreen` in this package already solved DOM
- * auto-shrink with, in place of RN's `adjustsFontSizeToFit`. Each amount
+ * Widest per-character advance the amount clamp budgets for, in em — a
+ * `clamp()` strategy for DOM auto-shrink, in place of RN's
+ * `adjustsFontSizeToFit`. Each amount
  * sits in a `containerType: inline-size` box so `cqw` reads that box's
  * width, not the viewport's.
  */
 const AMOUNT_CHAR_EM = 0.62;
 const amountClamp = (floorPx: number, ceilPx: number) =>
   `clamp(${floorPx}px, calc(100cqw / (var(--amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${ceilPx}px)`;
-
-/**
- * The ending's reserved heights, read from the onboarding grid (DESIGN.md
- * §The ending borrows the onboarding ending's bands) — the same call mobile
- * makes. The receipt offers no secondary action, so the assist band's union
- * is zero and it collapses onto the primary.
- */
-const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
 
 /** One stagger step per revealed element, top to bottom, on the verb's own constant. */
 const beat = (step: number) => step * SINK_FLOAT_STAGGER_MS;
@@ -94,7 +81,9 @@ function Rise({
   const ref = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
-  useEffect(() => {
+  // Before paint, not after: from a passive effect the element painted one
+  // frame at rest and only then jumped to the float's hidden start.
+  useLayoutEffect(() => {
     floatEntering(ref.current, reducedMotion, { delayMs: beat(step) });
   }, [reducedMotion, step]);
 
@@ -229,7 +218,6 @@ export function ExchangeReceipt({
                   {exchange.send.amount}
                 </span>
               </div>
-              <div style={styles.tickSlot} />
             </Rise>
             <Rise step={1} style={styles.trackRow} aria-hidden data-testid="tx-success-arrow">
               <ArrowDownIcon
@@ -256,9 +244,6 @@ export function ExchangeReceipt({
                 <span style={styles.amount} data-testid="tx-success-summary">
                   {exchange.receive.amount}
                 </span>
-              </div>
-              <div style={styles.tickSlot} data-testid="tx-success-tick">
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
               </div>
             </Rise>
           </div>
@@ -292,50 +277,35 @@ export function ExchangeReceipt({
           </Rise>
         )}
 
+        {/* The fine print, last: the receipt card Send draws (`Card` +
+          `KeyValueRow`) — effective rate, Salmon fee when it arrived, local
+          time. */}
         {exchange ? (
-          <Rise step={3} style={styles.receiptRows} data-testid="tx-success-receipt">
-            {exchangeRate ? (
-              <div style={styles.receiptRow}>
-                <span style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</span>
-                <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{exchangeRate}</span>
-              </div>
-            ) : null}
-            {exchangeFee ? (
-              <div style={styles.receiptRow}>
-                <span style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</span>
-                <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{exchangeFee}</span>
-              </div>
-            ) : null}
-            <div style={styles.receiptRow}>
-              <span style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</span>
-              <span style={{ ...styles.receiptValue, ...tabularNums.css }}>{receiptTime}</span>
-            </div>
+          <Rise step={3} style={styles.receiptCard}>
+            <Card padding="lg" gap={spacing.md} testID="tx-success-receipt">
+              {exchangeRate ? (
+                <KeyValueRow label={t('transactions.detail.rate', 'Rate')} value={exchangeRate} />
+              ) : null}
+              {exchangeFee ? (
+                <KeyValueRow label={t('transaction.salmonFee', 'Salmon fee')} value={exchangeFee} />
+              ) : null}
+              <KeyValueRow label={t('transactions.detail.time', 'Time')} value={receiptTime} />
+            </Card>
           </Rise>
         ) : null}
       </div>
 
+      {/* The ending is Send's: the explorer link as the secondary button over
+          the primary, the wallet's own action bottom-most. */}
       <Rise step={actionStep} style={styles.actionGroup} data-testid="tx-success-actions">
-        <div style={styles.assistBand} data-testid="tx-success-assist">
-          {explorerUrl ? (
-            <TextButton
-              onPress={handleExplorerClick}
-              color={semantic.text.secondary}
-              testID="tx-success-explorer-link"
-            >
-              {t('transaction.viewOnExplorer')}
-            </TextButton>
-          ) : null}
-        </div>
-
-        <div style={styles.actionBand} data-testid="tx-success-action">
-          <PrimaryButton
-            onPress={onContinue}
-            disabled={settling}
-            testID="tx-success-continue-button"
-          >
-            {t('transaction.continue', 'Back to wallet')}
-          </PrimaryButton>
-        </div>
+        {explorerUrl ? (
+          <SecondaryButton testID="tx-success-explorer-link" onPress={handleExplorerClick}>
+            {t('transaction.viewOnExplorer')}
+          </SecondaryButton>
+        ) : null}
+        <PrimaryButton onPress={onContinue} disabled={settling} testID="tx-success-continue-button">
+          {t('transaction.continue', 'Back to wallet')}
+        </PrimaryButton>
       </Rise>
     </div>
   );
@@ -399,12 +369,6 @@ const stylesFor = (t: Semantic): Record<string, React.CSSProperties> => ({
     display: 'flex',
     justifyContent: 'center',
   },
-  tickSlot: {
-    width: GRAPHIC_ICON_SIZE,
-    display: 'flex',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
   amountCell: {
     display: 'flex',
     flex: 1,
@@ -425,57 +389,23 @@ const stylesFor = (t: Semantic): Record<string, React.CSSProperties> => ({
   },
   amountSpent: {
     fontSize: amountClamp(fontSize.body, fontSize.bodyLg),
-    fontWeight: fontWeight.regular,
+    fontWeight: fontWeight.bold,
     color: t.text.secondary,
     lineHeight: `${fontSize.bodyLg * lineHeight.tight}px`,
   },
-  receiptRows: {
+  receiptCard: {
     display: 'flex',
-    alignSelf: 'stretch',
     flexDirection: 'column',
-    gap: spacing.sm,
+    alignSelf: 'stretch',
     marginBottom: spacing.xl,
-    paddingLeft: spacing.base,
-    paddingRight: spacing.base,
-  },
-  receiptRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  receiptLabel: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.sans,
-    color: t.text.tertiary,
-  },
-  receiptValue: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.sans,
-    fontWeight: fontWeight.medium,
-    color: t.text.secondary,
-    textAlign: 'right',
   },
   actionGroup: {
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
     marginTop: 'auto',
-  },
-  assistBand: {
-    height: endingBands.assist,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBand: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'stretch',
-    height: endingBands.action,
-    justifyContent: 'flex-start',
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing['2xl'],
-    boxSizing: 'border-box',
+    gap: spacing.md,
   },
 });

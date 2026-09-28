@@ -3,10 +3,9 @@
  * BEHIND every screen pushed on the `(app)` stack — a lock landing while
  * Wallets or Activity was open left balances sitting on top of the lock.
  * It now mounts in `(app)/_layout.tsx`, a sibling of the `<Stack>` itself,
- * so it covers every screen the stack can push. Powerups used to be the one
- * exception — as a `fullScreenModal` it was its own native window and had to
- * close itself on lock. It is a plain screen of this stack now, so it is
- * covered like the rest and that effect is gone.
+ * so it covers every screen the stack can push. A Powerup has no screen at
+ * all now — an installed one is a sub-tab of Home and the catalogue is a
+ * sheet over Home — so the overlay covers it with Home.
  */
 import React from 'react';
 import { act, render } from '@testing-library/react-native';
@@ -31,7 +30,7 @@ jest.mock('expo-router', () => {
 
 const accountState = { locked: false };
 /** One entry per commit of the tree, holding the surface count that commit saw. */
-const surfaceTrace: number[] = [];
+const surfaceTrace: string[] = [];
 /** The callbacks the layout hands the lock, captured by the mock below. */
 let lockContentProps: {
   onUnlock: (password: string) => Promise<boolean>;
@@ -46,6 +45,10 @@ jest.mock('../../src/contexts/DerivedAccountsContext', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The confirmation provider and host are core's own (their own suites);
+  // the layout only has to mount them.
+  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+  isSignableSolanaAccount: () => false,
   // The providers the layout mounts live in shared now; the task chrome is the
   // real one, developer mode is pass-through (its flags are mocked below).
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
@@ -57,12 +60,16 @@ jest.mock('@salmon/shared', () => ({
     const { Text } = require('react-native');
     const { useTaskChrome } = jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext');
     const Probe = () => {
-      const { surfaceKey } = useTaskChrome();
+      const { surfaceKey, isCovered } = useTaskChrome();
       // Every commit is recorded, not just the last: the defect this guards
       // is an intermediate commit, and `act()` flushes effects before any
       // assertion can see one.
-      surfaceTrace.push(surfaceKey);
-      return ReactActual.createElement(Text, { testID: 'surface-key' }, String(surfaceKey));
+      surfaceTrace.push(`${surfaceKey}:${isCovered ? 'covered' : 'open'}`);
+      return ReactActual.createElement(
+        Text,
+        { testID: 'surface-key' },
+        `${surfaceKey}:${isCovered ? 'covered' : 'open'}`
+      );
     };
     return ReactActual.createElement(
       ReactActual.Fragment,
@@ -115,6 +122,7 @@ jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   const ReactActual = require('react');
   return {
+    ConfirmationHost: () => null,
     LockOverlay: ({ children }: { children: React.ReactNode }) =>
       ReactActual.createElement(
         View,
@@ -128,13 +136,8 @@ jest.mock('../../src/components', () => {
       lockContentProps = props;
       return ReactActual.createElement(View, { testID: 'lock-content' });
     },
-    PowerupsFab: () => ReactActual.createElement(View, { testID: 'powerups-fab' }),
   };
 });
-
-jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0 }),
-}));
 
 import AppLayout from '../../app/(app)/_layout';
 
@@ -155,10 +158,6 @@ describe('the (app) shell', () => {
     // layout's overlay — a lock landing on a settings sub-screen left secrets
     // sitting on top of it. On this stack it is covered like anything else.
     expect('settings' in screensByName).toBe(true);
-    // Powerups too: it was a `fullScreenModal` (its own native window, above
-    // this whole React tree) and closed itself on lock. On this stack the
-    // overlay reaches it like anything else.
-    expect('powerups' in screensByName).toBe(true);
   });
 
   it('does not render the lock overlay while unlocked', () => {
@@ -177,7 +176,6 @@ describe('the (app) shell', () => {
     expect('wallets' in screensByName).toBe(true);
     expect('activity' in screensByName).toBe(true);
     expect('settings' in screensByName).toBe(true);
-    expect('powerups' in screensByName).toBe(true);
 
     const overlay = getByTestId('lock-overlay');
     const style = Object.assign({}, ...[overlay.props.style].flat(Infinity).filter(Boolean));
@@ -186,30 +184,31 @@ describe('the (app) shell', () => {
   });
 
   /**
-   * The frame that removes the gate is the frame that mounts what floats up
-   * through it (spec 031 §D2).
+   * The frame that removes the gate is the frame that uncovers Home.
    *
-   * Published from an effect on `isLocked`, the surfacing landed one painted
-   * frame late: that frame showed Home fully assembled and at rest, and the
-   * float then played on content the user had already watched arrive. The two
-   * sets have to be batched into one commit, so a single flush must produce
-   * both the overlay's removal and the incremented count.
+   * Home is not remounted for the unlock: it stays mounted under the overlay,
+   * held hidden while `isCovered`, and floats in place when the cover drops.
+   * Remounting it played the old copy's sink over the new copy's float, and
+   * the new copy painted a frame at rest first — the float that ran twice. So
+   * the release must drop the cover in the same commit that removes the
+   * overlay, and must not bump the surface count.
    */
-  it('surfaces the screen in the same commit that releases the gate', async () => {
+  it('uncovers Home in the same commit that releases the gate, without remounting it', async () => {
     accountState.locked = true;
     const { getByTestId, queryByTestId } = render(<AppLayout />);
 
     expect(getByTestId('lock-overlay')).toBeTruthy();
-    const before = Number(getByTestId('surface-key').props.children);
+    const [surface] = String(getByTestId('surface-key').props.children).split(':');
+    expect(getByTestId('surface-key').props.children).toBe(`${surface}:covered`);
 
     // The unlock resolves: shared state flips, but the gate is held until the
-    // wait reports its wave has left.
+    // wait reports its wave has left — Home stays covered.
     await act(async () => {
       await lockContentProps?.onUnlock('password');
     });
     accountState.locked = false;
     expect(getByTestId('lock-overlay')).toBeTruthy();
-    expect(Number(getByTestId('surface-key').props.children)).toBe(before);
+    expect(getByTestId('surface-key').props.children).toBe(`${surface}:covered`);
 
     // The wave has left. `FLOAT_DELAY_MS` is mocked to 0, so the release lands
     // on the next tick — and it must land whole.
@@ -222,11 +221,7 @@ describe('the (app) shell', () => {
     jest.useRealTimers();
 
     expect(queryByTestId('lock-overlay')).toBeNull();
-    expect(Number(getByTestId('surface-key').props.children)).toBe(before + 1);
-    // The point of the test: ONE commit carried the release, and it already
-    // had the new count. Bumped from an effect the trace reads
-    // `[before, before + 1]` — that first entry is the frame that painted Home
-    // at rest, and it is exactly what the owner saw as a float running twice.
-    expect(surfaceTrace).toEqual([before + 1]);
+    // ONE commit carried the release, already uncovered, with the same count.
+    expect(surfaceTrace).toEqual([`${surface}:open`]);
   });
 });

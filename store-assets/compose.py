@@ -28,8 +28,8 @@ INK_ON_CORAL = (0x07, 0x09, 0x11)
 
 # Каждый frame: (capture, eyebrow, headline, background)
 DECK = [
-    # (captura, eyebrow, headline, fondo, stores). Swap left the deck on
-    # 2026-09-03: the powerups surface is closed for the submission.
+    # (captura, eyebrow, headline, fondo, stores). The powerups surface is
+    # closed for the submission, so no Powerup frame is in the deck.
     ("01-home",         "OPEN-SOURCE. SELF-CUSTODIAL.", "Your keys.\nYour coins.",         "coral", None),
     ("02-send",         None, "Send to any wallet\nor .sol name",                          "navy",  None),
     ("03-transactions", None, "Your assets and activity,\none view.",                      "coral", None),

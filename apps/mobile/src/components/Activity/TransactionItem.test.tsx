@@ -30,13 +30,10 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
   // The row's verb table and its sentence are real — they are the row.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionItemDerived'),
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   formatRelativeTimeCompact: () => '2h',
-  getTransactionDescription: () => ({
-    key: 'transactions.description.swap',
-    values: { from: 'SOL', to: 'USDC' },
-  }),
 }));
 
 // No worklets runtime in Jest: the kit's pressable bubble pulls reanimated in,
@@ -127,9 +124,9 @@ const SEND_TRANSACTION = {
   outputs: [{ amount: '1000000', decimals: 6, symbol: 'USDC', destination: COUNTERPARTY }],
 } as never;
 
-const SWAP_TRANSACTION = {
+const STAKE_TRANSACTION = {
   id: 'tx-3',
-  type: 'swap',
+  type: 'stake',
   status: 'completed',
   source: LONGEST_SOURCE,
   timestamp: 1710000000000,
@@ -167,10 +164,10 @@ describe('TransactionItem — the counterparty, not the program', () => {
   });
 
   it('leaves a transaction with no counterparty to the shared description', () => {
-    render(<TransactionItem transaction={SWAP_TRANSACTION} />);
+    render(<TransactionItem transaction={STAKE_TRANSACTION} />);
 
-    // A swap has no "to" or "from" — the shared describer names it instead.
-    expect(screen.getByText('SOL to USDC')).toBeTruthy();
+    // A stake has no "to" or "from" — the shared describer names it instead.
+    expect(screen.getByText('Staking operation')).toBeTruthy();
   });
 });
 
@@ -209,16 +206,11 @@ describe('TransactionItem — the leading mark is the token, badged with the typ
     expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
   });
 
-  it('a swap leads with both sides, the overlapped pair', () => {
-    render(<TransactionItem transaction={SWAP_TRANSACTION} />);
-
-    expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
-    expect(screen.getByTestId('token-logo-SOL')).toBeTruthy();
-  });
-
-  it('falls back to the kit well when the token has no logo', () => {
+  it('keeps the token as the mark when it has no logo — its initials stand in', () => {
     render(<TransactionItem transaction={LOGOLESS_TRANSACTION} />);
 
-    expect(screen.queryByTestId('token-logo-USDC')).toBeNull();
+    // The token that moved is always the mark (owner, 2026-09-11); TokenLogo
+    // draws the initials when there is no image, never the type's bare well.
+    expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
   });
 });

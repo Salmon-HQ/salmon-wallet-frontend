@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  SignatureRequestProvider,
+  isSignableSolanaAccount,
   useAccountsContext,
   useAnalyticsConsent,
   useInactivityTimeout,
@@ -11,7 +13,7 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
+import { ConfirmationHost, LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -33,7 +35,7 @@ import { PasswordPage } from '../../pages/auth/PasswordPage';
 import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
-import { sessionArea } from '../../utils/storageCompat';
+import { useLockAcrossWindows } from './useLockAcrossWindows';
 
 // ============================================================================
 // Types
@@ -148,94 +150,14 @@ function App() {
     }
   }, []);
 
-  // Helper: route a single approval to the right pending state
-  const routeApproval = useCallback(
-    (approval: { origin: string; request: DAppApprovalRequest }) => {
-      const { origin, request } = approval;
-      if (request.method === 'connect' && request.id != null) {
-        setPendingDAppRequest({ origin, request });
-      } else if (
-        (request.method === 'sign' ||
-          request.method === 'signOffchain' ||
-          request.method === 'signIn') &&
-        request.id != null
-      ) {
-        setPendingDAppSignMessageRequest({ origin, request });
-      } else if (
-        (request.method === 'signTransaction' ||
-          request.method === 'signAllTransactions' ||
-          request.method === 'signAndSendTransaction') &&
-        request.id != null
-      ) {
-        setPendingDAppTxRequest({ origin, request });
-      }
-    },
-    []
-  );
-
-  // Listen for approval requests from background via session storage
-  useEffect(() => {
-    // Check for existing pending approvals on mount
-    sessionArea
-      .get('salmon_pending_approval')
-      .then((result) => {
-        const queue = result['salmon_pending_approval'] as
-          | Array<{
-              origin: string;
-              request: DAppApprovalRequest;
-            }>
-          | undefined;
-        if (queue && queue.length > 0) {
-          routeApproval(queue[0]);
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
-
-    // Watch for new approvals written by background.ts
-    const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-      if (areaName !== 'session' && areaName !== 'local') return;
-      const change = changes['salmon_pending_approval'];
-      if (!change) return;
-      const queue = change.newValue as
-        | Array<{
-            origin: string;
-            request: DAppApprovalRequest;
-          }>
-        | undefined;
-      if (queue && queue.length > 0) {
-        routeApproval(queue[0]);
-      }
-    };
-
-    chrome.storage.onChanged.addListener(listener);
-    return () => {
-      chrome.storage.onChanged.removeListener(listener);
-    };
-  }, [routeApproval]);
-
-  // Dismiss the current approval — clear storage entry and all pending states
+  // Dismiss the current approval. Requests arrive only through this window's
+  // URL hash; the session-storage queue that also fed this window had no
+  // producer left, and it accepted the local area, which content scripts can
+  // write, with the origin taken from storage.
   const dismissApproval = useCallback(() => {
     setPendingDAppRequest(null);
     setPendingDAppTxRequest(null);
     setPendingDAppSignMessageRequest(null);
-
-    sessionArea
-      .get('salmon_pending_approval')
-      .then((result) => {
-        const queue = result['salmon_pending_approval'] as unknown[] | undefined;
-        if (queue && queue.length > 1) {
-          // Pop the first item; the storage listener will route the next one
-          const remaining = queue.slice(1);
-          sessionArea.set({ salmon_pending_approval: remaining });
-        } else {
-          sessionArea.remove('salmon_pending_approval');
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
   }, []);
 
   // After a dApp approval, settle balance + transactions for the active account/network
@@ -278,8 +200,23 @@ function App() {
       void clearSessionKey();
       actions.lockAccounts();
     },
-    enabled: ready && !locked && accounts.length > 0 && !justCreated && !isAddingAccount,
+    // Not suspended while adding an account. Switching it off for the life of
+    // the panel left an unlocked wallet unlocked indefinitely — the background
+    // alarm that fires instead cannot lock a panel that is already open. The
+    // flow generates plenty of real activity, which is what should hold the
+    // timer off.
+    enabled: ready && !locked && accounts.length > 0 && !justCreated,
   });
+
+  // A lock here locks every other open wallet window, and theirs locks this
+  // one. Declared before the close handler below: that effect clears the
+  // closing flag as soon as this window is locked, and this one must read it
+  // first so closing a window does not lock the rest.
+  const lockThisWindow = useCallback(() => {
+    void clearSessionKey();
+    void actions.lockAccounts();
+  }, [actions]);
+  useLockAcrossWindows({ ready, locked, closing: closeLockTriggeredRef, lock: lockThisWindow });
 
   useEffect(() => {
     if (!ready || locked || accounts.length === 0) {
@@ -356,7 +293,7 @@ function App() {
    * The gate opens and the screen surfaces in one commit, as on mobile.
    *
    * Today the bump changes nothing visible: `HomePage` mounts fresh on this
-   * swap (it is not rendered behind the lock the way mobile's Home is), and
+   * change (it is not rendered behind the lock the way mobile's Home is), and
    * `SinkFloat`'s first phase carries its `from { opacity: 0 }` as a fill
    * state, so the float already plays once with no at-rest frame. That is
    * correct by accident — it holds only while `HomePage` stays below the lock
@@ -448,7 +385,13 @@ function App() {
         throw new Error('Solana account not available');
       }
 
-      await actions.addTrustedApp(origin, app, solanaApprovalAccount.network.id);
+      // The grant names the address the connect screen showed, so a silent
+      // connect after an account switch does not hand the site the new one.
+      await actions.addTrustedApp(
+        origin,
+        { ...app, address: solanaApprovalAccount.getReceiveAddress() },
+        solanaApprovalAccount.network.id
+      );
     },
     [actions, solanaApprovalAccount]
   );
@@ -606,8 +549,19 @@ function App() {
     );
   }
 
-  // Wallet is unlocked
-  return <HomePage onAddAccount={handleAddAccountFromHome} />;
+  // Wallet is unlocked. Core's signature request sits above Home: a Powerup
+  // proposes from a page, the confirmation covers the panel, and the account
+  // that signs is the active one when it can sign on Solana (spec 027 §2).
+  const signingAccount =
+    activeBlockchainAccount && isSignableSolanaAccount(activeBlockchainAccount)
+      ? activeBlockchainAccount
+      : null;
+  return (
+    <SignatureRequestProvider account={signingAccount}>
+      <HomePage onAddAccount={handleAddAccountFromHome} />
+      <ConfirmationHost />
+    </SignatureRequestProvider>
+  );
 }
 
 export default App;

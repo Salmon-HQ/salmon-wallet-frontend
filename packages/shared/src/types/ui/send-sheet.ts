@@ -1,3 +1,4 @@
+import type { TransferRequest } from '../../blockchain/solana/transfer-request';
 import type { Token } from '../index';
 import type { ValidationState } from '../validation';
 
@@ -24,6 +25,17 @@ export interface SendRecipient {
   resolvedAddress?: string;
   /** The address book's or the wallet list's name for it, when there is one. */
   name?: string;
+}
+
+/**
+ * What Send carries when it was started from a Solana Pay transfer request:
+ * the request as read, the token it resolved to, and which fields the payer
+ * may not edit (spec 033). `locked.amount` is false when the request named none.
+ */
+export interface SendRequest {
+  request: TransferRequest;
+  token: SendToken;
+  locked: { recipient: true; token: true; amount: boolean };
 }
 
 /**
@@ -58,6 +70,15 @@ export interface TokenSelectListPropsBase {
   onSelectToken: (token: SendToken) => void;
   /** Whether token data is still loading (shows skeleton when true) */
   loading?: boolean;
+  /** Trailing cell: the balance (default) or, for a catalogue, the symbol alone. */
+  showBalances?: boolean;
+  /**
+   * Hide tokens without a meaningful tag unless the developer toggle shows
+   * them (default). Off when the caller already curated the list.
+   */
+  verifiedOnly?: boolean;
+  /** Remote search past the list in hand — a catalogue the list does not carry whole. */
+  onSearch?: (query: string) => Promise<SendToken[]>;
 }
 
 /** @deprecated Read `TokenSelectListPropsBase`. */

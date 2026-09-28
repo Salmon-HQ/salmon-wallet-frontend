@@ -7,10 +7,13 @@ module.exports = {
   testTimeout: 20000,
   setupFilesAfterEnv: ['./jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@salmon/.*|@solana/.*|phosphor-react-native/.*|decode-uri-component|.pnpm/.*)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|standard-navigation|@salmon/.*|@solana/.*|phosphor-react-native/.*|decode-uri-component|.pnpm/.*)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    // The Powerups entry is a subpath the package does not publish; the
+    // bundlers alias it (see metro.config.js), so the tests map it the same way.
+    '^@salmon/shared/powerups$': '<rootDir>/../../packages/shared/src/powerups',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
   // Ratchet: floors sit just under the measured coverage (2026-09-09) and

@@ -1,0 +1,186 @@
+/**
+ * TransactionItem — one row of the activity list, on the DOM.
+ *
+ * The mobile twin is `apps/mobile/src/components/Activity/TransactionItem.tsx`:
+ * the kit's `ListRow` laid out as leading mark, title stack and amount column
+ * — the row draws no box of its own. No protocol chip: the subtitle is the
+ * counterparty (the address book's name when the book knows it, the short
+ * address otherwise); the protocol shows in the detail, where a program name
+ * belongs.
+ */
+import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  fontFamily,
+  fontSize,
+  fontWeight,
+  formatRawAmount,
+  formatRelativeTimeCompact,
+  lineHeight,
+  spacing,
+  tabularNums,
+  useTransactionItemDerived,
+  type TransactionTokenAmount,
+} from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import { ClockIcon, XCircleIcon, iconSize } from '../../icons';
+import { ListRow } from '../ListRow';
+import { TransactionMark, transactionTypeConfigFor } from '../TransactionMark';
+import type { TransactionItemProps } from './types';
+
+const HIDDEN_VALUE = '****';
+
+/** Maximum amounts to show before collapsing */
+
+/** The amount column reserves this width, so the chip can never reach it */
+const AMOUNT_COLUMN_MIN_WIDTH = 104;
+
+/**
+ * Money Composition Rule: amounts right-aligned in a fixed column, on tabular
+ * figures, so the column edge is the same on every row.
+ */
+const amountStyle: React.CSSProperties = {
+  fontFamily: fontFamily.sans,
+  fontSize: fontSize.caption,
+  lineHeight: `${fontSize.caption * lineHeight.snug}px`,
+  fontWeight: fontWeight.bold,
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+  ...tabularNums.css,
+};
+
+function AmountDisplay({
+  token,
+  sign,
+  hidden,
+}: {
+  token: TransactionTokenAmount;
+  sign: '+' | '-';
+  hidden: boolean;
+}) {
+  const { status } = useSemantic();
+  const displayAmount = hidden
+    ? `${sign} ${HIDDEN_VALUE} ${token.symbol}`
+    : `${sign} ${formatRawAmount(token.amount, token.decimals)} ${token.symbol}`;
+
+  return (
+    <span
+      data-testid="tx-row-amount"
+      style={{ ...amountStyle, color: sign === '+' ? status.success : status.danger }}
+    >
+      {displayAmount}
+    </span>
+  );
+}
+
+export function TransactionItem({
+  transaction,
+  onPress,
+  hiddenBalance = false,
+  contacts,
+  style,
+  className,
+}: TransactionItemProps) {
+  const { t } = useTranslation();
+  const semantic = useSemantic();
+  const { status: statusTokens, text } = semantic;
+  const { type, timestamp, status, inputs, outputs } = transaction;
+  const typeConfig = transactionTypeConfigFor(semantic);
+  const { descriptionText, typeLabel } = useTransactionItemDerived(
+    transaction,
+    contacts,
+    t,
+    typeConfig
+  );
+
+  const handlePress = useCallback(() => {
+    onPress?.(transaction);
+  }, [onPress, transaction]);
+
+  const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') =>
+    tokens.map((token, i) => (
+      <AmountDisplay key={`${sign}-${i}`} token={token} sign={sign} hidden={hiddenBalance} />
+    ));
+
+  const renderAmounts = () => {
+    if (status === 'failed' || status === 'pending') {
+      const failed = status === 'failed';
+      const StatusIcon = failed ? XCircleIcon : ClockIcon;
+      const ink = failed ? statusTokens.danger : statusTokens.warning;
+
+      return (
+        <span
+          data-testid={failed ? 'tx-row-status-failed' : 'tx-row-status-pending'}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: spacing.xs }}
+        >
+          <StatusIcon size={iconSize.sm} color={ink} />
+          <span
+            style={{
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.caption,
+              fontWeight: fontWeight.bold,
+              color: ink,
+            }}
+          >
+            {failed
+              ? t('transactions.detail.failed', 'Failed')
+              : t('transactions.detail.pending', 'Pending')}
+          </span>
+        </span>
+      );
+    }
+
+    return (
+      <>
+        {type !== 'receive' && renderTokenAmounts(outputs, '-')}
+        {type !== 'send' && renderTokenAmounts(inputs, '+')}
+      </>
+    );
+  };
+
+  return (
+    <ListRow
+      testID="activity-tx-row"
+      className={className}
+      style={style}
+      onPress={onPress ? handlePress : undefined}
+      leading={<TransactionMark transaction={transaction} />}
+      title={typeLabel}
+      subtitle={descriptionText}
+      trailing={
+        <span
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            // The amount column: it reserves its width before the row's left
+            // half is laid out, and it never gives it back.
+            minWidth: AMOUNT_COLUMN_MIN_WIDTH,
+            flexShrink: 0,
+            gap: spacing.xxs,
+          }}
+        >
+          {renderAmounts()}
+          <span
+            style={{
+              fontFamily: fontFamily.sans,
+              fontSize: fontSize.micro,
+              lineHeight: `${fontSize.micro * lineHeight.snug}px`,
+              fontWeight: fontWeight.medium,
+              color: text.secondary,
+              ...tabularNums.css,
+            }}
+          >
+            {formatRelativeTimeCompact(timestamp, t)}
+          </span>
+        </span>
+      }
+      accessibilityLabel={t(
+        'accessibility.transaction_row',
+        '{{type}} transaction, {{description}}',
+        { type: typeLabel, description: descriptionText }
+      )}
+    />
+  );
+}

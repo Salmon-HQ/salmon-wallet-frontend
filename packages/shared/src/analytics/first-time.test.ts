@@ -29,7 +29,7 @@ import { initAnalytics, resetAnalytics } from './client';
 import { trackFirstTime } from './first-time';
 import { createMemoryTransport } from './transport';
 
-const FLAG = 'salmon_analytics_first_swap' as const;
+const FLAG = 'salmon_analytics_first_send' as const;
 
 beforeEach(() => {
   store.clear();
@@ -43,7 +43,7 @@ describe('trackFirstTime', () => {
     const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
     await client.whenReady();
 
-    await trackFirstTime('first_swap_completed', FLAG);
+    await trackFirstTime('first_send_completed', FLAG);
     await client.flush();
 
     expect(transport.batches).toHaveLength(0);
@@ -57,11 +57,11 @@ describe('trackFirstTime', () => {
     await client.whenReady();
     await client.setConsent(true);
 
-    await trackFirstTime('first_swap_completed', FLAG);
+    await trackFirstTime('first_send_completed', FLAG);
     await client.flush();
 
     expect(transport.batches).toHaveLength(1);
-    expect(transport.batches[0].events[0]).toMatchObject({ event: 'first_swap_completed' });
+    expect(transport.batches[0].events[0]).toMatchObject({ event: 'first_send_completed' });
     expect(store.get(FLAG)).toBe(true);
   });
 
@@ -71,9 +71,9 @@ describe('trackFirstTime', () => {
     await client.whenReady();
     await client.setConsent(true);
 
-    await trackFirstTime('first_swap_completed', FLAG);
+    await trackFirstTime('first_send_completed', FLAG);
     await client.flush();
-    await trackFirstTime('first_swap_completed', FLAG);
+    await trackFirstTime('first_send_completed', FLAG);
     await client.flush();
 
     expect(transport.batches).toHaveLength(1);
@@ -81,7 +81,7 @@ describe('trackFirstTime', () => {
 
   it('is a no-op when analytics was never initialised', async () => {
     // No initAnalytics() call: getAnalytics() is null, so nothing happens.
-    await expect(trackFirstTime('first_swap_completed', FLAG)).resolves.toBeUndefined();
+    await expect(trackFirstTime('first_send_completed', FLAG)).resolves.toBeUndefined();
     expect(store.has(FLAG)).toBe(false);
   });
 });

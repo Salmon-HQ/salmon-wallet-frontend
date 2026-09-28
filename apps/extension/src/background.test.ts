@@ -62,6 +62,26 @@ function startBackground() {
   return { route, windowsCreate, windowsRemove, onWindowRemoved };
 }
 
+/**
+ * Storage as it looks after the user approved this origin's connect. Signing
+ * methods are refused without it, so every test that drives one seeds it.
+ */
+async function approveOrigin(origin: string = DAPP_ORIGIN) {
+  await fakeBrowser.storage.local.set({
+    salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'TrustedPubkey111' }),
+    salmon_active_network_id: JSON.stringify('solana-mainnet'),
+    salmon_trusted_apps: JSON.stringify({
+      'solana-mainnet': { [origin]: { address: 'TrustedPubkey111' } },
+    }),
+  });
+}
+
+/** Sender shape for one of the extension's own pages (popup, side panel). */
+const extensionPage = () => ({
+  id: fakeBrowser.runtime.id,
+  url: fakeBrowser.runtime.getURL('/popup.html'),
+});
+
 /** Sender shape for a message relayed by our own content script. */
 const ownSender = (origin: string = DAPP_ORIGIN) => ({
   id: fakeBrowser.runtime.id,
@@ -87,7 +107,6 @@ beforeEach(() => {
 
 describe('approval routing', () => {
   it.each([
-    'connect',
     'sign',
     'signTransaction',
     'signIn',
@@ -95,6 +114,7 @@ describe('approval routing', () => {
     'signAllTransactions',
     'signAndSendTransaction',
   ])('routes a %s request to an approval popup carrying the payload and origin', async (method) => {
+    await approveOrigin();
     const { route, windowsCreate } = startBackground();
     const sendResponse = vi.fn();
 
@@ -124,12 +144,14 @@ describe('approval routing', () => {
   it('answers a trusted origin connect from storage without opening any approval UI', async () => {
     await fakeBrowser.storage.local.set({
       salmon_connection: JSON.stringify({
-        blockchain: 'solana',
+        // Upper-case, as the wallet writes it. The gate used to compare against
+        // the lower-case spelling, which made it match nothing in production.
+        blockchain: 'SOLANA',
         address: 'TrustedPubkey111',
       }),
       salmon_active_network_id: JSON.stringify('solana-mainnet'),
       salmon_trusted_apps: JSON.stringify({
-        'solana-mainnet': { [DAPP_ORIGIN]: true },
+        'solana-mainnet': { [DAPP_ORIGIN]: { address: 'TrustedPubkey111' } },
       }),
     });
     const { route, windowsCreate } = startBackground();
@@ -151,6 +173,7 @@ describe('approval routing', () => {
   });
 
   it('relays the approval UI answer back to the origin and closes the popup', async () => {
+    await approveOrigin();
     const { route, windowsCreate, windowsRemove } = startBackground();
     const sendResponse = vi.fn();
 
@@ -163,13 +186,14 @@ describe('approval routing', () => {
       method: 'signed',
       result: { signature: 'abc' },
     };
-    route({ channel: EXTENSION_CHANNEL, data: approvalAnswer }, ownSender(), vi.fn());
+    route({ channel: EXTENSION_CHANNEL, data: approvalAnswer }, extensionPage(), vi.fn());
 
     expect(sendResponse).toHaveBeenCalledWith(approvalAnswer, 'req-42');
     await vi.waitFor(() => expect(windowsRemove).toHaveBeenCalledWith(POPUP_WINDOW_ID));
   });
 
   it('answers only the protocol error shape when the approval window closes without a response', async () => {
+    await approveOrigin();
     const { route, windowsCreate, onWindowRemoved } = startBackground();
     const sendResponse = vi.fn();
 
@@ -191,10 +215,197 @@ describe('approval routing', () => {
     // A late answer for the same id must not reach the origin twice.
     route(
       { channel: EXTENSION_CHANNEL, data: { id: 'req-cancelled', method: 'signed' } },
-      ownSender(),
+      extensionPage(),
       vi.fn()
     );
     expect(sendResponse).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('what an unapproved origin can make the wallet do', () => {
+  it('refuses a signing request from an origin the user never approved', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-cold'), ownSender(), sendResponse);
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-cold' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('still lets signIn through, since connecting is part of what it does', async () => {
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('signIn', 'req-signin'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
+  // The connect screen shows one address; the grant it wrote named none, so
+  // after an account switch a trusted site's silent connect returned the new
+  // account's address with no prompt.
+  it('answers a silent connect only for the account the site was approved with', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+    });
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(
+      dappRequest('connect', 'req-switched', { options: { onlyIfTrusted: true } }),
+      ownSender(),
+      sendResponse
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-switched' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('asks again when a site approved with another account connects', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+    });
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('connect', 'req-ask'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
+  it('answers a silent reconnect without opening any window', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(
+      dappRequest('connect', 'req-silent', { options: { onlyIfTrusted: true } }),
+      ownSender(),
+      sendResponse
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-silent' })
+    );
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
+  it('opens one approval window, however many requests an origin sends', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    const update = vi.spyOn(fakeBrowser.windows, 'update').mockResolvedValue(undefined as never);
+    const second = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+
+    route(dappRequest('signTransaction', 'req-b'), ownSender(), second);
+
+    await vi.waitFor(() =>
+      expect(second).toHaveBeenCalledWith({
+        error: 'Another approval is already open',
+        id: 'req-b',
+      })
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+    // Refusing has no side effect: re-focusing on every refusal let a page
+    // pull the wallet window to the front in a loop.
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  // The cap was per origin, so a page navigating itself through subdomains
+  // (no gesture, no trust: connect and signIn reach a window unapproved) got
+  // one more focused OS window per origin.
+  it('opens one approval window in total, whichever origins ask', async () => {
+    const { route, windowsCreate } = startBackground();
+    const responses = Array.from({ length: 10 }, () => vi.fn());
+
+    for (const [i, sendResponse] of responses.entries()) {
+      route(
+        dappRequest(i % 2 ? 'signIn' : 'connect', `req-${i}`),
+        ownSender(`https://s${i}.evil.example`),
+        sendResponse
+      );
+      await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    }
+
+    await vi.waitFor(() =>
+      expect(responses.slice(1).every((r) => r.mock.calls.length === 1)).toBe(true)
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+    expect(responses[1]).toHaveBeenCalledWith({
+      error: 'Another approval is already open',
+      id: 'req-1',
+    });
+  });
+
+  it('opens one approval window when requests arrive together', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    const responses = Array.from({ length: 25 }, () => vi.fn());
+
+    // A page calling in a loop: no request waits for the previous window.
+    responses.forEach((sendResponse, i) =>
+      route(dappRequest('signTransaction', `req-${i}`), ownSender(), sendResponse)
+    );
+
+    await vi.waitFor(() =>
+      expect(responses.slice(1).every((r) => r.mock.calls.length === 1)).toBe(true)
+    );
+    expect(windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets the origin ask again when its window could not be opened', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    // Both attempts fail: at the focused window's edge, then Chrome's placement.
+    windowsCreate
+      .mockRejectedValueOnce(new Error('no window'))
+      .mockRejectedValueOnce(new Error('no window'));
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(2));
+
+    route(dappRequest('signTransaction', 'req-b'), ownSender(), vi.fn());
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(3));
+  });
+
+  // Chrome refuses bounds less than half on a visible screen (a focused window
+  // straddling monitors); that must not turn every dApp request into a refusal.
+  it('opens the window where Chrome chooses when the edge position is refused', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    windowsCreate.mockRejectedValueOnce(
+      new Error(
+        'Invalid value for bounds. Bounds must be at least 50% within visible screen space.'
+      )
+    );
+    const sendResponse = vi.fn();
+
+    route(dappRequest('signTransaction', 'req-a'), ownSender(), sendResponse);
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(2));
+    const fallback = windowsCreate.mock.calls[1][0];
+    expect(fallback).not.toHaveProperty('top');
+    expect(fallback).not.toHaveProperty('left');
+    expect(sendResponse).not.toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Operation cancelled' })
+    );
+  });
+});
+
+describe('storage access', () => {
+  it("restricts storage.local to the extension's own pages", async () => {
+    const setAccessLevel = vi.fn(async () => undefined);
+    Object.assign(fakeBrowser.storage.local, { setAccessLevel });
+    startBackground();
+    await vi.waitFor(() =>
+      expect(setAccessLevel).toHaveBeenCalledWith({ accessLevel: 'TRUSTED_CONTEXTS' })
+    );
+    delete (fakeBrowser.storage.local as { setAccessLevel?: unknown }).setAccessLevel;
   });
 });
 
@@ -214,6 +425,28 @@ describe('malformed and untrusted input', () => {
     expect(windowsCreate).not.toHaveBeenCalled();
     expect(sendResponse).not.toHaveBeenCalled();
   });
+
+  // A sandboxed page has an opaque origin, which arrives as the string "null".
+  // As a trust-store key it is an ordinary string, so every sandboxed page in
+  // every tab would share one entry.
+  it.each(['null', '', 'chrome-extension://abc', 'https://evil.example/path'])(
+    'ignores a request whose origin is %s rather than a web origin',
+    async (origin) => {
+      const { route, windowsCreate } = startBackground();
+      const sendResponse = vi.fn();
+
+      const result = route(
+        dappRequest('connect', 'req-opaque'),
+        { id: fakeBrowser.runtime.id, origin },
+        sendResponse
+      );
+
+      expect(result).toBeUndefined();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(windowsCreate).not.toHaveBeenCalled();
+      expect(sendResponse).not.toHaveBeenCalled();
+    }
+  );
 
   it('ignores messages on an unknown channel without crashing or invoking any approval flow', async () => {
     const { route, windowsCreate } = startBackground();
@@ -266,7 +499,7 @@ describe('malformed and untrusted input', () => {
 
     route(
       { channel: EXTENSION_CHANNEL, data: { id: 'never-requested', method: 'signed' } },
-      ownSender(),
+      extensionPage(),
       sendResponse
     );
 
@@ -275,11 +508,64 @@ describe('malformed and untrusted input', () => {
   });
 });
 
+// Content scripts share the extension id with its pages, so the id alone let
+// a content-script context (a compromised renderer controls its own) read the
+// vault key from the stash and answer approvals.
+describe('privileged channels answer only the extension pages', () => {
+  const contentScript = () => ({
+    id: fakeBrowser.runtime.id,
+    url: `${DAPP_ORIGIN}/app`,
+    origin: DAPP_ORIGIN,
+    tab: { id: 9 },
+  });
+
+  it('does not serve the stash to a content script', () => {
+    const { route } = startBackground();
+    route(
+      {
+        channel: 'salmon_extension_stash_channel',
+        data: { method: 'set', key: 'derived_key_cache', value: 'sensitive' },
+      },
+      extensionPage(),
+      vi.fn()
+    );
+    const sendResponse = vi.fn();
+
+    route(
+      {
+        channel: 'salmon_extension_stash_channel',
+        data: { method: 'get', key: 'derived_key_cache' },
+      },
+      contentScript(),
+      sendResponse
+    );
+
+    expect(sendResponse).not.toHaveBeenCalled();
+  });
+
+  it('does not take an approval answer from a content script', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+    const pageResponse = vi.fn();
+    route(dappRequest('signTransaction', 'req-forged'), ownSender(), pageResponse);
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+
+    route(
+      { channel: EXTENSION_CHANNEL, data: { id: 'req-forged', result: { signature: 'forged' } } },
+      contentScript(),
+      vi.fn()
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(pageResponse).not.toHaveBeenCalled();
+  });
+});
+
 describe('stash channel session hygiene', () => {
   it('drops the derived key when the lock alarm fires so an unlocked session cannot outlive the timeout', async () => {
     const { route } = startBackground();
     const stash = (data: Record<string, unknown>, sendResponse = vi.fn()) => {
-      route({ channel: 'salmon_extension_stash_channel', data }, ownSender(), sendResponse);
+      route({ channel: 'salmon_extension_stash_channel', data }, extensionPage(), sendResponse);
       return sendResponse;
     };
 

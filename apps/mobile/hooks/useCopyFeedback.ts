@@ -18,7 +18,7 @@ const TICK_ENTER_SCALE = 0.4;
  * `copied` state and the `motionMs.feedbackHold` auto-revert), adding the
  * native scale animation for the tick — both ways. The entrance grows the
  * tick in on `settle` over `swell`; when the hold expires the tick sinks
- * back out on `sink` over `ebb` before `copied` reverts, so the icon swap
+ * back out on `sink` over `ebb` before `copied` reverts, so the icon change
  * reads as a return instead of a hard cut. Nothing bounces.
  *
  * The returned `copied`/`copiedKey` lag the shared state by the exit

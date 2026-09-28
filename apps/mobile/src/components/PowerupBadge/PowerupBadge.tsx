@@ -1,9 +1,8 @@
 /**
  * PowerupBadge — the tier marker on a powerup card or row.
  *
- * Featured is the only one that spends a salmon fill; official takes the tint
- * and community stays a plain surface, so a catalogue full of community
- * entries does not read as a wall of brand.
+ * Core takes the accent tint and community stays a plain surface, so a
+ * catalogue full of community entries does not read as a wall of brand.
  */
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
@@ -26,23 +25,17 @@ import type { PowerupBadgeProps, PowerupTier } from './types';
 const tiersFor = (
   t: Semantic
 ): Record<PowerupTier, { background: string; ink: string; key: string; fallback: string }> => ({
-  official: {
+  core: {
     background: t.accent.tint,
     ink: t.accent.ink,
-    key: 'powerups.badge.official',
-    fallback: 'Official',
+    key: 'powerups.badge.core',
+    fallback: 'Core',
   },
   community: {
     background: t.surface.raised,
     ink: t.text.secondary,
     key: 'powerups.badge.community',
     fallback: 'Community',
-  },
-  featured: {
-    background: t.accent.fill,
-    ink: t.accent.onFill,
-    key: 'powerups.badge.featured',
-    fallback: 'Featured',
   },
 });
 

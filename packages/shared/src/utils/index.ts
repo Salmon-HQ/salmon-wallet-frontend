@@ -120,6 +120,7 @@ export {
   formatAmount,
   formatBaseUnits,
   formatTokenAmount,
+  formatTokenAmountSignificant,
   showAmount,
   showValue,
   // Percentage utilities
@@ -143,15 +144,9 @@ export {
   formatPercentageCompact,
   formatPercent,
   formatSolFee,
-  formatConversionRate,
-  formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
   formatPercentChange,
-  // Price impact
-  type PriceImpactSeverity,
-  PRICE_IMPACT_THRESHOLDS,
-  getPriceImpactSeverity,
   // Price performance
   isPositivePerformance,
 } from './formatting';
@@ -272,9 +267,6 @@ export type {
 // Validation utilities
 export { VALIDATION_MESSAGES, getValidationState, getMessageType } from './validation';
 
-// Swap utilities
-export { mapToSwapToken, unifiedToSwapToken } from './swap';
-
 // Transaction transform utilities
 export {
   transformSolanaTransaction,
@@ -305,6 +297,8 @@ export {
   unlockDelayMs,
   UNLOCK_FREE_ATTEMPTS,
   UNLOCK_DELAY_SCHEDULE_MS,
+  UnlockThrottledError,
+  passwordCheckErrorKey,
 } from './unlock-throttle';
 export type { UnlockPenalty } from './unlock-throttle';
 
@@ -346,15 +340,14 @@ export {
   COUNTERPARTY_ADDRESS_CHARS,
   STATUS_LABEL_KEYS,
   TYPE_LABEL_KEYS,
-  conversionRateFor,
   describeTransactionRow,
   transactionCounterparty,
   transactionStatusDisplayFor,
   transactionTypeDisplayFor,
+  withPlatformGlyphs,
 } from './transactionDisplay';
 export type {
   ConfirmationTone,
-  ConversionRate,
   TransactionSentence,
   TransactionStatusDisplay,
   TransactionStatusGlyph,
@@ -383,3 +376,32 @@ export type {
   NftSection,
   NftsBySection,
 } from './nft';
+export {
+  ACCOUNT_ADD_METHODS,
+  ACCOUNT_ADD_STEP_TITLE_KEYS,
+  ACCOUNT_ADD_STEP_SUBTITLE_KEYS,
+} from './accountAddPanelCopy';
+export type { AccountAddMethodId, AccountAddMethodCopy } from './accountAddPanelCopy';
+export { buildTransactionDeveloperSections } from './transactionDeveloperRows';
+export type {
+  TransactionDeveloperRow,
+  TransactionDeveloperSection,
+  TransactionDeveloperTranslate,
+} from './transactionDeveloperRows';
+
+export {
+  EMPTY_POWERUP_ALLOWLIST,
+  parsePowerupSwitches,
+  toPowerupAllowlist,
+} from './powerupSwitches';
+export type { PowerupAllowlist } from './powerupSwitches';
+export { powerupFactRows } from './powerupFacts';
+export { overflowEdges } from './overflowEdges';
+export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
+
+// What a scanned or pasted payload is (the mobile scanner and the DOM paste field)
+export { classifyScanPayload, readSettledPaymentLink } from './scan-payload';
+export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestReview';
+export type { SendRequestReviewRow } from './sendRequestReview';
+export { sendReceiptRows } from './sendReceiptRows';
+export type { ScanClassification, SettledPaymentLink } from './scan-payload';

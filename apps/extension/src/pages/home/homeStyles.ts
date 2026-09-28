@@ -4,6 +4,7 @@
  * the two fades that seam them.
  */
 
+import { VIEW_TRANSITION_LEAVING_BLOCK, VIEW_TRANSITION_RISING_ROW } from '../../components';
 import type React from 'react';
 import { componentSizes, spacing } from '@salmon/shared';
 
@@ -71,6 +72,21 @@ export const pinnedHeaderStyle: React.CSSProperties = {
 export const pinnedSubTabsStyle: React.CSSProperties = {
   marginTop: spacing.xl,
 };
+
+/**
+ * The two elements the view transition names, so the browser can carry the
+ * sub-tab row from one position to the other and cross-fade the balance
+ * block out; `viewTransitionName` is not in React's CSS typings yet.
+ */
+export const balanceBlockStyle = {
+  viewTransitionName: VIEW_TRANSITION_LEAVING_BLOCK,
+} as React.CSSProperties;
+export const subTabsStyle = {
+  ...pinnedSubTabsStyle,
+  viewTransitionName: VIEW_TRANSITION_RISING_ROW,
+} as React.CSSProperties;
+/** Focus mode: the row stands where the chain selector stood, no seam above. */
+export const risenSubTabsStyle = { ...subTabsStyle, marginTop: 0 } as React.CSSProperties;
 
 /** The content region: the only part of Home that scrolls. */
 export const contentRegionStyle: React.CSSProperties = {

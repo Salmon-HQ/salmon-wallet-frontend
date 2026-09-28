@@ -3,11 +3,9 @@
  *
  * `transfer` proves the CORE 07 composition (seal, title, body, receipt
  * card of rows, two actions) renders from the crisp prop shape. `exchange`
- * proves the same `ReceiptScreen` delegates to the graphic receipt
- * `TransactionSuccessScreen` is a thin alias over — its own suite
- * (`TransactionSuccessScreen.test.tsx`) is the exhaustive one; this case only
- * has to show the `tone="exchange"` branch renders that receipt's e2e
- * vocabulary when driven straight through `ReceiptScreen`.
+ * proves the same `ReceiptScreen` delegates to the graphic receipt: the
+ * `tone="exchange"` branch renders that receipt's e2e vocabulary when driven
+ * straight through `ReceiptScreen`.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -47,6 +45,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('../../utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   floatEntering: () => undefined,
 }));
 
@@ -179,7 +178,7 @@ describe('ReceiptScreen — exchange tone', () => {
     render(
       <ReceiptScreen
         tone="exchange"
-        title="Swap Complete"
+        title="Memo sent"
         summary="1 SOL → 200 USDC"
         explorerUrl="https://solscan.io/tx/abc"
         onContinue={onContinue}
@@ -187,7 +186,7 @@ describe('ReceiptScreen — exchange tone', () => {
     );
 
     expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
-    expect(screen.getByText('Swap Complete')).toBeTruthy();
+    expect(screen.getByText('Memo sent')).toBeTruthy();
     expect(screen.getByText('1 SOL → 200 USDC')).toBeTruthy();
     expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
     expect(screen.getByTestId('tx-success-explorer-link')).toBeTruthy();

@@ -1,14 +1,13 @@
 /**
  * ExchangeReceipt — the graphic receipt: token-mark hero, arrow, rate/fee
- * block, the settling wait. Moved here byte-for-byte from
- * `TransactionSuccessScreen`, which is now a thin alias over
- * `ReceiptScreen tone="exchange"` so `SwapScreen` needs no change.
+ * block, the settling wait. Rendered through `ReceiptScreen tone="exchange"`.
  */
 import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
+import type { ExchangeReceiptScreenProps } from './types';
 import {
   componentSizes,
   fontFamilyNative,
@@ -17,8 +16,6 @@ import {
   letterSpacing,
   lineHeight,
   ms,
-  resolveOnboardingBands,
-  resolveOnboardingGrid,
   s,
   SINK_FLOAT_STAGGER_MS,
   spacing,
@@ -28,12 +25,13 @@ import {
   vs,
   type Semantic,
 } from '@salmon/shared';
-import type { TransactionSuccessScreenProps } from '@salmon/shared';
 
-import { ArrowDownIcon, CheckIcon } from '../../icons';
+import { ArrowDownIcon } from '../../icons';
 import { floatEntering } from '../../utils/sinkAndFloat';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
-import { PrimaryButton, TextButton } from '../Button';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { TokenLogo } from '../TokenLogo';
 import { useTabChrome } from '../../../hooks/useTabChrome';
@@ -55,17 +53,8 @@ const MIN_AMOUNT_SCALE = fontSize.body / fontSize.title;
  */
 const LOGO_SIZE = componentSizes.iconSize3XL;
 
-/** The tick and the arrow are chrome-sized glyphs, not illustrations. */
+/** The arrow is a chrome-sized glyph, not an illustration. */
 const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
-
-/**
- * The ending's reserved heights, read from the onboarding grid rather than
- * restated here (DESIGN.md §The ending borrows the onboarding ending's bands).
- * The receipt offers no secondary action, so the band whose union is zero
- * collapses and the assist sits directly over the primary —
- * `resolveOnboardingBands`, the same rule both onboarding layouts read.
- */
-const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
 
 /**
  * A receipt reveals its own content top to bottom, one beat per element, on
@@ -87,7 +76,7 @@ export function ExchangeReceipt({
   exchange,
   exchangeRate,
   exchangeFee,
-}: TransactionSuccessScreenProps) {
+}: Omit<ExchangeReceiptScreenProps, 'tone'>) {
   // Every receipt reveals itself top to bottom, one stagger step per element.
   // The two shapes are one rhythm at different lengths: an exchange reads
   // sent -> arrow -> received -> rows, a send or NFT reads status -> amount,
@@ -96,7 +85,7 @@ export function ExchangeReceipt({
   const actionStep = exchange ? 4 : 2;
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
-  const { text, status } = useSemantic();
+  const { text } = useSemantic();
   const { floatingBottomOffset, insets } = useTabChrome();
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -107,7 +96,7 @@ export function ExchangeReceipt({
   );
 
   const showWait = useWaitGate(settling);
-  // And the wait is not merely unmounted when it ends: this branch swaps the
+  // And the wait is not merely unmounted when it ends: this branch switches the
   // instant `settling` flips, so the closing wave used to play nowhere on the
   // one screen it matters most. `held` keeps the wait rendered — with
   // `visible={false}`, which is what starts its exit — until the last front has
@@ -167,12 +156,10 @@ export function ExchangeReceipt({
         {exchange ? (
           /* The hero is the graphic, and it reads down: the mark of the token
            that left with its amount on top, an arrow travelling downward from
-           it, and the token that arrived below — its amount beside it and the
-           tick attached to it, the same glyph the copy control draws when
-           something has landed. The tick belongs to what was received, not to
-           the block. The lines are the accessibility elements; the arrow and
-           the tick are decoration and are hidden from the reader, so the
-           result the sentence used to carry rides on the received line. */
+           it, and the token that arrived below with its amount beside it. The
+           lines are the accessibility elements; the arrow is decoration and is
+           hidden from the reader, so the result the sentence used to carry
+           rides on the received line. */
           <View style={styles.exchangeBlock} testID="tx-success-hero">
             <Animated.View
               style={styles.tokenLine}
@@ -189,7 +176,6 @@ export function ExchangeReceipt({
               >
                 {exchange.send.amount}
               </Text>
-              <View style={styles.tickSlot} />
             </Animated.View>
             <Animated.View
               style={styles.trackRow}
@@ -221,9 +207,6 @@ export function ExchangeReceipt({
               >
                 {exchange.receive.amount}
               </Text>
-              <View style={styles.tickSlot} testID="tx-success-tick">
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={status.success} />
-              </View>
             </Animated.View>
           </View>
         ) : (
@@ -270,66 +253,42 @@ export function ExchangeReceipt({
           </Animated.View>
         )}
 
-        {/* The fine print, last: quiet rows for what the flow already knows —
-          effective rate, Salmon fee when it arrived, local time. */}
+        {/* The fine print, last: the receipt card Send draws (`Card` +
+          `KeyValueRow`), with what the flow already knows — effective rate,
+          Salmon fee when it arrived, local time. */}
         {exchange ? (
           <Animated.View
-            style={styles.receiptRows}
-            testID="tx-success-receipt"
+            style={styles.receiptCard}
             entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(3) })}
           >
-            {exchangeRate ? (
-              <View style={styles.receiptRow}>
-                <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
-                <Text style={[styles.receiptValue, TABULAR]}>{exchangeRate}</Text>
-              </View>
-            ) : null}
-            {exchangeFee ? (
-              <View style={styles.receiptRow}>
-                <Text style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</Text>
-                <Text style={[styles.receiptValue, TABULAR]}>{exchangeFee}</Text>
-              </View>
-            ) : null}
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
-              <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
-            </View>
+            <Card padding="lg" gap={spacing.md} testID="tx-success-receipt">
+              {exchangeRate ? (
+                <KeyValueRow label={t('transactions.detail.rate', 'Rate')} value={exchangeRate} />
+              ) : null}
+              {exchangeFee ? (
+                <KeyValueRow label={t('transaction.salmonFee', 'Salmon fee')} value={exchangeFee} />
+              ) : null}
+              <KeyValueRow label={t('transactions.detail.time', 'Time')} value={receiptTime} />
+            </Card>
           </Animated.View>
         ) : null}
       </View>
 
-      {/* The ending composes like the onboarding ending: a quiet text-button
-          band (the explorer link) over the primary action, which is the
-          bottom-most control. The wallet's own action still outranks the link
-          that leaves for a block explorer, and what says so is the position —
-          and the assist band keeps its reserved height even when there is no
-          link, so the primary never moves. */}
+      {/* The ending is Send's: the explorer link as the secondary button over
+          the primary, the wallet's own action bottom-most. */}
       <Animated.View
         style={styles.actionGroup}
         testID="tx-success-actions"
         entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(actionStep) })}
       >
-        <View style={styles.assistBand} testID="tx-success-assist">
-          {explorerUrl ? (
-            <TextButton
-              onPress={handleExplorerPress}
-              color={text.secondary}
-              testID="tx-success-explorer-link"
-            >
-              {t('transaction.viewOnExplorer')}
-            </TextButton>
-          ) : null}
-        </View>
-
-        <View style={styles.actionBand} testID="tx-success-action">
-          <PrimaryButton
-            onPress={onContinue}
-            disabled={settling}
-            testID="tx-success-continue-button"
-          >
-            {t('transaction.continue', 'Back to wallet')}
-          </PrimaryButton>
-        </View>
+        {explorerUrl ? (
+          <SecondaryButton testID="tx-success-explorer-link" onPress={handleExplorerPress}>
+            {t('transaction.viewOnExplorer')}
+          </SecondaryButton>
+        ) : null}
+        <PrimaryButton onPress={onContinue} disabled={settling} testID="tx-success-continue-button">
+          {t('transaction.continue', 'Back to wallet')}
+        </PrimaryButton>
       </Animated.View>
     </View>
   );
@@ -387,7 +346,7 @@ const stylesFor = (t: Semantic) =>
       marginBottom: vs(spacing['2xl']),
     },
     // The exchange, read down the screen: what left on top, the arrow between,
-    // what arrived below with its tick. Each amount travels with its own mark.
+    // what arrived below. Each amount travels with its own mark.
     exchangeBlock: {
       alignSelf: 'stretch',
       alignItems: 'center',
@@ -402,13 +361,6 @@ const stylesFor = (t: Semantic) =>
       gap: s(spacing.sm),
     },
     trackRow: {
-      alignItems: 'center',
-    },
-    // The tick's place, reserved on both lines so the two amounts sit on one
-    // vertical axis — the same reservation the assist band makes below, for the
-    // same reason. Only the received line puts a glyph in it.
-    tickSlot: {
-      width: s(GRAPHIC_ICON_SIZE),
       alignItems: 'center',
     },
     amountCell: {
@@ -435,59 +387,22 @@ const stylesFor = (t: Semantic) =>
     // that emphasis when the hero left its card.
     amountSpent: {
       fontSize: ms(fontSize.bodyLg),
-      fontFamily: fontFamilyNative.regular,
+      fontFamily: fontFamilyNative.bold,
       color: t.text.secondary,
       lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
     },
-    // The quiet receipt: label left, value right, no card — secondary rank
-    // under the amount.
-    receiptRows: {
+    // The receipt card, stretched like Send's, under the exchange.
+    receiptCard: {
       alignSelf: 'stretch',
-      gap: vs(spacing.sm),
       marginBottom: vs(spacing.xl),
-      paddingHorizontal: s(spacing.base),
     },
-    receiptRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: s(spacing.md),
-    },
-    receiptLabel: {
-      fontSize: ms(fontSize.sm),
-      fontFamily: fontFamilyNative.regular,
-      color: t.text.tertiary,
-    },
-    receiptValue: {
-      fontSize: ms(fontSize.sm),
-      fontFamily: fontFamilyNative.medium,
-      color: t.text.secondary,
-      textAlign: 'right',
-      flexShrink: 1,
-    },
-    // The bottom of the column, on the onboarding ending's bands: the assist
-    // band (a quiet text button) directly over the action band's primary, with
-    // the grid's `spacing.lg` of air between them. The auto margin separates
-    // the report from the actions without inventing a spacer.
+    // The bottom of the column, as Send's receipt draws it: secondary over
+    // primary with the grid's air between, the primary on the bottom edge.
     actionGroup: {
       marginTop: 'auto',
       alignSelf: 'stretch',
-    },
-    // Reserved at the grid's assist height whether or not a link is rendered,
-    // so the primary sits at one Y across every ending.
-    assistBand: {
-      height: vs(endingBands.assist),
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    // The action band, exactly as the onboarding layout draws it: the grid's air
-    // over the primary and the grid's air under it, with the button on the
-    // bottom edge of the column. Nothing is reserved below it, which is what
-    // pins its Y.
-    actionBand: {
-      alignSelf: 'stretch',
-      height: vs(endingBands.action),
-      paddingTop: vs(spacing.lg),
+      paddingTop: vs(spacing.md),
       paddingBottom: vs(spacing['2xl']),
+      gap: vs(spacing.md),
     },
   });

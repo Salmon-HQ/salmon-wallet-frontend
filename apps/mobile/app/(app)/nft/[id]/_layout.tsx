@@ -16,11 +16,19 @@
  * `id` is the mint, never `screen`: that param name is reserved by React
  * Navigation (see the header comment on `app/(app)/settings/[panel].tsx`).
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAccountsContext, type SolanaNetworkId } from '@salmon/shared';
+import {
+  getShortAddress,
+  useAccountsContext,
+  useWaitExit,
+  type SolanaNetworkId,
+} from '@salmon/shared';
 
+import { LoadingScreen } from '../../../../src/components';
 import { NftFlowProvider, useNftFlow } from '../../../../src/contexts/NftFlowContext';
 
 /**
@@ -29,19 +37,61 @@ import { NftFlowProvider, useNftFlow } from '../../../../src/contexts/NftFlowCon
  * It lives here rather than on the two committing screens because both of them
  * hand the screen over the moment they commit, and `replace` is what keeps the
  * signed transaction from sitting behind a back gesture.
+ *
+ * The wait is here for the same reason, and works as the token send's does:
+ * the wave covers the signature, the landing and the settle, so the receipt
+ * arrives with its way home already open, once the last wave has left.
  */
 function NftPassage({ mint, query }: { mint: string; query: string }) {
+  const { t } = useTranslation();
   const router = useRouter();
-  const { successTxId } = useNftFlow();
+  const insets = useSafeAreaInsets();
+  const { successTxId, successSettling, sending, burning, nft, recipient, resolvedRecipient } =
+    useNftFlow();
   const navigatedRef = useRef(false);
 
+  const committing = sending || burning || successSettling;
+  const { held, onExited } = useWaitExit(committing);
+  // Which wait this is outlives the flag that started it: the wave is still
+  // leaving after `burning` drops, and its title must not flip to the send's.
+  const [kind, setKind] = useState<'send' | 'burn'>('send');
   useEffect(() => {
-    if (!successTxId || navigatedRef.current) return;
+    if (burning) setKind('burn');
+    else if (sending) setKind('send');
+  }, [burning, sending]);
+
+  const name = nft?.name ?? '';
+  const destination = resolvedRecipient ?? recipient;
+
+  // The receipt takes the review's place while the wave still covers it — the
+  // wait lives here, above the stack, so replacing the screen beneath cuts
+  // nothing. Waiting for the wave to leave first uncovered the review again,
+  // its confirm live, for the moment the receipt took to slide in.
+  useEffect(() => {
+    if (!successTxId || committing || navigatedRef.current) return;
     navigatedRef.current = true;
     router.replace(`/nft/${encodeURIComponent(mint)}/success${query}`);
-  }, [successTxId, mint, query, router]);
+  }, [successTxId, committing, mint, query, router]);
 
-  return null;
+  if (!held) return null;
+  return (
+    <LoadingScreen
+      fullScreen
+      visible={committing}
+      waves
+      title={kind === 'burn' ? t('nft.burn.pendingTitle') : t('nft.send.pendingTitle')}
+      subtitle={
+        kind === 'burn'
+          ? name
+          : t('nft.send.pendingSummary', {
+              name,
+              address: getShortAddress(destination) ?? destination,
+            })
+      }
+      bottomOffset={insets.bottom}
+      onExited={onExited}
+    />
+  );
 }
 
 export default function NftLayout() {
@@ -69,7 +119,7 @@ export default function NftLayout() {
         <Stack.Screen name="burn" />
         {/* There is nothing behind a signed transaction. The receipt's only way
             out is "Return home", so the back gesture is taken off it. */}
-        <Stack.Screen name="success" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="success" options={{ gestureEnabled: false, animation: 'none' }} />
       </Stack>
       <NftPassage mint={params.id} query={`?sub=${subAccountIndex}`} />
     </NftFlowProvider>

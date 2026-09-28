@@ -15,7 +15,7 @@
 - **Theme**: `packages/ui/src/theme/index.ts` freezes `semantic` (dark) into an MUI theme at module load; no `ThemeProvider`, no light mode, `STORAGE_KEYS.APPEARANCE` has no DOM reader.
 - **Kit**: no DOM counterpart for Card, ListRow, IconBubble, KeyValueRow, SectionLabel, Chip/ChipGroup, UnderlineTabs, SearchField, SkeletonRow/ShimmerRect, StateBlock, ReceiptScreen, PortfolioSubTabs, BottomSheetContainer (DOM has `BaseSheetDialog`), HomeTabOrderSheet, DerivedAccountsSheet, PowerupsFab. Counterparts exist but drifted for ScreenHeader, WarningNotice, Button, BalanceCard (≈ BalanceHeader), WalletHeader, NftCard, TokenList, Thermocline, DepthBackground, ScalesBackground, FleshBackground, LoadingScreen, LockScreen, OnboardingLayout, BrandMark.
 - **Motion**: fifteen mobile files use `packages/shared/src/motion`; zero extension files do.
-- **Screens**: Home, Swap, Collectibles, Send (single page vs mobile's 4 steps), Auth flow, Activity (via ui), Token detail, Wallets (a sheet, not a screen), no Settings route (ui has `SettingsPanelStack` unused), no Powerups; extension-only: dApp connect/sign/approve, Lock route.
+- **Screens**: Home, Collectibles, Send (single page vs mobile's 4 steps), Auth flow, Activity (via ui), Token detail, Wallets (a sheet, not a screen), no Settings route (ui has `SettingsPanelStack` unused), no Powerups; extension-only: dApp connect/sign/approve, Lock route.
 
 ## DOM alternatives (decided)
 

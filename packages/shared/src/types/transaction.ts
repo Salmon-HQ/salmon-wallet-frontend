@@ -12,7 +12,11 @@
  * Covers all blockchain transaction categories
  */
 export type TransactionType =
-  'send' | 'receive' | 'swap' | 'mint' | 'burn' | 'stake' | 'loan' | 'interaction' | 'unknown';
+  'send' | 'receive' | 'mint' | 'burn' | 'stake' | 'loan' | 'interaction' | 'memo' | 'unknown';
+
+/** What an `interaction` was — see `Transaction.action`. */
+export type TransactionAction =
+  'swap' | 'nft_sale' | 'nft_purchase' | 'accounts_closed' | 'program_call';
 
 /**
  * Transaction display status for history views
@@ -73,68 +77,6 @@ export interface TransactionFee {
 }
 
 /**
- * Swap route hop information (for multi-hop swaps)
- */
-export interface SwapRouteHop {
-  /** DEX/AMM label (e.g., 'Raydium', 'Orca', 'Meteora') */
-  dex: string;
-  /** Percentage of the swap going through this route (0-100) */
-  percent: number;
-  /** Input token for this hop */
-  inputToken: {
-    symbol: string;
-    amount: string;
-    decimals: number;
-    logo?: string | null;
-  };
-  /** Output token for this hop */
-  outputToken: {
-    symbol: string;
-    amount: string;
-    decimals: number;
-    logo?: string | null;
-  };
-  /** Fee for this hop */
-  fee?: {
-    amount: string;
-    symbol: string;
-  };
-}
-
-/**
- * Conversion rate information for swap display
- */
-export interface SwapConversionRate {
-  /** Input token symbol */
-  fromSymbol: string;
-  /** Output token symbol */
-  toSymbol: string;
-  /** Conversion rate (e.g., '1.5' means 1 fromToken = 1.5 toToken) */
-  rate: string;
-}
-
-/**
- * Swap route information for visualization
- */
-export interface SwapRoute {
-  /** List of hops in the swap route */
-  hops: SwapRouteHop[];
-  /** Price impact percentage */
-  priceImpact?: string;
-  /** Total fees across all hops */
-  totalFee?: {
-    amount: string;
-    symbol: string;
-  };
-  /** Conversion rate between input and output tokens */
-  conversionRate?: SwapConversionRate;
-  /** Total input amount for the swap */
-  inputAmount?: string;
-  /** Total output amount for the swap */
-  outputAmount?: string;
-}
-
-/**
  * Confirmation status of a transaction on the Solana network
  */
 export type TransactionConfirmationStatus = 'processed' | 'confirmed' | 'finalized';
@@ -160,12 +102,26 @@ export interface Transaction {
   outputs: TransactionTokenAmount[];
   /** Human-readable description from Helius */
   description?: string;
-  /** Source protocol (e.g., 'JUPITER', 'MAGIC_EDEN') */
+  /** Source protocol (e.g., 'RAYDIUM', 'MAGIC_EDEN') */
   source?: string;
   /** Original Helius transaction type */
   heliusType?: string;
-  /** Swap route information for multi-hop swaps */
-  swapRoute?: SwapRoute;
+  /**
+   * The verb inside an `interaction`, as a stable key the client translates
+   * (backend 017): `swap`, `nft_sale`, `nft_purchase`, `accounts_closed`,
+   * `program_call`. Absent on every other type.
+   */
+  action?: TransactionAction;
+  /** What the verb needs said: `{ count }` for `accounts_closed`. */
+  actionMeta?: { count?: number };
+  /** The name the user knows the program family by, for the detail. */
+  app?: string;
+  /**
+   * The SPL Memo note the transaction carries, when it carries one. A
+   * transaction that moves nothing and carries a note is `type: 'memo'`; a
+   * note riding a transfer keeps that type and carries it here.
+   */
+  memo?: string | null;
   /** Block slot number where the transaction was included */
   slot?: number;
   /** Block timestamp (Unix timestamp in seconds) */
@@ -178,43 +134,6 @@ export interface Transaction {
   instructions?: Array<{
     programId: string;
     innerInstructionsCount: number;
-  }>;
-  /** Swap-specific fees (only for swap transactions) */
-  swapFees?: {
-    nativeFees: Array<{
-      account: string;
-      amount: string;
-    }>;
-    tokenFees: Array<{
-      account: string;
-      amount: string;
-      mint: string;
-    }>;
-  };
-  /** Inner swaps for multi-hop routes */
-  innerSwaps?: Array<{
-    tokenInputs: Array<{
-      fromUserAccount: string;
-      toUserAccount: string;
-      fromTokenAccount: string;
-      toTokenAccount: string;
-      tokenAmount: number;
-      mint: string;
-    }>;
-    tokenOutputs: Array<{
-      fromUserAccount: string;
-      toUserAccount: string;
-      fromTokenAccount: string;
-      toTokenAccount: string;
-      tokenAmount: number;
-      mint: string;
-    }>;
-    programInfo: {
-      source: string;
-      account: string;
-      programName: string;
-      instructionName: string;
-    };
   }>;
   /** Number of accounts involved in the transaction */
   accountsInvolved?: number;
@@ -250,8 +169,6 @@ export const TRANSACTION_STATUS = {
   CANCELING_OFFER: 'canceling-offer',
   /** Purchasing an NFT */
   BUYING: 'buying',
-  /** Token swap is in progress */
-  SWAPPING: 'swapping',
 } as const;
 
 /**
@@ -275,7 +192,6 @@ const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   [TRANSACTION_STATUS.CREATING_OFFER]: 'Creating Offer',
   [TRANSACTION_STATUS.CANCELING_OFFER]: 'Canceling Offer',
   [TRANSACTION_STATUS.BUYING]: 'Buying',
-  [TRANSACTION_STATUS.SWAPPING]: 'Swapping',
 };
 
 /**
@@ -286,8 +202,8 @@ const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
  *
  * @example
  * ```typescript
- * const label = getTransactionStatusLabel('swapping');
- * console.log(label); // "Swapping"
+ * const label = getTransactionStatusLabel('sending');
+ * console.log(label); // "Sending"
  * ```
  */
 export function getTransactionStatusLabel(status: TransactionStatus): string {
@@ -315,7 +231,6 @@ export function isTransactionPending(status: TransactionStatus): boolean {
     TRANSACTION_STATUS.CREATING_OFFER,
     TRANSACTION_STATUS.CANCELING_OFFER,
     TRANSACTION_STATUS.BUYING,
-    TRANSACTION_STATUS.SWAPPING,
   ];
 
   return pendingStatuses.includes(status);
@@ -424,7 +339,6 @@ export type SolanaTransactionStatus = 'confirmed' | 'finalized' | 'failed';
  */
 export type SolanaTransactionType =
   | 'TRANSFER'
-  | 'SWAP'
   | 'NFT_SALE'
   | 'NFT_LISTING'
   | 'NFT_CANCEL_LISTING'
@@ -467,14 +381,24 @@ export interface SolanaTransaction {
   outputs: TransactionTokenAmount[];
   /** Human-readable description from Helius */
   description?: string;
-  /** Source protocol (e.g., 'JUPITER', 'MAGIC_EDEN', 'PHANTOM') */
+  /** Source protocol (e.g., 'RAYDIUM', 'MAGIC_EDEN', 'PHANTOM') */
   source?: string;
   /** Transaction events */
   events?: Record<string, unknown>;
   /** Original Helius transaction type (uppercase) */
   heliusType?: string;
-  /** Swap route — populated server-side for SWAP transactions */
-  swapRoute?: SwapRoute;
+  /**
+   * The verb inside an `interaction`, as a stable key the client translates
+   * (backend 017): `swap`, `nft_sale`, `nft_purchase`, `accounts_closed`,
+   * `program_call`. Absent on every other type.
+   */
+  action?: TransactionAction;
+  /** What the verb needs said: `{ count }` for `accounts_closed`. */
+  actionMeta?: { count?: number };
+  /** The name the user knows the program family by, for the detail. */
+  app?: string;
+  /** The SPL Memo note, when the transaction carries one (backend 015). */
+  memo?: string | null;
 }
 
 /**
@@ -492,6 +416,8 @@ export interface SolanaPagingParams {
   before?: string;
   /** @deprecated Use pageSize instead */
   limit?: number;
+  /** When `true`, asks the BE to skip the unverified-token transfer filter. */
+  includeSpam?: boolean;
 }
 
 /**
@@ -504,6 +430,8 @@ export interface SolanaTransactionsResponse {
   oldestSignature?: string | null;
   /** Whether there are more transactions to fetch */
   hasMore: boolean;
+  /** Number of items the BE dropped (unverified-token-only transfers), when known */
+  hidden?: number;
 }
 
 // ============================================================================

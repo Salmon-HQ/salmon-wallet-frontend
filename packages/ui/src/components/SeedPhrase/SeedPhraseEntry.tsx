@@ -31,8 +31,8 @@
  * capture. There is no DOM equivalent — a browser cannot stop a screenshot —
  * and nothing here pretends there is.
  */
-import { distributePhrase, LONG_PHRASE, SHORT_PHRASE, spacing } from '@salmon/shared';
-import { useCallback, useRef, type CSSProperties } from 'react';
+import { spacing, useSeedPhraseEntryLogic } from '@salmon/shared';
+import type { CSSProperties } from 'react';
 import { SeedWordInput } from './SeedWordInput';
 import type { SeedPhraseEntryProps } from './types';
 
@@ -58,80 +58,24 @@ export function SeedPhraseEntry({
   onPasteRejected,
   testID = 'recover',
 }: SeedPhraseEntryProps): React.ReactElement {
-  const refs = useRef<(HTMLInputElement | null)[]>([]);
-
   // Twenty-four words have to live in the band twelve live in: four columns
   // instead of three and a shorter box, rather than twice the rows. A grid
   // that grew would push the layout around, which is the jump the slot grid
   // exists to remove.
-  const dense = words.length > SHORT_PHRASE;
-  const columns = dense ? 4 : 3;
+  const { dense, columns, setRef, focus, fill, handleChange, handleBackspace } =
+    useSeedPhraseEntryLogic<HTMLInputElement>({
+      words,
+      onChange,
+      onLengthChange,
+      onPasteRejected,
+    });
 
-  const focus = useCallback((index: number) => {
-    refs.current[index]?.focus();
-  }, []);
-
-  /**
-   * Distributes a whole phrase across the boxes, growing the grid to 24 if
-   * that is what was pasted. Both paste paths land here.
-   */
-  const fill = useCallback(
-    (text: string) => {
-      const { words: filled, fits, count } = distributePhrase(text);
-      onLengthChange(filled.length);
-      onChange(filled);
-      // Reported *after* `onChange`, not before. The screen clears any previous
-      // rejection whenever the words change — that is what makes the notice go
-      // away as soon as someone starts fixing it — so reporting first would
-      // have the paste's own `onChange` immediately wipe the message it just
-      // raised, and a short paste would land silently.
-      if (!fits) onPasteRejected?.(count);
-    },
-    [onChange, onLengthChange, onPasteRejected]
-  );
-
-  const handleChange = useCallback(
-    (index: number, text: string) => {
-      // More than one word arrived at once: that is a paste the browser let
-      // through, wherever it landed, and it fills the grid rather than
-      // stuffing one box.
-      if (/\s/.test(text.trim())) {
-        fill(text);
-        return;
-      }
-
-      // A trailing space is the commit gesture. The word stays in this box.
-      if (text.endsWith(' ')) {
-        const next = words.slice();
-        next[index] = text.trim();
-        // Typing past the twelfth word is how a 24-word phrase is entered by
-        // hand; there is no length picker to get wrong first.
-        if (index === words.length - 1 && words.length === SHORT_PHRASE && next[index]) {
-          onChange([...next, ...Array<string>(LONG_PHRASE - SHORT_PHRASE).fill('')]);
-          onLengthChange(LONG_PHRASE);
-        } else {
-          onChange(next);
-        }
-        focus(index + 1);
-        return;
-      }
-
-      const next = words.slice();
-      next[index] = text;
-      onChange(next);
-    },
-    [fill, focus, onChange, onLengthChange, words]
-  );
-
-  const handleKeyDown = useCallback(
-    (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Backspace' && !words[index] && index > 0) {
-        event.preventDefault();
-        focus(index - 1);
-      }
-    },
-    [focus, words]
-  );
+  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !words[index] && index > 0) {
+      event.preventDefault();
+      handleBackspace(index);
+    }
+  };
 
   return (
     // `data-columns` is the grid's density, stated rather than inferred, so
@@ -154,9 +98,7 @@ export function SeedPhraseEntry({
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPasteText={fill}
             onSubmitEditing={() => focus(index + 1)}
-            inputRef={(input: HTMLInputElement | null) => {
-              refs.current[index] = input;
-            }}
+            inputRef={setRef(index)}
           />
         </div>
       ))}

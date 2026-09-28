@@ -12,6 +12,7 @@ import type {
   DerivationInput,
   Effects,
   NoEffect,
+  UndeterminedEffects,
   SolChange,
   TokenChange,
 } from './simulation-types';
@@ -75,11 +76,27 @@ function collectOwnedTokenAccounts(input: DerivationInput): readonly Address[] {
  * `previewTransactionEffects`, which calls this.
  *
  * @param input - Before/after snapshots plus the mints they reference.
- * @returns `no-effect` when nothing moved, `effects` otherwise. This function
- * never returns `undetermined` — uncertainty is decided before decoding.
+ * @returns `no-effect` when nothing moved, `effects` otherwise, and
+ * `undetermined` when an account changes owner, which no balance row can show.
+ * Every other kind of uncertainty is decided before decoding.
  */
-export function deriveEffects(input: DerivationInput): NoEffect | Effects {
+export function deriveEffects(input: DerivationInput): NoEffect | Effects | UndeterminedEffects {
   const { account, before, after, mints, resolveSymbol } = input;
+
+  // System Assign moves the wallet's own account to another program, which can
+  // then debit every lamport in it. No lamports move, so every diff below would
+  // report no-effect or the fee alone. Same treatment as a token account
+  // changing owner: undetermined, which the approval screen holds.
+  const ownerBefore = before.get(account)?.owner;
+  const ownerAfter = after.get(account)?.owner;
+  if (ownerBefore && ownerAfter && ownerBefore !== ownerAfter) {
+    return {
+      kind: 'undetermined',
+      account,
+      reason: 'ownership-change',
+      detail: `Account ${account} changes owner program from ${ownerBefore} to ${ownerAfter}.`,
+    };
+  }
 
   const lamportsBefore = before.get(account)?.lamports ?? 0n;
   const lamportsAfter = after.get(account)?.lamports ?? 0n;
@@ -102,6 +119,23 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects {
     const mint = mints.get(mintAddress);
     const decimals = mint?.decimals ?? 0;
     const symbol = resolveSymbol?.(mintAddress) ?? null;
+
+    // Ownership is diffed before amounts, because losing the account outranks
+    // anything that moved inside it. SetAuthority(AccountOwner) leaves the
+    // balance and the delegate identical, so every comparison below reports
+    // nothing and the whole preview collapses to `no-effect` — the UI then
+    // says the transaction moves none of your balances while handing the
+    // account away. Report it as undetermined: this build has no row for it,
+    // and the approval screen turns undetermined into hold-to-approve plus an
+    // explicit "could not determine what this does".
+    if (pre?.owner && post?.owner && pre.owner !== post.owner) {
+      return {
+        kind: 'undetermined',
+        account,
+        reason: 'ownership-change',
+        detail: `Token account ${tokenAccount} changes owner from ${pre.owner} to ${post.owner}.`,
+      };
+    }
 
     // A missing snapshot is a real balance of zero: absent before means the
     // transaction created the account, absent after means it closed it.

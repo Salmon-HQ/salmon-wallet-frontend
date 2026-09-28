@@ -26,7 +26,7 @@ export interface SinkFloatProps {
   /** The sink's length. Defaults to `SINK_OUT_MS`. */
   sinkMs?: number;
   /**
-   * How long the outgoing content is held before the swap: the sink plus the
+   * How long the outgoing content is held before the change: the sink plus the
    * beat that lets the eye read the double gesture. Defaults to
    * `FLOAT_DELAY_MS`. Override it together with `sinkMs`, or the beat stops
    * being a beat.

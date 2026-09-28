@@ -39,6 +39,7 @@ import {
   useAccountsContext,
   useAnalyticsConsent,
   useCurrencyContext,
+  useDeveloperModeToggles,
   useTheme,
   useUserConfig,
   getSettingsItemTestId,
@@ -63,7 +64,6 @@ import {
   ScreenHeader,
   SectionLabel,
 } from '../../../src/components';
-import { useDeveloperModeSettings } from '../../../src/contexts/DeveloperModeContext';
 import { useLanguage } from '../../../src/i18n';
 import { useBiometric } from '../../../src/contexts/BiometricContext';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
@@ -121,31 +121,14 @@ export default function SettingsScreenIndex() {
     activeBlockchainAccount: userConfigAccount,
   });
   const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
-  // The two "show me more" settings come from the `(app)` provider, so this
-  // screen reads the same instance the carousel and the network panel do.
+  // The two "show me more" settings and their toggle handlers are the same
+  // shape on both platforms — hoisted to `useDeveloperModeToggles`.
   const {
     developerNetworks,
     showUnverifiedTokens,
-    toggleDeveloperNetworks,
-    setShowUnverifiedTokens,
-  } = useDeveloperModeSettings();
-
-  // Turning the flag off while the session stands on devnet moves it to the
-  // mainnet sibling first — the shared toggle owns that passage, it only needs
-  // the session's network and the switch to make it with.
-  const handleToggleDeveloperNetworks = useCallback(() => {
-    void toggleDeveloperNetworks({
-      activeNetworkId: networkId,
-      changeNetwork: accountActions.changeNetwork,
-    });
-  }, [toggleDeveloperNetworks, networkId, accountActions]);
-
-  const handleToggleUnverifiedTokens = useCallback(
-    (show: boolean) => {
-      void setShowUnverifiedTokens(show);
-    },
-    [setShowUnverifiedTokens]
-  );
+    handleToggleDeveloperNetworks,
+    handleToggleUnverifiedTokens,
+  } = useDeveloperModeToggles();
   const toggles = useMemo<
     Record<SettingsToggleKey, { checked: boolean; onChange: (next: boolean) => void }>
   >(

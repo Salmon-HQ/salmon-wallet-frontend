@@ -293,3 +293,34 @@ describe('reading the previous transactions', () => {
     expect(serializedTx).toMatch(/^[0-9a-f]+$/);
   });
 });
+
+/**
+ * The listing says what an input is worth. The previous transaction says it
+ * outright, and it is on the device — it has to be, because the signature
+ * commits to it. A listing that understates a value shrinks the change output
+ * by the difference and leaves it to the miner.
+ */
+describe('a UTXO listing that understates what an input is worth', () => {
+  it('pays the change from the previous transaction, not from the listing', async () => {
+    const keyPair = await testSigningKeyPair();
+    const honest = await fundedUtxos();
+    // Same inputs, same raw hex — only the backend's number is wrong.
+    const understated = honest.map((utxo) => ({
+      ...utxo,
+      satoshis: Math.floor(utxo.satoshis / 2),
+    }));
+
+    const send = async (utxos: UTXO[]) =>
+      createTransferTransaction(NETWORK, keyPair, RECEIVER_ADDRESS, 0.0005, async () => utxos);
+
+    const fromHonest = await send(honest);
+    const fromUnderstated = await send(understated);
+
+    const changeOf = (serializedTx: string) => {
+      const outs = bitcoin.Transaction.fromHex(serializedTx).outs;
+      return outs.length > 1 ? outs[1].value : 0n;
+    };
+
+    expect(changeOf(fromUnderstated.serializedTx)).toBe(changeOf(fromHonest.serializedTx));
+  });
+});

@@ -5,7 +5,9 @@
  * `apps/mobile/src/components/HomeTabOrderSheet/HomeTabOrderSheet.tsx`: one
  * state, so it is a sheet and not a screen (DESIGN.md §Sheets), a list of the
  * tabs Home currently offers, and no Save — the new order is reported as each
- * row is dropped and Home re-flows behind the sheet.
+ * row is dropped and Home re-flows behind the sheet. Portfolio and NFTs are
+ * the wallet itself and can only be arranged; a Powerup's tab also carries a
+ * `−`, which uninstalls the Powerup and takes its tab away.
  *
  * Mobile drags with `react-native-gesture-handler`. Here the drag is Pointer
  * Events (spec 028, DOM alternatives): press the grip, move, drop. The rows
@@ -34,7 +36,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
-import { DotsSixVerticalIcon, iconSize } from '../../icons';
+import { DotsSixVerticalIcon, MinusIcon, iconSize } from '../../icons';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { ListRow } from '../ListRow';
 import type { HomeTabOrderSheetProps } from './types';
@@ -68,6 +70,8 @@ export function HomeTabOrderSheet({
   onClose,
   tabs,
   onOrderChange,
+  removableKeys,
+  onRemove,
   style,
   className,
   testID = 'home-tab-order-sheet',
@@ -211,30 +215,51 @@ export function HomeTabOrderSheet({
                       : undefined
                   }
                   trailing={
-                    <button
-                      type="button"
-                      data-testid={`${rowTestID}-handle`}
-                      aria-label={t('home.tabs.order.handle', 'Reorder {{tab}}', {
-                        tab: tab.label,
-                      })}
-                      onPointerDown={handlePointerDown(index)}
-                      onPointerMove={isDragged ? handlePointerMove : undefined}
-                      onPointerUp={handlePointerUp}
-                      onPointerCancel={handlePointerUp}
-                      onKeyDown={handleKeyDown(index)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        // A grip needs a target, and 12 around a 20pt glyph
-                        // clears the 44pt minimum without inflating the row.
-                        padding: spacing.md,
-                        display: 'inline-flex',
-                        cursor: 'grab',
-                        touchAction: 'none',
-                      }}
-                    >
-                      <DotsSixVerticalIcon size={iconSize.md} color={semantic.text.tertiary} />
-                    </button>
+                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {onRemove && removableKeys?.includes(tab.key) ? (
+                        <button
+                          type="button"
+                          data-testid={`${rowTestID}-remove`}
+                          aria-label={t('home.tabs.order.remove', 'Remove {{tab}}', {
+                            tab: tab.label,
+                          })}
+                          onClick={() => onRemove(tab.key)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            padding: spacing.md,
+                            display: 'inline-flex',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <MinusIcon size={iconSize.md} color={semantic.text.tertiary} />
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        data-testid={`${rowTestID}-handle`}
+                        aria-label={t('home.tabs.order.handle', 'Reorder {{tab}}', {
+                          tab: tab.label,
+                        })}
+                        onPointerDown={handlePointerDown(index)}
+                        onPointerMove={isDragged ? handlePointerMove : undefined}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        onKeyDown={handleKeyDown(index)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          // A grip needs a target, and 12 around a 20pt glyph
+                          // clears the 44pt minimum without inflating the row.
+                          padding: spacing.md,
+                          display: 'inline-flex',
+                          cursor: 'grab',
+                          touchAction: 'none',
+                        }}
+                      >
+                        <DotsSixVerticalIcon size={iconSize.md} color={semantic.text.tertiary} />
+                      </button>
+                    </span>
                   }
                 />
               </div>

@@ -35,7 +35,12 @@ export interface UseExplorerLinkParams {
   showMenu?: boolean;
   /** `useTranslation()`'s `t`, for the button's own label. */
   t: ExplorerLinkTranslate;
-  /** Opens a resolved URL — `window.open` on the DOM, `Linking.openURL` on native. */
+  /**
+   * Opens a resolved URL — `window.open` on the DOM, `Linking.openURL` on
+   * native. Pass a wrapper, never a bare method reference: RN's `Linking` is
+   * an instance whose `openURL` reads `this`, so `openUrl: Linking.openURL`
+   * throws before reaching the native module and the press does nothing.
+   */
   openUrl: (url: string) => void | Promise<void>;
   /** Reported once a row's URL has actually opened. */
   onPress?: (url: string, explorerName: string) => void;
@@ -50,6 +55,14 @@ export interface ExplorerLinkRow {
 }
 
 export interface UseExplorerLinkResult {
+  /**
+   * Set when the last press could not reach a browser — the promise
+   * `openUrl` returns was rejected, or it threw. The twin draws it as an
+   * inline notice under the button; the next press clears it. A failure here
+   * used to be a `console.warn` and nothing else, which looked exactly like
+   * a tap that did nothing (owner, 2026-09-13).
+   */
+  errorText: string | null;
   /** `null` when there is nothing to show — the caller renders nothing. */
   buttonText: string | null;
   /** True only when there is a real choice to offer. */
@@ -74,6 +87,7 @@ export function useExplorerLink({
   onPress: onExplorerOpened,
 }: UseExplorerLinkParams): UseExplorerLinkResult {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [failed, setFailed] = useState(false);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
   const availableExplorers = useMemo(
@@ -98,13 +112,19 @@ export function useExplorerLink({
   const openExplorer = useCallback(
     async (explorer: ExplorerWithKey) => {
       const url = getTransactionUrl(blockchain, environment, explorer.key, txHash);
+      setFailed(false);
       if (url) {
         try {
           await openUrl(url);
           onExplorerOpened?.(url, explorer.name);
         } catch (error) {
           console.warn('Failed to open explorer URL:', error);
+          setFailed(true);
         }
+      } else {
+        // No URL for this explorer on this network: the press cannot succeed,
+        // and the user is owed the same sentence as a browser that refused.
+        setFailed(true);
       }
       setMenuVisible(false);
     },
@@ -129,6 +149,7 @@ export function useExplorerLink({
 
   return {
     buttonText,
+    errorText: failed ? t('transactions.detail.explorerOpenFailed') : null,
     hasMenu,
     onPress: handlePress,
     menuVisible,

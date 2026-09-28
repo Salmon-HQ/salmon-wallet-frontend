@@ -12,7 +12,7 @@
  * from it, tied to it by `WalletFamily`'s rail, with "Derived from {name}" as
  * the derived card's subtitle (spec 025). No index ever appears.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   borderWidth,
@@ -20,21 +20,17 @@ import {
   fontSize,
   fontWeight,
   getAccountAddress,
-  getAccountMnemonic,
   getShortAddress,
   isWatchOnlyAccount,
   letterSpacing,
   spacing,
-  sumIncludedTotals,
   tabularNums,
   useAccountsContext,
-  useBalance,
   useCurrencyContext,
-  useUserConfig,
-  useWalletTotals,
+  useWalletsScreen,
+  useWalletCardDerived,
   type Account,
   type NetworkId,
-  groupWalletFamilies,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -85,54 +81,24 @@ export function WalletsScreen({
   const { accounts, accountId, activeBlockchainAccount, networkId } = accountState;
   const [, { formatValue }] = useCurrencyContext();
 
-  const userConfigAccount = useMemo(
-    () => ({
-      network: {
-        environment: (activeBlockchainAccount
-          ? networkId || 'solana-mainnet'
-          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-        blockchain: 'solana',
-      },
-    }),
-    [activeBlockchainAccount, networkId]
-  );
-  const { excludedFromTotal, setIncludedInTotal } = useUserConfig({
-    activeBlockchainAccount: userConfigAccount,
-  });
-
-  // The eye is the app's one balance-visibility preference, not a second one
-  // for this screen: `useBalance` owns it and persists it. Skipped, so
-  // mounting this screen costs no request — only the preference comes back.
-  const { hiddenBalance, toggleHidden } = useBalance({
-    account: activeBlockchainAccount,
-    networkId: (networkId ?? undefined) as NetworkId | undefined,
-    skip: true,
-  });
-
-  const { totals } = useWalletTotals({
+  // The eye, the aggregated total, the "include in total" set and the
+  // families the screen lists — the shell shared with the mobile twin
+  // (`useWalletsScreen`).
+  const {
+    hiddenBalance,
+    toggleHidden,
+    totals,
+    isIncluded,
+    includedCount,
+    families,
+    aggregated,
+    toggleInclude,
+  } = useWalletsScreen({
     accounts,
-    networkId: (networkId ?? undefined) as NetworkId | undefined,
+    networkId,
+    activeBlockchainAccount,
     includeSpam: showUnverifiedTokens,
   });
-
-  const isIncluded = useCallback(
-    (walletId: string) => !excludedFromTotal.includes(walletId),
-    [excludedFromTotal]
-  );
-
-  const includedCount = accounts.filter((a) => isIncluded(a.id)).length;
-
-  const families = useMemo(() => groupWalletFamilies(accounts), [accounts]);
-
-  const aggregated = useMemo(
-    () =>
-      sumIncludedTotals(
-        accounts.map((a) => a.id),
-        excludedFromTotal,
-        totals
-      ),
-    [accounts, excludedFromTotal, totals]
-  );
 
   const [keepOneNotice, setKeepOneNotice] = useState(false);
 
@@ -146,16 +112,11 @@ export function WalletsScreen({
 
   const handleToggleInclude = useCallback(
     (walletId: string) => {
-      const included = isIncluded(walletId);
       // The total can never be empty: excluding the last included wallet would
       // leave the card reading a number that belongs to nothing.
-      if (included && includedCount <= 1) {
-        setKeepOneNotice(true);
-        return;
-      }
-      void setIncludedInTotal(walletId, !included);
+      if (toggleInclude(walletId)) setKeepOneNotice(true);
     },
-    [includedCount, isIncluded, setIncludedInTotal]
+    [toggleInclude]
   );
 
   return (
@@ -375,20 +336,13 @@ function WalletCard({
   const shortAddress = getShortAddress(address) ?? '';
   // Only a seed has a derivation tree to look through — an imported key or a
   // watched address has nothing to find, so the action is absent rather than
-  // present and inert.
+  // present and inert. The derived accounts this wallet holds on the chain
+  // being read — shared with the mobile twin (`useWalletCardDerived`). Null
+  // slots are holes in the derivation tree, not accounts.
+  const { derived, canRescanEligible } = useWalletCardDerived({ account, networkId });
   // A derived wallet shares its parent's seed: scanning it would walk the
   // same tree and find the same paths, so only the parent offers the scan.
-  const canRescan = !!onRescan && !!getAccountMnemonic(account) && !account.derivedFrom;
-
-  // The derived accounts this wallet holds on the chain being read. Null
-  // slots are holes in the derivation tree, not accounts.
-  const derived = useMemo(() => {
-    const list = networkId ? account.networksAccounts?.[networkId] : undefined;
-    const held = (list ?? []).flatMap((blockchainAccount, index) =>
-      blockchainAccount ? [{ index, address: blockchainAccount.getReceiveAddress?.() ?? '' }] : []
-    );
-    return held.length < 2 ? [] : held;
-  }, [account.networksAccounts, networkId]);
+  const canRescan = !!onRescan && canRescanEligible;
 
   return (
     // A wallet derived from another one is tied to it by `WalletFamily`'s

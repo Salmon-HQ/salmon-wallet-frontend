@@ -7,15 +7,18 @@ import {
   Platform,
   BackHandler,
   Dimensions,
+  Keyboard,
   Animated,
   StyleProp,
   ViewStyle,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   useReducedMotion,
+  withDelay,
   withTiming,
   withSpring,
   runOnJS,
@@ -35,6 +38,13 @@ import {
   withAlpha,
   type Semantic,
   type BottomSheetContainerPropsBase,
+  SheetHeightContext,
+  SheetParentContext,
+  useHeldSheetSize,
+  useSheetTurn,
+  type SheetTurnMotion,
+  SHEET_EXIT_MS,
+  SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
@@ -47,7 +57,9 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const BACKDROP_OPACITY = 0.8;
+// The backdrop is drawn at its token's full alpha (`overlay.backdrop`), the
+// same on both twins — the token is the whole effect.
+const BACKDROP_OPACITY = 1;
 
 /**
  * The drag handle, redrawn: 44x5 rather than 70x6.
@@ -59,6 +71,13 @@ const BACKDROP_OPACITY = 0.8;
 const HANDLE_WIDTH = 44;
 const HANDLE_HEIGHT = 5;
 const DRAG_THRESHOLD = 150;
+/**
+ * The drag-release spring — the one animation in the app with no `motionMs`
+ * duration at all, and a deliberate exception to the duration vocabulary
+ * rather than an oversight. A gesture release has to follow the finger's
+ * velocity at the moment it lets go, which a fixed duration cannot express:
+ * a spring is the only model that takes that velocity as an input.
+ */
 const SPRING_CONFIG = {
   damping: 20,
   stiffness: 200,
@@ -76,10 +95,7 @@ const SPRING_CONFIG = {
  * mean guessing — `SendSheet` carried its own `ANIMATION_DURATION = 300`,
  * which did not match this at all.
  */
-export const SHEET_EXIT_MS = motionMs.ebb;
-
-/** Slack before the watchdog decides the exit callback is not coming. */
-const EXIT_WATCHDOG_GRACE_MS = 120;
+export { SHEET_EXIT_MS };
 
 export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase {
   /** Whether to show the top fade gradient driven by scroll offset */
@@ -156,6 +172,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   background,
   dragAreaStyle,
   dismissible = true,
+  maxHeight,
+  height,
   testID,
 }) => {
   const styles = useThemedStyles(stylesFor);
@@ -163,11 +181,33 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
+  // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).
+  const {
+    sheetHeight,
+    sheetMaxHeight,
+    release: releaseHeld,
+  } = useHeldSheetSize(visible, height, maxHeight);
+
+  // What this sheet is drawn at, for the sheets it opens: a nested sheet
+  // reads it and rises to exactly this (`useParentSheetHeight`).
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const handleSheetLayout = useCallback((event: LayoutChangeEvent) => {
+    setMeasuredHeight(event.nativeEvent.layout.height);
+  }, []);
+
   // The thermocline is the sheet material: every sheet whose caller passes
   // no explicit `background` grounds on the thick tier — same fill-and-clip
   // geometry the Receive sheet pioneered. A caller with its own `background`
   // still wins.
   const resolvedBackground = background ?? <Thermocline tier="thick" style={styles.thermocline} />;
+
+  // Where "gone" is: one sheet-height below its resting place, the way a
+  // native sheet leaves (UIKit's sheet and Material's bottom sheet both
+  // translate by their own height, so every sheet takes the same time to
+  // go whatever its size — owner, 2026-09-17: the short Activity detail
+  // read faster than the tall catalogue when both crossed the whole screen).
+  // The first-ever rise starts from the screen's edge, before any layout.
+  const restingBelow = sheetHeight ?? measuredHeight ?? SCREEN_HEIGHT;
 
   // Reanimated shared values for the sheet and backdrop
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -197,6 +237,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const closedReportedRef = useRef(false);
   const completeClose = useCallback(() => {
     setIsRendered(false);
+    releaseHeld();
     dragY.value = 0;
     backdropOpacity.value = 0;
     // Reported once per departure: the watchdog below and the animation's own
@@ -204,19 +245,61 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-  }, [dragY, backdropOpacity, onClosed]);
+    releaseParentTurnRef.current();
+  }, [dragY, backdropOpacity, onClosed, releaseHeld]);
+  const completeCloseRef = useRef(completeClose);
+  completeCloseRef.current = completeClose;
+  const completeCloseLatest = useCallback(() => completeCloseRef.current(), []);
+
+  // Sequential, never stacked (see `useSheetTurn`, shared with the DOM
+  // twin): as a child this sheet rises only after the parent has slid down
+  // and draws no backdrop of its own; as a parent, `yielded` keeps it
+  // mounted, off-screen, backdrop up, while its child is showing.
+  const turnMotion: SheetTurnMotion = {
+    sink: () => {
+      translateY.value = withTiming(restingBelow, exit);
+    },
+    rise: () => {
+      translateY.value = withTiming(0, enter);
+    },
+    // Dismissed while the child was up: already down, only the backdrop goes.
+    leave: () => {
+      backdropOpacity.value = withTiming(0, exit);
+      setTimeout(completeCloseLatest, SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS);
+    },
+  };
+  const {
+    parent,
+    yielded,
+    isYielded,
+    childEnterDelayMs,
+    parentHandle,
+    holdParentTurn,
+    releaseParentTurn,
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, turnMotion);
+  const releaseParentTurnRef = useRef(releaseParentTurn);
+  releaseParentTurnRef.current = releaseParentTurn;
+
+  // Read at call time by the open / close effect, so a callback's identity
+  // never re-runs it (a nested sheet used to rise and fall in a loop that way).
+  const latest = useRef({ parent, childEnterDelayMs, holdParentTurn });
+  latest.current = { parent, childEnterDelayMs, holdParentTurn };
 
   // Animate in / out when `visible` changes
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
       dragY.value = 0;
-      translateY.value = withTiming(0, enter);
-      backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
+      const { parent: parentNow, childEnterDelayMs: delay } = latest.current;
+      latest.current.holdParentTurn();
+      translateY.value = withDelay(delay, withTiming(0, enter));
+      if (!parentNow) backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
-      translateY.value = withTiming(SCREEN_HEIGHT, exit, (finished) => {
+      // A yielded parent waits for its child to leave (`releaseFromChild`).
+      if (isYielded()) return undefined;
+      translateY.value = withTiming(restingBelow, exit, (finished) => {
         if (finished) {
-          runOnJS(completeClose)();
+          runOnJS(completeCloseLatest)();
         }
       });
       backdropOpacity.value = withTiming(0, exit);
@@ -225,12 +308,18 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       // cancelled mid-exit — a re-show, a shared-value reassignment — used to
       // leave the sheet mounted with no way back. The watchdog closes it
       // anyway, a beat after the exit was due.
-      const watchdog = setTimeout(completeClose, SHEET_EXIT_MS + EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(
+        completeCloseLatest,
+        SHEET_EXIT_MS + SHEET_EXIT_WATCHDOG_GRACE_MS
+      );
       return () => clearTimeout(watchdog);
     }
     return undefined;
+    // Only the state that opens or closes re-runs this; the rest is read
+    // through `latest`, so a parent render never restarts the rise — a nested
+    // sheet used to rise and fall in a loop that way (owner, 2026-09-17).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, isRendered, completeClose]);
+  }, [visible, isRendered]);
 
   // Android hardware back button
   useEffect(() => {
@@ -255,6 +344,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       // Only allow dragging downward
       if (event.translationY > 0) {
         dragY.value = event.translationY;
+        if (parent) return;
         backdropOpacity.value = interpolate(
           event.translationY,
           [0, SCREEN_HEIGHT * 0.5],
@@ -265,19 +355,27 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     .onEnd((event) => {
       isDragging.value = false;
       if (event.translationY > DRAG_THRESHOLD || event.velocityY > 500) {
-        translateY.value = withTiming(SCREEN_HEIGHT, exit);
-        backdropOpacity.value = withTiming(0, exit);
+        translateY.value = withTiming(restingBelow, exit);
+        if (!parent) backdropOpacity.value = withTiming(0, exit);
         runOnJS(closeSheet)();
       } else {
         dragY.value = withSpring(0, SPRING_CONFIG);
-        backdropOpacity.value = withSpring(BACKDROP_OPACITY, SPRING_CONFIG);
+        if (!parent) backdropOpacity.value = withSpring(BACKDROP_OPACITY, SPRING_CONFIG);
       }
     });
 
+  // A tap outside while typing means "put the keyboard away", not "leave":
+  // the sheet closes on the next tap, once the field has let go.
   const handleBackdropPress = useCallback(() => {
+    if (Keyboard.isVisible()) {
+      Keyboard.dismiss();
+      return;
+    }
     if (!dismissible) return;
     onClose();
-  }, [onClose, dismissible]);
+    // Under a child the backdrop is the parent's: a tap on it closes both.
+    parent?.dismissWithChild();
+  }, [onClose, dismissible, parent]);
 
   const handleRequestClose = useCallback(() => {
     if (!dismissible) return;
@@ -316,12 +414,31 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           <TouchableWithoutFeedback onPress={handleBackdropPress}>
             <Reanimated.View
               style={[styles.backdrop, backdropAnimatedStyle]}
+              testID={testID ? `${testID}-backdrop` : undefined}
               pointerEvents={visible ? 'auto' : 'none'}
             />
           </TouchableWithoutFeedback>
 
           {/* Sheet */}
-          <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
+          <Reanimated.View
+            style={[
+              styles.sheetContainer,
+              // A ceiling in pixels, when the caller measured one: Home's
+              // catalogue stops just below the Send / Receive / Activity row
+              // instead of covering it.
+              sheetMaxHeight != null && { maxHeight: sheetMaxHeight },
+              // A fixed height, when the caller measured one: Home's
+              // catalogue rises exactly to the sub-tab row however little it
+              // has to show.
+              sheetHeight != null && { height: sheetHeight },
+              sheetAnimatedStyle,
+              style,
+            ]}
+            onLayout={handleSheetLayout}
+            accessibilityElementsHidden={yielded}
+            importantForAccessibility={yielded ? 'no-hide-descendants' : 'auto'}
+            testID={yielded ? 'sheet-yielded' : undefined}
+          >
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
               {/* No scales. Every sheet in the app mounts through here —
@@ -330,23 +447,30 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                   words, inputs and amounts at once. */}
             </BlurTargetView>
 
-            <BlurTargetProvider value={blurTargetRef}>
-              {/* Draggable area: handle + header content */}
-              <GestureDetector gesture={panGesture}>
-                <Reanimated.View style={[styles.dragArea, dragAreaStyle]}>
-                  {/* Drag handle bar */}
-                  <View style={styles.handleContainer}>
-                    <View style={styles.handle} />
-                  </View>
+            <SheetHeightContext.Provider value={sheetHeight ?? measuredHeight}>
+              <SheetParentContext.Provider value={parentHandle}>
+                <BlurTargetProvider value={blurTargetRef}>
+                  {/* Draggable area: handle + header content */}
+                  <GestureDetector gesture={panGesture}>
+                    <Reanimated.View
+                      testID="sheet-drag-handle"
+                      style={[styles.dragArea, dragAreaStyle]}
+                    >
+                      {/* Drag handle bar */}
+                      <View style={styles.handleContainer}>
+                        <View style={styles.handle} />
+                      </View>
 
-                  {/* Header: custom content wins, otherwise plain title */}
-                  {headerContent ?? title ?? null}
-                </Reanimated.View>
-              </GestureDetector>
+                      {/* Header: custom content wins, otherwise plain title */}
+                      {headerContent ?? title ?? null}
+                    </Reanimated.View>
+                  </GestureDetector>
 
-              {/* Sheet body */}
-              {children}
-            </BlurTargetProvider>
+                  {/* Sheet body */}
+                  {children}
+                </BlurTargetProvider>
+              </SheetParentContext.Provider>
+            </SheetHeightContext.Provider>
 
             {/* Top fade gradient for scrollable content */}
             {showFadeGradient && scrollOffsetValue && (
@@ -397,8 +521,13 @@ const stylesFor = (t: Semantic) =>
       // the container itself stays transparent.
       borderTopLeftRadius: borderRadius.header,
       borderTopRightRadius: borderRadius.header,
-      borderTopWidth: borderWidth.sheet,
-      borderTopColor: t.border.default,
+      // The edge follows the two top corners: a one-side border stops where
+      // the curve starts, so the stroke is drawn on top and both sides
+      // (the sides sit on the screen's own edge) and left off the bottom,
+      // where the sheet meets the device (owner, 2026-09-17).
+      borderWidth: borderWidth.sheet,
+      borderBottomWidth: 0,
+      borderColor: t.border.default,
       // No minHeight: a sheet hugs its content (a short receipt ends where it
       // ends); tall content is bounded by maxHeight and scrolls inside.
       maxHeight: '92%',
@@ -407,7 +536,7 @@ const stylesFor = (t: Semantic) =>
     // The material fills the sheet and clips itself to the sheet's own top
     // corners.
     thermocline: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderTopLeftRadius: borderRadius.header,
       borderTopRightRadius: borderRadius.header,
     },

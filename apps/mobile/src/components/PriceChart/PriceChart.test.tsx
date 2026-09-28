@@ -12,6 +12,7 @@ jest.mock('@salmon/shared', () => ({
   fontSize: { body: 16 },
   s: (size: number) => size,
   motionMs: { drift: 280, tide: 720 },
+  CHART_PULSE_MS: 720,
   opacity: { faint: 0.4, soft: 0.7, full: 1 },
   semantic: {
     status: { success: '#0f0', danger: '#f00' },

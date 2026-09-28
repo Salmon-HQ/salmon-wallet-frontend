@@ -192,15 +192,15 @@ export async function findDerivedAccounts(
 export interface UseDerivedAccountsScanOptions {
   /**
    * Whether the hook runs the silent pass on its own for a wallet not yet
-   * scanned. `true` (the default) is Home's session-wide owner; `false` is a
-   * surface that only ever scans when the user asks — the success screen's
-   * "Check derivables" — and must not start a pass the button then trips on.
+   * scanned. Off by default (owner, 2026-09-23): the question about derived
+   * accounts is asked only when the user asks for the search — Wallets'
+   * rescan, the success screen's "Check derivables" — never on its own.
    */
   automatic?: boolean;
 }
 
 export function useDerivedAccountsScan({
-  automatic = true,
+  automatic = false,
 }: UseDerivedAccountsScanOptions = {}): UseDerivedAccountsScanResult {
   const [{ accounts, activeAccount, locked, ready }, accountActions] = useAccountsContext();
   const { derivedScannedAccountIds, markDerivedScanned, isLoading } = useUserConfig({

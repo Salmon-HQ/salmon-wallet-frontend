@@ -16,6 +16,8 @@ const mockClearSessionKey = vi.fn();
 const eventListeners = new Map<string, EventListener>();
 
 vi.mock('@salmon/shared', () => ({
+  SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
+  isSignableSolanaAccount: () => false,
   colors: {
     background: { primary: '#000' },
     accent: { primary: '#0f0', tint: '#0f04' },
@@ -53,6 +55,7 @@ vi.mock('@salmon/shared/utils/account', () => ({
 
 vi.mock('@salmon/ui', () => ({
   WalletInitErrorScreen: () => null,
+  ConfirmationHost: () => null,
   // The popup's first frame names the water column itself, so the mock has to
   // carry the host class the real barrel exports.
   waterColumnHost: 'water-column-host',

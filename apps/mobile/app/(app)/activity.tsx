@@ -11,7 +11,7 @@
  * fewer rows in it. The selection is screen state and leaves with the screen.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Share, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,7 +46,9 @@ import {
   type ActivityRow,
 } from '../../src/components';
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
+import { useUnverifiedTokens } from '../../src/contexts/DeveloperModeContext';
 import { useSemantic } from '../../src/theme/useThemedStyles';
+import { Spinner } from '../../src/components/Spinner';
 
 // ============================================================================
 // Screen
@@ -67,6 +69,7 @@ export default function ActivityScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
   const explorerNetworkId = (networkId ?? 'solana-mainnet') as NetworkId;
+  const showUnverifiedTokens = useUnverifiedTokens();
 
   const { transactions, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
     useTransactions({
@@ -74,6 +77,7 @@ export default function ActivityScreen() {
       networkId: explorerNetworkId,
       skip: !ready || !activeBlockchainAccount,
       account: activeBlockchainAccount,
+      includeSpam: showUnverifiedTokens,
     });
 
   // The app's one balance-visibility preference, not a second one for this
@@ -157,7 +161,7 @@ export default function ActivityScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color={semantic.accent.fill} />
+        <Spinner color={semantic.accent.fill} />
       </View>
     );
   }, [loadingMore, semantic]);

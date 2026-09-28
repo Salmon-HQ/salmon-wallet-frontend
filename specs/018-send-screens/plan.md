@@ -8,7 +8,7 @@ Reuse map: `SendSheet/{SendSheet,StepAddressAmount,StepConfirmation,…}` → re
 
 Eight rules from the motion audit go into DESIGN.md §Motion ("The balance
 block's motion"); fixes: gate `exiting` like `entering` (A); un-nest the verb
-and split `contentSwap` into per-cause flags (B, D); reset scroll fade on chain
+and split `contentChange` into per-cause flags (B, D); reset scroll fade on chain
 change (F); `PendingValue` on the change row + em-dash for undefined, drop the
 `= 0` defaults (G); rule 8 resolved as "both travel": the active chain dot
 gains the same drift width/position transition as the sub-tab underline.

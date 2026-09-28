@@ -19,7 +19,7 @@ const item = (
   overrides: Partial<PendingActivityBannerProps['items'][number]> = {}
 ): PendingActivityBannerProps['items'][number] => ({
   id: 'sig-1',
-  kind: 'swap',
+  kind: 'send',
   status: 'pending',
   detail: '1 SOL → 210 USDC',
   dismissible: true,
@@ -41,16 +41,16 @@ describe('PendingActivityBanner', () => {
           item({ id: 'a', status: 'pending' }),
           item({ id: 'b', kind: 'send', status: 'confirmed' }),
           item({ id: 'c', kind: 'send', status: 'failed' }),
-          item({ id: 'd', kind: 'swap', status: 'expired' }),
+          item({ id: 'd', kind: 'send', status: 'expired' }),
         ]}
         onDismiss={vi.fn()}
       />
     );
 
-    expect(screen.getByText('pending.swap.pending')).toBeTruthy();
+    expect(screen.getByText('pending.send.pending')).toBeTruthy();
     expect(screen.getByText('pending.send.confirmed')).toBeTruthy();
     expect(screen.getByText('pending.send.failed')).toBeTruthy();
-    expect(screen.getByText('pending.swap.expired')).toBeTruthy();
+    expect(screen.getByText('pending.send.expired')).toBeTruthy();
     // Expiry means nothing was spent — the row says so rather than leaving the
     // user to guess whether their funds moved.
     expect(screen.getByText('pending.expiredHint')).toBeTruthy();

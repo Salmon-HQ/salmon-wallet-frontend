@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, FlatList, StyleSheet, ListRenderItem, RefreshControl } from 'react-native';
 import TokenListItem from './TokenListItem';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { spacing } from '@salmon/shared';
 import type { Token } from '@salmon/shared';
 import type { TokenListProps } from './types';
@@ -49,6 +49,7 @@ const TokenList: React.FC<TokenListProps> = ({
   onTokenPress,
   hiddenBalance = false,
   ListHeaderComponent,
+  ListFooterComponent,
   ListEmptyComponent,
   onRefresh,
   contentContainerStyle,
@@ -76,7 +77,7 @@ const TokenList: React.FC<TokenListProps> = ({
   // The pull's own state — see the refresh control below for why it is not the
   // caller's. Declared before any conditional return to comply with the Rules
   // of Hooks. `mounted` guards the late resolution of a refresh whose list has
-  // already gone (a chain switch swaps this component out mid-request).
+  // already gone (a chain switch changes this component out mid-request).
   const [pulling, setPulling] = React.useState(false);
   const mounted = React.useRef(true);
   React.useEffect(() => {
@@ -142,6 +143,7 @@ const TokenList: React.FC<TokenListProps> = ({
         windowSize={5}
         removeClippedSubviews={true}
         ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={ListFooterComponent}
         ListEmptyComponent={emptyComponent}
         refreshControl={refreshControl}
         onScroll={onScroll}

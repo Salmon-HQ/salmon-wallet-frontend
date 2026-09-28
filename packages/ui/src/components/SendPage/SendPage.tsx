@@ -19,18 +19,19 @@
  * retry fires the same transfer from there. A broadcast whose outcome could
  * not be established is not a failure: the heading says "Send unconfirmed".
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   classifyTransactionError,
   getShortAddress,
   useNftTransfer,
+  useSendCommitState,
   useSendFlowState,
   useWaitExit,
   type SendRecipient,
   type SendStep,
   type SendToken,
-  sendFailureReport,
+  type TransferRequest,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -61,6 +62,7 @@ export function SendPage({
   networkId,
   account,
   nft = null,
+  initialTokenAddress,
   onBack,
   onSuccess,
   loading = false,
@@ -75,7 +77,7 @@ export function SendPage({
   // screen floats in only once something has actually moved.
   const [stepped, setStepped] = useState(false);
 
-  const flow = useSendFlowState({ account, blockchain, tokens });
+  const flow = useSendFlowState({ account, blockchain, tokens, initialTokenAddress });
   const { token, setToken, recipient, setRecipient, amount, setAmount, sendHook, txId, submit } =
     flow;
 
@@ -93,9 +95,8 @@ export function SendPage({
     setNftError(null);
     try {
       const result = await sendNft(nft, recipient.resolvedAddress ?? recipient.address);
+      // The receipt waits for the wave to leave; see the effect below.
       setNftTxId(result.txId);
-      setStepped(true);
-      setStep('success');
     } catch (err) {
       setNftError(classifyTransactionError(err));
     } finally {
@@ -104,20 +105,10 @@ export function SendPage({
   }, [nft, recipient, nftSending, sendNft]);
 
   // ---------------------------------------------------------------- token ---
-  const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
-  const sendFailed = sendHook.status === 'failed';
-  const failure = sendFailureReport(sendHook, t);
-
-  // One wait spans the whole commit, signature through settle.
-  const isCommitted = isSending || sendHook.settling;
-  // `held` already means "committed, or still leaving", so it IS the render
-  // condition — twin of the native send. Gating on `txId` as well collapsed
-  // the branch in the same render a send failed, so `visible={false}` was
-  // never committed, the exit never ran, and `onWaveGone` never fired, leaving
-  // this hook stuck with `held` true for the life of the flow. The failure
-  // panel below renders over the wait, so its ebb plays out of sight
-  // (spec 031 §4).
-  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  // The commit state — the wait's hold, the failure's words — decided once
+  // for both platforms, twin of the native send (spec 031 §4).
+  const { isSending, sendFailed, failure, isCommitted, isWaveHeld, onWaveGone } =
+    useSendCommitState(sendHook, t);
 
   // The receipt waits for the wave's report, then takes the review's place.
   const navigatedRef = useRef(false);
@@ -128,9 +119,21 @@ export function SendPage({
     setStep('success');
   }, [txId, isWaveHeld]);
 
+  // The collectible's wait: the same wave over the signature, the landing and
+  // the settle, and the same rule — the receipt comes once its last wave has
+  // left, with its way home already open.
+  const nftCommitted = nftSending || nftSettling;
+  const { held: isNftWaveHeld, onExited: onNftWaveGone } = useWaitExit(nftCommitted);
+  useEffect(() => {
+    if (!nftTxId || isNftWaveHeld || navigatedRef.current) return;
+    navigatedRef.current = true;
+    setStepped(true);
+    setStep('success');
+  }, [nftTxId, isNftWaveHeld]);
+
   // Once signed, this screen is the only place the user learns whether their
   // money moved, so ambient navigation must not discard it.
-  const ownsScreen = isCommitted || nftSending || step === 'success';
+  const ownsScreen = isCommitted || nftSending || isNftWaveHeld || step === 'success';
   useEffect(() => {
     onFlowLockChange?.(ownsScreen);
     return () => onFlowLockChange?.(false);
@@ -162,6 +165,18 @@ export function SendPage({
     [setRecipient, goToStep, nft]
   );
 
+  // A pasted payment request: the flow starts from what it fixed and lands on
+  // whichever step the request left open (spec 033 US3).
+  const { startFromRequest } = flow;
+  const handleRequest = useCallback(
+    (request: TransferRequest) => {
+      const outcome = startFromRequest(request, tokens);
+      if (outcome.ok) goToStep(outcome.next);
+      return outcome;
+    },
+    [startFromRequest, tokens, goToStep]
+  );
+
   // A token picked on review may not cover the amount already typed: the fee
   // re-estimates itself, but the amount is the one thing review cannot fix.
   const handleReviewSelectToken = useCallback(
@@ -177,7 +192,9 @@ export function SendPage({
 
   // The failure surface floats up into the space the wave left.
   const failureRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  // Before paint, not after: from a passive effect the element painted one
+  // frame at rest and only then jumped to the float's hidden start.
+  useLayoutEffect(() => {
     if (sendFailed) floatEntering(failureRef.current, reducedMotion);
   }, [sendFailed, reducedMotion]);
 
@@ -212,6 +229,7 @@ export function SendPage({
             liveBalance={flow.liveBalance}
             onSelectToken={setToken}
             nft={nft}
+            onRequest={handleRequest}
           />
         )}
 
@@ -248,6 +266,8 @@ export function SendPage({
             onSelectToken={handleReviewSelectToken}
             nft={nft}
             nftError={nftError}
+            request={flow.request}
+            liveBalance={flow.liveBalance}
           />
         )}
 
@@ -274,6 +294,22 @@ export function SendPage({
           title={t('transaction.pendingSend')}
           subtitle={summary}
           onExited={onWaveGone}
+        />
+      )}
+
+      {isNftWaveHeld && nft && recipient && (
+        <LoadingScreen
+          visible={nftCommitted}
+          waves
+          title={t('nft.send.pendingTitle')}
+          subtitle={t('nft.send.pendingSummary', {
+            name: nft.name ?? '',
+            address:
+              getShortAddress(recipient.resolvedAddress || recipient.address) ??
+              recipient.resolvedAddress ??
+              recipient.address,
+          })}
+          onExited={onNftWaveGone}
         />
       )}
 

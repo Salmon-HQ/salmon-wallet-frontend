@@ -20,11 +20,17 @@ appId: io.salmonwallet.app
     timeout: 10000
 - assertVisible: 'Keep your seed phrase safe!'
 - takeScreenshot: screenshots/smoke/auth/create-step1
+# Scroll the warning to its end; the button arms only then (a warning short
+# enough to fit arms on its own, and the swipe is harmless).
 - swipe:
-    start: '50%, 60%'
-    end: '50%, 25%'
-- waitForAnimationToEnd:
-    timeout: 2000
+    from:
+      id: 'seed-warning-body'
+    direction: UP
+- extendedWaitUntil:
+    visible:
+      id: 'seed-warning-continue-button'
+      enabled: true
+    timeout: 5000
 - tapOn:
     id: 'seed-warning-continue-button'
 - extendedWaitUntil:

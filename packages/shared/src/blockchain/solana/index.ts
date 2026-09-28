@@ -21,7 +21,26 @@ export {
 export type { CreateSolanaAccountOptions, DeriveSolanaAccountsOptions } from './factory';
 
 // Networks
-export { SOLANA_TRANSACTION_VERSION, transactionVersionFor } from './networks';
+export { SOLANA_TRANSACTION_VERSION, solanaRpcFor, transactionVersionFor } from './networks';
+export { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from './known-mints';
+
+// Solana Pay transfer requests (the wallet asks and pays on the standard)
+export {
+  TRANSFER_REQUEST_MEMO_MAX_BYTES,
+  encodeTransferRequest,
+  isTransferRequestUri,
+  parseTransferRequest,
+} from './transfer-request';
+export type {
+  TransferRequest,
+  TransferRequestParseReason,
+  TransferRequestParseResult,
+} from './transfer-request';
+export { findTransferRequestSettlement } from './transfer-request-settlement';
+export type {
+  TransferRequestSettlement,
+  TransferRequestSettlementQuery,
+} from './transfer-request-settlement';
 
 // Transfer functions
 export {
@@ -69,19 +88,6 @@ export {
   getPublicKeyFromDomain,
 } from './domains';
 
-// Swap functions
-export {
-  getSwapQuote,
-  executeSwap,
-  swap,
-  getExpectedOutput,
-  getMinimumOutput,
-  getPriceImpact,
-  parseQuoteInfo,
-} from './swap';
-// Swap types are defined in types/swap.ts — import from there directly
-// DI function types (GetSwapOrderFn, ExecuteSwapApiFn, GetTokenListFn) remain in ./swap
-
 // Transaction history functions
 export {
   getPreparedSolanaTransactions,
@@ -92,7 +98,6 @@ export type { SignAndSendPreparedSolanaTransactionsOptions } from './prepared-tr
 export {
   getRecentTransactions,
   isTransferTransaction,
-  isSwapTransaction,
   isNftTransaction,
   isSuccessful,
   isFailed,

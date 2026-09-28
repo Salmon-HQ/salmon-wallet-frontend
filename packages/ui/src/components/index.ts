@@ -18,13 +18,11 @@ export { WalletHeader } from './WalletHeader';
 export type { WalletHeaderProps } from './WalletHeader';
 
 // TokenList - Token list display components
-export { TokenList, TokenListItem, TokenListSkeleton, TokenLogo } from './TokenList';
-export type {
-  TokenListItemProps,
-  TokenListProps,
-  TokenListSkeletonProps,
-  TokenLogoProps,
-} from './TokenList';
+export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
+// TokenLogo - a token's mark, the same one the list, the picker, the detail and the receipt draw
+export { TokenLogo } from './TokenLogo';
+export type { TokenLogoProps } from './TokenLogo';
+export type { TokenListItemProps, TokenListProps, TokenListSkeletonProps } from './TokenList';
 
 // LoadingScreen - Animated loading overlay
 export { LoadingScreen } from './LoadingScreen';
@@ -97,17 +95,20 @@ export type { StepIndicatorProps } from './StepIndicator';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
-// FadeThrough - keyed top-level content swap under a persistent frame
+// FadeThrough - keyed top-level content change under a persistent frame
 export { FadeThrough } from './FadeThrough';
 export type { FadeThroughProps } from './FadeThrough';
 
-// SinkFloat - keyed content swap that speaks the transition verb: sink, beat, float
+// SinkFloat - keyed content change that speaks the transition verb: sink, beat, float
 export { SinkFloat } from './SinkFloat';
 export type { SinkFloatProps } from './SinkFloat';
 
 // PendingValue - a value being recalculated inside a container that stays put
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
+// ValueActionsRow - a line of text with the controls that act on it pinned right
+export { ValueActionsRow } from './ValueActionsRow';
+export type { ValueActionsRowProps } from './ValueActionsRow';
 
 // PendingActivityBanner - Global in-flight transaction surface
 export { PendingActivityBanner } from './PendingActivityBanner';
@@ -165,6 +166,8 @@ export type { NftCardProps, NftCardSkeletonProps, NftData } from './NftCard';
 
 // NftDetailPage - Full-page NFT detail view with image, attributes, and actions
 export { NftDetailPage } from './NftDetailPage';
+export { NftMedia } from './NftMedia';
+export type { NftMediaProps } from './NftMedia';
 export type { NftAttribute, NftDetailData, NftDetailPageProps } from './NftDetailPage';
 
 // TokenDetailPage - the token detail screen: balance, chart, market data, about
@@ -175,45 +178,58 @@ export type { TokenDetailContentProps, TokenDetailPageProps } from './TokenDetai
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
 
+// The transaction-display things Activity and the detail share — filed by what they are.
+export { AddressCopyRow } from './AddressCopyRow';
+export type { AddressCopyRowProps } from './AddressCopyRow';
+export { ExplorerLinkButton } from './ExplorerLinkButton';
+export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
+export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
+export type { TransactionMarkProps } from './TransactionMark';
+
 // TransactionDetail - one transaction's facts, as a step inside the Activity page
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
 
-// TransactionHistoryPage - the Activity page: list and detail steps
-export {
-  AddressCopyRow,
-  ConversionRateDisplay,
-  ExplorerLinkButton,
-  PriceImpactBadge,
-  TransactionHistoryPage,
-  TransactionItem,
-} from './TransactionHistoryPage';
+// ActivityPage - the Activity page: list and detail steps
+export { ActivityPage, TransactionItem } from './ActivityPage';
 export type {
-  AddressCopyRowProps,
-  ConversionRateDisplayProps,
-  ExplorerLinkButtonProps,
-  PriceImpactBadgeProps,
-  SwapRoute,
-  SwapRouteHop,
   Transaction,
   TransactionFee,
-  TransactionHistoryPageProps,
+  ActivityPageProps,
   TransactionItemProps,
   TransactionTokenAmount,
   TransactionStatus as TxStatus,
   TransactionType as TxType,
-} from './TransactionHistoryPage';
+} from './ActivityPage';
 
 // SendPage - the send flow: recipient, amount, review, receipt (mobile's send routes)
-export { SendFailure, SendPage, TokenPickerSheet, TokenSelectList } from './SendPage';
+export { SendFailure, SendPage } from './SendPage';
+// The token picker: Send's, and any Powerup's that picks a token.
+export { TokenPickerSheet } from './TokenPickerSheet';
+export type { TokenPickerSheetProps } from './TokenPickerSheet';
+export { TokenSelectList } from './TokenSelectList';
+export type { TokenSelectListProps } from './TokenSelectList';
+export type { SendFailureProps, SendPageProps, SendStep, SendToken } from './SendPage';
+
+// TransactionConfirmation - core's confirmation screen and the cover it opens in
+// (spec 027 §2). The Powerup pages (MemoPage, PowerupsPage) are NOT exported
+// here: the extension imports them through `@salmon/ui/powerups`, the entry
+// the build flag aliases.
+export {
+  ConfirmationButtons,
+  ConfirmationDetailsCard,
+  ConfirmationExchange,
+  ConfirmationHost,
+  TransactionConfirmation,
+} from './TransactionConfirmation';
 export type {
-  SendFailureProps,
-  SendPageProps,
-  SendStep,
-  SendToken,
-  TokenPickerSheetProps,
-  TokenSelectListProps,
-} from './SendPage';
+  ConfirmationButtonsProps,
+  ConfirmationDetailsCardProps,
+  ConfirmationExchangeProps,
+  ConfirmationRow,
+  ProposalDisplay,
+  TransactionConfirmationProps,
+} from './TransactionConfirmation';
 
 // DAppApproval - Shared approval views for web and extension
 export {
@@ -228,6 +244,10 @@ export type {
   DAppSignMessageApprovalViewProps,
   DAppTransactionApprovalViewProps,
 } from './DAppApproval';
+
+// HoldToApproveButton - generic press-and-hold confirm control
+export { HoldToApproveButton } from './HoldToApproveButton';
+export type { HoldToApproveButtonProps } from './HoldToApproveButton';
 
 // AuthFlow - the onboarding screens, on the slot grid
 export {
@@ -291,10 +311,6 @@ export type {
   DerivedAccountCardSkeletonProps,
 } from './DerivedAccountCard';
 
-// TransactionSuccessScreen - the exchange receipt, an alias over ReceiptScreen
-export { TransactionSuccessScreen } from './TransactionSuccessScreen';
-export type { TransactionSuccessScreenProps } from './TransactionSuccessScreen';
-
 // AccountsPanel - Account list management
 export { AccountsPanel } from './AccountsPanel';
 export type { AccountsPanelProps } from './AccountsPanel';
@@ -351,6 +367,9 @@ export type { AboutPanelProps } from './AboutPanel';
 export { Card } from './Card';
 export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
 
+export { AmountEntryCard } from './AmountEntryCard';
+export type { AmountEntryCardProps } from './AmountEntryCard';
+
 // ListRow - a Card laid out as leading mark / title stack / trailing slot
 export { ListRow, RowPress, StopPress } from './ListRow';
 export type { ListRowEmphasis, ListRowPadding, ListRowProps } from './ListRow';
@@ -375,6 +394,20 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 export { SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
 
+// Spinner - the small inline wait (a field, a row, a working button); a whole surface waits with LoadingScreen
+export { Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
+
+// PressSpecular - the light a press puts on a surface
+export { PressSpecular, setSpecularOrigin } from './PressSpecular';
+export type { PressSpecularProps } from './PressSpecular';
+// Toggle - the kit's on/off control (a settings row's switch, a Powerup's install control)
+export { Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';
+
+// Hostname - a hostname rendered whole, never clipped at its deciding end
+export { Hostname } from './Hostname';
+
 // IconBubble - the well every glyph in the redesign sits inside
 export { IconBubble } from './IconBubble';
 export type {
@@ -389,6 +422,8 @@ export type {
 // ShimmerRect / SkeletonRow - the placeholder atoms, and the row they compose
 export { ShimmerRect } from './ShimmerRect';
 export type { ShimmerRectProps } from './ShimmerRect';
+export { FactsCard } from './FactsCard';
+export type { FactsCardProps } from './FactsCard';
 export { SkeletonRow } from './SkeletonRow';
 export type { SkeletonRowProps } from './SkeletonRow';
 
@@ -421,6 +456,17 @@ export type { BalanceHeaderProps } from './BalanceHeader';
 // HomeTabOrderSheet - where the user arranges Home's sub-tabs
 export { HomeTabOrderSheet } from './HomeTabOrderSheet';
 export type { HomeTabOrderSheetProps } from './HomeTabOrderSheet';
+
+// PowerupsFab - the `+` that opens the Powerups catalogue over Home. The
+// catalogue itself is NOT here: it reaches the app through `@salmon/ui/powerups`,
+// the entry the build flag aliases.
+export { PowerupsFab } from './PowerupsFab';
+export type { PowerupsFabProps } from './PowerupsFab';
+export { PowerupBadge } from './PowerupBadge';
+// DataAttribution - a data provider's mandatory credit (CoinGecko), once per screen
+export { DataAttribution } from './DataAttribution';
+export type { DataAttributionProps } from './DataAttribution';
+export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
 
 // DerivedAccountsSheet - which of a seed's funded paths become wallets
 export { DerivedAccountsSheet } from './DerivedAccountsSheet';

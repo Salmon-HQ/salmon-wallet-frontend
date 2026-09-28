@@ -535,7 +535,8 @@ export function createSemantic(mode: ThemeMode) {
    * overlays on dark imagery (`scrim`, from `colors.overlay.darkHover`).
    */
   const overlay = {
-    backdrop: pick({ dark: 'rgba(7, 9, 17, 0.7)', light: 'rgba(22, 28, 45, 0.7)' }),
+    /** Behind a sheet. Darker than the scrim's neighbours on purpose (owner, 2026-09-17): both twins draw it at full opacity, so this alpha is the whole effect. */
+    backdrop: pick({ dark: 'rgba(7, 9, 17, 0.84)', light: 'rgba(22, 28, 45, 0.84)' }),
     /** The press/selection wash on a card (was colors.interactive.highlight). */
     highlight: pick({ dark: 'rgba(255, 255, 255, 0.2)', light: 'rgba(22, 28, 45, 0.2)' }),
     scrim: pick({ dark: 'rgba(7, 9, 17, 0.9)', light: 'rgba(22, 28, 45, 0.9)' }),
@@ -592,6 +593,12 @@ export function createSemantic(mode: ThemeMode) {
      * two tones collapsed to one) — the instruction copy under the scan window.
      */
     hint: neutral[300],
+    /**
+     * The overlay's own primary ink: the title and the messages over the
+     * camera. `text.primary` follows the mode and goes dark on light, which
+     * on this always-dark ground does not read.
+     */
+    ink: neutral[50],
   } as const;
 
   /**

@@ -19,6 +19,8 @@ export interface TokenListProps extends TokenListPropsBase {
   ListHeaderComponent?: React.ReactElement | null;
   /** Component to render when list is empty */
   ListEmptyComponent?: React.ReactElement | null;
+  /** Component to render below the last row (the data provider's credit) */
+  ListFooterComponent?: React.ReactElement | null;
   /**
    * Called when the user pulls to refresh. The list raises its own refresh
    * affordance for the duration of the returned promise and for nothing else —

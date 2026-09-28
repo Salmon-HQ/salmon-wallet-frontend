@@ -9,13 +9,11 @@ import { test as base, expect, chromium, type BrowserContext, type Page } from '
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadTestEnv } from './env';
+import { EXT_DIST, loadTestEnv } from './env';
 
 loadTestEnv();
 
 const suiteRoot = path.dirname(fileURLToPath(import.meta.url));
-const appRoot = path.resolve(suiteRoot, '..');
-const extDist = path.join(appRoot, 'dist/chrome-mv3');
 
 type ExtensionOptions = {
   /** Which directory under `profiles/` to run in. */
@@ -40,9 +38,9 @@ export const test = base.extend<ExtensionOptions & ExtensionFixtures>({
   freshProfile: [false, { option: true }],
 
   context: async ({ profileName, freshProfile }, use) => {
-    if (!fs.existsSync(extDist)) {
+    if (!fs.existsSync(EXT_DIST)) {
       throw new Error(
-        `Missing extension build at ${extDist}. Run: pnpm --filter @salmon/extension build`
+        `Missing extension build at ${EXT_DIST}. Run: pnpm --filter @salmon/extension build`
       );
     }
 
@@ -61,8 +59,8 @@ export const test = base.extend<ExtensionOptions & ExtensionFixtures>({
       headless: process.env.SALMON_E2E_HEADLESS === '1',
       viewport: { width: 1280, height: 900 },
       args: [
-        `--disable-extensions-except=${extDist}`,
-        `--load-extension=${extDist}`,
+        `--disable-extensions-except=${EXT_DIST}`,
+        `--load-extension=${EXT_DIST}`,
         '--no-first-run',
         '--no-default-browser-check',
       ],

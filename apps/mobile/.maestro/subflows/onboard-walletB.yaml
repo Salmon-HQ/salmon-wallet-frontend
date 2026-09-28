@@ -1,11 +1,20 @@
 appId: io.salmonwallet.app
 ---
 # Onboard Wallet B from a clean install. Lands on Home with
-# "Switch wallet account" visible.
+# `home-screen` visible.
 - clearState
 - launchApp
 - runFlow: ./dev-launcher-pass.yaml
 - runFlow: ./recover-walletB.yaml
+# Key derivation (PBKDF2, 210k iterations) runs after the password screen and
+# takes over 30 s on a cold emulator. What follows it is either the biometric
+# offer or Success: wait for whichever comes, then skip biometrics if offered.
+# Checking for the offer before derivation ends finds nothing, and the offer
+# then covers Success for good.
+- extendedWaitUntil:
+    visible:
+      id: 'biometric-skip-button|success-go-to-wallet-button'
+    timeout: 90000
 - runFlow:
     when:
       visible:
@@ -13,14 +22,23 @@ appId: io.salmonwallet.app
     commands:
       - tapOn:
           id: 'biometric-skip-button'
-# Success comes first; leaving it presents the first-run analytics consent,
-# which is the final onboarding step. Decline to reach Home.
 - extendedWaitUntil:
-    visible: 'Congratulations!'
-    timeout: 90000
+    visible:
+      id: 'success-go-to-wallet-button'
+    timeout: 30000
 - tapOn:
     id: 'success-go-to-wallet-button'
-- runFlow: ./decline-analytics-consent.yaml
+# Let the transition settle before asking what is on screen.
+- waitForAnimationToEnd:
+    timeout: 5000
+# Consent is asked once per install and not on every build (a release build
+# without analytics skips it), so it is handled when it appears.
+- runFlow:
+    when:
+      visible:
+        id: 'analytics-consent-screen'
+    file: ./decline-analytics-consent.yaml
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 30000

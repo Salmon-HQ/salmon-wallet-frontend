@@ -25,7 +25,7 @@ export function LockOverlay({ children }: LockOverlayProps): React.ReactElement 
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     // Above every other plane the shell paints: the water, the tab content,
     // the header slot and any sheet that was open when the lock landed.
     zIndex: 1000,

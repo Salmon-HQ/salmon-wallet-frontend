@@ -47,55 +47,62 @@ import { fileURLToPath } from 'node:url';
  * 2962 after the settings-panel data hoist, 2641 after hoisting
  * ExplorerLinkButton's press routing and row data into useExplorerLink and
  * KeyValueRow's tone-ink mapping (valueInkFor) into packages/shared/src/types/ui;
+ * 2461 after the address truncation and the price-impact tables moved into
+ * the shared contracts, 2443 after the token picker's filter, search and
+ * balance label became one shared hook (2026-09-13);
  * every lot that hoists logic into packages/shared lowers it to the new
  * measurement. It may only go down.
  */
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2641;
+// 2026-09-17: 2250 → 2306. Five new twin pairs landed on one branch
+// (Payments tab and sheets, the Powerup usage line, the kit Toggle, Send's
+// token label, the recents skeleton) — rendering that legitimately exists
+// twice, no screen logic copied; the logic of each lives in packages/shared.
+// See docs/DOM-PARITY.md for when a raise is allowed.
+// 2026-09-17, later: 2306 → 2330. One more twin pair (Payments'
+// `PaymentRequestList`, the rows the tab and the history screen share) and
+// the history screen itself: rendering only, the scope and the rows are the
+// shared hook's.
+// 2026-09-23: 2330 → 2344. The Home screens render the tab-order sheet and
+// the receive sheet back to back on both platforms now that the automatic
+// derived-accounts sheet between them is gone — 19 lines of the same JSX,
+// no logic. Measured after hoisting the two derivations that had crept in
+// (readSettledPaymentLink for the recipient steps, passwordCheckErrorKey for
+// the password screens).
+// 2026-09-23, later: 2344 → 2358. The payment request sheet offers Copy and
+// Remove on every platform (owner's call; Share is gone from mobile), so the
+// two sheets and the two request lists now render the same controls — 14
+// more lines of the same JSX, no logic.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2358;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
-  AccountPanels: [
-    'AccountAddPanel',
-    'AccountAvatarPanel',
-    'AccountEditPanel',
-    'AccountNamePanel',
-    'AccountsPanel',
-  ],
-  Activity: ['TransactionHistoryPage'],
-  AddressPanels: ['AddressAddPanel', 'AddressBookPanel', 'AddressEditPanel'],
+  Activity: ['ActivityPage'],
   ConfirmSheet: ['ConfirmDialog'],
   Icon: ['Icon'],
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
+  MemoScreen: ['MemoPage'],
+  PaymentsScreen: ['PaymentsPage'],
+  PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],
-  SettingsSelectors: [
-    'SettingsSelectorList',
-    'AppearanceSelector',
-    'CurrencySelector',
-    'ExplorerSelector',
-    'LanguageSelector',
-  ],
-  Skeleton: ['SkeletonRow'],
-  TokenDetail: ['TokenAbout', 'TokenMarketData'],
-  PressSpecular: ['Button'],
 };
 
 /** Mobile-only components, with the reason the DOM has nothing to mirror. */
 export const MOBILE_ONLY = {
   QRScanner: 'camera — the side panel has no scanner; paste is the DOM path',
-  PowerupsFab: 'POWERUPS_SURFACE_ENABLED=false for the submission; spec 027 rebuilds it',
-  PowerupBadge: 'same — powerups surface closed',
-  SwapScreen: 'swap retired until spec 027; deleted from both when it lands',
   SubAccountSelector: 'NftSectionHeader chips — mobile-only per spec 025 §Wallets',
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
-  TokenLogo: 'expo-image wrapper; the DOM uses <img> inside IconBubble/TokenList',
   InputAddress: 'the DOM twin is RecipientInput inside InputAddress (mapped from Send)',
-  TokenSelector: 'the DOM picker is TokenPickerSheet inside SendPage',
+  NetworkSelector: 'RN network switcher; the DOM side panel has no network-switch surface',
 };
 
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */
 export const DOM_ONLY = {
   DAppApproval: 'extension-only surface (lot 5)',
+  Hostname:
+    'the unclipped counterparty hostname on dApp signing and trusted-app screens — extension-only surfaces',
+  HoldToApproveButton:
+    'no mobile twin; mobile Button/HoldToCopyButton is a different control (copy, not approve)',
   AuthFlow: 'onboarding screens are routes on mobile (app/(auth)); components on the DOM',
   WaterColumn:
     'the DOM ground composer; mobile mounts DepthBackground + ScalesBackground in the tab shell',
@@ -117,7 +124,7 @@ export const DOM_ONLY = {
 export const SCREENS = {
   '(app)/(tabs)/index': 'apps/extension/src/pages/home/HomePage.tsx',
   '(app)/wallets': 'packages/ui/src/components/WalletsScreen/WalletsScreen.tsx',
-  '(app)/activity': 'packages/ui/src/components/TransactionHistoryPage/TransactionHistoryPage.tsx',
+  '(app)/activity': 'packages/ui/src/components/ActivityPage/ActivityPage.tsx',
   '(app)/send/index': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/send/amount': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/send/review': 'packages/ui/src/components/SendPage/SendPage.tsx',
@@ -141,8 +148,6 @@ export const SCREENS = {
 
 /** Mobile-only routes, with the reason. */
 export const MOBILE_ONLY_SCREENS = {
-  '(app)/powerups':
-    'powerups surface closed for the submission; the route redirects Home, spec 027',
   '(auth)/biometric-setup': 'biometrics are native; the extension has none',
   '+html': 'Expo scaffolding',
   '+not-found': 'Expo scaffolding',

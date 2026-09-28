@@ -22,11 +22,11 @@ import Constants from 'expo-constants';
 import {
   componentSizes,
   fontFamilyNative,
-  useOpenLink,
   fontSize,
   lineHeight,
   spacing,
   type Semantic,
+  SALMON_LINKS,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { BrandMark, Wordmark } from '../BrandMark';
@@ -35,17 +35,10 @@ import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { ListRow } from '../ListRow';
 import { SectionLabel } from '../SectionLabel';
+import { WarningNotice } from '../WarningNotice';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useOpenExternalLink } from '../../../hooks/useOpenExternalLink';
 import type { AboutPanelProps } from './types';
-
-const LINKS = {
-  website: 'https://www.salmonwallet.io',
-  twitter: 'https://x.com/salmonwallet',
-  github: 'https://github.com/salmon-wallet',
-  medium: 'https://medium.com/@salmonwallet',
-  privacy: 'https://www.salmonwallet.io/privacy',
-  terms: 'https://www.salmonwallet.io/terms',
-} as const;
 
 /** The leading well every link row carries — Settings' own row bubble size. */
 const ROW_BUBBLE_SIZE = 40;
@@ -54,7 +47,7 @@ const SOCIAL_BUBBLE_SIZE = 44;
 
 export function AboutPanel({ onBack }: AboutPanelProps) {
   const { t } = useTranslation();
-  const openLink = useOpenLink();
+  const { openLink, errorText } = useOpenExternalLink();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
 
@@ -114,9 +107,9 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
           {t('actions.follow_us')}
         </SectionLabel>
         <View style={styles.socialButtons}>
-          {renderSocialButton(XLogoIcon, LINKS.twitter, 'twitter')}
-          {renderSocialButton(GithubLogoIcon, LINKS.github, 'github')}
-          {renderSocialButton(BookOpenIcon, LINKS.medium, 'medium')}
+          {renderSocialButton(XLogoIcon, SALMON_LINKS.twitter, 'twitter')}
+          {renderSocialButton(GithubLogoIcon, SALMON_LINKS.github, 'github')}
+          {renderSocialButton(BookOpenIcon, SALMON_LINKS.medium, 'medium')}
         </View>
       </View>
 
@@ -126,20 +119,27 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
       </Card>
 
       <View style={styles.linksSection}>
-        {renderLinkRow(GlobeIcon, t('settings.about_website', 'Website'), LINKS.website, 'website')}
+        {renderLinkRow(
+          GlobeIcon,
+          t('settings.about_website', 'Website'),
+          SALMON_LINKS.website,
+          'website'
+        )}
         {renderLinkRow(
           FileTextIcon,
           t('settings.about_privacy', 'Privacy Policy'),
-          LINKS.privacy,
+          SALMON_LINKS.privacy,
           'privacy'
         )}
         {renderLinkRow(
           FileIcon,
           t('settings.about_terms', 'Terms of Service'),
-          LINKS.terms,
+          SALMON_LINKS.terms,
           'terms'
         )}
       </View>
+
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
 
       <Text style={styles.copyright}>
         {t('settings.about_copyright', { year: new Date().getFullYear() })}

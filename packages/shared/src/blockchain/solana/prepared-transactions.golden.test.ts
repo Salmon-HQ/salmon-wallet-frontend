@@ -18,7 +18,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { VersionedTransaction } from '@solana/web3.js';
 import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
-import { signAndSendPreparedSolanaTransactions } from './prepared-transactions';
+import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
+import { SYSTEM_PROGRAM } from '../../core/verify';
 
 // TEST-ONLY deterministic signer. The seed is a constant so golden vectors are
 // reproducible; this key holds no funds and must never be used outside tests.
@@ -32,7 +33,7 @@ const testSigner = (seed: number) =>
 const FIXTURE_V0_WITH_LUT_B64 =
   'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
-/** The blockhash the flow swaps in, standing in for a `getLatestBlockhash` result. */
+/** The blockhash the flow substitutes, standing in for a `getLatestBlockhash` result. */
 const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 
 /**
@@ -45,7 +46,7 @@ const GOLDEN_SIGNED_TX_B64 =
   'AQP0u3pM3IOmDbpifVx/KGvkAGFpoW2/IffEexm7QUJ+uZ7MlHGPH8XToXo5eNbS6OPIAbFCe3sX5J4HDzx6BwyAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADjMtr5L6vs6LY/96RABeX9/Zr6FYdWthxalfkEs7jQgQEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
 
 describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
-  it('pins the bytes of a blockhash-swapped v0 transaction with lookup tables', async () => {
+  it('pins the bytes of a blockhash-substituted v0 transaction with lookup tables', async () => {
     // Only the RPC is stubbed; the transaction codec and the signer are real.
     const sendTransaction = vi.fn().mockReturnValue({ send: async () => 'sig' });
     const rpc = {
@@ -56,8 +57,17 @@ describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
       getSignatureStatuses: () => ({
         send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
       }),
+      getEpochInfo: () => ({ send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }) }),
     };
     const rpcSubscriptions = {
+      // Slots that never arrive: the blockhash-expiry verdict stays open.
+      slotNotifications: () => ({
+        subscribe: async () =>
+          (async function* () {
+            await new Promise(() => undefined);
+            yield { slot: 0n }; // unreachable: the promise above never settles
+          })(),
+      }),
       signatureNotifications: () => ({
         /* eslint-disable require-yield -- generator that completes without yielding; block form survives reformatting */
         subscribe: async () =>
@@ -73,8 +83,12 @@ describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
       getRpcSubscriptions: () => rpcSubscriptions,
     };
 
-    await signAndSendPreparedSolanaTransactions(account as never, {
-      transaction: FIXTURE_V0_WITH_LUT_B64,
+    // Through core/broadcast directly rather than the NFT flow above it: the
+    // vector pins the codec path, and these bytes are a bare lamport transfer,
+    // which an NFT flow's own rules refuse before they ever reach the codec.
+    await signAndSendSolanaTransaction(account as never, FIXTURE_V0_WITH_LUT_B64, {
+      feePayer: String(account.signer.address),
+      allowedPrograms: [SYSTEM_PROGRAM],
     });
 
     const sent = sendTransaction.mock.calls[0][0] as string;

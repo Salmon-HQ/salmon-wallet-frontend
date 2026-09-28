@@ -38,6 +38,8 @@
     "check:parity": "node scripts/check-dom-parity.mjs",
     "check:parity:report": "node scripts/check-dom-parity.mjs --report",
     "check:parity:test": "node --test scripts/check-dom-parity.test.mjs",
+    "check:e2e-selectors": "node scripts/check-e2e-selectors.mjs",
+    "check:e2e-selectors:test": "node --test scripts/check-e2e-selectors.test.mjs",
     "pack:sources": "git archive --format=zip -o salmon-wallet-source.zip HEAD",
     "check:duplicates": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters console",
     "check:duplicates:report": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report",
@@ -45,24 +47,30 @@
     "format:check": "prettier --check .",
     "check:no-secrets": "node scripts/check-no-secrets.mjs",
     "check:manifest": "node scripts/check-manifest-permissions.mjs",
-    "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check"
+    "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check",
+    "check:powerups-bundle": "node scripts/check-powerups-bundle.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@typescript-eslint/eslint-plugin": "^8.66.0",
-    "@typescript-eslint/parser": "^8.66.0",
+    "@eslint/js": "^9.39.5",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
-    "jscpd": "^5.0.14",
+    "jscpd": "^5.2.0",
     "prettier": "3.9.6",
-    "turbo": "^2.10.9"
+    "turbo": "^2.10.12"
   },
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
-    "node": "^20.19.0 || ^22.12.0"
+    "node": "^24.15.0"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "esbuild",
+      "utf-8-validate"
+    ],
     "peerDependencyRules": {
       "allowedVersions": {
         "@solana-program/token-2022>@solana/kit": "8",
@@ -73,12 +81,8 @@
       }
     },
     "overrides": {
-      "react": "19.2.0",
-      "react-dom": "19.2.0",
-      "@expo/dom-webview": "55.0.5",
-      "@expo/log-box": "55.0.10",
-      "@expo/metro-runtime": "55.0.10",
-      "expo-manifests": "55.0.10",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "tar": ">=7.5.7",
       "@xmldom/xmldom": ">=0.8.15 <0.9",
       "node-forge": ">=1.4.0 <2",
@@ -107,7 +111,7 @@
       "@solana-name-service/sns-sdk-kit>@solana-program/token": "0.16.1"
     },
     "patchedDependencies": {
-      "expo-camera@55.0.21": "patches/expo-camera@55.0.21.patch"
+      "expo-camera@57.0.5": "patches/expo-camera@57.0.5.patch"
     }
   }
 }

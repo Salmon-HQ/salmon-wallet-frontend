@@ -50,6 +50,41 @@ describe('DAppTransactionApprovalView', () => {
     cleanup();
   });
 
+  it('says the overview covers only the first transaction of a batch', () => {
+    render(
+      <DAppTransactionApprovalView
+        {...baseProps}
+        requestSummary="signAllTransactions"
+        transactionCount={4}
+        effects={{
+          kind: 'undetermined',
+          account: ACCOUNT,
+          reason: 'batch-not-previewable',
+          detail: 'four transactions',
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('batch-first-only')).toHaveTextContent('describe only the first one');
+  });
+
+  it('leaves the overview unqualified for a single transaction', () => {
+    render(
+      <DAppTransactionApprovalView
+        {...baseProps}
+        effects={{ kind: 'no-effect', account: ACCOUNT }}
+      />
+    );
+
+    expect(screen.queryByTestId('batch-first-only')).not.toBeInTheDocument();
+  });
+
+  it('cannot be approved while the preview is still running', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effectsLoading effects={null} />);
+
+    expect(screen.getByRole('button', { name: 'APPROVE & SIGN' })).toBeDisabled();
+  });
+
   it('keeps the ordinary button for a transaction the preview understood', () => {
     render(
       <DAppTransactionApprovalView

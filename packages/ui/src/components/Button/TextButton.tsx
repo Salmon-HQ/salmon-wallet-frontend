@@ -15,7 +15,7 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { ButtonSpinner } from './ButtonSpinner';
+import { Spinner } from '../Spinner';
 import type { TextButtonProps } from './types';
 
 export function TextButton({
@@ -68,7 +68,7 @@ export function TextButton({
       }}
     >
       {loading ? (
-        <ButtonSpinner color={ink} size={16} />
+        <Spinner color={ink} size={16} />
       ) : (
         <>
           {icon}

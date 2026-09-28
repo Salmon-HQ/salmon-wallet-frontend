@@ -183,7 +183,7 @@ export class SolanaReadAccount {
    * Fetches the Solana balance items from the backend API. Items
    * already carry `price`, `usdBalance`, and `priceChange24h` when the
    * salmon-api `multichain/price-enrichers/solana-price-enricher` has a
-   * Jupiter quote for the asset.
+   * price for the asset.
    */
   private async fetchSolanaBalance(opts?: { includeSpam?: boolean }): Promise<SolanaBalanceItem[]> {
     return this.fetchBalanceFn(this.network.id, this.publicKey, opts);
@@ -404,24 +404,6 @@ export class SolanaReadAccount {
    */
   async getFeaturedTokens(): Promise<never> {
     throw new Error('method_not_supported: Use token list service directly');
-  }
-
-  /**
-   * Gets the best swap quote for a token pair.
-   * @deprecated Use swap service directly
-   * @throws Error indicating method is not supported
-   */
-  async getBestSwapQuote(): Promise<never> {
-    throw new Error('method_not_supported: Use swap service directly');
-  }
-
-  /**
-   * Creates a swap transaction.
-   * @deprecated Use swap service directly
-   * @throws Error indicating method is not supported
-   */
-  async createSwapTransaction(): Promise<never> {
-    throw new Error('method_not_supported: Use swap service directly');
   }
 
   /**

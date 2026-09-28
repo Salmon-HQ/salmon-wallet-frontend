@@ -68,14 +68,14 @@ const TOKEN: Token = {
 // Text nodes only — the nested change `<Text>` is its own element, so
 // `props.children` on the outer Text is `[ticker, price, <Text>change</Text>]`.
 // Joining just the leaf strings gives the row's full text run.
-const textOf = (node: { props: { children: unknown } }): string =>
+const textOf = (node: { props: { children?: unknown } }): string =>
   [node.props.children]
     .flat(Infinity)
     .map((child) =>
       typeof child === 'string'
         ? child
         : child && typeof child === 'object' && 'props' in (child as never)
-          ? textOf(child as { props: { children: unknown } })
+          ? textOf(child as { props: { children?: unknown } })
           : ''
     )
     .join('');

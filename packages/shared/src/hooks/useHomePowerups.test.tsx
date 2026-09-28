@@ -1,0 +1,179 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The Powerups slice of Home, held once for both platforms: which installed
+ * ids become `useHomeShell` sub-tabs, and the catalogue drawer's own state
+ * plus its entries. Exercised against the real shared registry (one entry,
+ * `memo`) rather than a mock — the whole point is that both Homes read the
+ * same one.
+ */
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+}));
+
+import { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';
+import { EMPTY_POWERUP_ALLOWLIST, type PowerupAllowlist } from '../utils/powerupSwitches';
+
+const MEMO_ON: PowerupAllowlist = { enabled: ['memo'], disabled: {} };
+import { getPowerupCatalog } from '../powerups/catalog';
+import { POWERUPS } from '../powerups/registry';
+
+describe('useHomePowerupTabs', () => {
+  it('carries nothing installed', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({ installed: [], powerups: POWERUPS, allowlist: MEMO_ON })
+    );
+    expect(result.current).toEqual([]);
+  });
+
+  it('turns an installed id into a Home tab, labelled and networked', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({ installed: ['memo'], powerups: POWERUPS, allowlist: MEMO_ON })
+    );
+    expect(result.current).toEqual([
+      { key: 'memo', label: 'memo.catalog.name', networks: ['solana-mainnet', 'solana-devnet'] },
+    ]);
+  });
+
+  it('withholds an installed Powerup the backend does not list — fail closed', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({
+        installed: ['memo'],
+        powerups: POWERUPS,
+        allowlist: EMPTY_POWERUP_ALLOWLIST,
+      })
+    );
+    expect(result.current).toEqual([]);
+  });
+
+  it('keeps the tab of a switched-off Powerup and carries its reason', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({
+        installed: ['memo'],
+        powerups: POWERUPS,
+        allowlist: { enabled: [], disabled: { memo: 'maintenance' } },
+      })
+    );
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0].disabledReason).toBe('maintenance');
+  });
+
+  it('ignores an installed id the registry does not carry', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupTabs({ installed: ['not-a-powerup'], powerups: POWERUPS, allowlist: MEMO_ON })
+    );
+    expect(result.current).toEqual([]);
+  });
+});
+
+describe('useHomePowerupsCatalog', () => {
+  function setup(installed: string[] = []) {
+    const install = vi.fn();
+    const hook = renderHook(
+      (props: { installed: string[]; networkId: string; allowlist?: PowerupAllowlist }) =>
+        useHomePowerupsCatalog({
+          powerupTabs: props.installed.includes('memo')
+            ? [{ key: 'memo', label: 'Memo', networks: ['solana-mainnet', 'solana-devnet'] }]
+            : [],
+          installed: props.installed,
+          install,
+          networkId: props.networkId,
+          powerups: POWERUPS,
+          getCatalog: getPowerupCatalog,
+          allowlist: props.allowlist ?? MEMO_ON,
+        }),
+      { initialProps: { installed, networkId: 'solana-mainnet' } }
+    );
+    return { ...hook, install };
+  }
+
+  it('starts closed', () => {
+    const { result } = setup();
+    expect(result.current.catalogVisible).toBe(false);
+  });
+
+  it('toggles and closes the drawer', () => {
+    const { result } = setup();
+    act(() => result.current.handleCatalogToggle());
+    expect(result.current.catalogVisible).toBe(true);
+    act(() => result.current.handleCatalogClose());
+    expect(result.current.catalogVisible).toBe(false);
+  });
+
+  it('offers the real entry on its network, unlisted elsewhere', () => {
+    const { result, rerender } = renderHook(
+      (networkId: string) =>
+        useHomePowerupsCatalog({
+          powerupTabs: [],
+          installed: [],
+          install: vi.fn(),
+          networkId,
+          powerups: POWERUPS,
+          getCatalog: getPowerupCatalog,
+          allowlist: MEMO_ON,
+        }),
+      { initialProps: 'solana-mainnet' }
+    );
+    expect(result.current.catalogEntries.map((entry) => entry.id)).toEqual(['memo']);
+
+    rerender('bitcoin-mainnet');
+    expect(result.current.catalogEntries).toEqual([]);
+  });
+
+  it('withholds a Powerup the backend does not list, and refuses to install it', () => {
+    const { result, install } = setup([]);
+    act(() => result.current.handleInstall('memo'));
+    expect(install).toHaveBeenCalledWith('memo');
+
+    const closed = renderHook(() =>
+      useHomePowerupsCatalog({
+        powerupTabs: [],
+        installed: [],
+        install,
+        networkId: 'solana-mainnet',
+        powerups: POWERUPS,
+        getCatalog: getPowerupCatalog,
+        allowlist: EMPTY_POWERUP_ALLOWLIST,
+      })
+    );
+    expect(closed.result.current.catalogEntries).toEqual([]);
+    install.mockClear();
+    act(() => closed.result.current.handleInstall('memo'));
+    expect(install).not.toHaveBeenCalled();
+  });
+
+  it('keeps an installed, switched-off Powerup listed with its reason', () => {
+    const { result } = renderHook(() =>
+      useHomePowerupsCatalog({
+        powerupTabs: [],
+        installed: ['memo'],
+        install: vi.fn(),
+        networkId: 'solana-mainnet',
+        powerups: POWERUPS,
+        getCatalog: getPowerupCatalog,
+        allowlist: { enabled: [], disabled: { memo: 'maintenance' } },
+      })
+    );
+    const memo = result.current.catalogEntries.find((entry) => entry.id === 'memo');
+    expect(memo?.installed).toBe(true);
+    expect(memo?.disabledReason).toBe('maintenance');
+  });
+
+  it('installs only a real Powerup id', () => {
+    const { result, install } = setup();
+    act(() => result.current.handleInstall('memo'));
+    expect(install).toHaveBeenCalledWith('memo');
+
+    install.mockClear();
+    act(() => result.current.handleInstall('not-a-powerup'));
+    expect(install).not.toHaveBeenCalled();
+  });
+
+  it('lists installed tabs as removable', () => {
+    const { result } = setup(['memo']);
+    expect(result.current.removableTabKeys).toEqual(['memo']);
+  });
+});

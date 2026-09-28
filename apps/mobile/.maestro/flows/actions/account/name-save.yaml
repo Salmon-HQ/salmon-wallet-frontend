@@ -3,11 +3,11 @@ appId: io.salmonwallet.app
 # Rename Account #1 → "Wallet A Test".
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-accounts-panel.yaml
-# Tap edit pencil on Account #1 row (right side)
+# The first account's edit control: account ids are generated, so the id is
+# matched by its stable prefix and the first match taken.
 - tapOn:
-    point: '82%,18%'
-- waitForAnimationToEnd:
-    timeout: 3000
+    id: 'account-edit-.*'
+    index: 0
 - assertVisible: 'Edit Account'
 - tapOn:
     id: 'account-edit-name'

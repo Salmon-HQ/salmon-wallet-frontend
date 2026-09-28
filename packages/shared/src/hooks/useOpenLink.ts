@@ -1,44 +1,72 @@
 /**
- * useOpenLink - Hook for opening external URLs
+ * useOpenLink — opening an external URL, and saying so when it does not open.
  *
- * Provides a callback function to safely open URLs in the system browser.
- * Handles validation and error cases.
+ * Opening a link is platform territory (`window.open` on the DOM,
+ * `Linking.openURL` on native), so the caller passes `openUrl` in — a wrapper,
+ * never a bare method reference: RN's `Linking` is an instance whose `openURL`
+ * reads `this`, and a bare reference throws before reaching the native module
+ * (the explorer link lost a day to exactly that, 2026-09-13).
  *
- * Used by settings screens (about.tsx, support.tsx) to open external links.
+ * The hook exists for the other half: a link that does not open used to be a
+ * `console.warn` and nothing else, which on a phone looks identical to a tap
+ * that did nothing. `errorText` is set when the open fails and cleared by the
+ * next attempt; the caller draws it as an inline notice.
+ *
+ * @module hooks/useOpenLink
  */
 
-import { useCallback } from 'react';
-import { Linking } from 'react-native';
+import { useCallback, useState } from 'react';
+
+export interface UseOpenLinkParams {
+  /** Opens a URL — `window.open` on the DOM, `(url) => Linking.openURL(url)` on native. */
+  openUrl: (url: string) => void | Promise<void>;
+  /** `useTranslation()`'s `t`, for the failure line. */
+  t: (key: string) => string;
+}
+
+export interface UseOpenLinkResult {
+  /** Opens `url`. Never throws: a failure becomes `errorText`. */
+  openLink: (url: string) => Promise<void>;
+  /** Set when the last attempt did not reach a browser; `null` otherwise. */
+  errorText: string | null;
+}
 
 /**
- * Hook that returns a function to open external URLs
+ * Is this a link to the web, and nothing else?
  *
- * @returns A callback function that takes a URL string and attempts to open it
- *
- * @example
- * ```tsx
- * function MyComponent() {
- *   const openLink = useOpenLink();
- *
- *   return (
- *     <TouchableOpacity onPress={() => openLink('https://example.com')}>
- *       <Text>Open Link</Text>
- *     </TouchableOpacity>
- *   );
- * }
- * ```
+ * Some of what reaches here is remote: a token's homepage and a network's
+ * attribution link both come from salmon-api, and a row that says "Visit
+ * Website" must not be able to hand `Linking.openURL` an arbitrary scheme and
+ * launch whichever handler an attacker names.
  */
-export function useOpenLink() {
-  return useCallback(async (url: string) => {
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        console.warn(`Cannot open URL: ${url}`);
+function isWebUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+export function useOpenLink({ openUrl, t }: UseOpenLinkParams): UseOpenLinkResult {
+  const [failed, setFailed] = useState(false);
+
+  const openLink = useCallback(
+    async (url: string) => {
+      setFailed(false);
+      if (!isWebUrl(url)) {
+        setFailed(true);
+        return;
       }
-    } catch (error) {
-      console.error('Failed to open link:', error);
-    }
-  }, []);
+      try {
+        await openUrl(url);
+      } catch (error) {
+        console.warn('Failed to open link:', error);
+        setFailed(true);
+      }
+    },
+    [openUrl]
+  );
+
+  return { openLink, errorText: failed ? t('errors.linkOpenFailed') : null };
 }

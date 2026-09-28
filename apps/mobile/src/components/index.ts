@@ -10,6 +10,9 @@
 
 export { Card } from './Card';
 
+export { AmountEntryCard } from './AmountEntryCard';
+export type { AmountEntryCardProps } from './AmountEntryCard';
+
 // TextField - the plain text field: a Card holding a TextInput
 export { TextField } from './TextInput';
 export type { TextFieldProps } from './TextInput';
@@ -22,6 +25,13 @@ export { ListRow } from './ListRow';
 export type { ListRowPadding, ListRowProps } from './ListRow';
 
 export { IconBubble } from './IconBubble';
+export { Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
+export { PressSpecular } from './PressSpecular';
+export type { PressSpecularProps } from './PressSpecular';
+export { Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';
+export { WalletInitErrorScreen } from './WalletInitErrorScreen';
 export type {
   IconBubbleProps,
   IconBubbleShape,
@@ -40,6 +50,8 @@ export { StateBlock } from './StateBlock';
 export type { StateBlockProps, StateBlockTone } from './StateBlock';
 
 export { PowerupBadge } from './PowerupBadge';
+export { DataAttribution } from './DataAttribution';
+export type { DataAttributionProps } from './DataAttribution';
 export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
 
 export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';
@@ -82,14 +94,18 @@ export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
 
-export { SkeletonRow } from './Skeleton';
-export type { SkeletonRowProps } from './Skeleton';
+export { FactsCard } from './FactsCard';
+export type { FactsCardProps } from './FactsCard';
+export { SkeletonRow } from './SkeletonRow';
+export type { SkeletonRowProps } from './SkeletonRow';
 
 export { SearchField } from './SearchField';
 export type { SearchFieldProps } from './SearchField';
 
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
+export { ValueActionsRow } from './ValueActionsRow';
+export type { ValueActionsRowProps } from './ValueActionsRow';
 
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
@@ -186,16 +202,11 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 
 export { PowerupsFab } from './PowerupsFab';
 export type { PowerupsFabProps } from './PowerupsFab';
+export { PowerupsCatalog } from './PowerupsCatalog';
+export type { PowerupsCatalogProps } from './PowerupsCatalog';
 
 export { TokenList, TokenListItem } from './TokenList';
 export type { TokenListProps, TokenListItemProps } from './TokenList';
-
-export { TokenSelectorModal, useTokenSearch } from './TokenSelector';
-export type {
-  TokenSelectorToken,
-  TokenSelectorModalProps,
-  UseTokenSearchResult,
-} from './TokenSelector';
 
 export { TokenLogo } from './TokenLogo';
 
@@ -204,13 +215,16 @@ export { TokenLogo } from './TokenLogo';
 //
 // TokenInformationSheet is gone (spec 019 — token detail is a screen,
 // `app/(app)/token/[id].tsx`, not a sheet, DESIGN.md §Sheets' state rule).
-// MarketDataCard/AboutCard are kit-composed and shared with Home's Bitcoin
+// TokenMarketData/TokenAbout are kit-composed and shared with Home's Bitcoin
 // column (spec 019 D2/D3, research-mobile.md §2 D2) — the legacy
-// BlurContainer-based TokenMarketData/TokenAbout pair is gone.
+// BlurContainer-based pair of the same name is gone.
 // ---------------------------------------------------------------------------
 
-export { MarketDataCard, AboutCard } from './TokenDetail';
-export type { MarketDataCardProps, AboutCardProps, MarketData } from './TokenDetail';
+export { TokenMarketData } from './TokenMarketData';
+export type { TokenMarketDataProps, MarketData } from './TokenMarketData';
+
+export { TokenAbout } from './TokenAbout';
+export type { TokenAboutProps } from './TokenAbout';
 
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';
@@ -220,6 +234,8 @@ export type { PriceChartProps } from './PriceChart';
 // ---------------------------------------------------------------------------
 
 export { NftCard, NftCardSkeleton } from './NftCard';
+export { NftMedia } from './NftMedia';
+export type { NftMediaProps } from './NftMedia';
 export type {
   NftCardProps,
   NftCardSkeletonProps,
@@ -259,10 +275,16 @@ export type {
   TransactionFee,
 } from './Activity';
 
+// The transaction-display things Activity and the detail share — filed by what they are.
+export { AddressCopyRow } from './AddressCopyRow';
+export type { AddressCopyRowProps } from './AddressCopyRow';
+export { ExplorerLinkButton } from './ExplorerLinkButton';
+export type { ExplorerLinkButtonProps } from './ExplorerLinkButton';
+export { TransactionMark, transactionTypeConfigFor, TYPE_LABEL_KEYS } from './TransactionMark';
+export type { TransactionMarkProps } from './TransactionMark';
+
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';
-
-export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 
 export { ReceiptScreen } from './ReceiptScreen';
 export type {
@@ -273,32 +295,39 @@ export type {
 } from './ReceiptScreen';
 
 // ---------------------------------------------------------------------------
-// Send / Swap
+// Send
 // ---------------------------------------------------------------------------
 
 // The send flow is four screens under `app/(app)/send` (spec 018); what is
 // left here are the pieces those screens share.
-export { RecipientInput, SendFailure, TokenPickerSheet, TokenSelectList } from './Send';
-export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } from './Send';
+export { RecipientInput, SendFailure } from './Send';
+export type { RecipientInputProps, SendFailureProps } from './Send';
+// The token picker: Send's, and any Powerup's that picks a token.
+export { TokenPickerSheet } from './TokenPickerSheet';
+export type { TokenPickerSheetProps } from './TokenPickerSheet';
+export { TokenSelectList } from './TokenSelectList';
+export type { TokenSelectListProps } from './TokenSelectList';
 
+// A Powerup's screens are NOT exported here: Home imports them through
+// `src/powerups`, the entry the build flag aliases, so a build with Powerups
+// off carries none of them (spec 027 §3).
+
+// TransactionConfirmation - core's confirmation screen and its window
 export {
-  SwapScreen,
-  SwapAmountInput,
-  SwapReviewExchange,
-  SwapInputScreen,
-  SwapReviewScreen,
-} from './SwapScreen';
+  ConfirmationButtons,
+  ConfirmationDetailsCard,
+  ConfirmationExchange,
+  ConfirmationHost,
+  TransactionConfirmation,
+} from './TransactionConfirmation';
 export type {
-  SwapToken,
-  SwapQuote,
-  SwapStep,
-  SwapChainType,
-  SwapScreenProps,
-  SwapAmountInputProps,
-  SwapReviewExchangeProps,
-  SwapInputScreenProps,
-  SwapReviewScreenProps,
-} from './SwapScreen';
+  ConfirmationButtonsProps,
+  ConfirmationDetailsCardProps,
+  ConfirmationExchangeProps,
+  ConfirmationRow,
+  ProposalDisplay,
+  TransactionConfirmationProps,
+} from './TransactionConfirmation';
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -308,13 +337,13 @@ export { SettingsScreenLayout } from './SettingsScreenLayout';
 export type { SettingsScreenLayoutProps } from './SettingsScreenLayout';
 
 // Settings Selectors
-export { LanguageSelector } from './SettingsSelectors/LanguageSelector';
-export { AppearanceSelector } from './SettingsSelectors/AppearanceSelector';
-export { NetworkSelector } from './SettingsSelectors/NetworkSelector';
-export { CurrencySelector } from './SettingsSelectors/CurrencySelector';
-export { ExplorerSelector } from './SettingsSelectors/ExplorerSelector';
-export { SettingsSelectorList } from './SettingsSelectors/SettingsSelectorList';
-export type { SettingsSelectorListProps } from './SettingsSelectors/SettingsSelectorList';
+export { LanguageSelector } from './LanguageSelector';
+export { AppearanceSelector } from './AppearanceSelector';
+export { NetworkSelector } from './NetworkSelector';
+export { CurrencySelector } from './CurrencySelector';
+export { ExplorerSelector } from './ExplorerSelector';
+export { SettingsSelectorList } from './SettingsSelectorList';
+export type { SettingsSelectorListProps } from './SettingsSelectorList';
 
 export { TrustedAppsSelector } from './TrustedAppsSelector';
 export { SupportSelector } from './SupportSelector';
@@ -323,8 +352,8 @@ export { SupportSelector } from './SupportSelector';
 // Account Management
 // ---------------------------------------------------------------------------
 
-export { AccountsPanel } from './AccountPanels/AccountsPanel';
-export type { AccountsPanelProps } from './AccountPanels/AccountsPanel';
+export { AccountsPanel } from './AccountsPanel';
+export type { AccountsPanelProps } from './AccountsPanel';
 
 export { WatchOnlyBadge } from './WatchOnlyBadge';
 export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
@@ -333,26 +362,26 @@ export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
 export { WalletFamily } from './WalletFamily';
 export type { WalletFamilyProps } from './WalletFamily';
 
-export { AccountEditPanel } from './AccountPanels/AccountEditPanel';
-export type { AccountEditPanelProps } from './AccountPanels/AccountEditPanel';
+export { AccountEditPanel } from './AccountEditPanel';
+export type { AccountEditPanelProps } from './AccountEditPanel';
 
-export { AccountNamePanel } from './AccountPanels/AccountNamePanel';
-export type { AccountNamePanelProps } from './AccountPanels/AccountNamePanel';
+export { AccountNamePanel } from './AccountNamePanel';
+export type { AccountNamePanelProps } from './AccountNamePanel';
 
-export { AccountAddPanel } from './AccountPanels/AccountAddPanel';
-export type { AccountAddPanelProps } from './AccountPanels/AccountAddPanel';
+export { AccountAddPanel } from './AccountAddPanel';
+export type { AccountAddPanelProps } from './AccountAddPanel';
 
-export { AccountAvatarPanel } from './AccountPanels/AccountAvatarPanel';
-export type { AccountAvatarPanelProps } from './AccountPanels/AccountAvatarPanel';
+export { AccountAvatarPanel } from './AccountAvatarPanel';
+export type { AccountAvatarPanelProps } from './AccountAvatarPanel';
 
 // ---------------------------------------------------------------------------
 // Address Book
 // ---------------------------------------------------------------------------
 
-export { AddressBookPanel } from './AddressPanels/AddressBookPanel';
+export { AddressBookPanel } from './AddressBookPanel';
 export { AddressForm } from './AddressForm';
-export { AddressAddPanel } from './AddressPanels/AddressAddPanel';
-export { AddressEditPanel } from './AddressPanels/AddressEditPanel';
+export { AddressAddPanel } from './AddressAddPanel';
+export { AddressEditPanel } from './AddressEditPanel';
 
 // ---------------------------------------------------------------------------
 // Security

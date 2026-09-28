@@ -7,12 +7,13 @@
  * pending spinner a chip cannot carry.
  */
 import React, { memo } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { contentPadding, s, spacing } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
 import { Chip } from '../Chip';
 import type { SubAccountSelectorProps } from './types';
+import { Spinner } from '../Spinner';
 
 export const SubAccountSelector = memo(function SubAccountSelector({
   accounts,
@@ -33,7 +34,7 @@ export const SubAccountSelector = memo(function SubAccountSelector({
         if (isPending) {
           return (
             <View key={account.index} style={styles.pending}>
-              <ActivityIndicator size="small" color={text.secondary} />
+              <Spinner color={text.secondary} />
             </View>
           );
         }

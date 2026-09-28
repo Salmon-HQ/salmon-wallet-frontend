@@ -23,7 +23,7 @@
  * The task-chrome claim is deliberately gone (spec 018 FR-007). The sheet held
  * it so the home would sink out from under a flow that was about to cover it
  * with an opaque window; a pushed screen already covers Home completely, and
- * there is nothing behind it to disassemble. Swap keeps its own claim — the
+ * there is nothing behind it to disassemble. A Powerup's review keeps its own claim — the
  * context counts claims per publisher, so dropping this one changes nothing
  * for it.
  */
@@ -37,9 +37,8 @@ import {
   getShortAddress,
   isWatchOnlyAccount,
   useAccountsContext,
-  useWaitExit,
+  useSendCommitState,
   type Semantic,
-  sendFailureReport,
 } from '@salmon/shared';
 
 import {
@@ -67,26 +66,19 @@ function SendPassage() {
   const isReduceMotionEnabled = useReducedMotion();
   const { sendHook, token, amount, recipient, txId, submit, reset } = useSendFlow();
 
-  const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
-  const sendFailed = sendHook.status === 'failed';
+  // The commit state — the wait's hold, the failure's words — decided once
+  // for both platforms (spec 031 §4).
+  const { sendFailed, failure, isCommitted, isWaveHeld, onWaveGone } = useSendCommitState(
+    sendHook,
+    t
+  );
 
-  // What the failure surface says — the heading that does not claim the
-  // money stayed put when the outcome is unknown, the message, the chain's
-  // own words under it — decided once for both platforms.
-  const failure = sendFailureReport(sendHook, t);
-
-  // One wait spans the whole commit, signature through settle, exactly as the
-  // sheet spanned it: gated on `isSending` alone it ended at the signature and
-  // the receipt raised a second wait of its own for the indexer.
-  const isCommitted = isSending || sendHook.settling;
-  // `held` already means "committed, or still leaving", so it IS the render
-  // condition. Gating on `txId` as well collapsed the branch in the same
-  // render a send failed: `visible={false}` was never committed, the exit
-  // effect never ran, the front was cut mid-crossing, and `onWaveGone` never
-  // fired — leaving `useWaitExit` stuck with `held` true for the life of the
-  // flow, so a retry entered on stale state. The failure surface renders over
-  // the wait, so its ebb plays out of sight (spec 031 §4).
-  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  // The failure surface below is an RN `Modal` — its own native window, which
+  // the lock overlay (a plain zIndex View) does not cover — and it carries a
+  // Retry that re-fires the transfer. Same class as the confirmation window
+  // gated in `(app)/_layout.tsx`: keep it down while the wallet is locked so
+  // a transfer cannot be resent from above the lock screen.
+  const [{ locked }] = useAccountsContext();
 
   const summary =
     token && recipient
@@ -97,14 +89,17 @@ function SendPassage() {
         })
       : '';
 
-  // The receipt waits for the wave's report, then takes the review screen's
-  // place — `replace`, so the signed transfer is never behind a back gesture.
+  // The receipt takes the review screen's place while the wave still covers it
+  // — `replace`, so the signed transfer is never behind a back gesture. The
+  // wait lives here, above the stack, so the swap beneath cuts nothing; doing
+  // it after the wave left uncovered the review again, its confirm live, for
+  // the moment the receipt took to slide in.
   const navigatedRef = useRef(false);
   useEffect(() => {
-    if (!txId || isWaveHeld || navigatedRef.current) return;
+    if (!txId || isCommitted || navigatedRef.current) return;
     navigatedRef.current = true;
     router.replace('/send/success');
-  }, [txId, isWaveHeld, router]);
+  }, [txId, isCommitted, router]);
 
   /** Leave the flow: drop its state and go back to the wallet. */
   const handleLeave = useCallback(() => {
@@ -132,7 +127,7 @@ function SendPassage() {
           transfer does not rewind the passage: retry fires the same transfer
           from here, and the only thing that unwinds it is leaving. */}
       <Modal
-        visible={sendFailed}
+        visible={sendFailed && !locked}
         animationType="none"
         presentationStyle="fullScreen"
         onRequestClose={handleLeave}
@@ -188,7 +183,7 @@ export default function SendLayout() {
         <Stack.Screen name="review" />
         {/* There is nothing behind a signed transfer. The receipt's only way
             out is "Back to wallet", so the back gesture is taken off it. */}
-        <Stack.Screen name="success" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="success" options={{ gestureEnabled: false, animation: 'none' }} />
       </Stack>
       <SendPassage />
     </SendFlowProvider>

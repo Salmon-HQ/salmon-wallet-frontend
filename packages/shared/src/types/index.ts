@@ -25,5 +25,4 @@ export * from './ui';
 export * from './ui/index';
 export * from './icons';
 export * from './settings';
-export * from './swap';
 export * from './currency';

@@ -106,7 +106,10 @@ const stylesFor = (t: Semantic) =>
       alignItems: 'center',
       gap: s(spacing.sm),
     },
+    // The label never yields; the value shrinks and ellipsises — the DOM twin
+    // holds the same rule.
     labelGroup: {
+      flexShrink: 0,
       flexDirection: 'row',
       alignItems: 'center',
       gap: s(spacing.sm),

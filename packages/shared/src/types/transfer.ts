@@ -270,7 +270,13 @@ export interface SolanaBalanceItem {
   symbol: string;
   name: string;
   logo?: string;
-  uiAmount?: number;
+  /**
+   * Present only when the mint's own extensions make the displayed figure
+   * differ from `amount / 10 ** decimals` — Token-2022's Scaled UI Amount or
+   * Interest Bearing. A decimal string, so the wire keeps full precision;
+   * `resolveUiAmount` turns it into the number the UI works in.
+   */
+  uiAmount?: number | string;
   coingeckoId?: string;
   tags?: string[];
   price?: number;

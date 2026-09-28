@@ -395,12 +395,17 @@ describe('useAccounts Hook', () => {
       expect(state.accounts[0].networksAccounts).toEqual({});
     });
 
-    it('should update last activity on mount', async () => {
+    // Mounting is not activity. The same hook mounts in every window the
+    // wallet opens, including an approval window a web page asked for, and a
+    // write here reset the auto-lock timer — so an unsolicited request from a
+    // page the user never touched kept the wallet unlocked indefinitely.
+    it('does not count its own mount as user activity', async () => {
       renderHook(() => useAccounts());
 
       await waitFor(() => {
-        expect(storage.updateLastActivity).toHaveBeenCalled();
+        expect(storage.getStorageItem).toHaveBeenCalled();
       });
+      expect(storage.updateLastActivity).not.toHaveBeenCalled();
     });
   });
 

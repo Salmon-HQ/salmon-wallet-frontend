@@ -27,7 +27,7 @@
  *   `dragAreaStyle` are RN-only (an `Animated.Value` and a pan gesture) and
  *   have no DOM consumer yet — not mirrored here; see the component report.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   borderRadius,
   borderWidth,
@@ -36,6 +36,13 @@ import {
   motionMs,
   shadowsCSS,
   spacing,
+  SheetHeightContext,
+  SheetParentContext,
+  useHeldSheetSize,
+  useSheetTurn,
+  type SheetTurnMotion,
+  SHEET_EXIT_MS,
+  SHEET_EXIT_WATCHDOG_GRACE_MS,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -48,11 +55,7 @@ import type { BottomSheetContainerProps } from './types';
 const HANDLE_WIDTH = 44;
 const HANDLE_HEIGHT = 5;
 
-/** How long the sheet takes to leave — the mobile twin's `SHEET_EXIT_MS`. */
-export const SHEET_EXIT_MS = motionMs.ebb;
-
-/** Slack before the watchdog decides the exit's transitionend is not coming. */
-const EXIT_WATCHDOG_GRACE_MS = 120;
+export { SHEET_EXIT_MS };
 
 /**
  * The browser's default `::backdrop` paints its own dim behind `<dialog>`.
@@ -66,6 +69,17 @@ injectKeyframes(
   'dialog.sw-sheet::backdrop { background: transparent; }'
 );
 
+// Nothing inside a sheet shows a scrollbar (owner, 2026-09-17): the body's
+// own scroller, a token list's, the catalogue's — one rule for every
+// scroller a sheet will ever hold, rather than one `scrollbarWidth` per
+// component. `scrollbar-width` is the standard; the `::-webkit-scrollbar`
+// rule covers the engines that still draw the legacy one.
+injectKeyframes(
+  'sw-sheet-scrollbars',
+  'dialog.sw-sheet, dialog.sw-sheet * { scrollbar-width: none; } ' +
+    'dialog.sw-sheet ::-webkit-scrollbar, dialog.sw-sheet::-webkit-scrollbar { display: none; }'
+);
+
 export function BottomSheetContainer({
   visible,
   onClose,
@@ -76,6 +90,8 @@ export function BottomSheetContainer({
   background,
   dismissible = true,
   contentGutter = true,
+  maxHeight,
+  height,
   style,
   className,
   testID,
@@ -83,7 +99,28 @@ export function BottomSheetContainer({
   const t = useSemantic();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isRendered, setIsRendered] = useState(visible);
+
+  // The ceiling a sheet opens with is the ceiling it keeps (`useHeldSheetSize`).
+  const {
+    sheetHeight,
+    sheetMaxHeight,
+    release: releaseHeld,
+  } = useHeldSheetSize(visible, height, maxHeight);
   const [isOpen, setIsOpen] = useState(false);
+  // What this sheet is drawn at, for the sheets it opens: a nested sheet
+  // reads it and rises to exactly this (`useParentSheetHeight`).
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const node = sheetRef.current;
+    if (!node) return undefined;
+    setMeasuredHeight(node.offsetHeight);
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => setMeasuredHeight(node.offsetHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
+    // Re-armed when the sheet mounts; content changes reach it through the observer.
+  }, [isRendered]);
   const isReduceMotionEnabled = useReducedMotion();
   const closedReportedRef = useRef(false);
 
@@ -105,10 +142,65 @@ export function BottomSheetContainer({
       else dialog.removeAttribute('open');
     }
     setIsRendered(false);
+    releaseHeld();
     if (closedReportedRef.current) return;
     closedReportedRef.current = true;
     onClosed?.();
-  }, [onClosed]);
+    releaseParentTurnRef.current();
+  }, [onClosed, releaseHeld]);
+
+  // The rise is a Web Animation, the one driver of the sheet on its way up.
+  // A CSS transition needs the browser to have seen the closed position
+  // first, and inside the side panel React can commit the open state before
+  // that frame ever paints — the sheet was simply there (owner, 2026-09-17).
+  // An animation has no such dependency, and having only one driver means
+  // no second curve finishing a beat later under it. The transition stays
+  // for the way down (yield, exit), which starts from a painted position.
+  // `motionMs.rise` + `motionEasing.current` is the iOS sheet's own clock and
+  // curve, the pair Ionic and Vaul use for the same reason.
+  const rise = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || isReduceMotionEnabled || typeof sheet.animate !== 'function') return;
+    sheet.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], {
+      duration: motionMs.rise,
+      easing: motionEasing.current.css,
+    });
+  }, [isReduceMotionEnabled]);
+
+  // Sequential, never stacked (see `useSheetTurn`, shared with the mobile
+  // twin): as a child this sheet rises only after the parent has slid down
+  // and draws no backdrop of its own; as a parent, `yielded` keeps it
+  // mounted, off-screen, backdrop up, while its child is showing. The DOM's
+  // sink is the `yielded` state itself (the transform derives from it); the
+  // rise is the Web Animation; leaving under a child has no transform
+  // transition to wait for, so the backdrop fades on its own clock.
+  const turnMotion: SheetTurnMotion = {
+    sink: () => {},
+    rise,
+    leave: () => {
+      setIsOpen(false);
+      setTimeout(() => latest.current.completeClose(), isReduceMotionEnabled ? 0 : SHEET_EXIT_MS);
+    },
+  };
+  const {
+    parent,
+    yielded,
+    isYielded,
+    childEnterDelayMs,
+    parentHandle,
+    holdParentTurn,
+    releaseParentTurn,
+  } = useSheetTurn(visible, onClose, isReduceMotionEnabled, turnMotion);
+  const releaseParentTurnRef = useRef(releaseParentTurn);
+  releaseParentTurnRef.current = releaseParentTurn;
+
+  // Read at call time by the open / close effect, so a callback's identity
+  // never re-runs it (a nested sheet used to rise and fall in a loop that
+  // way). Refreshed before any passive effect of this render runs.
+  const latest = useRef({ completeClose, rise, childEnterDelayMs, holdParentTurn });
+  useLayoutEffect(() => {
+    latest.current = { completeClose, rise, childEnterDelayMs, holdParentTurn };
+  });
 
   // Open / close the native dialog and flip the transform in on the next
   // frame, so the browser paints the closed position before transitioning to
@@ -131,24 +223,43 @@ export function BottomSheetContainer({
         else dialog.setAttribute('open', '');
         void dialog.getBoundingClientRect();
       }
-      const raf = requestAnimationFrame(() => setIsOpen(true));
-      return () => cancelAnimationFrame(raf);
+      latest.current.holdParentTurn();
+      let raf = 0;
+      const timer = setTimeout(() => {
+        raf = requestAnimationFrame(() => {
+          latest.current.rise();
+          setIsOpen(true);
+        });
+      }, latest.current.childEnterDelayMs);
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(raf);
+      };
     }
 
     if (isRendered) {
+      // A yielded parent waits for its child to leave (`releaseFromChild`).
+      if (isYielded()) return undefined;
       setIsOpen(false);
       const exitMs = isReduceMotionEnabled ? 0 : SHEET_EXIT_MS;
-      const watchdog = setTimeout(completeClose, exitMs + EXIT_WATCHDOG_GRACE_MS);
+      const watchdog = setTimeout(
+        () => latest.current.completeClose(),
+        exitMs + SHEET_EXIT_WATCHDOG_GRACE_MS
+      );
       return () => clearTimeout(watchdog);
     }
 
     return undefined;
-  }, [visible, isRendered, isReduceMotionEnabled, completeClose]);
+    // Only the state that opens or closes re-runs this; see `latest`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, isRendered, isReduceMotionEnabled]);
 
   const handleBackdropClick = useCallback(() => {
     if (!dismissible) return;
     onClose();
-  }, [dismissible, onClose]);
+    // Under a child the backdrop is the parent's: a click on it closes both.
+    parent?.dismissWithChild();
+  }, [dismissible, onClose, parent]);
 
   // The dialog's native `cancel` event fires on Escape and closes it
   // immediately by default — prevented so the exit can animate first, same
@@ -163,15 +274,20 @@ export function BottomSheetContainer({
 
   const handleSheetTransitionEnd = useCallback(
     (event: React.TransitionEvent<HTMLDivElement>) => {
-      if (event.propertyName === 'transform' && !isOpen) completeClose();
+      if (event.propertyName === 'transform' && !isOpen && !isYielded()) completeClose();
     },
-    [isOpen, completeClose]
+    [isOpen, completeClose, isYielded]
   );
 
   if (!isRendered) return null;
 
-  const transitionMs = isReduceMotionEnabled ? 0 : isOpen ? motionMs.rise : SHEET_EXIT_MS;
-  const easing = isOpen ? motionEasing.current.css : motionEasing.sink.css;
+  const isUp = isOpen && !yielded;
+  // The backdrop fades on the sheet's clock both ways; the sheet's own
+  // transition only ever sinks — up is the Web Animation's job (`rise`).
+  const backdropMs = isReduceMotionEnabled ? 0 : isOpen ? motionMs.rise : SHEET_EXIT_MS;
+  const backdropEasing = isOpen ? motionEasing.current.css : motionEasing.sink.css;
+  const transitionMs = isReduceMotionEnabled || isUp ? 0 : SHEET_EXIT_MS;
+  const easing = motionEasing.sink.css;
 
   const overlay: React.CSSProperties = {
     position: 'fixed',
@@ -193,8 +309,9 @@ export function BottomSheetContainer({
     position: 'absolute',
     inset: 0,
     backgroundColor: t.overlay.backdrop,
-    opacity: isOpen ? 1 : 0,
-    transition: `opacity ${transitionMs}ms ${easing}`,
+    // A child draws no backdrop: the parent's stays up through the handoff.
+    opacity: isOpen && !parent ? 1 : 0,
+    transition: `opacity ${backdropMs}ms ${backdropEasing}`,
   };
 
   const sheetContainer: React.CSSProperties = {
@@ -202,13 +319,20 @@ export function BottomSheetContainer({
     boxSizing: 'border-box',
     borderTopLeftRadius: borderRadius.header,
     borderTopRightRadius: borderRadius.header,
-    borderTopWidth: borderWidth.sheet,
-    borderTopStyle: 'solid',
-    borderTopColor: t.border.default,
-    maxHeight: '92%',
+    // The edge follows the two top corners (see the mobile twin): stroke on
+    // top and both sides, none at the bottom where the sheet meets the edge.
+    border: `${borderWidth.sheet}px solid ${t.border.default}`,
+    borderBottom: 'none',
+    // A ceiling in pixels, when the caller measured one: Home's catalogue
+    // stops just below the Send / Receive / Activity row instead of covering
+    // it.
+    maxHeight: sheetMaxHeight != null ? sheetMaxHeight : '92%',
+    // A fixed height, when the caller measured one: Home's catalogue rises
+    // exactly to the sub-tab row however little it has to show.
+    ...(sheetHeight != null ? { height: sheetHeight } : null),
     boxShadow: shadowsCSS.lg,
     overflow: 'hidden',
-    transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
+    transform: isUp ? 'translateY(0)' : 'translateY(100%)',
     transition: `transform ${transitionMs}ms ${easing}`,
     ...style,
   };
@@ -221,49 +345,63 @@ export function BottomSheetContainer({
       onCancel={handleCancel}
       data-testid={testID}
     >
-      <div style={backdrop} onClick={handleBackdropClick} />
-      <div style={sheetContainer} onTransitionEnd={handleSheetTransitionEnd}>
-        {resolvedBackground}
+      <div
+        style={backdrop}
+        onClick={handleBackdropClick}
+        data-testid={testID ? `${testID}-backdrop` : undefined}
+      />
+      <div
+        ref={sheetRef}
+        style={sheetContainer}
+        onTransitionEnd={handleSheetTransitionEnd}
+        aria-hidden={yielded || undefined}
+        data-yielded={yielded || undefined}
+      >
+        <SheetHeightContext.Provider value={sheetHeight ?? measuredHeight}>
+          <SheetParentContext.Provider value={parentHandle}>
+            {resolvedBackground}
 
-        <div style={{ position: 'relative' }}>
-          {/* Drag handle bar — decorative on the DOM, no gesture attached. */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              paddingTop: spacing.md,
-              paddingBottom: spacing.sm,
-            }}
-          >
-            <div
-              style={{
-                width: HANDLE_WIDTH,
-                height: HANDLE_HEIGHT,
-                borderRadius: borderRadius.full,
-                backgroundColor: t.sheet.handle,
-                opacity: componentSizes.sheetHandleOpacity,
-              }}
-            />
-          </div>
+            <div style={{ position: 'relative' }}>
+              {/* Drag handle bar — decorative on the DOM, no gesture attached. */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  paddingTop: spacing.md,
+                  paddingBottom: spacing.sm,
+                }}
+              >
+                <div
+                  style={{
+                    width: HANDLE_WIDTH,
+                    height: HANDLE_HEIGHT,
+                    borderRadius: borderRadius.full,
+                    backgroundColor: t.sheet.handle,
+                    opacity: componentSizes.sheetHandleOpacity,
+                  }}
+                />
+              </div>
 
-          {headerContent ?? title ?? null}
-        </div>
+              {headerContent ?? title ?? null}
+            </div>
 
-        {/* The gutter every sheet shares, held once here rather than
+            {/* The gutter every sheet shares, held once here rather than
             re-declared by each body: a sheet's content starts one screen
             gutter in from its edge, as mobile's sheet bodies each do with
             `spacing.screenGutter`. A body that must bleed to the edge opts
             out with `contentGutter={false}`. */}
-        <div
-          style={{
-            position: 'relative',
-            overflow: 'auto',
-            paddingLeft: contentGutter ? spacing.screenGutter : 0,
-            paddingRight: contentGutter ? spacing.screenGutter : 0,
-          }}
-        >
-          {children}
-        </div>
+            <div
+              style={{
+                position: 'relative',
+                overflow: 'auto',
+                paddingLeft: contentGutter ? spacing.screenGutter : 0,
+                paddingRight: contentGutter ? spacing.screenGutter : 0,
+              }}
+            >
+              {children}
+            </div>
+          </SheetParentContext.Provider>
+        </SheetHeightContext.Provider>
       </div>
     </dialog>
   );

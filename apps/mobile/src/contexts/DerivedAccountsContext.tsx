@@ -8,10 +8,10 @@
  * survives every screen the stack pushes over it. Mounting it per screen would
  * start a second scan every time the user opened Wallets.
  *
- * It owns the sheet as well as the scan: Home renders `DerivedAccountsSheet`
- * from this state, and Wallets mounts the same sheet on
- * `rescanningAccountId` — a scan the user asked for is answered on the screen
- * they asked from — and calls `rescan` for the manual action.
+ * It owns the sheet as well as the scan: Wallets mounts `DerivedAccountsSheet`
+ * on `rescanningAccountId` — a scan the user asked for is answered on the
+ * screen they asked from — and calls `rescan` for the manual action. There is
+ * no automatic pass: the question is only ever asked on request.
  */
 import React, { createContext, useContext } from 'react';
 import { useDerivedAccountsScan, type UseDerivedAccountsScanResult } from '@salmon/shared';

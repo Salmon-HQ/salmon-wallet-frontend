@@ -64,8 +64,11 @@ export function KeyValueRow({
     gap: spacing.sm,
   };
 
+  // Whatever the value is, it never eats the label: the label keeps its
+  // width and the value is the side that shrinks and ellipsises (owner,
+  // 2026-09-16 — a full address in the right column was covering the left).
   const labelGroup: React.CSSProperties = {
-    minWidth: 0,
+    flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     gap: spacing.sm,

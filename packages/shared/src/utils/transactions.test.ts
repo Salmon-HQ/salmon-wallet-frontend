@@ -7,7 +7,7 @@ import {
 } from './transactions';
 
 describe('transaction utils', () => {
-  it('normalizes native Solana token data and infers swap from unknown type', () => {
+  it('normalizes native Solana token data and keeps an unknown type unknown', () => {
     const tx = transformSolanaTransaction({
       id: 'sig-1',
       timestamp: 1,
@@ -28,17 +28,35 @@ describe('transaction utils', () => {
         },
       ],
       description: 'Unknown',
-      source: 'JUPITER',
-      heliusType: 'SWAP',
+      source: 'RAYDIUM',
+      heliusType: 'UNKNOWN',
     } as any);
 
-    expect(tx.type).toBe('swap');
+    expect(tx.type).toBe('unknown');
     expect(tx.outputs[0]).toMatchObject({
       amount: '1000000000',
       decimals: 9,
       symbol: 'SOL',
       name: 'Solana',
       contract: 'So11111111111111111111111111111111111111112',
+    });
+  });
+
+  it('keeps a memo transaction as its own type and carries the note through', () => {
+    const tx = transformSolanaTransaction({
+      id: 'sig-memo',
+      timestamp: 1,
+      status: 'completed',
+      type: 'memo',
+      inputs: [],
+      outputs: [],
+      source: 'MEMO_PROGRAM',
+      memo: 'gm',
+    } as any);
+    expect(tx.type).toBe('memo');
+    expect(tx.memo).toBe('gm');
+    expect(getTransactionDescription('memo', [], [])).toEqual({
+      key: 'transactions.description.memo',
     });
   });
 
@@ -79,7 +97,7 @@ describe('transaction utils', () => {
     });
   });
 
-  it('names send receive and swap descriptions with the parts to interpolate', () => {
+  it('names send and receive descriptions with the parts to interpolate', () => {
     expect(
       getTransactionDescription(
         'send',
@@ -108,17 +126,6 @@ describe('transaction utils', () => {
     ).toEqual({
       key: 'transactions.description.receiveFrom',
       values: { address: expect.any(String) },
-    });
-
-    expect(
-      getTransactionDescription(
-        'swap',
-        [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'sol' }],
-        [{ amount: '2', decimals: 6, symbol: 'USDC', contract: 'usdc' }]
-      )
-    ).toEqual({
-      key: 'transactions.description.swap',
-      values: { from: 'USDC', to: 'SOL' },
     });
   });
 
@@ -150,8 +157,6 @@ describe('transaction utils', () => {
     expect(esKeys).toEqual(enKeys);
     expect(enKeys).toEqual(
       expect.arrayContaining([
-        'swap',
-        'swapMany',
         'sendTo',
         'send',
         'receiveFrom',
@@ -165,48 +170,33 @@ describe('transaction utils', () => {
       ])
     );
   });
+});
 
-  it('passes through swapRoute from the backend SolanaTransaction unchanged', () => {
-    const swapRoute = {
-      hops: [
+describe('transformSolanaTransaction — token leg images', () => {
+  it('routes an ipfs:// leg image through the gateway so the row can draw it', () => {
+    const tx = transformSolanaTransaction({
+      id: 'sig-nft',
+      timestamp: 1_700_000_000,
+      status: 'completed',
+      type: 'receive',
+      description: 'NFT',
+      source: 'TOKEN_PROGRAM',
+      fee: { amount: 5000, decimals: 9, symbol: 'SOL' },
+      inputs: [
         {
-          dex: 'JUPITER',
-          percent: 100,
-          inputToken: { symbol: 'SOL', amount: '1000000000', decimals: 9 },
-          outputToken: { symbol: 'USDC', amount: '120000000', decimals: 6 },
+          amount: '1',
+          decimals: 0,
+          symbol: 'MNDFLK',
+          name: 'Mindfolk',
+          contract: 'Mint111111111111111111111111111111111111111',
+          logo: 'ipfs://bafyimage',
+          isNft: true,
         },
       ],
-      inputAmount: '1000000000',
-      outputAmount: '120000000',
-      conversionRate: { fromSymbol: 'SOL', toSymbol: 'USDC', rate: '120.000000' },
-    };
-
-    const tx = transformSolanaTransaction({
-      id: 'sig-2',
-      signature: 'sig-2',
-      timestamp: 100,
-      status: 'completed',
-      type: 'swap',
-      inputs: [],
-      outputs: [],
-      swapRoute,
-    } as any);
-
-    expect(tx.swapRoute).toBe(swapRoute);
-    expect(tx.swapRoute?.conversionRate?.rate).toBe('120.000000');
-  });
-
-  it('leaves swapRoute undefined when the backend does not provide it', () => {
-    const tx = transformSolanaTransaction({
-      id: 'sig-3',
-      signature: 'sig-3',
-      timestamp: 100,
-      status: 'completed',
-      type: 'send',
-      inputs: [],
       outputs: [],
     } as any);
 
-    expect(tx.swapRoute).toBeUndefined();
+    expect(tx.inputs[0].logo).toMatch(/^https:\/\//);
+    expect(tx.inputs[0].logo).toContain('bafyimage');
   });
 });

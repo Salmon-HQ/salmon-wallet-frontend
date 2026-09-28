@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createSemantic } from '../theme/semantic';
-import { chainMarks } from '../theme/brand';
 import type { Transaction } from '../types/transaction';
 import {
   CONFIRMATION_CONFIG,
   TYPE_LABEL_KEYS,
-  conversionRateFor,
   describeTransactionRow,
   transactionCounterparty,
   transactionStatusDisplayFor,
   transactionTypeDisplayFor,
+  withPlatformGlyphs,
+  transactionVerbKey,
 } from './transactionDisplay';
 
 const amount = (
@@ -35,34 +35,9 @@ describe('transactionDisplay', () => {
       }
       expect(display.send.color).toBe(t.change.negative);
       expect(display.receive.color).toBe(t.change.positive);
-      expect(display.swap.color).toBe(chainMarks.purple);
       expect(transactionStatusDisplayFor(t).failed.color).toBe(t.status.danger);
     }
     expect(CONFIRMATION_CONFIG.finalized.tone).toBe('success');
-  });
-
-  it('rates a swap from the route, else from a one-in/one-out pair, else not at all', () => {
-    expect(conversionRateFor(null)).toBeNull();
-    expect(
-      conversionRateFor(
-        tx({
-          swapRoute: { conversionRate: { fromSymbol: 'A', toSymbol: 'B', rate: '2' } },
-        } as never)
-      )
-    ).toEqual({ fromSymbol: 'A', toSymbol: 'B', rate: '2' });
-    expect(
-      conversionRateFor(
-        tx({ outputs: [amount('SOL', '1000000000', 9)], inputs: [amount('USDC', '150000000', 6)] })
-      )
-    ).toEqual({ fromSymbol: 'SOL', toSymbol: 'USDC', rate: '150.000000' });
-    expect(
-      conversionRateFor(tx({ outputs: [amount('SOL', '0', 9)], inputs: [amount('USDC', '1', 6)] }))
-    ).toBeNull();
-    expect(
-      conversionRateFor(
-        tx({ outputs: [amount('A', '1', 0), amount('B', '1', 0)], inputs: [amount('C', '1', 0)] })
-      )
-    ).toBeNull();
   });
 
   it('finds the other side of a transfer, and nothing for anything else', () => {
@@ -76,7 +51,18 @@ describe('transactionDisplay', () => {
         tx({ type: 'receive', inputs: [amount('SOL', '1', 9, { source: ALICE })] })
       )
     ).toBe(ALICE);
-    expect(transactionCounterparty(tx({ type: 'swap' }))).toBeUndefined();
+    expect(transactionCounterparty(tx({ type: 'stake' }))).toBeUndefined();
+  });
+
+  it('says the note itself under a memo, and the generic sentence when the note is missing', () => {
+    expect(describeTransactionRow(tx({ type: 'memo', memo: 'gm' }))).toEqual({
+      key: 'transactions.description.memoNote',
+      values: { note: 'gm' },
+    });
+    expect(describeTransactionRow(tx({ type: 'memo', memo: null }))).toEqual({
+      key: 'transactions.description.memo',
+      values: undefined,
+    });
   });
 
   it('says "To <name>" from the address book, the short address without it, and defers otherwise', () => {
@@ -87,6 +73,46 @@ describe('transactionDisplay', () => {
     });
     const short = describeTransactionRow(sent).values?.address as string;
     expect(short.length).toBeLessThan(ALICE.length);
-    expect(describeTransactionRow(tx({ type: 'swap' })).key).not.toContain('sendTo');
+    expect(describeTransactionRow(tx({ type: 'stake' })).key).not.toContain('sendTo');
+  });
+});
+
+describe('withPlatformGlyphs', () => {
+  it("resolves each entry's glyph name to the platform icon for that name", () => {
+    const semantic = createSemantic('light');
+    const glyphs = { checkCircle: 'CheckCircleIcon', xCircle: 'XCircleIcon', clock: 'ClockIcon' };
+
+    const resolved = withPlatformGlyphs(transactionStatusDisplayFor(semantic), glyphs);
+
+    expect(resolved.completed).toEqual({
+      label: 'Completed',
+      color: semantic.status.success,
+      icon: 'CheckCircleIcon',
+    });
+    expect(resolved.failed.icon).toBe('XCircleIcon');
+    expect(resolved.pending.icon).toBe('ClockIcon');
+  });
+
+  describe('the verb inside an interaction (backend 017)', () => {
+    const base = { type: 'interaction' as const, inputs: [], outputs: [], source: 'AGGREGATOR' };
+    it('reads the action as the verb, and the type when the action has no verb of its own', () => {
+      expect(transactionVerbKey({ ...base, action: 'swap' })).toBe('transactions.action.swap');
+      expect(transactionVerbKey({ ...base, action: 'program_call' })).toBe(
+        'transactions.detail.interaction'
+      );
+      expect(transactionVerbKey({ type: 'send' })).toBe('transactions.detail.sent');
+    });
+    it('a swap says what went for what', () => {
+      const said = describeTransactionRow({
+        ...base,
+        action: 'swap',
+        outputs: [{ amount: '1', decimals: 6, symbol: 'USDC', contract: 'a' }],
+        inputs: [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'b' }],
+      });
+      expect(said).toEqual({
+        key: 'transactions.description.swap',
+        values: { from: 'USDC', to: 'SOL' },
+      });
+    });
   });
 });

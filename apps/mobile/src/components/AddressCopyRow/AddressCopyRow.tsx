@@ -1,0 +1,129 @@
+import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Animated, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from '../../utils/haptics';
+import { fontFamilyNative, fontSize, ms, truncatedAddress, type Semantic } from '@salmon/shared';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
+import { KeyValueRow } from '../KeyValueRow';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import type { AddressCopyRowProps } from './types';
+
+// ============================================================================
+// Component
+// ============================================================================
+
+/**
+ * AddressCopyRow - Displays an address with a copy button and haptic feedback
+ *
+ * Features:
+ * - Label on the left
+ * - Truncated address display
+ * - Copy button on the right
+ * - Copies to clipboard on press
+ * - Haptic feedback on copy
+ * - Visual feedback (checkmark) after copying
+ *
+ * @example
+ * ```tsx
+ * <AddressCopyRow
+ *   label="From"
+ *   address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+ *   truncate="medium"
+ * />
+ * ```
+ */
+export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
+  label,
+  address,
+  truncate = 'medium',
+  style,
+}) => {
+  const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { status, text } = useSemantic();
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
+
+  const displayAddress = truncatedAddress(address, truncate);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      // Copy to clipboard
+      await Clipboard.setStringAsync(address);
+
+      // Trigger haptic feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Show visual feedback (auto-reverts after motionMs.feedbackHold)
+      showCopied();
+    } catch (error) {
+      // Silently fail - clipboard might not be available in some environments
+      console.warn('Failed to copy address:', error);
+    }
+  }, [address, showCopied]);
+
+  return (
+    <KeyValueRow
+      style={style}
+      label={label}
+      // Monospace-Is-For-Scanning Rule: an address is read positionally,
+      // prefix against suffix, so its characters must hold a fixed width —
+      // Geist Mono at the address size. `KeyValueRow`'s own value style is
+      // bold body, so the address arrives as a node rather than a string.
+      value={
+        <Text style={styles.address} numberOfLines={1}>
+          {displayAddress}
+        </Text>
+      }
+      action={
+        // Same card, same gesture, same ink as the transaction hash row's
+        // copy control (`TransactionDetailReceipt`): a bare button, no well,
+        // accent for the affordance and success for the confirmation.
+        <TouchableOpacity
+          testID={`tx-detail-copy-address-${label}`}
+          onPress={handleCopy}
+          style={styles.copyButton}
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel={
+            copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
+          }
+        >
+          {copied ? (
+            <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+              <CheckIcon size={iconSize.sm} color={status.success} />
+            </Animated.View>
+          ) : (
+            <CopyIcon size={iconSize.sm} color={text.accent} />
+          )}
+        </TouchableOpacity>
+      }
+    />
+  );
+};
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /**
+     * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
+     * against suffix, so its characters must hold a fixed width — Geist Mono at
+     * the address size.
+     */
+    address: {
+      fontSize: ms(fontSize.mono),
+      fontFamily: fontFamilyNative.mono,
+      color: t.text.primary,
+      flexShrink: 1,
+    },
+    copyButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+
+export default AddressCopyRow;

@@ -49,6 +49,7 @@ import {
   floatEntering,
   sinkExiting,
   SINK_FLOAT_TRAVEL,
+  useCoverFloat,
 } from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { useThemedStyles, useSemantic } from '../../theme/useThemedStyles';
@@ -94,7 +95,13 @@ export function WalletHeader({
   const isReduceMotionEnabled = useReducedMotion();
   const insets = useSafeAreaInsets();
   // The signal a task flow publishes while it owns the screen.
-  const { isTaskEngaged } = useTaskChrome();
+  const { isTaskEngaged, isCovered } = useTaskChrome();
+  // Home's float under the lock, at the chrome's half depth.
+  const coverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled, {
+    distance: SINK_FLOAT_TRAVEL / 2,
+    scale: CHROME_SCALE,
+    durationMs: motionMs.drift,
+  });
 
   // The redesign's screen top: safe area, then `screenTop`, then the row
   // itself. Deliberately unscaled.
@@ -103,13 +110,13 @@ export function WalletHeader({
 
   // Chrome-scale sink and float for the account text: when the active chain
   // switches, the address half of the line changes, so the text is keyed on
-  // `address` and speaks the same verb as home's chain swap — half the
+  // `address` and speaks the same verb as home's chain change — half the
   // travel, shorter clock, because this is chrome, not content. On first
   // mount nothing sinks, so the float takes no delay (same render-time
-  // pattern as home's `chainSwap`).
-  const [addressSwap, setAddressSwap] = useState({ address, hasPrior: false });
-  if (addressSwap.address !== address) {
-    setAddressSwap({ address, hasPrior: true });
+  // pattern as home's `chainChange`).
+  const [addressChange, setAddressChange] = useState({ address, hasPrior: false });
+  if (addressChange.address !== address) {
+    setAddressChange({ address, hasPrior: true });
   }
 
   const handleCopyPress = useCallback(() => {
@@ -134,7 +141,7 @@ export function WalletHeader({
       {isTaskEngaged ? null : (
         <Reanimated.View
           testID="wallet-header-bar"
-          style={styles.container}
+          style={[styles.container, coverFloatStyle]}
           entering={floatEntering(isReduceMotionEnabled, {
             distance: SINK_FLOAT_TRAVEL / 2,
             scale: CHROME_SCALE,
@@ -188,7 +195,7 @@ export function WalletHeader({
                   distance: SINK_FLOAT_TRAVEL / 2,
                   scale: CHROME_SCALE,
                   durationMs: motionMs.drift,
-                  delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+                  delayMs: addressChange.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
                 })}
                 exiting={sinkExiting(isReduceMotionEnabled, {
                   distance: SINK_FLOAT_TRAVEL / 2,
@@ -252,26 +259,11 @@ export function WalletHeader({
               >
                 {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-                {/* UNRESOLVED: this swap does not paint on device.
-                Instrumented on the real mount path: the handler fires,
-                `copied` flips true and reverts 1519ms later, matching
-                `motionMs.feedbackHold` almost exactly — so the state and the
-                timing are correct and React commits the change. The glyph on
-                screen never changes for the whole hold. Ruled out: the spring
-                and the Animated.View (stripped entirely, still no paint), and
-                the header coming from the navigator's `screenOptions`
-                (`headerShown` is false; this is a plain `headerContent` prop
-                inside the header row). Adding a `key` per branch was tried and
-                removed — the two branches are different component types, so
-                React already unmounts and remounts across them and a key
-                changes nothing.
-                What has NOT been ruled out is a native-side cause, which is
-                where the next attempt should start. `ReceiveSheet` and
-                `TransactionDetailModal` drive the same hook correctly, so the
-                difference is this mount site, not the hook.
+                {/* The check replaces the copy glyph for `motionMs.feedbackHold`.
+                Only a device proves it paints — Jest's renderer does not
+                reproduce native paint — so
                 `.maestro/flows/smoke/home/copy-address-checkmark.yaml` asserts
-                the real behaviour on a device; Jest cannot, because its
-                renderer does not reproduce native paint. */}
+                it on the real mount path. */}
                 {copied ? (
                   <Animated.View style={{ transform: [{ scale: tickScale }] }}>
                     <CheckIcon size={s(23)} color={status.success} />

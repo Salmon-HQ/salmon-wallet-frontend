@@ -3,7 +3,7 @@ appId: io.salmonwallet.app
 # Store-screenshot capture flow (not part of the test suite). Runs against the
 # backend `apps/mobile/.env` names; ${OUT} is an absolute output dir. One flow,
 # seven captures: home, send, transactions, collectibles, nft detail, token
-# detail, about. Swap left the deck on 2026-09-03 (the powerups surface is
-# closed for the submission).
+# detail, about. No Powerup frame: the powerups surface is closed for the
+# submission.
 - runFlow: ../../subflows/onboard-walletA.yaml
 - runFlow: capture-shots.yaml

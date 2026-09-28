@@ -27,4 +27,11 @@ export interface UnderlineTabsPropsBase extends Testable {
   tabTestIDPrefix?: string;
   /** The travelling underline's own handle, for tests that watch it move. */
   underlineTestID?: string;
+  /**
+   * The set of tabs is the one the user sees (default true). While false — a
+   * stored list still being read — a tab that joins, leaves or moves does so
+   * without motion, and the underline lands instead of travelling: hydration
+   * is not an event the user caused or witnessed, so it owes no verb.
+   */
+  settled?: boolean;
 }

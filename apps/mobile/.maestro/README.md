@@ -28,7 +28,6 @@ installed.
 │       ├── profile/     — set profile picture
 │       ├── reveal/      — backup seed + private key reveal
 │       ├── send/        — on-chain SOL transfer (0.001 SOL)
-│       ├── swap/        — intra-Solana swap quote + execute
 │       ├── nft/         — NFT transfer (Wallet B → Wallet A)
 │       └── reset/       — remove all wallets (DESTRUCTIVE — last)
 ├── suites/             # orchestrators that runFlow children in order
@@ -70,12 +69,11 @@ and checking Home/Collectibles. These are real mainnet wallets.
 
 Per-flow prerequisites:
 
-| Flow                                                   | Needs                                                     |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below   |
-| `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                         |
-| `actions/swap/*`                                       | Wallet A: balance of the input token                      |
-| `actions/nft/*`                                        | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
+| Flow                                                   | Needs                                                                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below                                                          |
+| `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                                                                                |
+| `actions/nft/*`, `smoke/nft/*`                         | Devnet: the "Salmon Test NFT" fixture in Wallet A, kept there by `scripts/devnet-fixtures.cjs` (run.sh calls it) |
 
 Repo policy: a flow that finds its prerequisite missing skips with a clear
 message, never a cryptic failure. If the backend is reachable but behaves
@@ -131,12 +129,11 @@ The runner exists because four things here fail quietly rather than loudly:
   only behaves when Maestro runs from `apps/mobile/.maestro/`. Anywhere else
   scatters a stray `screenshots/` folder. The runner anchors to its own
   directory, so it works from anywhere.
-- **`-e` forwarding.** Maestro (verified on 2.4.0) does not inherit the shell
-  environment. Sourcing `.env.test` and running `maestro test` without `-e`
-  does not fail — flows interpolate `${SALMON_TEST_SEED_A}` to the literal
-  string `undefined`, type it into the seed field, and die many steps later on
-  an unrelated selector. The runner forwards all five and names any that are
-  missing before the first tap.
+- **Secrets by environment.** Maestro hands a flow only the shell variables
+  prefixed `MAESTRO_`. The runner exports each `.env.test` value as
+  `MAESTRO_<NAME>` (flows read `${MAESTRO_SALMON_TEST_SEED_A}`) and names any
+  that are missing before the first tap. It never passes them as `-e`, which
+  would put the seeds and the password in the process list.
 - **Android port mapping.** See "Backend reachability" above; the runner
   re-applies `adb reverse` on every run because an emulator reboot drops it.
 - **Backend down.** The runner checks and refuses to start, rather than letting

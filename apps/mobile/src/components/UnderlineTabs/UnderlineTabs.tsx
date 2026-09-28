@@ -24,7 +24,14 @@
  * measures its container as exactly its content and therefore never scrolls,
  * which is the correct answer for the filter rows.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from 'react';
 import {
   View,
   Text,
@@ -32,8 +39,12 @@ import {
   ScrollView,
   StyleSheet,
   type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, {
+  Easing,
+  LinearTransition,
   interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
@@ -48,16 +59,19 @@ import {
   fontSize,
   letterSpacing,
   lineHeight,
+  motionEasing,
   motionMs,
   s,
   spacing,
   vs,
   withAlpha,
   type Semantic,
+  overflowEdges,
 } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { timing } from '../../utils/motion';
+import { CHROME_SCALE, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import type { UnderlineTabsProps, UnderlineTabsSize } from './types';
 
 const UNDERLINE_WIDTH = 48;
@@ -101,7 +115,9 @@ const AnimatedText = Animated.createAnimatedComponent(Text);
 
 type TabLayoutMeasure = { x: number; width: number };
 
-interface UnderlineTabProps {
+type TabMotion = Pick<ComponentProps<typeof Animated.View>, 'layout' | 'entering' | 'exiting'>;
+
+interface UnderlineTabProps extends TabMotion {
   tabKey: string;
   label: string;
   isActive: boolean;
@@ -126,6 +142,9 @@ const UnderlineTab: React.FC<UnderlineTabProps> = ({
   testID,
   onLayoutMeasured,
   onPress,
+  layout,
+  entering,
+  exiting,
 }) => {
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
@@ -150,32 +169,42 @@ const UnderlineTab: React.FC<UnderlineTabProps> = ({
     [tabKey, onLayoutMeasured]
   );
 
+  // The tab's own motion lives on this wrapper — the frame Reanimated
+  // animates is the view that holds the prop — and so does the measurement,
+  // so the underline reads the tab where the row finally puts it.
   return (
-    <TouchableOpacity
-      testID={testID}
-      style={styles.tab}
-      onPress={onPress}
+    <Animated.View
+      layout={layout}
+      entering={entering}
+      exiting={exiting}
       onLayout={handleLayout}
-      activeOpacity={0.7}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: isActive }}
+      style={styles.tab}
     >
-      <AnimatedText
-        style={[
-          {
-            fontSize: s(metrics.font),
-            lineHeight: s(metrics.font) * lineHeight.snug,
-            letterSpacing: metrics.letterSpacing,
-          },
-          metrics.uppercase && styles.uppercase,
-          animatedTextStyle,
-        ]}
-        numberOfLines={1}
-        maxFontSizeMultiplier={fontScaleCap.chrome}
+      <TouchableOpacity
+        testID={testID}
+        style={styles.tab}
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isActive }}
       >
-        {label}
-      </AnimatedText>
-    </TouchableOpacity>
+        <AnimatedText
+          style={[
+            {
+              fontSize: s(metrics.font),
+              lineHeight: s(metrics.font) * lineHeight.snug,
+              letterSpacing: metrics.letterSpacing,
+            },
+            metrics.uppercase && styles.uppercase,
+            animatedTextStyle,
+          ]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={fontScaleCap.chrome}
+        >
+          {label}
+        </AnimatedText>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -186,6 +215,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   size = 'md',
   tabTestIDPrefix,
   underlineTestID,
+  settled = true,
   style,
   testID,
 }) => {
@@ -196,10 +226,37 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
 
   const [layouts, setLayouts] = useState<Record<string, TabLayoutMeasure>>({});
   const [containerWidth, setContainerWidth] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const hasMeasuredActive = useRef(false);
   const underlineX = useSharedValue(0);
   const underlineWidth = useSharedValue(UNDERLINE_WIDTH);
+
+  // A change in the SET of tabs moves only the tabs concerned (owner,
+  // 2026-09-16): a tab that joins floats in where it lands, one that leaves
+  // sinks out and the ones after it slide over on `layout`; a reorder is the
+  // same slide. The first mount owes no verb — every tab is simply there —
+  // so the entrance is armed only after it. State, not a ref: a ref cannot be
+  // read during render.
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+  // A set still being read (`settled` false) changes without motion, the
+  // same as the first mount: hydration owes no verb.
+  const tabMotion: TabMotion = {
+    layout:
+      isReduceMotionEnabled || !settled
+        ? undefined
+        : LinearTransition.duration(motionMs.drift).easing(
+            Easing.bezier(...motionEasing.current.native)
+          ),
+    entering:
+      hasMounted && settled
+        ? floatEntering(isReduceMotionEnabled, { scale: CHROME_SCALE, durationMs: motionMs.drift })
+        : undefined,
+    exiting: sinkExiting(isReduceMotionEnabled, { scale: CHROME_SCALE, durationMs: motionMs.ebb }),
+  };
 
   const handleLayoutMeasured = useCallback((key: string, layout: TabLayoutMeasure) => {
     setLayouts((prev) => {
@@ -240,8 +297,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const activeLayout = layouts[activeKey];
     if (!activeLayout) return;
 
-    if (!hasMeasuredActive.current) {
-      // First measurement: land on it directly, no travel from a stale 0.
+    if (!hasMeasuredActive.current || !settled) {
+      // First measurement — or one during hydration: land on it directly.
       underlineX.value = activeLayout.x;
       underlineWidth.value = activeLayout.width;
       hasMeasuredActive.current = true;
@@ -251,7 +308,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const config = timing(motionMs.drift, isReduceMotionEnabled);
     underlineX.value = withTiming(activeLayout.x, config);
     underlineWidth.value = withTiming(activeLayout.width, config);
-  }, [activeKey, layouts, isReduceMotionEnabled, underlineX, underlineWidth]);
+  }, [activeKey, layouts, isReduceMotionEnabled, underlineX, underlineWidth, settled]);
 
   // In overflow mode the newly active tab may be off-screen — including the
   // one restored at mount — so the row brings it in rather than leaving the
@@ -265,6 +322,19 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
     const target = Math.min(Math.max(activeLayout.x - s(SCROLL_INTO_VIEW_MARGIN), 0), maxOffset);
     scrollRef.current?.scrollTo({ x: target, animated: !isReduceMotionEnabled });
   }, [activeKey, layouts, isOverflowing, contentWidth, containerWidth, isReduceMotionEnabled]);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrollOffset(event.nativeEvent.contentOffset.x);
+  }, []);
+
+  // A fade only where content is hidden: none at the start while the row
+  // rests on its first tab, none at the end once the last one is in view.
+  const edges = overflowEdges({
+    offset: scrollOffset,
+    contentWidth,
+    containerWidth,
+    tolerance: OVERFLOW_TOLERANCE,
+  });
 
   const handlePress = useCallback(
     (key: string) => {
@@ -295,6 +365,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
           testID={tabTestIDPrefix ? `${tabTestIDPrefix}-${key}` : undefined}
           onLayoutMeasured={handleLayoutMeasured}
           onPress={() => handlePress(key)}
+          {...tabMotion}
         />
       ))}
       <Animated.View
@@ -324,6 +395,8 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
         scrollEnabled={isOverflowing}
         bounces={false}
         showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         testID={testID ? `${testID}-scroll` : undefined}
@@ -336,7 +409,17 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
           near the top of the water ramp, so the ground it fades into is the
           ramp's top stop (spec 022: what tops the ground reads stop 0),
           never the flat `depth.column`. */}
-      {isOverflowing && (
+      {isOverflowing && edges.leading && (
+        <LinearGradient
+          testID={testID ? `${testID}-fade-leading` : undefined}
+          colors={[water.gradient[0], withAlpha(water.gradient[0], 0)]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.leadingFade}
+          pointerEvents="none"
+        />
+      )}
+      {isOverflowing && edges.trailing && (
         <LinearGradient
           testID={testID ? `${testID}-fade` : undefined}
           colors={[withAlpha(water.gradient[0], 0), water.gradient[0]]}
@@ -387,6 +470,13 @@ const stylesFor = (t: Semantic) =>
       top: 0,
       bottom: 0,
       right: 0,
+      width: s(OVERFLOW_FADE_WIDTH),
+    },
+    leadingFade: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
       width: s(OVERFLOW_FADE_WIDTH),
     },
   });

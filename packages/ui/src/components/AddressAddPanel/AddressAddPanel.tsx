@@ -1,7 +1,7 @@
 /**
  * AddressAddPanel — add a contact, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressAddPanel`.
+ * The mobile twin is `apps/mobile/src/components/AddressAddPanel`.
  * The fields are `AddressForm`'s; this panel only names the screen and
  * commits a new contact.
  */

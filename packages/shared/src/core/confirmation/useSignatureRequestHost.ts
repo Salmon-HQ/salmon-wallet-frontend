@@ -1,0 +1,100 @@
+/**
+ * What a platform's confirmation host renders from: the parked proposal, the
+ * seconds its quote has left, and the three controls. The countdown and the
+ * "expired → rebuild before signing" rule live here once, so both twins
+ * behave the same.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import i18n from 'i18next';
+import { useSignatureRequestContext } from './SignatureRequestContext';
+import type { PendingSignatureRequest, SignatureRequestReceipt } from './SignatureRequestContext';
+
+export interface SignatureRequestHost {
+  request: PendingSignatureRequest | null;
+  /** The signed outcome to show, once the wave has left. */
+  receipt: SignatureRequestReceipt | null;
+  /** Whole seconds until `expiresAt`; `null` when the proposal never expires. */
+  secondsLeft: number | null;
+  /** True while a refreshed proposal is being built. */
+  refreshing: boolean;
+  /** The confirm control's label: "Confirm (12)" or "Refresh Quote" once expired. */
+  confirmLabel: string;
+  /** Confirm, or rebuild first when the quote expired. */
+  confirmOrRefresh: () => Promise<void>;
+  cancel: () => void;
+  /** The receipt's one button: close the window, hand the Powerup back. */
+  dismissReceipt: () => void;
+}
+
+function secondsUntil(expiresAt: string | undefined, now: number): number | null {
+  if (!expiresAt) return null;
+  const at = Date.parse(expiresAt);
+  if (Number.isNaN(at)) return null;
+  return Math.max(0, Math.ceil((at - now) / 1000));
+}
+
+export function useSignatureRequestHost(): SignatureRequestHost {
+  const { pending, receipt, confirm, cancel, dismissReceipt, refresh } =
+    useSignatureRequestContext();
+  const expiresAt = pending?.proposal.expiresAt;
+  const [now, setNow] = useState(() => Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return undefined;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  const secondsLeft = useMemo(() => secondsUntil(expiresAt, now), [expiresAt, now]);
+  const expired = secondsLeft === 0;
+
+  const confirmOrRefresh = useCallback(async () => {
+    if (!pending) return;
+    if (expired) {
+      // A build that has run out is not signable. When the Powerup can rebuild
+      // it, the press rebuilds; when it cannot, the press dismisses. What it
+      // must never do is sign the stale transaction — the button said "Refresh
+      // Quote" and signed the old bytes anyway, so the press the user meant as
+      // "rebuild this" was the press that authorised it.
+      if (!pending.proposal.refresh) {
+        cancel();
+        return;
+      }
+
+      setRefreshing(true);
+      try {
+        await refresh();
+      } finally {
+        setRefreshing(false);
+      }
+      return;
+    }
+    await confirm();
+  }, [pending, expired, refresh, confirm, cancel]);
+
+  const confirmLabel = useMemo(() => {
+    if (expired) {
+      return pending?.proposal.refresh
+        ? i18n.t('confirmation.refreshQuote', { defaultValue: 'Refresh Quote' })
+        : i18n.t('confirmation.expiredDismiss', { defaultValue: 'Expired — Dismiss' });
+    }
+    if (secondsLeft === null) return i18n.t('confirmation.confirm', { defaultValue: 'Confirm' });
+    return i18n.t('confirmation.confirmCountdown', {
+      seconds: secondsLeft,
+      defaultValue: 'Confirm ({{seconds}})',
+    });
+  }, [expired, pending, secondsLeft]);
+
+  return {
+    request: pending,
+    receipt,
+    secondsLeft,
+    refreshing,
+    confirmLabel,
+    confirmOrRefresh,
+    cancel,
+    dismissReceipt,
+  };
+}

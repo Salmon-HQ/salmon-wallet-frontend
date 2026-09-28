@@ -1,7 +1,7 @@
 /**
  * AccountNamePanel — edit account name, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AccountPanels/AccountNamePanel`:
+ * The mobile twin is `apps/mobile/src/components/AccountNamePanel`:
  * a `Card` field, an error line, a disclaimer, and the save button, on the
  * same `AccountNamePanelPropsBase` contract — the caller owns the write.
  */

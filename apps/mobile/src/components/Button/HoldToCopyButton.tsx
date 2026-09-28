@@ -2,7 +2,7 @@
  * HoldToCopyButton — a secondary action that must be held, not tapped.
  *
  * The React Native counterpart of the hold logic in
- * `packages/ui/src/components/DAppApproval/HoldToApproveButton.tsx` (DOM-only,
+ * `packages/ui/src/components/HoldToApproveButton/HoldToApproveButton.tsx` (DOM-only,
  * so it cannot be imported here). Same contract: holding for half a second
  * commits, releasing early cancels, and progress is drawn as a line along the
  * bottom edge. Used for copying the seed phrase — the clipboard is readable by

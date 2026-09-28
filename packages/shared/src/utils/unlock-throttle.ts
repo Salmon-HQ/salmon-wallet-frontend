@@ -25,6 +25,27 @@
 
 import { getStorageItem, removeStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 
+/**
+ * Raised when a password check is refused because an earlier run of wrong
+ * guesses left a wait standing. Distinct from a wrong password on purpose: the
+ * password may well be right, and telling the owner it is wrong sends them
+ * guessing again — which only lengthens the wait.
+ */
+export class UnlockThrottledError extends Error {
+  constructor(readonly remainingMs: number) {
+    super('Too many wrong passwords; wait before trying again');
+    this.name = 'UnlockThrottledError';
+  }
+}
+
+/**
+ * The message key for a password check that threw: "wait" when the throttle
+ * refused it, otherwise the caller's own key for a failed check.
+ */
+export function passwordCheckErrorKey(err: unknown, otherwise: string): string {
+  return err instanceof UnlockThrottledError ? 'errors.password_throttled' : otherwise;
+}
+
 /** Attempts allowed before any delay — fat-fingering a long password is normal. */
 export const UNLOCK_FREE_ATTEMPTS = 3;
 

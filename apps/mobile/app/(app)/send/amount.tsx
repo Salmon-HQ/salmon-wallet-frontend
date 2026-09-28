@@ -23,30 +23,28 @@
  * field. A memo has to reach the transaction builder, which is a
  * transaction-path change and is not made here. See the spec report.
  */
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   SOL_CONSTANTS,
   formatTokenAmount,
-  fontFamilyNative,
-  fontSize,
   getShortAddress,
   getSolShortfall,
   useFieldFocus,
-  lineHeight,
   s,
-  sanitizeDecimalInput,
   spacing,
-  tabularNums,
-  useCurrencyContext,
+  useFiatLine,
   vs,
   type Semantic,
+  useAmountShortcuts,
+  useDeferredFeeEstimate,
 } from '@salmon/shared';
 
 import {
+  AmountEntryCard,
   Card,
   ChipGroup,
   DepthBackground,
@@ -57,34 +55,9 @@ import {
 } from '../../../src/components';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
-import { useThemedStyles, useSemantic } from '../../../src/theme/useThemedStyles';
+import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
-
-// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
-// mutable one.
-const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
-
-/**
- * The amount being typed, at the size the frames draw it (CORE 05, 46/700).
- *
- * Deliberately a local constant rather than a new step in `fontSize`: the
- * scale tops out at the balance's 38 and this is the one number in the app
- * larger than the total balance — a size this screen owns, not a role the
- * type system offers.
- */
-const AMOUNT_ENTRY_FONT = 46;
-
-/** How long the fee estimate waits before firing, in ms. */
-const FEE_DEBOUNCE_MS = 300;
-
-/** The four fills the frames draw. `1` is MAX — the whole balance, as today. */
-const SHORTCUTS = [
-  { key: '25', value: 0.25 },
-  { key: '50', value: 0.5 },
-  { key: '75', value: 0.75 },
-  { key: 'max', value: 1 },
-] as const;
 
 /** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
 function formatSolAmount(value: number): string {
@@ -95,11 +68,9 @@ export default function SendAmountScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
-  const semantic = useSemantic();
   const amountFocus = useFieldFocus();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
-  const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const {
     blockchain,
     token,
@@ -136,33 +107,15 @@ export default function SendAmountScreen() {
     return !!token && !!recipient && amountValid && !solShortfall;
   }, [amount, tokenBalance, token, recipient, solShortfall]);
 
-  const handleShortcut = useCallback(
-    (key: string) => {
-      const option = SHORTCUTS.find((shortcut) => shortcut.key === key);
-      if (!option || !token) return;
-      const fillAmount = tokenBalance * option.value;
-      const decimals = token.decimals ?? 9;
-      const truncated = Math.floor(fillAmount * 10 ** decimals) / 10 ** decimals;
-      setAmount(truncated > 0 ? truncated.toString() : '0');
-    },
-    [tokenBalance, token, setAmount]
-  );
+  // The balance fills; a fill stays lit until the user types over it.
+  const shortcuts = useAmountShortcuts({
+    balance: token ? tokenBalance : undefined,
+    decimals: token?.decimals,
+    setAmount,
+    maxLabel: t('general.max'),
+  });
 
-  const tokenPrice = token?.price;
-  const fiatDisplay = useMemo(() => {
-    const numAmount = parseFloat(amount) || 0;
-    const fiat = !tokenPrice || numAmount === 0 ? 0 : numAmount * tokenPrice;
-    return `≈ ${formatPrecise(fiat)} ${currency.toUpperCase()}`;
-  }, [amount, tokenPrice, formatPrecise, currency]);
-
-  const shortcutOptions = useMemo(
-    () =>
-      SHORTCUTS.map((shortcut) => ({
-        key: shortcut.key,
-        label: shortcut.key === 'max' ? t('general.max') : `${shortcut.key}%`,
-      })),
-    [t]
-  );
+  const fiatDisplay = useFiatLine(amount, token?.price);
 
   const recipientShort = recipient
     ? (getShortAddress(recipient.resolvedAddress || recipient.address, 4) ??
@@ -170,17 +123,8 @@ export default function SendAmountScreen() {
       recipient.address)
     : '';
 
-  // The fee, asked for once the screen settles. The context no-ops a request
-  // for a pair it already holds, so the debounce only spares the first frames
-  // of a token change — it is not what keeps the request count at one.
-  // `hasAmount` is a dependency because the context refuses to price an
-  // empty amount: the request has to fire again the moment there is one.
-  const hasAmount = parseFloat(amount) > 0;
-  useEffect(() => {
-    if (!hasAmount) return undefined;
-    const timer = setTimeout(estimateFee, FEE_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [estimateFee, hasAmount]);
+  // The fee, asked for once the screen settles — one estimate for the flow.
+  useDeferredFeeEstimate(estimateFee, amount);
 
   const actionBottomPadding =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
@@ -222,38 +166,21 @@ export default function SendAmountScreen() {
         />
 
         {/* The amount. Tabular, so a repoll never reflows the digits. */}
-        <Card
-          padding="lg"
-          gap={spacing.base}
-          style={[styles.amountCard, amountFocus.focused && { borderColor: semantic.accent.ink }]}
-        >
-          <View style={styles.amountRow}>
-            <TextInput
-              testID="send-amount-input"
-              style={styles.amountInput}
-              placeholder="0"
-              placeholderTextColor={semantic.text.tertiary}
-              onFocus={amountFocus.onFocus}
-              onBlur={amountFocus.onBlur}
-              value={amount}
-              onChangeText={(text) => setAmount(sanitizeDecimalInput(text))}
-              keyboardType="decimal-pad"
-              autoCorrect={false}
-            />
-            <Text style={styles.ticker}>{token?.symbol ?? ''}</Text>
-          </View>
-          <Text style={styles.fiat} testID="send-amount-fiat">
-            {fiatDisplay}
-          </Text>
-        </Card>
+        <AmountEntryCard
+          testID="send-amount"
+          value={amount}
+          onChangeValue={shortcuts.onAmountChange}
+          subtext={fiatDisplay}
+          focused={amountFocus.focused || shortcuts.selected !== ''}
+          onFocus={amountFocus.onFocus}
+          onBlur={amountFocus.onBlur}
+        />
 
         <ChipGroup
           testID="send-shortcuts"
-          options={shortcutOptions}
-          // A shortcut is an action, not a selection: nothing stays lit after
-          // the fill, so the group never carries a value.
-          value=""
-          onChange={handleShortcut}
+          options={shortcuts.options}
+          value={shortcuts.selected}
+          onChange={shortcuts.select}
           size="md"
           fill
           variant="outline"
@@ -296,7 +223,7 @@ export default function SendAmountScreen() {
   );
 }
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = (_t: Semantic) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -308,35 +235,6 @@ const stylesFor = (t: Semantic) =>
       paddingHorizontal: s(spacing.screenGutter),
       paddingBottom: vs(spacing.screenGutter),
       gap: vs(spacing.screenGutter),
-    },
-    amountCard: {
-      alignItems: 'center',
-    },
-    amountRow: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: s(spacing.sm),
-    },
-    amountInput: {
-      ...TABULAR,
-      minWidth: s(80),
-      fontSize: s(AMOUNT_ENTRY_FONT),
-      lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.primary,
-      textAlign: 'right',
-      paddingVertical: 0,
-    },
-    ticker: {
-      fontSize: s(fontSize.body),
-      fontFamily: fontFamilyNative.bold,
-      color: t.text.secondary,
-    },
-    fiat: {
-      ...TABULAR,
-      fontSize: s(fontSize.mono),
-      fontFamily: fontFamilyNative.medium,
-      color: t.text.secondary,
     },
     shortcuts: {
       flexGrow: 0,

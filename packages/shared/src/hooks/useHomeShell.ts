@@ -4,10 +4,10 @@
  * Home is the same screen on mobile (`apps/mobile/app/(app)/(tabs)/index.tsx`)
  * and on the side panel (`apps/extension/src/pages/home/HomePage.tsx`): the
  * balance block paging through the wallet's networks, the Portfolio | NFTs
- * row in the user's order, a content region that swaps with the sink/float
+ * row in the user's order, a content region that changes with the sink/float
  * verb. This hook holds what is not platform-bound in that — the page index,
  * the balances per page, which network the screen stands on, which sub-tabs
- * are offered there, and WHICH wrapper owns the current swap so the verb
+ * are offered there, and WHICH wrapper owns the current change so the verb
  * never nests (DESIGN.md §The balance block's motion, rule five). Each
  * platform keeps its own rendering, its own fade reset, haptics and routing.
  *
@@ -17,24 +17,53 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { getBlockchainFromNetworkId } from '../config/blockchains';
-import type { BlockchainType } from '../types/blockchain';
+import type { BlockchainType, PowerupDisabledReason } from '../types/blockchain';
 import type { CoinInfo } from '../types/price';
 import type { Token } from '../types/ui';
 import type { BlockchainBalance, BlockchainId } from '../types/ui/balance-card';
 import { useHomeTabOrder } from './useHomeTabOrder';
-
-/** The two in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered`. */
-export type HomeSubTabKey = 'portfolio' | 'nfts';
+// Type-only: erased before any bundler runs, so a Powerups-off build still
+// reaches no manifest. The ids themselves arrive at runtime as
+// `allPowerupKeys`, read by the app through the aliased Powerups entry.
+import type { PowerupId } from '../powerups/registry';
 
 /**
- * The sub-tabs Home offers, in the order it draws them before the user has
- * arranged anything. A powerup that adds a surface to Home adds its key here;
- * `useHomeTabOrder` reconciles the stored arrangement against this list.
+ * The in-page sub-tabs. NFTs only exist on Solana — see `nftsOffered` — and
+ * a Powerup's only once it is installed on this device and the screen
+ * stands on a network it acts on (`powerupTabs`).
  */
-export const HOME_TAB_KEYS: HomeSubTabKey[] = ['portfolio', 'nfts'];
+export type HomeSubTabKey = HomeCoreTabKey | PowerupId;
 
-/** What can swap Home's content, and therefore which wrapper plays the verb. */
-export type HomeSwapCause = 'none' | 'chain' | 'subtab' | 'task';
+/** The two tabs Home draws with no Powerup installed at all. */
+export type HomeCoreTabKey = 'portfolio' | 'nfts';
+
+/**
+ * Core's own keys, first in the order Home uses if the user never arranged
+ * anything. The Powerups' keys follow, supplied by the app as
+ * `allPowerupKeys` (`POWERUP_TAB_KEYS`) — a Powerup's key belongs to the
+ * default arrangement so its place survives an uninstall, and deriving it
+ * from the registry keeps the ids written in one place: the manifests.
+ * Whether a tab is OFFERED is decided per render from `powerupTabs`.
+ */
+export const HOME_CORE_TAB_KEYS: HomeCoreTabKey[] = ['portfolio', 'nfts'];
+
+/** An installed Powerup's Home surface, as the app hands it to the shell. */
+export interface HomePowerupTab {
+  /** The Powerup's id, which is also its sub-tab key. */
+  key: HomeSubTabKey;
+  /**
+   * Set when the backend has switched the Powerup off (spec 029 §5.2): the
+   * tab is still offered, and its surface is the reason, never a blank.
+   */
+  disabledReason?: PowerupDisabledReason;
+  /** Already localised — the shell does not know a Powerup's copy keys. */
+  label: string;
+  /** The networks it acts on; elsewhere the tab is not offered. */
+  networks: readonly string[];
+}
+
+/** What can change Home's content, and therefore which wrapper plays the verb. */
+export type HomeChangeCause = 'none' | 'chain' | 'subtab' | 'task';
 
 export interface UseHomeShellParams {
   /** The networks the balance block offers, in page order. */
@@ -58,6 +87,25 @@ export interface UseHomeShellParams {
   surfaceKey: number;
   /** Persists the network change; the index is written optimistically first. */
   changeNetwork: (networkId: string) => Promise<unknown> | unknown;
+  /**
+   * The installed Powerups' Home surfaces. The app reads the registry and the
+   * installed list through the aliased Powerups entry, so a build with
+   * Powerups off simply passes none and the shell knows nothing about them.
+   */
+  powerupTabs?: readonly HomePowerupTab[];
+  /**
+   * The installed list has been read from storage (`useInstalledPowerups().hydrated`).
+   * Until it has, the sub-tabs are a placeholder and must not animate into
+   * their final set. Defaults to true for a build with Powerups off.
+   */
+  powerupsHydrated?: boolean;
+  /**
+   * Every Powerup id that carries a tab, installed or not, in the registry's
+   * order — `POWERUP_TAB_KEYS` from the aliased Powerups entry. It fixes the
+   * default arrangement; a build with Powerups off passes none. Pass a stable
+   * reference: it keys the stored order.
+   */
+  allPowerupKeys?: readonly string[];
 }
 
 export interface UseHomeShellResult {
@@ -77,12 +125,14 @@ export interface UseHomeShellResult {
   setSubTabOrder: (order: string[]) => void;
   /** The tabs to draw, labelled, in the user's order, minus what is not offered. */
   subTabs: { key: HomeSubTabKey; label: string }[];
-  /** The rendered set — the row plays the verb when THIS changes, not on a switch. */
-  subTabsKey: string;
-  /** False on first mount and after a surfacing; true when the tab set changed. */
-  tabsHasPrior: boolean;
-  /** Who owns the current swap; exactly one wrapper animates. */
-  swapCause: HomeSwapCause;
+  /**
+   * The sub-tabs are the set the user will see: the installed list and the
+   * stored order have both been read. A change before this is hydration,
+   * not an event, and the row applies it without motion.
+   */
+  subTabsSettled: boolean;
+  /** Who owns the current change; exactly one wrapper animates. */
+  changeCause: HomeChangeCause;
   taskHasPrior: boolean;
   subTabHasPrior: boolean;
   chainHasPrior: boolean;
@@ -109,6 +159,9 @@ export function useHomeShell({
   isTaskEngaged,
   surfaceKey,
   changeNetwork,
+  powerupTabs,
+  powerupsHydrated = true,
+  allPowerupKeys,
 }: UseHomeShellParams): UseHomeShellResult {
   const { t } = useTranslation();
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
@@ -178,53 +231,72 @@ export function useHomeShell({
   // The stored arrangement is untouched, so the tab returns to its own place
   // when the block comes back to Solana.
   const nftsOffered = currentChain === 'solana';
-  const effectiveSubTab: HomeSubTabKey =
-    activeSubTab === 'nfts' && !nftsOffered ? 'portfolio' : activeSubTab;
 
-  const { order: subTabOrder, setOrder: setSubTabOrder } = useHomeTabOrder(HOME_TAB_KEYS);
+  // Core's keys, then every Powerup's — the registry's for the arrangement,
+  // plus any offered tab the caller did not list, so an offered Powerup can
+  // never fall out of the order and vanish from the row.
+  const offeredPowerupKeys = powerupTabs?.map((tab) => tab.key).join(',') ?? '';
+  const defaultTabKeys = useMemo(() => {
+    const keys: string[] = [...HOME_CORE_TAB_KEYS, ...(allPowerupKeys ?? [])];
+    for (const key of offeredPowerupKeys ? offeredPowerupKeys.split(',') : []) {
+      if (!keys.includes(key)) keys.push(key);
+    }
+    return keys as HomeSubTabKey[];
+  }, [allPowerupKeys, offeredPowerupKeys]);
+  const {
+    order: subTabOrder,
+    setOrder: setSubTabOrder,
+    hydrated: orderHydrated,
+  } = useHomeTabOrder(defaultTabKeys);
+  const subTabsSettled = powerupsHydrated && orderHydrated;
+  // The array arrives as a fresh literal on every render, so the memo keys on
+  // its contents rather than on its identity.
+  const powerupTabsKey = (powerupTabs ?? [])
+    .map(
+      (tab) =>
+        `${tab.key}\u0000${tab.label}\u0000${tab.networks.join(',')}\u0000${tab.disabledReason ?? ''}`
+    )
+    .join('|');
   const subTabs = useMemo(() => {
     const labels: Record<string, string> = {
       portfolio: t('tabs.portfolio', 'Portfolio'),
       nfts: t('tabs.nfts', 'NFTs'),
     };
+    // A Powerup's tab is offered only where it acts. An uninstalled one is not
+    // in this map at all, so it has no label and drops out below — its place
+    // in the stored arrangement is left untouched for a reinstall.
+    for (const tab of powerupTabs ?? []) {
+      if (tab.networks.includes(currentNetworkId)) labels[tab.key] = tab.label;
+    }
     return subTabOrder.flatMap((key) => {
       if (key === 'nfts' && !nftsOffered) return [];
       const label = labels[key];
       return label ? [{ key: key as HomeSubTabKey, label }] : [];
     });
-  }, [subTabOrder, nftsOffered, t]);
-  const subTabsKey = subTabs.map((tab) => tab.key).join('|');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTabOrder, nftsOffered, currentNetworkId, powerupTabsKey, t]);
 
-  // The row plays the verb whenever the SET of tabs changes — a reorder, NFTs
-  // leaving on Bitcoin, floating back on Solana — never on a switch within the
-  // same set, so the underline keeps sliding. First mount owes no verb, and a
-  // surfacing silences the row like it silences the content wrappers.
-  // Render-time setState: refs cannot be read during render.
-  const [tabsSwap, setTabsSwap] = useState({
-    key: subTabsKey,
-    surface: surfaceKey,
-    hasPrior: false,
-  });
-  if (tabsSwap.surface !== surfaceKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: false });
-  } else if (tabsSwap.key !== subTabsKey) {
-    setTabsSwap({ key: subTabsKey, surface: surfaceKey, hasPrior: true });
-  }
-
-  // Three causes can swap the content and they must never speak at once: a
+  // Whatever is not offered here falls back to Portfolio — leaving Bitcoin
+  // with NFTs open, uninstalling the Powerup whose tab is showing, or a
+  // session restored onto a tab this network does not carry. The stored
+  // arrangement is untouched, so the tab returns to its own place when it is
+  // offered again (spec 026, ruling 3).
+  const isOffered = subTabs.some((tab) => tab.key === activeSubTab);
+  const effectiveSubTab: HomeSubTabKey = isOffered ? activeSubTab : 'portfolio';
+  // Three causes can change the content and they must never speak at once: a
   // task taking or releasing the screen owns the screen wrapper, a sub-tab
   // change owns the content region, a chain change owns the chain wrapper
-  // inside it. The cause of the current swap is recorded and only the wrapper
-  // that owns it animates. A SURFACING is not a swap: Home is never unmounted
+  // inside it. The cause of the current change is recorded and only the wrapper
+  // that owns it animates. A SURFACING is not a change: Home is never unmounted
   // while the wait is up, so the last gesture is still recorded when the
   // water clears — the surfacing wins, the cause goes back to 'none', and only
   // the screen wrapper speaks, with no beat.
-  const [contentSwap, setContentSwap] = useState<{
+  const [contentChange, setContentChange] = useState<{
     chain: string;
     subTab: HomeSubTabKey;
     engaged: boolean;
     surface: number;
-    cause: HomeSwapCause;
+    cause: HomeChangeCause;
   }>({
     chain: currentNetworkId,
     subTab: effectiveSubTab,
@@ -232,8 +304,8 @@ export function useHomeShell({
     surface: surfaceKey,
     cause: 'none',
   });
-  if (contentSwap.surface !== surfaceKey) {
-    setContentSwap({
+  if (contentChange.surface !== surfaceKey) {
+    setContentChange({
       chain: currentNetworkId,
       subTab: effectiveSubTab,
       engaged: isTaskEngaged,
@@ -241,11 +313,11 @@ export function useHomeShell({
       cause: 'none',
     });
   } else if (
-    contentSwap.chain !== currentNetworkId ||
-    contentSwap.subTab !== effectiveSubTab ||
-    contentSwap.engaged !== isTaskEngaged
+    contentChange.chain !== currentNetworkId ||
+    contentChange.subTab !== effectiveSubTab ||
+    contentChange.engaged !== isTaskEngaged
   ) {
-    setContentSwap({
+    setContentChange({
       chain: currentNetworkId,
       subTab: effectiveSubTab,
       engaged: isTaskEngaged,
@@ -253,9 +325,9 @@ export function useHomeShell({
       // Leaving Solana can change the chain AND drop NFTs in the same render.
       // The sub-tab wins: the content region is the one wrapper that speaks.
       cause:
-        contentSwap.engaged !== isTaskEngaged
+        contentChange.engaged !== isTaskEngaged
           ? 'task'
-          : contentSwap.subTab !== effectiveSubTab
+          : contentChange.subTab !== effectiveSubTab
             ? 'subtab'
             : 'chain',
     });
@@ -288,12 +360,11 @@ export function useHomeShell({
     subTabOrder,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
-    tabsHasPrior: tabsSwap.hasPrior,
-    swapCause: contentSwap.cause,
-    taskHasPrior: contentSwap.cause === 'task',
-    subTabHasPrior: contentSwap.cause === 'subtab',
-    chainHasPrior: contentSwap.cause === 'chain',
+    subTabsSettled,
+    changeCause: contentChange.cause,
+    taskHasPrior: contentChange.cause === 'task',
+    subTabHasPrior: contentChange.cause === 'subtab',
+    chainHasPrior: contentChange.cause === 'chain',
     selectBlockchain,
   };
 }

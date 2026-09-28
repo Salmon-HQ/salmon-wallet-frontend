@@ -29,8 +29,10 @@ API_PORT="${API_URL##*:}"
 command -v maestro >/dev/null 2>&1 || die "maestro not on PATH. Install: curl -Ls https://get.maestro.mobile.dev | bash"
 
 # ---------------------------------------------------------------- secrets ----
-# Maestro does not inherit the shell environment into flows, so every value has
-# to be forwarded with -e. Forgetting one does not fail: the flow interpolates
+# Maestro hands a flow only the shell variables prefixed MAESTRO_, so each value
+# is exported under that prefix — never passed as `-e KEY=value`, which puts
+# seeds and the password in the process list for anything that runs `ps`.
+# Forgetting one does not fail: the flow interpolates
 # the literal string "undefined", types it into the seed field, and dies many
 # steps later on an unrelated selector. Fail here instead, naming the variable.
 [[ -f .env.test ]] || die ".env.test missing. Copy .env.test.example and fill it in."
@@ -49,9 +51,8 @@ for key in "${REQUIRED[@]}"; do
 done
 [[ ${#MISSING[@]} -eq 0 ]] || die "Missing in .env.test: ${MISSING[*]}"
 
-MAESTRO_ENV=()
 for key in "${REQUIRED[@]}"; do
-  MAESTRO_ENV+=(-e "$key=${!key}")
+  export "MAESTRO_$key=${!key}"
 done
 
 # ----------------------------------------------------------------- device ----
@@ -133,10 +134,71 @@ else
       pnpm --filter @salmon/mobile start"
 fi
 
+# ------------------------------------------------------------------ single ---
+# Maestro's device forwarder binds a fixed port (7001): a second run against
+# the same machine fails in seconds with an IOException that reads like a
+# broken flow. Refuse instead, naming the run that holds it.
+LOCK_DIR="${TMPDIR:-/tmp}/salmon-maestro.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  die "another Maestro run holds $LOCK_DIR (pid $(cat "$LOCK_DIR/pid" 2>/dev/null || echo '?')).
+    Wait for it, or remove the directory if that run is gone."
+fi
+echo $$ > "$LOCK_DIR/pid"
+trap 'rm -rf "$LOCK_DIR"' EXIT
+
+# ------------------------------------------------------------------ device ---
+if [[ $IS_ANDROID -eq 1 ]]; then
+  [[ "$("${ADB[@]}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] \
+    || die "no booted Android device${DEVICE:+ ($DEVICE)}. Boot the emulator first."
+  ok "Android device booted"
+fi
+
+# ------------------------------------------------------------------ bundle ---
+# The dev launcher waits on Metro's first build of the bundle (tens of
+# seconds on a cold cache) and the first flow reads that as a hang. Build it
+# here. In this monorepo the entry is apps/mobile/index — /index.bundle 404s.
+PLATFORM=$([[ $IS_ANDROID -eq 1 ]] && echo android || echo ios)
+BUNDLE_URL="${METRO_URL%/status}/apps/mobile/index.bundle?platform=$PLATFORM&dev=true&minify=false"
+BUNDLE_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 300 "$BUNDLE_URL" 2>/dev/null || true)
+[[ "$BUNDLE_CODE" == "200" ]] || die "Metro could not build the $PLATFORM bundle (HTTP ${BUNDLE_CODE:-none}).
+    Open $BUNDLE_URL to see the error."
+ok "Metro bundle built for $PLATFORM"
+
+# -------------------------------------------------------------- installed ---
+# A dev build made for another Expo SDK loads this checkout's bundle and
+# fails at runtime in ways that look like app bugs. Compare the SDK baked
+# into the installed build with the checkout's.
+if [[ $IS_ANDROID -eq 1 ]]; then
+  APK_PATH=$("${ADB[@]}" shell pm path io.salmonwallet.app 2>/dev/null | head -1 | sed 's/^package://' | tr -d '\r')
+  [[ -n "$APK_PATH" ]] || die "io.salmonwallet.app is not installed. Build it: pnpm --filter @salmon/mobile android"
+  TMP_APK=$(mktemp -t salmon-apk)
+  "${ADB[@]}" pull "$APK_PATH" "$TMP_APK" >/dev/null 2>&1
+  INSTALLED_CONFIG=$(unzip -p "$TMP_APK" assets/app.config 2>/dev/null)
+  rm -f "$TMP_APK"
+  INSTALLED_SDK=$(sed -n 's/.*"sdkVersion":"\([0-9]*\)\..*/\1/p' <<<"$INSTALLED_CONFIG")
+  EXPECTED_SDK=$(node -p "require('$SUITE_DIR/../../../node_modules/expo/package.json').version.split('.')[0]")
+  [[ "$INSTALLED_SDK" == "$EXPECTED_SDK" ]] || die "the installed build is for Expo SDK ${INSTALLED_SDK:-unknown}; this checkout is SDK $EXPECTED_SDK.
+    Rebuild it: rm -rf apps/mobile/android && pnpm --filter @salmon/mobile android"
+  ok "installed build matches Expo SDK $EXPECTED_SDK"
+  # Without the quiet dev menu, a sheet covers the first screen at launch and
+  # a floating tools button covers the settings gear on every screen.
+  [[ "$INSTALLED_CONFIG" == *withQuietDevMenu* ]] || die "the installed build predates the quiet dev menu (plugins/withQuietDevMenu.js).
+    Rebuild it: pnpm --filter @salmon/mobile android"
+  ok "installed build opens without the dev menu"
+fi
+
+# ------------------------------------------------------------ devnet ------
+# Every flow that sends or views funds or NFTs does it on devnet. This keeps
+# Wallet A funded (topped up from B) and holding the NFT fixture (a transfer
+# moves it to B; the next run mints another), and stops the run, naming the
+# faucet, when B runs low. The secrets reach it through the environment.
+FIXTURE_OUT=$(node --no-deprecation "$SUITE_DIR/../../../scripts/devnet-fixtures.cjs" 2>&1) || die "$FIXTURE_OUT"
+ok "$FIXTURE_OUT"
+
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)
 [[ -n "$DEVICE" ]] && CMD+=(--device "$DEVICE")
-CMD+=(test "${MAESTRO_ENV[@]}" "${PASSTHROUGH[@]}")
+CMD+=(test "${PASSTHROUGH[@]}")
 
 printf '%s→ maestro test %s%s\n' "$DIM" "${PASSTHROUGH[*]}" "$OFF"
-exec "${CMD[@]}"
+"${CMD[@]}"

@@ -53,6 +53,6 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = React.memo(functi
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });

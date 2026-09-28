@@ -45,7 +45,7 @@ Follows spec 021 (light theme). 021 migrated every screen to `useThemedStyles`; 
 
 - The tab shell migrates to `useThemedStyles`/`useSemantic`. Ground colour = `water.gradient[1]`; bottom fade = `water.fadeBottom`.
 - `DepthBackground` draws `LinearGradient(water.gradient)` in both modes; the light branch goes.
-- `WalletHeader` leaves the absolute slot and is laid out in flow as Home's first child. `useTabChrome` keeps `headerChromeHeight` for the screens that still need it (swap) — Home stops consuming it for its offsets.
+- `WalletHeader` leaves the absolute slot and is laid out in flow as Home's first child. `useTabChrome` keeps `headerChromeHeight` for the screens that still need it — Home stops consuming it for its offsets.
 - Home lays out: header → balance block → sub-tab row (one `PortfolioSubTabs` instance, one parent, both tabs) → content region (`flex: 1`). The content region holds the active tab's own scroll view (TokenList / Bitcoin column / NftsTab). Seams stay the component gap (20).
 - One fade at the seam between the row and the content region: `water.fadeTop`, `componentSizes.sheetFadeGradientHeight` tall, opacity driven by the active list's scroll offset as today (`TOP_FADE_SCROLL_RANGE`). The band, `headerChromeHeight` in the fade, the sticky row, its scrim, both `onLayout`s, the spacer, `STICKY_SCRIM_START` and the unmeasured state are deleted.
 - `NftsTab` no longer takes `listHeader`/`contentTopOffset`; its `NftsTabHeader` loses the `listHeader` slot.

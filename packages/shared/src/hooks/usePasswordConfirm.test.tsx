@@ -4,6 +4,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { usePasswordConfirm } from './usePasswordConfirm';
+import { UnlockThrottledError } from '../utils/unlock-throttle';
 
 const t = (key: string, fallback: string) => `${key}|${fallback}`;
 
@@ -34,6 +35,21 @@ describe('usePasswordConfirm', () => {
     expect(result.current.loading).toBe(false);
     expect(onConfirm).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // A refusal for waiting is not a wrong password. Saying "Invalid password"
+  // to someone who typed the right one sends them guessing again, which only
+  // lengthens the wait.
+  it('says to wait, not that the password is wrong, while a penalty stands', async () => {
+    const { result, onConfirm } = setup({
+      validatePassword: async () => {
+        throw new UnlockThrottledError(5_000);
+      },
+    });
+    act(() => result.current.setPassword('right-password-000'));
+    await act(() => result.current.confirm());
+    expect(result.current.passwordError?.startsWith('errors.password_throttled|')).toBe(true);
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it('runs the action with the checked password, then closes', async () => {

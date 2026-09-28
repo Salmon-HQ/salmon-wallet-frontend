@@ -109,6 +109,7 @@ export default function SeedWarningScreen() {
       title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
       body={
         <ScrollView
+          testID="seed-warning-body"
           onLayout={handleLayout}
           onContentSizeChange={handleContentSize}
           onScroll={handleScroll}

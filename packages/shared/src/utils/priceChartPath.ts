@@ -4,7 +4,7 @@
  *
  * Every period's series is resampled to `RESAMPLE_POINTS` so two periods
  * always yield same-length arrays — which is what makes the curve
- * interpolable when the range changes, instead of a hard swap.
+ * interpolable when the range changes, instead of a hard cut.
  *
  * Mobile keeps its own copy of `buildLinePath` marked `'worklet'`: it runs on
  * the UI thread inside a Reanimated derived value every frame of the morph,

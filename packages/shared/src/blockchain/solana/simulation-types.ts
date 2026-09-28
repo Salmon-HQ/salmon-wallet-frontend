@@ -31,6 +31,15 @@ export type UndeterminedReason =
   /** The RPC call itself failed — offline, rate limited, node error. */
   | 'simulation-unavailable'
   /**
+   * A token account the wallet owns changes hands: its `owner` differs
+   * between the pre and post state, which SPL `SetAuthority(AccountOwner)`
+   * does. The balance and the delegate are untouched, so the amount/delegate
+   * diff below sees nothing — yet the holder loses the account and everything
+   * in it. The effect is real and total; what this build cannot do is render
+   * it as a row, so it must not be rendered as "no change" either.
+   */
+  | 'ownership-change'
+  /**
    * The node accepted the request but never executed the transaction (it
    * returns no logs), so there is no post state to diff.
    */
@@ -200,6 +209,8 @@ export interface MintState {
 /** One account, at one point in time. `null` means the account does not exist. */
 export interface AccountState {
   readonly lamports: bigint;
+  /** Program that owns the account. */
+  readonly owner: Address;
   /** Decoded token account, or `null` if this account is not an SPL token account. */
   readonly token: TokenAccountState | null;
 }

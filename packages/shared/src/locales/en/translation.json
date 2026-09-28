@@ -62,16 +62,13 @@
     "done": "Done",
     "send": "Send",
     "search_placeholder": "Search...",
-    "view_more": "View more",
     "continue": "Continue",
     "follow_us": "Follow us",
     "retry": "Retry",
-    "searching": "Searching...",
     "activity": "Activity",
     "copied": "Copied!",
     "edit": "Edit",
-    "reveal": "Reveal",
-    "select": "Select"
+    "reveal": "Reveal"
   },
   "dapp": {
     "decode_error": "This transaction could not be decoded. Do not approve unless you trust this site.",
@@ -150,7 +147,10 @@
     "effects_approval_unlimited": "an unlimited amount of",
     "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.",
     "hold_to_approve": "Hold to Approve",
-    "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it."
+    "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
+    "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
+    "batch_size": "Transactions in this request",
+    "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one."
   },
   "settings": {
     "title": "Settings",
@@ -219,7 +219,7 @@
     "developer_networks": "Developer Networks",
     "developer_networks_description": "Show testnet and devnet networks",
     "unverified_tokens": "Show unverified tokens",
-    "unverified_tokens_description": "Show tokens and collectibles that have not been verified, spam included. Off by default.",
+    "unverified_tokens_description": "Show tokens and collectibles that are unverified or low-cap, spam included. Off by default.",
     "analytics": "Usage Data",
     "analytics_description": "Share pseudonymous usage stats to help improve Salmon. Never includes addresses, balances, or amounts. Off by default.",
     "analytics_prompt_title": "Help improve Salmon",
@@ -321,7 +321,7 @@
       "import_private_key_description": "Add a wallet you already own using its private key",
       "reauth_title": "Confirm your password",
       "reauth_subtitle": "Enter your password to keep going.",
-      "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
+      "reauth_body": "For your security, the key that encrypts your wallet is not held in memory right now. Enter your password to finish adding this account — nothing you entered is lost.",
       "reauth_confirm": "Confirm and add",
       "import_watch_only": "Watch a wallet",
       "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds",
@@ -409,7 +409,6 @@
     },
     "detail": {
       "title": "Token Information",
-      "currentPrice": "Current price",
       "periodChange": "{{period}} change"
     },
     "chart": {
@@ -493,7 +492,8 @@
       "biometric_setup_skip": "Maybe Later",
       "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
       "creating_account": "Creating Account",
-      "securing_wallet": "Please wait while we secure your wallet"
+      "securing_wallet": "Please wait while we secure your wallet",
+      "acknowledge_written_down": "I wrote my recovery phrase down somewhere safe"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
@@ -527,7 +527,6 @@
     "loading_wallet": "Loading wallet...",
     "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
     "unnamed_account": "Account",
-    "token_search_failed": "Search isn't available right now. Try again.",
     "import": {
       "title": "Import private key",
       "label": "Private key",
@@ -552,7 +551,6 @@
       "help": "You will see this wallet’s balance and activity. You will not be able to move anything in it.",
       "resolved_address": "Wallet to watch",
       "badge": "Watch-only",
-      "disabled_action": "This is a watch-only wallet. It was added with an address only, so Salmon holds no key for it and cannot sign.",
       "errors": {
         "empty": "Enter a wallet address to continue.",
         "format": "That is not a Solana address. Check you copied all of it.",
@@ -573,12 +571,13 @@
     "detail": {
       "sent": "Sent",
       "received": "Received",
-      "swapped": "Swapped",
       "minted": "Minted",
       "burned": "Burned",
       "staked": "Staked",
       "loan": "Loan",
       "interaction": "Interaction",
+      "memo": "Memo",
+      "note": "Note",
       "unknown": "Unknown",
       "completed": "Completed",
       "failed": "Failed",
@@ -592,37 +591,31 @@
       "dateTime": "Date & Time",
       "confirmation": "Confirmation",
       "block": "Block",
-      "conversion": "Conversion",
-      "swapRoute": "Swap Route",
       "networkFee": "Network Fee",
-      "swapFee": "Swap Fee",
       "transactionHash": "Transaction Hash",
       "developerInfo": "Developer Info",
       "heliusType": "Type",
       "accountsInvolved": "Accounts Involved",
       "programs": "Programs",
-      "innerSwaps": "Inner Swaps",
-      "swapFees": "Swap Fees",
       "sentLabel": "Sent",
       "receivedLabel": "Received",
       "rate": "Rate",
       "feePayer": "Fee Payer",
       "share": "Share",
-      "nMore": "+{{count}} more",
       "time": "Time",
       "viewOnExplorer": "View on Explorer",
       "viewOn": "View on {{name}}",
       "copyAddressLabel": "Copy {{label}} address",
       "innerCount": "{{count}} inner",
       "copyTransactionHash": "Copy transaction hash",
+      "explorerOpenFailed": "Couldn’t open the explorer",
       "chooseExplorer": "Choose Explorer",
-      "nftMediaAlt": "NFT media"
+      "nftMediaAlt": "NFT media",
+      "app": "App"
     },
     "tapToViewDetails": "Tap to view transaction details",
     "share_message": "Check out this transaction: {{url}}",
     "description": {
-      "swap": "{{from}} to {{to}}",
-      "swapMany": "{{fromCount}} tokens to {{toCount}} tokens",
       "sendTo": "To {{address}}",
       "send": "Sent tokens",
       "receiveFrom": "From {{address}}",
@@ -632,7 +625,16 @@
       "stake": "Staking operation",
       "loan": "Loan operation",
       "interaction": "Contract interaction",
-      "fallback": "Transaction"
+      "memo": "On-chain note",
+      "memoNote": "{{note}}",
+      "fallback": "Transaction",
+      "swap": "{{from}} → {{to}}"
+    },
+    "action": {
+      "swap": "Swapped",
+      "nftSale": "NFT sold",
+      "nftPurchase": "NFT bought",
+      "accountsClosed": "Accounts closed"
     }
   },
   "nft": {
@@ -655,6 +657,8 @@
       "mintAddress": "Mint address"
     },
     "send": {
+      "pendingTitle": "Sending NFT",
+      "pendingSummary": "{{name}} to {{address}}",
       "title": "Send NFT",
       "reviewTitle": "Review Send",
       "enterRecipientAddress": "Enter recipient address",
@@ -663,6 +667,7 @@
       "successSummary": "{{name}} sent to {{address}}"
     },
     "burn": {
+      "pendingTitle": "Burning NFT",
       "reviewTitle": "Burn NFT",
       "reviewBody": "This action is irreversible. Confirm only if you want to permanently burn this NFT.",
       "preparing": "Preparing burn...",
@@ -684,53 +689,13 @@
     "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
     "notFound": "NFT not found. Please navigate from your collection."
   },
-  "swap": {
-    "you_send": "You Send",
-    "enter_amount": "Enter an amount",
-    "you_receive": "You Receive",
-    "router": "Router",
-    "gasless": "Gasless",
-    "yes": "Yes",
-    "priority_fee": "Priority Fee",
-    "rent_fee": "Rent Fee",
-    "slippage_tolerance": "Slippage Tolerance",
-    "minimum_received": "Minimum Received",
-    "swap_mode": "Swap Mode",
-    "platform_fee_disclaimer": "Includes 0.5% platform fee",
-    "showing_verified_tokens": "Showing verified tokens. Search to find other tokens.",
-    "review": {
-      "title": "Swap Review",
-      "salmonFee": "Salmon fee",
-      "route": "Route",
-      "details": "Details",
-      "totalPriceImpact": "Total Price Impact",
-      "pleaseNote": "Please Note",
-      "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
-      "confirmSwap": "Confirm",
-      "confirmCountdown": "Confirm ({{seconds}})",
-      "refreshQuote": "Refresh Quote",
-      "reviewAndSwap": "Review"
-    },
-    "available_balance": "Available: {{balance}} {{symbol}}",
-    "errors": {
-      "insufficientBalance": "Insufficient balance",
-      "minimumAmount": "Minimum swap amount is ${{amount}} USD",
-      "highPriceImpact": "High price impact! You may receive significantly less than expected.",
-      "quoteFailed": "Failed to fetch quote",
-      "noActiveAccount": "No active account",
-      "invalidAmount": "Invalid amount",
-      "noQuote": "No quote available. Please get a quote first.",
-      "noAccount": "No account found"
-    }
-  },
   "transaction": {
     "sendFailed": "Send failed",
     "sendUnconfirmed": "Send unconfirmed",
-    "swapComplete": "Swap Complete",
     "pendingSend": "Sending funds",
     "sendSummary": "{{amount}} {{symbol}} to {{recipient}}",
-    "pendingSwap": "Processing swap",
     "errors": {
+      "nftNotOwned": "This NFT is no longer in your wallet. We've removed it from your list.",
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
       "insufficientFunds": "Insufficient balance for this transaction.",
       "expired": "The network took too long to confirm. Try again.",
@@ -738,7 +703,7 @@
       "inputUnavailable": "We could not read one of your Bitcoin inputs right now. Nothing was sent — please try again in a moment.",
       "quoteExpired": "The quote changed before it could execute. Review and confirm again.",
       "slippage": "The price moved beyond your slippage tolerance. Try again or adjust the amount.",
-      "noRoute": "No swap route is available for this pair right now. Try a different amount or token.",
+      "noRoute": "No route is available for this pair right now. Try a different amount or token.",
       "generic": "The transaction failed. Please try again.",
       "insufficientRent": "This transfer would leave an account below the minimum SOL it needs to stay open. Send a little less, or add SOL.",
       "alreadyProcessed": "This transaction was already processed. Check your activity before sending again.",
@@ -747,12 +712,19 @@
       "signature": "The transaction's signature was rejected. Nothing was sent — try again.",
       "unsupportedVersion": "This network does not accept this transaction format yet.",
       "accountFrozen": "This token account is frozen by the token's issuer, so it cannot be moved.",
+      "memoRequired": "This recipient's token account requires a note on every incoming transfer. Add one and send again.",
+      "nonTransferable": "This token cannot be transferred — its issuer made it non-transferable.",
       "programRejected": "The program refused this transaction. Nothing was sent.",
       "malformed": "This transaction is not valid on this network. If a site built it, report it to them.",
-      "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign."
+      "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign.",
+      "cancelled": "The transaction was not signed.",
+      "confirmationBusy": "Another confirmation is already open.",
+      "buildFailed": "Couldn't prepare the transaction. Try again.",
+      "simulationFailed": "This transaction would fail on-chain, so it wasn't sent."
     },
     "viewOnExplorer": "View on Explorer",
-    "continue": "Back to wallet"
+    "continue": "Back to wallet",
+    "salmonFee": "Salmon fee"
   },
   "qrScanner": {
     "title": "Scan QR Code",
@@ -778,8 +750,8 @@
     "view_activity": "View activity",
     "show_balance": "Show balance",
     "hide_balance": "Hide balance",
-    "token_on_network": "{{token}} on {{network}}",
     "loading_token_info": "Loading token information",
+    "loading_recents": "Loading recent recipients",
     "token_balance": "{{name}} token, balance {{amount}} {{symbol}}",
     "token_price_balance": "{{name}} token, price {{price}}, balance {{amount}} {{symbol}}",
     "copy_contract_address": "Copy contract address",
@@ -789,7 +761,9 @@
     "nft_view_hint": "Double tap to view NFT details",
     "open_powerups": "Open Powerups",
     "close_powerups": "Close Powerups",
-    "portfolio_order": "Arrange tabs"
+    "portfolio_order": "Arrange tabs",
+    "install_powerup": "Add {{name}} to Home",
+    "uninstall_powerup": "Remove {{name}} from Home"
   },
   "collectibles": {
     "no_account_for_network": "No account available for this network.",
@@ -801,9 +775,11 @@
     "no_explorers": "No explorers available for this network"
   },
   "errors": {
+    "linkOpenFailed": "The link didn’t open",
     "invalid_password": "Invalid password",
     "password_check_failed": "Failed to verify password",
-    "password_required": "Password is required"
+    "password_required": "Password is required",
+    "password_throttled": "Too many wrong passwords. Wait a moment and try again — your wallet is untouched."
   },
   "activity": {
     "emptyFiltered": "No transactions match this filter",
@@ -816,12 +792,12 @@
   },
   "home": {
     "unnamed_account": "Account",
-    "change_period_24h": "24h",
     "tabs": {
       "order": {
         "title": "Arrange tabs",
         "hint": "Drag to change the order.",
-        "handle": "Reorder {{tab}}"
+        "handle": "Reorder {{tab}}",
+        "remove": "Remove {{tab}}"
       }
     }
   },
@@ -829,8 +805,25 @@
     "fee_estimate_failed": "Fee could not be estimated",
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",
+    "enter_address_or_request": "Address, domain or payment request",
+    "request": {
+      "requestedBy": "Requested by",
+      "for": "For",
+      "tokenNotHeld": "You don't hold the token this request asks for",
+      "errors": {
+        "notSolanaPay": "This is not a payment request",
+        "transactionRequest": "This kind of payment request is not supported yet",
+        "recipient": "The request names an invalid recipient",
+        "amount": "The request names an invalid amount",
+        "splToken": "The request names an invalid token",
+        "reference": "The request carries an invalid reference",
+        "memoTooLong": "The request carries a memo that is too long"
+      },
+      "memo": "On-chain note"
+    },
     "screens": {
       "recipientSubtitle": "Choose who will receive your assets.",
+      "youWillSend": "You will send",
       "amountSubtitle": "Enter the amount to send.",
       "reviewTitle": "Review send",
       "reviewSubtitle": "Check the details before signing.",
@@ -863,12 +856,6 @@
       "failed": "Send failed",
       "expired": "Send expired"
     },
-    "swap": {
-      "pending": "Swap in progress",
-      "confirmed": "Swap confirmed",
-      "failed": "Swap failed",
-      "expired": "Swap expired"
-    },
     "expiredHint": "It never reached the network. Nothing left your wallet.",
     "dismiss": "Dismiss"
   },
@@ -880,48 +867,50 @@
     }
   },
   "powerups": {
-    "installed": "INSTALLED",
-    "browse_title": "Browse Powerups",
-    "browse_subtitle": "Featured, official and community",
-    "badge": {
-      "official": "Official",
-      "community": "Community",
-      "featured": "Featured"
-    },
-    "search_placeholder": "Search powerups",
+    "browse_title": "Powerups",
+    "browse_subtitle": "Add-ons that give your wallet new abilities.",
     "empty_section": "Nothing here yet",
-    "filters": {
-      "all": "All",
-      "featured": "Featured",
-      "official": "Official",
+    "no_account": "No account found",
+    "badge": {
+      "core": "Core",
       "community": "Community"
     },
     "sections": {
-      "featured": "FEATURED",
-      "official": "OFFICIAL",
+      "core": "CORE",
       "community": "COMMUNITY"
     },
-    "catalog": {
-      "swap": {
-        "name": "Swap",
-        "description": "Swap tokens on Solana"
-      },
-      "wallet_guard": {
-        "name": "Wallet Guard",
-        "description": "Simulate transactions and flag risky signatures."
-      },
-      "staking": {
-        "name": "Staking",
-        "description": "Built and maintained by Salmon"
-      },
-      "auto_compound": {
-        "name": "Auto-compound",
-        "description": "Automate staking rewards"
-      },
-      "nft_floor_watch": {
-        "name": "NFT Floor Watch",
-        "description": "Track collection floor prices"
-      }
+    "detail": {
+      "about": "About",
+      "what_you_can_do": "What you can do",
+      "made_by": "Made by",
+      "networks": "Networks",
+      "uses": "Uses"
+    },
+    "disabled": {
+      "region": "This Powerup isn't available in your region.",
+      "maintenance": "This Powerup is paused for maintenance. Check back soon.",
+      "deprecated": "This Powerup has been retired. You can remove it from Home."
+    },
+    "disclosure": {
+      "address_to": "Sends your address to {{host}}.",
+      "balances_to": "Sends your token balances to {{host}}.",
+      "sends_nothing": "Sends nothing off your device."
+    },
+    "author": {
+      "salmon": "Salmon",
+      "community": "Community contributor"
+    },
+    "unavailable": {
+      "network": "This Powerup is available on Solana mainnet only.",
+      "region": "This Powerup is not available in your region.",
+      "wallet": "This Powerup is not available for this wallet."
     }
+  },
+  "confirmation": {
+    "details": "Details",
+    "confirm": "Confirm",
+    "confirmCountdown": "Confirm ({{seconds}})",
+    "refreshQuote": "Refresh Quote",
+    "expiredDismiss": "Expired — Dismiss"
   }
 }

@@ -2,15 +2,18 @@
 // This ensures they're available BEFORE expo-router loads any modules
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavigationThemeProvider,
-} from '@react-navigation/native';
 import { createSemantic, type ThemeMode } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider as NavigationThemeProvider,
+  router,
+  useSegments,
+  useRootNavigationState,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
@@ -32,6 +35,7 @@ import {
   useAccountsContext,
   useInactivityTimeout,
   createQueryClient,
+  focusManager,
   QueryClientProvider,
   PendingTransactionsProvider,
   usePendingActivity,
@@ -51,6 +55,17 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// React Query learns that the user came back from the DOM's focus events, which
+// React Native does not have: without this, `refetchOnWindowFocus` never fires
+// and reopening the app showed whatever was cached — an NFT already sent, a
+// balance from before a receive. Coming to the foreground is the app's focus.
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) =>
+    handleFocus(state === 'active')
+  );
+  return () => subscription.remove();
+});
 
 export default function RootLayout() {
   const [queryClient] = useState(() => createQueryClient());

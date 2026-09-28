@@ -38,6 +38,8 @@ import {
   ScreenHeader,
   SeedWordGrid,
   SeedWordInput,
+  Toggle,
+  WarningNotice,
 } from '../../src/components';
 import { useSemantic, useThemedStyles } from '../../src/theme/useThemedStyles';
 import * as Clipboard from 'expo-clipboard';
@@ -99,20 +101,25 @@ interface SeedPhraseStepProps {
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   const semantic = useSemantic();
   const [showToast, setShowToast] = useState(false);
-  // Gates "Guardé mi seed-phrase": the owner wants the commit disabled until
-  // the hold-to-copy has actually fired once, so advancing costs having seen
-  // the phrase land somewhere durable, not just having scrolled past it.
-  const [copied, setCopied] = useState(false);
+  // Gates "Guardé mi seed-phrase": advancing costs a deliberate statement that
+  // the phrase is written down. The copy used to be that gate, which made the
+  // clipboard — readable by any other app — the one mandatory step. It is
+  // optional now, with its warning. Mirrors the DOM twin.
+  const [acknowledged, setAcknowledged] = useState(false);
+  // A clipboard write can fail, and advancing depends on it here. Swallowing
+  // the failure left the button dead with nothing on screen saying why.
+  const [copyFailed, setCopyFailed] = useState(false);
   const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
+      setCopyFailed(false);
       await Clipboard.setStringAsync(mnemonic);
-      setCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+      setCopyFailed(true);
     }
   }, [mnemonic]);
 
@@ -148,6 +155,47 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           // leaving the grid flush under the text. Mirrors the DOM twin.
           <View style={{ paddingTop: spacing.xl }}>
             <SeedWordGrid words={words} columns={3} />
+            {/*
+              The same standing warning BackupPanel and PrivateKeyPanel show
+              before either of them lets a secret reach the clipboard. This
+              screen shows it too. Mirrors the DOM twin.
+            */}
+            <View style={{ paddingTop: spacing.lg }} testID="create-seed-clipboard-warning">
+              <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                {t('settings.clipboard_warning_description')}
+              </WarningNotice>
+            </View>
+            {copyFailed && (
+              <View style={{ paddingTop: spacing.md }} testID="create-seed-copy-failed">
+                <WarningNotice tone="error" title={t('settings.copy_failed')} />
+              </View>
+            )}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingTop: spacing.lg,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  color: semantic.text.primary,
+                  fontFamily: fontFamilyNative.regular,
+                  fontSize: s(fontSize.body),
+                }}
+              >
+                {t('wallet.create.acknowledge_written_down')}
+              </Text>
+              <Toggle
+                value={acknowledged}
+                onValueChange={setAcknowledged}
+                accessibilityLabel={t('wallet.create.acknowledge_written_down')}
+                testID="create-seed-acknowledge"
+              />
+            </View>
           </View>
         }
         secondary={
@@ -161,7 +209,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           </HoldToCopyButton>
         }
         action={
-          <PrimaryButton onPress={onNext} disabled={!copied} testID="create-backed-up-button">
+          <PrimaryButton onPress={onNext} disabled={!acknowledged} testID="create-backed-up-button">
             {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
         }

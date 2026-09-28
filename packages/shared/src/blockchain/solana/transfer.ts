@@ -20,6 +20,7 @@
  */
 
 import {
+  AccountRole,
   address,
   appendTransactionMessageInstructions,
   compileTransaction,
@@ -34,6 +35,7 @@ import {
   setTransactionMessageConfig,
 } from '@solana/kit';
 import type {
+  Base64EncodedWireTransaction,
   Address,
   Instruction,
   Signature,
@@ -43,6 +45,7 @@ import type {
 } from '@solana/kit';
 import { getTransferSolInstruction } from '@solana-program/system';
 import { getAddMemoInstruction } from '@solana-program/memo';
+import { getSetComputeUnitPriceInstruction } from '@solana-program/compute-budget';
 import {
   TOKEN_2022_PROGRAM_ADDRESS,
   fetchMaybeToken,
@@ -58,6 +61,7 @@ import { applyDecimals } from '../../utils/decimals';
 import { isNativeSol } from '../../utils/tokens';
 import { LAMPORTS_PER_SOL, SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaRpc } from './networks';
+import { resolvePriorityFeeMicroLamports, toPriorityFeeLamports } from './priority-fee';
 
 // ============================================================================
 // Constants
@@ -84,10 +88,15 @@ export interface TransferOptions {
   simulate?: boolean;
   /** Message version to build; defaults to 0 (see `SOLANA_TRANSACTION_VERSION`) */
   version?: TransferTransactionVersion;
-  /** Memo to attach to the transaction (for Token-2022) */
+  /** Memo instruction placed immediately before the transfer instruction */
   memo?: string;
   /** Token decimals (used as fallback if mint lookup fails) */
   decimals?: number;
+  /**
+   * Solana Pay references: keys the transfer instruction carries as read-only
+   * non-signers, in order, so the receiver's wallet finds the payment by them.
+   */
+  references?: readonly string[];
 }
 
 /** Payload returned by `simulateTransaction` when `TransferOptions.simulate` is set. */
@@ -104,6 +113,15 @@ type TransferTransactionMessage = Awaited<ReturnType<typeof buildTransactionMess
 export interface TransferResult {
   /** Transaction ID (signature) */
   txId: Signature | SimulatedTransferResponse;
+  /** Block height after which the sent transaction can never land — the bound of the confirmation wait. */
+  lastValidBlockHeight: bigint;
+  /**
+   * The signed bytes exactly as broadcast, base64. Re-sending these is safe by
+   * construction — same blockhash, same signature — which is what lets the
+   * confirmation wait cover a node that dropped the transaction. Absent on a
+   * simulation, which broadcasts nothing.
+   */
+  wireTransaction?: Base64EncodedWireTransaction;
 }
 
 /**
@@ -170,6 +188,28 @@ const V0_COMPUTE_UNITS_PER_INSTRUCTION = 200_000;
 const MAX_COMPUTE_UNIT_LIMIT = 1_400_000;
 const V0_LOADED_ACCOUNTS_DATA_SIZE_LIMIT = 64 * 1024 * 1024;
 
+/**
+ * The Solana Pay wire shape: references ride on the transfer instruction as
+ * read-only non-signer metas, appended after the program's own accounts. The
+ * kit builders take no extra metas, so they are added to the built instruction.
+ */
+function withReferences<T extends Instruction>(
+  instruction: T,
+  references: readonly string[] | undefined
+): T {
+  if (!references || references.length === 0) return instruction;
+  return {
+    ...instruction,
+    accounts: [
+      ...(instruction.accounts ?? []),
+      ...references.map((reference) => ({
+        address: address(reference),
+        role: AccountRole.READONLY,
+      })),
+    ],
+  };
+}
+
 /** The v1 header equivalent of what a v0 transaction with `instructions` is granted. */
 export function v1ResourceBudget(instructions: readonly Instruction[]): V1TransactionConfig {
   return {
@@ -189,30 +229,58 @@ export function v1ResourceBudget(instructions: readonly Instruction[]): V1Transa
  * literal version so kit's typed message shapes carry through to the signer,
  * and the v1 branch writes the resource budget v0 received implicitly.
  */
-// ponytail: a fixed v0-equivalent budget, not a measured one; simulate for
-// `unitsConsumed` and size the limit to it once a priority fee is charged per CU.
+// ponytail: a fixed v0-equivalent compute budget, not a measured one; simulate
+// for `unitsConsumed` and size the limit to it if the fee ever needs to be
+// tighter than the clamp in `priority-fee.ts` makes it.
 async function buildTransactionMessage(
   rpc: SolanaRpc,
   signer: TransactionSigner,
   instructions: Instruction[],
   version: TransferTransactionVersion = 0
 ) {
-  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+  // The base fee buys no priority, so a transfer that bids nothing waits out
+  // its blockhash whenever the network is busy. Both formats carry the same
+  // bid; only the way they express it differs.
+  const [{ value: latestBlockhash }, priorityFeeMicroLamports] = await Promise.all([
+    rpc.getLatestBlockhash().send(),
+    resolvePriorityFeeMicroLamports(rpc, instructions),
+  ]);
 
-  const base = pipe(
-    createTransactionMessage({ version: 0 }),
-    (message) => setTransactionMessageFeePayerSigner(signer, message),
-    (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
-    (message) => appendTransactionMessageInstructions(instructions, message)
-  );
-  if (version === 0) return base;
+  if (version === 0) {
+    // Legacy and v0 read the bid off a ComputeBudget instruction, as a price
+    // per compute unit against the 200k-per-instruction default.
+    const priced = [
+      getSetComputeUnitPriceInstruction({ microLamports: BigInt(priorityFeeMicroLamports) }),
+      ...instructions,
+    ];
+    return pipe(
+      createTransactionMessage({ version: 0 }),
+      (message) => setTransactionMessageFeePayerSigner(signer, message),
+      (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
+      (message) => appendTransactionMessageInstructions(priced, message)
+    );
+  }
 
+  // v1 takes ComputeBudget instructions out of the picture: the budget and the
+  // bid live in the message header, and the bid is one total figure in
+  // lamports rather than a rate.
+  const budget = v1ResourceBudget(instructions);
   return pipe(
     createTransactionMessage({ version: 1 }),
     (message) => setTransactionMessageFeePayerSigner(signer, message),
     (message) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, message),
     (message) => appendTransactionMessageInstructions(instructions, message),
-    (message) => setTransactionMessageConfig(v1ResourceBudget(instructions), message)
+    (message) =>
+      setTransactionMessageConfig(
+        {
+          ...budget,
+          priorityFeeLamports: toPriorityFeeLamports(
+            priorityFeeMicroLamports,
+            budget.computeUnitLimit ?? 0
+          ),
+        },
+        message
+      )
   );
 }
 
@@ -254,8 +322,12 @@ export async function createTransfer(
     ? await createSolTransaction(rpc, signer, to, amount, opts)
     : await createSplTransaction(rpc, signer, to, token, amount, opts);
 
-  const result = await executeTransaction(rpc, transaction, simulate);
-  return { txId: result };
+  const { result, wireTransaction } = await executeTransaction(rpc, transaction, simulate);
+  return {
+    txId: result,
+    lastValidBlockHeight: transaction.lifetimeConstraint.lastValidBlockHeight,
+    wireTransaction,
+  };
 }
 
 /**
@@ -265,7 +337,7 @@ export async function createTransfer(
  * @param signer - Sender's transaction signer
  * @param to - Recipient's address
  * @param amount - Amount in SOL
- * @param opts - Transfer options (only `version` applies)
+ * @param opts - Transfer options (`version`, `memo`, `references` apply)
  * @returns Prepared transaction message
  */
 export async function createSolTransaction(
@@ -273,20 +345,23 @@ export async function createSolTransaction(
   signer: TransactionSigner,
   to: Address,
   amount: number,
-  opts: Pick<TransferOptions, 'version'> = {}
+  opts: Pick<TransferOptions, 'version' | 'memo' | 'references'> = {}
 ) {
-  return buildTransactionMessage(
-    rpc,
-    signer,
-    [
+  const instructions: Instruction[] = [];
+  if (opts.memo) {
+    instructions.push(getAddMemoInstruction({ memo: opts.memo, signers: [signer] }));
+  }
+  instructions.push(
+    withReferences(
       getTransferSolInstruction({
         source: signer,
         destination: to,
         amount: BigInt(Math.floor(LAMPORTS_PER_SOL * amount)),
       }),
-    ],
-    opts.version
+      opts.references
+    )
   );
+  return buildTransactionMessage(rpc, signer, instructions, opts.version);
 }
 
 /**
@@ -314,7 +389,7 @@ export async function createSplTransaction(
   amount: number,
   opts: TransferOptions = {}
 ): Promise<TransferTransactionMessage> {
-  const { memo } = opts;
+  const { memo, references } = opts;
 
   const mintAddress = address(tokenAddress);
 
@@ -371,29 +446,35 @@ export async function createSplTransaction(
     const fee = await calculateTransferFee(rpc, tokenAddress, amount);
 
     instructions.push(
-      getTransferCheckedWithFeeInstruction({
-        source: fromTokenAddress,
-        mint: mintAddress,
-        destination: toTokenAddress,
-        // Must be the signer, not its address: a bare Address yields a
-        // READONLY account meta and the authority silently loses isSigner.
-        authority: signer,
-        amount: BigInt(transferAmount),
-        decimals,
-        fee: fee ?? 0n,
-      })
+      withReferences(
+        getTransferCheckedWithFeeInstruction({
+          source: fromTokenAddress,
+          mint: mintAddress,
+          destination: toTokenAddress,
+          // Must be the signer, not its address: a bare Address yields a
+          // READONLY account meta and the authority silently loses isSigner.
+          authority: signer,
+          amount: BigInt(transferAmount),
+          decimals,
+          fee: fee ?? 0n,
+        }),
+        references
+      )
     );
   } else {
     instructions.push(
-      getTransferInstruction(
-        {
-          source: fromTokenAddress,
-          destination: toTokenAddress,
-          // Same signer-vs-address constraint as above.
-          authority: signer,
-          amount: BigInt(transferAmount),
-        },
-        { programAddress: tokenProgram }
+      withReferences(
+        getTransferInstruction(
+          {
+            source: fromTokenAddress,
+            destination: toTokenAddress,
+            // Same signer-vs-address constraint as above.
+            authority: signer,
+            amount: BigInt(transferAmount),
+          },
+          { programAddress: tokenProgram }
+        ),
+        references
       )
     );
   }
@@ -413,23 +494,56 @@ async function executeTransaction(
   rpc: SolanaRpc,
   transaction: TransferTransactionMessage,
   simulate: boolean
-): Promise<Signature | SimulatedTransferResponse> {
+): Promise<{
+  result: Signature | SimulatedTransferResponse;
+  wireTransaction?: Base64EncodedWireTransaction;
+}> {
   const signed = await signTransactionMessageWithSigners(transaction);
   const wireTransaction = getBase64EncodedWireTransaction(signed);
 
   if (simulate) {
     const { value } = await rpc.simulateTransaction(wireTransaction, { encoding: 'base64' }).send();
-    return value;
+    return { result: value };
   }
 
   // skipPreflight: false (default) ensures transactions are simulated before sending.
   // This prevents loss of fees on transactions that would fail.
+  //
+  // maxRetries: 0 hands re-broadcasting to us. The node's own retry loop runs
+  // on a cadence we cannot see or stop, and the confirmation wait already
+  // re-sends these same bytes every couple of seconds
+  // (`confirmSolanaSignature`), so leaving the default would put two
+  // uncoordinated loops on one transaction. Solana's retry guide asks for
+  // exactly this pairing: "set maxRetries to 0 and manually rebroadcast via a
+  // custom algorithm".
   // @see https://solana.com/developers/guides/advanced/retry
-  return rpc
+  const result = await rpc
     .sendTransaction(wireTransaction, {
       encoding: 'base64',
       skipPreflight: false,
       preflightCommitment: 'confirmed',
+      maxRetries: 0n,
+    })
+    .send();
+  return { result, wireTransaction };
+}
+
+/**
+ * Re-broadcasts already-signed bytes. Preflight is skipped: the transaction
+ * passed it on the way out, and a re-send exists precisely for the case where
+ * the cluster has not seen it, so re-simulating only adds latency. `maxRetries`
+ * stays at zero here too — the interval driving this is the retry.
+ */
+export function resendTransaction(
+  rpc: SolanaRpc,
+  wireTransaction: Base64EncodedWireTransaction
+): Promise<Signature> {
+  return rpc
+    .sendTransaction(wireTransaction, {
+      encoding: 'base64',
+      skipPreflight: true,
+      preflightCommitment: 'confirmed',
+      maxRetries: 0n,
     })
     .send();
 }

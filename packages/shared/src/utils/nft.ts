@@ -1,4 +1,5 @@
 import type { NftAttribute, Nft } from '../types/nft';
+import { normalizeIpfsUrl } from './url';
 
 export type { NftAttribute };
 
@@ -158,7 +159,9 @@ export function solanaNftToNftData(nft: SolanaNftFromHelius): SolanaNftData {
     blockchain: 'solana',
     mint: nft.mint.address,
     name: nft.name,
-    image: nft.media,
+    // Through the gateway rewrite: the API may still hand an `ipfs.io` link
+    // (sunset, 429), which the side panel's <img> cannot load (2026-09-17).
+    image: normalizeIpfsUrl(nft.media) ?? undefined,
     description: nft.description,
     collectionName: nft.collection?.name,
     attributes: nft.extras?.attributes as NftAttribute[],
@@ -187,7 +190,7 @@ export function canonicalNftToSolanaNftData(nft: Nft): SolanaNftData {
     blockchain: 'solana',
     mint: nft.mint.address,
     name: nft.name || 'Unnamed NFT',
-    image: nft.media || undefined,
+    image: normalizeIpfsUrl(nft.media) ?? undefined,
     description: nft.description || undefined,
     collectionName: nft.collection?.name || undefined,
     attributes: nft.extras?.attributes,

@@ -57,7 +57,7 @@ describe('AnalyticsClient consent gating', () => {
     await client.whenReady();
 
     await client.setConsent(true);
-    client.track('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
+    client.track('send_completed', { chain: 'solana', success: true });
     await client.flush();
 
     expect(transport.batches).toHaveLength(1);
@@ -65,8 +65,8 @@ describe('AnalyticsClient consent gating', () => {
     expect(batch.context.platform).toBe('mobile');
     expect(batch.context.installId).toBeTruthy();
     expect(batch.events[0]).toMatchObject({
-      event: 'swap_completed',
-      props: { from_chain: 'solana', to_chain: 'solana', success: true },
+      event: 'send_completed',
+      props: { chain: 'solana', success: true },
     });
   });
 
@@ -155,6 +155,26 @@ describe('AnalyticsClient withdrawing consent', () => {
     client.track('nft_viewed');
     await client.flush();
     expect(transport.batches).toHaveLength(0);
+  });
+
+  // The persisted flag decides what the next launch does. Leaving `true` on
+  // disk under a toggle that reads OFF means collection resumes, under the same
+  // install id, without the user being told.
+  it('does not leave consent granted on disk when the write fails', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    expect(store.get('salmon_analytics_consent')).toBe(true);
+
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    memStorage.setItem.mockRejectedValueOnce(new Error('disk full'));
+    await client.setConsent(false);
+
+    // Neither `true`, nor an install id: absent consent is not consent.
+    expect(store.get('salmon_analytics_consent')).toBeUndefined();
+    expect(store.get('salmon_analytics_install_id')).toBeUndefined();
+    expect(client.getConsent()).toBe(false);
   });
 
   it('drops a batch that was in flight when consent was withdrawn', async () => {

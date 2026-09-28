@@ -2,12 +2,12 @@
  * PrimaryButton - Main call-to-action button
  *
  * A salmon fill carrying `accent.onFill` ink at 6.50:1 — the only legal ink
- * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
+ * on a salmon fill. Disabled changes the whole object to `surface.crest` with
  * disabled ink rather than dimming the fill: at 50% opacity the near-black
  * ink sat on a muddy red and read as neither alive nor disabled. The salmon
  * is either alive or absent — and so is the flesh inside it.
  */
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   componentSizes,
@@ -17,22 +17,16 @@ import {
   shadowsCSS,
   type Semantic,
 } from '@salmon/shared';
-import type { Testable } from '@salmon/shared';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { FleshBackground } from '../FleshBackground';
 import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+import type { PrimaryButtonProps } from './types';
+import { Spinner } from '../Spinner';
 
-interface PrimaryButtonProps extends Testable {
-  onPress: () => void;
-  children: string;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: ViewStyle;
-}
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export function PrimaryButton({
   onPress,
@@ -66,7 +60,7 @@ export function PrimaryButton({
           budget. Absent when the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ActivityIndicator color={isDisabled ? text.disabled : accent.onFill} />
+        <Spinner color={isDisabled ? text.disabled : accent.onFill} />
       ) : (
         <Text
           style={[styles.text, isDisabled && styles.textDisabled]}
@@ -114,7 +108,7 @@ const stylesFor = (t: Semantic) =>
       letterSpacing: letterSpacing.normal,
       // `adjustsFontSizeToFit` stretches the Text to the full button width, so
       // without an explicit center the label left-aligns (visible on short labels
-      // like the swap "Confirm (13)" countdown).
+      // like a review's "Confirm (13)" countdown).
       textAlign: 'center',
     },
   });

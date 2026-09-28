@@ -1,7 +1,7 @@
 /**
  * AddressEditPanel — edit a contact, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressEditPanel`.
+ * The mobile twin is `apps/mobile/src/components/AddressEditPanel`.
  * `AddressForm`'s fields, seeded from the contact; saving commits against the
  * contact's original address.
  */

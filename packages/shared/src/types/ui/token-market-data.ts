@@ -38,7 +38,7 @@ export interface MarketData {
 
 /**
  * The "Market data" card of a token's detail screen — a `Card` of
- * `KeyValueRow`s. Mobile's `MarketDataCard` and the DOM's `TokenMarketData`
+ * `KeyValueRow`s. Mobile's `TokenMarketData` and the DOM's `TokenMarketData`
  * read this one shape; no `data` renders nothing, `loading` renders the
  * skeleton.
  */

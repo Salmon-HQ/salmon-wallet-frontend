@@ -81,7 +81,7 @@ sign-off, and give changes near them extra scrutiny:
 Never log, echo, screenshot, or commit seed phrases, private keys, or
 passwords — including in tests and E2E flows (test secrets live in
 gitignored `.env.test` files). Never perform irreversible on-chain actions
-(send, swap, burn) or credential operations (e.g. mobile keystore changes)
+(send, burn) or credential operations (e.g. mobile keystore changes)
 autonomously; confirm with the human first.
 
 ## When in doubt, ask the human
@@ -145,17 +145,18 @@ baseline**, and a baseline only a human moves. When a change trips one of
 these, the fix is the deliberate update named here — never a weakened
 threshold or a skipped step.
 
-| You change…                                                                                                            | …so also update                                                                                                                                                                | Command / where                                                              |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Anything native in mobile: a package with native code, a config plugin, `app.json` native fields, `patches/`, Expo SDK | `apps/mobile/app.json → expo.version` (this ships as a binary, never as an OTA) and, when that binary is built, the fingerprint baseline `apps/mobile/native-fingerprint.json` | `pnpm --filter @salmon/mobile fingerprint:write`, in the pre-build checklist |
-| `permissions` / `host_permissions` in `apps/extension/wxt.config.ts`, or the API/CDN hosts in `apps/extension/.env.*`  | `apps/extension/manifest-permissions.json` — the diff must say why the extension asks for more                                                                                 | `pnpm --filter @salmon/extension build && pnpm check:manifest --write`       |
-| A test that needs a phrase, a keypair or a signature                                                                   | Use the public vectors (`abandon…`, `test…junk`) or a random one generated inside the test; otherwise mark the line `// no-secrets-ignore: <why>`                              | `pnpm check:no-secrets`                                                      |
-| Coverage of a package goes up for good                                                                                 | Raise that package's `thresholds` (vitest config) / `coverageThreshold` (jest config). They are a ratchet: they only ever go up; a PR that drops below adds tests              | `pnpm test:coverage`                                                         |
-| Cross-platform duplication goes down                                                                                   | Lower `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs` — same ratchet, the other direction                                                                   | `pnpm check:parity:report`                                                   |
-| `packageManager` (pnpm) or the Node version                                                                            | Keep `.nvmrc`, `package.json#engines`, `apps/mobile/eas.json → build.base.node` and `scripts/check-build-env.cjs` saying the same thing                                        | —                                                                            |
-| A dependency that has an entry in `package.json#pnpm.overrides`                                                        | Re-check the override: it exists to patch one advisory, bounded to one major. Remove it once the dependant pulls the fixed version on its own; never widen it past the major   | `pnpm audit`                                                                 |
-| A new `scripts/check-*.mjs` gate                                                                                       | The check list in `README.md`, `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md`, and a step in `.github/workflows/ci.yml`                                              | —                                                                            |
-| A tool pinned by version inside a workflow `run:` step (`web-ext@x.y.z`)                                               | Bump it by hand — dependabot updates `uses:` SHAs, not `npx` pins                                                                                                              | `.github/workflows/build-extension.yml`                                      |
+| You change…                                                                                                            | …so also update                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Command / where                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Anything native in mobile: a package with native code, a config plugin, `app.json` native fields, `patches/`, Expo SDK | `apps/mobile/app.json → expo.version` (this ships as a binary, never as an OTA) and, when that binary is built, the fingerprint baseline `apps/mobile/native-fingerprint.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `pnpm --filter @salmon/mobile fingerprint:write`, in the pre-build checklist |
+| `permissions` / `host_permissions` in `apps/extension/wxt.config.ts`, or the API/CDN hosts in `apps/extension/.env.*`  | `apps/extension/manifest-permissions.json` — the diff must say why the extension asks for more                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `pnpm --filter @salmon/extension build && pnpm check:manifest --write`       |
+| A test that needs a phrase, a keypair or a signature                                                                   | Use the public vectors (`abandon…`, `test…junk`) or a random one generated inside the test; otherwise mark the line `// no-secrets-ignore: <why>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `pnpm check:no-secrets`                                                      |
+| Coverage of a package goes up for good                                                                                 | Raise that package's `thresholds` (vitest config) / `coverageThreshold` (jest config). They are a ratchet: they only ever go up; a PR that drops below adds tests                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `pnpm test:coverage`                                                         |
+| Cross-platform duplication goes down                                                                                   | Lower `CROSS_PLATFORM_CLONE_LINES_MAX` in `scripts/check-dom-parity.mjs` — same ratchet, the other direction. It may be raised only for new twin pairs that copy no logic, with the reason in the commit (`docs/DOM-PARITY.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `pnpm check:parity:report`                                                   |
+| `packageManager` (pnpm) or the Node version                                                                            | Keep `.nvmrc`, `package.json#engines`, `apps/mobile/eas.json → build.base.node` and `scripts/check-build-env.cjs` saying the same thing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | —                                                                            |
+| A dependency that has an entry in `package.json#pnpm.overrides`                                                        | Re-check the override: it exists to patch one advisory, bounded to one major. Remove it once the dependant pulls the fixed version on its own; never widen it past the major                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `pnpm audit`                                                                 |
+| A new Powerup, or a new string inside one                                                                              | Its code and copy live under `powerups/**` (shared: `packages/shared/src/powerups`, kit: `packages/ui/src/powerups.ts`, mobile: `apps/mobile/src/powerups`) and reach the apps only through those entries — the build flag aliases them out (`EXPO_PUBLIC_POWERUPS` / `VITE_POWERUPS`); nothing under `powerups/**` imports `core/signing`, `core/broadcast`, `crypto` or `storage` (lint fails). Add a marker to `scripts/check-powerups-bundle.mjs` if the Powerup carries a string the grep should catch. Its UI composes only the blocks in `docs/POWERUPS-UI.md` (the Powerup UI runbook: what is reused, what is fixed, the reviewer checklist), and a NEW Powerup starts at the §Starting a new Powerup section: research, then the questions to the human, then the runbook | `pnpm check:powerups-bundle <dist>` after a build with the flag off          |
+| A new `scripts/check-*.mjs` gate                                                                                       | The check list in `README.md`, `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md`, and a step in `.github/workflows/ci.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | —                                                                            |
+| A tool pinned by version inside a workflow `run:` step (`web-ext@x.y.z`)                                               | Bump it by hand — dependabot updates `uses:` SHAs, not `npx` pins                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `.github/workflows/build-extension.yml`                                      |
 
 Also manual, by design: closing the "Nightly extension E2E is failing"
 issue once the run is green again; triaging a CodeQL alert (fix, or dismiss
@@ -169,6 +170,77 @@ against `apps/extension/package.json` (and CI must have passed on that
 commit; the release notes are the tag's `## extension X.Y.Z` section of
 `CHANGELOG.md`, so write it first), `mobile/v*` against `app.json` and the
 fingerprint baseline.
+
+## Starting a new Powerup
+
+A Powerup is a capability of the wallet, not a screen: the wrong answer about
+what it commits the user to is expensive to unwind, and the UI is the smallest
+part of it. Three steps before any code is written, in this order. None is
+optional, and none is satisfied by reading the existing Powerups.
+
+**1. Research what the capability actually is.** Write the findings down in
+the issue or the spec, with links, so the reviewer reads the same facts:
+
+- The product page for it in the SOT (the sibling product repo,
+  `02-product/Powerups/<Name>.md`): counterparty, custody exposure, data
+  exposure, exit conditions, surface, activation, and its open questions.
+  That page is the product's intent; this repo is the implementation of it.
+- The protocol's or provider's own documentation: what a transaction really
+  needs, every state a position can be in, what can fail, what is irreversible,
+  and how long each step takes. A capability that commits funds for a period
+  the user cannot shorten has to say so before they commit, not after.
+- How two or three established wallets present the same capability: what they
+  ask before committing, what they show while it is pending, how they let the
+  user out. Borrow the questions they ask, never their look.
+- The backend's build endpoint for it: a Powerup consumes it, it is never
+  designed in the client. Check `../salmon-wallet-backend`,
+  `src/services/solana/powerups/registry.js`, for an adapter with this id
+  before anything else — two minutes that decide the shape of the work.
+  What follows from the answer depends on the tier: a **core** Powerup is
+  written by a maintainer who owns both repos, so a missing adapter is the
+  first half of the same piece of work and lands in the backend first; a
+  **community** one cannot touch the backend at all, so a missing adapter is
+  a blocked contribution and the client branch waits. Either way the client
+  PR is reviewed against an endpoint that already exists.
+
+**2. Ask the human, and wait.** These are the answers a wrong guess turns into
+rework, and they are product decisions rather than engineering ones:
+
+- Who is the counterparty, and who chooses it — the user or the wallet?
+- What does the user commit, and exactly how do they get out? How long does
+  the exit take, and what is shown about that before they commit?
+- Which networks, and what is offered on the ones it does not act on?
+- What leaves the device, to whom? That is the manifest's `permissions` and
+  `endpoints`, and it generates the disclosure — it cannot be approximate.
+- A Home sub-tab or an action inside an existing screen? A tab is for
+  something that holds state the user owns and returns to.
+- Does it take a Salmon fee? If so, say who builds the fee leg — the generic
+  build path nulls it today, so that is a backend change that lands first.
+  (Installation needs no question: the kit `Toggle` is the same in the
+  catalogue row and in the detail, and the detail is where the disclosure
+  is read.)
+- What happens when the counterparty degrades or disappears, given that
+  removing the capability would remove the only surface that can unwind a
+  position?
+- Does it build more than one kind of transaction? They share one id and one
+  catalogue row; the build call distinguishes them.
+- The Spanish copy, from the owner. Never guessed (see i18n above).
+
+**3. Decide what core owes, before the Powerup exists.** If the position the
+capability manages exists on chain whether or not the Powerup is installed,
+then the wallet must show it either way, or turning a capability off would
+hide funds, which is the one failure a self-custodial wallet exists to
+prevent. Not every capability has this shape: one that only exchanges assets
+leaves nothing behind, while one that parks them somewhere does. That surface is core code, not
+`powerups/**`: the off build aliases the whole folder away. It is a separate
+PR, and it lands first.
+
+**4. Then follow `docs/POWERUPS-UI.md`.** It is the building-block inventory:
+what every Powerup must reuse, what it must not modify, what it may add, and
+the reviewer checklist in its §3 that a PR is measured against. A Powerup
+composes those blocks; it never draws its own. When a block it needs does not
+exist, the answer is to open a gap in that document's §4 and ask — never to
+draw the missing thing by hand inside the Powerup.
 
 ## Twins — the extension is the mobile app on the DOM
 

@@ -31,9 +31,12 @@ import {
   formatLargeNumber,
   formatPercentage,
   getShortAddress,
+  componentSizes,
   hiddenValue,
-  lineHeight,
+  isSignableAccount,
+  letterSpacing,
   PERIOD_TO_DAYS,
+  ms,
   s,
   spacing,
   tabularNums,
@@ -48,18 +51,22 @@ import {
   type Semantic,
 } from '@salmon/shared';
 import {
-  AboutCard,
+  TokenAbout,
+  DataAttribution,
   DepthBackground,
   KeyValueRow,
-  MarketDataCard,
+  IconBubble,
+  ValueActionsRow,
+  TokenMarketData,
   PriceChart,
   ScalesBackground,
   ScreenHeader,
   TokenLogo,
 } from '../../../src/components';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
+import { ArrowUpRightIcon } from '../../../src/icons';
 
-const TOKEN_LOGO_SIZE = 42;
+const BALANCE_MIN_FONT_SCALE = 0.6;
 
 export default function TokenDetailScreen() {
   const { t } = useTranslation();
@@ -151,6 +158,10 @@ export default function TokenDetailScreen() {
 
   const numericAmount =
     typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
+  const canSign = isSignableAccount(activeBlockchainAccount);
+  const handleSendPress = () => {
+    router.push({ pathname: '/send', params: { token: token.address } });
+  };
   const displayAmount = hiddenBalance
     ? hiddenValue
     : `${formatLargeNumber(numericAmount)} ${token.symbol}`;
@@ -159,6 +170,8 @@ export default function TokenDetailScreen() {
     : token.usdBalance != null
       ? formatValue(token.usdBalance)
       : null;
+  const displayPrice = token.price != null ? formatValue(token.price) : null;
+  const fiatLine = [displayFiat, displayPrice].filter((part) => part != null).join(' · ') || null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -167,7 +180,13 @@ export default function TokenDetailScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <ScreenHeader onBack={() => router.back()} title={token.name} subtitle={token.symbol} />
+      <ScreenHeader
+        onBack={() => router.back()}
+        titleGlyph={
+          <TokenLogo uri={token.logo} symbol={token.symbol} size={componentSizes.iconSizeMedium} />
+        }
+        title={token.name}
+      />
 
       <ScrollView
         testID="token-detail-screen"
@@ -177,20 +196,38 @@ export default function TokenDetailScreen() {
       >
         {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
         <View style={styles.balanceBlock} testID="token-detail-balance">
-          <View style={styles.balanceHeader}>
-            <TokenLogo uri={token.logo} symbol={token.symbol} size={TOKEN_LOGO_SIZE} />
-            <Text style={styles.tokenName} numberOfLines={1}>
-              {token.name}
-            </Text>
-          </View>
-          <Text style={styles.amount} testID="token-detail-amount">
+          <Text
+            style={styles.amount}
+            testID="token-detail-amount"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={BALANCE_MIN_FONT_SCALE}
+          >
             {displayAmount}
           </Text>
-          {displayFiat != null && (
-            <Text style={styles.fiat} testID="token-detail-fiat">
-              {displayFiat}
-            </Text>
-          )}
+          <ValueActionsRow
+            leading={
+              fiatLine != null ? (
+                <Text style={styles.fiat} testID="token-detail-fiat" numberOfLines={1}>
+                  {fiatLine}
+                </Text>
+              ) : null
+            }
+            actions={
+              canSign ? (
+                <IconBubble
+                  testID="token-detail-send-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="accent"
+                  icon={ArrowUpRightIcon}
+                  iconWeight="bold"
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={handleSendPress}
+                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+                />
+              ) : undefined
+            }
+          />
         </View>
 
         {/* Performance — current price, the chart with its own period
@@ -200,10 +237,6 @@ export default function TokenDetailScreen() {
             the right with its pulsing endpoint, the way Home's Bitcoin column
             draws it; a card would clip both. */}
         <View style={styles.performance} testID="token-detail-performance">
-          <KeyValueRow
-            label={t('token.detail.currentPrice', 'Current price')}
-            value={token.price != null ? formatValue(token.price) : '—'}
-          />
           {(loading || chartData.length > 0 || chartError) && (
             <PriceChart
               data={chartData}
@@ -228,19 +261,23 @@ export default function TokenDetailScreen() {
 
         {/* Market data — spec 019 D2 ruling: kept as a Card of KeyValueRows,
             shared with Home's Bitcoin column. */}
-        <MarketDataCard data={marketData} symbol={token.symbol} />
+        <TokenMarketData data={marketData} symbol={token.symbol} />
 
         {/* About — spec 019 D3 ruling: description, contract address copy
             row and website link, kept as today, shared with Home's Bitcoin
             column. The contract row has no data dependency of its own (the
             mint is always known), so the card always renders even for a
             token CoinGecko has nothing to say about. */}
-        <AboutCard
+        <TokenAbout
           description={coinInfo?.description}
           contractAddress={token.address}
           contractAddressShort={getShortAddress(token.address, 6) ?? token.address}
           website={website}
         />
+
+        {/* The provider behind the chart, the market data and the description
+            is credited here, on the one screen that is made of its data. */}
+        <DataAttribution networkId={networkId} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -263,30 +300,19 @@ const stylesFor = (t: Semantic) =>
     balanceBlock: {
       gap: vs(spacing.sm),
     },
-    balanceHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: s(spacing.md),
-    },
-    tokenName: {
-      fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.heading),
-      lineHeight: s(fontSize.heading) * lineHeight.snug,
-      color: t.text.primary,
-      flexShrink: 1,
-    },
     amount: {
       ...TABULAR,
       fontFamily: fontFamilyNative.bold,
-      fontSize: s(fontSize.display),
-      lineHeight: s(fontSize.display) * lineHeight.snug,
+      fontSize: ms(fontSize.balance),
+      letterSpacing: letterSpacing.balance,
       color: t.text.primary,
     },
     fiat: {
+      flexShrink: 1,
       ...TABULAR,
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: ms(fontSize.bodyLg),
+      letterSpacing: letterSpacing.change,
       color: t.text.secondary,
     },
     // The block's own anatomy: rows and chart at the in-component step.

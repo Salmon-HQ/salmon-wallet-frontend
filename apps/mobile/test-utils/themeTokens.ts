@@ -70,3 +70,6 @@ export { useAccountNameDraft } from '../../../packages/shared/src/hooks/useAccou
  * already re-exported above, imported by path for the same reason.
  */
 export { valueInkFor } from '../../../packages/shared/src/types/ui/key-value-row';
+// UnderlineTabs decides its edge fades with this pure helper; every screen
+// that carries a tab row needs it present in the mock.
+export { overflowEdges } from '../../../packages/shared/src/utils/overflowEdges';

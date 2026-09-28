@@ -1,6 +1,6 @@
 /**
  * CurrencySelector — the display currency panel, on the DOM. The mobile twin
- * is `apps/mobile/src/components/SettingsSelectors/CurrencySelector`.
+ * is `apps/mobile/src/components/CurrencySelector`.
  */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

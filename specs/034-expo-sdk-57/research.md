@@ -1,0 +1,203 @@
+# Research: Mobile on Expo SDK 57
+
+Phase 0 of [plan.md](./plan.md). The starting inventory is
+`docs/EXPO-SDK-57-UPGRADE.md`; this file resolves what that document left
+unverified or got wrong, against primary sources, on 2026-09-23.
+
+## R1. Does `react-native-fast-crypto` survive React Native 0.85+?
+
+- **Finding**: v3.0.0 (the latest, 2025-10-27) is a legacy native module:
+  `RCT_EXPORT_MODULE` / `RCT_REMAP_METHOD` on iOS, a Java
+  `ReactContextBaseJavaModule` on Android, called through `NativeModules`,
+  no `codegenConfig`. Today it runs through the New Architecture's interop
+  layer for legacy modules.
+- **Correction to the upgrade doc**: the doc states RN 0.85 "removes the
+  Bridge outright — no interop shim". The RN 0.85 release notes
+  (reactnative.dev/blog/2026/04/07/react-native-0.85) say no such thing; they
+  list only specific Android legacy classes removed or deprecated
+  (`CatalystInstanceImpl`, `NativeViewHierarchyManager`, …). Whether the
+  interop layer still serves this module is therefore an empirical question.
+- **Decision**: keep it through the SDK 56 checkpoint and prove it on a
+  build: the Android dev build must compile, and a recovery must take the
+  native path (not the WebCrypto/JS fallback in `mnemonic.ts`). If either
+  fails, replace it with `react-native-quick-crypto` (owner decision), which
+  is a JSI/New-Architecture module with a `pbkdf2` implementation.
+- **Rationale**: replacing a module on the seed-derivation path is a
+  constitution §III change; not doing it when it still works is the safer
+  default. The known-vector test (SC-001) guards either outcome.
+- **Alternatives**: replace now (rejected: security-sensitive churn without
+  evidence it is needed); drop the accelerator and accept the fallback
+  (rejected by the owner).
+
+## R2. Is the `expo-camera` barcode patch still needed on SDK 57?
+
+- **Finding**: on the `sdk-57` branch, `packages/expo-camera/expo-module.config.json`
+  still lists only `ios/ExpoCamera.podspec`, while `ExpoCamera.podspec`
+  still excludes `barcode-scanning/**` and `ios/ExpoCameraBarcodeScanning.podspec`
+  still exists. The defect the patch fixes (expo/expo#44491: no QR decoding
+  on iOS) is still present upstream.
+- **Decision**: rebase the patch onto the SDK 57 `expo-camera` version and
+  re-key `pnpm.patchedDependencies` to it.
+- **Alternatives**: drop the patch (rejected: iOS QR scanning silently stops
+  decoding).
+
+## R3. Versions SDK 57 pins that the repo pins locally
+
+From `bundledNativeModules.json` on `sdk-57`:
+
+| Package                | Repo today             | SDK 57     | Decision                                                                       |
+| ---------------------- | ---------------------- | ---------- | ------------------------------------------------------------------------------ |
+| `@expo/fingerprint`    | `0.16.6`               | `~0.20.13` | Take `~0.20.13` with the SDK (this is the bump deferred from Dependabot #138). |
+| `@expo/dom-webview`    | `55.0.5` (+ override)  | `~57.0.1`  | Bump; drop the override.                                                       |
+| `expo-manifests`       | override `55.0.10`     | `~57.0.2`  | Drop the override.                                                             |
+| `@expo/metro-runtime`  | `55.0.10` (+ override) | `~57.0.16` | Bump; drop the override.                                                       |
+| `@expo/log-box`        | override `55.0.10`     | not pinned | Drop the override; let `expo` resolve it.                                      |
+| `react-native-webview` | not a dependency       | `13.16.1`  | Stay without it: SDK 56 makes `@expo/dom-webview` the default.                 |
+
+- **Rationale for dropping overrides**: they existed to hold SDK-55
+  artifacts together; with every Expo package on 57, `expo install --fix`
+  is the source of truth. If resolution splits a package into two versions,
+  an override comes back pinned to the SDK 57 value, not SDK 55.
+
+## R4. Unused native dependencies
+
+- **Finding**: `react-native-encrypted-storage` and `react-native-permissions`
+  have zero import sites in `apps/` and `packages/`, are not config plugins in
+  `app.json`, and the legacy-vault migration reads only the shared storage
+  layer (AsyncStorage / SecureStore), never encrypted-storage.
+- **Decision**: remove both, and their entries in
+  `expo.doctor.reactNativeDirectoryCheck.exclude`, before the SDK bump.
+
+## R5. Android API levels on SDK 57
+
+- **Finding**: `expo-modules-core` on `sdk-57` defaults `minSdkVersion 24`
+  (Android 7.0), `compileSdkVersion 36`, `targetSdkVersion 36`.
+- **Decision**: accept the defaults; no `expo-build-properties` override.
+  Android 7 remains supported, matching Expo's "SDK 56 can build apps for
+  Android 7+".
+
+## R6. Node
+
+- **Finding**: RN 0.85 supports Node ≥ 20.19.4, 22 and 24+. The repo is on
+  Node 24.21.0 (commit `c411eded`).
+- **Decision**: nothing to do.
+
+## R7. `expo/fetch` becomes the global `fetch`
+
+- **Finding**: beyond the raw `fetch` calls the upgrade doc lists (Bitcoin and
+  Ethereum services), `@solana/kit`'s HTTP transport also uses global
+  `fetch`, so every Solana RPC call from mobile moves to `expo/fetch`.
+  WebSocket subscriptions (receive detection) do not.
+- **Decision**: keep the default; verify on device that balances, history,
+  sends and NFT actions work and that request cancellation (Bitcoin service's
+  `AbortSignal`) still aborts. The documented opt-out,
+  `EXPO_PUBLIC_USE_RN_FETCH=1`, is the fallback if a provider misbehaves.
+
+## R8. React Navigation import
+
+- **Finding**: one import site, `apps/mobile/app/_layout.tsx`
+  (`DarkTheme`, `DefaultTheme`, `ThemeProvider` from `@react-navigation/native`),
+  maps to `expo-router/react-navigation` per the SDK 55 → 56 router
+  migration guide.
+- **Decision**: edit by hand (the codemod is reported to miss sites and there
+  is one), drop the dependency and its `expo.install.exclude` entry, and drop
+  the dead `react-navigation` entries from `jest.config.js`
+  `transformIgnorePatterns`.
+
+## R9. Toolchain on this machine
+
+- **Finding**: Xcode 26.2 installed; SDK 56+ needs 26.4. JDK 17 present.
+  `eas-cli` 19.1.0 installed, 24.7.0 current.
+- **Decision**: Android verification proceeds now with `expo run:android`
+  (no EAS needed). iOS verification waits for the owner's Xcode update.
+  `eas-cli` is not needed for local dev builds; updating it is left to the
+  release step.
+
+## R10. TypeScript
+
+- **Finding**: SDK 56 templates move to TypeScript 6.0.3; `expo install --fix`
+  would try to align it.
+- **Decision**: add `typescript` to `expo.install.exclude` so this lot keeps
+  TypeScript 5.9; TypeScript moves in its own lot (TS 7).
+
+## R11. `StyleSheet.absoluteFillObject` is gone (found at the SDK 56 checkpoint)
+
+- **Finding**: React Native 0.85 removed `StyleSheet.absoluteFillObject`. The
+  upgrade doc said the repo had no occurrence; it had 17, in mobile
+  components that must cover the screen — `LockOverlay`, `RevealCover` (the
+  seed reveal cover), `QRScanner`, the sheets, the backgrounds. Spread as
+  `undefined`, each lost `position: 'absolute'`. Two existing tests
+  (`LockOverlay`, `OnboardingLayout`) and the typecheck caught it.
+- **Decision**: replace every use with `StyleSheet.absoluteFill`, which in
+  0.85 is a plain frozen object with the same five values, so spreading it is
+  equivalent.
+
+## R12. `standard-navigation` must be transformed under Jest
+
+- **Finding**: expo-router 56 depends on `standard-navigation`, published as
+  ESM only. `jest-expo`'s own preset allows it through babel-jest, but
+  `apps/mobile/jest.config.js` replaces the preset's `transformIgnorePatterns`
+  with its own list.
+- **Decision**: add `standard-navigation` to that list, and drop the
+  `react-navigation` entries nothing imports any more.
+
+## R13. Theme imports come from `expo-router` itself
+
+- **Finding**: `expo-router/react-navigation` re-exports `DarkTheme` and
+  `DefaultTheme` marked deprecated ("Import from `expo-router` instead"); the
+  root `expo-router` export carries `DarkTheme`, `DefaultTheme` and
+  `ThemeProvider`.
+- **Decision**: import all three from `expo-router`.
+
+## Checkpoint result: SDK 56 on Android
+
+- Android dev build compiles; `RNFastCryptoPackage` is autolinked and
+  `libfastcrypto.so` ships in the APK: the interop layer still serves the
+  legacy module on RN 0.85 (R1 answered — no swap).
+- Wallet A recovered: Solana and Bitcoin receive addresses identical to SDK
+  55; `createAccount` 489 ms (SDK 55: 460 ms), TOTAL 1589 ms (SDK 55: 1655 ms).
+- `expo-doctor`: 21/22, the one failure being the known Hermes V1 memory
+  regression of SDK 56, fixed in SDK 57.
+
+## R14. Expo patches `AbortSignal` halfway (found on the SDK 57 build)
+
+- **Finding**: from SDK 56, Expo's runtime (`expo/src/winter/AbortSignal.ts`)
+  adds `AbortSignal.timeout` and `.any` to React Native's abort-controller and
+  nothing else. `apps/mobile/src/polyfills/abort-signal.js` took `timeout` as
+  proof of a complete implementation and installed nothing, so
+  `signal.throwIfAborted` was undefined and every transaction confirmation on
+  mobile threw `undefined is not a function` — after the transaction was
+  already sent. Seen first as a failed NFT burn.
+- **Decision**: fill each member on its own (`timeout`, `abort`, `any`,
+  `throwIfAborted`), whoever installed the others.
+- **EventTarget**: RN 0.86 installs its own `EventTarget` / `CustomEvent`, so
+  `installEventTargetPolyfill` stands down. Subscription-based confirmation
+  completes on the device (burns land and settle), so React Native's
+  implementation delivers what `@solana/subscribable` reads.
+
+## R15. The SDK 57 dev launcher no longer lists local Metro
+
+- **Finding**: the Compose-based launcher shows an empty DEVELOPMENT SERVERS
+  list and "Fetch development servers" finds nothing, so the Maestro subflow's
+  tap on the `http://…:8081` row had nothing to hit.
+- **Decision**: `dev-launcher-pass.yaml` opens the bundle with the dev
+  client's deep link (`salmonwallet://expo-development-client/?url=…localhost:8081`).
+
+## R16. Gradle metaspace on consecutive SDK builds
+
+- **Finding**: building SDK 57 in the Gradle daemon that had just built SDK 56
+  failed with `OutOfMemoryError: Metaspace` in `expo-updates:kspDebugKotlin`;
+  a fresh daemon built it in under a minute. The generated
+  `org.gradle.jvmargs` caps metaspace at 512 MB.
+- **Decision**: no config change; `./gradlew --stop` between SDK switches. EAS
+  builds start from a fresh daemon.
+
+## SDK 57 result on Android
+
+- Wallet A recovered: Solana and Bitcoin addresses identical to SDK 55;
+  `createAccount` 411 ms, TOTAL 1660 ms (SDK 55: 460 / 1655).
+- `expo-doctor` 21/21.
+- Burn works after R14. The owner's walk found the Payments request sheet
+  offering Share only on reopening and, on Android, the share chooser sending
+  the app to background (which locks it). The owner's call: the request sheet
+  offers Copy and Remove on every platform, and no Share.

@@ -32,6 +32,10 @@ export default defineConfig({
   ],
   use: {
     testIdAttribute: 'data-testid',
+    // An action with no bound inherits the test's timeout — up to 15 minutes in
+    // the slow specs — so a selector that matches nothing hangs instead of
+    // failing. Actions that wait on real work pass their own timeout.
+    actionTimeout: 30_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',

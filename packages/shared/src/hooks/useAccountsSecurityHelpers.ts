@@ -3,7 +3,6 @@ import {
   lockAndGetKey,
   unlockAndGetKey,
   unlockWithKey,
-  refreshCachedKey,
   DEFAULT_DIGEST,
   DEFAULT_ITERATIONS,
   type DerivedKeyCache,
@@ -16,7 +15,6 @@ import {
   removeStashItem,
   setStashItem,
   setStorageItem,
-  updateLastActivity,
   STASH_KEYS,
   STORAGE_KEYS,
 } from '../storage';
@@ -100,10 +98,9 @@ export async function resolveMnemonicsWithCachedKey(
     return storedMnemonics;
   }
 
-  const mnemonics = unlockWithKey<SecretVault>(storedMnemonics, keyCache);
-  await setStashItem(STASH_KEYS.DERIVED_KEY, refreshCachedKey(keyCache));
-
-  return mnemonics;
+  // Read, not renewed: a window opening is not the user acting, and writing
+  // the key would re-arm the background auto-lock (see updateLastActivity).
+  return unlockWithKey<SecretVault>(storedMnemonics, keyCache);
 }
 
 export async function changeStoredPassword(
@@ -129,7 +126,6 @@ export async function finalizeUnlockedAccounts(
 ): Promise<void> {
   await loadAccounts(mnemonics);
   setLocked(false);
-  await updateLastActivity();
 }
 
 interface InitializeAccountsSecurityParams {

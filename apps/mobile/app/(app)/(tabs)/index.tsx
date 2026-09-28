@@ -25,33 +25,58 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from 'react-native';
-import Reanimated, { useReducedMotion } from 'react-native-reanimated';
+import {
+  Animated,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Reanimated, { Easing, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import {
+  useAccountActivity,
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
   usePrefetchBalances,
   useCurrencyContext,
   useHomeShell,
+  useHomePowerupTabs,
+  useHomePowerupsCatalog,
+  useInstalledPowerups,
   mapBalanceToToken,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
   getHeldNetworkIds,
   type NetworkId,
+  FLOAT_IN_MS,
+  SINK_OUT_MS,
+  motionEasing,
   type PriceChartPeriod,
   type Token,
+  useFocusModePhase,
+  useNetworkPowerups,
+  useSettledSubTab,
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  s,
+  spacing,
+  vs,
 } from '@salmon/shared';
 import {
   BalanceHeader,
-  DerivedAccountsSheet,
+  DataAttribution,
   HomeTabOrderSheet,
   NftsTab,
   PortfolioSubTabs,
+  PowerupsFab,
   ReceiveSheet,
   SkeletonRow,
   StateBlock,
@@ -60,18 +85,104 @@ import {
   WarningNotice,
   type BlockchainId,
 } from '../../../src/components';
-import { useDerivedAccounts } from '../../../src/contexts/DerivedAccountsContext';
+import {
+  POWERUPS,
+  POWERUPS_ENABLED,
+  PowerupsCatalog,
+  getPowerup,
+  getPowerupCatalog,
+  getPowerupTab,
+  type PowerupId,
+  POWERUP_TAB_KEYS,
+} from '../../../src/powerups';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
 import { TOP_FADE_SCROLL_RANGE, stylesFor } from '../../../src/screens/home/homeStyles';
 import { useHomeBitcoinMarket } from '../../../src/screens/home/useHomeBitcoinMarket';
 import { useSemantic, useThemedStyles } from '../../../src/theme/useThemedStyles';
-import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
+import {
+  FLOAT_DELAY_MS,
+  floatEntering,
+  sinkExiting,
+  useCoverFloat,
+} from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
-/** The two in-page sub-tabs — the shell's key, kept under its old local name. */
+/** The in-page sub-tabs — the shell's key, kept under its old local name. */
 type SubTabKey = HomeSubTabKey;
+
+/** The catalogue's ceiling is measured against the window, once. */
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
+
+/** The "no account" state fills the content region, like every other state. */
+const powerupBodyStyles = StyleSheet.create({
+  noAccount: { flex: 1, justifyContent: 'center' },
+  surface: { flex: 1, gap: vs(spacing.screenGutter) },
+  // How to use the Powerup, left-aligned under the sub-tabs in the header's
+  // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
+  usage: {
+    fontFamily: fontFamilyNative.medium,
+    fontSize: s(fontSize.subtitle),
+    lineHeight: s(fontSize.subtitle) * lineHeight.snug,
+    paddingHorizontal: s(spacing.headerPadding),
+  },
+});
+
+/**
+ * The active Powerup's surface, resolved through the aliased entry so Home
+ * never names a Powerup itself. Nothing when the id owns no surface — a build
+ * with Powerups off, or a stored tab whose Powerup is gone.
+ *
+ * The account is Home's business, not each Powerup's: with no account on the
+ * active network the surface is that state, and a Powerup is mounted only
+ * with an address already resolved (`docs/POWERUPS-UI.md` §1.1).
+ */
+function PowerupTabBody({
+  tabKey,
+  onNavigateHome,
+  sheetHeight,
+}: {
+  tabKey: string;
+  onNavigateHome: () => void;
+  sheetHeight?: number;
+}) {
+  const { t } = useTranslation();
+  const semantic = useSemantic();
+  const [{ ready, activeAccount, activeBlockchainAccount, networkId }] = useAccountsContext();
+  const body = getPowerupTab(tabKey);
+  const usageKey = getPowerup(tabKey as PowerupId)?.usageKey;
+  if (!body) return null;
+  if (!ready || !activeAccount || !activeBlockchainAccount) {
+    return (
+      <View style={powerupBodyStyles.noAccount}>
+        <StateBlock
+          tone="empty"
+          testID="home-powerup-no-account"
+          title={t('powerups.no_account')}
+        />
+      </View>
+    );
+  }
+  return (
+    <View style={powerupBodyStyles.surface}>
+      {usageKey && (
+        <Text
+          testID={`home-powerup-usage-${tabKey}`}
+          style={[powerupBodyStyles.usage, { color: semantic.text.secondary }]}
+        >
+          {t(usageKey)}
+        </Text>
+      )}
+      {React.createElement(body, {
+        publicKey: activeBlockchainAccount.getReceiveAddress(),
+        networkId: networkId ?? null,
+        onNavigateHome,
+        sheetHeight,
+      })}
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -79,11 +190,14 @@ export default function HomeScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { floatingBottomOffset } = useTabChrome();
-  const derivedAccounts = useDerivedAccounts();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
-  const { isTaskEngaged, surfaceKey } = useTaskChrome();
+  const { isTaskEngaged, surfaceKey, isCovered } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
+  // Held hidden under the lock and floated in place when it goes: see
+  // `useCoverFloat` for why Home is not remounted for the unlock.
+  const coverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
+  const fabCoverFloatStyle = useCoverFloat(isCovered, isReduceMotionEnabled);
   const [{ currency }] = useCurrencyContext();
 
   // Top fade gradient opacity - animated based on scroll position
@@ -101,6 +215,24 @@ export default function HomeScreen() {
   // The sheet where the sub-tabs are arranged
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
 
+  // The height the Powerups catalogue rises to: the top of the Portfolio /
+  // NFTs row in window coordinates (owner, 2026-09-11), so the sheet stands
+  // exactly on that row and the balance and the Send / Receive / Activity
+  // buttons stay visible above it. `catalogVisible` itself is
+  // `useHomePowerupsCatalog`'s state, set up further down with the rest of
+  // the Powerups slice.
+  const [subTabsTop, setSubTabsTop] = useState(0);
+  const subTabsRef = useRef<View>(null);
+  const handleSubTabsLayout = useCallback(() => {
+    subTabsRef.current?.measureInWindow((_x, y) => setSubTabsTop(y));
+  }, []);
+  const catalogHeight = subTabsTop > 0 ? Math.max(WINDOW_HEIGHT - subTabsTop, 0) : undefined;
+
+  // What this device has installed. Nothing is installed out of the box, so
+  // Home starts with Portfolio and NFTs and gains a tab only when the user
+  // adds one from the catalogue.
+  const { installed, install, uninstall, hydrated: powerupsHydrated } = useInstalledPowerups();
+
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -110,10 +242,14 @@ export default function HomeScreen() {
     if (!accountState.locked) return;
 
     setReceiveSheetVisible(false);
-    // Powerups is a route now, not a sheet — it closes itself on lock (see
-    // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
-    // mounts the lock overlay and Home cannot reach it from here. Token
-    // detail is a route too (spec 019) — same story, it closes itself.
+    handleCatalogClose();
+    // Token detail is a route (spec 019) — it sits above the tab shell that
+    // mounts the lock overlay, so it closes itself.
+    // `handleCatalogClose` is declared later in this component
+    // (`useHomePowerupsCatalog`); it is a stable useCallback with an empty
+    // dep array, same as `setReceiveSheetVisible` above, so omitting it here
+    // is safe and avoids a temporal-dead-zone read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountState.locked]);
 
   // Unverified tokens — its own setting now (spec 026 D4). Developer Networks
@@ -200,6 +336,9 @@ export default function HomeScreen() {
   });
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
+  // A receive only shows once something asks again; the chain's report of
+  // activity on the account is that cue.
+  useAccountActivity(ready ? activeBlockchainAccount : null, activeAccount?.id);
 
   // Clear switching network flag once new data has loaded
   useEffect(() => {
@@ -210,8 +349,22 @@ export default function HomeScreen() {
 
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
 
+  // The installed Powerups, as Home surfaces — the registry and the copy come
+  // through the shared registry (aliased out with the build flag off), so a
+  // build with Powerups off passes an empty list and the shell never hears
+  // of them (`useHomePowerupTabs`, shared with the extension's HomePage).
+  // The backend's kill switch for the network the account stands on (spec
+  // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
+  // offered, and a switched-off one keeps its tab only to show why.
+  const powerupAllowlist = useNetworkPowerups(networkId ?? null);
+  const powerupTabs = useHomePowerupTabs({
+    installed,
+    powerups: POWERUPS,
+    allowlist: powerupAllowlist,
+  });
+
   // The shell's state — page index, per-page balances, the network the screen
-  // stands on, the offered sub-tabs and which wrapper owns a swap — lives once
+  // stands on, the offered sub-tabs and which wrapper owns a change — lives once
   // in shared; this screen renders it (`useHomeShell`).
   const {
     activeBlockchainIndex,
@@ -222,8 +375,7 @@ export default function HomeScreen() {
     setActiveSubTab,
     setSubTabOrder,
     subTabs,
-    subTabsKey,
-    tabsHasPrior,
+    subTabsSettled,
     taskHasPrior,
     subTabHasPrior,
     chainHasPrior,
@@ -237,7 +389,52 @@ export default function HomeScreen() {
     isTaskEngaged,
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
+    powerupTabs,
+    powerupsHydrated,
+    allPowerupKeys: POWERUP_TAB_KEYS,
   });
+
+  // Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the balance block
+  // — chain selector, total, Send / Receive / Activity — leaves, and the
+  // sub-tab row rises to where the chain selector stood. Portfolio or NFTs
+  // bring it all back. A container transform: the row is one element whose
+  // position interpolates; the balance sinks out under it.
+  // Two beats, not one (owner, on device): the underline reaches the tab
+  // first and stops; only then does the header move. So the mode follows the
+  // tab one underline-slide later.
+  const wantsPowerupMode = powerupTabs.some((tab) => tab.key === effectiveSubTab);
+  // Three beats, never overlapping (owner, on device): the underline reaches
+  // the tab and stops; the balance sinks while the row holds its place; only
+  // then does the row travel. Coming back, the row travels down first and
+  // the balance floats into the room it left. `useFocusModePhase` keeps the
+  // clock; this screen draws each phase.
+  const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled);
+  const isPowerupMode = focusPhase === 'gone';
+  // The content follows the row, never the tap (owner, 2026-09-16): only the
+  // tab that has come to rest — underline slid, or row risen / come down —
+  // has its content drawn. Until then the region is empty: the outgoing
+  // content sinks at the tap, the incoming one floats into a row that stopped.
+  const isFocusTab = useCallback(
+    (key: string) => powerupTabs.some((tab) => tab.key === key),
+    [powerupTabs]
+  );
+  const settledSubTab = useSettledSubTab({
+    target: effectiveSubTab,
+    isFocusTab,
+    focusPhase,
+    isReduceMotionEnabled,
+  });
+  // The block's height, measured while shown, so its room can be held while
+  // it sinks and given back before it floats in.
+  const [balanceHeight, setBalanceHeight] = useState<number | null>(null);
+  // The row travels exactly as long as the balance's verb, on the verb's
+  // travel curve: the sink's length while the balance leaves, the float's
+  // while it comes back (owner: same duration, no exceptions).
+  const headerLayout = isReduceMotionEnabled
+    ? undefined
+    : LinearTransition.duration(
+        focusPhase === 'gone' || focusPhase === 'sinking' ? SINK_OUT_MS : FLOAT_IN_MS
+      ).easing(Easing.bezier(...motionEasing.settle.native));
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -348,8 +545,35 @@ export default function HomeScreen() {
     [topFadeOpacity, setActiveSubTab]
   );
 
+  // A Powerup's task ends on Home's own ground: the portfolio the new
+  // balances belong to, not the form that is already reset behind the user.
+  const returnToPortfolio = useCallback(() => setActiveSubTab('portfolio'), [setActiveSubTab]);
+
   const handleOrderPress = useCallback(() => setOrderSheetVisible(true), []);
   const handleOrderSheetClose = useCallback(() => setOrderSheetVisible(false), []);
+
+  // The catalogue drawer's own state and entries — shared with the
+  // extension's HomePage (`useHomePowerupsCatalog`). Entries are the
+  // registry's for the active network plus the developer-only mocks; an
+  // installed one keeps its place in its tier and says it is installed
+  // there. Only a real Powerup can be installed: the mocks advertise
+  // nothing the wallet can open, so the catalogue refuses to give them a tab.
+  const {
+    catalogVisible,
+    handleCatalogToggle,
+    handleCatalogClose,
+    catalogEntries,
+    handleInstall,
+    removableTabKeys,
+  } = useHomePowerupsCatalog({
+    powerupTabs,
+    installed,
+    install,
+    networkId: currentNetworkId,
+    powerups: POWERUPS,
+    getCatalog: getPowerupCatalog,
+    allowlist: powerupAllowlist,
+  });
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -411,17 +635,19 @@ export default function HomeScreen() {
   // The block above the content. It is fixed on both sub-tabs — nothing above
   // the sub-tab row scrolls (owner, 2026-09-01).
   const balanceBlock = (
-    <BalanceHeader
-      blockchains={blockchainBalances}
-      hiddenBalance={hiddenBalance}
-      onToggleVisibility={toggleHidden}
-      onBlockchainChange={handleBlockchainChange}
-      activeIndex={activeBlockchainIndex}
-      onSendPress={handleSendPress}
-      onReceivePress={handleReceivePress}
-      onActivityPress={handleActivityPress}
-      sendDisabled={isWatchOnlyAccount(activeAccount)}
-    />
+    <View>
+      <BalanceHeader
+        blockchains={blockchainBalances}
+        hiddenBalance={hiddenBalance}
+        onToggleVisibility={toggleHidden}
+        onBlockchainChange={handleBlockchainChange}
+        activeIndex={activeBlockchainIndex}
+        onSendPress={handleSendPress}
+        onReceivePress={handleReceivePress}
+        onActivityPress={handleActivityPress}
+        sendDisabled={isWatchOnlyAccount(activeAccount)}
+      />
+    </View>
   );
 
   const subTabsRow = (
@@ -430,15 +656,31 @@ export default function HomeScreen() {
       activeKey={effectiveSubTab}
       onChange={handleSubTabChange}
       onOrderPress={handleOrderPress}
-      // A reorder swaps the tabs on the verb — old arrangement sinks, new one
-      // floats — while the order button beside them holds still. Keyed by the
-      // arrangement, so a tab switch never remounts them.
-      tabsKey={subTabsKey}
-      tabsEntering={
-        tabsHasPrior ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS }) : undefined
-      }
-      tabsExiting={tabsHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+      settled={subTabsSettled}
     />
+  );
+
+  // A Powerup the backend switched off keeps its tab; its surface is the
+  // reason, never a blank (spec 029 §5.2).
+  const activePowerupDisabledReason = powerupTabs.find(
+    (tab) => tab.key === effectiveSubTab
+  )?.disabledReason;
+  const powerupTabContent = (
+    <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
+      {activePowerupDisabledReason ? (
+        <StateBlock
+          tone="empty"
+          testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+          title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+        />
+      ) : (
+        <PowerupTabBody
+          tabKey={effectiveSubTab}
+          onNavigateHome={returnToPortfolio}
+          sheetHeight={catalogHeight}
+        />
+      )}
+    </View>
   );
 
   // The one mask on this screen: the seam between the fixed row above and the
@@ -476,13 +718,12 @@ export default function HomeScreen() {
         onWalletPress={() => router.push('/wallets')}
         networkId={currentNetworkId}
         avatarUrl={activeAccount?.avatar}
-        accountId={activeAccount?.id}
       />
       {/* The balance, the sub-tabs, the content and the FAB are CONTENT, not
           chrome: when a task engages the shell they leave with the verb at
           full depth (the chrome's half depth is the header row's business, not
           theirs). Conditional render is the mechanism — the same one the
-          swap's step changes use — so unmount plays the sink and remount plays
+          a review's step changes use — so unmount plays the sink and remount plays
           the float. The wrapper sits inside the screen, which is itself a
           sibling of the mounted ground in `(tabs)/_layout.tsx`: the water
           never travels with it. */}
@@ -494,7 +735,7 @@ export default function HomeScreen() {
           // belongs to the surfacing.
           key={surfaceKey}
           testID="home-content"
-          style={styles.content}
+          style={[styles.content, coverFloatStyle]}
           entering={
             accountState.locked
               ? undefined
@@ -507,129 +748,214 @@ export default function HomeScreen() {
           {/* Fixed on both sub-tabs, and mounted under ONE parent so the row
               is the same instance across a switch: `UnderlineTabs` only slides
               its underline if it is not remounted. */}
-          <View style={styles.pinnedHeader}>
-            {balanceBlock}
-            <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
-          </View>
+          <Reanimated.View layout={headerLayout} style={styles.pinnedHeader}>
+            {/* The balance's room. While the block sinks the room stays, at
+                the height the block had, so the row under it does not move
+                until the block is gone; on the way back the room returns
+                empty first, and the block floats into it. */}
+            {focusPhase !== 'gone' && (
+              <View
+                testID="home-balance-room"
+                style={
+                  focusPhase !== 'shown' && balanceHeight !== null
+                    ? { height: balanceHeight }
+                    : undefined
+                }
+                onLayout={
+                  focusPhase === 'shown'
+                    ? (event) => setBalanceHeight(event.nativeEvent.layout.height)
+                    : undefined
+                }
+              >
+                {focusPhase === 'shown' && (
+                  <Reanimated.View
+                    key="home-balance"
+                    testID="home-balance-block"
+                    entering={floatEntering(isReduceMotionEnabled)}
+                    exiting={sinkExiting(isReduceMotionEnabled)}
+                  >
+                    {balanceBlock}
+                  </Reanimated.View>
+                )}
+              </View>
+            )}
+            {/* The row carries its own `layout`: Reanimated animates the frame
+                of the view that holds the prop, so a parent's `layout` never
+                moves a child. It travels when the room above leaves or
+                returns — the sink's length up, the float's down. */}
+            <Reanimated.View
+              ref={subTabsRef}
+              onLayout={handleSubTabsLayout}
+              collapsable={false}
+              layout={headerLayout}
+              style={[styles.pinnedSubTabs, isPowerupMode && styles.pinnedSubTabsRisen]}
+            >
+              {subTabsRow}
+            </Reanimated.View>
+          </Reanimated.View>
 
           {/* The content region plays the verb on a sub-tab change: the
               outgoing list sinks, the incoming one floats — NFTs used to
               appear from nothing (owner, on device). Keyed by sub-tab so the
-              swap is a remount, the same mechanism the chain swap uses; the
+              change is a remount, the same mechanism the chain change uses; the
               block above it holds still (rule four). */}
-          <Reanimated.View
-            key={effectiveSubTab}
-            testID="home-subtab-content"
-            style={styles.chainContent}
-            entering={
-              subTabHasPrior
-                ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                : undefined
-            }
-            exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-          >
-            {effectiveSubTab === 'portfolio' ? (
-              <>
-                {/* Partial-load failure: keep whatever data loaded visible;
+          {settledSubTab === effectiveSubTab && (
+            <Reanimated.View
+              key={settledSubTab}
+              testID="home-subtab-content"
+              style={styles.chainContent}
+              // Rides the header's move: as the block above shrinks, the content
+              // follows it up on the same clock instead of jumping.
+              layout={headerLayout}
+              // No beat before the float: the wait for the row already held it.
+              entering={subTabHasPrior ? floatEntering(isReduceMotionEnabled) : undefined}
+              exiting={subTabHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+            >
+              {settledSubTab === 'portfolio' ? (
+                <>
+                  {/* Partial-load failure: keep whatever data loaded visible;
                   retry is pull-to-refresh on the token list. Only 'ready'
                   carries data, so a total failure is left to the list's own
                   error state rather than told "shown data may be incomplete". */}
-                {balanceError && balanceState === 'ready' && !switchingNetwork && (
-                  <View style={styles.balanceErrorBanner} testID="balance-load-error">
-                    <WarningNotice
-                      tone="warning"
-                      title={t(
-                        'wallet.partial_load_error',
-                        "Some balances couldn't be loaded. Shown data may be incomplete."
-                      )}
-                    />
-                  </View>
-                )}
+                  {balanceError && balanceState === 'ready' && !switchingNetwork && (
+                    <View style={styles.balanceErrorBanner} testID="balance-load-error">
+                      <WarningNotice
+                        tone="warning"
+                        title={t(
+                          'wallet.partial_load_error',
+                          "Some balances couldn't be loaded. Shown data may be incomplete."
+                        )}
+                      />
+                    </View>
+                  )}
 
-                {/* Scrollable Token List or Bitcoin View.
-                  Keyed by chain so switching chains swaps the whole container
+                  {/* Scrollable Token List or Bitcoin View.
+                  Keyed by chain so switching chains replaces the whole container
                   with the sink and the float: the outgoing chain's content
                   sinks 12dp as its light goes, the incoming one floats up into
                   place. The frame above holds still; only the content travels.
-                  Under reduce motion both props are undefined and the swap
+                  Under reduce motion both props are undefined and the change
                   stays instant. */}
+                  <View style={styles.listContainer}>
+                    <Reanimated.View
+                      key={currentNetworkId}
+                      testID="home-chain-content"
+                      style={styles.chainContent}
+                      // Only a chain change moves this wrapper. It remounts on a
+                      // task hand-back too (it lives inside `home-content`), and
+                      // animating there stacked a second sink/float on the one
+                      // the screen was already playing.
+                      entering={
+                        chainHasPrior
+                          ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+                          : undefined
+                      }
+                      exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
+                    >
+                      {currentChain === 'bitcoin' ? (
+                        // Bitcoin lives inside Portfolio with chart, market data
+                        // and about — it has no asset-detail screen of its own.
+                        <BitcoinColumn
+                          styles={styles}
+                          bitcoin={bitcoin}
+                          chartPeriod={bitcoinChartPeriod}
+                          onChartPeriodChange={handleChartPeriodChange}
+                          balanceState={balanceState}
+                          hiddenBalance={hiddenBalance}
+                          ListEmptyComponent={ListEmptyComponent}
+                          bottomOffset={floatingBottomOffset}
+                          onScroll={handleScroll}
+                        />
+                      ) : (
+                        // Normal token list for Solana/Ethereum
+                        <TokenList
+                          tokens={tokenListItems}
+                          loading={balanceState === 'loading'}
+                          onTokenPress={handleTokenPress}
+                          hiddenBalance={hiddenBalance}
+                          ListEmptyComponent={ListEmptyComponent}
+                          // The price provider's credit closes the list (its
+                          // terms: once per screen that shows its prices).
+                          ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
+                          onRefresh={refresh}
+                          onScroll={handleScroll}
+                          scrollEventThrottle={16}
+                          contentContainerStyle={[
+                            styles.listContent,
+                            styles.tabGutter,
+                            { paddingBottom: floatingBottomOffset },
+                          ]}
+                          blockchain={currentChain}
+                        />
+                      )}
+                    </Reanimated.View>
+                    {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                    {topFade}
+                  </View>
+                </>
+              ) : settledSubTab === 'nfts' ? (
+                // NFTs: the grid owns the only scroll view in the content region,
+                // and everything above it is the same fixed block Portfolio shows.
                 <View style={styles.listContainer}>
-                  <Reanimated.View
-                    key={currentNetworkId}
-                    testID="home-chain-content"
-                    style={styles.chainContent}
-                    // Only a chain change moves this wrapper. It remounts on a
-                    // task hand-back too (it lives inside `home-content`), and
-                    // animating there stacked a second sink/float on the one
-                    // the screen was already playing.
-                    entering={
-                      chainHasPrior
-                        ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-                        : undefined
-                    }
-                    exiting={chainHasPrior ? sinkExiting(isReduceMotionEnabled) : undefined}
-                  >
-                    {currentChain === 'bitcoin' ? (
-                      // Bitcoin lives inside Portfolio with chart, market data
-                      // and about — it has no asset-detail screen of its own.
-                      <BitcoinColumn
-                        styles={styles}
-                        bitcoin={bitcoin}
-                        chartPeriod={bitcoinChartPeriod}
-                        onChartPeriodChange={handleChartPeriodChange}
-                        balanceState={balanceState}
-                        hiddenBalance={hiddenBalance}
-                        ListEmptyComponent={ListEmptyComponent}
-                        bottomOffset={floatingBottomOffset}
-                        onScroll={handleScroll}
-                      />
-                    ) : (
-                      // Normal token list for Solana/Ethereum
-                      <TokenList
-                        tokens={tokenListItems}
-                        loading={balanceState === 'loading'}
-                        onTokenPress={handleTokenPress}
-                        hiddenBalance={hiddenBalance}
-                        ListEmptyComponent={ListEmptyComponent}
-                        onRefresh={refresh}
-                        onScroll={handleScroll}
-                        scrollEventThrottle={16}
-                        contentContainerStyle={[
-                          styles.listContent,
-                          styles.tabGutter,
-                          { paddingBottom: floatingBottomOffset },
-                        ]}
-                        blockchain={currentChain}
-                      />
-                    )}
-                  </Reanimated.View>
-                  {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                  <NftsTab
+                    contentContainerStyle={styles.tabGutter}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
+                  />
                   {topFade}
                 </View>
-              </>
-            ) : (
-              // NFTs: the grid owns the only scroll view in the content region,
-              // and everything above it is the same fixed block Portfolio shows.
-              <View style={styles.listContainer}>
-                <NftsTab
-                  contentContainerStyle={styles.tabGutter}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                />
-                {topFade}
-              </View>
-            )}
-          </Reanimated.View>
+              ) : (
+                // An installed Powerup's own surface. The confirmation is core's
+                // and covers the whole app when the user signs (spec 027 §2).
+                powerupTabContent
+              )}
+            </Reanimated.View>
+          )}
         </Reanimated.View>
       )}
 
+      {/* The `+`. It floats over the content and opens the catalogue; while
+          the catalogue is up the plus turns into the close mark. It leaves
+          with the content when a task takes the screen. */}
+      {POWERUPS_ENABLED && !isTaskEngaged && (
+        // Floats in with the content after the lock; a layer of its own, so
+        // the float does not overwrite the button's leap transform.
+        <Reanimated.View
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFill, fabCoverFloatStyle]}
+        >
+          <PowerupsFab
+            open={catalogVisible}
+            onPress={handleCatalogToggle}
+            bottomOffset={floatingBottomOffset}
+          />
+        </Reanimated.View>
+      )}
+
+      {/* The catalogue: a drawer of Home, stopping just below the Send /
+          Receive / Activity row so the balance stays in view above it. */}
+      {PowerupsCatalog && (
+        <PowerupsCatalog
+          visible={catalogVisible}
+          onClose={handleCatalogClose}
+          entries={catalogEntries}
+          onInstall={handleInstall}
+          onUninstall={uninstall}
+          height={catalogHeight}
+        />
+      )}
+
       {/* The sub-tab arrangement. It applies live: the row above re-flows as
-          rows are dropped, and there is nothing to save. */}
+          rows are dropped, and there is nothing to save. Portfolio and NFTs
+          are the wallet itself; a Powerup's tab carries a `−` that uninstalls
+          it. */}
       <HomeTabOrderSheet
         visible={orderSheetVisible}
         onClose={handleOrderSheetClose}
         tabs={subTabs}
         onOrderChange={setSubTabOrder}
+        removableKeys={removableTabKeys}
+        onRemove={uninstall}
       />
 
       {/* Receive Sheet */}
@@ -644,21 +970,6 @@ export default function HomeScreen() {
         // deposit to a devnet address is not money (spec 026 D6).
         networkLabel={getNetworkLabel(currentNetworkId) ?? undefined}
         onCopy={handleReceiveSheetCopy}
-      />
-
-      {/* The question the automatic derived-account scan raises: the scan
-          belongs to the unlocked session, so its answer is taken on the first
-          screen the session lands on. A native Modal shows through any screen
-          pushed over Home, and Wallets answers the rescans it asks for over
-          itself, so this one only draws the automatic pass's finds. */}
-      <DerivedAccountsSheet
-        visible={derivedAccounts.sheetVisible && !derivedAccounts.sheetRequested}
-        // The automatic pass is silent: Home only ever draws the answer, never
-        // the wait. A rescan the user asked for is waited on where they asked.
-        scanning={false}
-        finds={derivedAccounts.finds}
-        onImport={(indexes) => void derivedAccounts.importFinds(indexes)}
-        onDismiss={() => void derivedAccounts.dismiss()}
       />
     </View>
   );

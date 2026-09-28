@@ -146,6 +146,28 @@ export const i18nResources = {
 } as const;
 
 /**
+ * A Powerup's copy lives next to the Powerup and is merged under its
+ * namespace here, by the app's i18n config — never imported by this module,
+ * so the core's locales carry no Powerup and no Powerup module graph
+ * (spec 027 §3). With Powerups compiled out the bundle hands an empty map.
+ *
+ * @example
+ * ```typescript
+ * import { powerupTranslations } from '@salmon/shared/powerups';
+ * i18n.init({ resources: withPowerupTranslations(i18nResources, powerupTranslations) });
+ * ```
+ */
+export function withPowerupTranslations(
+  resources: I18nResources,
+  powerups: { readonly [lang in LanguageCode]?: Record<string, unknown> }
+): { [lang in LanguageCode]: { translation: Record<string, unknown> } } {
+  return {
+    en: { translation: { ...resources.en.translation, ...(powerups.en ?? {}) } },
+    es: { translation: { ...resources.es.translation, ...(powerups.es ?? {}) } },
+  };
+}
+
+/**
  * Type for i18next resources configuration.
  */
 export type I18nResources = typeof i18nResources;

@@ -2,7 +2,7 @@ import { useCallback, useMemo, type Dispatch, type SetStateAction } from 'react'
 import merge from 'lodash-es/merge';
 import omit from 'lodash-es/omit';
 
-import { setStorageItem, STORAGE_KEYS } from '../storage';
+import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 import type { TrustedApp, TrustedApps } from '../types/trusted-app';
 import type { CustomTokens, TokenInfo, TokenToImport } from '../types/token';
 
@@ -39,35 +39,46 @@ export function useAccountsNetworkPreferences({
     [tokens, networkId]
   );
 
+  // Trusted apps are read from storage before every write, never taken from
+  // this document's copy: in the extension each document (side panel, every
+  // approval popup) loads its copy once at unlock, so writing that copy back
+  // restores a site another document revoked since.
   const addTrustedApp = useCallback(
     async (
       domain: string,
-      { name, icon }: TrustedApp = {},
+      { name, icon, address }: TrustedApp = {},
       targetNetworkId?: string
     ): Promise<void> => {
       const resolvedNetworkId = targetNetworkId ?? networkId;
       if (!resolvedNetworkId) return;
 
-      const newTrustedApps = { ...trustedApps };
-      merge(newTrustedApps, { [resolvedNetworkId]: { [domain]: { name, icon } } });
+      const current = (await getStorageItem<TrustedApps>(STORAGE_KEYS.TRUSTED_APPS)) ?? {};
+      const newTrustedApps: TrustedApps = {
+        ...current,
+        [resolvedNetworkId]: {
+          ...current[resolvedNetworkId],
+          [domain]: { name, icon, ...(address ? { address } : {}) },
+        },
+      };
       await setStorageItem(STORAGE_KEYS.TRUSTED_APPS, newTrustedApps);
       setTrustedApps(newTrustedApps);
     },
-    [trustedApps, networkId, setTrustedApps]
+    [networkId, setTrustedApps]
   );
 
+  // Revoking removes the site from every network. Trust on any network lets a
+  // site open signing prompts, and the list only shows the active network, so
+  // a grant left on another network would outlive the revoke unseen.
   const removeTrustedApp = useCallback(
     async (domain: string): Promise<void> => {
-      if (!networkId) return;
-
-      const newTrustedApps = { ...trustedApps };
-      if (newTrustedApps[networkId]) {
-        delete newTrustedApps[networkId][domain];
-      }
+      const current = (await getStorageItem<TrustedApps>(STORAGE_KEYS.TRUSTED_APPS)) ?? {};
+      const newTrustedApps: TrustedApps = Object.fromEntries(
+        Object.entries(current).map(([network, apps]) => [network, omit(apps, domain)])
+      );
       await setStorageItem(STORAGE_KEYS.TRUSTED_APPS, newTrustedApps);
       setTrustedApps(newTrustedApps);
     },
-    [trustedApps, networkId, setTrustedApps]
+    [setTrustedApps]
   );
 
   const importTokens = useCallback(

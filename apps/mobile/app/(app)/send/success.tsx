@@ -20,6 +20,7 @@ import {
   getDefaultExplorer,
   getShortAddress,
   getTransactionUrl,
+  sendReceiptRows,
   type Blockchain,
   type NetworkEnvironment,
 } from '@salmon/shared';
@@ -70,15 +71,7 @@ export default function SendSuccessScreen() {
         tone="transfer"
         title={t('send.screens.successTitle')}
         body={t('send.screens.successBody', { amount: amountDisplay, name: recipientName })}
-        rows={[
-          { label: t('token.send.amountLabel'), value: amountDisplay },
-          { label: t('transactions.to'), value: recipientName },
-          {
-            label: t('send.screens.status'),
-            value: t('transactions.detail.confirmed'),
-            valueTone: 'success',
-          },
-        ]}
+        rows={sendReceiptRows(t, amountDisplay, recipientName)}
         explorerUrl={explorerUrl ?? undefined}
         primary={{
           label: t('transaction.continue'),

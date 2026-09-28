@@ -38,6 +38,7 @@ const ICON_MAP: Record<string, React.ComponentType<IconGlyphProps>> = {
 export function SupportSelector({
   options,
   onOpenLink,
+  errorText,
   onBack,
 }: SupportSelectorProps): React.ReactElement {
   const { t } = useTranslation();
@@ -76,6 +77,7 @@ export function SupportSelector({
       onBack={onBack}
     >
       {options.map(renderOption)}
+      {errorText && <WarningNotice tone="error" testID="link-error" title={errorText} />}
 
       <WarningNotice tone="warning" title={t('settings.security_notice_title')}>
         {t('settings.security_notice')}

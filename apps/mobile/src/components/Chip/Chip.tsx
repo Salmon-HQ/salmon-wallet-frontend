@@ -46,6 +46,7 @@ export function Chip({
   const styles = useThemedStyles(stylesFor);
   const metrics = SIZES[size];
   const isSelected = variant === 'filter' && selected;
+  const isOutlineLit = variant === 'outline' && selected;
 
   const body = (
     <>
@@ -54,7 +55,7 @@ export function Chip({
         style={[
           styles.label,
           { fontSize: s(metrics.font) },
-          isSelected ? styles.labelSelected : styles.labelIdle,
+          isOutlineLit ? styles.labelAccent : isSelected ? styles.labelSelected : styles.labelIdle,
         ]}
         numberOfLines={1}
         maxFontSizeMultiplier={fontScaleCap.chrome}
@@ -70,7 +71,7 @@ export function Chip({
       paddingVertical: vs(metrics.paddingVertical),
       paddingHorizontal: s(metrics.paddingHorizontal),
     },
-    variant === 'outline' && styles.outline,
+    variant === 'outline' && (isOutlineLit ? styles.outlineLit : styles.outline),
     variant === 'filter' && (isSelected ? styles.filterSelected : styles.filterIdle),
     style,
   ];
@@ -88,7 +89,7 @@ export function Chip({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ selected: isSelected }}
+      accessibilityState={{ selected: isSelected || isOutlineLit }}
       onPress={onPress}
       activeOpacity={0.7}
       style={box}
@@ -112,6 +113,12 @@ const stylesFor = (t: Semantic) =>
       backgroundColor: 'transparent',
       borderColor: t.border.raised,
     },
+    // The lit outline is the amount fill the user chose: the accent edge the
+    // amount card wears while focused, so chip and card read as one state.
+    outlineLit: {
+      backgroundColor: 'transparent',
+      borderColor: t.accent.ink,
+    },
     filterIdle: {
       backgroundColor: 'transparent',
       borderColor: t.border.hairline,
@@ -132,5 +139,8 @@ const stylesFor = (t: Semantic) =>
     },
     labelSelected: {
       color: t.text.primary,
+    },
+    labelAccent: {
+      color: t.accent.ink,
     },
   });

@@ -1,6 +1,6 @@
 /**
  * ExplorerSelector — the block explorer panel, on the DOM. The mobile twin
- * is `apps/mobile/src/components/SettingsSelectors/ExplorerSelector`.
+ * is `apps/mobile/src/components/ExplorerSelector`.
  */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

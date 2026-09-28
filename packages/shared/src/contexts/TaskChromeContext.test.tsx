@@ -6,10 +6,24 @@
  * the provider's own `surface()` calls to the external bump.
  */
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { TaskChromeProvider, useTaskChrome, useTaskChromeClaim } from './TaskChromeContext';
+
+// This file selects jsdom through the docblock above, not through the project
+// environment (`node`), so testing-library's automatic teardown is never
+// registered for it: each render stayed in the document and the next
+// `getByTestId` found several of the same element. Every case after the first
+// was red on that, not on the contract it asserts.
+//
+// Registering this once in `vitest.setup.ts` does not work — the setup module
+// and the test file resolve different `@testing-library/react` instances, so
+// the cleanup registered there never sees this file's container. Ten more
+// files under `packages/shared` pick jsdom the same way and share the gap
+// without tripping it yet; each needs this line, or the suite needs one jsdom
+// project rather than per-file docblocks.
+afterEach(cleanup);
 
 function ChromeState() {
   const { isTaskEngaged } = useTaskChrome();

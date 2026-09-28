@@ -1,0 +1,157 @@
+/**
+ * What a transaction type looks like: its verb, its glyph, its mark ink, and
+ * the leading mark the activity row and the detail both put it behind.
+ *
+ * The mobile twin is `apps/mobile/src/components/TransactionMark/TransactionMark.tsx`
+ * — same table, same mark anatomy (the token that moved, badged with the
+ * type; the kit's own well when there is no logo).
+ */
+import React from 'react';
+import {
+  TYPE_LABEL_KEYS,
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  transactionTypeDisplayFor,
+  withPlatformGlyphs,
+  type Semantic,
+  type TransactionType,
+  type TransactionTypeGlyph,
+} from '@salmon/shared';
+
+import { useSemantic } from '../../theme/ThemeProvider';
+import {
+  ArrowDownLeftIcon,
+  ArrowUpRightIcon,
+  CubeIcon,
+  FileTextIcon,
+  FireIcon,
+  LockIcon,
+  MoneyIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  iconSize,
+  type IconComponent,
+} from '../../icons';
+import { IconBubble } from '../IconBubble';
+import { TokenLogo } from '../TokenLogo';
+import type { TransactionMarkProps } from './types';
+
+/** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
+export const LEADING_SIZE = componentSizes.iconSize2XL;
+
+/** The type badge riding the token logo — a mark on a mark, not a bubble. */
+const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
+
+/** The glyph inside the type badge. */
+const TYPE_BADGE_GLYPH = 10;
+
+/** The platform's glyph for each shared name — the only thing the DOM and RN tables did not share. */
+const GLYPHS: Record<TransactionTypeGlyph, IconComponent> = {
+  arrowUpRight: ArrowUpRightIcon,
+  arrowDownLeft: ArrowDownLeftIcon,
+  plusCircle: PlusCircleIcon,
+  fire: FireIcon,
+  lock: LockIcon,
+  money: MoneyIcon,
+  cube: CubeIcon,
+  note: FileTextIcon,
+  question: QuestionIcon,
+};
+
+/**
+ * The shared table (`transactionTypeDisplayFor`) with the glyph names resolved
+ * to this platform's icons. Call with `useSemantic()`'s result at render.
+ */
+export const transactionTypeConfigFor = (
+  t: Semantic
+): Record<TransactionType, { label: string; icon: IconComponent; color: string }> =>
+  withPlatformGlyphs(transactionTypeDisplayFor(t), GLYPHS) as Record<
+    TransactionType,
+    { label: string; icon: IconComponent; color: string }
+  >;
+
+export { TYPE_LABEL_KEYS };
+
+/** The type badge that rides the leading mark's corner. */
+function TypeBadge({
+  icon: Icon,
+  color,
+  single = false,
+}: {
+  icon: IconComponent;
+  color: string;
+  single?: boolean;
+}) {
+  const t = useSemantic();
+  const inset = single ? -2 : -4;
+  return (
+    <span
+      style={{
+        position: 'absolute',
+        top: inset,
+        right: inset,
+        width: TYPE_BADGE_SIZE,
+        height: TYPE_BADGE_SIZE,
+        borderRadius: borderRadius.full,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        border: `${borderWidth.medium}px solid ${t.depth.abyss}`,
+        backgroundColor: color,
+      }}
+    >
+      <Icon size={TYPE_BADGE_GLYPH} color={t.text.primary} />
+    </span>
+  );
+}
+
+/**
+ * The row's leading mark: the token that moved, badged with the type —
+ * falling back to the kit's own well when the token has no logo.
+ */
+export function TransactionMark({ transaction }: TransactionMarkProps) {
+  const t = useSemantic();
+  const { type, inputs, outputs } = transaction;
+  const typeConfig = transactionTypeConfigFor(t);
+  const config = typeConfig[type] || typeConfig.unknown;
+
+  // The token that moved is always the mark (owner, 2026-09-11): its logo, or
+  // its initials while the backend has no logo for it. Only a transaction
+  // with no token at all falls back to the type's own well.
+  const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
+  if (primaryToken) {
+    return (
+      <span
+        data-testid="tx-mark-token"
+        style={{
+          position: 'relative',
+          display: 'inline-flex',
+          width: LEADING_SIZE,
+          height: LEADING_SIZE,
+        }}
+      >
+        <TokenLogo
+          uri={primaryToken.logo ?? undefined}
+          symbol={primaryToken.symbol}
+          size={LEADING_SIZE}
+          borderRadius={borderRadius.full}
+        />
+        <TypeBadge icon={config.icon} color={config.color} single />
+      </span>
+    );
+  }
+
+  return (
+    <IconBubble
+      testID="tx-mark-well"
+      size={LEADING_SIZE}
+      shape="circle"
+      tone="surface"
+      icon={config.icon}
+      iconSize={iconSize.md}
+      iconColor={config.color}
+    />
+  );
+}

@@ -12,6 +12,9 @@ import { fileURLToPath } from 'node:url';
 const suiteRoot = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.join(suiteRoot, '.env.test');
 
+/** The built MV3 extension every spec loads. */
+export const EXT_DIST = path.join(suiteRoot, '..', 'dist/chrome-mv3');
+
 /**
  * Drop surrounding quotes, the way dotenv does. Seed phrases contain spaces, so
  * they get quoted naturally — and the sibling Maestro .env.test quotes every

@@ -84,7 +84,9 @@ describe('WelcomeScreen', () => {
     render(<WelcomeScreen />);
 
     expect(screen.getByTestId('welcome-brand-mark')).toBeTruthy();
-    expect(screen.getByTestId('brand-mark')).toBeTruthy();
+    // The mark is decorative here (no `title`), so it is hidden from
+    // assistive tech — the same switch the DOM twin makes on `aria-hidden`.
+    expect(screen.getByTestId('brand-mark', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByTestId('wordmark')).toBeTruthy();
     expect(screen.getByTestId('welcome-slogan')).toBeTruthy();
     expect(screen.getByText('Open code. Open ownership.')).toBeTruthy();

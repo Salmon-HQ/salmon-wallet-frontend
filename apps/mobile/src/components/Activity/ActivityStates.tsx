@@ -11,7 +11,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { spacing, vs } from '@salmon/shared';
-import { SkeletonRow } from '../Skeleton';
+import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
 
 /** The kit row's leading mark size (`transactionTypes.LEADING_SIZE`). */

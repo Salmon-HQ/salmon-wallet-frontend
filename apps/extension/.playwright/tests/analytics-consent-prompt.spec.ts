@@ -6,15 +6,17 @@
  * appears in the popup during onboarding, offers both choices, and that opting
  * in advances to Success and turns the Settings toggle ON.
  *
- * Runs against a fresh persistent profile (the suite deletes profiles/default to
- * force onboarding). Requires SALMON_TEST_SEED_A + SALMON_TEST_PASSWORD; skips
- * when the backend is unreachable (repo e2e policy).
+ * Runs on its own profile, wiped before launch, so onboarding always shows.
+ * Requires SALMON_TEST_SEED_A + SALMON_TEST_PASSWORD; skips when the backend
+ * is unreachable (repo e2e policy).
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
 
 const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
 const password = (): string => process.env.SALMON_TEST_PASSWORD ?? '';
+
+test.use({ profileName: 'analytics-consent-prompt', freshProfile: true });
 
 let backendUp = false;
 
@@ -30,20 +32,6 @@ test('first-run consent screen appears in onboarding and opts in', async ({ popu
   // Stub analytics ingest — opting in starts the flush timer.
   await popup.route('**/v1/events', (route) =>
     route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' })
-  );
-
-  // The consent screen only shows during onboarding. The suite shares one
-  // persistent profile, so a prior spec may have already onboarded it — the
-  // popup then opens on the lock screen. Skip in that case (run this spec on a
-  // fresh profile to exercise it).
-  const alreadyOnboarded = await popup
-    .getByTestId('lock-password-input')
-    .waitFor({ state: 'visible', timeout: 4000 })
-    .then(() => true)
-    .catch(() => false);
-  test.skip(
-    alreadyOnboarded,
-    'wallet already onboarded in this profile — consent screen only shows on fresh onboarding'
   );
 
   // Fresh profile → onboarding. Recover up to the consent screen.

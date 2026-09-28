@@ -16,7 +16,8 @@
  *   `InstructionError` variants: `@solana/errors` codes, mirrored from Agave.
  * - Program-specific `Custom(n)` codes: SPL Token (`solana-program/token`,
  *   `interface/src/error.rs`), the System program (`solana-sdk`,
- *   `system-interface/src/error.rs`), Jupiter's swap program (6001 = slippage).
+ *   `system-interface/src/error.rs`), and the aggregator programs' custom
+ *   slippage code (6001).
  * - Anything that is not a `SolanaError` (Bitcoin, Ethereum, the backend, an
  *   aggregator) still goes by message patterns, as before.
  */
@@ -66,7 +67,7 @@ import {
 
 /** What a failure becomes on screen: the message, and the line under it. */
 export interface TransactionFailure {
-  /** Translation key under `transaction.errors` (or `swap.errors`). */
+  /** Translation key under `transaction.errors`. */
   key: string;
   /**
    * What actually came back, already readable and short — the program and
@@ -85,7 +86,8 @@ const TOKEN_PROGRAMS = new Set([
   'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
 ]);
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
-const JUPITER_PROGRAMS = new Set([
+/** The aggregator programs whose custom errors history still has to decode. */
+const AGGREGATOR_PROGRAMS = new Set([
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
   'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB',
 ]);
@@ -112,6 +114,27 @@ const TOKEN_ERROR_NAMES = [
   'AccountFrozen',
   'MintDecimalsMismatch',
   'NonNativeNotSupported',
+  // Token-2022 continues the same numbering for its extension errors
+  // (`token-2022/interface/src/error.rs`).
+  'ExtensionTypeMismatch',
+  'ExtensionBaseMismatch',
+  'ExtensionAlreadyInitialized',
+  'ConfidentialTransferAccountHasBalance',
+  'ConfidentialTransferAccountNotApproved',
+  'ConfidentialTransferDepositsAndTransfersDisabled',
+  'ConfidentialTransferElGamalPubkeyMismatch',
+  'ConfidentialTransferBalanceMismatch',
+  'MintHasSupply',
+  'NoAuthorityExists',
+  'TransferFeeExceedsMaximum',
+  'MintRequiredForTransfer',
+  'FeeMismatch',
+  'FeeParametersMismatch',
+  'ImmutableOwner',
+  'AccountHasWithheldTransferFees',
+  'NoMemo',
+  'NonTransferable',
+  'NonTransferableNeedsImmutableOwnership',
 ];
 
 /** System program `SystemError`, by index (`system-interface/src/error.rs`). */
@@ -127,7 +150,7 @@ const SYSTEM_ERROR_NAMES = [
   'NonceUnexpectedBlockhashValue',
 ];
 
-const JUPITER_SLIPPAGE_CODE = 6001;
+const AGGREGATOR_SLIPPAGE_CODE = 6001;
 
 function classifyCustom(programId: string | null, code: number): { key: string; name: string } {
   if (programId && TOKEN_PROGRAMS.has(programId)) {
@@ -135,6 +158,10 @@ function classifyCustom(programId: string | null, code: number): { key: string; 
     if (code === 1) return { key: 'transaction.errors.insufficientFunds', name };
     if (code === 0) return { key: 'transaction.errors.insufficientRent', name };
     if (code === 17) return { key: 'transaction.errors.accountFrozen', name };
+    // Token-2022 extensions the recipient's own account opted into, which no
+    // amount of retrying gets past.
+    if (code === 36) return { key: 'transaction.errors.memoRequired', name };
+    if (code === 37) return { key: 'transaction.errors.nonTransferable', name };
     return { key: 'transaction.errors.programRejected', name };
   }
   if (programId === SYSTEM_PROGRAM) {
@@ -142,8 +169,8 @@ function classifyCustom(programId: string | null, code: number): { key: string; 
     if (code === 1) return { key: 'transaction.errors.insufficientFunds', name };
     return { key: 'transaction.errors.programRejected', name };
   }
-  if ((programId && JUPITER_PROGRAMS.has(programId)) || code === JUPITER_SLIPPAGE_CODE) {
-    if (code === JUPITER_SLIPPAGE_CODE) {
+  if ((programId && AGGREGATOR_PROGRAMS.has(programId)) || code === AGGREGATOR_SLIPPAGE_CODE) {
+    if (code === AGGREGATOR_SLIPPAGE_CODE) {
       return { key: 'transaction.errors.slippage', name: 'SlippageToleranceExceeded' };
     }
   }
@@ -315,7 +342,7 @@ const INSUFFICIENT_FUNDS_PATTERNS = [
 const SLIPPAGE_PATTERNS = [
   'slippage tolerance exceeded',
   'slippagetoleranceexceeded',
-  // Jupiter's swap program reports slippage as custom error 6001 (0x1771),
+  // The aggregator programs report slippage as custom error 6001 (0x1771),
   // which reaches us as a stringified InstructionError or as a hex code.
   '"custom":6001',
   '0x1771',
@@ -340,7 +367,7 @@ const BUSY_PATTERNS = [
 const BUSY_STATUS = /\b(429|502|503|504)\b/;
 
 /** Message prefixes that are already translation keys — pass them through. */
-const KEY_PREFIXES = ['transaction.errors.', 'swap.errors.'];
+const KEY_PREFIXES = ['transaction.errors.'];
 
 function describeByMessage(message: string, outer: unknown): TransactionFailure {
   const haystack = message.toLowerCase();
@@ -399,6 +426,12 @@ export function describeTransactionError(err: unknown): TransactionFailure {
     return { key: message, detail: null };
   }
 
+  // The backend's own verdict that the wallet no longer holds the NFT: the
+  // list was stale, not the transaction broken.
+  if ((err as { code?: unknown } | null)?.code === 'nft_not_owned') {
+    return { key: 'transaction.errors.nftNotOwned', detail: null };
+  }
+
   // A preflight failure wraps the transaction error that failed it; that is
   // the one to read. Anything else is read as it is.
   const root = unwrapSimulationError(err);
@@ -407,7 +440,7 @@ export function describeTransactionError(err: unknown): TransactionFailure {
   return describeByMessage(message, err);
 }
 
-/** The translation key alone — what the swap and NFT flows read. */
+/** The translation key alone — what the NFT flows read. */
 export function classifyTransactionError(err: unknown): string {
   return describeTransactionError(err).key;
 }

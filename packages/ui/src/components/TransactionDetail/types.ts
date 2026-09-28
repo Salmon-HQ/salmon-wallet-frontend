@@ -2,12 +2,7 @@ import type { CSSProperties } from 'react';
 import type { TransactionDetailPropsBase } from '@salmon/shared';
 
 // Re-export the transaction shapes the detail's variant files consume
-export type {
-  NftAttribute,
-  SwapConversionRate,
-  Transaction,
-  TransactionTokenAmount,
-} from '@salmon/shared';
+export type { NftAttribute, Transaction, TransactionTokenAmount } from '@salmon/shared';
 
 /**
  * Props for the TransactionDetail component (DOM).

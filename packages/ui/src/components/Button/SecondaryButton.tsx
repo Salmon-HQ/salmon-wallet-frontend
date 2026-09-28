@@ -3,7 +3,7 @@
  *
  * The mobile twin is `apps/mobile/src/components/Button/SecondaryButton.tsx`.
  * Transparent fill, `border.raised` stroke, primary ink. `tone="danger"`
- * swaps to danger ink and a danger edge for a destructive action that must
+ * changes to danger ink and a danger edge for a destructive action that must
  * not borrow the salmon fill; `tone="danger-fill"` is the filled destructive
  * plane, whose only ink that clears AA in both modes is `status.onFill`.
  */
@@ -21,8 +21,8 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { useReducedMotion } from '../../motion';
 import { usePressed } from '../../utils/usePressed';
-import { ButtonSpinner } from './ButtonSpinner';
-import { PressSpecular, setSpecularOrigin } from './PressSpecular';
+import { Spinner } from '../Spinner';
+import { PressSpecular, setSpecularOrigin } from '../PressSpecular';
 import type { SecondaryButtonProps } from './types';
 
 /** Mobile's `PRESS_SCALE` — DESIGN.md §Motion's `scale(0.985)`. */
@@ -105,7 +105,7 @@ export function SecondaryButton({
       }}
     >
       {loading ? (
-        <ButtonSpinner color={isDangerFill ? status.onFill : text.primary} />
+        <Spinner color={isDangerFill ? status.onFill : text.primary} />
       ) : (
         <>
           {icon}

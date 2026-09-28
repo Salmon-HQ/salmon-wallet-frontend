@@ -25,19 +25,19 @@ describe('PowerupBadge', () => {
     expect(screen.getByText('COMMUNITY')).toBeTruthy();
   });
 
-  it('reserves the salmon fill for featured', () => {
+  it('keeps the accent for core and a plain surface for community', () => {
     render(
       <>
-        <PowerupBadge testID="featured" tier="featured" />
-        <PowerupBadge testID="official" tier="official" />
+        <PowerupBadge testID="core" tier="core" />
+        <PowerupBadge testID="community" tier="community" />
       </>
     );
 
-    expect(flatten(screen.getByTestId('featured').props.style).backgroundColor).toBe(
-      semantic.accent.fill
-    );
-    expect(flatten(screen.getByTestId('official').props.style).backgroundColor).toBe(
+    expect(flatten(screen.getByTestId('core').props.style).backgroundColor).toBe(
       semantic.accent.tint
+    );
+    expect(flatten(screen.getByTestId('community').props.style).backgroundColor).toBe(
+      semantic.surface.raised
     );
   });
 });

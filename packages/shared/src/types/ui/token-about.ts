@@ -2,7 +2,7 @@ import type { Testable } from './testable';
 
 /**
  * The "About" card of a token's detail screen: description, contract address
- * copy row, website link. Mobile's `AboutCard` and the DOM's `TokenAbout` read
+ * copy row, website link. Mobile's `TokenAbout` and the DOM's `TokenAbout` read
  * this one shape; the card renders nothing when every field is absent, and a
  * skeleton while `loading`.
  */

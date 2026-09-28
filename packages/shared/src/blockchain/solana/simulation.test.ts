@@ -58,6 +58,7 @@ const USDC_ATA: Address = address('2y8ryG1ULFrfrJhg6iEuNbmvbLnKrCbxjfJvpG4PSvHb'
 const WSOL_ATA: Address = address('AeMuAqDcw2nWnCUnkqNXTVfWjRqPZ4uHzHUgBvBmnGXK');
 const POOL_ATA: Address = address('7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj');
 const BLOCKHASH = '11111111111111111111111111111111' as Blockhash;
+const SYSTEM_PROGRAM: Address = address('11111111111111111111111111111111');
 
 /** Builds a decoded token-account snapshot. */
 function tokenAccount(
@@ -66,6 +67,7 @@ function tokenAccount(
 ): AccountState {
   return {
     lamports,
+    owner: TOKEN_PROGRAM_ADDRESS,
     token: {
       amount: 0n,
       delegate: null,
@@ -75,9 +77,9 @@ function tokenAccount(
   };
 }
 
-/** Builds a plain (non-token) account snapshot. */
-function solAccount(lamports: bigint): AccountState {
-  return { lamports, token: null };
+/** Builds a plain (non-token) account snapshot, owned by the System Program unless stated. */
+function solAccount(lamports: bigint, owner: Address = SYSTEM_PROGRAM): AccountState {
+  return { lamports, owner, token: null };
 }
 
 const MINTS: ReadonlyMap<Address, MintState> = new Map([
@@ -149,6 +151,48 @@ describe('deriveEffects', () => {
     expect(result.kind).toBe('no-effect');
   });
 
+  // SPL SetAuthority(AccountOwner) hands the whole token account to someone
+  // else. The balance and the delegate are untouched, so an amount/delegate
+  // diff sees nothing and the preview used to collapse to `no-effect` — the
+  // approval screen then said the transaction moves none of your balances
+  // while it gave the account away.
+  it('never reports an ownership change as no-effect', () => {
+    const ATTACKER = '8pM1YsWLwCoU4nNGUzgjQZ8iBfTFtfkDfsfnayrHRJrQ' as Address;
+
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: WALLET, amount: 5_000_000_000n })],
+        ]),
+        after: new Map([
+          [USDC_ATA, tokenAccount({ mint: USDC, owner: ATTACKER, amount: 5_000_000_000n })],
+        ]),
+      })
+    );
+
+    expect(result.kind).not.toBe('no-effect');
+    expect(result.kind).toBe('undetermined');
+  });
+
+  // System Assign hands the wallet's own account to another program, which can
+  // then debit every lamport in it. No lamports move, so a balance diff sees
+  // nothing: the preview said "No balance changes" (dApp pays the fee) or only
+  // the fee, with a one-tap approve.
+  it('never reports a reassignment of the wallet account as no-effect or a plain fee', () => {
+    const ATTACKER_PROGRAM = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' as Address;
+
+    for (const lamportsAfter of [1_000_000n, 995_000n, 2_000_000n]) {
+      const result = deriveEffects(
+        derivationInput({
+          before: new Map([[WALLET, solAccount(1_000_000n)]]),
+          after: new Map([[WALLET, solAccount(lamportsAfter, ATTACKER_PROGRAM)]]),
+        })
+      );
+
+      expect(result).toMatchObject({ kind: 'undetermined', reason: 'ownership-change' });
+    }
+  });
+
   it('derives a plain SOL transfer as a negative lamport change including the fee', () => {
     // 1 SOL out plus a 5000 lamport fee, as observed on the account itself.
     const result = deriveEffects(
@@ -207,7 +251,7 @@ describe('deriveEffects', () => {
     expect(result.tokens[0]?.amount).toBe(-6n);
   });
 
-  it('derives a swap touching several token accounts and ignores accounts it does not own', () => {
+  it('derives an exchange touching several token accounts and ignores accounts it does not own', () => {
     const result = deriveEffects(
       derivationInput({
         before: new Map([
@@ -387,7 +431,7 @@ describe('deriveEffects approvals', () => {
     expect(result.approvals[0]?.scope).toBe('unlimited');
   });
 
-  it('reports a delegation swapped to a different spender for the same amount', () => {
+  it('reports a delegation moved to a different spender for the same amount', () => {
     const result = deriveEffects(
       derivationInput({
         before: new Map([
@@ -522,7 +566,7 @@ describe('decodeAccountState', () => {
       data: ['', 'base64'],
     });
 
-    expect(state).toEqual({ lamports: 7n, token: null });
+    expect(state).toEqual({ lamports: 7n, owner: SYSTEM_PROGRAM, token: null });
   });
 
   it('returns null for an account that does not exist', () => {

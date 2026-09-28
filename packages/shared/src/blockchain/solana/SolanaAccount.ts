@@ -1,12 +1,14 @@
 import { address, getAddressEncoder } from '@solana/kit';
-import type { KeyPairSigner } from '@solana/kit';
+import type { KeyPairSigner, Signature } from '@solana/kit';
 import bs58 from 'bs58';
 import {
   createTransfer,
+  resendTransaction,
   estimateFee as estimateSolanaFee,
   type TransferOptions as SolanaTransferOptions,
   type EstimateFeeOptions,
 } from './transfer';
+import { confirmSolanaSignature } from './confirm';
 import { removeDecimals } from '../../utils/decimals';
 import type { FeeEstimateResult } from '../../types/send';
 import type { SolanaNetwork } from '../../types/blockchain';
@@ -82,8 +84,16 @@ export class SolanaAccount extends SolanaReadAccount {
   /** This account holds key material. */
   override readonly canSign = true as const;
 
-  /** 32-byte ed25519 seed — the only recoverable form of the private key */
-  private readonly seed: Uint8Array;
+  /**
+   * 32-byte ed25519 seed — the only recoverable form of the private key.
+   *
+   * A `#` field, not `private`: TypeScript's `private` is a compile-time
+   * marker and leaves an ordinary enumerable own property, which
+   * `JSON.stringify`, `structuredClone` and a spread all carry. A private name
+   * lives in an internal slot no serializer can reach, so the seed cannot
+   * leave this object by accident.
+   */
+  readonly #seed: Uint8Array;
 
   /**
    * Creates a new SolanaAccount instance
@@ -101,7 +111,7 @@ export class SolanaAccount extends SolanaReadAccount {
       fetchNfts: options.fetchNfts,
     });
     this.signer = options.keyPair.signer;
-    this.seed = options.keyPair.seed;
+    this.#seed = options.keyPair.seed;
   }
 
   /**
@@ -114,7 +124,7 @@ export class SolanaAccount extends SolanaReadAccount {
     // An ed25519 secret key in its 64-byte form is the seed followed by the
     // public key — the same bytes the legacy web3.js keypair exposed.
     const secretKey = new Uint8Array(64);
-    secretKey.set(this.seed);
+    secretKey.set(this.#seed);
     secretKey.set(getAddressEncoder().encode(this.publicKey), 32);
     return bs58.encode(secretKey);
   }
@@ -130,7 +140,7 @@ export class SolanaAccount extends SolanaReadAccount {
    * @param token - Token mint address (SOL_ADDRESS for native SOL)
    * @param amount - Amount to transfer (human-readable)
    * @param opts - Transfer options (simulate, memo, decimals)
-   * @returns Object containing the transaction ID
+   * @returns Object containing the transaction ID, once the cluster confirms it
    */
   async transfer(
     to: string,
@@ -142,6 +152,23 @@ export class SolanaAccount extends SolanaReadAccount {
       ...opts,
       version: transactionVersionFor(this.network.networkId),
     });
+    // A simulation has no signature to wait for. A real send is not done
+    // until the chain says so: the receipt behind this must never show for a
+    // transaction that did not land.
+    if (!opts?.simulate) {
+      const rpc = this.getRpc();
+      const { wireTransaction } = result;
+      await confirmSolanaSignature(
+        { rpc, rpcSubscriptions: this.getRpcSubscriptions() },
+        result.txId as Signature,
+        result.lastValidBlockHeight,
+        // A node can accept the transaction and drop it before a leader sees
+        // it, which from here is indistinguishable from waiting. Re-sending
+        // the same signed bytes covers that: same blockhash, same signature,
+        // so it cannot pay twice.
+        wireTransaction ? { resend: () => resendTransaction(rpc, wireTransaction) } : undefined
+      );
+    }
     return { txId: result.txId as string };
   }
 

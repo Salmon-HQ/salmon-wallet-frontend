@@ -12,6 +12,8 @@ export type { CoinInfo } from '@salmon/shared';
  * period change), market data card, about card.
  */
 export interface TokenDetailContentProps {
+  /** Send opens on this token; absent for a surface that cannot send (watch-only). */
+  onSendPress?: () => void;
   /** Token to display. Undefined renders the balance-block skeleton. */
   token?: Token;
   /** Which chain's asset this is — Bitcoin has no contract address to copy. */
@@ -36,6 +38,8 @@ export interface TokenDetailContentProps {
   marketData: MarketData | undefined;
   /** Coin info has never resolved — skeletons the info cards, not the chart */
   infoLoading?: boolean;
+  /** The network the token lives on: its data provider is credited under the about card */
+  networkId?: string | null;
   /**
    * Horizontal padding of the container the chart bleeds out of on the left
    * (the curve runs off the screen edge and stops a gutter short of the right).

@@ -48,7 +48,7 @@ export const motionMs = {
    */
   drift: 280,
   /**
-   * 200ms — the entering half of a fade-through content swap (Material
+   * 200ms — the entering half of a fade-through content change (Material
    * Design's "fade through": top-level content is replaced under a frame that
    * stays put — the incoming view fades in and settles from `scale(0.97)`
    * while the outgoing one drops away in a `flick`). Shorter than `drift`
@@ -56,18 +56,21 @@ export const motionMs = {
    * still, so all the eye has to read is an arrival. Home's per-chain
    * content (token list ↔ Bitcoin view) is the canonical user.
    */
-  contentSwap: 200,
+  contentChange: 200,
   /**
-   * 420ms — sheet presentation. translateY 100%→0 with the backdrop blur and
-   * scrim moving over the same window, so the sheet and the water above it are
-   * one gesture instead of two.
+   * 500ms — sheet presentation: translateY 100%→0 with the backdrop moving
+   * over the same window. The clock of the iOS sheet, and the one the web's
+   * drawers copy from it (Ionic, then Vaul: 0.5s with `motionEasing.current`
+   * — a curve that settles, never overshoots). Was 420ms, `route`'s window;
+   * the owner asked for the sheet to be slower and to stop with ease
+   * (2026-09-17).
    */
-  rise: 420,
+  rise: 500,
   /**
-   * 420ms — route transition. Same window as `rise` on purpose: a pushed route
-   * and a presented sheet are the same event to the user (new surface arrives,
-   * old one recedes to `scale(0.97)`), and giving them different lengths only
-   * makes the app feel inconsistent about its own depth.
+   * 420ms — route transition. A pushed route and a presented sheet are the
+   * same event to the user (new surface arrives, old one recedes to
+   * `scale(0.97)`); the sheet is the one that follows the platform's own
+   * sheet clock, a beat longer.
    */
   route: 420,
   /**
@@ -102,6 +105,12 @@ export const motionMs = {
   feedbackHold: 1500,
   /** 500ms — input debounce before firing a search or a quote request. */
   debounce: 500,
+  /**
+   * 300ms — how long a fee estimate waits after the amount stops changing.
+   * Shorter than `debounce`: the fee is a small read the user is about to
+   * need, not a search they may abandon.
+   */
+  feeDebounce: 300,
   /** 24ms — per-item delay in a staggered list enter. Six items maximum. */
   stagger: 24,
 
@@ -122,7 +131,9 @@ export const motionMs = {
    */
   waitMinVisible: 600,
   /**
-   * 5000ms — **the owner-set floor on a wait, and the one place to dial it.**
+   * 2500ms — **the owner-set floor on a wait, and the one place to dial it.**
+   * One pulse of the wave, not two: it was 5000ms until 2026-09-17, when the
+   * owner halved it.
    * Once a waiting screen is up it stays up at least this long, whether or not
    * the work behind it has already finished, on every wait: unlock, boot,
    * recovery and transactions alike.
@@ -140,7 +151,7 @@ export const motionMs = {
    * and the watchdog that guarantees the handoff is armed at the floor plus
    * `wavefrontExitMs()`, so it still bounds the whole thing.
    */
-  waitFloor: 5000,
+  waitFloor: 2500,
 
   /**
    * Continuous loops. These are cycle lengths, not transitions: they describe
@@ -169,9 +180,9 @@ export const motionDuration = {
   ebb: `${motionMs.ebb}ms`,
   /** 280ms — element enter, expand/collapse, tab change */
   drift: `${motionMs.drift}ms`,
-  /** 200ms — the entering half of a fade-through content swap */
-  contentSwap: `${motionMs.contentSwap}ms`,
-  /** 420ms — sheet presentation */
+  /** 200ms — the entering half of a fade-through content change */
+  contentChange: `${motionMs.contentChange}ms`,
+  /** 500ms — sheet presentation */
   rise: `${motionMs.rise}ms`,
   /** 420ms — route transition */
   route: `${motionMs.route}ms`,
@@ -393,3 +404,38 @@ export type ReducedMotion = typeof reducedMotion;
 export type Duration = typeof duration;
 export type DurationMs = typeof durationMs;
 export type Easing = typeof easing;
+
+/**
+ * A bottom sheet's exit, on both twins: the `ebb`, plus the slack the exit
+ * watchdog allows before it decides the platform's end-of-animation callback
+ * is not coming. Declared once so the two containers cannot disagree.
+ */
+export const SHEET_EXIT_MS = motionMs.ebb;
+export const SHEET_EXIT_WATCHDOG_GRACE_MS = 120;
+
+/**
+ * The price chart's endpoint halo breathes on the water's long clock, not on
+ * `pulseCycle` (a placeholder's breath): it is a live mark, and it keeps time
+ * with the wait. One constant so both twins choose the same clock.
+ */
+export const CHART_PULSE_MS = motionMs.tide;
+
+/**
+ * The Powerups launcher's leap (owner, 2026-09-16): the salmon on the FAB
+ * jumps when tapped — up by `risePx`, nose tilted by `tiltDeg` — over `swell`
+ * and lands over `ebb`, shorter than the catalogue's rise so the two never
+ * compete. While the catalogue is open the mark cross-fades to the close
+ * mark over `drift`. Reduce motion: no leap, the glyph cuts.
+ */
+export const fabLeap = {
+  risePx: 6,
+  tiltDeg: 14,
+} as const;
+
+/**
+ * The one frame the interface needs to commit before the JS thread is taken
+ * by key derivation. This is NOT an animation and carries no motion vocabulary
+ * — it is a bare `setTimeout` yield so a `LoadingScreen` can paint before a
+ * blocking crypto operation starts, on both password-entry twins.
+ */
+export const YIELD_TO_PAINT_MS = 100;

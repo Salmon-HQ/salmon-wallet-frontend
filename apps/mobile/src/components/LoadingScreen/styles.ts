@@ -54,7 +54,7 @@ export const stylesFor = (t: Semantic) =>
      * The wait's content is what the eye reads, so it is what has to be centred.
      * Pinning the mark to `top: 50%` and hanging the words below it centred the
      * emitter and left the cluster low by half the words' height, which is the
-     * off-centre product saw on the swap wait (two lines) more than on the
+     * off-centre product saw on the exchange wait (two lines) more than on the
      * one-line waits. Centring the column keeps the mark horizontally exact —
      * `alignItems: 'center'`, no percentage anchor, so the Yoga padding trap
      * documented on `content` cannot come back — and the front's origin is

@@ -144,8 +144,22 @@ export const componentSizes = {
   buttonHeight: 56,
   buttonHeightMedium: 48,
   buttonHeightSmall: 44,
-  /** 42px - Compact action buttons (swap, receive, success) */
+  /** 42px - Compact action buttons (receive, success) */
   buttonHeightCompact: 42,
+  /**
+   * 48px — the Powerups FAB, both twins. It reads as iOS 26's detached
+   * tab-bar search button: a round control at the trailing edge of the band
+   * a tab bar occupies, sized to that bar's height (Apple HIG, "Tab bars":
+   * the standard tab bar content height is 49pt —
+   * https://developer.apple.com/design/human-interface-guidelines/tab-bars —
+   * and iOS 26 keeps it for the floating bar and its detached search tab;
+   * Apple publishes no exact new-bar geometry). 48 rather than 49: the
+   * app's existing medium control height, one point off, instead of a
+   * near-duplicate token (owner, 2026-09-17).
+   */
+  fabSize: 48,
+  /** 24px — the FAB's glyph, the bubble's 22/42 ratio rounded to the icon scale. */
+  fabIconSize: 24,
   /**
    * The control radius. It was 28, which on a 56px control is a pill, and the
    * product owner does not want pills: a button must read with the same
@@ -192,7 +206,7 @@ export const componentSizes = {
 
   // Inputs
   inputHeight: 56,
-  /** 58px - Swap amount input */
+  /** 58px - Amount input */
   inputHeightLg: 58,
   /** The control radius — see `buttonRadius`. Already 12; now bound to it. */
   inputRadius: borderRadius.lg,
@@ -240,7 +254,7 @@ export const componentSizes = {
   iconSizeXSmall: 18,
   /** 20px */
   iconSizeSmall: 20,
-  /** 22px - Compact token icons (swap selector) */
+  /** 22px - Compact token icons (token selector) */
   iconSizeCompact: 22,
   /** 24px */
   iconSizeMedium: 24,
@@ -258,7 +272,7 @@ export const componentSizes = {
   iconSize3XL: 48,
   /** 52px - NFT action buttons height */
   iconSize4XL: 52,
-  /** 54px - Swap logo container width */
+  /** 54px - Exchange logo container width */
   iconSize5XL: 54,
   /** 100px - Large token icons (confirmation step) */
   tokenIconXL: 100,
@@ -280,7 +294,7 @@ export const componentSizes = {
    * band is 36-40; tune here and every review screen moves together). The
    * per-row pill it replaces sat at `backButtonSize` + 9px of gap each.
    */
-  swapDetailRowHeight: 38,
+  confirmationDetailRowHeight: 38,
 
   // Balance card elements
   logoContainer: 35,
@@ -353,9 +367,6 @@ export const componentSizes = {
   // screen is allowed.
   /** 3px — wave displacement. Perceptible if you look, invisible if you don't. */
   waveAmplitude: 3,
-
-  // Swap
-  swapSelectorMinWidth: 100,
 
   // Badge
   badgeMinWidth: 55,

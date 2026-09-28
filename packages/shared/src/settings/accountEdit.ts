@@ -13,6 +13,29 @@ export interface AccountEditSection {
   testID: string;
 }
 
+/** Per-action handlers a panel receives, keyed the same way `ACCOUNT_EDIT_SECTIONS` is. */
+export interface AccountEditActionHandlers {
+  onEditName: () => void;
+  onEditAvatar: () => void;
+  onBackupSeed: () => void;
+  onExportPrivateKey: () => void;
+}
+
+/** Both twins build the same `action -> handler` map to wire `ListRow.onPress`. */
+export function buildAccountEditActions({
+  onEditName,
+  onEditAvatar,
+  onBackupSeed,
+  onExportPrivateKey,
+}: AccountEditActionHandlers): Record<AccountEditAction, () => void> {
+  return {
+    name: onEditName,
+    avatar: onEditAvatar,
+    backup: onBackupSeed,
+    privateKey: onExportPrivateKey,
+  };
+}
+
 export const ACCOUNT_EDIT_SECTIONS: readonly AccountEditSection[] = [
   {
     action: 'name',

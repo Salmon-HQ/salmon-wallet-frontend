@@ -28,14 +28,13 @@ describe('isAddressLike', () => {
 
 describe('validateEvent', () => {
   it('accepts a known event with allow-listed categorical props', () => {
-    const result = validateEvent('swap_completed', {
-      from_chain: 'solana',
-      to_chain: 'ethereum',
+    const result = validateEvent('send_completed', {
+      chain: 'solana',
       success: true,
     });
     expect(result).toEqual({
-      event: 'swap_completed',
-      props: { from_chain: 'solana', to_chain: 'ethereum', success: true },
+      event: 'send_completed',
+      props: { chain: 'solana', success: true },
     });
   });
 
@@ -79,5 +78,16 @@ describe('validateEvent', () => {
 describe('safeValidateEvent', () => {
   it('returns null instead of throwing on invalid input', () => {
     expect(safeValidateEvent('nope')).toBeNull();
+  });
+});
+
+describe('the success prop', () => {
+  // Every caller passes a boolean. A string there is either a mistake or a
+  // value smuggled through a key whose name the guardrail trusts.
+  it('takes a boolean and refuses a free-form string', () => {
+    expect(() => validateEvent('send_completed', { success: true })).not.toThrow();
+    expect(() => validateEvent('send_completed', { success: 'user-42-declined' })).toThrow(
+      AnalyticsValidationError
+    );
   });
 });

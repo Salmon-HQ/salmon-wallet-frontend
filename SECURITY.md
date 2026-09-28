@@ -26,7 +26,7 @@ Signed transactions are broadcast client-side and never reach our backend: the w
 raw signed Bitcoin transaction straight to a public relay (mempool.space, with blockstream.info as
 a fallback), and Solana transactions go straight to the RPC.
 
-Out of scope: the backend API (separate repository — report there), third-party providers the wallet consumes (Jupiter, CoinGecko, Helius, Triton), and social engineering.
+Out of scope: the backend API (separate repository — report there), third-party providers the wallet consumes (0x, CoinGecko, Helius, Triton), and social engineering.
 
 What data the wallet sends for pseudonymous, opt-in analytics is catalogued in [`docs/ANALYTICS.md`](docs/ANALYTICS.md).
 

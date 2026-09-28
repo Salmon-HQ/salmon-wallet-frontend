@@ -3,7 +3,7 @@
  *
  * A balance ticking `$17.29 → $17.30` must not move the line. That is only
  * true if every digit in the face rendering numbers has the same advance
- * width, and it is the reason the interface typeface was once swapped out
+ * width, and it is the reason the interface typeface was once replaced
  * entirely. DM Sans has no `tnum` feature, so `font-variant-numeric` and React
  * Native's `fontVariant` cannot deliver it — `scripts/dmsans.py` bakes the
  * widths into the binaries instead, and this test is what stops a future

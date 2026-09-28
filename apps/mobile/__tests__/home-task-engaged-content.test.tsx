@@ -39,6 +39,8 @@ jest.mock('react-native-reanimated', () => {
   return {
     __esModule: true,
     default: { View },
+    LinearTransition: { duration: () => ({ easing: () => undefined }) },
+    Easing: { bezier: () => undefined },
     useReducedMotion: () => false,
   };
 });
@@ -71,6 +73,7 @@ jest.mock('../hooks/useTabChrome', () => ({
 // The verb itself is covered by its own suite; here the helpers only have to
 // say WHICH wrapper was handed the gesture, and with what beat.
 jest.mock('../src/utils/sinkAndFloat', () => ({
+  useCoverFloat: () => ({}),
   FLOAT_DELAY_MS: 120,
   floatEntering: (_reduceMotion: boolean, options?: { delayMs?: number }) => ({
     verb: 'float',
@@ -80,7 +83,17 @@ jest.mock('../src/utils/sinkAndFloat', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The focus-mode clock is real: the screen reads Home in its resting phases.
+  ...jest.requireActual('../../../packages/shared/src/motion/useFocusModePhase'),
+  useAccountActivity: jest.fn(),
+  // The settle clock is identity here: the content follows the tap at once.
+  // The clock itself is covered in `useSettledSubTab.test.tsx`.
+  useSettledSubTab: ({ target }: { target: string }) => target,
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
+  motionMs: { drift: 280 },
+  SINK_OUT_MS: 225,
+  FLOAT_IN_MS: 560,
+  motionEasing: { settle: { native: [0.22, 1, 0.36, 1] } },
   colors: {
     accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },
@@ -104,8 +117,30 @@ jest.mock('@salmon/shared', () => ({
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
-  fontSize: { xs: 11, sm: 13, base: 15, md: 16, bodyLg: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, headerPadding: 16 },
+  fontSize: {
+    xs: 11,
+    sm: 13,
+    base: 15,
+    md: 16,
+    bodyLg: 16,
+    subtitle: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 30,
+  },
+  lineHeight: { snug: 1.3 },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 32,
+    headerPadding: 16,
+    screenGutter: 20,
+  },
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
@@ -155,6 +190,18 @@ jest.mock('@salmon/shared', () => ({
   // cover the logic, and Home is rendered here with what they hand back.
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+    .useHomePowerupTabs,
+  useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
+    .useHomePowerupsCatalog,
+  // Nothing installed: the Powerup tabs are their own suite.
+  useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
+  useInstalledPowerups: () => ({
+    installed: [],
+    isInstalled: () => false,
+    install: jest.fn(),
+    uninstall: jest.fn(),
+  }),
   mapBalanceToToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').mapBalanceToToken,
   buildBitcoinToken: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').buildBitcoinToken,
 }));
@@ -165,6 +212,17 @@ jest.mock('@salmon/shared/src/hooks/useHomeTabOrder', () => ({
   useHomeTabOrder: (defaults: string[]) => ({ order: defaults, setOrder: jest.fn() }),
 }));
 
+// The Powerups entry is a build-time alias (metro.config.js). Home reads it
+// for the catalogue, the tab bodies and the flag; the real module pulls in the
+// sheet and its motion, which is not what any of this is about.
+jest.mock('../src/powerups', () => ({
+  POWERUPS: [],
+  POWERUPS_ENABLED: true,
+  PowerupsCatalog: null,
+  getPowerupCatalog: () => [],
+  getPowerupTab: () => null,
+}));
+
 jest.mock('../src/components', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
@@ -172,6 +230,7 @@ jest.mock('../src/components', () => {
   return {
     DerivedAccountsSheet: () => null,
     HomeTabOrderSheet: () => null,
+    PowerupsFab: () => null,
     // The identity line. Its own suite covers it; here it only has to render
     // so the Home tree mounts.
     WalletHeader: () => <View testID="wallet-header" />,
@@ -195,7 +254,7 @@ jest.mock('../src/components', () => {
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SkeletonRow: () => <View />,
-    AboutCard: () => <View />,
+    TokenAbout: () => <View />,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
     // provided empty component once the load settled with no rows.
     TokenList: ({
@@ -218,7 +277,7 @@ jest.mock('../src/components', () => {
       </View>
     ),
     TokenListItem: () => <View />,
-    MarketDataCard: () => <View />,
+    TokenMarketData: () => <View />,
     TransactionDetailModal: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
   };
@@ -327,7 +386,7 @@ describe('home content vs an engaged task', () => {
 
   it('drops the beat when a task hand-back is followed by a surfacing', () => {
     // Leaving a task records 'task', which buys the screen a beat of empty
-    // water. A surfacing that follows is not that swap: the wait already held
+    // water. A surfacing that follows is not that change: the wait already held
     // the screen, so the float owes no pause (owner, 2026-09-02).
     mockTaskChrome.isTaskEngaged = true;
     const { rerender } = renderScreen(<HomeScreen />);

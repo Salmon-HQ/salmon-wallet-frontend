@@ -1,7 +1,7 @@
 /**
  * AddressBookPanel — the contact list, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AddressPanels/AddressBookPanel`:
+ * The mobile twin is `apps/mobile/src/components/AddressBookPanel`:
  * a `ListRow` per contact (initial bubble, name, domain or short address plus
  * the whole network name), trash + edit trailing, and the outlined "Add"
  * card — the same idiom as Wallets' "Add wallet".

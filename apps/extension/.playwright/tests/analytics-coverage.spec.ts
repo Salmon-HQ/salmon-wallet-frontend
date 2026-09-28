@@ -7,8 +7,8 @@
  * the same thing the Maestro suite does for mobile.
  *
  * Scope is the six events reachable without spending money on-chain. The
- * remaining five (send_completed, first_send_completed, swap_completed,
- * first_swap_completed, nft_sent) need a real mainnet transaction and live in
+ * remaining three (send_completed, first_send_completed, nft_sent) need a
+ * real mainnet transaction and live in
  * analytics-coverage-onchain.spec.ts.
  *
  * Runs on a FRESH profile: the `first_*` events burn a per-install flag, so a
@@ -22,13 +22,10 @@
  */
 import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
-import { unlockOrRecover, waitHome } from '../helpers';
+import { closeSettings, fixtureNftCard, selectDevnet, unlockOrRecover, waitHome } from '../helpers';
 import type { Page, Request } from '@playwright/test';
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
-
-// Mindfolk Founder #5154 — the one NFT the test wallets can actually render.
-const NFT_MINT = 'CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV';
 
 const EXPECTED_EVENTS = [
   'address_book_used',
@@ -52,43 +49,6 @@ test.beforeAll(async () => {
 });
 
 const openSettings = (popup: Page) => popup.getByTestId('wallet-header-settings-button').click();
-
-/**
- * Close the settings drawer, from any depth, and land back on home.
- *
- * Clicks the MUI backdrop, which fires the Drawer's `onClose` regardless of
- * where focus or the panel stack happen to be. Closing resets the stack, so the
- * next `openSettings` lands on the root menu.
- *
- * Why not the obvious alternatives:
- *  - Walking back panel by panel hangs: `handlePop` is a no-op while a panel
- *    animates, and the back button lives inside the transforming panel, so
- *    clicking it during the transition does nothing and the "count decreased"
- *    wait times out. That is exactly what left this spec stuck at the settings
- *    root after the second account import.
- *  - The close button is covered: the panels are absolutely positioned over the
- *    drawer chrome, so from inside a nested panel it is present and "stable" but
- *    behind the panel, and the click is swallowed.
- *
- * The backdrop covers the whole viewport; the drawer is anchored right, so the
- * top-left corner is always backdrop, never the paper.
- */
-async function closeSettings(popup: Page): Promise<void> {
-  await popup
-    .locator('.MuiBackdrop-root')
-    .last()
-    .click({ position: { x: 8, y: 8 } });
-  // The drawer unmounts its root close button when it is actually gone — a more
-  // honest signal than home-screen visibility, since home sits behind the drawer
-  // and reads as "visible" the whole time it is open.
-  await expect(popup.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
-  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
-  // The panel stack is reset on a `durationMs.slow` (300ms) timer AFTER the
-  // drawer starts closing — which lands right around when the close button
-  // unmounts, so reopening immediately can catch the pre-reset stack and drop
-  // us back into whatever panel was open. Wait past that timer.
-  await popup.waitForTimeout(500);
-}
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
 const leaveNftDetail = (popup: Page) =>
@@ -127,16 +87,18 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await waitHome(popup);
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // ── nft_viewed — opening an NFT detail page.
-  await popup.getByTestId('tab-collectibles').click();
-  const nftCard = popup.getByTestId(`nft-card-${NFT_MINT}`);
+  // ── nft_viewed — opening an NFT detail page, on devnet: the fixture NFT
+  //    global-setup keeps in Wallet A.
+  await selectDevnet(popup);
+  await popup.getByTestId('portfolio-tab-nfts').click();
+  const nftCard = fixtureNftCard(popup);
   await expect(nftCard).toBeVisible({ timeout: 30_000 });
   await nftCard.click();
   await expect(popup.getByTestId('nft-detail-send-button')).toBeVisible({ timeout: 15_000 });
   // The detail page replaces the popup view, tab bar included — leave via the
   // header back button, not the tabs.
   await leaveNftDetail(popup);
-  await popup.getByTestId('tab-home').click();
+  await popup.getByTestId('portfolio-tab-portfolio').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
   // Open settings to reach the address-book and accounts panels below.
@@ -148,15 +110,14 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await popup.getByTestId('address-book-add-button').click();
   await popup.getByTestId('address-book-label-input').fill('E2E Coverage Contact');
   await popup
-    .getByTestId('address-book-address-input')
+    .getByTestId('address-book-address-recipient-input')
     .fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
   const saveContact = popup.getByTestId('address-book-save-button');
   await expect(saveContact).toBeEnabled({ timeout: 20_000 }); // address validation is async
   await saveContact.click();
   // The form neither navigates nor gives feedback, and it does not reset, so
   // there is nothing in the UI to wait on. `address_book_used` landing in the
-  // batch is what proves the contact was actually stored.
-  await popup.waitForTimeout(1_500);
+  // batch — polled at the end — is what proves the contact was stored.
   await closeSettings(popup);
 
   // ── wallet_created — a DERIVED account reuses the active seed, which the
@@ -172,9 +133,13 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await derived.click();
   await popup.getByTestId('account-add-derive-continue-button').click();
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 60_000 });
+  // Adding an account closes Settings and lands on Home with it active.
+  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 60_000 });
+  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── wallet_recovered — an IMPORTED seed is a recovery.
+  await openSettings(popup);
+  await popup.getByTestId('settings-item-accounts').click();
   await popup.getByTestId('account-add-button').click();
   await popup.getByTestId('account-add-method-import').click();
   await popup
@@ -182,23 +147,22 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
     .fill(process.env.SALMON_TEST_SEED_B ?? '');
   await popup.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
+  await expect(popup.getByTestId('settings-screen')).toHaveCount(0, { timeout: 90_000 });
+  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  await closeSettings(popup);
-
-  // ── wallet_switched — the switcher now holds three accounts; pick another.
-  await popup.getByTestId('wallet-header-account-switcher').first().click();
-  const otherAccount = popup.locator('[data-testid^="wallet-switcher-account-"]').nth(1);
-  await expect(otherAccount).toBeVisible({ timeout: 15_000 });
-  await otherAccount.click();
+  // ── wallet_switched — the wallets screen now holds three accounts; the
+  //    imported one is active, so the first card is another account.
+  await popup.getByTestId('wallet-header-account-switcher').click();
+  await expect(popup.getByTestId('wallets-screen')).toBeVisible({ timeout: 15_000 });
+  await popup.locator('[data-testid^="wallet-card-"]').first().click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── network_switched — the balance carousel drives changeNetwork(). This runs
   //    LAST on purpose: it moves the active network off Solana, and the address
   //    book validates a contact against whatever network is active, so a Solana
   //    address would stop validating and Save would never enable.
-  await popup.getByTestId('balance-carousel-next').click();
-  await popup.waitForTimeout(2_000);
+  // Developer networks are on (the NFT step chose devnet): stay on test networks.
+  await popup.getByTestId('balance-chain-selector-option-bitcoin-testnet').click();
 
   // Batches leave on the client's 30s timer, so the tail of the run is still in
   // the queue. Poll rather than sleep a fixed interval.

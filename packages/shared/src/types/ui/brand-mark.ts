@@ -11,6 +11,11 @@ export interface BrandMarkPropsBase extends Testable {
   size: number;
   /** Ink. Defaults to the mode's `text.primary`. */
   color?: string;
+  /**
+   * Accessible name. Present: the mark announces as a named image. Absent
+   * (the usual case): the mark is decorative and hidden from assistive tech.
+   */
+  title?: string;
 }
 
 /**

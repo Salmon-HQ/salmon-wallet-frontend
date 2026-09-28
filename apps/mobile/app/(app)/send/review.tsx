@@ -22,12 +22,13 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  chunkAddress,
   fontFamilyNative,
   fontSize,
   formatTokenAmount,
   getShortAddress,
+  isSendRequestUnderfunded,
   s,
+  sendRequestReviewRows,
   spacing,
   vs,
   type SendToken,
@@ -66,7 +67,16 @@ export default function SendReviewScreen() {
     reset,
     estimatedFee,
     estimateFee,
+    request,
+    liveBalance,
   } = useSendFlow();
+
+  // Started from a payment request: the requester fixed the token and the
+  // amount, so neither is offered for change here, and a balance that does
+  // not cover the request blocks the commit — the wallet never substitutes
+  // another token (spec 033 FR-021, FR-023).
+  const requestRows = sendRequestReviewRows(request);
+  const insufficient = isSendRequestUnderfunded(request, amount, liveBalance);
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -76,21 +86,19 @@ export default function SendReviewScreen() {
   // amount is the one thing this screen cannot fix on its own. So: send the
   // user back to `/send/amount` with the new token already selected when it
   // no longer fits, and stay put otherwise.
-  const handleSelectToken = useCallback(
-    (next: SendToken) => {
-      setToken(next);
-      setPickerOpen(false);
-      const numAmount = parseFloat(amount);
-      const nextBalance =
-        typeof next.uiAmount === 'string' ? parseFloat(next.uiAmount) : (next.uiAmount ?? 0);
-      if (!isNaN(numAmount) && numAmount > nextBalance) {
-        router.dismissTo('/send/amount');
-      }
-    },
-    [amount, router, setToken]
-  );
+  const handleSelectToken = (next: SendToken) => {
+    setToken(next);
+    setPickerOpen(false);
+    const numAmount = parseFloat(amount);
+    const nextBalance =
+      typeof next.uiAmount === 'string' ? parseFloat(next.uiAmount) : (next.uiAmount ?? 0);
+    if (!isNaN(numAmount) && numAmount > nextBalance) {
+      router.dismissTo('/send/amount');
+    }
+  };
 
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
+  const confirmDisabled = isSending || insufficient;
 
   // What the transfer will actually pay. When a `.sol` domain was typed, the
   // resolved address is the destination — showing the domain here would ask
@@ -134,27 +142,40 @@ export default function SendReviewScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Card padding="lg" gap={spacing.md} testID="send-review-summary">
+          {/* Who asked, and what for — the request's own words, above what
+              it fixed. */}
+          {requestRows.map((row) => (
+            <KeyValueRow
+              key={row.key}
+              testID={row.testID}
+              label={t(row.labelKey)}
+              value={row.value}
+            />
+          ))}
           {/* The one row that carries an action: a wrong token picked on
               `/send` is fixed here rather than by starting the flow over
               (owner ruling 2026-09-01). The action sits beside the label,
               not the value, so the amount still right-aligns with every
-              other row's value. */}
+              other row's value. A request fixed the token: no action. */}
           <KeyValueRow
             testID="send-confirm-amount"
             label={t('token.send.amountLabel')}
             value={amountDisplay}
             labelAction={
-              <TouchableOpacity
-                testID="send-review-change-token"
-                onPress={() => setPickerOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('actions.change')}
-              >
-                <Text style={styles.changeLink}>{t('actions.change')}</Text>
-              </TouchableOpacity>
+              request ? undefined : (
+                <TouchableOpacity
+                  testID="send-review-change-token"
+                  onPress={() => setPickerOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('actions.change')}
+                >
+                  <Text style={styles.changeLink}>{t('actions.change')}</Text>
+                </TouchableOpacity>
+              )
             }
           />
           <KeyValueRow
+            testID="send-review-to"
             label={t('transactions.to')}
             value={recipient?.name ?? getShortAddress(destinationAddress) ?? destinationAddress}
           />
@@ -163,7 +184,7 @@ export default function SendReviewScreen() {
           <KeyValueRow
             testID="send-confirm-address"
             label={t('send.screens.address')}
-            value={chunkAddress(destinationAddress)}
+            value={getShortAddress(destinationAddress) ?? destinationAddress}
           />
           {resolvedFromDomain !== null && (
             <KeyValueRow
@@ -190,6 +211,15 @@ export default function SendReviewScreen() {
             style={styles.notice}
           />
         )}
+
+        {insufficient && (
+          <WarningNotice
+            tone="error"
+            title={t('transaction.errors.insufficientFunds')}
+            style={styles.notice}
+            testID="send-review-insufficient"
+          />
+        )}
       </ScrollView>
 
       <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
@@ -200,7 +230,7 @@ export default function SendReviewScreen() {
         >
           {t('actions.cancel')}
         </SecondaryButton>
-        <PrimaryButton testID="send-confirm-button" onPress={submit} disabled={isSending}>
+        <PrimaryButton testID="send-confirm-button" onPress={submit} disabled={confirmDisabled}>
           {t('actions.confirm')}
         </PrimaryButton>
       </View>

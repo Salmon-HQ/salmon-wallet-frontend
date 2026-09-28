@@ -27,6 +27,7 @@ appId: io.salmonwallet.app
     id: 'success-go-to-wallet-button'
 - runFlow: ../../../subflows/decline-analytics-consent.yaml
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'home-screen'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/auth/home-after-recover

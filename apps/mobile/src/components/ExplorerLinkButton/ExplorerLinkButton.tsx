@@ -1,0 +1,151 @@
+/**
+ * ExplorerLinkButton — the outlined control that opens a block explorer, or a
+ * picker of them.
+ *
+ * The DOM twin is
+ * `packages/ui/src/components/ExplorerLinkButton/ExplorerLinkButton.tsx`:
+ * the kit's `SecondaryButton` with the "off to the web" mark and, when there
+ * is a choice, a caret; the picker is the shared `BottomSheetContainer` with
+ * a list of `ListRow`s, same as every other sheet in the app. The whole of
+ * the behavior — the explorer lookup, the picker's own state, the press
+ * routing, the row data — is the shared `useExplorerLink` hook; only opening
+ * the resolved URL (and the icon slots on each row) is platform territory.
+ */
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Linking, StyleSheet, View } from 'react-native';
+import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
+import {
+  spacing,
+  s,
+  vs,
+  useExplorerLink,
+  useParentSheetHeight,
+  type Semantic,
+} from '@salmon/shared';
+import { SecondaryButton } from '../Button';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { IconBubble } from '../IconBubble';
+import { ListRow } from '../ListRow';
+import { WarningNotice } from '../WarningNotice';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
+import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import type { ExplorerLinkButtonProps } from './types';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/** The explorer row's leading well — the settings-row step. */
+const EXPLORER_BUBBLE_SIZE = 36;
+
+// ============================================================================
+// Component
+// ============================================================================
+
+/**
+ * ExplorerLinkButton - Button to view transactions on blockchain explorers
+ *
+ * Provides either a single button that opens the default explorer,
+ * or a menu with multiple explorer options.
+ */
+export function ExplorerLinkButton({
+  txHash,
+  blockchain = 'SOLANA',
+  environment = 'solana-mainnet',
+  explorerKey,
+  showMenu = false,
+  onPress,
+  style,
+}: ExplorerLinkButtonProps) {
+  const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
+  const { standardContentBottomPadding } = useBottomSheetChrome();
+  // The picker is the detail's own drawer one level deeper: as tall as it.
+  const parentSheetHeight = useParentSheetHeight();
+  const {
+    buttonText,
+    errorText,
+    hasMenu,
+    onPress: handlePress,
+    menuVisible,
+    closeMenu,
+    rows,
+  } = useExplorerLink({
+    txHash,
+    blockchain,
+    environment,
+    explorerKey,
+    showMenu,
+    t,
+    // Wrapped, never passed bare: `Linking` is an instance and `openURL` is a
+    // prototype method that calls `this._validateURL(url)`. A bare reference
+    // loses `this`, throws inside the hook's `try`, and the press does
+    // nothing at all — the sheet closes over a browser that never opened
+    // (owner, on an iPhone 16, 2026-09-13).
+    openUrl: (url: string) => Linking.openURL(url),
+    onPress,
+  });
+
+  // Don't render if no explorers available
+  if (!buttonText) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* The kit's outlined control. The leading mark says "off to the web",
+          the caret says "and you get to pick where" — the picker's own
+          affordance, kept from the hand-drawn button this replaced. */}
+      <SecondaryButton
+        testID="tx-detail-explorer-link"
+        onPress={handlePress}
+        style={style}
+        icon={<ArrowSquareOutIcon size={iconSize.sm} color={text.primary} />}
+        trailingIcon={hasMenu && <CaretDownIcon size={iconSize.sm} color={text.primary} />}
+      >
+        {buttonText}
+      </SecondaryButton>
+      <BottomSheetContainer
+        visible={menuVisible}
+        onClose={closeMenu}
+        height={parentSheetHeight ?? undefined}
+        title={<SheetTitle>{t('transactions.detail.chooseExplorer')}</SheetTitle>}
+        testID="tx-detail-explorer-menu"
+      >
+        <View style={[styles.content, { paddingBottom: standardContentBottomPadding }]}>
+          {rows.map(({ key, ...row }) => (
+            <ListRow
+              key={key}
+              {...row}
+              leading={<IconBubble size={EXPLORER_BUBBLE_SIZE} tone="surface" icon={GlobeIcon} />}
+              trailing={<ArrowSquareOutIcon size={iconSize.sm} color={text.tertiary} />}
+            />
+          ))}
+        </View>
+      </BottomSheetContainer>
+      {/* A press that never reached a browser says so. Last in the tree, yet
+          under the button on screen: the sheet above draws out of the flow
+          (a modal on native, a fixed dialog on the DOM) or not at all. */}
+      {errorText ? (
+        <WarningNotice tone="error" testID="tx-detail-explorer-error" title={errorText} />
+      ) : null}
+    </>
+  );
+}
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const stylesFor = (_t: Semantic) =>
+  StyleSheet.create({
+    content: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.md),
+    },
+  });
+
+export default ExplorerLinkButton;

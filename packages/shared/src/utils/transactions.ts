@@ -17,6 +17,7 @@ import type {
 } from '../types/transaction';
 import type { BlockchainType } from '../types/blockchain';
 import { getShortAddress } from './address';
+import { normalizeIpfsUrl } from './url';
 import { SOL_CONSTANTS } from './balance';
 import { ETH_CONSTANTS, ETH_ADDRESS } from './tokens';
 
@@ -109,7 +110,9 @@ function normalizeTokenAmount(
     decimals: token.decimals ?? (nativeToken ? native.DECIMALS : 0),
     symbol: token.symbol || (nativeToken ? native.SYMBOL : (getShortAddress(token.contract) ?? '')),
     name: token.name || (nativeToken ? native.NAME : undefined),
-    logo: token.logo ?? (nativeToken ? native.LOGO : undefined),
+    // An NFT leg's image can arrive as `ipfs://` or `ar://`, which no image
+    // view loads; the NFT list already routes those through a gateway.
+    logo: normalizeIpfsUrl(token.logo) ?? (nativeToken ? native.LOGO : undefined),
     contract: token.contract || (nativeToken ? native.ADDRESS : ''),
   };
 }
@@ -123,13 +126,6 @@ function inferTransactionType(
 ): TransactionType {
   if (inputs.length > 0 && outputs.length === 0) return 'receive';
   if (outputs.length > 0 && inputs.length === 0) return 'send';
-
-  if (inputs.length > 0 && outputs.length > 0) {
-    const inputContracts = new Set(inputs.map((t) => t.contract));
-    const outputContracts = new Set(outputs.map((t) => t.contract));
-    const hasDistinctContracts = [...outputContracts].some((c) => !inputContracts.has(c));
-    if (hasDistinctContracts) return 'swap';
-  }
 
   return 'unknown';
 }
@@ -169,22 +165,6 @@ export function getTransactionDescription(
   _source?: string,
   description?: string
 ): TransactionDescription {
-  if (type === 'swap') {
-    const outputSymbols = [...new Set(outputs.map((o) => o.symbol))];
-    const inputSymbols = [...new Set(inputs.map((i) => i.symbol))];
-
-    if (outputSymbols.length <= 2 && inputSymbols.length <= 2) {
-      return {
-        key: 'transactions.description.swap',
-        values: { from: outputSymbols.join(', '), to: inputSymbols.join(', ') },
-      };
-    }
-    return {
-      key: 'transactions.description.swapMany',
-      values: { fromCount: outputSymbols.length, toCount: inputSymbols.length },
-    };
-  }
-
   // The indexer's own wording, which we cannot translate and should not
   // discard — it is more specific than any label below.
   if (description && description.length > 0 && !description.includes('Unknown')) {
@@ -218,6 +198,8 @@ export function getTransactionDescription(
       return { key: 'transactions.description.loan' };
     case 'interaction':
       return { key: 'transactions.description.interaction' };
+    case 'memo':
+      return { key: 'transactions.description.memo' };
     default:
       return { key: 'transactions.description.fallback' };
   }
@@ -248,7 +230,10 @@ export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
     description: tx.description,
     source: tx.source,
     heliusType: tx.heliusType,
-    swapRoute: tx.swapRoute,
+    memo: tx.memo ?? undefined,
+    action: tx.action,
+    actionMeta: tx.actionMeta,
+    app: tx.app,
   };
 }
 

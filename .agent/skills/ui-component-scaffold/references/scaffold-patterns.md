@@ -78,7 +78,7 @@ Use a non-generic shared contract only when the props are fully platform-agnosti
 - DOM-only: `ConfirmDialog`, `PageShell`, `BaseDialog`
 - Cross-platform with shared contract: `WalletHeader`, `BalanceCard`, `InputAddress`
 - Shared contract without `TStyle`: `StepIndicator`
-- Complex component families: `SendPage`, `SwapScreen`
+- Complex component families: `SendPage`, `ActivityPage`
 
 ## Verification
 

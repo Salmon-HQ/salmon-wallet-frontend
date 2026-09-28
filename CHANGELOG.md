@@ -2,16 +2,43 @@
 
 All notable, user-visible changes to the wallet apps are recorded here, newest first. Extension and mobile releases follow store submissions; the web wallet was retired on 2026-09-02. Each entry should list what a user or dApp developer can observe: new/changed flows, fixed bugs, behavior changes.
 
-## Unreleased
+## mobile 1.2.0 — 2026-09-28
 
-### mobile
+Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
 
+- Built on Expo SDK 57 and React Native 0.86. iOS now needs 16.4 or later (from 15.1); Android is unchanged (7.0, API 24).
+
+- Payments keeps only what is still waiting to be paid on its tab; every request, paid and expired included, is one tap away behind the clock, in a sheet from below. The + and the code icon stay.
+- Sheets take turns instead of stacking: opening a second one (the explorer picker over a transaction, a Powerup's detail over the catalogue, a request over the ask form), the first slides down, the second rises, on one darker backdrop; closing runs the inverse, and a tap on the backdrop closes both. A sheet leaves by its own height, the way a native sheet does, so short and tall ones read alike.
+- Home's tabs no longer move on launch: installed Powerups and the saved order arrive from storage without animating into place, and the underline lands instead of travelling.
+- The Powerups button is the tab bar's search button: 48pt at the trailing edge, the salmon leaps on a tap and stays the salmon while the catalogue is open.
+- Activity rows say what an interaction was — swapped, an NFT bought or sold, accounts closed for their rent are hidden — and the detail names the app.
+- The wait screen stands for one pulse of the wave, not two.
+- Payments, the first Powerup: ask for an exact amount of USDC from a Home tab. The wallet builds a Solana Pay request on the device, shows it as a QR in a sheet, and tells you it was paid only once the transfer is final on the network with the exact amount in your own account. Requests stay on the device; nothing is sent to Salmon.
+- Send pays a scanned payment request: recipient, token and amount arrive locked, with who asked and what for, and the transfer carries the request's reference and memo so any Solana Pay receiver recognises it. A request for a token you do not hold is refused, never substituted.
 - Face ID unlock works again, and it is the same unlock the password takes. The keychain used to hold a session key tied to the vault, which a password change or a key-derivation upgrade silently orphaned — the switch still read "on" with nothing behind it. It now holds a random key with the password sealed under it, so nothing the wallet does to itself can break the enrolment.
 - A Face ID prompt you dismiss no longer costs you the enrolment, and one the system destroys (a re-enrolment, a new fingerprint) now says so and points at where to turn it back on, instead of failing silently.
 - The unlock wait no longer stutters: the wave used to be restarted from the beginning by any relayout behind it — the keyboard leaving, the Face ID sheet dismissing — so it went blank for about a second, twice, before settling.
 - Unlocking no longer plays the same arrival twice. The screen behind the lock used to appear finished for one frame and only then float in.
-- A send or swap that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
+- A send or exchange that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
+
+## extension 0.16.0 — 2026-09-28
+
+- Approve in a dApp request window takes a click only once the window has been in front for three quarters of a second, and again after it loses focus. A page could predict where the window opens and time a double click so its second click landed on Approve; Reject is never delayed.
+- The password re-prompt when adding an account no longer says the wallet was idle: closing a dApp approval window also clears the unlocked key.
+- The wallet locks after five idle minutes even when a web page keeps opening approval windows: opening a wallet window no longer counts as activity or renews the unlocked session.
+- An approval request no longer fails with "Operation cancelled" when the browser window sits across two monitors or partly off screen; the approval window opens where Chrome places it.
+- Content scripts can no longer read or write the extension's local storage (the encrypted vault, the trusted sites); only the extension's own pages can.
+
+- Sheets rise smoothly (they used to appear in place), on the iOS sheet's clock and curve, with no scrollbar down their edge; two sheets take turns instead of stacking, and closing the explorer picker no longer leaves the panel dimmed and unusable.
+- Payments keeps only what is still waiting to be paid on its tab; the clock opens a page with every request. The + and the code icon stay.
+- Home's tabs no longer move on load, and the underline waits for the web font before it travels.
+- Bitcoin in Portfolio is the same column as mobile — the chart across the whole panel, Bitcoin's row, market data, About — instead of the token detail's content with the chart stopping three quarters across.
+- An NFT whose image lives on `ipfs.io` (a gateway being shut down) loads again: images are read through a working gateway.
+- Activity rows say what an interaction was, and the detail names the app.
+- Payments, the first Powerup, on the side panel too: ask for USDC, show the request as a QR in a sheet, watch it settle.
+- Send pays a payment request pasted under the recipient field (the side panel has no camera): locked review, who asked and what for, reference and memo on the transfer.
 
 ## extension 0.15.0 — 2026-09-15
 
@@ -46,7 +73,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
 - Derived accounts are wallets of their own, and you choose which to import.
 - Developer mode returns: the screen follows the network you are standing on.
-- The swap surface and the Powerups browser are closed for this release.
+- The Powerups browser is closed for this release.
 
 ## extension 0.13.1 — 2026-09-03
 
@@ -61,7 +88,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - NFT images that live on hotlink-guarded IPFS gateways now load on the extension.
 - Send on Bitcoin broadcasts the signed transaction from the device to public relays (mempool.space, blockstream.info); an unknown outcome reads "Send unconfirmed", never "failed".
 - Sending Bitcoin works. Every previous build failed before signing: a P2PKH input needs the transaction it spends, and no build ever had it. The wallet now reads it from the same public relays it broadcasts to, so no part of a Bitcoin send touches our servers.
-- The web wallet is retired. The StealthEX bridge and the swap surface are removed from every app pending the Powerups boundary work.
+- The web wallet is retired. The StealthEX bridge and the exchange surface are removed from every app pending the Powerups boundary work.
 - Under the hood: MUI left the codebase; the extension kit is emotion on the shared tokens; screen logic lives once in `packages/shared` for both platforms; a parity gate in CI keeps the two apps in step.
 
 ## 1.2.0 — 2026-08-12 (web)

@@ -45,9 +45,11 @@ jest.mock('@salmon/shared', () => ({
   // tokens by hand is how this mock used to break on an unrelated change.
   ...jest.requireActual('../../../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  // The display tables and derivations are real: the verb, the status ink
-  // and the swap rate are what this detail is built from.
+  // The display tables and derivations are real: the verb and the status
+  // ink are what this detail is built from.
   ...jest.requireActual('@salmon/shared/src/utils/transactionDisplay'),
+  ...jest.requireActual('@salmon/shared/src/hooks/useTransactionDetailDerived'),
+  ...jest.requireActual('@salmon/shared/src/utils/transactionDeveloperRows'),
   useDeveloperMode: () => mockDeveloperMode,
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
@@ -108,7 +110,7 @@ jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
-jest.mock('../Activity/AddressCopyRow', () => ({
+jest.mock('../AddressCopyRow', () => ({
   AddressCopyRow: ({ label, address }: { label: string; address: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -116,7 +118,7 @@ jest.mock('../Activity/AddressCopyRow', () => ({
   },
 }));
 
-jest.mock('../Activity/ExplorerLinkButton', () => ({
+jest.mock('../ExplorerLinkButton', () => ({
   ExplorerLinkButton: ({
     onPress,
     ...props
@@ -141,38 +143,14 @@ jest.mock('../Activity/ExplorerLinkButton', () => ({
   },
 }));
 
-jest.mock('../Activity/PriceImpactBadge', () => ({
-  PriceImpactBadge: ({ value }: { value: string }) => {
-    const React = require('react');
-    const { Text } = require('react-native');
-    return React.createElement(Text, null, `Price impact:${value}`);
-  },
-}));
-
-jest.mock('../Activity/ConversionRateDisplay', () => ({
-  ConversionRateDisplay: ({
-    fromSymbol,
-    toSymbol,
-    rate,
-  }: {
-    fromSymbol: string;
-    toSymbol: string;
-    rate: string;
-  }) => {
-    const React = require('react');
-    const { Text } = require('react-native');
-    return React.createElement(Text, null, `${fromSymbol}/${toSymbol}:${rate}`);
-  },
-}));
-
 import { borderRadius, semantic } from '@salmon/shared';
 import { TransactionDetail } from './TransactionDetail';
 
 const BASE_TRANSACTION = {
   id: 'tx-1234567890abcdef',
-  type: 'swap',
+  type: 'send',
   status: 'completed',
-  source: 'Jupiter',
+  source: 'Raydium',
   timestamp: 1710000000000,
   confirmationStatus: 'finalized',
   slot: 123456,
@@ -196,39 +174,9 @@ const BASE_TRANSACTION = {
     },
   ],
   fee: { amount: '5000', decimals: 9, symbol: 'SOL' },
-  swapRoute: {
-    priceImpact: '0.5',
-    conversionRate: {
-      fromSymbol: 'SOL',
-      toSymbol: 'USDC',
-      rate: '2.5',
-    },
-    hops: [
-      {
-        dex: 'Orca',
-        inputToken: { symbol: 'SOL' },
-        outputToken: { symbol: 'USDC' },
-        percent: 100,
-      },
-    ],
-    totalFee: { amount: '0.05', symbol: 'USDC' },
-  },
-  heliusType: 'SWAP',
+  heliusType: 'TRANSFER',
   accountsInvolved: 4,
   instructions: [{ programId: 'Program111111', innerInstructionsCount: 2 }],
-  innerSwaps: [
-    {
-      programInfo: {
-        source: 'Orca',
-        programName: 'Whirlpool',
-        instructionName: 'swap',
-      },
-    },
-  ],
-  swapFees: {
-    nativeFees: [{ account: 'NativeFee111111', amount: '0.001' }],
-    tokenFees: [{ account: 'TokenFee111111', amount: '0.2', mint: 'Mint111111' }],
-  },
 } as any;
 
 describe('TransactionDetail', () => {
@@ -303,8 +251,7 @@ describe('TransactionDetail', () => {
     render(<TransactionDetail transaction={BASE_TRANSACTION} onViewExplorer={onViewExplorer} />);
 
     expect(screen.getByText('DEVELOPER INFO')).toBeTruthy();
-    expect(screen.getByText('SWAP')).toBeTruthy();
-    expect(screen.getAllByText('Orca').length).toBeGreaterThan(0);
+    expect(screen.getByText('TRANSFER')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Explorer'));
 

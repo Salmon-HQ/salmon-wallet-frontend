@@ -25,18 +25,11 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { BrandMark } from '../BrandMark';
 import { CopyTick } from '../CopyTick';
 import { FleshBackground } from '../FleshBackground';
 import { QRCode } from '../QRCode';
 import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
-
-// Brand mark inside the QR: the knockout (quiet zone behind the mark) covers
-// 24% of the code's width — under the ~30% of modules a level-H code can lose
-// and still scan — and the mark sits inside it with breathing room.
-const QR_LOGO_KNOCKOUT_RATIO = 0.24;
-const QR_LOGO_MARK_RATIO = 0.66; // of the knockout, so the mark never touches modules
 
 export function ReceiveSheet({
   visible,
@@ -53,7 +46,6 @@ export function ReceiveSheet({
   const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const contentRef = useRef<HTMLDivElement>(null);
   const [qrSize, setQrSize] = useState<number>(componentSizes.qrCodeSize);
-  const qrLogoKnockoutSize = Math.round(qrSize * QR_LOGO_KNOCKOUT_RATIO);
 
   // A deposit made on the wrong chain is gone for good, so the chain is named
   // twice: an opaque badge with a label and a warning that says what "wrong
@@ -151,38 +143,15 @@ export function ReceiveSheet({
             {/* The QR is data, not an accent: neutral inks maximise module
                 contrast for a scanner. */}
             <QRCode
+              testID="receive-qr"
               value={address}
               size={qrSize}
               backgroundColor={semantic.text.primary}
               color={semantic.depth.abyss}
-              // The centered mark hides modules, so the code carries level-H
-              // redundancy — a wallet QR must stay scannable before it looks good.
-              ecLevel="H"
+              // The salmon mark on its own knockout, the kit's: the code
+              // carries level-H redundancy so the hidden modules recover.
+              brandKnockout
             />
-            {/* The salmon mark, centered on its own knockout so no module
-                collides with it. Same inks as the code. */}
-            <div
-              data-testid="receive-qr-logo"
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: qrLogoKnockoutSize,
-                height: qrLogoKnockoutSize,
-                borderRadius: qrLogoKnockoutSize / 4,
-                backgroundColor: semantic.text.primary,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <BrandMark
-                size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                color={semantic.depth.abyss}
-              />
-            </div>
           </div>
         </div>
 

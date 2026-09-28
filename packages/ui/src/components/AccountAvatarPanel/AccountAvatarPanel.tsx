@@ -1,7 +1,7 @@
 /**
  * AccountAvatarPanel — the profile picture, on the DOM.
  *
- * The mobile twin is `apps/mobile/src/components/AccountPanels/AccountAvatarPanel`:
+ * The mobile twin is `apps/mobile/src/components/AccountAvatarPanel`:
  * two surfaces under a travelling underline — the preset grid and the
  * user's NFTs — and the save button. Lateral choice takes the underline,
  * never a boxed or filled container (DESIGN.md §Navigation).

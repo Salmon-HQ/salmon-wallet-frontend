@@ -146,7 +146,7 @@ describe('IconBubble', () => {
     expect(screen.getByTestId('delete').props.accessibilityHint).toBe('Removes the recipient');
   });
 
-  it('swaps a disabled control to the crest ground instead of dimming the fill', () => {
+  it('switches a disabled control to the crest ground instead of dimming the fill', () => {
     const onPress = jest.fn();
     render(
       <IconBubble

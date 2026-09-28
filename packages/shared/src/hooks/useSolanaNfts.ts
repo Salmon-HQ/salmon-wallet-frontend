@@ -9,8 +9,9 @@
  * refetch are handled by the QueryClient mounted at app roots.
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../query/keys';
+import { withoutHeldBackNfts } from '../query/invalidation';
 import { getSolanaNfts, type SolanaNftPageWalk } from '../api/services/solana-nft';
 import type { Nft } from '../types/nft';
 import type { NetworkId } from '../types/blockchain';
@@ -65,6 +66,7 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
   const { publicKey, networkId, includeSpam = false, enabled = true } = params;
   const isEnabled = !!enabled && !!publicKey && !!networkId;
   const accountId = publicKey ?? '';
+  const queryClient = useQueryClient();
 
   const query = useQuery<SolanaNftPageWalk, Error>({
     queryKey: queryKeys.solanaNfts({
@@ -72,9 +74,19 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
       networkId: (networkId ?? 'solana-mainnet') as NetworkId,
       includeSpam,
     }),
-    queryFn: () => getSolanaNfts(networkId as string, publicKey as string, false, { includeSpam }),
+    queryFn: async () => {
+      const walk = await getSolanaNfts(networkId as string, publicKey as string, false, {
+        includeSpam,
+      });
+      // An NFT that just left the wallet stays gone while the indexer catches up.
+      return { ...walk, nfts: withoutHeldBackNfts(queryClient, walk.nfts) };
+    },
     enabled: isEnabled,
-    staleTime: 60_000,
+    // Short, and refetched on every mount, like the balance: a grid showing an
+    // NFT already sent, or missing one just received, is a wrong answer about
+    // what the user owns, not merely an old one.
+    staleTime: 15_000,
+    refetchOnMount: 'always',
   });
 
   return {

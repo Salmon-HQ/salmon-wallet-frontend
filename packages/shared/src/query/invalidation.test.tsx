@@ -231,7 +231,7 @@ describe('useInvalidateAfterTx', () => {
 
   it("forces refetch of inactive queries via refetchType: 'all'", async () => {
     // Regression: tab navigators preserve home screen instances, so refetch
-    // on mount alone never fires after a swap success modal closes. Without
+    // on mount alone never fires after a Powerup's success modal closes. Without
     // refetchType: 'all', invalidated-but-inactive balance queries stay
     // stale until full page reload.
     const client = makeClient();
@@ -397,6 +397,31 @@ describe('useInvalidateAfterTx', () => {
           queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV })
         )
       ).toBeDefined();
+    });
+
+    it('strips the NFT from the page walk the grid actually caches', async () => {
+      const client = makeClient();
+      const key = queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL });
+      client.setQueryData(key, {
+        nfts: [{ mint: { address: MINT_KEEP } }, { mint: { address: MINT_BURN } }],
+        partial: false,
+      });
+      const { result } = renderHook(() => useInvalidateAfterTx(), {
+        wrapper: makeWrapper(client),
+      });
+
+      await result.current({
+        accountId: ACCOUNT_A,
+        kinds: [],
+        removedNftMintAddresses: [MINT_BURN],
+      });
+
+      const walk = client.getQueryData(key) as {
+        nfts: Array<{ mint: { address: string } }>;
+        partial: boolean;
+      };
+      expect(walk.nfts.map((n) => n.mint.address)).toEqual([MINT_KEEP]);
+      expect(walk.partial).toBe(false);
     });
 
     it('is a no-op when removedNftMintAddresses is empty or omitted', async () => {

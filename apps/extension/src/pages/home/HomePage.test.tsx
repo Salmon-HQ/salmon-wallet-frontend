@@ -25,6 +25,12 @@ function stub(testID: string) {
 }
 
 vi.mock('../../components', () => ({
+  useReducedMotion: () => false,
+  floatEntering: () => undefined,
+  sinkExiting: () => undefined,
+  VIEW_TRANSITION_LEAVING_BLOCK: 'sw-leaving-block',
+  VIEW_TRANSITION_RISING_ROW: 'sw-rising-row',
+  VIEW_TRANSITION_MS_VAR: '--sw-view-transition-ms',
   WalletHeader: ({ onWalletPress }: { onWalletPress?: () => void }) => (
     <div data-testid="wallet-header-bar">
       <button type="button" data-testid="open-wallets" onClick={onWalletPress} />
@@ -35,6 +41,8 @@ vi.mock('../../components', () => ({
     <div data-testid="home-sub-tabs">{tabs.map((tab) => tab.key).join('|')}</div>
   ),
   HomeTabOrderSheet: () => null,
+  PowerupsFab: () => null,
+  DataAttribution: () => null,
   DerivedAccountsSheet: ({ visible, scanning }: { visible: boolean; scanning: boolean }) =>
     visible ? (
       <div data-testid={scanning ? 'derived-sheet-scanning' : 'derived-sheet-answer'} />
@@ -43,7 +51,6 @@ vi.mock('../../components', () => ({
   StateBlock: () => <div data-testid="state-block" />,
   WarningNotice: () => null,
   TokenList: () => <div data-testid="token-list" />,
-  TokenDetailContent: () => <div data-testid="bitcoin-column" />,
   SinkFloat: ({ children, testID }: PropsWithChildren<{ testID?: string }>) => (
     <div data-testid={testID}>{children}</div>
   ),
@@ -52,7 +59,7 @@ vi.mock('../../components', () => ({
   ),
   TokenDetailPage: () => null,
   NftDetailPage: () => null,
-  TransactionHistoryPage: () => null,
+  ActivityPage: () => null,
   ReceiveSheet: () => null,
   useTaskChrome: () => ({
     isTaskEngaged: false,
@@ -89,6 +96,22 @@ vi.mock('../../components', () => ({
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({ clearSessionKey: vi.fn() }));
+vi.mock('./BitcoinColumn', () => ({ BitcoinColumn: () => <div data-testid="bitcoin-column" /> }));
+
+// The Powerups entry is a build-time alias; Home only reads the flag, the
+// registry and the catalogue, so what is behind it is stubbed rather than
+// loaded. Nothing installed: the Powerup tabs are their own suite.
+vi.mock('@salmon/ui/powerups', () => ({
+  POWERUPS_ENABLED: true,
+  POWERUPS: [],
+  POWERUP_TAB_KEYS: [],
+  isPowerupOnNetwork: () => false,
+  getPowerupCatalog: () => [],
+  PowerupsPage: () => null,
+  MemoPage: () => null,
+  PaymentsPage: () => null,
+  PaymentsHistoryPage: () => null,
+}));
 
 const NETWORKS = [
   { id: 'solana-mainnet', name: 'Solana' },
@@ -119,9 +142,20 @@ vi.mock('@salmon/shared', async () => {
   const homeShell = await vi.importActual<typeof import('@salmon/shared/hooks/useHomeShell')>(
     '@salmon/shared/hooks/useHomeShell'
   );
+  const homePowerups = await vi.importActual<typeof import('@salmon/shared/hooks/useHomePowerups')>(
+    '@salmon/shared/hooks/useHomePowerups'
+  );
   const settings =
     await vi.importActual<typeof import('@salmon/shared/settings')>('@salmon/shared/settings');
+  // The focus-mode clock is real: the suite reads Home in its resting phases.
+  const focusMode = await vi.importActual<typeof import('@salmon/shared/motion/useFocusModePhase')>(
+    '@salmon/shared/motion/useFocusModePhase'
+  );
   return {
+    useAccountActivity: vi.fn(),
+    ...focusMode,
+    // The settle clock is identity here: the content follows the tap at once.
+    useSettledSubTab: ({ target }: { target: string }) => target,
     colors: {
       background: { primary: '#000', card: '#111', tertiary: '#222' },
       text: { primary: '#fff', secondary: '#aaa', disabled: '#555' },
@@ -256,6 +290,15 @@ vi.mock('@salmon/shared', async () => {
     }),
     ...settings,
     useHomeShell: homeShell.useHomeShell,
+    useHomePowerupTabs: homePowerups.useHomePowerupTabs,
+    useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
+    useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {} }),
+    useInstalledPowerups: () => ({
+      installed: [],
+      isInstalled: () => false,
+      install: vi.fn(),
+      uninstall: vi.fn(),
+    }),
     mapBalanceToToken: homeShell.mapBalanceToToken,
     buildBitcoinToken: homeShell.buildBitcoinToken,
   };
@@ -295,15 +338,14 @@ describe('HomePage shell', () => {
     expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
   });
 
-  it('offers the NFTs tab on Solana — and no Home / Collectibles / Swap tab bar', () => {
+  it('offers the NFTs tab on Solana — and no Home / Collectibles tab bar', () => {
     render(<HomePage onAddAccount={vi.fn()} />);
 
     expect(screen.getByTestId('home-sub-tabs').textContent).toBe('portfolio|nfts');
-    // Swap is a powerup now, not a tab, and Collectibles is a surface inside
-    // Home rather than a screen beside it (spec 028).
+    // A Powerup is a sub-tab of Home, not a tab, and Collectibles is a surface
+    // inside Home rather than a screen beside it (spec 028).
     expect(screen.queryByTestId('tab-home')).toBeNull();
     expect(screen.queryByTestId('tab-collectibles')).toBeNull();
-    expect(screen.queryByTestId('tab-swap')).toBeNull();
   });
 });
 
@@ -322,7 +364,9 @@ describe('HomePage — the derived-accounts sheet is mounted where the user is',
     expect(screen.getByTestId('derived-sheet-scanning')).toBeTruthy();
   });
 
-  it('answers the rescan the user asked for on Wallets, and the automatic pass on Home', () => {
+  // Only a search the user asked for is answered, on Wallets where they asked;
+  // Home never raises the question on its own (owner, 2026-09-23).
+  it('answers the rescan the user asked for on Wallets, and nothing on Home', () => {
     Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: true });
     const { unmount } = render(<HomePage onAddAccount={vi.fn()} />);
     expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
@@ -332,6 +376,6 @@ describe('HomePage — the derived-accounts sheet is mounted where the user is',
 
     Object.assign(derivedScanState, { sheetVisible: true, sheetRequested: false });
     render(<HomePage onAddAccount={vi.fn()} />);
-    expect(screen.getByTestId('derived-sheet-answer')).toBeTruthy();
+    expect(screen.queryByTestId('derived-sheet-answer')).toBeNull();
   });
 });

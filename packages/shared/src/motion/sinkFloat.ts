@@ -15,7 +15,7 @@
  * slide): the geometry below is weighted so that **scale carries the Z and
  * travel is only an accent**. The verb first shipped the other way round —
  * 28dp of travel and no scale at all on the exit — and translation dominating
- * meant the swap read as a Y-slide: content sliding off a shelf rather than
+ * meant the change read as a Y-slide: content sliding off a shelf rather than
  * content going away from the viewer. Scale is the Z cue every depth idiom
  * uses (Material's shared-Z-axis, the iOS sheet push-back, aerial
  * perspective), so the same verb was re-weighted onto it: the travel shrank to
@@ -57,7 +57,7 @@ import { motionMs } from '../theme/durations';
 /**
  * How far things travel — dp on mobile, px on the DOM. The buoyancy accent,
  * not the carrier: scale speaks the depth (see the two scales below), and
- * travel only tips the eye which way the Z is going. Band 0–10: at 0 the swap
+ * travel only tips the eye which way the Z is going. Band 0–10: at 0 the change
  * is pure depth and can read as a crossfade-zoom; above ~10 the slide starts
  * competing with the scale again and the verb slides instead of receding.
  * Chrome speaks the same verb at half this distance.
@@ -78,7 +78,7 @@ export const DRAG_FOLLOW = 0.6;
  * leaving. Far enough to be a departure rather than a nudge; the light is
  * already out before it gets there, so it never has to reach a real edge.
  */
-export const LATERAL_SWAP_TRAVEL = 64;
+export const LATERAL_CHANGE_TRAVEL = 64;
 
 /**
  * Where the incoming content arrives from — small → full, an arrival *from*
@@ -91,7 +91,7 @@ export const FLOAT_ENTER_SCALE = 0.9;
 /**
  * Where the outgoing content recedes to — the push-back itself, and the reason
  * the exit is no longer a Y-slide: before this the sink animated translation
- * and light only, so the swap read as content dropping off a shelf rather than
+ * and light only, so the change read as content dropping off a shelf rather than
  * as content going away from the viewer. Same band and same reasoning as
  * {@link FLOAT_ENTER_SCALE}; equal to it by intent, not by coincidence.
  */
@@ -130,7 +130,7 @@ export const SINK_OUT_MS = motionMs.tide / 2;
  * the double gesture.
  *
  * Spend it **only where something actually sank first** — a keyed content
- * swap, a step change with a real exit. On an arrival with no prior sink (a
+ * change, a step change with a real exit. On an arrival with no prior sink (a
  * first mount) the same delay is pure lag, so those sites pass nothing.
  */
 export const FLOAT_DELAY_MS = SINK_OUT_MS + 90;

@@ -5,14 +5,12 @@
  * API Endpoints:
  * - GET /v1/{networkId}/account/{address}/transactions - Get paginated transactions
  * - GET /v1/{networkId}/account/{address}/transactions/{txId} - Get single transaction
- * - GET /v1/{networkId}/ft/swap/order - Get swap quote
- * - POST /v1/{networkId}/ft/swap/execute - Execute swap
  *
  * Note: Token list endpoints (verified, batch, search) are in tokens.ts
  */
 
 import { get, apiClient, ApiError } from '../client';
-import { removeDecimals } from '../../utils/decimals';
+import { resolveUiAmount } from '../../utils/decimals';
 import type { SolanaNetworkId } from '../../types/blockchain';
 import type {
   SolanaTransaction,
@@ -32,13 +30,6 @@ export type {
   SolanaPagingParams,
   SolanaTransactionsResponse,
 } from '../../types/transaction';
-
-import type {
-  SwapOrderResponse,
-  SwapOrderParams,
-  SwapExecuteRequest,
-  ApiSwapExecuteResponse,
-} from '../../types/swap';
 
 // ============================================================================
 // API Functions - Transactions
@@ -94,11 +85,16 @@ export async function getSolanaTransactions(
     if (paging?.type) {
       params.type = paging.type;
     }
+    if (paging?.includeSpam) {
+      params.includeSpam = 'true';
+    }
 
-    // Backend returns { data: Transaction[], meta: { nextPageToken?: string } }
+    // Backend returns { data: Transaction[], meta: { nextPageToken?: string, hidden?: number } }
+    // meta.hidden is the count of incoming transfers dropped for being made only of
+    // unverified fungible tokens, unless `?includeSpam=true` is set.
     interface BackendResponse {
       data: SolanaTransaction[];
-      meta?: { nextPageToken?: string };
+      meta?: { nextPageToken?: string; hidden?: number };
     }
 
     const { data: response } = await apiClient.get<BackendResponse>(
@@ -113,102 +109,13 @@ export async function getSolanaTransactions(
       transactions,
       oldestSignature: nextPageToken || null,
       hasMore: !!nextPageToken,
+      hidden: response.meta?.hidden,
     };
   } catch (error) {
     if (error instanceof ApiError && error.isNotFound()) {
       return { transactions: [], oldestSignature: null, hasMore: false };
     }
     reportUnexpected('[SolanaService] Failed to get transactions:', error);
-    throw error;
-  }
-}
-
-// ============================================================================
-// API Functions - Swap
-// ============================================================================
-
-/**
- * Get a swap quote/order
- *
- * Endpoint: GET /v1/{networkId}/ft/swap/order
- *
- * This endpoint returns a quote and a serialized transaction ready to be signed.
- * The transaction is valid for a limited time (check expiresAt).
- *
- * @param networkId - Solana network identifier
- * @param params - Swap parameters
- * @returns Swap order with route info and unsigned transaction
- */
-export async function getSwapOrder(
-  networkId: SolanaNetworkId,
-  params: SwapOrderParams
-): Promise<SwapOrderResponse | null> {
-  try {
-    const queryParams: Record<string, string | number | boolean> = {
-      inputMint: params.inputMint,
-      outputMint: params.outputMint,
-      publicKey: params.publicKey,
-    };
-
-    if (params.amount !== undefined) {
-      queryParams.amount = params.amount;
-    }
-    if (params.uiAmount !== undefined) {
-      queryParams.uiAmount = params.uiAmount;
-    }
-
-    const { data } = await apiClient.get<SwapOrderResponse>(`/v1/${networkId}/ft/swap/order`, {
-      params: queryParams,
-    });
-
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError && error.isNotFound()) {
-      return null;
-    }
-    reportUnexpected('[SolanaService] Failed to get swap order:', error);
-    throw error;
-  }
-}
-
-/**
- * Execute a signed swap transaction via API
- *
- * Endpoint: POST /v1/{networkId}/ft/swap/execute
- *
- * After signing the transaction from getSwapOrder(), submit it here for execution.
- * The backend handles transaction submission and confirmation.
- *
- * @param networkId - Solana network identifier
- * @param signedTransaction - Base64 encoded signed transaction
- * @param requestId - Request ID from the swap order response
- * @returns Execution result with signature
- */
-export async function executeSwapApi(
-  networkId: SolanaNetworkId,
-  signedTransaction: string,
-  requestId: string
-): Promise<ApiSwapExecuteResponse> {
-  try {
-    const { data } = await apiClient.post<ApiSwapExecuteResponse>(
-      `/v1/${networkId}/ft/swap/execute`,
-      {
-        signedTransaction,
-        requestId,
-      } as SwapExecuteRequest
-    );
-
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      console.error('[SolanaService] Failed to execute swap:', error.message);
-      return {
-        signature: '',
-        status: 'Failed',
-        error: error.message,
-      };
-    }
-    reportUnexpected('[SolanaService] Failed to execute swap:', error);
     throw error;
   }
 }
@@ -231,7 +138,7 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
     params.includeSpam = 'true';
   }
 
-  // The salmon-api Solana balance provider already merges Jupiter v2 metadata
+  // The salmon-api Solana balance provider already merges token metadata
   // (logo/name/symbol/coingeckoId/tags), drops zero-amount SPL entries, and
   // drops `unknown`-only tagged tokens unless `?includeSpam=true`.
   const data = await get<SolanaBalanceItem[]>(`/v1/${networkId}/account/${address}/balance`, {
@@ -240,10 +147,14 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
 
   return data.map((token) => ({
     ...token,
-    // Native SOL inherits the canonical Jupiter tag set so the FE can keep
+    // Native SOL inherits the canonical tag set so the FE can keep
     // tag-based UI logic uniform across natives + SPL tokens.
     tags: token.mint ? token.tags : (token.tags ?? [...SOL_CONSTANTS.TAGS]),
-    uiAmount: removeDecimals(token.amount, token.decimals),
+    // `resolveUiAmount`, not a bare division: a Token-2022 mint with a scaled
+    // UI amount has a multiplier the raw amount knows nothing about, and the
+    // backend already applied it. Recomputing from `amount / 10 ** decimals`
+    // threw that away and showed the wrong balance for exactly those mints.
+    uiAmount: resolveUiAmount(token),
   }));
 };
 

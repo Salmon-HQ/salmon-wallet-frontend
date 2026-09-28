@@ -46,8 +46,7 @@ address 11/500 muted; balance 38/700; gap 20. Keep responsiveness (`s()`/`vs()`)
    (doc comment: "the total balance, and nothing else"); keep `letterSpacing.balance`
    and tabular figures. Home `BalanceHeader` uses `fontSize.balance` again (not
    `display`). Consumers that misuse the token move to `display` (36):
-   `packages/ui/src/components/SwapScreen/SwapAmountInput.tsx`,
-   `apps/mobile/src/components/SwapScreen/SwapAmountInput.tsx`, and any other
+   and any other
    non-balance use (`packages/ui/.../TokenListItem.tsx` — check). `packages/ui/BalanceCard`
    keeps the token (it IS the balance; web/extension pick up 38 ahead of their redesign —
    accepted by the owner). Update tests that pin 60.
@@ -75,7 +74,7 @@ address 11/500 muted; balance 38/700; gap 20. Keep responsiveness (`s()`/`vs()`)
   (lightning 17 accent + 20/700) + subtitle 12/500, **no back chevron**; search pill;
   filters All / Featured / Official / Community (`ChipGroup` sm); first section
   **INSTALLED** (grid tiles, ex-launcher POWERUPS 01: tile = `Card` p[12,8] + `IconBubble`
-  48 rounded + label 12/700 — Swap is the one real installed powerup today); then
+  48 rounded + label 12/700 — Memo is the one real installed powerup today); then
   FEATURED (`Card` ink: `IconBubble` 48 rounded accent, `PowerupBadge`s, title 18/700,
   description 12/500), OFFICIAL and COMMUNITY (`ListRow` in `Card`: `IconBubble` 44
   rounded accent-tint, title 14/700, subtitle 11/500, trailing `PowerupBadge`).
@@ -85,7 +84,7 @@ address 11/500 muted; balance 38/700; gap 20. Keep responsiveness (`s()`/`vs()`)
 - `PowerupsLauncherSheet` is deleted (files included).
 - Catalogue: mock entries from the `.pen` (Wallet Guard, Staking, Auto-compound, NFT
   Floor Watch) live behind a developer flag (`useDeveloperMode` / an explicit
-  `SHOW_MOCK_POWERUPS` constant); without the flag only the real catalogue (Swap,
+  `SHOW_MOCK_POWERUPS` constant); without the flag only the real catalogue (Memo,
   installed) renders and the other sections show their empty state.
 - Screen header type (2026-09-01 evening): title `headline` 24/700, subtitle `body` 14/500 — the `.pen`'s 20/13 read too small on device; DESIGN.md's headline role for screen headers wins.
 - Sub-tab switch on Solana must not replay the balance entering animation (remount artefact); Solana family match includes devnet.

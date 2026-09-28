@@ -78,7 +78,7 @@ describe('WalletHeader', () => {
 
     expect(screen.getByTestId('copy-tick')).toBe(tick);
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
-    // The outgoing address is held while it sinks — the swap waits out the beat.
+    // The outgoing address is held while it sinks — the change waits out the beat.
     expect(screen.getByText('7xKX...gAsU')).toBeTruthy();
 
     act(() => {
@@ -97,6 +97,9 @@ describe('WalletHeader', () => {
     );
 
     const line = screen.getByTestId('wallet-header-account-name').parentElement as HTMLElement;
+    // Same hook the mobile twin puts on its own sink/float wrapper around the
+    // account line — one e2e vocabulary for both suites.
+    expect(screen.getByTestId('wallet-header-account-text')).toBe(line);
     expect(line.style.getPropertyValue('--salmon-sink-float-scale')).toBe(String(CHROME_SCALE));
     // Half the depth of content, not a depth the header computed for itself —
     // and shallower than content, so the frame never out-speaks what it frames.

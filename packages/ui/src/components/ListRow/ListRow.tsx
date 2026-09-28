@@ -26,6 +26,7 @@ export function ListRow({
   titleAccessory,
   subtitle,
   trailing,
+  trailingFill = false,
   onPress,
   accessibilityRole,
   tone,
@@ -78,7 +79,22 @@ export function ListRow({
         </div>
         {typeof subtitle === 'string' ? <span style={subtitleStyle(t)}>{subtitle}</span> : subtitle}
       </div>
-      {trailing}
+      {/* The trailing slot: as tall as the row, its content centred on both
+          axes, the same rule the mobile twin keeps. */}
+      {!trailingFill ? (
+        trailing
+      ) : (
+        <div
+          style={{
+            display: 'flex',
+            alignSelf: 'stretch',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {trailing}
+        </div>
+      )}
     </Card>
   );
 }

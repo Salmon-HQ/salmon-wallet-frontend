@@ -11,7 +11,7 @@ function PendingActivity(): React.ReactElement {
  * Global in-flight surface for both extension entrypoints.
  *
  * The side panel re-creates its whole React tree (and its QueryClient) on every
- * open, so a swap or send signed before it was closed used to lose its only
+ * open, so a send signed before it was closed used to lose its only
  * reporter. The provider rehydrates from storage on mount; this banner is where
  * the user finally sees that.
  *

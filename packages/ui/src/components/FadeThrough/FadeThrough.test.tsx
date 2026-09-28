@@ -3,7 +3,7 @@
  *
  * The fade-through contract on the DOM: a changed key remounts the content so
  * the entrance replays, and reduce motion drops the animation entirely — the
- * swap stays the instant cut it always was. The pixels of the keyframes live
+ * change stays the instant cut it always was. The pixels of the keyframes live
  * in CSS; what is asserted is the decision.
  */
 import React from 'react';

@@ -16,7 +16,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 import { useAccountsSecurity } from './useAccountsSecurity';
-import { getUnlockPenalty, unlockDelayMs, UNLOCK_FREE_ATTEMPTS } from '../utils/unlock-throttle';
+import {
+  getUnlockPenalty,
+  unlockDelayMs,
+  UNLOCK_FREE_ATTEMPTS,
+  UnlockThrottledError,
+} from '../utils/unlock-throttle';
 import * as encryption from '../crypto/encryption';
 
 // ---------------------------------------------------------------------------
@@ -213,5 +218,132 @@ describe('useAccountsSecurity — unlock throttling', () => {
 
     expect(accepted).toBe(false);
     expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
+  });
+});
+
+describe('useAccountsSecurity — re-auth throttling', () => {
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    vi.mocked(encryption.unlockAndGetKey).mockRejectedValue(new Error('Decryption failed'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('makes wrong guesses at the re-auth prompt cost the same as at the lock screen', async () => {
+    const { result } = renderSecurity();
+
+    for (let i = 0; i < UNLOCK_FREE_ATTEMPTS + 1; i += 1) {
+      await act(async () => {
+        await result.current.checkPassword(WRONG_PASSWORD);
+      });
+    }
+
+    expect((await getUnlockPenalty()).remainingMs).toBeGreaterThan(0);
+
+    const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
+    // Refused as a wait, not as a wrong password: the password may be right,
+    // and "wrong password" sends the owner guessing again.
+    await act(async () => {
+      await expect(result.current.checkPassword(WRONG_PASSWORD)).rejects.toBeInstanceOf(
+        UnlockThrottledError
+      );
+    });
+
+    // Refused by the throttle, not by decryption: the vault was never opened.
+    expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
+  });
+
+  it('refuses a password change while a penalty stands', async () => {
+    const { result } = renderSecurity();
+
+    for (let i = 0; i < UNLOCK_FREE_ATTEMPTS + 1; i += 1) {
+      await act(async () => {
+        await result.current.checkPassword(WRONG_PASSWORD);
+      });
+    }
+
+    const attemptsSoFar = vi.mocked(encryption.unlockAndGetKey).mock.calls.length;
+    await act(async () => {
+      await expect(
+        result.current.changePassword(WRONG_PASSWORD, 'new-password-000')
+      ).rejects.toBeInstanceOf(UnlockThrottledError);
+    });
+
+    expect(vi.mocked(encryption.unlockAndGetKey).mock.calls.length).toBe(attemptsSoFar);
+  });
+
+  it('forgets the failures once the right password arrives at the re-auth prompt', async () => {
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      await result.current.checkPassword(WRONG_PASSWORD);
+    });
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: { 'account-1': 'stub mnemonic value' },
+      keyCache: { key: [1], salt: 'stub-salt', iterations: 210000, digest: 'sha512' },
+    } as never);
+
+    let accepted = false;
+    await act(async () => {
+      accepted = await result.current.checkPassword('right-password-000');
+    });
+
+    expect(accepted).toBe(true);
+    expect(await getUnlockPenalty()).toEqual({ failedAttempts: 0, remainingMs: 0 });
+  });
+});
+
+describe('useAccountsSecurity — what counts as activity', () => {
+  const KEY_CACHE = { key: 'stub-key', salt: 'stub-salt', expiresAt: Number.MAX_SAFE_INTEGER };
+
+  beforeEach(async () => {
+    storageMap.clear();
+    stashMap.clear();
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    vi.mocked(encryption.unlockWithKey).mockReturnValue({ mnemonics: [] } as never);
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: { mnemonics: [] },
+      keyCache: KEY_CACHE,
+    } as never);
+    const { updateLastActivity } = await import('../storage');
+    vi.mocked(updateLastActivity).mockClear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Every window the wallet opens unlocks itself through the cached key,
+  // including an approval window a web page asked for. Writing activity there
+  // let a page postpone the auto-lock by sending a request every few minutes.
+  it('does not count a window unlocking through the cached key as activity', async () => {
+    const { updateLastActivity } = await import('../storage');
+    const { result } = renderSecurity();
+
+    let unlocked = false;
+    await act(async () => {
+      unlocked = await result.current.unlockWithCachedKey(KEY_CACHE as never);
+    });
+
+    expect(unlocked).toBe(true);
+    expect(updateLastActivity).not.toHaveBeenCalled();
+    // Rewriting the cached key re-arms the background auto-lock just the same.
+    expect(stashMap.has('derived_key_cache')).toBe(false);
+  });
+
+  it('counts typing the password as activity', async () => {
+    const { updateLastActivity } = await import('../storage');
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      await result.current.unlockAccounts('obviously-fake-password');
+    });
+
+    expect(updateLastActivity).toHaveBeenCalledTimes(1);
   });
 });

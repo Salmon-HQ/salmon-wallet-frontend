@@ -129,7 +129,7 @@ export interface UseInactivityTimeoutResult {
  * @example
  * ```typescript
  * import { useInactivityTimeout } from '@salmon/shared/hooks';
- * import { useNavigation } from '@react-navigation/native';
+ * import { useNavigation } from 'expo-router';
  *
  * function AppRoot() {
  *   const navigation = useNavigation();
@@ -282,9 +282,12 @@ export function useInactivityTimeout(
           onTimeoutRef.current?.();
         } else {
           setIsActive(true);
-          // Record initial activity if session is valid
-          await updateLastActivity();
-          setLastActivity(Date.now());
+          // Mounting is not activity. This runs in every window the wallet
+          // opens, including an approval window a web page asked for, and a
+          // write here resets both this timer and the background auto-lock
+          // alarm — so an unsolicited request from a page the user never
+          // touched kept the wallet unlocked. The timestamp an unlock wrote
+          // stands until the user actually does something.
         }
       } catch (error) {
         console.error('Failed to initialize inactivity timeout:', error);
@@ -320,21 +323,17 @@ export function useInactivityTimeout(
       void recordActivity();
     };
 
-    // Add listeners for all activity events
+    // Only input counts. Window focus and blur are not the user acting: the
+    // extension creates and focuses approval windows on a web page's request,
+    // so counting them let a page keep an unattended wallet from locking.
     for (const event of WEB_ACTIVITY_EVENTS) {
       document.addEventListener(event, handleActivity, { passive: true });
     }
-
-    // Also listen on window for better coverage
-    window.addEventListener('focus', handleActivity, { passive: true });
-    window.addEventListener('blur', handleActivity, { passive: true });
 
     return () => {
       for (const event of WEB_ACTIVITY_EVENTS) {
         document.removeEventListener(event, handleActivity);
       }
-      window.removeEventListener('focus', handleActivity);
-      window.removeEventListener('blur', handleActivity);
     };
   }, [enabled, recordActivity]);
 

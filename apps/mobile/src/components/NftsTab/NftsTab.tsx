@@ -31,7 +31,7 @@ import {
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { NftCard, type NftData } from '../NftCard';
@@ -41,6 +41,7 @@ import { useTabChrome } from '../../../hooks/useTabChrome';
 import { NftSectionHeader } from './NftSectionHeader';
 import { NftsTabHeader } from './NftsTabHeader';
 import type { NftsTabProps } from './types';
+import { Spinner } from '../Spinner';
 
 // ============================================================================
 // Constants
@@ -167,7 +168,7 @@ export function NftsTab({
   if (!ready) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={accent.ink} />
+        <Spinner size={32} color={accent.ink} />
         <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
