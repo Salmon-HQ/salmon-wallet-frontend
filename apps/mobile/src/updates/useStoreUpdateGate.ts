@@ -30,7 +30,7 @@ import { isUpdateRequired, type StorePlatform } from '@salmon/shared';
 import { UPDATE_GATE_TIMEOUT_MS, withTimeout } from './useMandatoryUpdate';
 
 /** The team's published minimum, one entry per platform. */
-export const STORE_RELEASE_URL = 'https://salmonwallet.io/app/mobile-release.json';
+export const STORE_RELEASE_URL = 'https://www.salmonwallet.io/app/mobile-release.json';
 
 /** Where the update button sends the user; fixed in the binary on purpose. */
 export const STORE_URLS: Record<StorePlatform, string> = {

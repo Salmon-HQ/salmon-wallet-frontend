@@ -3,7 +3,7 @@
  * oldest version the team still supports?
  *
  * The minimum comes from a small JSON the team publishes on its own domain
- * (`https://salmonwallet.io/app/mobile-release.json`), one entry per
+ * (`https://www.salmonwallet.io/app/mobile-release.json`), one entry per
  * platform. The mobile app fetches it at launch and, when the installed
  * version is below the minimum, shows the update screen instead of the
  * wallet. Everything that can go wrong — no network, a slow server, a

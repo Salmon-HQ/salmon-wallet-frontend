@@ -64,7 +64,7 @@ Agent guardrails:
 a version string: the people on a binary the team has replaced keep opening
 it. `useStoreUpdateGate` (`src/updates/`) closes that door. At launch, in
 parallel with the update check, the app reads
-`https://salmonwallet.io/app/mobile-release.json` — one `minimumVersion` per
+`https://www.salmonwallet.io/app/mobile-release.json` — one `minimumVersion` per
 platform, published from the `salmon-website` repo (`public/app/`) — and when
 `app.json`'s `expo.version` is older, the root layout renders
 `UpdateRequiredScreen` instead of the navigator. The screen's one action opens
