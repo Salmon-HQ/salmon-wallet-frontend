@@ -79,6 +79,9 @@ describe('ExplorerLinkButton', () => {
         throw new Error('popup blocked');
       })
     );
+    // The hook reports the failure on the console on purpose; keep it out of
+    // the run's output and check it was said.
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(<ExplorerLinkButton txHash="tx-123" />);
     expect(screen.queryByTestId('tx-detail-explorer-error')).toBeNull();
 
@@ -88,5 +91,7 @@ describe('ExplorerLinkButton', () => {
 
     expect(screen.getByTestId('tx-detail-explorer-error')).toBeTruthy();
     expect(screen.getByText('transactions.detail.explorerOpenFailed')).toBeTruthy();
+    expect(consoleWarn).toHaveBeenCalledWith('Failed to open explorer URL:', expect.any(Error));
+    consoleWarn.mockRestore();
   });
 });
