@@ -52,15 +52,27 @@ jobs:
       - name: Build extension (chrome-mv3)
         run: pnpm --filter @salmon/extension build
 
-      # Minimal env, NOT a copy of .env.test.example: the example ships
-      # CHANGE_ME placeholders, and a *set* SALMON_TEST_SEED_A (even garbage)
-      # defeats the specs' skip guards. Leaving seed keys unset makes
-      # seed-gated specs skip cleanly; smoke/a11y/responsive still run.
-      # Optional depth: define SALMON_TEST_SEED_A/B etc. as repo secrets —
-      # fork PRs never receive secrets, so the guards stay safe there.
-      - name: Write minimal test env
+      # Not a copy of .env.test.example: the example ships CHANGE_ME
+      # placeholders, and a *set* seed key (even garbage) defeats the specs'
+      # skip guards. The devnet seeds and addresses are repo secrets; with
+      # them the seed-gated specs run, without them they skip cleanly.
+      - name: Write test env
         working-directory: apps/extension/.playwright
-        run: printf 'SALMON_TEST_PASSWORD=CiSmoke-Pass1!\n' > .env.test
+        env:
+          SALMON_TEST_SEED_A: ${{ secrets.SALMON_TEST_SEED_A }}
+          SALMON_TEST_SEED_B: ${{ secrets.SALMON_TEST_SEED_B }}
+          SALMON_TEST_WALLET_A_ADDR: ${{ secrets.SALMON_TEST_WALLET_A_ADDR }}
+          SALMON_TEST_WALLET_B_ADDR: ${{ secrets.SALMON_TEST_WALLET_B_ADDR }}
+        # A key is written only when its secret is set: an empty value would
+        # defeat the specs' skip guards. Fork PRs get no secrets, so they
+        # keep running the smoke subset.
+        run: |
+          printf 'SALMON_TEST_PASSWORD=CiSmoke-Pass1!\n' > .env.test
+          for key in SALMON_TEST_SEED_A SALMON_TEST_SEED_B SALMON_TEST_WALLET_A_ADDR SALMON_TEST_WALLET_B_ADDR; do
+            eval "value=\${$key}"
+            [ -n "$value" ] && printf '%s=%s\n' "$key" "$value" >> .env.test
+          done
+          cut -d= -f1 .env.test
 
       - name: Run extension E2E headless
         env:
