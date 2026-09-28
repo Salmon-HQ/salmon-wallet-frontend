@@ -2,9 +2,7 @@
 
 All notable, user-visible changes to the wallet apps are recorded here, newest first. Extension and mobile releases follow store submissions; the web wallet was retired on 2026-09-02. Each entry should list what a user or dApp developer can observe: new/changed flows, fixed bugs, behavior changes.
 
-## Unreleased
-
-### mobile
+## mobile 1.2.0 — 2026-09-28
 
 Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
 
@@ -25,7 +23,7 @@ Ships as a binary, 1.2.0, never as an update: the native surface moved on this b
 - A send or exchange that fails now lets its wait leave instead of cutting it mid-wave, and a retry starts clean.
 - Updates are checked at launch and applied before the app opens.
 
-### extension
+## extension 0.16.0 — 2026-09-28
 
 - Approve in a dApp request window takes a click only once the window has been in front for three quarters of a second, and again after it loses focus. A page could predict where the window opens and time a double click so its second click landed on Approve; Reject is never delayed.
 - The password re-prompt when adding an account no longer says the wallet was idle: closing a dApp approval window also clears the unlocked key.

@@ -52,10 +52,7 @@ Salmon currently ships as:
 
 - Browser extension (Chrome side panel; Firefox build available)
 - Android app
-
-Coming soon:
-
-- iOS
+- iOS app
 
 The web wallet was retired on 2026-09-02; the extension is the only browser surface.
 
