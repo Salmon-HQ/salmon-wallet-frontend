@@ -32,6 +32,8 @@ export type { PressSpecularProps } from './PressSpecular';
 export { Toggle } from './Toggle';
 export type { ToggleProps } from './Toggle';
 export { WalletInitErrorScreen } from './WalletInitErrorScreen';
+export { UpdateRequiredScreen } from './UpdateRequiredScreen';
+export type { UpdateRequiredScreenProps } from './UpdateRequiredScreen';
 export type {
   IconBubbleProps,
   IconBubbleShape,

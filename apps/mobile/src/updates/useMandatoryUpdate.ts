@@ -33,7 +33,7 @@ import { useEffect, useState } from 'react';
 export const UPDATE_GATE_TIMEOUT_MS = 8000;
 
 /** Resolves to `null` if `promise` has not settled in time. */
-async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([

@@ -912,5 +912,10 @@
     "confirmCountdown": "Confirm ({{seconds}})",
     "refreshQuote": "Refresh Quote",
     "expiredDismiss": "Expired — Dismiss"
+  },
+  "updates": {
+    "required_title": "Update Salmon to continue",
+    "required_body": "This version is no longer supported. Your accounts and funds are safe; install the latest version from the store to keep using the wallet.",
+    "open_store": "Open the store"
   }
 }
