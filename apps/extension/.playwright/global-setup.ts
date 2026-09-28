@@ -10,7 +10,7 @@ import { chromium } from '@playwright/test';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { EXT_DIST, loadTestEnv, requireSecrets } from './env';
+import { EXT_DIST, isBackendUp, loadTestEnv, requireSecrets } from './env';
 
 const repoRoot = path.resolve(EXT_DIST, '../../../..');
 /** What the extension bundle is built from. */
@@ -81,18 +81,20 @@ const DEVNET_SECRETS = [
   'SALMON_TEST_WALLET_B_ADDR',
 ] as const;
 
-export default function globalSetup(): void {
+export default async function globalSetup(): Promise<void> {
   loadTestEnv();
   requireSecrets(['SALMON_TEST_PASSWORD']);
   requireFreshBuild();
   requireChromium();
-  // CI writes a password-only .env.test (e2e.yml) so seed-gated specs skip;
-  // the devnet fixtures only make sense when the seeds are there.
-  if (DEVNET_SECRETS.every((key) => process.env[key])) {
-    ensureDevnetFixtures();
+  // The devnet fixtures serve the seed-gated specs, which also skip when
+  // salmon-api is down (no backend in CI, e2e.yml D3). Both must hold, or
+  // the fixtures would fund wallets for specs that will not run.
+  const missing = DEVNET_SECRETS.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    console.log(`devnet fixtures skipped: ${missing.join(', ')} unset`);
+  } else if (!(await isBackendUp())) {
+    console.log('devnet fixtures skipped: salmon-api not reachable, seed-gated specs skip');
   } else {
-    console.log(
-      `devnet fixtures skipped: ${DEVNET_SECRETS.filter((k) => !process.env[k]).join(', ')} unset`
-    );
+    ensureDevnetFixtures();
   }
 }
