@@ -1,5 +1,8 @@
 // URL utilities
 export { normalizeIpfsUrl, DEAD_DOMAINS, getExplorerUrl, getSolscanUrl, formatOrigin } from './url';
+// Store update gate: is the installed app older than the published minimum?
+export { isUpdateRequired, isBelowVersion, parseVersion, readMinimumVersion } from './storeRelease';
+export type { StorePlatform } from './storeRelease';
 export {
   approveSolanaSignIn,
   approveSolanaSignMessage,

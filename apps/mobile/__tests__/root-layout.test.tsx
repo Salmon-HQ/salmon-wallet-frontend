@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
 import { focusManager } from '@salmon/shared';
@@ -76,6 +76,22 @@ jest.mock('@salmon/assets/src/fonts/GeistMono-Regular.ttf', () => 'GeistMonoRegu
   virtual: true,
 });
 
+const mockUseStoreUpdateGate = jest.fn(() => ({ checking: false, required: false }));
+jest.mock('../src/updates/useStoreUpdateGate', () => ({
+  STORE_URLS: { ios: 'https://apps.example/ios', android: 'https://play.example/android' },
+  useStoreUpdateGate: () => mockUseStoreUpdateGate(),
+}));
+
+jest.mock('../src/components/UpdateRequiredScreen', () => {
+  const React = require('react');
+  const { Pressable } = require('react-native');
+  return {
+    UpdateRequiredScreen: ({ onOpenStore }: { onOpenStore: () => void }) => (
+      <Pressable testID="update-required" onPress={onOpenStore} />
+    ),
+  };
+});
+
 jest.mock('../src/components/WalletInitErrorScreen', () => {
   const React = require('react');
   const { Pressable } = require('react-native');
@@ -131,6 +147,7 @@ describe('RootLayout mobile lock lifecycle', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseStoreUpdateGate.mockReturnValue({ checking: false, required: false });
     listeners = {};
     mockUseAccountsContext.mockReturnValue([
       {
@@ -307,6 +324,32 @@ describe('RootLayout mobile lock lifecycle', () => {
     expect(getByTestId('wallet-init-error')).toBeTruthy();
     // While gated, never redirect into onboarding.
     expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('blocks with the update screen when the store minimum is newer than this build', async () => {
+    const { router } = jest.requireMock('expo-router');
+    const { Linking } = jest.requireActual('react-native');
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    mockUseStoreUpdateGate.mockReturnValue({ checking: false, required: true });
+
+    const { getByTestId, queryByTestId } = render(<RootLayout />);
+
+    expect(getByTestId('update-required')).toBeTruthy();
+    // The gate precedes the init-failed screen and every route.
+    expect(queryByTestId('wallet-init-error')).toBeNull();
+    expect(router.replace).not.toHaveBeenCalled();
+
+    fireEvent.press(getByTestId('update-required'));
+    expect(openURL).toHaveBeenCalledWith('https://apps.example/ios');
+    openURL.mockRestore();
+  });
+
+  it('holds the splash while the store minimum is still being read', async () => {
+    mockUseStoreUpdateGate.mockReturnValue({ checking: true, required: false });
+
+    const { toJSON } = render(<RootLayout />);
+
+    expect(toJSON()).toBeNull();
   });
 
   it('does not block when accounts loaded despite a secondary error', async () => {

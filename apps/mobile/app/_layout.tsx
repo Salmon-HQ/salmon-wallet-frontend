@@ -17,7 +17,15 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, AppState, useColorScheme, type AppStateStatus } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  AppState,
+  Linking,
+  Platform,
+  useColorScheme,
+  type AppStateStatus,
+} from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -25,7 +33,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nProvider } from '../src/i18n';
 import { BiometricProvider } from '../src/contexts/BiometricContext';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
+import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
+import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
@@ -94,7 +104,10 @@ export default function RootLayout() {
   // launch the user may never make. Fails open and is time-bounded — see
   // `useMandatoryUpdate`.
   const checkingForUpdate = useMandatoryUpdate();
-  const ready = loaded && !checkingForUpdate;
+  // In parallel: is this build older than the minimum the team publishes for
+  // the store? If so the navigator never mounts — see `useStoreUpdateGate`.
+  const storeGate = useStoreUpdateGate();
+  const ready = loaded && !checkingForUpdate && !storeGate.checking;
 
   useEffect(() => {
     if (ready) {
@@ -117,7 +130,7 @@ export default function RootLayout() {
                   copies of that state is how the toggle and the lock screen
                   came to disagree. */}
               <BiometricProvider>
-                <RootLayoutNav />
+                <RootLayoutNav updateRequired={storeGate.required} />
               </BiometricProvider>
             </ThemeProvider>
           </CurrencyProvider>
@@ -168,7 +181,15 @@ function navigationTheme(mode: ThemeMode) {
   };
 }
 
-function RootLayoutNav() {
+/** The store listing for this build's platform; the update gate's one exit. */
+function openStore(): void {
+  const url = STORE_URLS[Platform.OS === 'android' ? 'android' : 'ios'];
+  Linking.openURL(url).catch((error) => {
+    console.warn('[updates] could not open the store:', error);
+  });
+}
+
+function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   const { mode } = useTheme();
   const navTheme = navigationTheme(mode);
   // The bar's glyphs are the inverse of the ground under them: light glyphs on
@@ -210,8 +231,9 @@ function RootLayoutNav() {
       return;
     }
 
-    // While the init-failed gate is up, don't redirect into the auth flow.
-    if (initFailed) {
+    // While a gate is up (update required, init failed), don't redirect into
+    // the auth flow: the navigator is not mounted.
+    if (updateRequired || initFailed) {
       return;
     }
 
@@ -260,6 +282,7 @@ function RootLayoutNav() {
     navigationState?.key,
     hasNavigated,
     initFailed,
+    updateRequired,
   ]);
 
   // Determine if lock screen should be shown
@@ -308,6 +331,21 @@ function RootLayoutNav() {
       changeSubscription.remove();
     };
   }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
+
+  // An unsupported build is not opened at all: this gate precedes the lock
+  // screen and the init-failed gate, and the store is the only way out.
+  if (updateRequired) {
+    return (
+      <I18nProvider>
+        <NavigationThemeProvider value={navTheme}>
+          <StatusBar style={barStyle} />
+          <View style={styles.container}>
+            <UpdateRequiredScreen onOpenStore={openStore} />
+          </View>
+        </NavigationThemeProvider>
+      </I18nProvider>
+    );
+  }
 
   if (initFailed) {
     return (

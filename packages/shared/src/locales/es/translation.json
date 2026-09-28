@@ -912,5 +912,10 @@
     "confirmCountdown": "Confirmar ({{seconds}})",
     "refreshQuote": "Actualizar cotización",
     "expiredDismiss": "Expiró — Descartar"
+  },
+  "updates": {
+    "required_title": "Actualizá Salmon para continuar",
+    "required_body": "Esta versión ya no tiene soporte. Tus cuentas y fondos están a salvo; instalá la última versión desde la tienda para seguir usando la billetera.",
+    "open_store": "Abrir la tienda"
   }
 }

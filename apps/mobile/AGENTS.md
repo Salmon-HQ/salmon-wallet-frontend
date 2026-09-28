@@ -58,6 +58,29 @@ Agent guardrails:
   `eas credentials` autonomously — losing a published keystore permanently
   removes the ability to update the Play Store listing. Ask the human first.
 
+## The store update gate
+
+`useMandatoryUpdate` applies JavaScript updates, but an update never crosses
+a version string: the people on a binary the team has replaced keep opening
+it. `useStoreUpdateGate` (`src/updates/`) closes that door. At launch, in
+parallel with the update check, the app reads
+`https://www.salmonwallet.io/app/mobile-release.json` — one `minimumVersion` per
+platform, published from the `salmon-website` repo (`public/app/`) — and when
+`app.json`'s `expo.version` is older, the root layout renders
+`UpdateRequiredScreen` instead of the navigator. The screen's one action opens
+the store listing; the links are constants in `useStoreUpdateGate.ts`, never
+read from the file, so a compromised host cannot send a user anywhere.
+
+The gate fails open on purpose, like the update gate: no network, a slow
+server (8 s cap), a non-2xx answer or a file that does not parse all open the
+app. Only a file read in full that names a newer minimum closes it. It is a
+no-op in development.
+
+To retire a version: raise `minimumVersion` in the website file and merge —
+every launch of an older build on that platform lands on the update screen
+from then on. A build without this gate (1.1.0 and older) cannot be retired
+this way; only its own runtime's OTA channel reaches it.
+
 ## OTA updates cannot carry native modules
 
 `runtimeVersion.policy` is `appVersion`, so an OTA reaches every installed

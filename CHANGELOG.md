@@ -7,6 +7,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
 
 - Built on Expo SDK 57 and React Native 0.86. iOS now needs 16.4 or later (from 15.1); Android is unchanged (7.0, API 24).
+- A build the team no longer supports does not open: at launch the app reads the minimum version published for its store and, when it is older, shows an update screen whose only action opens the store. Nothing about the check can lock a user out by accident — no network, a slow server or an unreadable file all open the app.
 
 - Payments keeps only what is still waiting to be paid on its tab; every request, paid and expired included, is one tap away behind the clock, in a sheet from below. The + and the code icon stay.
 - Sheets take turns instead of stacking: opening a second one (the explorer picker over a transaction, a Powerup's detail over the catalogue, a request over the ask form), the first slides down, the second rises, on one darker backdrop; closing runs the inverse, and a tap on the backdrop closes both. A sheet leaves by its own height, the way a native sheet does, so short and tall ones read alike.

@@ -94,6 +94,8 @@ export const MOBILE_ONLY = {
   BottomSheetTitleHeader: 'RN sheet chrome; the DOM sheet is a <dialog> with SheetTitle inside',
   InputAddress: 'the DOM twin is RecipientInput inside InputAddress (mapped from Send)',
   NetworkSelector: 'RN network switcher; the DOM side panel has no network-switch surface',
+  UpdateRequiredScreen:
+    'the store update gate; the browser store updates the extension itself, so the DOM has no screen to mirror',
 };
 
 /** DOM-only components, with the reason (spec 028 "DOM alternatives" or extension runtime). */
