@@ -68,7 +68,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "bufferutil",
-      "esbuild"
+      "esbuild",
+      "utf-8-validate"
     ],
     "peerDependencyRules": {
       "allowedVersions": {
