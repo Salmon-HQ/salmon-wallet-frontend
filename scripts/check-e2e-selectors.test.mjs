@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 
 import { auditMaestroFlow, auditPlaywrightFile, makeResolver } from './check-e2e-selectors.mjs';
 
-const source = `
-  <View testID="receive-qr" />
-  <TextInput testID={\`\${testID}-word-input-\${index + 1}\`} />
-  const x = \`\${a}-\${b}\`;
-  <UnderlineTabs tabTestIDPrefix="portfolio-tab" />
-  <UnderlineTabs tabTestIDPrefix={\`\${testID}-option\`} />
-`;
+const source = [
+  '<View testID="receive-qr" />',
+  '<TextInput testID={`${testID}-word-input-${index + 1}`} />',
+  'const x = `${a}-${b}`;',
+  '<UnderlineTabs tabTestIDPrefix="portfolio-tab" />',
+  '<UnderlineTabs tabTestIDPrefix={`${testID}-option`} />',
+].join('\n');
 const idExists = makeResolver(source);
 
 test('a literal testID resolves', () => {

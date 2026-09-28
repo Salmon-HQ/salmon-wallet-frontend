@@ -52,7 +52,7 @@ const PINATA_PRIVATE_PATTERN = /https?:\/\/[^/]+\.mypinata\.cloud\/ipfs\/(.+)/;
  */
 // `[^/]+` then an optional `/path`: no two ways to split one input, so a long
 // hostile URL cannot make the matcher backtrack (CodeQL js/polynomial-redos).
-const SUBDOMAIN_IPFS_PATTERN = /https?:\/\/([a-zA-Z0-9]+)\.ipfs\.([^/]+)(?:\/(.*))?$/;
+const SUBDOMAIN_IPFS_PATTERN = /^https?:\/\/([a-zA-Z0-9]+)\.ipfs\.([^/]+)(?:\/(.*))?$/;
 
 /**
  * Default IPFS gateway for normalized URLs — one that serves a browser's
