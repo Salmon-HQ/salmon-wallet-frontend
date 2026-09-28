@@ -92,7 +92,12 @@ export function PowerupsFab({
             justifyContent: 'center',
           }}
         >
-          <PlusIcon data-testid="powerups-fab-icon" size={FAB_ICON_SIZE} color={accent.onFill} weight="bold" />
+          <PlusIcon
+            data-testid="powerups-fab-icon"
+            size={FAB_ICON_SIZE}
+            color={accent.onFill}
+            weight="bold"
+          />
         </span>
       </IconBubble>
     </div>

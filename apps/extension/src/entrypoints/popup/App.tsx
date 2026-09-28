@@ -150,7 +150,6 @@ function App() {
     }
   }, []);
 
-
   // Dismiss the current approval. Requests arrive only through this window's
   // URL hash; the session-storage queue that also fed this window had no
   // producer left, and it accepted the local area, which content scripts can

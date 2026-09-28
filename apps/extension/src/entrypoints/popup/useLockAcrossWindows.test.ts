@@ -20,9 +20,12 @@ interface WindowState {
 function openWindow(initial: WindowState) {
   const lock = vi.fn();
   const closing = { current: false };
-  const view = renderHook((state: WindowState) => useLockAcrossWindows({ ...state, closing, lock }), {
-    initialProps: initial,
-  });
+  const view = renderHook(
+    (state: WindowState) => useLockAcrossWindows({ ...state, closing, lock }),
+    {
+      initialProps: initial,
+    }
+  );
   return { ...view, lock, closing };
 }
 

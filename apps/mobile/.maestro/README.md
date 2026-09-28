@@ -69,10 +69,10 @@ and checking Home/Collectibles. These are real mainnet wallets.
 
 Per-flow prerequisites:
 
-| Flow                                                   | Needs                                                     |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below   |
-| `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                         |
+| Flow                                                   | Needs                                                                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below                                                          |
+| `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                                                                                |
 | `actions/nft/*`, `smoke/nft/*`                         | Devnet: the "Salmon Test NFT" fixture in Wallet A, kept there by `scripts/devnet-fixtures.cjs` (run.sh calls it) |
 
 Repo policy: a flow that finds its prerequisite missing skips with a clear
