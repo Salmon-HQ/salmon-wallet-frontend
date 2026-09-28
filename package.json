@@ -61,11 +61,15 @@
     "prettier": "3.9.6",
     "turbo": "^2.10.12"
   },
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": "^24.15.0"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "esbuild"
+    ],
     "peerDependencyRules": {
       "allowedVersions": {
         "@solana-program/token-2022>@solana/kit": "8",

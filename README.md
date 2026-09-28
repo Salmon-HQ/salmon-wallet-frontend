@@ -120,13 +120,13 @@ Light and dark come from one `createSemantic(mode)` in `packages/shared/src/them
 ## Requirements
 
 - Node.js `^24.15.0` (pinned in `.nvmrc`)
-- pnpm `9.x`
+- pnpm `10.x`
 
 This repository uses `workspace:*` dependencies and requires pnpm.
 
 ```bash
 corepack enable
-corepack prepare pnpm@9.0.0 --activate
+corepack prepare pnpm@10.34.5 --activate
 pnpm install
 ```
 

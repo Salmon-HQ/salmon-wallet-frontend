@@ -6,7 +6,7 @@ test phrase for derivation checks and the devnet test wallet for sends.
 
 ## Prerequisites
 
-- Node 24.21.0, pnpm 9, JDK 17, Android SDK with platform 36.
+- Node 24.21.0, pnpm 10, JDK 17, Android SDK with platform 36.
 - Android emulators: one with gesture navigation, one with 3-button
   navigation (`cmd overlay enable-exclusive --category
 com.android.internal.systemui.navbar.threebutton`).

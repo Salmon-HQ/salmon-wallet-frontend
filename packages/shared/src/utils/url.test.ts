@@ -24,6 +24,16 @@ describe('normalizeIpfsUrl', () => {
     );
   });
 
+  it('reads the subdomain form only at the start of the URL', () => {
+    // A minter's https URL that merely mentions an IPFS host further along is
+    // not an IPFS URL: it stays what it is instead of being sent to the
+    // gateway with the wrong hash.
+    const hash = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
+    const mention = `https://art.example/?via=https://${hash}.ipfs.dweb.link/1.png`;
+
+    expect(normalizeIpfsUrl(mention)).toBe(mention);
+  });
+
   it('answers a hostile, very long URL without stalling', () => {
     // A subdomain host followed by a long run with no slash used to make the
     // matcher backtrack polynomially; it must return in a few milliseconds.
