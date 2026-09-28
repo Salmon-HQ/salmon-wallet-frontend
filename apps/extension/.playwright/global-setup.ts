@@ -74,15 +74,25 @@ function ensureDevnetFixtures(): void {
   console.log(result.stdout.trim());
 }
 
+/** The seed-gated specs need these; without them they skip, so the run does not. */
+const DEVNET_SECRETS = [
+  'SALMON_TEST_SEED_B',
+  'SALMON_TEST_WALLET_A_ADDR',
+  'SALMON_TEST_WALLET_B_ADDR',
+] as const;
+
 export default function globalSetup(): void {
   loadTestEnv();
-  requireSecrets([
-    'SALMON_TEST_PASSWORD',
-    'SALMON_TEST_SEED_B',
-    'SALMON_TEST_WALLET_A_ADDR',
-    'SALMON_TEST_WALLET_B_ADDR',
-  ]);
+  requireSecrets(['SALMON_TEST_PASSWORD']);
   requireFreshBuild();
   requireChromium();
-  ensureDevnetFixtures();
+  // CI writes a password-only .env.test (e2e.yml) so seed-gated specs skip;
+  // the devnet fixtures only make sense when the seeds are there.
+  if (DEVNET_SECRETS.every((key) => process.env[key])) {
+    ensureDevnetFixtures();
+  } else {
+    console.log(
+      `devnet fixtures skipped: ${DEVNET_SECRETS.filter((k) => !process.env[k]).join(', ')} unset`
+    );
+  }
 }
