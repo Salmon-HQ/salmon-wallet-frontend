@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockUseDAppMetadata = vi.fn();
@@ -81,7 +81,7 @@ describe('DAppSignInApprovalPage', () => {
     const onDismiss = vi.fn();
 
     const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
-    getByTestId('reject-button').click();
+    fireEvent.click(getByTestId('reject-button'));
 
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',
@@ -98,7 +98,7 @@ describe('DAppSignInApprovalPage', () => {
     const { getByTestId } = render(
       <DAppSignInApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />
     );
-    getByTestId('approve-button').click();
+    fireEvent.click(getByTestId('approve-button'));
 
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',
@@ -115,8 +115,8 @@ describe('DAppSignInApprovalPage', () => {
     mockApproveSolanaSignIn.mockResolvedValue(payload);
 
     const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
-    getByTestId('approve-button').click();
-    await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
 
     expect(mockApproveSolanaSignIn).toHaveBeenCalledWith(
       baseProps.account,
@@ -133,16 +133,19 @@ describe('DAppSignInApprovalPage', () => {
     const sendMessage = stubChrome();
     const onDismiss = vi.fn();
     mockApproveSolanaSignIn.mockRejectedValue(new Error('some internal RPC detail'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
-    getByTestId('approve-button').click();
-    await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
 
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',
       data: { error: 'Sign-in failed', id: 'req-siws-1' },
     });
-    // The internal error detail must never leak to the dApp origin.
+    // The internal error detail must never leak to the dApp origin; it goes to the console.
     expect(JSON.stringify(sendMessage.mock.calls)).not.toContain('some internal RPC detail');
+    expect(consoleError).toHaveBeenCalledWith('[dapp-approval]', expect.any(Error));
+    consoleError.mockRestore();
   });
 });

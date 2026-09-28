@@ -25,7 +25,7 @@ jobs:
   extension:
     name: extension (playwright, chromium headless)
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
       contents: read

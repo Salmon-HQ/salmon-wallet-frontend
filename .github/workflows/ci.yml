@@ -20,7 +20,7 @@ concurrency:
 jobs:
   checks:
     name: typecheck / lint / test / i18n
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -112,7 +112,7 @@ jobs:
   pr-title:
     name: conventional PR title
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       pull-requests: read
@@ -135,7 +135,7 @@ jobs:
 
   zizmor:
     name: workflow security lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
     steps:
