@@ -37,5 +37,7 @@
     "insufficientSol": "Necesitás más SOL para cubrir la comisión de red y las cuentas de token que abre este swap.",
     "insufficientSolFor": "Necesitás {{amount}} SOL más para cubrir la comisión de red y las cuentas de token que abre este swap.",
     "amountTooSmall": "Este monto es demasiado chico para cambiarlo. Probá con un monto mayor."
-  }
+  },
+  "empty_title": "Todavía no hay nada para cambiar",
+  "empty_body": "Primero recibí SOL o algún token. Un swap también necesita un poco de SOL para la comisión de red."
 }

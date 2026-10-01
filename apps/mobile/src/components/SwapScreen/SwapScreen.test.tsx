@@ -55,7 +55,7 @@ jest.mock('../WarningNotice', () => ({
 const mockLogic = {
   pay: {
     token: { address: 'sol', symbol: 'SOL', name: 'Solana', uiAmount: 2, decimals: 9 },
-    tokens: [],
+    tokens: [{ address: 'sol', symbol: 'SOL', name: 'Solana', uiAmount: 2, decimals: 9 }],
     loading: false,
     pickerOpen: false,
     openPicker: jest.fn(),
@@ -100,6 +100,8 @@ describe('SwapScreen', () => {
     mockLogic.error = null;
     mockLogic.unavailable = null;
     mockLogic.blocker = null;
+    mockLogic.pay.tokens = [mockLogic.pay.token];
+    mockLogic.pay.loading = false;
     mockLogic.pay.pickerOpen = false;
   });
 
@@ -139,5 +141,13 @@ describe('SwapScreen', () => {
     render(<SwapScreen publicKey="pk" networkId="solana-mainnet" />);
     expect(screen.getByTestId('swap-blocker')).toBeTruthy();
     expect(screen.getByText('swap.errors.insufficientSolFor')).toBeTruthy();
+  });
+
+  it('says there is nothing to swap when the wallet holds no token, instead of an empty form', () => {
+    mockLogic.pay.tokens = [];
+    render(<SwapScreen publicKey="pk" networkId="solana-mainnet" />);
+    expect(screen.getByTestId('swap-empty')).toBeTruthy();
+    expect(screen.getByText('swap.empty_title')).toBeTruthy();
+    expect(screen.queryByTestId('swap-submit-button')).toBeNull();
   });
 });

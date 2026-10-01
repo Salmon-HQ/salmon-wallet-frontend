@@ -60,10 +60,25 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
     );
   }
 
+  if (!pay.loading && pay.tokens.length === 0) {
+    return (
+      <div data-testid="swap-screen" style={container}>
+        <StateBlock
+          tone="empty"
+          testID="swap-empty"
+          title={t('swap.empty_title')}
+          body={t('swap.empty_body')}
+        />
+      </div>
+    );
+  }
+
   const caret = <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />;
 
   return (
     <div data-testid="swap-screen" style={container}>
+      {/* What stops the swap is said first, before the user composes one. */}
+      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       <SectionLabel variant="caps">{t('swap.pay_label')}</SectionLabel>
       <ListRow
         testID="swap-pay-token"
@@ -120,7 +135,6 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
         trailing={caret}
       />
 
-      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       {errorText && <WarningNotice tone="error" title={errorText} testID="swap-error" />}
 
       <div style={{ paddingTop: spacing.lg }}>

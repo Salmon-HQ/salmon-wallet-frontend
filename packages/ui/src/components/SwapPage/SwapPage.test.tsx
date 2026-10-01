@@ -20,7 +20,7 @@ vi.mock('../TokenPickerSheet', () => ({
 const logic = {
   pay: {
     token: { address: 'sol', symbol: 'SOL', name: 'Solana', uiAmount: 2, decimals: 9 },
-    tokens: [],
+    tokens: [{ address: 'sol', symbol: 'SOL', name: 'Solana', uiAmount: 2, decimals: 9 }],
     loading: false,
     pickerOpen: false,
     openPicker: vi.fn(),
@@ -67,6 +67,7 @@ describe('SwapPage', () => {
     logic.error = null;
     logic.unavailable = null;
     logic.blocker = null;
+    logic.pay.tokens = [logic.pay.token];
     logic.receive.pickerOpen = false;
   });
   afterEach(cleanup);
@@ -107,5 +108,13 @@ describe('SwapPage', () => {
     renderPage();
     expect(screen.getByTestId('swap-blocker')).toBeTruthy();
     expect(screen.getByText('swap.errors.amountTooSmall')).toBeTruthy();
+  });
+
+  it('says there is nothing to swap when the wallet holds no token, instead of an empty form', () => {
+    logic.pay.tokens = [];
+    renderPage();
+    expect(screen.getByTestId('swap-empty')).toBeTruthy();
+    expect(screen.getByText('swap.empty_title')).toBeTruthy();
+    expect(screen.queryByTestId('swap-submit-button')).toBeNull();
   });
 });

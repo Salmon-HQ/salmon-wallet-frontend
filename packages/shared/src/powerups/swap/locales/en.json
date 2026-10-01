@@ -37,5 +37,7 @@
     "insufficientSol": "You need more SOL to cover the network fee and the token accounts this swap opens.",
     "insufficientSolFor": "You need {{amount}} more SOL to cover the network fee and the token accounts this swap opens.",
     "amountTooSmall": "This amount is too small to swap. Try a larger amount."
-  }
+  },
+  "empty_title": "Nothing to swap yet",
+  "empty_body": "Receive some SOL or a token first. A swap also needs a little SOL for the network fee."
 }

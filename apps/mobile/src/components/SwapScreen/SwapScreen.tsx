@@ -52,10 +52,25 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
     );
   }
 
+  if (!pay.loading && pay.tokens.length === 0) {
+    return (
+      <View style={[styles.container, style]} testID="swap-screen">
+        <StateBlock
+          tone="empty"
+          testID="swap-empty"
+          title={t('swap.empty_title')}
+          body={t('swap.empty_body')}
+        />
+      </View>
+    );
+  }
+
   const caret = <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />;
 
   return (
     <View style={[styles.container, style]} testID="swap-screen">
+      {/* What stops the swap is said first, before the user composes one. */}
+      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       <SectionLabel variant="caps">{t('swap.pay_label')}</SectionLabel>
       <ListRow
         testID="swap-pay-token"
@@ -107,7 +122,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
         trailing={caret}
       />
 
-      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       {errorText && <WarningNotice tone="error" title={errorText} testID="swap-error" />}
 
       <View style={styles.action}>
