@@ -53,7 +53,10 @@ const logic = {
   unavailable: null as 'region' | 'wallet' | null,
   submit: vi.fn(),
 };
-vi.mock('@salmon/shared/powerups', () => ({ useSwapScreenLogic: () => logic }));
+vi.mock('@salmon/shared/powerups', async () => ({
+  ...(await vi.importActual<object>('../../../../shared/src/powerups/swap/view')),
+  useSwapScreenLogic: () => logic,
+}));
 
 import { renderInMode } from '../../test/renderInMode';
 import { SwapPage } from './SwapPage';

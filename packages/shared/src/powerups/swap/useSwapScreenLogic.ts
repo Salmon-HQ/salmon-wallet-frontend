@@ -53,8 +53,6 @@ export const SWAP_CODES: Record<string, string> = {
 };
 
 export interface SwapBlockerInput {
-  amount: string;
-  payToken: SwapToken | null;
   /** The wallet's SOL, from the held list; `undefined` until the list arrives. */
   nativeSol: number | undefined;
 }
@@ -65,11 +63,7 @@ export interface SwapBlockerInput {
  * amount; a route that rounds to nothing comes back as the provider's own
  * refusal. The amount-versus-balance and same-token rules live in `canSubmit`.
  */
-export function swapBlocker({
-  amount,
-  payToken,
-  nativeSol,
-}: SwapBlockerInput): PowerupErrorMessage | null {
+export function swapBlocker({ nativeSol }: SwapBlockerInput): PowerupErrorMessage | null {
   if (nativeSol !== undefined) {
     const shortfall = getSolShortfall({ nativeBalanceSol: nativeSol, isTokenTransfer: true });
     if (shortfall !== null) {
@@ -434,10 +428,7 @@ export function useSwapScreenLogic({
   const nativeSol = heldLoading
     ? undefined
     : (held.find((item) => item.address === SOL_CONSTANTS.ADDRESS)?.uiAmount ?? 0);
-  const blocker = useMemo(
-    () => swapBlocker({ amount, payToken, nativeSol }),
-    [amount, payToken, nativeSol]
-  );
+  const blocker = useMemo(() => swapBlocker({ nativeSol }), [nativeSol]);
 
   const numericAmount = parseFloat(amount);
   const canSubmit =

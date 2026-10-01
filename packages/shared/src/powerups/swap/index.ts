@@ -30,3 +30,5 @@ export type {
   UseSwapScreenLogicParams,
   UseSwapScreenLogicResult,
 } from './useSwapScreenLogic';
+export { swapScreenView } from './view';
+export type { SwapScreenView } from './view';

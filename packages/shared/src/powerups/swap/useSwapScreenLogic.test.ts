@@ -141,29 +141,19 @@ describe('swap — the proposal core signs', () => {
   });
 
   describe('what stops a swap before it is asked for', () => {
-    const sol = {
-      address: SOL,
-      name: 'Solana',
-      symbol: 'SOL',
-      decimals: 9,
-      uiAmount: 1,
-      price: 120,
-    };
-
     it('asks for more SOL when the wallet cannot pay the fee and the token accounts', () => {
-      expect(swapBlocker({ amount: '0.5', payToken: sol, nativeSol: 0.0001 })).toEqual({
+      expect(swapBlocker({ nativeSol: 0.0001 })).toEqual({
         key: 'swap.errors.insufficientSolFor',
         params: { amount: expect.stringMatching(/^0\.\d+$/) },
       });
     });
 
     it('sets no minimum of its own: the providers decide what routes', () => {
-      expect(swapBlocker({ amount: '0.0001', payToken: sol, nativeSol: 1 })).toBeNull();
-      expect(swapBlocker({ amount: '', payToken: sol, nativeSol: 1 })).toBeNull();
+      expect(swapBlocker({ nativeSol: 1 })).toBeNull();
     });
 
     it('waits for the balance before judging the SOL', () => {
-      expect(swapBlocker({ amount: '0.5', payToken: sol, nativeSol: undefined })).toBeNull();
+      expect(swapBlocker({ nativeSol: undefined })).toBeNull();
     });
   });
 

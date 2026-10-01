@@ -89,6 +89,7 @@ const mockLogic = {
   submit: jest.fn(),
 };
 jest.mock('@salmon/shared/powerups', () => ({
+  ...jest.requireActual('@salmon/shared/src/powerups/swap/view'),
   useSwapScreenLogic: () => mockLogic,
 }));
 
