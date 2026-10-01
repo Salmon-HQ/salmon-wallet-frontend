@@ -19,8 +19,8 @@ const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 const envelope = (overrides: Partial<SwapBuildEnvelope> = {}): SwapBuildEnvelope => ({
   provider: 'jupiter',
-  providerDisplayName: 'Jupiter',
-  attribution: 'Powered by Jupiter',
+  providerDisplayName: 'Metis',
+  attribution: 'Powered by Metis (Jupiter)',
   providerRequestId: null,
   transaction: 'AQ==',
   expiresAt: '2026-10-01T00:00:00Z',
@@ -76,7 +76,7 @@ describe('swap — the proposal core signs', () => {
     expect(advanced['swap.review.slippage']).toBe('0.5%');
     expect(advanced['swap.review.priceImpact']).toBe('0.36%');
     expect(advanced['swap.review.route']).toBe('Whirlpool');
-    expect(proposal.display.attribution).toBe('Powered by Jupiter');
+    expect(proposal.display.attribution).toBe('Powered by Metis (Jupiter)');
     expect(proposal.display.warning).toBeUndefined();
     expect(proposal.display.receipt).toEqual({
       title: 'swap.complete',
