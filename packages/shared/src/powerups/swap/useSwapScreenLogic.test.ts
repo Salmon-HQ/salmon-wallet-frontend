@@ -157,13 +157,8 @@ describe('swap — the proposal core signs', () => {
       });
     });
 
-    it('refuses a dust amount when the price says it rounds to nothing, and only then', () => {
-      expect(swapBlocker({ amount: '0.0001', payToken: sol, nativeSol: 1 })).toBe(
-        'swap.errors.amountTooSmall'
-      );
-      expect(swapBlocker({ amount: '0.01', payToken: sol, nativeSol: 1 })).toBeNull();
-      const unpriced = { ...sol, price: undefined };
-      expect(swapBlocker({ amount: '0.0001', payToken: unpriced, nativeSol: 1 })).toBeNull();
+    it('sets no minimum of its own: the providers decide what routes', () => {
+      expect(swapBlocker({ amount: '0.0001', payToken: sol, nativeSol: 1 })).toBeNull();
       expect(swapBlocker({ amount: '', payToken: sol, nativeSol: 1 })).toBeNull();
     });
 

@@ -104,10 +104,10 @@ describe('SwapPage', () => {
   });
 
   it('draws the blocker as a warning', () => {
-    logic.blocker = 'swap.errors.amountTooSmall';
+    logic.blocker = 'swap.errors.insufficientSol';
     renderPage();
     expect(screen.getByTestId('swap-blocker')).toBeTruthy();
-    expect(screen.getByText('swap.errors.amountTooSmall')).toBeTruthy();
+    expect(screen.getByText('swap.errors.insufficientSol')).toBeTruthy();
   });
 
   it('says there is nothing to swap when the wallet holds no token, instead of an empty form', () => {

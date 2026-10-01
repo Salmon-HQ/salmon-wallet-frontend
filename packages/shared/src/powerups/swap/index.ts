@@ -11,7 +11,6 @@ export type {
 export { MAX_SLIPPAGE_BPS, SWAP_INSTRUCTIONS } from './expectation';
 export {
   HIGH_PRICE_IMPACT_PCT,
-  MIN_SWAP_USD,
   SWAP_CODES,
   SWAP_NETWORK,
   assertEnvelopeMatches,

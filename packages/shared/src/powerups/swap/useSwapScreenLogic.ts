@@ -52,13 +52,6 @@ export const SWAP_CODES: Record<string, string> = {
   swap_misconfigured: 'transaction.errors.networkBusy',
 };
 
-/**
- * Below this, in the display's USD terms, a route rounds to nothing and the
- * providers refuse or the runtime rejects the quote; the screen says so
- * before asking. Skipped when the token has no price to judge by.
- */
-export const MIN_SWAP_USD = 0.1;
-
 export interface SwapBlockerInput {
   amount: string;
   payToken: SwapToken | null;
@@ -68,8 +61,9 @@ export interface SwapBlockerInput {
 
 /**
  * What stops the swap before it is asked for: too little SOL for the network
- * fee and the token accounts a swap opens, or an amount too small to route.
- * The amount-versus-balance and same-token rules live in `canSubmit`.
+ * fee and the token accounts a swap opens. Neither provider sets a minimum
+ * amount; a route that rounds to nothing comes back as the provider's own
+ * refusal. The amount-versus-balance and same-token rules live in `canSubmit`.
  */
 export function swapBlocker({
   amount,
@@ -84,15 +78,6 @@ export function swapBlocker({
         params: { amount: formatSolAmount(shortfall) },
       };
     }
-  }
-  const numeric = parseFloat(amount);
-  if (
-    payToken?.price &&
-    Number.isFinite(numeric) &&
-    numeric > 0 &&
-    numeric * payToken.price < MIN_SWAP_USD
-  ) {
-    return 'swap.errors.amountTooSmall';
   }
   return null;
 }
