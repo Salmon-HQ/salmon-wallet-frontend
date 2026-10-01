@@ -10,12 +10,17 @@ export type {
 } from './api';
 export {
   HIGH_PRICE_IMPACT_PCT,
+  MIN_SWAP_USD,
+  SWAP_CODES,
   SWAP_NETWORK,
+  swapBlocker,
   buildSwapProposal,
+  sortNativeFirst,
   toSwapToken,
   useSwapScreenLogic,
 } from './useSwapScreenLogic';
 export type {
+  SwapBlockerInput,
   SwapProposalContext,
   SwapSideBinding,
   SwapToken,

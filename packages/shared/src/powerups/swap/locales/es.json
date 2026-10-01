@@ -31,6 +31,11 @@
   "complete": "Swap completado",
   "errors": {
     "buildFailed": "No se pudo preparar el swap. Probá de nuevo.",
-    "tokenNotSupported": "Este token no se puede cambiar por ahora."
+    "tokenNotSupported": "Este token no se puede cambiar por ahora.",
+    "slippageExceeded": "El precio se movió más que tu tolerancia de deslizamiento antes de que el swap se concretara. Probá de nuevo para una cotización nueva.",
+    "insufficientFunds": "No tenés suficiente de este token para ese monto.",
+    "insufficientSol": "Necesitás más SOL para cubrir la comisión de red y las cuentas de token que abre este swap.",
+    "insufficientSolFor": "Necesitás {{amount}} SOL más para cubrir la comisión de red y las cuentas de token que abre este swap.",
+    "amountTooSmall": "Este monto es demasiado chico para cambiarlo. Probá con un monto mayor."
   }
 }

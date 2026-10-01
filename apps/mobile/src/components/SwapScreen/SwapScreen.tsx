@@ -31,11 +31,14 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
   const logic = useSwapScreenLogic(logicParams);
   const { pay, receive, shortcuts } = logic;
   const error = logic.error;
-  const errorText = error
-    ? typeof error === 'string'
-      ? t(error)
-      : t(error.key, error.params)
-    : undefined;
+  const describe = (message: typeof error) =>
+    message
+      ? typeof message === 'string'
+        ? t(message)
+        : t(message.key, message.params)
+      : undefined;
+  const errorText = describe(error);
+  const blockerText = describe(logic.blocker);
 
   if (logic.unavailable) {
     return (
@@ -58,7 +61,9 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
         testID="swap-pay-token"
         onPress={pay.openPicker}
         accessibilityLabel={t('swap.select_token')}
-        leading={<TokenLogo uri={pay.token?.logo || undefined} symbol={pay.token?.symbol} size={s(38)} />}
+        leading={
+          <TokenLogo uri={pay.token?.logo || undefined} symbol={pay.token?.symbol} size={s(38)} />
+        }
         title={pay.token?.symbol ?? t('swap.select_token')}
         subtitle={pay.subtitle}
         trailing={caret}
@@ -91,13 +96,18 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
         onPress={receive.openPicker}
         accessibilityLabel={t('swap.select_token')}
         leading={
-          <TokenLogo uri={receive.token?.logo || undefined} symbol={receive.token?.symbol} size={s(38)} />
+          <TokenLogo
+            uri={receive.token?.logo || undefined}
+            symbol={receive.token?.symbol}
+            size={s(38)}
+          />
         }
         title={receive.token?.symbol ?? t('swap.select_token')}
         subtitle={receive.subtitle}
         trailing={caret}
       />
 
+      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       {errorText && <WarningNotice tone="error" title={errorText} testID="swap-error" />}
 
       <View style={styles.action}>

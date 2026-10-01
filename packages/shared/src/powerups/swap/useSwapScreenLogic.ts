@@ -28,6 +28,7 @@ import type { CatalogToken, TokenMetadata } from '../../types/token';
 import type { SendToken } from '../../types/ui/send-sheet';
 import { SOL_CONSTANTS } from '../../utils/balance';
 import { formatTokenAmount } from '../../utils/formatting';
+import { getSolShortfall } from '../../utils/sol-fees';
 import { describePowerupBuildError, type PowerupErrorMessage } from '../backend/errors';
 import { toPowerupProposal } from '../backend/proposal';
 import type { PowerupUnavailableReason } from '../backend/errors';
@@ -38,27 +39,92 @@ export const SWAP_NETWORK: SolanaNetworkId = 'solana-mainnet';
 /** Above this the review carries a warning: the route moves the price. */
 export const HIGH_PRICE_IMPACT_PCT = 3;
 
-const SWAP_CODES: Record<string, string> = {
+/** The swap route's own codes, over the shared table (`describePowerupBuildError`). */
+export const SWAP_CODES: Record<string, string> = {
   unknown_mint: 'swap.errors.tokenNotSupported',
   token_not_supported: 'swap.errors.tokenNotSupported',
+  slippage_exceeded: 'swap.errors.slippageExceeded',
+  insufficient_funds: 'swap.errors.insufficientFunds',
+  insufficient_sol: 'swap.errors.insufficientSol',
   swap_misconfigured: 'transaction.errors.networkBusy',
 };
+
+/**
+ * Below this, in the display's USD terms, a route rounds to nothing and the
+ * providers refuse or the runtime rejects the quote; the screen says so
+ * before asking. Skipped when the token has no price to judge by.
+ */
+export const MIN_SWAP_USD = 0.1;
+
+export interface SwapBlockerInput {
+  amount: string;
+  payToken: SwapToken | null;
+  /** The wallet's SOL, from the held list; `undefined` until the list arrives. */
+  nativeSol: number | undefined;
+}
+
+/**
+ * What stops the swap before it is asked for: too little SOL for the network
+ * fee and the token accounts a swap opens, or an amount too small to route.
+ * The amount-versus-balance and same-token rules live in `canSubmit`.
+ */
+export function swapBlocker({
+  amount,
+  payToken,
+  nativeSol,
+}: SwapBlockerInput): PowerupErrorMessage | null {
+  if (nativeSol !== undefined) {
+    const shortfall = getSolShortfall({ nativeBalanceSol: nativeSol, isTokenTransfer: true });
+    if (shortfall !== null) {
+      return {
+        key: 'swap.errors.insufficientSolFor',
+        params: { amount: formatSolAmount(shortfall) },
+      };
+    }
+  }
+  const numeric = parseFloat(amount);
+  if (
+    payToken?.price &&
+    Number.isFinite(numeric) &&
+    numeric > 0 &&
+    numeric * payToken.price < MIN_SWAP_USD
+  ) {
+    return 'swap.errors.amountTooSmall';
+  }
+  return null;
+}
+
+/** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
+const formatSolAmount = (value: number): string =>
+  value.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
 
 /** A token as the two pickers and the rows read it: the Send shape, decimals included. */
 export type SwapToken = SendToken & { decimals: number };
 
-/** The verified catalogue, in the picker's shape; a catalogue entry carries no balance. */
+/**
+ * The verified catalogue, in the picker's shape; a catalogue entry carries no
+ * balance. The catalogue lists the wrapped-SOL mint as "WSOL"; the user
+ * receives plain SOL there, so that entry wears SOL's own name and mark.
+ */
 export function toSwapToken(token: CatalogToken | TokenMetadata): SwapToken {
+  const native = token.address === SOL_CONSTANTS.ADDRESS;
   return {
     address: token.address,
-    name: token.name ?? token.symbol,
-    symbol: token.symbol,
-    logo: token.logo,
+    name: native ? SOL_CONSTANTS.NAME : (token.name ?? token.symbol),
+    symbol: native ? SOL_CONSTANTS.SYMBOL : token.symbol,
+    logo: native ? SOL_CONSTANTS.LOGO : token.logo,
     decimals: token.decimals,
     price: 'usdPrice' in token ? token.usdPrice : undefined,
     uiAmount: 0,
     tags: ['verified'],
   };
+}
+
+/** SOL first, so the one token everyone receives is never buried in a list of 7000. */
+export function sortNativeFirst(tokens: SwapToken[]): SwapToken[] {
+  const index = tokens.findIndex((token) => token.address === SOL_CONSTANTS.ADDRESS);
+  if (index <= 0) return tokens;
+  return [tokens[index], ...tokens.slice(0, index), ...tokens.slice(index + 1)];
 }
 
 const uiAmountOf = (amount: string, decimals: number | undefined): number =>
@@ -144,8 +210,7 @@ export function buildSwapProposal(
             logo: envelope.output.logo,
             symbol: outSymbol ?? '',
             amount: withSymbol(amountOut, outSymbol),
-            usdValue:
-              envelope.outUsdValue === null ? undefined : formatValue(envelope.outUsdValue),
+            usdValue: envelope.outUsdValue === null ? undefined : formatValue(envelope.outUsdValue),
             emphasis: true,
           },
         },
@@ -198,6 +263,8 @@ export interface UseSwapScreenLogicResult {
   canSubmit: boolean;
   isConfirming: boolean;
   error: PowerupErrorMessage | null;
+  /** What stops the swap before it is asked for (SOL for the fee, a dust amount); the twin draws it as a warning. */
+  blocker: PowerupErrorMessage | null;
   /** The backend refused this caller outright; the twin draws the state in place of the form. */
   unavailable: PowerupUnavailableReason | null;
   submit: () => Promise<void>;
@@ -239,7 +306,10 @@ export function useSwapScreenLogic({
 
   // What can be received: the verified catalogue, searchable past it.
   const catalog = useTokenCatalog({ networkId: solanaNetworkId });
-  const receiveTokens = useMemo(() => catalog.tokens.map(toSwapToken), [catalog.tokens]);
+  const receiveTokens = useMemo(
+    () => sortNativeFirst(catalog.tokens.map(toSwapToken)),
+    [catalog.tokens]
+  );
   const onSearch = useCallback(
     async (query: string): Promise<SendToken[]> =>
       (await searchTokens(query, solanaNetworkId ?? SWAP_NETWORK)).map(toSwapToken),
@@ -256,11 +326,18 @@ export function useSwapScreenLogic({
   const [unavailable, setUnavailable] = useState<PowerupUnavailableReason | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  // Defaults once the lists arrive: pay with SOL, receive USDC.
+  // Defaults once the lists arrive: pay with SOL when there is some, else the
+  // first token with a balance; receive USDC.
   const usdcMint = solanaNetworkId ? USDC_MINT_BY_NETWORK[solanaNetworkId] : undefined;
   const payToken = useMemo(() => {
-    const wanted = payAddress ?? SOL_CONSTANTS.ADDRESS;
-    return payTokens.find((token) => token.address === wanted) ?? payTokens[0] ?? null;
+    if (payAddress) return payTokens.find((token) => token.address === payAddress) ?? null;
+    const funded = payTokens.filter((token) => Number(token.uiAmount) > 0);
+    return (
+      funded.find((token) => token.address === SOL_CONSTANTS.ADDRESS) ??
+      funded[0] ??
+      payTokens[0] ??
+      null
+    );
   }, [payTokens, payAddress]);
   const receiveToken = useMemo(() => {
     const wanted = receiveAddress ?? usdcMint;
@@ -299,6 +376,14 @@ export function useSwapScreenLogic({
     setReceivePickerOpen(false);
   }, []);
 
+  const nativeSol = heldLoading
+    ? undefined
+    : (held.find((item) => item.address === SOL_CONSTANTS.ADDRESS)?.uiAmount ?? 0);
+  const blocker = useMemo(
+    () => swapBlocker({ amount, payToken, nativeSol }),
+    [amount, payToken, nativeSol]
+  );
+
   const numericAmount = parseFloat(amount);
   const canSubmit =
     !!solanaNetworkId &&
@@ -308,6 +393,7 @@ export function useSwapScreenLogic({
     Number.isFinite(numericAmount) &&
     numericAmount > 0 &&
     numericAmount <= (payBalance ?? 0) &&
+    blocker === null &&
     !isConfirming &&
     unavailable === null;
 
@@ -389,6 +475,7 @@ export function useSwapScreenLogic({
     canSubmit,
     isConfirming,
     error,
+    blocker,
     unavailable,
     submit,
   };

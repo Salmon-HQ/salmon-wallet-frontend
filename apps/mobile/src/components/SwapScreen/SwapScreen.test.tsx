@@ -84,6 +84,7 @@ const mockLogic = {
   canSubmit: true,
   isConfirming: false,
   error: null as string | null,
+  blocker: null as string | { key: string; params: Record<string, string> } | null,
   unavailable: null as 'region' | 'wallet' | null,
   submit: jest.fn(),
 };
@@ -98,6 +99,7 @@ describe('SwapScreen', () => {
     jest.clearAllMocks();
     mockLogic.error = null;
     mockLogic.unavailable = null;
+    mockLogic.blocker = null;
     mockLogic.pay.pickerOpen = false;
   });
 
@@ -130,5 +132,12 @@ describe('SwapScreen', () => {
     expect(screen.getByTestId('swap-unavailable-region')).toBeTruthy();
     expect(screen.getByText('powerups.unavailable.region')).toBeTruthy();
     expect(screen.queryByTestId('swap-submit-button')).toBeNull();
+  });
+
+  it('draws the blocker as a warning, with its interpolated amount', () => {
+    mockLogic.blocker = { key: 'swap.errors.insufficientSolFor', params: { amount: '0.002' } };
+    render(<SwapScreen publicKey="pk" networkId="solana-mainnet" />);
+    expect(screen.getByTestId('swap-blocker')).toBeTruthy();
+    expect(screen.getByText('swap.errors.insufficientSolFor')).toBeTruthy();
   });
 });

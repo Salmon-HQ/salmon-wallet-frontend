@@ -29,8 +29,10 @@ export interface SwapFeeLine extends PowerupFeeLine {
   symbol?: string;
 }
 
-export interface SwapBuildEnvelope
-  extends Omit<PowerupBuildEnvelope, 'salmonFee' | 'routeFee' | 'contributor'> {
+export interface SwapBuildEnvelope extends Omit<
+  PowerupBuildEnvelope,
+  'salmonFee' | 'routeFee' | 'contributor'
+> {
   providerRequestId: string | null;
   input: SwapBuildLeg;
   output: SwapBuildLeg & { minAmount: string };

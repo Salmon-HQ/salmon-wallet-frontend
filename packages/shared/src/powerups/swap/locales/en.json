@@ -31,6 +31,11 @@
   "complete": "Swap complete",
   "errors": {
     "buildFailed": "Couldn't prepare the swap. Try again.",
-    "tokenNotSupported": "This token can't be swapped right now."
+    "tokenNotSupported": "This token can't be swapped right now.",
+    "slippageExceeded": "The price moved past your slippage tolerance before the swap could settle. Try again for a fresh quote.",
+    "insufficientFunds": "You don't hold enough of this token for that amount.",
+    "insufficientSol": "You need more SOL to cover the network fee and the token accounts this swap opens.",
+    "insufficientSolFor": "You need {{amount}} more SOL to cover the network fee and the token accounts this swap opens.",
+    "amountTooSmall": "This amount is too small to swap. Try a larger amount."
   }
 }

@@ -49,6 +49,7 @@ const logic = {
   canSubmit: true,
   isConfirming: false,
   error: null as string | null,
+  blocker: null as string | { key: string; params: Record<string, string> } | null,
   unavailable: null as 'region' | 'wallet' | null,
   submit: vi.fn(),
 };
@@ -65,6 +66,7 @@ describe('SwapPage', () => {
     vi.clearAllMocks();
     logic.error = null;
     logic.unavailable = null;
+    logic.blocker = null;
     logic.receive.pickerOpen = false;
   });
   afterEach(cleanup);
@@ -98,5 +100,12 @@ describe('SwapPage', () => {
     expect(screen.getByTestId('swap-unavailable-wallet')).toBeTruthy();
     expect(screen.getByText('powerups.unavailable.wallet')).toBeTruthy();
     expect(screen.queryByTestId('swap-submit-button')).toBeNull();
+  });
+
+  it('draws the blocker as a warning', () => {
+    logic.blocker = 'swap.errors.amountTooSmall';
+    renderPage();
+    expect(screen.getByTestId('swap-blocker')).toBeTruthy();
+    expect(screen.getByText('swap.errors.amountTooSmall')).toBeTruthy();
   });
 });

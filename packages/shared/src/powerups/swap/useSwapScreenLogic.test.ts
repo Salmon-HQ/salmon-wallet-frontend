@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildSwapProposal, toSwapToken } from './useSwapScreenLogic';
+import {
+  SWAP_CODES,
+  buildSwapProposal,
+  sortNativeFirst,
+  swapBlocker,
+  toSwapToken,
+} from './useSwapScreenLogic';
+import { describePowerupBuildError } from '../backend/errors';
+import { ApiError } from '../../api/client';
 import { swapManifest } from './manifest';
 import type { SwapBuildEnvelope } from './api';
 
@@ -117,5 +125,77 @@ describe('swap — the proposal core signs', () => {
       uiAmount: 0,
       tags: ['verified'],
     });
+  });
+
+  it('presents the wrapped-SOL catalogue entry as SOL, and lists it first', () => {
+    const wsol = toSwapToken({ address: SOL, symbol: 'WSOL', name: 'Wrapped SOL', decimals: 9 });
+    expect(wsol).toMatchObject({ address: SOL, symbol: 'SOL', name: 'Solana' });
+    expect(wsol.logo).toContain('solana');
+    const usdc = toSwapToken({ address: USDC, symbol: 'USDC', name: 'USD Coin', decimals: 6 });
+    expect(sortNativeFirst([usdc, wsol]).map((token) => token.symbol)).toEqual(['SOL', 'USDC']);
+    expect(sortNativeFirst([usdc])).toEqual([usdc]);
+  });
+
+  describe('what stops a swap before it is asked for', () => {
+    const sol = {
+      address: SOL,
+      name: 'Solana',
+      symbol: 'SOL',
+      decimals: 9,
+      uiAmount: 1,
+      price: 120,
+    };
+
+    it('asks for more SOL when the wallet cannot pay the fee and the token accounts', () => {
+      expect(swapBlocker({ amount: '0.5', payToken: sol, nativeSol: 0.0001 })).toEqual({
+        key: 'swap.errors.insufficientSolFor',
+        params: { amount: expect.stringMatching(/^0\.\d+$/) },
+      });
+    });
+
+    it('refuses a dust amount when the price says it rounds to nothing, and only then', () => {
+      expect(swapBlocker({ amount: '0.0001', payToken: sol, nativeSol: 1 })).toBe(
+        'swap.errors.amountTooSmall'
+      );
+      expect(swapBlocker({ amount: '0.01', payToken: sol, nativeSol: 1 })).toBeNull();
+      const unpriced = { ...sol, price: undefined };
+      expect(swapBlocker({ amount: '0.0001', payToken: unpriced, nativeSol: 1 })).toBeNull();
+      expect(swapBlocker({ amount: '', payToken: sol, nativeSol: 1 })).toBeNull();
+    });
+
+    it('waits for the balance before judging the SOL', () => {
+      expect(swapBlocker({ amount: '0.5', payToken: sol, nativeSol: undefined })).toBeNull();
+    });
+  });
+
+  it('gives every backend refusal of the swap route its own copy', () => {
+    const describe = (code: string) =>
+      describePowerupBuildError(new ApiError('x', 422, code), { codes: SWAP_CODES });
+    expect(describe('slippage_exceeded')).toEqual({
+      kind: 'message',
+      message: 'swap.errors.slippageExceeded',
+    });
+    expect(describe('insufficient_funds')).toEqual({
+      kind: 'message',
+      message: 'swap.errors.insufficientFunds',
+    });
+    expect(describe('insufficient_sol')).toEqual({
+      kind: 'message',
+      message: 'swap.errors.insufficientSol',
+    });
+    expect(describe('token_not_supported')).toEqual({
+      kind: 'message',
+      message: 'swap.errors.tokenNotSupported',
+    });
+    expect(describe('no_route')).toEqual({
+      kind: 'message',
+      message: 'transaction.errors.noRoute',
+    });
+    expect(describe('simulation_failed')).toEqual({
+      kind: 'message',
+      message: 'transaction.errors.simulationFailed',
+    });
+    expect(describe('region_restricted')).toEqual({ kind: 'unavailable', reason: 'region' });
+    expect(describe('wallet_restricted')).toEqual({ kind: 'unavailable', reason: 'wallet' });
   });
 });

@@ -29,11 +29,14 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
   const logic = useSwapScreenLogic(logicParams);
   const { pay, receive, shortcuts } = logic;
   const error = logic.error;
-  const errorText = error
-    ? typeof error === 'string'
-      ? t(error)
-      : t(error.key, error.params)
-    : undefined;
+  const describe = (message: typeof error) =>
+    message
+      ? typeof message === 'string'
+        ? t(message)
+        : t(message.key, message.params)
+      : undefined;
+  const errorText = describe(error);
+  const blockerText = describe(logic.blocker);
 
   const container: React.CSSProperties = {
     display: 'flex',
@@ -67,7 +70,12 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
         onPress={pay.openPicker}
         accessibilityLabel={t('swap.select_token')}
         leading={
-          <TokenLogo uri={pay.token?.logo || undefined} symbol={pay.token?.symbol} size={38} borderRadius={19} />
+          <TokenLogo
+            uri={pay.token?.logo || undefined}
+            symbol={pay.token?.symbol}
+            size={38}
+            borderRadius={19}
+          />
         }
         title={pay.token?.symbol ?? t('swap.select_token')}
         subtitle={pay.subtitle}
@@ -112,6 +120,7 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
         trailing={caret}
       />
 
+      {blockerText && <WarningNotice tone="warning" title={blockerText} testID="swap-blocker" />}
       {errorText && <WarningNotice tone="error" title={errorText} testID="swap-error" />}
 
       <div style={{ paddingTop: spacing.lg }}>
