@@ -25,7 +25,9 @@
     "priceImpact": "Price impact",
     "route": "Route",
     "highImpactTitle": "High price impact",
-    "highImpactBody": "This swap moves the price by {{percent}}%. You may receive noticeably less than the market rate."
+    "highImpactBody": "This swap moves the price by {{percent}}%. You may receive noticeably less than the market rate.",
+    "payMint": "Pay mint",
+    "receiveMint": "Receive mint"
   },
   "pending": "Swapping",
   "complete": "Swap complete",

@@ -60,9 +60,12 @@ export async function buildSwap(
   networkId: string,
   params: SwapBuildParams
 ): Promise<SwapBuildEnvelope> {
-  const { data } = await apiClient.get<SwapBuildEnvelope>(`/v1/${networkId}/ft/swap/build`, {
-    params,
-  });
+  const { data } = await apiClient.get<SwapBuildEnvelope>(
+    `/v1/${encodeURIComponent(networkId)}/ft/swap/build`,
+    {
+      params,
+    }
+  );
   return data;
 }
 

@@ -25,7 +25,9 @@
     "priceImpact": "Impacto en el precio",
     "route": "Ruta",
     "highImpactTitle": "Impacto alto en el precio",
-    "highImpactBody": "Este swap mueve el precio un {{percent}} %. Podés recibir bastante menos que la tasa de mercado."
+    "highImpactBody": "Este swap mueve el precio un {{percent}} %. Podés recibir bastante menos que la tasa de mercado.",
+    "payMint": "Mint que pagás",
+    "receiveMint": "Mint que recibís"
   },
   "pending": "Haciendo el swap",
   "complete": "Swap completado",

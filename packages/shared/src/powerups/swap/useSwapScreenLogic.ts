@@ -33,7 +33,10 @@ import { describePowerupBuildError, type PowerupErrorMessage } from '../backend/
 import { toPowerupProposal } from '../backend/proposal';
 import type { PowerupUnavailableReason } from '../backend/errors';
 import { buildSwap, type BuildSwapFn, type SwapBuildEnvelope } from './api';
+import { MAX_SLIPPAGE_BPS, SWAP_INSTRUCTIONS } from './expectation';
 import { swapManifest } from './manifest';
+import { useUnverifiedTokens } from '../../contexts/DeveloperModeContext';
+import { getShortAddress } from '../../utils/address';
 
 export const SWAP_NETWORK: SolanaNetworkId = 'solana-mainnet';
 /** Above this the review carries a warning: the route moves the price. */
@@ -106,7 +109,10 @@ export type SwapToken = SendToken & { decimals: number };
  * balance. The catalogue lists the wrapped-SOL mint as "WSOL"; the user
  * receives plain SOL there, so that entry wears SOL's own name and mark.
  */
-export function toSwapToken(token: CatalogToken | TokenMetadata): SwapToken {
+export function toSwapToken(
+  token: CatalogToken | TokenMetadata,
+  { verified = true }: { verified?: boolean } = {}
+): SwapToken {
   const native = token.address === SOL_CONSTANTS.ADDRESS;
   return {
     address: token.address,
@@ -116,8 +122,61 @@ export function toSwapToken(token: CatalogToken | TokenMetadata): SwapToken {
     decimals: token.decimals,
     price: 'usdPrice' in token ? token.usdPrice : undefined,
     uiAmount: 0,
-    tags: ['verified'],
+    // The verified catalogue vouches for its entries; a search result only
+    // carries what the backend tagged it with.
+    tags: verified ? ['verified'] : ((token as { tags?: string[] }).tags ?? []),
   };
+}
+
+const hasMeaningfulTags = (token: { tags?: string[] }): boolean =>
+  (token.tags ?? []).some((tag) => tag !== 'unknown');
+
+/** `"0.1"` with 9 decimals → `"100000000"`, exact, no floating point. */
+export function toBaseUnits(amount: string, decimals: number): string {
+  const [whole = '0', fraction = ''] = amount.trim().split('.');
+  if (!/^\d*$/.test(whole) || !/^\d*$/.test(fraction)) return '';
+  const padded = (fraction + '0'.repeat(decimals)).slice(0, decimals);
+  return BigInt((whole || '0') + padded).toString();
+}
+
+/** What the user asked for, to hold the build to. */
+export interface SwapRequestFacts {
+  payToken: SwapToken;
+  receiveToken: SwapToken;
+  amount: string;
+}
+
+/**
+ * Refuses a build that is not the one the user asked for: another mint on
+ * either side, another amount, other decimals (which would rescale every
+ * number on the screen), a minimum above the quote, or a slippage past the
+ * cap. The bytes are then never proposed, whatever the screen would say.
+ */
+export function assertEnvelopeMatches(
+  envelope: SwapBuildEnvelope,
+  { payToken, receiveToken, amount }: SwapRequestFacts
+): void {
+  const refuse = (why: string): never => {
+    throw new Error(`swap build does not match the request: ${why}`);
+  };
+  if (envelope.input.mint !== payToken.address) refuse('input mint');
+  if (envelope.output.mint !== receiveToken.address) refuse('output mint');
+  if (envelope.input.decimals !== undefined && envelope.input.decimals !== payToken.decimals) {
+    refuse('input decimals');
+  }
+  if (
+    envelope.output.decimals !== undefined &&
+    receiveToken.decimals > 0 &&
+    envelope.output.decimals !== receiveToken.decimals
+  ) {
+    refuse('output decimals');
+  }
+  if (envelope.input.amount !== toBaseUnits(amount, payToken.decimals)) refuse('input amount');
+  if (!/^\d+$/.test(envelope.output.amount) || !/^\d+$/.test(envelope.output.minAmount)) {
+    refuse('output amount');
+  }
+  if (BigInt(envelope.output.minAmount) > BigInt(envelope.output.amount)) refuse('minimum');
+  if (!(envelope.slippageBps >= 0 && envelope.slippageBps <= MAX_SLIPPAGE_BPS)) refuse('slippage');
 }
 
 /** SOL first, so the one token everyone receives is never buried in a list of 7000. */
@@ -139,13 +198,15 @@ export interface SwapProposalContext {
   networkId: SolanaNetworkId;
   /** The user's display currency, from `useCurrencyContext`. */
   formatValue: (usd: number | null | undefined) => string;
+  /** The tokens the user picked: the screen names and draws these, never what the backend says. */
+  tokens?: { pay: SwapToken; receive: SwapToken };
   refresh?: () => Promise<TransactionProposal>;
 }
 
 /** Pure: what core renders for a built swap. Every string is already translated. */
 export function buildSwapProposal(
   envelope: SwapBuildEnvelope,
-  { networkId, formatValue, refresh }: SwapProposalContext
+  { networkId, formatValue, tokens, refresh }: SwapProposalContext
 ): TransactionProposal {
   // The key itself when i18n has nothing for it (tests, a build with the
   // namespace missing): a row with a key is readable, a row with nothing is not.
@@ -156,8 +217,11 @@ export function buildSwapProposal(
   const amountIn = uiAmountOf(envelope.input.amount, envelope.input.decimals);
   const amountOut = uiAmountOf(envelope.output.amount, envelope.output.decimals);
   const minOut = uiAmountOf(envelope.output.minAmount, envelope.output.decimals);
-  const inSymbol = envelope.input.symbol;
-  const outSymbol = envelope.output.symbol;
+  // With the picked tokens in hand, the backend's names and marks are not consulted at all.
+  const inSymbol = tokens ? tokens.pay.symbol : envelope.input.symbol;
+  const outSymbol = tokens ? tokens.receive.symbol : envelope.output.symbol;
+  const inLogo = tokens ? tokens.pay.logo : envelope.input.logo;
+  const outLogo = tokens ? tokens.receive.logo : envelope.output.logo;
   const rate =
     amountIn > 0 ? `1 ${inSymbol ?? ''} ≈ ${withSymbol(amountOut / amountIn, outSymbol)}` : '';
   const fee = envelope.salmonFee;
@@ -182,6 +246,9 @@ export function buildSwapProposal(
       value: envelope.priceImpactPct === null ? '—' : `${envelope.priceImpactPct}%`,
     },
     { label: t('swap.review.route'), value: routeLabels || envelope.providerDisplayName },
+    // The mints, so a lookalike symbol is never the whole story.
+    { label: t('swap.review.payMint'), value: getShortAddress(envelope.input.mint, 6) ?? '' },
+    { label: t('swap.review.receiveMint'), value: getShortAddress(envelope.output.mint, 6) ?? '' },
   ];
 
   const summary = `${withSymbol(amountIn, inSymbol)} → ${withSymbol(amountOut, outSymbol)}`;
@@ -192,7 +259,7 @@ export function buildSwapProposal(
     { ...envelope, salmonFee: null, routeFee: null, contributor: envelope.contributor ?? null },
     {
       networkId,
-      expect: { allowedPrograms: swapManifest.programs },
+      expect: { allowedPrograms: swapManifest.programs, allowedInstructions: SWAP_INSTRUCTIONS },
       refresh,
       pending: { kind: 'send', summary },
       display: {
@@ -200,14 +267,14 @@ export function buildSwapProposal(
         exchange: {
           send: {
             label: t('swap.review.youPay'),
-            logo: envelope.input.logo,
+            logo: inLogo,
             symbol: inSymbol ?? '',
             amount: withSymbol(amountIn, inSymbol),
             usdValue: envelope.inUsdValue === null ? undefined : formatValue(envelope.inUsdValue),
           },
           receive: {
             label: t('swap.review.youReceive'),
-            logo: envelope.output.logo,
+            logo: outLogo,
             symbol: outSymbol ?? '',
             amount: withSymbol(amountOut, outSymbol),
             usdValue: envelope.outUsdValue === null ? undefined : formatValue(envelope.outUsdValue),
@@ -278,6 +345,7 @@ export function useSwapScreenLogic({
 }: UseSwapScreenLogicParams): UseSwapScreenLogicResult {
   const { t } = useTranslation();
   const requestSignature = useRequestSignature();
+  const showUnverifiedTokens = useUnverifiedTokens();
   const [, { formatValue }] = useCurrencyContext();
   const [{ activeBlockchainAccount }] = useAccountsContext();
   const solanaNetworkId = networkId === SWAP_NETWORK ? SWAP_NETWORK : undefined;
@@ -307,13 +375,15 @@ export function useSwapScreenLogic({
   // What can be received: the verified catalogue, searchable past it.
   const catalog = useTokenCatalog({ networkId: solanaNetworkId });
   const receiveTokens = useMemo(
-    () => sortNativeFirst(catalog.tokens.map(toSwapToken)),
+    () => sortNativeFirst(catalog.tokens.map((token) => toSwapToken(token))),
     [catalog.tokens]
   );
   const onSearch = useCallback(
     async (query: string): Promise<SendToken[]> =>
-      (await searchTokens(query, solanaNetworkId ?? SWAP_NETWORK)).map(toSwapToken),
-    [solanaNetworkId]
+      (await searchTokens(query, solanaNetworkId ?? SWAP_NETWORK))
+        .filter((token) => showUnverifiedTokens || hasMeaningfulTags(token))
+        .map((token) => toSwapToken(token, { verified: false })),
+    [solanaNetworkId, showUnverifiedTokens]
   );
 
   const [payAddress, setPayAddress] = useState<string | null>(null);
@@ -407,12 +477,17 @@ export function useSwapScreenLogic({
       publicKey,
       uiAmount: amount,
     };
-    const propose = async (): Promise<TransactionProposal> =>
-      buildSwapProposal(await build(solanaNetworkId, params), {
+    const facts = { payToken, receiveToken, amount };
+    const propose = async (): Promise<TransactionProposal> => {
+      const envelope = await build(solanaNetworkId, params);
+      assertEnvelopeMatches(envelope, facts);
+      return buildSwapProposal(envelope, {
         networkId: solanaNetworkId,
         formatValue,
+        tokens: { pay: payToken, receive: receiveToken },
         refresh: propose,
       });
+    };
     try {
       // Resolves once the user has read core's receipt and closed it.
       await requestSignature(await propose());

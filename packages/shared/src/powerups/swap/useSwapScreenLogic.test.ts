@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   SWAP_CODES,
+  assertEnvelopeMatches,
   buildSwapProposal,
   sortNativeFirst,
   swapBlocker,
+  toBaseUnits,
   toSwapToken,
 } from './useSwapScreenLogic';
+import { SWAP_INSTRUCTIONS } from './expectation';
 import { describePowerupBuildError } from '../backend/errors';
 import { ApiError } from '../../api/client';
 import { swapManifest } from './manifest';
@@ -51,6 +54,7 @@ describe('swap — the proposal core signs', () => {
 
     expect(proposal.transaction).toBe('AQ==');
     expect(proposal.expect.allowedPrograms).toBe(swapManifest.programs);
+    expect(proposal.expect.allowedInstructions).toBe(SWAP_INSTRUCTIONS);
     expect(proposal.display.exchange?.send).toMatchObject({
       symbol: 'SOL',
       amount: '0.01 SOL',
@@ -197,5 +201,65 @@ describe('swap — the proposal core signs', () => {
     });
     expect(describe('region_restricted')).toEqual({ kind: 'unavailable', reason: 'region' });
     expect(describe('wallet_restricted')).toEqual({ kind: 'unavailable', reason: 'wallet' });
+  });
+
+  describe('holding the build to the request', () => {
+    const pay = { address: SOL, name: 'Solana', symbol: 'SOL', decimals: 9, uiAmount: 1 };
+    const receive = { address: USDC, name: 'USD Coin', symbol: 'USDC', decimals: 6, uiAmount: 0 };
+    const facts = { payToken: pay, receiveToken: receive, amount: '0.01' };
+
+    it('converts a typed amount to base units exactly', () => {
+      expect(toBaseUnits('0.01', 9)).toBe('10000000');
+      expect(toBaseUnits('1', 6)).toBe('1000000');
+      expect(toBaseUnits('0.1234567891', 9)).toBe('123456789');
+      expect(toBaseUnits('12.5', 0)).toBe('12');
+      expect(toBaseUnits('abc', 9)).toBe('');
+    });
+
+    it('accepts the build the user asked for', () => {
+      expect(() => assertEnvelopeMatches(envelope(), facts)).not.toThrow();
+    });
+
+    it.each([
+      ['input mint', { input: { ...envelope().input, mint: USDC } }],
+      ['output mint', { output: { ...envelope().output, mint: SOL } }],
+      ['input decimals', { input: { ...envelope().input, decimals: 6 } }],
+      ['input amount', { input: { ...envelope().input, amount: '10000001' } }],
+      ['minimum', { output: { ...envelope().output, minAmount: '9999999999' } }],
+      ['slippage', { slippageBps: 5000 }],
+      ['output amount', { output: { ...envelope().output, amount: 'lots' } }],
+    ])("refuses a build whose %s is not the request's", (why, overrides) => {
+      expect(() => assertEnvelopeMatches(envelope(overrides as never), facts)).toThrow(why);
+    });
+
+    it('names and draws the picked tokens, not what the backend says', () => {
+      const proposal = buildSwapProposal(
+        envelope({
+          input: { ...envelope().input, symbol: 'USDC', logo: 'evil.png' },
+          output: { ...envelope().output, symbol: 'SOL', logo: 'evil2.png' },
+        }),
+        { networkId: 'solana-mainnet', formatValue, tokens: { pay, receive } }
+      );
+      expect(proposal.display.exchange?.send).toMatchObject({ symbol: 'SOL', logo: undefined });
+      expect(proposal.display.exchange?.receive).toMatchObject({ symbol: 'USDC', logo: undefined });
+      const advanced = Object.fromEntries(
+        (proposal.display.advancedRows ?? []).map((row) => [row.label, row.value])
+      );
+      expect(advanced['swap.review.payMint']).toMatch(/^So1111.*112$/);
+      expect(advanced['swap.review.receiveMint']).toMatch(/^EPjFWd.*Dt1v$/);
+    });
+
+    it("keeps a search result's own tags instead of calling it verified", () => {
+      const scam = toSwapToken(
+        { address: 'scam', symbol: 'USDC', name: 'USDC', decimals: 6, tags: ['unknown'] },
+        { verified: false }
+      );
+      expect(scam.tags).toEqual(['unknown']);
+      const bare = toSwapToken(
+        { address: 'x', symbol: 'X', name: 'X', decimals: 6 },
+        { verified: false }
+      );
+      expect(bare.tags).toEqual([]);
+    });
   });
 });

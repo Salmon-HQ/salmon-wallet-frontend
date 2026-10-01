@@ -20,7 +20,7 @@ export interface PowerupAvailabilityEntry {
 
 export async function getPowerupAvailability(networkId: string): Promise<unknown> {
   const { data } = await apiClient.get<{ data?: unknown }>(
-    `/v1/${networkId}/powerups/availability`
+    `/v1/${encodeURIComponent(networkId)}/powerups/availability`
   );
   return data?.data;
 }

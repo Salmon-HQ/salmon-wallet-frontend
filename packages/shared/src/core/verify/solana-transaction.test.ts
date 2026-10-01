@@ -11,11 +11,13 @@ import {
   SolanaTransactionMismatchError,
 } from './solana-transaction';
 import {
+  ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
   SYSTEM_PROGRAM,
   TOKEN_METADATA_PROGRAM,
+  TOKEN_PROGRAM,
 } from './solana-programs';
 
 /** The owner that pays and signs in both fixtures. */
@@ -257,5 +259,127 @@ describe('nftAction', () => {
     await expect(check(NO_LOOKUPS, { asset: CNFT_ASSET })).rejects.toThrow(
       /pays from|does not act on/
     );
+  });
+});
+
+/**
+ * A v0 message built on the NO_LOOKUPS fixture's frame with our own static
+ * accounts and instructions, so a rule can be checked against exactly the
+ * instruction shapes a swap carries.
+ */
+function message(
+  accounts: readonly string[],
+  instructions: readonly { program: string; accounts: number[]; data: number[] }[]
+): string {
+  const transaction = getTransactionDecoder().decode(
+    new Uint8Array(Buffer.from(NO_LOOKUPS, 'base64'))
+  );
+  const decoded = getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
+  if (!('instructions' in decoded)) throw new Error('fixture is not a v0 message');
+  const messageBytes = getCompiledTransactionMessageEncoder().encode({
+    ...decoded,
+    staticAccounts: accounts as unknown as typeof decoded.staticAccounts,
+    instructions: instructions.map((instruction) => ({
+      programAddressIndex: accounts.indexOf(instruction.program),
+      accountIndices: instruction.accounts,
+      data: new Uint8Array(instruction.data),
+    })),
+  });
+  return Buffer.from(
+    getTransactionEncoder().encode({
+      ...transaction,
+      messageBytes: messageBytes as typeof transaction.messageBytes,
+    })
+  ).toString('base64');
+}
+
+describe("account binds — an instruction may only reach the wallet's own accounts", () => {
+  const WSOL_ATA = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  const ATTACKER = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  const MINT = 'So11111111111111111111111111111111111111112';
+  // 0 owner, 1 wsol ata, 2 attacker, 3 mint, 4 system, 5 token, 6 ata program
+  const ACCOUNTS = [
+    OWNER,
+    WSOL_ATA,
+    ATTACKER,
+    MINT,
+    SYSTEM_PROGRAM,
+    TOKEN_PROGRAM,
+    ASSOCIATED_TOKEN_PROGRAM,
+  ];
+  const createIdempotent = {
+    program: ASSOCIATED_TOKEN_PROGRAM,
+    accounts: [0, 1, 0, 3, 4, 5],
+    data: [1],
+  };
+  const transferTo = (index: number) => ({
+    program: SYSTEM_PROGRAM,
+    accounts: [0, index],
+    data: [2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+  });
+  const closeTo = (index: number) => ({
+    program: TOKEN_PROGRAM,
+    accounts: [1, index, 0],
+    data: [9],
+  });
+  const rules = {
+    [SYSTEM_PROGRAM]: {
+      width: 4 as const,
+      codes: [2],
+      binds: [{ code: 2, index: 1, mustBe: 'ownAtaCreatedHere' as const }],
+    },
+    [TOKEN_PROGRAM]: {
+      width: 1 as const,
+      codes: [9, 17],
+      binds: [{ code: 9, index: 1, mustBe: 'feePayer' as const }],
+    },
+  };
+  const expectation = {
+    feePayer: OWNER,
+    allowedPrograms: [SYSTEM_PROGRAM, TOKEN_PROGRAM, ASSOCIATED_TOKEN_PROGRAM],
+    allowedInstructions: rules,
+  };
+
+  it('accepts wrapping SOL into an account this message creates for the wallet, and closing it back', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [createIdempotent, transferTo(1), closeTo(0)]),
+        expectation
+      )
+    ).not.toThrow();
+  });
+
+  it('refuses a SOL transfer to any other account, even one created here for someone else', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [createIdempotent, transferTo(2)]),
+        expectation
+      )
+    ).toThrow(/not the wallet's own/);
+    const forAttacker = { ...createIdempotent, accounts: [0, 1, 2, 3, 4, 5] };
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [forAttacker, transferTo(1)]), expectation)
+    ).toThrow(/not the wallet's own/);
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [transferTo(1)]), expectation)
+    ).toThrow(/not the wallet's own/);
+  });
+
+  it('refuses closing an account to anyone but the wallet, and any Token instruction outside the list', () => {
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [closeTo(2)]), expectation)
+    ).toThrow(/not the wallet's own/);
+    const approve = {
+      program: TOKEN_PROGRAM,
+      accounts: [1, 2, 0],
+      data: [4, 1, 0, 0, 0, 0, 0, 0, 0],
+    };
+    expect(() => assertSolanaTransactionMatches(message(ACCOUNTS, [approve]), expectation)).toThrow(
+      /instruction 4 on/
+    );
+    const setAuthority = { program: TOKEN_PROGRAM, accounts: [1, 0], data: [6, 2, 1] };
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [setAuthority]), expectation)
+    ).toThrow(/instruction 6 on/);
   });
 });
