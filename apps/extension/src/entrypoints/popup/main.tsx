@@ -9,13 +9,16 @@ import App from './App';
 import { AppProviders } from '../../AppProviders';
 
 // Initialize storage and stash for extension platform
-import { APP_VERSION, initStorage, initStash, initAnalytics } from '@salmon/shared';
+import { APP_VERSION, initStorage, initStash, initAnalytics, setApiPlatform } from '@salmon/shared';
 
 // Initialize storage with Chrome extension adapter
 initStorage({ platform: 'extension' });
 
 // Initialize stash for session data (communicates with background worker)
 initStash('extension');
+
+// The backend's availability gate reads the platform on every request (spec 018).
+setApiPlatform('extension');
 
 // Anonymous, opt-in usage analytics (no events until the user opts in).
 initAnalytics({ platform: 'extension', appVersion: APP_VERSION });

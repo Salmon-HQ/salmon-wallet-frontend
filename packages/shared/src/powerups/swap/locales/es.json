@@ -1,0 +1,36 @@
+{
+  "catalog": {
+    "name": "Swap",
+    "description": "Cambiá un token por otro",
+    "about": "Cambia un token de Solana por otro en una sola transacción que vos firmás. Salmon prepara la transacción a partir de la cotización de un proveedor de ruteo y te muestra cada número antes de confirmar; el intercambio corre en la red, entre vos y sus programas. Salmon cobra una comisión del 0,5 %, mostrada como una línea aparte.",
+    "usage": "Elegí con qué pagás, qué recibís y cuánto. Revisá la cotización y firmá.",
+    "actions": {
+      "swap": "Cambiar un token por otro con una comisión de Salmon del 0,5 %"
+    }
+  },
+  "pay_label": "Pagás",
+  "receive_label": "Recibís",
+  "available": "{{amount}} disponible",
+  "select_token": "Elegir token",
+  "submit": "Revisar swap",
+  "review": {
+    "title": "Revisión del swap",
+    "youPay": "Pagás",
+    "youReceive": "Recibís (estimado)",
+    "rate": "Tasa",
+    "salmonFee": "Comisión de Salmon",
+    "routeFee": "Comisión del proveedor",
+    "minReceived": "Mínimo a recibir",
+    "slippage": "Deslizamiento máximo",
+    "priceImpact": "Impacto en el precio",
+    "route": "Ruta",
+    "highImpactTitle": "Impacto alto en el precio",
+    "highImpactBody": "Este swap mueve el precio un {{percent}} %. Podés recibir bastante menos que la tasa de mercado."
+  },
+  "pending": "Haciendo el swap",
+  "complete": "Swap completado",
+  "errors": {
+    "buildFailed": "No se pudo preparar el swap. Probá de nuevo.",
+    "tokenNotSupported": "Este token no se puede cambiar por ahora."
+  }
+}

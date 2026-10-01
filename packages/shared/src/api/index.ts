@@ -46,3 +46,7 @@ export {
 
 // Services exports
 export * from './services';
+
+// The platform header the backend's availability gate reads (spec 018).
+export { setApiPlatform, getApiPlatform, PLATFORM_HEADER } from './client';
+export type { ApiPlatform } from './client';

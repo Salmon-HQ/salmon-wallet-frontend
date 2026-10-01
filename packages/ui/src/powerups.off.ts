@@ -5,6 +5,7 @@
 import type { ComponentType } from 'react';
 import type { PowerupsPageProps } from './components/PowerupsPage';
 import type { MemoPageProps } from './components/MemoPage';
+import type { SwapPageProps } from './components/SwapPage';
 import type { PaymentsHistoryPageProps, PaymentsPageProps } from './components/PaymentsPage';
 
 export {
@@ -18,5 +19,6 @@ export type { PowerupEntry } from '@salmon/shared/powerups';
 
 export const PowerupsPage: ComponentType<PowerupsPageProps> | null = null;
 export const MemoPage: ComponentType<MemoPageProps> | null = null;
+export const SwapPage: ComponentType<SwapPageProps> | null = null;
 export const PaymentsPage: ComponentType<PaymentsPageProps> | null = null;
 export const PaymentsHistoryPage: ComponentType<PaymentsHistoryPageProps> | null = null;

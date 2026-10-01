@@ -299,6 +299,7 @@ export type { BlockchainMarkPropsBase } from './blockchain-mark';
 export type { TextInputPropsBase } from './text-input';
 
 export type { MemoScreenPropsBase } from './memo-screen';
+export type { SwapScreenPropsBase } from './swap-screen';
 export type {
   PaymentRequestListPropsBase,
   PaymentRequestRow,

@@ -26,3 +26,4 @@ export { powerupTranslations } from './locales';
 export * from './backend';
 export * from './memo';
 export * from './payments';
+export * from './swap';

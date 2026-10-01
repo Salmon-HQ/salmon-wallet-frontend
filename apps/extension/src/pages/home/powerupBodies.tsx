@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { getPowerup, type PowerupId } from '@salmon/shared/powerups';
 import { useSemantic } from '../../components';
-import { MemoPage, PaymentsHistoryPage, PaymentsPage } from '@salmon/ui/powerups';
+import { MemoPage, PaymentsHistoryPage, PaymentsPage, SwapPage } from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
   /** The active account's receive address on `networkId`; never null here. */
@@ -114,6 +114,15 @@ function renderPowerupPage(id: string, ctx: PowerupBodyContext): React.ReactElem
   if (id === 'memo' && MemoPage) {
     return (
       <MemoPage
+        publicKey={ctx.publicKey}
+        networkId={ctx.networkId}
+        onNavigateHome={ctx.onNavigateHome}
+      />
+    );
+  }
+  if (id === 'swap' && SwapPage) {
+    return (
+      <SwapPage
         publicKey={ctx.publicKey}
         networkId={ctx.networkId}
         onNavigateHome={ctx.onNavigateHome}

@@ -1,20 +1,20 @@
 /**
- * useNetworkPowerups — the Powerups the backend offers on one network, read
- * from the network catalogue (`/v1/networks`, spec 029 §5.2).
+ * useNetworkPowerups — the Powerups the backend offers THIS caller on one
+ * network, read from the availability route (spec 018: decided per request
+ * from the caller's country and platform, never cached at the edge).
  *
- * Fail closed: until the catalogue has answered, and whenever it cannot, the
- * allowlist is empty and Home offers no Powerup. The catalogue is fetched
- * once per session (`getNetworks` caches the promise) and its last answer is
- * kept here, so a Home that mounts after the app's own network load reads the
- * allowlist synchronously and its tabs never flash.
+ * Fail closed: until the route has answered, and whenever it cannot, the
+ * allowlist is empty and Home offers no Powerup. The last answer per network
+ * is kept for the session, so a Home that mounts again reads it
+ * synchronously and its tabs never flash; every mount still asks again,
+ * because the answer is the caller's and may change with their network.
  *
  * This is core, not a Powerup: it carries no Powerup's copy, so both Homes
  * may import it by value in a build with Powerups off — it simply has
  * nothing to allow there.
  */
 import { useEffect, useState } from 'react';
-import { getNetworks } from '../api/services/network';
-import type { NetworkCatalogEntry } from '../types/blockchain';
+import { getPowerupAvailability } from '../api/services/powerups';
 import {
   EMPTY_POWERUP_ALLOWLIST,
   parsePowerupSwitches,
@@ -22,42 +22,40 @@ import {
   type PowerupAllowlist,
 } from '../utils/powerupSwitches';
 
-let lastNetworks: readonly NetworkCatalogEntry[] | null = null;
-
-function allowlistFor(
-  networks: readonly NetworkCatalogEntry[] | null,
-  networkId: string | null
-): PowerupAllowlist {
-  if (!networks || !networkId) return EMPTY_POWERUP_ALLOWLIST;
-  const network = networks.find((entry) => entry.id === networkId);
-  if (!network) return EMPTY_POWERUP_ALLOWLIST;
-  return toPowerupAllowlist(parsePowerupSwitches((network as { powerups?: unknown }).powerups));
-}
+const lastByNetwork = new Map<string, PowerupAllowlist>();
 
 export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
-  const [networks, setNetworks] = useState<readonly NetworkCatalogEntry[] | null>(lastNetworks);
+  const [allowlist, setAllowlist] = useState<PowerupAllowlist>(
+    () => (networkId && lastByNetwork.get(networkId)) || EMPTY_POWERUP_ALLOWLIST
+  );
 
   useEffect(() => {
+    if (!networkId) {
+      setAllowlist(EMPTY_POWERUP_ALLOWLIST);
+      return;
+    }
     let cancelled = false;
-    getNetworks()
-      .then((result) => {
-        lastNetworks = result;
-        if (!cancelled) setNetworks(result);
+    setAllowlist(lastByNetwork.get(networkId) ?? EMPTY_POWERUP_ALLOWLIST);
+    getPowerupAvailability(networkId)
+      .then((entries) => {
+        const next = toPowerupAllowlist(parsePowerupSwitches(entries));
+        lastByNetwork.set(networkId, next);
+        if (!cancelled) setAllowlist(next);
       })
       .catch(() => {
-        // Closed stays closed; the catalogue failing is reported where the
-        // app loads it.
-        if (!cancelled) setNetworks(null);
+        // Closed stays closed; a route that cannot answer offers nothing.
+        lastByNetwork.delete(networkId);
+        if (!cancelled) setAllowlist(EMPTY_POWERUP_ALLOWLIST);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [networkId]);
 
-  return allowlistFor(networks, networkId);
+  return allowlist;
 }
 
-/** Test seam: forget the last catalogue answer. */
+/** Test seam: forget every network's last answer. */
 export function resetNetworkPowerupsCache(): void {
-  lastNetworks = null;
+  lastByNetwork.clear();
 }

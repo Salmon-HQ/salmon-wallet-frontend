@@ -17,7 +17,7 @@ vi.mock('react-i18next', () => ({
 import { useHomePowerupTabs, useHomePowerupsCatalog } from './useHomePowerups';
 import { EMPTY_POWERUP_ALLOWLIST, type PowerupAllowlist } from '../utils/powerupSwitches';
 
-const MEMO_ON: PowerupAllowlist = { enabled: ['memo'], disabled: {} };
+const MEMO_ON: PowerupAllowlist = { enabled: ['memo'], disabled: {}, providers: {} };
 import { getPowerupCatalog } from '../powerups/catalog';
 import { POWERUPS } from '../powerups/registry';
 
@@ -54,7 +54,7 @@ describe('useHomePowerupTabs', () => {
       useHomePowerupTabs({
         installed: ['memo'],
         powerups: POWERUPS,
-        allowlist: { enabled: [], disabled: { memo: 'maintenance' } },
+        allowlist: { enabled: [], disabled: { memo: 'maintenance' }, providers: {} },
       })
     );
     expect(result.current).toHaveLength(1);
@@ -154,7 +154,7 @@ describe('useHomePowerupsCatalog', () => {
         networkId: 'solana-mainnet',
         powerups: POWERUPS,
         getCatalog: getPowerupCatalog,
-        allowlist: { enabled: [], disabled: { memo: 'maintenance' } },
+        allowlist: { enabled: [], disabled: { memo: 'maintenance' }, providers: {} },
       })
     );
     const memo = result.current.catalogEntries.find((entry) => entry.id === 'memo');
