@@ -54,6 +54,13 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "dapp-store": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "local"
+      }
     }
   },
   "submit": {
