@@ -26,7 +26,7 @@ const DEFAULT_LOCAL_PORT = 3000;
 // Note: Local uses /local prefix because serverless-offline adds it to all routes
 const API_URLS: Record<Environment, string> = {
   local: `http://${DEFAULT_LOCAL_HOST}:${DEFAULT_LOCAL_PORT}/local`,
-  staging: 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod',
+  staging: 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging',
   production: 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod',
 };
 
@@ -34,7 +34,7 @@ const API_URLS: Record<Environment, string> = {
 // Note: Local uses /local prefix because serverless-offline adds it to all routes
 const STATIC_API_URLS: Record<Environment, string> = {
   local: `http://${DEFAULT_LOCAL_HOST}:${DEFAULT_LOCAL_PORT}/local`,
-  staging: 'https://d1fh2pwo7kzely.cloudfront.net',
+  staging: 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging',
   production: 'https://d1fh2pwo7kzely.cloudfront.net',
 };
 
