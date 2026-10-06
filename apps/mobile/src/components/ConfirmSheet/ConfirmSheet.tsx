@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
 import {
@@ -76,33 +76,30 @@ export function ConfirmSheet({
           {title}
         </SheetTitle>
       }
+      // A password sheet stands full height with its content from the top, so
+      // the keyboard opening under the autofocused field never covers Confirm.
+      forTyping={!!requirePassword}
       style={styles.sheet}
     >
-      {/*
-        The password field autofocuses, so on iOS the keyboard opens over the
-        bottom-anchored sheet and hides the Confirm button. Padding grows the
-        sheet upward instead. Android resizes the window itself.
-      */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
-          <Text style={styles.message}>{message}</Text>
+      <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
+        <Text style={styles.message}>{message}</Text>
 
-          {requirePassword && (
-            <View style={styles.passwordSection}>
-              <PasswordInput
-                value={password}
-                onChangeText={handlePasswordChange}
-                placeholder={t('general.password', 'Password')}
-                error={passwordError}
-                editable={!loading}
-                testID="confirm-dialog-password"
-                autoFocus
-                onSubmitEditing={handleConfirm}
-              />
-            </View>
-          )}
+        {requirePassword && (
+          <View style={styles.passwordSection}>
+            <PasswordInput
+              value={password}
+              onChangeText={handlePasswordChange}
+              placeholder={t('general.password', 'Password')}
+              error={passwordError}
+              editable={!loading}
+              testID="confirm-dialog-password"
+              autoFocus
+              onSubmitEditing={handleConfirm}
+            />
+          </View>
+        )}
 
-          {/*
+        {/*
             On a danger sheet the two buttons trade places. Backing out takes
             the primary fill and comes first, because on a sheet that destroys a
             wallet the recommended outcome is the one that changes nothing; the
@@ -110,47 +107,42 @@ export function ConfirmSheet({
             painted into it, so it stays plainly a button without inviting the
             thumb that is already travelling toward the primary.
           */}
-          <View style={styles.actions}>
-            {acknowledgeOnly ? (
-              <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-confirm">
-                {confirmText || t('actions.close', 'Close')}
+        <View style={styles.actions}>
+          {acknowledgeOnly ? (
+            <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-confirm">
+              {confirmText || t('actions.close', 'Close')}
+            </PrimaryButton>
+          ) : isDanger ? (
+            <>
+              <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                {cancelText || t('actions.cancel', 'Cancel')}
               </PrimaryButton>
-            ) : isDanger ? (
-              <>
-                <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
-                  {cancelText || t('actions.cancel', 'Cancel')}
-                </PrimaryButton>
-                <SecondaryButton
-                  onPress={handleConfirm}
-                  disabled={!canConfirm || loading}
-                  tone="danger-fill"
-                  testID="confirm-dialog-confirm"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
-                </SecondaryButton>
-              </>
-            ) : (
-              <>
-                <SecondaryButton
-                  onPress={onClose}
-                  disabled={loading}
-                  testID="confirm-dialog-cancel"
-                >
-                  {cancelText || t('actions.cancel', 'Cancel')}
-                </SecondaryButton>
-                <PrimaryButton
-                  onPress={handleConfirm}
-                  disabled={!canConfirm}
-                  loading={loading}
-                  testID="confirm-dialog-confirm"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
-                </PrimaryButton>
-              </>
-            )}
-          </View>
+              <SecondaryButton
+                onPress={handleConfirm}
+                disabled={!canConfirm || loading}
+                tone="danger-fill"
+                testID="confirm-dialog-confirm"
+              >
+                {confirmText || t('actions.confirm', 'Confirm')}
+              </SecondaryButton>
+            </>
+          ) : (
+            <>
+              <SecondaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                {cancelText || t('actions.cancel', 'Cancel')}
+              </SecondaryButton>
+              <PrimaryButton
+                onPress={handleConfirm}
+                disabled={!canConfirm}
+                loading={loading}
+                testID="confirm-dialog-confirm"
+              >
+                {confirmText || t('actions.confirm', 'Confirm')}
+              </PrimaryButton>
+            </>
+          )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </BottomSheetContainer>
   );
 }

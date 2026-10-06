@@ -30,6 +30,9 @@ export function TokenPickerSheet({
       visible={visible}
       onClose={onClose}
       testID={testID}
+      // The search field takes the keyboard: the sheet stands full height so
+      // the field and the first results stay above it.
+      forTyping
       style={styles.sheet}
       title={<SheetTitle>{t('wallet.select_token', 'Select Token')}</SheetTitle>}
       // The sheet's ground is the thermocline at its thick tier, the same
@@ -42,11 +45,9 @@ export function TokenPickerSheet({
 }
 
 const styles = StyleSheet.create({
-  // A sheet hugs its content, and a virtualised list has none to hug — it
-  // fills whatever it is given. So this one sheet is given a height, or the
-  // list collapses to the handle.
+  // A virtualised list has no content to hug; `forTyping` gives the sheet its
+  // full height, and the list fills it.
   sheet: {
-    height: '70%',
     overflow: 'hidden',
   },
   thermocline: {

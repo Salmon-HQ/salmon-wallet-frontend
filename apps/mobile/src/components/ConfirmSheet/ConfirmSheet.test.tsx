@@ -26,14 +26,20 @@ jest.mock('../BottomSheetContainer', () => ({
   BottomSheetContainer: ({
     visible,
     children,
+    forTyping,
   }: {
     visible: boolean;
     children: React.ReactNode;
+    forTyping?: boolean;
   }) => {
     if (!visible) return null;
     const RN = require('react-native');
     const R = require('react');
-    return R.createElement(RN.View, null, children);
+    return R.createElement(
+      RN.View,
+      { testID: forTyping ? 'sheet-for-typing' : 'sheet-hugging' },
+      children
+    );
   },
 }));
 
@@ -92,6 +98,19 @@ function renderSheet(props: Partial<React.ComponentProps<typeof ConfirmSheet>> =
   );
   return { onConfirm, onClose };
 }
+
+// Owner, 2026-10-06: the biometrics password sheet sat under the keyboard.
+describe('ConfirmSheet and the keyboard', () => {
+  it('stands full height when it asks for a password', () => {
+    renderSheet({ requirePassword: true, validatePassword: jest.fn() });
+    expect(screen.getByTestId('sheet-for-typing')).toBeTruthy();
+  });
+
+  it('hugs its content when it asks for nothing typed', () => {
+    renderSheet({});
+    expect(screen.getByTestId('sheet-hugging')).toBeTruthy();
+  });
+});
 
 describe('ConfirmSheet password gate', () => {
   it('does not run the action when the password does not check out', async () => {
