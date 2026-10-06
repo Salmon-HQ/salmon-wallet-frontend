@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Keyboard } from 'react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
@@ -118,6 +119,16 @@ describe('SwapScreen', () => {
     fireEvent.press(screen.getByTestId('swap-submit-button'));
     expect(mockLogic.submit).toHaveBeenCalled();
     expect(screen.queryByTestId('swap-error')).toBeNull();
+  });
+
+  // The amount uses the decimal pad, which has no return key: a tap anywhere
+  // off the field must put the keyboard away so Review can be pressed.
+  it('puts the keyboard away on a tap outside the field', () => {
+    const dismiss = jest.spyOn(Keyboard, 'dismiss');
+    render(<SwapScreen publicKey="pk" networkId="solana-mainnet" />);
+    fireEvent.press(screen.getByTestId('swap-screen'));
+    expect(dismiss).toHaveBeenCalled();
+    dismiss.mockRestore();
   });
 
   it('shows the build error as a notice and the open picker as a sheet', () => {

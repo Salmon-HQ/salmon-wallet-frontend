@@ -82,7 +82,8 @@ jest.mock('../BlurContainer', () => ({
   BlurTargetProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-import { BottomSheetContainer } from './BottomSheetContainer';
+import { StyleSheet, Dimensions } from 'react-native';
+import { BottomSheetContainer, TYPING_SHEET_HEIGHT } from './BottomSheetContainer';
 
 const noop = () => {};
 
@@ -116,6 +117,35 @@ describe('BottomSheetContainer sheet material', () => {
 
     expect(getByTestId('custom-bg')).toBeTruthy();
     expect(queryByTestId('thermocline')).toBeNull();
+  });
+});
+
+// Owner, 2026-10-06: a sheet the user types into opens at its full height,
+// content from the top, so the keyboard only ever covers empty sheet.
+describe('BottomSheetContainer for typing', () => {
+  const heights = (root: { findAll: (p: (n: any) => boolean) => any[] }) =>
+    root
+      .findAll((node) => node.props?.style != null)
+      .map((node) => StyleSheet.flatten(node.props.style)?.height)
+      .filter((h) => typeof h === 'number');
+
+  it('stands at the full sheet height when the user types into it', () => {
+    const { UNSAFE_root } = render(
+      <BottomSheetContainer visible onClose={noop} forTyping>
+        <Text>body</Text>
+      </BottomSheetContainer>
+    );
+    expect(TYPING_SHEET_HEIGHT).toBe(Dimensions.get('window').height * 0.92);
+    expect(heights(UNSAFE_root)).toContain(TYPING_SHEET_HEIGHT);
+  });
+
+  it('hugs its content otherwise', () => {
+    const { UNSAFE_root } = render(
+      <BottomSheetContainer visible onClose={noop}>
+        <Text>body</Text>
+      </BottomSheetContainer>
+    );
+    expect(heights(UNSAFE_root)).not.toContain(TYPING_SHEET_HEIGHT);
   });
 });
 

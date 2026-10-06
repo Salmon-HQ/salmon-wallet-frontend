@@ -21,11 +21,11 @@ import {
   StyleSheet,
   ScrollView,
   View,
-  KeyboardAvoidingView,
   Platform,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
@@ -96,9 +96,9 @@ export function SettingsScreenLayout({
 
       {/*
         Settings panels host the label, address, seed and password fields.
-        iOS floats the keyboard over the app, so the fields and their save
-        buttons need padding pushed in from below; Android already shrinks the
-        window via `windowSoftInputMode="adjustResize"`, so it opts out.
+        The keyboard floats over the app, so the fields and their save buttons
+        need room pushed in from below. This avoider follows the keyboard
+        frame by frame, so the content climbs with it instead of jumping.
       */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoider}
