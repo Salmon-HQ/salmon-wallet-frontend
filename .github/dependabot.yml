@@ -22,7 +22,8 @@ updates:
         update-types: [minor, patch]
     # Majors need a human decision in a wallet; they arrive as separate PRs.
     ignore:
-      # Expo SDK owns these versions (currently SDK 55). Bumping them out of
+      # Expo SDK owns these versions (currently SDK 57; `npx expo install --check`
+      # in apps/mobile lists the expected ones). Bumping them out of
       # band breaks the native build silently; they move only in a deliberate
       # SDK migration.
       - dependency-name: react-native
@@ -32,6 +33,8 @@ updates:
       - dependency-name: react-native-screens
       - dependency-name: react-native-safe-area-context
       - dependency-name: react-native-svg
+      - dependency-name: react-native-gesture-handler
+      - dependency-name: '@react-native-async-storage/async-storage'
       - dependency-name: react
       - dependency-name: react-dom
       - dependency-name: expo*
