@@ -26,6 +26,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { powerupIcons } from '../../icons';
 import { SlideStack } from '../../motion';
+import { Card } from '../Card';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -61,8 +62,8 @@ export function PowerupsPage({
     else onInstall(entry.id);
   };
 
-  // Body copy at the token detail's weight: regular under a caps label, so
-  // label, paragraph and list read as three levels, not one grey block.
+  // Body copy at the token detail's weight: regular under the card title, so
+  // title, paragraph and list read as three levels, not one grey block.
   const bodyStyle: React.CSSProperties = {
     fontFamily: fontFamily.sans,
     fontWeight: fontWeight.regular,
@@ -75,10 +76,12 @@ export function PowerupsPage({
     lineHeight: `${fontSize.body * lineHeight.snug}px`,
     flex: 1,
   };
-  const blockStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.sm,
+  const cardTitleStyle: React.CSSProperties = {
+    fontFamily: fontFamily.sans,
+    fontWeight: fontWeight.bold,
+    fontSize: fontSize.bodyLg,
+    lineHeight: `${fontSize.bodyLg * lineHeight.snug}px`,
+    color: semantic.text.primary,
   };
   // A hanging list: the marker keeps its own column, so a wrapped line
   // starts under the first word, never under the dot.
@@ -152,14 +155,17 @@ export function PowerupsPage({
             />
           ) : null}
 
-          <div style={blockStyle}>
-            <SectionLabel variant="caps">{t('powerups.detail.about')}</SectionLabel>
+          {/* About, what you can do and uses sit in the token detail's titled
+              card, the one Market data and About use, so a Power-up reads
+              like any other thing the wallet describes. */}
+          <Card padding="lg" gap={spacing.md}>
+            <span style={cardTitleStyle}>{t('powerups.detail.about')}</span>
             <span style={bodyStyle}>{t(details.aboutKey)}</span>
-          </div>
+          </Card>
 
           {details.actionKeys.length > 0 ? (
-            <div style={blockStyle}>
-              <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
+            <Card padding="lg" gap={spacing.md}>
+              <span style={cardTitleStyle}>{t('powerups.detail.what_you_can_do')}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
                 {details.actionKeys.map((key) => (
                   <div key={key} style={listItemStyle}>
@@ -170,17 +176,17 @@ export function PowerupsPage({
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           ) : null}
 
           {/* A sentence, not a fact: it reads like About, not like a value in
               the facts card, whose values are bold by construction. */}
-          <div style={blockStyle}>
-            <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
+          <Card padding="lg" gap={spacing.md}>
+            <span style={cardTitleStyle}>{t('powerups.detail.uses')}</span>
             <span style={bodyStyle} data-testid="powerups-detail-uses">
               {details.disclosure.map((line) => t(line.key, line.params)).join(' ')}
             </span>
-          </div>
+          </Card>
 
           <FactsCard testID={`powerups-facts-${entry.id}`} rows={powerupFactRows(details, t)} />
         </div>
