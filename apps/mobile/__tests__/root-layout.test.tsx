@@ -117,6 +117,7 @@ jest.mock('@salmon/shared', () => {
 
   return {
     focusManager: { setEventListener: jest.fn() },
+    setApiPlatform: jest.fn(),
     colors: {
       background: { primary: '#000' },
     },

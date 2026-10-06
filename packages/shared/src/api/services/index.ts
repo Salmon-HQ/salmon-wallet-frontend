@@ -142,3 +142,10 @@ export {
   getEnabledNetworkIds,
   isBackendNetworkEnabled,
 } from './network';
+
+// ============================================================================
+// Powerups availability (spec 018)
+// ============================================================================
+
+export { getPowerupAvailability } from './powerups';
+export type { PowerupAvailabilityEntry } from './powerups';

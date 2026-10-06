@@ -41,6 +41,7 @@ import { powerupIcons } from '../../icons';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { Card } from '../Card';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -140,14 +141,17 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
           />
         ) : null}
 
-        <View style={styles.block}>
-          <SectionLabel variant="caps">{t('powerups.detail.about')}</SectionLabel>
+        {/* About, what you can do and uses sit in the token detail's titled
+            card, the one Market data and About use, so a Power-up reads like
+            any other thing the wallet describes. */}
+        <Card padding="lg" gap={spacing.md}>
+          <Text style={styles.cardTitle}>{t('powerups.detail.about')}</Text>
           <Text style={styles.body}>{t(details.aboutKey)}</Text>
-        </View>
+        </Card>
 
         {details.actionKeys.length > 0 ? (
-          <View style={styles.block}>
-            <SectionLabel variant="caps">{t('powerups.detail.what_you_can_do')}</SectionLabel>
+          <Card padding="lg" gap={spacing.md}>
+            <Text style={styles.cardTitle}>{t('powerups.detail.what_you_can_do')}</Text>
             {/* A hanging list: the marker keeps its own column, so a wrapped
                 line starts under the first word, never under the dot. */}
             <View style={styles.list}>
@@ -160,17 +164,17 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
                 </View>
               ))}
             </View>
-          </View>
+          </Card>
         ) : null}
 
         {/* A sentence, not a fact: it reads like About, not like a value in
             the facts card, whose values are bold by construction. */}
-        <View style={styles.block}>
-          <SectionLabel variant="caps">{t('powerups.detail.uses')}</SectionLabel>
+        <Card padding="lg" gap={spacing.md}>
+          <Text style={styles.cardTitle}>{t('powerups.detail.uses')}</Text>
           <Text style={styles.body} testID="powerups-detail-uses">
             {details.disclosure.map((line) => t(line.key, line.params)).join(' ')}
           </Text>
-        </View>
+        </Card>
 
         <FactsCard testID={`powerups-facts-${entry.id}`} rows={powerupFactRows(details, t)} />
       </View>
@@ -314,11 +318,14 @@ const stylesFor = (t: Semantic) =>
     detail: {
       gap: vs(spacing.xl),
     },
-    block: {
-      gap: vs(spacing.sm),
+    cardTitle: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      color: t.text.primary,
     },
-    // Body copy at the token detail's weight: regular under a caps label, so
-    // label, paragraph and list read as three levels, not one grey block.
+    // Body copy at the token detail's weight: regular under the card title, so
+    // title, paragraph and list read as three levels, not one grey block.
     body: {
       fontFamily: fontFamilyNative.regular,
       fontSize: s(fontSize.body),

@@ -1483,4 +1483,31 @@ describe('retry policy', () => {
       expect(parseRetryAfter(headers)).toBeNull();
     });
   });
+
+  describe('platform header', () => {
+    it('names the platform on every request once an app set it, and never before', async () => {
+      const { setApiPlatform, getApiPlatform, PLATFORM_HEADER } = await import('./client');
+      vi.mocked(axios.create).mockClear();
+      const client = createApiClient() as unknown as {
+        interceptors: { request: { use: ReturnType<typeof vi.fn> } };
+      };
+      const [onRequest] = client.interceptors.request.use.mock.calls[0] as [
+        (config: { headers: Record<string, string> }) => { headers: Record<string, string> },
+      ];
+
+      setApiPlatform(null as never);
+      expect(onRequest({ headers: {} }).headers[PLATFORM_HEADER]).toBeUndefined();
+
+      setApiPlatform('android');
+      expect(getApiPlatform()).toBe('android');
+      expect(onRequest({ headers: { Accept: 'x' } }).headers).toEqual({
+        Accept: 'x',
+        [PLATFORM_HEADER]: 'android',
+      });
+
+      const set = vi.fn();
+      onRequest({ headers: { set } as never });
+      expect(set).toHaveBeenCalledWith(PLATFORM_HEADER, 'android');
+    });
+  });
 });

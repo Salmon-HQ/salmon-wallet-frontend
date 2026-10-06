@@ -1,0 +1,51 @@
+{
+  "catalog": {
+    "name": "Swap",
+    "description": "Exchange one token for another",
+    "about": "Exchanges one Solana token for another in a single transaction you sign. Salmon prepares the transaction from the quote of a routing provider and shows you every number before you confirm; the swap runs on the network, between you and its programs. Salmon charges a 0.5% fee, shown as its own line.",
+    "usage": "Pick what you pay with, what you receive and how much. Review the quote, then sign.",
+    "actions": {
+      "swap": "Exchange one token for another with a 0.5% Salmon fee"
+    }
+  },
+  "pay_label": "You pay",
+  "receive_label": "You receive",
+  "available": "{{amount}} available",
+  "select_token": "Select token",
+  "submit": "Review swap",
+  "review": {
+    "title": "Swap Review",
+    "youPay": "You pay",
+    "youReceive": "You receive (estimated)",
+    "rate": "Rate",
+    "salmonFee": "Salmon fee",
+    "salmonFeeOutput": "{{amount}} ({{percent}}), taken from what you receive",
+    "salmonFeeInput": "{{amount}} ({{percent}}), taken from what you pay",
+    "noSalmonFee": "No fee on this swap",
+    "routeFee": "Provider fee",
+    "zeroExFee": "0x fee",
+    "zeroExFeeValue": "Up to 0.15% on some pairs, already included in what you receive",
+    "priceImprovement": "Price improvement",
+    "priceImprovementValue": "If it executes at a better price than quoted, 0x keeps the difference",
+    "minReceived": "Minimum received",
+    "slippage": "Max slippage",
+    "priceImpact": "Price impact",
+    "route": "Route",
+    "highImpactTitle": "High price impact",
+    "highImpactBody": "This swap moves the price by {{percent}}%. You may receive noticeably less than the market rate.",
+    "payMint": "Pay mint",
+    "receiveMint": "Receive mint"
+  },
+  "pending": "Swapping",
+  "complete": "Swap complete",
+  "errors": {
+    "buildFailed": "Couldn't prepare the swap. Try again.",
+    "tokenNotSupported": "This token can't be swapped right now.",
+    "slippageExceeded": "The price moved past your slippage tolerance before the swap could settle. Try again for a fresh quote.",
+    "insufficientFunds": "You don't hold enough of this token for that amount.",
+    "insufficientSol": "You need more SOL to cover the network fee and the token accounts this swap opens.",
+    "insufficientSolFor": "You need {{amount}} more SOL to cover the network fee and the token accounts this swap opens."
+  },
+  "empty_title": "Nothing to swap yet",
+  "empty_body": "Receive some SOL or a token first. A swap also needs a little SOL for the network fee."
+}

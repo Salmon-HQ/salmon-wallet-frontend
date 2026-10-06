@@ -43,6 +43,12 @@ export const ADDRESS_LOOKUP_TABLE_PROGRAM = 'AddressLookupTab1e11111111111111111
 /** SPL Memo — a note carried on chain, and nothing else. */
 export const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
+/** Jupiter's aggregator (Swap API v2 Router path): the one program a Jupiter-routed swap invokes at top level. */
+export const JUPITER_AGGREGATOR_PROGRAM = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4';
+
+/** 0x's Solana settler: the one program a 0x-routed swap invokes at top level (probed 2026-09-30). */
+export const ZEROEX_SETTLER_PROGRAM = 'Sett1erwx2eqT5A8uvu8GBxDFT2W5TNnhirL7hLmb8m';
+
 /**
  * What an NFT transfer or burn may invoke.
  *

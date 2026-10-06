@@ -57,6 +57,13 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+/**
+ * The height a sheet the user types into stands at: the sheet ceiling, so its
+ * content starts at the top and the keyboard only covers empty sheet (owner,
+ * 2026-10-06; Payments' ask sheet first).
+ */
+export const TYPING_SHEET_HEIGHT = SCREEN_HEIGHT * 0.92;
+
 // The backdrop is drawn at its token's full alpha (`overlay.backdrop`), the
 // same on both twins — the token is the whole effect.
 const BACKDROP_OPACITY = 1;
@@ -125,6 +132,12 @@ export interface BottomSheetContainerProps extends BottomSheetContainerPropsBase
   background?: React.ReactNode;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
+  /**
+   * The user types into this sheet: it opens at its full height
+   * (`TYPING_SHEET_HEIGHT`) with its content from the top, so the keyboard
+   * never covers a field or a button. A caller's `height` still wins.
+   */
+  forTyping?: boolean;
 }
 
 // ============================================================================
@@ -174,6 +187,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   dismissible = true,
   maxHeight,
   height,
+  forTyping = false,
   testID,
 }) => {
   const styles = useThemedStyles(stylesFor);
@@ -186,7 +200,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     sheetHeight,
     sheetMaxHeight,
     release: releaseHeld,
-  } = useHeldSheetSize(visible, height, maxHeight);
+  } = useHeldSheetSize(visible, height ?? (forTyping ? TYPING_SHEET_HEIGHT : undefined), maxHeight);
 
   // What this sheet is drawn at, for the sheets it opens: a nested sheet
   // reads it and rises to exactly this (`useParentSheetHeight`).

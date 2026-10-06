@@ -1,0 +1,51 @@
+{
+  "catalog": {
+    "name": "Swap",
+    "description": "Cambiá un token por otro",
+    "about": "Cambia un token de Solana por otro en una sola transacción que vos firmás. Salmon prepara la transacción a partir de la cotización de un proveedor de ruteo y te muestra cada número antes de confirmar; el intercambio corre en la red, entre vos y sus programas. Salmon cobra una comisión del 0,5 %, mostrada como una línea aparte.",
+    "usage": "Elegí con qué pagás, qué recibís y cuánto. Revisá la cotización y firmá.",
+    "actions": {
+      "swap": "Cambiar un token por otro con una comisión de Salmon del 0,5 %"
+    }
+  },
+  "pay_label": "Pagás",
+  "receive_label": "Recibís",
+  "available": "{{amount}} disponible",
+  "select_token": "Elegir token",
+  "submit": "Revisar swap",
+  "review": {
+    "title": "Revisión del swap",
+    "youPay": "Pagás",
+    "youReceive": "Recibís (estimado)",
+    "rate": "Tasa",
+    "salmonFee": "Comisión de Salmon",
+    "salmonFeeOutput": "{{amount}} ({{percent}}), se descuenta de lo que recibís",
+    "salmonFeeInput": "{{amount}} ({{percent}}), se descuenta de lo que pagás",
+    "noSalmonFee": "Sin cargo en este swap",
+    "routeFee": "Comisión del proveedor",
+    "zeroExFee": "Comisión de 0x",
+    "zeroExFeeValue": "Hasta 0,15 % en algunos pares, ya incluida en lo que recibís",
+    "priceImprovement": "Mejora de precio",
+    "priceImprovementValue": "Si se ejecuta a un precio mejor que el cotizado, la diferencia queda para 0x",
+    "minReceived": "Mínimo a recibir",
+    "slippage": "Deslizamiento máximo",
+    "priceImpact": "Impacto en el precio",
+    "route": "Ruta",
+    "highImpactTitle": "Impacto alto en el precio",
+    "highImpactBody": "Este swap mueve el precio un {{percent}} %. Podés recibir bastante menos que la tasa de mercado.",
+    "payMint": "Mint que pagás",
+    "receiveMint": "Mint que recibís"
+  },
+  "pending": "Haciendo el swap",
+  "complete": "Swap completado",
+  "errors": {
+    "buildFailed": "No se pudo preparar el swap. Probá de nuevo.",
+    "tokenNotSupported": "Este token no se puede cambiar por ahora.",
+    "slippageExceeded": "El precio se movió más que tu tolerancia de deslizamiento antes de que el swap se concretara. Probá de nuevo para una cotización nueva.",
+    "insufficientFunds": "No tenés suficiente de este token para ese monto.",
+    "insufficientSol": "Necesitás más SOL para cubrir la comisión de red y las cuentas de token que abre este swap.",
+    "insufficientSolFor": "Necesitás {{amount}} SOL más para cubrir la comisión de red y las cuentas de token que abre este swap."
+  },
+  "empty_title": "Todavía no hay nada para cambiar",
+  "empty_body": "Primero recibí SOL o algún token. Un swap también necesita un poco de SOL para la comisión de red."
+}

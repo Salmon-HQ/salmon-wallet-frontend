@@ -33,7 +33,16 @@ export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
             {index + 1}
             <Text style={styles.indexDot}>.</Text>
           </Text>
-          <Text style={styles.wordText}>{word}</Text>
+          {/* A long word shrinks to its cell rather than running past the edge
+              (iPhone 16 Pro, owner 2026-10-06); 0.75 keeps it legible. */}
+          <Text
+            style={styles.wordText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {word}
+          </Text>
         </View>
       ))}
     </View>
@@ -89,5 +98,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.mono,
       fontWeight: fontWeight.medium,
       fontSize: fontSize.monoLg,
+      flexShrink: 1,
     },
   });

@@ -276,7 +276,10 @@ jest.mock('../../hooks/useTabChrome', () => ({
     insets: { top: 0, bottom: 0 },
   }),
 }));
-jest.mock('../../hooks/useKeyboardHeight', () => ({ useKeyboardHeight: () => 0 }));
+jest.mock('../../hooks/useKeyboardHeight', () => ({
+  useKeyboardHeight: () => 0,
+  useKeyboardLift: () => ({}),
+}));
 jest.mock('../../src/contexts/DeveloperModeContext', () => ({ useDeveloperMode: () => false }));
 
 jest.mock('react-native-reanimated', () => {

@@ -38,6 +38,11 @@
       },
       "channel": "staging"
     },
+    "testflight": {
+      "extends": "staging",
+      "distribution": "store",
+      "autoIncrement": true
+    },
     "production": {
       "extends": "base",
       "autoIncrement": true,
@@ -45,7 +50,7 @@
         "NODE_ENV": "production",
         "EXPO_NO_DOCTOR": "1",
         "EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK": "1",
-        "EXPO_PUBLIC_POWERUPS": "off"
+        "EXPO_PUBLIC_POWERUPS": "on"
       },
       "channel": "production"
     },

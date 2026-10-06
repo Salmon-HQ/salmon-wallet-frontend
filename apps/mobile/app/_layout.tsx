@@ -2,7 +2,7 @@
 // This ensures they're available BEFORE expo-router loads any modules
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { createSemantic, type ThemeMode } from '@salmon/shared';
+import { createSemantic, setApiPlatform, type ThemeMode } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -28,9 +28,14 @@ import {
 } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
+
+// The backend's availability gate reads the platform on every request
+// (spec 018); named once here, before any screen asks for anything.
+setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
 import { BiometricProvider } from '../src/contexts/BiometricContext';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
@@ -368,30 +373,34 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
             chain swipe, sheets) resolves to this instead of carrying its own. */}
         <GestureHandlerRootView style={styles.container}>
           <SafeAreaProvider>
-            <View style={styles.container}>
-              <Stack screenOptions={{ headerShown: false }}>
-                {/* Auth flow - onboarding screens */}
-                <Stack.Screen
-                  name="(auth)"
-                  options={{
-                    // Prevent going back to auth after completing onboarding
-                    gestureEnabled: false,
-                  }}
-                />
+            {/* Feeds the keyboard's position frame by frame, so what it lifts
+                rides with it instead of jumping once it has opened. */}
+            <KeyboardProvider>
+              <View style={styles.container}>
+                <Stack screenOptions={{ headerShown: false }}>
+                  {/* Auth flow - onboarding screens */}
+                  <Stack.Screen
+                    name="(auth)"
+                    options={{
+                      // Prevent going back to auth after completing onboarding
+                      gestureEnabled: false,
+                    }}
+                  />
 
-                {/* Main app - tabs and other screens */}
-                <Stack.Screen
-                  name="(app)"
-                  options={{
-                    // Prevent going back
-                    gestureEnabled: false,
-                  }}
-                />
-              </Stack>
-              <PendingActivity />
-              {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
-              {DEBUG_FORCE_WAIT && <WaitPreview />}
-            </View>
+                  {/* Main app - tabs and other screens */}
+                  <Stack.Screen
+                    name="(app)"
+                    options={{
+                      // Prevent going back
+                      gestureEnabled: false,
+                    }}
+                  />
+                </Stack>
+                <PendingActivity />
+                {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
+                {DEBUG_FORCE_WAIT && <WaitPreview />}
+              </View>
+            </KeyboardProvider>
           </SafeAreaProvider>
         </GestureHandlerRootView>
       </NavigationThemeProvider>

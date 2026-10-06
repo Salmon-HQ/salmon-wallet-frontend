@@ -216,6 +216,8 @@ export interface NetworkPowerupSwitch {
   enabled: boolean;
   /** Only when `enabled` is false; the copy the disabled surface shows. */
   reason?: PowerupDisabledReason;
+  /** Only when enabled and the capability routes through one (`jupiter` | `0x`). */
+  provider?: string;
 }
 
 export interface NetworkCatalogBase {

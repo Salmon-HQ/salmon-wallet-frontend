@@ -24,7 +24,8 @@
  * transaction-path change and is not made here. See the spec report.
  */
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,7 +58,7 @@ import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
+import { useKeyboardLift } from '../../../hooks/useKeyboardHeight';
 
 /** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
 function formatSolAmount(value: number): string {
@@ -70,7 +71,7 @@ export default function SendAmountScreen() {
   const styles = useThemedStyles(stylesFor);
   const amountFocus = useFieldFocus();
   const { floatingBottomOffset } = useTabChrome();
-  const keyboardHeight = useKeyboardHeight();
+  const actionLift = useKeyboardLift(floatingBottomOffset, vs(spacing.sm));
   const {
     blockchain,
     token,
@@ -125,9 +126,6 @@ export default function SendAmountScreen() {
 
   // The fee, asked for once the screen settles — one estimate for the flow.
   useDeferredFeeEstimate(estimateFee, amount);
-
-  const actionBottomPadding =
-    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -210,7 +208,7 @@ export default function SendAmountScreen() {
         </Card>
       </ScrollView>
 
-      <View style={[styles.action, { paddingBottom: actionBottomPadding }]}>
+      <Animated.View style={[styles.action, actionLift]}>
         <PrimaryButton
           testID="send-review-button"
           onPress={() => router.push('/send/review')}
@@ -218,7 +216,7 @@ export default function SendAmountScreen() {
         >
           {t('send.screens.reviewTitle')}
         </PrimaryButton>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

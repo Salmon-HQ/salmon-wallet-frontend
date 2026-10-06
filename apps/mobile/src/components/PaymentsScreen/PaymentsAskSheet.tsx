@@ -6,10 +6,11 @@
  */
 import React from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { s, spacing, useFieldFocus, vs } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
+import { useKeyboardLift } from '../../../hooks/useKeyboardHeight';
 import { AmountEntryCard } from '../AmountEntryCard';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button';
@@ -33,10 +34,8 @@ export function PaymentsAskSheet({
   const focus = useFieldFocus();
   // The sheet stands at its full height from the start; the keyboard covers
   // the form, and the action row rides on top of it like every CTA in the app.
-  const keyboardHeight = useKeyboardHeight();
+  const footerLift = useKeyboardLift(actionRowBottomPadding, vs(spacing.sm));
   const { label, ...createButton } = form.createButton;
-  const footerBottomInset =
-    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : actionRowBottomPadding;
 
   return (
     <BottomSheetContainer
@@ -64,11 +63,11 @@ export function PaymentsAskSheet({
             {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
           </Pressable>
         </ScrollView>
-        <View style={[layout.footer, { paddingBottom: footerBottomInset }]}>
+        <Animated.View style={[layout.footer, footerLift]}>
           <PrimaryButton testID="payments-create" {...createButton}>
             {label}
           </PrimaryButton>
-        </View>
+        </Animated.View>
       </View>
       {children}
     </BottomSheetContainer>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform } from 'react-native';
+import { useAnimatedStyle } from 'react-native-reanimated';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 
 /**
  * Height of the on-screen keyboard in px, or 0 while it is hidden.
@@ -42,6 +44,19 @@ export function useKeyboardHeight(): number {
   }, []);
 
   return keyboardHeight;
+}
+
+/**
+ * Bottom padding that rides on the keyboard: `rest` while it is hidden,
+ * its height plus `gap` while it is up, and every frame in between — so an
+ * action row climbs with the keyboard instead of jumping once it has opened.
+ * The library reports the height as a negative offset, hence the sign.
+ */
+export function useKeyboardLift(rest: number, gap: number) {
+  const { height, progress } = useReanimatedKeyboardAnimation();
+  return useAnimatedStyle(() => ({
+    paddingBottom: rest + (-height.value + gap - rest) * progress.value,
+  }));
 }
 
 export default useKeyboardHeight;

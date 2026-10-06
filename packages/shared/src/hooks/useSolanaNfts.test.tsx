@@ -113,24 +113,29 @@ describe('useSolanaNfts (react-query)', () => {
     expect(mockGetSolanaNfts).toHaveBeenCalledTimes(2);
   });
 
-  it('treats the list as stale after 15s and refetches it on every mount', async () => {
+  // Home's tab transition remounts the grid while it animates out; a remount
+  // inside the 15 s window must reuse the list, not walk the pages again.
+  it('reuses a list younger than 15s on a remount, and refetches once it is older', async () => {
     mockGetSolanaNfts.mockResolvedValue({ nfts: [sampleNft], partial: false });
+    const params = { publicKey: 'wallet-stale', networkId: 'solana-mainnet' as any };
 
     const { client, wrapper } = makeWrapper();
-    renderHook(
-      () => useSolanaNfts({ publicKey: 'wallet-stale', networkId: 'solana-mainnet' as any }),
-      { wrapper }
-    );
+    const first = renderHook(() => useSolanaNfts(params), { wrapper });
+    await waitFor(() => expect(first.result.current.hasData).toBe(true));
+    first.unmount();
 
-    await waitFor(() => {
-      expect(mockGetSolanaNfts).toHaveBeenCalled();
+    const second = renderHook(() => useSolanaNfts(params), { wrapper });
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(second.result.current.nfts).toHaveLength(1);
+    expect(mockGetSolanaNfts).toHaveBeenCalledTimes(1);
+    second.unmount();
 
-    const queries = client.getQueryCache().findAll({ queryKey: ['solana-nfts'] });
-    expect(queries.length).toBeGreaterThan(0);
-    const options = queries[0]!.options as { staleTime?: number; refetchOnMount?: unknown };
-    expect(options.staleTime).toBe(15_000);
-    expect(options.refetchOnMount).toBe('always');
+    const [query] = client.getQueryCache().findAll({ queryKey: ['solana-nfts'] });
+    query!.setState({ dataUpdatedAt: Date.now() - 16_000 });
+    renderHook(() => useSolanaNfts(params), { wrapper });
+    await waitFor(() => expect(mockGetSolanaNfts).toHaveBeenCalledTimes(2));
   });
 
   // The indexer can list a sent NFT for a minute more; a refetch in that window
