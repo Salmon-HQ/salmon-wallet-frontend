@@ -5,7 +5,7 @@
  * DOM twin: `packages/ui/src/components/SwapPage`.
  */
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { s, spacing, useFieldFocus, vs, type Semantic } from '@salmon/shared';
 import { swapScreenView, useSwapScreenLogic } from '@salmon/shared/powerups';
@@ -46,7 +46,14 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
   );
 
   return (
-    <View style={[styles.container, style]} testID="swap-screen">
+    // The amount takes the decimal pad, which has no return key: a tap off the
+    // field puts the keyboard away so Review is reachable (Payments' pattern).
+    <Pressable
+      onPress={Keyboard.dismiss}
+      accessible={false}
+      style={[styles.container, style]}
+      testID="swap-screen"
+    >
       {/* What stops the swap is said first, before the user composes one. */}
       {view.blockerText && (
         <WarningNotice tone="warning" title={view.blockerText} testID="swap-blocker" />
@@ -72,7 +79,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = ({ style, ...logicParams })
 
       <TokenPickerSheet {...view.payPicker} />
       <TokenPickerSheet {...view.receivePicker} />
-    </View>
+    </Pressable>
   );
 };
 
