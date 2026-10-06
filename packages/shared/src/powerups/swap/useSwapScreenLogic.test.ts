@@ -13,6 +13,8 @@ import { describePowerupBuildError } from '../backend/errors';
 import { ApiError } from '../../api/client';
 import { swapManifest } from './manifest';
 import type { SwapBuildEnvelope } from './api';
+import en from './locales/en.json';
+import es from './locales/es.json';
 
 const SOL = 'So11111111111111111111111111111111111111112';
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
@@ -67,7 +69,7 @@ describe('swap — the proposal core signs', () => {
     });
     const rows = Object.fromEntries(proposal.display.rows.map((row) => [row.label, row.value]));
     expect(rows['swap.review.rate']).toMatch(/^1 SOL ≈ .* USDC$/);
-    expect(rows['swap.review.salmonFee']).toBe('0.005902 USDC (0.5%)');
+    expect(rows['swap.review.salmonFee']).toBe('swap.review.salmonFeeOutput');
     expect(rows['swap.review.minReceived']).toBe('1.168607 USDC');
     expect(rows['swap.review.routeFee']).toBeUndefined();
     const advanced = Object.fromEntries(
@@ -98,8 +100,63 @@ describe('swap — the proposal core signs', () => {
     });
     const rows = Object.fromEntries(proposal.display.rows.map((row) => [row.label, row.value]));
     expect(rows['swap.review.routeFee']).toBe('0.15%');
-    expect(rows['swap.review.salmonFee']).toBeUndefined();
+    expect(rows['swap.review.salmonFee']).toBe('swap.review.noSalmonFee');
     expect(proposal.display.receipt?.fee).toBeUndefined();
+  });
+
+  // T&C Power-ups 1.4 §10.2: the review says which side the Salmon fee comes
+  // out of, says so when there is none, and discloses 0x's own terms.
+  describe('fee disclosure (T&C §10.2)', () => {
+    const rowsOf = (env: SwapBuildEnvelope) =>
+      Object.fromEntries(
+        buildSwapProposal(env, { networkId: 'solana-mainnet', formatValue }).display.rows.map(
+          (row) => [row.label, row.value]
+        )
+      );
+
+    it('says the fee is taken from what you receive when it is charged on the output', () => {
+      expect(rowsOf(envelope())['swap.review.salmonFee']).toBe('swap.review.salmonFeeOutput');
+    });
+
+    it('says the fee is taken from what you pay when it is charged on the input', () => {
+      const env = envelope({
+        salmonFee: {
+          amount: '50000',
+          mint: SOL,
+          side: 'input',
+          bps: 50,
+          decimals: 9,
+          symbol: 'SOL',
+        },
+      });
+      expect(rowsOf(env)['swap.review.salmonFee']).toBe('swap.review.salmonFeeInput');
+    });
+
+    it('keeps the Salmon fee row and says there is no fee when none is charged', () => {
+      expect(rowsOf(envelope({ salmonFee: null }))['swap.review.salmonFee']).toBe(
+        'swap.review.noSalmonFee'
+      );
+    });
+
+    it("shows 0x's fee and price-improvement terms on 0x routes only", () => {
+      const zeroEx = rowsOf(envelope({ provider: '0x' }));
+      expect(zeroEx['swap.review.zeroExFee']).toBe('swap.review.zeroExFeeValue');
+      expect(zeroEx['swap.review.priceImprovement']).toBe('swap.review.priceImprovementValue');
+      const jupiter = rowsOf(envelope({ provider: 'jupiter' }));
+      expect(jupiter['swap.review.zeroExFee']).toBeUndefined();
+      expect(jupiter['swap.review.priceImprovement']).toBeUndefined();
+    });
+
+    it('carries the approved copy in both languages', () => {
+      expect(es.review.salmonFeeOutput).toBe(
+        '{{amount}} ({{percent}}), se descuenta de lo que recibís'
+      );
+      expect(en.review.salmonFeeInput).toBe('{{amount}} ({{percent}}), taken from what you pay');
+      expect(es.review.noSalmonFee).toBe('Sin cargo en este swap');
+      expect(en.review.priceImprovementValue).toBe(
+        'If it executes at a better price than quoted, 0x keeps the difference'
+      );
+    });
   });
 
   it('keeps the refresh so core can rebuild an expired quote', async () => {
