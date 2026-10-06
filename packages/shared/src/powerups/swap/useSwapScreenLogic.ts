@@ -206,14 +206,27 @@ export function buildSwapProposal(
   const fee = envelope.salmonFee;
 
   const rows: ConfirmationRow[] = [{ label: t('swap.review.rate'), value: rate }];
-  if (fee) {
-    rows.push({
-      label: t('swap.review.salmonFee'),
-      value: `${withSymbol(uiAmountOf(fee.amount, fee.decimals), fee.symbol)} (${percent(fee.bps)})`,
-    });
-  }
+  // T&C Power-ups §10.2: the row always shows, says which side the fee is
+  // taken from, and says so when this swap carries none.
+  rows.push({
+    label: t('swap.review.salmonFee'),
+    value: fee
+      ? t(fee.side === 'input' ? 'swap.review.salmonFeeInput' : 'swap.review.salmonFeeOutput', {
+          amount: withSymbol(uiAmountOf(fee.amount, fee.decimals), fee.symbol),
+          percent: percent(fee.bps),
+        })
+      : t('swap.review.noSalmonFee'),
+  });
   if (envelope.routeFee?.bps) {
     rows.push({ label: t('swap.review.routeFee'), value: percent(envelope.routeFee.bps) });
+  }
+  // 0x's Solana API folds its fee into amount_out and keeps the trade surplus,
+  // reporting neither per trade, so its terms are disclosed as fixed text.
+  if (envelope.provider === '0x') {
+    rows.push(
+      { label: t('swap.review.zeroExFee'), value: t('swap.review.zeroExFeeValue') },
+      { label: t('swap.review.priceImprovement'), value: t('swap.review.priceImprovementValue') }
+    );
   }
   rows.push({ label: t('swap.review.minReceived'), value: withSymbol(minOut, outSymbol) });
 
