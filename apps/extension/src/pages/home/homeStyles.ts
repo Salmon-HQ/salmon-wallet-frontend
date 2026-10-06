@@ -85,8 +85,11 @@ export const subTabsStyle = {
   ...pinnedSubTabsStyle,
   viewTransitionName: VIEW_TRANSITION_RISING_ROW,
 } as React.CSSProperties;
-/** Focus mode: the row stands where the chain selector stood, no seam above. */
-export const risenSubTabsStyle = { ...subTabsStyle, marginTop: 0 } as React.CSSProperties;
+/**
+ * Focus mode: the block condenses to the amount alone and the row rises under
+ * it, a narrower seam than the full block's so the Powerup keeps the room.
+ */
+export const risenSubTabsStyle = { ...subTabsStyle, marginTop: spacing.sm } as React.CSSProperties;
 
 /** The content region: the only part of Home that scrolls. */
 export const contentRegionStyle: React.CSSProperties = {

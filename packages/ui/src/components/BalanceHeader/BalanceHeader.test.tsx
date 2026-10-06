@@ -109,6 +109,28 @@ describe('BalanceHeader', () => {
     expect(screen.getByTestId('balance-chain-selector')).toBeTruthy();
   });
 
+  it('keeps only the amount and its eye when compact, at the heading size', () => {
+    stubDom();
+    stubMatchMedia(false);
+    render('dark', <BalanceHeader blockchains={CHAINS} activeIndex={0} compact />);
+
+    expect(screen.getByTestId('balance-amount')).toBeTruthy();
+    expect(screen.getByTestId('balance-eye-toggle')).toBeTruthy();
+    for (const gone of [
+      'balance-chain-selector',
+      'balance-change',
+      'home-activity-button',
+      'home-send-button',
+      'home-receive-button',
+    ]) {
+      expect(screen.queryByTestId(gone)).toBeNull();
+    }
+    const sizes = [...screen.getByTestId('balance-amount').querySelectorAll('span')].map(
+      (span) => (span as HTMLElement).style.fontSize
+    );
+    expect(sizes).toContain('18px');
+  });
+
   it('turns the page on an arrow key, and from the chain selector', async () => {
     stubDom();
     stubMatchMedia(false);
