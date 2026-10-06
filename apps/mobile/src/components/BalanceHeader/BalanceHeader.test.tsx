@@ -201,23 +201,6 @@ describe('BalanceHeader', () => {
     expect(view.getByText('+$61.45 · 2.8%')).toBeTruthy();
   });
 
-  it('keeps only the amount and its eye when compact', () => {
-    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} compact />);
-
-    expect(view.getByText('$1200')).toBeTruthy();
-    expect(view.getByTestId('balance-eye-toggle')).toBeTruthy();
-    for (const gone of [
-      'balance-chain-selector',
-      'balance-change',
-      'home-activity-button',
-      'home-send-button',
-      'home-receive-button',
-    ]) {
-      expect(view.queryByTestId(gone)).toBeNull();
-    }
-    expect(view.queryByText('+$61.45 · 2.8%')).toBeNull();
-  });
-
   it('asks the screen to toggle visibility when the eye is pressed', () => {
     const onToggleVisibility = jest.fn();
     const view = render(

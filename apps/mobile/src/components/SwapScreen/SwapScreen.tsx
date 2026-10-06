@@ -81,15 +81,13 @@ const stylesFor = (_t: Semantic) =>
     container: {
       flex: 1,
       paddingHorizontal: s(spacing.headerPadding),
-      // Tight seams so the whole form, button included, fits under Home's
-      // condensed balance (owner, 2026-10-06).
-      gap: vs(spacing.sm),
+      gap: vs(spacing.md),
     },
     shortcuts: {
       flexGrow: 0,
     },
     action: {
-      paddingTop: vs(spacing.sm),
+      paddingTop: vs(spacing.lg),
     },
   });
 

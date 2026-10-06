@@ -88,7 +88,6 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   onReceivePress,
   onActivityPress,
   sendDisabled = false,
-  compact = false,
   style,
   testID,
 }) => {
@@ -311,14 +310,12 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
     <GestureDetector gesture={panGesture}>
       <View style={[styles.container, style]} testID={testID}>
         <View style={styles.balanceColumn}>
-          {!compact && (
-            <ChainSelector
-              blockchains={blockchains}
-              activeIndex={activeIndex}
-              onSelect={leaveFor}
-              testID="balance-chain-selector"
-            />
-          )}
+          <ChainSelector
+            blockchains={blockchains}
+            activeIndex={activeIndex}
+            onSelect={leaveFor}
+            testID="balance-chain-selector"
+          />
 
           {/* The value stays readable while it is being recalculated — the
               number breathes, it is never replaced by a placeholder. The eye
@@ -328,7 +325,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
             <Animated.View style={[styles.amountFlex, amountStyle]} testID="balance-amount">
               <PendingValue pending={loading}>
                 <Text
-                  style={[styles.balance, compact && styles.balanceCompact]}
+                  style={styles.balance}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={BALANCE_MIN_FONT_SCALE}
@@ -374,72 +371,70 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               right. Off mainnet nothing priced the balance, so this reads as
               an em-dash rather than disappearing — the row stays, only the
               figure is unknown. */}
-          {!compact && (
-            <ValueActionsRow
-              leading={
+          <ValueActionsRow
+            leading={
+              <Animated.View
+                testID="balance-change-sink"
+                style={[styles.changeText, changeSinkStyle]}
+              >
                 <Animated.View
-                  testID="balance-change-sink"
-                  style={[styles.changeText, changeSinkStyle]}
+                  key={`change-${currentBlockchainId}`}
+                  testID="balance-change"
+                  {...changeMotion}
                 >
-                  <Animated.View
-                    key={`change-${currentBlockchainId}`}
-                    testID="balance-change"
-                    {...changeMotion}
-                  >
-                    <PendingValue pending={loading}>
-                      <Text
-                        style={[
-                          styles.change,
-                          { color: hiddenBalance ? text.secondary : changeColor },
-                        ]}
-                      >
-                        {hiddenBalance
-                          ? `${hiddenValue} · ${hiddenValue}`
-                          : hasChange
-                            ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
-                            : EM_DASH}
-                      </Text>
-                    </PendingValue>
-                  </Animated.View>
+                  <PendingValue pending={loading}>
+                    <Text
+                      style={[
+                        styles.change,
+                        { color: hiddenBalance ? text.secondary : changeColor },
+                      ]}
+                    >
+                      {hiddenBalance
+                        ? `${hiddenValue} · ${hiddenValue}`
+                        : hasChange
+                          ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
+                          : EM_DASH}
+                    </Text>
+                  </PendingValue>
                 </Animated.View>
-              }
-              actions={
-                <>
-                  <IconBubble
-                    testID="home-activity-button"
-                    size={componentSizes.iconBubbleSm}
-                    tone="outline"
-                    icon={ClockIcon}
-                    iconSize={componentSizes.iconSizeXSmall}
-                    onPress={onActivityPress}
-                    accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-                  />
+              </Animated.View>
+            }
+            actions={
+              <>
+                <IconBubble
+                  testID="home-activity-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="outline"
+                  icon={ClockIcon}
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onActivityPress}
+                  accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+                />
 
-                  <IconBubble
-                    testID="home-send-button"
-                    size={componentSizes.iconBubbleSm}
-                    tone="accent"
-                    icon={ArrowUpRightIcon}
-                    iconWeight="bold"
-                    iconSize={componentSizes.iconSizeXSmall}
-                    onPress={onSendPress}
-                    disabled={sendDisabled}
-                    accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-                  />
+                <IconBubble
+                  testID="home-send-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="accent"
+                  icon={ArrowUpRightIcon}
+                  iconWeight="bold"
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onSendPress}
+                  disabled={sendDisabled}
+                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+                />
 
-                  <IconBubble
-                    testID="home-receive-button"
-                    size={componentSizes.iconBubbleSm}
-                    tone="outline"
-                    icon={ArrowDownLeftIcon}
-                    iconSize={componentSizes.iconSizeXSmall}
-                    onPress={onReceivePress}
-                    accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-                  />
-                </>
-              }
-            />
-          )}
+                <IconBubble
+                  testID="home-receive-button"
+                  size={componentSizes.iconBubbleSm}
+                  tone="outline"
+                  icon={ArrowDownLeftIcon}
+                  iconSize={componentSizes.iconSizeXSmall}
+                  onPress={onReceivePress}
+                  accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+                />
+              </>
+            }
+          />
         </View>
       </View>
     </GestureDetector>
@@ -472,10 +467,6 @@ const stylesFor = (t: Semantic) =>
       color: t.text.primary,
       letterSpacing: letterSpacing.balance,
       ...TABULAR,
-    },
-    /** Home's condensed header on a Powerup tab: the amount at heading size. */
-    balanceCompact: {
-      fontSize: ms(fontSize.heading),
     },
     // The change wrapper may shrink; nothing else sits beside it any more.
     changeText: {

@@ -37,11 +37,10 @@ export const stylesFor = (_t: Semantic) =>
     pinnedSubTabs: {
       marginTop: vs(spacing.xl),
     },
-    // Focus mode: the block condenses to the amount alone and the row rises
-    // under it, a narrower seam than the full block's so the Powerup keeps
-    // the room (owner, 2026-10-06).
+    // Focus mode: with the balance block gone the row stands where the chain
+    // selector stood, so it owes no seam above itself.
     pinnedSubTabsRisen: {
-      marginTop: vs(spacing.sm),
+      marginTop: 0,
     },
     listContainer: {
       flex: 1,

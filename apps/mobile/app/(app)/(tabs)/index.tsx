@@ -753,24 +753,6 @@ export default function HomeScreen() {
                 the height the block had, so the row under it does not move
                 until the block is gone; on the way back the room returns
                 empty first, and the block floats into it. */}
-            {/* Focus mode, condensed (owner, 2026-10-06): on a Powerup's tab
-                the amount and its eye stay, at heading size. */}
-            {isPowerupMode && (
-              <Reanimated.View
-                key="home-balance-compact"
-                entering={floatEntering(isReduceMotionEnabled)}
-              >
-                <BalanceHeader
-                  testID="home-balance-compact"
-                  compact
-                  blockchains={blockchainBalances}
-                  hiddenBalance={hiddenBalance}
-                  onToggleVisibility={toggleHidden}
-                  onBlockchainChange={handleBlockchainChange}
-                  activeIndex={activeBlockchainIndex}
-                />
-              </Reanimated.View>
-            )}
             {focusPhase !== 'gone' && (
               <View
                 testID="home-balance-room"
