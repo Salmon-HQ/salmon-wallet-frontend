@@ -38,6 +38,7 @@ import {
 import type { ReadonlyUint8Array } from '@solana/kit';
 
 import {
+  ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
   NFT_ACTION_LAYOUTS,
   TOKEN_2022_PROGRAM,
@@ -101,12 +102,28 @@ type CompiledMessage = ReturnType<
   ReturnType<typeof getCompiledTransactionMessageDecoder>['decode']
 >;
 
+/**
+ * Who one account of an instruction must be. `feePayer` is the signing
+ * wallet; `ownAtaCreatedHere` is an associated token account this same
+ * message creates for the fee payer (an ATA-program create or
+ * createIdempotent naming the fee payer as owner) — the only place a swap
+ * may move SOL to, since wrapping SOL is a transfer into such an account.
+ */
+export interface AccountBind {
+  code: number;
+  /** Position in the instruction's account list. */
+  index: number;
+  mustBe: 'feePayer' | 'ownAtaCreatedHere';
+}
+
 /** The instruction codes one program may carry, and how wide its code is. */
 export interface ProgramInstructionRule {
   /** Discriminator width in bytes: 1 for SPL Token, 4 for the System program. */
   width: 1 | 4;
   /** The codes the flow uses. Anything else on this program is refused. */
   codes: readonly number[];
+  /** Accounts of those instructions that must be the wallet's own. */
+  binds?: readonly AccountBind[];
 }
 
 /** One instruction, reduced to what can be checked before signing. */
@@ -153,6 +170,27 @@ function discriminator(data: ReadonlyUint8Array | undefined, width: 1 | 4): numb
     code = code * 256 + (data[byte] as number);
   }
   return code;
+}
+
+/** ATA `create` (0, or no data) and `createIdempotent` (1): payer, ata, owner, mint, … */
+const ATA_CREATE_CODES = new Set([0, 1]);
+
+/** The associated token accounts this message creates for `owner`. */
+function ownAtasCreated(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  owner: string
+): Set<string> {
+  const created = new Set<string>();
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
+    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
+    if (!ATA_CREATE_CODES.has(code as number)) continue;
+    const ata = accounts[instruction.accountIndices[1] ?? -1];
+    const ataOwner = accounts[instruction.accountIndices[2] ?? -1];
+    if (ata !== undefined && ataOwner === owner) created.add(ata);
+  }
+  return created;
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
@@ -333,7 +371,9 @@ export function assertSolanaTransactionMatches(
 
   const allowed = new Set(expectation.allowedPrograms);
   const instructionRules = expectation.allowedInstructions ?? {};
-  for (const instruction of compiledInstructions(message)) {
+  const instructions = compiledInstructions(message);
+  const ownAtas = ownAtasCreated(accounts, instructions, feePayer);
+  for (const instruction of instructions) {
     const index = instruction.programAddressIndex;
     // A program is always a static account: Solana refuses to invoke one
     // resolved through an address table. An index past the static list is
@@ -363,6 +403,21 @@ export function assertSolanaTransactionMatches(
       throw new SolanaTransactionMismatchError(
         `Transaction carries instruction ${code} on ${program}, which this flow does not use`
       );
+    }
+    for (const bind of rule.binds ?? []) {
+      if (bind.code !== code) continue;
+      const account = accounts[instruction.accountIndices[bind.index] ?? -1];
+      if (account === undefined) {
+        throw new SolanaTransactionMismatchError(
+          `Transaction resolves an account of instruction ${code} on ${program} through a lookup table it cannot verify`
+        );
+      }
+      const ok = bind.mustBe === 'feePayer' ? account === feePayer : ownAtas.has(account);
+      if (!ok) {
+        throw new SolanaTransactionMismatchError(
+          `Transaction sends instruction ${code} on ${program} to ${account}, which is not the wallet's own`
+        );
+      }
     }
   }
 

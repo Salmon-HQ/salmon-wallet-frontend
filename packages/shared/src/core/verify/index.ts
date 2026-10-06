@@ -5,6 +5,8 @@ export {
   UNVERIFIED,
 } from './solana-transaction';
 export type {
+  ProgramInstructionRule,
+  AccountBind,
   DeclaredTransactionEffects,
   NftActionExpectation,
   SolanaTransactionExpectation,

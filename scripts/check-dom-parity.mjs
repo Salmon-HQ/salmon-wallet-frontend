@@ -72,7 +72,11 @@ import { fileURLToPath } from 'node:url';
 // Remove on every platform (owner's call; Share is gone from mobile), so the
 // two sheets and the two request lists now render the same controls — 14
 // more lines of the same JSX, no logic.
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2358;
+// 2026-10-01: 2358 → 2399. The Swap Powerup's twins (`SwapScreen` /
+// `SwapPage`): the same imports and the same JSX on two platforms, 41 lines,
+// no logic — every prop each block receives is composed once in shared by
+// `swapScreenView`, and the twins only spread it.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2399;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -82,6 +86,7 @@ export const MAP = {
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
   MemoScreen: ['MemoPage'],
+  SwapScreen: ['SwapPage'],
   PaymentsScreen: ['PaymentsPage'],
   PowerupsCatalog: ['PowerupsPage'],
   SettingsScreenLayout: ['SettingsPanelContent'],

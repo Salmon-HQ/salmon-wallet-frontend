@@ -5,6 +5,9 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /
+    # Updates land on staging first, the integration branch; main only moves
+    # when staging ships.
+    target-branch: staging
     schedule:
       interval: weekly
       day: monday
@@ -57,6 +60,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: staging
     schedule:
       interval: weekly
       day: monday
