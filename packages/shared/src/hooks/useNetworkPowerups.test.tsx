@@ -33,6 +33,15 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     expect(availability).toHaveBeenCalledWith('solana-mainnet');
   });
 
+  it('asks once when two Homes mount together, and both get the answer', async () => {
+    availability.mockResolvedValue([{ id: 'swap', enabled: true }]);
+    const a = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    const b = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    await waitFor(() => expect(a.result.current.enabled).toEqual(['swap']));
+    await waitFor(() => expect(b.result.current.enabled).toEqual(['swap']));
+    expect(availability).toHaveBeenCalledTimes(1);
+  });
+
   it('never asks on a network without Powerups: the route exists only for Solana', async () => {
     const { result } = renderHook(() => useNetworkPowerups('bitcoin-mainnet'));
     await act(async () => {});

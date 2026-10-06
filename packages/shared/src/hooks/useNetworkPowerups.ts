@@ -24,6 +24,17 @@ import {
 } from '../utils/powerupSwitches';
 
 const lastByNetwork = new Map<string, PowerupAllowlist>();
+/** One question per network at a time: Homes that mount together share it. */
+const inFlight = new Map<string, Promise<unknown>>();
+
+function askOnce(networkId: string): Promise<unknown> {
+  let pending = inFlight.get(networkId);
+  if (!pending) {
+    pending = getPowerupAvailability(networkId).finally(() => inFlight.delete(networkId));
+    inFlight.set(networkId, pending);
+  }
+  return pending;
+}
 
 export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
   const [allowlist, setAllowlist] = useState<PowerupAllowlist>(
@@ -39,7 +50,7 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
     }
     let cancelled = false;
     setAllowlist(lastByNetwork.get(networkId) ?? EMPTY_POWERUP_ALLOWLIST);
-    getPowerupAvailability(networkId)
+    askOnce(networkId)
       .then((entries) => {
         const next = toPowerupAllowlist(parsePowerupSwitches(entries));
         lastByNetwork.set(networkId, next);
@@ -61,4 +72,5 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
 /** Test seam: forget every network's last answer. */
 export function resetNetworkPowerupsCache(): void {
   lastByNetwork.clear();
+  inFlight.clear();
 }

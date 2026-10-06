@@ -82,11 +82,13 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
       return { ...walk, nfts: withoutHeldBackNfts(queryClient, walk.nfts) };
     },
     enabled: isEnabled,
-    // Short, and refetched on every mount, like the balance: a grid showing an
-    // NFT already sent, or missing one just received, is a wrong answer about
-    // what the user owns, not merely an old one.
+    // Short: a grid showing an NFT already sent, or missing one just received,
+    // is a wrong answer about what the user owns, not merely an old one. A
+    // mount refetches only once the list is stale — Home's tab transition
+    // remounts the grid while it animates out, and every remount walked the
+    // pages again. A confirmed send or burn invalidates the list explicitly.
     staleTime: 15_000,
-    refetchOnMount: 'always',
+    refetchOnMount: true,
   });
 
   return {
