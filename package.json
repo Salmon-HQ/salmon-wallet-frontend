@@ -58,8 +58,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
     "jscpd": "^5.2.0",
-    "prettier": "3.9.6",
-    "turbo": "^2.10.12"
+    "prettier": "3.9.9",
+    "turbo": "^2.11.5"
   },
   "packageManager": "pnpm@10.34.5",
   "engines": {
