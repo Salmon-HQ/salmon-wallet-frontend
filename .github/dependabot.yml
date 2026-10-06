@@ -45,6 +45,10 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: '@types/jest'
         update-types: [version-update:semver-major]
+      # @types/node tracks the Node runtime major (.nvmrc); a newer major types
+      # APIs the runtime does not have.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
       # react-i18next 17 requires i18next >= 26; both majors move together in
       # a deliberate migration.
       - dependency-name: react-i18next
