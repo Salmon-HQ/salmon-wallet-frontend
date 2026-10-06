@@ -34,7 +34,7 @@ if (hash === baseline.hash) {
 }
 if (version !== baseline.version) {
   console.log(
-    `native-fingerprint: changed since ${baseline.version}, and expo.version is ${version} — a binary release. Refresh the baseline when it is built: pnpm --filter @salmon/mobile fingerprint:write`
+    `native-fingerprint: changed since ${baseline.version} (${hash}), and expo.version is ${version} — a binary release. Refresh the baseline when it is built: pnpm --filter @salmon/mobile fingerprint:write`
   );
   process.exit(0);
 }
