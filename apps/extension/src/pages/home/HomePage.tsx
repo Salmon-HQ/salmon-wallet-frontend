@@ -802,21 +802,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 is the same instance across a switch: `UnderlineTabs` only
                 slides its underline if it is not remounted. */}
             <div style={pinnedHeaderStyle}>
-              {/* Focus mode (owner, 2026-09-11; condensed 2026-10-06): on a
-                  Powerup's sub-tab the full block leaves and a compact header
-                  — the amount and its eye — stays above the risen sub-tab
-                  row; Portfolio or NFTs bring the full block back. */}
-              {isPowerupMode && (
-                <BalanceHeader
-                  testID="home-balance-compact"
-                  compact
-                  blockchains={blockchainBalances}
-                  hiddenBalance={hiddenBalance}
-                  onToggleVisibility={toggleHidden}
-                  onBlockchainChange={handleBlockchainChange}
-                  activeIndex={activeBlockchainIndex}
-                />
-              )}
+              {/* Focus mode (owner, 2026-09-11): on a Powerup's sub-tab the
+                  balance block leaves and the sub-tab row rises to where the
+                  chain selector stood; Portfolio or NFTs bring it back. */}
               {focusPhase !== 'gone' && (
                 <div
                   data-testid="home-balance-room"

@@ -21,11 +21,4 @@ export interface BalanceHeaderPropsBase<TStyle> extends BalanceCardCarouselProps
   onActivityPress?: () => void;
   /** Watch-only accounts cannot send. */
   sendDisabled?: boolean;
-  /**
-   * The condensed header Home shows on a Powerup's tab: the amount and its
-   * eye at heading size; the chain selector, the change and the three
-   * controls are not rendered. The balance stays readable while the Powerup
-   * gets the room.
-   */
-  compact?: boolean;
 }

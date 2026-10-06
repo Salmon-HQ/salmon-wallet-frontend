@@ -35,9 +35,7 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
     flexDirection: 'column',
     flex: 1,
     minHeight: 0,
-    // Tight seams so the whole form, button included, fits the popup under
-    // Home's condensed balance (owner, 2026-10-06).
-    gap: spacing.sm,
+    gap: spacing.md,
     padding: `0 ${spacing.headerPadding}px ${spacing.screenGutter}px`,
     ...style,
   };
@@ -76,7 +74,7 @@ export function SwapPage({ style, ...logicParams }: SwapPageProps) {
 
       {view.errorText && <WarningNotice tone="error" title={view.errorText} testID="swap-error" />}
 
-      <div style={{ paddingTop: spacing.sm }}>
+      <div style={{ paddingTop: spacing.lg }}>
         <PrimaryButton {...view.submitButton}>{view.submitLabel}</PrimaryButton>
       </div>
 

@@ -84,7 +84,6 @@ export function BalanceHeader({
   onReceivePress,
   onActivityPress,
   sendDisabled = false,
-  compact = false,
   style,
   className,
   testID,
@@ -328,14 +327,12 @@ export function BalanceHeader({
       }}
     >
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
-        {!compact && (
-          <ChainSelector
-            blockchains={blockchains}
-            activeIndex={activeIndex}
-            onSelect={leaveFor}
-            testID="balance-chain-selector"
-          />
-        )}
+        <ChainSelector
+          blockchains={blockchains}
+          activeIndex={activeIndex}
+          onSelect={leaveFor}
+          testID="balance-chain-selector"
+        />
 
         {/* The value stays readable while it is being recalculated — the number
             breathes, it is never replaced by a placeholder. The region is the
@@ -359,7 +356,7 @@ export function BalanceHeader({
                 style={{
                   fontFamily: fontFamily.sans,
                   fontWeight: fontWeight.bold,
-                  fontSize: (compact ? fontSize.heading : fontSize.balance) * balanceFit,
+                  fontSize: fontSize.balance * balanceFit,
                   color: text.primary,
                   letterSpacing: letterSpacing.balance,
                   whiteSpace: 'nowrap',
@@ -393,69 +390,67 @@ export function BalanceHeader({
             not the row is otherwise empty. Off mainnet nothing priced the
             balance, so this reads as an em-dash rather than disappearing —
             the row stays, only the figure is unknown. */}
-        {!compact && (
-          <ValueActionsRow
-            leading={
-              <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
-                <PendingValue pending={loading}>
-                  <span
-                    style={{
-                      fontFamily: fontFamily.sans,
-                      fontWeight: fontWeight.bold,
-                      // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
-                      // at `md`) — one reading size for the block's two
-                      // lateral-choice/status lines.
-                      fontSize: fontSize.bodyLg,
-                      letterSpacing: letterSpacing.change,
-                      color: hiddenBalance ? text.secondary : changeColor,
-                      whiteSpace: 'nowrap',
-                      ...tabularNums.css,
-                    }}
-                  >
-                    {hiddenBalance
-                      ? `${hiddenValue} · ${hiddenValue}`
-                      : hasChange
-                        ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
-                        : EM_DASH}
-                  </span>
-                </PendingValue>
-              </div>
-            }
-            actions={
-              <>
-                <IconBubble
-                  testID="home-activity-button"
-                  size={componentSizes.iconBubbleSm}
-                  tone="outline"
-                  icon={ClockIcon}
-                  iconSize={componentSizes.iconSizeXSmall}
-                  onPress={onActivityPress}
-                  accessibilityLabel={t('accessibility.view_activity', 'View activity')}
-                />
-                <IconBubble
-                  testID="home-send-button"
-                  size={componentSizes.iconBubbleSm}
-                  tone="accent"
-                  icon={ArrowUpRightIcon}
-                  iconWeight="bold"
-                  iconSize={componentSizes.iconSizeXSmall}
-                  onPress={onSendPress}
-                  disabled={sendDisabled}
-                  accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
-                />
-                <IconBubble
-                  testID="home-receive-button"
-                  size={componentSizes.iconBubbleSm}
-                  tone="outline"
-                  icon={ArrowDownLeftIcon}
-                  iconSize={componentSizes.iconSizeXSmall}
-                  onPress={onReceivePress}
-                  accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
-                />
-              </>
-            }
-          />
-        )}
+        <ValueActionsRow
+          leading={
+            <div ref={changeRef} data-testid="balance-change" style={{ minWidth: 0 }}>
+              <PendingValue pending={loading}>
+                <span
+                  style={{
+                    fontFamily: fontFamily.sans,
+                    fontWeight: fontWeight.bold,
+                    // Same size as the Portfolio/NFTs subtabs (`UnderlineTabs`
+                    // at `md`) — one reading size for the block's two
+                    // lateral-choice/status lines.
+                    fontSize: fontSize.bodyLg,
+                    letterSpacing: letterSpacing.change,
+                    color: hiddenBalance ? text.secondary : changeColor,
+                    whiteSpace: 'nowrap',
+                    ...tabularNums.css,
+                  }}
+                >
+                  {hiddenBalance
+                    ? `${hiddenValue} · ${hiddenValue}`
+                    : hasChange
+                      ? `${formatChange(changeAmount)} · ${showPercentage(changePercent)}`
+                      : EM_DASH}
+                </span>
+              </PendingValue>
+            </div>
+          }
+          actions={
+            <>
+              <IconBubble
+                testID="home-activity-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ClockIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onActivityPress}
+                accessibilityLabel={t('accessibility.view_activity', 'View activity')}
+              />
+              <IconBubble
+                testID="home-send-button"
+                size={componentSizes.iconBubbleSm}
+                tone="accent"
+                icon={ArrowUpRightIcon}
+                iconWeight="bold"
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onSendPress}
+                disabled={sendDisabled}
+                accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
+              />
+              <IconBubble
+                testID="home-receive-button"
+                size={componentSizes.iconBubbleSm}
+                tone="outline"
+                icon={ArrowDownLeftIcon}
+                iconSize={componentSizes.iconSizeXSmall}
+                onPress={onReceivePress}
+                accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
+              />
+            </>
+          }
+        />
       </div>
     </div>
   );
