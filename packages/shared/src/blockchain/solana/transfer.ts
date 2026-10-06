@@ -73,6 +73,14 @@ export const SOL_ADDRESS = SOL_CONSTANTS.ADDRESS;
 /** Denominator of a transfer-fee basis-point rate. */
 const ONE_IN_BASIS_POINTS = 10_000n;
 
+/**
+ * The classic SPL Memo program (v3), immutable. @solana-program/memo ≥ 0.14
+ * defaults to Memo v4 (Memo4c2p…), which is upgradeable, unaudited as far as we
+ * know, and invisible to RPC nodes older than Agave 4.2 — so a recipient that
+ * reads deposit memos could miss ours. Moving to v4 is a deliberate decision.
+ */
+const MEMO_PROGRAM_ADDRESS = address('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -349,7 +357,12 @@ export async function createSolTransaction(
 ) {
   const instructions: Instruction[] = [];
   if (opts.memo) {
-    instructions.push(getAddMemoInstruction({ memo: opts.memo, signers: [signer] }));
+    instructions.push(
+      getAddMemoInstruction(
+        { memo: opts.memo, signers: [signer] },
+        { programAddress: MEMO_PROGRAM_ADDRESS }
+      )
+    );
   }
   instructions.push(
     withReferences(
@@ -432,7 +445,9 @@ export async function createSplTransaction(
   if (memo) {
     // `signers` is required: without it the instruction carries no accounts at
     // all, and the memo is not attributable to the payer.
-    instructions.push(getAddMemoInstruction({ memo, signers: [signer] }));
+    instructions.push(
+      getAddMemoInstruction({ memo, signers: [signer] }, { programAddress: MEMO_PROGRAM_ADDRESS })
+    );
   }
 
   const transferFeeConfig =

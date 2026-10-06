@@ -416,7 +416,9 @@ describe('API Config Module', () => {
 
     it('should provide dynamic staticBaseUrl getter', () => {
       process.env.EXPO_PUBLIC_SALMON_ENV = 'staging';
-      expect(apiConfig.staticBaseUrl).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
+      expect(apiConfig.staticBaseUrl).toBe(
+        'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging'
+      );
     });
 
     it('should provide dynamic environment getter', () => {
