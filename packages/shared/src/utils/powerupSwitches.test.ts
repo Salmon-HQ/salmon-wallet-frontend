@@ -42,6 +42,24 @@ describe('toPowerupAllowlist', () => {
         { id: 'memo', enabled: false, reason: 'deprecated' },
         { id: 'ghost', enabled: false },
       ])
-    ).toEqual({ enabled: ['stake'], disabled: { memo: 'deprecated' } });
+    ).toEqual({ enabled: ['stake'], disabled: { memo: 'deprecated' }, providers: {} });
+  });
+
+  it('carries the routing provider of an enabled entry, and never of a disabled one', () => {
+    const switches = parsePowerupSwitches([
+      { id: 'swap', enabled: true, provider: 'jupiter' },
+      { id: 'other', enabled: false, reason: 'region', provider: '0x' },
+      { id: 'blank', enabled: true, provider: '' },
+    ]);
+    expect(switches).toEqual([
+      { id: 'swap', enabled: true, provider: 'jupiter' },
+      { id: 'other', enabled: false, reason: 'region' },
+      { id: 'blank', enabled: true },
+    ]);
+    expect(toPowerupAllowlist(switches)).toEqual({
+      enabled: ['swap', 'blank'],
+      disabled: { other: 'region' },
+      providers: { swap: 'jupiter' },
+    });
   });
 });

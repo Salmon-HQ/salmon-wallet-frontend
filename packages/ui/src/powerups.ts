@@ -14,6 +14,8 @@ import {
 } from './components/PaymentsPage';
 import type { PowerupsPageProps } from './components/PowerupsPage';
 import type { MemoPageProps } from './components/MemoPage';
+import { SwapPage as SwapPageImpl } from './components/SwapPage';
+import type { SwapPageProps } from './components/SwapPage';
 import type { PaymentsHistoryPageProps, PaymentsPageProps } from './components/PaymentsPage';
 
 export {
@@ -30,6 +32,9 @@ export const PowerupsPage: ComponentType<PowerupsPageProps> | null = PowerupsPag
 
 /** The Memo Powerup's Home sub-tab; `null` in a build with Powerups off. */
 export const MemoPage: ComponentType<MemoPageProps> | null = MemoPageImpl;
+
+/** The Swap Powerup's Home sub-tab; `null` in a build with Powerups off. */
+export const SwapPage: ComponentType<SwapPageProps> | null = SwapPageImpl;
 
 /** The Payments Powerup's Home sub-tab; `null` in a build with Powerups off. */
 export const PaymentsPage: ComponentType<PaymentsPageProps> | null = PaymentsPageImpl;

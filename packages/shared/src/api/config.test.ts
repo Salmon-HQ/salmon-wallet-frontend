@@ -272,12 +272,12 @@ describe('API Config Module', () => {
     it('should use provided environment parameter over detected environment', () => {
       process.env.EXPO_PUBLIC_SALMON_ENV = 'local';
       const url = getApiUrl('staging');
-      expect(url).toBe('https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod');
+      expect(url).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
     });
 
     it('should return AWS API Gateway URL for staging', () => {
       const url = getApiUrl('staging');
-      expect(url).toBe('https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod');
+      expect(url).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
     });
 
     it('should return AWS API Gateway URL for production', () => {
@@ -335,7 +335,7 @@ describe('API Config Module', () => {
     it('should use detected environment when no parameter provided', () => {
       process.env.EXPO_PUBLIC_SALMON_ENV = 'staging';
       const url = getApiUrl();
-      expect(url).toBe('https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod');
+      expect(url).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
     });
   });
 
@@ -345,9 +345,9 @@ describe('API Config Module', () => {
       expect(url).toBe('http://localhost:3000/local');
     });
 
-    it('should return CloudFront URL for staging', () => {
+    it('should return the staging API Gateway URL for staging', () => {
       const url = getStaticApiUrl('staging');
-      expect(url).toBe('https://d1fh2pwo7kzely.cloudfront.net');
+      expect(url).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
     });
 
     it('should return CloudFront URL for production', () => {
@@ -402,10 +402,9 @@ describe('API Config Module', () => {
       });
     });
 
-    it('should return same URL for staging and production', () => {
-      const stagingUrl = getStaticApiUrl('staging');
-      const productionUrl = getStaticApiUrl('production');
-      expect(stagingUrl).toBe(productionUrl);
+    it('should never point staging at a production host', () => {
+      expect(getStaticApiUrl('staging')).not.toBe(getStaticApiUrl('production'));
+      expect(getApiUrl('staging')).not.toBe(getApiUrl('production'));
     });
   });
 
@@ -417,7 +416,7 @@ describe('API Config Module', () => {
 
     it('should provide dynamic staticBaseUrl getter', () => {
       process.env.EXPO_PUBLIC_SALMON_ENV = 'staging';
-      expect(apiConfig.staticBaseUrl).toBe('https://d1fh2pwo7kzely.cloudfront.net');
+      expect(apiConfig.staticBaseUrl).toBe('https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging');
     });
 
     it('should provide dynamic environment getter', () => {

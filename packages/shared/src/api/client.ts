@@ -138,6 +138,45 @@ export interface ApiClientConfig {
 }
 
 // ============================================================================
+// Platform header
+// ============================================================================
+
+/** The platform the app runs on, as the backend's availability gate reads it (spec 018). */
+export type ApiPlatform = 'ios' | 'android' | 'extension';
+
+export const PLATFORM_HEADER = 'X-Salmon-Platform';
+
+let apiPlatform: ApiPlatform | null = null;
+
+/**
+ * Names the platform on every request from now on. Each app calls this once
+ * at boot; a client that never does sends no header, and the backend then
+ * evaluates it as the most restrictive platform.
+ */
+export function setApiPlatform(platform: ApiPlatform): void {
+  apiPlatform = platform;
+}
+
+export function getApiPlatform(): ApiPlatform | null {
+  return apiPlatform;
+}
+
+function withPlatformHeader(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
+  if (!apiPlatform) return config;
+  const headers = config.headers as unknown as
+    { set?: (name: string, value: string) => void } | Record<string, string> | undefined;
+  if (headers && typeof (headers as { set?: unknown }).set === 'function') {
+    (headers as { set: (name: string, value: string) => void }).set(PLATFORM_HEADER, apiPlatform);
+  } else {
+    config.headers = {
+      ...(headers as Record<string, string>),
+      [PLATFORM_HEADER]: apiPlatform,
+    } as never;
+  }
+  return config;
+}
+
+// ============================================================================
 // Client Factory
 // ============================================================================
 
@@ -245,7 +284,8 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
 
   // Request interceptor
   client.interceptors.request.use(
-    (requestConfig: InternalAxiosRequestConfig) => {
+    (incoming: InternalAxiosRequestConfig) => {
+      const requestConfig = withPlatformHeader(incoming);
       if (debug) {
         console.log(`[API Request] ${requestConfig.method?.toUpperCase()} ${requestConfig.url}`, {
           params: requestConfig.params,

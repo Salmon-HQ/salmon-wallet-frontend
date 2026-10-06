@@ -2,7 +2,7 @@
 // This ensures they're available BEFORE expo-router loads any modules
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { createSemantic, type ThemeMode } from '@salmon/shared';
+import { createSemantic, setApiPlatform, type ThemeMode } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -31,6 +31,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
+
+// The backend's availability gate reads the platform on every request
+// (spec 018); named once here, before any screen asks for anything.
+setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
 import { BiometricProvider } from '../src/contexts/BiometricContext';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
