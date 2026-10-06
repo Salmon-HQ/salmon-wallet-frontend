@@ -19,7 +19,7 @@
     "@solana-name-service/sns-sdk-kit": "^1.0.1",
     "@solana-program/address-lookup-table": "^0.15.0",
     "@solana-program/compute-budget": "^0.19.0",
-    "@solana-program/memo": "^0.13.1",
+    "@solana-program/memo": "^0.15.0",
     "@solana-program/system": "^0.15.0",
     "@solana-program/token-2022": "^0.19.0",
     "@solana/addresses": "^8.3.0",

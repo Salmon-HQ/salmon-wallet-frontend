@@ -42,11 +42,6 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: '@types/jest'
         update-types: [version-update:semver-major]
-      # 0.15 switched the default memo program from MemoSq4… (the one
-      # exchanges and Solana Pay read) to the new Memo4c2p…; moving it is a
-      # product decision, not a routine bump.
-      - dependency-name: '@solana-program/memo'
-        update-types: [version-update:semver-major, version-update:semver-minor]
       # react-i18next 17 requires i18next >= 26; both majors move together in
       # a deliberate migration.
       - dependency-name: react-i18next

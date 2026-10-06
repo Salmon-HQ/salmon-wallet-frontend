@@ -370,8 +370,8 @@ importers:
         specifier: ^0.19.0
         version: 0.19.0(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana-program/memo':
-        specifier: ^0.13.1
-        version: 0.13.1(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+        specifier: ^0.15.0
+        version: 0.15.0(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana-program/system':
         specifier: ^0.15.0
         version: 0.15.0(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
@@ -2281,10 +2281,10 @@ packages:
     peerDependencies:
       '@solana/kit': ^8.3.0
 
-  '@solana-program/memo@0.13.1':
-    resolution: {integrity: sha512-c0J4nNSTbGjRlVfn81mavBQvBy22Gad6cKSJw+x2pqBtNiBLL60W+wWuxhHfQeb+v1nETvtupgIrDrrWrlqXcw==}
+  '@solana-program/memo@0.15.0':
+    resolution: {integrity: sha512-OofePobs2d+mZpCYq/dJ1Mv4//TVBHiYZN1is9CfsrkuMJboVK3ghv9T1bzdbM4OcywGLEyvZ4HjCByfg3RWwg==}
     peerDependencies:
-      '@solana/kit': ^8.0.0
+      '@solana/kit': ^8.3.0
 
   '@solana-program/record@0.5.0':
     resolution: {integrity: sha512-Hie4a3hJhyk0ER2O+T2YQFBRB69xraIcmH/U5S/DOGv6ig3DMsPCO1Jqt6+0BZ/fS+vHouX/wededWTviLEm7A==}
@@ -9999,7 +9999,7 @@ snapshots:
     dependencies:
       '@solana/kit': 8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
 
-  '@solana-program/memo@0.13.1(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
+  '@solana-program/memo@0.15.0(@solana/kit@8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@solana/kit': 8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
 
