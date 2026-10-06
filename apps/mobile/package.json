@@ -75,7 +75,7 @@
     "react-i18next": "^16.6.6",
     "react-native": "0.86.3",
     "react-native-fast-crypto": "^3.0.0",
-    "react-native-gesture-handler": "~2.32.0",
+    "react-native-gesture-handler": "~3.3.0",
     "react-native-get-random-values": "^1.11.0",
     "react-native-qrcode-svg": "^6.3.24",
     "react-native-reanimated": "4.5.1",
