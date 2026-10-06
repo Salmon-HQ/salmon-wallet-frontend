@@ -352,8 +352,8 @@ importers:
   packages/shared:
     dependencies:
       '@bitcoinerlab/secp256k1':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: 2.0.0
+        version: 2.0.0
       '@onsol/tldparser-kit':
         specifier: ^1.0.2
         version: 1.0.2(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
@@ -1041,8 +1041,9 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitcoinerlab/secp256k1@1.2.0':
-    resolution: {integrity: sha512-jeujZSzb3JOZfmJYI0ph1PVpCRV5oaexCgy+RvCXV8XlY+XFB/2n3WOcvBsKLsOw78KYgnQrQWb2HrKE4be88Q==}
+  '@bitcoinerlab/secp256k1@2.0.0':
+    resolution: {integrity: sha512-l8wO4Hx7fovtcDVU5xYEa7yfP9DokC8QxYlJoaP1zi2/iX+c6NNSvMzq+oCZ8ikqvrXTuhSQ6iP1IRx08kWZgw==}
+    engines: {node: '>=20.19.0'}
 
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
@@ -8540,9 +8541,9 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitcoinerlab/secp256k1@1.2.0':
+  '@bitcoinerlab/secp256k1@2.0.0':
     dependencies:
-      '@noble/curves': 1.9.7
+      '@noble/curves': 2.4.0
 
   '@bramus/specificity@2.4.2':
     dependencies:

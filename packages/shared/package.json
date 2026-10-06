@@ -13,7 +13,7 @@
     "test:coverage": "node --no-warnings ../../node_modules/vitest/vitest.mjs run --coverage"
   },
   "dependencies": {
-    "@bitcoinerlab/secp256k1": "^1.2.0",
+    "@bitcoinerlab/secp256k1": "2.0.0",
     "@onsol/tldparser-kit": "^1.0.2",
     "@scure/bip39": "~2.4.0",
     "@solana-name-service/sns-sdk-kit": "^1.0.1",
