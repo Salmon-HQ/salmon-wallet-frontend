@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getPowerupAvailability } from '../api/services/powerups';
+import { getBlockchainFromNetworkId } from '../config/blockchains';
 import {
   EMPTY_POWERUP_ALLOWLIST,
   parsePowerupSwitches,
@@ -30,7 +31,9 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
   );
 
   useEffect(() => {
-    if (!networkId) {
+    // Powerups exist only on Solana, and so does the route: asking for any
+    // other network is a guaranteed 404.
+    if (!networkId || getBlockchainFromNetworkId(networkId) !== 'solana') {
       setAllowlist(EMPTY_POWERUP_ALLOWLIST);
       return;
     }
