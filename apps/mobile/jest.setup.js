@@ -11,3 +11,7 @@ jest.mock('expo-updates', () => ({
   fetchUpdateAsync: jest.fn(async () => ({ isNew: false })),
   reloadAsync: jest.fn(async () => {}),
 }));
+
+jest.mock('react-native-keyboard-controller', () =>
+  require('react-native-keyboard-controller/jest')
+);
