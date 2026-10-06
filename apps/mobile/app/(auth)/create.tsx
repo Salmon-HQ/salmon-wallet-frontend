@@ -17,6 +17,7 @@ import {
   componentSizes,
   contentPadding,
   fontFamilyNative,
+  fontScaleCap,
   fontSize,
   generateMnemonic,
   generateValidationPositions,
@@ -170,32 +171,39 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
                 <WarningNotice tone="error" title={t('settings.copy_failed')} />
               </View>
             )}
-            <View
+          </View>
+        }
+        /*
+          Pinned, never in the scroll: on an iPhone 16 Pro the phrase and the
+          clipboard notice pushed it below the fold, and the disabled button
+          beneath gave no hint why (owner, 2026-10-06).
+        */
+        assist={
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: spacing.md,
+            }}
+          >
+            <Text
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: spacing.md,
-                paddingTop: spacing.lg,
+                flex: 1,
+                color: semantic.text.primary,
+                fontFamily: fontFamilyNative.regular,
+                fontSize: s(fontSize.body),
               }}
+              maxFontSizeMultiplier={fontScaleCap.chrome}
             >
-              <Text
-                style={{
-                  flex: 1,
-                  color: semantic.text.primary,
-                  fontFamily: fontFamilyNative.regular,
-                  fontSize: s(fontSize.body),
-                }}
-              >
-                {t('wallet.create.acknowledge_written_down')}
-              </Text>
-              <Toggle
-                value={acknowledged}
-                onValueChange={setAcknowledged}
-                accessibilityLabel={t('wallet.create.acknowledge_written_down')}
-                testID="create-seed-acknowledge"
-              />
-            </View>
+              {t('wallet.create.acknowledge_written_down')}
+            </Text>
+            <Toggle
+              value={acknowledged}
+              onValueChange={setAcknowledged}
+              accessibilityLabel={t('wallet.create.acknowledge_written_down')}
+              testID="create-seed-acknowledge"
+            />
           </View>
         }
         secondary={

@@ -51,6 +51,17 @@ describe('SeedWordGrid', () => {
     expect(word.fontWeight).toBe(fontWeight.medium);
   });
 
+  // iPhone 16 Pro: "distance", "forward" and "toddler" ran past the cell edge.
+  it('keeps a long word inside its cell: one line, shrinking to fit', () => {
+    render(<SeedWordGrid words={words} />);
+
+    const word = screen.getByText(words[0]);
+    expect(word.props.numberOfLines).toBe(1);
+    expect(word.props.adjustsFontSizeToFit).toBe(true);
+    expect(word.props.minimumFontScale).toBe(0.75);
+    expect(flat(word.props.style).flexShrink).toBe(1);
+  });
+
   it('sets the cell number at label size so it is never read as part of the phrase', () => {
     render(<SeedWordGrid words={words} />);
 
