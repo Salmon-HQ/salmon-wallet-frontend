@@ -330,7 +330,9 @@
       "reauth_confirm": "Confirmar y agregar",
       "import_watch_only": "Seguir una billetera",
       "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos",
-      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos"
+      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos",
+      "import_seed_vault": "Usar Seed Vault",
+      "import_seed_vault_description": "Agregá una wallet cuya clave queda en el Seed Vault de tu Seeker"
     },
     "security": {
       "title": "Seguridad",
@@ -564,8 +566,6 @@
       }
     },
     "seedVault": {
-      "use": "Usar Seed Vault",
-      "use_description": "Agregá una wallet cuya clave queda en el Seed Vault de tu Seeker",
       "title": "Seed Vault",
       "subtitle": "Elegí una cuenta de tu Seed Vault. Su clave nunca sale del Seed Vault.",
       "waiting": "Esperando al Seed Vault…",

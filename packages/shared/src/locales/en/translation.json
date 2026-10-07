@@ -330,7 +330,9 @@
       "reauth_confirm": "Confirm and add",
       "import_watch_only": "Watch a wallet",
       "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds",
-      "watch_only_subtitle": "Follow a wallet's address without moving its funds"
+      "watch_only_subtitle": "Follow a wallet's address without moving its funds",
+      "import_seed_vault": "Use Seed Vault",
+      "import_seed_vault_description": "Add a wallet whose key stays in your Seeker's Seed Vault"
     },
     "security": {
       "title": "Security",
@@ -564,8 +566,6 @@
       }
     },
     "seedVault": {
-      "use": "Use Seed Vault",
-      "use_description": "Add a wallet whose key stays in your Seeker's Seed Vault",
       "title": "Seed Vault",
       "subtitle": "Pick an account from your Seed Vault. Its key never leaves Seed Vault.",
       "waiting": "Waiting for Seed Vault…",

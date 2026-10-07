@@ -38,8 +38,8 @@ export const ACCOUNT_ADD_METHODS: readonly AccountAddMethodCopy[] = [
   // Offered only where the device has Seed Vault (`canUseSeedVault`).
   {
     id: 'seed-vault',
-    titleKey: 'wallet.seedVault.use',
-    descriptionKey: 'wallet.seedVault.use_description',
+    titleKey: 'settings.account_add.import_seed_vault',
+    descriptionKey: 'settings.account_add.import_seed_vault_description',
   },
 ];
 
