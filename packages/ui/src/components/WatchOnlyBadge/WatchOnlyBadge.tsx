@@ -18,11 +18,15 @@ import {
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
-import { EyeIcon, iconSize } from '../../icons';
+import { EyeIcon, VaultIcon, iconSize } from '../../icons';
 
 export interface WatchOnlyBadgeProps extends WatchOnlyBadgePropsBase {}
 
-export function WatchOnlyBadge({ testID = 'watch-only-badge' }: WatchOnlyBadgeProps) {
+export function WatchOnlyBadge({
+  testID = 'watch-only-badge',
+  kind = 'watchOnly',
+}: WatchOnlyBadgeProps) {
+  const Icon = kind === 'seedVault' ? VaultIcon : EyeIcon;
   const { t } = useTranslation();
   const { surface, text } = useSemantic();
 
@@ -39,7 +43,7 @@ export function WatchOnlyBadge({ testID = 'watch-only-badge' }: WatchOnlyBadgePr
         flexShrink: 0,
       }}
     >
-      <EyeIcon color={text.secondary} size={iconSize.sm} />
+      <Icon color={text.secondary} size={iconSize.sm} />
       <span
         style={{
           color: text.secondary,
@@ -49,7 +53,7 @@ export function WatchOnlyBadge({ testID = 'watch-only-badge' }: WatchOnlyBadgePr
           lineHeight: 1,
         }}
       >
-        {t('wallet.watchOnly.badge')}
+        {t(`wallet.${kind}.badge`)}
       </span>
     </span>
   );

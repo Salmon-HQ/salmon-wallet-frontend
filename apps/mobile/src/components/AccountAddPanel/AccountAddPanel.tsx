@@ -20,6 +20,7 @@ import {
   FileTextIcon,
   KeyIcon,
   TreeStructureIcon,
+  VaultIcon,
   iconSize,
 } from '../../icons';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,7 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { stylesFor } from './styles';
 import type { AccountAddPanelProps } from './types';
 import { Spinner } from '../Spinner';
+import { useSeedVaultAccess } from '../../seed-vault/useSeedVaultAccess';
 
 // ============================================================================
 // Component
@@ -124,6 +126,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     [t]
   );
 
+  const seedVault = useSeedVaultAccess();
   const flow = useAccountAddFlow({
     defaultName,
     onBack,
@@ -131,6 +134,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     onWaitEnd,
     onPersisted,
     onFailure,
+    seedVault,
   });
   const { step, privateKeyImport, watchOnlyImport, selectedDerived } = flow;
 
@@ -150,15 +154,19 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     import: FileTextIcon,
     'private-key': KeyIcon,
     'watch-only': EyeIcon,
+    'seed-vault': VaultIcon,
   };
   const methodHandlers: Record<AccountAddMethodId, () => void> = {
     derive: flow.selectDerive,
     import: flow.selectImport,
     'private-key': flow.selectImportPrivateKey,
     'watch-only': flow.selectImportWatchOnly,
+    'seed-vault': () => void flow.selectSeedVault(),
   };
   const methods = ACCOUNT_ADD_METHODS.filter(
-    (method) => method.id !== 'derive' || flow.canDerive
+    (method) =>
+      (method.id !== 'derive' || flow.canDerive) &&
+      (method.id !== 'seed-vault' || flow.canUseSeedVault)
   ).map((method) => ({
     ...method,
     icon: methodIcons[method.id],
@@ -349,6 +357,74 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     </View>
   );
 
+  // The key of every account listed here stays in Seed Vault; Salmon only
+  // learns the address. Picking one goes on to the name step like any import.
+  const renderImportSeedVault = () => {
+    if (flow.seedVaultLoading) {
+      return (
+        <View style={styles.scanState}>
+          <Spinner size={32} color={accent.ink} />
+          <Text style={styles.scanStateText}>{t('wallet.seedVault.waiting')}</Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.stack}>
+        {flow.seedVaultError ? (
+          <WarningNotice tone="error" title={t(flow.seedVaultError)} />
+        ) : null}
+        {flow.seedVaultAccounts.map((row) => (
+          <DerivedAccountCard
+            key={`${row.authToken}-${row.address}`}
+            testID={`seed-vault-account-${row.address}`}
+            address={row.address}
+            networkName={row.name}
+            path={row.derivationPath.replace(/^bip32:\//, '')}
+            balanceFormatted={
+              row.added
+                ? t('wallet.seedVault.added')
+                : row.isUserWallet
+                  ? t('wallet.seedVault.in_use')
+                  : ''
+            }
+            selected={
+              flow.selectedSeedVault?.address === row.address &&
+              flow.selectedSeedVault.authToken === row.authToken
+            }
+            dimmed={row.added}
+            onToggle={() => flow.toggleSeedVault(row)}
+            blockchain="solana"
+          />
+        ))}
+        <PrimaryButton
+          onPress={flow.continueSeedVault}
+          disabled={!flow.selectedSeedVault}
+          testID="account-add-seed-vault-continue-button"
+        >
+          {t('actions.continue')}
+        </PrimaryButton>
+        <SecondaryButton
+          onPress={() => void flow.seedVaultAction('authorizeAnother')}
+          testID="account-add-seed-vault-authorize-button"
+        >
+          {t('wallet.seedVault.authorize_another')}
+        </SecondaryButton>
+        <SecondaryButton
+          onPress={() => void flow.seedVaultAction('createSeed')}
+          testID="account-add-seed-vault-create-button"
+        >
+          {t('wallet.seedVault.create_seed')}
+        </SecondaryButton>
+        <SecondaryButton
+          onPress={() => void flow.seedVaultAction('importSeed')}
+          testID="account-add-seed-vault-import-button"
+        >
+          {t('wallet.seedVault.import_seed')}
+        </SecondaryButton>
+      </View>
+    );
+  };
+
   const renderReauth = () => (
     <View style={styles.stack}>
       <Text style={styles.bodyText}>{t('settings.account_add.reauth_body')}</Text>
@@ -419,6 +495,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         {step === 'import-seed' && renderImportSeed()}
         {step === 'import-private-key' && renderImportPrivateKey()}
         {step === 'import-watch-only' && renderImportWatchOnly()}
+        {step === 'import-seed-vault' && renderImportSeedVault()}
         {step === 'set-name' && renderSetName()}
         {step === 'reauth' && renderReauth()}
       </SettingsScreenLayout>

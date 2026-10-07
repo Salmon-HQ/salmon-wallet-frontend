@@ -18,6 +18,7 @@ import {
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
   createBlockchainAccountForWatchOnly,
+  createBlockchainAccountForSeedVault,
 } from '../utils/account';
 import type {
   Account,
@@ -211,6 +212,36 @@ export async function importWatchOnlyAccount(
     secret: { kind: 'watchOnly', address, networkId },
     // Index 0 is the only slot a watched address occupies; nothing was derived.
     pathIndexes: { [networkId]: [0] },
+    networksAccounts,
+  };
+
+  return { account, blockchainAccounts: networksAccounts };
+}
+
+/**
+ * Imports a Seed Vault account: an address whose key stays in Seed Vault and
+ * which signs by asking it. Nothing secret is stored.
+ */
+export async function importSeedVaultAccount(options: {
+  id?: string;
+  name: string;
+  avatar?: string;
+  authToken: string;
+  derivationPath: string;
+  address: string;
+  networkId: string;
+}): Promise<CreateAccountResult> {
+  const { id = generateAccountId(), name, avatar = getRandomAvatar(), ...seedVault } = options;
+  const secret = { kind: 'seedVault', ...seedVault } as const;
+  const blockchainAccount = await createBlockchainAccountForSeedVault(secret);
+  const networksAccounts: NetworksAccounts = { [secret.networkId]: [blockchainAccount] };
+
+  const account: Account = {
+    id,
+    name,
+    avatar,
+    secret,
+    pathIndexes: { [secret.networkId]: [0] },
     networksAccounts,
   };
 

@@ -110,6 +110,7 @@ export { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 export { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
 export { SlidersIcon } from 'phosphor-react-native/src/icons/Sliders';
 export { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley';
+export { VaultIcon } from 'phosphor-react-native/src/icons/Vault';
 export { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle';
 export { SquaresFourIcon } from 'phosphor-react-native/src/icons/SquaresFour';
 export { StackIcon } from 'phosphor-react-native/src/icons/Stack';

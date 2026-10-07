@@ -120,7 +120,12 @@ export type { AccountsPanelPropsBase } from './accounts-panel';
 export type { AccountEditPanelPropsBase } from './account-edit-panel';
 
 // Account Add Panel
-export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
+export type {
+  AccountAddStep,
+  AccountAddPanelPropsBase,
+  SeedVaultAccess,
+  SeedVaultListedAccount,
+} from './account-add';
 
 // Security Panel
 export type { SecurityPanelPropsBase } from './security-panel';

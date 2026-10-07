@@ -6,7 +6,7 @@ import type { AccountAddStep } from '../types/ui/account-add';
  * matching `useAccountAddFlow` selector. `derive` is filtered out by
  * callers when `!canDerive` — there is no phrase to derive from yet.
  */
-export type AccountAddMethodId = 'derive' | 'import' | 'private-key' | 'watch-only';
+export type AccountAddMethodId = 'derive' | 'import' | 'private-key' | 'watch-only' | 'seed-vault';
 
 export interface AccountAddMethodCopy {
   id: AccountAddMethodId;
@@ -35,6 +35,12 @@ export const ACCOUNT_ADD_METHODS: readonly AccountAddMethodCopy[] = [
     titleKey: 'settings.account_add.import_watch_only',
     descriptionKey: 'settings.account_add.import_watch_only_description',
   },
+  // Offered only where the device has Seed Vault (`canUseSeedVault`).
+  {
+    id: 'seed-vault',
+    titleKey: 'wallet.seedVault.use',
+    descriptionKey: 'wallet.seedVault.use_description',
+  },
 ];
 
 /** `settings.account_add.title`-style translation key per step, single-arg `t(key)`. */
@@ -44,6 +50,7 @@ export const ACCOUNT_ADD_STEP_TITLE_KEYS: Record<AccountAddStep, string> = {
   'import-seed': 'settings.account_add.import_seed',
   'import-private-key': 'wallet.import.title',
   'import-watch-only': 'wallet.watchOnly.title',
+  'import-seed-vault': 'wallet.seedVault.title',
   'set-name': 'settings.account_add.set_name',
   reauth: 'settings.account_add.reauth_title',
   complete: 'settings.account_add.title',
@@ -75,6 +82,10 @@ export const ACCOUNT_ADD_STEP_SUBTITLE_KEYS: Record<AccountAddStep, readonly [st
   'import-watch-only': [
     'settings.account_add.watch_only_subtitle',
     "Follow a wallet's address without moving its funds",
+  ],
+  'import-seed-vault': [
+    'wallet.seedVault.subtitle',
+    'Pick an account from your Seed Vault. Its key never leaves Seed Vault.',
   ],
   'set-name': [
     'settings.account_add.set_name_subtitle',

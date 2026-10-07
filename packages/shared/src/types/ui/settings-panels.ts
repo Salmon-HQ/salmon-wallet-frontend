@@ -138,8 +138,13 @@ export interface DerivedAccountCardPropsBase extends Testable {
   blockchain?: 'solana' | 'bitcoin' | 'ethereum';
 }
 
-/** WatchOnlyBadge — marks a wallet the user can read but not operate. */
-export interface WatchOnlyBadgePropsBase extends Testable {}
+/**
+ * WatchOnlyBadge — the quiet tag on a wallet row: a wallet the user can read
+ * but not operate, or (`seedVault`) one whose key stays in Seed Vault.
+ */
+export interface WatchOnlyBadgePropsBase extends Testable {
+  kind?: 'watchOnly' | 'seedVault';
+}
 
 /**
  * AddressForm — the address-book form both the add and the edit panel draw:

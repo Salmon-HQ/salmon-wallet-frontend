@@ -562,6 +562,24 @@
         "looksLikeSecret": "That looks like a private key, not an address. Only paste an address here — never your private key.",
         "duplicate": "This wallet is already in your list."
       }
+    },
+    "seedVault": {
+      "use": "Use Seed Vault",
+      "use_description": "Add a wallet whose key stays in your Seeker's Seed Vault",
+      "title": "Seed Vault",
+      "subtitle": "Pick an account from your Seed Vault. Its key never leaves Seed Vault.",
+      "waiting": "Waiting for Seed Vault…",
+      "added": "Already in Salmon",
+      "in_use": "Your Seed Vault wallet",
+      "authorize_another": "Use another seed",
+      "create_seed": "Create a seed in Seed Vault",
+      "import_seed": "Import a seed into Seed Vault",
+      "errors": {
+        "cancelled": "Seed Vault access was not given.",
+        "unavailable": "Seed Vault is not available on this device.",
+        "failed": "Seed Vault could not complete the request. Try again."
+      },
+      "badge": "Seed Vault"
     }
   },
   "transactions": {

@@ -40,6 +40,8 @@ export interface SeedVaultRegistration {
   bridge: SeedVaultBridge;
   /** Most payloads Seed Vault signs in one confirmation (at least 3). */
   maxPerRequest: number;
+  /** Gives up Salmon's access to a seed. */
+  release?: (authToken: string) => void;
 }
 
 let registered: SeedVaultRegistration | null = null;
@@ -51,6 +53,11 @@ let registered: SeedVaultRegistration | null = null;
  */
 export function registerSeedVault(registration: SeedVaultRegistration | null): void {
   registered = registration;
+}
+
+/** Gives up Salmon's access to a seed, where a Seed Vault is registered. */
+export function releaseSeedVaultAccess(authToken: string): void {
+  registered?.release?.(authToken);
 }
 
 const unavailable = (): Promise<Uint8Array[]> => Promise.reject(new SeedVaultError('unavailable'));

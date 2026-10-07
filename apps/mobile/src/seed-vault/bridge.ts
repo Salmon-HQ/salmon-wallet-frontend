@@ -38,6 +38,7 @@ const native = SeedVault as unknown as {
   authorizeNewSeed(): Promise<{ authToken: string }>;
   createNewSeed(): Promise<{ authToken: string }>;
   importExistingSeed(): Promise<{ authToken: string }>;
+  getAuthorizedSeeds(): Promise<{ authToken: string }[]>;
   getAccounts(authToken: string): Promise<NativeAccount[]>;
   getUserWallets(authToken: string): Promise<NativeAccount[]>;
   signTransactions(authToken: string, requests: SigningRequest[]): Promise<NativeSigningResult[]>;
@@ -101,6 +102,12 @@ export async function listSeedVaultAccounts(authToken: string): Promise<SeedVaul
     name: a.name,
     isUserWallet: used.has(a.publicKeyEncoded),
   }));
+}
+
+/** The seeds Salmon may already use, by their authorization. */
+export async function listAuthorizedSeeds(): Promise<string[]> {
+  const seeds = await native.getAuthorizedSeeds().catch(failure);
+  return seeds.map((s) => s.authToken).filter(usable);
 }
 
 /** Gives up Salmon's access to a seed. */

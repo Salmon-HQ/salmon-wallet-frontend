@@ -81,6 +81,7 @@ export {
   buildSecretVault,
   getAccountMnemonic,
   isWatchOnlyAccount,
+  seedVaultAccessToRelease,
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
 

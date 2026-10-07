@@ -365,6 +365,9 @@ function WalletCard({
             {isWatchOnlyAccount(account) && (
               <WatchOnlyBadge testID={`wallet-watch-only-${account.id}`} />
             )}
+            {account.secret.kind === 'seedVault' && (
+              <WatchOnlyBadge kind="seedVault" testID={`wallet-seed-vault-${account.id}`} />
+            )}
           </>
         }
         subtitle={

@@ -5,6 +5,7 @@ import {
   toStoredSecret,
   buildSecretVault,
   getAccountMnemonic,
+  seedVaultAccessToRelease,
 } from './account-secret';
 import type { Account, AccountSecret } from '../types/account';
 
@@ -75,5 +76,22 @@ describe('account secret vault serialization', () => {
     const seeded = makeAccount('a', { kind: 'mnemonic', mnemonic: MNEMONIC });
 
     expect(getAccountMnemonic(seeded)).toBe(MNEMONIC);
+  });
+});
+
+describe('seedVaultAccessToRelease', () => {
+  const sv = (id: string, authToken: string) =>
+    ({ id, secret: { kind: 'seedVault', authToken, derivationPath: 'p', address: id, networkId: 'n' } }) as never;
+
+  it('gives up the access when the last wallet of a seed is removed', () => {
+    expect(seedVaultAccessToRelease(sv('a', '7'), [sv('b', '8')])).toBe('7');
+  });
+
+  it('keeps it while another wallet of the same seed remains', () => {
+    expect(seedVaultAccessToRelease(sv('a', '7'), [sv('b', '7')])).toBeNull();
+  });
+
+  it('has nothing to give up for a wallet that is not in Seed Vault', () => {
+    expect(seedVaultAccessToRelease({ id: 'm', secret: { kind: 'mnemonic', mnemonic: 'x' } } as never, [])).toBeNull();
   });
 });

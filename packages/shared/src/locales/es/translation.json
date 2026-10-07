@@ -562,6 +562,24 @@
         "looksLikeSecret": "Eso parece una clave privada, no una dirección. Acá pegá solo una dirección — nunca tu clave privada.",
         "duplicate": "Esta billetera ya está en tu lista."
       }
+    },
+    "seedVault": {
+      "use": "Usar Seed Vault",
+      "use_description": "Agregá una wallet cuya clave queda en el Seed Vault de tu Seeker",
+      "title": "Seed Vault",
+      "subtitle": "Elegí una cuenta de tu Seed Vault. Su clave nunca sale del Seed Vault.",
+      "waiting": "Esperando al Seed Vault…",
+      "added": "Ya está en Salmon",
+      "in_use": "Tu wallet del Seed Vault",
+      "authorize_another": "Usar otra semilla",
+      "create_seed": "Crear una semilla en el Seed Vault",
+      "import_seed": "Importar una semilla al Seed Vault",
+      "errors": {
+        "cancelled": "No se dio acceso al Seed Vault.",
+        "unavailable": "Este dispositivo no tiene Seed Vault.",
+        "failed": "El Seed Vault no pudo completar el pedido. Probá de nuevo."
+      },
+      "badge": "Seed Vault"
     }
   },
   "transactions": {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { EyeIcon, iconSize } from '../../icons';
+import { EyeIcon, VaultIcon, iconSize } from '../../icons';
 import {
   spacing,
   borderRadius,
@@ -22,15 +22,19 @@ export interface WatchOnlyBadgeProps extends WatchOnlyBadgePropsBase {}
  * warning. The loud signal belongs on the actions that refuse, not on every
  * row in a list.
  */
-export function WatchOnlyBadge({ testID = 'watch-only-badge' }: WatchOnlyBadgeProps) {
+export function WatchOnlyBadge({
+  testID = 'watch-only-badge',
+  kind = 'watchOnly',
+}: WatchOnlyBadgeProps) {
+  const Icon = kind === 'seedVault' ? VaultIcon : EyeIcon;
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { text } = useSemantic();
 
   return (
     <View testID={testID} style={styles.badge}>
-      <EyeIcon color={text.secondary} size={iconSize.sm} />
-      <Text style={styles.label}>{t('wallet.watchOnly.badge')}</Text>
+      <Icon color={text.secondary} size={iconSize.sm} />
+      <Text style={styles.label}>{t(`wallet.${kind}.badge`)}</Text>
     </View>
   );
 }

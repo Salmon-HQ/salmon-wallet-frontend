@@ -6,6 +6,8 @@ import type { Account, EditAccountParams, StoredAccount } from '../types/account
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
 import { resolveActiveSlot } from '../utils/active-selection';
+import { seedVaultAccessToRelease } from '../utils/account-secret';
+import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
   buildSecretVault,
   clearAccountsStorage,
@@ -56,6 +58,12 @@ export function useAccountsMutations({
   const removeAllAccounts = useCallback(async (): Promise<void> => {
     await clearAccountsStorage();
     await removeStashItem(STASH_KEYS.DERIVED_KEY);
+    // Every Seed Vault seed Salmon was using is given up with the wallets.
+    // (A reset from the lock screen has no wallets in memory; Seed Vault's
+    // own settings still list Salmon then, and the user can revoke there.)
+    new Set(
+      accounts.flatMap(({ secret }) => (secret.kind === 'seedVault' ? [secret.authToken] : []))
+    ).forEach(releaseSeedVaultAccess);
 
     setLocked(false);
     setRequiredLock(false);
@@ -67,6 +75,7 @@ export function useAccountsMutations({
     setTrustedApps({});
     setTokens({});
   }, [
+    accounts,
     setAccountId,
     setAccounts,
     setCounter,
@@ -213,6 +222,12 @@ export function useAccountsMutations({
       if (password) {
         setRequiredLock(true);
       }
+
+      // Removing the last wallet of a Seed Vault seed gives up Salmon's access
+      // to it, so Seed Vault no longer lists Salmon among the apps using it.
+      const removed = accounts.find(({ id }) => id === targetId);
+      const release = removed && seedVaultAccessToRelease(removed, newAccounts);
+      if (release) releaseSeedVaultAccess(release);
     },
     [
       accountId,

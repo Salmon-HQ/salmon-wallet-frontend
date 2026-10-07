@@ -6,6 +6,7 @@ import {
   focusManager,
   PendingTransactionsProvider,
   QueryClientProvider,
+  registerSeedVault,
   setApiPlatform,
   ThemeProvider,
 } from '@salmon/shared';
@@ -14,6 +15,7 @@ import { useState, type ReactNode } from 'react';
 import { AppState, Platform, useColorScheme } from 'react-native';
 
 import { BiometricProvider } from '../contexts/BiometricContext';
+import { deauthorizeSeed, SEED_VAULT_MAX_PER_REQUEST, seedVaultBridge } from '../seed-vault/bridge';
 
 // Process-wide setup, here because both React roots (the app's navigator and
 // the dApp approval activity) load this module before rendering anything.
@@ -21,6 +23,16 @@ import { BiometricProvider } from '../contexts/BiometricContext';
 // The backend's availability gate reads the platform on every request
 // (spec 018); named once, before any screen asks for anything.
 setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
+
+// Seed Vault wallets (spec 037) sign through the device's Seed Vault, which
+// only Android has; everywhere else they refuse to sign as unavailable.
+if (Platform.OS === 'android') {
+  registerSeedVault({
+    bridge: seedVaultBridge,
+    maxPerRequest: SEED_VAULT_MAX_PER_REQUEST,
+    release: deauthorizeSeed,
+  });
+}
 
 // React Query learns that the user came back from the DOM's focus events, which
 // React Native does not have: without this, `refetchOnWindowFocus` never fires

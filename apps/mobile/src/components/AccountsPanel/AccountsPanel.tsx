@@ -93,6 +93,9 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
             {isWatchOnlyAccount(account) && (
               <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
             )}
+            {account.secret.kind === 'seedVault' && (
+              <WatchOnlyBadge kind="seedVault" testID={`account-item-seed-vault-${account.id}`} />
+            )}
           </View>
           {shortAddress ? <Text style={styles.address}>{shortAddress}</Text> : null}
         </View>

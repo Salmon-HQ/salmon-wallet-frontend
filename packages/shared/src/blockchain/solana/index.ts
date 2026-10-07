@@ -198,6 +198,7 @@ export { signBytesWith, signTransactionWith, type SolanaSigner } from './signing
 export {
   createSeedVaultSigner,
   registerSeedVault,
+  releaseSeedVaultAccess,
   SeedVaultError,
   type SeedVaultBridge,
   type SeedVaultFailure,
