@@ -57,6 +57,7 @@ export {
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
   createBlockchainAccountForWatchOnly,
+  createBlockchainAccountForSeedVault,
   collectSolanaAddresses,
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,

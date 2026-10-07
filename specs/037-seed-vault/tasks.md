@@ -6,7 +6,7 @@
 
 ## Phase 2 — Seed Vault signer and account kind (shared)
 - [x] T003 RED/GREEN `seed-vault-signer.ts`: message bytes to the bridge, signature merge, chunking, typed errors (cancelled, revoked, unavailable)
-- [ ] T004 `AccountSecret` `seedVault`; restore builds Solana accounts with the signer; private-key export only on key-holding accounts
+- [x] T004 `AccountSecret` `seedVault`; restore builds Solana accounts with the signer; private-key export only on key-holding accounts
 - [ ] T005 Copy `wallet.seedVault.*` EN + ES
 
 ## Phase 3 — App (mobile)

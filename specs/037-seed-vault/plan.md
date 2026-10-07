@@ -118,3 +118,7 @@ apps/mobile/
 ## Owner sign-off
 
 2026-10-07 — Luca approved the plan (signing path change included), chose decision 1 as `@solana-mobile/seed-vault-lib` behind the adapter, and decision 2 as splitting batches into chunks.
+
+## Follow-up
+
+- Replace `@solana-mobile/seed-vault-lib` with an own Expo module over the native `com.solanamobile:seedvault-wallet-sdk`, because Solana Mobile labels the JS package community-maintained and not production-tested. Only `apps/mobile/src/seed-vault/bridge.ts` changes; it needs a new binary, not an OTA.

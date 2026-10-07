@@ -3,6 +3,7 @@ import {
   createKeyPairSignerFromBytes,
   createKeyPairSignerFromPrivateKeyBytes,
 } from '@solana/kit';
+import { createSeedVaultSigner } from './seed-vault-signer';
 import HDKey from 'micro-key-producer/slip10.js';
 import { SolanaAccount, type SolanaSigningKey } from './SolanaAccount';
 import { WatchOnlySolanaAccount } from './WatchOnlySolanaAccount';
@@ -216,6 +217,30 @@ export async function createSolanaAccountFromSecretKey(
     index,
     apiFunctions
   );
+}
+
+/**
+ * Creates a Solana account whose key lives in Seed Vault: it signs by asking
+ * Seed Vault, and holds no key material here.
+ */
+export function createSeedVaultSolanaAccount(
+  network: SolanaNetwork,
+  seedVault: { authToken: string; derivationPath: string; address: string },
+  apiFunctions: SolanaAccountApiFunctions
+): SolanaAccount {
+  return new SolanaAccount({
+    network,
+    index: 0,
+    path: seedVault.derivationPath,
+    keyPair: {
+      signer: createSeedVaultSigner({
+        address: address(seedVault.address),
+        authToken: seedVault.authToken,
+        derivationPath: seedVault.derivationPath,
+      }),
+    },
+    ...apiFunctions,
+  });
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   createSolanaAccount,
   createSolanaAccountFromSecretKey,
   createWatchOnlySolanaAccount,
+  createSeedVaultSolanaAccount,
   SOLANA_NETWORKS,
 } from '../blockchain/solana';
 import { createBitcoinAccount, BITCOIN_NETWORKS } from '../blockchain/bitcoin';
@@ -18,7 +19,7 @@ import { bitcoinApiFunctions } from '../api/services/bitcoin';
 import { solanaApiFunctions } from '../api/services/solana';
 import { ethereumApiFunctions } from '../api/services/ethereum';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
-import type { Account } from '../types/account';
+import type { Account, AccountSecret } from '../types/account';
 import type { AccountKeyInfo } from '../types/settings';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { isBackendNetworkEnabled } from '../api/services/network';
@@ -311,6 +312,23 @@ export async function createBlockchainAccountForWatchOnly(
   return createWatchOnlySolanaAccount(network, watchedAddress, solanaApiFunctions);
 }
 
+/**
+ * Builds the Solana account for a Seed Vault wallet. Seed Vault holds Solana
+ * keys only, so any other network is refused.
+ */
+export async function createBlockchainAccountForSeedVault(
+  secret: Extract<AccountSecret, { kind: 'seedVault' }>
+): Promise<BlockchainAccount> {
+  await fetchAndMergeNetworkConfigs();
+
+  const network = SOLANA_NETWORKS[secret.networkId];
+  if (getBlockchainFromNetworkId(secret.networkId) !== 'solana' || !network) {
+    throw new Error(`Seed Vault holds Solana keys only, not: ${secret.networkId}`);
+  }
+
+  return createSeedVaultSolanaAccount(network, secret, solanaApiFunctions);
+}
+
 // ============================================================================
 // Derivation Path Utilities
 // ============================================================================
@@ -452,7 +470,11 @@ export function getAccountKeysForNetwork(
 
   return networkAccounts
     .filter((account): account is NonNullable<typeof account> => account !== null)
-    .filter((account) => !isSolanaAccount(account) || isSignableSolanaAccount(account))
+    // A Seed Vault account signs but its key never leaves Seed Vault.
+    .filter(
+      (account): account is Exclude<typeof account, WatchOnlySolanaAccount> =>
+        !isSolanaAccount(account) || (isSignableSolanaAccount(account) && account.holdsKey)
+    )
     .map((account) => ({
       path: account.path,
       address: account.getReceiveAddress(),

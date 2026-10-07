@@ -84,6 +84,21 @@ export type AccountSecret =
       address: string;
       /** The single network this address is watched on */
       networkId: string;
+    }
+  | {
+      /**
+       * The key lives in Seed Vault (Solana Seeker) and never in Salmon: every
+       * signature is asked of Seed Vault. Nothing here is secret.
+       */
+      kind: 'seedVault';
+      /** Seed Vault's id for Salmon's access to one seed (a long, as a string) */
+      authToken: string;
+      /** e.g. `m/44'/501'/0'/0'` */
+      derivationPath: string;
+      /** The base58 address Seed Vault reported for that path */
+      address: string;
+      /** The single Solana network this wallet is on */
+      networkId: string;
     };
 
 /**

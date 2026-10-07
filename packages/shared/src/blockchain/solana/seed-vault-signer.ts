@@ -35,6 +35,30 @@ export interface SeedVaultBridge {
   signMessages(authToken: string, derivationPath: string, payloads: Uint8Array[]): Promise<Uint8Array[]>;
 }
 
+/** The device's Seed Vault, once the app has registered it. */
+export interface SeedVaultRegistration {
+  bridge: SeedVaultBridge;
+  /** Most payloads Seed Vault signs in one confirmation (at least 3). */
+  maxPerRequest: number;
+}
+
+let registered: SeedVaultRegistration | null = null;
+
+/**
+ * Registers the device's Seed Vault. Only the Android app calls this, where
+ * Seed Vault exists; everywhere else Seed Vault accounts can be read but every
+ * signature fails as `unavailable`.
+ */
+export function registerSeedVault(registration: SeedVaultRegistration | null): void {
+  registered = registration;
+}
+
+const unavailable = (): Promise<Uint8Array[]> => Promise.reject(new SeedVaultError('unavailable'));
+const UNAVAILABLE: SeedVaultRegistration = {
+  bridge: { signTransactions: unavailable, signMessages: unavailable },
+  maxPerRequest: 1,
+};
+
 export interface SeedVaultSignerOptions {
   /** The account's address, as Seed Vault reported it. */
   address: Address;
@@ -42,25 +66,30 @@ export interface SeedVaultSignerOptions {
   authToken: string;
   /** e.g. `m/44'/501'/0'/0'` */
   derivationPath: string;
-  bridge: SeedVaultBridge;
-  /** Most payloads Seed Vault signs in one confirmation (at least 3). */
-  maxPerRequest: number;
+  /** Defaults to the registered Seed Vault, looked up at signing time. */
+  bridge?: SeedVaultBridge;
+  maxPerRequest?: number;
 }
 
 /** A {@link SolanaSigner} that asks Seed Vault for every signature. */
 export function createSeedVaultSigner(options: SeedVaultSignerOptions): SolanaSigner {
-  const { address, authToken, derivationPath, bridge, maxPerRequest } = options;
+  const { address, authToken, derivationPath } = options;
+  const vault = (): SeedVaultRegistration =>
+    options.bridge
+      ? { bridge: options.bridge, maxPerRequest: options.maxPerRequest ?? 3 }
+      : (registered ?? UNAVAILABLE);
 
   // A batch larger than Seed Vault's limit is split, so the user may confirm
   // more than once; every payload is still signed exactly once, in order.
   async function signAll(
-    sign: SeedVaultBridge['signTransactions'],
+    kind: keyof SeedVaultBridge,
     payloads: Uint8Array[]
   ): Promise<Record<Address, SignatureBytes>[]> {
+    const { bridge, maxPerRequest } = vault();
     const signatures: Uint8Array[] = [];
     for (let i = 0; i < payloads.length; i += maxPerRequest) {
       const chunk = payloads.slice(i, i + maxPerRequest);
-      const signed = await sign(authToken, derivationPath, chunk);
+      const signed = await bridge[kind](authToken, derivationPath, chunk);
       if (signed.length !== chunk.length || signed.some((s) => s.length !== 64)) {
         throw new Error('Seed Vault returned an invalid signature');
       }
@@ -73,12 +102,12 @@ export function createSeedVaultSigner(options: SeedVaultSignerOptions): SolanaSi
     address,
     signTransactions: (transactions) =>
       signAll(
-        (...args) => bridge.signTransactions(...args),
+        'signTransactions',
         transactions.map((tx) => new Uint8Array(tx.messageBytes))
       ),
     signMessages: (messages) =>
       signAll(
-        (...args) => bridge.signMessages(...args),
+        'signMessages',
         messages.map((m) => new Uint8Array(m.content))
       ),
   };

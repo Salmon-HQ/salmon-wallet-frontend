@@ -44,8 +44,11 @@ export interface SolanaAccountOptions {
   index: number;
   /** BIP44 derivation path */
   path: string;
-  /** Solana signing key material (seed + kit signer) */
-  keyPair: SolanaSigningKey;
+  /**
+   * Solana signing key material (seed + kit signer), or only a signer for an
+   * account whose key lives outside the app (Seed Vault).
+   */
+  keyPair: SolanaSigningKey | { signer: SolanaSigner; seed?: undefined };
   /** Function to fetch token balances (DI) */
   fetchBalance: FetchSolanaBalanceFn;
   /** Function to fetch transactions list (DI) */
@@ -98,7 +101,7 @@ export class SolanaAccount extends SolanaReadAccount {
    * lives in an internal slot no serializer can reach, so the seed cannot
    * leave this object by accident.
    */
-  readonly #seed: Uint8Array;
+  readonly #seed: Uint8Array | null;
 
   /**
    * Creates a new SolanaAccount instance
@@ -116,7 +119,15 @@ export class SolanaAccount extends SolanaReadAccount {
       fetchNfts: options.fetchNfts,
     });
     this.signer = options.keyPair.signer;
-    this.#seed = options.keyPair.seed;
+    this.#seed = options.keyPair.seed ?? null;
+  }
+
+  /**
+   * Whether this app holds the key. False for a Seed Vault account: it signs,
+   * but its key can never be shown or exported.
+   */
+  get holdsKey(): boolean {
+    return this.#seed !== null;
   }
 
   /**
@@ -126,6 +137,9 @@ export class SolanaAccount extends SolanaReadAccount {
    * @returns Base58-encoded secret key
    */
   retrieveSecurePrivateKey(): string {
+    if (!this.#seed) {
+      throw new Error('This key lives in Seed Vault and cannot be exported');
+    }
     // An ed25519 secret key in its 64-byte form is the seed followed by the
     // public key — the same bytes the legacy web3.js keypair exposed.
     const secretKey = new Uint8Array(64);
