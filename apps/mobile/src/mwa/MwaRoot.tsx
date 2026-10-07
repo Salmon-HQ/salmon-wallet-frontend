@@ -18,8 +18,9 @@ import { useMwaSession } from './useMwaSession';
  * not its navigator — the approval sits over the dApp and closes back to it.
  */
 export function MwaRoot() {
-  const [fontsLoaded] = useAppFonts();
-  if (!fontsLoaded) return null;
+  // A font that fails to load must not leave the dApp waiting on a blank sheet.
+  const [fontsLoaded, fontError] = useAppFonts();
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <AppProviders>
@@ -36,6 +37,8 @@ export function MwaRoot() {
 
 // Finishing the activity hands the screen back to the dApp.
 const close = () => BackHandler.exitApp();
+// The dApp's lock offers no reset (`allowReset={false}`); the contract still asks for one.
+const noReset = async () => {};
 
 function MwaHost() {
   const [state, actions] = useAccountsContext();
@@ -45,24 +48,41 @@ function MwaHost() {
   // the screen: the next dApp asks for the password again instead of finding
   // the key still in memory.
   const lockAndClose = useCallback(() => {
-    void actions.lockAccounts().finally(close);
+    actions
+      .lockAccounts()
+      .catch((error: unknown) => console.warn('[mwa] lock failed', error))
+      .finally(close);
   }, [actions]);
   const { current, respond } = useMwaSession({ onEnd: lockAndClose });
 
+  // Leaving the screen any way at all — background, or the activity torn down
+  // without a session event — locks as well.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'background') void actions.lockAccounts();
     });
-    return () => subscription.remove();
+    return () => {
+      subscription.remove();
+      void actions.lockAccounts();
+    };
   }, [actions]);
 
-  const removeAllAccounts = useCallback(async () => {
-    await biometric.disarm();
-    await actions.removeAllAccounts();
-    close();
-  }, [actions, biometric]);
+  // Hardware back: with nothing on screen it closes back to the dApp; a request
+  // on screen answers through its own controls (the sheet's back handling, the
+  // review's Back button), which know whether signing is under way.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!current) lockAndClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [current, lockAndClose]);
 
   if (!state.ready) return null;
+
+  // An unlocked wallet whose active account has not loaded yet would be judged
+  // "watch-only"; wait for it.
+  if (!state.locked && state.accounts.length > 0 && !state.activeBlockchainAccount) return null;
 
   // Nothing is shown to the dApp, and nothing is signed, before the wallet is
   // open: the same password or biometrics the app asks for.
@@ -72,8 +92,9 @@ function MwaHost() {
         <DepthBackground />
         <LockContent
           locked
+          allowReset={false}
           onUnlock={actions.unlockAccounts}
-          onRemoveAllAccounts={removeAllAccounts}
+          onRemoveAllAccounts={noReset}
           biometric={{
             available: biometric.available,
             armed: biometric.armed,

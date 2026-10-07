@@ -46,6 +46,7 @@ export function ConfirmSheet({
   cancelText,
   isDanger = false,
   acknowledgeOnly = false,
+  confirmDisabled = false,
   requirePassword = false,
   validatePassword,
   onConfirm,
@@ -119,7 +120,7 @@ export function ConfirmSheet({
               </PrimaryButton>
               <SecondaryButton
                 onPress={handleConfirm}
-                disabled={!canConfirm || loading}
+                disabled={!canConfirm || loading || confirmDisabled}
                 tone="danger-fill"
                 testID="confirm-dialog-confirm"
               >
@@ -133,7 +134,7 @@ export function ConfirmSheet({
               </SecondaryButton>
               <PrimaryButton
                 onPress={handleConfirm}
-                disabled={!canConfirm}
+                disabled={!canConfirm || confirmDisabled}
                 loading={loading}
                 testID="confirm-dialog-confirm"
               >

@@ -20,7 +20,7 @@ export const MWA_CONFIG: MobileWalletAdapterConfig = {
   optionalFeatures: ['solana:signInWithSolana', 'solana:signTransactions'],
 };
 
-const DECLINED = { failReason: MWARequestFailReason.UserDeclined } as MWAResponse;
+const DECLINED: MWAResponse = { failReason: MWARequestFailReason.UserDeclined };
 
 const SESSION_ENDED = new Set<string>([
   MWASessionEventType.SessionTerminatedEvent,
@@ -43,7 +43,13 @@ export function useMwaSession({ onEnd }: { onEnd: () => void }) {
   const answerHead = useCallback((response: MWAResponse) => {
     const head = queue.current.shift();
     if (!head) return;
-    resolve(head as never, response as never);
+    try {
+      // `resolve` is overloaded per request type; the screen picked the shape.
+      resolve(head as never, response as never);
+    } catch (error) {
+      // A session the dApp already closed must not strand the requests behind it.
+      console.warn('[mwa] could not answer a request', error);
+    }
     setCurrent(queue.current[0] ?? null);
   }, []);
 

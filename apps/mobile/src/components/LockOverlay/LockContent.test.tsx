@@ -151,6 +151,21 @@ describe('LockContent', () => {
     });
   });
 
+  // A dApp can open the lock screen; it must not be a path to wiping the wallet.
+  it('offers no reset when the caller does not allow it', async () => {
+    render(
+      <LockContent
+        locked
+        allowReset={false}
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{ available: false, armed: false, kind: null, unlock: jest.fn(), refresh: jest.fn() }}
+      />
+    );
+    await act(async () => {});
+    expect(screen.queryByTestId('lock-forgot-password-button')).toBeNull();
+  });
+
   /** An armed device, with the unlock result the test wants to exercise. */
   const armedBiometric = (unlock: jest.Mock) =>
     ({

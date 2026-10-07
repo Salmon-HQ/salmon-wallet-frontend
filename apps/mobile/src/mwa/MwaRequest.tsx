@@ -1,4 +1,5 @@
 import {
+  MWARequestFailReason,
   MWARequestType,
   verifyCallingPackage,
   type AuthorizeDappRequest,
@@ -10,9 +11,13 @@ import {
 } from '@solana-mobile/mobile-wallet-adapter-walletlib';
 import {
   dappTransactionDisplay,
+  dappTransactionGate,
+  decodeDAppMessage,
   encodeMwaAuthToken,
   getShortAddress,
   mwaAuthorizedAccount,
+  mwaDisplayName,
+  mwaIconUrl,
   mwaPrecheck,
   mwaSignAndSend,
   mwaSignIn,
@@ -26,7 +31,7 @@ import {
   type MwaPrecheck,
   type SolanaAccount,
 } from '@salmon/shared';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,7 +51,13 @@ interface Props {
 
 // The bridge hands bytes over as plain number arrays.
 const bytes = (value: unknown) => Uint8Array.from(value as ArrayLike<number>);
-const fail = (failReason: string) => ({ failReason }) as unknown as MWAResponse;
+
+const declined: MWAResponse = { failReason: MWARequestFailReason.UserDeclined };
+const fail = (failReason: string): MWAResponse => ({ failReason }) as MWAResponse;
+const invalid = (valid: boolean[]): MWAResponse => ({
+  failReason: MWARequestFailReason.InvalidSignatures,
+  valid,
+});
 
 /** One dApp request: refused up front, answered silently, or shown for approval. */
 export function MwaRequest({ request, respond, account }: Props) {
@@ -68,7 +79,7 @@ export function MwaRequest({ request, respond, account }: Props) {
         },
         { address, networkId: state.networkId, trustedApps: state.activeTrustedApps }
       ),
-    // The request is answered once; later trust changes must not re-judge it.
+    // The request is judged once, against the wallet as it was when it arrived.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [request]
   );
@@ -80,12 +91,18 @@ export function MwaRequest({ request, respond, account }: Props) {
   }, [silent, check, respond]);
 
   // Reconnect and disconnect carry a valid token by now and need no screen.
+  const silentDone = useRef(false);
   useEffect(() => {
-    if (!check.ok) return;
+    if (!check.ok || silentDone.current) return;
     if (request.__type === MWARequestType.ReauthorizeDappRequest) {
-      respond({ authorizationScope: bytes(request.authorizationScope) } as MWAResponse);
+      silentDone.current = true;
+      respond({ authorizationScope: bytes(request.authorizationScope) });
     } else if (request.__type === MWARequestType.DeauthorizeDappRequest) {
-      void actions.removeTrustedApp(check.origin).finally(() => respond({} as MWAResponse));
+      silentDone.current = true;
+      actions
+        .removeTrustedApp(check.origin)
+        .catch((error: unknown) => console.warn('[mwa] could not forget the dApp', error))
+        .finally(() => respond({}));
     }
   }, [actions, check, request, respond]);
 
@@ -94,7 +111,7 @@ export function MwaRequest({ request, respond, account }: Props) {
   if (!check.ok) {
     const message =
       check.reason === 'network'
-        ? t('dapp.network_mismatch', { requested: check.requested, active: state.networkId })
+        ? t('dapp.mwa_network_unsupported', { requested: check.requested })
         : check.reason === 'watch-only'
           ? t('dapp.mwa_watch_only')
           : t('dapp.mwa_identity_missing');
@@ -110,6 +127,7 @@ export function MwaRequest({ request, respond, account }: Props) {
     );
   }
 
+  // `check.ok` means an account that can sign was present when it was judged.
   if (!account) return null;
   const { origin } = check;
 
@@ -142,16 +160,47 @@ export function MwaRequest({ request, respond, account }: Props) {
   }
 }
 
-/** Digital Asset Links: does the calling app really belong to the site it names? */
-function useIdentityVerified(identityUri: string | undefined) {
-  const [verified, setVerified] = useState(true);
+type Verification = 'checking' | 'verified' | 'unverified';
+
+/**
+ * Digital Asset Links: does the calling app really belong to the site it names?
+ * Nothing is approvable while the answer is pending, and no answer is a no.
+ */
+function useIdentityVerification(identityUri: string | undefined): Verification {
+  const [state, setState] = useState<Verification>(identityUri ? 'checking' : 'unverified');
   useEffect(() => {
-    if (!identityUri) return;
+    if (!identityUri) return undefined;
+    let cancelled = false;
     verifyCallingPackage(identityUri)
-      .then((ok) => setVerified(!!ok))
-      .catch(() => setVerified(false));
+      .then((ok: unknown) => {
+        if (!cancelled) setState(ok ? 'verified' : 'unverified');
+      })
+      .catch(() => {
+        if (!cancelled) setState('unverified');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [identityUri]);
-  return verified;
+  return state;
+}
+
+/** One approval at a time: a second tap while the first runs does nothing. */
+function useOnce() {
+  const busy = useRef(false);
+  const [running, setRunning] = useState(false);
+  const run = async (work: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true;
+    setRunning(true);
+    try {
+      await work();
+    } finally {
+      busy.current = false;
+      setRunning(false);
+    }
+  };
+  return { run, running, busy };
 }
 
 interface ApprovalProps<R> {
@@ -161,43 +210,60 @@ interface ApprovalProps<R> {
   respond: Respond;
 }
 
-function ConnectApproval({ request, origin, account, respond }: ApprovalProps<AuthorizeDappRequest>) {
+function ConnectApproval({
+  request,
+  origin,
+  account,
+  respond,
+}: ApprovalProps<AuthorizeDappRequest>) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const verified = useIdentityVerified(request.appIdentity?.identityUri);
+  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const { run } = useOnce();
   const address = account.getReceiveAddress();
-  const name = request.appIdentity?.identityName ?? origin;
+  const name = mwaDisplayName(request.appIdentity?.identityName, origin);
   const signIn = request.signInPayload;
 
+  // The origin and the warning come first: the name is the dApp's own claim.
   const lines = [
-    `${name} — ${origin}`,
+    origin,
+    ...(verification === 'unverified' ? [t('dapp.mwa_unverified', { origin })] : []),
+    name,
     `${t('dapp.wallet_address')}: ${getShortAddress(address, 4) ?? address}`,
     signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint'),
-    ...(verified ? [] : [t('dapp.mwa_unverified', { origin })]),
   ];
 
-  const approve = async () => {
-    const token = newMwaAuthToken();
-    const signInResult = signIn
-      ? await mwaSignIn(account, { ...signIn, resources: signIn.resources && [...signIn.resources] }, origin)
-      : undefined;
-    const iconPath = request.appIdentity?.iconRelativeUri;
-    await actions.addTrustedApp(
-      origin,
-      {
-        name,
-        icon: iconPath ? new URL(iconPath, origin).toString() : undefined,
-        address,
-        authToken: encodeMwaAuthToken(token),
-      },
-      state.networkId ?? undefined
-    );
-    respond({
-      accounts: [mwaAuthorizedAccount(address, request.chain, state.activeAccount?.name)],
-      authorizationScope: token,
-      signInResult,
-    } as MWAResponse);
-  };
+  const approve = () =>
+    run(async () => {
+      try {
+        const token = newMwaAuthToken();
+        const signInResult = signIn
+          ? await mwaSignIn(
+              account,
+              { ...signIn, resources: signIn.resources && [...signIn.resources] },
+              origin
+            )
+          : undefined;
+        await actions.addTrustedApp(
+          origin,
+          {
+            name,
+            icon: mwaIconUrl(origin, request.appIdentity?.iconRelativeUri),
+            address,
+            authToken: encodeMwaAuthToken(token),
+          },
+          state.networkId ?? undefined
+        );
+        respond({
+          accounts: [mwaAuthorizedAccount(address, request.chain, state.activeAccount?.name)],
+          authorizationScope: token,
+          signInResult,
+        });
+      } catch (error) {
+        console.warn('[mwa] connect failed', error);
+        respond(declined);
+      }
+    });
 
   return (
     <ConfirmSheet
@@ -206,14 +272,10 @@ function ConnectApproval({ request, origin, account, respond }: ApprovalProps<Au
       message={lines.join('\n\n')}
       confirmText={signIn ? t('dapp.sign_in_action') : t('dapp.approve')}
       cancelText={t('dapp.deny')}
-      isDanger={!verified}
-      onClose={() => respond(fail('USER_DECLINED'))}
-      onConfirm={() =>
-        approve().catch((error: unknown) => {
-          console.warn('[mwa] connect failed', error);
-          respond(fail('USER_DECLINED'));
-        })
-      }
+      isDanger={verification !== 'verified'}
+      confirmDisabled={verification === 'checking'}
+      onClose={() => respond(declined)}
+      onConfirm={approve}
     />
   );
 }
@@ -225,34 +287,35 @@ function SignMessagesApproval({
   respond,
 }: ApprovalProps<SignMessagesRequest>) {
   const { t } = useTranslation();
+  const { run } = useOnce();
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
-  const text = payloads
-    .map((payload) => {
-      try {
-        return new TextDecoder('utf-8', { fatal: true }).decode(payload);
-      } catch {
-        return t('dapp.mwa_message_binary', { bytes: payload.length });
-      }
+  // The extension's reading of a message: text only when it is plain text,
+  // hex otherwise, so control characters cannot hide part of what is signed.
+  const shown = payloads
+    .map((payload, i) => {
+      const { text } = decodeDAppMessage(Array.from(payload));
+      return payloads.length > 1 ? `${i + 1}/${payloads.length}\n${text}` : text;
     })
-    .join('\n\n—\n\n');
+    .join('\n\n');
 
-  const approve = async () => {
-    try {
-      respond({ signedPayloads: await mwaSignMessages(account, payloads, origin) } as MWAResponse);
-    } catch (error) {
-      console.warn('[mwa] message refused', error);
-      respond({ failReason: 'INVALID_SIGNATURES', valid: payloads.map(() => false) } as never);
-    }
-  };
+  const approve = () =>
+    run(async () => {
+      try {
+        respond({ signedPayloads: await mwaSignMessages(account, payloads, origin) });
+      } catch (error) {
+        console.warn('[mwa] message refused', error);
+        respond(invalid(payloads.map(() => false)));
+      }
+    });
 
   return (
     <ConfirmSheet
       visible
       title={t('dapp.sign_message_title')}
-      message={`${origin}\n\n${text}\n\n${t('dapp.sign_message_hint')}`}
+      message={`${origin}\n\n${shown}\n\n${t('dapp.sign_message_hint')}`}
       confirmText={t('dapp.sign')}
       cancelText={t('dapp.reject')}
-      onClose={() => respond(fail('USER_DECLINED'))}
+      onClose={() => respond(declined)}
       onConfirm={approve}
     />
   );
@@ -266,10 +329,15 @@ function TransactionApproval({
 }: ApprovalProps<SignTransactionsRequest | SignAndSendTransactionsRequest>) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [busy, setBusy] = useState(false);
+  const { run, running, busy } = useOnce();
   const [error, setError] = useState<string | null>(null);
+  const answered = useRef(false);
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
-  const sendAfterSigning = request.__type === MWARequestType.SignAndSendTransactionsRequest;
+
+  const answer = (response: MWAResponse) => {
+    answered.current = true;
+    respond(response);
+  };
 
   // The preview is the extension's; a request that cannot even be read is
   // refused here, before anything is shown as signable.
@@ -281,7 +349,7 @@ function TransactionApproval({
     }
   }, [payloads, request.requestId]);
   useEffect(() => {
-    if (!preview) respond({ failReason: 'INVALID_SIGNATURES', valid: payloads.map(() => false) } as never);
+    if (!preview) respond(invalid(payloads.map(() => false)));
   }, [preview, payloads, respond]);
 
   const { feeSol, parsingError, effects, effectsLoading, details } = useSolanaTransactionApproval({
@@ -302,42 +370,54 @@ function TransactionApproval({
     },
     t
   );
+  const gate = dappTransactionGate({ effects, effectsLoading, parsingError });
 
-  const approve = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      if (!sendAfterSigning) {
-        respond({ signedPayloads: await mwaSignTransactions(account, payloads) } as MWAResponse);
-        return;
+  const approve = () =>
+    run(async () => {
+      setError(null);
+      try {
+        if (request.__type === MWARequestType.SignTransactionsRequest) {
+          answer({ signedPayloads: await mwaSignTransactions(account, payloads) });
+          return;
+        }
+        const result = await mwaSignAndSend(
+          account,
+          payloads,
+          {
+            minContextSlot: request.minContextSlot,
+            commitment: request.commitment,
+            skipPreflight: request.skipPreflight,
+            maxRetries: request.maxRetries,
+          },
+          () => !answered.current
+        );
+        if (!answered.current) {
+          answer(
+            'signatures' in result
+              ? { signedTransactions: result.signatures }
+              : invalid(result.valid)
+          );
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
       }
-      const sendRequest = request as SignAndSendTransactionsRequest;
-      const result = await mwaSignAndSend(account, payloads, {
-        minContextSlot: sendRequest.minContextSlot,
-        commitment: sendRequest.commitment,
-        skipPreflight: sendRequest.skipPreflight,
-        maxRetries: sendRequest.maxRetries,
-      });
-      respond(
-        'signatures' in result
-          ? ({ signedTransactions: result.signatures } as MWAResponse)
-          : ({ failReason: 'INVALID_SIGNATURES', valid: result.valid } as never)
-      );
-    } catch (err) {
-      setBusy(false);
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
+    });
 
   return (
     <View style={[styles.surface, { paddingTop: insets.top }]}>
       <DepthBackground />
       <TransactionConfirmation
         display={display}
-        onBack={() => respond(fail('USER_DECLINED'))}
+        // Backing out while signing would tell the dApp "no" while the wallet
+        // keeps going; it waits until the work in hand is done.
+        onBack={() => {
+          if (!busy.current) answer(declined);
+        }}
         onConfirm={() => void approve()}
-        confirmLabel={t('dapp.approve_and_sign')}
-        isRefreshing={busy}
+        confirmLabel={gate.requiresHold ? t('dapp.hold_to_approve') : t('dapp.approve_and_sign')}
+        isRefreshing={running}
+        confirmDisabled={!gate.canApprove}
+        requiresHold={gate.requiresHold}
         error={error}
         style={{ paddingBottom: insets.bottom + spacing.lg }}
       />

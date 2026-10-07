@@ -155,7 +155,7 @@
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
-    "mwa_message_binary": "Este mensaje no es texto legible ({{bytes}} bytes)."
+    "mwa_network_unsupported": "Esta app pidió {{requested}}, una red que tu billetera no está usando. Cambiá Salmon a esa red, si la soporta, y volvé a intentar."
   },
   "settings": {
     "title": "Configuración",

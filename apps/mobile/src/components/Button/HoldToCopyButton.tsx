@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
+import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 
 /** How long the control must be held before it commits — same as the DOM. */
@@ -30,6 +31,45 @@ export interface HoldToCopyButtonProps extends Testable {
 }
 
 export function HoldToCopyButton({ onCopy, children, disabled, testID }: HoldToCopyButtonProps) {
+  return (
+    <HoldButton onCommit={onCopy} disabled={disabled} testID={testID} Button={SecondaryButton}>
+      {children}
+    </HoldButton>
+  );
+}
+
+export interface HoldToApproveButtonProps extends Testable {
+  onApprove: () => void | Promise<void>;
+  children: string;
+  disabled?: boolean;
+}
+
+/**
+ * The primary action of a review that must be held: a dApp asking for a
+ * spending permission, a preview that could not tell what happens, or a
+ * transaction that would fail — the extension's `HoldToApproveButton` cases.
+ */
+export function HoldToApproveButton({
+  onApprove,
+  children,
+  disabled,
+  testID,
+}: HoldToApproveButtonProps) {
+  return (
+    <HoldButton onCommit={onApprove} disabled={disabled} testID={testID} Button={PrimaryButton}>
+      {children}
+    </HoldButton>
+  );
+}
+
+interface HoldButtonProps extends Testable {
+  onCommit: () => void | Promise<void>;
+  children: string;
+  disabled?: boolean;
+  Button: typeof PrimaryButton | typeof SecondaryButton;
+}
+
+function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButtonProps) {
   const styles = useThemedStyles(stylesFor);
   const [progress, setProgress] = useState(0);
   const frame = useRef<number | null>(null);
@@ -63,20 +103,18 @@ export function HoldToCopyButton({ onCopy, children, disabled, testID }: HoldToC
     if (disabled || startedAt.current !== null) return;
     const began = Date.now();
     startedAt.current = began;
-
     function step() {
       const elapsed = Date.now() - began;
       if (elapsed >= HOLD_MS) {
         stop();
-        void onCopy();
+        void onCommit();
         return;
       }
       setProgress(elapsed / HOLD_MS);
       frame.current = requestAnimationFrame(step);
     }
-
     frame.current = requestAnimationFrame(step);
-  }, [disabled, onCopy, stop]);
+  }, [disabled, onCommit, stop]);
 
   return (
     <View
@@ -85,15 +123,15 @@ export function HoldToCopyButton({ onCopy, children, disabled, testID }: HoldToC
       onTouchEnd={stop}
       onTouchCancel={stop}
     >
-      <SecondaryButton
+      <Button
         // Touch presses are the hold; only a screen reader's synthesized
         // activation goes straight through.
-        onPress={screenReaderOn ? () => void onCopy() : noop}
+        onPress={screenReaderOn ? () => void onCommit() : noop}
         disabled={disabled}
         testID={testID}
       >
         {children}
-      </SecondaryButton>
+      </Button>
       {progress > 0 && (
         <View
           testID="hold-progress"

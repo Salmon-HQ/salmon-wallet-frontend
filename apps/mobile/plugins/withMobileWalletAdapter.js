@@ -42,7 +42,9 @@ const withMwaManifest = (config) =>
         'android:taskAffinity': '',
         'android:excludeFromRecents': 'true',
         'android:theme': `@style/${THEME}`,
-        'android:screenOrientation': 'portrait',
+        // No orientation lock: Android 8.0 refuses one on a translucent
+        // activity ("Only fullscreen opaque activities can request
+        // orientation"), and minSdk reaches below it.
         'android:windowSoftInputMode': 'adjustResize',
         'android:configChanges':
           'keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize',

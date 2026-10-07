@@ -1,5 +1,5 @@
-export { HoldToCopyButton } from './HoldToCopyButton';
-export type { HoldToCopyButtonProps } from './HoldToCopyButton';
+export { HoldToApproveButton, HoldToCopyButton } from './HoldToCopyButton';
+export type { HoldToApproveButtonProps, HoldToCopyButtonProps } from './HoldToCopyButton';
 export { PrimaryButton } from './PrimaryButton';
 export { SecondaryButton } from './SecondaryButton';
 export { TextButton } from './TextButton';

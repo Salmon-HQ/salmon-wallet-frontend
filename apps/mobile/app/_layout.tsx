@@ -1,7 +1,7 @@
 // Note: Crypto polyfills are now loaded in index.js (the app entry point)
 // This ensures they're available BEFORE expo-router loads any modules
 
-import { createSemantic, setApiPlatform, type ThemeMode } from '@salmon/shared';
+import { createSemantic, type ThemeMode } from '@salmon/shared';
 import { StatusBar } from 'expo-status-bar';
 import {
   DarkTheme,
@@ -30,9 +30,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
 
-// The backend's availability gate reads the platform on every request
-// (spec 018); named once here, before any screen asks for anything.
-setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
 import { AppProviders, useAppFonts } from '../src/providers/AppProviders';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
@@ -44,7 +41,6 @@ import { useSemantic } from '../src/theme/useThemedStyles';
 import {
   useAccountsContext,
   useInactivityTimeout,
-  focusManager,
   usePendingActivity,
   useTheme,
 } from '@salmon/shared';
@@ -62,16 +58,6 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// React Query learns that the user came back from the DOM's focus events, which
-// React Native does not have: without this, `refetchOnWindowFocus` never fires
-// and reopening the app showed whatever was cached — an NFT already sent, a
-// balance from before a receive. Coming to the foreground is the app's focus.
-focusManager.setEventListener((handleFocus) => {
-  const subscription = AppState.addEventListener('change', (state) =>
-    handleFocus(state === 'active')
-  );
-  return () => subscription.remove();
-});
 
 export default function RootLayout() {
   const [loaded, error] = useAppFonts();

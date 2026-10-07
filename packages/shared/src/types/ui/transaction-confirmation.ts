@@ -28,6 +28,10 @@ export interface TransactionConfirmationPropsBase<TStyle> {
   confirmLabel: string;
   /** A rebuild is in flight: the values a fresh quote can change say so */
   isRefreshing?: boolean;
+  /** The review is not ready to confirm (a dApp preview still running or unreadable) */
+  confirmDisabled?: boolean;
+  /** Confirm must be held, not tapped (the dApp approval hold cases) */
+  requiresHold?: boolean;
   /** The last signing failure, a translation key, drawn on the screen */
   error?: string | null;
   style?: TStyle;

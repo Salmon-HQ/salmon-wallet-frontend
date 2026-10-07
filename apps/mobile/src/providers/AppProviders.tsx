@@ -3,15 +3,35 @@ import {
   AccountsProvider,
   createQueryClient,
   CurrencyProvider,
+  focusManager,
   PendingTransactionsProvider,
   QueryClientProvider,
+  setApiPlatform,
   ThemeProvider,
 } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { AppState, Platform, useColorScheme } from 'react-native';
 
 import { BiometricProvider } from '../contexts/BiometricContext';
+
+// Process-wide setup, here because both React roots (the app's navigator and
+// the dApp approval activity) load this module before rendering anything.
+
+// The backend's availability gate reads the platform on every request
+// (spec 018); named once, before any screen asks for anything.
+setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
+
+// React Query learns that the user came back from the DOM's focus events, which
+// React Native does not have: without this, `refetchOnWindowFocus` never fires
+// and reopening the app showed whatever was cached — an NFT already sent, a
+// balance from before a receive. Coming to the foreground is the app's focus.
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) =>
+    handleFocus(state === 'active')
+  );
+  return () => subscription.remove();
+});
 
 /** The fonts every screen assumes; both React roots (app and dApp approval) load them. */
 export function useAppFonts() {

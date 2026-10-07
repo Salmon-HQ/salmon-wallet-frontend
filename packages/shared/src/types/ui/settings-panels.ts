@@ -114,6 +114,8 @@ export interface ConfirmSheetPropsBase {
    * only reports something the user can do nothing about here.
    */
   acknowledgeOnly?: boolean;
+  /** The confirm control is not ready yet (e.g. a dApp's identity still being checked). */
+  confirmDisabled?: boolean;
   requirePassword?: boolean;
   validatePassword?: (password: string) => Promise<boolean>;
   /**

@@ -146,3 +146,15 @@ describe('ConfirmSheet password gate', () => {
     await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(undefined));
   });
 });
+
+describe('ConfirmSheet not ready', () => {
+  // A dApp's identity is still being checked: nothing is approvable yet.
+  it('does not run the action while confirm is disabled', async () => {
+    const { onConfirm } = renderSheet({ confirmDisabled: true });
+
+    fireEvent.press(screen.getByText('Confirm'));
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
