@@ -9,7 +9,7 @@
 | address | string? | existing — the account the user approved |
 | **authToken** | string? | **new** — bs58 of the random 32-byte `authorizationScope` returned to an MWA dApp. Absent for extension-trusted sites. |
 
-Stored as today: `TrustedApps[origin][networkId]`. `origin` = origin of `identityUri` (`https://jup.ag`), the same key the extension uses.
+Stored as today: `TrustedApps[networkId][origin]`, read from storage before every write. `origin` = origin of `identityUri` (`https://jup.ag`), the same key the extension uses.
 
 **Validation (every non-authorize request)**: entry exists for `domain` on the active network, `authToken` equals the request's `authorizationScope`, and `address` equals the active account's address. Any mismatch → `AuthorizationNotValid`.
 

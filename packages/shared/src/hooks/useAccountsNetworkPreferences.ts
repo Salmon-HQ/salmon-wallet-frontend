@@ -46,7 +46,7 @@ export function useAccountsNetworkPreferences({
   const addTrustedApp = useCallback(
     async (
       domain: string,
-      { name, icon, address }: TrustedApp = {},
+      { name, icon, address, authToken }: TrustedApp = {},
       targetNetworkId?: string
     ): Promise<void> => {
       const resolvedNetworkId = targetNetworkId ?? networkId;
@@ -57,7 +57,12 @@ export function useAccountsNetworkPreferences({
         ...current,
         [resolvedNetworkId]: {
           ...current[resolvedNetworkId],
-          [domain]: { name, icon, ...(address ? { address } : {}) },
+          [domain]: {
+            name,
+            icon,
+            ...(address ? { address } : {}),
+            ...(authToken ? { authToken } : {}),
+          },
         },
       };
       await setStorageItem(STORAGE_KEYS.TRUSTED_APPS, newTrustedApps);
