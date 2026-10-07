@@ -12,5 +12,5 @@ Claude-specific wiring only:
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/036-mwa-wallet/plan.md`.
+at `specs/037-seed-vault/plan.md`.
 <!-- SPECKIT END -->
