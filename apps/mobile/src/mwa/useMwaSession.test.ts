@@ -9,7 +9,15 @@ const bridge: {
 
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
   __esModule: true,
-  MWARequestFailReason: { UserDeclined: 'USER_DECLINED' },
+  MWARequestFailReason: {
+    UserDeclined: 'USER_DECLINED',
+    AuthorizationNotValid: 'AUTHORIZATION_NOT_VALID',
+  },
+  MWARequestType: {
+    AuthorizeDappRequest: 'AUTHORIZE_DAPP',
+    ReauthorizeDappRequest: 'REAUTHORIZE_DAPP',
+    DeauthorizeDappRequest: 'DEAUTHORIZE_DAPP',
+  },
   MWASessionEventType: {
     SessionTerminatedEvent: 'SESSION_TERMINATED',
     SessionCompleteEvent: 'SESSION_COMPLETE',
@@ -88,5 +96,28 @@ describe('useMwaSession', () => {
     unmount();
 
     expect(resolved).toHaveBeenCalledWith(request('a'), DECLINED);
+  });
+
+  // MWA accepts only AUTHORIZATION_NOT_VALID as a refusal of a reconnect or
+  // disconnect, and only USER_DECLINED for a connect; anything else is an
+  // invalid response the dApp reports as an error.
+  it('refuses a reconnect the way the protocol allows', () => {
+    const { unmount } = renderHook(() => useMwaSession({ onEnd: jest.fn() }));
+    const reauthorize = { __type: 'REAUTHORIZE_DAPP', requestId: 'r', sessionId: 's' };
+    act(() => bridge.onRequest?.(reauthorize));
+
+    unmount();
+
+    expect(resolved).toHaveBeenCalledWith(reauthorize, { failReason: 'AUTHORIZATION_NOT_VALID' });
+  });
+
+  it('refuses a connect only as declined', () => {
+    const { result } = renderHook(() => useMwaSession({ onEnd: jest.fn() }));
+    const authorize = { __type: 'AUTHORIZE_DAPP', requestId: 'r', sessionId: 's' };
+    act(() => bridge.onRequest?.(authorize));
+
+    act(() => result.current.respond({ failReason: 'TOO_MANY_PAYLOADS' } as never));
+
+    expect(resolved).toHaveBeenCalledWith(authorize, DECLINED);
   });
 });

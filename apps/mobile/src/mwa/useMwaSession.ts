@@ -2,6 +2,7 @@ import {
   initializeMobileWalletAdapterSession,
   initializeMWAEventListener,
   MWARequestFailReason,
+  MWARequestType,
   MWASessionEventType,
   resolve,
   type MobileWalletAdapterConfig,
@@ -21,6 +22,25 @@ export const MWA_CONFIG: MobileWalletAdapterConfig = {
 };
 
 const DECLINED: MWAResponse = { failReason: MWARequestFailReason.UserDeclined };
+
+/**
+ * The refusals the protocol accepts per request: a reconnect or disconnect can
+ * only be refused as AUTHORIZATION_NOT_VALID and a connect only as declined.
+ * Any other failure for them is coerced, because the bridge rejects it as an
+ * invalid response and the dApp sees an error instead of a no.
+ */
+function protocolResponse(request: MWARequest, response: MWAResponse): MWAResponse {
+  if (!('failReason' in response)) return response;
+  switch (request.__type) {
+    case MWARequestType.ReauthorizeDappRequest:
+    case MWARequestType.DeauthorizeDappRequest:
+      return { failReason: MWARequestFailReason.AuthorizationNotValid };
+    case MWARequestType.AuthorizeDappRequest:
+      return DECLINED;
+    default:
+      return response;
+  }
+}
 
 const SESSION_ENDED = new Set<string>([
   MWASessionEventType.SessionTerminatedEvent,
@@ -45,7 +65,7 @@ export function useMwaSession({ onEnd }: { onEnd: () => void }) {
     if (!head) return;
     try {
       // `resolve` is overloaded per request type; the screen picked the shape.
-      resolve(head as never, response as never);
+      resolve(head as never, protocolResponse(head, response) as never);
     } catch (error) {
       // A session the dApp already closed must not strand the requests behind it.
       console.warn('[mwa] could not answer a request', error);

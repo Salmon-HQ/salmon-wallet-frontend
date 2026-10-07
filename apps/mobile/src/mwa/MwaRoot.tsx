@@ -1,5 +1,5 @@
 import { isSignableSolanaAccount, useAccountsContext } from '@salmon/shared';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { AppState, BackHandler, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -56,27 +56,35 @@ function MwaHost() {
   const { current, respond } = useMwaSession({ onEnd: lockAndClose });
 
   // Leaving the screen any way at all — background, or the activity torn down
-  // without a session event — locks as well.
+  // without a session event — locks as well. `actions` changes identity with
+  // the wallet state, so it is read through a ref: an effect keyed on it would
+  // run its cleanup, and lock, on the very unlock it should survive.
+  const actionsRef = useRef(actions);
+  useEffect(() => {
+    actionsRef.current = actions;
+  }, [actions]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'background') void actions.lockAccounts();
+      if (next === 'background') void actionsRef.current.lockAccounts();
     });
     return () => {
       subscription.remove();
-      void actions.lockAccounts();
+      void actionsRef.current.lockAccounts();
     };
-  }, [actions]);
+  }, []);
 
-  // Hardware back: with nothing on screen it closes back to the dApp; a request
-  // on screen answers through its own controls (the sheet's back handling, the
-  // review's Back button), which know whether signing is under way.
+  // Hardware back: a request on screen answers through its own controls (the
+  // sheet's back handling, the review's Back button), which know whether
+  // signing is under way. Anywhere else — the lock, nothing yet — it closes
+  // back to the dApp, and the session declines whatever was waiting.
+  const requestOnScreen = !!current && state.ready && !state.locked;
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (!current) lockAndClose();
+      if (!requestOnScreen) lockAndClose();
       return true;
     });
     return () => subscription.remove();
-  }, [current, lockAndClose]);
+  }, [requestOnScreen, lockAndClose]);
 
   if (!state.ready) return null;
 
