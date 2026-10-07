@@ -31,6 +31,8 @@ export {
   withSignature,
 } from './mwa';
 export type { MwaSendOptions } from './mwa';
+export { dappTransactionDisplay } from './dapp-transaction-display';
+export type { DAppTransactionDisplayInput } from './dapp-transaction-display';
 
 // Account utilities
 export {
