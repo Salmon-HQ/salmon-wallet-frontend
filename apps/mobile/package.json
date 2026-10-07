@@ -44,6 +44,7 @@
     "@salmon/assets": "workspace:*",
     "@salmon/shared": "workspace:*",
     "@solana-mobile/mobile-wallet-adapter-walletlib": "1.4.5",
+    "@solana-mobile/seed-vault-lib": "0.4.1",
     "@solana/webcrypto-ed25519-polyfill": "^8.4.0",
     "buffer": "^6.0.3",
     "expo": "^57.0.26",
