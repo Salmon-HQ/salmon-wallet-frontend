@@ -133,3 +133,69 @@ export function isMwaAuthorizationValid(
     app.authToken === encodeMwaAuthToken(authorizationScope)
   );
 }
+
+/** The four refusals the MWA wallet bridge can return. */
+export type MwaFailReason =
+  | 'USER_DECLINED'
+  | 'TOO_MANY_PAYLOADS'
+  | 'INVALID_SIGNATURES'
+  | 'AUTHORIZATION_NOT_VALID';
+
+/** Most transactions or messages Salmon accepts in one request. */
+export const MWA_MAX_PAYLOADS = 10;
+
+export interface MwaPrecheckInput {
+  /** A connect request carries no token yet. */
+  authorize: boolean;
+  chain: string;
+  identityUri?: string;
+  authorizationScope?: Uint8Array;
+  payloadCount?: number;
+}
+
+export interface MwaPrecheckContext {
+  /** Active account's address, or null when it cannot sign (watch-only). */
+  address: string | null;
+  networkId: string | null;
+  /** Trusted apps on the active network. */
+  trustedApps: Record<string, TrustedApp>;
+}
+
+export type MwaPrecheck =
+  | { ok: true; origin: string; networkId: string }
+  | {
+      ok: false;
+      failReason: MwaFailReason;
+      /** Set when the user should be told why before the dApp hears no. */
+      reason?: 'network' | 'identity' | 'watch-only';
+      requested?: string;
+    };
+
+/**
+ * Everything a dApp request must pass before the user is asked anything:
+ * a network Salmon is on, a declared identity, an account that can sign,
+ * a live authorization, and a payload count Salmon advertised.
+ */
+export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): MwaPrecheck {
+  const networkId = mwaChainToNetworkId(input.chain);
+  if (!networkId || networkId !== ctx.networkId) {
+    return { ok: false, reason: 'network', requested: input.chain, failReason: 'USER_DECLINED' };
+  }
+  const origin = mwaIdentityOrigin(input.identityUri);
+  if (!origin) return { ok: false, reason: 'identity', failReason: 'USER_DECLINED' };
+  if (!ctx.address) return { ok: false, reason: 'watch-only', failReason: 'USER_DECLINED' };
+  if (
+    !input.authorize &&
+    !isMwaAuthorizationValid(
+      ctx.trustedApps[origin],
+      ctx.address,
+      input.authorizationScope ?? new Uint8Array()
+    )
+  ) {
+    return { ok: false, failReason: 'AUTHORIZATION_NOT_VALID' };
+  }
+  if ((input.payloadCount ?? 0) > MWA_MAX_PAYLOADS) {
+    return { ok: false, failReason: 'TOO_MANY_PAYLOADS' };
+  }
+  return { ok: true, origin, networkId };
+}

@@ -23,14 +23,18 @@ export type { SolanaTransactionApprovalDetails } from './dapp-approval';
 export {
   encodeMwaAuthToken,
   isMwaAuthorizationValid,
+  MWA_MAX_PAYLOADS,
   mwaChainToNetworkId,
   mwaIdentityOrigin,
+  mwaPrecheck,
   newMwaAuthToken,
   toSignAllTransactionsRequest,
   toSignAndSendRequest,
   withSignature,
 } from './mwa';
-export type { MwaSendOptions } from './mwa';
+export type { MwaFailReason, MwaPrecheck, MwaSendOptions } from './mwa';
+export { mwaSignAndSend, mwaSignIn, mwaSignMessages, mwaSignTransactions } from './mwa-sign';
+export type { MwaSignInResult } from './mwa-sign';
 export { dappTransactionDisplay } from './dapp-transaction-display';
 export type { DAppTransactionDisplayInput } from './dapp-transaction-display';
 

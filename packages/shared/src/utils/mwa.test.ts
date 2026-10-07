@@ -13,6 +13,7 @@ import {
   mwaChainToNetworkId,
   newMwaAuthToken,
   mwaIdentityOrigin,
+  mwaPrecheck,
   toSignAllTransactionsRequest,
   toSignAndSendRequest,
   withSignature,
@@ -164,5 +165,82 @@ describe('authorization token', () => {
     expect(isMwaAuthorizationValid(app, other, token)).toBe(false);
     expect(isMwaAuthorizationValid(undefined, address, token)).toBe(false);
     expect(isMwaAuthorizationValid({ address }, address, token)).toBe(false);
+  });
+});
+
+describe('mwaPrecheck', () => {
+  const address = salmon.publicKey.toBase58();
+  const origin = 'https://jup.ag';
+  const token = new Uint8Array(32).fill(7);
+  const ctx = {
+    address,
+    networkId: 'solana-mainnet',
+    trustedApps: { [origin]: { address, authToken: encodeMwaAuthToken(token) } },
+  };
+  const sign = {
+    authorize: false,
+    chain: 'solana:mainnet',
+    identityUri: origin,
+    authorizationScope: token,
+    payloadCount: 1,
+  };
+
+  it('lets an authorized request through with its origin and network', () => {
+    expect(mwaPrecheck(sign, ctx)).toEqual({ ok: true, origin, networkId: 'solana-mainnet' });
+  });
+
+  it('refuses a network Salmon is not on, and says which', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:devnet' }, ctx)).toEqual({
+      ok: false,
+      reason: 'network',
+      requested: 'solana:devnet',
+      failReason: 'USER_DECLINED',
+    });
+  });
+
+  it('refuses a network Salmon does not support at all', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, ctx)).toMatchObject({
+      ok: false,
+      reason: 'network',
+    });
+  });
+
+  it('refuses a dApp that does not say who it is', () => {
+    expect(mwaPrecheck({ ...sign, identityUri: undefined }, ctx)).toEqual({
+      ok: false,
+      reason: 'identity',
+      failReason: 'USER_DECLINED',
+    });
+  });
+
+  it('refuses a watch-only wallet, and says so', () => {
+    expect(mwaPrecheck(sign, { ...ctx, address: null })).toEqual({
+      ok: false,
+      reason: 'watch-only',
+      failReason: 'USER_DECLINED',
+    });
+  });
+
+  it('refuses a token that was revoked or never issued', () => {
+    expect(mwaPrecheck(sign, { ...ctx, trustedApps: {} })).toEqual({
+      ok: false,
+      failReason: 'AUTHORIZATION_NOT_VALID',
+    });
+  });
+
+  it('refuses more payloads than Salmon advertises', () => {
+    expect(mwaPrecheck({ ...sign, payloadCount: 11 }, ctx)).toEqual({
+      ok: false,
+      failReason: 'TOO_MANY_PAYLOADS',
+    });
+  });
+
+  it('does not ask a connect request for a token it cannot have yet', () => {
+    const authorize = { authorize: true, chain: 'solana:mainnet', identityUri: origin };
+    expect(mwaPrecheck(authorize, { ...ctx, trustedApps: {} })).toEqual({
+      ok: true,
+      origin,
+      networkId: 'solana-mainnet',
+    });
   });
 });
