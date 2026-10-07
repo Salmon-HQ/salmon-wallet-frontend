@@ -135,10 +135,12 @@ Pre-build checklist — run in order before `eas build --profile production`:
    - both stores: `eas build --platform all --profile production`
      (`.aab` for Play Store, `.ipa` for App Store)
    - `.apk` for sideload: `eas build --platform android --profile production-apk`
-   - `.apk` for the Solana dApp Store: `eas build --platform android --profile dapp-store`
-     (`pnpm build:dapp-store` locally). The dApp Store refuses the Play signing key, so this
-     profile signs from a gitignored `apps/mobile/credentials.json` pointing at a separate
-     dApp Store keystore. All its future updates need that same key: back it up like the Play one.
+   - `.apk` for the Solana dApp Store: `eas build --platform android --profile dapp-store`.
+     The dApp Store refuses the Play signing key, so this profile signs with a second keystore
+     that EAS stores for the same package under the name `dapp-store` (`keystoreName` in
+     eas.json; Play keeps the default keystore). Every future dApp Store update needs that same
+     key: keep its downloaded backup next to the Play one. It ships a new native runtime
+     (Mobile Wallet Adapter activity), so it is a new binary, never an OTA onto an older one.
 
    Download the artifacts from the EAS build page (or `eas build:list`).
    The `versionCode` / `buildNumber` is assigned by EAS during the build;
