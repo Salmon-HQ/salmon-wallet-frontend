@@ -10,6 +10,7 @@ import { useBiometric } from '../contexts/BiometricContext';
 import { I18nProvider } from '../i18n';
 import { AppProviders, useAppFonts } from '../providers/AppProviders';
 import { MwaRequest } from './MwaRequest';
+import { isSeedVaultScreenOpen } from '../seed-vault/bridge';
 import { useMwaSession } from './useMwaSession';
 
 /**
@@ -65,7 +66,10 @@ function MwaHost() {
   }, [actions]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'background') void actionsRef.current.lockAccounts();
+      // A Seed Vault confirmation puts its own screen over this one.
+      if (next === 'background' && !isSeedVaultScreenOpen()) {
+        void actionsRef.current.lockAccounts();
+      }
     });
     return () => {
       subscription.remove();

@@ -14,7 +14,7 @@
 - [x] T007 Config plugin guard: build fails if the privileged permission is in the manifest
 - [x] T008 Add flow from Add wallet and the welcome screen; accounts picker; duplicates shown as added
 - [x] T009 Removal deauthorizes the last wallet of a seed; revoked access refuses with re-authorize offer
-- [ ] T010 No lock while a Seed Vault confirmation is open (main app and MWA root)
+- [x] T010 No lock while a Seed Vault confirmation is open (main app and MWA root)
 
 ## Phase 4 — Verification
 - [ ] T011 Simulator on `Seeker_API35`: add, send on devnet, MWA request types, cancel, revoke

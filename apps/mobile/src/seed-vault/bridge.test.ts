@@ -28,7 +28,7 @@ jest.mock('@salmon/shared', () => {
 
 import { Buffer } from 'buffer';
 
-import { createSeed, listSeedVaultAccounts, seedVaultBridge } from './bridge';
+import { createSeed, isSeedVaultScreenOpen, listSeedVaultAccounts, seedVaultBridge } from './bridge';
 
 const mockNative = jest.requireMock('@solana-mobile/seed-vault-lib').SeedVault as Record<string, jest.Mock>;
 
@@ -90,5 +90,19 @@ describe('Seed Vault bridge', () => {
       { derivationPath: PATH, address: 'Addr1', name: 'Main', isUserWallet: true },
       { derivationPath: "bip32:/m/44'/501'/1'/0'", address: 'Addr2', name: 'Addr2', isUserWallet: false },
     ]);
+  });
+});
+
+describe('Seed Vault screen tracking', () => {
+  it('reports Seed Vault\'s screen as open while a request waits, and closed after, even on failure', async () => {
+    let finish!: (value: unknown) => void;
+    mockNative.signMessages.mockReturnValue(new Promise((_, reject) => (finish = reject)));
+
+    const pending = seedVaultBridge.signMessages('4001', PATH, [Uint8Array.of(1)]);
+    expect(isSeedVaultScreenOpen()).toBe(true);
+
+    finish(new Error('signMessages failed with result=0'));
+    await expect(pending).rejects.toBeDefined();
+    expect(isSeedVaultScreenOpen()).toBe(false);
   });
 });

@@ -31,6 +31,7 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
+import { isSeedVaultScreenOpen } from '../src/seed-vault/bridge';
 import {
   useAccountsContext,
   useInactivityTimeout,
@@ -265,7 +266,9 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       const goingToBackground =
         nextState === 'background' && (previousState === 'active' || previousState === 'inactive');
 
-      if (!goingToBackground) {
+      // A Seed Vault confirmation is another app's screen over this one; the
+      // wallet is still in use (spec 037).
+      if (!goingToBackground || isSeedVaultScreenOpen()) {
         return;
       }
 

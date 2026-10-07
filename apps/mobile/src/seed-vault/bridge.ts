@@ -47,6 +47,26 @@ const native = SeedVault as unknown as {
 };
 type SigningRequest = { payload: string; requestedSignatures: string[] };
 
+// Seed Vault's screens (and Android's permission dialog) are other apps'
+// activities: while one is up, Salmon's own activity reports `background`.
+// The lock-on-background handlers ask this first, so a confirmation does not
+// lock the wallet, or close the dApp sheet, under the user's finger.
+let screensOpen = 0;
+
+/** Whether a Seed Vault screen Salmon opened is still up. */
+export function isSeedVaultScreenOpen(): boolean {
+  return screensOpen > 0;
+}
+
+async function onSeedVaultScreen<T>(call: () => Promise<T>): Promise<T> {
+  screensOpen += 1;
+  try {
+    return await call();
+  } finally {
+    screensOpen -= 1;
+  }
+}
+
 /**
  * Whether this device has a Seed Vault Salmon may use. Production builds
  * accept only a secure one; development builds also accept the simulator.
@@ -62,7 +82,9 @@ export async function isSeedVaultAvailable(): Promise<boolean> {
 
 /** Asks Android for the standard Seed Vault permission (never the privileged one). */
 export async function requestSeedVaultPermission(): Promise<boolean> {
-  const result = await PermissionsAndroid.request(SeedVaultPermissionAndroid);
+  const result = await onSeedVaultScreen(() =>
+    PermissionsAndroid.request(SeedVaultPermissionAndroid)
+  );
   return result === PermissionsAndroid.RESULTS.GRANTED;
 }
 
@@ -72,20 +94,22 @@ const usable = (authToken: string) => authToken !== '-1' && authToken !== '';
 
 /** Opens Seed Vault's screen to let Salmon use one existing seed. */
 export async function authorizeSeed(): Promise<string> {
-  const { authToken } = await native.authorizeNewSeed().catch(failure);
+  const { authToken } = await onSeedVaultScreen(() => native.authorizeNewSeed()).catch(failure);
   if (!usable(authToken)) throw new SeedVaultError('failed');
   return authToken;
 }
 
 /** Opens Seed Vault's screen to create a seed, then authorizes it. */
 export async function createSeed(): Promise<string> {
-  const { authToken } = await native.createNewSeed().catch(failure);
+  const { authToken } = await onSeedVaultScreen(() => native.createNewSeed()).catch(failure);
   return usable(authToken) ? authToken : authorizeSeed();
 }
 
 /** Opens Seed Vault's screen to import a seed, then authorizes it. */
 export async function importSeed(): Promise<string> {
-  const { authToken } = await native.importExistingSeed().catch(failure);
+  const { authToken } = await onSeedVaultScreen(() => native.importExistingSeed()).catch(
+    failure
+  );
   return usable(authToken) ? authToken : authorizeSeed();
 }
 
@@ -142,10 +166,14 @@ const firstSignatures = (results: NativeSigningResult[]) =>
 export const seedVaultBridge: SeedVaultBridge = {
   signTransactions: async (authToken, derivationPath, payloads) =>
     firstSignatures(
-      await native.signTransactions(authToken, toRequests(derivationPath, payloads)).catch(failure)
+      await onSeedVaultScreen(() =>
+        native.signTransactions(authToken, toRequests(derivationPath, payloads))
+      ).catch(failure)
     ),
   signMessages: async (authToken, derivationPath, payloads) =>
     firstSignatures(
-      await native.signMessages(authToken, toRequests(derivationPath, payloads)).catch(failure)
+      await onSeedVaultScreen(() =>
+        native.signMessages(authToken, toRequests(derivationPath, payloads))
+      ).catch(failure)
     ),
 };
