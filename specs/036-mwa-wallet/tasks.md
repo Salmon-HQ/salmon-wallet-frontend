@@ -79,4 +79,5 @@ MVP = Phases 1–3 (Salmon connects to any dApp). Then US2 (the reason dApps exi
 - Request handling lives in `packages/shared` (`utils/mwa.ts`, `utils/mwa-sign.ts`, `utils/dapp-transaction-display.ts`) with Vitest, because `apps/mobile` Jest cannot load `@solana/kit`; `apps/mobile/src/mwa/` is glue over existing views (`ConfirmSheet`, `TransactionConfirmation`, `LockContent`).
 - US4 is covered by the shared tests for `mwaPrecheck` / `isMwaAuthorizationValid` and by the hand-test (reconnect without a prompt).
 - Hand-test on `Seeker_API35` with `solana-mobile playground` (devnet): connect, silent reconnect, sign message, decline, sign transaction, sign and send (finalized on devnet), sign-in inside connect and as a message. Each session ends with the wallet locked. Deauthorize not yet exercised.
+- iOS regression check (owner, on device, 2026-10-07, Release 1.4.0 against production): unlock and lock, refresh on return, Swap confirmation screen, confirm sheets, hold-to-copy — all working.
 - MWA 2.0 needs `solana:signTransactions` advertised explicitly; without it dApps get "method not available".
