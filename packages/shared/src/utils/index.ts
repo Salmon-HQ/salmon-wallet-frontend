@@ -20,6 +20,17 @@ export {
   UnsupportedTransactionVersionError,
 } from './dapp-approval';
 export type { SolanaTransactionApprovalDetails } from './dapp-approval';
+export {
+  encodeMwaAuthToken,
+  isMwaAuthorizationValid,
+  mwaChainToNetworkId,
+  mwaIdentityOrigin,
+  newMwaAuthToken,
+  toSignAllTransactionsRequest,
+  toSignAndSendRequest,
+  withSignature,
+} from './mwa';
+export type { MwaSendOptions } from './mwa';
 
 // Account utilities
 export {

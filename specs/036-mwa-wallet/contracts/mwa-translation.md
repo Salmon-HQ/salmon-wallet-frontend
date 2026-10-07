@@ -3,28 +3,25 @@
 Pure functions, no key access, Vitest-covered. Exported from `@salmon/shared` (new module `utils/mwa.ts`).
 
 ```ts
-type SalmonSolanaNetworkId = 'solana-mainnet' | 'solana-devnet';
-
 /** MWA chain or legacy cluster → Salmon network; null when unsupported. */
-function mwaChainToNetworkId(chain: string | undefined): SalmonSolanaNetworkId | null;
+function mwaChainToNetworkId(chain: string | undefined): 'solana-mainnet' | 'solana-devnet' | null;
 
-/** Host of the dApp's declared identity URI; null when missing or not http(s). */
-function mwaIdentityDomain(identityUri: string | undefined): string | null;
+/** Origin of the dApp's declared identity URI (trusted-apps key, same as the extension); null when missing or not http(s). */
+function mwaIdentityOrigin(identityUri: string | undefined): string | null;
 
-/** Wire transactions → the existing request shapes. */
+/** Wire transactions → the existing request shapes. Throws on bytes that are not a transaction. */
 function toSignAllTransactionsRequest(id: string, wires: Uint8Array[]): DAppSignAllTransactionsRequest;
 function toSignAndSendRequest(id: string, wire: Uint8Array, options: MwaSendOptions): DAppSignAndSendTransactionRequest;
 
 /** Place this wallet's signature into the dApp's wire transaction, keeping every other signature. */
 function withSignature(wire: Uint8Array, signer: string, signatureBs58: string): Uint8Array;
 
-/** True when the request's token, domain, network and address match a stored trusted app. */
-function isMwaAuthorizationValid(args: {
-  trustedApps: TrustedApps; domain: string; networkId: string; address: string; authorizationScope: Uint8Array;
-}): boolean;
-
-/** New random authorization token (32 bytes). */
+/** Authorization token: 32 random bytes; stored bs58 on the trusted app. */
 function newMwaAuthToken(): Uint8Array;
+function encodeMwaAuthToken(token: Uint8Array): string;
+
+/** Valid only for the trusted app's stored token and the account it was shown. */
+function isMwaAuthorizationValid(app: TrustedApp | undefined, address: string, authorizationScope: Uint8Array): boolean;
 ```
 
 `MwaSendOptions` = `{ minContextSlot?, commitment?, skipPreflight?, maxRetries? }`, passed through as the existing `params.options`.

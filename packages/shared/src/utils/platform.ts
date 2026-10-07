@@ -1,7 +1,6 @@
 /**
  * Platform detection utilities.
  *
- * Consolidated from useRuntime.ts and useInactivityTimeout.ts.
  * Uses globalThis casting to avoid type conflicts with WXT's auto-generated types.
  *
  * @module utils/platform

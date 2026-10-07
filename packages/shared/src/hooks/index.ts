@@ -20,11 +20,6 @@ export type {
   UseUserConfigResult,
 } from './useUserConfig';
 
-// Runtime detection hook
-export { useRuntime } from './useRuntime';
-export type { RuntimeInfo } from './useRuntime';
-export { ADAPTER_PREFIXES } from './useRuntime';
-
 // Language management hook
 export { useLanguage } from './useLanguage';
 export type { UseLanguageResult } from './useLanguage';

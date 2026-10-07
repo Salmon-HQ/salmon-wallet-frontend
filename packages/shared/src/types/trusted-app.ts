@@ -14,6 +14,8 @@ export interface TrustedApp {
   icon?: string;
   /** The address the user saw and approved when trusting this origin */
   address?: string;
+  /** bs58 token handed to a Mobile Wallet Adapter dApp; absent for sites trusted through the extension */
+  authToken?: string;
 }
 
 /**
