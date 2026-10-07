@@ -12,6 +12,7 @@ import {
   isMwaAuthorizationValid,
   mwaChainToNetworkId,
   newMwaAuthToken,
+  mwaAuthorizedAccount,
   mwaIdentityOrigin,
   mwaPrecheck,
   toSignAllTransactionsRequest,
@@ -241,6 +242,16 @@ describe('mwaPrecheck', () => {
       ok: true,
       origin,
       networkId: 'solana-mainnet',
+    });
+  });
+});
+
+describe('mwaAuthorizedAccount', () => {
+  it('hands the dApp the raw public key of the address it was shown', () => {
+    expect(mwaAuthorizedAccount(salmon.publicKey.toBase58(), 'solana:mainnet', 'Main')).toEqual({
+      publicKey: salmon.publicKey.toBytes(),
+      accountLabel: 'Main',
+      chains: ['solana:mainnet'],
     });
   });
 });

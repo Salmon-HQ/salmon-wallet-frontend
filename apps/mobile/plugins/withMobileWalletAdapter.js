@@ -37,6 +37,10 @@ const withMwaManifest = (config) =>
         'android:name': `.${ACTIVITY}`,
         'android:exported': 'true',
         'android:launchMode': 'singleTask',
+        // Its own task: the dApp stays visible behind the sheet, and the app's
+        // own stack is neither brought forward nor listed twice in recents.
+        'android:taskAffinity': '',
+        'android:excludeFromRecents': 'true',
         'android:theme': `@style/${THEME}`,
         'android:screenOrientation': 'portrait',
         'android:windowSoftInputMode': 'adjustResize',

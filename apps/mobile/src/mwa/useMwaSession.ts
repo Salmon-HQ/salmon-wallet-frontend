@@ -16,7 +16,8 @@ export const MWA_CONFIG: MobileWalletAdapterConfig = {
   maxMessagesPerSigningRequest: 10,
   supportedTransactionVersions: [0, 'legacy'],
   noConnectionWarningTimeoutMs: 3000,
-  optionalFeatures: ['solana:signInWithSolana'],
+  // signTransactions is optional (and deprecated) in MWA 2.0, but dApps still call it.
+  optionalFeatures: ['solana:signInWithSolana', 'solana:signTransactions'],
 };
 
 const DECLINED = { failReason: MWARequestFailReason.UserDeclined } as MWAResponse;

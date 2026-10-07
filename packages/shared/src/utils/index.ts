@@ -24,6 +24,7 @@ export {
   encodeMwaAuthToken,
   isMwaAuthorizationValid,
   MWA_MAX_PAYLOADS,
+  mwaAuthorizedAccount,
   mwaChainToNetworkId,
   mwaIdentityOrigin,
   mwaPrecheck,

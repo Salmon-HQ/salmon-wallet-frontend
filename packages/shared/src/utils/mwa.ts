@@ -199,3 +199,8 @@ export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): M
   }
   return { ok: true, origin, networkId };
 }
+
+/** The account an approved `authorize` hands the dApp: the raw key of the address the user saw. */
+export function mwaAuthorizedAccount(address: string, chain: string, label?: string) {
+  return { publicKey: bs58.decode(address), accountLabel: label, chains: [chain] };
+}

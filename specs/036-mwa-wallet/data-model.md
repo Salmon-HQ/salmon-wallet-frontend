@@ -38,4 +38,4 @@ The bridge's request as received (`AuthorizeDapp`, `ReauthorizeDapp`, `Deauthori
 | maxMessagesPerSigningRequest | 10 |
 | supportedTransactionVersions | `0`, `'legacy'` |
 | supportsSignAndSendTransactions | true |
-| optionalFeatures | `solana:signInWithSolana` |
+| optionalFeatures | `solana:signInWithSolana`, `solana:signTransactions` |

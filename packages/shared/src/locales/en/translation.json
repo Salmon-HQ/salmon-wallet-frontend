@@ -150,7 +150,12 @@
     "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
     "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
     "batch_size": "Transactions in this request",
-    "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one."
+    "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.",
+    "mwa_refused_title": "Request refused",
+    "mwa_unverified": "Salmon could not confirm that this request comes from {{origin}}. Approve only if you opened that app or site yourself.",
+    "mwa_watch_only": "The active wallet only watches balances, so it cannot connect or sign. Switch to a wallet that holds its keys and try again.",
+    "mwa_identity_missing": "This app did not say which site it is, so Salmon cannot show you who is asking. The request was refused.",
+    "mwa_message_binary": "This message is not readable text ({{bytes}} bytes)."
   },
   "settings": {
     "title": "Settings",

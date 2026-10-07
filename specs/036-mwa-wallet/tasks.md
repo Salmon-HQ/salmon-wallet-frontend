@@ -23,41 +23,41 @@
 - [x] T010 Extract the provider tree of `apps/mobile/app/_layout.tsx` into `apps/mobile/src/providers/AppProviders.tsx` (fonts, `setApiPlatform`, focus manager stay where they are or move with it); `_layout.tsx` uses it; existing mobile tests stay green
 - [x] T011 Tests for the session hook in `apps/mobile/src/mwa/useMwaSession.test.ts` (native module mocked): requests are queued and surfaced one at a time, every request is resolved exactly once, unmount/session end declines the pending one
 - [x] T012 Implement `apps/mobile/src/mwa/useMwaSession.ts` (listener + `initializeMobileWalletAdapterSession('Salmon', config)` with the limits in `data-model.md`; queue; `finish` on session end) until T011 passes
-- [ ] T013 `apps/mobile/src/mwa/MwaRoot.tsx`: `AppProviders` + lock gate (show `LockContent` while `state.locked`, unlock via password or `useBiometric().unlock()`), then render the current request's view; watch-only active account → decline with a message
+- [x] T013 `apps/mobile/src/mwa/MwaRoot.tsx`: `AppProviders` + lock gate (show `LockContent` while `state.locked`, unlock via password or `useBiometric().unlock()`), then render the current request's view; watch-only active account → decline with a message
 
 ## Phase 3: User Story 1 — Connect a dApp (P1) 🎯 MVP
 
 **Independent test**: playground Connect → address shown; Trusted apps lists the dApp; decline, locked, unsupported network and unverified identity behave per spec.
 
-- [ ] T014 [P] [US1] RN view `apps/mobile/src/components/DAppApproval/DAppConnectApprovalView.tsx` on `DAppConnectApprovalViewPropsBase`, `dapp.*` copy, theme tokens (+ RNTL test)
-- [ ] T015 [US1] Authorize handler in `apps/mobile/src/mwa/handlers.ts`: chain → network (refuse unsupported or ≠ active network with `dapp.network_mismatch`), domain from `identityUri` (refuse if missing), `verifyCallingPackage` → `showOriginWarning`, on approve `addTrustedApp(domain, {name, icon, address, authToken}, networkId)` and respond with account + token
-- [ ] T016 [US1] Reauthorize and deauthorize handlers in `apps/mobile/src/mwa/handlers.ts` using `isMwaAuthorizationValid`; deauthorize removes the trusted app (covers US4)
+- [x] T014 [P] [US1] RN view `apps/mobile/src/components/DAppApproval/DAppConnectApprovalView.tsx` on `DAppConnectApprovalViewPropsBase`, `dapp.*` copy, theme tokens (+ RNTL test)
+- [x] T015 [US1] Authorize handler in `apps/mobile/src/mwa/handlers.ts`: chain → network (refuse unsupported or ≠ active network with `dapp.network_mismatch`), domain from `identityUri` (refuse if missing), `verifyCallingPackage` → `showOriginWarning`, on approve `addTrustedApp(domain, {name, icon, address, authToken}, networkId)` and respond with account + token
+- [x] T016 [US1] Reauthorize and deauthorize handlers in `apps/mobile/src/mwa/handlers.ts` using `isMwaAuthorizationValid`; deauthorize removes the trusted app (covers US4)
 
 ## Phase 4: User Story 2 — Sign and send transactions (P1)
 
 **Independent test**: playground Sign transaction and Sign and send on devnet; signature resolves on an explorer; unreadable / too many / unauthorized refused.
 
-- [ ] T017 [P] [US2] RN view `DAppTransactionApprovalView.tsx` on `DAppTransactionApprovalViewPropsBase` using `useSolanaTransactionApproval` for fee and effects (+ RNTL test)
-- [ ] T018 [US2] signTransactions handler: auth check, payload count ≤ 10, decode each (unreadable → `InvalidSignatures` with `valid[]`), `approveSolanaTransactionRequest` with `toSignAllTransactionsRequest`, merge with `withSignature`, respond `signedPayloads`
-- [ ] T019 [US2] signAndSendTransactions handler: same checks, one `approveSolanaTransactionRequest` per payload via `toSignAndSendRequest` (WYSIWYS check included), stop at the first send failure (`InvalidSignatures`), respond `signedTransactions` with signatures
+- [x] T017 [P] [US2] RN view `DAppTransactionApprovalView.tsx` on `DAppTransactionApprovalViewPropsBase` using `useSolanaTransactionApproval` for fee and effects (+ RNTL test)
+- [x] T018 [US2] signTransactions handler: auth check, payload count ≤ 10, decode each (unreadable → `InvalidSignatures` with `valid[]`), `approveSolanaTransactionRequest` with `toSignAllTransactionsRequest`, merge with `withSignature`, respond `signedPayloads`
+- [x] T019 [US2] signAndSendTransactions handler: same checks, one `approveSolanaTransactionRequest` per payload via `toSignAndSendRequest` (WYSIWYS check included), stop at the first send failure (`InvalidSignatures`), respond `signedTransactions` with signatures
 
 ## Phase 5: User Story 3 — Sign message and sign in (P2)
 
-- [ ] T020 Confirm the `signMessages` response byte layout against the official fakewallet source and record it in `contracts/mwa-translation.md`
-- [ ] T021 [P] [US3] RN views `DAppSignMessageApprovalView.tsx` and `DAppSignInApprovalView.tsx` on their `*PropsBase` (+ RNTL tests)
-- [ ] T022 [US3] signMessages handler: `approveSolanaSignMessage` per payload with the identity origin (lookalike → refused)
-- [ ] T023 [US3] Sign-in inside authorize: map `signInPayload` to `SolanaSignInInputFields`, `approveSolanaSignIn`, return `signInResult`
+- [x] T020 Confirm the `signMessages` response byte layout against the official fakewallet source and record it in `contracts/mwa-translation.md`
+- [x] T021 [P] [US3] RN views `DAppSignMessageApprovalView.tsx` and `DAppSignInApprovalView.tsx` on their `*PropsBase` (+ RNTL tests)
+- [x] T022 [US3] signMessages handler: `approveSolanaSignMessage` per payload with the identity origin (lookalike → refused)
+- [x] T023 [US3] Sign-in inside authorize: map `signInPayload` to `SolanaSignInInputFields`, `approveSolanaSignIn`, return `signInResult`
 
 ## Phase 6: User Story 4 — Stay connected and disconnect (P3)
 
-- [ ] T024 [US4] Jest test: approved dApp reauthorizes silently; revoked or wrong-account dApp gets `AuthorizationNotValid`; revoking in `TrustedAppsSelector` shows MWA apps with their name and icon
+- [x] T024 [US4] Jest test: approved dApp reauthorizes silently; revoked or wrong-account dApp gets `AuthorizationNotValid`; revoking in `TrustedAppsSelector` shows MWA apps with their name and icon
 
 ## Phase 7: Polish and gates
 
-- [ ] T025 [P] New copy keys (unverified app, watch-only, too many payloads) in `packages/shared/src/locales/en/translation.json` and `es/translation.json`; list them for owner review
+- [x] T025 [P] New copy keys (unverified app, watch-only, too many payloads) in `packages/shared/src/locales/en/translation.json` and `es/translation.json`; list them for owner review
 - [ ] T026 Maestro flow `apps/mobile/.maestro/flows/actions/dapp/mwa-connect.yaml`: send the `solana-wallet:` association intent from a test dApp and approve/decline (follow `.maestro/AGENTS.md`)
 - [ ] T027 Run `quickstart.md` hand-test end to end on `Seeker_API35`; record results
-- [ ] T028 `pnpm typecheck`, `pnpm lint` (0/0), Vitest in `packages/shared`, `pnpm --filter mobile test`, mobile Maestro smoke
+- [x] T028 `pnpm typecheck`, `pnpm lint` (0/0), Vitest in `packages/shared`, `pnpm --filter mobile test`, mobile Maestro smoke
 - [ ] T029 Note in `apps/mobile/AGENTS.md`: this feature needs a new binary; fingerprint baseline is refreshed from CI's hash after merge
 
 ## Dependencies
@@ -73,3 +73,10 @@
 ## Implementation strategy
 
 MVP = Phases 1–3 (Salmon connects to any dApp). Then US2 (the reason dApps exist), US3, US4, polish. Owner sign-off (constitution III) before Phase 2 starts.
+
+## Implementation notes
+
+- Request handling lives in `packages/shared` (`utils/mwa.ts`, `utils/mwa-sign.ts`, `utils/dapp-transaction-display.ts`) with Vitest, because `apps/mobile` Jest cannot load `@solana/kit`; `apps/mobile/src/mwa/` is glue over existing views (`ConfirmSheet`, `TransactionConfirmation`, `LockContent`).
+- US4 is covered by the shared tests for `mwaPrecheck` / `isMwaAuthorizationValid` and by the hand-test (reconnect without a prompt).
+- Hand-test on `Seeker_API35` with `solana-mobile playground` (devnet): connect, silent reconnect, sign message, decline, sign transaction, sign and send (finalized on devnet), sign-in inside connect and as a message. Each session ends with the wallet locked. Deauthorize not yet exercised.
+- MWA 2.0 needs `solana:signTransactions` advertised explicitly; without it dApps get "method not available".
