@@ -16,9 +16,9 @@ import {
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
-  partiallySignTransaction,
 } from '@solana/kit';
-import type { Commitment, KeyPairSigner, Signature, TransactionMessageBytes } from '@solana/kit';
+import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
+import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
 import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
 import { assertSolanaTransactionMatches, bubblegumAssets, UNVERIFIED } from '../verify';
@@ -26,7 +26,7 @@ import type { SolanaTransactionExpectation, Unverified } from '../verify';
 
 /** What broadcasting needs from an account: its signer and its RPC clients. */
 export interface SolanaBroadcaster {
-  signer: KeyPairSigner;
+  signer: SolanaSigner;
   getRpc: () => SolanaRpc;
   getRpcSubscriptions: () => SolanaRpcSubscriptions;
 }
@@ -49,7 +49,7 @@ export interface SolanaBroadcastOptions {
  * and lookup-table indices, which does not reproduce the input bytes.
  * Replacing the one field is the only transformation that round-trips exactly.
  *
- * `partiallySignTransaction` preserves signatures already in the map, so a
+ * `signTransactionWith` preserves signatures already in the map, so a
  * co-signer's signature on a prepared transaction survives; this wallet only
  * ever fills its own slot.
  *
@@ -95,7 +95,7 @@ export async function signAndSendSolanaTransaction(
     lifetimeToken: value.blockhash,
   }) as TransactionMessageBytes;
 
-  const signed = await partiallySignTransaction([account.signer.keyPair], {
+  const signed = await signTransactionWith(account.signer, {
     messageBytes,
     signatures: decoded.signatures,
   });

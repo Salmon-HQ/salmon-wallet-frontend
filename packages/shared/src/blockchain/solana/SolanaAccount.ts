@@ -17,6 +17,7 @@ import type { FetchSolanaBalanceFn, FetchSolanaTransactionsFn } from '../../type
 import type { FetchNftsFromBackendFn } from '../../types/nft';
 import { SolanaReadAccount } from './SolanaReadAccount';
 import { transactionVersionFor } from './networks';
+import type { SolanaSigner } from './signing';
 import type { ValidationResult } from './validation';
 
 /**
@@ -78,8 +79,12 @@ export type { ValidationResult };
  * site handed one fails to compile rather than failing at runtime.
  */
 export class SolanaAccount extends SolanaReadAccount {
-  /** Kit signer, used for off-chain message signing */
-  readonly signer: KeyPairSigner;
+  /**
+   * Signs for this account: a `KeyPairSigner` for a key this process holds, or
+   * one that asks Seed Vault. Every signing site goes through
+   * `signing.ts`, never through a key.
+   */
+  readonly signer: SolanaSigner;
 
   /** This account holds key material. */
   override readonly canSign = true as const;

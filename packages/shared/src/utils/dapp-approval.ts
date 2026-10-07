@@ -9,8 +9,6 @@ import {
   getTransactionDecoder,
   getTransactionEncoder,
   isSolanaError,
-  partiallySignTransaction,
-  signBytes,
   SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
 } from '@solana/kit';
 import type {
@@ -36,6 +34,7 @@ import {
   signSiwsMessage,
 } from '../blockchain/solana';
 import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
+import { signBytesWith, signTransactionWith } from '../blockchain/solana/signing';
 import type {
   ResolveSymbolFn,
   SolanaAccount,
@@ -102,7 +101,7 @@ function emptySignatureMap(
 /** Signs an approved compiled message, leaving every other signer slot empty. */
 function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
   const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
-  return partiallySignTransaction([account.signer.keyPair], {
+  return signTransactionWith(account.signer, {
     messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
     signatures: emptySignatureMap(message),
   });
@@ -400,7 +399,7 @@ export async function approveSolanaSignMessage(
     throw new TransactionLookalikeMessageError();
   }
   assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
-  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
+  const signature = await signBytesWith(account.signer, messageBytes);
 
   return {
     signature: bs58.encode(signature),
@@ -546,7 +545,7 @@ export async function approveSolanaTransactionRequest(
   // Signing the transaction the dApp sent preserves signatures it already
   // applied; rebuilding from the message alone silently drops them, producing a
   // transaction the cluster rejects. The decoder reads both wire formats and
-  // `partiallySignTransaction` only ever fills this wallet's own slot.
+  // `signTransactionWith` only ever fills this wallet's own slot.
   const encodedTransaction = request.params?.transaction;
   if (encodedTransaction) {
     const decoded = getTransactionDecoder().decode(bs58.decode(encodedTransaction));
@@ -563,7 +562,7 @@ export async function approveSolanaTransactionRequest(
       );
     }
 
-    const signed = await partiallySignTransaction([account.signer.keyPair], decoded);
+    const signed = await signTransactionWith(account.signer, decoded);
     const signature = await rpc
       .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
       .send();

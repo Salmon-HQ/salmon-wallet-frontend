@@ -114,3 +114,7 @@ apps/mobile/
 3. Simulator on `Seeker_API35`: add a Seed Vault wallet, send on devnet, run the seven MWA request types from the playground, cancel a confirmation, revoke in the simulator and see the refusal.
 4. Final manifest contains `ACCESS_SEED_VAULT` and not `ACCESS_SEED_VAULT_PRIVILEGED`.
 5. Real Seeker (partner): authorize the setup seed and sign one devnet transaction.
+
+## Owner sign-off
+
+2026-10-07 — Luca approved the plan (signing path change included), chose decision 1 as `@solana-mobile/seed-vault-lib` behind the adapter, and decision 2 as splitting batches into chunks.
