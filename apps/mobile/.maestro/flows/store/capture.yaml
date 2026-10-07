@@ -2,8 +2,9 @@ appId: io.salmonwallet.app
 ---
 # Store-screenshot capture flow (not part of the test suite). Runs against the
 # backend `apps/mobile/.env` names; ${OUT} is an absolute output dir. One flow,
-# seven captures: home, send, transactions, collectibles, nft detail, token
-# detail, about. No Powerup frame: the powerups surface is closed for the
-# submission.
+# six captures: home, send, transactions, collectibles, nft detail, token
+# detail. Production builds carry Powerups (Swap, Payments) since iOS 1.3.0 /
+# Android 1.3.0, so Home shows their tabs and the deck still needs a Swap
+# frame; capture from a Release build with EXPO_PUBLIC_POWERUPS=on.
 - runFlow: ../../subflows/onboard-walletA.yaml
 - runFlow: capture-shots.yaml
