@@ -34,17 +34,56 @@ export function mwaChainToNetworkId(
   return (chain && MWA_NETWORKS[chain]) || null;
 }
 
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
 /**
- * Origin of the identity URI a dApp declares; null when missing or not http(s).
- * Trusted apps are keyed by origin, the same key the extension uses.
+ * Origin of the identity URI a dApp declares; null when missing, not https, or
+ * shaped so that URL parsers could disagree on its host (userinfo, `@`, `\`).
+ * Plain http is accepted only for a dApp on this machine. Trusted apps are
+ * keyed by origin, the same key the extension uses.
  */
 export function mwaIdentityOrigin(identityUri: string | undefined): string | null {
-  if (!identityUri) return null;
+  if (!identityUri || /[@\\]/.test(identityUri)) return null;
   try {
     const url = new URL(identityUri);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.origin : null;
+    const allowed =
+      url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.has(url.hostname));
+    if (!allowed || url.username || url.password) return null;
+    return url.origin === `${url.protocol}//${url.host}` ? url.origin : null;
   } catch {
     return null;
+  }
+}
+
+const NAME_MAX = 40;
+// Control characters and the bidirectional overrides/isolates that can make a
+// name read as something it is not.
+// eslint-disable-next-line no-control-regex
+const UNSAFE_NAME_CHARS = /[\u0000-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+/**
+ * The name a dApp declares for itself, made safe to show: one line, no control
+ * or direction-override characters, capped. The origin stands in when nothing
+ * usable is left.
+ */
+export function mwaDisplayName(name: string | undefined, origin: string): string {
+  const clean = (name ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(UNSAFE_NAME_CHARS, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, NAME_MAX);
+  return clean || origin;
+}
+
+/** The dApp's icon, only when it resolves to the dApp's own origin. */
+export function mwaIconUrl(origin: string, iconRelativeUri: string | undefined): string | undefined {
+  if (!iconRelativeUri) return undefined;
+  try {
+    const url = new URL(iconRelativeUri, origin);
+    return url.origin === origin ? url.toString() : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -104,7 +143,8 @@ export function toSignAndSendRequest(
     params: {
       message: encodedMessage(wire),
       transaction: bs58.encode(wire),
-      options: { ...options },
+      // The send path honours `preflightCommitment`; MWA names it `commitment`.
+      options: { ...options, preflightCommitment: options.commitment },
     },
   };
 }

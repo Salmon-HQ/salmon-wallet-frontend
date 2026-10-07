@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Address } from '@solana/kit';
-import { dappTransactionDisplay } from './dapp-transaction-display';
+import { dappTransactionDisplay, dappTransactionGate } from './dapp-transaction-display';
 
 // Echoes the key and its values, so assertions read the copy that was chosen.
 const t = (key: string, values?: Record<string, unknown>) =>
@@ -126,5 +126,69 @@ describe('dappTransactionDisplay', () => {
   it('says how many transactions a batch signs', () => {
     const display = dappTransactionDisplay({ ...base, transactionCount: 3 }, t);
     expect(display.advancedRows).toContainEqual({ label: 'dapp.batch_size', value: '3' });
+  });
+});
+
+describe('every spending permission is shown', () => {
+  it('lists each approval, not only the first', () => {
+    const grant = (spender: string, scope: 'bounded' | 'unlimited') => ({
+      tokenAccount: ACCOUNT,
+      mint: MINT,
+      spender: spender as Address,
+      amount: 1n,
+      decimals: 0,
+      symbol: 'USDC',
+      scope,
+    });
+    const display = dappTransactionDisplay(
+      {
+        ...base,
+        effects: {
+          kind: 'effects',
+          account: ACCOUNT,
+          sol: { lamports: 0n, feeLamports: null },
+          tokens: [],
+          approvals: [
+            grant('Small11111111111111111111111111111111111111', 'bounded'),
+            grant('Drain11111111111111111111111111111111111111', 'unlimited'),
+          ],
+        },
+      },
+      t
+    );
+    expect(display.warning?.body).toContain('Smal');
+    expect(display.warning?.body).toContain('Drai');
+    expect(display.warning?.body).toContain('dapp.effects_approval_unlimited');
+  });
+});
+
+describe("dappTransactionGate (the extension's approval rules)", () => {
+  const effects = (kind: string, extra: Record<string, unknown> = {}) =>
+    ({ kind, account: ACCOUNT, ...extra }) as never;
+
+  it('lets a plain, understood transaction through on a tap', () => {
+    expect(
+      dappTransactionGate({
+        effects: effects('effects', { approvals: [] }),
+        effectsLoading: false,
+        parsingError: null,
+      })
+    ).toEqual({ canApprove: true, requiresHold: false });
+  });
+
+  it('refuses approval while the preview has not answered, or could not read the transaction', () => {
+    expect(dappTransactionGate({ effects: null, effectsLoading: true, parsingError: null }).canApprove).toBe(false);
+    expect(dappTransactionGate({ effects: null, effectsLoading: false, parsingError: 'x' }).canApprove).toBe(false);
+  });
+
+  it.each([
+    ['a spending permission', effects('effects', { approvals: [{}] })],
+    ['an undetermined preview', effects('undetermined')],
+    ['a transaction that would fail', effects('transaction-would-fail')],
+  ])('asks for a hold on %s', (_name, value) => {
+    expect(dappTransactionGate({ effects: value, effectsLoading: false, parsingError: null })).toEqual({
+      canApprove: true,
+      requiresHold: true,
+    });
   });
 });

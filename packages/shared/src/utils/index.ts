@@ -26,6 +26,8 @@ export {
   MWA_MAX_PAYLOADS,
   mwaAuthorizedAccount,
   mwaChainToNetworkId,
+  mwaDisplayName,
+  mwaIconUrl,
   mwaIdentityOrigin,
   mwaPrecheck,
   newMwaAuthToken,
@@ -36,7 +38,7 @@ export {
 export type { MwaFailReason, MwaPrecheck, MwaSendOptions } from './mwa';
 export { mwaSignAndSend, mwaSignIn, mwaSignMessages, mwaSignTransactions } from './mwa-sign';
 export type { MwaSignInResult } from './mwa-sign';
-export { dappTransactionDisplay } from './dapp-transaction-display';
+export { dappTransactionDisplay, dappTransactionGate } from './dapp-transaction-display';
 export type { DAppTransactionDisplayInput } from './dapp-transaction-display';
 
 // Account utilities

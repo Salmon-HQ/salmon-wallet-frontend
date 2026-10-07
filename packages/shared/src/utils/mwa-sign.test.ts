@@ -120,6 +120,28 @@ describe('mwaSignAndSend', () => {
   });
 });
 
+describe('mwaSignAndSend once the request is no longer wanted', () => {
+  it('sends nothing more after the dApp was told no', async () => {
+    const sendTransaction = vi.fn().mockReturnValue({ send: async () => bs58.encode(new Uint8Array(64)) });
+    const account = await makeAccount({ sendTransaction });
+    let wanted = true;
+
+    const result = await mwaSignAndSend(
+      account as never,
+      [coSignedTransfer(1).serialize(), coSignedTransfer(2).serialize()],
+      {},
+      () => {
+        const answer = wanted;
+        wanted = false;
+        return answer;
+      }
+    );
+
+    expect(sendTransaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ valid: [true, false] });
+  });
+});
+
 describe('mwaSignIn', () => {
   it("signs the sign-in message for the real origin and returns it in MWA's base64 form", async () => {
     const account = await makeAccount();

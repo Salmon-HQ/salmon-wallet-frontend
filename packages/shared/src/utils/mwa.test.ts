@@ -13,6 +13,8 @@ import {
   mwaChainToNetworkId,
   newMwaAuthToken,
   mwaAuthorizedAccount,
+  mwaDisplayName,
+  mwaIconUrl,
   mwaIdentityOrigin,
   mwaPrecheck,
   toSignAllTransactionsRequest,
@@ -66,7 +68,19 @@ describe('mwaIdentityOrigin', () => {
     expect(mwaIdentityOrigin('http://localhost:3000')).toBe('http://localhost:3000');
   });
 
-  it.each([undefined, '', 'not a url', 'javascript:alert(1)', 'solana-wallet:/v1'])(
+  it.each([
+    undefined,
+    '',
+    'not a url',
+    'javascript:alert(1)',
+    'solana-wallet:/v1',
+    // Parsers disagree on these; the asset-links check could read another host.
+    'https://evil.com?@jup.ag',
+    'https://evil.com\\@jup.ag',
+    'https://user:pass@jup.ag',
+    // Plain http only for a dApp running on this machine.
+    'http://jup.ag',
+  ])(
     'refuses %s',
     (uri) => {
       expect(mwaIdentityOrigin(uri)).toBeNull();
@@ -131,7 +145,7 @@ describe('request builders', () => {
       params: {
         message: bs58.encode(tx.message.serialize()),
         transaction: bs58.encode(tx.serialize()),
-        options: { skipPreflight: true },
+        options: { skipPreflight: true, preflightCommitment: undefined },
       },
     });
   });
@@ -254,4 +268,45 @@ describe('mwaAuthorizedAccount', () => {
       chains: ['solana:mainnet'],
     });
   });
+});
+
+describe('commitment', () => {
+  it('carries the dApp commitment as the preflight commitment the send path honours', () => {
+    const request = toSignAndSendRequest('r', coSignedV0().serialize(), { commitment: 'confirmed' });
+    expect(request.params?.options).toEqual({ commitment: 'confirmed', preflightCommitment: 'confirmed' });
+  });
+});
+
+describe('mwaDisplayName', () => {
+  it('keeps an ordinary name', () => {
+    expect(mwaDisplayName('Jupiter', 'https://jup.ag')).toBe('Jupiter');
+  });
+
+  it('flattens line breaks and drops control and direction-override characters', () => {
+    expect(mwaDisplayName('Jup\u202Eiter\n\nhttps://jup.ag ✓ Verified', 'https://x.io')).toBe(
+      'Jupiter https://jup.ag ✓ Verified'
+    );
+  });
+
+  it('caps the length', () => {
+    expect(mwaDisplayName('a'.repeat(100), 'https://x.io')).toHaveLength(40);
+  });
+
+  it('falls back to the origin when the dApp gives no usable name', () => {
+    expect(mwaDisplayName('\u202E\n', 'https://x.io')).toBe('https://x.io');
+    expect(mwaDisplayName(undefined, 'https://x.io')).toBe('https://x.io');
+  });
+});
+
+describe('mwaIconUrl', () => {
+  it('resolves a relative icon against the origin', () => {
+    expect(mwaIconUrl('https://jup.ag', 'favicon.ico')).toBe('https://jup.ag/favicon.ico');
+  });
+
+  it.each(['https://tracker.example/pixel.png', '//tracker.example/x.png', 'javascript:alert(1)'])(
+    'refuses %s',
+    (icon) => {
+      expect(mwaIconUrl('https://jup.ag', icon)).toBeUndefined();
+    }
+  );
 });

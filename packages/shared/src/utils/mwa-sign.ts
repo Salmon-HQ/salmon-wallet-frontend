@@ -5,6 +5,7 @@
  * transaction lookalikes, sign-in bound to the requesting origin.
  */
 import bs58 from 'bs58';
+import { getBase64Decoder } from '@solana/kit';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
 import type { SolanaSignInInputFields } from '../blockchain/solana/sign-in';
 import {
@@ -19,7 +20,7 @@ import {
   type MwaSendOptions,
 } from './mwa';
 
-const toBase64 = (bytes: Uint8Array) => Buffer.from(bytes).toString('base64');
+const toBase64 = (bytes: Uint8Array) => getBase64Decoder().decode(bytes);
 
 /** `sign_messages`: each payload comes back with Salmon's 64-byte signature appended. */
 export async function mwaSignMessages(
@@ -55,14 +56,18 @@ export async function mwaSignTransactions(
 /**
  * `sign_and_send_transactions`: sent in order through Salmon's own connection.
  * The first failure stops the rest, and `valid` tells the dApp which went out.
+ * `stillWanted` is asked before each send: once the dApp has been told no
+ * (the user backed out, the session ended), nothing further is broadcast.
  */
 export async function mwaSignAndSend(
   account: SolanaAccount,
   payloads: Uint8Array[],
-  options: MwaSendOptions
+  options: MwaSendOptions,
+  stillWanted: () => boolean = () => true
 ): Promise<{ signatures: Uint8Array[] } | { valid: boolean[] }> {
   const signatures: Uint8Array[] = [];
   for (const [i, wire] of payloads.entries()) {
+    if (!stillWanted()) return { valid: payloads.map((_, j) => j < i) };
     try {
       const result = await approveSolanaTransactionRequest(
         account,

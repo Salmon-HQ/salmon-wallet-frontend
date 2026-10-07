@@ -50,18 +50,22 @@ export function dappTransactionDisplay(
     for (const change of effects.tokens) {
       rows.push(amountRow(t, change.amount, change.decimals, change.symbol ?? change.mint));
     }
-    const grant = effects.approvals[0];
-    if (grant) {
+    // Every delegation is named: a harmless first one must not hide the next.
+    if (effects.approvals.length > 0) {
       warning = {
         title: t('dapp.effects_approval_title'),
-        body: t('dapp.effects_approval_body', {
-          spender: getShortAddress(grant.spender, 4) ?? grant.spender,
-          amount:
-            grant.scope === 'unlimited'
-              ? t('dapp.effects_approval_unlimited')
-              : formatBaseUnits(grant.amount, grant.decimals),
-          token: grant.symbol ?? grant.mint,
-        }),
+        body: effects.approvals
+          .map((grant) =>
+            t('dapp.effects_approval_body', {
+              spender: getShortAddress(grant.spender, 4) ?? grant.spender,
+              amount:
+                grant.scope === 'unlimited'
+                  ? t('dapp.effects_approval_unlimited')
+                  : formatBaseUnits(grant.amount, grant.decimals),
+              token: grant.symbol ?? grant.mint,
+            })
+          )
+          .join('\n\n'),
       };
     }
   } else if (effects?.kind === 'no-effect') {
@@ -90,4 +94,29 @@ export function dappTransactionDisplay(
     warning,
     pendingTitle: t('dapp.transaction_title'),
   };
+}
+
+export interface DAppTransactionGateInput {
+  effects: TransactionEffects | null;
+  effectsLoading: boolean;
+  parsingError: string | null;
+}
+
+/**
+ * The extension's approval rules (`DAppTransactionApprovalView`): nothing is
+ * signable before the preview answers or when it could not read the bytes —
+ * the requesting site controls how long the preview takes — and a delegation,
+ * an undetermined preview or a failing transaction needs a deliberate hold.
+ */
+export function dappTransactionGate({
+  effects,
+  effectsLoading,
+  parsingError,
+}: DAppTransactionGateInput): { canApprove: boolean; requiresHold: boolean } {
+  const requiresHold =
+    effects != null &&
+    (effects.kind === 'undetermined' ||
+      effects.kind === 'transaction-would-fail' ||
+      (effects.kind === 'effects' && effects.approvals.length > 0));
+  return { canApprove: !effectsLoading && !parsingError, requiresHold };
 }
