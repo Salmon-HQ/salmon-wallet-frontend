@@ -7,7 +7,7 @@ Sources were read from the published packages and official docs; nothing here is
 - **Decision**: `@solana-mobile/mobile-wallet-adapter-walletlib` 1.4.5 (npm, peer `react-native >0.74`; we run 0.86.3). Native dependency `com.solanamobile:mobile-wallet-adapter-walletlib:2.0.2` plus `digital-asset-links-android:1.0.3`.
 - **Rationale**: the only React Native bridge for the wallet side of MWA. The README marks it "alpha… the API is stable". Writing our own Kotlin bridge over walletlib 2.0.2 would duplicate it.
 - **Alternatives**: own native module (more code, same native lib); not doing MWA (Salmon unusable with dApps on Seeker).
-- **Risk**: the bridge is an old-architecture native module (`ReactContextBaseJavaModule`); the app runs `newArchEnabled=true`. Compatibility relies on React Native's interop layer — verified only when the first build runs (task T0 spike).
+- **Risk**: the bridge is an old-architecture native module (`ReactContextBaseJavaModule`); the app runs `newArchEnabled=true`. Compatibility relies on React Native's interop layer. **Spike result (T005, `Seeker_API35`, debug build)**: the official `fakedapp` (release `wallet-standard-mobile@0.6.0`) opened `MwaActivity`, React Native ran `MobileWalletAdapterEntrypoint` with Fabric on, the bridge created the scenario and established the session over the local WebSocket, and the stub's `UserDeclined` reached the dApp as "authorization request failed". The bridge works under the new architecture.
 
 ## R2. Where the request is read
 

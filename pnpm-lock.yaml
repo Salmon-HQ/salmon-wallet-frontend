@@ -188,6 +188,9 @@ importers:
       '@salmon/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@solana-mobile/mobile-wallet-adapter-walletlib':
+        specifier: 1.4.5
+        version: 1.4.5(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3))
       '@solana/webcrypto-ed25519-polyfill':
         specifier: ^8.4.0
         version: 8.4.0(typescript@5.9.3)
@@ -2268,6 +2271,11 @@ packages:
 
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
+
+  '@solana-mobile/mobile-wallet-adapter-walletlib@1.4.5':
+    resolution: {integrity: sha512-HVMmDLDrJUGXq83ehl4BS0DvEaLPOMv4wfZ3Sml+oIJse278cZBkTZ68HW5xwYJ5IIdn4jYYiipdOED64B7EVQ==}
+    peerDependencies:
+      react-native: '>0.74'
 
   '@solana-name-service/sns-sdk-kit@1.0.1':
     resolution: {integrity: sha512-sapLZQQYH31KRaAwuxyRd9/WimMPzhRpg67kq46nWN0l9C9ztW0nHDZ2ysjFPatn7PGEnUVfGE5iPm9uy+AYsg==}
@@ -9995,6 +10003,10 @@ snapshots:
   '@sinonjs/fake-timers@10.3.0':
     dependencies:
       '@sinonjs/commons': 3.0.1
+
+  '@solana-mobile/mobile-wallet-adapter-walletlib@1.4.5(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3))':
+    dependencies:
+      react-native: 0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3)
 
   '@solana-name-service/sns-sdk-kit@1.0.1(@solana/kit@8.4.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:

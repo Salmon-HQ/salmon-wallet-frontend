@@ -8,11 +8,11 @@
 
 ## Phase 1: Setup and spike
 
-- [ ] T001 Add `@solana-mobile/mobile-wallet-adapter-walletlib@1.4.5` to `apps/mobile/package.json` and install with pnpm 10 / Node 24
-- [ ] T002 Write the config plugin `apps/mobile/plugins/withMobileWalletAdapter.js` (style of `withQuietDevMenu.js`): `withAndroidManifest` adds `.MwaActivity` (exported, singleTask, own `taskAffinity`, translucent theme, portrait) with the two `solana-wallet` intent filters (`order=1` VIEW+DEFAULT+BROWSABLE, `order=0` DEFAULT); `withDangerousMod` writes `MwaActivity.kt` next to `MainActivity.kt` (ReactActivity, `getMainComponentName() = "MobileWalletAdapterEntrypoint"`, `ReactActivityDelegateWrapper` + `DefaultReactActivityDelegate` exactly as the generated `MainActivity`)
-- [ ] T003 Register the plugin in `apps/mobile/app.json` and declare the translucent style it needs (via the plugin's `withAndroidStyles`)
-- [ ] T004 Register `MobileWalletAdapterEntrypoint` in `apps/mobile/index.js` (Android only) pointing at a stub `apps/mobile/src/mwa/MwaRoot.tsx` that starts the session and declines every request
-- [ ] T005 Spike: prebuild, `expo run:android` on `Seeker_API35`; check the `solana-wallet:` intent resolves to Salmon and `npx solana-mobile@latest playground` Connect returns "user declined". Record the result in `research.md` R1
+- [x] T001 Add `@solana-mobile/mobile-wallet-adapter-walletlib@1.4.5` to `apps/mobile/package.json` and install with pnpm 10 / Node 24
+- [x] T002 Write the config plugin `apps/mobile/plugins/withMobileWalletAdapter.js` (style of `withQuietDevMenu.js`): `withAndroidManifest` adds `.MwaActivity` (exported, singleTask, own `taskAffinity`, translucent theme, portrait) with the two `solana-wallet` intent filters (`order=1` VIEW+DEFAULT+BROWSABLE, `order=0` DEFAULT); `withDangerousMod` writes `MwaActivity.kt` next to `MainActivity.kt` (ReactActivity, `getMainComponentName() = "MobileWalletAdapterEntrypoint"`, `ReactActivityDelegateWrapper` + `DefaultReactActivityDelegate` exactly as the generated `MainActivity`)
+- [x] T003 Register the plugin in `apps/mobile/app.json` and declare the translucent style it needs (via the plugin's `withAndroidStyles`)
+- [x] T004 Register `MobileWalletAdapterEntrypoint` in `apps/mobile/index.js` (Android only) pointing at a stub `apps/mobile/src/mwa/MwaRoot.tsx` that starts the session and declines every request
+- [x] T005 Spike: prebuild, `expo run:android` on `Seeker_API35`; check the `solana-wallet:` intent resolves to Salmon and `npx solana-mobile@latest playground` Connect returns "user declined". Record the result in `research.md` R1
 
 ## Phase 2: Foundational (blocks every story)
 

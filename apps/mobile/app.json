@@ -52,6 +52,7 @@
       ],
       "expo-dev-client",
       "./plugins/withQuietDevMenu",
+      "./plugins/withMobileWalletAdapter",
       "expo-router",
       [
         "expo-secure-store",
