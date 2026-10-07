@@ -1,9 +1,7 @@
 // Note: Crypto polyfills are now loaded in index.js (the app entry point)
 // This ensures they're available BEFORE expo-router loads any modules
 
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { createSemantic, setApiPlatform, type ThemeMode } from '@salmon/shared';
-import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import {
   DarkTheme,
@@ -23,7 +21,6 @@ import {
   AppState,
   Linking,
   Platform,
-  useColorScheme,
   type AppStateStatus,
 } from 'react-native';
 import 'react-native-reanimated';
@@ -36,7 +33,7 @@ import { I18nProvider } from '../src/i18n';
 // The backend's availability gate reads the platform on every request
 // (spec 018); named once here, before any screen asks for anything.
 setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
-import { BiometricProvider } from '../src/contexts/BiometricContext';
+import { AppProviders, useAppFonts } from '../src/providers/AppProviders';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
@@ -45,16 +42,10 @@ import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
 import {
-  AccountsProvider,
-  CurrencyProvider,
   useAccountsContext,
   useInactivityTimeout,
-  createQueryClient,
   focusManager,
-  QueryClientProvider,
-  PendingTransactionsProvider,
   usePendingActivity,
-  ThemeProvider,
   useTheme,
 } from '@salmon/shared';
 
@@ -83,22 +74,7 @@ focusManager.setEventListener((handleFocus) => {
 });
 
 export default function RootLayout() {
-  const [queryClient] = useState(() => createQueryClient());
-  // The OS reader lives here: `packages/shared` stays runtime-agnostic, so the
-  // platform's colour scheme is passed in rather than looked up inside the
-  // provider. Under the 'system' preference this is what picks the mode.
-  // React Native reports a third value, 'unspecified', for a platform that
-  // cannot tell; the provider's own "cannot tell" is `null`, which falls back
-  // to deep water.
-  const systemScheme = useColorScheme();
-  const [loaded, error] = useFonts({
-    DMSansRegular: require('@salmon/assets/src/fonts/DMSans-Regular.ttf'),
-    DMSansMedium: require('@salmon/assets/src/fonts/DMSans-Medium.ttf'),
-    DMSansSemiBold: require('@salmon/assets/src/fonts/DMSans-SemiBold.ttf'),
-    DMSansBold: require('@salmon/assets/src/fonts/DMSans-Bold.ttf'),
-    GeistMonoRegular: require('@salmon/assets/src/fonts/GeistMono-Regular.ttf'),
-    ...FontAwesome.font,
-  });
+  const [loaded, error] = useAppFonts();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -125,23 +101,9 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PendingTransactionsProvider>
-        <AccountsProvider>
-          <CurrencyProvider>
-            <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
-              {/* Above both route groups: onboarding arms biometrics, the app
-                  shell unlocks with them, and Settings toggles them. Three
-                  copies of that state is how the toggle and the lock screen
-                  came to disagree. */}
-              <BiometricProvider>
-                <RootLayoutNav updateRequired={storeGate.required} />
-              </BiometricProvider>
-            </ThemeProvider>
-          </CurrencyProvider>
-        </AccountsProvider>
-      </PendingTransactionsProvider>
-    </QueryClientProvider>
+    <AppProviders>
+      <RootLayoutNav updateRequired={storeGate.required} />
+    </AppProviders>
   );
 }
 

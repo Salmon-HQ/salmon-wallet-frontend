@@ -20,7 +20,7 @@
 - [x] T007 Implement `packages/shared/src/utils/mwa.ts` per `contracts/mwa-translation.md` until T006 passes; export from `packages/shared/src/utils/index.ts`
 - [x] T008 [P] Add optional `authToken` to `TrustedApp` in `packages/shared/src/types/trusted-app.ts`
 - [x] T009 [P] Remove `packages/shared/src/hooks/useRuntime.ts`, `useRuntime.native.ts`, `useRuntime.shared.ts`, `useRuntime.test.ts` and their exports in `packages/shared/src/hooks/index.ts`; fix the comment in `packages/shared/src/utils/platform.ts`
-- [ ] T010 Extract the provider tree of `apps/mobile/app/_layout.tsx` into `apps/mobile/src/providers/AppProviders.tsx` (fonts, `setApiPlatform`, focus manager stay where they are or move with it); `_layout.tsx` uses it; existing mobile tests stay green
+- [x] T010 Extract the provider tree of `apps/mobile/app/_layout.tsx` into `apps/mobile/src/providers/AppProviders.tsx` (fonts, `setApiPlatform`, focus manager stay where they are or move with it); `_layout.tsx` uses it; existing mobile tests stay green
 - [ ] T011 Tests for the session hook in `apps/mobile/src/mwa/useMwaSession.test.ts` (native module mocked): requests are queued and surfaced one at a time, every request is resolved exactly once, unmount/session end declines the pending one
 - [ ] T012 Implement `apps/mobile/src/mwa/useMwaSession.ts` (listener + `initializeMobileWalletAdapterSession('Salmon', config)` with the limits in `data-model.md`; queue; `finish` on session end) until T011 passes
 - [ ] T013 `apps/mobile/src/mwa/MwaRoot.tsx`: `AppProviders` + lock gate (show `LockContent` while `state.locked`, unlock via password or `useBiometric().unlock()`), then render the current request's view; watch-only active account → decline with a message
