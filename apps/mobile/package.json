@@ -14,6 +14,7 @@
     "build:aab": "f=\"salmon-wallet-$(node -p \"require('./app.json').expo.version\")-$(date +%Y-%m-%d).aab\" && eas build --platform android --profile production --local --output \"$f\"",
     "build:apk": "f=\"salmon-wallet-$(node -p \"require('./app.json').expo.version\")-$(date +%Y-%m-%d).apk\" && eas build --platform android --profile production-apk --local --output \"$f\"",
     "build:dapp-store": "f=\"salmon-wallet-$(node -p \"require('./app.json').expo.version\")-$(date +%Y-%m-%d)-dapp-store.apk\" && eas build --platform android --profile dapp-store --local --output \"$f\"",
+    "build:dapp-store:remote": "eas build --platform android --profile dapp-store",
     "eas-build-post-install": "test \"$EAS_BUILD_PLATFORM\" = \"android\" && printf '\\norg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g\\n' >> ./android/gradle.properties || true",
     "fingerprint:check": "node scripts/check-native-fingerprint.mjs",
     "fingerprint:write": "node scripts/check-native-fingerprint.mjs --write",
