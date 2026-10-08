@@ -523,23 +523,6 @@ export default function HomeScreen() {
     [router]
   );
 
-  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
-  // tab when it is installed here (spec 039).
-  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
-  const handleStakingPress = useCallback(
-    (token: Token) => {
-      if (token.address === STAKED_SOL_KEY) router.push('/staking');
-      else if (token.address === STAKED_SKR_KEY && skrTabOffered) {
-        setActiveSubTab('skr');
-      }
-    },
-    [router, setActiveSubTab, skrTabOffered]
-  );
-  const stakingBlocks = stakingSectionBlocks(
-    { tokens: staking.tokens, onPress: handleStakingPress, hiddenBalance },
-    t
-  );
-
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
       if (!selectBlockchain(index)) return;
@@ -597,6 +580,8 @@ export default function HomeScreen() {
     catalogEntries,
     handleInstall,
     removableTabKeys,
+    openCatalogAt,
+    catalogFocusId,
   } = useHomePowerupsCatalog({
     powerupTabs,
     installed,
@@ -605,7 +590,26 @@ export default function HomeScreen() {
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
     allowlist: powerupAllowlist,
+    onOpenTab: (id) => setActiveSubTab(id as HomeSubTabKey),
   });
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab, or the catalogue on its detail to install it (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) router.push('/staking');
+      else if (token.address === STAKED_SKR_KEY) {
+        if (skrTabOffered) setActiveSubTab('skr');
+        else openCatalogAt('skr');
+      }
+    },
+    [router, setActiveSubTab, skrTabOffered, openCatalogAt]
+  );
+  const stakingBlocks = stakingSectionBlocks(
+    { tokens: staking.tokens, onPress: handleStakingPress, hiddenBalance },
+    t
+  );
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -982,6 +986,7 @@ export default function HomeScreen() {
           entries={catalogEntries}
           onInstall={handleInstall}
           onUninstall={uninstall}
+          focusId={catalogFocusId}
           height={catalogHeight}
         />
       )}

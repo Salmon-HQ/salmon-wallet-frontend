@@ -81,7 +81,7 @@ import { fileURLToPath } from 'node:url';
 // password), so its action row is now the same JSX as the DOM `ConfirmDialog`:
 // 27 lines of buttons, no logic — the gate's state is `usePasswordConfirm` in
 // shared. One more import line on the Power-up detail twins (the titled card).
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2421;
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2411;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

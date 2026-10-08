@@ -8,6 +8,8 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
+    .powerupBadgeTier,
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
@@ -130,6 +132,12 @@ function setup(overrides: Partial<React.ComponentProps<typeof PowerupsCatalog>> 
 }
 
 describe('PowerupsCatalog', () => {
+  it('opens straight onto the detail of the Powerup it was opened on', () => {
+    setup({ focusId: 'memo' });
+
+    expect(screen.getByTestId('powerups-detail-memo')).toBeTruthy();
+  });
+
   it('draws Core and Community, and nothing else', () => {
     setup();
 

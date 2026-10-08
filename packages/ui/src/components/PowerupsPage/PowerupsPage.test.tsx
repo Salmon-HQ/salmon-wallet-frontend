@@ -74,6 +74,12 @@ function setup(overrides: Partial<React.ComponentProps<typeof PowerupsPage>> = {
 afterEach(cleanup);
 
 describe('PowerupsPage', () => {
+  it('opens straight onto the detail of the Powerup it was opened on', () => {
+    setup({ focusId: 'memo' });
+
+    expect(screen.getByTestId('powerups-detail-memo')).toBeTruthy();
+  });
+
   it('draws Core and Community, and nothing else', () => {
     setup();
 

@@ -38,7 +38,7 @@ A list of what the stake earned per recorded period, newest first, with the SKR 
 - **FR-001**: Powerup folder `packages/shared/src/powerups/skr` (manifest: id `skr`, core, `solana-mainnet`, permissions `address`, endpoints none, programs none, tab `skr`), its locales (EN/ES), and `useSkrScreenLogic` building the view (fact rows and history rows) once for both twins.
 - **FR-002**: Contract `SkrScreenPropsBase`; `SkrScreen` (mobile) + `SkrTab`; `SkrPage` (DOM); registered in the three entries, `check-i18n`, `check-powerups-bundle`, `check-dom-parity`.
 - **FR-003**: Composed only of runbook blocks: `FactsCard`, `ListRow`, `SectionLabel`, `StateBlock`, skeleton/wait of §1.7.
-- **FR-004**: The price chart is **not** drawn: there is no chart block for Powerups (runbook §4). It is recorded as an open block decision.
+- **FR-004**: The tab shows SKR's price with the token screen's own `PriceChart` and `useCoinMarketData` (CoinGecko `seeker`), which the owner made a Powerup block (2026-10-09).
 
 ## Success Criteria _(mandatory)_
 

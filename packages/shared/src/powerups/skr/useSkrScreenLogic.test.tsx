@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 vi.mock('../../api/services/staking', () => ({ getSkrStake: vi.fn(), getStakeAccounts: vi.fn() }));
+vi.mock('../../hooks/useCoinMarketData', () => ({
+  useCoinMarketData: () => ({ chartData: [], chartLoading: false, error: null }),
+}));
 vi.mock('../../contexts/CurrencyContext', () => ({
   useCurrencyContext: () => [
     { currency: 'usd' },

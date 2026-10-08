@@ -14,30 +14,15 @@ import {
   fontWeight,
   letterSpacing,
   spacing,
-  type Semantic,
+  powerupBadgeTier,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import type { PowerupBadgeProps } from './types';
 
-const tiersFor = (t: Semantic) => ({
-  core: {
-    background: t.accent.tint,
-    ink: t.accent.ink,
-    key: 'powerups.badge.core',
-    fallback: 'Core',
-  },
-  community: {
-    background: t.surface.raised,
-    ink: t.text.secondary,
-    key: 'powerups.badge.community',
-    fallback: 'Community',
-  },
-});
-
 export function PowerupBadge({ tier, style, testID }: PowerupBadgeProps) {
   const { t } = useTranslation();
-  const { background, ink, key, fallback } = tiersFor(useSemantic())[tier];
+  const { background, ink, key, fallback } = powerupBadgeTier(useSemantic(), tier);
 
   return (
     <span

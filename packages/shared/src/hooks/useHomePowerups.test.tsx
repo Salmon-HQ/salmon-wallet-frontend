@@ -90,6 +90,68 @@ describe('useHomePowerupsCatalog', () => {
     return { ...hook, install };
   }
 
+  // A row elsewhere in the app (Assets' Staked SKR) opens the catalogue on
+  // one Powerup's detail; installing it there closes the sheet and opens its tab.
+  describe('opened on a Powerup', () => {
+    function setupFocused() {
+      const install = vi.fn();
+      const onOpenTab = vi.fn();
+      const hook = renderHook(() =>
+        useHomePowerupsCatalog({
+          powerupTabs: [],
+          installed: [],
+          install,
+          networkId: 'solana-mainnet',
+          powerups: POWERUPS,
+          getCatalog: getPowerupCatalog,
+          allowlist: MEMO_ON,
+          onOpenTab,
+        })
+      );
+      return { ...hook, install, onOpenTab };
+    }
+
+    it('opens on the detail of a Powerup the catalogue lists', () => {
+      const { result } = setupFocused();
+
+      act(() => result.current.openCatalogAt('memo'));
+
+      expect(result.current.catalogVisible).toBe(true);
+      expect(result.current.catalogFocusId).toBe('memo');
+    });
+
+    it('stays closed for one it does not list', () => {
+      const { result } = setupFocused();
+
+      act(() => result.current.openCatalogAt('swap'));
+
+      expect(result.current.catalogVisible).toBe(false);
+      expect(result.current.catalogFocusId).toBeNull();
+    });
+
+    it('closes and opens the tab once that Powerup is installed from there', () => {
+      const { result, install, onOpenTab } = setupFocused();
+      act(() => result.current.openCatalogAt('memo'));
+
+      act(() => result.current.handleInstall('memo'));
+
+      expect(install).toHaveBeenCalledWith('memo');
+      expect(onOpenTab).toHaveBeenCalledWith('memo');
+      expect(result.current.catalogVisible).toBe(false);
+      expect(result.current.catalogFocusId).toBeNull();
+    });
+
+    it('forgets the Powerup when the sheet is closed without installing it', () => {
+      const { result, onOpenTab } = setupFocused();
+      act(() => result.current.openCatalogAt('memo'));
+
+      act(() => result.current.handleCatalogClose());
+
+      expect(result.current.catalogFocusId).toBeNull();
+      expect(onOpenTab).not.toHaveBeenCalled();
+    });
+  });
+
   it('starts closed', () => {
     const { result } = setup();
     expect(result.current.catalogVisible).toBe(false);

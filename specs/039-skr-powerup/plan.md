@@ -8,4 +8,5 @@
 - Twins: `SkrScreen` (mobile, via `SkrTab`) and `SkrPage` (DOM), each a `BlockList` of `skrBlocks`.
 - Registered in `registry.ts`, `locales.ts`, `powerups/index.ts`, mobile `getPowerupTab`, `@salmon/ui/powerups` (+ `.off`), extension `powerupBodies.tsx`, `check-i18n`, `check-powerups-bundle`, `check-dom-parity`.
 - Liquid SKR comes from the backend (`liquid`), not the wallet's balance.
-- The price chart is not drawn: no chart block exists for Powerups (runbook §4). Open as a block decision.
+- The price chart is the token screen's `PriceChart`, a `chart` block in `BlockList` fed by `useCoinMarketData` (owner, 2026-10-09).
+- Staked SKR with the Powerup not installed opens the catalogue on its detail (`openCatalogAt`, `focusId`); installing it there closes the catalogue and opens the tab (`onOpenTab`).

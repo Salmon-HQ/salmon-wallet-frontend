@@ -6,6 +6,7 @@ import React from 'react';
 import { spacing, type KitBlock } from '@salmon/shared';
 
 import { FactsCard } from '../FactsCard';
+import { PriceChart } from '../PriceChart';
 import { SectionLabel } from '../SectionLabel';
 import { SkeletonRow } from '../SkeletonRow';
 import { StateBlock } from '../StateBlock';
@@ -13,6 +14,7 @@ import { TokenListItem } from '../TokenList';
 import type { BlockListProps } from './types';
 
 function Block({ block }: { block: KitBlock }) {
+  if (block.kind === 'chart') return <PriceChart {...block.props} />;
   if (block.kind === 'facts') return <FactsCard {...block.props} />;
   if (block.kind === 'label') return <SectionLabel {...block.props} />;
   if (block.kind === 'skeleton') return <SkeletonRow {...block.props} />;

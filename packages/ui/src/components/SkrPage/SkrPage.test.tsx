@@ -47,6 +47,7 @@ vi.mock('../StateBlock', () => ({
 vi.mock('../SectionLabel', () => ({
   SectionLabel: ({ children }: { children: string }) => <h3>{children}</h3>,
 }));
+vi.mock('../PriceChart', () => ({ PriceChart: () => null }));
 vi.mock('../TokenList', () => ({ TokenListItem: () => null }));
 vi.mock('../SkeletonRow', () => ({ SkeletonRow: () => <div data-testid="skeleton" /> }));
 
@@ -56,6 +57,7 @@ const ready = {
   state: 'ready',
   summary: [{ key: 'liquid' }, { key: 'staked' }],
   history: [{ key: 'h-1' }],
+  chart: { data: [], selectedPeriod: '1M', onPeriodChange: () => {} },
   refresh: vi.fn(),
 };
 

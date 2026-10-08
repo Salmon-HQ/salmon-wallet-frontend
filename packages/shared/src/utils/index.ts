@@ -436,3 +436,5 @@ export type { ScanClassification, SettledPaymentLink } from './scan-payload';
 export { stakeAccountCards, stakingSummary, STAKED_SOL_KEY, STAKED_SKR_KEY } from './staking';
 export type { StakeAccountCard, StakingSummary } from './staking';
 export { stakeAccountsBlocks, stakingSectionBlocks } from './stakingBlocks';
+export { powerupBadgeTier } from './powerupBadgeTier';
+export type { PowerupBadgeLook } from './powerupBadgeTier';

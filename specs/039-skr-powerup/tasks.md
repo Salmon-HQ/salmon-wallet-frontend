@@ -7,4 +7,5 @@
 - [x] T005 `SkrScreen` / `SkrPage` twins (Jest, Vitest) and their registration
 - [x] T006 Checks: i18n, bundle marker, parity
 - [ ] T007 On a device against staging: install from the catalogue, the tab shows the recorded wallet's facts
-- [ ] T008 Block decision for the price chart (runbook §4)
+- [x] T008 Price chart: the token screen's `PriceChart` as a `BlockList` block (owner, 2026-10-09)
+- [x] T009 Staked SKR without the Powerup installed opens the catalogue on its detail; installing there opens the tab

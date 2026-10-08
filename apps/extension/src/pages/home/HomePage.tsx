@@ -470,19 +470,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     allPowerupKeys: POWERUP_TAB_KEYS,
   });
 
-  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
-  // tab when it is installed here (spec 039).
-  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
-  const handleStakingPress = useCallback(
-    (token: Token) => {
-      if (token.address === STAKED_SOL_KEY) setCurrentPage('staking');
-      else if (token.address === STAKED_SKR_KEY && skrTabOffered) {
-        setActiveSubTab('skr');
-      }
-    },
-    [setActiveSubTab, skrTabOffered]
-  );
-
   // A page change on the balance block. The incoming chain's list starts at
   // the top, so the offset the seam fade reads must start over with it.
   const handleBlockchainChange = useCallback(
@@ -616,7 +603,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // installed one keeps its place in its tier and says it is installed there.
   // Only a real Powerup can be installed: the mocks advertise nothing the
   // wallet can open, so the catalogue refuses to give them a tab.
-  const { catalogEntries, handleInstall, removableTabKeys } = useHomePowerupsCatalog({
+  const {
+    catalogEntries,
+    handleInstall,
+    removableTabKeys,
+    openCatalogAt,
+    catalogFocusId,
+    handleCatalogClose,
+  } = useHomePowerupsCatalog({
     powerupTabs,
     installed,
     install,
@@ -624,7 +618,29 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
     allowlist: powerupAllowlist,
+    onOpenTab: (id) => {
+      setCurrentPage('home');
+      setActiveSubTab(id as HomeSubTabKey);
+    },
   });
+  // Opened on one Powerup (Assets' Staked SKR): the catalogue is a page here.
+  useEffect(() => {
+    if (catalogFocusId) setCurrentPage('powerups');
+  }, [catalogFocusId]);
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab, or the catalogue on its detail to install it (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) setCurrentPage('staking');
+      else if (token.address === STAKED_SKR_KEY) {
+        if (skrTabOffered) setActiveSubTab('skr');
+        else openCatalogAt('skr');
+      }
+    },
+    [setActiveSubTab, skrTabOffered, openCatalogAt]
+  );
 
   const activePowerupDisabledReason = powerupTabs.find(
     (tab) => tab.key === effectiveSubTab
@@ -719,7 +735,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             entries={catalogEntries}
             onInstall={handleInstall}
             onUninstall={uninstall}
-            onBack={handleBack}
+            focusId={catalogFocusId}
+            onBack={() => {
+              handleCatalogClose();
+              handleBack();
+            }}
           />
         ) : (
           <></>

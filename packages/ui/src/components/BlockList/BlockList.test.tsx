@@ -12,6 +12,7 @@ const { leaf } = vi.hoisted(() => ({
   }),
 }));
 vi.mock('../FactsCard', () => leaf('FactsCard'));
+vi.mock('../PriceChart', () => ({ PriceChart: () => <div>PriceChart</div> }));
 vi.mock('../SectionLabel', () => leaf('SectionLabel'));
 vi.mock('../SkeletonRow', () => leaf('SkeletonRow'));
 vi.mock('../StateBlock', () => leaf('StateBlock'));
@@ -29,6 +30,11 @@ const blocks: KitBlock[] = [
   },
   { kind: 'state', key: 's', props: { testID: 'b-state', tone: 'empty', title: 'x' } },
   { kind: 'skeleton', key: 'k', props: { testID: 'b-skeleton' } },
+  {
+    kind: 'chart',
+    key: 'c',
+    props: { data: [], selectedPeriod: '1M', onPeriodChange: () => {} },
+  },
 ];
 
 afterEach(cleanup);
@@ -44,6 +50,7 @@ describe('BlockList', () => {
       'TokenListItem',
       'StateBlock',
       'SkeletonRow',
+      'PriceChart',
     ]);
   });
 });

@@ -48,13 +48,15 @@ export function PowerupsPage({
   onInstall,
   onUninstall,
   onBack,
+  focusId,
   style,
   className,
   testID = 'powerups-page',
 }: PowerupsPageProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
-  const [detailId, setDetailId] = useState<string | null>(null);
+  // Opened on one Powerup (Assets' Staked SKR): its detail first.
+  const [detailId, setDetailId] = useState<string | null>(focusId ?? null);
   const detail = entries.find((entry) => entry.id === detailId) ?? null;
 
   const handleToggle = (entry: PowerupsCatalogEntry) => {

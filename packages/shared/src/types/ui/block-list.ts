@@ -1,4 +1,5 @@
 import type { FactsCardPropsBase } from './facts-card';
+import type { PriceChartPropsBase } from './price-chart';
 import type { SectionLabelPropsBase } from './section-label';
 import type { SkeletonRowPropsBase } from './skeleton';
 import type { StateBlockPropsBase } from './state-block';
@@ -12,6 +13,7 @@ import type { Testable } from './testable';
  * and do not repeat the same tree (`docs/POWERUPS-UI.md` §1.10, rule 3).
  */
 export type KitBlock =
+  | { kind: 'chart'; key: string; props: Omit<PriceChartPropsBase<never>, 'style'> }
   | { kind: 'facts'; key: string; props: FactsCardPropsBase }
   | { kind: 'label'; key: string; props: SectionLabelPropsBase }
   | { kind: 'skeleton'; key: string; props: SkeletonRowPropsBase }

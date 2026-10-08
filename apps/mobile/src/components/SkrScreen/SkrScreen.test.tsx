@@ -48,6 +48,7 @@ jest.mock('../SectionLabel', () => {
   const { Text } = jest.requireActual('react-native');
   return { SectionLabel: ({ children }: { children: string }) => <Text>{children}</Text> };
 });
+jest.mock('../PriceChart', () => ({ PriceChart: () => null }));
 jest.mock('../TokenList', () => ({ TokenListItem: () => null }));
 jest.mock('../SkeletonRow', () => {
   const { View } = jest.requireActual('react-native');
@@ -60,6 +61,7 @@ const ready = {
   state: 'ready',
   summary: [{ key: 'liquid' }, { key: 'staked' }],
   history: [{ key: 'h-1' }],
+  chart: { data: [], selectedPeriod: '1M', onPeriodChange: () => {} },
   refresh: jest.fn(),
 };
 

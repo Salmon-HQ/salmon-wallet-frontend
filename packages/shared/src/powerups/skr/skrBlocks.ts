@@ -6,7 +6,7 @@ import type { KitBlock } from '../../types/ui/block-list';
 import type { UseSkrScreenLogicResult } from './useSkrScreenLogic';
 
 export function skrBlocks(
-  { state, summary, history, refresh }: UseSkrScreenLogicResult,
+  { state, summary, history, refresh, chart }: UseSkrScreenLogicResult,
   t: (key: string) => string
 ): KitBlock[] {
   if (state === 'loading') {
@@ -49,6 +49,12 @@ export function skrBlocks(
       key: 'facts',
       props: { testID: 'skr-facts', title: t('skr.facts.title'), rows: summary },
     },
+    {
+      kind: 'label',
+      key: 'price-title',
+      props: { variant: 'title', children: t('skr.price.title') },
+    },
+    { kind: 'chart', key: 'price', props: chart },
     {
       kind: 'label',
       key: 'history-title',

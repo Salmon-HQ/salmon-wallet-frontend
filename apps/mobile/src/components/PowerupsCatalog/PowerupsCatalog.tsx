@@ -63,6 +63,7 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   entries,
   onInstall,
   onUninstall,
+  focusId,
   height,
   style,
   testID = 'powerups-catalog',
@@ -77,6 +78,10 @@ export const PowerupsCatalog: React.FC<PowerupsCatalogProps> = ({
   useEffect(() => {
     if (!visible) setDetailId(null);
   }, [visible]);
+  // Opened on one Powerup (Assets' Staked SKR): its detail first.
+  useEffect(() => {
+    if (visible && focusId) setDetailId(focusId);
+  }, [visible, focusId]);
 
   const detail = entries.find((entry) => entry.id === detailId) ?? null;
 

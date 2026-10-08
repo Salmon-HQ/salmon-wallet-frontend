@@ -12,6 +12,10 @@ const leaf = (name: string) => () => {
   return { [name]: ({ testID }: { testID?: string }) => <Text testID={testID}>{name}</Text> };
 };
 jest.mock('../FactsCard', () => leaf('FactsCard')());
+jest.mock('../PriceChart', () => {
+  const { Text } = jest.requireActual('react-native');
+  return { PriceChart: () => <Text testID="b-chart">PriceChart</Text> };
+});
 jest.mock('../SectionLabel', () => leaf('SectionLabel')());
 jest.mock('../SkeletonRow', () => leaf('SkeletonRow')());
 jest.mock('../StateBlock', () => leaf('StateBlock')());
@@ -29,6 +33,11 @@ const blocks: KitBlock[] = [
   },
   { kind: 'state', key: 's', props: { testID: 'b-state', tone: 'empty', title: 'x' } },
   { kind: 'skeleton', key: 'k', props: { testID: 'b-skeleton' } },
+  {
+    kind: 'chart',
+    key: 'c',
+    props: { data: [], selectedPeriod: '1M', onPeriodChange: () => {} },
+  },
 ];
 
 describe('BlockList', () => {
@@ -40,5 +49,6 @@ describe('BlockList', () => {
     expect(screen.getByTestId('b-token').props.children).toBe('TokenListItem');
     expect(screen.getByTestId('b-state').props.children).toBe('StateBlock');
     expect(screen.getByTestId('b-skeleton').props.children).toBe('SkeletonRow');
+    expect(screen.getByTestId('b-chart').props.children).toBe('PriceChart');
   });
 });
