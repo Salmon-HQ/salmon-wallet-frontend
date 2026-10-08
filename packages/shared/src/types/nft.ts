@@ -125,6 +125,8 @@ export interface Nft {
   extensions: Token2022Extension[];
   /** Whether the NFT is blacklisted */
   blacklisted?: boolean;
+  /** The issuer froze the holder's token: it can be neither sent nor burned. */
+  frozen?: boolean;
   /** Server-emitted spam score (count of triggered heuristics, 0 = clean). */
   spamScore?: number;
   /** Server-emitted heuristic codes that fired. */

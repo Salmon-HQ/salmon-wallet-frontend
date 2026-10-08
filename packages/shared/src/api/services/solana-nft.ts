@@ -44,6 +44,7 @@ interface BackendNft {
   blacklisted?: boolean;
   spamScore?: number;
   spamReasons?: string[];
+  frozen?: boolean;
 }
 
 function normalizeBackendNft(raw: BackendNft, owner: string): Nft {
@@ -79,6 +80,7 @@ function normalizeBackendNft(raw: BackendNft, owner: string): Nft {
     blacklisted: raw.blacklisted,
     spamScore: raw.spamScore,
     spamReasons: raw.spamReasons,
+    frozen: raw.frozen === true,
   };
 }
 

@@ -85,6 +85,8 @@ jest.mock('@salmon/shared', () => ({
   getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
   isSignableAccount: () => mockIsSignable,
   isSolanaNft: (nft: { blockchain: string }) => nft.blockchain === 'solana',
+  isFrozenNft: (nft: { blockchain?: string; frozen?: boolean } | null) =>
+    nft?.blockchain === 'solana' && nft.frozen === true,
   isBitcoinNft: (nft: { blockchain: string }) => nft.blockchain === 'bitcoin',
   formatRawAmount: () => '0.005',
   trackEvent: jest.fn(),
@@ -214,6 +216,16 @@ describe('the NFT detail screen', () => {
 
     expect(screen.queryByTestId('nft-detail-send-button')).toBeNull();
     expect(screen.queryByTestId('nft-detail-burn-button')).toBeNull();
+  });
+
+  it('offers neither send nor burn for an NFT its issuer froze, and says why', () => {
+    mockFlow.nft = { ...mockNft, frozen: true };
+
+    render(<NftDetailScreen />);
+
+    expect(screen.queryByTestId('nft-detail-send-button')).toBeNull();
+    expect(screen.queryByTestId('nft-detail-burn-button')).toBeNull();
+    expect(screen.getByTestId('nft-detail-frozen')).toBeTruthy();
   });
 
   it('keeps them disabled while the account is still resolving', () => {

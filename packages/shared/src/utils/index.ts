@@ -310,6 +310,7 @@ export {
   isAnimatedImage,
   solanaNftToNftData,
   canonicalNftToSolanaNftData,
+  isFrozenNft,
   isSolanaNft,
   isBitcoinNft,
   getSatRarityColor,

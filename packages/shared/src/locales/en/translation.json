@@ -681,7 +681,8 @@
       "imageAlt": "NFT image for {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Collection",
-      "mintAddress": "Mint address"
+      "mintAddress": "Mint address",
+      "frozen": "Its issuer locked this NFT to your wallet: it cannot be sent or burned."
     },
     "send": {
       "pendingTitle": "Sending NFT",

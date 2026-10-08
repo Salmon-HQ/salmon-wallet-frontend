@@ -42,6 +42,8 @@ export interface SolanaNftData extends NftDataBase {
   symbol?: string;
   updateAuthority?: string;
   royaltyBps?: number;
+  /** The issuer froze the holder's token: it can be neither sent nor burned. */
+  frozen?: boolean;
 }
 
 /**
@@ -204,6 +206,7 @@ export function canonicalNftToSolanaNftData(nft: Nft): SolanaNftData {
     symbol: nft.symbol || undefined,
     updateAuthority: nft.updateAuthorityAddress ?? undefined,
     royaltyBps: nft.sellerFeeBasisPoints,
+    frozen: nft.frozen,
   };
 }
 
@@ -267,3 +270,11 @@ export interface NftSection {
  * All NFT sections grouped by section key.
  */
 export type NftsBySection = Record<NftSectionKey, NftSection>;
+
+/**
+ * Whether the issuer froze the holder's token (the Seeker Genesis Token is):
+ * such an NFT can be neither sent nor burned, so neither is offered.
+ */
+export function isFrozenNft(nft: NftData | null | undefined): boolean {
+  return nft?.blockchain === 'solana' && nft.frozen === true;
+}

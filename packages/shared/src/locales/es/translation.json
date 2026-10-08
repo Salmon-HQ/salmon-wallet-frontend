@@ -681,7 +681,8 @@
       "imageAlt": "Imagen del NFT {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Colección",
-      "mintAddress": "Mint address"
+      "mintAddress": "Mint address",
+      "frozen": "Su emisor dejó este NFT fijo en tu wallet: no se puede enviar ni quemar."
     },
     "send": {
       "pendingTitle": "Enviando NFT",

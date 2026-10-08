@@ -122,6 +122,21 @@ describe('NftDetailPage', () => {
     expect(screen.queryByTestId('nft-detail-burn-button')).toBeNull();
   });
 
+  it('offers neither Send nor Burn for an NFT its issuer froze, and says why', () => {
+    renderInMode(
+      'dark',
+      <NftDetailPage
+        nft={{ ...(BASE_NFT as object), frozen: true } as never}
+        onBack={vi.fn()}
+        onSendPress={vi.fn()}
+        onBurnPress={vi.fn()}
+      />
+    );
+    expect(screen.queryByTestId('nft-detail-send-button')).toBeNull();
+    expect(screen.queryByTestId('nft-detail-burn-button')).toBeNull();
+    expect(screen.getByTestId('nft-detail-frozen')).toBeTruthy();
+  });
+
   it('reviews the burn with the lookup table cost and confirms only with a preview', () => {
     const onBurnBack = vi.fn();
     const onBurnConfirm = vi.fn();
