@@ -28,14 +28,14 @@ A new account kind, `seedVault`, joins `mnemonic`, `privateKey` and `watchOnly`.
 
 ## Constitution Check
 
-| Principle | Status |
-|---|---|
-| I. Ownership boundaries | ✅ Account kind, signer, signing helpers, restore → `packages/shared` (blockchain + types). Seed Vault bridge, add flow and screens → `apps/mobile`. The signer receives the bridge by injection, so `packages/shared` imports nothing native. |
-| II. Shared code consumers | ⚠️ `SolanaAccount.signer` widens from `KeyPairSigner` to kit's signer interfaces, and six call sites change from `signer.keyPair` to the helpers. The extension consumes the same code: its accounts keep `KeyPairSigner`, which satisfies the wider type, and its suites must pass unchanged. |
-| III. Wallet safety | ⚠️ Changes the signing path for every account and adds an account kind to the secret vault. Key-holding accounts must sign byte-identically before and after (golden tests already exist for prepared transactions). **Requires owner sign-off before implementation.** |
-| IV. Bilingual copy | ✅ New keys under `wallet.seedVault.*`, EN + ES, flagged for owner review. |
-| V. Functional coverage first | ✅ Vitest for helpers, signer and restore; Jest for the adapter; one Maestro flow. |
-| VI. Ask rather than guess | ✅ Open decision listed below for the owner. |
+| Principle                    | Status                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Ownership boundaries      | ✅ Account kind, signer, signing helpers, restore → `packages/shared` (blockchain + types). Seed Vault bridge, add flow and screens → `apps/mobile`. The signer receives the bridge by injection, so `packages/shared` imports nothing native.                                                 |
+| II. Shared code consumers    | ⚠️ `SolanaAccount.signer` widens from `KeyPairSigner` to kit's signer interfaces, and six call sites change from `signer.keyPair` to the helpers. The extension consumes the same code: its accounts keep `KeyPairSigner`, which satisfies the wider type, and its suites must pass unchanged. |
+| III. Wallet safety           | ⚠️ Changes the signing path for every account and adds an account kind to the secret vault. Key-holding accounts must sign byte-identically before and after (golden tests already exist for prepared transactions). **Requires owner sign-off before implementation.**                        |
+| IV. Bilingual copy           | ✅ New keys under `wallet.seedVault.*`, EN + ES, flagged for owner review.                                                                                                                                                                                                                     |
+| V. Functional coverage first | ✅ Vitest for helpers, signer and restore; Jest for the adapter; one Maestro flow.                                                                                                                                                                                                             |
+| VI. Ask rather than guess    | ✅ Open decision listed below for the owner.                                                                                                                                                                                                                                                   |
 
 ## Decisions for the owner
 
@@ -49,7 +49,12 @@ A new account kind, `seedVault`, joins `mnemonic`, `privateKey` and `watchOnly`.
 `AccountSecret` gains:
 
 ```ts
-{ kind: 'seedVault'; authToken: string; derivationPath: string; address: string }
+{
+  kind: 'seedVault';
+  authToken: string;
+  derivationPath: string;
+  address: string;
+}
 ```
 
 `authToken` is Seed Vault's per-seed authorization id (a long, stored as a string), not a secret. Restore builds one `SolanaAccount` per Solana network with a `SeedVaultSigner` for `address`. `getAccountMnemonic` already returns null for non-mnemonic kinds, so recovery-phrase surfaces need no change; private-key export (`retrieveSecurePrivateKey`) moves off the base class onto key-holding accounts only.

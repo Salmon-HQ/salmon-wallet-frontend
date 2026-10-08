@@ -2,11 +2,11 @@
 
 ## AccountSecret (extended)
 
-| Kind | Fields | Key material in Salmon |
-|---|---|---|
-| mnemonic | mnemonic | yes |
-| privateKey | privateKey, networkId | yes |
-| watchOnly | address, networkId | no — cannot sign |
+| Kind          | Fields                                        | Key material in Salmon    |
+| ------------- | --------------------------------------------- | ------------------------- |
+| mnemonic      | mnemonic                                      | yes                       |
+| privateKey    | privateKey, networkId                         | yes                       |
+| watchOnly     | address, networkId                            | no — cannot sign          |
 | **seedVault** | authToken, derivationPath, address, networkId | **no — Seed Vault signs** |
 
 - `authToken`: Seed Vault's id for Salmon's access to one seed; string form of a long. Several wallets may share one.

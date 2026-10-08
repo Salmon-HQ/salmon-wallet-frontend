@@ -81,7 +81,10 @@ describe('account secret vault serialization', () => {
 
 describe('seedVaultAccessToRelease', () => {
   const sv = (id: string, authToken: string) =>
-    ({ id, secret: { kind: 'seedVault', authToken, derivationPath: 'p', address: id, networkId: 'n' } }) as never;
+    ({
+      id,
+      secret: { kind: 'seedVault', authToken, derivationPath: 'p', address: id, networkId: 'n' },
+    }) as never;
 
   it('gives up the access when the last wallet of a seed is removed', () => {
     expect(seedVaultAccessToRelease(sv('a', '7'), [sv('b', '8')])).toBe('7');
@@ -92,6 +95,11 @@ describe('seedVaultAccessToRelease', () => {
   });
 
   it('has nothing to give up for a wallet that is not in Seed Vault', () => {
-    expect(seedVaultAccessToRelease({ id: 'm', secret: { kind: 'mnemonic', mnemonic: 'x' } } as never, [])).toBeNull();
+    expect(
+      seedVaultAccessToRelease(
+        { id: 'm', secret: { kind: 'mnemonic', mnemonic: 'x' } } as never,
+        []
+      )
+    ).toBeNull();
   });
 });

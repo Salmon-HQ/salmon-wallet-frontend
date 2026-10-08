@@ -20,7 +20,8 @@ const salmon = Keypair.fromSeed(new Uint8Array(32).fill(2));
 const stranger = Keypair.fromSeed(new Uint8Array(32).fill(3));
 const BLOCKHASH = Keypair.fromSeed(new Uint8Array(32).fill(4)).publicKey.toBase58();
 
-const salmonSigner = () => createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(2), false);
+const salmonSigner = () =>
+  createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(2), false);
 
 /** A transfer from Salmon's account, fee paid and already signed by a co-signer. */
 function coSignedTransfer() {
@@ -50,7 +51,8 @@ function remoteSigner(secret: Keypair): TransactionPartialSigner & MessagePartia
   const self = address(secret.publicKey.toBase58());
   return {
     address: self,
-    signTransactions: async (txs) => txs.map((tx) => ({ [self]: sign(new Uint8Array(tx.messageBytes)) })),
+    signTransactions: async (txs) =>
+      txs.map((tx) => ({ [self]: sign(new Uint8Array(tx.messageBytes)) })),
     signMessages: async (messages) => messages.map((m) => ({ [self]: sign(m.content) })),
   };
 }
@@ -63,16 +65,25 @@ describe('signTransactionWith', () => {
     const viaHelper = await signTransactionWith(signer, tx);
     const viaKit = await partiallySignTransaction([signer.keyPair], tx);
 
-    expect(getBase64EncodedWireTransaction(viaHelper)).toBe(getBase64EncodedWireTransaction(viaKit));
+    expect(getBase64EncodedWireTransaction(viaHelper)).toBe(
+      getBase64EncodedWireTransaction(viaKit)
+    );
   });
 
-  it('adds a key-less signer\'s signature and keeps the co-signer\'s', async () => {
+  it("adds a key-less signer's signature and keeps the co-signer's", async () => {
     const tx = coSignedTransfer();
 
     const signed = await signTransactionWith(remoteSigner(salmon), tx);
 
     const own = signed.signatures[address(salmon.publicKey.toBase58())];
-    expect(own && nacl.sign.detached.verify(new Uint8Array(signed.messageBytes), own, salmon.publicKey.toBytes())).toBe(true);
+    expect(
+      own &&
+        nacl.sign.detached.verify(
+          new Uint8Array(signed.messageBytes),
+          own,
+          salmon.publicKey.toBytes()
+        )
+    ).toBe(true);
     expect(signed.signatures[address(coSigner.publicKey.toBase58())]).toEqual(
       tx.signatures[address(coSigner.publicKey.toBase58())]
     );
@@ -91,10 +102,12 @@ describe('signBytesWith', () => {
   it('signs exactly as signBytes does for a key-holding account', async () => {
     const signer = await salmonSigner();
 
-    expect(await signBytesWith(signer, bytes)).toEqual(await signBytes(signer.keyPair.privateKey, bytes));
+    expect(await signBytesWith(signer, bytes)).toEqual(
+      await signBytes(signer.keyPair.privateKey, bytes)
+    );
   });
 
-  it('returns a key-less signer\'s 64-byte signature over the bytes', async () => {
+  it("returns a key-less signer's 64-byte signature over the bytes", async () => {
     const signature = await signBytesWith(remoteSigner(salmon), bytes);
 
     expect(signature).toHaveLength(64);

@@ -108,9 +108,7 @@ export async function createSeed(): Promise<string> {
 
 /** Opens Seed Vault's screen to import a seed, then authorizes it. */
 export async function importSeed(): Promise<string> {
-  const { authToken } = await onSeedVaultScreen(() => native.importExistingSeed()).catch(
-    failure
-  );
+  const { authToken } = await onSeedVaultScreen(() => native.importExistingSeed()).catch(failure);
   return usable(authToken) ? authToken : authorizeSeed();
 }
 

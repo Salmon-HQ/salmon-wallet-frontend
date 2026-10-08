@@ -28,9 +28,17 @@ jest.mock('@salmon/shared', () => {
 
 import { Buffer } from 'buffer';
 
-import { createSeed, isSeedVaultScreenOpen, listSeedVaultAccounts, seedVaultBridge } from './bridge';
+import {
+  createSeed,
+  isSeedVaultScreenOpen,
+  listSeedVaultAccounts,
+  seedVaultBridge,
+} from './bridge';
 
-const mockNative = jest.requireMock('@solana-mobile/seed-vault-lib').SeedVault as Record<string, jest.Mock>;
+const mockNative = jest.requireMock('@solana-mobile/seed-vault-lib').SeedVault as Record<
+  string,
+  jest.Mock
+>;
 
 const b64 = (bytes: number[]) => Buffer.from(bytes).toString('base64');
 const PATH = "bip32:/m/44'/501'/0'/0'";
@@ -59,15 +67,21 @@ describe('Seed Vault bridge', () => {
   it('reads a cancelled confirmation as cancelled', async () => {
     mockNative.signMessages.mockRejectedValue(new Error('signMessages failed with result=0'));
 
-    await expect(seedVaultBridge.signMessages('4001', PATH, [Uint8Array.of(1)])).rejects.toMatchObject({
+    await expect(
+      seedVaultBridge.signMessages('4001', PATH, [Uint8Array.of(1)])
+    ).rejects.toMatchObject({
       reason: 'cancelled',
     });
   });
 
   it('reads an invalid authorization as revoked access', async () => {
-    mockNative.signTransactions.mockRejectedValue(new Error('signTransactions failed with result=1002'));
+    mockNative.signTransactions.mockRejectedValue(
+      new Error('signTransactions failed with result=1002')
+    );
 
-    await expect(seedVaultBridge.signTransactions('4001', PATH, [Uint8Array.of(1)])).rejects.toMatchObject({
+    await expect(
+      seedVaultBridge.signTransactions('4001', PATH, [Uint8Array.of(1)])
+    ).rejects.toMatchObject({
       reason: 'revoked',
     });
   });
@@ -79,23 +93,35 @@ describe('Seed Vault bridge', () => {
     await expect(createSeed()).resolves.toBe('4002');
   });
 
-  it('lists accounts and marks the ones the seed\'s own wallet uses', async () => {
+  it("lists accounts and marks the ones the seed's own wallet uses", async () => {
     mockNative.getAccounts.mockResolvedValue([
       { id: '1', name: 'Main', derivationPath: PATH, publicKeyEncoded: 'Addr1' },
-      { id: '2', name: 'Addr2', derivationPath: "bip32:/m/44'/501'/1'/0'", publicKeyEncoded: 'Addr2' },
+      {
+        id: '2',
+        name: 'Addr2',
+        derivationPath: "bip32:/m/44'/501'/1'/0'",
+        publicKeyEncoded: 'Addr2',
+      },
     ]);
-    mockNative.getUserWallets.mockResolvedValue([{ id: '1', name: 'Main', derivationPath: PATH, publicKeyEncoded: 'Addr1' }]);
+    mockNative.getUserWallets.mockResolvedValue([
+      { id: '1', name: 'Main', derivationPath: PATH, publicKeyEncoded: 'Addr1' },
+    ]);
 
     await expect(listSeedVaultAccounts('4001')).resolves.toEqual([
       { derivationPath: PATH, address: 'Addr1', name: 'Main', isUserWallet: true },
-      { derivationPath: "bip32:/m/44'/501'/1'/0'", address: 'Addr2', name: 'Addr2', isUserWallet: false },
+      {
+        derivationPath: "bip32:/m/44'/501'/1'/0'",
+        address: 'Addr2',
+        name: 'Addr2',
+        isUserWallet: false,
+      },
     ]);
     expect(mockNative.getAccounts).toHaveBeenCalledWith('4001', null, null);
   });
 });
 
 describe('Seed Vault screen tracking', () => {
-  it('reports Seed Vault\'s screen as open while a request waits, and closed after, even on failure', async () => {
+  it("reports Seed Vault's screen as open while a request waits, and closed after, even on failure", async () => {
     let finish!: (value: unknown) => void;
     mockNative.signMessages.mockReturnValue(new Promise((_, reject) => (finish = reject)));
 

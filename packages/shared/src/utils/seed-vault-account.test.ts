@@ -22,8 +22,10 @@ const SECRET = {
 } as const satisfies AccountSecret;
 
 const fakeVault: SeedVaultBridge = {
-  signTransactions: async (_a, _p, payloads) => payloads.map((p) => nacl.sign.detached(p, vaultKey.secretKey)),
-  signMessages: async (_a, _p, payloads) => payloads.map((p) => nacl.sign.detached(p, vaultKey.secretKey)),
+  signTransactions: async (_a, _p, payloads) =>
+    payloads.map((p) => nacl.sign.detached(p, vaultKey.secretKey)),
+  signMessages: async (_a, _p, payloads) =>
+    payloads.map((p) => nacl.sign.detached(p, vaultKey.secretKey)),
 };
 
 const bytes = new TextEncoder().encode('hello');
@@ -46,7 +48,9 @@ describe('Seed Vault account', () => {
   it('cannot sign where Seed Vault is not available', async () => {
     const account = (await createBlockchainAccountForSeedVault(SECRET)) as SolanaAccount;
 
-    await expect(signBytesWith(account.signer, bytes)).rejects.toMatchObject({ reason: 'unavailable' });
+    await expect(signBytesWith(account.signer, bytes)).rejects.toMatchObject({
+      reason: 'unavailable',
+    });
   });
 
   it('is left out of private-key export', async () => {

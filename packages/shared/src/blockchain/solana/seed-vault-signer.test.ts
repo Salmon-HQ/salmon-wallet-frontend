@@ -17,13 +17,21 @@ function fakeVault() {
   const sign = (payloads: Uint8Array[]) =>
     Promise.resolve(payloads.map((p) => nacl.sign.detached(p, vaultKey.secretKey)));
   return {
-    signTransactions: vi.fn((_auth: string, _path: string, payloads: Uint8Array[]) => sign(payloads)),
+    signTransactions: vi.fn((_auth: string, _path: string, payloads: Uint8Array[]) =>
+      sign(payloads)
+    ),
     signMessages: vi.fn((_auth: string, _path: string, payloads: Uint8Array[]) => sign(payloads)),
   } satisfies SeedVaultBridge;
 }
 
 const signerWith = (bridge: SeedVaultBridge, maxPerRequest = 3) =>
-  createSeedVaultSigner({ address: ADDRESS, authToken: AUTH, derivationPath: PATH, bridge, maxPerRequest });
+  createSeedVaultSigner({
+    address: ADDRESS,
+    authToken: AUTH,
+    derivationPath: PATH,
+    bridge,
+    maxPerRequest,
+  });
 
 function transfer(lamports: number) {
   const tx = new VersionedTransaction(
@@ -31,7 +39,11 @@ function transfer(lamports: number) {
       payerKey: vaultKey.publicKey,
       recentBlockhash: BLOCKHASH,
       instructions: [
-        SystemProgram.transfer({ fromPubkey: vaultKey.publicKey, toPubkey: vaultKey.publicKey, lamports }),
+        SystemProgram.transfer({
+          fromPubkey: vaultKey.publicKey,
+          toPubkey: vaultKey.publicKey,
+          lamports,
+        }),
       ],
     }).compileToV0Message()
   );
@@ -45,10 +57,17 @@ describe('Seed Vault signer', () => {
 
     const signed = await signTransactionWith(signerWith(vault), tx);
 
-    expect(vault.signTransactions).toHaveBeenCalledWith(AUTH, PATH, [new Uint8Array(tx.messageBytes)]);
+    expect(vault.signTransactions).toHaveBeenCalledWith(AUTH, PATH, [
+      new Uint8Array(tx.messageBytes),
+    ]);
     const signature = signed.signatures[ADDRESS];
     expect(
-      signature && nacl.sign.detached.verify(new Uint8Array(tx.messageBytes), signature, vaultKey.publicKey.toBytes())
+      signature &&
+        nacl.sign.detached.verify(
+          new Uint8Array(tx.messageBytes),
+          signature,
+          vaultKey.publicKey.toBytes()
+        )
     ).toBe(true);
   });
 
@@ -62,18 +81,24 @@ describe('Seed Vault signer', () => {
     expect(nacl.sign.detached.verify(bytes, signature, vaultKey.publicKey.toBytes())).toBe(true);
   });
 
-  it('splits a batch above Seed Vault\'s limit into requests and keeps the order', async () => {
+  it("splits a batch above Seed Vault's limit into requests and keeps the order", async () => {
     const vault = fakeVault();
     const txs = [1, 2, 3, 4, 5].map(transfer);
 
     const result = await signerWith(vault, 3).signTransactions(txs as never);
 
-    expect(vault.signTransactions.mock.calls.map(([, , payloads]) => payloads.length)).toEqual([3, 2]);
+    expect(vault.signTransactions.mock.calls.map(([, , payloads]) => payloads.length)).toEqual([
+      3, 2,
+    ]);
     result.forEach((dictionary, i) => {
       const signature = dictionary[ADDRESS];
       expect(
         signature &&
-          nacl.sign.detached.verify(new Uint8Array(txs[i]!.messageBytes), signature, vaultKey.publicKey.toBytes())
+          nacl.sign.detached.verify(
+            new Uint8Array(txs[i]!.messageBytes),
+            signature,
+            vaultKey.publicKey.toBytes()
+          )
       ).toBe(true);
     });
   });
@@ -82,14 +107,18 @@ describe('Seed Vault signer', () => {
     const vault = fakeVault();
     vault.signMessages.mockResolvedValueOnce([new Uint8Array(63)]);
 
-    await expect(signerWith(vault).signMessages([createSignableMessage('x')])).rejects.toThrow(/signature/);
+    await expect(signerWith(vault).signMessages([createSignableMessage('x')])).rejects.toThrow(
+      /signature/
+    );
   });
 
   it('refuses an answer with fewer signatures than requested', async () => {
     const vault = fakeVault();
     vault.signTransactions.mockResolvedValueOnce([]);
 
-    await expect(signerWith(vault).signTransactions([transfer(1)] as never)).rejects.toThrow(/signature/);
+    await expect(signerWith(vault).signTransactions([transfer(1)] as never)).rejects.toThrow(
+      /signature/
+    );
   });
 
   it('passes a cancelled confirmation through as such, with nothing signed', async () => {

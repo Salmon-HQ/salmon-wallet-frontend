@@ -370,9 +370,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     }
     return (
       <View style={styles.stack}>
-        {flow.seedVaultError ? (
-          <WarningNotice tone="error" title={t(flow.seedVaultError)} />
-        ) : null}
+        {flow.seedVaultError ? <WarningNotice tone="error" title={t(flow.seedVaultError)} /> : null}
         {flow.seedVaultAccounts.map((row) => (
           <DerivedAccountCard
             key={`${row.authToken}-${row.address}`}
