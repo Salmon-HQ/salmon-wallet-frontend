@@ -21,6 +21,9 @@ export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
 // Token List
 export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+export type { StakeAccountsBodyPropsBase } from './stake-accounts';
+export type { SkrScreenPropsBase } from './skr-screen';
+export type { BlockListPropsBase, KitBlock } from './block-list';
 export type { TokenLogoPropsBase } from './token-logo';
 export type { SpinnerPropsBase } from './spinner';
 export { SPINNER_DEFAULT_SIZE, SPINNER_LARGE_FROM } from './spinner';

@@ -9,6 +9,7 @@ import { PowerupsCatalog as PowerupsCatalogImpl } from '../components/PowerupsCa
 import MemoTabImpl from '../screens/MemoTab';
 import PaymentsTabImpl from '../screens/PaymentsTab';
 import SwapTabImpl from '../screens/SwapTab';
+import SkrTabImpl from '../screens/SkrTab';
 
 export {
   POWERUPS_ENABLED,
@@ -48,5 +49,6 @@ export function getPowerupTab(id: string): ComponentType<PowerupTabProps> | null
   if (id === 'memo') return MemoTabImpl;
   if (id === 'payments') return PaymentsTabImpl;
   if (id === 'swap') return SwapTabImpl;
+  if (id === 'skr') return SkrTabImpl;
   return null;
 }

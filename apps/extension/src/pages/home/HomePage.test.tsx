@@ -156,6 +156,17 @@ vi.mock('@salmon/shared', async () => {
     ...focusMode,
     // The settle clock is identity here: the content follows the tap at once.
     useSettledSubTab: ({ target }: { target: string }) => target,
+    useHomeSubTabContent: ({
+      effectiveSubTab,
+      focusPhase,
+    }: {
+      effectiveSubTab: string;
+      focusPhase: string;
+    }) => ({
+      isPowerupMode: focusPhase === 'gone',
+      settledSubTab: effectiveSubTab,
+      subTabPending: false,
+    }),
     colors: {
       background: { primary: '#000', card: '#111', tertiary: '#222' },
       text: { primary: '#fff', secondary: '#aaa', disabled: '#555' },
@@ -290,6 +301,14 @@ vi.mock('@salmon/shared', async () => {
     }),
     ...settings,
     useHomeShell: homeShell.useHomeShell,
+    useHomeStaking: ({ usdTotal }: { usdTotal: number | undefined }) => ({
+      tokens: [],
+      totalWithStakes: usdTotal,
+    }),
+    useStakeAccountsScreen: () => ({ state: 'loading', cards: [], refresh: async () => {} }),
+    stakingSectionBlocks: () => [],
+    STAKED_SOL_KEY: 'staked-sol',
+    STAKED_SKR_KEY: 'staked-skr',
     useHomePowerupTabs: homePowerups.useHomePowerupTabs,
     useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
     useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),

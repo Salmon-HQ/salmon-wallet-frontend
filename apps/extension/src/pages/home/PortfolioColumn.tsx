@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import {
   getBlockchainFromNetworkId,
   spacing,
+  stakingSectionBlocks,
   type BalanceLoadState,
   type BlockchainId,
   type PriceChartPeriod,
   type Token,
 } from '@salmon/shared';
 
-import { DataAttribution, StateBlock, TokenList, WarningNotice } from '../../components';
+import { DataAttribution, BlockList, StateBlock, TokenList, WarningNotice } from '../../components';
 
 import { scrollColumnStyle } from './homeStyles';
 import { BitcoinColumn } from './BitcoinColumn';
@@ -23,6 +24,9 @@ interface PortfolioColumnProps {
   hiddenBalance: boolean;
   tokens: Token[];
   onTokenPress: (token: Token) => void;
+  /** What is staked, under the tokens (spec 038). */
+  stakingTokens: Token[];
+  onStakingPress: (token: Token) => void;
   onRetry: () => void;
   bitcoin: HomeBitcoinMarketData;
   bitcoinChartPeriod: PriceChartPeriod;
@@ -43,6 +47,8 @@ export function PortfolioColumn({
   hiddenBalance,
   tokens,
   onTokenPress,
+  stakingTokens,
+  onStakingPress,
   onRetry,
   bitcoin,
   bitcoinChartPeriod,
@@ -50,6 +56,10 @@ export function PortfolioColumn({
   onScroll,
 }: PortfolioColumnProps): React.ReactElement {
   const { t } = useTranslation();
+  const stakingBlocks = stakingSectionBlocks(
+    { tokens: stakingTokens, onPress: onStakingPress, hiddenBalance },
+    t
+  );
 
   return (
     <div style={scrollColumnStyle} onScroll={onScroll}>
@@ -95,6 +105,11 @@ export function PortfolioColumn({
             hiddenBalance={hiddenBalance}
             blockchain={getBlockchainFromNetworkId(currentNetworkId)}
           />
+          {stakingBlocks.length > 0 && (
+            <div style={{ marginTop: spacing.xl }}>
+              <BlockList testID="staking-section" blocks={stakingBlocks} />
+            </div>
+          )}
           {/* The price provider's credit closes the list: once, below the
               data set, as its attribution guide asks. */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>

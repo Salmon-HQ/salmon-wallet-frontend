@@ -1,0 +1,37 @@
+{
+  "catalog": {
+    "name": "SKR",
+    "description": "Your SKR, staked and earning",
+    "about": "Shows the SKR your wallet holds and what it has staked with a guardian in Solana Mobile's staking: how much it has earned, the current rate, and the rewards of each period. It only reads; staking and unstaking stay in Solana Mobile's own apps.",
+    "usage": "Your SKR position. Rewards compound every two days.",
+    "actions": {
+      "position": "See your staked SKR, its guardian and what it has earned",
+      "rewards": "Follow the rewards of each period"
+    }
+  },
+  "facts": {
+    "title": "Your SKR",
+    "liquid": "Available",
+    "staked": "Staked",
+    "earned": "Earned",
+    "apy": "Annual rate",
+    "guardian": "Guardian",
+    "commission": "Guardian commission",
+    "unstaking": "Unstaking",
+    "withdrawable": "Withdrawable from",
+    "since": "Staked for",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days"
+  },
+  "history": {
+    "title": "Rewards",
+    "empty": "Your reward history starts building today: Salmon records it from now on. What you have earned so far is above."
+  },
+  "empty": {
+    "title": "No SKR in this wallet",
+    "body": "When this wallet holds or stakes SKR, it shows here."
+  },
+  "error": {
+    "title": "Could not load your SKR."
+  }
+}

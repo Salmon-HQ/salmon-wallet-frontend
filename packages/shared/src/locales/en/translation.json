@@ -7,7 +7,7 @@
   },
   "tabs": {
     "home": "Home",
-    "portfolio": "Portfolio",
+    "portfolio": "Assets",
     "nfts": "NFTs"
   },
   "general": {
@@ -945,5 +945,26 @@
     "required_title": "Update Salmon to continue",
     "required_body": "This version is no longer supported. Your accounts and funds are safe; install the latest version from the store to keep using the wallet.",
     "open_store": "Open the store"
+  },
+  "staking": {
+    "title": "Staking",
+    "staked_sol": "Staked SOL",
+    "staked_skr": "Staked SKR",
+    "detail": {
+      "title": "Stake accounts",
+      "subtitle": "SOL delegated to validators, and what each epoch paid.",
+      "amount": "Amount",
+      "state": "State",
+      "epoch_reward": "Epoch {{epoch}} reward",
+      "undelegated": "Not delegated",
+      "empty": "This wallet has no stake accounts.",
+      "error": "Could not load the stake accounts."
+    },
+    "state": {
+      "activating": "Activating",
+      "active": "Active",
+      "deactivating": "Deactivating",
+      "inactive": "Inactive"
+    }
   }
 }

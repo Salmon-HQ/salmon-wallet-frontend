@@ -27,6 +27,7 @@ const POWERUP_LOCALES = [
   ['memo', 'packages/shared/src/powerups/memo/locales'],
   ['payments', 'packages/shared/src/powerups/payments/locales'],
   ['swap', 'packages/shared/src/powerups/swap/locales'],
+  ['skr', 'packages/shared/src/powerups/skr/locales'],
 ];
 function loadLocale(lang) {
   const base = readJson(`packages/shared/src/locales/${lang}/translation.json`);

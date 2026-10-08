@@ -75,6 +75,17 @@ jest.mock('@salmon/shared', () => ({
   // The settle clock is identity here: the content follows the tap at once.
   // The clock itself is covered in `useSettledSubTab.test.tsx`.
   useSettledSubTab: ({ target }: { target: string }) => target,
+  useHomeSubTabContent: ({
+    effectiveSubTab,
+    focusPhase,
+  }: {
+    effectiveSubTab: string;
+    focusPhase: string;
+  }) => ({
+    isPowerupMode: focusPhase === 'gone',
+    settledSubTab: effectiveSubTab,
+    subTabPending: false,
+  }),
   borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
   motionMs: { drift: 280 },
   SINK_OUT_MS: 225,
@@ -176,6 +187,13 @@ jest.mock('@salmon/shared', () => ({
   // cover the logic, and Home is rendered here with what they hand back.
   ...jest.requireActual('@salmon/shared/src/contexts/TaskChromeContext'),
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
+  useHomeStaking: ({ usdTotal }: { usdTotal: number | undefined }) => ({
+    tokens: [],
+    totalWithStakes: usdTotal,
+  }),
+  stakingSectionBlocks: () => [],
+  STAKED_SOL_KEY: 'staked-sol',
+  STAKED_SKR_KEY: 'staked-skr',
   useHomePowerupTabs: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')
     .useHomePowerupTabs,
   useHomePowerupsCatalog: jest.requireActual('@salmon/shared/src/hooks/useHomePowerups')

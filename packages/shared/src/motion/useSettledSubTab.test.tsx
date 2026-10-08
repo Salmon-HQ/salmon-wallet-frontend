@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FLOAT_IN_MS, SINK_OUT_MS } from './sinkFloat';
 import type { FocusModePhase } from './useFocusModePhase';
-import { SUB_TAB_SETTLE_MS, useSettledSubTab } from './useSettledSubTab';
+import { SUB_TAB_SETTLE_MS, useHomeSubTabContent, useSettledSubTab } from './useSettledSubTab';
 
 type Key = 'portfolio' | 'nfts' | 'memo';
 const isFocusTab = (key: Key) => key === 'memo';
@@ -70,5 +70,35 @@ describe('useSettledSubTab', () => {
     const { result, rerender } = setup('portfolio', 'shown', true);
     rerender({ target: 'memo', focusPhase: 'shown', isReduceMotionEnabled: true });
     expect(result.current).toBe('memo');
+  });
+});
+
+describe('useHomeSubTabContent', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("treats an installed Powerup's tab as focus mode and reports the content pending until it settles", () => {
+    const powerupTabs = [{ key: 'memo' }];
+    const { result, rerender } = renderHook(
+      (p: { effectiveSubTab: Key; focusPhase: FocusModePhase }) =>
+        useHomeSubTabContent({ ...p, powerupTabs, isReduceMotionEnabled: true }),
+      {
+        initialProps: {
+          effectiveSubTab: 'portfolio' as Key,
+          focusPhase: 'shown' as FocusModePhase,
+        },
+      }
+    );
+    expect(result.current).toEqual({
+      isPowerupMode: false,
+      settledSubTab: 'portfolio',
+      subTabPending: false,
+    });
+
+    rerender({ effectiveSubTab: 'memo', focusPhase: 'gone' });
+
+    expect(result.current.isPowerupMode).toBe(true);
+    expect(result.current.settledSubTab).toBe('memo');
+    expect(result.current.subTabPending).toBe(false);
   });
 });

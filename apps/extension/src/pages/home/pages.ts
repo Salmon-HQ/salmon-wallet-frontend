@@ -6,6 +6,7 @@ export type PageView =
   | 'tokenDetail'
   | 'nftDetail'
   | 'activity'
+  | 'staking'
   | 'send'
   | 'wallets'
   | 'powerups'
@@ -22,6 +23,7 @@ export const PAGE_DEPTH: Record<PageView, number> = {
   tokenDetail: 1,
   nftDetail: 1,
   activity: 1,
+  staking: 1,
   send: 1,
   wallets: 1,
   powerups: 1,

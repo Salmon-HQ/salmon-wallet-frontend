@@ -432,3 +432,7 @@ export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestRe
 export type { SendRequestReviewRow } from './sendRequestReview';
 export { sendReceiptRows } from './sendReceiptRows';
 export type { ScanClassification, SettledPaymentLink } from './scan-payload';
+
+export { stakeAccountCards, stakingSummary, STAKED_SOL_KEY, STAKED_SKR_KEY } from './staking';
+export type { StakeAccountCard, StakingSummary } from './staking';
+export { stakeAccountsBlocks, stakingSectionBlocks } from './stakingBlocks';

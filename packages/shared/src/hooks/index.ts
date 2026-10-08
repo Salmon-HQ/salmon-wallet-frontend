@@ -192,6 +192,12 @@ export type { UseAvatarNftsParams, UseAvatarNftsResult } from './useAvatarNfts';
 // Solana NFT list hook (shared between mobile, web, extension collectibles screens)
 export { useAccountActivity } from './useAccountActivity';
 export { useSolanaNfts } from './useSolanaNfts';
+export { useHomeStaking, useStakeAccountsScreen, useStaking, useSkrStake } from './useStaking';
+export type {
+  UseStakeAccountsScreenResult,
+  UseStakingParams,
+  UseStakingResult,
+} from './useStaking';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
 // Settings panel stack hook

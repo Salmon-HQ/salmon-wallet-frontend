@@ -50,6 +50,10 @@ import {
   useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
+  STAKED_SKR_KEY,
+  STAKED_SOL_KEY,
+  stakingSectionBlocks,
+  useHomeStaking,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
@@ -62,7 +66,7 @@ import {
   type Token,
   useFocusModePhase,
   useNetworkPowerups,
-  useSettledSubTab,
+  useHomeSubTabContent,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -73,6 +77,7 @@ import {
 import {
   BalanceHeader,
   DataAttribution,
+  BlockList,
   HomeTabOrderSheet,
   NftsTab,
   PortfolioSubTabs,
@@ -324,6 +329,15 @@ export default function HomeScreen() {
     includeSpam: showUnverifiedTokens,
   });
 
+  // What the wallet has staked (spec 038): the Staking section under the
+  // tokens, and its USD in the total. A failed read adds nothing.
+  const staking = useHomeStaking({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
+    tokens,
+    usdTotal,
+  });
+
   // Warm the chains the user is not looking at, so the first swipe of the
   // session lands on a number instead of a skeleton. One request per inactive
   // chain per app load — see the hook for why it is not per switch.
@@ -385,7 +399,13 @@ export default function HomeScreen() {
     networkId,
     activeAccountId: activeAccount?.id,
     networksAccounts,
-    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    balance: {
+      usdTotal: staking.totalWithStakes,
+      nativeAmount,
+      changePercent,
+      changeAmount,
+      hasData,
+    },
     isTaskEngaged,
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
@@ -409,18 +429,13 @@ export default function HomeScreen() {
   // the balance floats into the room it left. `useFocusModePhase` keeps the
   // clock; this screen draws each phase.
   const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled);
-  const isPowerupMode = focusPhase === 'gone';
   // The content follows the row, never the tap (owner, 2026-09-16): only the
   // tab that has come to rest — underline slid, or row risen / come down —
   // has its content drawn. Until then the region is empty: the outgoing
   // content sinks at the tap, the incoming one floats into a row that stopped.
-  const isFocusTab = useCallback(
-    (key: string) => powerupTabs.some((tab) => tab.key === key),
-    [powerupTabs]
-  );
-  const settledSubTab = useSettledSubTab({
-    target: effectiveSubTab,
-    isFocusTab,
+  const { isPowerupMode, settledSubTab } = useHomeSubTabContent({
+    effectiveSubTab,
+    powerupTabs,
     focusPhase,
     isReduceMotionEnabled,
   });
@@ -506,6 +521,23 @@ export default function HomeScreen() {
       router.push({ pathname: '/token/[id]', params: { id: token.address } });
     },
     [router]
+  );
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab when it is installed here (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) router.push('/staking');
+      else if (token.address === STAKED_SKR_KEY && skrTabOffered) {
+        setActiveSubTab('skr');
+      }
+    },
+    [router, setActiveSubTab, skrTabOffered]
+  );
+  const stakingBlocks = stakingSectionBlocks(
+    { tokens: staking.tokens, onPress: handleStakingPress, hiddenBalance },
+    t
   );
 
   const handleBlockchainChange = useCallback(
@@ -876,7 +908,16 @@ export default function HomeScreen() {
                           ListEmptyComponent={ListEmptyComponent}
                           // The price provider's credit closes the list (its
                           // terms: once per screen that shows its prices).
-                          ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
+                          ListFooterComponent={
+                            <>
+                              {stakingBlocks.length > 0 && (
+                                <View style={styles.stakingSection}>
+                                  <BlockList testID="staking-section" blocks={stakingBlocks} />
+                                </View>
+                              )}
+                              <DataAttribution networkId={currentNetworkId} />
+                            </>
+                          }
                           onRefresh={refresh}
                           onScroll={handleScroll}
                           scrollEventThrottle={16}

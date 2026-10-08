@@ -7,7 +7,7 @@
   },
   "tabs": {
     "home": "Inicio",
-    "portfolio": "Portfolio",
+    "portfolio": "Activos",
     "nfts": "NFTs"
   },
   "general": {
@@ -945,5 +945,26 @@
     "required_title": "Actualizá Salmon para continuar",
     "required_body": "Esta versión ya no tiene soporte. Tus cuentas y fondos están a salvo; instalá la última versión desde la tienda para seguir usando la billetera.",
     "open_store": "Abrir la tienda"
+  },
+  "staking": {
+    "title": "Staking",
+    "staked_sol": "SOL en staking",
+    "staked_skr": "SKR en staking",
+    "detail": {
+      "title": "Cuentas de staking",
+      "subtitle": "SOL delegado a validadores, y lo que pagó cada época.",
+      "amount": "Monto",
+      "state": "Estado",
+      "epoch_reward": "Recompensa de la época {{epoch}}",
+      "undelegated": "Sin delegar",
+      "empty": "Esta wallet no tiene cuentas de staking.",
+      "error": "No se pudieron cargar las cuentas de staking."
+    },
+    "state": {
+      "activating": "Activándose",
+      "active": "Activa",
+      "deactivating": "Desactivándose",
+      "inactive": "Inactiva"
+    }
   }
 }

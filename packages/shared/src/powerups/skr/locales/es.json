@@ -1,0 +1,37 @@
+{
+  "catalog": {
+    "name": "SKR",
+    "description": "Tu SKR, en staking y generando",
+    "about": "Muestra el SKR que tiene tu wallet y lo que tenés en staking con un guardián en el staking de Solana Mobile: cuánto ganaste, la tasa actual y las recompensas de cada período. Solo lee; hacer staking o retirarlo sigue en las apps de Solana Mobile.",
+    "usage": "Tu posición de SKR. Las recompensas se suman cada dos días.",
+    "actions": {
+      "position": "Ver tu SKR en staking, su guardián y lo que ganaste",
+      "rewards": "Seguir las recompensas de cada período"
+    }
+  },
+  "facts": {
+    "title": "Tu SKR",
+    "liquid": "Disponible",
+    "staked": "En staking",
+    "earned": "Ganado",
+    "apy": "Tasa anual",
+    "guardian": "Guardián",
+    "commission": "Comisión del guardián",
+    "unstaking": "Retirándose",
+    "withdrawable": "Disponible desde",
+    "since": "En staking hace",
+    "days_one": "{{count}} día",
+    "days_other": "{{count}} días"
+  },
+  "history": {
+    "title": "Recompensas",
+    "empty": "Tu historial de recompensas empieza a armarse hoy: Salmon lo registra desde ahora. Lo que ganaste hasta acá está arriba."
+  },
+  "empty": {
+    "title": "Esta wallet no tiene SKR",
+    "body": "Cuando esta wallet tenga SKR o lo ponga en staking, aparece acá."
+  },
+  "error": {
+    "title": "No se pudo cargar tu SKR."
+  }
+}

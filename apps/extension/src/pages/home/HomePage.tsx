@@ -14,6 +14,10 @@ import {
   useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
+  STAKED_SKR_KEY,
+  STAKED_SOL_KEY,
+  useStakeAccountsScreen,
+  useHomeStaking,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
@@ -34,7 +38,7 @@ import {
   useFocusModePhase,
   type FocusModePhase,
   useNetworkPowerups,
-  useSettledSubTab,
+  useHomeSubTabContent,
   isSignableAccount,
 } from '@salmon/shared';
 import {
@@ -49,6 +53,7 @@ import {
   TokenDetailPage,
   NftDetailPage,
   ActivityPage,
+  StakeAccountsPage,
   ReceiveSheet,
   useTaskChrome,
   WalletsScreen,
@@ -240,6 +245,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     skip: !ready || !activeBlockchainAccount || !networksReady,
     // BE filters unknown-only-tagged SPL tokens by default; opt in via developer mode.
     includeSpam: showUnverifiedTokens,
+  });
+
+  // What the wallet has staked (spec 038): the Staking section under the
+  // tokens, and its USD in the total. A failed read adds nothing.
+  const staking = useHomeStaking({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
+    tokens,
+    usdTotal,
+  });
+  const stakeAccountsScreen = useStakeAccountsScreen({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
   });
 
   // Warm the chains the user is not looking at, so the first arrow press of the
@@ -437,7 +455,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId,
     activeAccountId: activeAccount?.id,
     networksAccounts: activeAccount?.networksAccounts,
-    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    balance: {
+      usdTotal: staking.totalWithStakes,
+      nativeAmount,
+      changePercent,
+      changeAmount,
+      hasData,
+    },
     isTaskEngaged,
     surfaceKey,
     changeNetwork: actions.changeNetwork,
@@ -445,6 +469,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     powerupsHydrated,
     allPowerupKeys: POWERUP_TAB_KEYS,
   });
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab when it is installed here (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) setCurrentPage('staking');
+      else if (token.address === STAKED_SKR_KEY && skrTabOffered) {
+        setActiveSubTab('skr');
+      }
+    },
+    [setActiveSubTab, skrTabOffered]
+  );
 
   // A page change on the balance block. The incoming chain's list starts at
   // the top, so the offset the seam fade reads must start over with it.
@@ -524,20 +561,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled, {
     commit: commitFocusPhase,
   });
-  const isPowerupMode = focusPhase === 'gone';
   // The content follows the row, never the tap (owner, 2026-09-16): only the
   // tab that has come to rest has its content drawn; see the mobile twin.
-  const isFocusTab = useCallback(
-    (key: string) => powerupTabs.some((tab) => tab.key === key),
-    [powerupTabs]
-  );
-  const settledSubTab = useSettledSubTab({
-    target: effectiveSubTab,
-    isFocusTab,
+  const { isPowerupMode, settledSubTab, subTabPending } = useHomeSubTabContent({
+    effectiveSubTab,
+    powerupTabs,
     focusPhase,
     isReduceMotionEnabled,
   });
-  const subTabPending = settledSubTab !== effectiveSubTab;
 
   // The block's room: its height, read while shown, holds while it sinks and
   // comes back empty before it floats in. The block itself plays the verbs.
@@ -734,6 +765,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         // rather than a hole in the stack; back still returns home.
         return page ?? <></>;
       }
+      case 'staking':
+        return (
+          <StakeAccountsPage
+            onBack={handleBack}
+            state={stakeAccountsScreen.state}
+            cards={stakeAccountsScreen.cards}
+            onRetry={() => void stakeAccountsScreen.refresh()}
+          />
+        );
       case 'activity':
         return (
           <ActivityPage
@@ -883,6 +923,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       hiddenBalance={hiddenBalance}
                       tokens={formattedTokens}
                       onTokenPress={handleTokenPress}
+                      stakingTokens={staking.tokens}
+                      onStakingPress={handleStakingPress}
                       onRetry={refresh}
                       bitcoin={bitcoin}
                       bitcoinChartPeriod={bitcoinChartPeriod}

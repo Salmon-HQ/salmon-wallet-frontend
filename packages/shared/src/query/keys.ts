@@ -14,6 +14,9 @@ export const queryKeys = {
   tokenCatalog: (params: { networkId: NetworkId }) => ['token-catalog', params] as const,
   dappMetadata: (params: { origin: string }) => ['dapp-metadata', params] as const,
   token: (params: { tokenId: string; networkId: NetworkId }) => ['token', params] as const,
+  stakeAccounts: (params: { address: string; networkId: NetworkId }) =>
+    ['stake-accounts', params] as const,
+  skrStake: (params: { owner: string }) => ['skr-stake', params] as const,
   solanaNftDetail: (params: { mintAddress: string; networkId: NetworkId }) =>
     ['solana-nft-detail', params] as const,
 } as const;
