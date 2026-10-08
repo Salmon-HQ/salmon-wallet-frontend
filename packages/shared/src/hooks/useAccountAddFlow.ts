@@ -71,6 +71,34 @@ function seedVaultAccountIndex(path: string): number {
   return match ? Number(match[1]) : Infinity;
 }
 
+/**
+ * The Seed Vault accounts worth offering. Seed Vault lists every path it
+ * derived ahead of time (on the simulator, a hundred per path style); shown
+ * are the seed's own wallet accounts first — those hold the user's funds —
+ * then the first few of each path style, each marked when it is already a
+ * Salmon wallet under the same access.
+ * ponytail: fixed cap of SEED_VAULT_SHOWN_INDEXES; add "show more" if a user needs a deeper index.
+ */
+export function seedVaultRows(
+  listed: SeedVaultListedAccount[],
+  wallets: Account[]
+): SeedVaultRow[] {
+  return listed
+    .filter(
+      (a) => a.isUserWallet || seedVaultAccountIndex(a.derivationPath) < SEED_VAULT_SHOWN_INDEXES
+    )
+    .sort((a, b) => Number(b.isUserWallet) - Number(a.isUserWallet))
+    .map((row) => ({
+      ...row,
+      added: wallets.some(
+        ({ secret }) =>
+          secret?.kind === 'seedVault' &&
+          secret.address === row.address &&
+          secret.authToken === row.authToken
+      ),
+    }));
+}
+
 /** The re-auth step's errors, as i18n keys. */
 export type ReauthErrorKey =
   'errors.password_required' | 'errors.password_check_failed' | 'errors.invalid_password' | '';
@@ -210,27 +238,8 @@ export function useAccountAddFlow({
   const [seedVaultLoading, setSeedVaultLoading] = useState(false);
   const [seedVaultError, setSeedVaultError] = useState<SeedVaultErrorKey>('');
   const [selectedSeedVault, setSelectedSeedVault] = useState<SeedVaultRow | null>(null);
-  // Seed Vault lists every path it derived ahead of time (on the simulator, a
-  // hundred per path style). Shown: the seed's own wallet accounts first —
-  // those hold the user's funds — then the first few of each path style.
-  // ponytail: fixed cap of SEED_VAULT_SHOWN_INDEXES; add "show more" if a user needs a deeper index.
-  const seedVaultAccounts = useMemo<SeedVaultRow[]>(
-    () =>
-      seedVaultListed
-        .filter(
-          (a) =>
-            a.isUserWallet || seedVaultAccountIndex(a.derivationPath) < SEED_VAULT_SHOWN_INDEXES
-        )
-        .sort((a, b) => Number(b.isUserWallet) - Number(a.isUserWallet))
-        .map((listed) => ({
-          ...listed,
-          added: accounts.some(
-            ({ secret }) =>
-              secret?.kind === 'seedVault' &&
-              secret.address === listed.address &&
-              secret.authToken === listed.authToken
-          ),
-        })),
+  const seedVaultAccounts = useMemo(
+    () => seedVaultRows(seedVaultListed, accounts),
     [seedVaultListed, accounts]
   );
 

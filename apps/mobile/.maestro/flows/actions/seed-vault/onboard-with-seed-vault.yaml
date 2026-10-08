@@ -1,0 +1,80 @@
+appId: io.salmonwallet.app
+---
+# First launch with the wallet already in Seed Vault (spec 037, US1 scenario 5):
+# welcome → Use Seed Vault → pick an account → set Salmon's password → Home.
+# Needs the Seed Vault simulator with a test seed (see add-seed-vault-wallet.yaml).
+- clearState
+- launchApp
+- runFlow: ../../../subflows/dev-launcher-pass.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'select-seed-vault-button'
+    timeout: 30000
+- tapOn:
+    id: 'select-seed-vault-button'
+- runFlow:
+    when:
+      visible: 'Allow'
+    commands:
+      - tapOn: 'Allow'
+- runFlow:
+    when:
+      visible: 'Connection request'
+    file: ../../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'seed-vault-account-.*'
+    timeout: 30000
+- tapOn:
+    id: 'seed-vault-account-.*'
+    index: 0
+- scrollUntilVisible:
+    element:
+      id: 'seed-vault-next-button'
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: 'seed-vault-next-button'
+- extendedWaitUntil:
+    visible:
+      id: 'password-input'
+    timeout: 30000
+- tapOn:
+    id: 'password-input'
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+- runFlow: ../../../subflows/hide-keyboard.yaml
+- tapOn:
+    id: 'password-confirm-input'
+- inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+- runFlow: ../../../subflows/hide-keyboard.yaml
+- tapOn:
+    id: 'password-submit-button'
+- extendedWaitUntil:
+    visible:
+      id: 'biometric-skip-button|success-go-to-wallet-button'
+    timeout: 90000
+- runFlow:
+    when:
+      visible:
+        id: 'biometric-skip-button'
+    commands:
+      - tapOn:
+          id: 'biometric-skip-button'
+- extendedWaitUntil:
+    visible:
+      id: 'success-go-to-wallet-button'
+    timeout: 30000
+- tapOn:
+    id: 'success-go-to-wallet-button'
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible:
+        id: 'analytics-consent-screen'
+    file: ../../../subflows/decline-analytics-consent.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 30000
+- takeScreenshot: screenshots/actions/seed-vault/onboarded-home

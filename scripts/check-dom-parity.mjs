@@ -161,6 +161,7 @@ export const SCREENS = {
 /** Mobile-only routes, with the reason. */
 export const MOBILE_ONLY_SCREENS = {
   '(auth)/biometric-setup': 'biometrics are native; the extension has none',
+  '(auth)/seed-vault': 'Seed Vault exists only on Android Seeker devices (spec 037)',
   '+html': 'Expo scaffolding',
   '+not-found': 'Expo scaffolding',
 };

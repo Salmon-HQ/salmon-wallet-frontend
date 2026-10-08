@@ -34,6 +34,7 @@
 import {
   ApiError,
   createAccount,
+  importSeedVaultAccount,
   fontFamilyNative,
   generateAccountName,
   getMirrorNetworks,
@@ -59,7 +60,7 @@ import {
 import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -92,7 +93,7 @@ export default function PasswordScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const mode = useThemeMode();
-  const params = useLocalSearchParams<{ type?: string }>();
+  const params = useLocalSearchParams<{ type?: string; seedVault?: string }>();
   const [state, actions] = useAccountsContext();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
 
@@ -106,6 +107,22 @@ export default function PasswordScreen() {
     };
     void loadMnemonic();
   }, []);
+
+  // A Seed Vault wallet (spec 037) arrives instead of a phrase: which seed,
+  // which path, which address. Nothing secret — the key stays in Seed Vault.
+  const seedVault = useMemo(() => {
+    if (!params.seedVault) return null;
+    try {
+      return JSON.parse(params.seedVault) as {
+        authToken: string;
+        derivationPath: string;
+        address: string;
+      };
+    } catch {
+      return null;
+    }
+  }, [params.seedVault]);
+  const hasSecret = !!mnemonic || !!seedVault;
 
   // Get requiredLock from state - true if password already exists
   const requiredLock = state.requiredLock;
@@ -164,11 +181,11 @@ export default function PasswordScreen() {
   const isFormValid = useCallback((): boolean => {
     if (showSingleInput) {
       // Just need a password to check
-      return password.length > 0 && !!mnemonic;
+      return password.length > 0 && hasSecret;
     }
     // Need valid password and matching confirmation
-    return passwordValidation.isValid && passwordsMatch && !!mnemonic;
-  }, [showSingleInput, password, passwordValidation.isValid, passwordsMatch, mnemonic]);
+    return passwordValidation.isValid && passwordsMatch && hasSecret;
+  }, [showSingleInput, password, passwordValidation.isValid, passwordsMatch, hasSecret]);
 
   /**
    * Handle back navigation
@@ -212,7 +229,7 @@ export default function PasswordScreen() {
    * Handle form submission - create account and navigate to success
    */
   const handleSubmit = useCallback(async () => {
-    if (!isFormValid() || !mnemonic) return;
+    if (!isFormValid() || !hasSecret) return;
 
     Keyboard.dismiss();
 
@@ -254,14 +271,18 @@ export default function PasswordScreen() {
       // Derives accounts for ALL networks (mainnet + devnet/testnet)
       // This ensures accounts are ready when user enables developer mode later
       const t0 = Date.now();
-      const scanNetworks = await getScanNetworks();
-      const mirrorNetworks = await getMirrorNetworks();
-      const { account } = await createAccount({
-        name: accountName,
-        mnemonic: mnemonic,
-        networkIds: [...scanNetworks, ...Object.values(mirrorNetworks)],
-        startIndex: 0,
-      });
+      const { account } = seedVault
+        ? await importSeedVaultAccount({
+            name: accountName,
+            ...seedVault,
+            networkId: 'solana-mainnet',
+          })
+        : await createAccount({
+            name: accountName,
+            mnemonic: mnemonic ?? '',
+            networkIds: [...(await getScanNetworks()), ...Object.values(await getMirrorNetworks())],
+            startIndex: 0,
+          });
       console.log(`[perf] recovery: createAccount ${Date.now() - t0}ms`);
 
       // Add account with password encryption
@@ -314,6 +335,8 @@ export default function PasswordScreen() {
     }
   }, [
     isFormValid,
+    hasSecret,
+    seedVault,
     mnemonic,
     password,
     actions,

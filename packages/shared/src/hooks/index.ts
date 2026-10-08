@@ -259,12 +259,14 @@ export type {
 } from './useHomeShell';
 export { useAccountRemoval, useAccountDeleteConfirm } from './useAccountRemoval';
 export type { UseAccountRemovalResult, AccountDeleteConfirm } from './useAccountRemoval';
-export { useAccountAddFlow } from './useAccountAddFlow';
+export { useAccountAddFlow, seedVaultRows } from './useAccountAddFlow';
 export type {
   AccountAddFlow,
   UseAccountAddFlowOptions,
   SeedErrorKey,
   ReauthErrorKey,
+  SeedVaultErrorKey,
+  SeedVaultRow,
 } from './useAccountAddFlow';
 export { useWaitTips } from './useWaitTips';
 export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';

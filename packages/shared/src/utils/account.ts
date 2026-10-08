@@ -465,16 +465,14 @@ export function getAccountKeysForNetwork(
   networkId: string | null
 ): AccountKeyInfo[] {
   if (!networkId || !activeAccount?.networksAccounts) return [];
+  // A Seed Vault wallet signs, but its key never leaves Seed Vault.
+  if (activeAccount.secret?.kind === 'seedVault') return [];
   const networkAccounts = activeAccount.networksAccounts[networkId];
   if (!networkAccounts) return [];
 
   return networkAccounts
     .filter((account): account is NonNullable<typeof account> => account !== null)
-    // A Seed Vault account signs but its key never leaves Seed Vault.
-    .filter(
-      (account): account is Exclude<typeof account, WatchOnlySolanaAccount> =>
-        !isSolanaAccount(account) || (isSignableSolanaAccount(account) && account.holdsKey)
-    )
+    .filter((account) => !isSolanaAccount(account) || isSignableSolanaAccount(account))
     .map((account) => ({
       path: account.path,
       address: account.getReceiveAddress(),

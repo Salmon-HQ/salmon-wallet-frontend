@@ -51,7 +51,10 @@ describe('Seed Vault account', () => {
 
   it('is left out of private-key export', async () => {
     const account = await createBlockchainAccountForSeedVault(SECRET);
-    const wallet = { networksAccounts: { 'solana-mainnet': [account] } } as unknown as Account;
+    const wallet = {
+      secret: SECRET,
+      networksAccounts: { 'solana-mainnet': [account] },
+    } as unknown as Account;
 
     expect(getAccountKeysForNetwork(wallet, 'solana-mainnet')).toEqual([]);
   });
