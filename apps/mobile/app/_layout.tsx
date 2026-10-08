@@ -15,14 +15,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  AppState,
-  Linking,
-  Platform,
-  type AppStateStatus,
-} from 'react-native';
+import { View, StyleSheet, AppState, Linking, Platform, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -57,7 +50,6 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
 
 export default function RootLayout() {
   const [loaded, error] = useAppFonts();
