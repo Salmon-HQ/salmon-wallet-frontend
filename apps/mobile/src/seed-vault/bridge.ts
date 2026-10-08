@@ -39,7 +39,8 @@ const native = SeedVault as unknown as {
   createNewSeed(): Promise<{ authToken: string }>;
   importExistingSeed(): Promise<{ authToken: string }>;
   getAuthorizedSeeds(): Promise<{ authToken: string }[]>;
-  getAccounts(authToken: string): Promise<NativeAccount[]>;
+  // The native method takes all three: a bridge call with fewer arguments is rejected.
+  getAccounts(authToken: string, filterOnColumn: null, value: null): Promise<NativeAccount[]>;
   getUserWallets(authToken: string): Promise<NativeAccount[]>;
   signTransactions(authToken: string, requests: SigningRequest[]): Promise<NativeSigningResult[]>;
   signMessages(authToken: string, requests: SigningRequest[]): Promise<NativeSigningResult[]>;
@@ -116,7 +117,7 @@ export async function importSeed(): Promise<string> {
 /** The Solana accounts Seed Vault holds for an authorized seed. */
 export async function listSeedVaultAccounts(authToken: string): Promise<SeedVaultAccount[]> {
   const [accounts, userWallets] = await Promise.all([
-    native.getAccounts(authToken),
+    native.getAccounts(authToken, null, null),
     native.getUserWallets(authToken),
   ]).catch(failure);
   const used = new Set(userWallets.map((a) => a.publicKeyEncoded));

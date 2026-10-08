@@ -1,0 +1,15 @@
+appId: io.salmonwallet.app
+---
+# Answers a Seed Vault simulator screen (connect or sign) with the test seed's
+# PIN. Seed Vault draws its own screen over Salmon; the selectors are the
+# simulator's, not Salmon's.
+- extendedWaitUntil:
+    visible:
+      id: 'UsePin'
+    timeout: 20000
+- tapOn:
+    id: 'UsePin'
+- tapOn:
+    id: 'PinEntryField'
+- inputText: ${MAESTRO_SALMON_SEED_VAULT_PIN}
+- tapOn: 'OK'

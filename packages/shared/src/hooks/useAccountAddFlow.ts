@@ -63,6 +63,14 @@ export interface SeedVaultRow extends SeedVaultListedAccount {
   added: boolean;
 }
 
+const SEED_VAULT_SHOWN_INDEXES = 5;
+
+/** The account index in a Solana path (`…/44'/501'/3'…` → 3); Infinity when absent. */
+function seedVaultAccountIndex(path: string): number {
+  const match = /44'\/501'\/(\d+)'/.exec(path);
+  return match ? Number(match[1]) : Infinity;
+}
+
 /** The re-auth step's errors, as i18n keys. */
 export type ReauthErrorKey =
   'errors.password_required' | 'errors.password_check_failed' | 'errors.invalid_password' | '';
@@ -202,17 +210,27 @@ export function useAccountAddFlow({
   const [seedVaultLoading, setSeedVaultLoading] = useState(false);
   const [seedVaultError, setSeedVaultError] = useState<SeedVaultErrorKey>('');
   const [selectedSeedVault, setSelectedSeedVault] = useState<SeedVaultRow | null>(null);
+  // Seed Vault lists every path it derived ahead of time (on the simulator, a
+  // hundred per path style). Shown: the seed's own wallet accounts first —
+  // those hold the user's funds — then the first few of each path style.
+  // ponytail: fixed cap of SEED_VAULT_SHOWN_INDEXES; add "show more" if a user needs a deeper index.
   const seedVaultAccounts = useMemo<SeedVaultRow[]>(
     () =>
-      seedVaultListed.map((listed) => ({
-        ...listed,
-        added: accounts.some(
-          ({ secret }) =>
-            secret?.kind === 'seedVault' &&
-            secret.address === listed.address &&
-            secret.authToken === listed.authToken
-        ),
-      })),
+      seedVaultListed
+        .filter(
+          (a) =>
+            a.isUserWallet || seedVaultAccountIndex(a.derivationPath) < SEED_VAULT_SHOWN_INDEXES
+        )
+        .sort((a, b) => Number(b.isUserWallet) - Number(a.isUserWallet))
+        .map((listed) => ({
+          ...listed,
+          added: accounts.some(
+            ({ secret }) =>
+              secret?.kind === 'seedVault' &&
+              secret.address === listed.address &&
+              secret.authToken === listed.authToken
+          ),
+        })),
     [seedVaultListed, accounts]
   );
 

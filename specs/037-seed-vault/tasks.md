@@ -17,6 +17,6 @@
 - [x] T010 No lock while a Seed Vault confirmation is open (main app and MWA root)
 
 ## Phase 4 — Verification
-- [ ] T011 Simulator on `Seeker_API35`: add, send on devnet, MWA request types, cancel, revoke
-- [ ] T012 Maestro flow `seed-vault.yaml`
+- [x] T011 Simulator on `Seeker_API35`: add, send on devnet, MWA request types, cancel, revoke
+- [x] T012 Maestro flow `seed-vault.yaml`
 - [ ] T013 Gates: typecheck, lint, shared/mobile/ui/extension suites; manifest check

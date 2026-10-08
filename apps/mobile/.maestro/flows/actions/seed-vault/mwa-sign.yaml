@@ -1,0 +1,180 @@
+appId: io.salmonwallet.app
+---
+# A dApp signs with a Seed Vault wallet (spec 037, US2): connect, sign a
+# message, sign a transaction. Run after add-seed-vault-wallet.yaml (the Seed
+# Vault wallet active on devnet) with the Solana Mobile playground serving on
+# the emulator: `npx solana-mobile playground --cluster devnet`.
+- openLink: http://localhost:4747
+- tapOn: 'Reset authorization'
+- tapOn: 'Connect'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm'
+      enabled: true
+    timeout: 30000
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- runFlow:
+    when:
+      visible:
+        id: 'UsePin'
+    file: ../../../subflows/seed-vault-confirm.yaml
+# Back on the dApp. Chrome exposes the page to Maestro only intermittently,
+# so the wait is on Salmon's sheet leaving, not on the page's text.
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-connect
+# Reloading hands Maestro a fresh view of the page; the playground keeps its
+# authorization across reloads.
+- openLink: http://localhost:4747
+- tapOn: 'Sign Message'
+# Every session ends with the wallet locked, so each request starts at the lock.
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm'
+      enabled: true
+    timeout: 30000
+- tapOn:
+    id: 'confirm-dialog-confirm'
+# Seed Vault's own confirmation, over Salmon's sheet.
+- runFlow: ../../../subflows/seed-vault-confirm.yaml
+# Back on the dApp. Chrome exposes the page to Maestro only intermittently,
+# so the wait is on Salmon's sheet leaving, not on the page's text.
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-sign-message
+# Reloading hands Maestro a fresh view of the page; the playground keeps its
+# authorization across reloads.
+- openLink: http://localhost:4747
+- tapOn: 'Sign Transaction'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirmation-confirm-button|confirmation-hold-button'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirmation-confirm-button|confirmation-hold-button'
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: 'confirmation-confirm-button'
+    commands:
+      - tapOn:
+          id: 'confirmation-confirm-button'
+- runFlow:
+    when:
+      visible:
+        id: 'confirmation-hold-button'
+    commands:
+      - longPressOn:
+          id: 'confirmation-hold-button'
+- runFlow: ../../../subflows/seed-vault-confirm.yaml
+# Back on the dApp. Chrome exposes the page to Maestro only intermittently,
+# so the wait is on Salmon's sheet leaving, not on the page's text.
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-sign-transaction
+# Sign and send: needs devnet SOL in the Seed Vault account (send-from-seed-vault.yaml funds it).
+- openLink: http://localhost:4747
+- tapOn: 'Sign and Send'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirmation-confirm-button|confirmation-hold-button'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirmation-confirm-button|confirmation-hold-button'
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: 'confirmation-confirm-button'
+    commands:
+      - tapOn:
+          id: 'confirmation-confirm-button'
+- runFlow:
+    when:
+      visible:
+        id: 'confirmation-hold-button'
+    commands:
+      - longPressOn:
+          id: 'confirmation-hold-button'
+- runFlow: ../../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-sign-and-send
+# Sign in with Solana.
+- openLink: http://localhost:4747
+- tapOn: 'Sign In (SIWS)'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm'
+      enabled: true
+    timeout: 30000
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-siws
+# Refused in Seed Vault: the dApp is told no, nothing is signed.
+- openLink: http://localhost:4747
+- tapOn: 'Sign Message'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm'
+      enabled: true
+    timeout: 30000
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- extendedWaitUntil:
+    visible:
+      id: 'UsePin'
+    timeout: 20000
+- tapOn: "Don't allow"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/seed-vault/mwa-refused-in-seed-vault

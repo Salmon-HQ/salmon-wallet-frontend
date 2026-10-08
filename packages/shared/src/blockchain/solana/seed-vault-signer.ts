@@ -16,9 +16,16 @@ import type { SolanaSigner } from './signing';
 export type SeedVaultFailure = 'cancelled' | 'revoked' | 'unavailable' | 'failed';
 
 /** Thrown when Seed Vault does not produce a signature; nothing was signed. */
+const MESSAGES: Record<SeedVaultFailure, string> = {
+  cancelled: 'Not signed: the request was declined in Seed Vault.',
+  revoked: 'Not signed: Seed Vault access was revoked. Add this wallet again from Add wallet.',
+  unavailable: 'Not signed: Seed Vault is not available on this device.',
+  failed: 'Not signed: Seed Vault could not complete the request.',
+};
+
 export class SeedVaultError extends Error {
   constructor(readonly reason: SeedVaultFailure) {
-    super(`Seed Vault did not sign: ${reason}`);
+    super(MESSAGES[reason]);
     this.name = 'SeedVaultError';
   }
 }
@@ -30,9 +37,17 @@ export class SeedVaultError extends Error {
  */
 export interface SeedVaultBridge {
   /** Signs transaction message bytes (never the wire transaction). */
-  signTransactions(authToken: string, derivationPath: string, payloads: Uint8Array[]): Promise<Uint8Array[]>;
+  signTransactions(
+    authToken: string,
+    derivationPath: string,
+    payloads: Uint8Array[]
+  ): Promise<Uint8Array[]>;
   /** Signs raw bytes. */
-  signMessages(authToken: string, derivationPath: string, payloads: Uint8Array[]): Promise<Uint8Array[]>;
+  signMessages(
+    authToken: string,
+    derivationPath: string,
+    payloads: Uint8Array[]
+  ): Promise<Uint8Array[]>;
 }
 
 /** The device's Seed Vault, once the app has registered it. */

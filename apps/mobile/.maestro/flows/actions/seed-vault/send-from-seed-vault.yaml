@@ -1,0 +1,63 @@
+appId: io.salmonwallet.app
+---
+# Send from a Seed Vault wallet (spec 037, US2): Wallet A funds the Seed Vault
+# account with 0.01 devnet SOL, then the Seed Vault wallet sends 0.001 back —
+# Salmon's review, then Seed Vault's own confirmation. Devnet only. Needs what
+# add-seed-vault-wallet.yaml needs, plus SALMON_SEED_VAULT_ADDR: the address of
+# the simulator seed's first account.
+- runFlow: ./add-seed-vault-wallet.yaml
+# Wallet A pays.
+- tapOn: 'Account #1'
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 20000
+- runFlow:
+    file: ../../../subflows/send-sol-devnet.yaml
+    env:
+      TO: ${MAESTRO_SALMON_SEED_VAULT_ADDR}
+      AMOUNT: '0.01'
+- tapOn:
+    id: 'send-confirm-button'
+- extendedWaitUntil:
+    visible:
+      id: 'tx-success-continue-button'
+    timeout: 60000
+- tapOn:
+    id: 'tx-success-continue-button'
+# The Seed Vault wallet sends some back.
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
+# Right after the receipt, Home can swallow the first tap on the switcher.
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: 'wallet-header-account-switcher'
+      - extendedWaitUntil:
+          visible:
+            id: 'wallets-screen'
+          timeout: 8000
+- tapOn: 'Account 2'
+- extendedWaitUntil:
+    visible:
+      id: 'home-screen'
+    timeout: 20000
+- runFlow:
+    file: ../../../subflows/send-sol-devnet.yaml
+    env:
+      TO: ${MAESTRO_SALMON_TEST_WALLET_A_ADDR}
+      AMOUNT: '0.001'
+- takeScreenshot: screenshots/actions/seed-vault/send-review
+- tapOn:
+    id: 'send-confirm-button'
+- runFlow: ../../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'tx-success-continue-button'
+    timeout: 60000
+- takeScreenshot: screenshots/actions/seed-vault/send-success

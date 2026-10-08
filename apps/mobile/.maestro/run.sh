@@ -54,6 +54,11 @@ done
 for key in "${REQUIRED[@]}"; do
   export "MAESTRO_$key=${!key}"
 done
+# Optional: only the flows that need them read these, so a missing one is not
+# fatal here (the Seed Vault flows need the simulator anyway).
+for key in SALMON_SEED_VAULT_PIN SALMON_SEED_VAULT_ADDR; do
+  [[ -n "${!key:-}" ]] && export "MAESTRO_$key=${!key}"
+done
 
 # ----------------------------------------------------------------- device ----
 DEVICE=""

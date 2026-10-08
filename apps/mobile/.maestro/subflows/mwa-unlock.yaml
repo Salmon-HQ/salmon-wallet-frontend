@@ -1,0 +1,19 @@
+appId: io.salmonwallet.app
+---
+# The dApp sheet opens locked whenever the wallet was locked (leaving the app
+# locks it): unlock it there. Unlike unlock.yaml there is no Home to wait for.
+- runFlow:
+    when:
+      visible:
+        id: 'mwa-lock'
+    commands:
+      - tapOn:
+          id: 'lock-password-input'
+      - inputText: ${MAESTRO_SALMON_TEST_PASSWORD}
+      - runFlow:
+          when:
+            visible:
+              id: 'lock-unlock-button'
+          commands:
+            - tapOn:
+                id: 'lock-unlock-button'

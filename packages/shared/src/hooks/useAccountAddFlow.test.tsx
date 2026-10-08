@@ -283,8 +283,20 @@ describe('useAccountAddFlow', () => {
 
 describe('useAccountAddFlow — Seed Vault', () => {
   const listed = [
-    { authToken: '7', derivationPath: "bip32:/m/44'/501'/0'/0'", address: 'AddrA', name: 'Main', isUserWallet: true },
-    { authToken: '7', derivationPath: "bip32:/m/44'/501'/1'/0'", address: 'AddrB', name: 'AddrB', isUserWallet: false },
+    {
+      authToken: '7',
+      derivationPath: "bip32:/m/44'/501'/0'/0'",
+      address: 'AddrA',
+      name: 'Main',
+      isUserWallet: true,
+    },
+    {
+      authToken: '7',
+      derivationPath: "bip32:/m/44'/501'/1'/0'",
+      address: 'AddrB',
+      name: 'AddrB',
+      isUserWallet: false,
+    },
   ];
   const access = () => ({
     listAccounts: vi.fn().mockResolvedValue(listed),
@@ -302,7 +314,7 @@ describe('useAccountAddFlow — Seed Vault', () => {
     importSeedVaultMock.mockResolvedValue({ account: { id: 'sv' } } as never);
   });
 
-  it('lists the authorized seeds\' accounts and marks one already in Salmon', async () => {
+  it("lists the authorized seeds' accounts and marks one already in Salmon", async () => {
     withWallets([{ id: 'w', secret: { kind: 'seedVault', authToken: '7', address: 'AddrA' } }]);
     const seedVault = access();
     const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
@@ -351,10 +363,37 @@ describe('useAccountAddFlow — Seed Vault', () => {
     expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
   });
 
+  it("shows the seed's own wallets and the first few paths, not every path derived ahead of time", async () => {
+    withWallets([]);
+    const deep = (i: number) => ({
+      authToken: '7',
+      derivationPath: `bip32:/m/44'/501'/${i}'/0'`,
+      address: `Deep${i}`,
+      name: `Deep${i}`,
+      isUserWallet: i === 40,
+    });
+    const seedVault = access();
+    seedVault.listAccounts.mockResolvedValue(Array.from({ length: 50 }, (_, i) => deep(i)));
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
+
+    await act(() => result.current.selectSeedVault());
+
+    expect(result.current.seedVaultAccounts.map((a) => a.address)).toEqual([
+      'Deep40',
+      'Deep0',
+      'Deep1',
+      'Deep2',
+      'Deep3',
+      'Deep4',
+    ]);
+  });
+
   it('stays on the step with the reason when Seed Vault did not answer', async () => {
     withWallets([]);
     const seedVault = access();
-    seedVault.listAccounts.mockRejectedValue(Object.assign(new Error('x'), { reason: 'cancelled' }));
+    seedVault.listAccounts.mockRejectedValue(
+      Object.assign(new Error('x'), { reason: 'cancelled' })
+    );
     const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
 
     await act(() => result.current.selectSeedVault());

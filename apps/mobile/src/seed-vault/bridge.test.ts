@@ -90,6 +90,7 @@ describe('Seed Vault bridge', () => {
       { derivationPath: PATH, address: 'Addr1', name: 'Main', isUserWallet: true },
       { derivationPath: "bip32:/m/44'/501'/1'/0'", address: 'Addr2', name: 'Addr2', isUserWallet: false },
     ]);
+    expect(mockNative.getAccounts).toHaveBeenCalledWith('4001', null, null);
   });
 });
 
