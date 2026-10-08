@@ -111,7 +111,11 @@ describe('mwaSignAndSend', () => {
 
     const result = await mwaSignAndSend(
       account as never,
-      [coSignedTransfer(1).serialize(), coSignedTransfer(2).serialize(), coSignedTransfer(3).serialize()],
+      [
+        coSignedTransfer(1).serialize(),
+        coSignedTransfer(2).serialize(),
+        coSignedTransfer(3).serialize(),
+      ],
       {}
     );
 
@@ -122,7 +126,9 @@ describe('mwaSignAndSend', () => {
 
 describe('mwaSignAndSend once the request is no longer wanted', () => {
   it('sends nothing more after the dApp was told no', async () => {
-    const sendTransaction = vi.fn().mockReturnValue({ send: async () => bs58.encode(new Uint8Array(64)) });
+    const sendTransaction = vi
+      .fn()
+      .mockReturnValue({ send: async () => bs58.encode(new Uint8Array(64)) });
     const account = await makeAccount({ sendTransaction });
     let wanted = true;
 
@@ -152,7 +158,9 @@ describe('mwaSignIn', () => {
     const signature = Buffer.from(result.signature, 'base64');
     expect(Buffer.from(result.address, 'base64')).toEqual(Buffer.from(salmon.publicKey.toBytes()));
     expect(signedMessage.toString()).toContain('jup.ag wants you to sign in');
-    expect(nacl.sign.detached.verify(signedMessage, signature, salmon.publicKey.toBytes())).toBe(true);
+    expect(nacl.sign.detached.verify(signedMessage, signature, salmon.publicKey.toBytes())).toBe(
+      true
+    );
     expect(result.signature_type).toBe('ed25519');
   });
 });

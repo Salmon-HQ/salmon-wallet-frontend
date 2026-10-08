@@ -30,15 +30,15 @@ A second Android activity answers `solana-wallet:` intents through the official 
 
 ## Constitution Check
 
-| Principle | Status |
-|---|---|
-| I. Ownership boundaries | ✅ Translation helpers → `packages/shared/src/utils/mwa.ts`; RN views, session and activity → `apps/mobile`; nothing from `@salmon/ui` imported by mobile. |
-| II. Shared code consumers | ✅ `TrustedApp` gains an optional field (extension ignores it). `useRuntime`/`ADAPTER_PREFIXES` removal: consumers checked — only its barrel export and test. |
-| III. Wallet safety | ⚠️ Touches the dApp signing path and the lock flow. No change to `approveSolana*`, crypto or storage; only callers and a pure signature merge. **Requires owner sign-off before implementation.** |
-| IV. Bilingual copy | ✅ Reuse `dapp.*`; new keys EN+ES, flagged for owner review. |
-| V. Functional coverage first | ✅ Vitest for translation and token checks, Jest for the session queue, then one Maestro flow. |
-| VI. Ask rather than guess | ✅ Approval rules and `useRuntime` removal clarified (spec §Clarifications). |
-| Platform constraints | ⚠️ Native config (manifest, new activity, new native module) → prebuild + new store binary; called out in the spec. Locked identifiers untouched. |
+| Principle                    | Status                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Ownership boundaries      | ✅ Translation helpers → `packages/shared/src/utils/mwa.ts`; RN views, session and activity → `apps/mobile`; nothing from `@salmon/ui` imported by mobile.                                        |
+| II. Shared code consumers    | ✅ `TrustedApp` gains an optional field (extension ignores it). `useRuntime`/`ADAPTER_PREFIXES` removal: consumers checked — only its barrel export and test.                                     |
+| III. Wallet safety           | ⚠️ Touches the dApp signing path and the lock flow. No change to `approveSolana*`, crypto or storage; only callers and a pure signature merge. **Requires owner sign-off before implementation.** |
+| IV. Bilingual copy           | ✅ Reuse `dapp.*`; new keys EN+ES, flagged for owner review.                                                                                                                                      |
+| V. Functional coverage first | ✅ Vitest for translation and token checks, Jest for the session queue, then one Maestro flow.                                                                                                    |
+| VI. Ask rather than guess    | ✅ Approval rules and `useRuntime` removal clarified (spec §Clarifications).                                                                                                                      |
+| Platform constraints         | ⚠️ Native config (manifest, new activity, new native module) → prebuild + new store binary; called out in the spec. Locked identifiers untouched.                                                 |
 
 ## Project Structure
 
@@ -86,7 +86,7 @@ apps/mobile/
 
 ## Complexity Tracking
 
-| Item | Why needed | Simpler alternative rejected because |
-|---|---|---|
-| Second activity + generated Kotlin | The bridge reads the request from the current activity's intent | Reusing `MainActivity` depends on unverified `onNewIntent` behaviour and drags the whole app over the dApp |
-| `withSignature` helper | MWA returns full transactions and co-signer signatures must survive | `serializeSignedTransactionFromApproval` rebuilds with empty signatures |
+| Item                               | Why needed                                                          | Simpler alternative rejected because                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Second activity + generated Kotlin | The bridge reads the request from the current activity's intent     | Reusing `MainActivity` depends on unverified `onNewIntent` behaviour and drags the whole app over the dApp |
+| `withSignature` helper             | MWA returns full transactions and co-signer signatures must survive | `serializeSignedTransactionFromApproval` rebuilds with empty signatures                                    |

@@ -77,7 +77,10 @@ export function mwaDisplayName(name: string | undefined, origin: string): string
 }
 
 /** The dApp's icon, only when it resolves to the dApp's own origin. */
-export function mwaIconUrl(origin: string, iconRelativeUri: string | undefined): string | undefined {
+export function mwaIconUrl(
+  origin: string,
+  iconRelativeUri: string | undefined
+): string | undefined {
   if (!iconRelativeUri) return undefined;
   try {
     const url = new URL(iconRelativeUri, origin);
@@ -97,7 +100,10 @@ export function withSignature(wire: Uint8Array, signer: string, signatureBs58: s
   if (!(signer in tx.signatures)) {
     throw new Error(`${signer} is not a required signer of this transaction`);
   }
-  const signatures = { ...tx.signatures, [signer as Address]: bs58.decode(signatureBs58) as SignatureBytes };
+  const signatures = {
+    ...tx.signatures,
+    [signer as Address]: bs58.decode(signatureBs58) as SignatureBytes,
+  };
   return new Uint8Array(getTransactionEncoder().encode({ ...tx, signatures }));
 }
 
@@ -109,7 +115,8 @@ function decodeWire(wire: Uint8Array) {
   }
 }
 
-const encodedMessage = (wire: Uint8Array) => getBase58Decoder().decode(decodeWire(wire).messageBytes);
+const encodedMessage = (wire: Uint8Array) =>
+  getBase58Decoder().decode(decodeWire(wire).messageBytes);
 
 /** MWA `sign_transactions` payloads → the request the extension's approval path signs. */
 export function toSignAllTransactionsRequest(
@@ -176,10 +183,7 @@ export function isMwaAuthorizationValid(
 
 /** The four refusals the MWA wallet bridge can return. */
 export type MwaFailReason =
-  | 'USER_DECLINED'
-  | 'TOO_MANY_PAYLOADS'
-  | 'INVALID_SIGNATURES'
-  | 'AUTHORIZATION_NOT_VALID';
+  'USER_DECLINED' | 'TOO_MANY_PAYLOADS' | 'INVALID_SIGNATURES' | 'AUTHORIZATION_NOT_VALID';
 
 /** Most transactions or messages Salmon accepts in one request. */
 export const MWA_MAX_PAYLOADS = 10;

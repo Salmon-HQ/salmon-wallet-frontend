@@ -120,7 +120,10 @@ describe('dappTransactionDisplay', () => {
 
   it('refuses to look harmless when the transaction cannot be read', () => {
     const display = dappTransactionDisplay({ ...base, parsingError: 'bad bytes' }, t);
-    expect(display.warning).toEqual({ title: 'dapp.transaction_unavailable', body: 'dapp.decode_error' });
+    expect(display.warning).toEqual({
+      title: 'dapp.transaction_unavailable',
+      body: 'dapp.decode_error',
+    });
   });
 
   it('says how many transactions a batch signs', () => {
@@ -177,8 +180,12 @@ describe("dappTransactionGate (the extension's approval rules)", () => {
   });
 
   it('refuses approval while the preview has not answered, or could not read the transaction', () => {
-    expect(dappTransactionGate({ effects: null, effectsLoading: true, parsingError: null }).canApprove).toBe(false);
-    expect(dappTransactionGate({ effects: null, effectsLoading: false, parsingError: 'x' }).canApprove).toBe(false);
+    expect(
+      dappTransactionGate({ effects: null, effectsLoading: true, parsingError: null }).canApprove
+    ).toBe(false);
+    expect(
+      dappTransactionGate({ effects: null, effectsLoading: false, parsingError: 'x' }).canApprove
+    ).toBe(false);
   });
 
   it.each([
@@ -186,7 +193,9 @@ describe("dappTransactionGate (the extension's approval rules)", () => {
     ['an undetermined preview', effects('undetermined')],
     ['a transaction that would fail', effects('transaction-would-fail')],
   ])('asks for a hold on %s', (_name, value) => {
-    expect(dappTransactionGate({ effects: value, effectsLoading: false, parsingError: null })).toEqual({
+    expect(
+      dappTransactionGate({ effects: value, effectsLoading: false, parsingError: null })
+    ).toEqual({
       canApprove: true,
       requiresHold: true,
     });

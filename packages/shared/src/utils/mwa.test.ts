@@ -27,7 +27,11 @@ const payer = Keypair.fromSeed(new Uint8Array(32).fill(1));
 const salmon = Keypair.fromSeed(new Uint8Array(32).fill(2));
 const recipient = Keypair.fromSeed(new Uint8Array(32).fill(3)).publicKey;
 const recentBlockhash = Keypair.fromSeed(new Uint8Array(32).fill(4)).publicKey.toBase58();
-const transfer = SystemProgram.transfer({ fromPubkey: salmon.publicKey, toPubkey: recipient, lamports: 1 });
+const transfer = SystemProgram.transfer({
+  fromPubkey: salmon.publicKey,
+  toPubkey: recipient,
+  lamports: 1,
+});
 
 /** v0 transaction the dApp's co-signer (payer) already signed; Salmon's slot is empty. */
 function coSignedV0() {
@@ -51,12 +55,9 @@ describe('mwaChainToNetworkId', () => {
     expect(mwaChainToNetworkId(chain)).toBe(networkId);
   });
 
-  it.each(['solana:testnet', 'testnet', 'ethereum:1', '', undefined])(
-    'refuses %s',
-    (chain) => {
-      expect(mwaChainToNetworkId(chain)).toBeNull();
-    }
-  );
+  it.each(['solana:testnet', 'testnet', 'ethereum:1', '', undefined])('refuses %s', (chain) => {
+    expect(mwaChainToNetworkId(chain)).toBeNull();
+  });
 });
 
 describe('mwaIdentityOrigin', () => {
@@ -80,12 +81,9 @@ describe('mwaIdentityOrigin', () => {
     'https://user:pass@jup.ag',
     // Plain http only for a dApp running on this machine.
     'http://jup.ag',
-  ])(
-    'refuses %s',
-    (uri) => {
-      expect(mwaIdentityOrigin(uri)).toBeNull();
-    }
-  );
+  ])('refuses %s', (uri) => {
+    expect(mwaIdentityOrigin(uri)).toBeNull();
+  });
 });
 
 describe('withSignature', () => {
@@ -117,7 +115,9 @@ describe('withSignature', () => {
     const wire = coSignedV0().serialize();
     const stranger = Keypair.fromSeed(new Uint8Array(32).fill(9)).publicKey.toBase58();
 
-    expect(() => withSignature(wire, stranger, bs58.encode(new Uint8Array(64)))).toThrow(/not a required signer/);
+    expect(() => withSignature(wire, stranger, bs58.encode(new Uint8Array(64)))).toThrow(
+      /not a required signer/
+    );
   });
 });
 
@@ -151,7 +151,9 @@ describe('request builders', () => {
   });
 
   it('refuses bytes that are not a transaction', () => {
-    expect(() => toSignAllTransactionsRequest('r3', [new Uint8Array([1, 2, 3])])).toThrow(/not a valid transaction/);
+    expect(() => toSignAllTransactionsRequest('r3', [new Uint8Array([1, 2, 3])])).toThrow(
+      /not a valid transaction/
+    );
   });
 });
 
@@ -272,8 +274,13 @@ describe('mwaAuthorizedAccount', () => {
 
 describe('commitment', () => {
   it('carries the dApp commitment as the preflight commitment the send path honours', () => {
-    const request = toSignAndSendRequest('r', coSignedV0().serialize(), { commitment: 'confirmed' });
-    expect(request.params?.options).toEqual({ commitment: 'confirmed', preflightCommitment: 'confirmed' });
+    const request = toSignAndSendRequest('r', coSignedV0().serialize(), {
+      commitment: 'confirmed',
+    });
+    expect(request.params?.options).toEqual({
+      commitment: 'confirmed',
+      preflightCommitment: 'confirmed',
+    });
   });
 });
 

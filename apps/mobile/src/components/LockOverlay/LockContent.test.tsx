@@ -159,7 +159,13 @@ describe('LockContent', () => {
         allowReset={false}
         onUnlock={jest.fn().mockResolvedValue(true)}
         onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
-        biometric={{ available: false, armed: false, kind: null, unlock: jest.fn(), refresh: jest.fn() }}
+        biometric={{
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn(),
+        }}
       />
     );
     await act(async () => {});
