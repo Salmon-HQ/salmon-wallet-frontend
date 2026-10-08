@@ -5,6 +5,7 @@ jest.mock('@solana-mobile/seed-vault-lib', () => ({
   SeedVault: {
     isSeedVaultAvailable: jest.fn(),
     authorizeNewSeed: jest.fn(),
+    getAuthorizedSeeds: jest.fn(),
     createNewSeed: jest.fn(),
     getAccounts: jest.fn(),
     getUserWallets: jest.fn(),
@@ -20,18 +21,24 @@ jest.mock('@salmon/shared', () => {
     reason: string;
     constructor(why: string) {
       super(why);
+      this.name = 'SeedVaultError';
       this.reason = why;
     }
   }
-  return { __esModule: true, SeedVaultError };
+  const isSeedVaultError = (e: unknown) => e instanceof SeedVaultError;
+  return { __esModule: true, SeedVaultError, isSeedVaultError };
 });
 
 import { Buffer } from 'buffer';
 
 import {
+  authorizeSeed,
   createSeed,
+  deauthorizeSeed,
   isSeedVaultScreenOpen,
   listSeedVaultAccounts,
+  onSeedVaultScreensClosed,
+  SEED_VAULT_SCREEN_TIMEOUT_MS,
   seedVaultBridge,
 } from './bridge';
 
@@ -131,5 +138,50 @@ describe('Seed Vault screen tracking', () => {
     finish(new Error('signMessages failed with result=0'));
     await expect(pending).rejects.toBeDefined();
     expect(isSeedVaultScreenOpen()).toBe(false);
+  });
+});
+
+describe('Seed Vault bridge — review fixes', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('gives up on a Seed Vault screen that never answers, and reports it closed', async () => {
+    jest.useFakeTimers();
+    const closed = jest.fn();
+    const stop = onSeedVaultScreensClosed(closed);
+    mockNative.signMessages.mockReturnValue(new Promise(() => {}));
+
+    const pending = seedVaultBridge.signMessages('4001', PATH, [Uint8Array.of(1)]);
+    const outcome = expect(pending).rejects.toMatchObject({ reason: 'failed' });
+    jest.advanceTimersByTime(SEED_VAULT_SCREEN_TIMEOUT_MS + 1);
+    await outcome;
+
+    expect(isSeedVaultScreenOpen()).toBe(false);
+    expect(closed).toHaveBeenCalledTimes(1);
+    stop();
+    jest.useRealTimers();
+  });
+
+  it('reads "no seed to authorize" as its own reason', async () => {
+    mockNative.authorizeNewSeed.mockRejectedValue(
+      new Error('authorizeSeed failed with result=1005')
+    );
+
+    await expect(authorizeSeed()).rejects.toMatchObject({ reason: 'no-seeds' });
+  });
+
+  it('does not give up an access Seed Vault no longer lists', async () => {
+    mockNative.getAuthorizedSeeds.mockResolvedValue([{ authToken: '4002' }]);
+
+    await deauthorizeSeed('4001');
+
+    expect(mockNative.deauthorizeSeed).not.toHaveBeenCalled();
+  });
+
+  it('gives up an access Seed Vault still lists', async () => {
+    mockNative.getAuthorizedSeeds.mockResolvedValue([{ authToken: '4001' }]);
+
+    await deauthorizeSeed('4001');
+
+    expect(mockNative.deauthorizeSeed).toHaveBeenCalledWith('4001');
   });
 });

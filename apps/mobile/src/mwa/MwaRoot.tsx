@@ -10,7 +10,11 @@ import { useBiometric } from '../contexts/BiometricContext';
 import { I18nProvider } from '../i18n';
 import { AppProviders, useAppFonts } from '../providers/AppProviders';
 import { MwaRequest } from './MwaRequest';
-import { isSeedVaultScreenOpen } from '../seed-vault/bridge';
+import {
+  isSeedVaultScreenOpen,
+  onSeedVaultScreensClosed,
+  SEED_VAULT_CLOSE_SETTLE_MS,
+} from '../seed-vault/bridge';
 import { useMwaSession } from './useMwaSession';
 
 /**
@@ -71,8 +75,15 @@ function MwaHost() {
         void actionsRef.current.lockAccounts();
       }
     });
+    // Leaving while a Seed Vault screen was on top sends no new event.
+    const unsubscribeSeedVault = onSeedVaultScreensClosed(() => {
+      setTimeout(() => {
+        if (AppState.currentState !== 'active') void actionsRef.current.lockAccounts();
+      }, SEED_VAULT_CLOSE_SETTLE_MS);
+    });
     return () => {
       subscription.remove();
+      unsubscribeSeedVault();
       void actionsRef.current.lockAccounts();
     };
   }, []);

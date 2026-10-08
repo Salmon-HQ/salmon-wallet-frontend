@@ -76,7 +76,7 @@ export function isWatchOnlyAccount(account: Account | null | undefined): boolean
 
 /** True when the wallet's key lives in Seed Vault (spec 037). */
 export function isSeedVaultAccount(account: Account | null | undefined): boolean {
-  return account?.secret.kind === 'seedVault';
+  return account?.secret?.kind === 'seedVault';
 }
 
 /**

@@ -31,7 +31,11 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
-import { isSeedVaultScreenOpen } from '../src/seed-vault/bridge';
+import {
+  isSeedVaultScreenOpen,
+  onSeedVaultScreensClosed,
+  SEED_VAULT_CLOSE_SETTLE_MS,
+} from '../src/seed-vault/bridge';
 import {
   useAccountsContext,
   useInactivityTimeout,
@@ -216,7 +220,13 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
         typeof authScreen === 'string' &&
         ['password', 'biometric-setup', 'analytics-consent', 'success'].includes(authScreen);
 
-      if (!inAppGroup && !hasNavigated && !isPostCreationScreen) {
+      // A locked wallet never stays in `(auth)`, not even on a post-creation
+      // screen: a deep link can open the password screen there, and setting a
+      // new password on top of locked funds must not be one tap away.
+      if (inAuthGroup && state.locked) {
+        router.replace('/(app)/(tabs)');
+        setHasNavigated(true);
+      } else if (!inAppGroup && !hasNavigated && !isPostCreationScreen) {
         router.replace('/(app)/(tabs)');
         setHasNavigated(true);
       }
@@ -224,6 +234,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   }, [
     state.ready,
     state.accounts.length,
+    state.locked,
     segments,
     navigationState?.key,
     hasNavigated,
@@ -275,8 +286,17 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       tryLock();
     });
 
+    // The user can leave Salmon while a Seed Vault screen is on top; no new
+    // `background` event comes then, so the lock is checked once it closes.
+    const unsubscribeSeedVault = onSeedVaultScreensClosed(() => {
+      setTimeout(() => {
+        if (AppState.currentState !== 'active') tryLock();
+      }, SEED_VAULT_CLOSE_SETTLE_MS);
+    });
+
     return () => {
       changeSubscription.remove();
+      unsubscribeSeedVault();
     };
   }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
 

@@ -134,7 +134,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     onWaitEnd,
     onPersisted,
     onFailure,
-    seedVault,
+    seedVault: seedVault ?? undefined,
   });
   const { step, privateKeyImport, watchOnlyImport, selectedDerived } = flow;
 

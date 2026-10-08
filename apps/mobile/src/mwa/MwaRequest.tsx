@@ -30,7 +30,7 @@ import {
   useSolanaTransactionApproval,
   type MwaPrecheck,
   type SolanaAccount,
-  SeedVaultError,
+  isSeedVaultError,
 } from '@salmon/shared';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -58,7 +58,7 @@ const fail = (failReason: string): MWAResponse => ({ failReason }) as MWARespons
 // The user said no on Seed Vault's own screen: to the dApp that is a decline,
 // like Salmon's Deny, not a signing failure.
 const refusedInSeedVault = (error: unknown) =>
-  error instanceof SeedVaultError && error.reason === 'cancelled';
+  isSeedVaultError(error) && error.reason === 'cancelled';
 const invalid = (valid: boolean[]): MWAResponse => ({
   failReason: MWARequestFailReason.InvalidSignatures,
   valid,

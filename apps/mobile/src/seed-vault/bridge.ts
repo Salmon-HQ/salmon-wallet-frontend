@@ -10,7 +10,12 @@
  * where its TypeScript declarations say number, so values are passed as the
  * strings it returns.
  */
-import { SeedVaultError, type SeedVaultBridge, type SeedVaultFailure } from '@salmon/shared';
+import {
+  isSeedVaultError,
+  SeedVaultError,
+  type SeedVaultBridge,
+  type SeedVaultFailure,
+} from '@salmon/shared';
 import { SeedVault, SeedVaultPermissionAndroid } from '@solana-mobile/seed-vault-lib';
 import { Buffer } from 'buffer';
 import { PermissionsAndroid, Platform } from 'react-native';
@@ -53,18 +58,49 @@ type SigningRequest = { payload: string; requestedSignatures: string[] };
 // The lock-on-background handlers ask this first, so a confirmation does not
 // lock the wallet, or close the dApp sheet, under the user's finger.
 let screensOpen = 0;
+const closedListeners = new Set<() => void>();
+
+// The native module gives up on a screen after 300 s, but only through the
+// activity that opened it; if that activity is gone, its promise never settles.
+// Salmon stops waiting a little later, so the lock can never stay off for good.
+export const SEED_VAULT_SCREEN_TIMEOUT_MS = 305_000;
+
+// After the last Seed Vault screen closes, Android takes a moment to bring
+// Salmon back to the front; the lock checks after that.
+export const SEED_VAULT_CLOSE_SETTLE_MS = 1_000;
 
 /** Whether a Seed Vault screen Salmon opened is still up. */
 export function isSeedVaultScreenOpen(): boolean {
   return screensOpen > 0;
 }
 
+/**
+ * Called each time the last open Seed Vault screen closes. The lock handlers
+ * use it to lock if the user left Salmon while Seed Vault was on top, since no
+ * new `background` event comes in that case.
+ */
+export function onSeedVaultScreensClosed(listener: () => void): () => void {
+  closedListeners.add(listener);
+  return () => closedListeners.delete(listener);
+}
+
 async function onSeedVaultScreen<T>(call: () => Promise<T>): Promise<T> {
   screensOpen += 1;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    return await call();
+    return await Promise.race([
+      call(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new SeedVaultError('failed')),
+          SEED_VAULT_SCREEN_TIMEOUT_MS
+        );
+      }),
+    ]);
   } finally {
+    clearTimeout(timer);
     screensOpen -= 1;
+    if (screensOpen === 0) closedListeners.forEach((listener) => listener());
   }
 }
 
@@ -81,12 +117,16 @@ export async function isSeedVaultAvailable(): Promise<boolean> {
   }
 }
 
-/** Asks Android for the standard Seed Vault permission (never the privileged one). */
-export async function requestSeedVaultPermission(): Promise<boolean> {
+/**
+ * Asks Android for the standard Seed Vault permission (never the privileged
+ * one). `blocked`: denied for good, so only Android Settings can grant it.
+ */
+export async function requestSeedVaultPermission(): Promise<'granted' | 'denied' | 'blocked'> {
   const result = await onSeedVaultScreen(() =>
     PermissionsAndroid.request(SeedVaultPermissionAndroid)
   );
-  return result === PermissionsAndroid.RESULTS.GRANTED;
+  if (result === PermissionsAndroid.RESULTS.GRANTED) return 'granted';
+  return result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ? 'blocked' : 'denied';
 }
 
 // Seed Vault returns -1 when there is no authorization to give (and, on some
@@ -133,23 +173,37 @@ export async function listAuthorizedSeeds(): Promise<string[]> {
   return seeds.map((s) => s.authToken).filter(usable);
 }
 
-/** Gives up Salmon's access to a seed. */
-export function deauthorizeSeed(authToken: string): void {
+/**
+ * Gives up Salmon's access to a seed, if Seed Vault still lists it. The native
+ * call throws on a background thread, out of JS's reach, when the access is
+ * already gone (revoked in Seed Vault) — which would crash the app — so it is
+ * made only for an access Seed Vault still reports.
+ */
+export async function deauthorizeSeed(authToken: string): Promise<void> {
   try {
-    native.deauthorizeSeed(authToken);
-  } catch {
-    // Already not authorized (the user revoked it in Seed Vault): nothing to give up.
+    if ((await listAuthorizedSeeds()).includes(authToken)) native.deauthorizeSeed(authToken);
+  } catch (error) {
+    console.warn('[seed-vault] could not give up access', error);
   }
 }
 
-/** What Seed Vault's failure means for the user. */
+// Android's RESULT_CANCELED is 0; Seed Vault's codes are RESULT_FIRST_USER (1)
+// + 1000…: 1002 invalid authorization, 1004 authentication failed, 1005 no
+// seed available to authorize (WalletContractV1).
+const REASONS: Record<string, SeedVaultFailure> = {
+  '0': 'cancelled',
+  '1002': 'revoked',
+  '1004': 'cancelled',
+  '1005': 'no-seeds',
+};
+
+/** What Seed Vault's failure means for the user; the native error stays as `cause`. */
 function failure(error: unknown): never {
+  if (isSeedVaultError(error)) throw error;
   const code = /result=(-?\d+)/.exec(error instanceof Error ? error.message : String(error))?.[1];
-  // Android's RESULT_CANCELED is 0; Seed Vault's codes are RESULT_FIRST_USER (1)
-  // + 1000…: 1002 invalid authorization, 1004 authentication failed.
-  const reason: SeedVaultFailure =
-    code === '0' || code === '1004' ? 'cancelled' : code === '1002' ? 'revoked' : 'failed';
-  throw new SeedVaultError(reason);
+  const reason = (code && REASONS[code]) || 'failed';
+  if (reason === 'failed') console.warn('[seed-vault] request failed', error);
+  throw new SeedVaultError(reason, { cause: error });
 }
 
 const toRequests = (derivationPath: string, payloads: Uint8Array[]): SigningRequest[] =>

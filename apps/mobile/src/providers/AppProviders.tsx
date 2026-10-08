@@ -30,7 +30,7 @@ if (Platform.OS === 'android') {
   registerSeedVault({
     bridge: seedVaultBridge,
     maxPerRequest: SEED_VAULT_MAX_PER_REQUEST,
-    release: deauthorizeSeed,
+    release: (authToken) => void deauthorizeSeed(authToken),
   });
 }
 

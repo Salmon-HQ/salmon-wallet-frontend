@@ -56,11 +56,18 @@ import {
   YIELD_TO_PAINT_MS,
   type Semantic,
   passwordCheckErrorKey,
+  isSeedVaultError,
+  SeedVaultError,
 } from '@salmon/shared';
 import { LockIcon } from '../../src/icons';
+import { listSeedVaultAccounts } from '../../src/seed-vault/bridge';
+import {
+  getPendingSeedVaultSelection,
+  setPendingSeedVaultSelection,
+} from '../../src/seed-vault/pendingSelection';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -93,7 +100,7 @@ export default function PasswordScreen() {
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const mode = useThemeMode();
-  const params = useLocalSearchParams<{ type?: string; seedVault?: string }>();
+  const params = useLocalSearchParams<{ type?: string }>();
   const [state, actions] = useAccountsContext();
   const [mnemonic, setMnemonic] = useState<string | null>(null);
 
@@ -110,18 +117,10 @@ export default function PasswordScreen() {
 
   // A Seed Vault wallet (spec 037) arrives instead of a phrase: which seed,
   // which path, which address. Nothing secret — the key stays in Seed Vault.
-  const seedVault = useMemo(() => {
-    if (!params.seedVault) return null;
-    try {
-      return JSON.parse(params.seedVault) as {
-        authToken: string;
-        derivationPath: string;
-        address: string;
-      };
-    } catch {
-      return null;
-    }
-  }, [params.seedVault]);
+  // It comes from memory, never from route params, which a deep link can set.
+  const [seedVault] = useState(() =>
+    params.type === 'seed-vault' ? getPendingSeedVaultSelection() : null
+  );
   const hasSecret = !!mnemonic || !!seedVault;
 
   // Get requiredLock from state - true if password already exists
@@ -271,6 +270,20 @@ export default function PasswordScreen() {
       // Derives accounts for ALL networks (mainnet + devnet/testnet)
       // This ensures accounts are ready when user enables developer mode later
       const t0 = Date.now();
+      if (seedVault) {
+        // Asked of Seed Vault again, so the wallet is only ever an account
+        // Seed Vault itself reports for that authorization.
+        const listed = await listSeedVaultAccounts(seedVault.authToken);
+        if (
+          !listed.some(
+            (a) => a.derivationPath === seedVault.derivationPath && a.address === seedVault.address
+          )
+        ) {
+          throw new SeedVaultError('failed');
+        }
+      } else if (!mnemonic) {
+        throw new Error('No recovery phrase to create the wallet from');
+      }
       const { account } = seedVault
         ? await importSeedVaultAccount({
             name: accountName,
@@ -279,7 +292,7 @@ export default function PasswordScreen() {
           })
         : await createAccount({
             name: accountName,
-            mnemonic: mnemonic ?? '',
+            mnemonic: mnemonic!,
             networkIds: [...(await getScanNetworks()), ...Object.values(await getMirrorNetworks())],
             startIndex: 0,
           });
@@ -288,6 +301,7 @@ export default function PasswordScreen() {
       // Add account with password encryption
       const t1 = Date.now();
       await actions.addAccount(account, password);
+      setPendingSeedVaultSelection(null);
       console.log(`[perf] recovery: addAccount (encrypt + storage) ${Date.now() - t1}ms`);
 
       // Unlock the wallet so no lock screen appears when navigating to the app.
@@ -324,10 +338,12 @@ export default function PasswordScreen() {
       // too. Blaming the seed phrase for that sends users hunting for a lost
       // wallet when all they need is a connection.
       setError(
-        err instanceof ApiError && err.isNetworkError()
-          ? t('wallet.create.recovery_network_error') ||
+        isSeedVaultError(err)
+          ? t(`wallet.seedVault.errors.${err.reason}`)
+          : err instanceof ApiError && err.isNetworkError()
+            ? t('wallet.create.recovery_network_error') ||
               'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
-          : t('wallet.create.recovery_error') ||
+            : t('wallet.create.recovery_error') ||
               'Failed to recover account. Please check your seed phrase and try again.'
       );
     } finally {

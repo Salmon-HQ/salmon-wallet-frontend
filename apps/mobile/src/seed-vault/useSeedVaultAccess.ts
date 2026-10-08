@@ -12,12 +12,13 @@ import {
 } from './bridge';
 
 /**
- * Seed Vault for the add-wallet flow, or undefined where the device has none
- * (so "Use Seed Vault" is not offered). Every call first makes sure Android
- * granted the permission, because the user can revoke it at any time.
+ * Seed Vault for the add-wallet flow: undefined while checking, null where the
+ * device has none (so "Use Seed Vault" is not offered). Every call first makes
+ * sure Android granted the permission, because the user can revoke it at any
+ * time.
  */
-export function useSeedVaultAccess(): SeedVaultAccess | undefined {
-  const [available, setAvailable] = useState(false);
+export function useSeedVaultAccess(): SeedVaultAccess | null | undefined {
+  const [available, setAvailable] = useState<boolean>();
   useEffect(() => {
     let live = true;
     void isSeedVaultAvailable().then((yes) => live && setAvailable(yes));
@@ -27,9 +28,12 @@ export function useSeedVaultAccess(): SeedVaultAccess | undefined {
   }, []);
 
   return useMemo(() => {
-    if (!available) return undefined;
+    if (available === undefined) return undefined;
+    if (!available) return null;
     const permitted = async () => {
-      if (!(await requestSeedVaultPermission())) throw new SeedVaultError('cancelled');
+      const permission = await requestSeedVaultPermission();
+      if (permission !== 'granted')
+        throw new SeedVaultError(permission === 'blocked' ? 'blocked' : 'cancelled');
     };
     const accountsOf = async (authTokens: string[]): Promise<SeedVaultListedAccount[]> =>
       (

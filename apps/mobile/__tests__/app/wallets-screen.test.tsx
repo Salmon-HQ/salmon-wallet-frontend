@@ -145,6 +145,7 @@ jest.mock('@salmon/shared', () => {
     ...jest.requireActual('../../../../packages/shared/src/hooks/useWalletsScreen'),
     getAccountMnemonic: actualSecret.getAccountMnemonic,
     isWatchOnlyAccount: actualSecret.isWatchOnlyAccount,
+    isSeedVaultAccount: actualSecret.isSeedVaultAccount,
     getAccountAddress: (account: {
       networksAccounts: Record<string, ({ getReceiveAddress: () => string } | null)[]>;
     }) => Object.values(account.networksAccounts)[0]?.find(Boolean)?.getReceiveAddress() ?? '',

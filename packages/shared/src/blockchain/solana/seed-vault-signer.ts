@@ -40,8 +40,10 @@ export class SeedVaultError extends Error {
     readonly reason: SeedVaultFailure,
     options?: { cause?: unknown }
   ) {
-    super(MESSAGES[reason], options);
+    super(MESSAGES[reason]);
     this.name = 'SeedVaultError';
+    // Set by hand: not every package's TypeScript lib knows the ES2022 option.
+    if (options) Object.defineProperty(this, 'cause', { value: options.cause });
   }
 }
 
