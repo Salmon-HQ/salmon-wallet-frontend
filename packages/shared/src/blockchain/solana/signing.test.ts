@@ -1,5 +1,5 @@
 import nacl from 'tweetnacl';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Keypair, SystemProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import {
   address,
@@ -12,7 +12,7 @@ import {
   type SignatureBytes,
   type TransactionPartialSigner,
 } from '@solana/kit';
-import { signBytesWith, signTransactionWith } from './signing';
+import { signBytesWith, signTransactionWith, signTransactionsWith } from './signing';
 
 // TEST-ONLY keys: no funds, never used outside tests.
 const coSigner = Keypair.fromSeed(new Uint8Array(32).fill(1));
@@ -112,5 +112,34 @@ describe('signBytesWith', () => {
 
     expect(signature).toHaveLength(64);
     expect(nacl.sign.detached.verify(bytes, signature, salmon.publicKey.toBytes())).toBe(true);
+  });
+});
+
+describe('signTransactionsWith', () => {
+  it('asks the signer once for the whole batch and signs each transaction', async () => {
+    const signer = remoteSigner(salmon);
+    const spy = vi.spyOn(signer, 'signTransactions');
+    const txs = [coSignedTransfer(), coSignedTransfer()];
+
+    const signed = await signTransactionsWith(signer, txs);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    signed.forEach((tx) => {
+      const own = tx.signatures[address(salmon.publicKey.toBase58())];
+      expect(
+        own &&
+          nacl.sign.detached.verify(
+            new Uint8Array(tx.messageBytes),
+            own,
+            salmon.publicKey.toBytes()
+          )
+      ).toBe(true);
+    });
+  });
+
+  it('refuses the batch when any transaction does not need the signer', async () => {
+    await expect(
+      signTransactionsWith(remoteSigner(stranger), [coSignedTransfer()])
+    ).rejects.toThrow(/not a required signer/);
   });
 });

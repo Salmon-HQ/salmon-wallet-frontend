@@ -39,7 +39,6 @@ describe('Seed Vault account', () => {
     const account = (await createBlockchainAccountForSeedVault(SECRET)) as SolanaAccount;
 
     expect(account.getReceiveAddress()).toBe(SECRET.address);
-    expect(account.holdsKey).toBe(false);
     expect(() => account.retrieveSecurePrivateKey()).toThrow(/Seed Vault/);
     const signature = await signBytesWith(account.signer, bytes);
     expect(nacl.sign.detached.verify(bytes, signature, vaultKey.publicKey.toBytes())).toBe(true);

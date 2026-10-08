@@ -103,6 +103,20 @@ describe('Seed Vault signer', () => {
     });
   });
 
+  it("refuses a signature made by a key other than the account's", async () => {
+    const vault = fakeVault();
+    const otherKey = Keypair.fromSeed(new Uint8Array(32).fill(9));
+    vault.signMessages.mockImplementationOnce(async (_a, _p, payloads) =>
+      payloads.map((p) => nacl.sign.detached(p, otherKey.secretKey))
+    );
+
+    await expect(
+      signerWith(vault).signMessages([createSignableMessage('x')])
+    ).rejects.toMatchObject({
+      reason: 'failed',
+    });
+  });
+
   it('refuses a signature that is not 64 bytes', async () => {
     const vault = fakeVault();
     vault.signMessages.mockResolvedValueOnce([new Uint8Array(63)]);

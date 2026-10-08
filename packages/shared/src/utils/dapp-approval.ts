@@ -34,7 +34,11 @@ import {
   signSiwsMessage,
 } from '../blockchain/solana';
 import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
-import { signBytesWith, signTransactionWith } from '../blockchain/solana/signing';
+import {
+  signBytesWith,
+  signTransactionWith,
+  signTransactionsWith,
+} from '../blockchain/solana/signing';
 import type {
   ResolveSymbolFn,
   SolanaAccount,
@@ -99,12 +103,17 @@ function emptySignatureMap(
 }
 
 /** Signs an approved compiled message, leaving every other signer slot empty. */
-function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+/** An approved compiled message as an unsigned transaction, every signer slot empty. */
+function approvedTransaction(encodedMessage: string) {
   const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
-  return signTransactionWith(account.signer, {
+  return {
     messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
     signatures: emptySignatureMap(message),
-  });
+  };
+}
+
+function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+  return signTransactionWith(account.signer, approvedTransaction(encodedMessage));
 }
 
 const SEND_COMMITMENTS: readonly Commitment[] = ['processed', 'confirmed', 'finalized'];
@@ -518,16 +527,19 @@ export async function approveSolanaTransactionRequest(
     const encodedMessages = request.params?.messages ?? [];
     if (!encodedMessages.length) throw new Error('Missing messages');
 
-    const signatures = await Promise.all(
-      encodedMessages.map(async (encodedMessage) => {
-        const signed = await signApprovedMessage(account, encodedMessage);
-        const signature = signed.signatures[account.signer.address];
-        if (!signature) {
-          throw new Error('Failed to sign one of the transactions');
-        }
-        return bs58.encode(signature);
-      })
+    // One request for the whole batch: a Seed Vault account then confirms in
+    // groups instead of once per transaction, and nothing races.
+    const signed = await signTransactionsWith(
+      account.signer,
+      encodedMessages.map(approvedTransaction)
     );
+    const signatures = signed.map((tx) => {
+      const signature = tx.signatures[account.signer.address];
+      if (!signature) {
+        throw new Error('Failed to sign one of the transactions');
+      }
+      return bs58.encode(signature);
+    });
 
     return {
       signatures,

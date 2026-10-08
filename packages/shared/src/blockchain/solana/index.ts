@@ -194,12 +194,18 @@ export type {
   SignatureOutcomeQuery,
 } from './signature-status';
 
-export { signBytesWith, signTransactionWith, type SolanaSigner } from './signing';
+export {
+  signBytesWith,
+  signTransactionWith,
+  signTransactionsWith,
+  type SolanaSigner,
+} from './signing';
 export {
   createSeedVaultSigner,
   registerSeedVault,
   releaseSeedVaultAccess,
   SeedVaultError,
+  isSeedVaultError,
   type SeedVaultBridge,
   type SeedVaultFailure,
   type SeedVaultRegistration,

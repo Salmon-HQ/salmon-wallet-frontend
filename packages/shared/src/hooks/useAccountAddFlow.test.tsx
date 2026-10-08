@@ -13,6 +13,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 import { useAccountAddFlow, type UseAccountAddFlowOptions } from './useAccountAddFlow';
 import { useAccountsContext } from '../contexts/AccountsContext';
+import { SeedVaultError } from '../blockchain/solana/seed-vault-signer';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { validateMnemonic } from '../crypto/mnemonic';
 import { createAccount, importSeedVaultAccount } from '../factories/account-factory';
@@ -106,7 +107,13 @@ async function reachSetName(result: { current: ReturnType<typeof useAccountAddFl
 beforeEach(() => {
   vi.clearAllMocks();
   accountsMock.mockReturnValue([
-    { accounts: [{ id: 'a1' }, { id: 'a2' }], activeAccount },
+    {
+      accounts: [
+        { id: 'a1', secret: { kind: 'mnemonic', mnemonic: 'a' } },
+        { id: 'a2', secret: { kind: 'mnemonic', mnemonic: 'b' } },
+      ],
+      activeAccount,
+    },
     { addAccount, removeAccount, checkPassword, getNetworkId: () => 'solana-devnet' },
   ] as unknown as ReturnType<typeof useAccountsContext>);
   vaultCachedMock.mockResolvedValue(true);
@@ -230,7 +237,7 @@ describe('useAccountAddFlow', () => {
     await act(() => result.current.confirmReauth());
 
     expect(checkPassword).toHaveBeenCalledWith('correct-horse');
-    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse');
+    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse', undefined);
     expect(opts.onPersisted).toHaveBeenCalledTimes(1);
     expect(result.current.reauthPassword).toBe('');
   });
@@ -345,7 +352,7 @@ describe('useAccountAddFlow — Seed Vault', () => {
       address: 'AddrB',
       networkId: 'solana-devnet',
     });
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, undefined);
     expect(removeAccount).not.toHaveBeenCalled();
   });
 
@@ -359,8 +366,9 @@ describe('useAccountAddFlow — Seed Vault', () => {
     act(() => result.current.continueSeedVault());
     await act(() => result.current.confirm());
 
-    expect(removeAccount).toHaveBeenCalledWith('old', undefined);
-    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined);
+    // One write that drops the stale wallet (spec US3 scenario 4).
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, 'old');
+    expect(removeAccount).not.toHaveBeenCalled();
   });
 
   it("shows the seed's own wallets and the first few paths, not every path derived ahead of time", async () => {
@@ -391,9 +399,7 @@ describe('useAccountAddFlow — Seed Vault', () => {
   it('stays on the step with the reason when Seed Vault did not answer', async () => {
     withWallets([]);
     const seedVault = access();
-    seedVault.listAccounts.mockRejectedValue(
-      Object.assign(new Error('x'), { reason: 'cancelled' })
-    );
+    seedVault.listAccounts.mockRejectedValue(new SeedVaultError('cancelled'));
     const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
 
     await act(() => result.current.selectSeedVault());

@@ -33,7 +33,8 @@ interface UseAccountsMutationsParams {
 }
 
 interface UseAccountsMutationsResult {
-  addAccount: (account: Account, password?: string) => Promise<void>;
+  /** `replaces`: the id of a wallet the new one takes the place of, in the same write. */
+  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   removeAccount: (targetId: string, password?: string) => Promise<void>;
   removeAllAccounts: () => Promise<void>;
@@ -88,9 +89,9 @@ export function useAccountsMutations({
   ]);
 
   const addAccount = useCallback(
-    async (account: Account, password?: string): Promise<void> => {
+    async (account: Account, password?: string, replaces?: string): Promise<void> => {
       const newCounter = counter + 1;
-      const newAccounts = [...accounts, account];
+      const newAccounts = [...accounts.filter(({ id }) => id !== replaces), account];
       const newAccountId = account.id;
       // The new wallet becomes the active one, so the session's network and
       // slot must be ones *it* holds. Keeping the session's network unchecked

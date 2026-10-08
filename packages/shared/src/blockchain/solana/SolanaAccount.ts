@@ -123,14 +123,6 @@ export class SolanaAccount extends SolanaReadAccount {
   }
 
   /**
-   * Whether this app holds the key. False for a Seed Vault account: it signs,
-   * but its key can never be shown or exported.
-   */
-  get holdsKey(): boolean {
-    return this.#seed !== null;
-  }
-
-  /**
    * Retrieves the private key encoded as base58 string.
    * WARNING: Handle with care - this exposes sensitive key material.
    *

@@ -577,9 +577,13 @@
       "errors": {
         "cancelled": "No se dio acceso al Seed Vault.",
         "unavailable": "Este dispositivo no tiene Seed Vault.",
-        "failed": "El Seed Vault no pudo completar el pedido. Probá de nuevo."
+        "failed": "El Seed Vault no pudo completar el pedido. Probá de nuevo.",
+        "revoked": "Se revocó el acceso al Seed Vault. Usá Seed Vault de nuevo para reconectar esta wallet.",
+        "no-seeds": "El Seed Vault todavía no tiene una semilla. Creá o importá una en el Seed Vault.",
+        "blocked": "El acceso al Seed Vault está desactivado para Salmon. Permitilo en los Ajustes de Android."
       },
-      "badge": "Seed Vault"
+      "badge": "Seed Vault",
+      "open_settings": "Abrir Ajustes"
     }
   },
   "transactions": {

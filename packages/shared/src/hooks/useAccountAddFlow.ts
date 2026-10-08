@@ -44,6 +44,7 @@ import type {
   SeedVaultListedAccount,
 } from '../types/ui/account-add';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { isSeedVaultError, type SeedVaultFailure } from '../blockchain/solana/seed-vault-signer';
 import { useImportPrivateKey, type UseImportPrivateKeyResult } from './useImportPrivateKey';
 import { useImportWatchOnly, type UseImportWatchOnlyResult } from './useImportWatchOnly';
 
@@ -51,11 +52,7 @@ import { useImportWatchOnly, type UseImportWatchOnlyResult } from './useImportWa
 export type SeedErrorKey = 'wallet.create.invalidSeed' | '';
 
 /** The Seed Vault step's errors, as i18n keys. */
-export type SeedVaultErrorKey =
-  | 'wallet.seedVault.errors.cancelled'
-  | 'wallet.seedVault.errors.unavailable'
-  | 'wallet.seedVault.errors.failed'
-  | '';
+export type SeedVaultErrorKey = `wallet.seedVault.errors.${SeedVaultFailure}` | '';
 
 /** A Seed Vault account as the step shows it. */
 export interface SeedVaultRow extends SeedVaultListedAccount {
@@ -92,7 +89,7 @@ export function seedVaultRows(
       ...row,
       added: wallets.some(
         ({ secret }) =>
-          secret?.kind === 'seedVault' &&
+          secret.kind === 'seedVault' &&
           secret.address === row.address &&
           secret.authToken === row.authToken
       ),
@@ -292,10 +289,9 @@ export function useAccountAddFlow({
         await before?.();
         setSeedVaultListed(await seedVault.listAccounts());
       } catch (err) {
-        const reason = (err as { reason?: string } | null)?.reason;
         setSeedVaultError(
-          reason === 'cancelled' || reason === 'unavailable'
-            ? `wallet.seedVault.errors.${reason}`
+          isSeedVaultError(err) && err.reason !== 'failed'
+            ? `wallet.seedVault.errors.${err.reason}`
             : 'wallet.seedVault.errors.failed'
         );
       } finally {
@@ -469,11 +465,10 @@ export function useAccountAddFlow({
       const stale = selectedSeedVault
         ? accounts.find(
             ({ secret }) =>
-              secret?.kind === 'seedVault' && secret.address === selectedSeedVault.address
+              secret.kind === 'seedVault' && secret.address === selectedSeedVault.address
           )
         : undefined;
-      if (stale) await accountActions.removeAccount(stale.id, password);
-      await accountActions.addAccount(account, password);
+      await accountActions.addAccount(account, password, stale?.id);
       // Anonymous funnel event: a derived account reuses the active seed
       // (create); an imported seed or private key is a recovery. No seed,
       // address or key material leaves here — just which flow completed.

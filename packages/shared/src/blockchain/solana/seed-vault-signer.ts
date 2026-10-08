@@ -9,25 +9,53 @@
  * @module blockchain/solana/seed-vault-signer
  */
 
-import type { Address, SignatureBytes } from '@solana/kit';
+import {
+  getPublicKeyFromAddress,
+  verifySignature,
+  type Address,
+  type SignatureBytes,
+} from '@solana/kit';
 import type { SolanaSigner } from './signing';
 
 /** Why Seed Vault did not sign. */
-export type SeedVaultFailure = 'cancelled' | 'revoked' | 'unavailable' | 'failed';
+/**
+ * Why Seed Vault did not sign or answer. `no-seeds`: no seed to authorize yet;
+ * `blocked`: Android permission denied for good (only Settings can grant it).
+ */
+export type SeedVaultFailure =
+  'cancelled' | 'revoked' | 'unavailable' | 'no-seeds' | 'blocked' | 'failed';
 
 /** Thrown when Seed Vault does not produce a signature; nothing was signed. */
 const MESSAGES: Record<SeedVaultFailure, string> = {
   cancelled: 'Not signed: the request was declined in Seed Vault.',
   revoked: 'Not signed: Seed Vault access was revoked. Add this wallet again from Add wallet.',
   unavailable: 'Not signed: Seed Vault is not available on this device.',
+  'no-seeds': 'Seed Vault has no seed yet. Create or import one in Seed Vault.',
+  blocked: 'Seed Vault access is turned off for Salmon. Allow it in Android Settings.',
   failed: 'Not signed: Seed Vault could not complete the request.',
 };
 
 export class SeedVaultError extends Error {
-  constructor(readonly reason: SeedVaultFailure) {
-    super(MESSAGES[reason]);
+  constructor(
+    readonly reason: SeedVaultFailure,
+    options?: { cause?: unknown }
+  ) {
+    super(MESSAGES[reason], options);
     this.name = 'SeedVaultError';
   }
+}
+
+/**
+ * Whether `error` is a {@link SeedVaultError}. Checked by name, not
+ * `instanceof`: a bundle can load this module twice (package entry and a
+ * relative import), and the class identity would then differ.
+ */
+export function isSeedVaultError(error: unknown): error is SeedVaultError {
+  return (
+    error instanceof Error &&
+    error.name === 'SeedVaultError' &&
+    typeof (error as { reason?: unknown }).reason === 'string'
+  );
 }
 
 /**
@@ -115,6 +143,14 @@ export function createSeedVaultSigner(options: SeedVaultSignerOptions): SolanaSi
       if (signed.length !== chunk.length || signed.some((s) => s.length !== 64)) {
         throw new Error('Seed Vault returned an invalid signature');
       }
+      // Each signature must be this account's over exactly this payload: a
+      // stored address that is not the key Seed Vault used (stale or forged)
+      // is caught here rather than filed under the wrong signer.
+      const key = await getPublicKeyFromAddress(address);
+      const valid = await Promise.all(
+        signed.map((sig, j) => verifySignature(key, sig as SignatureBytes, chunk[j]!))
+      );
+      if (valid.includes(false)) throw new SeedVaultError('failed');
       signatures.push(...signed);
     }
     return signatures.map((s) => ({ [address]: s as SignatureBytes }));

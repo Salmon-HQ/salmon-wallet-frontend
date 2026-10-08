@@ -858,6 +858,24 @@ describe('useAccounts Hook', () => {
       expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_accounts', expect.any(Array));
     });
 
+    it('replaces a wallet in one write instead of keeping both', async () => {
+      const { result } = renderHook(() => useAccounts());
+      await waitFor(() => {
+        expect(result.current[0].ready).toBe(true);
+      });
+      const stale = createMockAccount();
+      await act(async () => {
+        await result.current[1].addAccount(stale);
+      });
+      const fresh = { ...createMockAccount(), id: 'fresh-wallet' };
+
+      await act(async () => {
+        await result.current[1].addAccount(fresh, undefined, stale.id);
+      });
+
+      expect(result.current[0].accounts.map((a) => a.id)).toEqual(['fresh-wallet']);
+    });
+
     it('should add account with password encryption', async () => {
       const { result } = renderHook(() => useAccounts());
 

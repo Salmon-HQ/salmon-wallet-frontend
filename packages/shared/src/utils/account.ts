@@ -22,6 +22,7 @@ import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
 import type { Account, AccountSecret } from '../types/account';
 import type { AccountKeyInfo } from '../types/settings';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { isSeedVaultAccount } from './account-secret';
 import { isBackendNetworkEnabled } from '../api/services/network';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
@@ -466,7 +467,7 @@ export function getAccountKeysForNetwork(
 ): AccountKeyInfo[] {
   if (!networkId || !activeAccount?.networksAccounts) return [];
   // A Seed Vault wallet signs, but its key never leaves Seed Vault.
-  if (activeAccount.secret?.kind === 'seedVault') return [];
+  if (isSeedVaultAccount(activeAccount)) return [];
   const networkAccounts = activeAccount.networksAccounts[networkId];
   if (!networkAccounts) return [];
 

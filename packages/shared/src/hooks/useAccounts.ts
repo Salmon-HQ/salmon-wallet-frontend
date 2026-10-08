@@ -106,8 +106,8 @@ export interface UseAccountsActions {
   getNetworkId: () => string | null;
   /** Change the active path index */
   changePathIndex: (targetIndex: number) => Promise<void>;
-  /** Add a new account */
-  addAccount: (account: Account, password?: string) => Promise<void>;
+  /** Add a new account; `replaces` drops the wallet it takes the place of in the same write */
+  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
   /** Edit an existing account */
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   /** Remove an account */
