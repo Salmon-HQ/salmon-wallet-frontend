@@ -114,4 +114,25 @@ describe('Card', () => {
     expect(style.borderColor).toBe('transparent');
     expect(style.padding).toBe(0);
   });
+
+  it('lights the featured tone with a salmon glow from its top-right corner', () => {
+    const { getByTestId, queryByTestId } = renderWithTheme(
+      <>
+        <Card testID="featured" tone="featured">
+          <Text>a</Text>
+        </Card>
+        <Card testID="plain">
+          <Text>b</Text>
+        </Card>
+      </>,
+      { mode: 'dark' }
+    );
+
+    // Drawn once the card is laid out, edge to edge inside its border.
+    fireEvent(getByTestId('featured'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 200 } },
+    });
+    expect(getByTestId('featured-glow').props.width).toBe(298);
+    expect(queryByTestId('plain-glow')).toBeNull();
+  });
 });

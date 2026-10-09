@@ -17,9 +17,11 @@ import type { Testable } from './testable';
  * `shelf` is the opaque step above the bedrock — the one tone with no
  * translucency, for a card under the Bedrock Rule (the signing gate).
  * `clear` draws no ground and no edge: the card's layout without the card,
- * for a row that heads a screen (spec 040).
+ * for a row that heads a screen (spec 040). `featured` is `surface` lit by
+ * a salmon glow from its top-right corner: the one card a screen is about
+ * (the SKR stake card).
  */
-export type CardTone = 'surface' | 'accent' | 'warning' | 'ink' | 'shelf' | 'clear';
+export type CardTone = 'surface' | 'accent' | 'warning' | 'ink' | 'shelf' | 'clear' | 'featured';
 
 /** 0 / 12 / 14 / 16 / 24 — `none` for a `clear` card that aligns with the column. */
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
@@ -65,7 +67,15 @@ export const cardTonesFor = (
   ink: { background: t.depth.abyss, border: t.border.hairline },
   shelf: { background: t.surface.shelf, border: t.border.hairline },
   clear: { background: 'transparent', border: 'transparent' },
+  featured: { background: t.surface.membraneThin, border: t.border.hairline },
 });
+
+/**
+ * The `featured` tone's glow, read by both twins: a radial wash of the accent
+ * ink centred on the card's top-right corner (as fractions of its box),
+ * fading to nothing. From the owner's SKR redesign.
+ */
+export const CARD_GLOW = { cx: 0.9, cy: 0, rx: 0.7, ry: 0.6, alpha: 0.2 } as const;
 
 /**
  * `md` is 14: the spacing scale steps 12 → 16 with nothing between, and the

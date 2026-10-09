@@ -11,11 +11,13 @@
 import React from 'react';
 import {
   borderWidth,
+  CARD_GLOW,
   CARD_PADDINGS,
   CARD_RADII,
   cardTonesFor,
   motionEasing,
   motionMs,
+  withAlpha,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -38,12 +40,20 @@ export function Card({
   children,
   testID,
 }: CardProps) {
-  const { background, border } = cardTonesFor(useSemantic())[tone];
+  const t = useSemantic();
+  const { background, border } = cardTonesFor(t)[tone];
   const { pressed, handlers } = usePressed();
+  const pct = (fraction: number) => `${fraction * 100}%`;
+  // The `featured` tone's salmon glow, from its top-right corner.
+  const glow =
+    tone === 'featured'
+      ? `radial-gradient(${pct(CARD_GLOW.rx)} ${pct(CARD_GLOW.ry)} at ${pct(CARD_GLOW.cx)} ${pct(CARD_GLOW.cy)}, ${withAlpha(t.accent.ink, CARD_GLOW.alpha)}, transparent)`
+      : undefined;
 
   const box: React.CSSProperties = {
     boxSizing: 'border-box',
     backgroundColor: background,
+    ...(glow ? { backgroundImage: glow } : null),
     borderStyle: 'solid',
     borderWidth: borderWidth.thin,
     borderColor: border,

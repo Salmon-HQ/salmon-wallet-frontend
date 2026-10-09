@@ -110,7 +110,7 @@ function stakeCard(view: SkrView, t: Translate): KitBlock {
       },
     });
   }
-  return { kind: 'card', key: 'stake', props: { testID: 'skr-stake' }, blocks };
+  return { kind: 'card', key: 'stake', props: { testID: 'skr-stake', tone: 'featured' }, blocks };
 }
 
 function dailyBlocks(view: SkrView, t: Translate): KitBlock[] {

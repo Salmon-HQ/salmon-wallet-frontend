@@ -87,6 +87,13 @@ describe('skrBlocks', () => {
     });
   });
 
+  it('lights the stake card as the one card the tab is about', () => {
+    expect(find(skrBlocks(input(), t), 'stake')).toMatchObject({
+      kind: 'card',
+      props: { tone: 'featured' },
+    });
+  });
+
   it('shows each guardian sunk into the card, with its status as a pill', () => {
     expect(find(skrBlocks(input(), t), 'guardian-DPJ5')).toMatchObject({
       kind: 'row',
