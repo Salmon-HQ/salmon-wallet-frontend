@@ -10,7 +10,8 @@
     }
   },
   "history": {
-    "empty": "Your reward history starts building today: Salmon records it from now on. What you have earned so far is above."
+    "empty": "Salmon records your rewards from {{date}}. The first one shows here after the next payout.",
+    "emptyToday": "Salmon records your rewards from today. The first one shows here after the next payout."
   },
   "empty": {
     "title": "No SKR in this wallet",
@@ -41,11 +42,16 @@
     "perDay": "Per day",
     "stakedFor": "Staked for",
     "days_one": "day",
-    "days_other": "days"
+    "days_other": "days",
+    "compounding": "Compounds every"
   },
   "rewards": {
     "title": "Rewards",
-    "recorded": "Recorded"
+    "compounded": "Compounded",
+    "lastPayouts": "Last {{count}} payouts",
+    "average": "{{value}} avg",
+    "chartLabel": "What your stake earned in each of the last payouts",
+    "seeAll": "See all rewards"
   },
   "about": {
     "title": "About SKR",
@@ -57,5 +63,12 @@
     "stakedLegend": "Staked {{value}}",
     "liquidLegend": "Liquid {{value}}",
     "shareLabel": "Share of circulating SKR that is staked"
+  },
+  "payout": {
+    "next": "Next compound",
+    "countdown": "in {{days}}d {{hours}}h",
+    "due": "Due now",
+    "last": "Last payout: {{value}}",
+    "progressLabel": "Time gone since the last payout"
   }
 }

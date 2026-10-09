@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
@@ -53,6 +53,40 @@ describe('useSkrScreenLogic', () => {
 
     await waitFor(() => expect(result.current.state).toBe('ready'));
     expect(result.current.view?.available.value).toBe('1.00');
+  });
+
+  it('shows every reward row once asked', async () => {
+    vi.mocked(getSkrStake).mockResolvedValue({ ...base, liquid: '1000000' });
+
+    const { result } = renderHook(() => useSkrScreenLogic({ publicKey: 'Owner' }), { wrapper });
+
+    await waitFor(() => expect(result.current.state).toBe('ready'));
+    expect(result.current.rewardsExpanded).toBe(false);
+    act(() => result.current.expandRewards?.());
+    expect(result.current.rewardsExpanded).toBe(true);
+  });
+
+  it('moves the countdown to the next payout on its own, minute by minute', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(Date.parse('2026-10-08T21:00:00Z'));
+    vi.mocked(getSkrStake).mockResolvedValue({
+      ...base,
+      liquid: '1000000',
+      payouts: {
+        intervalSeconds: 172800,
+        lastAt: Date.parse('2026-10-08T01:59:42Z'),
+        nextAt: Date.parse('2026-10-10T01:59:42Z'),
+      },
+    });
+
+    const { result } = renderHook(() => useSkrScreenLogic({ publicKey: 'Owner' }), { wrapper });
+    await waitFor(() => expect(result.current.state).toBe('ready'));
+    const before = result.current.view?.payout?.progress ?? 0;
+
+    act(() => vi.advanceTimersByTime(60_000));
+
+    expect(result.current.view?.payout?.progress).toBeGreaterThan(before);
+    vi.useRealTimers();
   });
 
   it('is empty without any SKR', async () => {

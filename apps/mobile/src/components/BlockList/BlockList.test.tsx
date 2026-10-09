@@ -29,6 +29,8 @@ jest.mock('../StateBlock', () => leaf('StateBlock')());
 jest.mock('../TokenList', () => leaf('TokenListItem')());
 jest.mock('../StatTile', () => leaf('StatGrid')());
 jest.mock('../ProgressBar', () => leaf('ProgressBar')());
+jest.mock('../BarChart', () => leaf('BarChart')());
+jest.mock('../Button', () => leaf('SecondaryButton')());
 jest.mock('../ListRow', () => {
   const { Text } = jest.requireActual('react-native');
   return {
@@ -78,6 +80,12 @@ const blocks: KitBlock[] = [
     key: 'c',
     props: { data: [], selectedPeriod: '1M', onPeriodChange: () => {} },
   },
+  { kind: 'bars', key: 'b', props: { testID: 'b-bars', values: [1, 2], accessibilityLabel: 'x' } },
+  {
+    kind: 'button',
+    key: 'u',
+    props: { testID: 'b-button', children: 'See all', onPress: () => {} },
+  },
 ];
 
 describe('BlockList', () => {
@@ -90,6 +98,8 @@ describe('BlockList', () => {
     expect(screen.getByTestId('b-state').props.children).toBe('StateBlock');
     expect(screen.getByTestId('b-skeleton').props.children).toBe('SkeletonRow');
     expect(screen.getByTestId('b-chart').props.children).toBe('PriceChart');
+    expect(screen.getByTestId('b-bars').props.children).toBe('BarChart');
+    expect(screen.getByTestId('b-button').props.children).toBe('SecondaryButton');
     // The token screen's chart: off the left edge, a gutter short of the right.
     expect(screen.getByTestId('b-chart').props.accessibilityHint).toBe('bleed');
   });

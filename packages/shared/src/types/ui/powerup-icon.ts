@@ -12,6 +12,7 @@
  * and the catalogue no longer keeps a table of Powerup ids.
  */
 export type PowerupIconName =
+  | 'ArrowsClockwise'
   | 'ArrowsLeftRight'
   | 'ChartPie'
   | 'Gift'

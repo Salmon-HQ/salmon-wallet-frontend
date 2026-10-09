@@ -137,6 +137,7 @@ export type { Icon as IconComponent, IconProps } from 'phosphor-react-native';
 
 import type { PowerupIconName } from '@salmon/shared';
 import type { Icon as IconComponent } from 'phosphor-react-native';
+import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
 import { GiftIcon } from 'phosphor-react-native/src/icons/Gift';
@@ -157,6 +158,7 @@ import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
  * Powerup ship no art and the catalogue keep no table of Powerup ids.
  */
 export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsClockwise: ArrowsClockwiseIcon,
   ArrowsLeftRight: ArrowsLeftRightIcon,
   ChartPie: ChartPieIcon,
   Gift: GiftIcon,

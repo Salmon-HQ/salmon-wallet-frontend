@@ -81,6 +81,7 @@ export {
   statInkFor,
 } from '../../../packages/shared/src/types/ui/stat-tile';
 export { progressPercent } from '../../../packages/shared/src/types/ui/progress-bar';
+export { barHeights } from '../../../packages/shared/src/types/ui/bar-chart';
 // The kit's block renderer (spec 040): screens build their BlockList from it
 // at import time, so every mock of the barrel needs it.
 export { createBlockList } from '../../../packages/shared/src/kit/createBlockList';

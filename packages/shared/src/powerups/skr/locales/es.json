@@ -10,7 +10,8 @@
     }
   },
   "history": {
-    "empty": "Tu historial de recompensas empieza a armarse hoy: Salmon lo registra desde ahora. Lo que ganaste hasta acá está arriba."
+    "empty": "Salmon registra tus recompensas desde el {{date}}. La primera aparece acá después del próximo pago.",
+    "emptyToday": "Salmon registra tus recompensas desde hoy. La primera aparece acá después del próximo pago."
   },
   "empty": {
     "title": "Esta wallet no tiene SKR",
@@ -41,11 +42,16 @@
     "perDay": "Por día",
     "stakedFor": "En staking hace",
     "days_one": "día",
-    "days_other": "días"
+    "days_other": "días",
+    "compounding": "Se suma cada"
   },
   "rewards": {
     "title": "Recompensas",
-    "recorded": "Registrado"
+    "compounded": "Capitalizado",
+    "lastPayouts": "Últimos {{count}} pagos",
+    "average": "{{value}} prom.",
+    "chartLabel": "Lo que ganó tu stake en cada uno de los últimos pagos",
+    "seeAll": "Ver todas las recompensas"
   },
   "about": {
     "title": "Sobre SKR",
@@ -57,5 +63,12 @@
     "stakedLegend": "En staking {{value}}",
     "liquidLegend": "Líquido {{value}}",
     "shareLabel": "Parte del SKR circulante que está en staking"
+  },
+  "payout": {
+    "next": "Próxima capitalización",
+    "countdown": "en {{days}} d {{hours}} h",
+    "due": "Pago en curso",
+    "last": "Último pago: {{value}}",
+    "progressLabel": "Tiempo transcurrido desde el último pago"
   }
 }

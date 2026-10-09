@@ -21,6 +21,9 @@ const view: SkrView = {
   earnedTotal: '+6,045.71 SKR',
   history: [{ key: 'h-1', date: '2026-10-08', value: '+41.00 SKR', caption: '$0.67' }],
   totalStaked: 5_026_970_696.86,
+  payout: { every: 2, countdown: 'in 1d 4h', progress: 0.4, last: '+41.00 SKR' },
+  bars: { values: [41.09, 41], average: '$0.67' },
+  historySince: '2026-10-06',
 };
 const chart = {
   data: [{ timestamp: 1, price: 0.016 }],
@@ -62,6 +65,7 @@ describe('skrBlocks', () => {
       'daily-title',
       'daily',
       'rewards-title',
+      'rewards-chart',
       'h-1',
       'about-title',
       'price',
@@ -114,10 +118,11 @@ describe('skrBlocks', () => {
     expect(find(noRate, 'header')).not.toHaveProperty('props.pill');
   });
 
-  it('drops the daily section when neither the estimate nor the days are known', () => {
-    const keys = skrBlocks(input({ view: { ...view, perDay: null, days: null } }), t).map(
-      (b) => b.key
-    );
+  it('drops the daily section when neither the estimate, the days nor the schedule are known', () => {
+    const keys = skrBlocks(
+      input({ view: { ...view, perDay: null, days: null, payout: null } }),
+      t
+    ).map((b) => b.key);
     expect(keys).not.toContain('daily');
     expect(keys).not.toContain('daily-title');
   });
@@ -185,12 +190,73 @@ describe('skrBlocks', () => {
     });
   });
 
-  it('explains an empty history in its place', () => {
-    const blocks = skrBlocks(input({ view: { ...view, history: [] } }), t);
+  it('explains an empty history in its place, with the day it counts from', () => {
+    const blocks = skrBlocks(input({ view: { ...view, history: [], bars: null } }), t);
     expect(find(blocks, 'history-empty')).toMatchObject({
       kind: 'state',
-      props: { title: 'skr.history.empty' },
+      props: { title: 'skr.history.empty:{"date":"2026-10-06"}' },
     });
+    expect(find(blocks, 'rewards-chart')).toBeUndefined();
+  });
+
+  it('adds the payout cadence to the daily figures, then the countdown to the next payout', () => {
+    const blocks = skrBlocks(input(), t);
+
+    expect(find(blocks, 'daily-stats')).toMatchObject({
+      props: { items: [{ key: 'per-day' }, { key: 'days' }, { key: 'every', value: '2' }] },
+    });
+    const daily = find(blocks, 'daily') as Extract<KitBlock, { kind: 'card' }>;
+    expect(daily.blocks.map((b) => b.key)).toEqual([
+      'daily-stats',
+      'daily-divider',
+      'next-payout',
+      'payout-progress',
+    ]);
+    expect(find(blocks, 'next-payout')).toMatchObject({
+      kind: 'row',
+      props: { title: 'skr.payout.next', value: { value: 'in 1d 4h' } },
+    });
+    expect(find(blocks, 'payout-progress')).toMatchObject({
+      kind: 'progress',
+      props: { value: 0.4, startLabel: 'skr.payout.last:{"value":"+41.00 SKR"}' },
+    });
+  });
+
+  it('charts the last payouts with their average above the reward rows', () => {
+    const blocks = skrBlocks(input(), t);
+
+    expect(find(blocks, 'rewards-chart-label')).toMatchObject({
+      kind: 'label',
+      props: {
+        variant: 'caps',
+        children: 'skr.rewards.lastPayouts:{"count":2}',
+        trailing: 'skr.rewards.average:{"value":"$0.67"}',
+      },
+    });
+    expect(find(blocks, 'rewards-bars')).toMatchObject({
+      kind: 'bars',
+      props: { values: [41.09, 41] },
+    });
+  });
+
+  it('shows the five newest rewards, and all of them once asked', () => {
+    const history = Array.from({ length: 7 }, (_, i) => ({
+      key: `h-${i}`,
+      date: `d${i}`,
+      value: '+1.00 SKR',
+    }));
+    const expand = vi.fn();
+    const few = skrBlocks(input({ view: { ...view, history }, expandRewards: expand }), t);
+
+    expect(few.filter((b) => b.key.startsWith('h-'))).toHaveLength(5);
+    const button = find(few, 'rewards-all') as Extract<KitBlock, { kind: 'button' }>;
+    expect(button.props.children).toBe('skr.rewards.seeAll');
+    button.props.onPress();
+    expect(expand).toHaveBeenCalled();
+
+    const all = skrBlocks(input({ view: { ...view, history }, rewardsExpanded: true }), t);
+    expect(all.filter((b) => b.key.startsWith('h-'))).toHaveLength(7);
+    expect(find(all, 'rewards-all')).toBeUndefined();
   });
 
   it("draws the token screen's own chart for the price", () => {

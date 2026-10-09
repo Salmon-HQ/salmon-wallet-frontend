@@ -11,9 +11,9 @@
 ## Owner decisions (2026-10-09)
 
 1. The SKR Powerup stays a Powerup (installed from the catalogue), and is offered only where it can be discriminated as a Solana Mobile phone: a device with a secure Seed Vault (Seeker, Saga). Elsewhere it is not listed and its tab does not mount.
-2. The "Next compound" block (countdown, progress, "Compounding 2d", "+69.2 SKR will be added") is dropped: the staking program keeps no payout schedule on chain (IDL verified 2026-10-09). Asked in DEV-87.
-3. The inflation rate is dropped until product names a source (DEV-87).
-4. The last-payouts bar chart and "See all rewards" wait for DEV-87 (an exact per-payout history).
+2. The "Next compound" block is built from the SKR inflation program's schedule on chain (backend spec 022 `payouts`): the countdown to the next payout, the period's progress and "Compounds every 2 days". "+69.2 SKR will be added" is a projection and is replaced by what the last payout paid the stake, once a record closes on it.
+3. The inflation rate is left out: the app shows only figures it can confirm from the chain or an API (owner, 2026-10-09).
+4. The last-payouts bar chart, its average and "See all rewards" are built from the exact history (DEV-87 option A), which counts from the first daily record.
 5. Layout is responsive on every phone width: rows and grids fill their container and share it, text truncates or wraps instead of overflowing, sizes come from the scaled tokens.
 
 ## Audit of the proposal (what the design asks for, against what exists)
@@ -73,6 +73,8 @@ On iOS, the extension and Android phones without Seed Vault the Powerup is absen
 - **FR-006**: The manifest declares that the Powerup needs Seed Vault; the catalogue and the tab mount honour it from a device capability the app reports (mobile: Seed Vault detection; DOM: never).
 - **FR-007**: The Assets "Staked SKR" row links to the tab only where the Powerup is offered.
 - **FR-008**: `docs/POWERUPS-UI.md` lists the new blocks.
+- **FR-009**: The daily card adds the payout cadence and a "Next compound" row with the countdown (recomputed each minute) and a progress bar through the period, labelled with the last payout's reward when known; all from backend `payouts`, hidden from an older backend.
+- **FR-010**: Rewards adds a card with the last 14 payouts as bars (`BarChart`, new twin pair) and their average in the user's currency, shows the five newest rows and a "See all rewards" button that lists all of them; an empty history names the day it counts from (`historySince`).
 
 ## Success Criteria _(mandatory)_
 

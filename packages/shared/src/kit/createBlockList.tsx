@@ -13,6 +13,8 @@ import type {
   KitCardPropsBase,
   KitRowPropsBase,
 } from '../types/ui/block-list';
+import type { BarChartPropsBase } from '../types/ui/bar-chart';
+import type { ButtonPropsBase } from '../types/ui/button';
 import type { CardPropsBase } from '../types/ui/card';
 import type { FactsCardPropsBase } from '../types/ui/facts-card';
 import type { IconBubblePropsBase } from '../types/ui/icon-bubble';
@@ -32,6 +34,9 @@ import { borderRadius, componentSizes, spacing } from '../theme';
 const CARD_GAPS = { none: 0, md: spacing.md, lg: spacing.lg } as const;
 
 export interface BlockKit {
+  BarChart: ComponentType<BarChartPropsBase>;
+  /** The secondary button. */
+  Button: ComponentType<ButtonPropsBase>;
   Card: ComponentType<CardPropsBase>;
   FactsCard: ComponentType<FactsCardPropsBase>;
   IconBubble: ComponentType<IconBubblePropsBase>;
@@ -111,6 +116,10 @@ export function createBlockList(kit: BlockKit): ComponentType<BlockListPropsBase
         return <Row {...block.props} />;
       case 'progress':
         return <kit.ProgressBar {...block.props} />;
+      case 'bars':
+        return <kit.BarChart {...block.props} />;
+      case 'button':
+        return <kit.Button {...block.props} />;
       case 'divider':
         return <kit.Divider />;
       case 'card':

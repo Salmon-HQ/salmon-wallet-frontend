@@ -26,6 +26,8 @@ export type { SkrScreenPropsBase } from './skr-screen';
 export type { BlockListPropsBase, KitBlock, KitCardPropsBase, KitRowPropsBase } from './block-list';
 export type { PillPropsBase, PillTone } from './pill';
 export { pillColorsFor } from './pill';
+export type { BarChartPropsBase } from './bar-chart';
+export { barHeights } from './bar-chart';
 export type { ProgressBarPropsBase } from './progress-bar';
 export { progressPercent } from './progress-bar';
 export type { StatGridPropsBase, StatTilePropsBase, StatTileSize, StatTileTone } from './stat-tile';

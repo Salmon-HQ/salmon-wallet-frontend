@@ -8,6 +8,8 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { borderWidth, createBlockList, s, spacing, vs, type Semantic } from '@salmon/shared';
 
+import { BarChart } from '../BarChart';
+import { SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
@@ -43,6 +45,8 @@ function Column({ testID, children }: { testID?: string; children: React.ReactNo
 }
 
 export const BlockList = createBlockList({
+  BarChart,
+  Button: SecondaryButton,
   Card,
   FactsCard,
   IconBubble,

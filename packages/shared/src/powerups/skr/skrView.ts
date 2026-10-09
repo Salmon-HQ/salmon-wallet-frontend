@@ -7,7 +7,10 @@ import type { SkrStakeResponse } from '../../api/services/staking';
 import { getShortAddress } from '../../utils/address';
 import { formatNumber, formatPercent } from '../../utils/formatting';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+/** The payouts the rewards chart shows. */
+const BARS = 14;
 const DAYS_PER_YEAR = 365;
 
 export interface SkrViewDeps {
@@ -56,6 +59,20 @@ export interface SkrView {
   history: SkrHistoryRow[];
   /** Everything staked in the program, whole SKR; null from an older backend. */
   totalStaked: number | null;
+  /** The payout schedule from the chain; null from an older backend. */
+  payout: {
+    /** Days between payouts. */
+    every: number;
+    countdown: string;
+    /** 0–1 through the current period. */
+    progress: number;
+    /** What the stake earned in the last payout, once a record closes on it. */
+    last: string | null;
+  } | null;
+  /** The last payouts, oldest first, in whole SKR, and their average. */
+  bars: { values: number[]; average: string } | null;
+  /** The date the history counts from. */
+  historySince: string | null;
 }
 
 export function skrView(response: SkrStakeResponse, deps: SkrViewDeps): SkrView {
@@ -106,17 +123,40 @@ export function skrView(response: SkrStakeResponse, deps: SkrViewDeps): SkrView 
       byDate.set(entry.at, (byDate.get(entry.at) ?? 0n) + BigInt(entry.earned));
     }
   }
-  const history = [...byDate.entries()]
-    .sort(([a], [b]) => b - a)
-    .map(([at, base]): SkrHistoryRow => {
-      const caption = worth(ui(base));
-      return {
-        key: `h-${at}`,
-        date: formatDate(at),
-        value: `${amount(ui(base), '+')} SKR`,
-        ...(caption === undefined ? {} : { caption }),
-      };
-    });
+  const rows = [...byDate.entries()].sort(([a], [b]) => b - a);
+  const history = rows.map(([at, base]): SkrHistoryRow => {
+    const caption = worth(ui(base));
+    return {
+      key: `h-${at}`,
+      date: formatDate(at),
+      value: `${amount(ui(base), '+')} SKR`,
+      ...(caption === undefined ? {} : { caption }),
+    };
+  });
+
+  const schedule = response.payouts ?? null;
+  let payout: SkrView['payout'] = null;
+  if (schedule) {
+    const left = schedule.nextAt - now;
+    const lastRow = rows.find(([at]) => at >= schedule.lastAt);
+    payout = {
+      every: schedule.intervalSeconds / (DAY_MS / 1000),
+      countdown:
+        left <= 0
+          ? t('skr.payout.due')
+          : t('skr.payout.countdown', {
+              days: Math.floor(left / DAY_MS),
+              hours: Math.floor((left % DAY_MS) / HOUR_MS),
+            }),
+      progress: Math.min(1, (now - schedule.lastAt) / (schedule.intervalSeconds * 1000)),
+      last: lastRow ? `${amount(ui(lastRow[1]), '+')} SKR` : null,
+    };
+  }
+  const barValues = rows
+    .slice(0, BARS)
+    .map(([, base]) => ui(base))
+    .reverse();
+  const mean = barValues.reduce((sum, v) => sum + v, 0) / barValues.length;
 
   return {
     empty: liquid === 0n && response.positions.length === 0,
@@ -134,5 +174,11 @@ export function skrView(response: SkrStakeResponse, deps: SkrViewDeps): SkrView 
     earnedTotal: `${amount(earned, '+')} SKR`,
     history,
     totalStaked: response.totalStaked === undefined ? null : ui(BigInt(response.totalStaked)),
+    payout,
+    bars:
+      barValues.length === 0
+        ? null
+        : { values: barValues, average: worth(mean) ?? `${amount(mean)} SKR` },
+    historySince: response.historySince ? formatDate(response.historySince) : null,
   };
 }

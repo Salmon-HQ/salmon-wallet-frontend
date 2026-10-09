@@ -18,6 +18,13 @@ const response: SkrStakeResponse = {
   usdPrice: 0.01622,
   liquid: '0',
   totalStaked: '5026970696857042',
+  // The inflation program's schedule as the backend reads it (spec 022).
+  payouts: {
+    intervalSeconds: 172800,
+    lastAt: Date.parse('2026-10-08T01:59:42Z'),
+    nextAt: Date.parse('2026-10-10T01:59:42Z'),
+  },
+  historySince: Date.parse('2026-10-06T02:05:00Z'),
   positions: [
     {
       address: '7yFnVkeEk4Qd6jgGsjrU4rhYDd7UQ985ah1VgWNg8m58',
@@ -123,5 +130,37 @@ describe('skrView', () => {
   it('is empty without SKR', () => {
     expect(view({ ...response, positions: [] }).empty).toBe(true);
     expect(view({ ...response, positions: [], liquid: '1000000' }).empty).toBe(false);
+  });
+
+  it('counts down to the next payout and says how far into the period it is', () => {
+    // From 2026-10-08 21:00 to 2026-10-10 01:59:42: 1 day 4 hours left; 19 of 48 hours gone.
+    expect(view(response).payout).toEqual({
+      every: 2,
+      countdown: 'skr.payout.countdown:{"days":1,"hours":4}',
+      progress: expect.closeTo(19.005 / 48, 3),
+      last: '+41.00 SKR',
+    });
+  });
+
+  it('says the payout is due once its time has passed, and has no last one before a record closes on it', () => {
+    const late = skrView(
+      { ...response, positions: [{ ...response.positions[0]!, history: [] }] },
+      { t, formatValue, formatDate, now: Date.parse('2026-10-10T02:00:30Z'), locale: 'en' }
+    );
+    expect(late.payout).toMatchObject({ countdown: 'skr.payout.due', progress: 1, last: null });
+  });
+
+  it('has no payout block from a backend without the schedule', () => {
+    expect(view({ ...response, payouts: undefined }).payout).toBeNull();
+  });
+
+  it('charts the payouts oldest first, with their average in the user currency', () => {
+    expect(view(response).bars).toEqual({ values: [41.09, 41], average: '$0.67' });
+    expect(view({ ...response, usdPrice: null }).bars).toMatchObject({ average: '41.05 SKR' });
+  });
+
+  it('dates the history from the first record', () => {
+    expect(view(response).historySince).toBe('2026-10-06');
+    expect(view({ ...response, historySince: null }).historySince).toBeNull();
   });
 });

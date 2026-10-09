@@ -30,6 +30,7 @@
 import { createElement } from 'react';
 import type { PowerupIconName } from '@salmon/shared';
 import type { Icon as IconComponent } from '@phosphor-icons/react/dist/lib/types';
+import { ArrowsClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
 import { ArrowsLeftRightIcon } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
 import { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
 import { GiftIcon } from '@phosphor-icons/react/dist/csr/Gift';
@@ -191,6 +192,7 @@ const ICON_DEFAULTS = { size: iconSize.lg, weight: 'regular' } as const;
  * Powerup ship no art and the catalogue keep no table of Powerup ids.
  */
 export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsClockwise: ArrowsClockwiseIcon,
   ArrowsLeftRight: ArrowsLeftRightIcon,
   ChartPie: ChartPieIcon,
   Gift: GiftIcon,

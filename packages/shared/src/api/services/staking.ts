@@ -65,6 +65,10 @@ export interface SkrStakeResponse {
   liquid: string;
   /** Everything staked in the program, base units; absent from an older backend. */
   totalStaked?: string;
+  /** The SKR payout schedule on chain, epoch ms; absent from an older backend. */
+  payouts?: { intervalSeconds: number; lastAt: number; nextAt: number } | null;
+  /** The first share-price record the history counts from, epoch ms. */
+  historySince?: number | null;
   positions: SkrPosition[];
 }
 

@@ -3,7 +3,7 @@
  * position through the shared staking query and SKR's market data, and lays
  * them out with `skrView`; `skrBlocks` turns the result into the tab.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useCurrencyContext } from '../../contexts/CurrencyContext';
@@ -28,11 +28,14 @@ export interface UseSkrScreenLogicResult extends SkrScreenInput {
 // CoinGecko lists SKR as `seeker`.
 const SKR_COINGECKO_ID = 'seeker';
 const SKR_MINT = 'SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3';
+const MINUTE_MS = 60_000;
 
 export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSkrScreenLogicResult {
   const { t, i18n } = useTranslation();
   const [{ currency }, { formatValue }] = useCurrencyContext();
   const [period, setPeriod] = useState<PriceChartPeriod>('1M');
+  const [rewardsExpanded, setRewardsExpanded] = useState(false);
+  const expandRewards = useCallback(() => setRewardsExpanded(true), []);
   const coin = useCoinMarketData({
     coinId: SKR_COINGECKO_ID,
     contractAddress: SKR_MINT,
@@ -41,8 +44,12 @@ export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSk
   });
   const chartData = useMemo(() => coin.chartData ?? [], [coin.chartData]);
   const query = useSkrStake(publicKey);
-  // Read once per mount: "staked for N days" does not need to tick.
-  const [now] = useState(Date.now);
+  // The countdown to the next payout recomputes each minute, cleared on unmount.
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), MINUTE_MS);
+    return () => clearInterval(id);
+  }, []);
   const view = useMemo(
     () =>
       query.data
@@ -92,6 +99,8 @@ export function useSkrScreenLogic({ publicKey }: UseSkrScreenLogicParams): UseSk
     view,
     market,
     refresh,
+    rewardsExpanded,
+    expandRewards,
     chart: {
       data: chartData,
       selectedPeriod: period,

@@ -7,6 +7,8 @@
 import React from 'react';
 import { borderWidth, createBlockList, spacing } from '@salmon/shared';
 
+import { BarChart } from '../BarChart';
+import { SecondaryButton } from '../Button';
 import { Card } from '../Card';
 import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
@@ -42,6 +44,8 @@ function Column({ testID, children }: { testID?: string; children: React.ReactNo
 const identity = (size: number) => size;
 
 export const BlockList = createBlockList({
+  BarChart,
+  Button: SecondaryButton,
   Card,
   FactsCard,
   IconBubble,

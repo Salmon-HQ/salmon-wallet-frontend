@@ -27,7 +27,13 @@ export interface SkrScreenInput {
   market: SkrMarket;
   chart: Omit<PriceChartPropsBase<never>, 'style'>;
   refresh: () => Promise<void> | void;
+  /** Every reward row, not only the newest. */
+  rewardsExpanded?: boolean;
+  expandRewards?: () => void;
 }
+
+/** Reward rows shown before "See all rewards". */
+const REWARD_ROWS = 5;
 
 const SKR = 'SKR';
 
@@ -137,8 +143,45 @@ function dailyBlocks(view: SkrView, t: Translate): KitBlock[] {
             unit: t('skr.daily.days', { count: view.days }),
           },
         ]),
+    ...(view.payout
+      ? [
+          {
+            key: 'every',
+            label: t('skr.daily.compounding'),
+            value: String(view.payout.every),
+            unit: t('skr.daily.days', { count: view.payout.every }),
+          },
+        ]
+      : []),
   ];
   if (items.length === 0) return [];
+  const next: KitBlock[] = view.payout
+    ? [
+        { kind: 'divider', key: 'daily-divider' },
+        {
+          kind: 'row',
+          key: 'next-payout',
+          props: {
+            tone: 'clear',
+            padding: 'none',
+            leading: { icon: 'ArrowsClockwise' },
+            title: t('skr.payout.next'),
+            value: { value: view.payout.countdown },
+          },
+        },
+        {
+          kind: 'progress',
+          key: 'payout-progress',
+          props: {
+            value: view.payout.progress,
+            accessibilityLabel: t('skr.payout.progressLabel'),
+            ...(view.payout.last
+              ? { startLabel: t('skr.payout.last', { value: view.payout.last }) }
+              : {}),
+          },
+        },
+      ]
+    : [];
   return [
     {
       kind: 'label',
@@ -153,12 +196,60 @@ function dailyBlocks(view: SkrView, t: Translate): KitBlock[] {
       kind: 'card',
       key: 'daily',
       props: {},
-      blocks: [{ kind: 'stats', key: 'daily-stats', props: { items } }],
+      blocks: [{ kind: 'stats', key: 'daily-stats', props: { items } }, ...next],
     },
   ];
 }
 
-function rewardBlocks(view: SkrView, t: Translate): KitBlock[] {
+function rewardBlocks(
+  view: SkrView,
+  t: Translate,
+  expanded: boolean,
+  expand: (() => void) | undefined
+): KitBlock[] {
+  const rows = expanded ? view.history : view.history.slice(0, REWARD_ROWS);
+  const chart: KitBlock[] = view.bars
+    ? [
+        {
+          kind: 'card',
+          key: 'rewards-chart',
+          props: { gap: 'md' },
+          blocks: [
+            {
+              kind: 'label',
+              key: 'rewards-chart-label',
+              props: {
+                variant: 'caps',
+                children: t('skr.rewards.lastPayouts', { count: view.bars.values.length }),
+                trailing: t('skr.rewards.average', { value: view.bars.average }),
+              },
+            },
+            {
+              kind: 'bars',
+              key: 'rewards-bars',
+              props: {
+                values: view.bars.values,
+                accessibilityLabel: t('skr.rewards.chartLabel'),
+              },
+            },
+          ],
+        },
+      ]
+    : [];
+  const more: KitBlock[] =
+    rows.length < view.history.length && expand
+      ? [
+          {
+            kind: 'button',
+            key: 'rewards-all',
+            props: {
+              testID: 'skr-rewards-all',
+              children: t('skr.rewards.seeAll'),
+              onPress: expand,
+            },
+          },
+        ]
+      : [];
   return [
     {
       kind: 'label',
@@ -170,14 +261,15 @@ function rewardBlocks(view: SkrView, t: Translate): KitBlock[] {
         trailingTone: 'positive',
       },
     },
-    ...(view.history.length > 0
-      ? view.history.map((row): KitBlock => ({
+    ...chart,
+    ...(rows.length > 0
+      ? rows.map((row): KitBlock => ({
           kind: 'row',
           key: row.key,
           props: {
             leading: { icon: 'Gift' },
             title: row.date,
-            subtitle: t('skr.rewards.recorded'),
+            subtitle: t('skr.rewards.compounded'),
             value: { value: row.value, caption: row.caption },
           },
         }))
@@ -185,9 +277,16 @@ function rewardBlocks(view: SkrView, t: Translate): KitBlock[] {
           {
             kind: 'state',
             key: 'history-empty',
-            props: { testID: 'skr-history-empty', tone: 'empty', title: t('skr.history.empty') },
+            props: {
+              testID: 'skr-history-empty',
+              tone: 'empty',
+              title: view.historySince
+                ? t('skr.history.empty', { date: view.historySince })
+                : t('skr.history.emptyToday'),
+            },
           } satisfies KitBlock,
         ]),
+    ...more,
   ];
 }
 
@@ -291,7 +390,7 @@ function aboutBlocks(
 }
 
 export function skrBlocks(
-  { state, view, market, chart, refresh }: SkrScreenInput,
+  { state, view, market, chart, refresh, rewardsExpanded = false, expandRewards }: SkrScreenInput,
   t: Translate
 ): KitBlock[] {
   if (state === 'loading') {
@@ -348,7 +447,7 @@ export function skrBlocks(
     },
     stakeCard(view, t),
     ...dailyBlocks(view, t),
-    ...rewardBlocks(view, t),
+    ...rewardBlocks(view, t, rewardsExpanded, expandRewards),
     ...aboutBlocks(view, market, chart, t),
   ];
 }

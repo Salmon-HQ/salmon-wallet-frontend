@@ -1,3 +1,5 @@
+import type { BarChartPropsBase } from './bar-chart';
+import type { ButtonPropsBase } from './button';
 import type { CardPadding, CardTone } from './card';
 import type { ListRowPadding } from './list-row';
 import type { FactsCardPropsBase } from './facts-card';
@@ -28,6 +30,9 @@ export type KitBlock =
   | { kind: 'stats'; key: string; props: StatGridPropsBase }
   | { kind: 'row'; key: string; props: KitRowPropsBase }
   | { kind: 'progress'; key: string; props: ProgressBarPropsBase }
+  | { kind: 'bars'; key: string; props: BarChartPropsBase }
+  /** A secondary button: an action on the content above it. */
+  | { kind: 'button'; key: string; props: ButtonPropsBase }
   | { kind: 'divider'; key: string }
   /** A `Card` holding its own column of blocks. */
   | { kind: 'card'; key: string; props: KitCardPropsBase; blocks: readonly KitBlock[] };
