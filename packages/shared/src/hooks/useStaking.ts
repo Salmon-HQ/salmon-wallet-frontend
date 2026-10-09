@@ -84,16 +84,18 @@ export function useHomeStaking({
 }
 
 /** The SOL stake accounts `address` manages on `networkId`. Disabled without an address. */
+export const stakeAccountsQuery = (address: string | undefined, networkId: string | undefined) => ({
+  queryKey: queryKeys.stakeAccounts({
+    address: address ?? '',
+    networkId: (networkId ?? 'solana-mainnet') as NetworkId,
+  }),
+  queryFn: () => getStakeAccounts(networkId as string, address as string),
+  enabled: !!address && !!networkId,
+  staleTime: STALE_MS,
+});
+
 function useStakeAccounts(address: string | undefined, networkId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.stakeAccounts({
-      address: address ?? '',
-      networkId: (networkId ?? 'solana-mainnet') as NetworkId,
-    }),
-    queryFn: () => getStakeAccounts(networkId as string, address as string),
-    enabled: !!address && !!networkId,
-    staleTime: STALE_MS,
-  });
+  return useQuery(stakeAccountsQuery(address, networkId));
 }
 
 export interface UseStakeAccountsScreenResult {
@@ -128,11 +130,13 @@ export function useStakeAccountsScreen({
 }
 
 /** The owner's SKR position (mainnet). Disabled without an owner. */
+export const skrStakeQuery = (owner: string | undefined) => ({
+  queryKey: queryKeys.skrStake({ owner: owner ?? '' }),
+  queryFn: () => getSkrStake(owner as string),
+  enabled: !!owner,
+  staleTime: STALE_MS,
+});
+
 export function useSkrStake(owner: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.skrStake({ owner: owner ?? '' }),
-    queryFn: () => getSkrStake(owner as string),
-    enabled: !!owner,
-    staleTime: STALE_MS,
-  });
+  return useQuery(skrStakeQuery(owner));
 }

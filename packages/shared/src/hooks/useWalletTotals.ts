@@ -10,6 +10,8 @@
  * The total is the one for the network currently on screen, which is the same
  * number the home balance shows for the active wallet — one chain, one source
  * (DESIGN.md §Chain identity: every surface reads the chain from `networkId`).
+ * Like Home's, it counts what the wallet has staked (`useStaking`'s reads);
+ * a stake read that fails adds nothing.
  */
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
@@ -17,7 +19,12 @@ import { useQueries } from '@tanstack/react-query';
 import { queryKeys } from '../query/keys';
 import type { Account } from '../types/account';
 import type { NetworkId } from '../types/blockchain';
+import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { stakingSummary } from '../utils/staking';
 import { fetchBalanceForAccount } from './useBalance';
+import { skrStakeQuery, stakeAccountsQuery } from './useStaking';
+
+const NO_LABELS = { sol: '', skr: '' };
 
 export interface UseWalletTotalsParams {
   /** Every wallet to price. */
@@ -87,16 +94,36 @@ export function useWalletTotals({
     })),
   });
 
+  const onSolana = !!networkId && getBlockchainFromNetworkId(networkId) === 'solana';
+  const stakes = useQueries({
+    queries: entries.map(({ address }) =>
+      stakeAccountsQuery(onSolana ? address : undefined, networkId)
+    ),
+  });
+  const skr = useQueries({
+    queries: entries.map(({ address }) =>
+      skrStakeQuery(networkId === 'solana-mainnet' ? address : undefined)
+    ),
+  });
+
+  // The query arrays are fresh every render; their identity is not a signal.
+  const updated = [...results, ...stakes, ...skr].map((r) => r.dataUpdatedAt).join(',');
+
   return useMemo(() => {
     const totals: Record<string, number | undefined> = {};
     let loading = false;
     entries.forEach(({ walletId }, index) => {
       const result = results[index];
-      totals[walletId] = result?.data?.usdTotal;
+      const liquid = result?.data?.usdTotal;
+      const { stakedUsd } = stakingSummary({
+        stakes: stakes[index]?.data,
+        skr: skr[index]?.data,
+        labels: NO_LABELS,
+      });
+      totals[walletId] = liquid === undefined ? undefined : liquid + stakedUsd;
       if (result?.isPending) loading = true;
     });
     return { totals, loading };
-    // `results` is a fresh array every render; its identity is not a signal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, results.map((r) => r.dataUpdatedAt).join(','), results.length]);
+  }, [entries, updated, results.length]);
 }
