@@ -27,6 +27,8 @@ export interface StakeAccountsResponse {
   epoch: number;
   /** USD per SOL, or null when no quote could be had. */
   usdPrice: number | null;
+  /** The staked token's logo, from the backend's token catalog; absent from an older backend. */
+  logo?: string | null;
   data: StakeAccount[];
 }
 
@@ -57,6 +59,8 @@ export interface SkrStakeResponse {
   apy: number | null;
   /** USD per SKR, or null. */
   usdPrice: number | null;
+  /** The staked token's logo, from the backend's token catalog; absent from an older backend. */
+  logo?: string | null;
   /** SKR outside staking, in base units. */
   liquid: string;
   /** Everything staked in the program, base units; absent from an older backend. */

@@ -67,6 +67,31 @@ describe('stakingSummary', () => {
     expect(stakedUsd).toBeCloseTo(1.002513301 * 108.2 + 46045.70712 * 0.01622, 6);
   });
 
+  it("shows each staked token's logo from its own read, whatever the wallet holds", () => {
+    const { tokens } = stakingSummary({
+      stakes: { ...stakes, logo: 'https://cdn/sol.jpg' },
+      skr: { ...skr, logo: 'https://cdn/skr.jpg' },
+      labels,
+      logos: {},
+    });
+
+    expect(tokens.map((token) => token.logo)).toEqual([
+      'https://cdn/sol.jpg',
+      'https://cdn/skr.jpg',
+    ]);
+  });
+
+  it("falls back to the wallet's own logo when a read carries none", () => {
+    const { tokens } = stakingSummary({
+      stakes: { ...stakes, logo: null },
+      skr,
+      labels,
+      logos: { SOL: 'https://wallet/sol.png' },
+    });
+
+    expect(tokens[0]!.logo).toBe('https://wallet/sol.png');
+  });
+
   it('adds every stake account and every position', () => {
     const two = {
       ...stakes,

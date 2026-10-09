@@ -54,7 +54,10 @@ export function stakingSummary({
   stakes: StakeAccountsResponse | undefined;
   skr: SkrStakeResponse | undefined;
   labels: { sol: string; skr: string };
-  /** Logos by symbol, taken from the liquid tokens when the wallet holds them. */
+  /**
+   * Logos by symbol from the wallet's liquid tokens: the fallback when a read
+   * carries no logo of its own (an older backend).
+   */
   logos?: Record<string, string | undefined>;
 }): StakingSummary {
   const tokens: Token[] = [];
@@ -67,14 +70,21 @@ export function stakingSummary({
         'SOL',
         toUi(lamports, SOL_DECIMALS),
         stakes!.usdPrice,
-        logos.SOL
+        stakes!.logo ?? logos.SOL
       )
     );
   }
   const staked = (skr?.positions ?? []).reduce((sum, p) => sum + BigInt(p.staked), 0n);
   if (staked > 0n) {
     tokens.push(
-      row(STAKED_SKR_KEY, labels.skr, 'SKR', toUi(staked, skr!.decimals), skr!.usdPrice, logos.SKR)
+      row(
+        STAKED_SKR_KEY,
+        labels.skr,
+        'SKR',
+        toUi(staked, skr!.decimals),
+        skr!.usdPrice,
+        skr!.logo ?? logos.SKR
+      )
     );
   }
   const stakedUsd = tokens.reduce((sum, t) => sum + (t.usdBalance ?? 0), 0);
