@@ -7,7 +7,7 @@
 ## Summary
 
 Draw the shipped UI (baseline: `origin/main` 31cd6541 + `feat/seeker-seed-vault`
-0c037b5f) as a Pencil design system in the private SOT: a library of themed
+137d6751) as a Pencil design system in the private SOT: a library of themed
 token variables and auto-layout components (`Salmon.lib.pen`), a screens file
 that imports it with platform templates and the six key flows
 (`Salmon Screens.pen`), a findings report of code-vs-structure debt, and a short

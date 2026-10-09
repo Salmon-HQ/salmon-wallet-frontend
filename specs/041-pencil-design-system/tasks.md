@@ -23,7 +23,7 @@ checks: variable lint, coverage diff and PNG-vs-runtime comparison (research R9)
 
 - `DS/` = `03-dev/Design System/` in the private SOT repo (plan §Project Structure).
 - `$FRONTEND` = this repo's checkout on `feat/041-pencil-design-system`, which
-  carries the baseline code (`feat/seeker-seed-vault` at `0c037b5f` on top of
+  carries the baseline code (`feat/seeker-seed-vault` at `137d6751` on top of
   `origin/main` `31cd6541`). Nothing outside `specs/` changes in this repo.
 - One writer per `.pen`: a builder writes a file only while it is closed in
   the Pencil app. Builders run through `DS/tools/pen-run.sh` (bash only, R4).
@@ -40,9 +40,9 @@ checks: variable lint, coverage diff and PNG-vs-runtime comparison (research R9)
 - [x] T002 Write `DS/tools/pen-run.sh` per contracts/tooling.md (`#!/bin/bash`, JSON-encode the builder, prepend `_helpers.js`, optional pre-command, `save()`/`exit()`, non-zero exit on `Error:` or `rolled back`)
 - [x] T003 [P] Write `DS/tools/builders/_helpers.js`: `COMP` map from `Get(n => n.reusable)`, `ALIAS` read from the document's `imports` (empty in the library), text/icon/shadow helpers that accept only `$variable` names, and a `deleteGroup(prefix)` used for idempotent rebuilds
 - [x] T004 [P] Create `DS/tools/empty.pen` (`{"version":"2.21","children":[]}`) and verify `pen-run.sh` with a one-line builder that inserts and deletes a frame under `document`
-- [ ] T005 [P] HUMAN — Install the shipped DM Sans (the modified build in `$FRONTEND/packages/assets/src/fonts/`) and Geist Mono into the Pencil app. **Blocks**: T042, T049 (visual check)
+- [x] T005 [P] HUMAN — Install the shipped DM Sans (the modified build in `$FRONTEND/packages/assets/src/fonts/`) and Geist Mono into the Pencil app. **Blocks**: T042, T049 (visual check)
 - [x] T006 [P] HUMAN — Fill `$FRONTEND/apps/extension/.playwright/.env.test` from its `.env.test.example` with a test wallet that holds a little SOL and USDC on the test network. **Blocks**: T019, T021
-- [ ] T007 [P] HUMAN — Fill `$FRONTEND/apps/mobile/.maestro/.env.test` from its `.env.test.example` and boot an iOS Simulator (iPhone 17 Pro Max, 440×956) with the mobile dev build installed. **Blocks**: T020, T021
+- [x] T007 [P] HUMAN — Fill `$FRONTEND/apps/mobile/.maestro/.env.test` from its `.env.test.example` and boot an iOS Simulator (iPhone 17 Pro Max, 440×956) with the mobile dev build installed. **Blocks**: T020, T021
 
 ---
 
@@ -64,8 +64,8 @@ checks: variable lint, coverage diff and PNG-vs-runtime comparison (research R9)
 - [x] T017 [P] Write `DS/tools/capture-extension.mjs` reusing `$FRONTEND/apps/extension/.playwright/fixtures.ts` and `helpers.ts` (pattern: `scripts/store-shots.mjs`): headless Chromium with the dev build, side panel at Chrome's default width; per state, screenshot + elements by `data-testid` and kit roots with box and computed styles; auto-flag `margin-between-siblings`, `absolute-outside-overlay`, `fixed-size-in-flex`, `colour-not-in-tokens` → `DS/measurements/extension/<flow>/<state>.{json,png}` (data-model). Never confirms send, swap or burn
 - [x] T018 [P] Write `DS/tools/capture-mobile.sh` and the flows in `DS/tools/maestro/` (run from `$FRONTEND/apps/mobile/.maestro/`, reusing its subflows): per state `takeScreenshot` + `maestro hierarchy`, and a converter to `DS/measurements/mobile/<flow>/<state>.json` (bounds by `testID`)
 - [x] T019 Add the Swap capture to `capture-extension.mjs`: open Swap, pick SOL→USDC, enter an amount, stop at the quote/review state; plus the dApp-approval window and the extension sheet container (requires T006)
-- [ ] T020 Add `DS/tools/maestro/swap.yaml` (Swap to review only) and the mobile sheet container states to `capture-mobile.sh` (requires T007)
-- [ ] T021 Capture every key-flow state on both platforms — Onboarding (welcome, create password, seed warning, seed shown with the public `abandon…` test phrase, success), Home (portfolio, NFTs tab, a sheet open), Send (recipient, amount, review), Receive, Swap (form, review), Settings (root, one panel, a selector) — plus both themes for Home and Send; mobile in full, the extension states that FR-010 needs (requires T006, T007, T017–T020)
+- [x] T020 Add `DS/tools/maestro/swap.yaml` (Swap to review only) and the mobile sheet container states to `capture-mobile.sh` (requires T007)
+- [x] T021 Capture every key-flow state on both platforms — Onboarding (welcome, create password, seed warning, seed shown with the public `abandon…` test phrase, success), Home (portfolio, NFTs tab, a sheet open), Send (recipient, amount, review), Receive, Swap (form, review), Settings (root, one panel, a selector) — plus both themes for Home and Send; mobile in full, the extension states that FR-010 needs (requires T006, T007, T017–T020)
 
 **Checkpoint**: Inventory, tokens, lint/coverage and audit tools exist; captures may still be waiting on T006/T007.
 
@@ -144,7 +144,7 @@ Use `product.pen` (the 2026-09 redesign drawing) as a structural reference only 
 
 **Independent Test**: Passes the SOT vault rules; every file it names exists.
 
-- [x] T047 [US5] Write `DS/Design System.md`: frontmatter `title`/`status`/`owner`/`reviewed` (owner: Luca and Darío, as for code), plain-language opening line, where the files are, the baseline record (`origin/main` `31cd6541` + `feat/seeker-seed-vault` `0c037b5f`), the pen CLI version pinned (0.3.11) with the R1 probe to re-run after upgrades, the font prerequisite, how to rebuild (quickstart), how to switch themes (`<alias>:mode`), what is deliberately not drawn
+- [x] T047 [US5] Write `DS/Design System.md`: frontmatter `title`/`status`/`owner`/`reviewed` (owner: Luca and Darío, as for code), plain-language opening line, where the files are, the baseline record (`origin/main` `31cd6541` + `feat/seeker-seed-vault` `137d6751`), the pen CLI version pinned (0.3.11) with the R1 probe to re-run after upgrades, the font prerequisite, how to rebuild (quickstart), how to switch themes (`<alias>:mode`), what is deliberately not drawn
 - [x] T048 [US5] Run the SOT's own document checks (per the SOT `AGENTS.md`) on `DS/Design System.md` and `DS/Findings.md`; fix until clean
 
 ---
@@ -154,7 +154,7 @@ Use `product.pen` (the 2026-09 redesign drawing) as a structural reference only 
 - [x] T049 Rebuild both files from scratch per quickstart.md, unattended (tokens → 10–60 → 70 → 80/85), into temporary copies; confirm the result matches the committed files (node counts, variable counts, lint empty) — proves the builders, not hand edits, are the source
 - [x] T050 Commit the SOT changes (`DS/**` except captured screenshots containing wallet data, if any) on a branch in the SOT repo, following its commit rules; do not push without the owner's word
 - [ ] T051 HUMAN — The owner reviews the six flows in `DS/Salmon Screens.pen` (both themes) and says they replace `product.pen`. **Blocks**: T052
-- [ ] T052 After T051 only: locate `product.pen` with the owner (confirm which copy, and any duplicate), then move it to the macOS Trash with `mv <path> ~/.Trash/` — never `rm`; report the path moved (D3)
+- [x] T052 After T051 only: locate `product.pen` with the owner (confirm which copy, and any duplicate), then move it to the macOS Trash with `mv <path> ~/.Trash/` — never `rm`; report the path moved (D3)
 
 ---
 

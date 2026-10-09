@@ -194,7 +194,7 @@ built them.
 
   Baseline confirmed by the owner on 2026-10-09:
   - `main`: `origin/main` at `31cd6541d039571aaa95d3ae716a46decffe4371` (2026-10-07).
-  - In-flight: `feat/seeker-seed-vault` at `0c037b5f` — Seed Vault accounts, Staking in Assets and the SKR Powerup, the frozen-NFT notice, the Mobile Wallet Adapter dApp approval it carries from `feat/seeker-dapp-store`, and the 040 SKR redesign (Pill, ProgressBar and StatTile kit components; BlockList and SectionLabel changes).
+  - In-flight: `feat/seeker-seed-vault` at `137d6751` — Seed Vault accounts, Staking in Assets and the SKR Powerup, the frozen-NFT notice, the Mobile Wallet Adapter dApp approval it carries from `feat/seeker-dapp-store`, and the 040 SKR redesign (Pill, ProgressBar and StatTile kit components; BlockList and SectionLabel changes).
   - Excluded as stale: `feat/query-settlement`, `feat/solana-actions-blinks-stake`. `feat/seeker-dapp-store` on origin is left as is; its UI is read from `feat/seeker-seed-vault`.
 
 ### Key Entities
