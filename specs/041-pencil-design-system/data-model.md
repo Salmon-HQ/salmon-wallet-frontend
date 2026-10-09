@@ -76,8 +76,8 @@ Lives in `Salmon Screens.pen`, as a component of the screens file.
 
 | Template                             | Outer size                                                   | Slots                    |
 | ------------------------------------ | ------------------------------------------------------------ | ------------------------ |
-| `Template/Mobile Screen`             | 390×844, safe-area insets as padding                         | header, content, actions |
-| `Template/Mobile Sheet`              | width 390, `fit_content` height                              | title, content, actions  |
+| `Template/Mobile Screen`             | 440×956 (iPhone 17 Pro Max, the scaling reference), safe-area insets as padding | header, content, actions |
+| `Template/Mobile Sheet`              | width 440, `fit_content` height | title, content, actions  |
 | `Template/Extension Side Panel`      | measured default width × measured height, `panelTop` padding | header, content, actions |
 | `Template/Extension Approval Window` | measured window size                                         | header, content, actions |
 | `Template/Extension Sheet`           | measured dialog size                                         | title, content, actions  |

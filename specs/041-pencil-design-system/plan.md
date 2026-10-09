@@ -26,7 +26,7 @@ Playwright and Maestro suites. No app code changes.
 
 **Testing**: Variable lint (zero unbound values), token/component coverage diff, PNG export vs runtime screenshot and per-element bounds (1px templates, 2px flows)
 
-**Target Platform**: Pencil desktop app and pen CLI on macOS; captures from headless Chromium (extension side panel) and iOS Simulator 390×844 (mobile)
+**Target Platform**: Pencil desktop app and pen CLI on macOS; captures from headless Chromium (extension side panel) and iOS Simulator 440×956, the iPhone 17 Pro Max that `scaling.native.ts` designs against (mobile)
 
 **Project Type**: Design-asset pipeline (scripts + generated design files), outside the app build
 

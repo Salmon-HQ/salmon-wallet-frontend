@@ -42,7 +42,7 @@ checks: variable lint, coverage diff and PNG-vs-runtime comparison (research R9)
 - [x] T004 [P] Create `DS/tools/empty.pen` (`{"version":"2.21","children":[]}`) and verify `pen-run.sh` with a one-line builder that inserts and deletes a frame under `document`
 - [ ] T005 [P] HUMAN — Install the shipped DM Sans (the modified build in `$FRONTEND/packages/assets/src/fonts/`) and Geist Mono into the Pencil app. **Blocks**: T042, T049 (visual check)
 - [x] T006 [P] HUMAN — Fill `$FRONTEND/apps/extension/.playwright/.env.test` from its `.env.test.example` with a test wallet that holds a little SOL and USDC on the test network. **Blocks**: T019, T021
-- [ ] T007 [P] HUMAN — Fill `$FRONTEND/apps/mobile/.maestro/.env.test` from its `.env.test.example` and boot an iOS Simulator (390×844 class) with the mobile dev build installed. **Blocks**: T020, T021
+- [ ] T007 [P] HUMAN — Fill `$FRONTEND/apps/mobile/.maestro/.env.test` from its `.env.test.example` and boot an iOS Simulator (iPhone 17 Pro Max, 440×956) with the mobile dev build installed. **Blocks**: T020, T021
 
 ---
 
@@ -100,7 +100,7 @@ Each builder below: write it from the twins' source and the inventory, test on a
 **Independent Test**: Instantiate each template, drop a library component in its content slot; it stretches and spaces correctly; outer size and insets within 1px of the measured container.
 
 - [x] T031 [US2] Create `DS/Salmon Screens.pen` from `empty.pen` and run `import_library({ path: "Salmon.lib.pen" })`; confirm the library components appear as `<alias>:<id>` and the theme axis as `<alias>:mode` (research R1)
-- [x] T032 [US2] Write and run `DS/tools/builders/70-templates.js`: `Template/Mobile Screen` (390×844, safe areas as padding), `Template/Mobile Sheet`, `Template/Extension Side Panel` (measured default width, `panelTop`), `Template/Extension Approval Window`, `Template/Extension Sheet` (the `<dialog>`), each with `header`/`title`, `content`, `actions` slots; no absolute nodes except real overlays (data-model)
+- [x] T032 [US2] Write and run `DS/tools/builders/70-templates.js`: `Template/Mobile Screen` (440×956, safe areas as padding), `Template/Mobile Sheet`, `Template/Extension Side Panel` (measured default width, `panelTop`), `Template/Extension Approval Window`, `Template/Extension Sheet` (the `<dialog>`), each with `header`/`title`, `content`, `actions` slots; no absolute nodes except real overlays (data-model)
 - [x] T033 [US2] Check each template against the container measurements from T021 (≤ 1px on outer size, insets and paddings); record any mismatch the code causes as a finding candidate
 
 ---

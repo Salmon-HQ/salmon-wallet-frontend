@@ -113,8 +113,7 @@ are read from the repo or from Pencil's own `read_skill` guides.
   accessibility ids, not styles. Per captured state: `takeScreenshot` and
   `maestro hierarchy` (bounds per `testID`). Spacing between elements is
   derived from bounds; the structural cause is read from the RN source of the
-  twin. iPhone 15/16 class (390×844 pt) is the reference frame, the same size
-  the existing `product.pen` drawings use.
+  twin. iPhone 17 Pro Max (440×956 pt) is the reference frame, because every mobile `s()`/`vs()` scales from `DESIGN_WIDTH` 440 in `packages/shared/src/utils/scaling.native.ts`; drawn tokens are unscaled values.
 - **Flows reused**: `.playwright/tests/{onboarding-grid,send,receive,settings}`
   and `.maestro/flows/smoke/{auth,home,send,receive,settings}` already reach
   every key-flow state except Swap; the Swap capture is a new script/flow in
