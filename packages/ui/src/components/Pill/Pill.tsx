@@ -29,7 +29,6 @@ export function Pill({ label, tone, icon, dot, style, testID }: PillProps) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        alignSelf: 'flex-start',
         flexShrink: 0,
         gap: spacing.xs,
         padding: `${spacing.xs}px ${spacing.sm}px`,

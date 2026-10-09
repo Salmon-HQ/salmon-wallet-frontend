@@ -196,6 +196,7 @@ export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 
 // Card
 export type { CardTone, CardPadding, CardRadius, CardPropsBase } from './card';
+export { CARD_PADDINGS, CARD_RADII, cardTonesFor } from './card';
 
 // List Row
 export type { ListRowPadding, ListRowEmphasis, ListRowPropsBase } from './list-row';

@@ -1,4 +1,5 @@
 import type { CardPadding, CardTone } from './card';
+import type { ListRowPadding } from './list-row';
 import type { FactsCardPropsBase } from './facts-card';
 import type { PillPropsBase } from './pill';
 import type { PowerupIconName } from './powerup-icon';
@@ -42,6 +43,8 @@ export interface KitRowPropsBase extends Testable {
   emphasis?: 'default' | 'strong';
   /** A row is a card of its own; `ink` sinks it into the card it sits in. */
   tone?: CardTone;
+  /** `none` with the `clear` tone: a heading row flush with the column. */
+  padding?: ListRowPadding;
 }
 
 export interface KitCardPropsBase extends Testable {

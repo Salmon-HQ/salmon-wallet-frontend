@@ -20,7 +20,6 @@ import {
   STAT_MIN_FONT_SCALE,
   STAT_SIZES,
   statInkFor,
-  tabularNums,
   type Semantic,
 } from '@salmon/shared';
 
@@ -37,43 +36,48 @@ export function StatTile({
   size = 'md',
   align = 'start',
   pill,
+  note,
   style,
   testID,
 }: StatTileProps) {
   const styles = useThemedStyles(stylesFor);
-  const ink = statInkFor(useSemantic())[tone];
+  const t = useSemantic();
   const metrics = STAT_SIZES[size];
   const end = align === 'end';
 
-  return (
-    <View testID={testID} style={[styles.tile, end && styles.end, style]}>
-      {label || pill ? (
-        <View style={styles.labelLine}>
-          {label ? (
-            <Text style={styles.label} numberOfLines={2} maxFontSizeMultiplier={fontScaleCap.dense}>
-              {label.toUpperCase()}
-            </Text>
-          ) : null}
-          {pill ? <Pill {...pill} /> : null}
-        </View>
+  const figure = (
+    <>
+      {label ? (
+        <Text style={styles.label} numberOfLines={2} maxFontSizeMultiplier={fontScaleCap.dense}>
+          {label.toUpperCase()}
+        </Text>
       ) : null}
       <View style={[styles.valueLine, end && styles.valueLineEnd]}>
+        {/* One line of text holds the figure and its unit: shrinking to fit,
+            Android sizes a lone Text to the room it was given, which left the
+            unit a gap away from the figure. */}
         <Text
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={STAT_MIN_FONT_SCALE}
           maxFontSizeMultiplier={fontScaleCap.dense}
-          style={[styles.value, { fontSize: s(metrics.value), color: ink }]}
+          style={styles.line}
         >
-          {value}
+          <Text style={[styles.value, { fontSize: s(metrics.value), color: statInkFor(t)[tone] }]}>
+            {value}
+          </Text>
+          {unit ? <Text style={[styles.unit, { fontSize: s(metrics.unit) }]}> {unit}</Text> : null}
         </Text>
-        {unit ? (
+        {note ? (
           <Text
             numberOfLines={1}
             maxFontSizeMultiplier={fontScaleCap.dense}
-            style={[styles.unit, { fontSize: s(metrics.unit) }]}
+            style={[
+              styles.note,
+              { color: note.tone === 'accent' ? t.accent.ink : t.text.secondary },
+            ]}
           >
-            {unit}
+            {note.text}
           </Text>
         ) : null}
       </View>
@@ -82,6 +86,19 @@ export function StatTile({
           {caption}
         </Text>
       ) : null}
+    </>
+  );
+
+  if (!pill)
+    return (
+      <View testID={testID} style={[styles.tile, end && styles.end, style]}>
+        {figure}
+      </View>
+    );
+  return (
+    <View testID={testID} style={[styles.withPill, style]}>
+      <View style={[styles.tile, end && styles.end, styles.body]}>{figure}</View>
+      <Pill {...pill} />
     </View>
   );
 }
@@ -101,20 +118,13 @@ const gridStyles = StyleSheet.create({
   cell: { flex: 1, minWidth: 0 },
 });
 
-// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
-// mutable one.
-const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
-
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
     tile: { gap: s(spacing.xs), minWidth: 0 },
     end: { alignItems: 'flex-end' },
-    labelLine: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: s(spacing.sm),
-    },
+    // A pill sits beside the figure, centred on it both ways.
+    withPill: { flexDirection: 'row', alignItems: 'center', gap: s(spacing.md), minWidth: 0 },
+    body: { flex: 1 },
     label: {
       flexShrink: 1,
       fontFamily: fontFamilyNative.semiBold,
@@ -124,8 +134,17 @@ const stylesFor = (t: Semantic) =>
     },
     valueLine: { flexDirection: 'row', alignItems: 'baseline', gap: s(spacing.xs), minWidth: 0 },
     valueLineEnd: { justifyContent: 'flex-end' },
-    value: { flexShrink: 1, fontFamily: fontFamilyNative.bold, ...TABULAR },
-    unit: { flexShrink: 0, fontFamily: fontFamilyNative.semiBold, color: t.text.secondary },
+    // Proportional digits: a lone figure reads in the font's own widths; table
+    // columns (tabular) would space "46,045.71" out like a ledger.
+    line: { flexShrink: 1 },
+    value: { fontFamily: fontFamilyNative.bold },
+    unit: { fontFamily: fontFamilyNative.semiBold, color: t.text.secondary },
+    note: {
+      flexShrink: 0,
+      marginLeft: 'auto',
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.caption),
+    },
     caption: {
       fontFamily: fontFamilyNative.regular,
       fontSize: s(fontSize.caption),

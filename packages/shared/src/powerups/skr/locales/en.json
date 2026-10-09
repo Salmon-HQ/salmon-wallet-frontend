@@ -20,7 +20,7 @@
     "title": "Could not load your SKR."
   },
   "header": {
-    "subtitle": "Staking position"
+    "subtitle": "Seeker · Staking position"
   },
   "apy": "{{value}} APY",
   "stake": {
@@ -53,7 +53,7 @@
     "totalSupply": "Total supply",
     "circulating": "Circulating",
     "staked": "Staked",
-    "ofCirculating": "Of circulating",
+    "ofCirculating": "{{value}} of circulating",
     "stakedLegend": "Staked {{value}}",
     "liquidLegend": "Liquid {{value}}",
     "shareLabel": "Share of circulating SKR that is staked"

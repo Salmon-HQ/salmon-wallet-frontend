@@ -78,7 +78,8 @@ export function createBlockList(kit: BlockKit): ComponentType<BlockListPropsBase
     ) : value ? (
       <kit.StatTile size="sm" align="end" {...value} />
     ) : undefined;
-    return <kit.ListRow {...row} leading={mark} trailing={trailing} />;
+    // A pill is centred in the row's end slot on both axes (`trailingFill`).
+    return <kit.ListRow {...row} leading={mark} trailing={trailing} trailingFill={!!pill} />;
   }
 
   function Card({ props, blocks }: { props: KitCardPropsBase; blocks: readonly KitBlock[] }) {

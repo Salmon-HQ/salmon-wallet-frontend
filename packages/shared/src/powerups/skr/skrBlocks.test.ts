@@ -65,6 +65,7 @@ describe('skrBlocks', () => {
       'h-1',
       'about-title',
       'price',
+      'chart',
       'supply',
     ]);
   });
@@ -114,7 +115,47 @@ describe('skrBlocks', () => {
     expect(keys).not.toContain('daily-title');
   });
 
-  it("shows the program's staked share of circulating SKR as a bar", () => {
+  it('heads the tab with the token itself, not a card', () => {
+    expect(find(skrBlocks(input(), t), 'header')).toMatchObject({
+      props: { tone: 'clear', padding: 'none', subtitle: 'skr.header.subtitle' },
+    });
+  });
+
+  it('shows the price large, its change beside it, then the chart as the token screen draws it', () => {
+    const blocks = skrBlocks(input(), t);
+
+    expect(blocks.find((b) => b.key === 'price')).toMatchObject({
+      kind: 'stats',
+      props: {
+        items: [
+          { value: '$0.01622', size: 'hero', pill: { label: '−4.20% · 1M', tone: 'negative' } },
+        ],
+      },
+    });
+    expect(blocks.find((b) => b.key === 'chart')).toMatchObject({ kind: 'chart' });
+  });
+
+  it("closes the supply card with the program's staked ratio: the figure, its share, the bar", () => {
+    const supply = find(skrBlocks(input(), t), 'supply');
+    expect(supply).toMatchObject({ kind: 'card' });
+    expect((supply as Extract<KitBlock, { kind: 'card' }>).blocks.map((b) => b.key)).toEqual([
+      'supply-figures',
+      'supply-divider',
+      'network-staked',
+      'staked-share',
+    ]);
+    expect(find(skrBlocks(input(), t), 'network-staked')).toMatchObject({
+      props: {
+        items: [
+          {
+            label: 'skr.about.staked',
+            value: '5.03B',
+            unit: 'SKR',
+            note: { text: 'skr.about.ofCirculating:{"value":"70.36%"}', tone: 'accent' },
+          },
+        ],
+      },
+    });
     expect(find(skrBlocks(input(), t), 'staked-share')).toMatchObject({
       kind: 'progress',
       props: { value: 5_026_970_696.86 / 7_144_670_823 },

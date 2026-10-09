@@ -4,7 +4,7 @@ import type { CardTone } from './card';
 import type { Testable } from './testable';
 
 /** 14 or 16 — the two internal paddings a row is drawn at. */
-export type ListRowPadding = 'md' | 'lg';
+export type ListRowPadding = 'none' | 'md' | 'lg';
 
 /**
  * How loud the title is. `default` is the 14/700 of a recipient or an activity

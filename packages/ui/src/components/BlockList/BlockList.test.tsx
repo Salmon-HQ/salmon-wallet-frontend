@@ -27,12 +27,14 @@ vi.mock('../ListRow', () => ({
     testID,
     title,
     trailing,
+    trailingFill,
   }: {
     testID?: string;
     title: string;
     trailing?: React.ReactNode;
+    trailingFill?: boolean;
   }) => (
-    <div data-testid={testID}>
+    <div data-testid={testID} data-trailing-fill={String(!!trailingFill)}>
       {title}
       {trailing}
     </div>
@@ -120,5 +122,7 @@ describe('BlockList — composed blocks', () => {
       expect(card.contains(screen.getByTestId(id))).toBe(true);
     }
     expect(screen.getByTestId('b-row').textContent).toContain('Solana Mobile Guardian');
+    // A pill is centred in the row's end slot, both ways.
+    expect(screen.getByTestId('b-row').dataset.trailingFill).toBe('true');
   });
 });

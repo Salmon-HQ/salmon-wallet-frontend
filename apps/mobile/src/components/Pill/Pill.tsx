@@ -47,7 +47,6 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     flexShrink: 0,
     gap: s(spacing.xs),
     paddingVertical: vs(spacing.xs),

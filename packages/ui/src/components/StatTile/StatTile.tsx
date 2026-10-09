@@ -16,7 +16,6 @@ import {
   spacing,
   STAT_SIZES,
   statInkFor,
-  tabularNums,
 } from '@salmon/shared';
 
 import { Pill } from '../Pill';
@@ -32,49 +31,35 @@ export function StatTile({
   size = 'md',
   align = 'start',
   pill,
+  note,
   style,
   testID,
 }: StatTileProps) {
   const t = useSemantic();
   const metrics = STAT_SIZES[size];
   const end = align === 'end';
+  const column: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: end ? 'flex-end' : 'stretch',
+    gap: spacing.xs,
+    minWidth: 0,
+  };
 
-  return (
-    <div
-      data-testid={testID}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: end ? 'flex-end' : 'stretch',
-        gap: spacing.xs,
-        minWidth: 0,
-        ...style,
-      }}
-    >
-      {label || pill ? (
-        <div
+  const figure = (
+    <>
+      {label ? (
+        <span
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: spacing.sm,
+            fontFamily: fontFamily.sans,
+            fontWeight: fontWeight.semibold,
+            fontSize: fontSize.micro,
+            letterSpacing: letterSpacing.label,
+            color: t.text.tertiary,
           }}
         >
-          {label ? (
-            <span
-              style={{
-                fontFamily: fontFamily.sans,
-                fontWeight: fontWeight.semibold,
-                fontSize: fontSize.micro,
-                letterSpacing: letterSpacing.label,
-                color: t.text.tertiary,
-              }}
-            >
-              {label.toUpperCase()}
-            </span>
-          ) : null}
-          {pill ? <Pill {...pill} /> : null}
-        </div>
+          {label.toUpperCase()}
+        </span>
       ) : null}
       <div
         style={{
@@ -86,6 +71,7 @@ export function StatTile({
           maxWidth: '100%',
         }}
       >
+        {/* Proportional digits: a lone figure reads in the font's own widths. */}
         <span
           style={{
             fontFamily: fontFamily.sans,
@@ -96,7 +82,6 @@ export function StatTile({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             minWidth: 0,
-            ...tabularNums.css,
           }}
         >
           {value}
@@ -114,6 +99,21 @@ export function StatTile({
             {unit}
           </span>
         ) : null}
+        {note ? (
+          <span
+            style={{
+              flexShrink: 0,
+              marginLeft: 'auto',
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.semibold,
+              fontSize: fontSize.caption,
+              color: note.tone === 'accent' ? t.accent.ink : t.text.secondary,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {note.text}
+          </span>
+        ) : null}
       </div>
       {caption ? (
         <span
@@ -127,6 +127,30 @@ export function StatTile({
           {caption}
         </span>
       ) : null}
+    </>
+  );
+
+  if (!pill)
+    return (
+      <div data-testid={testID} style={{ ...column, ...style }}>
+        {figure}
+      </div>
+    );
+  // A pill sits beside the figure, centred on it both ways.
+  return (
+    <div
+      data-testid={testID}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        minWidth: 0,
+        ...style,
+      }}
+    >
+      <div style={{ ...column, flex: 1 }}>{figure}</div>
+      <Pill {...pill} />
     </div>
   );
 }

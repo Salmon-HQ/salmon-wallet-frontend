@@ -100,4 +100,18 @@ describe('Card', () => {
     expect(lightGround).toBe(createSemantic('light').surface.membraneThin);
     expect(lightGround).not.toBe(darkGround);
   });
+
+  it('draws nothing of its own in the clear tone, for content that only needs the layout', () => {
+    const { getByTestId } = renderWithTheme(
+      <Card testID="clear" tone="clear" padding="none">
+        <Text>a</Text>
+      </Card>,
+      { mode: 'dark' }
+    );
+
+    const style = flatten(getByTestId('clear').props.style);
+    expect(style.backgroundColor).toBe('transparent');
+    expect(style.borderColor).toBe('transparent');
+    expect(style.padding).toBe(0);
+  });
 });

@@ -8,6 +8,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
   powerupBadgeTier: jest.requireActual('@salmon/shared/src/utils/powerupBadgeTier')
     .powerupBadgeTier,
   s: (value: number) => value,

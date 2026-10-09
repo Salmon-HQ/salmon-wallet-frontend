@@ -39,13 +39,37 @@ describe('StatTile', () => {
     );
   });
 
-  it('carries a pill on its label line', () => {
+  it('sets its pill beside the figure, centred on the tile', () => {
     renderInMode(
       'dark',
-      <StatTile label="Price" value="$0.016" pill={{ label: '−4.2%', tone: 'negative' }} />
+      <StatTile
+        testID="price"
+        label="Price"
+        value="$0.016"
+        pill={{ label: '−4.2%', tone: 'negative' }}
+      />
     );
 
     expect(screen.getByText('−4.2%')).toBeTruthy();
+    expect(screen.getByTestId('price').style.flexDirection).toBe('row');
+    expect(screen.getByTestId('price').style.alignItems).toBe('center');
+  });
+
+  it('closes the value line with a note at the end, in its tone', () => {
+    renderInMode(
+      'dark',
+      <StatTile value="5.03B" note={{ text: '70.38% of circulating', tone: 'accent' }} />
+    );
+
+    expect(screen.getByText('70.38% of circulating').style.color).toBe(
+      asRenderedColor(createSemantic('dark').accent.ink)
+    );
+  });
+
+  it("reads its digits in the font's own widths, not table columns", () => {
+    renderInMode('dark', <StatTile value="46,045.71" size="hero" />);
+
+    expect(screen.getByText('46,045.71').style.fontVariantNumeric).toBe('');
   });
 });
 

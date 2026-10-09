@@ -91,4 +91,17 @@ describe('Card', () => {
     );
     expect(screen.getByRole('link', { name: 'Explorer' })).toBeTruthy();
   });
+
+  it('draws nothing of its own in the clear tone, for content that only needs the layout', () => {
+    renderInMode(
+      'dark',
+      <Card testID="clear" tone="clear" padding="none">
+        content
+      </Card>
+    );
+
+    const card = screen.getByTestId('clear');
+    expect(card.style.backgroundColor).toBe('transparent');
+    expect(card.style.padding).toBe('0px');
+  });
 });

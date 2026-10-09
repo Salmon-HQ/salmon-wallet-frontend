@@ -20,8 +20,10 @@ export interface StatTilePropsBase extends Testable {
   tone?: StatTileTone;
   size?: StatTileSize;
   align?: 'start' | 'end';
-  /** Shown at the end of the label line, e.g. the change over a period. */
+  /** Beside the figure, centred on the tile: the change over a period. */
   pill?: PillPropsBase;
+  /** At the end of the value line, on its baseline: "70% of circulating". */
+  note?: { text: string; tone?: 'accent' | 'secondary' };
 }
 
 /** Figures side by side, each an equal share of the row. */

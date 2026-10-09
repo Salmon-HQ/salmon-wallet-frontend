@@ -84,3 +84,9 @@ export { progressPercent } from '../../../packages/shared/src/types/ui/progress-
 // The kit's block renderer (spec 040): screens build their BlockList from it
 // at import time, so every mock of the barrel needs it.
 export { createBlockList } from '../../../packages/shared/src/kit/createBlockList';
+// Card's tone, padding and radius tables (spec 040), pure functions of the tokens.
+export {
+  CARD_PADDINGS,
+  CARD_RADII,
+  cardTonesFor,
+} from '../../../packages/shared/src/types/ui/card';

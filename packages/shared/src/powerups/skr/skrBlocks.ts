@@ -197,29 +197,25 @@ function aboutBlocks(
   chart: SkrScreenInput['chart'],
   t: Translate
 ): KitBlock[] {
-  const price: KitBlock = {
-    kind: 'card',
-    key: 'price',
-    props: {},
-    blocks: [
-      {
-        kind: 'stats',
-        key: 'price-figure',
-        props: {
-          items: [
-            {
-              key: 'price',
-              label: t('skr.about.price'),
-              value: market.price ?? '-',
-              size: 'lg',
-              ...(market.change ? { pill: market.change } : {}),
-            },
-          ],
-        },
+  // The price is not boxed: the chart keeps the token screen's own look.
+  const price: KitBlock[] = [
+    {
+      kind: 'stats',
+      key: 'price',
+      props: {
+        items: [
+          {
+            key: 'price',
+            label: t('skr.about.price'),
+            value: market.price ?? '-',
+            size: 'hero',
+            ...(market.change ? { pill: market.change } : {}),
+          },
+        ],
       },
-      { kind: 'chart', key: 'chart', props: chart },
-    ],
-  };
+    },
+    { kind: 'chart', key: 'chart', props: chart },
+  ];
   const supply: KitBlock[] = [];
   if (market.totalSupply !== null || market.circulatingSupply !== null) {
     supply.push({
@@ -254,17 +250,15 @@ function aboutBlocks(
             label: t('skr.about.staked'),
             value: formatLargeNumber(view.totalStaked),
             unit: SKR,
+            ...(share === null
+              ? {}
+              : {
+                  note: {
+                    text: t('skr.about.ofCirculating', { value: formatPercent(share * 100) }),
+                    tone: 'accent' as const,
+                  },
+                }),
           },
-          ...(share === null
-            ? []
-            : [
-                {
-                  key: 'share',
-                  label: t('skr.about.ofCirculating'),
-                  value: formatPercent(share * 100),
-                  tone: 'accent' as const,
-                },
-              ]),
         ],
       },
     });
@@ -289,7 +283,7 @@ function aboutBlocks(
       key: 'about-title',
       props: { variant: 'title', children: t('skr.about.title') },
     },
-    price,
+    ...price,
     ...(supply.length > 0
       ? [{ kind: 'card', key: 'supply', props: {}, blocks: supply } satisfies KitBlock]
       : []),
@@ -343,6 +337,9 @@ export function skrBlocks(
         leading: { token: { uri: market.logo, symbol: SKR } },
         title: SKR,
         subtitle: t('skr.header.subtitle'),
+        // The tab's own heading, laid out as a row but not boxed as one.
+        tone: 'clear',
+        padding: 'none',
         emphasis: 'strong',
         ...(view.apy
           ? { pill: { label: t('skr.apy', { value: view.apy }), tone: 'accent', icon: 'Percent' } }

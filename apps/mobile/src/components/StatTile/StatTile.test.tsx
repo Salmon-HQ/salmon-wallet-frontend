@@ -23,12 +23,17 @@ describe('StatTile', () => {
     expect(screen.getByText('≈ $746.73')).toBeTruthy();
   });
 
-  it('keeps the value on one line and lets it shrink to fit', () => {
-    render(<StatTile value="46,045.70" size="hero" />);
+  it('keeps the value and its unit on one line that shrinks to fit, as one', () => {
+    render(<StatTile value="46,045.70" unit="SKR" size="hero" />);
 
     const value = screen.getByText('46,045.70');
-    expect(value.props.numberOfLines).toBe(1);
-    expect(value.props.adjustsFontSizeToFit).toBe(true);
+    const unit = screen.getByText('SKR');
+    // One line of text holds both, so the unit follows the figure at a
+    // space's distance however much the line shrinks.
+    const line = value.parent!.parent!;
+    expect(unit.parent!.parent).toBe(line);
+    expect(line.props.numberOfLines).toBe(1);
+    expect(line.props.adjustsFontSizeToFit).toBe(true);
     expect(flatten(value.props.style).fontSize).toBe(s(fontSize.display));
   });
 
@@ -38,10 +43,33 @@ describe('StatTile', () => {
     expect(flatten(screen.getByText('+6,045.71').props.style).color).toBe(semantic.change.positive);
   });
 
-  it('carries a pill on its label line', () => {
-    render(<StatTile label="Price" value="$0.016" pill={{ label: '−4.2%', tone: 'negative' }} />);
+  it('sets its pill beside the figure, centred on the tile', () => {
+    render(
+      <StatTile
+        testID="price"
+        label="Price"
+        value="$0.016"
+        pill={{ testID: 'change', label: '−4.2%', tone: 'negative' }}
+      />
+    );
 
     expect(screen.getByText('−4.2%')).toBeTruthy();
+    const tile = flatten(screen.getByTestId('price').props.style);
+    expect(tile.flexDirection).toBe('row');
+    expect(tile.alignItems).toBe('center');
+  });
+
+  it('closes the value line with a note at the end, in its tone', () => {
+    render(<StatTile value="5.03B" note={{ text: '70.38% of circulating', tone: 'accent' }} />);
+
+    const note = flatten(screen.getByText('70.38% of circulating').props.style);
+    expect(note.color).toBe(semantic.accent.ink);
+  });
+
+  it("reads its digits in the font's own widths, not table columns", () => {
+    render(<StatTile value="46,045.71" size="hero" />);
+
+    expect(flatten(screen.getByText('46,045.71').props.style).fontVariant).toBeUndefined();
   });
 });
 
