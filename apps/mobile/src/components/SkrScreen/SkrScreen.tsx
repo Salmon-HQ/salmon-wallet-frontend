@@ -6,7 +6,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { s, spacing, vs } from '@salmon/shared';
+import { componentSizes, s, spacing, vs } from '@salmon/shared';
 import { skrBlocks, useSkrScreenLogic } from '@salmon/shared/powerups';
 
 import { BlockList } from '../BlockList';
@@ -23,5 +23,10 @@ export function SkrScreen({ publicKey, style }: SkrScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: s(spacing.screenGutter), paddingBottom: vs(spacing.screenBottom) },
+  // Home's floating `+` sits over the tab: the last block clears it, as
+  // Home's own lists do.
+  content: {
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingBottom: vs(componentSizes.tabBarScrollPadding),
+  },
 });
