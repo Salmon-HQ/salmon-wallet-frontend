@@ -104,7 +104,8 @@ function PowerupUsage({ id }: { id: string }) {
       data-testid={`home-powerup-usage-${id}`}
       style={{
         fontFamily: fontFamily.sans,
-        fontWeight: fontWeight.medium,
+        // Bold: the one line that says what the tab is for (owner, 2026-10-09).
+        fontWeight: fontWeight.bold,
         fontSize: fontSize.subtitle,
         lineHeight: `${fontSize.subtitle * lineHeight.snug}px`,
         color: semantic.text.secondary,

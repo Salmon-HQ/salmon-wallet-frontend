@@ -128,8 +128,9 @@ const powerupBodyStyles = StyleSheet.create({
   surface: { flex: 1, gap: vs(spacing.screenGutter) },
   // How to use the Powerup, left-aligned under the sub-tabs in the header's
   // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
+  // Bold: the one line that says what the tab is for (owner, 2026-10-09).
   usage: {
-    fontFamily: fontFamilyNative.medium,
+    fontFamily: fontFamilyNative.bold,
     fontSize: s(fontSize.subtitle),
     lineHeight: s(fontSize.subtitle) * lineHeight.snug,
     paddingHorizontal: s(spacing.headerPadding),
