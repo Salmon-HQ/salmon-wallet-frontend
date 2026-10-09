@@ -17,6 +17,33 @@ vi.mock('../SectionLabel', () => leaf('SectionLabel'));
 vi.mock('../SkeletonRow', () => leaf('SkeletonRow'));
 vi.mock('../StateBlock', () => leaf('StateBlock'));
 vi.mock('../TokenList', () => leaf('TokenListItem'));
+vi.mock('../StatTile', () => ({ ...leaf('StatGrid'), ...leaf('StatTile') }));
+vi.mock('../ProgressBar', () => leaf('ProgressBar'));
+vi.mock('../Pill', () => leaf('Pill'));
+vi.mock('../IconBubble', () => leaf('IconBubble'));
+vi.mock('../TokenLogo', () => leaf('TokenLogo'));
+vi.mock('../ListRow', () => ({
+  ListRow: ({
+    testID,
+    title,
+    trailing,
+  }: {
+    testID?: string;
+    title: string;
+    trailing?: React.ReactNode;
+  }) => (
+    <div data-testid={testID}>
+      {title}
+      {trailing}
+    </div>
+  ),
+}));
+vi.mock('../Card', () => ({
+  Card: ({ testID, children }: { testID?: string; children?: React.ReactNode }) => (
+    <section data-testid={testID}>{children}</section>
+  ),
+}));
+vi.mock('../../icons', () => ({ powerupIcons: {} }));
 
 import { BlockList } from './BlockList';
 
@@ -52,5 +79,46 @@ describe('BlockList', () => {
       'SkeletonRow',
       'PriceChart',
     ]);
+  });
+});
+
+describe('BlockList — composed blocks', () => {
+  it("nests a card's own blocks inside it, with rows, figures, dividers and bars", () => {
+    render(
+      <BlockList
+        blocks={[
+          {
+            kind: 'card',
+            key: 'card',
+            props: { testID: 'b-card' },
+            blocks: [
+              { kind: 'stats', key: 'st', props: { testID: 'b-stats', items: [] } },
+              { kind: 'divider', key: 'd' },
+              {
+                kind: 'row',
+                key: 'r',
+                props: {
+                  testID: 'b-row',
+                  leading: { icon: 'ShieldCheck' },
+                  title: 'Solana Mobile Guardian',
+                  pill: { testID: 'b-pill', label: 'Active', tone: 'success' },
+                },
+              },
+              {
+                kind: 'progress',
+                key: 'p',
+                props: { testID: 'b-progress', value: 0.7, accessibilityLabel: 'x' },
+              },
+            ],
+          },
+        ]}
+      />
+    );
+
+    const card = screen.getByTestId('b-card');
+    for (const id of ['b-stats', 'b-row', 'b-pill', 'b-progress']) {
+      expect(card.contains(screen.getByTestId(id))).toBe(true);
+    }
+    expect(screen.getByTestId('b-row').textContent).toContain('Solana Mobile Guardian');
   });
 });

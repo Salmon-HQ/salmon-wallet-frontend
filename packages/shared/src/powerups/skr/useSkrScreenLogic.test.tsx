@@ -6,8 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 vi.mock('../../api/services/staking', () => ({ getSkrStake: vi.fn(), getStakeAccounts: vi.fn() }));
+const market = vi.hoisted(() => ({
+  current: { chartData: [] as { timestamp: number; price: number }[], coinInfo: null as unknown },
+}));
 vi.mock('../../hooks/useCoinMarketData', () => ({
-  useCoinMarketData: () => ({ chartData: [], chartLoading: false, error: null }),
+  useCoinMarketData: () => ({ ...market.current, chartLoading: false, error: null }),
 }));
 vi.mock('../../contexts/CurrencyContext', () => ({
   useCurrencyContext: () => [
@@ -37,7 +40,10 @@ const base = {
   positions: [],
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  market.current = { chartData: [], coinInfo: null };
+});
 
 describe('useSkrScreenLogic', () => {
   it('is ready with the facts once the position arrives', async () => {
@@ -46,7 +52,7 @@ describe('useSkrScreenLogic', () => {
     const { result } = renderHook(() => useSkrScreenLogic({ publicKey: 'Owner' }), { wrapper });
 
     await waitFor(() => expect(result.current.state).toBe('ready'));
-    expect(result.current.summary[0]).toMatchObject({ key: 'liquid', value: '1 SKR' });
+    expect(result.current.view?.available.value).toBe('1.00');
   });
 
   it('is empty without any SKR', async () => {
@@ -63,5 +69,31 @@ describe('useSkrScreenLogic', () => {
     const { result } = renderHook(() => useSkrScreenLogic({ publicKey: 'Owner' }), { wrapper });
 
     await waitFor(() => expect(result.current.state).toBe('error'));
+  });
+
+  it("reads SKR's price, its change over the chart's period, and its supply", async () => {
+    vi.mocked(getSkrStake).mockResolvedValue({ ...base, liquid: '1000000' });
+    market.current = {
+      chartData: [
+        { timestamp: 1, price: 0.02 },
+        { timestamp: 2, price: 0.019 },
+      ],
+      coinInfo: {
+        id: 'seeker',
+        image: 'https://img/skr.png',
+        marketData: { currentPrice: 0.019, circulatingSupply: 7.1e9, totalSupply: 10.6e9 },
+      },
+    };
+
+    const { result } = renderHook(() => useSkrScreenLogic({ publicKey: 'Owner' }), { wrapper });
+
+    await waitFor(() => expect(result.current.state).toBe('ready'));
+    expect(result.current.market).toEqual({
+      logo: 'https://img/skr.png',
+      price: '$0.019',
+      change: { label: '−5.00% · 1M', tone: 'negative' },
+      totalSupply: 10.6e9,
+      circulatingSupply: 7.1e9,
+    });
   });
 });

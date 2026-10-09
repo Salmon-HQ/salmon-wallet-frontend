@@ -81,7 +81,13 @@ import { fileURLToPath } from 'node:url';
 // password), so its action row is now the same JSX as the DOM `ConfirmDialog`:
 // 27 lines of buttons, no logic — the gate's state is `usePasswordConfirm` in
 // shared. One more import line on the Power-up detail twins (the titled card).
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2411;
+// 2026-10-09: 2411 → 2420. Three new kit twin pairs (`Pill`, `StatTile`,
+// `ProgressBar`) and three more kit imports on `BlockList`: the same imports
+// on two platforms, no logic. Measured after hoisting the block renderer
+// itself into shared (`createBlockList`) and the tone, size and percent
+// tables into the contracts (`pillColorsFor`, `statInkFor`, `STAT_SIZES`,
+// `progressPercent`), which took the new twins from 2488 to 2420.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2420;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {

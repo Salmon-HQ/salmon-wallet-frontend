@@ -139,12 +139,15 @@ import type { PowerupIconName } from '@salmon/shared';
 import type { Icon as IconComponent } from 'phosphor-react-native';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
+import { GiftIcon } from 'phosphor-react-native/src/icons/Gift';
 import { ImageIcon } from 'phosphor-react-native/src/icons/Image';
 import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
 import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
+import { PercentIcon } from 'phosphor-react-native/src/icons/Percent';
 import { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode';
 import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 import { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+import { TrendDownIcon } from 'phosphor-react-native/src/icons/TrendDown';
 import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
 
 /**
@@ -156,11 +159,14 @@ import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
 export const powerupIcons: Record<PowerupIconName, IconComponent> = {
   ArrowsLeftRight: ArrowsLeftRightIcon,
   ChartPie: ChartPieIcon,
+  Gift: GiftIcon,
   Image: ImageIcon,
   Lightning: LightningIcon,
   PencilSimple: PencilSimpleIcon,
+  Percent: PercentIcon,
   QrCode: QrCodeIcon,
   ShieldCheck: ShieldCheckIcon,
   Stack: StackIcon,
+  TrendDown: TrendDownIcon,
   TrendUp: TrendUpIcon,
 };

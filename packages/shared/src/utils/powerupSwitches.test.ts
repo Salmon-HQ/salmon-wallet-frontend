@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePowerupSwitches, toPowerupAllowlist } from './powerupSwitches';
+import { allowlistForDevice, parsePowerupSwitches, toPowerupAllowlist } from './powerupSwitches';
 
 describe('parsePowerupSwitches — fail closed', () => {
   it('reads a well-formed list, keeping a reason only on a disabled entry', () => {
@@ -61,5 +61,30 @@ describe('toPowerupAllowlist', () => {
       disabled: { other: 'region' },
       providers: { swap: 'jupiter' },
     });
+  });
+});
+
+describe('allowlistForDevice', () => {
+  const allowlist = toPowerupAllowlist([
+    { id: 'skr', enabled: true, provider: 'x' },
+    { id: 'swap', enabled: true },
+    { id: 'memo', enabled: false, reason: 'maintenance' },
+  ]);
+  const powerups = [
+    { id: 'skr', requires: ['seed-vault'] as const },
+    { id: 'swap' },
+    { id: 'memo', requires: ['seed-vault'] as const },
+  ];
+
+  it('drops a Powerup the device cannot run, switched on or off', () => {
+    const gated = allowlistForDevice(allowlist, powerups, []);
+
+    expect(gated.enabled).toEqual(['swap']);
+    expect(gated.disabled).toEqual({});
+    expect(gated.providers).toEqual({});
+  });
+
+  it('keeps it on a device that has what it needs', () => {
+    expect(allowlistForDevice(allowlist, powerups, ['seed-vault'])).toEqual(allowlist);
   });
 });

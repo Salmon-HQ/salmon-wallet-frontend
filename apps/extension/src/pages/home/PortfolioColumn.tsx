@@ -27,6 +27,8 @@ interface PortfolioColumnProps {
   /** What is staked, under the tokens (spec 038). */
   stakingTokens: Token[];
   onStakingPress: (token: Token) => void;
+  /** False for a staking row that opens nothing here (spec 040). */
+  canStakingPress?: (token: Token) => boolean;
   onRetry: () => void;
   bitcoin: HomeBitcoinMarketData;
   bitcoinChartPeriod: PriceChartPeriod;
@@ -49,6 +51,7 @@ export function PortfolioColumn({
   onTokenPress,
   stakingTokens,
   onStakingPress,
+  canStakingPress,
   onRetry,
   bitcoin,
   bitcoinChartPeriod,
@@ -57,7 +60,7 @@ export function PortfolioColumn({
 }: PortfolioColumnProps): React.ReactElement {
   const { t } = useTranslation();
   const stakingBlocks = stakingSectionBlocks(
-    { tokens: stakingTokens, onPress: onStakingPress, hiddenBalance },
+    { tokens: stakingTokens, onPress: onStakingPress, canPress: canStakingPress, hiddenBalance },
     t
   );
 

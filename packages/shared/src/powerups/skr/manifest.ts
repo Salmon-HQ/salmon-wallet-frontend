@@ -21,4 +21,6 @@ export const skrManifest = {
   programs: [],
   locales: 'skr',
   entries: { tab: 'skr' },
+  // Offered on Solana Mobile phones only (owner, 2026-10-09).
+  requires: ['seed-vault'],
 } as const satisfies PowerupManifest;

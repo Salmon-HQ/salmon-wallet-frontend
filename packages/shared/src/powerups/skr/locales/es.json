@@ -9,22 +9,7 @@
       "rewards": "Seguir las recompensas de cada período"
     }
   },
-  "facts": {
-    "title": "Tu SKR",
-    "liquid": "Disponible",
-    "staked": "En staking",
-    "earned": "Ganado",
-    "apy": "Tasa anual",
-    "guardian": "Guardián",
-    "commission": "Comisión del guardián",
-    "unstaking": "Retirándose",
-    "withdrawable": "Disponible desde",
-    "since": "En staking hace",
-    "days_one": "{{count}} día",
-    "days_other": "{{count}} días"
-  },
   "history": {
-    "title": "Recompensas",
     "empty": "Tu historial de recompensas empieza a armarse hoy: Salmon lo registra desde ahora. Lo que ganaste hasta acá está arriba."
   },
   "empty": {
@@ -34,7 +19,43 @@
   "error": {
     "title": "No se pudo cargar tu SKR."
   },
-  "price": {
-    "title": "Precio"
+  "header": {
+    "subtitle": "Posición en staking"
+  },
+  "apy": "{{value}} APY",
+  "stake": {
+    "title": "Mi stake",
+    "earned": "Ganado",
+    "available": "Disponible",
+    "unstaking": "Retirándose",
+    "withdrawable": "Retirable desde"
+  },
+  "guardian": {
+    "commission": "{{value}} de comisión",
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "daily": {
+    "title": "Diario",
+    "estimate": "Estimado",
+    "perDay": "Por día",
+    "stakedFor": "En staking hace",
+    "days_one": "día",
+    "days_other": "días"
+  },
+  "rewards": {
+    "title": "Recompensas",
+    "recorded": "Registrado"
+  },
+  "about": {
+    "title": "Sobre SKR",
+    "price": "Precio",
+    "totalSupply": "Supply total",
+    "circulating": "Circulante",
+    "staked": "En staking",
+    "ofCirculating": "Del circulante",
+    "stakedLegend": "En staking {{value}}",
+    "liquidLegend": "Líquido {{value}}",
+    "shareLabel": "Parte del SKR circulante que está en staking"
   }
 }

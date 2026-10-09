@@ -12,8 +12,15 @@ export function stakingSectionBlocks(
   {
     tokens,
     onPress,
+    canPress,
     hiddenBalance,
-  }: { tokens: Token[]; onPress?: (token: Token) => void; hiddenBalance?: boolean },
+  }: {
+    tokens: Token[];
+    onPress?: (token: Token) => void;
+    /** False for a row that opens nothing on this device (spec 040). */
+    canPress?: (token: Token) => boolean;
+    hiddenBalance?: boolean;
+  },
   t: Translate
 ): KitBlock[] {
   if (tokens.length === 0) return [];
@@ -25,7 +32,7 @@ export function stakingSectionBlocks(
       props: {
         testID: `staking-row-${token.address}`,
         token,
-        onPress,
+        onPress: canPress?.(token) === false ? undefined : onPress,
         hiddenBalance,
         blockchain: 'solana',
       },

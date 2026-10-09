@@ -9,22 +9,7 @@
       "rewards": "Follow the rewards of each period"
     }
   },
-  "facts": {
-    "title": "Your SKR",
-    "liquid": "Available",
-    "staked": "Staked",
-    "earned": "Earned",
-    "apy": "Annual rate",
-    "guardian": "Guardian",
-    "commission": "Guardian commission",
-    "unstaking": "Unstaking",
-    "withdrawable": "Withdrawable from",
-    "since": "Staked for",
-    "days_one": "{{count}} day",
-    "days_other": "{{count}} days"
-  },
   "history": {
-    "title": "Rewards",
     "empty": "Your reward history starts building today: Salmon records it from now on. What you have earned so far is above."
   },
   "empty": {
@@ -34,7 +19,43 @@
   "error": {
     "title": "Could not load your SKR."
   },
-  "price": {
-    "title": "Price"
+  "header": {
+    "subtitle": "Staking position"
+  },
+  "apy": "{{value}} APY",
+  "stake": {
+    "title": "My stake",
+    "earned": "Earned",
+    "available": "Available",
+    "unstaking": "Unstaking",
+    "withdrawable": "Withdrawable from"
+  },
+  "guardian": {
+    "commission": "{{value}} commission",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "daily": {
+    "title": "Daily",
+    "estimate": "Estimate",
+    "perDay": "Per day",
+    "stakedFor": "Staked for",
+    "days_one": "day",
+    "days_other": "days"
+  },
+  "rewards": {
+    "title": "Rewards",
+    "recorded": "Recorded"
+  },
+  "about": {
+    "title": "About SKR",
+    "price": "Price",
+    "totalSupply": "Total supply",
+    "circulating": "Circulating",
+    "staked": "Staked",
+    "ofCirculating": "Of circulating",
+    "stakedLegend": "Staked {{value}}",
+    "liquidLegend": "Liquid {{value}}",
+    "shareLabel": "Share of circulating SKR that is staked"
   }
 }

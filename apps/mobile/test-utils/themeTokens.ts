@@ -73,3 +73,14 @@ export { valueInkFor } from '../../../packages/shared/src/types/ui/key-value-row
 // UnderlineTabs decides its edge fades with this pure helper; every screen
 // that carries a tab row needs it present in the mock.
 export { overflowEdges } from '../../../packages/shared/src/utils/overflowEdges';
+// Pill / StatTile tone maps (spec 040), pure functions of the tokens above.
+export { pillColorsFor } from '../../../packages/shared/src/types/ui/pill';
+export {
+  STAT_MIN_FONT_SCALE,
+  STAT_SIZES,
+  statInkFor,
+} from '../../../packages/shared/src/types/ui/stat-tile';
+export { progressPercent } from '../../../packages/shared/src/types/ui/progress-bar';
+// The kit's block renderer (spec 040): screens build their BlockList from it
+// at import time, so every mock of the barrel needs it.
+export { createBlockList } from '../../../packages/shared/src/kit/createBlockList';

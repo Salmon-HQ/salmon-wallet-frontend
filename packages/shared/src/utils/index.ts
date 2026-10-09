@@ -420,8 +420,9 @@ export {
   EMPTY_POWERUP_ALLOWLIST,
   parsePowerupSwitches,
   toPowerupAllowlist,
+  allowlistForDevice,
 } from './powerupSwitches';
-export type { PowerupAllowlist } from './powerupSwitches';
+export type { DeviceCapability, PowerupAllowlist } from './powerupSwitches';
 export { powerupFactRows } from './powerupFacts';
 export { overflowEdges } from './overflowEdges';
 export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';

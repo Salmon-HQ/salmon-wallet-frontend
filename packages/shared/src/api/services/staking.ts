@@ -59,6 +59,8 @@ export interface SkrStakeResponse {
   usdPrice: number | null;
   /** SKR outside staking, in base units. */
   liquid: string;
+  /** Everything staked in the program, base units; absent from an older backend. */
+  totalStaked?: string;
   positions: SkrPosition[];
 }
 

@@ -17,6 +17,7 @@ const response: SkrStakeResponse = {
   apy: 0.151,
   usdPrice: 0.01622,
   liquid: '0',
+  totalStaked: '5026970696857042',
   positions: [
     {
       address: '7yFnVkeEk4Qd6jgGsjrU4rhYDd7UQ985ah1VgWNg8m58',
@@ -37,29 +38,54 @@ const response: SkrStakeResponse = {
     },
   ],
 };
-const view = (r: SkrStakeResponse) => skrView(r, { t, formatValue, formatDate, now: NOW });
+const view = (r: SkrStakeResponse) =>
+  skrView(r, { t, formatValue, formatDate, now: NOW, locale: 'en' });
 
 describe('skrView', () => {
-  it("lays out the wallet's SKR: liquid, staked, earned, rate, guardian and how long", () => {
-    expect(view(response).summary).toEqual([
-      { key: 'liquid', label: 'skr.facts.liquid', value: '0 SKR' },
-      { key: 'staked', label: 'skr.facts.staked', value: '46045.7 SKR · $746.86' },
-      { key: 'earned', label: 'skr.facts.earned', value: '+6045.71 SKR · $98.06' },
-      { key: 'apy', label: 'skr.facts.apy', value: '15.10%' },
-      { key: 'guardian', label: 'skr.facts.guardian', value: 'Solana Mobile Guardian' },
-      { key: 'commission', label: 'skr.facts.commission', value: '0%' },
-      { key: 'since', label: 'skr.facts.since', value: 'skr.facts.days:{"count":260}' },
+  it('gives the stake card its figures: staked, earned, available, each with its value', () => {
+    const v = view(response);
+
+    expect(v.staked).toEqual({ value: '46,045.71', caption: '≈ $746.86' });
+    expect(v.earned).toEqual({ value: '+6,045.71', caption: '≈ $98.06' });
+    expect(v.available).toEqual({ value: '0.00', caption: '≈ $0.00' });
+    expect(v.apy).toBe('15.10%');
+  });
+
+  it('names each guardian with its commission and status', () => {
+    expect(view(response).guardians).toEqual([
+      {
+        key: 'DPJ58trLsF9yPrBa2pk6UaRkvqW8hWUYjawe788WBuqr',
+        name: 'Solana Mobile Guardian',
+        commission: 'skr.guardian.commission:{"value":"0%"}',
+        active: true,
+      },
     ]);
   });
 
-  it('lists what each recorded period earned, newest first', () => {
-    expect(view(response).history).toEqual([
-      { key: 'h-1791453600000', label: '2026-10-08', value: '+41 SKR · $0.67' },
-      { key: 'h-1791280800000', label: '2026-10-06', value: '+41.09 SKR · $0.67' },
+  it('estimates the SKR earned per day from the rate, and counts the days staked', () => {
+    const v = view(response);
+
+    // 46,045.707 × 0.151 / 365 = 19.049…
+    expect(v.perDay).toEqual({ value: '≈ +19.05', caption: '≈ $0.31' });
+    expect(v.days).toBe(260);
+  });
+
+  it('lists what each recorded period earned, newest first, and the total', () => {
+    const v = view(response);
+
+    expect(v.earnedTotal).toBe('+6,045.71 SKR');
+    expect(v.history).toEqual([
+      { key: 'h-1791453600000', date: '2026-10-08', value: '+41.00 SKR', caption: '$0.67' },
+      { key: 'h-1791280800000', date: '2026-10-06', value: '+41.09 SKR', caption: '$0.67' },
     ]);
   });
 
-  it('says when an unstake can be withdrawn', () => {
+  it("reads the program's total staked in whole SKR", () => {
+    expect(view(response).totalStaked).toBeCloseTo(5026970696.857042, 3);
+    expect(view({ ...response, totalStaked: undefined }).totalStaked).toBeNull();
+  });
+
+  it('says how much is unstaking and when it can be withdrawn', () => {
     const unstaking = {
       ...response,
       positions: [
@@ -70,16 +96,11 @@ describe('skrView', () => {
       ],
     };
 
-    expect(view(unstaking).summary).toEqual(
-      expect.arrayContaining([
-        { key: 'unstaking', label: 'skr.facts.unstaking', value: '5 SKR' },
-        { key: 'withdrawable', label: 'skr.facts.withdrawable', value: '2026-10-10' },
-      ])
-    );
+    expect(view(unstaking).unstaking).toEqual({ value: '5.00', withdrawable: '2026-10-10' });
   });
 
-  it('leaves out what is not known: rate, start, price', () => {
-    const unknown = {
+  it('leaves out what is not known: rate, start, price, guardian name', () => {
+    const v = view({
       ...response,
       apy: null,
       usdPrice: null,
@@ -87,16 +108,16 @@ describe('skrView', () => {
         {
           ...response.positions[0]!,
           stakedSince: null,
-          guardian: { ...response.positions[0]!.guardian, name: null },
+          guardian: { ...response.positions[0]!.guardian, name: null, commissionBps: null },
         },
       ],
-    };
-    const keys = view(unknown).summary.map((row) => row.key);
+    });
 
-    expect(keys).not.toContain('apy');
-    expect(keys).not.toContain('since');
-    expect(view(unknown).summary.find((r) => r.key === 'staked')!.value).toBe('46045.7 SKR');
-    expect(view(unknown).summary.find((r) => r.key === 'guardian')!.value).toBe('DPJ5...Buqr');
+    expect(v.apy).toBeNull();
+    expect(v.perDay).toBeNull();
+    expect(v.days).toBeNull();
+    expect(v.staked).toEqual({ value: '46,045.71' });
+    expect(v.guardians[0]).toMatchObject({ name: 'DPJ5...Buqr', commission: null });
   });
 
   it('is empty without SKR', () => {

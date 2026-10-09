@@ -66,6 +66,7 @@ import {
   type Token,
   useFocusModePhase,
   useNetworkPowerups,
+  allowlistForDevice,
   useHomeSubTabContent,
   fontFamilyNative,
   fontSize,
@@ -102,6 +103,7 @@ import {
 } from '../../../src/powerups';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
+import { useDeviceCapabilities } from '../../../src/seed-vault/useDeviceCapabilities';
 import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
 import { TOP_FADE_SCROLL_RANGE, stylesFor } from '../../../src/screens/home/homeStyles';
 import { useHomeBitcoinMarket } from '../../../src/screens/home/useHomeBitcoinMarket';
@@ -370,7 +372,14 @@ export default function HomeScreen() {
   // The backend's kill switch for the network the account stands on (spec
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
-  const powerupAllowlist = useNetworkPowerups(networkId ?? null);
+  // A Powerup that needs more than a network (SKR: Seed Vault) is left out
+  // on a device without it (spec 040).
+  const networkAllowlist = useNetworkPowerups(networkId ?? null);
+  const deviceCapabilities = useDeviceCapabilities();
+  const powerupAllowlist = useMemo(
+    () => allowlistForDevice(networkAllowlist, POWERUPS, deviceCapabilities),
+    [networkAllowlist, deviceCapabilities]
+  );
   const powerupTabs = useHomePowerupTabs({
     installed,
     powerups: POWERUPS,
@@ -606,8 +615,14 @@ export default function HomeScreen() {
     },
     [router, setActiveSubTab, skrTabOffered, openCatalogAt]
   );
+  const skrOffered = powerupAllowlist.enabled.includes('skr');
   const stakingBlocks = stakingSectionBlocks(
-    { tokens: staking.tokens, onPress: handleStakingPress, hiddenBalance },
+    {
+      tokens: staking.tokens,
+      onPress: handleStakingPress,
+      canPress: (token) => token.address !== STAKED_SKR_KEY || skrOffered,
+      hiddenBalance,
+    },
     t
   );
 

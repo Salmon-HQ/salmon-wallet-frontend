@@ -14,10 +14,13 @@
 export type PowerupIconName =
   | 'ArrowsLeftRight'
   | 'ChartPie'
+  | 'Gift'
   | 'Image'
   | 'Lightning'
   | 'PencilSimple'
+  | 'Percent'
   | 'QrCode'
   | 'ShieldCheck'
   | 'Stack'
+  | 'TrendDown'
   | 'TrendUp';

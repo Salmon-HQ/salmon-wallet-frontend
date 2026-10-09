@@ -38,6 +38,8 @@ import {
   useFocusModePhase,
   type FocusModePhase,
   useNetworkPowerups,
+  allowlistForDevice,
+  type DeviceCapability,
   useHomeSubTabContent,
   isSignableAccount,
 } from '@salmon/shared';
@@ -108,6 +110,9 @@ interface HomePageProps {
  * Home page component displayed when wallet is unlocked.
  * Shows account info and provides access to main wallet features.
  */
+/** The extension runs on no phone: it has no device capability to offer. */
+const NO_DEVICE_CAPABILITIES: readonly DeviceCapability[] = [];
+
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
@@ -427,7 +432,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // The backend's kill switch for the network the account stands on (spec
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
-  const powerupAllowlist = useNetworkPowerups(state.networkId ?? null);
+  // A Powerup that needs more than a network (SKR: Seed Vault, a Solana
+  // Mobile phone) is never offered here (spec 040).
+  const networkAllowlist = useNetworkPowerups(state.networkId ?? null);
+  const powerupAllowlist = useMemo(
+    () => allowlistForDevice(networkAllowlist, POWERUPS, NO_DEVICE_CAPABILITIES),
+    [networkAllowlist]
+  );
   const powerupTabs = useHomePowerupTabs({
     installed,
     powerups: POWERUPS,
@@ -640,6 +651,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       }
     },
     [setActiveSubTab, skrTabOffered, openCatalogAt]
+  );
+
+  const skrOffered = powerupAllowlist.enabled.includes('skr');
+  const canStakingPress = useCallback(
+    (token: Token) => token.address !== STAKED_SKR_KEY || skrOffered,
+    [skrOffered]
   );
 
   const activePowerupDisabledReason = powerupTabs.find(
@@ -945,6 +962,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       onTokenPress={handleTokenPress}
                       stakingTokens={staking.tokens}
                       onStakingPress={handleStakingPress}
+                      canStakingPress={canStakingPress}
                       onRetry={refresh}
                       bitcoin={bitcoin}
                       bitcoinChartPeriod={bitcoinChartPeriod}

@@ -200,6 +200,7 @@ jest.mock('@salmon/shared', () => ({
     .useHomePowerupsCatalog,
   // Nothing installed: the Powerup tabs are their own suite.
   useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
+  allowlistForDevice: (allowlist: unknown) => allowlist,
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,

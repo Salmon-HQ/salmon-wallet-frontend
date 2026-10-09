@@ -97,6 +97,7 @@ jest.mock('@salmon/shared', () => ({
   useHomeShell: jest.requireActual('@salmon/shared/src/hooks/useHomeShell').useHomeShell,
   // Nothing installed: the Powerup tabs are their own suite.
   useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
+  allowlistForDevice: (allowlist: unknown) => allowlist,
   useInstalledPowerups: () => ({
     installed: [],
     isInstalled: () => false,

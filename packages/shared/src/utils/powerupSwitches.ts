@@ -65,3 +65,36 @@ export function toPowerupAllowlist(switches: readonly NetworkPowerupSwitch[]): P
   }
   return { enabled, disabled, providers };
 }
+
+/**
+ * Something a Powerup needs from the device, beyond the network. `seed-vault`:
+ * a secure Seed Vault, which only Solana Mobile phones (Seeker, Saga) carry.
+ */
+export type DeviceCapability = 'seed-vault';
+
+/**
+ * The allowlist narrowed to what this device can run (spec 040): a Powerup
+ * whose manifest `requires` a capability the device lacks is neither offered
+ * nor listed as switched off, so the catalogue, the tabs and install all
+ * leave it out. `powerups` is the platform's registry, passed in so this core
+ * file never imports a Powerup.
+ */
+export function allowlistForDevice(
+  allowlist: PowerupAllowlist,
+  powerups: readonly { id: string; requires?: readonly DeviceCapability[] }[],
+  capabilities: readonly DeviceCapability[]
+): PowerupAllowlist {
+  const blocked = new Set(
+    powerups
+      .filter((entry) => entry.requires?.some((need) => !capabilities.includes(need)))
+      .map((entry) => entry.id)
+  );
+  if (blocked.size === 0) return allowlist;
+  const keep = <T>(record: Readonly<Record<string, T>>) =>
+    Object.fromEntries(Object.entries(record).filter(([id]) => !blocked.has(id)));
+  return {
+    enabled: allowlist.enabled.filter((id) => !blocked.has(id)),
+    disabled: keep(allowlist.disabled),
+    providers: keep(allowlist.providers),
+  };
+}

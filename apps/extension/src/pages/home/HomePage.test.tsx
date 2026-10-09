@@ -312,6 +312,7 @@ vi.mock('@salmon/shared', async () => {
     useHomePowerupTabs: homePowerups.useHomePowerupTabs,
     useHomePowerupsCatalog: homePowerups.useHomePowerupsCatalog,
     useNetworkPowerups: () => ({ enabled: ['memo'], disabled: {}, providers: {} }),
+    allowlistForDevice: (allowlist: unknown) => allowlist,
     useInstalledPowerups: () => ({
       installed: [],
       isInstalled: () => false,

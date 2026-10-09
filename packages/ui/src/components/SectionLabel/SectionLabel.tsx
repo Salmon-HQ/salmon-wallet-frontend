@@ -17,7 +17,14 @@
  * platform.
  */
 import React from 'react';
-import { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight } from '@salmon/shared';
+import {
+  fontFamily,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  lineHeight,
+  spacing,
+} from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import type { SectionLabelProps, SectionLabelVariant } from './types';
@@ -51,19 +58,54 @@ const VARIANTS: Record<SectionLabelVariant, React.CSSProperties> = {
   },
 };
 
-export function SectionLabel({ children, variant, style, className, testID }: SectionLabelProps) {
+export function SectionLabel({
+  children,
+  variant,
+  trailing,
+  trailingTone = 'secondary',
+  style,
+  className,
+  testID,
+}: SectionLabelProps) {
   const t = useSemantic();
   const ink = variant === 'title' ? t.text.primary : t.text.secondary;
-
-  return (
+  const heading = (
     <span
       data-testid={testID}
       role="heading"
       aria-level={LEVELS[variant]}
-      className={className}
-      style={{ ...VARIANTS[variant], color: ink, margin: 0, ...style }}
+      className={trailing ? undefined : className}
+      style={{ ...VARIANTS[variant], color: ink, margin: 0, ...(trailing ? null : style) }}
     >
       {variant === 'caps' ? children.toUpperCase() : children}
     </span>
+  );
+  if (!trailing) return heading;
+
+  return (
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: spacing.md,
+        ...style,
+      }}
+    >
+      {heading}
+      <span
+        style={{
+          flexShrink: 0,
+          fontFamily: fontFamily.sans,
+          fontWeight: fontWeight.semibold,
+          fontSize: fontSize.caption,
+          color: trailingTone === 'positive' ? t.change.positive : t.text.secondary,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {trailing}
+      </span>
+    </div>
   );
 }

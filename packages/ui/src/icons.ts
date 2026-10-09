@@ -32,12 +32,15 @@ import type { PowerupIconName } from '@salmon/shared';
 import type { Icon as IconComponent } from '@phosphor-icons/react/dist/lib/types';
 import { ArrowsLeftRightIcon } from '@phosphor-icons/react/dist/csr/ArrowsLeftRight';
 import { ChartPieIcon } from '@phosphor-icons/react/dist/csr/ChartPie';
+import { GiftIcon } from '@phosphor-icons/react/dist/csr/Gift';
 import { ImageIcon } from '@phosphor-icons/react/dist/csr/Image';
 import { LightningIcon } from '@phosphor-icons/react/dist/csr/Lightning';
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
+import { PercentIcon } from '@phosphor-icons/react/dist/csr/Percent';
 import { QrCodeIcon } from '@phosphor-icons/react/dist/csr/QrCode';
 import { ShieldCheckIcon } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
+import { TrendDownIcon } from '@phosphor-icons/react/dist/csr/TrendDown';
 import { TrendUpIcon } from '@phosphor-icons/react/dist/csr/TrendUp';
 import type { ReactNode } from 'react';
 import { IconContext } from '@phosphor-icons/react/dist/lib/context';
@@ -190,11 +193,14 @@ const ICON_DEFAULTS = { size: iconSize.lg, weight: 'regular' } as const;
 export const powerupIcons: Record<PowerupIconName, IconComponent> = {
   ArrowsLeftRight: ArrowsLeftRightIcon,
   ChartPie: ChartPieIcon,
+  Gift: GiftIcon,
   Image: ImageIcon,
   Lightning: LightningIcon,
   PencilSimple: PencilSimpleIcon,
+  Percent: PercentIcon,
   QrCode: QrCodeIcon,
   ShieldCheck: ShieldCheckIcon,
   Stack: StackIcon,
+  TrendDown: TrendDownIcon,
   TrendUp: TrendUpIcon,
 };

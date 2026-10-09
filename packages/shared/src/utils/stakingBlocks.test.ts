@@ -27,6 +27,14 @@ describe('stakingSectionBlocks', () => {
   it('is nothing when nothing is staked', () => {
     expect(stakingSectionBlocks({ tokens: [] }, t)).toEqual([]);
   });
+
+  it('leaves a row that leads nowhere on this device without a press', () => {
+    const blocks = stakingSectionBlocks(
+      { tokens: [token], onPress: vi.fn(), canPress: () => false },
+      t
+    );
+    expect(blocks[1]).toMatchObject({ props: { onPress: undefined } });
+  });
 });
 
 describe('stakeAccountsBlocks', () => {
