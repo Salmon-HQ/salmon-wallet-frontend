@@ -15,7 +15,13 @@ const leaf = (name: string) => () => {
 jest.mock('../FactsCard', () => leaf('FactsCard')());
 jest.mock('../PriceChart', () => {
   const { Text } = jest.requireActual('react-native');
-  return { PriceChart: () => <Text testID="b-chart">PriceChart</Text> };
+  return {
+    PriceChart: ({ bleed }: { bleed?: boolean }) => (
+      <Text testID="b-chart" accessibilityHint={bleed ? 'bleed' : 'inset'}>
+        PriceChart
+      </Text>
+    ),
+  };
 });
 jest.mock('../SectionLabel', () => leaf('SectionLabel')());
 jest.mock('../SkeletonRow', () => leaf('SkeletonRow')());
@@ -84,6 +90,8 @@ describe('BlockList', () => {
     expect(screen.getByTestId('b-state').props.children).toBe('StateBlock');
     expect(screen.getByTestId('b-skeleton').props.children).toBe('SkeletonRow');
     expect(screen.getByTestId('b-chart').props.children).toBe('PriceChart');
+    // The token screen's chart: off the left edge, a gutter short of the right.
+    expect(screen.getByTestId('b-chart').props.accessibilityHint).toBe('bleed');
   });
 });
 

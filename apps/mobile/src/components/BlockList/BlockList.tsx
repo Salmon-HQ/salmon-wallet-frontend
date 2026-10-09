@@ -13,7 +13,7 @@ import { FactsCard } from '../FactsCard';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
 import { Pill } from '../Pill';
-import { PriceChart } from '../PriceChart';
+import { PriceChart, type PriceChartProps } from '../PriceChart';
 import { ProgressBar } from '../ProgressBar';
 import { SectionLabel } from '../SectionLabel';
 import { SkeletonRow } from '../SkeletonRow';
@@ -26,6 +26,12 @@ import { useThemedStyles } from '../../theme/useThemedStyles';
 
 function Divider() {
   return <View style={useThemedStyles(stylesFor).divider} />;
+}
+
+// A chart in a block list is the token screen's: off the left edge of the
+// phone, stopping a gutter short of the right so the pulse never touches it.
+function BleedingPriceChart(props: PriceChartProps) {
+  return <PriceChart {...props} bleed />;
 }
 
 function Column({ testID, children }: { testID?: string; children: React.ReactNode }) {
@@ -42,7 +48,7 @@ export const BlockList = createBlockList({
   IconBubble,
   ListRow,
   Pill,
-  PriceChart,
+  PriceChart: BleedingPriceChart,
   ProgressBar,
   SectionLabel,
   SkeletonRow,
