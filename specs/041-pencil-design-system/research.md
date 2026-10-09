@@ -176,15 +176,14 @@ are read from the repo or from Pencil's own `read_skill` guides.
 
 ## R10 — Where the tooling lives
 
-- **Default**: in the private SOT, `03-dev/Design System/tools/` (token
-  exporter, builder scripts, lint, audit capture scripts, pen wrapper). The
-  scripts take the frontend checkout path as an argument and import the
-  theme and the e2e fixtures from there. Nothing is added to this public repo
-  beyond the spec, and the tooling can reference unreleased screens.
-- **Alternative**: commit the exporter and capture scripts here
-  (`scripts/`, `apps/extension/.playwright/scripts/` — `store-shots.mjs` is a
-  precedent) so CI could later check token drift. Left to the owner (plan
-  §Decisions).
+- **Decision (owner, 2026-10-09)**: in the private SOT,
+  `03-dev/Design System/tools/` (token exporter, builder scripts, lint, audit
+  capture scripts, pen wrapper). The scripts take the frontend checkout path
+  as an argument and import the theme and the e2e fixtures from there.
+  Nothing is added to this public repo beyond the spec, and the tooling can
+  reference unreleased screens.
+- **Rejected**: committing the exporter and capture scripts here so CI could
+  check token drift — possible later, not part of this feature.
 
 ## R11 — Existing drawings
 
@@ -192,4 +191,6 @@ are read from the repo or from Pencil's own `read_skill` guides.
   structure-only per the owner's 2026-09 rule) and the SOT brand-guidelines `.pen`
   (brand guidelines) exist. Neither is the source for this feature: the code
   baseline (spec FR-018) is. `product.pen` may be used as a structural
-  reference when reading a flow; its colours are never copied.
+  reference when reading a flow; its colours are never copied. Owner decision
+  (2026-10-09): once the 041 flows replace it and the owner has seen them, it
+  is moved to the macOS Trash (never `rm`).

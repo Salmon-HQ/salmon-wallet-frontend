@@ -123,22 +123,18 @@ folder, so `Salmon.lib.pen` and `Salmon Screens.pen` sit side by side and the
 import path is the stable relative `Salmon.lib.pen` (R1). This repo carries
 only the spec set.
 
-## Decisions for the owner
+## Owner decisions (resolved 2026-10-09)
 
-Defaults are in force; a different answer changes only the named phase.
-
-- **D1 — Extension surface.** The spec said "extension popup"; the toolbar
-  actually opens the side panel, and `popup.html` is only the dApp-approval
-  window (R5). The plan draws _Side panel_ + _Approval window_ + extension
-  sheet (spec FR-009 updated). Confirm. (Phase 6)
-- **D2 — Where the tooling lives.** Default: SOT `tools/` (private, can
-  reference unreleased UI, no public-repo churn). Alternative: commit the token
-  exporter and capture scripts to this repo so CI can later flag token drift
-  between code and design. (Phases 1, 3, 4)
-- **D3 — `product.pen` (outside any repo).** The redesign drawings (33 screens) are
-  outside any repo. Default: leave them where they are and use them only as a
-  structural reference (R11). Alternative: move them into the SOT next to the
-  new files, or mark them superseded once the flows exist.
+- **D1 — Extension surface.** Confirmed: the extension templates are _Side
+  panel_ (what the toolbar opens) + _Approval window_ (`popup.html`, dApp
+  approvals only) + extension sheet (R5; spec FR-009). (Phase 6)
+- **D2 — Where the tooling lives.** All tooling lives in the SOT,
+  `03-dev/Design System/tools/`; nothing but the spec set is committed to this
+  repo (R10). (Phases 1, 3, 4)
+- **D3 — `product.pen`.** Used as a structural reference while building, never
+  as a colour source (R11). When the 041 work is finished it is deleted:
+  moved to the macOS Trash, never removed with `rm`, and only after the flows
+  that replace it exist and the owner has seen them. That is the last task.
 
 ## Risks
 
