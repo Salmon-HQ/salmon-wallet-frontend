@@ -60,6 +60,13 @@ export function useStaking({ publicKey, networkId, logos }: UseStakingParams): U
 }
 
 /**
+ * A wallet's total with what it has staked: the one sum Home's balance and
+ * each card of the wallets screen (`useWalletTotals`) show, so they agree.
+ */
+export const withStakes = (usdTotal: number | undefined, stakedUsd: number) =>
+  usdTotal === undefined ? undefined : usdTotal + stakedUsd;
+
+/**
  * Home's staking, once for both Homes: the Staking section's rows, and the
  * total with what is staked added. Logos come from the liquid tokens.
  */
@@ -79,7 +86,7 @@ export function useHomeStaking({
   const staking = useStaking({ publicKey, networkId, logos });
   return {
     tokens: staking.tokens,
-    totalWithStakes: usdTotal === undefined ? undefined : usdTotal + staking.stakedUsd,
+    totalWithStakes: withStakes(usdTotal, staking.stakedUsd),
   };
 }
 

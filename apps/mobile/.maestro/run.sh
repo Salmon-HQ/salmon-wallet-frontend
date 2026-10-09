@@ -8,6 +8,7 @@
 #   ./run.sh flows/smoke/settings/about.yaml
 #   ./run.sh --device emulator-5554 suites/smoke.yaml
 #   ./run.sh --shard-split=2 suites/smoke.yaml     # split across 2 devices
+#   ./run.sh --release flows/...                    # an installed release APK: no Metro
 #
 # Any flag it does not recognise is forwarded to `maestro test` untouched.
 set -euo pipefail
@@ -62,11 +63,13 @@ done
 
 # ----------------------------------------------------------------- device ----
 DEVICE=""
+RELEASE=0
 PASSTHROUGH=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --device|--udid) DEVICE="$2"; shift 2 ;;
     --device=*|--udid=*) DEVICE="${1#*=}"; shift ;;
+    --release) RELEASE=1; shift ;;
     *) PASSTHROUGH+=("$1"); shift ;;
   esac
 done
@@ -92,6 +95,9 @@ if [[ $IS_ANDROID -eq 1 ]] && command -v adb >/dev/null 2>&1; then
   else
     warn "adb reverse failed; the app may not reach the backend from the emulator"
   fi
+  # Gboard's "Try out your stylus" card opens over the app on the first text
+  # field and hides every selector under it.
+  "${ADB[@]}" shell settings put secure stylus_handwriting_enabled 0 >/dev/null 2>&1 || true
 fi
 
 # The iOS simulator keyboard drops characters when the recover grid re-focuses
@@ -129,8 +135,12 @@ fi
 # The dev build loads its JS from Metro. When Metro is down the dev launcher has
 # no server entry to tap, so every flow dies inside dev-launcher-pass.yaml on a
 # selector — which reads as a broken suite rather than a missing bundler.
+# A release build carries its bundle, so --release skips Metro, the bundle and
+# the dev-build checks below.
 METRO_URL="${SALMON_METRO_URL:-http://localhost:8081/status}"
-if curl -s -m 5 "$METRO_URL" 2>/dev/null | grep -q "packager-status:running"; then
+if [[ $RELEASE -eq 1 ]]; then
+  ok "release build: no Metro needed"
+elif curl -s -m 5 "$METRO_URL" 2>/dev/null | grep -q "packager-status:running"; then
   ok "Metro bundler running"
 else
   die "Metro is not running at ${METRO_URL%/status}.
@@ -163,17 +173,19 @@ fi
 # seconds on a cold cache) and the first flow reads that as a hang. Build it
 # here. In this monorepo the entry is apps/mobile/index — /index.bundle 404s.
 PLATFORM=$([[ $IS_ANDROID -eq 1 ]] && echo android || echo ios)
+if [[ $RELEASE -eq 0 ]]; then
 BUNDLE_URL="${METRO_URL%/status}/apps/mobile/index.bundle?platform=$PLATFORM&dev=true&minify=false"
 BUNDLE_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 300 "$BUNDLE_URL" 2>/dev/null || true)
 [[ "$BUNDLE_CODE" == "200" ]] || die "Metro could not build the $PLATFORM bundle (HTTP ${BUNDLE_CODE:-none}).
     Open $BUNDLE_URL to see the error."
 ok "Metro bundle built for $PLATFORM"
+fi
 
 # -------------------------------------------------------------- installed ---
 # A dev build made for another Expo SDK loads this checkout's bundle and
 # fails at runtime in ways that look like app bugs. Compare the SDK baked
 # into the installed build with the checkout's.
-if [[ $IS_ANDROID -eq 1 ]]; then
+if [[ $IS_ANDROID -eq 1 && $RELEASE -eq 0 ]]; then
   APK_PATH=$("${ADB[@]}" shell pm path io.salmonwallet.app 2>/dev/null | head -1 | sed 's/^package://' | tr -d '\r')
   [[ -n "$APK_PATH" ]] || die "io.salmonwallet.app is not installed. Build it: pnpm --filter @salmon/mobile android"
   TMP_APK=$(mktemp -t salmon-apk)

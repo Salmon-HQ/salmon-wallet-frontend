@@ -22,7 +22,7 @@ import type { NetworkId } from '../types/blockchain';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { stakingSummary } from '../utils/staking';
 import { fetchBalanceForAccount } from './useBalance';
-import { skrStakeQuery, stakeAccountsQuery } from './useStaking';
+import { skrStakeQuery, stakeAccountsQuery, withStakes } from './useStaking';
 
 const NO_LABELS = { sol: '', skr: '' };
 
@@ -120,7 +120,7 @@ export function useWalletTotals({
         skr: skr[index]?.data,
         labels: NO_LABELS,
       });
-      totals[walletId] = liquid === undefined ? undefined : liquid + stakedUsd;
+      totals[walletId] = withStakes(liquid, stakedUsd);
       if (result?.isPending) loading = true;
     });
     return { totals, loading };
