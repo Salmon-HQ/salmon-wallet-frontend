@@ -16,7 +16,7 @@
      sign and send, sign in, and a refusal in Seed Vault.
 5. A release APK never counts the simulator as Seed Vault, so anything gated on it (the SKR
    Powerup) is absent there: check those on the development build (`pnpm --filter @salmon/mobile
-   android` with the target environment's `.env` loaded, then Metro the same way).
+android` with the target environment's `.env` loaded, then Metro the same way).
 6. Revoked access: the simulator has no per-app revoke; its Clear (all seeds) invalidates Salmon's
    authorization the same way, and signing then refuses as revoked (Seed Vault result 1002).
 
