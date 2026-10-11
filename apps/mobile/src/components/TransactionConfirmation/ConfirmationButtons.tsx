@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
 import { spacing, vs, componentSizes } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { HoldToApproveButton, PrimaryButton, SecondaryButton } from '../Button';
 import type { ConfirmationButtonsProps } from './types';
 
 /**
@@ -12,6 +12,8 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
   onBack,
   onConfirm,
   isRefreshing = false,
+  confirmDisabled = false,
+  requiresHold = false,
   confirmLabel,
   style,
 }) => {
@@ -30,15 +32,25 @@ export const ConfirmationButtons: React.FC<ConfirmationButtonsProps> = ({
       >
         {t('general.back')}
       </SecondaryButton>
-      <PrimaryButton
-        onPress={onConfirm}
-        loading={isRefreshing}
-        disabled={isRefreshing}
-        style={styles.confirmButton}
-        testID="confirmation-confirm-button"
-      >
-        {confirmLabel ?? t('general.confirm')}
-      </PrimaryButton>
+      {requiresHold ? (
+        <HoldToApproveButton
+          onApprove={onConfirm}
+          disabled={isRefreshing || confirmDisabled}
+          testID="confirmation-hold-button"
+        >
+          {confirmLabel ?? t('general.confirm')}
+        </HoldToApproveButton>
+      ) : (
+        <PrimaryButton
+          onPress={onConfirm}
+          loading={isRefreshing}
+          disabled={isRefreshing || confirmDisabled}
+          style={styles.confirmButton}
+          testID="confirmation-confirm-button"
+        >
+          {confirmLabel ?? t('general.confirm')}
+        </PrimaryButton>
+      )}
     </View>
   );
 };

@@ -6,48 +6,65 @@
  * component: nothing else in `apps/mobile` should be re-deriving a background,
  * a radius and a hairline by hand.
  */
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { borderRadius, borderWidth, s, spacing, type Semantic } from '@salmon/shared';
+import React, { useId, useState } from 'react';
+import { type LayoutChangeEvent, View, TouchableOpacity, StyleSheet } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import {
+  borderWidth,
+  CARD_GLOW,
+  CARD_PADDINGS,
+  CARD_RADII,
+  cardTonesFor,
+  s,
+  type Semantic,
+} from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
-import type { CardPadding, CardProps, CardRadius, CardTone } from './types';
+import type { CardProps } from './types';
 
 /**
- * Ground and edge per tone. Every border is the decorative hairline except
- * `warning`, which keeps the amber stroke the tint ships with.
- *
- * `surface` grounds on the thin-tier membrane rather than the opaque
- * `surface.raised` (2026-09-01, owner: what lies under a card must show
- * through a little) — the water column's scales read faintly behind every
- * token row and content card built on `Card`/`ListRow`.
+ * The `featured` tone's salmon glow, under the card's content. Sized from the
+ * card's measured box: a "100%" SVG on Android takes the content box and
+ * stops a padding short of the edges.
  */
-const tonesFor = (t: Semantic): Record<CardTone, { background: string; border: string }> => ({
-  surface: { background: t.surface.membraneThin, border: t.border.hairline },
-  accent: { background: t.accent.tint, border: t.border.hairline },
-  warning: { background: t.status.warningTint, border: t.status.warningTintBorder },
-  ink: { background: t.depth.abyss, border: t.border.hairline },
-  shelf: { background: t.surface.shelf, border: t.border.hairline },
-});
-
-/**
- * `md` is 14: the spacing scale steps 12 → 16 with nothing between, and the
- * dense list row the frames draw sits on the half step. Named here rather
- * than spelled at a call site so it moves in one place if the scale gains it.
- */
-const PADDING_MD = 14;
-
-const PADDINGS: Record<CardPadding, number> = {
-  sm: spacing.md,
-  md: PADDING_MD,
-  lg: spacing.lg,
-  xl: spacing['2xl'],
-};
-
-const RADII: Record<CardRadius, number> = {
-  lg: borderRadius.r3,
-  xl: borderRadius.r4,
-};
+function Glow({
+  testID,
+  width,
+  height,
+  radius,
+  t,
+}: {
+  testID?: string;
+  width: number;
+  height: number;
+  radius: number;
+  t: Semantic;
+}) {
+  const id = useId();
+  return (
+    <Svg
+      testID={testID && `${testID}-glow`}
+      width={width}
+      height={height}
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+    >
+      <Defs>
+        <RadialGradient
+          id={id}
+          cx={`${CARD_GLOW.cx * 100}%`}
+          cy={`${CARD_GLOW.cy * 100}%`}
+          rx={`${CARD_GLOW.rx * 100}%`}
+          ry={`${CARD_GLOW.ry * 100}%`}
+        >
+          <Stop offset="0" stopColor={t.accent.ink} stopOpacity={CARD_GLOW.alpha} />
+          <Stop offset="1" stopColor={t.accent.ink} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect width={width} height={height} rx={radius} ry={radius} fill={`url(#${id})`} />
+    </Svg>
+  );
+}
 
 export function Card({
   tone = 'surface',
@@ -64,14 +81,35 @@ export function Card({
   // A record of strings, not a stylesheet: built at render through
   // `useSemantic` rather than cached by `useThemedStyles`, which is for
   // `StyleSheet.create` blocks only.
-  const { background, border } = tonesFor(useSemantic())[tone];
+  const t = useSemantic();
+  const { background, border } = cardTonesFor(t)[tone];
+  // The glow fills the box inside the border, measured once laid out.
+  const [inner, setInner] = useState<{ width: number; height: number } | null>(null);
+  const featured = tone === 'featured';
+  const onLayout = featured
+    ? ({ nativeEvent: { layout } }: LayoutChangeEvent) =>
+        setInner({
+          width: layout.width - 2 * borderWidth.thin,
+          height: layout.height - 2 * borderWidth.thin,
+        })
+    : undefined;
+  const glow =
+    featured && inner ? (
+      <Glow
+        testID={testID}
+        width={inner.width}
+        height={inner.height}
+        radius={CARD_RADII[radius] - borderWidth.thin}
+        t={t}
+      />
+    ) : null;
   const box = [
     styles.card,
     {
       backgroundColor: background,
       borderColor: border,
-      borderRadius: RADII[radius],
-      padding: s(PADDINGS[padding]),
+      borderRadius: CARD_RADII[radius],
+      padding: s(CARD_PADDINGS[padding]),
     },
     gap != null && { gap: s(gap) },
     style,
@@ -79,7 +117,8 @@ export function Card({
 
   if (!onPress) {
     return (
-      <View testID={testID} style={box} accessibilityLabel={accessibilityLabel}>
+      <View testID={testID} style={box} accessibilityLabel={accessibilityLabel} onLayout={onLayout}>
+        {glow}
         {children}
       </View>
     );
@@ -93,7 +132,9 @@ export function Card({
       onPress={onPress}
       activeOpacity={0.7}
       style={box}
+      onLayout={onLayout}
     >
+      {glow}
       {children}
     </TouchableOpacity>
   );

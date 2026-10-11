@@ -6,26 +6,47 @@
  * screen is how a type scale drifts.
  */
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import {
   fontFamilyNative,
   fontSize,
   letterSpacing,
   lineHeight,
   s,
+  spacing,
   type Semantic,
 } from '@salmon/shared';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { SectionLabelProps } from './types';
 
-export function SectionLabel({ children, variant, style, testID }: SectionLabelProps) {
+export function SectionLabel({
+  children,
+  variant,
+  trailing,
+  trailingTone = 'secondary',
+  style,
+  testID,
+}: SectionLabelProps) {
   const styles = useThemedStyles(stylesFor);
-
-  return (
-    <Text testID={testID} accessibilityRole="header" style={[styles[variant], style]}>
+  const heading = (
+    <Text
+      testID={testID}
+      accessibilityRole="header"
+      style={[styles[variant], trailing ? styles.shrink : null, style]}
+    >
       {variant === 'caps' ? children.toUpperCase() : children}
     </Text>
+  );
+  if (!trailing) return heading;
+
+  return (
+    <View style={styles.line}>
+      {heading}
+      <Text numberOfLines={1} style={[styles.trailing, styles[trailingTone]]}>
+        {trailing}
+      </Text>
+    </View>
   );
 }
 
@@ -50,4 +71,18 @@ const stylesFor = (t: Semantic) =>
       lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
       color: t.text.primary,
     },
+    line: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    shrink: { flexShrink: 1 },
+    trailing: {
+      flexShrink: 0,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.caption),
+    },
+    secondary: { color: t.text.secondary },
+    positive: { color: t.change.positive },
   });

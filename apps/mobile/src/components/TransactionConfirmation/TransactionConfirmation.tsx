@@ -37,6 +37,8 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
   onConfirm,
   confirmLabel,
   isRefreshing = false,
+  confirmDisabled = false,
+  requiresHold = false,
   error,
   style,
 }) => {
@@ -130,6 +132,8 @@ export const TransactionConfirmation: React.FC<TransactionConfirmationProps> = (
           onBack={onBack}
           onConfirm={onConfirm}
           isRefreshing={isRefreshing}
+          confirmDisabled={confirmDisabled}
+          requiresHold={requiresHold}
           confirmLabel={confirmLabel}
         />
       </Animated.View>

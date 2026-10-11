@@ -31,6 +31,7 @@ describe('the (auth) screens', () => {
       'index.tsx',
       'password.tsx',
       'recover.tsx',
+      'seed-vault.tsx',
       'seed-warning.tsx',
       'success.tsx',
     ]);

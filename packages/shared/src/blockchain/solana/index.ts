@@ -12,6 +12,7 @@ export {
   createSolanaAccountFromKeyPair,
   createSolanaAccountFromSecretKey,
   createWatchOnlySolanaAccount,
+  createSeedVaultSolanaAccount,
   deriveSolanaAccounts,
   generateKeyPair,
   getSolanaDerivationPath,
@@ -192,3 +193,20 @@ export type {
   SignatureOutcomeLookup,
   SignatureOutcomeQuery,
 } from './signature-status';
+
+export {
+  signBytesWith,
+  signTransactionWith,
+  signTransactionsWith,
+  type SolanaSigner,
+} from './signing';
+export {
+  createSeedVaultSigner,
+  registerSeedVault,
+  releaseSeedVaultAccess,
+  SeedVaultError,
+  isSeedVaultError,
+  type SeedVaultBridge,
+  type SeedVaultFailure,
+  type SeedVaultRegistration,
+} from './seed-vault-signer';

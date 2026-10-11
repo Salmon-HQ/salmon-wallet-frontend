@@ -7,6 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,

@@ -69,6 +69,22 @@ describe('useAccountsNetworkPreferences trusted apps', () => {
     });
   });
 
+  // A Mobile Wallet Adapter dApp reconnects with the token it was given; a
+  // grant stored without it could never be presented again.
+  it('keeps the authorization token handed to a mobile dApp', async () => {
+    const doc = openDocument({});
+
+    await act(() =>
+      doc.result.current.addTrustedApp(OTHER, { name: 'Other', address: 'Addr1', authToken: 'tok' })
+    );
+
+    expect(stored()['solana-mainnet'][OTHER]).toEqual({
+      name: 'Other',
+      address: 'Addr1',
+      authToken: 'tok',
+    });
+  });
+
   // The signing gate honours a grant on any network, so revoking on the
   // active network alone left a hidden grant that kept opening prompts.
   it('revokes a site on every network, not only the active one', async () => {

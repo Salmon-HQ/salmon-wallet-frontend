@@ -110,6 +110,7 @@ export { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 export { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
 export { SlidersIcon } from 'phosphor-react-native/src/icons/Sliders';
 export { SmileyIcon } from 'phosphor-react-native/src/icons/Smiley';
+export { VaultIcon } from 'phosphor-react-native/src/icons/Vault';
 export { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle';
 export { SquaresFourIcon } from 'phosphor-react-native/src/icons/SquaresFour';
 export { StackIcon } from 'phosphor-react-native/src/icons/Stack';
@@ -136,14 +137,18 @@ export type { Icon as IconComponent, IconProps } from 'phosphor-react-native';
 
 import type { PowerupIconName } from '@salmon/shared';
 import type { Icon as IconComponent } from 'phosphor-react-native';
+import { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
 import { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 import { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
+import { GiftIcon } from 'phosphor-react-native/src/icons/Gift';
 import { ImageIcon } from 'phosphor-react-native/src/icons/Image';
 import { LightningIcon } from 'phosphor-react-native/src/icons/Lightning';
 import { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
+import { PercentIcon } from 'phosphor-react-native/src/icons/Percent';
 import { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode';
 import { ShieldCheckIcon } from 'phosphor-react-native/src/icons/ShieldCheck';
 import { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+import { TrendDownIcon } from 'phosphor-react-native/src/icons/TrendDown';
 import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
 
 /**
@@ -153,13 +158,17 @@ import { TrendUpIcon } from 'phosphor-react-native/src/icons/TrendUp';
  * Powerup ship no art and the catalogue keep no table of Powerup ids.
  */
 export const powerupIcons: Record<PowerupIconName, IconComponent> = {
+  ArrowsClockwise: ArrowsClockwiseIcon,
   ArrowsLeftRight: ArrowsLeftRightIcon,
   ChartPie: ChartPieIcon,
+  Gift: GiftIcon,
   Image: ImageIcon,
   Lightning: LightningIcon,
   PencilSimple: PencilSimpleIcon,
+  Percent: PercentIcon,
   QrCode: QrCodeIcon,
   ShieldCheck: ShieldCheckIcon,
   Stack: StackIcon,
+  TrendDown: TrendDownIcon,
   TrendUp: TrendUpIcon,
 };

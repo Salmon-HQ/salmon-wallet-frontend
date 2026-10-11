@@ -20,11 +20,6 @@ export type {
   UseUserConfigResult,
 } from './useUserConfig';
 
-// Runtime detection hook
-export { useRuntime } from './useRuntime';
-export type { RuntimeInfo } from './useRuntime';
-export { ADAPTER_PREFIXES } from './useRuntime';
-
 // Language management hook
 export { useLanguage } from './useLanguage';
 export type { UseLanguageResult } from './useLanguage';
@@ -197,6 +192,12 @@ export type { UseAvatarNftsParams, UseAvatarNftsResult } from './useAvatarNfts';
 // Solana NFT list hook (shared between mobile, web, extension collectibles screens)
 export { useAccountActivity } from './useAccountActivity';
 export { useSolanaNfts } from './useSolanaNfts';
+export { useHomeStaking, useStakeAccountsScreen, useStaking, useSkrStake } from './useStaking';
+export type {
+  UseStakeAccountsScreenResult,
+  UseStakingParams,
+  UseStakingResult,
+} from './useStaking';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
 // Settings panel stack hook
@@ -264,12 +265,14 @@ export type {
 } from './useHomeShell';
 export { useAccountRemoval, useAccountDeleteConfirm } from './useAccountRemoval';
 export type { UseAccountRemovalResult, AccountDeleteConfirm } from './useAccountRemoval';
-export { useAccountAddFlow } from './useAccountAddFlow';
+export { useAccountAddFlow, seedVaultRows } from './useAccountAddFlow';
 export type {
   AccountAddFlow,
   UseAccountAddFlowOptions,
   SeedErrorKey,
   ReauthErrorKey,
+  SeedVaultErrorKey,
+  SeedVaultRow,
 } from './useAccountAddFlow';
 export { useWaitTips } from './useWaitTips';
 export type { UseWaitTipsOptions, WaitTips } from './useWaitTips';

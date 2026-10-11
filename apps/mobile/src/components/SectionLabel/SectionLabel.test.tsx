@@ -8,7 +8,7 @@ import { render, screen } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../../test-utils/themeTokens') }));
 
-import { fontSize, s } from '@salmon/shared';
+import { fontSize, s, semantic } from '@salmon/shared';
 import { SectionLabel } from './SectionLabel';
 
 const flatten = (style: unknown) =>
@@ -34,6 +34,19 @@ describe('SectionLabel', () => {
 
     expect(flatten(screen.getByText('Recent activity').props.style).fontSize).toBe(
       s(fontSize.bodyLg)
+    );
+  });
+
+  it('carries a figure at the end of its line, inked by tone', () => {
+    render(
+      <SectionLabel variant="title" trailing="+6,045.71 SKR" trailingTone="positive">
+        Rewards
+      </SectionLabel>
+    );
+
+    expect(screen.getByText('Rewards')).toBeTruthy();
+    expect(flatten(screen.getByText('+6,045.71 SKR').props.style).color).toBe(
+      semantic.change.positive
     );
   });
 });

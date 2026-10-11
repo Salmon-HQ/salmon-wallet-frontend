@@ -149,3 +149,16 @@ export {
 
 export { getPowerupAvailability } from './powerups';
 export type { PowerupAvailabilityEntry } from './powerups';
+
+// ============================================================================
+// Staking Service (read-only)
+// ============================================================================
+
+export { getStakeAccounts, getSkrStake } from './staking';
+export type {
+  StakeAccount,
+  StakeAccountsResponse,
+  StakeState,
+  SkrPosition,
+  SkrStakeResponse,
+} from './staking';

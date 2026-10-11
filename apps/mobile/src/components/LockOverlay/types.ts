@@ -29,6 +29,11 @@ export interface LockContentProps extends LockScreenPropsBase {
   onUnlockExited?: () => void;
   /** Biometric configuration */
   biometric?: BiometricConfig;
+  /**
+   * Whether "forgot password" (wipe and start over) is offered. Off on the
+   * lock a dApp brings up: a request from outside is no path to a reset.
+   */
+  allowReset?: boolean;
 }
 
 /**

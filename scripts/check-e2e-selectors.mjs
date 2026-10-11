@@ -18,7 +18,8 @@
  * A testID built from a template (`${testID}-word-input-${n}`) matches when
  * its static part has at least four characters, so a bare `${a}-${b}` does not
  * vouch for everything. Strings the app does not own — the Expo dev menu,
- * system prompts, data a flow types itself — are listed in EXTERNAL, by name.
+ * system prompts, data a flow types itself, Seed Vault's own screens — are
+ * listed in EXTERNAL, by name, ids and texts alike.
  */
 import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -37,6 +38,16 @@ export const EXTERNAL = new Set([
   'order-12',
   'Salmon Treasury',
   'Salmon Test NFT',
+  // Seed Vault simulator screens, drawn over Salmon (subflows/seed-vault-confirm.yaml),
+  // and the name its wallet carries into Salmon's switcher.
+  'UsePin',
+  'PinEntryField',
+  'Connection request',
+  'Account 2',
+  // Solana Mobile playground, the test dApp the MWA flows open.
+  'Reset authorization',
+  'Sign Transaction',
+  'Sign and Send',
 ]);
 
 const read = (p) => readFileSync(p, 'utf8');
@@ -124,7 +135,7 @@ export function auditMaestroFlow(file, text, { idExists, textExists }) {
     const id = line.match(ID_LINE)?.[1]?.trim();
     // `a|b` waits for whichever appears first: each alternative must exist.
     for (const alt of id && !id.includes('${') ? id.split('|') : []) {
-      if (!idExists(alt)) findings.push(`${file}:${i + 1}  id  ${alt}`);
+      if (!EXTERNAL.has(alt) && !idExists(alt)) findings.push(`${file}:${i + 1}  id  ${alt}`);
     }
     const t = line.match(TEXT_LINE)?.[1];
     // Regex anchors (`.*`, `(?i)`) are patterns, not strings; checked by hand.

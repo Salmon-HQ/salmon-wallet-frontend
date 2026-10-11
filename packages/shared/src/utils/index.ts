@@ -20,6 +20,26 @@ export {
   UnsupportedTransactionVersionError,
 } from './dapp-approval';
 export type { SolanaTransactionApprovalDetails } from './dapp-approval';
+export {
+  encodeMwaAuthToken,
+  isMwaAuthorizationValid,
+  MWA_MAX_PAYLOADS,
+  mwaAuthorizedAccount,
+  mwaChainToNetworkId,
+  mwaDisplayName,
+  mwaIconUrl,
+  mwaIdentityOrigin,
+  mwaPrecheck,
+  newMwaAuthToken,
+  toSignAllTransactionsRequest,
+  toSignAndSendRequest,
+  withSignature,
+} from './mwa';
+export type { MwaFailReason, MwaPrecheck, MwaSendOptions } from './mwa';
+export { mwaSignAndSend, mwaSignIn, mwaSignMessages, mwaSignTransactions } from './mwa-sign';
+export type { MwaSignInResult } from './mwa-sign';
+export { dappTransactionDisplay, dappTransactionGate } from './dapp-transaction-display';
+export type { DAppTransactionDisplayInput } from './dapp-transaction-display';
 
 // Account utilities
 export {
@@ -37,6 +57,7 @@ export {
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
   createBlockchainAccountForWatchOnly,
+  createBlockchainAccountForSeedVault,
   collectSolanaAddresses,
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,
@@ -60,6 +81,8 @@ export {
   buildSecretVault,
   getAccountMnemonic,
   isWatchOnlyAccount,
+  seedVaultAccessToRelease,
+  isSeedVaultAccount,
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
 
@@ -287,6 +310,7 @@ export {
   isAnimatedImage,
   solanaNftToNftData,
   canonicalNftToSolanaNftData,
+  isFrozenNft,
   isSolanaNft,
   isBitcoinNft,
   getSatRarityColor,
@@ -396,8 +420,9 @@ export {
   EMPTY_POWERUP_ALLOWLIST,
   parsePowerupSwitches,
   toPowerupAllowlist,
+  allowlistForDevice,
 } from './powerupSwitches';
-export type { PowerupAllowlist } from './powerupSwitches';
+export type { DeviceCapability, PowerupAllowlist } from './powerupSwitches';
 export { powerupFactRows } from './powerupFacts';
 export { overflowEdges } from './overflowEdges';
 export type { OverflowEdges, OverflowEdgesInput } from './overflowEdges';
@@ -408,3 +433,9 @@ export { isSendRequestUnderfunded, sendRequestReviewRows } from './sendRequestRe
 export type { SendRequestReviewRow } from './sendRequestReview';
 export { sendReceiptRows } from './sendReceiptRows';
 export type { ScanClassification, SettledPaymentLink } from './scan-payload';
+
+export { stakeAccountCards, stakingSummary, STAKED_SOL_KEY, STAKED_SKR_KEY } from './staking';
+export type { StakeAccountCard, StakingSummary } from './staking';
+export { stakeAccountsBlocks, stakingSectionBlocks } from './stakingBlocks';
+export { powerupBadgeTier } from './powerupBadgeTier';
+export type { PowerupBadgeLook } from './powerupBadgeTier';

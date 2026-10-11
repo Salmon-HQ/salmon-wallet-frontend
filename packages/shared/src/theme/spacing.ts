@@ -376,6 +376,8 @@ export const componentSizes = {
 
   // Chart
   chartHeight: 200,
+  /** 64px — a row of reward bars (the SKR tab's last payouts). */
+  barChartHeight: 64,
 
   // Web layout
   webContainerMaxWidth: 430,

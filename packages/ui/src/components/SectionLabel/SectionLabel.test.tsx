@@ -63,4 +63,18 @@ describe('SectionLabel', () => {
     renderInMode('dark', <SectionLabel variant={variant}>Danger zone</SectionLabel>);
     expect(screen.getByRole('heading', { level })).toBeTruthy();
   });
+
+  it('carries a figure at the end of its line, inked by tone', () => {
+    renderInMode(
+      'dark',
+      <SectionLabel variant="title" trailing="+6,045.71 SKR" trailingTone="positive">
+        Rewards
+      </SectionLabel>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Rewards' })).toBeTruthy();
+    expect(screen.getByText('+6,045.71 SKR').style.color).toBe(
+      asRenderedColor(createSemantic('dark').change.positive)
+    );
+  });
 });

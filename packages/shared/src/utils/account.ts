@@ -10,6 +10,7 @@ import {
   createSolanaAccount,
   createSolanaAccountFromSecretKey,
   createWatchOnlySolanaAccount,
+  createSeedVaultSolanaAccount,
   SOLANA_NETWORKS,
 } from '../blockchain/solana';
 import { createBitcoinAccount, BITCOIN_NETWORKS } from '../blockchain/bitcoin';
@@ -18,9 +19,10 @@ import { bitcoinApiFunctions } from '../api/services/bitcoin';
 import { solanaApiFunctions } from '../api/services/solana';
 import { ethereumApiFunctions } from '../api/services/ethereum';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
-import type { Account } from '../types/account';
+import type { Account, AccountSecret } from '../types/account';
 import type { AccountKeyInfo } from '../types/settings';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { isSeedVaultAccount } from './account-secret';
 import { isBackendNetworkEnabled } from '../api/services/network';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
@@ -311,6 +313,23 @@ export async function createBlockchainAccountForWatchOnly(
   return createWatchOnlySolanaAccount(network, watchedAddress, solanaApiFunctions);
 }
 
+/**
+ * Builds the Solana account for a Seed Vault wallet. Seed Vault holds Solana
+ * keys only, so any other network is refused.
+ */
+export async function createBlockchainAccountForSeedVault(
+  secret: Extract<AccountSecret, { kind: 'seedVault' }>
+): Promise<BlockchainAccount> {
+  await fetchAndMergeNetworkConfigs();
+
+  const network = SOLANA_NETWORKS[secret.networkId];
+  if (getBlockchainFromNetworkId(secret.networkId) !== 'solana' || !network) {
+    throw new Error(`Seed Vault holds Solana keys only, not: ${secret.networkId}`);
+  }
+
+  return createSeedVaultSolanaAccount(network, secret, solanaApiFunctions);
+}
+
 // ============================================================================
 // Derivation Path Utilities
 // ============================================================================
@@ -447,6 +466,8 @@ export function getAccountKeysForNetwork(
   networkId: string | null
 ): AccountKeyInfo[] {
   if (!networkId || !activeAccount?.networksAccounts) return [];
+  // A Seed Vault wallet signs, but its key never leaves Seed Vault.
+  if (isSeedVaultAccount(activeAccount)) return [];
   const networkAccounts = activeAccount.networksAccounts[networkId];
   if (!networkAccounts) return [];
 

@@ -78,6 +78,7 @@ export function LockContent({
   onRemoveAllAccounts,
   onUnlockExited,
   biometric,
+  allowReset = true,
 }: LockContentProps) {
   const { t } = useTranslation();
   const mode = useThemeMode();
@@ -550,16 +551,18 @@ export function LockContent({
                     />
                     {/* The escape hatch belongs to the field it escapes from, so it
                   sits directly under it rather than in a band of its own. */}
-                    <View style={styles.forgotRow}>
-                      <TextButton
-                        testID="lock-forgot-password-button"
-                        onPress={handleForgotPassword}
-                        disabled={isLoading}
-                        color={semantic.text.primary}
-                      >
-                        {t('lock.forgot_password')}
-                      </TextButton>
-                    </View>
+                    {allowReset && (
+                      <View style={styles.forgotRow}>
+                        <TextButton
+                          testID="lock-forgot-password-button"
+                          onPress={handleForgotPassword}
+                          disabled={isLoading}
+                          color={semantic.text.primary}
+                        >
+                          {t('lock.forgot_password')}
+                        </TextButton>
+                      </View>
+                    )}
                   </View>
                 </ReservedSlot>
               }

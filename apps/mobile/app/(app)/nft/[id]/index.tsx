@@ -25,6 +25,7 @@ import {
   getSatRarityColor,
   getShortAddress,
   isBitcoinNft,
+  isFrozenNft,
   isSignableAccount,
   isSolanaNft,
   s,
@@ -82,6 +83,8 @@ export default function NftDetailScreen() {
   // Two states that must not be conflated: an account still resolving (keep
   // the controls, disabled) versus one known to hold no key (drop them).
   const accountCannotEverSign = !!account && !isSignableAccount(account);
+  // The issuer froze it (the Seeker Genesis Token): nothing to send or burn.
+  const frozen = isFrozenNft(nft);
 
   const mint = nft?.mint;
   const handleCopyMint = useCallback(async () => {
@@ -252,7 +255,12 @@ export default function NftDetailScreen() {
       </ScrollView>
 
       {/* Gone, not greyed: see the module comment. */}
-      {nft && !accountCannotEverSign && (
+      {nft && frozen && (
+        <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+          <WarningNotice tone="info" testID="nft-detail-frozen" title={t('nft.detail.frozen')} />
+        </View>
+      )}
+      {nft && !accountCannotEverSign && !frozen && (
         <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
           <PrimaryButton
             testID="nft-detail-send-button"

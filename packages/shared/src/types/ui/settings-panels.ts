@@ -114,6 +114,8 @@ export interface ConfirmSheetPropsBase {
    * only reports something the user can do nothing about here.
    */
   acknowledgeOnly?: boolean;
+  /** The confirm control is not ready yet (e.g. a dApp's identity still being checked). */
+  confirmDisabled?: boolean;
   requirePassword?: boolean;
   validatePassword?: (password: string) => Promise<boolean>;
   /**
@@ -136,8 +138,13 @@ export interface DerivedAccountCardPropsBase extends Testable {
   blockchain?: 'solana' | 'bitcoin' | 'ethereum';
 }
 
-/** WatchOnlyBadge — marks a wallet the user can read but not operate. */
-export interface WatchOnlyBadgePropsBase extends Testable {}
+/**
+ * WatchOnlyBadge — the quiet tag on a wallet row: a wallet the user can read
+ * but not operate, or (`seedVault`) one whose key stays in Seed Vault.
+ */
+export interface WatchOnlyBadgePropsBase extends Testable {
+  kind?: 'watchOnly' | 'seedVault';
+}
 
 /**
  * AddressForm — the address-book form both the add and the edit panel draw:

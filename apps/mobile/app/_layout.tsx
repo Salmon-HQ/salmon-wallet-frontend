@@ -1,9 +1,7 @@
 // Note: Crypto polyfills are now loaded in index.js (the app entry point)
 // This ensures they're available BEFORE expo-router loads any modules
 
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { createSemantic, setApiPlatform, type ThemeMode } from '@salmon/shared';
-import { useFonts } from 'expo-font';
+import { createSemantic, type ThemeMode } from '@salmon/shared';
 import { StatusBar } from 'expo-status-bar';
 import {
   DarkTheme,
@@ -17,15 +15,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  AppState,
-  Linking,
-  Platform,
-  useColorScheme,
-  type AppStateStatus,
-} from 'react-native';
+import { View, StyleSheet, AppState, Linking, Platform, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -33,10 +23,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
 
-// The backend's availability gate reads the platform on every request
-// (spec 018); named once here, before any screen asks for anything.
-setApiPlatform(Platform.OS === 'ios' ? 'ios' : 'android');
-import { BiometricProvider } from '../src/contexts/BiometricContext';
+import { AppProviders, useAppFonts } from '../src/providers/AppProviders';
 import { useMandatoryUpdate } from '../src/updates/useMandatoryUpdate';
 import { STORE_URLS, useStoreUpdateGate } from '../src/updates/useStoreUpdateGate';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
@@ -45,16 +32,14 @@ import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
 import {
-  AccountsProvider,
-  CurrencyProvider,
+  isSeedVaultScreenOpen,
+  onSeedVaultScreensClosed,
+  SEED_VAULT_CLOSE_SETTLE_MS,
+} from '../src/seed-vault/bridge';
+import {
   useAccountsContext,
   useInactivityTimeout,
-  createQueryClient,
-  focusManager,
-  QueryClientProvider,
-  PendingTransactionsProvider,
   usePendingActivity,
-  ThemeProvider,
   useTheme,
 } from '@salmon/shared';
 
@@ -71,34 +56,8 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// React Query learns that the user came back from the DOM's focus events, which
-// React Native does not have: without this, `refetchOnWindowFocus` never fires
-// and reopening the app showed whatever was cached — an NFT already sent, a
-// balance from before a receive. Coming to the foreground is the app's focus.
-focusManager.setEventListener((handleFocus) => {
-  const subscription = AppState.addEventListener('change', (state) =>
-    handleFocus(state === 'active')
-  );
-  return () => subscription.remove();
-});
-
 export default function RootLayout() {
-  const [queryClient] = useState(() => createQueryClient());
-  // The OS reader lives here: `packages/shared` stays runtime-agnostic, so the
-  // platform's colour scheme is passed in rather than looked up inside the
-  // provider. Under the 'system' preference this is what picks the mode.
-  // React Native reports a third value, 'unspecified', for a platform that
-  // cannot tell; the provider's own "cannot tell" is `null`, which falls back
-  // to deep water.
-  const systemScheme = useColorScheme();
-  const [loaded, error] = useFonts({
-    DMSansRegular: require('@salmon/assets/src/fonts/DMSans-Regular.ttf'),
-    DMSansMedium: require('@salmon/assets/src/fonts/DMSans-Medium.ttf'),
-    DMSansSemiBold: require('@salmon/assets/src/fonts/DMSans-SemiBold.ttf'),
-    DMSansBold: require('@salmon/assets/src/fonts/DMSans-Bold.ttf'),
-    GeistMonoRegular: require('@salmon/assets/src/fonts/GeistMono-Regular.ttf'),
-    ...FontAwesome.font,
-  });
+  const [loaded, error] = useAppFonts();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -125,23 +84,9 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PendingTransactionsProvider>
-        <AccountsProvider>
-          <CurrencyProvider>
-            <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
-              {/* Above both route groups: onboarding arms biometrics, the app
-                  shell unlocks with them, and Settings toggles them. Three
-                  copies of that state is how the toggle and the lock screen
-                  came to disagree. */}
-              <BiometricProvider>
-                <RootLayoutNav updateRequired={storeGate.required} />
-              </BiometricProvider>
-            </ThemeProvider>
-          </CurrencyProvider>
-        </AccountsProvider>
-      </PendingTransactionsProvider>
-    </QueryClientProvider>
+    <AppProviders>
+      <RootLayoutNav updateRequired={storeGate.required} />
+    </AppProviders>
   );
 }
 
@@ -275,7 +220,13 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
         typeof authScreen === 'string' &&
         ['password', 'biometric-setup', 'analytics-consent', 'success'].includes(authScreen);
 
-      if (!inAppGroup && !hasNavigated && !isPostCreationScreen) {
+      // A locked wallet never stays in `(auth)`, not even on a post-creation
+      // screen: a deep link can open the password screen there, and setting a
+      // new password on top of locked funds must not be one tap away.
+      if (inAuthGroup && state.locked) {
+        router.replace('/(app)/(tabs)');
+        setHasNavigated(true);
+      } else if (!inAppGroup && !hasNavigated && !isPostCreationScreen) {
         router.replace('/(app)/(tabs)');
         setHasNavigated(true);
       }
@@ -283,6 +234,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   }, [
     state.ready,
     state.accounts.length,
+    state.locked,
     segments,
     navigationState?.key,
     hasNavigated,
@@ -325,15 +277,26 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       const goingToBackground =
         nextState === 'background' && (previousState === 'active' || previousState === 'inactive');
 
-      if (!goingToBackground) {
+      // A Seed Vault confirmation is another app's screen over this one; the
+      // wallet is still in use (spec 037).
+      if (!goingToBackground || isSeedVaultScreenOpen()) {
         return;
       }
 
       tryLock();
     });
 
+    // The user can leave Salmon while a Seed Vault screen is on top; no new
+    // `background` event comes then, so the lock is checked once it closes.
+    const unsubscribeSeedVault = onSeedVaultScreensClosed(() => {
+      setTimeout(() => {
+        if (AppState.currentState !== 'active') tryLock();
+      }, SEED_VAULT_CLOSE_SETTLE_MS);
+    });
+
     return () => {
       changeSubscription.remove();
+      unsubscribeSeedVault();
     };
   }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
 

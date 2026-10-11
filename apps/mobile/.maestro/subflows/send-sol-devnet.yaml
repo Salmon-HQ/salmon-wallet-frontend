@@ -1,0 +1,43 @@
+appId: io.salmonwallet.app
+---
+# From Home on devnet, send ${AMOUNT} SOL to ${TO} up to the confirm button.
+# The caller taps confirm: a Seed Vault wallet has a Seed Vault screen after it.
+- runFlow: ./assert-devnet.yaml
+- tapOn:
+    id: 'home-send-button'
+- extendedWaitUntil:
+    visible:
+      id: 'send-recipient-screen'
+    timeout: 20000
+- tapOn:
+    id: 'send-recipient-input'
+- inputText: ${TO}
+- extendedWaitUntil:
+    visible:
+      id: 'send-continue-button'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: 'send-continue-button'
+- extendedWaitUntil:
+    visible:
+      id: 'send-amount-input'
+    timeout: 20000
+- tapOn:
+    id: 'send-amount-input'
+- inputText: ${AMOUNT}
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: 'send-amount-screen'
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: 'send-review-button'
+- extendedWaitUntil:
+    visible:
+      id: 'send-confirm-button'
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 3000

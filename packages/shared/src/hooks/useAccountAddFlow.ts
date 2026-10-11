@@ -26,6 +26,7 @@ import {
   createAccount,
   importAccountFromPrivateKey,
   importWatchOnlyAccount,
+  importSeedVaultAccount,
 } from '../factories/account-factory';
 import { trackEvent } from '../analytics/client';
 import { getAccountMnemonic } from '../utils/account-secret';
@@ -37,12 +38,63 @@ import {
 } from '../utils/derived-accounts';
 import { SHORT_PHRASE } from '../utils/seed-phrase';
 import type { Account } from '../types';
-import type { AccountAddStep } from '../types/ui/account-add';
+import type {
+  AccountAddStep,
+  SeedVaultAccess,
+  SeedVaultListedAccount,
+} from '../types/ui/account-add';
+import { getBlockchainFromNetworkId } from '../config/blockchains';
+import { isSeedVaultError, type SeedVaultFailure } from '../blockchain/solana/seed-vault-signer';
 import { useImportPrivateKey, type UseImportPrivateKeyResult } from './useImportPrivateKey';
 import { useImportWatchOnly, type UseImportWatchOnlyResult } from './useImportWatchOnly';
 
 /** The seed step's one error, as an i18n key. */
 export type SeedErrorKey = 'wallet.create.invalidSeed' | '';
+
+/** The Seed Vault step's errors, as i18n keys. */
+export type SeedVaultErrorKey = `wallet.seedVault.errors.${SeedVaultFailure}` | '';
+
+/** A Seed Vault account as the step shows it. */
+export interface SeedVaultRow extends SeedVaultListedAccount {
+  /** Already a Salmon wallet with this same access: shown, not offered. */
+  added: boolean;
+}
+
+const SEED_VAULT_SHOWN_INDEXES = 5;
+
+/** The account index in a Solana path (`…/44'/501'/3'…` → 3); Infinity when absent. */
+function seedVaultAccountIndex(path: string): number {
+  const match = /44'\/501'\/(\d+)'/.exec(path);
+  return match ? Number(match[1]) : Infinity;
+}
+
+/**
+ * The Seed Vault accounts worth offering. Seed Vault lists every path it
+ * derived ahead of time (on the simulator, a hundred per path style); shown
+ * are the seed's own wallet accounts first — those hold the user's funds —
+ * then the first few of each path style, each marked when it is already a
+ * Salmon wallet under the same access.
+ * ponytail: fixed cap of SEED_VAULT_SHOWN_INDEXES; add "show more" if a user needs a deeper index.
+ */
+export function seedVaultRows(
+  listed: SeedVaultListedAccount[],
+  wallets: Account[]
+): SeedVaultRow[] {
+  return listed
+    .filter(
+      (a) => a.isUserWallet || seedVaultAccountIndex(a.derivationPath) < SEED_VAULT_SHOWN_INDEXES
+    )
+    .sort((a, b) => Number(b.isUserWallet) - Number(a.isUserWallet))
+    .map((row) => ({
+      ...row,
+      added: wallets.some(
+        ({ secret }) =>
+          secret.kind === 'seedVault' &&
+          secret.address === row.address &&
+          secret.authToken === row.authToken
+      ),
+    }));
+}
 
 /** The re-auth step's errors, as i18n keys. */
 export type ReauthErrorKey =
@@ -65,6 +117,8 @@ export interface UseAccountAddFlowOptions {
   onPersisted: () => void;
   /** The write failed for a reason other than a lapsed vault key. */
   onFailure: (error: unknown) => void;
+  /** Seed Vault, where the device has one (Android Seeker); absent elsewhere. */
+  seedVault?: SeedVaultAccess;
 }
 
 export interface AccountAddFlow {
@@ -97,6 +151,18 @@ export interface AccountAddFlow {
   privateKeyImport: UseImportPrivateKeyResult;
   watchOnlyImport: UseImportWatchOnlyResult;
 
+  /** Whether this device offers "Use Seed Vault". */
+  canUseSeedVault: boolean;
+  seedVaultAccounts: SeedVaultRow[];
+  seedVaultLoading: boolean;
+  seedVaultError: SeedVaultErrorKey;
+  selectedSeedVault: SeedVaultRow | null;
+  selectSeedVault: () => Promise<void>;
+  /** Authorize another seed, or create/import one in Seed Vault, then list again. */
+  seedVaultAction: (action: 'authorizeAnother' | 'createSeed' | 'importSeed') => Promise<void>;
+  toggleSeedVault: (row: SeedVaultRow) => void;
+  continueSeedVault: () => void;
+
   selectDerive: () => Promise<void>;
   selectImport: () => void;
   selectImportPrivateKey: () => void;
@@ -127,6 +193,7 @@ export function useAccountAddFlow({
   onWaitEnd,
   onPersisted,
   onFailure,
+  seedVault,
 }: UseAccountAddFlowOptions): AccountAddFlow {
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, activeAccount } = accountState;
@@ -161,6 +228,17 @@ export function useAccountAddFlow({
   const [reauthPassword, setReauthPasswordState] = useState('');
   const [reauthError, setReauthError] = useState<ReauthErrorKey>('');
   const [reauthChecking, setReauthChecking] = useState(false);
+
+  // Seed Vault. Rows are recomputed against the wallets, so one added in this
+  // flow shows as added when the step is shown again.
+  const [seedVaultListed, setSeedVaultListed] = useState<SeedVaultListedAccount[]>([]);
+  const [seedVaultLoading, setSeedVaultLoading] = useState(false);
+  const [seedVaultError, setSeedVaultError] = useState<SeedVaultErrorKey>('');
+  const [selectedSeedVault, setSelectedSeedVault] = useState<SeedVaultRow | null>(null);
+  const seedVaultAccounts = useMemo(
+    () => seedVaultRows(seedVaultListed, accounts),
+    [seedVaultListed, accounts]
+  );
 
   const privateKeyImport = useImportPrivateKey({ accounts });
   const watchOnlyImport = useImportWatchOnly({ accounts });
@@ -201,6 +279,52 @@ export function useAccountAddFlow({
   }, [activeAccount]);
 
   const selectImport = useCallback(() => setStep('import-seed'), []);
+
+  const loadSeedVault = useCallback(
+    async (before?: () => Promise<void>) => {
+      if (!seedVault) return;
+      setSeedVaultLoading(true);
+      setSeedVaultError('');
+      try {
+        await before?.();
+        setSeedVaultListed(await seedVault.listAccounts());
+      } catch (err) {
+        setSeedVaultError(
+          isSeedVaultError(err) && err.reason !== 'failed'
+            ? `wallet.seedVault.errors.${err.reason}`
+            : 'wallet.seedVault.errors.failed'
+        );
+      } finally {
+        setSeedVaultLoading(false);
+      }
+    },
+    [seedVault]
+  );
+
+  const selectSeedVault = useCallback(async () => {
+    setSelectedSeedVault(null);
+    setStep('import-seed-vault');
+    await loadSeedVault();
+  }, [loadSeedVault]);
+
+  const seedVaultAction = useCallback(
+    (action: 'authorizeAnother' | 'createSeed' | 'importSeed') =>
+      loadSeedVault(() => seedVault![action]()),
+    [loadSeedVault, seedVault]
+  );
+
+  const toggleSeedVault = useCallback((row: SeedVaultRow) => {
+    if (row.added) return;
+    setSelectedSeedVault((prev) =>
+      prev?.address === row.address && prev.authToken === row.authToken ? null : row
+    );
+  }, []);
+
+  const continueSeedVault = useCallback(() => {
+    if (!selectedSeedVault) return;
+    setAccountName(selectedSeedVault.isUserWallet ? selectedSeedVault.name : defaultName);
+    setStep('set-name');
+  }, [selectedSeedVault, defaultName]);
 
   const selectImportPrivateKey = useCallback(() => {
     privateKeyImport.reset();
@@ -285,6 +409,20 @@ export function useAccountAddFlow({
         networkId: privateKeyImport.networkId,
       });
     }
+    // A Seed Vault account is one address whose key stays in Seed Vault. It
+    // lands on the selected network when that is Solana (Seed Vault holds
+    // Solana keys only), so a devnet session adds a devnet wallet.
+    if (selectedSeedVault) {
+      const current = accountActions.getNetworkId();
+      return importSeedVaultAccount({
+        name,
+        authToken: selectedSeedVault.authToken,
+        derivationPath: selectedSeedVault.derivationPath,
+        address: selectedSeedVault.address,
+        networkId:
+          current && getBlockchainFromNetworkId(current) === 'solana' ? current : 'solana-mainnet',
+      });
+    }
     // A watched address derives nothing either, and has no key to import.
     if (watchOnlyImport.address) {
       return importWatchOnlyAccount({
@@ -308,6 +446,8 @@ export function useAccountAddFlow({
     defaultName,
     privateKeyImport,
     watchOnlyImport,
+    selectedSeedVault,
+    accountActions,
     selectedDerived,
     activeAccount,
     seedPhrase,
@@ -320,7 +460,15 @@ export function useAccountAddFlow({
    */
   const persistAccount = useCallback(
     async (account: Account, password?: string) => {
-      await accountActions.addAccount(account, password);
+      // The same Seed Vault account under an access the user re-granted after
+      // revoking it: the wallet is replaced, not duplicated.
+      const stale = selectedSeedVault
+        ? accounts.find(
+            ({ secret }) =>
+              secret.kind === 'seedVault' && secret.address === selectedSeedVault.address
+          )
+        : undefined;
+      await accountActions.addAccount(account, password, stale?.id);
       // Anonymous funnel event: a derived account reuses the active seed
       // (create); an imported seed or private key is a recovery. No seed,
       // address or key material leaves here — just which flow completed.
@@ -331,7 +479,15 @@ export function useAccountAddFlow({
       watchOnlyImport.reset();
       onPersisted();
     },
-    [accountActions, selectedDerived, privateKeyImport, watchOnlyImport, onPersisted]
+    [
+      accountActions,
+      accounts,
+      selectedSeedVault,
+      selectedDerived,
+      privateKeyImport,
+      watchOnlyImport,
+      onPersisted,
+    ]
   );
 
   const confirm = useCallback(async () => {
@@ -423,6 +579,7 @@ export function useAccountAddFlow({
     }
     if (step === 'set-name') {
       if (selectedDerived) setStep('derive-scan');
+      else if (selectedSeedVault) setStep('import-seed-vault');
       else if (privateKeyImport.privateKey) setStep('import-private-key');
       else if (watchOnlyImport.address) setStep('import-watch-only');
       else setStep('import-seed');
@@ -430,15 +587,17 @@ export function useAccountAddFlow({
       step === 'derive-scan' ||
       step === 'import-seed' ||
       step === 'import-private-key' ||
-      step === 'import-watch-only'
+      step === 'import-watch-only' ||
+      step === 'import-seed-vault'
     ) {
+      if (step === 'import-seed-vault') setSelectedSeedVault(null);
       if (step === 'import-private-key') privateKeyImport.reset();
       if (step === 'import-watch-only') watchOnlyImport.reset();
       setStep('select-method');
     } else {
       onBack();
     }
-  }, [step, selectedDerived, privateKeyImport, watchOnlyImport, onBack]);
+  }, [step, selectedDerived, selectedSeedVault, privateKeyImport, watchOnlyImport, onBack]);
 
   return {
     step,
@@ -459,6 +618,15 @@ export function useAccountAddFlow({
     reauthChecking,
     privateKeyImport,
     watchOnlyImport,
+    canUseSeedVault: !!seedVault,
+    seedVaultAccounts,
+    seedVaultLoading,
+    seedVaultError,
+    selectedSeedVault,
+    selectSeedVault,
+    seedVaultAction,
+    toggleSeedVault,
+    continueSeedVault,
     selectDerive,
     selectImport,
     selectImportPrivateKey,

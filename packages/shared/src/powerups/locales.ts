@@ -9,8 +9,10 @@ import paymentsEn from './payments/locales/en.json';
 import paymentsEs from './payments/locales/es.json';
 import swapEn from './swap/locales/en.json';
 import swapEs from './swap/locales/es.json';
+import skrEn from './skr/locales/en.json';
+import skrEs from './skr/locales/es.json';
 
 export const powerupTranslations = {
-  en: { memo: memoEn, payments: paymentsEn, swap: swapEn },
-  es: { memo: memoEs, payments: paymentsEs, swap: swapEs },
+  en: { memo: memoEn, payments: paymentsEn, swap: swapEn, skr: skrEn },
+  es: { memo: memoEs, payments: paymentsEs, swap: swapEs, skr: skrEs },
 } as const;

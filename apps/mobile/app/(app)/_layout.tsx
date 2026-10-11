@@ -171,6 +171,7 @@ export default function AppLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="wallets" />
               <Stack.Screen name="activity" />
+              <Stack.Screen name="staking" />
               {/* Settings is a sub-stack too (the list plus one screen per
             `SettingsScreen` key). It used to be a `href: null` tab, which is
             why it never slid: a tab switch is not a stack push. On the stack it

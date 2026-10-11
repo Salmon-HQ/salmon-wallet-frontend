@@ -21,6 +21,17 @@ export type { MarketData, TokenMarketDataPropsBase } from './token-market-data';
 
 // Token List
 export type { TokenListBlockchain, TokenListItemPropsBase, TokenListPropsBase } from './token-list';
+export type { StakeAccountsBodyPropsBase } from './stake-accounts';
+export type { SkrScreenPropsBase } from './skr-screen';
+export type { BlockListPropsBase, KitBlock, KitCardPropsBase, KitRowPropsBase } from './block-list';
+export type { PillPropsBase, PillTone } from './pill';
+export { pillColorsFor } from './pill';
+export type { BarChartPropsBase } from './bar-chart';
+export { barHeights } from './bar-chart';
+export type { ProgressBarPropsBase } from './progress-bar';
+export { progressPercent } from './progress-bar';
+export type { StatGridPropsBase, StatTilePropsBase, StatTileSize, StatTileTone } from './stat-tile';
+export { STAT_MIN_FONT_SCALE, STAT_SIZES, statInkFor } from './stat-tile';
 export type { TokenLogoPropsBase } from './token-logo';
 export type { SpinnerPropsBase } from './spinner';
 export { SPINNER_DEFAULT_SIZE, SPINNER_LARGE_FROM } from './spinner';
@@ -120,7 +131,12 @@ export type { AccountsPanelPropsBase } from './accounts-panel';
 export type { AccountEditPanelPropsBase } from './account-edit-panel';
 
 // Account Add Panel
-export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
+export type {
+  AccountAddStep,
+  AccountAddPanelPropsBase,
+  SeedVaultAccess,
+  SeedVaultListedAccount,
+} from './account-add';
 
 // Security Panel
 export type { SecurityPanelPropsBase } from './security-panel';
@@ -182,6 +198,7 @@ export type { PowerupBadgeTier, PowerupBadgePropsBase } from './powerup-badge';
 
 // Card
 export type { CardTone, CardPadding, CardRadius, CardPropsBase } from './card';
+export { CARD_GLOW, CARD_PADDINGS, CARD_RADII, cardTonesFor } from './card';
 
 // List Row
 export type { ListRowPadding, ListRowEmphasis, ListRowPropsBase } from './list-row';

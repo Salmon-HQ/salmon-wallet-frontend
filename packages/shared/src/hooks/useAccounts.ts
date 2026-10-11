@@ -25,6 +25,7 @@ import {
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
   createBlockchainAccountForWatchOnly,
+  createBlockchainAccountForSeedVault,
 } from '../utils';
 import { getRandomAvatar } from '../utils/avatar';
 import type { BlockchainAccount } from '../types/blockchain';
@@ -105,8 +106,8 @@ export interface UseAccountsActions {
   getNetworkId: () => string | null;
   /** Change the active path index */
   changePathIndex: (targetIndex: number) => Promise<void>;
-  /** Add a new account */
-  addAccount: (account: Account, password?: string) => Promise<void>;
+  /** Add a new account; `replaces` drops the wallet it takes the place of in the same write */
+  addAccount: (account: Account, password?: string, replaces?: string) => Promise<void>;
   /** Edit an existing account */
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   /** Remove an account */
@@ -187,6 +188,21 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
   // an imported key, minus the secret.
   if (secret.kind === 'watchOnly') {
     const account = await createBlockchainAccountForWatchOnly(secret.networkId, secret.address);
+
+    return {
+      id,
+      name: name ?? `Account ${id.slice(-4)}`,
+      avatar: avatar ?? getRandomAvatar(),
+      secret,
+      pathIndexes: { [secret.networkId]: [0] },
+      networksAccounts: { [secret.networkId]: [account] },
+    };
+  }
+
+  // A Seed Vault wallet is one address on one Solana network, like a watched
+  // one, except that it signs — by asking Seed Vault.
+  if (secret.kind === 'seedVault') {
+    const account = await createBlockchainAccountForSeedVault(secret);
 
     return {
       id,

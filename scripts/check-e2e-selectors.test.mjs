@@ -37,7 +37,8 @@ test('a coordinate tap is a finding', () => {
 });
 
 test('external strings and regex anchors are not findings', () => {
-  const flow = "- tapOn: 'Development Build'\n- assertVisible: '(?i)Welcome back|Unlock'\n";
+  const flow =
+    "- tapOn: 'Development Build'\n- assertVisible: '(?i)Welcome back|Unlock'\n- tapOn:\n    id: 'UsePin'\n";
   assert.deepEqual(auditMaestroFlow('f.yaml', flow, { idExists, textExists: () => false }), []);
 });
 

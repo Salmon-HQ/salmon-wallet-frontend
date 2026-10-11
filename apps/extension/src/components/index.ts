@@ -49,6 +49,8 @@ export {
   TokenListSkeleton,
   TokenMarketData,
   ActivityPage,
+  BlockList,
+  StakeAccountsPage,
   TrustedAppsSelector,
   SolanaSvgIcon,
   WalletHeader,

@@ -7,7 +7,7 @@
   },
   "tabs": {
     "home": "Inicio",
-    "portfolio": "Portfolio",
+    "portfolio": "Activos",
     "nfts": "NFTs"
   },
   "general": {
@@ -150,7 +150,12 @@
     "hold_to_approve_hint": "Esta solicitud necesita una aprobación deliberada. Mantené presionado el botón para firmarla.",
     "effects_reason_ownership_change": "Esta transacción entrega el control de una de tus cuentas de tokens a otra persona, así que los saldos posteriores ya no serían tuyos.",
     "batch_size": "Transacciones en esta solicitud",
-    "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera."
+    "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
+    "mwa_refused_title": "Solicitud rechazada",
+    "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
+    "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
+    "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
+    "mwa_network_unsupported": "Esta app pidió {{requested}}, una red que tu billetera no está usando. Cambiá Salmon a esa red, si la soporta, y volvé a intentar."
   },
   "settings": {
     "title": "Configuración",
@@ -325,7 +330,9 @@
       "reauth_confirm": "Confirmar y agregar",
       "import_watch_only": "Seguir una billetera",
       "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos",
-      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos"
+      "watch_only_subtitle": "Seguí una dirección sin poder mover sus fondos",
+      "import_seed_vault": "Usar Seed Vault",
+      "import_seed_vault_description": "Agregá una wallet cuya clave queda en el Seed Vault de tu Seeker"
     },
     "security": {
       "title": "Seguridad",
@@ -557,6 +564,26 @@
         "looksLikeSecret": "Eso parece una clave privada, no una dirección. Acá pegá solo una dirección — nunca tu clave privada.",
         "duplicate": "Esta billetera ya está en tu lista."
       }
+    },
+    "seedVault": {
+      "title": "Seed Vault",
+      "subtitle": "Elegí una cuenta de tu Seed Vault. Su clave nunca sale del Seed Vault.",
+      "waiting": "Esperando al Seed Vault…",
+      "added": "Ya está en Salmon",
+      "in_use": "Tu wallet del Seed Vault",
+      "authorize_another": "Usar otra semilla",
+      "create_seed": "Crear una semilla en el Seed Vault",
+      "import_seed": "Importar una semilla al Seed Vault",
+      "errors": {
+        "cancelled": "No se dio acceso al Seed Vault.",
+        "unavailable": "Este dispositivo no tiene Seed Vault.",
+        "failed": "El Seed Vault no pudo completar el pedido. Probá de nuevo.",
+        "revoked": "Se revocó el acceso al Seed Vault. Usá Seed Vault de nuevo para reconectar esta wallet.",
+        "no-seeds": "El Seed Vault todavía no tiene una semilla. Creá o importá una en el Seed Vault.",
+        "blocked": "El acceso al Seed Vault está desactivado para Salmon. Permitilo en los Ajustes de Android."
+      },
+      "badge": "Seed Vault",
+      "open_settings": "Abrir Ajustes"
     }
   },
   "transactions": {
@@ -654,7 +681,8 @@
       "imageAlt": "Imagen del NFT {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Colección",
-      "mintAddress": "Mint address"
+      "mintAddress": "Mint address",
+      "frozen": "Su emisor dejó este NFT fijo en tu wallet: no se puede enviar ni quemar."
     },
     "send": {
       "pendingTitle": "Enviando NFT",
@@ -917,5 +945,26 @@
     "required_title": "Actualizá Salmon para continuar",
     "required_body": "Esta versión ya no tiene soporte. Tus cuentas y fondos están a salvo; instalá la última versión desde la tienda para seguir usando la billetera.",
     "open_store": "Abrir la tienda"
+  },
+  "staking": {
+    "title": "Staking",
+    "staked_sol": "SOL en staking",
+    "staked_skr": "SKR en staking",
+    "detail": {
+      "title": "Cuentas de staking",
+      "subtitle": "SOL delegado a validadores, y lo que pagó cada época.",
+      "amount": "Monto",
+      "state": "Estado",
+      "epoch_reward": "Recompensa de la época {{epoch}}",
+      "undelegated": "Sin delegar",
+      "empty": "Esta wallet no tiene cuentas de staking.",
+      "error": "No se pudieron cargar las cuentas de staking."
+    },
+    "state": {
+      "activating": "Activándose",
+      "active": "Activa",
+      "deactivating": "Desactivándose",
+      "inactive": "Inactiva"
+    }
   }
 }

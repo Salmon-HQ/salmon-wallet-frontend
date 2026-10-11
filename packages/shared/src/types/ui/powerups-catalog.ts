@@ -73,4 +73,6 @@ export interface PowerupsCatalogPropsBase extends Testable {
   entries: readonly PowerupsCatalogEntry[];
   onInstall: (id: string) => void;
   onUninstall: (id: string) => void;
+  /** Open straight onto this Powerup's detail (`openCatalogAt`). */
+  focusId?: string | null;
 }
