@@ -13,9 +13,9 @@
  * the wallet to sign the constructed SIWS text wrapped in an OCMS v1 envelope
  * (see `./offchain-message.ts`) instead of signing the raw UTF-8 bytes.
  */
-import { signBytes } from '@solana/kit';
 import { address } from '@solana/addresses';
 import { signOffchainMessage } from './offchain-message';
+import { signBytesWith } from './signing';
 import type { SolanaAccount } from './SolanaAccount';
 
 /**
@@ -263,6 +263,6 @@ export async function signSiwsMessage(
     };
   }
 
-  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
+  const signature = await signBytesWith(account.signer, messageBytes);
   return { message: prepared.message, signedMessage: messageBytes, signature };
 }

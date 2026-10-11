@@ -17,7 +17,13 @@ import { useTranslation } from 'react-i18next';
 import { fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { getPowerup, type PowerupId } from '@salmon/shared/powerups';
 import { useSemantic } from '../../components';
-import { MemoPage, PaymentsHistoryPage, PaymentsPage, SwapPage } from '@salmon/ui/powerups';
+import {
+  MemoPage,
+  PaymentsHistoryPage,
+  PaymentsPage,
+  SkrPage,
+  SwapPage,
+} from '@salmon/ui/powerups';
 
 export interface PowerupBodyContext {
   /** The active account's receive address on `networkId`; never null here. */
@@ -98,7 +104,8 @@ function PowerupUsage({ id }: { id: string }) {
       data-testid={`home-powerup-usage-${id}`}
       style={{
         fontFamily: fontFamily.sans,
-        fontWeight: fontWeight.medium,
+        // Bold: the one line that says what the tab is for (owner, 2026-10-09).
+        fontWeight: fontWeight.bold,
         fontSize: fontSize.subtitle,
         lineHeight: `${fontSize.subtitle * lineHeight.snug}px`,
         color: semantic.text.secondary,
@@ -111,6 +118,9 @@ function PowerupUsage({ id }: { id: string }) {
 }
 
 function renderPowerupPage(id: string, ctx: PowerupBodyContext): React.ReactElement | null {
+  if (id === 'skr' && SkrPage) {
+    return <SkrPage publicKey={ctx.publicKey} />;
+  }
   if (id === 'memo' && MemoPage) {
     return (
       <MemoPage

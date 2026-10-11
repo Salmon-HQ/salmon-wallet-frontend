@@ -9,8 +9,6 @@ import {
   getTransactionDecoder,
   getTransactionEncoder,
   isSolanaError,
-  partiallySignTransaction,
-  signBytes,
   SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
 } from '@solana/kit';
 import type {
@@ -36,6 +34,11 @@ import {
   signSiwsMessage,
 } from '../blockchain/solana';
 import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
+import {
+  signBytesWith,
+  signTransactionWith,
+  signTransactionsWith,
+} from '../blockchain/solana/signing';
 import type {
   ResolveSymbolFn,
   SolanaAccount,
@@ -100,12 +103,17 @@ function emptySignatureMap(
 }
 
 /** Signs an approved compiled message, leaving every other signer slot empty. */
-function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+/** An approved compiled message as an unsigned transaction, every signer slot empty. */
+function approvedTransaction(encodedMessage: string) {
   const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
-  return partiallySignTransaction([account.signer.keyPair], {
+  return {
     messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
     signatures: emptySignatureMap(message),
-  });
+  };
+}
+
+function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+  return signTransactionWith(account.signer, approvedTransaction(encodedMessage));
 }
 
 const SEND_COMMITMENTS: readonly Commitment[] = ['processed', 'confirmed', 'finalized'];
@@ -400,7 +408,7 @@ export async function approveSolanaSignMessage(
     throw new TransactionLookalikeMessageError();
   }
   assertSiwsTextBoundToOrigin(messageBytes, origin, account.getReceiveAddress());
-  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
+  const signature = await signBytesWith(account.signer, messageBytes);
 
   return {
     signature: bs58.encode(signature),
@@ -519,16 +527,19 @@ export async function approveSolanaTransactionRequest(
     const encodedMessages = request.params?.messages ?? [];
     if (!encodedMessages.length) throw new Error('Missing messages');
 
-    const signatures = await Promise.all(
-      encodedMessages.map(async (encodedMessage) => {
-        const signed = await signApprovedMessage(account, encodedMessage);
-        const signature = signed.signatures[account.signer.address];
-        if (!signature) {
-          throw new Error('Failed to sign one of the transactions');
-        }
-        return bs58.encode(signature);
-      })
+    // One request for the whole batch: a Seed Vault account then confirms in
+    // groups instead of once per transaction, and nothing races.
+    const signed = await signTransactionsWith(
+      account.signer,
+      encodedMessages.map(approvedTransaction)
     );
+    const signatures = signed.map((tx) => {
+      const signature = tx.signatures[account.signer.address];
+      if (!signature) {
+        throw new Error('Failed to sign one of the transactions');
+      }
+      return bs58.encode(signature);
+    });
 
     return {
       signatures,
@@ -546,7 +557,7 @@ export async function approveSolanaTransactionRequest(
   // Signing the transaction the dApp sent preserves signatures it already
   // applied; rebuilding from the message alone silently drops them, producing a
   // transaction the cluster rejects. The decoder reads both wire formats and
-  // `partiallySignTransaction` only ever fills this wallet's own slot.
+  // `signTransactionWith` only ever fills this wallet's own slot.
   const encodedTransaction = request.params?.transaction;
   if (encodedTransaction) {
     const decoded = getTransactionDecoder().decode(bs58.decode(encodedTransaction));
@@ -563,7 +574,7 @@ export async function approveSolanaTransactionRequest(
       );
     }
 
-    const signed = await partiallySignTransaction([account.signer.keyPair], decoded);
+    const signed = await signTransactionWith(account.signer, decoded);
     const signature = await rpc
       .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
       .send();

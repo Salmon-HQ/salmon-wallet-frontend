@@ -16,7 +16,7 @@
  * the target and adds the travel that starts when the phase lands. Reduce
  * motion: the target settles at once.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motionMs } from '../theme/durations';
 import { FLOAT_DELAY_MS, FLOAT_IN_MS, SINK_OUT_MS } from './sinkFloat';
 import type { FocusModePhase } from './useFocusModePhase';
@@ -58,4 +58,37 @@ export function useSettledSubTab<K extends string>({
   }, [target, settled, focusPhase, isReduceMotionEnabled, isFocusTab]);
 
   return settled;
+}
+
+/**
+ * Home's content region, once for both Homes: whether a Powerup's tab holds
+ * the screen (focus mode), the tab whose content may be drawn, and whether a
+ * switch is still on its way to it.
+ */
+export function useHomeSubTabContent<K extends string>({
+  effectiveSubTab,
+  powerupTabs,
+  focusPhase,
+  isReduceMotionEnabled,
+}: {
+  effectiveSubTab: K;
+  powerupTabs: readonly { key: string }[];
+  focusPhase: FocusModePhase;
+  isReduceMotionEnabled: boolean;
+}): { isPowerupMode: boolean; settledSubTab: K; subTabPending: boolean } {
+  const isFocusTab = useCallback(
+    (key: K) => powerupTabs.some((tab) => tab.key === key),
+    [powerupTabs]
+  );
+  const settledSubTab = useSettledSubTab({
+    target: effectiveSubTab,
+    isFocusTab,
+    focusPhase,
+    isReduceMotionEnabled,
+  });
+  return {
+    isPowerupMode: focusPhase === 'gone',
+    settledSubTab,
+    subTabPending: settledSubTab !== effectiveSubTab,
+  };
 }

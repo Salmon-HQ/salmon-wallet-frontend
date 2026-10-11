@@ -25,6 +25,7 @@ import {
   vs,
   type Account,
   type Semantic,
+  isSeedVaultAccount,
 } from '@salmon/shared';
 import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
@@ -92,6 +93,9 @@ function AccountRow({ account, isActive, canDelete, onPress, onEdit, onDelete }:
             />
             {isWatchOnlyAccount(account) && (
               <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
+            )}
+            {isSeedVaultAccount(account) && (
+              <WatchOnlyBadge kind="seedVault" testID={`account-item-seed-vault-${account.id}`} />
             )}
           </View>
           {shortAddress ? <Text style={styles.address}>{shortAddress}</Text> : null}

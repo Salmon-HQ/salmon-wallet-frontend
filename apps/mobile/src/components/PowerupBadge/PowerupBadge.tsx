@@ -16,32 +16,15 @@ import {
   s,
   spacing,
   vs,
-  type Semantic,
+  powerupBadgeTier,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';
-import type { PowerupBadgeProps, PowerupTier } from './types';
-
-const tiersFor = (
-  t: Semantic
-): Record<PowerupTier, { background: string; ink: string; key: string; fallback: string }> => ({
-  core: {
-    background: t.accent.tint,
-    ink: t.accent.ink,
-    key: 'powerups.badge.core',
-    fallback: 'Core',
-  },
-  community: {
-    background: t.surface.raised,
-    ink: t.text.secondary,
-    key: 'powerups.badge.community',
-    fallback: 'Community',
-  },
-});
+import type { PowerupBadgeProps } from './types';
 
 export function PowerupBadge({ tier, style, testID }: PowerupBadgeProps) {
   const { t } = useTranslation();
-  const { background, ink, key, fallback } = tiersFor(useSemantic())[tier];
+  const { background, ink, key, fallback } = powerupBadgeTier(useSemantic(), tier);
 
   return (
     <View testID={testID} style={[styles.badge, { backgroundColor: background }, style]}>

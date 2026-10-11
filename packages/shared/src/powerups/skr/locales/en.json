@@ -1,0 +1,74 @@
+{
+  "catalog": {
+    "name": "SKR",
+    "description": "Your SKR, staked and earning",
+    "about": "Shows the SKR your wallet holds and what it has staked with a guardian in Solana Mobile's staking: how much it has earned, the current rate, and the rewards of each period. It only reads; staking and unstaking stay in Solana Mobile's own apps.",
+    "usage": "Your SKR position. Rewards compound every two days.",
+    "actions": {
+      "position": "See your staked SKR, its guardian and what it has earned",
+      "rewards": "Follow the rewards of each period"
+    }
+  },
+  "history": {
+    "empty": "Salmon records your rewards from {{date}}. The first one shows here after the next payout.",
+    "emptyToday": "Salmon records your rewards from today. The first one shows here after the next payout."
+  },
+  "empty": {
+    "title": "No SKR in this wallet",
+    "body": "When this wallet holds or stakes SKR, it shows here."
+  },
+  "error": {
+    "title": "Could not load your SKR."
+  },
+  "header": {
+    "subtitle": "Seeker · Staking position"
+  },
+  "apy": "{{value}} APY",
+  "stake": {
+    "title": "My stake",
+    "earned": "Earned",
+    "available": "Available",
+    "unstaking": "Unstaking",
+    "withdrawable": "Withdrawable from"
+  },
+  "guardian": {
+    "commission": "{{value}} commission",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "daily": {
+    "title": "Daily",
+    "estimate": "Estimate",
+    "perDay": "Per day",
+    "stakedFor": "Staked for",
+    "days_one": "day",
+    "days_other": "days",
+    "compounding": "Compounds every"
+  },
+  "rewards": {
+    "title": "Rewards",
+    "compounded": "Compounded",
+    "lastPayouts": "Last {{count}} payouts",
+    "average": "{{value}} avg",
+    "chartLabel": "What your stake earned in each of the last payouts",
+    "seeAll": "See all rewards"
+  },
+  "about": {
+    "title": "About SKR",
+    "price": "Price",
+    "totalSupply": "Total supply",
+    "circulating": "Circulating",
+    "staked": "Staked",
+    "ofCirculating": "{{value}} of circulating",
+    "stakedLegend": "Staked {{value}}",
+    "liquidLegend": "Liquid {{value}}",
+    "shareLabel": "Share of circulating SKR that is staked"
+  },
+  "payout": {
+    "next": "Next compound",
+    "countdown": "in {{days}}d {{hours}}h",
+    "due": "Due now",
+    "last": "Last payout: {{value}}",
+    "progressLabel": "Time gone since the last payout"
+  }
+}

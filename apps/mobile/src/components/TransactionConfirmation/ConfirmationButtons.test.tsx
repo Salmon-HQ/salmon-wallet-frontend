@@ -33,6 +33,9 @@ jest.mock('../Button', () => {
     SecondaryButton: ({ style, testID }: { style?: object; testID?: string }) => (
       <RNText testID={testID} style={style} />
     ),
+    HoldToApproveButton: ({ testID, disabled }: { testID?: string; disabled?: boolean }) => (
+      <RNText testID={testID} accessibilityState={{ disabled }} />
+    ),
   };
 });
 
@@ -113,5 +116,23 @@ describe('ConfirmationButtons — the pair stacks, full width', () => {
       busy: true,
       disabled: true,
     });
+  });
+});
+
+describe('ConfirmationButtons — approval friction', () => {
+  it('cannot confirm while the review says it is not ready', () => {
+    const { getByTestId } = render(
+      <ConfirmationButtons onBack={jest.fn()} onConfirm={jest.fn()} confirmDisabled />
+    );
+    expect(getByTestId('confirmation-confirm-button').props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+  });
+
+  it('asks for a hold instead of a tap when the review requires it', () => {
+    const { getByTestId } = render(
+      <ConfirmationButtons onBack={jest.fn()} onConfirm={jest.fn()} requiresHold />
+    );
+    expect(getByTestId('confirmation-hold-button')).toBeTruthy();
   });
 });

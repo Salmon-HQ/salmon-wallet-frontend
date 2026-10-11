@@ -24,6 +24,10 @@ export interface ConfirmationButtonsProps {
   onConfirm: () => void;
   /** A rebuild is in flight: the confirm control spins and refuses a second press. */
   isRefreshing?: boolean;
+  /** The review is not ready to be confirmed (a dApp preview still running or unreadable). */
+  confirmDisabled?: boolean;
+  /** Confirm must be held, not tapped (the extension's hold-to-approve cases). */
+  requiresHold?: boolean;
   confirmLabel?: string;
   style?: ViewStyle;
 }

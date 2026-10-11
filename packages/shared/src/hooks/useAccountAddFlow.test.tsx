@@ -13,9 +13,10 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 import { useAccountAddFlow, type UseAccountAddFlowOptions } from './useAccountAddFlow';
 import { useAccountsContext } from '../contexts/AccountsContext';
+import { SeedVaultError } from '../blockchain/solana/seed-vault-signer';
 import { isVaultKeyCached, EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
 import { validateMnemonic } from '../crypto/mnemonic';
-import { createAccount } from '../factories/account-factory';
+import { createAccount, importSeedVaultAccount } from '../factories/account-factory';
 import { getScanNetworks } from '../utils/derived-accounts';
 
 vi.mock('../contexts/AccountsContext', () => ({ useAccountsContext: vi.fn() }));
@@ -31,6 +32,7 @@ vi.mock('../factories/account-factory', () => ({
   createAccount: vi.fn(),
   importAccountFromPrivateKey: vi.fn(),
   importWatchOnlyAccount: vi.fn(),
+  importSeedVaultAccount: vi.fn(),
 }));
 vi.mock('../analytics/client', () => ({ trackEvent: vi.fn() }));
 vi.mock('../utils/derived-accounts', () => ({
@@ -72,7 +74,9 @@ const createMock = vi.mocked(createAccount);
 const networksMock = vi.mocked(getScanNetworks);
 
 const addAccount = vi.fn();
+const removeAccount = vi.fn();
 const checkPassword = vi.fn();
+const importSeedVaultMock = vi.mocked(importSeedVaultAccount);
 
 const activeAccount = {
   id: 'wallet-1',
@@ -103,8 +107,14 @@ async function reachSetName(result: { current: ReturnType<typeof useAccountAddFl
 beforeEach(() => {
   vi.clearAllMocks();
   accountsMock.mockReturnValue([
-    { accounts: [{ id: 'a1' }, { id: 'a2' }], activeAccount },
-    { addAccount, checkPassword },
+    {
+      accounts: [
+        { id: 'a1', secret: { kind: 'mnemonic', mnemonic: 'a' } },
+        { id: 'a2', secret: { kind: 'mnemonic', mnemonic: 'b' } },
+      ],
+      activeAccount,
+    },
+    { addAccount, removeAccount, checkPassword, getNetworkId: () => 'solana-devnet' },
   ] as unknown as ReturnType<typeof useAccountsContext>);
   vaultCachedMock.mockResolvedValue(true);
   addAccount.mockResolvedValue(undefined);
@@ -227,7 +237,7 @@ describe('useAccountAddFlow', () => {
     await act(() => result.current.confirmReauth());
 
     expect(checkPassword).toHaveBeenCalledWith('correct-horse');
-    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse');
+    expect(addAccount).toHaveBeenCalledWith({ id: 'new' }, 'correct-horse', undefined);
     expect(opts.onPersisted).toHaveBeenCalledTimes(1);
     expect(result.current.reauthPassword).toBe('');
   });
@@ -275,5 +285,127 @@ describe('useAccountAddFlow', () => {
     expect(result.current.step).toBe('select-method');
     act(() => result.current.stepBack());
     expect(opts.onBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useAccountAddFlow — Seed Vault', () => {
+  const listed = [
+    {
+      authToken: '7',
+      derivationPath: "bip32:/m/44'/501'/0'/0'",
+      address: 'AddrA',
+      name: 'Main',
+      isUserWallet: true,
+    },
+    {
+      authToken: '7',
+      derivationPath: "bip32:/m/44'/501'/1'/0'",
+      address: 'AddrB',
+      name: 'AddrB',
+      isUserWallet: false,
+    },
+  ];
+  const access = () => ({
+    listAccounts: vi.fn().mockResolvedValue(listed),
+    authorizeAnother: vi.fn().mockResolvedValue(undefined),
+    createSeed: vi.fn().mockResolvedValue(undefined),
+    importSeed: vi.fn().mockResolvedValue(undefined),
+  });
+  const withWallets = (wallets: unknown[]) =>
+    accountsMock.mockReturnValue([
+      { accounts: wallets, activeAccount },
+      { addAccount, removeAccount, checkPassword, getNetworkId: () => 'solana-devnet' },
+    ] as unknown as ReturnType<typeof useAccountsContext>);
+
+  beforeEach(() => {
+    importSeedVaultMock.mockResolvedValue({ account: { id: 'sv' } } as never);
+  });
+
+  it("lists the authorized seeds' accounts and marks one already in Salmon", async () => {
+    withWallets([{ id: 'w', secret: { kind: 'seedVault', authToken: '7', address: 'AddrA' } }]);
+    const seedVault = access();
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
+
+    await act(() => result.current.selectSeedVault());
+
+    expect(result.current.step).toBe('import-seed-vault');
+    expect(result.current.seedVaultAccounts.map((a) => [a.address, a.added])).toEqual([
+      ['AddrA', true],
+      ['AddrB', false],
+    ]);
+  });
+
+  it('adds the chosen account as a Seed Vault wallet on the selected Solana network', async () => {
+    withWallets([]);
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault: access() })));
+    await act(() => result.current.selectSeedVault());
+
+    act(() => result.current.toggleSeedVault(result.current.seedVaultAccounts[1]!));
+    act(() => result.current.continueSeedVault());
+    expect(result.current.step).toBe('set-name');
+    await act(() => result.current.confirm());
+
+    expect(importSeedVaultMock).toHaveBeenCalledWith({
+      name: 'Account 3',
+      authToken: '7',
+      derivationPath: "bip32:/m/44'/501'/1'/0'",
+      address: 'AddrB',
+      networkId: 'solana-devnet',
+    });
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, undefined);
+    expect(removeAccount).not.toHaveBeenCalled();
+  });
+
+  it('reconnects a wallet whose Seed Vault access was revoked instead of duplicating it', async () => {
+    withWallets([{ id: 'old', secret: { kind: 'seedVault', authToken: '3', address: 'AddrA' } }]);
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault: access() })));
+    await act(() => result.current.selectSeedVault());
+    expect(result.current.seedVaultAccounts[0]!.added).toBe(false);
+
+    act(() => result.current.toggleSeedVault(result.current.seedVaultAccounts[0]!));
+    act(() => result.current.continueSeedVault());
+    await act(() => result.current.confirm());
+
+    // One write that drops the stale wallet (spec US3 scenario 4).
+    expect(addAccount).toHaveBeenCalledWith({ id: 'sv' }, undefined, 'old');
+    expect(removeAccount).not.toHaveBeenCalled();
+  });
+
+  it("shows the seed's own wallets and the first few paths, not every path derived ahead of time", async () => {
+    withWallets([]);
+    const deep = (i: number) => ({
+      authToken: '7',
+      derivationPath: `bip32:/m/44'/501'/${i}'/0'`,
+      address: `Deep${i}`,
+      name: `Deep${i}`,
+      isUserWallet: i === 40,
+    });
+    const seedVault = access();
+    seedVault.listAccounts.mockResolvedValue(Array.from({ length: 50 }, (_, i) => deep(i)));
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
+
+    await act(() => result.current.selectSeedVault());
+
+    expect(result.current.seedVaultAccounts.map((a) => a.address)).toEqual([
+      'Deep40',
+      'Deep0',
+      'Deep1',
+      'Deep2',
+      'Deep3',
+      'Deep4',
+    ]);
+  });
+
+  it('stays on the step with the reason when Seed Vault did not answer', async () => {
+    withWallets([]);
+    const seedVault = access();
+    seedVault.listAccounts.mockRejectedValue(new SeedVaultError('cancelled'));
+    const { result } = renderHook(() => useAccountAddFlow(options({ seedVault })));
+
+    await act(() => result.current.selectSeedVault());
+
+    expect(result.current.step).toBe('import-seed-vault');
+    expect(result.current.seedVaultError).toBe('wallet.seedVault.errors.cancelled');
+    expect(result.current.seedVaultAccounts).toEqual([]);
   });
 });

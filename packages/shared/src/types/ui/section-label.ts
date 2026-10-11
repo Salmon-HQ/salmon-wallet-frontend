@@ -10,4 +10,7 @@ export type SectionLabelVariant = 'caps' | 'group' | 'title';
 export interface SectionLabelPropsBase extends Testable {
   children: string;
   variant: SectionLabelVariant;
+  /** A figure at the end of the heading's line ("+6,045.71 SKR"). */
+  trailing?: string;
+  trailingTone?: 'secondary' | 'positive';
 }

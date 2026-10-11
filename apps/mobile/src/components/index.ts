@@ -208,6 +208,8 @@ export { PowerupsCatalog } from './PowerupsCatalog';
 export type { PowerupsCatalogProps } from './PowerupsCatalog';
 
 export { TokenList, TokenListItem } from './TokenList';
+export { BlockList } from './BlockList';
+export type { BlockListProps } from './BlockList';
 export type { TokenListProps, TokenListItemProps } from './TokenList';
 
 export { TokenLogo } from './TokenLogo';

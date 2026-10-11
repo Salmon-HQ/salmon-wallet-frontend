@@ -29,6 +29,7 @@ import {
   Wordmark,
 } from '../../src/components';
 import { useThemedStyles } from '../../src/theme/useThemedStyles';
+import { useSeedVaultAccess } from '../../src/seed-vault/useSeedVaultAccess';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -43,6 +44,8 @@ export default function WelcomeScreen() {
   const { t } = useTranslation();
   const { accent } = useSemantic();
   const styles = useThemedStyles(stylesFor);
+  // On a Seeker the wallet usually already lives in Seed Vault (spec 037).
+  const seedVault = useSeedVaultAccess();
 
   /**
    * Navigate to account creation flow
@@ -91,6 +94,16 @@ export default function WelcomeScreen() {
         <Text style={styles.slogan} testID="welcome-slogan">
           Open code. Open ownership.
         </Text>
+      }
+      assist={
+        seedVault ? (
+          <SecondaryButton
+            onPress={() => router.push('/(auth)/seed-vault')}
+            testID="select-seed-vault-button"
+          >
+            {t('settings.account_add.import_seed_vault')}
+          </SecondaryButton>
+        ) : undefined
       }
       secondary={
         <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">

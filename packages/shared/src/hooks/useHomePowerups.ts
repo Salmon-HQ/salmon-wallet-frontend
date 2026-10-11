@@ -83,6 +83,11 @@ export interface UseHomePowerupsCatalogParams {
   getCatalog: (params: PowerupCatalogParams) => PowerupsCatalogEntry[];
   /** The backend's kill switch for `networkId`; only its enabled ids are offered. */
   allowlist: PowerupAllowlist;
+  /**
+   * Opens a Powerup's tab. Called when the Powerup the catalogue was opened
+   * on (`openCatalogAt`) is installed from there.
+   */
+  onOpenTab?: (id: string) => void;
 }
 
 export interface UseHomePowerupsCatalogResult {
@@ -93,6 +98,14 @@ export interface UseHomePowerupsCatalogResult {
   /** Only a Powerup the registry holds and the backend allows can be installed. */
   handleInstall: (id: string) => void;
   removableTabKeys: string[];
+  /**
+   * Opens the catalogue on one Powerup's detail — where its disclosure is
+   * read and its `+` installs it. Does nothing for one the catalogue does
+   * not list here.
+   */
+  openCatalogAt: (id: string) => void;
+  /** The Powerup the catalogue was opened on, until it closes. */
+  catalogFocusId: string | null;
 }
 
 /** The catalogue drawer's own state, plus the entries it draws. */
@@ -104,10 +117,18 @@ export function useHomePowerupsCatalog({
   powerups,
   getCatalog,
   allowlist,
+  onOpenTab,
 }: UseHomePowerupsCatalogParams): UseHomePowerupsCatalogResult {
   const [catalogVisible, setCatalogVisible] = useState(false);
-  const handleCatalogToggle = useCallback(() => setCatalogVisible((open) => !open), []);
-  const handleCatalogClose = useCallback(() => setCatalogVisible(false), []);
+  const [catalogFocusId, setCatalogFocusId] = useState<string | null>(null);
+  const handleCatalogToggle = useCallback(() => {
+    setCatalogFocusId(null);
+    setCatalogVisible((open) => !open);
+  }, []);
+  const handleCatalogClose = useCallback(() => {
+    setCatalogFocusId(null);
+    setCatalogVisible(false);
+  }, []);
 
   const catalogEntries = useMemo(
     () =>
@@ -120,11 +141,26 @@ export function useHomePowerupsCatalog({
     [getCatalog, networkId, installed, allowlist]
   );
 
+  const openCatalogAt = useCallback(
+    (id: string) => {
+      if (!catalogEntries.some((entry) => entry.id === id)) return;
+      setCatalogFocusId(id);
+      setCatalogVisible(true);
+    },
+    [catalogEntries]
+  );
+
   const handleInstall = useCallback(
     (id: string) => {
-      if (powerups.some((entry) => entry.id === id) && allowlist.enabled.includes(id)) install(id);
+      if (!powerups.some((entry) => entry.id === id) || !allowlist.enabled.includes(id)) return;
+      install(id);
+      if (id === catalogFocusId) {
+        setCatalogFocusId(null);
+        setCatalogVisible(false);
+        onOpenTab?.(id);
+      }
     },
-    [install, powerups, allowlist]
+    [install, powerups, allowlist, catalogFocusId, onOpenTab]
   );
 
   const removableTabKeys = useMemo(
@@ -139,5 +175,7 @@ export function useHomePowerupsCatalog({
     catalogEntries,
     handleInstall,
     removableTabKeys,
+    openCatalogAt,
+    catalogFocusId,
   };
 }

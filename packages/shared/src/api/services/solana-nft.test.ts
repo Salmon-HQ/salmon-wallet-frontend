@@ -57,6 +57,26 @@ describe('solana-nft service', () => {
     ]);
   });
 
+  // The Seeker Genesis Token: its issuer froze the holder's token, so the
+  // wallet must not offer to send or burn it.
+  it('keeps the frozen flag the backend reports', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: {
+        data: [
+          { mint: 'Sgt111', name: 'Seeker Genesis Token', media: 'https://x/s.png', frozen: true },
+          { mint: 'Plain111', name: 'Plain', media: 'https://x/p.png' },
+        ],
+      },
+    });
+
+    const { nfts } = await getSolanaNfts('solana-mainnet', 'Owner111', false);
+
+    expect(nfts.map((n) => [n.mint.address, n.frozen])).toEqual([
+      ['Sgt111', true],
+      ['Plain111', false],
+    ]);
+  });
+
   // An NFT without usable art is still the user's. Dropping it hid assets
   // they could then neither see, send nor burn.
   it('keeps NFTs that have no usable media, with no image', async () => {

@@ -52,6 +52,10 @@ export const stylesFor = (_t: Semantic) =>
       marginHorizontal: s(spacing.screenGutter),
       marginBottom: vs(spacing.xl),
     },
+    // Assets' Staking section, a block's gap under the tokens (spec 038).
+    stakingSection: {
+      marginTop: vs(spacing.xl),
+    },
     listContent: {
       paddingTop: 0,
       paddingBottom: vs(componentSizes.tabBarScrollPadding),

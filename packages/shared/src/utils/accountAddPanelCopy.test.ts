@@ -18,12 +18,13 @@ const ALL_STEPS: readonly AccountAddStep[] = [
 ];
 
 describe('ACCOUNT_ADD_METHODS', () => {
-  it('lists derive first, then import, private-key, watch-only', () => {
+  it('lists derive first, then import, private-key, watch-only, seed-vault', () => {
     expect(ACCOUNT_ADD_METHODS.map((method) => method.id)).toEqual([
       'derive',
       'import',
       'private-key',
       'watch-only',
+      'seed-vault',
     ]);
   });
 

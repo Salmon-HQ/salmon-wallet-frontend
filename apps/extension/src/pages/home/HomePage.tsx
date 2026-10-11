@@ -14,6 +14,10 @@ import {
   useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
+  STAKED_SKR_KEY,
+  STAKED_SOL_KEY,
+  useStakeAccountsScreen,
+  useHomeStaking,
   type HomeSubTabKey,
   getNetworkLabel,
   getHeldNetworkIds,
@@ -34,7 +38,9 @@ import {
   useFocusModePhase,
   type FocusModePhase,
   useNetworkPowerups,
-  useSettledSubTab,
+  allowlistForDevice,
+  type DeviceCapability,
+  useHomeSubTabContent,
   isSignableAccount,
 } from '@salmon/shared';
 import {
@@ -49,6 +55,7 @@ import {
   TokenDetailPage,
   NftDetailPage,
   ActivityPage,
+  StakeAccountsPage,
   ReceiveSheet,
   useTaskChrome,
   WalletsScreen,
@@ -103,6 +110,9 @@ interface HomePageProps {
  * Home page component displayed when wallet is unlocked.
  * Shows account info and provides access to main wallet features.
  */
+/** The extension runs on no phone: it has no device capability to offer. */
+const NO_DEVICE_CAPABILITIES: readonly DeviceCapability[] = [];
+
 export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
@@ -240,6 +250,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     skip: !ready || !activeBlockchainAccount || !networksReady,
     // BE filters unknown-only-tagged SPL tokens by default; opt in via developer mode.
     includeSpam: showUnverifiedTokens,
+  });
+
+  // What the wallet has staked (spec 038): the Staking section under the
+  // tokens, and its USD in the total. A failed read adds nothing.
+  const staking = useHomeStaking({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
+    tokens,
+    usdTotal,
+  });
+  const stakeAccountsScreen = useStakeAccountsScreen({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
   });
 
   // Warm the chains the user is not looking at, so the first arrow press of the
@@ -409,7 +432,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // The backend's kill switch for the network the account stands on (spec
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
-  const powerupAllowlist = useNetworkPowerups(state.networkId ?? null);
+  // A Powerup that needs more than a network (SKR: Seed Vault, a Solana
+  // Mobile phone) is never offered here (spec 040).
+  const networkAllowlist = useNetworkPowerups(state.networkId ?? null);
+  const powerupAllowlist = useMemo(
+    () => allowlistForDevice(networkAllowlist, POWERUPS, NO_DEVICE_CAPABILITIES),
+    [networkAllowlist]
+  );
   const powerupTabs = useHomePowerupTabs({
     installed,
     powerups: POWERUPS,
@@ -437,7 +466,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     networkId,
     activeAccountId: activeAccount?.id,
     networksAccounts: activeAccount?.networksAccounts,
-    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    balance: {
+      usdTotal: staking.totalWithStakes,
+      nativeAmount,
+      changePercent,
+      changeAmount,
+      hasData,
+    },
     isTaskEngaged,
     surfaceKey,
     changeNetwork: actions.changeNetwork,
@@ -524,20 +559,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled, {
     commit: commitFocusPhase,
   });
-  const isPowerupMode = focusPhase === 'gone';
   // The content follows the row, never the tap (owner, 2026-09-16): only the
   // tab that has come to rest has its content drawn; see the mobile twin.
-  const isFocusTab = useCallback(
-    (key: string) => powerupTabs.some((tab) => tab.key === key),
-    [powerupTabs]
-  );
-  const settledSubTab = useSettledSubTab({
-    target: effectiveSubTab,
-    isFocusTab,
+  const { isPowerupMode, settledSubTab, subTabPending } = useHomeSubTabContent({
+    effectiveSubTab,
+    powerupTabs,
     focusPhase,
     isReduceMotionEnabled,
   });
-  const subTabPending = settledSubTab !== effectiveSubTab;
 
   // The block's room: its height, read while shown, holds while it sinks and
   // comes back empty before it floats in. The block itself plays the verbs.
@@ -585,7 +614,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // installed one keeps its place in its tier and says it is installed there.
   // Only a real Powerup can be installed: the mocks advertise nothing the
   // wallet can open, so the catalogue refuses to give them a tab.
-  const { catalogEntries, handleInstall, removableTabKeys } = useHomePowerupsCatalog({
+  const {
+    catalogEntries,
+    handleInstall,
+    removableTabKeys,
+    openCatalogAt,
+    catalogFocusId,
+    handleCatalogClose,
+  } = useHomePowerupsCatalog({
     powerupTabs,
     installed,
     install,
@@ -593,7 +629,35 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
     allowlist: powerupAllowlist,
+    onOpenTab: (id) => {
+      setCurrentPage('home');
+      setActiveSubTab(id as HomeSubTabKey);
+    },
   });
+  // Opened on one Powerup (Assets' Staked SKR): the catalogue is a page here.
+  useEffect(() => {
+    if (catalogFocusId) setCurrentPage('powerups');
+  }, [catalogFocusId]);
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab, or the catalogue on its detail to install it (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) setCurrentPage('staking');
+      else if (token.address === STAKED_SKR_KEY) {
+        if (skrTabOffered) setActiveSubTab('skr');
+        else openCatalogAt('skr');
+      }
+    },
+    [setActiveSubTab, skrTabOffered, openCatalogAt]
+  );
+
+  const skrOffered = powerupAllowlist.enabled.includes('skr');
+  const canStakingPress = useCallback(
+    (token: Token) => token.address !== STAKED_SKR_KEY || skrOffered,
+    [skrOffered]
+  );
 
   const activePowerupDisabledReason = powerupTabs.find(
     (tab) => tab.key === effectiveSubTab
@@ -688,7 +752,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             entries={catalogEntries}
             onInstall={handleInstall}
             onUninstall={uninstall}
-            onBack={handleBack}
+            focusId={catalogFocusId}
+            onBack={() => {
+              handleCatalogClose();
+              handleBack();
+            }}
           />
         ) : (
           <></>
@@ -734,6 +802,15 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         // rather than a hole in the stack; back still returns home.
         return page ?? <></>;
       }
+      case 'staking':
+        return (
+          <StakeAccountsPage
+            onBack={handleBack}
+            state={stakeAccountsScreen.state}
+            cards={stakeAccountsScreen.cards}
+            onRetry={() => void stakeAccountsScreen.refresh()}
+          />
+        );
       case 'activity':
         return (
           <ActivityPage
@@ -883,6 +960,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       hiddenBalance={hiddenBalance}
                       tokens={formattedTokens}
                       onTokenPress={handleTokenPress}
+                      stakingTokens={staking.tokens}
+                      onStakingPress={handleStakingPress}
+                      canStakingPress={canStakingPress}
                       onRetry={refresh}
                       bitcoin={bitcoin}
                       bitcoinChartPeriod={bitcoinChartPeriod}

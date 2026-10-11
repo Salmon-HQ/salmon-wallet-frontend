@@ -7,7 +7,7 @@
   },
   "tabs": {
     "home": "Home",
-    "portfolio": "Portfolio",
+    "portfolio": "Assets",
     "nfts": "NFTs"
   },
   "general": {
@@ -150,7 +150,12 @@
     "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
     "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
     "batch_size": "Transactions in this request",
-    "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one."
+    "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.",
+    "mwa_refused_title": "Request refused",
+    "mwa_unverified": "Salmon could not confirm that this request comes from {{origin}}. Approve only if you opened that app or site yourself.",
+    "mwa_watch_only": "The active wallet only watches balances, so it cannot connect or sign. Switch to a wallet that holds its keys and try again.",
+    "mwa_identity_missing": "This app did not say which site it is, so Salmon cannot show you who is asking. The request was refused.",
+    "mwa_network_unsupported": "This app asked for {{requested}}, a network your wallet is not using. Switch Salmon to that network, if it supports it, and try again."
   },
   "settings": {
     "title": "Settings",
@@ -325,7 +330,9 @@
       "reauth_confirm": "Confirm and add",
       "import_watch_only": "Watch a wallet",
       "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds",
-      "watch_only_subtitle": "Follow a wallet's address without moving its funds"
+      "watch_only_subtitle": "Follow a wallet's address without moving its funds",
+      "import_seed_vault": "Use Seed Vault",
+      "import_seed_vault_description": "Add a wallet whose key stays in your Seeker's Seed Vault"
     },
     "security": {
       "title": "Security",
@@ -557,6 +564,26 @@
         "looksLikeSecret": "That looks like a private key, not an address. Only paste an address here — never your private key.",
         "duplicate": "This wallet is already in your list."
       }
+    },
+    "seedVault": {
+      "title": "Seed Vault",
+      "subtitle": "Pick an account from your Seed Vault. Its key never leaves Seed Vault.",
+      "waiting": "Waiting for Seed Vault…",
+      "added": "Already in Salmon",
+      "in_use": "Your Seed Vault wallet",
+      "authorize_another": "Use another seed",
+      "create_seed": "Create a seed in Seed Vault",
+      "import_seed": "Import a seed into Seed Vault",
+      "errors": {
+        "cancelled": "Seed Vault access was not given.",
+        "unavailable": "Seed Vault is not available on this device.",
+        "failed": "Seed Vault could not complete the request. Try again.",
+        "revoked": "Seed Vault access was revoked. Use Seed Vault again to reconnect this wallet.",
+        "no-seeds": "Seed Vault has no seed yet. Create or import one in Seed Vault.",
+        "blocked": "Seed Vault access is turned off for Salmon. Allow it in Android Settings."
+      },
+      "badge": "Seed Vault",
+      "open_settings": "Open Settings"
     }
   },
   "transactions": {
@@ -654,7 +681,8 @@
       "imageAlt": "NFT image for {{name}}",
       "cardLabel": "NFT: {{name}}",
       "collection": "Collection",
-      "mintAddress": "Mint address"
+      "mintAddress": "Mint address",
+      "frozen": "Its issuer locked this NFT to your wallet: it cannot be sent or burned."
     },
     "send": {
       "pendingTitle": "Sending NFT",
@@ -917,5 +945,26 @@
     "required_title": "Update Salmon to continue",
     "required_body": "This version is no longer supported. Your accounts and funds are safe; install the latest version from the store to keep using the wallet.",
     "open_store": "Open the store"
+  },
+  "staking": {
+    "title": "Staking",
+    "staked_sol": "Staked SOL",
+    "staked_skr": "Staked SKR",
+    "detail": {
+      "title": "Stake accounts",
+      "subtitle": "SOL delegated to validators, and what each epoch paid.",
+      "amount": "Amount",
+      "state": "State",
+      "epoch_reward": "Epoch {{epoch}} reward",
+      "undelegated": "Not delegated",
+      "empty": "This wallet has no stake accounts.",
+      "error": "Could not load the stake accounts."
+    },
+    "state": {
+      "activating": "Activating",
+      "active": "Active",
+      "deactivating": "Deactivating",
+      "inactive": "Inactive"
+    }
   }
 }

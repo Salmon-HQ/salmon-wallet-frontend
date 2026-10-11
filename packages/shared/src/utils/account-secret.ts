@@ -73,3 +73,22 @@ export function getAccountMnemonic(account: Account | null | undefined): string 
 export function isWatchOnlyAccount(account: Account | null | undefined): boolean {
   return account?.secret.kind === 'watchOnly';
 }
+
+/** True when the wallet's key lives in Seed Vault (spec 037). */
+export function isSeedVaultAccount(account: Account | null | undefined): boolean {
+  return account?.secret?.kind === 'seedVault';
+}
+
+/**
+ * The Seed Vault access to give up when `removed` leaves the wallet list, or
+ * null. Access is per seed, and several wallets can share one: it is given up
+ * only with the last of them.
+ */
+export function seedVaultAccessToRelease(removed: Account, remaining: Account[]): string | null {
+  if (removed.secret.kind !== 'seedVault') return null;
+  const { authToken } = removed.secret;
+  const shared = remaining.some(
+    ({ secret }) => secret.kind === 'seedVault' && secret.authToken === authToken
+  );
+  return shared ? null : authToken;
+}

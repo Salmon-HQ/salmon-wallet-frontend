@@ -27,3 +27,4 @@ export * from './backend';
 export * from './memo';
 export * from './payments';
 export * from './swap';
+export * from './skr';

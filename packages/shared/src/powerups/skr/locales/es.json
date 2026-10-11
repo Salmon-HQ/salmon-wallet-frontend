@@ -1,0 +1,74 @@
+{
+  "catalog": {
+    "name": "SKR",
+    "description": "Tu SKR, en staking y generando",
+    "about": "Muestra el SKR que tiene tu wallet y lo que tenés en staking con un guardián en el staking de Solana Mobile: cuánto ganaste, la tasa actual y las recompensas de cada período. Solo lee; hacer staking o retirarlo sigue en las apps de Solana Mobile.",
+    "usage": "Tu posición de SKR. Las recompensas se suman cada dos días.",
+    "actions": {
+      "position": "Ver tu SKR en staking, su guardián y lo que ganaste",
+      "rewards": "Seguir las recompensas de cada período"
+    }
+  },
+  "history": {
+    "empty": "Salmon registra tus recompensas desde el {{date}}. La primera aparece acá después del próximo pago.",
+    "emptyToday": "Salmon registra tus recompensas desde hoy. La primera aparece acá después del próximo pago."
+  },
+  "empty": {
+    "title": "Esta wallet no tiene SKR",
+    "body": "Cuando esta wallet tenga SKR o lo ponga en staking, aparece acá."
+  },
+  "error": {
+    "title": "No se pudo cargar tu SKR."
+  },
+  "header": {
+    "subtitle": "Seeker · Posición en staking"
+  },
+  "apy": "{{value}} APY",
+  "stake": {
+    "title": "Mi stake",
+    "earned": "Ganado",
+    "available": "Disponible",
+    "unstaking": "Retirándose",
+    "withdrawable": "Retirable desde"
+  },
+  "guardian": {
+    "commission": "{{value}} de comisión",
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "daily": {
+    "title": "Diario",
+    "estimate": "Estimado",
+    "perDay": "Por día",
+    "stakedFor": "En staking hace",
+    "days_one": "día",
+    "days_other": "días",
+    "compounding": "Se suma cada"
+  },
+  "rewards": {
+    "title": "Recompensas",
+    "compounded": "Capitalizado",
+    "lastPayouts": "Últimos {{count}} pagos",
+    "average": "{{value}} prom.",
+    "chartLabel": "Lo que ganó tu stake en cada uno de los últimos pagos",
+    "seeAll": "Ver todas las recompensas"
+  },
+  "about": {
+    "title": "Sobre SKR",
+    "price": "Precio",
+    "totalSupply": "Supply total",
+    "circulating": "Circulante",
+    "staked": "En staking",
+    "ofCirculating": "{{value}} del circulante",
+    "stakedLegend": "En staking {{value}}",
+    "liquidLegend": "Líquido {{value}}",
+    "shareLabel": "Parte del SKR circulante que está en staking"
+  },
+  "payout": {
+    "next": "Próxima capitalización",
+    "countdown": "en {{days}} d {{hours}} h",
+    "due": "Pago en curso",
+    "last": "Último pago: {{value}}",
+    "progressLabel": "Tiempo transcurrido desde el último pago"
+  }
+}

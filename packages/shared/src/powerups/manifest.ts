@@ -10,6 +10,7 @@
  */
 import type { SolanaNetworkId } from '../types/blockchain';
 import type { PowerupIconName } from '../types/ui/powerup-icon';
+import type { DeviceCapability } from '../utils/powerupSwitches';
 
 /** Origin only: who wrote it. It never decides the disclosure (spec 029 §4). */
 export type PowerupTier = 'core' | 'community';
@@ -74,6 +75,11 @@ export interface PowerupManifest {
     /** The Home sub-tab surface, when the Powerup has one. */
     tab?: string;
   };
+  /**
+   * What the device must have for the Powerup to be offered at all (spec
+   * 040). Absent: any device on its networks.
+   */
+  requires?: readonly DeviceCapability[];
 }
 
 /** The name the rest of the app has always read the registry's records by. */

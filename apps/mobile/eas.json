@@ -59,6 +59,19 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "dapp-store": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote",
+        "keystoreName": "dapp-store"
+      }
+    },
+    "dapp-store-test": {
+      "extends": "dapp-store",
+      "channel": "dapp-store-test",
+      "autoIncrement": false
     }
   },
   "submit": {

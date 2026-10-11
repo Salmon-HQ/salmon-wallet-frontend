@@ -114,6 +114,9 @@ export default function AuthLayout() {
           {/* Show and confirm the recovery phrase */}
           <Stack.Screen name="create" />
 
+          {/* Pick an account from Seed Vault instead of a phrase (spec 037) */}
+          <Stack.Screen name="seed-vault" />
+
           {/* Set password */}
           <Stack.Screen
             name="password"

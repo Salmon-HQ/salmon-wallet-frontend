@@ -113,6 +113,7 @@ apps/mobile/.maestro/run.sh suites/smoke.yaml            # read-only smoke
 apps/mobile/.maestro/run.sh suites/actions.yaml          # authorized per run
 apps/mobile/.maestro/run.sh flows/smoke/settings/about.yaml
 apps/mobile/.maestro/run.sh --device emulator-5554 suites/smoke.yaml
+apps/mobile/.maestro/run.sh --release flows/...        # an installed release APK, no Metro
 ```
 
 Anything it does not recognise is forwarded to `maestro test`, so Maestro's own

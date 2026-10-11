@@ -29,6 +29,7 @@ const MARKERS = [
   'payments.catalog',
   'swap.catalog',
   'swap.review',
+  'skr.catalog',
 ];
 
 const [, , dir, ...flags] = process.argv;

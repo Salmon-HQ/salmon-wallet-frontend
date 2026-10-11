@@ -11,13 +11,13 @@
  * start with those bytes, which is what makes an off-chain message signature
  * structurally impossible to replay as a transaction signature.
  *
- * Signing and verification go through `@solana/kit`'s WebCrypto-backed `signBytes`
- * and `verifySignature` rather than the library's own
+ * Signing goes through the account's signer (`signBytesWith`) and verification
+ * through `@solana/kit`'s `verifySignature`, rather than the library's own
  * `signOffchainMessageEnvelope`/`verifyOffchainMessageEnvelope` helpers, which
- * expect a full `CryptoKeyPair`. The account only carries a signer whose private
- * key is non-extractable, which is all `signBytes` needs.
+ * expect a full `CryptoKeyPair`: the account carries a signer, which may hold
+ * no key at all (Seed Vault).
  */
-import { isSignatureBytes, signBytes, verifySignature } from '@solana/kit';
+import { isSignatureBytes, verifySignature } from '@solana/kit';
 import { getAddressEncoder, type Address } from '@solana/addresses';
 import {
   compileOffchainMessageV1Envelope,
@@ -26,6 +26,7 @@ import {
   type OffchainMessageV1,
 } from '@solana/offchain-messages';
 import type { SolanaAccount } from './SolanaAccount';
+import { signBytesWith } from './signing';
 
 export interface SignedOffchainMessage {
   /** Raw 64-byte ed25519 signature over `buffer`. */
@@ -78,7 +79,7 @@ export async function signOffchainMessage(
   }
 
   const buffer = buildOffchainMessageV1(content, signers);
-  const signature = await signBytes(account.signer.keyPair.privateKey, buffer);
+  const signature = await signBytesWith(account.signer, buffer);
   return { signature, buffer };
 }
 

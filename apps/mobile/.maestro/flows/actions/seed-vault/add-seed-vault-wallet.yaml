@@ -1,0 +1,57 @@
+appId: io.salmonwallet.app
+---
+# Add a Seed Vault wallet on devnet (spec 037, US1). Needs, on the emulator:
+# the Seed Vault simulator (SeedVaultSimulator from solana-mobile/seed-vault-sdk)
+# holding a test seed whose PIN is SALMON_SEED_VAULT_PIN, and a development
+# build — production builds do not accept the simulator.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- runFlow: ../../../subflows/select-devnet.yaml
+- tapOn:
+    id: 'wallet-header-account-switcher'
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: 'wallets-add-wallet'
+- waitForAnimationToEnd:
+    timeout: 4000
+- tapOn:
+    id: 'account-add-method-seed-vault'
+# First run only: Android's permission dialog, then Seed Vault's connect
+# screen. A seed authorized on an earlier run is listed without either.
+- runFlow:
+    when:
+      visible: 'Allow'
+    commands:
+      - tapOn: 'Allow'
+- runFlow:
+    when:
+      visible: 'Connection request'
+    file: ../../../subflows/seed-vault-confirm.yaml
+- extendedWaitUntil:
+    visible:
+      id: 'seed-vault-account-.*'
+    timeout: 30000
+- takeScreenshot: screenshots/actions/seed-vault/accounts
+- tapOn:
+    id: 'seed-vault-account-.*'
+    index: 0
+# Seed Vault lists every path it derived ahead of time; Continue sits below.
+- scrollUntilVisible:
+    element:
+      id: 'account-add-seed-vault-continue-button'
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: 'account-add-seed-vault-continue-button'
+- extendedWaitUntil:
+    visible:
+      id: 'account-add-name-input'
+    timeout: 20000
+- tapOn: 'Confirm'
+- extendedWaitUntil:
+    visible:
+      id: 'wallets-screen'
+    timeout: 30000
+- assertVisible:
+    id: 'wallet-seed-vault-.*'
+- takeScreenshot: screenshots/actions/seed-vault/added

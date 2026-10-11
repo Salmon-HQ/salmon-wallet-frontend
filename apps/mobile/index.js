@@ -181,6 +181,15 @@ initStash('mobile');
 const { version: appVersion } = require('./app.json').expo;
 initAnalytics({ platform: 'mobile', appVersion });
 
+// Android: dApps reach Salmon through Mobile Wallet Adapter in their own
+// activity (plugins/withMobileWalletAdapter), rendered by this root.
+if (require('react-native').Platform.OS === 'android') {
+  require('react-native').AppRegistry.registerComponent(
+    'MobileWalletAdapterEntrypoint',
+    () => require('./src/mwa/MwaRoot').MwaRoot
+  );
+}
+
 // =============================================================================
 // 5. Load Expo Router - This starts the app
 // =============================================================================

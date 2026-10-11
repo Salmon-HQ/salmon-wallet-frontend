@@ -31,6 +31,7 @@ import {
   useWaitExit,
   type NftAttribute,
   type Semantic,
+  isFrozenNft,
 } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -256,8 +257,10 @@ export function NftDetailPage({
       style={style}
       className={className}
       footer={
-        // Gone, not greyed: see the module comment.
-        actionsUnavailable ? undefined : (
+        // Gone, not greyed: see the module comment. A frozen NFT says why.
+        isFrozenNft(nft) ? (
+          <WarningNotice tone="info" testID="nft-detail-frozen" title={t('nft.detail.frozen')} />
+        ) : actionsUnavailable ? undefined : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
             <PrimaryButton testID="nft-detail-send-button" onPress={() => onSendPress?.()}>
               {t('nft.send.title', 'Send NFT')}

@@ -50,6 +50,10 @@ import {
   useHomePowerupsCatalog,
   useInstalledPowerups,
   mapBalanceToToken,
+  STAKED_SKR_KEY,
+  STAKED_SOL_KEY,
+  stakingSectionBlocks,
+  useHomeStaking,
   type HomeSubTabKey,
   isWatchOnlyAccount,
   getNetworkLabel,
@@ -62,7 +66,8 @@ import {
   type Token,
   useFocusModePhase,
   useNetworkPowerups,
-  useSettledSubTab,
+  allowlistForDevice,
+  useHomeSubTabContent,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -73,6 +78,7 @@ import {
 import {
   BalanceHeader,
   DataAttribution,
+  BlockList,
   HomeTabOrderSheet,
   NftsTab,
   PortfolioSubTabs,
@@ -97,6 +103,7 @@ import {
 } from '../../../src/powerups';
 import { useDeveloperMode, useUnverifiedTokens } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
+import { useDeviceCapabilities } from '../../../src/seed-vault/useDeviceCapabilities';
 import { BitcoinColumn } from '../../../src/screens/home/BitcoinColumn';
 import { TOP_FADE_SCROLL_RANGE, stylesFor } from '../../../src/screens/home/homeStyles';
 import { useHomeBitcoinMarket } from '../../../src/screens/home/useHomeBitcoinMarket';
@@ -121,8 +128,9 @@ const powerupBodyStyles = StyleSheet.create({
   surface: { flex: 1, gap: vs(spacing.screenGutter) },
   // How to use the Powerup, left-aligned under the sub-tabs in the header's
   // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
+  // Bold: the one line that says what the tab is for (owner, 2026-10-09).
   usage: {
-    fontFamily: fontFamilyNative.medium,
+    fontFamily: fontFamilyNative.bold,
     fontSize: s(fontSize.subtitle),
     lineHeight: s(fontSize.subtitle) * lineHeight.snug,
     paddingHorizontal: s(spacing.headerPadding),
@@ -324,6 +332,15 @@ export default function HomeScreen() {
     includeSpam: showUnverifiedTokens,
   });
 
+  // What the wallet has staked (spec 038): the Staking section under the
+  // tokens, and its USD in the total. A failed read adds nothing.
+  const staking = useHomeStaking({
+    publicKey: activeBlockchainAccount?.getReceiveAddress(),
+    networkId: networkId ?? undefined,
+    tokens,
+    usdTotal,
+  });
+
   // Warm the chains the user is not looking at, so the first swipe of the
   // session lands on a number instead of a skeleton. One request per inactive
   // chain per app load — see the hook for why it is not per switch.
@@ -356,7 +373,14 @@ export default function HomeScreen() {
   // The backend's kill switch for the network the account stands on (spec
   // 029 §5.2): fail closed, so until the catalogue answers no Powerup is
   // offered, and a switched-off one keeps its tab only to show why.
-  const powerupAllowlist = useNetworkPowerups(networkId ?? null);
+  // A Powerup that needs more than a network (SKR: Seed Vault) is left out
+  // on a device without it (spec 040).
+  const networkAllowlist = useNetworkPowerups(networkId ?? null);
+  const deviceCapabilities = useDeviceCapabilities();
+  const powerupAllowlist = useMemo(
+    () => allowlistForDevice(networkAllowlist, POWERUPS, deviceCapabilities),
+    [networkAllowlist, deviceCapabilities]
+  );
   const powerupTabs = useHomePowerupTabs({
     installed,
     powerups: POWERUPS,
@@ -385,7 +409,13 @@ export default function HomeScreen() {
     networkId,
     activeAccountId: activeAccount?.id,
     networksAccounts,
-    balance: { usdTotal, nativeAmount, changePercent, changeAmount, hasData },
+    balance: {
+      usdTotal: staking.totalWithStakes,
+      nativeAmount,
+      changePercent,
+      changeAmount,
+      hasData,
+    },
     isTaskEngaged,
     surfaceKey,
     changeNetwork: accountActions.changeNetwork,
@@ -409,18 +439,13 @@ export default function HomeScreen() {
   // the balance floats into the room it left. `useFocusModePhase` keeps the
   // clock; this screen draws each phase.
   const focusPhase = useFocusModePhase(wantsPowerupMode, isReduceMotionEnabled);
-  const isPowerupMode = focusPhase === 'gone';
   // The content follows the row, never the tap (owner, 2026-09-16): only the
   // tab that has come to rest — underline slid, or row risen / come down —
   // has its content drawn. Until then the region is empty: the outgoing
   // content sinks at the tap, the incoming one floats into a row that stopped.
-  const isFocusTab = useCallback(
-    (key: string) => powerupTabs.some((tab) => tab.key === key),
-    [powerupTabs]
-  );
-  const settledSubTab = useSettledSubTab({
-    target: effectiveSubTab,
-    isFocusTab,
+  const { isPowerupMode, settledSubTab } = useHomeSubTabContent({
+    effectiveSubTab,
+    powerupTabs,
     focusPhase,
     isReduceMotionEnabled,
   });
@@ -565,6 +590,8 @@ export default function HomeScreen() {
     catalogEntries,
     handleInstall,
     removableTabKeys,
+    openCatalogAt,
+    catalogFocusId,
   } = useHomePowerupsCatalog({
     powerupTabs,
     installed,
@@ -573,7 +600,32 @@ export default function HomeScreen() {
     powerups: POWERUPS,
     getCatalog: getPowerupCatalog,
     allowlist: powerupAllowlist,
+    onOpenTab: (id) => setActiveSubTab(id as HomeSubTabKey),
   });
+
+  // Staked SOL opens its stake accounts; Staked SKR opens the SKR Powerup's
+  // tab, or the catalogue on its detail to install it (spec 039).
+  const skrTabOffered = subTabs.some((tab) => tab.key === 'skr');
+  const handleStakingPress = useCallback(
+    (token: Token) => {
+      if (token.address === STAKED_SOL_KEY) router.push('/staking');
+      else if (token.address === STAKED_SKR_KEY) {
+        if (skrTabOffered) setActiveSubTab('skr');
+        else openCatalogAt('skr');
+      }
+    },
+    [router, setActiveSubTab, skrTabOffered, openCatalogAt]
+  );
+  const skrOffered = powerupAllowlist.enabled.includes('skr');
+  const stakingBlocks = stakingSectionBlocks(
+    {
+      tokens: staking.tokens,
+      onPress: handleStakingPress,
+      canPress: (token) => token.address !== STAKED_SKR_KEY || skrOffered,
+      hiddenBalance,
+    },
+    t
+  );
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
@@ -876,7 +928,16 @@ export default function HomeScreen() {
                           ListEmptyComponent={ListEmptyComponent}
                           // The price provider's credit closes the list (its
                           // terms: once per screen that shows its prices).
-                          ListFooterComponent={<DataAttribution networkId={currentNetworkId} />}
+                          ListFooterComponent={
+                            <>
+                              {stakingBlocks.length > 0 && (
+                                <View style={styles.stakingSection}>
+                                  <BlockList testID="staking-section" blocks={stakingBlocks} />
+                                </View>
+                              )}
+                              <DataAttribution networkId={currentNetworkId} />
+                            </>
+                          }
                           onRefresh={refresh}
                           onScroll={handleScroll}
                           scrollEventThrottle={16}
@@ -941,6 +1002,7 @@ export default function HomeScreen() {
           entries={catalogEntries}
           onInstall={handleInstall}
           onUninstall={uninstall}
+          focusId={catalogFocusId}
           height={catalogHeight}
         />
       )}

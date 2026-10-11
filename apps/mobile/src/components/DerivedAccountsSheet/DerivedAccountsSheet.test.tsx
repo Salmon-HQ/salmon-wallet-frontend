@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
+  ...jest.requireActual('@salmon/shared/src/types/ui/card'),
   // The rows and the selection are shared logic, not a platform's: the real
   // hook runs here so the sheet is tested against the contract both twins use.
   ...jest.requireActual('@salmon/shared/src/hooks/useDerivedFindRows'),

@@ -9,45 +9,20 @@
  * `TouchableOpacity`'s `activeOpacity` gives mobile for free.
  */
 import React from 'react';
-import { borderRadius, borderWidth, motionEasing, motionMs, spacing } from '@salmon/shared';
-import type { CardPadding, CardRadius, CardTone, Semantic } from '@salmon/shared';
+import {
+  borderWidth,
+  CARD_GLOW,
+  CARD_PADDINGS,
+  CARD_RADII,
+  cardTonesFor,
+  motionEasing,
+  motionMs,
+  withAlpha,
+} from '@salmon/shared';
 
 import { useSemantic } from '../../theme/ThemeProvider';
 import { usePressed } from '../../utils/usePressed';
 import type { CardProps } from './types';
-
-/**
- * Ground and edge per tone — the mobile record, unchanged. Every border is the
- * decorative hairline except `warning`, which keeps the amber stroke the tint
- * ships with. `surface` grounds on the thin-tier membrane rather than the
- * opaque raised surface, so the water column's scales read faintly behind
- * every card.
- */
-const tonesFor = (t: Semantic): Record<CardTone, { background: string; border: string }> => ({
-  surface: { background: t.surface.membraneThin, border: t.border.hairline },
-  accent: { background: t.accent.tint, border: t.border.hairline },
-  warning: { background: t.status.warningTint, border: t.status.warningTintBorder },
-  ink: { background: t.depth.abyss, border: t.border.hairline },
-  shelf: { background: t.surface.shelf, border: t.border.hairline },
-});
-
-/**
- * `md` is 14: the spacing scale steps 12 → 16 with nothing between, and the
- * dense list row sits on the half step.
- */
-const PADDING_MD = 14;
-
-const PADDINGS: Record<CardPadding, number> = {
-  sm: spacing.md,
-  md: PADDING_MD,
-  lg: spacing.lg,
-  xl: spacing['2xl'],
-};
-
-const RADII: Record<CardRadius, number> = {
-  lg: borderRadius.r3,
-  xl: borderRadius.r4,
-};
 
 /** The pressed opacity is RN's `activeOpacity`, to the digit. */
 const PRESSED_OPACITY = 0.7;
@@ -65,17 +40,25 @@ export function Card({
   children,
   testID,
 }: CardProps) {
-  const { background, border } = tonesFor(useSemantic())[tone];
+  const t = useSemantic();
+  const { background, border } = cardTonesFor(t)[tone];
   const { pressed, handlers } = usePressed();
+  const pct = (fraction: number) => `${fraction * 100}%`;
+  // The `featured` tone's salmon glow, from its top-right corner.
+  const glow =
+    tone === 'featured'
+      ? `radial-gradient(${pct(CARD_GLOW.rx)} ${pct(CARD_GLOW.ry)} at ${pct(CARD_GLOW.cx)} ${pct(CARD_GLOW.cy)}, ${withAlpha(t.accent.ink, CARD_GLOW.alpha)}, transparent)`
+      : undefined;
 
   const box: React.CSSProperties = {
     boxSizing: 'border-box',
     backgroundColor: background,
+    ...(glow ? { backgroundImage: glow } : null),
     borderStyle: 'solid',
     borderWidth: borderWidth.thin,
     borderColor: border,
-    borderRadius: RADII[radius],
-    padding: PADDINGS[padding],
+    borderRadius: CARD_RADII[radius],
+    padding: CARD_PADDINGS[padding],
     overflow: 'hidden',
     // `overflow: hidden` turns a flex item's automatic minimum size to zero,
     // so a card in a column that is shorter than its rows (Activity's scroll

@@ -40,6 +40,7 @@ import {
   FileTextIcon,
   KeyIcon,
   TreeStructureIcon,
+  VaultIcon,
   iconSize,
 } from '../../icons';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -167,15 +168,19 @@ export function AccountAddPanel({
     import: FileTextIcon,
     'private-key': KeyIcon,
     'watch-only': EyeIcon,
+    'seed-vault': VaultIcon,
   };
   const methodHandlers: Record<AccountAddMethodId, () => void> = {
     derive: () => void flow.selectDerive(),
     import: flow.selectImport,
     'private-key': flow.selectImportPrivateKey,
     'watch-only': flow.selectImportWatchOnly,
+    'seed-vault': () => void flow.selectSeedVault(),
   };
   const methods = ACCOUNT_ADD_METHODS.filter(
-    (method) => method.id !== 'derive' || flow.canDerive
+    (method) =>
+      (method.id !== 'derive' || flow.canDerive) &&
+      (method.id !== 'seed-vault' || flow.canUseSeedVault)
   ).map((method) => ({
     ...method,
     icon: methodIcons[method.id],

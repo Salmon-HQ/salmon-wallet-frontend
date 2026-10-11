@@ -121,6 +121,12 @@ jest.mock('@salmon/shared/src/hooks/useImportWatchOnly', () => ({
   useImportWatchOnly: () => mockWatchOnlyImport,
 }));
 
+// The real signer pulls in @solana/kit's ESM build, which Jest does not parse;
+// the flow only asks whether an error came from Seed Vault.
+jest.mock('@salmon/shared/src/blockchain/solana/seed-vault-signer', () => ({
+  isSeedVaultError: (error: unknown) => error instanceof Error && error.name === 'SeedVaultError',
+}));
+
 jest.mock('@salmon/shared', () => ({
   // The real design tokens: hand-listing the subset a screen happens to read
   // breaks this test whenever the panel starts reading one more (see
@@ -395,7 +401,7 @@ describe('AccountAddPanel', () => {
 
     // A private key derives nothing, so the mnemonic fan-out must stay out of it.
     expect(mockCreateAccount).not.toHaveBeenCalled();
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, undefined);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, undefined, undefined);
     // The key does not linger in component state after the account is stored.
     expect(mockPrivateKeyImport.reset).toHaveBeenCalled();
   });
@@ -455,7 +461,7 @@ describe('AccountAddPanel', () => {
       );
     });
 
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, undefined);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, undefined, undefined);
 
     // The completion is parked behind the wait's exit: dropping `loading`
     // starts the wave's exit, and only its report hands the panel back.
@@ -572,7 +578,7 @@ describe('AccountAddPanel expired vault key', () => {
         expect.objectContaining({ privateKey: 'base58-secret-key' })
       );
     });
-    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, SHEET_PASSWORD);
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' }, SHEET_PASSWORD, undefined);
   });
 
   it('never writes the vault under a password it has not verified', async () => {

@@ -33,6 +33,7 @@ import {
   type Account,
   type NetworkId,
   type Semantic,
+  isSeedVaultAccount,
 } from '@salmon/shared';
 import {
   Card,
@@ -364,6 +365,9 @@ function WalletCard({
             />
             {isWatchOnlyAccount(account) && (
               <WatchOnlyBadge testID={`wallet-watch-only-${account.id}`} />
+            )}
+            {isSeedVaultAccount(account) && (
+              <WatchOnlyBadge kind="seedVault" testID={`wallet-seed-vault-${account.id}`} />
             )}
           </>
         }

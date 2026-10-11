@@ -81,7 +81,13 @@ import { fileURLToPath } from 'node:url';
 // password), so its action row is now the same JSX as the DOM `ConfirmDialog`:
 // 27 lines of buttons, no logic — the gate's state is `usePasswordConfirm` in
 // shared. One more import line on the Power-up detail twins (the titled card).
-export const CROSS_PLATFORM_CLONE_LINES_MAX = 2427;
+// 2026-10-09: 2411 → 2420. Three new kit twin pairs (`Pill`, `StatTile`,
+// `ProgressBar`) and three more kit imports on `BlockList`: the same imports
+// on two platforms, no logic. Measured after hoisting the block renderer
+// itself into shared (`createBlockList`) and the tone, size and percent
+// tables into the contracts (`pillColorsFor`, `statInkFor`, `STAT_SIZES`,
+// `progressPercent`), which took the new twins from 2488 to 2420.
+export const CROSS_PLATFORM_CLONE_LINES_MAX = 2420;
 
 /** Twins whose folders are not named the same. mobile folder → DOM folder(s). */
 export const MAP = {
@@ -91,6 +97,7 @@ export const MAP = {
   LockOverlay: ['LockScreen'],
   Send: ['SendPage', 'InputAddress'],
   MemoScreen: ['MemoPage'],
+  SkrScreen: ['SkrPage'],
   SwapScreen: ['SwapPage'],
   PaymentsScreen: ['PaymentsPage'],
   PowerupsCatalog: ['PowerupsPage'],
@@ -123,6 +130,7 @@ export const DOM_ONLY = {
   CopyTick: 'DOM copy affordance; mobile uses haptics + toast',
   NftDetailPage: 'mobile has it as a route (app/(app)/nft/[id]); the DOM keeps a component',
   TokenDetailPage: 'mobile has it as a route (app/(app)/token/[id]); the DOM keeps a component',
+  StakeAccountsPage: 'mobile has it as a route (app/(app)/staking); the DOM keeps a component',
   WalletsScreen: "mobile's Wallets is the route app/(app)/wallets.tsx; the DOM keeps a component",
   SettingsPanelStack:
     "mobile's Settings root is the route app/(app)/settings/index.tsx; the DOM keeps a component",
@@ -147,6 +155,7 @@ export const SCREENS = {
   '(app)/nft/[id]/success': 'packages/ui/src/components/NftDetailPage/NftDetailPage.tsx',
   '(app)/nft/[id]/send': 'packages/ui/src/components/SendPage/SendPage.tsx',
   '(app)/token/[id]': 'packages/ui/src/components/TokenDetailPage/TokenDetailPage.tsx',
+  '(app)/staking': 'packages/ui/src/components/StakeAccountsPage/StakeAccountsPage.tsx',
   '(app)/settings/index': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(app)/settings/[panel]': 'packages/ui/src/components/SettingsPanelStack/SettingsPanelStack.tsx',
   '(auth)/index': 'packages/ui/src/components/AuthFlow/SelectOptionsPage.tsx',
@@ -161,6 +170,7 @@ export const SCREENS = {
 /** Mobile-only routes, with the reason. */
 export const MOBILE_ONLY_SCREENS = {
   '(auth)/biometric-setup': 'biometrics are native; the extension has none',
+  '(auth)/seed-vault': 'Seed Vault exists only on Android Seeker devices (spec 037)',
   '+html': 'Expo scaffolding',
   '+not-found': 'Expo scaffolding',
 };
