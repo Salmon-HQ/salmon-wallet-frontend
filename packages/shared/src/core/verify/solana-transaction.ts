@@ -40,6 +40,7 @@ import type { ReadonlyUint8Array } from '@solana/kit';
 import {
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  JUPITER_AGGREGATOR_PROGRAM,
   NFT_ACTION_LAYOUTS,
   TOKEN_2022_PROGRAM,
   TOKEN_METADATA_PROGRAM,
@@ -72,6 +73,27 @@ export interface SolanaTransactionExpectation {
    * else. See `NFT_ACTION_LAYOUTS`.
    */
   nftAction?: NftActionExpectation;
+  /**
+   * A swap's Jupiter router call: it must pay the wallet's own account and
+   * carry the amounts the screen shows. See `assertJupiterRoute`.
+   */
+  swapRoute?: SwapRouteExpectation;
+}
+
+/** What a Jupiter `route_v2` call must say, all taken from the build the screen draws. */
+export interface SwapRouteExpectation {
+  /** The wallet's own token accounts of the output mint: its SPL and Token-2022 ATAs. */
+  destinations: readonly string[];
+  inputMint: string;
+  outputMint: string;
+  inAmount: string;
+  /** The quoted output; Jupiter refuses on chain to pay less than it minus the slippage. */
+  quotedOutAmount: string;
+  /** The minimum the screen shows, which a simulated 0x swap must pay the wallet. */
+  minOutAmount: string;
+  slippageBps: number;
+  /** Salmon's fee, the only platform fee the screen shows. */
+  platformFeeBps: number;
 }
 
 /** The one NFT a burn or transfer may act on, and where a transfer sends it. */
@@ -191,6 +213,26 @@ function ownAtasCreated(
     if (ata !== undefined && ataOwner === owner) created.add(ata);
   }
   return created;
+}
+
+/** Which programs the message invokes, and how many associated token accounts it creates. */
+export function invocationsOf(transactionBase64: string): {
+  programs: Set<string>;
+  ataCreates: number;
+} {
+  const message = decodeMessage(transactionBase64);
+  const accounts = message.staticAccounts.map(String);
+  const programs = new Set<string>();
+  let ataCreates = 0;
+  for (const instruction of compiledInstructions(message)) {
+    const program = accounts[instruction.programAddressIndex];
+    if (program === undefined) continue;
+    programs.add(program);
+    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
+    if (program === ASSOCIATED_TOKEN_PROGRAM && ATA_CREATE_CODES.has(code as number))
+      ataCreates += 1;
+  }
+  return { programs, ataCreates };
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
@@ -345,6 +387,80 @@ function assertNftAction(
   if (!actsOnAsset) refuse(`Transaction does not act on ${action.asset}`);
 }
 
+/** Anchor discriminator of Jupiter's `route_v2`, the only call its build endpoint returns. */
+const JUPITER_ROUTE_V2 = [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14];
+/** `route_v2` accounts: 0 the authority, 2 where the output lands, 7 an optional override of it. */
+const ROUTE_AUTHORITY = 0;
+const ROUTE_DESTINATION = 2;
+const ROUTE_DESTINATION_OVERRIDE = 7;
+/** `route_v2` data after the discriminator: in u64, quoted out u64, slippage u16, platform fee u16. */
+const ROUTE_ARGS_BYTES = 8 + 8 + 8 + 2 + 2;
+
+/**
+ * Every Jupiter call pays the swap's output to the wallet's own account, with
+ * the amounts the screen shows.
+ *
+ * The router instruction is the one that moves a swap's whole value, and the
+ * program allowlist says nothing about its accounts: a build naming another
+ * account as the destination would pass every other check while the screen
+ * still showed the quote. The destination is the instruction's own slot —
+ * where Jupiter pays — and the optional override slot must be empty, which
+ * Anchor encodes as the program's own address. The amounts are bound so the
+ * minimum Jupiter enforces on chain is the minimum the screen shows. The mint
+ * is not read: the destination is an ATA derived from the output mint, and the
+ * token program refuses to credit an account of another mint.
+ */
+function assertJupiterRoute(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  route: SwapRouteExpectation,
+  feePayer: string
+): void {
+  const refuse = (why: string): never => {
+    throw new SolanaTransactionMismatchError(why);
+  };
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== JUPITER_AGGREGATOR_PROGRAM) continue;
+    const accountAt = (slot: number): string =>
+      accounts[instruction.accountIndices[slot] ?? -1] ??
+      refuse('Transaction resolves a Jupiter account through a lookup table it cannot verify');
+
+    const data = instruction.data;
+    if (
+      !data ||
+      data.length < 8 + ROUTE_ARGS_BYTES ||
+      JUPITER_ROUTE_V2.some((byte, index) => data[index] !== byte)
+    ) {
+      throw new SolanaTransactionMismatchError(
+        'Transaction carries a Jupiter instruction other than route_v2'
+      );
+    }
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    if (accountAt(ROUTE_AUTHORITY) !== feePayer) {
+      refuse('Transaction swaps tokens the wallet does not authorize');
+    }
+    const destination = accountAt(ROUTE_DESTINATION);
+    if (!route.destinations.includes(destination)) {
+      refuse(`Transaction pays the swap to ${destination}, which is not the wallet's own`);
+    }
+    if (accountAt(ROUTE_DESTINATION_OVERRIDE) !== JUPITER_AGGREGATOR_PROGRAM) {
+      refuse('Transaction redirects the swap output to another account');
+    }
+    if (view.getBigUint64(8, true).toString() !== route.inAmount) {
+      refuse('Transaction swaps an amount other than the one on screen');
+    }
+    if (view.getBigUint64(16, true).toString() !== route.quotedOutAmount) {
+      refuse('Transaction quotes an output other than the one on screen');
+    }
+    if (view.getUint16(24, true) > route.slippageBps) {
+      refuse('Transaction allows more slippage than the screen shows');
+    }
+    if (view.getUint16(26, true) > route.platformFeeBps) {
+      refuse('Transaction takes a larger fee than the screen shows');
+    }
+  }
+}
+
 /**
  * Refuses a transaction that disagrees with what the flow declared.
  *
@@ -419,6 +535,10 @@ export function assertSolanaTransactionMatches(
         );
       }
     }
+  }
+
+  if (expectation.swapRoute) {
+    assertJupiterRoute(accounts, instructions, expectation.swapRoute, feePayer);
   }
 
   if (expectation.nftAction) {
