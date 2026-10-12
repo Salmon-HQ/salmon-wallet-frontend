@@ -2,6 +2,15 @@
 
 All notable, user-visible changes to the wallet apps are recorded here, newest first. Extension and mobile releases follow store submissions; the web wallet was retired on 2026-09-02. Each entry should list what a user or dApp developer can observe: new/changed flows, fixed bugs, behavior changes.
 
+## extension 0.17.1 — unreleased
+
+- Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
+- Unlocking no longer copies the key that opens the wallet into the extension's storage. Reported by iblitzc0de.
+
+## mobile 1.4.0 — unreleased
+
+- Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
+
 ## mobile 1.2.0 — 2026-09-28
 
 Ships as a binary, 1.2.0, never as an update: the native surface moved on this branch (the Powerups build flag in `metro.config.js`, `eas.json`), and the fingerprint gate holds an OTA back for that.
