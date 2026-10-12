@@ -3,14 +3,14 @@
  *
  * The screen itself is `LockScreen` in `@salmon/ui`; this file supplies only
  * what is genuinely the extension's: the unlock callback the popup passes in,
- * and the session-key cache. It and the web twin used to be near-verbatim
- * copies of the same 350 lines, diverging in exactly two places — both of
+ * and the sweep of the session-key record an older build left behind. It and
+ * the web twin used to be near-verbatim copies of the same 350 lines, diverging in exactly two places — both of
  * which were the web copy hardcoding a number the extension read from a token.
  */
-import React, { useCallback } from 'react';
+import React from 'react';
 import { LockScreen } from '../../components';
-import { getStashItem, STASH_KEYS, type DerivedKeyCache } from '@salmon/shared';
-import { clearSessionKey, storeSessionKey } from '../../utils/sessionKeyCache';
+import type { DerivedKeyCache } from '@salmon/shared';
+import { clearSessionKey } from '../../utils/sessionKeyCache';
 
 interface LockPageProps {
   onUnlock: (password: string) => Promise<boolean>;
@@ -33,21 +33,10 @@ export function LockPage({
   onRemoveAllAccounts,
   onUnlockExited,
 }: LockPageProps): React.ReactElement {
-  const handleUnlocked = useCallback(async () => {
-    try {
-      const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
-      if (derivedKey) await storeSessionKey(derivedKey);
-    } catch (cacheError) {
-      console.warn('Failed to cache session key:', cacheError);
-    } finally {
-      onUnlockExited?.();
-    }
-  }, [onUnlockExited]);
-
   return (
     <LockScreen
       onUnlock={onUnlock}
-      onUnlocked={handleUnlocked}
+      onUnlocked={onUnlockExited}
       onMount={clearSessionKey}
       onRemoveAllAccounts={onRemoveAllAccounts}
     />

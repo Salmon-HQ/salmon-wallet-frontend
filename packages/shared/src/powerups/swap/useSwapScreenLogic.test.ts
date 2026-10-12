@@ -52,7 +52,11 @@ const formatValue = (usd: number | null | undefined) => `$${usd}`;
 
 describe('swap — the proposal core signs', () => {
   it('maps the build into exchange sides, fee and quote rows, receipt and pending summary', () => {
-    const proposal = buildSwapProposal(envelope(), { networkId: 'solana-mainnet', formatValue });
+    const proposal = buildSwapProposal(envelope(), {
+      networkId: 'solana-mainnet',
+      formatValue,
+      destinations: [],
+    });
 
     expect(proposal.transaction).toBe('AQ==');
     expect(proposal.expect.allowedPrograms).toBe(swapManifest.programs);
@@ -92,7 +96,7 @@ describe('swap — the proposal core signs', () => {
   it('warns on a high price impact and shows a provider fee when one is reported', () => {
     const proposal = buildSwapProposal(
       envelope({ priceImpactPct: 7.5, routeFee: { bps: 15 }, salmonFee: null, provider: '0x' }),
-      { networkId: 'solana-mainnet', formatValue }
+      { networkId: 'solana-mainnet', formatValue, destinations: [] }
     );
     expect(proposal.display.warning).toEqual({
       title: 'swap.review.highImpactTitle',
@@ -109,9 +113,11 @@ describe('swap — the proposal core signs', () => {
   describe('fee disclosure (T&C §10.2)', () => {
     const rowsOf = (env: SwapBuildEnvelope) =>
       Object.fromEntries(
-        buildSwapProposal(env, { networkId: 'solana-mainnet', formatValue }).display.rows.map(
-          (row) => [row.label, row.value]
-        )
+        buildSwapProposal(env, {
+          networkId: 'solana-mainnet',
+          formatValue,
+          destinations: [],
+        }).display.rows.map((row) => [row.label, row.value])
       );
 
     it('says the fee is taken from what you receive when it is charged on the output', () => {
@@ -163,10 +169,12 @@ describe('swap — the proposal core signs', () => {
     const refreshed = buildSwapProposal(envelope({ transaction: 'Ag==' }), {
       networkId: 'solana-mainnet',
       formatValue,
+      destinations: [],
     });
     const proposal = buildSwapProposal(envelope(), {
       networkId: 'solana-mainnet',
       formatValue,
+      destinations: [],
       refresh: async () => refreshed,
     });
     await expect(proposal.refresh?.()).resolves.toBe(refreshed);
@@ -280,7 +288,7 @@ describe('swap — the proposal core signs', () => {
           input: { ...envelope().input, symbol: 'USDC', logo: 'evil.png' },
           output: { ...envelope().output, symbol: 'SOL', logo: 'evil2.png' },
         }),
-        { networkId: 'solana-mainnet', formatValue, tokens: { pay, receive } }
+        { networkId: 'solana-mainnet', formatValue, destinations: [], tokens: { pay, receive } }
       );
       expect(proposal.display.exchange?.send).toMatchObject({ symbol: 'SOL', logo: undefined });
       expect(proposal.display.exchange?.receive).toMatchObject({ symbol: 'USDC', logo: undefined });

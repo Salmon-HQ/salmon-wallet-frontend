@@ -21,7 +21,14 @@ import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
 import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
-import { assertSolanaTransactionMatches, bubblegumAssets, UNVERIFIED } from '../verify';
+import {
+  assertSolanaTransactionMatches,
+  assertSwapPaysWallet,
+  bubblegumAssets,
+  invocationsOf,
+  UNVERIFIED,
+  ZEROEX_SETTLER_PROGRAM,
+} from '../verify';
 import type { SolanaTransactionExpectation, Unverified } from '../verify';
 
 /** What broadcasting needs from an account: its signer and its RPC clients. */
@@ -82,6 +89,18 @@ export async function signAndSendSolanaTransaction(
   }
 
   const rpc = account.getRpc();
+  if (expectation !== UNVERIFIED && expectation.swapRoute) {
+    const { programs, ataCreates } = invocationsOf(transactionBase64);
+    if (programs.has(ZEROEX_SETTLER_PROGRAM)) {
+      await assertSwapPaysWallet(
+        rpc,
+        transactionBase64,
+        expectation.feePayer,
+        expectation.swapRoute,
+        ataCreates
+      );
+    }
+  }
   const commitment = options.commitment ?? 'confirmed';
 
   const decoded = getTransactionDecoder().decode(
