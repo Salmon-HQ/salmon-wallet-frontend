@@ -3,14 +3,12 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PropsWithChildren } from 'react';
 
 import { LockPage } from './LockPage';
 
-const mockGetSessionKey = vi.fn();
-const mockStoreSessionKey = vi.fn();
 const mockClearSessionKey = vi.fn();
 const mockGetStashItem = vi.fn();
 
@@ -49,17 +47,20 @@ vi.mock('../../components', () => ({
   // The screen itself is `@salmon/ui`'s and is tested there. What is this
   // file's to prove is the adapter: that it clears the cached key on mount and
   // never unlocks from one.
-  LockScreen: ({ onMount }: { onMount?: () => void }) => {
+  LockScreen: ({ onMount, onUnlocked }: { onMount?: () => void; onUnlocked?: () => void }) => {
     React.useEffect(() => {
       void onMount?.();
     }, [onMount]);
-    return <input placeholder="Password" data-testid="lock-password-input" />;
+    return (
+      <>
+        <input placeholder="Password" data-testid="lock-password-input" />
+        <button onClick={() => void onUnlocked?.()}>unlocked</button>
+      </>
+    );
   },
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({
-  getSessionKey: () => mockGetSessionKey(),
-  storeSessionKey: (...args: unknown[]) => mockStoreSessionKey(...args),
   clearSessionKey: () => mockClearSessionKey(),
 }));
 
@@ -92,8 +93,6 @@ vi.mock('@salmon/shared', () => {
 describe('Extension LockPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSessionKey.mockResolvedValue(null);
-    mockStoreSessionKey.mockResolvedValue(undefined);
     mockClearSessionKey.mockResolvedValue(undefined);
     mockGetStashItem.mockResolvedValue(null);
     mockThrottle.failedAttempts = 0;
@@ -101,17 +100,7 @@ describe('Extension LockPage', () => {
     mockThrottle.remainingSeconds = 0;
   });
 
-  it('requires explicit re-authentication on the lock screen even if a session key exists', async () => {
-    const sessionKey = {
-      key: [1, 2, 3],
-      salt: 'salt',
-      iterations: 210000,
-      digest: 'sha512',
-      expiresAt: Date.now() + 60_000,
-    };
-
-    mockGetSessionKey.mockResolvedValue(sessionKey);
-
+  it('requires explicit re-authentication on the lock screen, never a cached key', async () => {
     const onUnlock = vi.fn().mockResolvedValue(true);
     const onUnlockWithCachedKey = vi.fn().mockResolvedValue(true);
     const onRemoveAllAccounts = vi.fn().mockResolvedValue(undefined);
@@ -149,5 +138,31 @@ describe('Extension LockPage', () => {
     });
 
     expect(mockClearSessionKey).toHaveBeenCalledTimes(1);
+  });
+
+  // Where storage.session is missing (Firefox before 115), the session area
+  // falls back to storage.local: on disk, beside the vault. The background
+  // stash already holds the key in memory, and this page has no use for it.
+  it('never reads the derived vault key out of the stash after an unlock', async () => {
+    mockGetStashItem.mockResolvedValue({
+      key: [1, 2, 3],
+      salt: 'salt',
+      iterations: 220000,
+      digest: 'sha512',
+      expiresAt: Date.now() + 60_000,
+    });
+    const onUnlockExited = vi.fn();
+
+    render(
+      <LockPage
+        onUnlock={vi.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={vi.fn().mockResolvedValue(undefined)}
+        onUnlockExited={onUnlockExited}
+      />
+    );
+    fireEvent.click(screen.getByText('unlocked'));
+
+    await waitFor(() => expect(onUnlockExited).toHaveBeenCalled());
+    expect(mockGetStashItem).not.toHaveBeenCalled();
   });
 });

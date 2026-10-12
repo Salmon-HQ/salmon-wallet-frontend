@@ -7,7 +7,8 @@
 
 import { browser } from 'wxt/browser';
 
-// storage.session is MV3-only; fall back to storage.local for Firefox MV2
+// Chrome MV3 and Firefox 115+ (MV2 included) have storage.session; the
+// storage.local fallback only serves older browsers the manifest excludes.
 const sessionArea = browser.storage.session ?? browser.storage.local;
 
 const STORAGE_KEYS = {
