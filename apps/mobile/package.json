@@ -81,7 +81,7 @@
     "react-native-fast-crypto": "^3.0.0",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "^1.11.0",
-    "react-native-keyboard-controller": "1.21.9",
+    "react-native-keyboard-controller": "1.22.6",
     "react-native-qrcode-svg": "^6.3.24",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
@@ -91,7 +91,7 @@
     "readable-stream": "^4.5.2"
   },
   "devDependencies": {
-    "@expo/fingerprint": "0.20.13",
+    "@expo/fingerprint": "0.21.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.18",
