@@ -12,7 +12,7 @@ import {
   type MWARequest,
   type MWAResponse,
 } from '@solana-mobile/mobile-wallet-adapter-walletlib';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState, BackHandler, Linking, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,6 +30,7 @@ import {
   onSeedVaultScreensClosed,
   SEED_VAULT_CLOSE_SETTLE_MS,
 } from '../seed-vault/bridge';
+import { setMwaSessionOpen } from './sessionOpen';
 import { useMwaSession } from './useMwaSession';
 
 /**
@@ -38,6 +39,13 @@ import { useMwaSession } from './useMwaSession';
  * not its navigator — the approval sits over the dApp and closes back to it.
  */
 export function MwaRoot() {
+  // Before fonts, before anything: the app's lock behind this one must hold
+  // its biometric prompt from the first frame (see `sessionOpen`).
+  useLayoutEffect(() => {
+    setMwaSessionOpen(true);
+    return () => setMwaSessionOpen(false);
+  }, []);
+
   // A font that fails to load must not leave the dApp waiting on a blank sheet.
   const [fontsLoaded, fontError] = useAppFonts();
   if (!fontsLoaded && !fontError) return null;

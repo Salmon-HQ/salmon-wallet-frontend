@@ -34,6 +34,12 @@ export interface LockContentProps extends LockScreenPropsBase {
    * lock a dApp brings up: a request from outside is no path to a reset.
    */
   allowReset?: boolean;
+  /**
+   * Whether the biometric prompt may open on its own. Off on the app's lock
+   * while the dApp's lock is on screen; it then waits for the app to come
+   * back to the front. The button still works.
+   */
+  autoPrompt?: boolean;
 }
 
 /**
