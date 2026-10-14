@@ -156,18 +156,9 @@ export function LockContent({
   // Can we use biometric for unlock?
   const canUseBiometric = !!biometric?.available && !!biometric?.armed && !!biometricUnlock;
 
-  const biometricActionLabel = (() => {
-    switch (biometric?.kind) {
-      case 'facial':
-        return t('lock.use_face_id');
-      case 'fingerprint':
-        return t('lock.use_touch_id');
-      case 'iris':
-        return t('lock.use_iris');
-      default:
-        return t('lock.use_biometric');
-    }
-  })();
+  // One neutral label: the sensor kind Android reports does not match what the
+  // user calls it (a fingerprint phone was offered "Face ID").
+  const biometricActionLabel = t('lock.use_biometric');
 
   // Reset state on *entering* locked, never on leaving it. After a successful
   // unlock `locked` flips false while the gate is still held and this
