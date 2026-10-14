@@ -1,9 +1,24 @@
-import { isSignableSolanaAccount, useAccountsContext } from '@salmon/shared';
+import {
+  getHeldPathIndex,
+  isSignableSolanaAccount,
+  mwaDisplayName,
+  mwaIdentityOrigin,
+  mwaNetworkSwitch,
+  useAccountsContext,
+} from '@salmon/shared';
+import {
+  MWARequestFailReason,
+  MWARequestType,
+  type MWARequest,
+  type MWAResponse,
+} from '@solana-mobile/mobile-wallet-adapter-walletlib';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { AppState, BackHandler, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { AppState, BackHandler, Linking, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ConfirmSheet } from '../components/ConfirmSheet';
 import { LockContent } from '../components/LockOverlay';
 import { DepthBackground } from '../components/DepthBackground';
 import { useBiometric } from '../contexts/BiometricContext';
@@ -42,10 +57,13 @@ export function MwaRoot() {
 
 // Finishing the activity hands the screen back to the dApp.
 const close = () => BackHandler.exitApp();
+const declined: MWAResponse = { failReason: MWARequestFailReason.UserDeclined };
+// The app's own scheme, declared on MainActivity: it opens Salmon's first screen.
+const SALMON_URL = 'salmonwallet://';
 // The dApp's lock offers no reset (`allowReset={false}`); the contract still asks for one.
 const noReset = async () => {};
 
-function MwaHost() {
+export function MwaHost() {
   const [state, actions] = useAccountsContext();
   const biometric = useBiometric();
 
@@ -103,6 +121,14 @@ function MwaHost() {
 
   if (!state.ready) return null;
 
+  // No wallet yet: there is nothing to unlock and no network to judge, so the
+  // user is told that first, and led to where a wallet is made.
+  if (state.accounts.length === 0) {
+    return current ? (
+      <NoWalletSheet key={current.requestId} respond={respond} onLeave={lockAndClose} />
+    ) : null;
+  }
+
   // An unlocked wallet whose active account has not loaded yet would be judged
   // "watch-only"; wait for it.
   if (!state.locked && state.accounts.length > 0 && !state.activeBlockchainAccount) return null;
@@ -133,6 +159,31 @@ function MwaHost() {
 
   if (!current) return null;
 
+  // A network Salmon holds but is not on: offer to move there before the request.
+  // A disconnect needs no network, so it never asks.
+  const switchTo =
+    current.__type !== MWARequestType.DeauthorizeDappRequest &&
+    mwaNetworkSwitch(
+      'chain' in current ? current.chain : undefined,
+      state.networkId,
+      (networkId) => getHeldPathIndex(state.activeAccount, networkId) !== null
+    );
+  if (switchTo && state.networkId) {
+    return (
+      <NetworkSwitchSheet
+        key={current.requestId}
+        request={current}
+        from={state.networkId}
+        to={switchTo}
+        respond={respond}
+        onSwitch={async () => {
+          await actions.changeNetwork(switchTo);
+          actions.clearSwitchingNetwork();
+        }}
+      />
+    );
+  }
+
   const account = state.activeBlockchainAccount;
   return (
     <MwaRequest
@@ -140,6 +191,89 @@ function MwaHost() {
       request={current}
       respond={respond}
       account={account && isSignableSolanaAccount(account) ? account : null}
+    />
+  );
+}
+
+/**
+ * `ConfirmSheet` calls `onClose` after `onConfirm` as well, so each sheet
+ * remembers whether the user chose, and only a close without a choice declines.
+ */
+function useChoice() {
+  const chose = useRef(false);
+  return {
+    choose: () => {
+      chose.current = true;
+    },
+    closedWithoutChoice: () => !chose.current,
+  };
+}
+
+function NoWalletSheet({
+  respond,
+  onLeave,
+}: {
+  respond: (response: MWAResponse) => void;
+  onLeave: () => void;
+}) {
+  const { t } = useTranslation();
+  const { choose, closedWithoutChoice } = useChoice();
+  return (
+    <ConfirmSheet
+      visible
+      title={t('dapp.mwa_no_wallet_title')}
+      message={t('dapp.mwa_no_wallet_message')}
+      confirmText={t('dapp.mwa_no_wallet_open')}
+      cancelText={t('actions.close', 'Close')}
+      onConfirm={async () => {
+        choose();
+        await Linking.openURL(SALMON_URL).catch((error: unknown) =>
+          console.warn('[mwa] could not open Salmon', error)
+        );
+        respond(declined);
+        onLeave();
+      }}
+      onClose={() => {
+        if (closedWithoutChoice()) respond(declined);
+      }}
+    />
+  );
+}
+
+function NetworkSwitchSheet({
+  request,
+  from,
+  to,
+  respond,
+  onSwitch,
+}: {
+  request: MWARequest;
+  from: string;
+  to: string;
+  respond: (response: MWAResponse) => void;
+  onSwitch: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const { choose, closedWithoutChoice } = useChoice();
+  const origin = mwaIdentityOrigin(request.appIdentity?.identityUri) ?? '';
+  const target = t(`dapp.mwa_network_names.${to}`);
+  return (
+    <ConfirmSheet
+      visible
+      title={t('dapp.mwa_switch_title')}
+      message={t('dapp.mwa_switch_message', {
+        origin: mwaDisplayName(request.appIdentity?.identityName, origin),
+        target,
+        current: t(`dapp.mwa_network_names.${from}`),
+      })}
+      confirmText={t('dapp.mwa_switch_confirm', { target })}
+      onConfirm={async () => {
+        choose();
+        await onSwitch();
+      }}
+      onClose={() => {
+        if (closedWithoutChoice()) respond(declined);
+      }}
     />
   );
 }

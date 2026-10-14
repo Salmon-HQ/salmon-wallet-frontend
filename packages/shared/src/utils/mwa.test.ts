@@ -16,6 +16,7 @@ import {
   mwaDisplayName,
   mwaIconUrl,
   mwaIdentityOrigin,
+  mwaNetworkSwitch,
   mwaPrecheck,
   toSignAllTransactionsRequest,
   toSignAndSendRequest,
@@ -215,11 +216,22 @@ describe('mwaPrecheck', () => {
     });
   });
 
-  it('refuses a network Salmon does not support at all', () => {
-    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, ctx)).toMatchObject({
+  it('refuses a network Salmon does not support at all, as unsupported', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, ctx)).toEqual({
       ok: false,
-      reason: 'network',
+      reason: 'network-unsupported',
+      requested: 'solana:testnet',
+      failReason: 'USER_DECLINED',
     });
+    expect(mwaPrecheck({ ...sign, chain: 'testnet' }, ctx)).toMatchObject({
+      reason: 'network-unsupported',
+    });
+  });
+
+  it('judges the network before anything about the account', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, { ...ctx, address: null })).toMatchObject(
+      { reason: 'network-unsupported' }
+    );
   });
 
   it('refuses a dApp that does not say who it is', () => {
@@ -316,4 +328,29 @@ describe('mwaIconUrl', () => {
       expect(mwaIconUrl('https://jup.ag', icon)).toBeUndefined();
     }
   );
+});
+
+describe('mwaNetworkSwitch', () => {
+  const holds = (ids: string[]) => (id: string) => ids.includes(id);
+
+  it('offers the network the dApp asks for when the wallet holds it and is elsewhere', () => {
+    expect(mwaNetworkSwitch('solana:devnet', 'solana-mainnet', holds(['solana-mainnet', 'solana-devnet']))).toBe(
+      'solana-devnet'
+    );
+    expect(mwaNetworkSwitch('mainnet-beta', 'solana-devnet', holds(['solana-mainnet']))).toBe(
+      'solana-mainnet'
+    );
+  });
+
+  it('offers nothing when the wallet is already there', () => {
+    expect(mwaNetworkSwitch('solana:mainnet', 'solana-mainnet', holds(['solana-mainnet']))).toBeNull();
+  });
+
+  it('offers nothing for a network Salmon does not support', () => {
+    expect(mwaNetworkSwitch('solana:testnet', 'solana-mainnet', holds(['solana-devnet']))).toBeNull();
+  });
+
+  it('offers nothing when the active account holds no account on that network', () => {
+    expect(mwaNetworkSwitch('solana:devnet', 'solana-mainnet', holds(['solana-mainnet']))).toBeNull();
+  });
 });

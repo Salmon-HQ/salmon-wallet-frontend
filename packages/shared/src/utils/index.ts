@@ -29,6 +29,7 @@ export {
   mwaDisplayName,
   mwaIconUrl,
   mwaIdentityOrigin,
+  mwaNetworkSwitch,
   mwaPrecheck,
   newMwaAuthToken,
   toSignAllTransactionsRequest,

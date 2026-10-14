@@ -210,8 +210,12 @@ export type MwaPrecheck =
   | {
       ok: false;
       failReason: MwaFailReason;
-      /** Set when the user should be told why before the dApp hears no. */
-      reason?: 'network' | 'identity' | 'watch-only';
+      /**
+       * Set when the user should be told why before the dApp hears no.
+       * `network`: one Salmon supports but is not on; `network-unsupported`:
+       * one it does not support at all.
+       */
+      reason?: 'network' | 'network-unsupported' | 'identity' | 'watch-only';
       requested?: string;
     };
 
@@ -222,7 +226,15 @@ export type MwaPrecheck =
  */
 export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): MwaPrecheck {
   const networkId = mwaChainToNetworkId(input.chain);
-  if (!networkId || networkId !== ctx.networkId) {
+  if (!networkId) {
+    return {
+      ok: false,
+      reason: 'network-unsupported',
+      requested: input.chain,
+      failReason: 'USER_DECLINED',
+    };
+  }
+  if (networkId !== ctx.networkId) {
     return { ok: false, reason: 'network', requested: input.chain, failReason: 'USER_DECLINED' };
   }
   const origin = mwaIdentityOrigin(input.identityUri);
@@ -242,6 +254,22 @@ export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): M
     return { ok: false, failReason: 'TOO_MANY_PAYLOADS' };
   }
   return { ok: true, origin, networkId };
+}
+
+/**
+ * The network to offer switching to before a request is shown: the one the
+ * dApp asks for, when Salmon supports it, is not on it, and the active account
+ * holds an account there (`changeNetwork` does nothing otherwise). Null when no
+ * switch applies, and the precheck then judges the request as it stands.
+ */
+export function mwaNetworkSwitch(
+  chain: string | undefined,
+  activeNetworkId: string | null,
+  holds: (networkId: string) => boolean
+): 'solana-mainnet' | 'solana-devnet' | null {
+  const target = mwaChainToNetworkId(chain);
+  if (!target || target === activeNetworkId || !holds(target)) return null;
+  return target;
 }
 
 /** The account an approved `authorize` hands the dApp: the raw key of the address the user saw. */
