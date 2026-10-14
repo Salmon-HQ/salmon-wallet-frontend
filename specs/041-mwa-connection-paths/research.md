@@ -52,3 +52,10 @@ Local release build of this branch, against `solana-mobile playground` 0.6.0:
 | dApp on testnet                           | "Request refused — Salmon works with Solana Mainnet and Devnet only"                                        |
 
 Not covered on the emulator: a real Seeker's Seed Vault wallet and the dApp Store's own install path; the runbook's on-device check covers them.
+
+## R7 — Two locks, one biometric prompt (found on the Seeker, 2026-10-14)
+
+Returning to a dApp to sign showed "Biometric unlock failed" on the dApp's lock; a second tap worked. On `Seeker_API35` with a fingerprint enrolled, the app's own lock (`app/(app)/_layout.tsx`), mounted behind `MwaActivity`, auto-prompted on the same `AppState` `active`: either it took the finger and the dApp's lock stayed shut, or the dApp's prompt failed with `Authentication is already in progress` (`expo-secure-store` allows one authentication per process).
+
+- **Decision**: `MwaRoot` marks the dApp session open (`src/mwa/sessionOpen.ts`); while it is, the app's lock holds its automatic prompt (`autoPrompt={false}`) and asks on the app's next return to the front. A prompt scheduled inside the 400 ms settle beat is cancelled and still owed.
+- **Verified** on a release build: Connect and then Sign Message each took one fingerprint on the dApp's lock, and reopening Salmon afterwards prompted and unlocked the app's lock. iOS has no dApp activity, so the flag never sets there.
