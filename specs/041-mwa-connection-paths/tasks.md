@@ -8,29 +8,29 @@
 
 ## Phase 1: Foundational (shared decision logic)
 
-- [ ] T001 Write failing Vitest cases for `mwaNetworkGate` and the precheck's `network-unsupported` reason in `packages/shared/src/utils/mwa.test.ts`
-- [ ] T002 Implement `mwaNetworkGate` and split the precheck's network reason in `packages/shared/src/utils/mwa.ts`; export from `packages/shared/src/utils/index.ts` alongside the other `mwa*` helpers
-- [ ] T003 [P] Add the `dapp.mwa_*` keys (switch title/message/button, no-wallet title/message/button, unsupported message, network names) to `packages/shared/src/locales/en/translation.json` and `.../es/translation.json`
+- [x] T001 Write failing Vitest cases for `mwaNetworkGate` and the precheck's `network-unsupported` reason in `packages/shared/src/utils/mwa.test.ts`
+- [x] T002 Implement `mwaNetworkGate` and split the precheck's network reason in `packages/shared/src/utils/mwa.ts`; export from `packages/shared/src/utils/index.ts` alongside the other `mwa*` helpers
+- [x] T003 [P] Add the `dapp.mwa_*` keys (switch title/message/button, no-wallet title/message/button, unsupported message, network names) to `packages/shared/src/locales/en/translation.json` and `.../es/translation.json`
 
 ## Phase 2: User Story 1 — switch to the network the dApp asks for (P1) 🎯
 
-- [ ] T004 [US1] Write failing Jest cases in `apps/mobile/src/mwa/MwaRoot.test.tsx`: a devnet request on a mainnet wallet shows the switch sheet; Switch calls `changeNetwork('solana-devnet')`; Cancel answers declined without switching
-- [ ] T005 [US1] Render the switch gate in `MwaHost` (`apps/mobile/src/mwa/MwaRoot.tsx`) with `ConfirmSheet`, after the lock and before `MwaRequest`
+- [x] T004 [US1] Write failing Jest cases in `apps/mobile/src/mwa/MwaRoot.test.tsx`: a devnet request on a mainnet wallet shows the switch sheet; Switch calls `changeNetwork('solana-devnet')`; Cancel answers declined without switching
+- [x] T005 [US1] Render the switch gate in `MwaHost` (`apps/mobile/src/mwa/MwaRoot.tsx`) with `ConfirmSheet`, after the lock and before `MwaRequest`
 
 ## Phase 3: User Story 2 — no wallet yet (P1)
 
-- [ ] T006 [US2] Jest cases in `MwaRoot.test.tsx`: with no accounts any request shows the no-wallet sheet; Open Salmon opens `salmonwallet://` then declines; Close declines
-- [ ] T007 [US2] Render the no-wallet gate in `MwaHost`, before the lock
+- [x] T006 [US2] Jest cases in `MwaRoot.test.tsx`: with no accounts any request shows the no-wallet sheet; Open Salmon opens `salmonwallet://` then declines; Close declines
+- [x] T007 [US2] Render the no-wallet gate in `MwaHost`, before the lock
 
 ## Phase 4: User Story 3 — unsupported network (P2)
 
-- [ ] T008 [US3] Show the `network-unsupported` message in `apps/mobile/src/mwa/MwaRequest.tsx` (acknowledge-only `ConfirmSheet`, as today's refusals)
+- [x] T008 [US3] Show the `network-unsupported` message in `apps/mobile/src/mwa/MwaRequest.tsx` (acknowledge-only `ConfirmSheet`, as today's refusals)
 
 ## Phase 5: Polish & verification
 
-- [ ] T009 `pnpm typecheck`, `pnpm lint` (zero warnings), Vitest in `packages/shared`, Jest in `apps/mobile`
-- [ ] T010 Run `quickstart.md` on `Seeker_API35` against a release build; record results in `research.md`
-- [ ] T011 Trace any new `testID` through `apps/mobile/.maestro`; add the devnet switch to the MWA Maestro coverage
+- [x] T009 `pnpm typecheck`, `pnpm lint` (zero warnings), Vitest in `packages/shared`, Jest in `apps/mobile`
+- [x] T010 Run `quickstart.md` on `Seeker_API35` against a release build; record results in `research.md`
+- [x] T011 Trace any new `testID` through `apps/mobile/.maestro`; add the devnet switch to the MWA Maestro coverage
 
 ## Dependencies
 

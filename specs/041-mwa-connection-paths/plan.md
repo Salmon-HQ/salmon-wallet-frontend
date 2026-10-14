@@ -41,14 +41,14 @@ Switching calls the same `actions.changeNetwork` Settings calls; the host's exis
 
 ## Constitution Check
 
-| Principle                    | Status                                                                                                                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I. Ownership boundaries      | ✅ Decision logic in `packages/shared/src/utils/mwa.ts`; rendering in `apps/mobile/src/mwa`. No new component: `ConfirmSheet` covers all three screens.                 |
-| II. Shared code consumers    | ✅ `mwaPrecheck`'s only consumer is `MwaRequest`; `MwaPrecheck.reason` gains a value. The extension does not use these helpers.                                          |
-| III. Wallet safety           | ✅ No change to signing, crypto, storage or the lock. The switch reuses `changeNetwork`; the lock still comes before any request. Owner approved the scope 2026-10-14.    |
-| IV. Bilingual copy           | ⚠️ New `dapp.mwa_*` keys in EN and ES; the Spanish is drafted to match the existing `dapp.mwa_*` voice and **flagged for owner review**.                                  |
-| V. Functional coverage first | ✅ Vitest for the gate decision and precheck reasons, Jest for the host's gates, then the release-build hand-test.                                                       |
-| VI. Ask rather than guess    | ✅ Scope and the protocol constraint are recorded in spec §Clarifications.                                                                                               |
+| Principle                    | Status                                                                                                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Ownership boundaries      | ✅ Decision logic in `packages/shared/src/utils/mwa.ts`; rendering in `apps/mobile/src/mwa`. No new component: `ConfirmSheet` covers all three screens.                |
+| II. Shared code consumers    | ✅ `mwaPrecheck`'s only consumer is `MwaRequest`; `MwaPrecheck.reason` gains a value. The extension does not use these helpers.                                        |
+| III. Wallet safety           | ✅ No change to signing, crypto, storage or the lock. The switch reuses `changeNetwork`; the lock still comes before any request. Owner approved the scope 2026-10-14. |
+| IV. Bilingual copy           | ⚠️ New `dapp.mwa_*` keys in EN and ES; the Spanish is drafted to match the existing `dapp.mwa_*` voice and **flagged for owner review**.                               |
+| V. Functional coverage first | ✅ Vitest for the gate decision and precheck reasons, Jest for the host's gates, then the release-build hand-test.                                                     |
+| VI. Ask rather than guess    | ✅ Scope and the protocol constraint are recorded in spec §Clarifications.                                                                                             |
 
 ## Project Structure
 

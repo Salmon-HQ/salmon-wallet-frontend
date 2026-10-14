@@ -4,11 +4,11 @@
 
 Submitted APK 1.4.0 (versionCode 84) on the `Seeker_API35` emulator against `npx solana-mobile@latest playground` (0.6.0):
 
-| Setup | Result |
-| --- | --- |
-| Wallet on mainnet, dApp on mainnet | Connect approval shown; approved; the page receives the address |
-| Wallet on mainnet, dApp on devnet | "Request refused — asked for solana:devnet, a network your wallet is not using…"; no way forward |
-| No wallet, dApp on mainnet | "Request refused — asked for solana:mainnet, a network your wallet is not using…" (wrong cause) |
+| Setup                                 | Result                                                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Wallet on mainnet, dApp on mainnet    | Connect approval shown; approved; the page receives the address                                                         |
+| Wallet on mainnet, dApp on devnet     | "Request refused — asked for solana:devnet, a network your wallet is not using…"; no way forward                        |
+| No wallet, dApp on mainnet            | "Request refused — asked for solana:mainnet, a network your wallet is not using…" (wrong cause)                         |
 | No wallet, first launch after install | Once: closed in 0.4 s with no screen, page shows "authorization request failed"; not reproduced in three later attempts |
 
 The manifest is correct: `MwaActivity` is exported with both `solana-wallet` intent filters, and the intent resolves to it.
@@ -39,3 +39,16 @@ Mobile Wallet Adapter spec (`authorize`): `chain` is optional and defaults to `s
 `MainActivity` declares the `salmonwallet` scheme; `MwaActivity` runs in its own task (`taskAffinity=""`), so `Linking.openURL('salmonwallet://')` brings the app's own task forward while the dApp activity finishes on the session end.
 
 - **Decision**: open the app first, then decline; the decline ends the session and closes the dApp activity as every session end does.
+
+## R6 — Release build on `Seeker_API35`, after the fix (2026-10-14)
+
+Local release build of this branch, against `solana-mobile playground` 0.6.0:
+
+| Setup                                     | Result                                                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| No wallet, dApp on mainnet                | "No wallet yet" sheet; Open Salmon lands on create-or-import                                                |
+| Wallet on mainnet, dApp on devnet         | "Switch network?" sheet; Switch → Connect approval → the page receives the address; Sign Message then signs |
+| Wallet on devnet, dApp on mainnet, Cancel | The page reports the authorization failed; Salmon stays on devnet                                           |
+| dApp on testnet                           | "Request refused — Salmon works with Solana Mainnet and Devnet only"                                        |
+
+Not covered on the emulator: a real Seeker's Seed Vault wallet and the dApp Store's own install path; the runbook's on-device check covers them.

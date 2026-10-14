@@ -1,0 +1,31 @@
+appId: io.salmonwallet.app
+---
+# A dApp on devnet reaches a wallet on mainnet (spec 041, US1): Salmon offers
+# to switch, switches, and the connection completes on devnet. Run after
+# onboard-walletA (the wallet on mainnet) with the Solana Mobile playground
+# serving on the emulator: `npx solana-mobile playground --cluster devnet`.
+- openLink: http://localhost:4747
+- tapOn: 'Reset authorization'
+- tapOn: 'Connect'
+- extendedWaitUntil:
+    visible:
+      id: 'mwa-lock|confirm-dialog-confirm'
+    timeout: 30000
+- runFlow: ../../../subflows/mwa-unlock.yaml
+- extendedWaitUntil:
+    visible: 'Switch network?'
+    timeout: 30000
+- takeScreenshot: screenshots/actions/mwa/network-switch-offer
+- tapOn:
+    id: 'confirm-dialog-confirm'
+- extendedWaitUntil:
+    visible: 'Connect to dApp'
+    timeout: 30000
+- tapOn:
+    id: 'confirm-dialog-confirm'
+# Back on the dApp. Chrome exposes the page to Maestro only intermittently,
+# so the wait is on Salmon's sheet leaving, not on the page's text.
+- extendedWaitUntil:
+    notVisible:
+      id: 'confirm-dialog-confirm'
+    timeout: 20000
