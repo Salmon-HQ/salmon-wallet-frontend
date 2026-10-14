@@ -219,6 +219,11 @@ export type MwaPrecheck =
       requested?: string;
     };
 
+/** The dApp's chain as a short identifier, so a refusal cannot carry its sentences. */
+function mwaChainLabel(chain: string | undefined): string {
+  return (chain ?? '').replace(/[^A-Za-z0-9:_-]/g, '').slice(0, 32) || '?';
+}
+
 /**
  * Everything a dApp request must pass before the user is asked anything:
  * a network Salmon is on, a declared identity, an account that can sign,
@@ -230,11 +235,14 @@ export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): M
     return {
       ok: false,
       reason: 'network-unsupported',
-      requested: input.chain,
+      requested: mwaChainLabel(input.chain),
       failReason: 'USER_DECLINED',
     };
   }
   if (networkId !== ctx.networkId) {
+    // A token belongs to the network it was issued on; the dApp connects again,
+    // and only a connect may offer to move the wallet (`mwaNetworkSwitch`).
+    if (!input.authorize) return { ok: false, failReason: 'AUTHORIZATION_NOT_VALID' };
     return { ok: false, reason: 'network', requested: input.chain, failReason: 'USER_DECLINED' };
   }
   const origin = mwaIdentityOrigin(input.identityUri);
@@ -257,17 +265,18 @@ export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): M
 }
 
 /**
- * The network to offer switching to before a request is shown: the one the
- * dApp asks for, when Salmon supports it, is not on it, and the active account
- * holds an account there (`changeNetwork` does nothing otherwise). Null when no
+ * The network to offer switching to before a request is shown: the one a
+ * connecting dApp with a verifiable origin asks for, when Salmon supports it,
+ * is not on it, and the active account holds an account there (`changeNetwork` does nothing otherwise). Null when no
  * switch applies, and the precheck then judges the request as it stands.
  */
 export function mwaNetworkSwitch(
-  chain: string | undefined,
+  request: { authorize: boolean; chain: string | undefined; identityUri: string | undefined },
   activeNetworkId: string | null,
   holds: (networkId: string) => boolean
 ): 'solana-mainnet' | 'solana-devnet' | null {
-  const target = mwaChainToNetworkId(chain);
+  if (!request.authorize || !mwaIdentityOrigin(request.identityUri)) return null;
+  const target = mwaChainToNetworkId(request.chain);
   if (!target || target === activeNetworkId || !holds(target)) return null;
   return target;
 }

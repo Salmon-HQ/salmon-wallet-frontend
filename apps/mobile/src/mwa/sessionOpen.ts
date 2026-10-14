@@ -6,12 +6,13 @@ import { useSyncExternalStore } from 'react';
  * process: the app's own lock, behind it, must not ask for the finger the
  * dApp's lock is waiting for.
  */
-let open = false;
+// A count, not a flag: a dApp can reopen the activity while the previous one
+// is still closing, and that close must not clear the new session.
+let openCount = 0;
 const listeners = new Set<() => void>();
 
 export function setMwaSessionOpen(next: boolean) {
-  if (open === next) return;
-  open = next;
+  openCount = Math.max(0, openCount + (next ? 1 : -1));
   listeners.forEach((listener) => listener());
 }
 
@@ -23,5 +24,5 @@ function subscribe(listener: () => void) {
 }
 
 export function useMwaSessionOpen() {
-  return useSyncExternalStore(subscribe, () => open);
+  return useSyncExternalStore(subscribe, () => openCount > 0);
 }

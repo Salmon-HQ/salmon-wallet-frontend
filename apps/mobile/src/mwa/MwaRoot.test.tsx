@@ -35,6 +35,7 @@ jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
   MWARequestType: {
     AuthorizeDappRequest: 'AUTHORIZE_DAPP',
     DeauthorizeDappRequest: 'DEAUTHORIZE_DAPP',
+    SignMessagesRequest: 'SIGN_MESSAGES',
   },
 }));
 
@@ -167,6 +168,39 @@ describe('MwaHost — a devnet dApp on a mainnet wallet', () => {
     expect(mockRespond).toHaveBeenCalledTimes(1);
     expect(mockRespond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
     expect(mockChangeNetwork).not.toHaveBeenCalled();
+  });
+
+  it('offers no switch to a dApp that does not say who it is', () => {
+    given(walletOn('solana-mainnet'), {
+      ...connect('solana:devnet'),
+      appIdentity: { identityName: 'Salmon Support' },
+    });
+    render(<MwaHost />);
+
+    expect(screen.queryByText('dapp.mwa_switch_title')).toBeNull();
+    expect(mockChangeNetwork).not.toHaveBeenCalled();
+  });
+
+  it('offers no switch for a signing request', () => {
+    given(walletOn('solana-mainnet'), { ...connect('solana:devnet'), __type: 'SIGN_MESSAGES' });
+    render(<MwaHost />);
+
+    expect(screen.queryByText('dapp.mwa_switch_title')).toBeNull();
+  });
+
+  // A switch that fails must still answer the dApp, or it waits on a sheet
+  // whose Cancel no longer declines.
+  it('declines when the switch fails', async () => {
+    mockChangeNetwork.mockRejectedValueOnce(new Error('storage'));
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    given(walletOn('solana-mainnet'), connect('solana:devnet'));
+    render(<MwaHost />);
+
+    await act(async () => fireEvent.press(screen.getByTestId('sheet-confirm')));
+    if (mockRespond.mock.calls.length === 0) fireEvent.press(screen.getByTestId('sheet-cancel'));
+
+    expect(mockRespond).toHaveBeenCalledTimes(1);
+    expect(mockRespond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
   });
 
   it('shows the request itself once the wallet is on the network asked for', () => {

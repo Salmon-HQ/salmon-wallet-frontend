@@ -167,15 +167,16 @@ export function MwaHost() {
 
   if (!current) return null;
 
-  // A network Salmon holds but is not on: offer to move there before the request.
-  // A disconnect needs no network, so it never asks.
-  const switchTo =
-    current.__type !== MWARequestType.DeauthorizeDappRequest &&
-    mwaNetworkSwitch(
-      'chain' in current ? current.chain : undefined,
-      state.networkId,
-      (networkId) => getHeldPathIndex(state.activeAccount, networkId) !== null
-    );
+  // A network Salmon holds but is not on: offer to move there before a connect.
+  const switchTo = mwaNetworkSwitch(
+    {
+      authorize: current.__type === MWARequestType.AuthorizeDappRequest,
+      chain: 'chain' in current ? current.chain : undefined,
+      identityUri: current.appIdentity?.identityUri,
+    },
+    state.networkId,
+    (networkId) => getHeldPathIndex(state.activeAccount, networkId) !== null
+  );
   if (switchTo && state.networkId) {
     return (
       <NetworkSwitchSheet
@@ -276,8 +277,10 @@ function NetworkSwitchSheet({
       })}
       confirmText={t('dapp.mwa_switch_confirm', { target })}
       onConfirm={async () => {
-        choose();
-        await onSwitch();
+        // A failed switch is no choice: the close that follows declines.
+        await onSwitch().then(choose, (error: unknown) =>
+          console.warn('[mwa] network switch failed', error)
+        );
       }}
       onClose={() => {
         if (closedWithoutChoice()) respond(declined);
