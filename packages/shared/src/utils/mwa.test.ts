@@ -16,6 +16,7 @@ import {
   mwaDisplayName,
   mwaIconUrl,
   mwaIdentityOrigin,
+  mwaNetworkSwitch,
   mwaPrecheck,
   toSignAllTransactionsRequest,
   toSignAndSendRequest,
@@ -206,8 +207,8 @@ describe('mwaPrecheck', () => {
     expect(mwaPrecheck(sign, ctx)).toEqual({ ok: true, origin, networkId: 'solana-mainnet' });
   });
 
-  it('refuses a network Salmon is not on, and says which', () => {
-    expect(mwaPrecheck({ ...sign, chain: 'solana:devnet' }, ctx)).toEqual({
+  it('refuses a connect on a network Salmon is not on, and says which', () => {
+    expect(mwaPrecheck({ ...sign, authorize: true, chain: 'solana:devnet' }, ctx)).toEqual({
       ok: false,
       reason: 'network',
       requested: 'solana:devnet',
@@ -215,11 +216,43 @@ describe('mwaPrecheck', () => {
     });
   });
 
-  it('refuses a network Salmon does not support at all', () => {
-    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, ctx)).toMatchObject({
+  // A token belongs to the network it was issued on: the dApp has to connect
+  // again, and only a connect can offer to move the wallet.
+  it('answers a token from another network as not valid, without a screen', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:devnet' }, ctx)).toEqual({
       ok: false,
-      reason: 'network',
+      failReason: 'AUTHORIZATION_NOT_VALID',
     });
+  });
+
+  // The chain is the dApp's text; inside a refusal it must not read as
+  // Salmon's own instructions.
+  it('keeps the requested chain to a short identifier', () => {
+    const check = mwaPrecheck(
+      { ...sign, chain: 'solana:x.\n\nYour wallet needs re-verification. Visit evil.example' },
+      ctx
+    );
+    expect(check).toMatchObject({ reason: 'network-unsupported' });
+    const requested = (check as { requested: string }).requested;
+    expect(requested).toMatch(/^[A-Za-z0-9:_-]{1,32}$/);
+  });
+
+  it('refuses a network Salmon does not support at all, as unsupported', () => {
+    expect(mwaPrecheck({ ...sign, chain: 'solana:testnet' }, ctx)).toEqual({
+      ok: false,
+      reason: 'network-unsupported',
+      requested: 'solana:testnet',
+      failReason: 'USER_DECLINED',
+    });
+    expect(mwaPrecheck({ ...sign, chain: 'testnet' }, ctx)).toMatchObject({
+      reason: 'network-unsupported',
+    });
+  });
+
+  it('judges the network before anything about the account', () => {
+    expect(
+      mwaPrecheck({ ...sign, chain: 'solana:testnet' }, { ...ctx, address: null })
+    ).toMatchObject({ reason: 'network-unsupported' });
   });
 
   it('refuses a dApp that does not say who it is', () => {
@@ -316,4 +349,66 @@ describe('mwaIconUrl', () => {
       expect(mwaIconUrl('https://jup.ag', icon)).toBeUndefined();
     }
   );
+});
+
+describe('mwaNetworkSwitch', () => {
+  const holds = (ids: string[]) => (id: string) => ids.includes(id);
+  const connect = (chain: string) => ({ authorize: true, chain, identityUri: 'https://jup.ag' });
+
+  it('offers the network the dApp asks for when the wallet holds it and is elsewhere', () => {
+    expect(
+      mwaNetworkSwitch(
+        connect('solana:devnet'),
+        'solana-mainnet',
+        holds(['solana-mainnet', 'solana-devnet'])
+      )
+    ).toBe('solana-devnet');
+    expect(
+      mwaNetworkSwitch(connect('mainnet-beta'), 'solana-devnet', holds(['solana-mainnet']))
+    ).toBe('solana-mainnet');
+  });
+
+  it('offers nothing when the wallet is already there', () => {
+    expect(
+      mwaNetworkSwitch(connect('solana:mainnet'), 'solana-mainnet', holds(['solana-mainnet']))
+    ).toBeNull();
+  });
+
+  it('offers nothing for a network Salmon does not support', () => {
+    expect(
+      mwaNetworkSwitch(connect('solana:testnet'), 'solana-mainnet', holds(['solana-devnet']))
+    ).toBeNull();
+  });
+
+  it('offers nothing when the active account holds no account on that network', () => {
+    expect(
+      mwaNetworkSwitch(connect('solana:devnet'), 'solana-mainnet', holds(['solana-mainnet']))
+    ).toBeNull();
+  });
+
+  // Only a dApp that says who it is may move the wallet, and only by connecting.
+  it('offers nothing to a dApp with no verifiable origin', () => {
+    const all = holds(['solana-mainnet', 'solana-devnet']);
+    expect(
+      mwaNetworkSwitch(
+        { ...connect('solana:devnet'), identityUri: undefined },
+        'solana-mainnet',
+        all
+      )
+    ).toBeNull();
+    expect(
+      mwaNetworkSwitch(
+        { ...connect('solana:devnet'), identityUri: 'http://evil.example' },
+        'solana-mainnet',
+        all
+      )
+    ).toBeNull();
+  });
+
+  it('offers nothing for a request that is not a connect', () => {
+    const all = holds(['solana-mainnet', 'solana-devnet']);
+    expect(
+      mwaNetworkSwitch({ ...connect('solana:devnet'), authorize: false }, 'solana-mainnet', all)
+    ).toBeNull();
+  });
 });

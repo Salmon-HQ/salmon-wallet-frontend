@@ -16,6 +16,7 @@ import {
   encodeMwaAuthToken,
   getShortAddress,
   mwaAuthorizedAccount,
+  mwaChainToNetworkId,
   mwaDisplayName,
   mwaIconUrl,
   mwaPrecheck,
@@ -114,12 +115,17 @@ export function MwaRequest({ request, respond, account }: Props) {
   if (silent) return null;
 
   if (!check.ok) {
+    const requestedNetwork = mwaChainToNetworkId(check.requested);
     const message =
-      check.reason === 'network'
+      check.reason === 'network-unsupported'
         ? t('dapp.mwa_network_unsupported', { requested: check.requested })
-        : check.reason === 'watch-only'
-          ? t('dapp.mwa_watch_only')
-          : t('dapp.mwa_identity_missing');
+        : check.reason === 'network' && requestedNetwork
+          ? t('dapp.mwa_network_not_held', {
+              network: t(`dapp.mwa_network_names.${requestedNetwork}`),
+            })
+          : check.reason === 'watch-only'
+            ? t('dapp.mwa_watch_only')
+            : t('dapp.mwa_identity_missing');
     return (
       <ConfirmSheet
         visible

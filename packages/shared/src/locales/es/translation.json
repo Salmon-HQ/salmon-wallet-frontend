@@ -155,7 +155,18 @@
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
-    "mwa_network_unsupported": "Esta app pidió {{requested}}, una red que tu billetera no está usando. Cambiá Salmon a esa red, si la soporta, y volvé a intentar."
+    "mwa_network_unsupported": "Esta app pidió {{requested}}. Salmon funciona solo con Solana Mainnet y Devnet, así que la solicitud se rechazó.",
+    "mwa_network_not_held": "Esta app pidió {{network}}, pero la billetera activa no tiene una cuenta ahí. Cambiá a una billetera que la tenga y volvé a intentar.",
+    "mwa_switch_title": "¿Cambiar de red?",
+    "mwa_switch_message": "{{origin}} pide {{target}}. Salmon está en {{current}}.",
+    "mwa_switch_confirm": "Cambiar a {{target}}",
+    "mwa_no_wallet_title": "Todavía no hay billetera",
+    "mwa_no_wallet_message": "Creá o importá una billetera en Salmon y después volvé a conectarte.",
+    "mwa_no_wallet_open": "Abrir Salmon",
+    "mwa_network_names": {
+      "solana-mainnet": "Mainnet",
+      "solana-devnet": "Devnet"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -442,9 +453,6 @@
     "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo.",
     "unlocking": "Desbloqueando billetera",
     "use_biometric": "Usar Biometría",
-    "use_face_id": "Usar Face ID",
-    "use_touch_id": "Usar Touch ID",
-    "use_iris": "Usar Iris",
     "biometric_unlock_failed": "Error al desbloquear con biometría",
     "biometric_needs_rearm": "Después de esta actualización hay que volver a configurar el desbloqueo biométrico. Ingresá tu contraseña y activalo de nuevo en Ajustes → Seguridad.",
     "biometric_invalidated": "La biometría cambió en este dispositivo, así que se desactivó acá. Ingresá tu contraseña y volvé a activarla en Ajustes → Seguridad.",

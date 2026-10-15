@@ -10,6 +10,10 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 ## mobile 1.4.0 — unreleased
 
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
+- A dApp on the other Solana network no longer dead-ends: when it asks to connect on Devnet (or Mainnet) and your wallet holds that network, Salmon offers to switch, then shows the usual connect approval. A network Salmon does not support is named in the refusal.
+- A dApp that reaches Salmon before any wallet exists is told so, with a button that opens Salmon to create or import one.
+- Returning to a dApp to sign takes one fingerprint: the app's own lock no longer competes with the dApp's for the biometric prompt, which showed "Biometric unlock failed" until tapped again.
+- The unlock button reads "Use Biometrics" on every device, instead of naming a sensor the phone may not have.
 
 ## mobile 1.2.0 — 2026-09-28
 

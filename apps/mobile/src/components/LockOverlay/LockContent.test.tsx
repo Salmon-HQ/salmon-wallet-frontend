@@ -213,6 +213,56 @@ describe('LockContent', () => {
     });
   });
 
+  // The dApp's lock and the app's lock share one process, and the OS takes one
+  // biometric prompt per process: the app's lock, behind, must not take it.
+  it('holds the prompt while the dApp lock is up, and asks when the app returns', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'cancelled' });
+    const props = {
+      locked: true,
+      onUnlock: jest.fn().mockResolvedValue(true),
+      onRemoveAllAccounts: jest.fn().mockResolvedValue(undefined),
+      biometric: armedBiometric(unlock),
+    };
+    const { rerender } = render(<LockContent {...props} autoPrompt={false} />);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(unlock).not.toHaveBeenCalled();
+
+    // The dApp lock closes; AppState still reads 'active' from it.
+    rerender(<LockContent {...props} autoPrompt />);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(unlock).not.toHaveBeenCalled();
+
+    const onChange = mockAddEventListener.mock.calls.at(-1)?.[1] as (s: string) => void;
+    await act(async () => {
+      onChange('active');
+      jest.advanceTimersByTime(400);
+    });
+    expect(unlock).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels a prompt the dApp lock arrives in time to own', async () => {
+    const unlock = jest.fn().mockResolvedValue({ status: 'cancelled' });
+    const props = {
+      locked: true,
+      onUnlock: jest.fn().mockResolvedValue(true),
+      onRemoveAllAccounts: jest.fn().mockResolvedValue(undefined),
+      biometric: armedBiometric(unlock),
+    };
+    const { rerender } = render(<LockContent {...props} />);
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    rerender(<LockContent {...props} autoPrompt={false} />);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(unlock).not.toHaveBeenCalled();
+  });
+
   it('says nothing when the user dismisses the prompt', async () => {
     const unlock = jest.fn().mockResolvedValue({ status: 'cancelled' });
 
