@@ -33,5 +33,5 @@
 
 - The three clarification markers were answered by the owner on 2026-10-19: `production-apk` is a store build and `dapp-store-test` is not; event data retention stays at 2 months; "new wallets" is reported as "wallets added".
 - Code and backend file references are confined to the "Cross-repo contract" section and the closing "Where each trigger lives today" table, both for the planning phase, following the precedent of spec 040; the requirements and success criteria themselves state behaviour.
-- The consent copy (FR-017) is proposed text that waits for the owner's confirmation before implementation.
+- The consent copy (FR-017) was confirmed by the owner on 2026-10-19.
 - Validation iteration 1: all other items pass.
