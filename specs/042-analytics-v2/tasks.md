@@ -141,7 +141,7 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 - [ ] T065 [P] `03-dev/Frontend Analytics and Privacy Model.md`: describe v2; remove the claim that first-onboarding events cannot be measured
 - [ ] T066 [P] `03-dev/Stores/Store Privacy Declarations.md`: D5 → "closed allow-list of 20 events"; categories unchanged; record `seeker` as part of "the platform" (LS-005)
 - [ ] T067 [P] `06-operations/Processes/Privacy Policy Evidence.md`: the new events and the platform split
-- [ ] T068 [P] Privacy Policy §6.1 adds "and how often the app is opened" in EN, ES and PT (`07-publishing/Website/Salmon Privacy Policy Powerups *.md`, the version published with this release), published before or with the release (LS-002)
+- [ ] T068 [P] Privacy Policy §6.1 adds "and how often the app is opened" in EN, ES and PT (`07-publishing/Website/Salmon Privacy Policy Powerups 1.5 *.md`, the 1.5 draft — owner, 2026-10-19: the published 1.4 is not edited), published before or with the release (LS-002)
 - [ ] T069 Owner: update Apple App Privacy and Google Play Data safety answers to match T066 (Chrome Web Store "User activity" answer unchanged) before the release reaches the stores (SC-007)
 
 ## Phase 12: After release
