@@ -26,7 +26,7 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 - [ ] T010 [P] GA4 property 307622850 → Admin → Custom definitions: create the **event-scoped** custom dimension `powerup` (parameter `powerup`) BEFORE any v2 build or OTA
 - [ ] T011 [P] GA4 property 307622850 → Admin → Events: mark `wallet_created`, `wallet_recovered`, `first_send_completed`, `first_swap_completed` as key events (create by name if not listed yet)
-- [ ] T012 [P] In `apps/mobile`, run `eas env:list` for every EAS environment and confirm `EXPO_PUBLIC_ANALYTICS_URL` is not set (it would override build routing, FR-014); before any EAS build of this branch
+- [x] T012 [P] In `apps/mobile`, run `eas env:list` for every EAS environment and confirm `EXPO_PUBLIC_ANALYTICS_URL` is not set (it would override build routing, FR-014); before any EAS build of this branch — done 2026-10-19: no variables in any EAS environment (production, preview, development)
 - [ ] T013 [P] Team process: every team member declines analytics on their personal store installs (spec "Owner decisions" 2); the single verification install of T071–T072 is the only exception
 - [ ] T014 [P] Lawyer question (spec "Legal and store impact"): must installs that consented under the current copy be asked again after the FR-017 copy change? Answer before release; a "yes" is a separate change that ships with or before this one
 
