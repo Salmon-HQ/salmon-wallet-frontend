@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/services/powerups', () => ({ getPowerupAvailability: vi.fn() }));
 
+import { focusManager } from '@tanstack/react-query';
 import { getPowerupAvailability } from '../api/services/powerups';
 import { resetNetworkPowerupsCache, useNetworkPowerups } from './useNetworkPowerups';
 import { EMPTY_POWERUP_ALLOWLIST } from '../utils/powerupSwitches';
@@ -58,6 +59,26 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     const second = renderHook(() => useNetworkPowerups('solana-mainnet'));
     expect(second.result.current.providers).toEqual({ swap: '0x' });
     await waitFor(() => expect(availability).toHaveBeenCalledTimes(2));
+  });
+
+  // A wallet that travelled while in the background must not keep the
+  // answer from where it was: the blocked Powerup's tab shows its reason.
+  it('asks again when the app returns to the foreground', async () => {
+    availability
+      .mockResolvedValueOnce([{ id: 'swap', enabled: true, provider: 'jupiter' }])
+      .mockResolvedValueOnce([{ id: 'swap', enabled: false, reason: 'region' }]);
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    await waitFor(() => expect(result.current.enabled).toEqual(['swap']));
+
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+
+    await waitFor(() => expect(result.current.disabled).toEqual({ swap: 'region' }));
+    expect(result.current.enabled).toEqual([]);
+    unmount();
+    focusManager.setFocused(undefined);
   });
 
   it('closes when the route fails, and offers nothing without a network', async () => {
