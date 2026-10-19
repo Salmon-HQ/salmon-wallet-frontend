@@ -52,7 +52,7 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
       return;
     }
     let cancelled = false;
-    const ask = () =>
+    const ask = (keepOnFailure: boolean) =>
       askOnce(networkId)
         .then((entries) => {
           const next = toPowerupAllowlist(parsePowerupSwitches(entries));
@@ -60,14 +60,17 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
           if (!cancelled) setAllowlist(next);
         })
         .catch(() => {
-          // Closed stays closed; a route that cannot answer offers nothing.
+          // A re-ask on return to the foreground often fails before the
+          // network is back; it keeps the last answer, since the backend
+          // refuses a blocked build anyway. Otherwise closed stays closed.
+          if (keepOnFailure) return;
           lastByNetwork.delete(networkId);
           if (!cancelled) setAllowlist(EMPTY_POWERUP_ALLOWLIST);
         });
     setAllowlist(lastByNetwork.get(networkId) ?? EMPTY_POWERUP_ALLOWLIST);
-    void ask();
+    void ask(false);
     const unsubscribe = focusManager.subscribe((focused) => {
-      if (focused) void ask();
+      if (focused) void ask(true);
     });
     return () => {
       cancelled = true;

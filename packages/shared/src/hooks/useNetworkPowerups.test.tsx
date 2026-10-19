@@ -81,6 +81,24 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     focusManager.setFocused(undefined);
   });
 
+  it('keeps the last answer when the re-ask on return fails', async () => {
+    availability
+      .mockResolvedValueOnce([{ id: 'swap', enabled: true, provider: 'jupiter' }])
+      .mockRejectedValueOnce(new Error('offline'));
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    await waitFor(() => expect(result.current.enabled).toEqual(['swap']));
+
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+
+    expect(availability).toHaveBeenCalledTimes(2);
+    expect(result.current.enabled).toEqual(['swap']);
+    unmount();
+    focusManager.setFocused(undefined);
+  });
+
   it('closes when the route fails, and offers nothing without a network', async () => {
     availability.mockRejectedValue(new Error('down'));
     const { result } = renderHook(() => useNetworkPowerups('solana-mainnet'));
