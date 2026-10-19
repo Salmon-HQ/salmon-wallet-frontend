@@ -6,6 +6,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SignatureRequestProvider, useSignatureRequestContext } from './SignatureRequestContext';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import {
   PendingTransactionsProvider,
   usePendingTransactions,
@@ -207,6 +208,32 @@ describe('SignatureRequestProvider', () => {
       await view.result.current.ctx.confirm();
     });
     await expect(outcome).resolves.toBeInstanceOf(NoSigningAccountError);
+  });
+
+  it('never signs again after an unknown outcome: it only closes', async () => {
+    const signProposal = vi
+      .fn()
+      .mockRejectedValue(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const { view } = setup({ signProposal });
+    let outcome: Promise<unknown> | undefined;
+
+    act(() => {
+      outcome = view.result.current.ctx.requestSignature(proposal()).catch((error) => error);
+    });
+    await act(async () => {
+      await view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(view.result.current.ctx.pending?.error).toBe('transaction.errors.broadcastUnknown');
+    expect(view.result.current.host.confirmLabel).toBe('Close');
+
+    await act(async () => {
+      await view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(signProposal).toHaveBeenCalledTimes(1);
+    expect(view.result.current.ctx.pending).toBeNull();
+    await outcome;
   });
 
   // The one Powerup that builds transactions today passes no `refresh`, so

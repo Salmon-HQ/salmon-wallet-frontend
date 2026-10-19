@@ -14,6 +14,11 @@ import {
   signAndSendPreparedSolanaTransactions,
 } from './prepared-transactions';
 import type { PreparedNftTransactionResponse } from '../../types/nft';
+import { SolanaError } from '@solana/errors';
+
+/** A send the node itself refused (a failed preflight): nothing was broadcast. */
+const nodeRefusal = () =>
+  new SolanaError(-32002 as never, { __serverMessage: 'rpc boom' } as never);
 
 // ============================================================================
 // Test Constants
@@ -298,7 +303,7 @@ describe('prepared-transactions', () => {
     const rpc = createRpc({
       sendTransaction: vi.fn().mockReturnValue({
         send: async () => {
-          throw new Error('rpc boom');
+          throw nodeRefusal();
         },
       }),
     });
@@ -310,11 +315,11 @@ describe('prepared-transactions', () => {
         { transactions: [{ transaction: NFT_WORK_B64, step: 'burn' }] },
         BURN_NFT
       )
-    ).rejects.toThrow('Failed during burn: rpc boom');
+    ).rejects.toThrow(/^Failed during burn: /);
   });
 
   it('keeps the original error as the cause', async () => {
-    const cause = new Error('rpc boom');
+    const cause = nodeRefusal();
     const rpc = createRpc({
       sendTransaction: () => ({
         send: async () => {

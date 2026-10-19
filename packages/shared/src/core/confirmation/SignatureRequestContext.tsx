@@ -27,6 +27,7 @@ import React, {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
@@ -44,6 +45,11 @@ export interface PendingSignatureRequest {
   phase: SignatureRequestPhase;
   /** The last failure to sign or refresh — a translation key. Cleared on retry. */
   error: string | null;
+  /**
+   * The last attempt may have landed (the chain could not be asked): signing
+   * again would send a second transaction, so the only way out is to close.
+   */
+  unresolved?: boolean;
 }
 
 /** A signed proposal, waiting to be read: what the host's receipt renders. */
@@ -161,6 +167,24 @@ export function SignatureRequestProvider({
       setPending(null);
       setReceipt({ proposal: parked.proposal, signature: result.signature });
     } catch (error) {
+      if (error instanceof SolanaOutcomeUnknownError) {
+        // It may have landed: the banner follows the signature until the
+        // chain answers, and the host offers only a way out.
+        const { pending: report, networkId } = parked.proposal;
+        if (report) {
+          pendingTransactions?.trackPendingTransaction({
+            signature: error.signature,
+            kind: report.kind,
+            networkId,
+            submittedAt: Date.now(),
+            summary: report.summary,
+          });
+        }
+        setPending((prev) =>
+          prev ? { ...prev, phase: 'review', error: error.message, unresolved: true } : prev
+        );
+        return;
+      }
       // The parked request stays: the host shows the failure and the user
       // retries or backs out. The rejection reaches the Powerup only on cancel.
       const message = error instanceof Error ? error.message : String(error);

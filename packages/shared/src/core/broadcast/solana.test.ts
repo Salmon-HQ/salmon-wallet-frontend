@@ -87,6 +87,23 @@ describe('signAndSendSolanaTransaction', () => {
     expect(transaction.signatures[account.signer.address]).not.toBeNull();
   });
 
+  it('waits for the verdict when the send answer is lost, instead of inviting a second send', async () => {
+    const rpc = createRpc({
+      sendTransaction: vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('fetch failed');
+        },
+      }),
+    });
+    const account = await createAccount(rpc);
+
+    const signature = await signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED);
+
+    // The signature it signed, confirmed by the chain — not an error the user could retry.
+    expect(signature).toMatch(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+    expect(rpc.sendTransaction).toHaveBeenCalledTimes(1);
+  });
+
   it('propagates a confirmation failure instead of returning the signature', async () => {
     const account = await createAccount(createRpc(), createRpcSubscriptions(failedNotification));
 

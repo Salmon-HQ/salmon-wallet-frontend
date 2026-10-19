@@ -15,11 +15,12 @@ import {
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
+  getSignatureFromTransaction,
   getTransactionDecoder,
 } from '@solana/kit';
 import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
-import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
+import { confirmSolanaSignature, sendExpectingOutcome } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
 import {
   assertSolanaTransactionMatches,
@@ -119,13 +120,19 @@ export async function signAndSendSolanaTransaction(
     signatures: decoded.signatures,
   });
 
-  const signature = await rpc
-    .sendTransaction(getBase64EncodedWireTransaction(signed), {
-      encoding: 'base64',
-      preflightCommitment: commitment,
-      skipPreflight: options.skipPreflight ?? false,
-    })
-    .send();
+  // A lost answer can follow a broadcast the node accepted: the wait below
+  // settles it by this signature rather than reporting a retryable failure.
+  const signature = await sendExpectingOutcome(
+    () =>
+      rpc
+        .sendTransaction(getBase64EncodedWireTransaction(signed), {
+          encoding: 'base64',
+          preflightCommitment: commitment,
+          skipPreflight: options.skipPreflight ?? false,
+        })
+        .send(),
+    getSignatureFromTransaction(signed)
+  );
 
   await confirmSolanaSignature(
     { rpc, rpcSubscriptions: account.getRpcSubscriptions() },

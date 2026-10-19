@@ -26,6 +26,13 @@
  */
 import type { Commitment, Signature } from '@solana/kit';
 import {
+  getSolanaErrorFromTransactionError,
+  isSolanaError,
+  SolanaError,
+  SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED,
+  SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR,
+} from '@solana/errors';
+import {
   createBlockHeightExceedencePromiseFactory,
   createRecentSignatureConfirmationPromiseFactory,
 } from '@solana/transaction-confirmation';
@@ -42,6 +49,115 @@ export interface SolanaConfirmOptions {
   resend?: () => Promise<unknown>;
   /** How often to re-broadcast. */
   resendIntervalMs?: number;
+}
+
+/**
+ * The chain could not be asked whether the transaction landed — the
+ * subscription broke and the HTTP fallback kept failing. The transaction may
+ * have landed, so this is not a failure: the screen must not offer a retry,
+ * which would sign and send a second one with a fresh blockhash.
+ */
+export class SolanaOutcomeUnknownError extends Error {
+  constructor(readonly signature: Signature) {
+    super('transaction.errors.broadcastUnknown');
+    this.name = 'SolanaOutcomeUnknownError';
+  }
+}
+
+/** How often the HTTP fallback asks, and how many failures in a row it takes. */
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_FAILURES = 15;
+
+/**
+ * An answer from the chain, not from the connection: the blockhash expired, or
+ * the transaction (or one of its instructions) failed.
+ */
+function isChainVerdict(error: unknown): boolean {
+  if (!isSolanaError(error)) return false;
+  const code = error.context.__code as number;
+  return (
+    code === SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED ||
+    (code >= 7_050_000 && code < 7_051_000) ||
+    (code >= 4_615_000 && code < 4_616_000)
+  );
+}
+
+function reached(status: string | null | undefined, commitment: Commitment): boolean {
+  if (commitment === 'finalized') return status === 'finalized';
+  if (commitment === 'confirmed') return status === 'confirmed' || status === 'finalized';
+  return status != null;
+}
+
+/**
+ * Asks over plain HTTP until the chain gives a verdict — the stateless
+ * fallback for a subscription that broke (a dropped socket, a network switch,
+ * the app going to the background) while the transaction may already have
+ * landed. Gives up with {@link SolanaOutcomeUnknownError} only when the
+ * network cannot be asked at all.
+ */
+async function pollForVerdict(
+  rpc: SolanaRpc,
+  signature: Signature,
+  lastValidBlockHeight: bigint,
+  commitment: Commitment
+): Promise<void> {
+  let failures = 0;
+  for (;;) {
+    let answer: {
+      status: { err: unknown; confirmationStatus?: string | null } | null;
+      height: bigint;
+    };
+    try {
+      const [{ value }, height] = await Promise.all([
+        rpc.getSignatureStatuses([signature]).send(),
+        rpc.getBlockHeight({ commitment }).send(),
+      ]);
+      answer = { status: value[0] ?? null, height };
+      failures = 0;
+    } catch {
+      failures += 1;
+      if (failures >= MAX_POLL_FAILURES) throw new SolanaOutcomeUnknownError(signature);
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      continue;
+    }
+    const { status, height } = answer;
+    if (status?.err) throw getSolanaErrorFromTransactionError(status.err as never);
+    if (status && reached(status.confirmationStatus, commitment)) return;
+    if (height > lastValidBlockHeight) {
+      throw new SolanaError(SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED, {
+        currentBlockHeight: height,
+        lastValidBlockHeight,
+      });
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+}
+
+/**
+ * Sends signed bytes, treating a lost answer as "may have landed". A refusal
+ * the node itself answered (a JSON-RPC error such as a failed preflight) or an
+ * HTTP 429 means nothing was broadcast, so it is rethrown. Any other failure —
+ * a dropped connection, a timeout, a gateway error — can happen after the node
+ * accepted the transaction, so the locally computed `signature` is returned
+ * and the caller's confirmation wait settles whether it landed.
+ */
+export async function sendExpectingOutcome(
+  send: () => Promise<Signature>,
+  signature: Signature
+): Promise<Signature> {
+  try {
+    return await send();
+  } catch (error) {
+    if (isSolanaError(error)) {
+      const code = error.context.__code as number;
+      const refusedByNode = code >= -32_768 && code <= -32_000;
+      const rateLimited =
+        code === SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR &&
+        (error.context as { statusCode?: number }).statusCode === 429;
+      if (refusedByNode || rateLimited) throw error;
+    }
+    return signature;
+  }
 }
 
 /** Often enough to outrun a dropped transaction, rarely enough to be polite. */
@@ -72,18 +188,26 @@ export async function confirmSolanaSignature(
       }, options.resendIntervalMs ?? DEFAULT_RESEND_INTERVAL_MS)
     : undefined;
   try {
-    await Promise.race([
-      getRecentSignatureConfirmationPromise({
-        abortSignal: controller.signal,
-        commitment,
-        signature,
-      }),
-      getBlockHeightExceedencePromise({
-        abortSignal: controller.signal,
-        commitment,
-        lastValidBlockHeight,
-      }),
-    ]);
+    try {
+      await Promise.race([
+        getRecentSignatureConfirmationPromise({
+          abortSignal: controller.signal,
+          commitment,
+          signature,
+        }),
+        getBlockHeightExceedencePromise({
+          abortSignal: controller.signal,
+          commitment,
+          lastValidBlockHeight,
+        }),
+      ]);
+    } catch (error) {
+      if (isChainVerdict(error)) throw error;
+      // The subscription broke, not the transaction: reporting a failure here
+      // would invite a retry that sends twice. Ask over HTTP instead.
+      controller.abort();
+      await pollForVerdict(clients.rpc, signature, lastValidBlockHeight, commitment);
+    }
   } finally {
     if (resendTimer !== undefined) clearInterval(resendTimer);
     controller.abort();

@@ -496,6 +496,44 @@ describe('useSendTransaction', () => {
     expect(result.current.isError).toBe(true);
   });
 
+  it('follows an unknown outcome as pending instead of calling it failed for good', async () => {
+    const { SolanaOutcomeUnknownError } = await import('../blockchain/solana/confirm');
+    const { PendingTransactionsProvider, usePendingTransactions } =
+      await import('../contexts/PendingTransactionsContext');
+    mockAccount.transfer.mockRejectedValueOnce(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const client = createTestQueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryWrapper client={client}>
+        <PendingTransactionsProvider getOutcomes={vi.fn(async () => ({}))} pollIntervalMs={60_000}>
+          {children}
+        </PendingTransactionsProvider>
+      </QueryWrapper>
+    );
+
+    const { result } = renderHook(
+      () => ({
+        send: useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+        pending: usePendingTransactions(),
+      }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.send
+        .sendTransaction({
+          token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+          recipientAddress: RAW_RECIPIENT,
+          amount: AMOUNT,
+        })
+        .catch(() => undefined);
+    });
+
+    expect(result.current.send.error).toBe('transaction.errors.broadcastUnknown');
+    expect(result.current.pending.pendingTransactions).toEqual([
+      expect.objectContaining({ signature: 'sig-maybe', kind: 'send', status: 'pending' }),
+    ]);
+  });
+
   it('resets state after an error', async () => {
     mockAccount.transfer.mockRejectedValueOnce(new Error('boom'));
 

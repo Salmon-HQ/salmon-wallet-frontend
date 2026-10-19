@@ -37,6 +37,7 @@ import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsC
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
 import { describeTransactionError } from '../utils/transaction-errors';
+import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
 
 // ============================================================================
 // Types
@@ -291,6 +292,18 @@ export function useSendTransaction({
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: false,
         });
+        if (err instanceof SolanaOutcomeUnknownError) {
+          // It may have landed: the banner follows the signature until the
+          // chain answers, and the failure surface offers no retry.
+          pendingTransactions?.trackPendingTransaction({
+            signature: String(err.signature),
+            kind: 'send',
+            networkId: account.getNetworkId(),
+            accountId: account.getReceiveAddress(),
+            submittedAt: Date.now(),
+            summary: `${params.amount} ${params.token.symbol}`,
+          });
+        }
         const failure = describeTransactionError(err);
         setError(failure.key);
         setErrorDetail(failure.detail);
