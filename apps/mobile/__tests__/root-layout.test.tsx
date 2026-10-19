@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
-import { focusManager } from '@salmon/shared';
+import { focusManager, trackEvent } from '@salmon/shared';
 import RootLayout from '../app/_layout';
 
 // Registered once, when the layout module loads — captured before any test
@@ -118,6 +118,9 @@ jest.mock('@salmon/shared', () => {
   return {
     focusManager: { setEventListener: jest.fn() },
     setApiPlatform: jest.fn(),
+    initAnalytics: jest.fn(),
+    getAnalytics: () => null,
+    trackEvent: jest.fn(),
     colors: {
       background: { primary: '#000' },
     },
@@ -228,6 +231,35 @@ describe('RootLayout mobile lock lifecycle', () => {
     await waitFor(() => {
       expect(mockLockAccounts).toHaveBeenCalledTimes(2);
     });
+  });
+
+  // Spec 042: an app open is the return after the leave the lock rule saw, so
+  // opens and locks agree; an iOS overlay is neither.
+  it('counts one app open per return the lock rule saw as a leave', async () => {
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((eventType: any, listener: any) => {
+      listeners[eventType] ??= [];
+      listeners[eventType].push(listener);
+      return { remove: jest.fn() } as any;
+    });
+    mockLockAccounts.mockResolvedValue(undefined);
+    const { startAnalytics } = require('../src/analytics/appAnalytics');
+    startAnalytics('1.5.0');
+    render(<RootLayout />);
+    await waitFor(() => expect(listeners.change).toHaveLength(2));
+    const emit = (state: string) => listeners.change.forEach((listener) => listener(state));
+    const opens = () =>
+      (trackEvent as jest.Mock).mock.calls.filter(([name]) => name === 'app_opened').length;
+    emit('active');
+    (trackEvent as jest.Mock).mockClear();
+
+    emit('inactive');
+    emit('active');
+    expect(opens()).toBe(0);
+
+    emit('background');
+    emit('active');
+    await waitFor(() => expect(mockLockAccounts).toHaveBeenCalledTimes(1));
+    expect(opens()).toBe(1);
   });
 
   it('does not lock on iOS-style inactive transitions alone', async () => {

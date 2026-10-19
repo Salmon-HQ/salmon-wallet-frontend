@@ -18,7 +18,7 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 - [x] T006 Backend `docs/ANALYTICS.md` (20 events, 6 keys, platforms, `powerup` custom dimension, pipeline without `web`), `CHANGELOG.md` and `package.json` `0.25.0` (accepted events, prop, platforms; `success` strings rejected); `npm test` green
 - [x] T007 Release `0.25.0`: PR to `main`; staging leg on a branch cut from `origin/staging` with the same diff; `npm run serverless:deploy:staging` with exported AWS credentials — done: backend PR #101 (main) and #102 (staging, merged), staging deployed 2026-10-19
 - [x] T008 **GATE G1** — probe staging `https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging/v1/events` with the quickstart §2 body once per platform (`ios`, `android`, `seeker`, `extension`, `mobile`): each answers `{"accepted":11,"rejected":0}`. Blocks any internal app build that sends v2 values — passed 2026-10-19 for all five platforms
-- [ ] T009 **GATE G2** — the user merges `main` and tags `prod/v0.25.0`; production is confirmed by the tag's deploy run and a health check of its commit, never by a synthetic event. Blocks any store build and any OTA
+- [x] T009 **GATE G2** — the user merges `main` and tags `prod/v0.25.0`; production is confirmed by the tag's deploy run and a health check of its commit, never by a synthetic event. Blocks any store build and any OTA — done 2026-10-19: PR #101 merged (32e7569), tag `prod/v0.25.0`, Deploy run 39313317029 green; prod `/health`, Powerups availability and `/v1/networks` answer 200 before and after
 
 **Checkpoint**: backend `npm test` green; G1 before internal builds, G2 before store builds and OTA.
 
@@ -50,14 +50,14 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 **Independent test**: on each platform open, background, reopen → two `app_opened` with the right `platform`; Seed Vault screen, permission dialog, iOS overlay, extension approval window and MWA sheet add none; a Seeker reports `seeker`.
 
-- [ ] T022 [P] [US2] Extend `apps/mobile/src/seed-vault/useDeviceCapabilities.test.ts`: the exported `loadDeviceCapabilities()` returns the same memoized answer the hook uses, asked once
-- [ ] T023 [P] [US2] Tests in `apps/mobile/src/analytics/appAnalytics.test.ts` (new, Jest): platform `ios` on iOS; on Android `seeker` when the capabilities hold `seed-vault`, else `android`; cold open tracked once per process; `noteAppLeft()` then `active` → `startSession()` before one `app_opened`; `inactive` → `active` none; `active` without a noted leave (Seed Vault, overlay) none; `active` while the MWA root is on screen none
-- [ ] T024 [P] [US2] Tests in `apps/extension/src/analytics.test.ts` (new, Vitest): `isDAppApprovalLaunch(hash)` true only with `origin` and `request`; start-up tracks one `app_opened` without an approval hash and none with one
-- [ ] T025 [US2] Export the memoized `ask()` as `loadDeviceCapabilities` from `apps/mobile/src/seed-vault/useDeviceCapabilities.ts` until T022 passes
-- [ ] T026 [US2] Create `apps/mobile/src/analytics/appAnalytics.ts` until T023 passes: `startAnalytics()` (`initAnalytics` with the platform promise and the `app.json` version), `trackColdOpen()`, `noteAppLeft()`, `noteAppActive()`, `setMwaOnScreen(on)` (data-model "Mobile open rule")
-- [ ] T027 [US2] Wire mobile: `apps/mobile/index.js:182` calls `startAnalytics()`, and the MWA component provider at `:186-191` sets MWA presence; `apps/mobile/app/_layout.tsx` calls `trackColdOpen()` on `RootLayoutNav` mount, `noteAppLeft()` beside both `tryLock()` calls (`:286`, `:293`) and `noteAppActive()` on `active`; `apps/mobile/src/mwa/MwaRoot.tsx` clears presence on unmount. Lock behaviour unchanged (security gate T055)
-- [ ] T028 [US2] Create `apps/extension/src/analytics.ts` until T024 passes: `isDAppApprovalLaunch` extracted from `apps/extension/src/entrypoints/popup/App.tsx:96-101` (App.tsx reuses it) and `startExtensionAnalytics()`; `apps/extension/src/entrypoints/popup/main.tsx:24` and `apps/extension/src/entrypoints/sidepanel/main.tsx:22` call it instead of `initAnalytics`; existing `App.test.tsx` stays green
-- [ ] T029 [P] [US2] Consent copy (FR-017): replace `settings.analytics_prompt_body` and `settings.analytics_description` with the owner's confirmed strings verbatim in `packages/shared/src/locales/en/translation.json:229,231` and `packages/shared/src/locales/es/translation.json:229,231`, keys unchanged; `pnpm check:i18n`
+- [x] T022 [P] [US2] Extend `apps/mobile/src/seed-vault/useDeviceCapabilities.test.ts`: the exported `loadDeviceCapabilities()` returns the same memoized answer the hook uses, asked once
+- [x] T023 [P] [US2] Tests in `apps/mobile/src/analytics/appAnalytics.test.ts` (new, Jest): platform `ios` on iOS; on Android `seeker` when the capabilities hold `seed-vault`, else `android`; cold open tracked once per process; `noteAppLeft()` then `active` → `startSession()` before one `app_opened`; `inactive` → `active` none; `active` without a noted leave (Seed Vault, overlay) none; `active` while the MWA root is on screen none
+- [x] T024 [P] [US2] Tests in `apps/extension/src/analytics.test.ts` (new, Vitest): `isDAppApprovalLaunch(hash)` true only with `origin` and `request`; start-up tracks one `app_opened` without an approval hash and none with one
+- [x] T025 [US2] Export the memoized `ask()` as `loadDeviceCapabilities` from `apps/mobile/src/seed-vault/useDeviceCapabilities.ts` until T022 passes
+- [x] T026 [US2] Create `apps/mobile/src/analytics/appAnalytics.ts` until T023 passes: `startAnalytics()` (`initAnalytics` with the platform promise and the `app.json` version), `trackColdOpen()`, `noteAppLeft()`, `noteAppActive()`, `setMwaOnScreen(on)` (data-model "Mobile open rule")
+- [x] T027 [US2] Wire mobile: `apps/mobile/index.js:182` calls `startAnalytics()`, and the MWA component provider at `:186-191` sets MWA presence; `apps/mobile/app/_layout.tsx` calls `trackColdOpen()` on `RootLayoutNav` mount, `noteAppLeft()` beside both `tryLock()` calls (`:286`, `:293`) and `noteAppActive()` on `active`; `apps/mobile/src/mwa/MwaRoot.tsx` clears presence on unmount. Lock behaviour unchanged (security gate T055)
+- [x] T028 [US2] Create `apps/extension/src/analytics.ts` until T024 passes: `isDAppApprovalLaunch` extracted from `apps/extension/src/entrypoints/popup/App.tsx:96-101` (App.tsx reuses it) and `startExtensionAnalytics()`; `apps/extension/src/entrypoints/popup/main.tsx:24` and `apps/extension/src/entrypoints/sidepanel/main.tsx:22` call it instead of `initAnalytics`; existing `App.test.tsx` stays green
+- [x] T029 [P] [US2] Consent copy (FR-017): replace `settings.analytics_prompt_body` and `settings.analytics_description` with the owner's confirmed strings verbatim in `packages/shared/src/locales/en/translation.json:229,231` and `packages/shared/src/locales/es/translation.json:229,231`, keys unchanged; `pnpm check:i18n`
 
 **Checkpoint**: three-package gate green; `pnpm check:i18n`.
 
@@ -113,6 +113,18 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 **Checkpoint**: three-package gate green.
 
+## Phase 7b: Consent version (FR-021, owner decision 2026-10-19)
+
+**Goal**: no new event is recorded under the v1 consent text, whatever the lawyer answers on LS-006. Runs after US4 and before the wallet-safety review (it touches `storage/types.ts`).
+
+- [ ] T073 [P] Extend `packages/shared/src/analytics/client.test.ts`: a stored consent `true` with no version reads as `v1`; a `v1` install sends the 9 v1 events and drops the 11 new ones (including `app_opened`); granting consent through the client stores `v2`; a `v2` install sends all 20; withdrawing consent clears the version
+- [ ] T074 Implement until T073 passes: `ANALYTICS_CONSENT_VERSION` in `packages/shared/src/storage/types.ts`; `V1_EVENTS` (the first 9 names) exported from `analytics/events.ts`; the client reads the version at bootstrap, writes `v2` when consent is granted, filters non-v1 events for `v1` installs and clears the version on withdrawal
+- [ ] T075 [P] Update `apps/mobile/src/analytics/appAnalytics.test.ts:33` and `apps/extension/src/analytics.test.ts:44` to store a `v2` consent, and re-check the cold-open expectations
+- [ ] T076 Owner + lawyer: answer LS-006 (ask v1 installs to accept the v2 text again, or show a prominent notice with a one-tap off switch)
+- [ ] T077 After T076: show the v2 text once to `v1` installs as decided (UI change: the owner confirms the screen before it is built), recording `v2` on acceptance (or on dismissal of the notice)
+
+**Checkpoint**: shared, mobile and extension typecheck/lint/test green.
+
 ## Phase 8: Wallet-safety review gate (owner condition, constitution III)
 
 - [ ] T055 Run the `security-reviewer` agent on the branch diff of `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`, `packages/shared/src/core/confirmation/types.ts`, `packages/shared/src/storage/types.ts`, `apps/mobile/app/_layout.tsx` (lock effect), `apps/mobile/src/mwa/MwaRoot.tsx` and `apps/mobile/index.js`, plus the approval path `apps/mobile/src/mwa/MwaRequest.tsx`, `apps/extension/src/pages/dapp/useDAppApproval.ts`, `apps/extension/src/pages/dapp/DAppConnectPage.tsx`. It confirms: signing, broadcast and lock behaviour unchanged; a throwing callback never turns a signed transaction into a failure; tracking cannot delay, alter or drop an answer to a dApp; no dApp identity reaches an event. Findings fixed and re-reviewed before this phase closes; blocks the PR
@@ -157,7 +169,7 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 - **G2**: T009 (production deployed) before any store build or OTA (`pnpm --filter @salmon/mobile ota`). T010 (GA4 `powerup` dimension) before any v2 build or OTA. T012 (`eas env:list`) before any EAS build of this branch.
 - **Store release**: T065–T069 done and T014 answered (SC-007).
 - **PR**: T055 (security review) and T058 green before merge.
-- Phase 3 → US2 → US3 → US5 → US4 → T055 → US1 → Phase 10. US5 follows US2 because both edit `apps/mobile/src/analytics/appAnalytics.ts` and `apps/extension/src/analytics.ts`; US3 and US4 depend only on Phase 3.
+- Phase 3 → US2 → US3 → US5 → US4 → Phase 7b → T055 → US1 → Phase 10. US5 follows US2 because both edit `apps/mobile/src/analytics/appAnalytics.ts` and `apps/extension/src/analytics.ts`; US3 and US4 depend only on Phase 3.
 - Test → implementation pairs: T015/T016 → T017; T018 → T020; T019 → T021; T022 → T025; T023 → T026 → T027; T024 → T028; T030 → T036; T031 → T037; T032 → T038; T033 → T039 (needs T036, T037); T034 → T040 (needs T036); T035 → T041; T042/T043 → T045; T044 → T046; T047 → T048; T049 → T052; T050 → T053; T051 → T054.
 - T059 → T060 (same spec file). T062 needs Phase 1 on the local backend; T064 needs T008.
 

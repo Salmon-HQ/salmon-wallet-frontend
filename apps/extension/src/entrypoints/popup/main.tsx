@@ -9,7 +9,8 @@ import App from './App';
 import { AppProviders } from '../../AppProviders';
 
 // Initialize storage and stash for extension platform
-import { APP_VERSION, initStorage, initStash, initAnalytics, setApiPlatform } from '@salmon/shared';
+import { initStorage, initStash, setApiPlatform } from '@salmon/shared';
+import { startExtensionAnalytics } from '../../analytics';
 
 // Initialize storage with Chrome extension adapter
 initStorage({ platform: 'extension' });
@@ -21,7 +22,7 @@ initStash('extension');
 setApiPlatform('extension');
 
 // Anonymous, opt-in usage analytics (no events until the user opts in).
-initAnalytics({ platform: 'extension', appVersion: APP_VERSION });
+startExtensionAnalytics();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <AppProviders>

@@ -36,6 +36,7 @@ import { SuccessPage } from '../../pages/auth/SuccessPage';
 import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 import { useLockAcrossWindows } from './useLockAcrossWindows';
+import { isDAppApprovalLaunch } from '../../analytics';
 
 // ============================================================================
 // Types
@@ -93,12 +94,7 @@ function App() {
   // approval flow* stands on flat ground, showing nothing living through
   // itself. The extension has no /dapp/* routes — the popup knows it was
   // launched for an approval from its URL hash, before accounts are ready.
-  const isDAppApprovalLaunch = useMemo(() => {
-    const hash = window.location.hash?.slice(1);
-    if (!hash) return false;
-    const params = new URLSearchParams(hash);
-    return Boolean(params.get('origin') && params.get('request'));
-  }, []);
+  const approvalLaunch = useMemo(() => isDAppApprovalLaunch(window.location.hash), []);
 
   // dApp connection flow (when popup is launched for connect approval)
   const [pendingDAppRequest, setPendingDAppRequest] = useState<{
@@ -410,11 +406,7 @@ function App() {
   // than flashing 2s of wave to say so.
   if (waitHeld) {
     return (
-      <LoadingScreen
-        visible={showBootWait}
-        bedrock={isDAppApprovalLaunch}
-        onExited={onWaitExited}
-      />
+      <LoadingScreen visible={showBootWait} bedrock={approvalLaunch} onExited={onWaitExited} />
     );
   }
 
