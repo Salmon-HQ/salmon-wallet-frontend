@@ -127,7 +127,7 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 ## Phase 8: Wallet-safety review gate (owner condition, constitution III)
 
-- [ ] T055 Run the `security-reviewer` agent on the branch diff of `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`, `packages/shared/src/core/confirmation/types.ts`, `packages/shared/src/storage/types.ts`, `apps/mobile/app/_layout.tsx` (lock effect), `apps/mobile/src/mwa/MwaRoot.tsx` and `apps/mobile/index.js`, plus the approval path `apps/mobile/src/mwa/MwaRequest.tsx`, `apps/extension/src/pages/dapp/useDAppApproval.ts`, `apps/extension/src/pages/dapp/DAppConnectPage.tsx`. It confirms: signing, broadcast and lock behaviour unchanged; a throwing callback never turns a signed transaction into a failure; tracking cannot delay, alter or drop an answer to a dApp; no dApp identity reaches an event. Findings fixed and re-reviewed before this phase closes; blocks the PR
+- [x] T055 Run the `security-reviewer` agent on the branch diff of `packages/shared/src/core/confirmation/SignatureRequestContext.tsx`, `packages/shared/src/core/confirmation/types.ts`, `packages/shared/src/storage/types.ts`, `apps/mobile/app/_layout.tsx` (lock effect), `apps/mobile/src/mwa/MwaRoot.tsx` and `apps/mobile/index.js`, plus the approval path `apps/mobile/src/mwa/MwaRequest.tsx`, `apps/extension/src/pages/dapp/useDAppApproval.ts`, `apps/extension/src/pages/dapp/DAppConnectPage.tsx`. It confirms: signing, broadcast and lock behaviour unchanged; a throwing callback never turns a signed transaction into a failure; tracking cannot delay, alter or drop an answer to a dApp; no dApp identity reaches an event. Findings fixed and re-reviewed before this phase closes; blocks the PR — done 2026-10-19: security-reviewer verdict "safe to merge" for 042; its LOW item (async onOutcome) fixed in 2b22aa66; follow-ups decided by the owner: Swap double-send fix in its own PR (pre-existing), backend 0.25.1 with hour-rounded GA timestamps and ingest protections
 
 ## Phase 9: User Story 1 — Monthly figures a backer can trust (P1)
 
@@ -135,8 +135,8 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 **Independent test**: two people compute M1, M4 and M8 for the same month from the document alone and get the same figures (SC-005).
 
-- [ ] T056 [US1] Rewrite `docs/ANALYTICS.md` from the spec: privacy posture, the 20-event tracking plan, props and platforms, metrics dictionary M1–M11 with its conventions, what is not measurable, build routing (contract "Routing"), verification and local testing; remove the 11-event catalog, `web`, the "onboarding not measurable" claim and the wrong NFT detail locations
-- [ ] T057 [US1] SC-006 review: diff the event, prop key, prop value and platform lists in `docs/ANALYTICS.md` against `packages/shared/src/analytics/events.ts` and the backend's `src/analytics/event-schema.js` and `src/analytics/handler.js` on `feat/analytics-catalog-v2`; zero differences
+- [x] T056 [US1] Rewrite `docs/ANALYTICS.md` from the spec: privacy posture, the 20-event tracking plan, props and platforms, metrics dictionary M1–M11 with its conventions, what is not measurable, build routing (contract "Routing"), verification and local testing; remove the 11-event catalog, `web`, the "onboarding not measurable" claim and the wrong NFT detail locations
+- [x] T057 [US1] SC-006 review: diff the event, prop key, prop value and platform lists in `docs/ANALYTICS.md` against `packages/shared/src/analytics/events.ts` and the backend's `src/analytics/event-schema.js` and `src/analytics/handler.js` on `feat/analytics-catalog-v2`; zero differences
 
 ## Phase 10: Verification (FR-020, plan Phase G; runbook in quickstart.md)
 
