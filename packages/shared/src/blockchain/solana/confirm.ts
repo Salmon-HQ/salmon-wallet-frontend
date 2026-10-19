@@ -228,7 +228,9 @@ const DEFAULT_RESEND_INTERVAL_MS = 2000;
 /**
  * Resolves once the cluster reports `signature` at `commitment`; throws the
  * chain's verdict otherwise — a failed transaction's error, or
- * `SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED` once the blockhash has expired.
+ * `SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED` once the ledger confirms the blockhash
+ * expired without it — or {@link SolanaOutcomeUnknownError} when the network
+ * could not be asked: the transaction may have landed, so nothing may retry it.
  */
 export async function confirmSolanaSignature(
   clients: { rpc: SolanaRpc; rpcSubscriptions: SolanaRpcSubscriptions },

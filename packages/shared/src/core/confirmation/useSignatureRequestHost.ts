@@ -17,9 +17,9 @@ export interface SignatureRequestHost {
   secondsLeft: number | null;
   /** True while a refreshed proposal is being built. */
   refreshing: boolean;
-  /** The confirm control's label: "Confirm (12)" or "Refresh Quote" once expired. */
+  /** The confirm control's label: "Confirm (12)", "Refresh Quote" once expired, or "Close" after an unknown outcome. */
   confirmLabel: string;
-  /** Confirm, or rebuild first when the quote expired. */
+  /** Confirm, rebuild first when the quote expired, or only close after an unknown outcome: never sign again. */
   confirmOrRefresh: () => Promise<void>;
   cancel: () => void;
   /** The receipt's one button: close the window, hand the Powerup back. */
