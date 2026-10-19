@@ -236,6 +236,27 @@ describe('SignatureRequestProvider', () => {
     await outcome;
   });
 
+  it('refuses to sign again after an unknown outcome, even when confirm is called directly', async () => {
+    const signProposal = vi
+      .fn()
+      .mockRejectedValue(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const { view } = setup({ signProposal });
+
+    act(() => {
+      void view.result.current.ctx.requestSignature(proposal()).catch(() => undefined);
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+
+    expect(signProposal).toHaveBeenCalledTimes(1);
+    expect(view.result.current.ctx.pending?.error).toBe('transaction.errors.broadcastUnknown');
+    act(() => view.result.current.ctx.cancel());
+  });
+
   // The one Powerup that builds transactions today passes no `refresh`, so
   // this is the shipped path: the button relabelled itself and signed the old
   // bytes anyway, which made the press the user meant as "rebuild this" the

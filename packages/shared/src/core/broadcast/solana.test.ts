@@ -124,6 +124,8 @@ describe('signAndSendSolanaTransaction', () => {
         .fn()
         .mockReturnValueOnce({ send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }) })
         .mockReturnValue({ send: async () => ({ absoluteSlot: 5n, blockHeight: 5n }) }),
+      // Kit's expiry is checked against the ledger before it is believed.
+      getBlockHeight: vi.fn().mockReturnValue({ send: async () => 5n }),
     });
     const account = await createAccount(rpc, createRpcSubscriptions(pending, pastTheWindow));
 
@@ -132,6 +134,9 @@ describe('signAndSendSolanaTransaction', () => {
     );
     // The verdict the error decoder maps to `transaction.errors.expired`.
     expect(isSolanaError(outcome, SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED)).toBe(true);
+    expect(rpc.getSignatureStatuses).toHaveBeenCalledWith(expect.anything(), {
+      searchTransactionHistory: true,
+    });
   });
 
   it('honours skipPreflight and the commitment it is given', async () => {

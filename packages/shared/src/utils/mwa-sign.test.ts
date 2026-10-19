@@ -2,7 +2,11 @@ import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 import { describe, expect, it, vi } from 'vitest';
 import { Keypair, SystemProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
+import {
+  createKeyPairSignerFromPrivateKeyBytes,
+  SolanaError,
+  SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+} from '@solana/kit';
 import { TransactionLookalikeMessageError } from './dapp-approval';
 import { mwaSignAndSend, mwaSignIn, mwaSignMessages, mwaSignTransactions } from './mwa-sign';
 
@@ -104,7 +108,13 @@ describe('mwaSignAndSend', () => {
       .mockReturnValueOnce({ send: async () => sig(1) })
       .mockReturnValueOnce({
         send: async () => {
-          throw new Error('blockhash not found');
+          // The node's own refusal, so nothing went out.
+          throw new SolanaError(
+            SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+            {
+              __serverMessage: 'blockhash not found',
+            } as never
+          );
         },
       });
     const account = await makeAccount({ sendTransaction });

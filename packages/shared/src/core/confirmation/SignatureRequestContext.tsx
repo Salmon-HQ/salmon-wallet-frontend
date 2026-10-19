@@ -86,6 +86,8 @@ interface ParkedRequest {
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
   result?: SignedResult;
+  /** Sent, with no verdict: it may have landed, so it is never signed again. */
+  unresolved?: boolean;
 }
 
 export interface SignatureRequestProviderProps {
@@ -135,7 +137,7 @@ export function SignatureRequestProvider({
 
   const confirm = useCallback(async () => {
     const parked = parkedRef.current;
-    if (!parked) return;
+    if (!parked || parked.unresolved) return;
     setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
 
     const signer = accountRef.current;
@@ -170,6 +172,7 @@ export function SignatureRequestProvider({
       if (error instanceof SolanaOutcomeUnknownError) {
         // It may have landed: the banner follows the signature until the
         // chain answers, and the host offers only a way out.
+        parked.unresolved = true;
         const { pending: report, networkId } = parked.proposal;
         if (report) {
           pendingTransactions?.trackPendingTransaction({
