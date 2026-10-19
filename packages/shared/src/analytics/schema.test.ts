@@ -56,10 +56,15 @@ describe('validateEvent', () => {
     ).toThrow(/address\/mint/);
   });
 
-  it('rejects a raw numeric value (magnitudes must be bucketed strings)', () => {
-    expect(() => validateEvent('send_completed', { amount_bucket: 42 as never })).toThrow(
+  it('rejects a raw numeric value', () => {
+    expect(() => validateEvent('send_completed', { chain: 42 as never })).toThrow(
       /string or boolean/
     );
+  });
+
+  // The consent copy promises no amounts, so no prop may carry one.
+  it('refuses an amount prop', () => {
+    expect(() => validateEvent('send_completed', { amount_bucket: '10-100' } as never)).toThrow();
   });
 
   it('rejects a value outside a closed enum', () => {

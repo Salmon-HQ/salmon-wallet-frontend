@@ -19,15 +19,12 @@
 export {
   ANALYTICS_EVENTS,
   CHAINS,
-  AMOUNT_BUCKETS,
   ALLOWED_PROP_KEYS,
   PROP_ENUMS,
   isAnalyticsEvent,
   isAllowedPropKey,
-  toAmountBucket,
   type AnalyticsEventName,
   type Chain,
-  type AmountBucket,
   type AllowedPropKey,
 } from './events';
 

@@ -87,10 +87,9 @@ Only these six keys. Anything else is rejected, on both sides.
 | --------------------------------- | --------------------------------------------------------------- |
 | `chain`, `from_chain`, `to_chain` | `solana`, `bitcoin`, `ethereum`                                 |
 | `success`                         | `true`, `false` (a boolean; a string is rejected on both sides) |
-| `amount_bucket`                   | `0-10`, `10-100`, `100-1k`, `1k-10k`, `10k+`                    |
 | `powerup`                         | `swap`, `payments`, `memo`, `skr`                               |
 
-`amount_bucket` is allowed and sent by no event. `powerup` holds the Powerups registry's ids; a Powerup added later adds its id to both allow-lists before it ships. `chain` is the network family (`solana-devnet` reports `solana`), never a network id.
+No prop carries an amount, because the consent copy promises none. `powerup` holds the Powerups registry's ids; a Powerup added later adds its id to both allow-lists before it ships. `chain` is the network family (`solana-devnet` reports `solana`), never a network id.
 
 > **In GA4, `success` reads `1` (true) and `0` (false)**, not `true`/`false`: the Measurement Protocol turns booleans into numbers. Every filter below uses `1` and `0`.
 
@@ -208,14 +207,14 @@ Delivery is best-effort: the Measurement Protocol answers `2xx` for any well-for
 
 ### Google Analytics setup
 
-| Item                 | Value                                                                                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Property             | `307622850` ("salmon-wallet"); reporting time zone `America/Buenos_Aires`                                                                                                |
-| Wallet stream        | `G-NZ4BZZ1R51` — in the Data API `streamId` `3353576817`, `streamName` `salmon-wallet`                                                                                   |
-| Website stream       | `G-8W36W1WMX8` (www.salmonwallet.io) — `streamId` `16053506340`, `streamName` `Salmon website`. Same property: **every report filters to the wallet stream**             |
-| Custom dimensions    | Event-scoped, Data API name `customEvent:<param>`: `platform`, `app_version`, `chain`, `from_chain`, `to_chain`, `success`, `powerup`. `amount_bucket` is not registered |
-| Key events           | `wallet_created`, `wallet_recovered`, `first_send_completed`, `first_swap_completed`                                                                                     |
-| Event data retention | 2 months                                                                                                                                                                 |
+| Item                 | Value                                                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Property             | `307622850` ("salmon-wallet"); reporting time zone `America/Buenos_Aires`                                                                                    |
+| Wallet stream        | `G-NZ4BZZ1R51` — in the Data API `streamId` `3353576817`, `streamName` `salmon-wallet`                                                                       |
+| Website stream       | `G-8W36W1WMX8` (www.salmonwallet.io) — `streamId` `16053506340`, `streamName` `Salmon website`. Same property: **every report filters to the wallet stream** |
+| Custom dimensions    | Event-scoped, Data API name `customEvent:<param>`: `platform`, `app_version`, `chain`, `from_chain`, `to_chain`, `success`, `powerup`                        |
+| Key events           | `wallet_created`, `wallet_recovered`, `first_send_completed`, `first_swap_completed`                                                                         |
+| Event data retention | 2 months                                                                                                                                                     |
 
 A param that is not registered as a custom dimension is delivered but does not surface in reports. Retention of 2 months means event-level data (explorations, segments, cohorts) older than two months is gone: any figure that follows individual installs across months (M6, the M5 rate) is computed and recorded in the first days after its month closes. Retention stays at 2 months because 14 months would change the Privacy Policy (§6.1, §9) and the store privacy declarations.
 
@@ -346,9 +345,9 @@ The onboarding events are kept on the device until the consent answer and sent o
 
 `send_completed`, `nft_sent`, `swap_completed` and `memo_sent` fire on both outcomes, so failure rates among submitted operations are computable. There is no _attempt_ event: a user who abandons before submitting is never counted.
 
-### 4. `amount_bucket` is allowed but not emitted
+### 4. No operation size
 
-The prop and the `toAmountBucket()` helper exist; no event sends it and GA4 has no dimension registered for it. Segmenting by operation size needs both.
+No event carries an amount or a size range: the consent copy promises none. Segmenting by operation size would need a new prop, a new consent text and a new consent version.
 
 ### 5. No identity, no value
 

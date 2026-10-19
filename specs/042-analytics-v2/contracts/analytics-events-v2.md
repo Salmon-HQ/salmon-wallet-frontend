@@ -38,12 +38,11 @@ Accepted: `extension`, `ios`, `android`, `seeker`, and `mobile` (builds older th
 
 ## Props
 
-| Key                               | Values                                                                   |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| `chain`, `from_chain`, `to_chain` | `solana`, `bitcoin`, `ethereum`                                          |
-| `success`                         | boolean only (a string is rejected on both sides)                        |
-| `amount_bucket`                   | `0-10`, `10-100`, `100-1k`, `1k-10k`, `10k+` (allowed, sent by no event) |
-| `powerup`                         | `swap`, `payments`, `memo`, `skr`                                        |
+| Key                               | Values                                            |
+| --------------------------------- | ------------------------------------------------- |
+| `chain`, `from_chain`, `to_chain` | `solana`, `bitcoin`, `ethereum`                   |
+| `success`                         | boolean only (a string is rejected on both sides) |
+| `powerup`                         | `swap`, `payments`, `memo`, `skr`                 |
 
 Every string value is also rejected when it looks like an address or mint, or exceeds 32 characters.
 

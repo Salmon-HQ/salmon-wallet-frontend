@@ -23,7 +23,7 @@
 - Payments, Memo and SKR get an event for their core action where one exists. SKR is read-only: it has no action to complete, so it gets no action event; its adoption is its installs.
 - The batch `platform` splits `mobile` into `ios`, `android` and `seeker`; `extension` stays.
 - `success` is reused wherever an action has an outcome. dApp events count completed approvals only (FR-012).
-- `amount_bucket` stays allowed and unused; no amount is added anywhere.
+- `amount_bucket` leaves both allow-lists: the consent copy promises no amounts, so no prop may carry one.
 
 ## How the analytics work today (the base this builds on)
 
@@ -70,12 +70,11 @@ The catalog after this feature: 20 events. "All" means iOS, Android, Seeker and 
 
 Props after this feature (6 keys):
 
-| Prop                              | Values                                                                   |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| `chain`, `from_chain`, `to_chain` | `solana`, `bitcoin`, `ethereum`                                          |
-| `success`                         | `true`, `false`                                                          |
-| `amount_bucket`                   | `0-10`, `10-100`, `100-1k`, `1k-10k`, `10k+` (allowed, sent by no event) |
-| `powerup` (new)                   | `swap`, `payments`, `memo`, `skr`                                        |
+| Prop                              | Values                            |
+| --------------------------------- | --------------------------------- |
+| `chain`, `from_chain`, `to_chain` | `solana`, `bitcoin`, `ethereum`   |
+| `success`                         | `true`, `false`                   |
+| `powerup` (new)                   | `swap`, `payments`, `memo`, `skr` |
 
 Batch context `platform`: `ios`, `android`, `seeker`, `extension`. Builds older than this version keep sending `mobile` until they are updated.
 

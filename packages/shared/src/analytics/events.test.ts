@@ -41,7 +41,7 @@ describe('analytics catalog', () => {
 
   it('allows exactly the 6 prop keys', () => {
     expect([...ALLOWED_PROP_KEYS].sort()).toEqual(
-      ['amount_bucket', 'chain', 'from_chain', 'powerup', 'success', 'to_chain'].sort()
+      ['chain', 'from_chain', 'powerup', 'success', 'to_chain'].sort()
     );
   });
 
