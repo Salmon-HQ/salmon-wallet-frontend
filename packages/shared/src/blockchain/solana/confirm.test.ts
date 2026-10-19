@@ -11,6 +11,7 @@ vi.mock('@solana/transaction-confirmation', () => ({
 const { confirmSolanaSignature, sendExpectingOutcome, SolanaOutcomeUnknownError } =
   await import('./confirm');
 const {
+  getSolanaErrorFromJsonRpcError,
   getSolanaErrorFromTransactionError,
   SolanaError,
   SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED,
@@ -32,17 +33,21 @@ function expired() {
  * An HTTP RPC whose answers the test scripts, one per poll. `calls` records
  * the order of reads, and whether the status read searched the ledger.
  */
-function pollingRpc(statuses: Array<unknown | Error>, heights: bigint[] = [500n]) {
+function pollingRpc(
+  statuses: Array<unknown | Error>,
+  heights: bigint[] = [500n],
+  { statusSlot = 100n, heightSlot = 100n } = {}
+) {
   let polls = 0;
   let heightReads = 0;
   const calls: string[] = [];
   const rpc = {
-    getBlockHeight: () => ({
+    getEpochInfo: () => ({
       send: async () => {
         calls.push('height');
         const height = heights[Math.min(heightReads, heights.length - 1)];
         heightReads += 1;
-        return height;
+        return { blockHeight: height, absoluteSlot: heightSlot };
       },
     }),
     getSignatureStatuses: (
@@ -54,7 +59,7 @@ function pollingRpc(statuses: Array<unknown | Error>, heights: bigint[] = [500n]
         const answer = statuses[Math.min(polls, statuses.length - 1)];
         polls += 1;
         if (answer instanceof Error) throw answer;
-        return { value: [answer] };
+        return { context: { slot: statusSlot }, value: [answer] };
       },
     }),
   };
@@ -125,6 +130,23 @@ describe('confirmSolanaSignature', () => {
       await verdict;
       expect(calls).toEqual(['height', 'ledger', 'height', 'ledger']);
     });
+  });
+
+  it('moves to the HTTP poll when the subscription goes silent', async () => {
+    // A socket closed with code 1000 raises nothing: kit's race never settles.
+    recentSignature.mockReturnValue(new Promise(() => {}));
+    const { rpc, calls } = pollingRpc([{ confirmationStatus: 'confirmed', err: null }]);
+
+    const waiting = confirmSolanaSignature(
+      { rpc, rpcSubscriptions: {} } as never,
+      SIGNATURE,
+      1000n
+    );
+    await vi.advanceTimersByTimeAsync(29_000);
+    expect(calls).toEqual([]);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    await expect(waiting).resolves.toBeUndefined();
   });
 
   describe('re-broadcasting', () => {
@@ -352,15 +374,53 @@ describe('confirmSolanaSignature', () => {
       });
     });
 
-    it('passes a failed transaction through without asking again', async () => {
-      const failed = getSolanaErrorFromTransactionError('InsufficientFundsForFee');
-      recentSignature.mockRejectedValue(failed);
-      const { rpc, polls } = pollingRpc([null]);
+    it("confirms kit's failure over HTTP before reporting it", async () => {
+      recentSignature.mockRejectedValue(
+        getSolanaErrorFromTransactionError('InsufficientFundsForFee')
+      );
+      const { rpc, polls } = pollingRpc([
+        { confirmationStatus: 'confirmed', err: 'InsufficientFundsForFee' },
+      ]);
 
       await expect(
         confirmSolanaSignature({ rpc, rpcSubscriptions: {} } as never, SIGNATURE, 1000n)
-      ).rejects.toBe(failed);
-      expect(polls()).toBe(0);
+      ).rejects.toBeInstanceOf(SolanaError);
+      expect(polls()).toBe(1);
+    });
+
+    // A failure seen only at `processed` can come from a minority fork; the
+    // same transaction can still land on the main one.
+    it('does not report a failure seen below the commitment', async () => {
+      recentSignature.mockRejectedValue(new Error('socket closed'));
+      const { rpc } = pollingRpc([
+        { confirmationStatus: 'processed', err: { InstructionError: [0, { Custom: 1 }] } },
+        { confirmationStatus: 'confirmed', err: null },
+      ]);
+
+      const waiting = confirmSolanaSignature(
+        { rpc, rpcSubscriptions: {} } as never,
+        SIGNATURE,
+        1000n
+      );
+      await vi.advanceTimersByTimeAsync(5000);
+
+      await expect(waiting).resolves.toBeUndefined();
+    });
+
+    it('does not count a miss from a node that had not reached the end of the window', async () => {
+      recentSignature.mockRejectedValue(new Error('socket closed'));
+      const { rpc } = pollingRpc([null], [1001n], { statusSlot: 99n, heightSlot: 100n });
+
+      const waiting = confirmSolanaSignature(
+        { rpc, rpcSubscriptions: {} } as never,
+        SIGNATURE,
+        1000n
+      );
+      // Every miss comes from a lagging node, so expiry is never declared and
+      // the wait ends unknown, never retryable.
+      const verdict = expect(waiting).rejects.toBeInstanceOf(SolanaOutcomeUnknownError);
+      await vi.advanceTimersByTimeAsync(200_000);
+      await verdict;
     });
   });
 });
@@ -383,6 +443,19 @@ describe('sendExpectingOutcome', () => {
         throw refused;
       }, SIGNATURE)
     ).rejects.toBe(refused);
+  });
+
+  it('returns the signature when the preflight found these bytes already processed', async () => {
+    const landed = getSolanaErrorFromJsonRpcError({
+      code: -32002,
+      message: 'Transaction simulation failed',
+      data: { err: 'AlreadyProcessed', logs: [], accounts: null, unitsConsumed: 0 },
+    });
+    await expect(
+      sendExpectingOutcome(async () => {
+        throw landed;
+      }, SIGNATURE)
+    ).resolves.toBe(SIGNATURE);
   });
 
   it.each([

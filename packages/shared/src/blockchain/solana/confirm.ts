@@ -43,6 +43,7 @@ import {
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_TRANSACTION_SIGNATURE_VERIFICATION_FAILURE,
   SOLANA_ERROR__JSON_RPC__SERVER_ERROR_UNSUPPORTED_TRANSACTION_VERSION,
   SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR,
+  SOLANA_ERROR__TRANSACTION_ERROR__ALREADY_PROCESSED,
 } from '@solana/kit';
 import {
   createBlockHeightExceedencePromiseFactory,
@@ -83,24 +84,13 @@ const MAX_POLL_FAILURES = 15;
 const POLL_REQUEST_TIMEOUT_MS = 10_000;
 /** A node whose block height stops moving would otherwise be asked forever. */
 const POLL_CEILING_MS = 180_000;
-/**
- * Ledger misses in a row, past the window, before expiry is declared. RPC
- * pools spread requests over nodes that can be a slot apart, so one miss can
- * come from a node that has not seen the last block yet.
- */
+/** Ledger misses in a row, past the window, before expiry is declared. */
 const EXPIRY_MISSES = 2;
-
 /**
- * The transaction (or one of its instructions) failed. Kit's own expiry is
- * not taken at its word: its race reads the block height before the
- * signature, so a transaction that landed in the window's last block can
- * still lose to it.
+ * A socket closed cleanly (code 1000) raises nothing in kit, so its race would
+ * wait forever. Past this much silence the wait moves to the HTTP poll.
  */
-function isTransactionFailure(error: unknown): boolean {
-  if (!isSolanaError(error)) return false;
-  const code = error.context.__code as number;
-  return (code >= 7_050_000 && code < 7_051_000) || (code >= 4_615_000 && code < 4_616_000);
-}
+const SUBSCRIPTION_SILENCE_MS = 30_000;
 
 function reached(status: string | null | undefined, commitment: Commitment): boolean {
   if (commitment === 'finalized') return status === 'finalized';
@@ -140,16 +130,21 @@ async function pollForVerdict(
   for (;;) {
     if (Date.now() > deadline) throw new SolanaOutcomeUnknownError(signature);
     let height: bigint;
+    let heightSlot: bigint;
+    let statusSlot: bigint;
     let status: { err: unknown; confirmationStatus?: string | null } | null;
     try {
       // Height first: once it is past the window, a status read after it
       // sees every block the transaction could have landed in.
-      height = await sendWithTimeout(rpc.getBlockHeight({ commitment }));
-      const { value } = await sendWithTimeout(
+      ({ blockHeight: height, absoluteSlot: heightSlot } = await sendWithTimeout(
+        rpc.getEpochInfo({ commitment })
+      ));
+      const { context, value } = await sendWithTimeout(
         rpc.getSignatureStatuses([signature], {
           searchTransactionHistory: height > lastValidBlockHeight,
         })
       );
+      statusSlot = context.slot;
       status = value[0] ?? null;
       failures = 0;
     } catch {
@@ -158,9 +153,16 @@ async function pollForVerdict(
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       continue;
     }
-    if (status?.err) throw getSolanaErrorFromTransactionError(status.err as never);
-    if (status && reached(status.confirmationStatus, commitment)) return;
-    misses = !status && height > lastValidBlockHeight ? misses + 1 : 0;
+    // A failure only counts at `commitment`: one seen on a minority fork can
+    // still be replaced by the same transaction landing on the main one.
+    if (status?.err && reached(status.confirmationStatus, commitment)) {
+      throw getSolanaErrorFromTransactionError(status.err as never);
+    }
+    if (status && !status.err && reached(status.confirmationStatus, commitment)) return;
+    // A pool can answer the two reads from different nodes; a miss counts
+    // only from a node that had seen the slot where the window was over.
+    const missed = !status && height > lastValidBlockHeight && statusSlot >= heightSlot;
+    misses = missed ? misses + 1 : 0;
     if (misses >= EXPIRY_MISSES) {
       throw new SolanaError(SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED, {
         currentBlockHeight: height,
@@ -207,7 +209,10 @@ export async function sendExpectingOutcome(
   } catch (error) {
     if (isSolanaError(error)) {
       const code = error.context.__code as number;
-      const refusedByNode = REFUSED_BEFORE_BROADCAST.has(code);
+      // A preflight that fails with AlreadyProcessed found these very bytes on
+      // the ledger: the transaction landed.
+      const landed = isSolanaError(error.cause, SOLANA_ERROR__TRANSACTION_ERROR__ALREADY_PROCESSED);
+      const refusedByNode = REFUSED_BEFORE_BROADCAST.has(code) && !landed;
       const rateLimited =
         code === SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR &&
         (error.context as { statusCode?: number }).statusCode === 429;
@@ -257,12 +262,20 @@ export async function confirmSolanaSignature(
           commitment,
           lastValidBlockHeight,
         }),
+        new Promise<never>((_, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error('subscription silent')),
+            SUBSCRIPTION_SILENCE_MS
+          );
+          controller.signal.addEventListener('abort', () => clearTimeout(timer));
+        }),
       ]);
-    } catch (error) {
-      if (isTransactionFailure(error)) throw error;
-      // The subscription broke or kit called expiry, not the transaction:
-      // reporting a failure here would invite a retry that sends twice. Ask
-      // over HTTP, ledger included, instead.
+    } catch {
+      // Kit's verdicts are not final: its expiry can beat a transaction that
+      // landed in the window's last block, and its failure can come from a
+      // minority fork. A broken or silent subscription says nothing at all.
+      // Reporting a failure here would invite a retry that sends twice, so
+      // the HTTP poll, ledger included, decides.
       controller.abort();
       await pollForVerdict(clients.rpc, signature, lastValidBlockHeight, commitment);
     }

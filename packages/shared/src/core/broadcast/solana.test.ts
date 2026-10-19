@@ -33,7 +33,9 @@ function createRpc(overrides: Record<string, unknown> = {}) {
       send: async () => ({ value: { blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1n } }),
     }),
     sendTransaction: vi.fn().mockReturnValue({ send: async () => 'signature-1' }),
-    getSignatureStatuses: vi.fn().mockReturnValue({ send: async () => ({ value: [null] }) }),
+    getSignatureStatuses: vi
+      .fn()
+      .mockReturnValue({ send: async () => ({ context: { slot: 5n }, value: [null] }) }),
     getEpochInfo: vi.fn().mockReturnValue({
       send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }),
     }),
@@ -105,7 +107,20 @@ describe('signAndSendSolanaTransaction', () => {
   });
 
   it('propagates a confirmation failure instead of returning the signature', async () => {
-    const account = await createAccount(createRpc(), createRpcSubscriptions(failedNotification));
+    const rpc = createRpc({
+      getSignatureStatuses: vi.fn().mockReturnValue({
+        send: async () => ({
+          context: { slot: 5n },
+          value: [
+            {
+              confirmationStatus: 'confirmed',
+              err: { InstructionError: [0, 'InvalidAccountData'] },
+            },
+          ],
+        }),
+      }),
+    });
+    const account = await createAccount(rpc, createRpcSubscriptions(failedNotification));
 
     await expect(signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED)).rejects.toThrow();
   });
@@ -124,8 +139,6 @@ describe('signAndSendSolanaTransaction', () => {
         .fn()
         .mockReturnValueOnce({ send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }) })
         .mockReturnValue({ send: async () => ({ absoluteSlot: 5n, blockHeight: 5n }) }),
-      // Kit's expiry is checked against the ledger before it is believed.
-      getBlockHeight: vi.fn().mockReturnValue({ send: async () => 5n }),
     });
     const account = await createAccount(rpc, createRpcSubscriptions(pending, pastTheWindow));
 

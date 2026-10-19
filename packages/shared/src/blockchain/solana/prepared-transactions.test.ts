@@ -93,7 +93,10 @@ function createRpc(overrides: Record<string, unknown> = {}) {
     }),
     sendTransaction: vi.fn().mockReturnValue({ send: async () => 'signature-1' }),
     getSignatureStatuses: vi.fn().mockReturnValue({
-      send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
+      send: async () => ({
+        context: { slot: 0n },
+        value: [{ confirmationStatus: 'confirmed', err: null }],
+      }),
     }),
     getEpochInfo: vi.fn().mockReturnValue({
       send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }),
@@ -221,12 +224,21 @@ describe('prepared-transactions', () => {
     expect(transaction.signatures[account.signer.address]).not.toBeNull();
   });
 
-  it('propagates a confirmation failure instead of falling back to polling', async () => {
+  it('propagates a confirmation failure the chain confirms', async () => {
     const account = await createAccount({
       rpcSubscriptions: createRpcSubscriptions(failedNotification),
       rpc: createRpc({
-        // No status yet, so the subscription is the only source of truth.
-        getSignatureStatuses: vi.fn().mockReturnValue({ send: async () => ({ value: [null] }) }),
+        getSignatureStatuses: vi.fn().mockReturnValue({
+          send: async () => ({
+            context: { slot: 0n },
+            value: [
+              {
+                confirmationStatus: 'confirmed',
+                err: { InstructionError: [0, 'InvalidAccountData'] },
+              },
+            ],
+          }),
+        }),
       }),
     });
 

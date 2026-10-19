@@ -21,6 +21,8 @@ import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prep
 import type { SolanaAccount } from '../blockchain/solana';
 import type { SolanaNetworkId } from '../types/blockchain';
 import { classifyTransactionError } from '../utils/transaction-errors';
+import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
+import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 
 export type NftTransferStatus = 'idle' | 'sending' | 'success' | 'failed';
 
@@ -54,6 +56,7 @@ export function useNftTransfer({
   const [error, setError] = useState<string | null>(null);
   const settleUntilChanged = useSettleUntilChanged();
   const invalidateAfterTx = useInvalidateAfterTx();
+  const pendingTransactions = usePendingTransactionsOptional();
 
   const reset = useCallback(() => {
     setStatus('idle');
@@ -157,6 +160,18 @@ export function useNftTransfer({
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: false,
         });
+        if (err instanceof SolanaOutcomeUnknownError) {
+          // It may have landed: the banner follows the signature until the
+          // chain answers, as for a token send.
+          pendingTransactions?.trackPendingTransaction({
+            signature: String(err.signature),
+            kind: 'send',
+            networkId: account.getNetworkId(),
+            accountId: account.getReceiveAddress(),
+            submittedAt: Date.now(),
+            summary: nft.name,
+          });
+        }
         const errorMessage = classifyTransactionError(err);
         if (errorMessage === 'transaction.errors.nftNotOwned' && nft.blockchain === 'solana') {
           // The list was stale: drop the NFT now and fetch what is really held.
@@ -172,7 +187,7 @@ export function useNftTransfer({
         throw err;
       }
     },
-    [account, invalidateAfterTx, onTransferSuccess, settleUntilChanged]
+    [account, invalidateAfterTx, onTransferSuccess, settleUntilChanged, pendingTransactions]
   );
 
   return { sendNft, status, settling, error, isError: error !== null, reset };
