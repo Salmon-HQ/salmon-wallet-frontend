@@ -140,12 +140,12 @@ Before the store builds (spec "Legal and store impact"; done by the supervising 
 
 ## Spec vs code
 
-1. FR-011 and the tracking plan name an approval "in the side panel when that is open". Approvals always open their own window (`apps/extension/src/entrypoints/background.ts:257-263`); the docstring above it still describes side-panel routing (`:248-251`), and the side panel forwards `CONNECT_REQUEST` to nobody (`sidepanel/main.tsx:71-74`). The plan wires the approval pages, which covers whichever window renders them.
-2. Definitions name "the toolbar popup". The extension has none: `default_popup` is removed (`apps/extension/wxt.config.ts:160-172`) and the toolbar opens the side panel or sidebar (`background.ts:545-554`); `popup.html` opens only for approvals (`background.ts:191`). The Playwright suite opens `popup.html` without a hash as its main surface (`.playwright/fixtures.ts:85`), which the "not an approval launch" rule counts as an open.
+1. FR-011 and the tracking plan name an approval "in the side panel when that is open". Approvals always open their own window (`apps/extension/src/entrypoints/background.ts:257-263`); the docstring above it still describes side-panel routing (`:248-251`), and the side panel forwards `CONNECT_REQUEST` to nobody (`sidepanel/main.tsx:71-74`). The plan wires the approval pages, which covers whichever window renders them. **Resolved in the spec (2026-10-19).**
+2. Definitions name "the toolbar popup". The extension has none: `default_popup` is removed (`apps/extension/wxt.config.ts:160-172`) and the toolbar opens the side panel or sidebar (`background.ts:545-554`); `popup.html` opens only for approvals (`background.ts:191`). The Playwright suite opens `popup.html` without a hash as its main surface (`.playwright/fixtures.ts:85`), which the "not an approval launch" rule counts as an open. **Resolved in the spec (2026-10-19).**
 3. Edge case "offline device … up to the 200-event queue bound": the client sends its whole queue in one batch (`packages/shared/src/analytics/client.ts:170`) and the backend drops everything past 100 (`salmon-wallet-backend src/analytics/handler.js:27,130`). Fixed by chunking (FR-015 row).
 4. The backend still accepts `platform: 'web'` (`handler.js:26`); the web app is retired and SC-006 wants one list on both sides. Default taken: drop it (maps to `unknown`).
-5. `checklists/requirements.md:36` says the consent copy waits for confirmation; the spec records it as confirmed on 2026-10-19.
-6. Assumptions list store builds without `production-apk`; Definitions include it. The channel rule follows Definitions.
+5. `checklists/requirements.md:36` says the consent copy waits for confirmation; the spec records it as confirmed on 2026-10-19. **Resolved in the spec (2026-10-19).**
+6. Assumptions list store builds without `production-apk`; Definitions include it. The channel rule follows Definitions. **Resolved in the spec (2026-10-19).**
 7. The Seeker check accepts the Seed Vault simulator in development builds (`apps/mobile/src/seed-vault/bridge.ts:114`, `__DEV__`); only non-store builds can report a simulated `seeker`.
 8. `analytics/types.ts:42-44` says transports swallow their errors; the client re-queues on a throw (`client.ts:183-191`) and `transport.ts:11` throws. The comment is corrected with the transport change.
 
