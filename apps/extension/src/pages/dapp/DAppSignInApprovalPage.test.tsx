@@ -4,13 +4,16 @@
 
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
+import { startTestAnalytics, type SentEvent } from '@salmon/shared/test-utils/analytics';
 
 const mockUseDAppMetadata = vi.fn();
 const mockPrepareSignInMessage = vi.fn();
 const mockApproveSolanaSignIn = vi.fn();
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  // The real analytics client: the test reads what leaves the window.
+  ...(await vi.importActual<object>('@salmon/shared/analytics')),
   useDAppMetadata: (origin: string) => mockUseDAppMetadata(origin),
   prepareSignInMessage: (...args: unknown[]) => mockPrepareSignInMessage(...args),
   approveSolanaSignIn: (...args: unknown[]) => mockApproveSolanaSignIn(...args),
@@ -146,6 +149,76 @@ describe('DAppSignInApprovalPage', () => {
     // The internal error detail must never leak to the dApp origin; it goes to the console.
     expect(JSON.stringify(sendMessage.mock.calls)).not.toContain('some internal RPC detail');
     expect(consoleError).toHaveBeenCalledWith('[dapp-approval]', expect.any(Error));
+    consoleError.mockRestore();
+  });
+});
+
+// FR-011–FR-013, FR-015: a standalone Sign-In With Solana is a signed message,
+// counted once with no props and already on its way when the background hears
+// the answer; nothing for a refusal, a guard error or a failed signature.
+describe('DAppSignInApprovalPage analytics', () => {
+  let analytics: Awaited<ReturnType<typeof startTestAnalytics>>;
+  let atAnswer: SentEvent[][];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    mockPrepareSignInMessage.mockReturnValue({
+      fields: { domain: 'dapp.example' },
+      message: 'dapp.example wants you to sign in',
+      domainMismatch: false,
+      addressMismatch: false,
+    });
+    analytics = await startTestAnalytics();
+    atAnswer = [];
+    vi.stubGlobal('chrome', {
+      runtime: { sendMessage: vi.fn(() => atAnswer.push(analytics.delivered())) },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('counts an approved sign-in as a signed message before answering, with no props', async () => {
+    mockApproveSolanaSignIn.mockResolvedValue({ signature: 'sig' });
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
+
+    expect(atAnswer).toEqual([[{ event: 'dapp_message_signed', props: {} }]]);
+    expect(await analytics.sent()).toEqual([{ event: 'dapp_message_signed', props: {} }]);
+  });
+
+  it('records nothing when the user rejects', async () => {
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} />);
+    fireEvent.click(getByTestId('reject-button'));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+  });
+
+  it('records nothing when the approval is refused before signing', async () => {
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} account={undefined} />);
+    fireEvent.click(getByTestId('approve-button'));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+  });
+
+  it('records nothing when signing fails', async () => {
+    mockApproveSolanaSignIn.mockRejectedValue(new Error('rpc'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
     consoleError.mockRestore();
   });
 });

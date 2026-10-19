@@ -9,7 +9,12 @@ import { initStorage } from '../storage';
 
 export type SentEvent = Omit<AnalyticsEventPayload, 'ts'>;
 
-export async function startTestAnalytics(): Promise<{ sent: () => Promise<SentEvent[]> }> {
+export async function startTestAnalytics(): Promise<{
+  /** Flushes, then returns everything sent. */
+  sent: () => Promise<SentEvent[]>;
+  /** What has already reached the transport, without flushing. */
+  delivered: () => SentEvent[];
+}> {
   const store = new Map<string, string>();
   initStorage({
     platform: 'extension',
@@ -29,12 +34,15 @@ export async function startTestAnalytics(): Promise<{ sent: () => Promise<SentEv
   const client = initAnalytics({ platform: 'ios', appVersion: '0.0.0', transport, strict: true });
   await client.whenReady();
   await client.setConsent(true);
+  const delivered = () =>
+    transport.batches.flatMap((batch) =>
+      batch.events.map(({ event, props }) => ({ event, props }))
+    );
   return {
     sent: async () => {
       await client.flush();
-      return transport.batches.flatMap((batch) =>
-        batch.events.map(({ event, props }) => ({ event, props }))
-      );
+      return delivered();
     },
+    delivered,
   };
 }
