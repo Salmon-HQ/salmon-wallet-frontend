@@ -117,9 +117,9 @@ Repo `salmon-wallet-backend`, branch `feat/analytics-catalog-v2` from `origin/ma
 
 **Goal**: no new event is recorded under the v1 consent text, whatever the lawyer answers on LS-006. Runs after US4 and before the wallet-safety review (it touches `storage/types.ts`).
 
-- [ ] T073 [P] Extend `packages/shared/src/analytics/client.test.ts`: a stored consent `true` with no version reads as `v1`; a `v1` install sends the 9 v1 events and drops the 11 new ones (including `app_opened`); granting consent through the client stores `v2`; a `v2` install sends all 20; withdrawing consent clears the version
-- [ ] T074 Implement until T073 passes: `ANALYTICS_CONSENT_VERSION` in `packages/shared/src/storage/types.ts`; `V1_EVENTS` (the first 9 names) exported from `analytics/events.ts`; the client reads the version at bootstrap, writes `v2` when consent is granted, filters non-v1 events for `v1` installs and clears the version on withdrawal
-- [ ] T075 [P] Update `apps/mobile/src/analytics/appAnalytics.test.ts:33` and `apps/extension/src/analytics.test.ts:44` to store a `v2` consent, and re-check the cold-open expectations
+- [x] T073 [P] Extend `packages/shared/src/analytics/client.test.ts`: a stored consent `true` with no version reads as `v1`; a `v1` install sends the 9 v1 events and drops the 11 new ones (including `app_opened`); granting consent through the client stores `v2`; a `v2` install sends all 20; withdrawing consent clears the version
+- [x] T074 Implement until T073 passes: `ANALYTICS_CONSENT_VERSION` in `packages/shared/src/storage/types.ts`; `V1_EVENTS` (the first 9 names) exported from `analytics/events.ts`; the client reads the version at bootstrap, writes `v2` when consent is granted, filters non-v1 events for `v1` installs and clears the version on withdrawal
+- [x] T075 [P] Update `apps/mobile/src/analytics/appAnalytics.test.ts:33` and `apps/extension/src/analytics.test.ts:44` to store a `v2` consent, and re-check the cold-open expectations
 - [ ] T076 Owner + lawyer: answer LS-006 (ask v1 installs to accept the v2 text again, or show a prominent notice with a one-tap off switch)
 - [ ] T077 After T076: show the v2 text once to `v1` installs as decided (UI change: the owner confirms the screen before it is built), recording `v2` on acceptance (or on dismissal of the notice)
 

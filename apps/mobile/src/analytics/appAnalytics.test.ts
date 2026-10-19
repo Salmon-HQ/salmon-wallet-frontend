@@ -19,7 +19,11 @@ type Modules = {
 const fetchMock = jest.fn(async () => ({ ok: true, status: 202 }));
 
 /** Fresh module state per test: a new process, as far as the open rule knows. */
-function load(os: 'ios' | 'android', channel: string | null = null): Modules {
+function load(
+  os: 'ios' | 'android',
+  channel: string | null = null,
+  consentVersion: 'v2' | null = 'v2'
+): Modules {
   jest.doMock('expo-updates', () => ({ __esModule: true, channel }));
   const { AppState, Platform } = require('react-native');
   jest.replaceProperty(Platform, 'OS', os);
@@ -29,8 +33,11 @@ function load(os: 'ios' | 'android', channel: string | null = null): Modules {
     return { remove: jest.fn() };
   });
 
-  // Consent was given in an earlier session.
+  // Consent was given in an earlier session, under the v2 text unless the test says otherwise.
   const stored = new Map<string, string>([['salmon_analytics_consent', 'true']]);
+  if (consentVersion) {
+    stored.set('salmon_analytics_consent_version', JSON.stringify(consentVersion));
+  }
   require('../../../../packages/shared/src/storage/storage').initStorage({
     platform: 'mobile',
     adapter: {
@@ -230,6 +237,21 @@ describe('opens', () => {
     modules.app.setMwaOnScreen(false);
     modules.emit('active');
     expect(opens(await sent(modules))).toBe(2);
+  });
+});
+
+// FR-021: a consent given before the v2 text keeps the v1 catalog, which has no opens.
+describe('consent given under the v1 text', () => {
+  it('sends no open, cold or returning, and still sends the v1 events', async () => {
+    const modules = load('ios', null, null);
+    modules.app.startAnalytics('1.5.0');
+    modules.app.trackColdOpen();
+    modules.shared.trackEvent('wallet_switched');
+    modules.app.noteAppLeft();
+    modules.emit('active');
+
+    const batches = await sent(modules);
+    expect(batches.flatMap((b) => b.events).map((e) => e.event)).toEqual(['wallet_switched']);
   });
 });
 

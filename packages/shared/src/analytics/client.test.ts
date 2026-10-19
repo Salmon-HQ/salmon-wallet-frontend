@@ -22,10 +22,12 @@ vi.mock('../storage', () => ({
     ANALYTICS_CONSENT: 'salmon_analytics_consent',
     ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
     ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
+    ANALYTICS_CONSENT_VERSION: 'salmon_analytics_consent_version',
   },
 }));
 
-import { initAnalytics, resetAnalytics } from './client';
+import { initAnalytics, resetAnalytics, type AnalyticsClient } from './client';
+import { ANALYTICS_EVENTS } from './events';
 import { createMemoryTransport } from './transport';
 import type { AnalyticsBatch, AnalyticsPlatform } from './types';
 
@@ -261,11 +263,124 @@ describe('AnalyticsClient consent persistence across restarts', () => {
 /** Event names per batch, in the order the batches left. */
 const sentEvents = (batches: AnalyticsBatch[]) => batches.map((b) => b.events.map((e) => e.event));
 
+// FR-021: an install keeps the catalog its consent text described. A consent
+// given before the v2 text (stored with no version) sends only the 9 v1 events.
+describe('AnalyticsClient consent version', () => {
+  const V1 = [
+    'wallet_created',
+    'wallet_recovered',
+    'first_send_completed',
+    'send_completed',
+    'nft_viewed',
+    'nft_sent',
+    'network_switched',
+    'wallet_switched',
+    'address_book_used',
+  ];
+  const NEW = ANALYTICS_EVENTS.filter((event) => !V1.includes(event));
+  const trackAll = (client: AnalyticsClient) =>
+    ANALYTICS_EVENTS.forEach((event) => client.track(event));
+
+  it('the catalog adds 11 events to the 9 of v1, app_opened among them', () => {
+    expect(NEW).toHaveLength(11);
+    expect(NEW).toContain('app_opened');
+  });
+
+  it('reads a stored consent with no version as v1: the 9 v1 events leave, the 11 new ones never do', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    // The cold open, recorded before consent is read.
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    trackAll(client);
+    await client.flush();
+    expect(sentEvents(transport.batches).flat()).toEqual(V1);
+
+    // Accepting the v2 text later does not release what was recorded under v1.
+    await client.setConsent(true);
+    await client.flush();
+    expect(sentEvents(transport.batches).flat()).toEqual(V1);
+  });
+
+  it('granting consent through the client records v2, and the install sends all 20', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+
+    await client.setConsent(true);
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+    trackAll(client);
+    await client.flush();
+
+    expect(sentEvents(transport.batches).flat()).toEqual([...ANALYTICS_EVENTS]);
+    // The version stays on the device.
+    for (const batch of transport.batches) {
+      expect(Object.keys(batch.context).sort()).toEqual([
+        'appVersion',
+        'installId',
+        'platform',
+        'sessionId',
+      ]);
+    }
+  });
+
+  it('a v1 install that grants consent again records v2 and sends the new events', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+
+    await client.setConsent(true);
+    client.track('app_opened');
+    await client.flush();
+
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+    expect(sentEvents(transport.batches).flat()).toEqual(['app_opened']);
+  });
+
+  it('a stored v2 consent sends all 20 after a restart', async () => {
+    store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    ANALYTICS_EVENTS.filter((event) => event !== 'app_opened').forEach((event) =>
+      client.track(event)
+    );
+    await client.flush();
+
+    expect(sentEvents(transport.batches).flat().sort()).toEqual([...ANALYTICS_EVENTS].sort());
+  });
+
+  it('withdrawing consent clears the version together with the install id', async () => {
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+    });
+    await client.whenReady();
+    await client.setConsent(true);
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+
+    await client.setConsent(false);
+
+    expect(store.has('salmon_analytics_consent_version')).toBe(false);
+    expect(store.has('salmon_analytics_install_id')).toBe(false);
+  });
+});
+
 // FR-016: consent is read asynchronously; an event recorded in the first
 // moments of a window or an app start must wait for it, not be dropped.
 describe('AnalyticsClient before consent is read', () => {
   it('sends an early event when consent is stored', async () => {
     store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
     const transport = createMemoryTransport();
     const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
 
@@ -309,6 +424,7 @@ describe('AnalyticsClient before consent is read', () => {
 describe('AnalyticsClient with a platform still being decided', () => {
   it('sends no batch before the platform is known, then carries it', async () => {
     store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
     let resolvePlatform: (platform: AnalyticsPlatform) => void = () => {};
     const platform = new Promise<AnalyticsPlatform>((resolve) => {
       resolvePlatform = resolve;
@@ -409,6 +525,7 @@ describe('AnalyticsClient build routing', () => {
     vi.stubEnv('EXPO_PUBLIC_ANALYTICS_URL', '');
     vi.stubEnv('VITE_ANALYTICS_URL', '');
     store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
   });
 
   afterEach(() => {

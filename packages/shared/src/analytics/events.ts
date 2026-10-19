@@ -48,6 +48,12 @@ export const ANALYTICS_EVENTS = [
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];
 
+/**
+ * The 9 events the v1 consent text described. An install that consented under
+ * that text sends only these until it accepts the v2 text (FR-021).
+ */
+export const V1_EVENTS: readonly AnalyticsEventName[] = ANALYTICS_EVENTS.slice(0, 9);
+
 const EVENT_SET: ReadonlySet<string> = new Set(ANALYTICS_EVENTS);
 
 /** Whether a raw string is a known, allowed event name. */

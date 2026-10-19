@@ -22,6 +22,7 @@ import { initStorage } from '@salmon/shared/storage/storage';
 import { isDAppApprovalLaunch, startExtensionAnalytics } from './analytics';
 
 const fetchMock = vi.fn(async () => ({ ok: true, status: 202 }));
+let stored: Map<string, string>;
 
 const APPROVAL_HASH = `#origin=${encodeURIComponent('https://dapp.example')}&request=${encodeURIComponent(
   JSON.stringify({ method: 'connect', id: 1 })
@@ -42,8 +43,11 @@ beforeEach(() => {
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
   window.location.hash = '';
-  // Consent was given in an earlier window.
-  const stored = new Map<string, string>([['salmon_analytics_consent', 'true']]);
+  // Consent was given in an earlier window, under the v2 text.
+  stored = new Map<string, string>([
+    ['salmon_analytics_consent', 'true'],
+    ['salmon_analytics_consent_version', JSON.stringify('v2')],
+  ]);
   initStorage({
     platform: 'extension',
     adapter: {
@@ -76,6 +80,17 @@ describe('startExtensionAnalytics', () => {
 
   it('reports no open from an approval window', async () => {
     window.location.hash = APPROVAL_HASH;
+
+    startExtensionAnalytics();
+    trackEvent('wallet_switched');
+
+    const batches = await sent();
+    expect(batches.flatMap((b) => b.events).map((e) => e.event)).toEqual(['wallet_switched']);
+  });
+
+  // FR-021: a consent given before the v2 text keeps the v1 catalog, which has no opens.
+  it('reports no open under a consent given before the v2 text', async () => {
+    stored.delete('salmon_analytics_consent_version');
 
     startExtensionAnalytics();
     trackEvent('wallet_switched');

@@ -10,7 +10,9 @@
  * - No wallet material ever leaves the device (enforced by `./schema`).
  * - `track` never throws in production; bad events are dropped (or throw in
  *   strict/dev mode so mistakes surface during development).
- * - Withdrawing consent clears the queue and the install id.
+ * - Withdrawing consent clears the queue, the install id and the consent version.
+ * - A consent given under the v1 text sends only the v1 events (FR-021); the
+ *   version stays on the device.
  */
 
 import chunk from 'lodash-es/chunk';
@@ -25,7 +27,7 @@ import type {
   AnalyticsProps,
   AnalyticsTransport,
 } from './types';
-import type { AnalyticsEventName } from './events';
+import { V1_EVENTS, type AnalyticsEventName } from './events';
 import { createHttpTransport } from './transport';
 
 const DEFAULT_BATCH_SIZE = 20;
@@ -48,6 +50,8 @@ class AnalyticsClient {
   private platform: AnalyticsPlatform | null = null;
   private installId: string | null = null;
   private consent = false;
+  /** Whether consent was given under the v2 text; stored consent without a version is v1. */
+  private consentV2 = false;
   private prompted = false;
   private bootstrapped = false;
   private queue: AnalyticsEventPayload[] = [];
@@ -83,6 +87,8 @@ class AnalyticsClient {
       const storage = getStorage();
       const consent = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT);
       this.consent = consent === true;
+      const version = await storage.getItem<string>(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION);
+      this.consentV2 = version === 'v2';
       const prompted = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT_PROMPTED);
       this.prompted = prompted === true;
       if (this.consent) {
@@ -98,6 +104,14 @@ class AnalyticsClient {
 
   getConsent(): boolean {
     return this.consent;
+  }
+
+  /**
+   * Whether `event` recorded now would be queued: consent is given and covers
+   * it. A v1 consent covers only {@link V1_EVENTS} (FR-021).
+   */
+  allows(event: AnalyticsEventName): boolean {
+    return this.consent && (this.consentV2 || V1_EVENTS.includes(event));
   }
 
   /** Whether the user has already answered the first-run consent prompt. */
@@ -116,7 +130,8 @@ class AnalyticsClient {
   }
 
   /**
-   * Grants or withdraws consent, persisting the choice.
+   * Grants or withdraws consent, persisting the choice. Granting records the
+   * v2 text, the one both consent surfaces show (FR-017, FR-021).
    *
    * A withdrawal stops collecting before it tries to write anything, and the
    * write is not allowed to fail quietly. It used to: the persisted flag stayed
@@ -129,6 +144,7 @@ class AnalyticsClient {
    */
   async setConsent(enabled: boolean): Promise<void> {
     this.consent = enabled;
+    this.consentV2 = enabled;
 
     if (!enabled) {
       this.stopTimer();
@@ -150,18 +166,21 @@ class AnalyticsClient {
         console.warn('Analytics consent withdrawal fell back to removing the key:', error);
       }
       await clearInstallId();
+      await storage.removeItem(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION);
       return;
     }
 
     await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT, true);
+    await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION, 'v2');
     this.installId = await getOrCreateInstallId();
     this.startTimer();
   }
 
   /**
-   * Records an event. No-op without consent. Invalid events are dropped (or
-   * throw in strict mode). Before stored consent has been read, the event waits
-   * for it instead of being dropped as "no consent" (FR-016).
+   * Records an event. No-op without consent, or for an event a v1 consent
+   * does not cover (FR-021). Invalid events are dropped (or throw in strict
+   * mode). Before stored consent has been read, the event waits for it instead
+   * of being dropped as "no consent" (FR-016).
    */
   track(event: AnalyticsEventName, props: AnalyticsProps = {}): void {
     if (!this.bootstrapped) {
@@ -169,7 +188,7 @@ class AnalyticsClient {
       void this.ready.then(() => this.track(event, props));
       return;
     }
-    if (!this.consent) return;
+    if (!this.allows(event)) return;
 
     const validated = this.strict ? validateEvent(event, props) : safeValidateEvent(event, props);
     if (!validated) return;

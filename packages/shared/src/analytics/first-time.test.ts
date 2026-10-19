@@ -116,4 +116,24 @@ describe('trackFirstSwapCompleted', () => {
 
     expect(transport.batches).toHaveLength(0);
   });
+
+  // FR-021: a v1 consent drops the event, so the first swap is still unspent
+  // when the install accepts the v2 text.
+  it('keeps the first swap of a v1 install for after it accepts the v2 text', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
+    await client.whenReady();
+
+    await trackFirstSwapCompleted();
+    expect(store.has('salmon_analytics_first_swap')).toBe(false);
+
+    await client.setConsent(true);
+    await trackFirstSwapCompleted();
+    await client.flush();
+
+    expect(transport.batches.flatMap((batch) => batch.events.map((e) => e.event))).toEqual([
+      'first_swap_completed',
+    ]);
+  });
 });

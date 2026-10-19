@@ -25,10 +25,11 @@ export async function trackFirstTime(
   flagKey: StorageKey,
   props?: AnalyticsProps
 ): Promise<void> {
-  // Gate on consent before touching the flag: without consent we neither emit
-  // nor mark the "first" as spent, preserving it until the user opts in.
+  // Gate on consent before touching the flag: without consent (or with a v1
+  // consent that does not cover the event, FR-021) we neither emit nor mark
+  // the "first" as spent, preserving it until the user opts in.
   const client = getAnalytics();
-  if (!client || !client.getConsent()) return;
+  if (!client || !client.allows(event)) return;
 
   try {
     const storage = getStorage();
