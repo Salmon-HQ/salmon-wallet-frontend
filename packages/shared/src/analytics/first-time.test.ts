@@ -17,16 +17,16 @@ const memStorage = {
   }),
 };
 
-vi.mock('../storage', () => ({
+// The real keys: the first-swap flag must be the one August–September 2026
+// builds wrote, so its spelling is part of what is tested.
+vi.mock('../storage', async () => ({
   getStorage: () => memStorage,
-  STORAGE_KEYS: {
-    ANALYTICS_CONSENT: 'salmon_analytics_consent',
-    ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
-  },
+  STORAGE_KEYS: (await vi.importActual<typeof import('../storage/types')>('../storage/types'))
+    .STORAGE_KEYS,
 }));
 
 import { initAnalytics, resetAnalytics } from './client';
-import { trackFirstTime } from './first-time';
+import { trackFirstSwapCompleted, trackFirstTime } from './first-time';
 import { createMemoryTransport } from './transport';
 
 const FLAG = 'salmon_analytics_first_send' as const;
@@ -83,5 +83,37 @@ describe('trackFirstTime', () => {
     // No initAnalytics() call: getAnalytics() is null, so nothing happens.
     await expect(trackFirstTime('first_send_completed', FLAG)).resolves.toBeUndefined();
     expect(store.has(FLAG)).toBe(false);
+  });
+});
+
+describe('trackFirstSwapCompleted', () => {
+  async function consentingClient() {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    return { client, transport };
+  }
+
+  it('reports the first swap once per install', async () => {
+    const { client, transport } = await consentingClient();
+
+    await trackFirstSwapCompleted();
+    await trackFirstSwapCompleted();
+    await client.flush();
+
+    expect(transport.batches.flatMap((batch) => batch.events.map((e) => e.event))).toEqual([
+      'first_swap_completed',
+    ]);
+  });
+
+  it('stays silent on an install that reported it from an August–September 2026 build', async () => {
+    store.set('salmon_analytics_first_swap', true);
+    const { client, transport } = await consentingClient();
+
+    await trackFirstSwapCompleted();
+    await client.flush();
+
+    expect(transport.batches).toHaveLength(0);
   });
 });

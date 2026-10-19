@@ -209,6 +209,117 @@ describe('SignatureRequestProvider', () => {
     await expect(outcome).resolves.toBeInstanceOf(NoSigningAccountError);
   });
 
+  describe('onOutcome — how each signing attempt ended, for the Powerup to report', () => {
+    it('hears true once the transaction is signed, while the receipt is still up', async () => {
+      const onOutcome = vi.fn();
+      const { view } = setup();
+      let result: Promise<{ signature: string }> | undefined;
+
+      act(() => {
+        result = view.result.current.ctx.requestSignature(proposal({ onOutcome }));
+      });
+      await act(async () => {
+        await view.result.current.ctx.confirm();
+      });
+
+      expect(onOutcome.mock.calls).toEqual([[true]]);
+      expect(view.result.current.ctx.receipt?.signature).toBe('sig-1');
+
+      act(() => view.result.current.ctx.dismissReceipt());
+      await expect(result).resolves.toEqual({ signature: 'sig-1' });
+      expect(onOutcome.mock.calls).toEqual([[true]]);
+    });
+
+    it('hears false once per failed attempt, then true for the retry that lands', async () => {
+      const onOutcome = vi.fn();
+      const signProposal = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('transaction.errors.networkBusy'))
+        .mockRejectedValueOnce(new Error('transaction.errors.networkBusy'))
+        .mockResolvedValueOnce({ signature: 'sig-3' });
+      const { view } = setup({ signProposal });
+
+      act(() => {
+        void view.result.current.ctx.requestSignature(proposal({ onOutcome }));
+      });
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await act(async () => {
+          await view.result.current.ctx.confirm();
+        });
+      }
+
+      expect(onOutcome.mock.calls).toEqual([[false], [false], [true]]);
+      act(() => view.result.current.ctx.dismissReceipt());
+    });
+
+    it('hears nothing when the user backs out, or when no account can sign', async () => {
+      const onOutcome = vi.fn();
+      const cancelled = setup();
+      act(() => {
+        void cancelled.view.result.current.ctx
+          .requestSignature(proposal({ onOutcome }))
+          .catch(() => undefined);
+      });
+      act(() => cancelled.view.result.current.ctx.cancel());
+
+      const unsigned = setup({ account: null });
+      act(() => {
+        void unsigned.view.result.current.ctx
+          .requestSignature(proposal({ onOutcome }))
+          .catch(() => undefined);
+      });
+      await act(async () => {
+        await unsigned.view.result.current.ctx.confirm();
+      });
+
+      expect(onOutcome).not.toHaveBeenCalled();
+    });
+
+    it('still shows the receipt when the callback throws on a signed transaction', async () => {
+      const onOutcome = vi.fn(() => {
+        throw new Error('analytics broke');
+      });
+      const { view } = setup();
+      let result: Promise<{ signature: string }> | undefined;
+
+      act(() => {
+        result = view.result.current.ctx.requestSignature(proposal({ onOutcome }));
+      });
+      await act(async () => {
+        await view.result.current.ctx.confirm();
+      });
+
+      expect(onOutcome).toHaveBeenCalledWith(true);
+      expect(view.result.current.ctx.pending).toBeNull();
+      expect(view.result.current.ctx.receipt?.signature).toBe('sig-1');
+      act(() => view.result.current.ctx.dismissReceipt());
+      await expect(result).resolves.toEqual({ signature: 'sig-1' });
+    });
+
+    it('still shows the signing error when the callback throws on a failure', async () => {
+      const onOutcome = vi.fn(() => {
+        throw new Error('analytics broke');
+      });
+      const signProposal = vi.fn().mockRejectedValue(new Error('transaction.errors.networkBusy'));
+      const { view } = setup({ signProposal });
+
+      act(() => {
+        void view.result.current.ctx
+          .requestSignature(proposal({ onOutcome }))
+          .catch(() => undefined);
+      });
+      await act(async () => {
+        await view.result.current.ctx.confirm();
+      });
+
+      expect(onOutcome).toHaveBeenCalledWith(false);
+      expect(view.result.current.ctx.pending?.error).toBe('transaction.errors.networkBusy');
+      expect(view.result.current.ctx.pending?.phase).toBe('review');
+      expect(view.result.current.ctx.receipt).toBeNull();
+      act(() => view.result.current.ctx.cancel());
+    });
+  });
+
   // The one Powerup that builds transactions today passes no `refresh`, so
   // this is the shipped path: the button relabelled itself and signed the old
   // bytes anyway, which made the press the user meant as "rebuild this" the

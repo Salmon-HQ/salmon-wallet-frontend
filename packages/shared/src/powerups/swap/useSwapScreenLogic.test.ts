@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   SWAP_CODES,
   assertEnvelopeMatches,
@@ -12,6 +12,7 @@ import { SWAP_INSTRUCTIONS } from './expectation';
 import { describePowerupBuildError } from '../backend/errors';
 import { ApiError } from '../../api/client';
 import { swapManifest } from './manifest';
+import { startTestAnalytics } from '../../test-utils/analytics';
 import type { SwapBuildEnvelope } from './api';
 import en from './locales/en.json';
 import es from './locales/es.json';
@@ -106,6 +107,32 @@ describe('swap — the proposal core signs', () => {
     expect(rows['swap.review.routeFee']).toBe('0.15%');
     expect(rows['swap.review.salmonFee']).toBe('swap.review.noSalmonFee');
     expect(proposal.display.receipt?.fee).toBeUndefined();
+  });
+
+  describe('what an attempt reports (FR-007, FR-008)', () => {
+    const SWAP = { from_chain: 'solana', to_chain: 'solana' };
+    const propose = () =>
+      buildSwapProposal(envelope(), { networkId: 'solana-mainnet', formatValue, destinations: [] });
+
+    it('reports a confirmed swap, and the first swap of the install', async () => {
+      const analytics = await startTestAnalytics();
+      propose().onOutcome?.(true);
+      await vi.waitFor(async () =>
+        expect(await analytics.sent()).toEqual([
+          { event: 'swap_completed', props: { ...SWAP, success: true } },
+          { event: 'first_swap_completed', props: {} },
+        ])
+      );
+    });
+
+    it('reports a failed attempt alone, with no first swap', async () => {
+      const analytics = await startTestAnalytics();
+      propose().onOutcome?.(false);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(await analytics.sent()).toEqual([
+        { event: 'swap_completed', props: { ...SWAP, success: false } },
+      ]);
+    });
   });
 
   // T&C Power-ups 1.4 §10.2: the review says which side the Salmon fee comes

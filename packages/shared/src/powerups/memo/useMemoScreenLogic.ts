@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react';
 import i18n from 'i18next';
+import { trackEvent } from '../../analytics';
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
 import {
   SignatureRequestCancelledError,
@@ -39,6 +40,7 @@ export function buildMemoProposal(
   return toPowerupProposal(envelope, {
     networkId,
     expect: { allowedPrograms: memoManifest.programs },
+    onOutcome: (success) => trackEvent('memo_sent', { success }),
     display: {
       title: t('memo.review.title'),
       rows: [
