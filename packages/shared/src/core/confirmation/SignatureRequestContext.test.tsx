@@ -233,7 +233,8 @@ describe('SignatureRequestProvider', () => {
 
     expect(signProposal).toHaveBeenCalledTimes(1);
     expect(view.result.current.ctx.pending).toBeNull();
-    await outcome;
+    // The Powerup learns it may have landed, not that the user backed out.
+    await expect(outcome).resolves.toBeInstanceOf(SolanaOutcomeUnknownError);
   });
 
   it('refuses to sign again after an unknown outcome, even when confirm is called directly', async () => {

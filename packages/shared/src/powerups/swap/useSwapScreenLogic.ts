@@ -11,6 +11,7 @@ import i18n from 'i18next';
 import { address } from '@solana/kit';
 import { findAssociatedTokenPda } from '@solana-program/token-2022';
 import { useTranslation } from 'react-i18next';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
 import { useAccountsContext } from '../../contexts/AccountsContext';
 import { useCurrencyContext } from '../../contexts/CurrencyContext';
@@ -516,7 +517,11 @@ export function useSwapScreenLogic({
       setAmountState('');
       onNavigateHome?.();
     } catch (caught) {
-      if (!(caught instanceof SignatureRequestCancelledError)) {
+      if (caught instanceof SolanaOutcomeUnknownError) {
+        // It may have landed: nothing stays typed for a second swap.
+        setAmountState('');
+        setError(caught.message);
+      } else if (!(caught instanceof SignatureRequestCancelledError)) {
         const failure = describePowerupBuildError(caught, {
           codes: SWAP_CODES,
           fallback: 'swap.errors.buildFailed',

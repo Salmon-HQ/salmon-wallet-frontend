@@ -86,8 +86,11 @@ interface ParkedRequest {
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
   result?: SignedResult;
-  /** Sent, with no verdict: it may have landed, so it is never signed again. */
-  unresolved?: boolean;
+  /**
+   * Sent, with no verdict: it may have landed, so it is never signed again,
+   * and closing hands the Powerup this error instead of a plain cancel.
+   */
+  unresolved?: SolanaOutcomeUnknownError;
 }
 
 export interface SignatureRequestProviderProps {
@@ -172,7 +175,7 @@ export function SignatureRequestProvider({
       if (error instanceof SolanaOutcomeUnknownError) {
         // It may have landed: the banner follows the signature until the
         // chain answers, and the host offers only a way out.
-        parked.unresolved = true;
+        parked.unresolved = error;
         const { pending: report, networkId } = parked.proposal;
         if (report) {
           pendingTransactions?.trackPendingTransaction({
@@ -200,7 +203,7 @@ export function SignatureRequestProvider({
     // Nothing backs out of a transaction that is already signed and away.
     if (!parked || parked.result) return;
     settle();
-    parked.reject(new SignatureRequestCancelledError());
+    parked.reject(parked.unresolved ?? new SignatureRequestCancelledError());
   }, [settle]);
 
   const dismissReceipt = useCallback(() => {

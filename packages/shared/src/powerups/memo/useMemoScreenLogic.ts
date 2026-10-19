@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react';
 import i18n from 'i18next';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
 import {
   SignatureRequestCancelledError,
@@ -115,7 +116,11 @@ export function useMemoScreenLogic({
       setNoteState('');
       onNavigateHome?.();
     } catch (caught) {
-      if (!(caught instanceof SignatureRequestCancelledError)) {
+      if (caught instanceof SolanaOutcomeUnknownError) {
+        // It may have landed: nothing stays typed for a second memo.
+        setNoteState('');
+        setError(caught.message);
+      } else if (!(caught instanceof SignatureRequestCancelledError)) {
         const failure = describePowerupBuildError(caught, {
           codes: MEMO_CODES,
           fallback: 'memo.errors.buildFailed',
