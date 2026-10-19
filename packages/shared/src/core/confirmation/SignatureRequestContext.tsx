@@ -76,7 +76,8 @@ const SignatureRequestContext = createContext<SignatureRequestContextValue | nul
 
 function reportOutcome(proposal: TransactionProposal, success: boolean): void {
   try {
-    proposal.onOutcome?.(success);
+    // An async callback's rejection is caught here too, not left unhandled.
+    void Promise.resolve(proposal.onOutcome?.(success)).catch(() => undefined);
   } catch {
     // The Powerup's bookkeeping never turns a signed transaction into a failure.
   }
