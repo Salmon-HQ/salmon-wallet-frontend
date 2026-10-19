@@ -41,7 +41,7 @@ function isDevEnvironment(): boolean {
 
 class AnalyticsClient {
   private readonly config: Required<Omit<AnalyticsClientConfig, 'transport' | 'strict'>>;
-  private readonly transport: AnalyticsTransport;
+  private transport: AnalyticsTransport | null;
   private readonly strict: boolean;
 
   private sessionId = createSessionId();
@@ -58,22 +58,28 @@ class AnalyticsClient {
     this.config = {
       platform: config.platform,
       appVersion: config.appVersion,
+      storeBuild: config.storeBuild ?? false,
       batchSize: config.batchSize ?? DEFAULT_BATCH_SIZE,
       flushIntervalMs: config.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS,
     };
-    this.transport = config.transport ?? createHttpTransport();
+    this.transport = config.transport ?? null;
     this.strict = config.strict ?? isDevEnvironment();
     this.ready = this.bootstrap();
   }
 
-  /** Resolves once the platform, persisted consent and install id are known. */
+  /** Resolves once the platform, build kind, persisted consent and install id are known. */
   whenReady(): Promise<void> {
     return this.ready;
   }
 
   private async bootstrap(): Promise<void> {
     try {
-      this.platform = await this.config.platform;
+      const [platform, storeBuild] = await Promise.all([
+        this.config.platform,
+        this.config.storeBuild,
+      ]);
+      this.transport ??= createHttpTransport(storeBuild);
+      this.platform = platform;
       const storage = getStorage();
       const consent = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT);
       this.consent = consent === true;
@@ -183,12 +189,13 @@ class AnalyticsClient {
    * called as a window closes reaches the transport before the page is gone.
    */
   async flush(): Promise<void> {
-    if (!this.platform || !this.consent || !this.installId || this.queue.length === 0) return;
+    const { platform, transport, installId } = this;
+    if (!platform || !transport || !this.consent || !installId || this.queue.length === 0) return;
 
     const context: AnalyticsContext = {
-      installId: this.installId,
+      installId,
       sessionId: this.sessionId,
-      platform: this.platform,
+      platform,
       appVersion: this.config.appVersion,
     };
     const events = this.queue;
@@ -197,7 +204,7 @@ class AnalyticsClient {
     await Promise.all(
       chunk(events, MAX_EVENTS_PER_REQUEST).map(async (part) => {
         try {
-          await this.transport.send({ context, events: part });
+          await transport.send({ context, events: part });
         } catch {
           // Best-effort delivery: put the events back (bounded) to retry next
           // tick — unless consent was withdrawn while this batch was in flight,

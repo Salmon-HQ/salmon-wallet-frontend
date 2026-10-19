@@ -3,7 +3,7 @@
  * and the invariant that withdrawing consent wipes the queue and the install id.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const store = new Map<string, unknown>();
 const memStorage = {
@@ -389,5 +389,73 @@ describe('AnalyticsClient sessions', () => {
     expect(sentEvents(transport.batches)).toEqual([['wallet_switched'], ['app_opened']]);
     const [before, after] = transport.batches;
     expect(after.context.sessionId).not.toBe(before.context.sessionId);
+  });
+});
+
+// FR-014: the build kind picks the ingest; a store build's answer can arrive
+// asynchronously (the extension asks the browser), and nothing leaves before it.
+describe('AnalyticsClient build routing', () => {
+  const STAGING = 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging';
+  const PRODUCTION = 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod';
+  const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+  const postedTo = () => fetchMock.mock.calls.map((call) => (call as unknown[])[0]);
+
+  beforeEach(() => {
+    fetchMock.mockClear();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('EXPO_PUBLIC_SALMON_ENV', 'production');
+    vi.stubEnv('EXPO_PUBLIC_API_URL', '');
+    vi.stubEnv('VITE_API_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_ANALYTICS_URL', '');
+    vi.stubEnv('VITE_ANALYTICS_URL', '');
+    store.set('salmon_analytics_consent', true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('sends nothing while the build kind is unknown, then posts where it says', async () => {
+    let resolveStoreBuild: (storeBuild: boolean) => void = () => {};
+    const storeBuild = new Promise<boolean>((resolve) => {
+      resolveStoreBuild = resolve;
+    });
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', storeBuild });
+
+    await settle();
+    client.track('app_opened');
+    await client.flush();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    resolveStoreBuild(true);
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${PRODUCTION}/v1/events`]);
+  });
+
+  it.each([
+    [true, PRODUCTION],
+    [false, STAGING],
+  ])('a build whose store answer is %s posts to %s', async (storeBuild, base) => {
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', storeBuild });
+    await client.whenReady();
+
+    client.track('app_opened');
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${base}/v1/events`]);
+  });
+
+  it('treats a build that does not say as not a store build', async () => {
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0' });
+    await client.whenReady();
+
+    client.track('app_opened');
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${STAGING}/v1/events`]);
   });
 });

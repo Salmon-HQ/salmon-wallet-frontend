@@ -3,11 +3,12 @@
  */
 
 /**
- * The extension's analytics start-up (spec 042, FR-003): what each window hands
- * the ingest. The side panel is an open; a window opened to approve a dApp's
- * request is not.
+ * The extension's analytics start-up (spec 042, FR-003, FR-014, FR-015): what
+ * each window hands the ingest, where, and when. The side panel is an open; a
+ * window opened to approve a dApp's request is not.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 // The barrel drags the Solana stack in; the real analytics client is all this needs.
 vi.mock('@salmon/shared', async () => ({
@@ -37,6 +38,7 @@ async function sent(): Promise<AnalyticsBatch[]> {
 
 beforeEach(() => {
   resetAnalytics();
+  vi.restoreAllMocks();
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
   window.location.hash = '';
@@ -80,5 +82,97 @@ describe('startExtensionAnalytics', () => {
 
     const batches = await sent();
     expect(batches.flatMap((b) => b.events).map((e) => e.event)).toEqual(['wallet_switched']);
+  });
+});
+
+// FR-014: only a copy installed from a store reaches production. Unpacked
+// loads (developers, Playwright) report `development`; a check that fails
+// counts as not a store copy, losing data rather than polluting production.
+describe('build routing', () => {
+  const PRODUCTION_API = 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod';
+  const STAGING_API = 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging';
+
+  beforeEach(() => {
+    // The build talks to the production API, as the store package does.
+    vi.stubEnv('VITE_SALMON_ENV', 'production');
+    vi.stubEnv('EXPO_PUBLIC_SALMON_ENV', '');
+    vi.stubEnv('VITE_API_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_API_URL', '');
+    vi.stubEnv('VITE_ANALYTICS_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_ANALYTICS_URL', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  async function postedTo(): Promise<string[]> {
+    startExtensionAnalytics();
+    await sent();
+    return fetchMock.mock.calls.map((call) => (call as unknown as [string])[0]);
+  }
+
+  it('posts a store install to production', async () => {
+    vi.spyOn(fakeBrowser.management, 'getSelf').mockResolvedValue({
+      installType: 'normal',
+    } as never);
+    expect(await postedTo()).toEqual([`${PRODUCTION_API}/v1/events`]);
+  });
+
+  it('posts an unpacked install to staging', async () => {
+    vi.spyOn(fakeBrowser.management, 'getSelf').mockResolvedValue({
+      installType: 'development',
+    } as never);
+    expect(await postedTo()).toEqual([`${STAGING_API}/v1/events`]);
+  });
+
+  it('posts to staging when the browser cannot say how it was installed', async () => {
+    vi.spyOn(fakeBrowser.management, 'getSelf').mockRejectedValue(new Error('unavailable'));
+    expect(await postedTo()).toEqual([`${STAGING_API}/v1/events`]);
+  });
+});
+
+// FR-015: a window can close before the 30-second send; what it recorded must
+// already be on its way when it hides or goes away.
+describe('closing or hiding the window', () => {
+  /** Started, consent read and the open queued, nothing sent yet. */
+  async function startQuietly(): Promise<void> {
+    startExtensionAnalytics();
+    await getAnalytics()!.whenReady();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(fetchMock).not.toHaveBeenCalled();
+  }
+
+  const sentEvents = () =>
+    fetchMock.mock.calls.flatMap((call) =>
+      (
+        JSON.parse((call as unknown as [string, { body: string }])[1].body) as AnalyticsBatch
+      ).events.map((e) => e.event)
+    );
+
+  it('starts the send synchronously on pagehide', async () => {
+    await startQuietly();
+
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents()).toEqual(['app_opened']);
+  });
+
+  it('starts the send synchronously when the window becomes hidden', async () => {
+    await startQuietly();
+
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(sentEvents()).toEqual(['app_opened']);
+  });
+
+  it('does not send when the window becomes visible', async () => {
+    await startQuietly();
+
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

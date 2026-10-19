@@ -10,7 +10,7 @@
  * ```ts
  * import { initAnalytics, trackEvent } from '@salmon/shared';
  *
- * initAnalytics({ platform: 'ios', appVersion: APP_VERSION });
+ * initAnalytics({ platform: 'ios', appVersion: APP_VERSION, storeBuild: Updates.channel === 'production' });
  * // ...after the user opts in via Settings...
  * trackEvent('send_completed', { chain: 'solana', success: true });
  * ```

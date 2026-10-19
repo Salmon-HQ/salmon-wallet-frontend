@@ -1,7 +1,7 @@
 /**
- * The mobile app's analytics start-up and open rule (spec 042, FR-003–FR-005):
- * what leaves the app — the batches posted to the ingest — for each platform
- * and each way of coming back to the screen.
+ * The mobile app's analytics start-up and open rule (spec 042, FR-003–FR-005,
+ * FR-014, FR-015): what leaves the app — the batches posted to the ingest — for
+ * each platform, each build and each way of leaving or coming back to the screen.
  */
 import type { AnalyticsBatch } from '@salmon/shared';
 
@@ -19,7 +19,8 @@ type Modules = {
 const fetchMock = jest.fn(async () => ({ ok: true, status: 202 }));
 
 /** Fresh module state per test: a new process, as far as the open rule knows. */
-function load(os: 'ios' | 'android'): Modules {
+function load(os: 'ios' | 'android', channel: string | null = null): Modules {
+  jest.doMock('expo-updates', () => ({ __esModule: true, channel }));
   const { AppState, Platform } = require('react-native');
   jest.replaceProperty(Platform, 'OS', os);
   const listeners: ((state: string) => void)[] = [];
@@ -60,15 +61,23 @@ async function sent({ shared }: Modules): Promise<AnalyticsBatch[]> {
 const opens = (batches: AnalyticsBatch[]) =>
   batches.flatMap((b) => b.events).filter((e) => e.event === 'app_opened').length;
 
+const PRODUCTION_API = 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod';
+const STAGING_API = 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging';
+const originalEnv = process.env;
+
 beforeEach(() => {
   jest.resetModules();
   jest.restoreAllMocks();
   fetchMock.mockClear();
   global.fetch = fetchMock as unknown as typeof fetch;
+  process.env = { ...originalEnv };
+  delete process.env.EXPO_PUBLIC_ANALYTICS_URL;
+  delete process.env.EXPO_PUBLIC_API_URL;
 });
 
 afterEach(() => {
   jest.useRealTimers();
+  process.env = originalEnv;
 });
 
 describe('platform', () => {
@@ -221,5 +230,51 @@ describe('opens', () => {
     modules.app.setMwaOnScreen(false);
     modules.emit('active');
     expect(opens(await sent(modules))).toBe(2);
+  });
+});
+
+// FR-014: only a build the public installs from a store reaches production.
+// EAS bakes the `production` channel into `production`, `production-apk` and
+// `dapp-store`; every other build reports another channel or none.
+describe('build routing', () => {
+  /** Where the batches went, for a build that talks to the production API. */
+  async function postedTo(channel: string | null): Promise<string[]> {
+    process.env.EXPO_PUBLIC_SALMON_ENV = 'production';
+    const modules = load('ios', channel);
+    modules.app.startAnalytics('1.5.0');
+    modules.app.trackColdOpen();
+    await sent(modules);
+    return fetchMock.mock.calls.map((call) => (call as unknown as [string])[0]);
+  }
+
+  it('posts a store build to production', async () => {
+    expect(await postedTo('production')).toEqual([`${PRODUCTION_API}/v1/events`]);
+  });
+
+  it.each([null, 'staging', 'dapp-store-test'])(
+    'posts a build on channel %s to staging',
+    async (channel) => {
+      expect(await postedTo(channel)).toEqual([`${STAGING_API}/v1/events`]);
+    }
+  );
+});
+
+// FR-015: what the app recorded leaves when it goes to the background, not 30 s later.
+describe('background', () => {
+  it('sends what is queued once when the app goes to the background', async () => {
+    const modules = load('ios');
+    modules.app.startAnalytics('1.5.0');
+    modules.app.trackColdOpen();
+    await modules.shared.getAnalytics()!.whenReady();
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    modules.emit('inactive');
+    modules.emit('background');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, { body: string }];
+    const batch = JSON.parse(init.body) as AnalyticsBatch;
+    expect(batch.events.map((e) => e.event)).toEqual(['app_opened']);
   });
 });

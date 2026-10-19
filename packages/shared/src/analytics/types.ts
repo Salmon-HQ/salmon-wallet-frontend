@@ -55,7 +55,13 @@ export interface AnalyticsClientConfig {
   /** A promise when the platform needs an async check (Seeker); no batch leaves before it resolves. */
   platform: AnalyticsPlatform | Promise<AnalyticsPlatform>;
   appVersion: string;
-  /** Delivery mechanism. Defaults to the HTTP transport when omitted. */
+  /**
+   * Whether the public installed this build from a store (FR-014): only a store
+   * build posts to production. A promise when the answer needs an async check
+   * (extension); no batch leaves before it resolves. Default `false`.
+   */
+  storeBuild?: boolean | Promise<boolean>;
+  /** Delivery mechanism. Defaults to the HTTP transport, built once `storeBuild` is known. */
   transport?: AnalyticsTransport;
   /** Max events buffered before an eager flush. Default 20. */
   batchSize?: number;
