@@ -90,4 +90,22 @@ describe('the success prop', () => {
       AnalyticsValidationError
     );
   });
+
+  // The backend rejects a string `success` too; the two sides agree on both outcomes.
+  it('takes false and refuses the string "true"', () => {
+    expect(validateEvent('memo_sent', { success: false }).props).toEqual({ success: false });
+    expect(() => validateEvent('memo_sent', { success: 'true' })).toThrow(/must be a boolean/);
+  });
+});
+
+describe('the powerup prop', () => {
+  it('takes a Powerup id from the registry list', () => {
+    expect(validateEvent('powerup_installed', { powerup: 'memo' }).props).toEqual({
+      powerup: 'memo',
+    });
+  });
+
+  it('refuses a Powerup that is not in the list', () => {
+    expect(() => validateEvent('powerup_installed', { powerup: 'jupiter' })).toThrow(/not one of/);
+  });
 });

@@ -1,6 +1,6 @@
 /**
- * Client behaviour tests: consent gating, batching, retry, and the invariant
- * that withdrawing consent wipes the queue and the install id.
+ * Client behaviour tests: consent gating, batching, retry, delivery, sessions,
+ * and the invariant that withdrawing consent wipes the queue and the install id.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -27,7 +27,7 @@ vi.mock('../storage', () => ({
 
 import { initAnalytics, resetAnalytics } from './client';
 import { createMemoryTransport } from './transport';
-import type { AnalyticsBatch } from './types';
+import type { AnalyticsBatch, AnalyticsPlatform } from './types';
 
 /** Lets any `void flush()` microtasks/promises settle. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -53,7 +53,7 @@ describe('AnalyticsClient consent gating', () => {
 
   it('sends events once consent is granted', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'mobile', appVersion: '3.1.0', transport });
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.1.0', transport });
     await client.whenReady();
 
     await client.setConsent(true);
@@ -62,7 +62,7 @@ describe('AnalyticsClient consent gating', () => {
 
     expect(transport.batches).toHaveLength(1);
     const [batch] = transport.batches;
-    expect(batch.context.platform).toBe('mobile');
+    expect(batch.context.platform).toBe('ios');
     expect(batch.context.installId).toBeTruthy();
     expect(batch.events[0]).toMatchObject({
       event: 'send_completed',
@@ -255,5 +255,139 @@ describe('AnalyticsClient consent persistence across restarts', () => {
     restarted.track('nft_viewed');
     await restarted.flush();
     expect(transport.batches).toHaveLength(1);
+  });
+});
+
+/** Event names per batch, in the order the batches left. */
+const sentEvents = (batches: AnalyticsBatch[]) => batches.map((b) => b.events.map((e) => e.event));
+
+// FR-016: consent is read asynchronously; an event recorded in the first
+// moments of a window or an app start must wait for it, not be dropped.
+describe('AnalyticsClient before consent is read', () => {
+  it('sends an early event when consent is stored', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['app_opened']]);
+  });
+
+  it('drops an early event when no consent is stored', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    await client.setConsent(true);
+    await client.flush();
+
+    expect(transport.batches).toHaveLength(0);
+  });
+
+  it('still throws at the call site in strict mode', () => {
+    store.set('salmon_analytics_consent', true);
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+      strict: true,
+    });
+
+    expect(() =>
+      client.track('send_completed', { chain: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' })
+    ).toThrow();
+  });
+});
+
+// FR-005: on Android the platform waits for the Seed Vault check.
+describe('AnalyticsClient with a platform still being decided', () => {
+  it('sends no batch before the platform is known, then carries it', async () => {
+    store.set('salmon_analytics_consent', true);
+    let resolvePlatform: (platform: AnalyticsPlatform) => void = () => {};
+    const platform = new Promise<AnalyticsPlatform>((resolve) => {
+      resolvePlatform = resolve;
+    });
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform, appVersion: '3.0.0', transport });
+
+    await settle();
+    client.track('app_opened');
+    await client.flush();
+    expect(transport.batches).toHaveLength(0);
+
+    resolvePlatform('seeker');
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['app_opened']]);
+    expect(transport.batches[0].context.platform).toBe('seeker');
+  });
+});
+
+// FR-015: a window can close while a send is in flight; whatever it recorded
+// since must leave on the flush its closing triggers.
+describe('AnalyticsClient delivery', () => {
+  it('sends an event tracked during an in-flight send on the next flush', async () => {
+    const sent: AnalyticsBatch[] = [];
+    const transport = {
+      send: (batch: AnalyticsBatch): Promise<void> => {
+        sent.push(batch);
+        return new Promise<void>(() => {});
+      },
+    };
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('nft_viewed');
+    void client.flush();
+    client.track('wallet_switched');
+    void client.flush();
+
+    expect(sentEvents(sent)).toEqual([['nft_viewed'], ['wallet_switched']]);
+  });
+
+  // The backend takes at most 100 events per batch and drops the rest.
+  it('sends 150 queued events as two requests of at most 100', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport,
+      batchSize: 1000,
+    });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    for (let i = 0; i < 150; i++) client.track('nft_viewed');
+    await client.flush();
+
+    expect(transport.batches.map((b) => b.events.length)).toEqual([100, 50]);
+  });
+});
+
+// FR-004: on mobile each open starts a session.
+describe('AnalyticsClient sessions', () => {
+  it('sends queued events under the old session id and the next event under a new one', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('wallet_switched');
+    client.startSession();
+    client.track('app_opened');
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['wallet_switched'], ['app_opened']]);
+    const [before, after] = transport.batches;
+    expect(after.context.sessionId).not.toBe(before.context.sessionId);
   });
 });

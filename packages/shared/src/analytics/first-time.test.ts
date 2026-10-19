@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('trackFirstTime', () => {
   it('is a no-op without consent and does not spend the flag', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
     await client.whenReady();
 
     await trackFirstTime('first_send_completed', FLAG);
@@ -53,7 +53,7 @@ describe('trackFirstTime', () => {
 
   it('emits once with consent, then sets the flag', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
     await client.whenReady();
     await client.setConsent(true);
 
@@ -67,7 +67,7 @@ describe('trackFirstTime', () => {
 
   it('does not emit a second time once the flag is set', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
     await client.whenReady();
     await client.setConsent(true);
 

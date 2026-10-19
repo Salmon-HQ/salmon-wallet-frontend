@@ -39,7 +39,7 @@ async function initClient(): Promise<{
   transport: ReturnType<typeof createMemoryTransport>;
 }> {
   const transport = createMemoryTransport();
-  const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
+  const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
   await client.whenReady();
   return { client, transport };
 }

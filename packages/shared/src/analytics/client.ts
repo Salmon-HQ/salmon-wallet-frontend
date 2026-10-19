@@ -3,7 +3,8 @@
  *
  * A singleton, framework-agnostic client (mirrors the storage module's
  * init/get pattern). It is opt-in by default: until the user grants consent,
- * `track` is a total no-op — nothing is validated, queued, stored, or sent.
+ * nothing is queued, stored, or sent. An event recorded before the stored
+ * consent has been read waits in memory for it, then is queued or dropped.
  *
  * Design invariants:
  * - No wallet material ever leaves the device (enforced by `./schema`).
@@ -12,13 +13,15 @@
  * - Withdrawing consent clears the queue and the install id.
  */
 
+import chunk from 'lodash-es/chunk';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import { validateEvent, safeValidateEvent } from './schema';
 import { getOrCreateInstallId, clearInstallId, createSessionId } from './install-id';
 import type {
-  AnalyticsBatch,
   AnalyticsClientConfig,
+  AnalyticsContext,
   AnalyticsEventPayload,
+  AnalyticsPlatform,
   AnalyticsProps,
   AnalyticsTransport,
 } from './types';
@@ -29,6 +32,8 @@ const DEFAULT_BATCH_SIZE = 20;
 const DEFAULT_FLUSH_INTERVAL_MS = 30_000;
 /** Upper bound on buffered events, so an offline device can't grow unbounded. */
 const MAX_QUEUE_LENGTH = 200;
+/** The backend's per-batch cap; it drops everything past it. */
+const MAX_EVENTS_PER_REQUEST = 100;
 
 function isDevEnvironment(): boolean {
   return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';
@@ -39,12 +44,13 @@ class AnalyticsClient {
   private readonly transport: AnalyticsTransport;
   private readonly strict: boolean;
 
-  private readonly sessionId = createSessionId();
+  private sessionId = createSessionId();
+  private platform: AnalyticsPlatform | null = null;
   private installId: string | null = null;
   private consent = false;
   private prompted = false;
+  private bootstrapped = false;
   private queue: AnalyticsEventPayload[] = [];
-  private flushing = false;
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly ready: Promise<void>;
 
@@ -60,13 +66,14 @@ class AnalyticsClient {
     this.ready = this.bootstrap();
   }
 
-  /** Resolves once persisted consent + install id have been loaded. */
+  /** Resolves once the platform, persisted consent and install id are known. */
   whenReady(): Promise<void> {
     return this.ready;
   }
 
   private async bootstrap(): Promise<void> {
     try {
+      this.platform = await this.config.platform;
       const storage = getStorage();
       const consent = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT);
       this.consent = consent === true;
@@ -78,6 +85,8 @@ class AnalyticsClient {
       }
     } catch {
       this.consent = false;
+    } finally {
+      this.bootstrapped = true;
     }
   }
 
@@ -145,9 +154,15 @@ class AnalyticsClient {
 
   /**
    * Records an event. No-op without consent. Invalid events are dropped (or
-   * throw in strict mode).
+   * throw in strict mode). Before stored consent has been read, the event waits
+   * for it instead of being dropped as "no consent" (FR-016).
    */
   track(event: AnalyticsEventName, props: AnalyticsProps = {}): void {
+    if (!this.bootstrapped) {
+      if (this.strict) validateEvent(event, props);
+      void this.ready.then(() => this.track(event, props));
+      return;
+    }
     if (!this.consent) return;
 
     const validated = this.strict ? validateEvent(event, props) : safeValidateEvent(event, props);
@@ -162,36 +177,46 @@ class AnalyticsClient {
     }
   }
 
-  /** Sends buffered events. Re-queues on failure for a later retry. */
+  /**
+   * Sends buffered events, in requests of at most 100. Re-queues on failure for
+   * a later retry. Every request starts before the first `await`, so a flush
+   * called as a window closes reaches the transport before the page is gone.
+   */
   async flush(): Promise<void> {
-    if (this.flushing || !this.consent || !this.installId || this.queue.length === 0) return;
+    if (!this.platform || !this.consent || !this.installId || this.queue.length === 0) return;
 
-    this.flushing = true;
+    const context: AnalyticsContext = {
+      installId: this.installId,
+      sessionId: this.sessionId,
+      platform: this.platform,
+      appVersion: this.config.appVersion,
+    };
     const events = this.queue;
     this.queue = [];
 
-    const batch: AnalyticsBatch = {
-      context: {
-        installId: this.installId,
-        sessionId: this.sessionId,
-        platform: this.config.platform,
-        appVersion: this.config.appVersion,
-      },
-      events,
-    };
+    await Promise.all(
+      chunk(events, MAX_EVENTS_PER_REQUEST).map(async (part) => {
+        try {
+          await this.transport.send({ context, events: part });
+        } catch {
+          // Best-effort delivery: put the events back (bounded) to retry next
+          // tick — unless consent was withdrawn while this batch was in flight,
+          // in which case the withdrawal's queue wipe wins and they are dropped.
+          if (this.consent) {
+            this.queue = [...part, ...this.queue].slice(-MAX_QUEUE_LENGTH);
+          }
+        }
+      })
+    );
+  }
 
-    try {
-      await this.transport.send(batch);
-    } catch {
-      // Best-effort delivery: put the events back (bounded) to retry next tick —
-      // unless consent was withdrawn while this batch was in flight, in which
-      // case the withdrawal's queue wipe wins and the events are dropped.
-      if (this.consent) {
-        this.queue = [...events, ...this.queue].slice(-MAX_QUEUE_LENGTH);
-      }
-    } finally {
-      this.flushing = false;
-    }
+  /**
+   * Starts a new session: what is queued leaves under the current session id,
+   * and the next event gets a new one. Mobile calls it at each app open (FR-004).
+   */
+  startSession(): void {
+    void this.flush();
+    this.sessionId = createSessionId();
   }
 
   /** Stops the flush timer. Call on teardown; safe to call repeatedly. */

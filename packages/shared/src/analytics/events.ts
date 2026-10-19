@@ -30,6 +30,20 @@ export const ANALYTICS_EVENTS = [
   'network_switched',
   'wallet_switched',
   'address_book_used',
+  // App use
+  'app_opened',
+  // Powerups
+  'powerup_installed',
+  'powerup_uninstalled',
+  'swap_completed',
+  'first_swap_completed',
+  'memo_sent',
+  'payment_request_created',
+  'payment_request_paid',
+  // dApps (never with anything that identifies the dApp)
+  'dapp_connected',
+  'dapp_message_signed',
+  'dapp_transaction_signed',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];
@@ -57,6 +71,13 @@ export const AMOUNT_BUCKETS = ['0-10', '10-100', '100-1k', '1k-10k', '10k+'] as 
 export type AmountBucket = (typeof AMOUNT_BUCKETS)[number];
 
 /**
+ * The Powerups registry's ids, written out rather than derived: the list must
+ * stay closed and identical on the backend, and a build with Powerups compiled
+ * out would derive an empty one. `events.test.ts` checks the registry against it.
+ */
+export const POWERUP_IDS = ['swap', 'payments', 'memo', 'skr'] as const;
+
+/**
  * The only prop keys any event may carry. Values are further constrained by
  * `PROP_ENUMS` and the guardrail in `./schema`.
  */
@@ -66,6 +87,7 @@ export const ALLOWED_PROP_KEYS = [
   'to_chain',
   'success',
   'amount_bucket',
+  'powerup',
 ] as const;
 
 export type AllowedPropKey = (typeof ALLOWED_PROP_KEYS)[number];
@@ -87,6 +109,7 @@ export const PROP_ENUMS: Partial<Record<AllowedPropKey, readonly string[]>> = {
   from_chain: CHAINS,
   to_chain: CHAINS,
   amount_bucket: AMOUNT_BUCKETS,
+  powerup: POWERUP_IDS,
   // Every caller passes a boolean, which skips the string checks entirely. The
   // empty list is for the other case: a string reaching `success` is a mistake
   // or a smuggled value, and there is no spelling of it that is right.
