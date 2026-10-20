@@ -216,7 +216,7 @@ describe('MwaHost — a devnet dApp on a mainnet wallet', () => {
     render(<MwaHost />);
 
     const message = screen.getByText(/dapp\.mwa_switch_message/).props.children as string;
-    expect(message.startsWith('https://dapp.example')).toBe(true);
+    expect(message.split('\n\n')[0]).toBe('https://dapp.example');
     expect(message).toContain('dapp.mwa_unverified');
   });
 
