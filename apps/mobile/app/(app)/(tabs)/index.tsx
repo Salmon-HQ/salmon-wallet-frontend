@@ -714,16 +714,17 @@ export default function HomeScreen() {
 
   // A Powerup the backend switched off keeps its tab; its surface is the
   // reason, never a blank (spec 029 §5.2).
-  const activePowerupDisabledReason = powerupTabs.find(
-    (tab) => tab.key === effectiveSubTab
-  )?.disabledReason;
+  const activePowerupTab = powerupTabs.find((tab) => tab.key === effectiveSubTab);
+  const activePowerupDisabledReason = activePowerupTab?.disabledReason;
   const powerupTabContent = (
     <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
       {activePowerupDisabledReason ? (
         <StateBlock
           tone="empty"
           testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
-          title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+          title={t(`powerups.disabled.${activePowerupDisabledReason}`, {
+            name: activePowerupTab?.label,
+          })}
         />
       ) : (
         <PowerupTabBody

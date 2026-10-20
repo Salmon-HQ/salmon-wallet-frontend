@@ -915,7 +915,7 @@
       "uses": "Uses"
     },
     "disabled": {
-      "region": "This Powerup isn't available in the region you're in.",
+      "region": "{{name}} isn't available in the region you're in.",
       "maintenance": "This Powerup is paused for maintenance. Check back soon.",
       "deprecated": "This Powerup has been retired. You can remove it from Home."
     },
