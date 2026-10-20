@@ -30,12 +30,17 @@ const lastByNetwork = new Map<string, PowerupAllowlist>();
 /** One question per network at a time: Homes that mount together share it. */
 const inFlight = new Map<string, Promise<unknown>>();
 
-function askOnce(networkId: string): Promise<unknown> {
-  let pending = inFlight.get(networkId);
-  if (!pending) {
-    pending = getPowerupAvailability(networkId).finally(() => inFlight.delete(networkId));
-    inFlight.set(networkId, pending);
-  }
+/**
+ * `fresh` skips the shared question: a return to the foreground must ask from
+ * where the wallet is now, not join one sent before it moved.
+ */
+function askOnce(networkId: string, fresh: boolean): Promise<unknown> {
+  const shared = fresh ? undefined : inFlight.get(networkId);
+  if (shared) return shared;
+  const pending: Promise<unknown> = getPowerupAvailability(networkId).finally(() => {
+    if (inFlight.get(networkId) === pending) inFlight.delete(networkId);
+  });
+  inFlight.set(networkId, pending);
   return pending;
 }
 
@@ -52,9 +57,14 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
       return;
     }
     let cancelled = false;
-    const ask = (keepOnFailure: boolean) =>
-      askOnce(networkId)
+    // Only the newest question may write: an older one that answers late
+    // describes where the wallet was.
+    let latest = 0;
+    const ask = (keepOnFailure: boolean, fresh: boolean) => {
+      const asked = ++latest;
+      return askOnce(networkId, fresh)
         .then((entries) => {
+          if (asked !== latest) return;
           const next = toPowerupAllowlist(parsePowerupSwitches(entries));
           lastByNetwork.set(networkId, next);
           if (!cancelled) setAllowlist(next);
@@ -63,14 +73,15 @@ export function useNetworkPowerups(networkId: string | null): PowerupAllowlist {
           // A re-ask on return to the foreground often fails before the
           // network is back; it keeps the last answer, since the backend
           // refuses a blocked build anyway. Otherwise closed stays closed.
-          if (keepOnFailure) return;
+          if (asked !== latest || keepOnFailure) return;
           lastByNetwork.delete(networkId);
           if (!cancelled) setAllowlist(EMPTY_POWERUP_ALLOWLIST);
         });
+    };
     setAllowlist(lastByNetwork.get(networkId) ?? EMPTY_POWERUP_ALLOWLIST);
-    void ask(false);
+    void ask(false, false);
     const unsubscribe = focusManager.subscribe((focused) => {
-      if (focused) void ask(true);
+      if (focused) void ask(true, true);
     });
     return () => {
       cancelled = true;

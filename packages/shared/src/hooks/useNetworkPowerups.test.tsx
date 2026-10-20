@@ -18,7 +18,10 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     resetNetworkPowerupsCache();
     availability.mockReset();
   });
-  afterEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    focusManager.setFocused(undefined);
+    vi.clearAllMocks();
+  });
 
   it('is empty until the route answers, then carries ids, reasons and providers', async () => {
     availability.mockResolvedValue([
@@ -78,7 +81,26 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     await waitFor(() => expect(result.current.disabled).toEqual({ swap: 'region' }));
     expect(result.current.enabled).toEqual([]);
     unmount();
-    focusManager.setFocused(undefined);
+  });
+
+  it('asks afresh on return even while an older question is in flight, and the older answer loses', async () => {
+    let answerOld: (entries: unknown) => void = () => {};
+    availability
+      .mockReturnValueOnce(new Promise((resolve) => (answerOld = resolve)) as never)
+      .mockResolvedValueOnce([{ id: 'swap', enabled: false, reason: 'region' }]);
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => expect(result.current.disabled).toEqual({ swap: 'region' }));
+
+    await act(async () => answerOld([{ id: 'swap', enabled: true, provider: 'jupiter' }]));
+    expect(availability).toHaveBeenCalledTimes(2);
+    expect(result.current.disabled).toEqual({ swap: 'region' });
+    expect(result.current.enabled).toEqual([]);
+    unmount();
   });
 
   it('keeps the last answer when the re-ask on return fails', async () => {
@@ -96,7 +118,6 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     expect(availability).toHaveBeenCalledTimes(2);
     expect(result.current.enabled).toEqual(['swap']);
     unmount();
-    focusManager.setFocused(undefined);
   });
 
   it('closes when the route fails, and offers nothing without a network', async () => {
