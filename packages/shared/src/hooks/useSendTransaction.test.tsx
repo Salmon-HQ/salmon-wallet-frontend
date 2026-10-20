@@ -542,6 +542,47 @@ describe('useSendTransaction', () => {
     expect(trackEvent).not.toHaveBeenCalledWith('send_completed', expect.anything());
   });
 
+  // The review screen re-estimates when its fee is missing; that estimate used
+  // to clear the failure and re-enable Confirm, so a press sent the funds twice.
+  it('after an unknown outcome, neither an estimate nor a second send gets through until reset', async () => {
+    const { SolanaOutcomeUnknownError } = await import('../blockchain/solana/confirm');
+    mockAccount.transfer.mockRejectedValueOnce(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const params = {
+      token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+      recipientAddress: RAW_RECIPIENT,
+      amount: AMOUNT,
+    };
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.sendTransaction(params).catch(() => undefined);
+    });
+    mockAccount.estimateTransferFee.mockClear();
+
+    await act(async () => {
+      await expect(result.current.estimateFee(params)).resolves.toBeNull();
+    });
+    expect(mockAccount.estimateTransferFee).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('failed');
+    expect(result.current.error).toBe('transaction.errors.broadcastUnknown');
+
+    await act(async () => {
+      await expect(result.current.sendTransaction(params)).rejects.toThrow(
+        'transaction.errors.broadcastUnknown'
+      );
+    });
+    expect(mockAccount.transfer).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.reset());
+    await act(async () => {
+      await result.current.estimateFee(params);
+    });
+    expect(mockAccount.estimateTransferFee).toHaveBeenCalledTimes(1);
+  });
+
   it('reports a send that fails for a known reason as success: false', async () => {
     mockAccount.transfer.mockRejectedValueOnce(new Error('boom'));
     const { result } = renderHook(

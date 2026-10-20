@@ -14,6 +14,11 @@ vi.mock('../blockchain/solana/prepared-transactions', () => ({
 import { useNftBurn } from './useNftBurn';
 import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prepared-transactions';
 import { queryKeys } from '../query/keys';
+import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
+import {
+  PendingTransactionsProvider,
+  usePendingTransactions,
+} from '../contexts/PendingTransactionsContext';
 
 const ACCT = 'sol-burn-address';
 const NET = 'solana-mainnet';
@@ -106,5 +111,45 @@ describe('useNftBurn', () => {
     await waitFor(() => expect(result.current.status).toBe('failed'));
     expect(result.current.isError).toBe(true);
     expect(result.current.settling).toBe(false);
+  });
+
+  it('follows an unknown outcome in the pending banner and burns nothing more until reset', async () => {
+    vi.mocked(signAndSendPreparedSolanaTransactions).mockRejectedValueOnce(
+      new SolanaOutcomeUnknownError('sig-maybe' as never)
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <PendingTransactionsProvider getOutcomes={vi.fn(async () => ({}))} pollIntervalMs={60_000}>
+          {children}
+        </PendingTransactionsProvider>
+      </QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => ({ burn: useNftBurn({ account: mockAccount }), pending: usePendingTransactions() }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.burn
+        .burnNft({ transaction: 'prepared' } as never, 'mint-burned', 'Test NFT')
+        .catch(() => undefined);
+    });
+    expect(result.current.pending.pendingTransactions).toEqual([
+      expect.objectContaining({ signature: 'sig-maybe', summary: 'Test NFT' }),
+    ]);
+
+    await act(async () => {
+      await expect(
+        result.current.burn.burnNft({ transaction: 'prepared' } as never, 'mint-burned')
+      ).rejects.toThrow('transaction.errors.broadcastUnknown');
+    });
+    expect(signAndSendPreparedSolanaTransactions).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.burn.reset());
+    await act(async () => {
+      await result.current.burn.burnNft({ transaction: 'prepared' } as never, 'mint-burned');
+    });
+    expect(signAndSendPreparedSolanaTransactions).toHaveBeenCalledTimes(2);
   });
 });

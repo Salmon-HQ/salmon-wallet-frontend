@@ -131,7 +131,11 @@ describe('useNftFlowState', () => {
 
     await act(() => result.current.confirmBurn());
 
-    expect(mockBurnNft).toHaveBeenCalledWith({ transaction: 'burn-transaction' }, 'Mint111');
+    expect(mockBurnNft).toHaveBeenCalledWith(
+      { transaction: 'burn-transaction' },
+      'Mint111',
+      'Burnable NFT'
+    );
     expect(result.current.successKind).toBe('burn');
     expect(result.current.successTxId).toBe('signature-111');
     expect(result.current.explorerUrl).toBe('https://explorer.example/tx');

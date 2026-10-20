@@ -40,6 +40,9 @@ export function buildMemoProposal(
   return toPowerupProposal(envelope, {
     networkId,
     expect: { allowedPrograms: memoManifest.programs },
+    // The banner follows the signature, so a memo whose outcome is unknown is
+    // not written twice by a user who thinks it failed.
+    pending: { kind: 'send', summary: envelope.note },
     display: {
       title: t('memo.review.title'),
       rows: [

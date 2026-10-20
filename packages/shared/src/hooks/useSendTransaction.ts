@@ -126,7 +126,13 @@ export function useSendTransaction({
   }, []);
   const isCurrent = useCallback((attempt: number) => attemptRef.current === attempt, []);
 
+  // A send whose outcome is unknown may have landed. Until the flow is reset
+  // nothing may leave this hook again: not a second send, and not an estimate,
+  // whose state writes would clear the failure and re-enable Confirm.
+  const unresolvedRef = useRef(false);
+
   const reset = useCallback(() => {
+    unresolvedRef.current = false;
     beginAttempt();
     setStatus('idle');
     setSettling(false);
@@ -143,6 +149,7 @@ export function useSendTransaction({
       // A watch-only account has no key to pay or sign with. Nothing should
       // route a send here, but this hook is the last thing before the chain.
       if (!isSignableAccount(account)) return null;
+      if (unresolvedRef.current) return null;
 
       const attempt = beginAttempt();
       setStatus('estimating-fee');
@@ -196,6 +203,7 @@ export function useSendTransaction({
         setStatus('failed');
         throw new Error('transaction.errors.watchOnlyAccount');
       }
+      if (unresolvedRef.current) throw new Error('transaction.errors.broadcastUnknown');
 
       const effectiveRecipientAddress = params.resolvedRecipientAddress ?? params.recipientAddress;
 
@@ -298,6 +306,7 @@ export function useSendTransaction({
         if (err instanceof SolanaOutcomeUnknownError) {
           // It may have landed: the banner follows the signature until the
           // chain answers, and the failure surface offers no retry.
+          unresolvedRef.current = true;
           pendingTransactions?.trackPendingTransaction({
             signature: String(err.signature),
             kind: 'send',
