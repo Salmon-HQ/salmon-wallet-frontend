@@ -124,7 +124,7 @@ const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 /** The "no account" state fills the content region, like every other state. */
 const powerupBodyStyles = StyleSheet.create({
-  noAccount: { flex: 1, justifyContent: 'center' },
+  noAccount: { flex: 1, justifyContent: 'center', paddingHorizontal: s(spacing.screenGutter) },
   surface: { flex: 1, gap: vs(spacing.screenGutter) },
   // How to use the Powerup, left-aligned under the sub-tabs in the header's
   // own subtitle voice; the surface starts under it (`docs/POWERUPS-UI.md` §1.1).
@@ -719,13 +719,16 @@ export default function HomeScreen() {
   const powerupTabContent = (
     <View style={styles.listContainer} testID={`home-powerup-${effectiveSubTab}`}>
       {activePowerupDisabledReason ? (
-        <StateBlock
-          tone="empty"
-          testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
-          title={t(`powerups.disabled.${activePowerupDisabledReason}`, {
-            name: activePowerupTab?.label,
-          })}
-        />
+        // Home draws this state, not the Powerup, so it takes the tab gutter here.
+        <View style={styles.tabGutter}>
+          <StateBlock
+            tone="empty"
+            testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+            title={t(`powerups.disabled.${activePowerupDisabledReason}`, {
+              name: activePowerupTab?.label,
+            })}
+          />
+        </View>
       ) : (
         <PowerupTabBody
           tabKey={effectiveSubTab}

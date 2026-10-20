@@ -124,6 +124,12 @@ export const scrollColumnStyle: React.CSSProperties = {
   paddingBottom: spacing['2xl'],
 };
 
+/** Home's own state in a Powerup tab (switched off, no account): the tab gutter. */
+export const tabGutterStyle: React.CSSProperties = {
+  paddingLeft: spacing.screenGutter,
+  paddingRight: spacing.screenGutter,
+};
+
 /** A flex column that fills its parent — the shape every `SinkFloat` on Home takes. */
 export const fillColumnStyle: React.CSSProperties = {
   flex: 1,

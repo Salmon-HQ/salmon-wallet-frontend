@@ -89,6 +89,7 @@ import {
   contentRegionStyle,
   fillColumnStyle,
   pinnedHeaderStyle,
+  tabGutterStyle,
   risenSubTabsStyle,
   subTabsStyle,
   balanceBlockStyle,
@@ -989,6 +990,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   <StateBlock
                     tone="empty"
                     testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
+                    style={tabGutterStyle}
                     title={t(`powerups.disabled.${activePowerupDisabledReason}`, {
                       name: activePowerupTab?.label,
                     })}
@@ -1002,6 +1004,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     tone="empty"
                     testID="home-powerup-no-account"
                     title={t('powerups.no_account')}
+                    style={tabGutterStyle}
                   />
                 ) : (
                   // Which surface this id draws is `powerupBodies.tsx`'s, the
