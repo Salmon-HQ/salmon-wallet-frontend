@@ -10,6 +10,7 @@ const mockClearSwitchingNetwork = jest.fn();
 const mockLockAccounts = jest.fn().mockResolvedValue(undefined);
 const mockSession: { current: unknown } = { current: null };
 const mockState: Record<string, unknown> = {};
+const mockVerification = { current: 'verified' };
 
 // `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
 // the signing functions, which this host never reaches.
@@ -55,6 +56,7 @@ jest.mock('./MwaRequest', () => ({
     const { Text: MockText } = jest.requireActual('react-native');
     return <MockText>{`request ${request.requestId}`}</MockText>;
   },
+  useIdentityVerification: () => mockVerification.current,
 }));
 
 // The sheet is the kit's; what is under test is which one the host shows and
@@ -133,6 +135,7 @@ function given(state: Record<string, unknown>, request: unknown) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockVerification.current = 'verified';
   jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
 });
 
@@ -188,19 +191,33 @@ describe('MwaHost — a devnet dApp on a mainnet wallet', () => {
     expect(screen.queryByText('dapp.mwa_switch_title')).toBeNull();
   });
 
-  // A switch that fails must still answer the dApp, or it waits on a sheet
-  // whose Cancel no longer declines.
-  it('declines when the switch fails', async () => {
+  // A switch that fails must still answer the dApp, and the user, who asked
+  // for it, hears why before the dApp hears no.
+  it('says the switch failed, then declines once', async () => {
     mockChangeNetwork.mockRejectedValueOnce(new Error('storage'));
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     given(walletOn('solana-mainnet'), connect('solana:devnet'));
     render(<MwaHost />);
 
     await act(async () => fireEvent.press(screen.getByTestId('sheet-confirm')));
-    if (mockRespond.mock.calls.length === 0) fireEvent.press(screen.getByTestId('sheet-cancel'));
+    expect(mockRespond).not.toHaveBeenCalled();
+    expect(screen.getByText('dapp.mwa_refused_title')).toBeTruthy();
+    expect(screen.getByText(/dapp\.mwa_switch_failed/)).toBeTruthy();
 
+    fireEvent.press(screen.getByTestId('sheet-confirm'));
     expect(mockRespond).toHaveBeenCalledTimes(1);
     expect(mockRespond).toHaveBeenCalledWith({ failReason: 'USER_DECLINED' });
+  });
+
+  // The name is the dApp's own claim; the switch holds for the whole app.
+  it('puts the origin first, and warns when it cannot confirm who is asking', () => {
+    mockVerification.current = 'unverified';
+    given(walletOn('solana-mainnet'), connect('solana:devnet'));
+    render(<MwaHost />);
+
+    const message = screen.getByText(/dapp\.mwa_switch_message/).props.children as string;
+    expect(message.startsWith('https://dapp.example')).toBe(true);
+    expect(message).toContain('dapp.mwa_unverified');
   });
 
   it('shows the request itself once the wallet is on the network asked for', () => {

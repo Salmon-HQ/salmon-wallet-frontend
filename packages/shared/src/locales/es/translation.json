@@ -160,6 +160,7 @@
     "mwa_switch_title": "¿Cambiar de red?",
     "mwa_switch_message": "{{origin}} pide {{target}}. Salmon está en {{current}}.",
     "mwa_switch_confirm": "Cambiar a {{target}}",
+    "mwa_switch_failed": "Salmon no pudo cambiar a {{target}}, así que se rechazó la solicitud. Volvé a pedirlo desde la app o el sitio.",
     "mwa_no_wallet_title": "Todavía no hay billetera",
     "mwa_no_wallet_message": "Creá o importá una billetera en Salmon y después volvé a conectarte.",
     "mwa_no_wallet_open": "Abrir Salmon",

@@ -1,5 +1,5 @@
 import bs58 from 'bs58';
-import type { TrustedApp } from '../types/trusted-app';
+import type { TrustedApp, TrustedApps } from '../types/trusted-app';
 import type {
   DAppSignAllTransactionsRequest,
   DAppSignAndSendTransactionRequest,
@@ -179,6 +179,26 @@ export function isMwaAuthorizationValid(
     app.address === address &&
     app.authToken === encodeMwaAuthToken(authorizationScope)
   );
+}
+
+/**
+ * A disconnect can arrive while Salmon is on another network than the one the
+ * dApp connected on. Its token names that network, so it is checked there:
+ * the site to forget when the token is the one Salmon issued it, else `null`.
+ */
+export function mwaDeauthorizeOrigin(
+  input: {
+    chain: string | undefined;
+    identityUri: string | undefined;
+    authorizationScope: Uint8Array;
+  },
+  trustedApps: TrustedApps
+): string | null {
+  const networkId = mwaChainToNetworkId(input.chain);
+  const origin = mwaIdentityOrigin(input.identityUri);
+  if (!networkId || !origin) return null;
+  const token = trustedApps[networkId]?.[origin]?.authToken;
+  return token && token === encodeMwaAuthToken(input.authorizationScope) ? origin : null;
 }
 
 /** The four refusals the MWA wallet bridge can return. */

@@ -12,7 +12,7 @@ import {
   type MWARequest,
   type MWAResponse,
 } from '@solana-mobile/mobile-wallet-adapter-walletlib';
-import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState, BackHandler, Linking, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,7 +24,7 @@ import { DepthBackground } from '../components/DepthBackground';
 import { useBiometric } from '../contexts/BiometricContext';
 import { I18nProvider } from '../i18n';
 import { AppProviders, useAppFonts } from '../providers/AppProviders';
-import { MwaRequest } from './MwaRequest';
+import { MwaRequest, useIdentityVerification } from './MwaRequest';
 import {
   isSeedVaultScreenOpen,
   onSeedVaultScreensClosed,
@@ -264,23 +264,50 @@ function NetworkSwitchSheet({
 }) {
   const { t } = useTranslation();
   const { choose, closedWithoutChoice } = useChoice();
+  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const [failed, setFailed] = useState(false);
   const origin = mwaIdentityOrigin(request.appIdentity?.identityUri) ?? '';
   const target = t(`dapp.mwa_network_names.${to}`);
+
+  // The user asked to switch: say it did not happen before the dApp hears no.
+  if (failed) {
+    return (
+      <ConfirmSheet
+        visible
+        acknowledgeOnly
+        title={t('dapp.mwa_refused_title')}
+        message={t('dapp.mwa_switch_failed', { target })}
+        onConfirm={() => respond(declined)}
+        onClose={() => respond(declined)}
+      />
+    );
+  }
+
+  // As on the connect sheet, the origin and the warning come first: the name
+  // is the dApp's own claim, and the switch holds for the whole app.
+  const lines = [
+    origin,
+    ...(verification === 'unverified' ? [t('dapp.mwa_unverified', { origin })] : []),
+    t('dapp.mwa_switch_message', {
+      origin: mwaDisplayName(request.appIdentity?.identityName, origin),
+      target,
+      current: t(`dapp.mwa_network_names.${from}`),
+    }),
+  ];
   return (
     <ConfirmSheet
       visible
       title={t('dapp.mwa_switch_title')}
-      message={t('dapp.mwa_switch_message', {
-        origin: mwaDisplayName(request.appIdentity?.identityName, origin),
-        target,
-        current: t(`dapp.mwa_network_names.${from}`),
-      })}
+      message={lines.join('\n\n')}
       confirmText={t('dapp.mwa_switch_confirm', { target })}
+      isDanger={verification !== 'verified'}
+      confirmDisabled={verification === 'checking'}
       onConfirm={async () => {
-        // A failed switch is no choice: the close that follows declines.
-        await onSwitch().then(choose, (error: unknown) =>
-          console.warn('[mwa] network switch failed', error)
-        );
+        await onSwitch().then(choose, (error: unknown) => {
+          console.warn('[mwa] network switch failed', error);
+          choose();
+          setFailed(true);
+        });
       }}
       onClose={() => {
         if (closedWithoutChoice()) respond(declined);

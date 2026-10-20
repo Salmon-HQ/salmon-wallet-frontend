@@ -15,8 +15,10 @@ import {
   decodeDAppMessage,
   encodeMwaAuthToken,
   getShortAddress,
+  getStorageItem,
   mwaAuthorizedAccount,
   mwaChainToNetworkId,
+  mwaDeauthorizeOrigin,
   mwaDisplayName,
   mwaIconUrl,
   mwaPrecheck,
@@ -31,7 +33,9 @@ import {
   useSolanaTransactionApproval,
   type MwaPrecheck,
   type SolanaAccount,
+  type TrustedApps,
   isSeedVaultError,
+  STORAGE_KEYS,
 } from '@salmon/shared';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,11 +94,38 @@ export function MwaRequest({ request, respond, account }: Props) {
     [request]
   );
 
-  // Refusals the user does not need to read go back to the dApp at once.
+  // Refusals the user does not need to read go back to the dApp at once —
+  // except a disconnect from another network, which is still a disconnect:
+  // its token is checked where it was issued, and the dApp forgotten everywhere.
   const silent = !check.ok && !check.reason;
+  const refusing = useRef(false);
   useEffect(() => {
-    if (silent) respond(fail(check.failReason));
-  }, [silent, check, respond]);
+    if (!silent || refusing.current) return;
+    refusing.current = true;
+    if (request.__type !== MWARequestType.DeauthorizeDappRequest) {
+      respond(fail(check.failReason));
+      return;
+    }
+    const scope = bytes(request.authorizationScope);
+    getStorageItem<TrustedApps>(STORAGE_KEYS.TRUSTED_APPS)
+      .then(async (apps) => {
+        const origin = mwaDeauthorizeOrigin(
+          {
+            chain: request.chain,
+            identityUri: request.appIdentity?.identityUri,
+            authorizationScope: scope,
+          },
+          apps ?? {}
+        );
+        if (!origin) return respond(fail(check.failReason));
+        await actions.removeTrustedApp(origin);
+        respond({});
+      })
+      .catch((error: unknown) => {
+        console.warn('[mwa] could not forget the dApp', error);
+        respond(fail(check.failReason));
+      });
+  }, [silent, check, request, respond, actions]);
 
   // Reconnect and disconnect carry a valid token by now and need no screen.
   const silentDone = useRef(false);
@@ -177,7 +208,7 @@ type Verification = 'checking' | 'verified' | 'unverified';
  * Digital Asset Links: does the calling app really belong to the site it names?
  * Nothing is approvable while the answer is pending, and no answer is a no.
  */
-function useIdentityVerification(identityUri: string | undefined): Verification {
+export function useIdentityVerification(identityUri: string | undefined): Verification {
   const [state, setState] = useState<Verification>(identityUri ? 'checking' : 'unverified');
   useEffect(() => {
     if (!identityUri) return undefined;

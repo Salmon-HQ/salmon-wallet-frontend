@@ -160,6 +160,7 @@
     "mwa_switch_title": "Switch network?",
     "mwa_switch_message": "{{origin}} asks for {{target}}. Salmon is on {{current}}.",
     "mwa_switch_confirm": "Switch to {{target}}",
+    "mwa_switch_failed": "Salmon could not switch to {{target}}, so the request was refused. Ask again from the app or site.",
     "mwa_no_wallet_title": "No wallet yet",
     "mwa_no_wallet_message": "Create or import a wallet in Salmon, then come back and connect.",
     "mwa_no_wallet_open": "Open Salmon",

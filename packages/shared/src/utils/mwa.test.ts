@@ -18,6 +18,7 @@ import {
   mwaIdentityOrigin,
   mwaNetworkSwitch,
   mwaPrecheck,
+  mwaDeauthorizeOrigin,
   toSignAllTransactionsRequest,
   toSignAndSendRequest,
   withSignature,
@@ -410,5 +411,33 @@ describe('mwaNetworkSwitch', () => {
     expect(
       mwaNetworkSwitch({ ...connect('solana:devnet'), authorize: false }, 'solana-mainnet', all)
     ).toBeNull();
+  });
+});
+
+describe('mwaDeauthorizeOrigin', () => {
+  const token = new Uint8Array(32).fill(7);
+  const apps = {
+    'solana-mainnet': {
+      'https://dapp.example': {
+        name: 'Dapp',
+        address: 'addr',
+        authToken: encodeMwaAuthToken(token),
+      },
+    },
+  } as never;
+  const input = (chain: string, scope: Uint8Array, identityUri = 'https://dapp.example') => ({
+    chain,
+    identityUri,
+    authorizationScope: scope,
+  });
+
+  it('names the site when the token is the one issued on the network it names', () => {
+    expect(mwaDeauthorizeOrigin(input('solana:mainnet', token), apps)).toBe('https://dapp.example');
+  });
+
+  it('forgets nothing for another token, another network or no identity', () => {
+    expect(mwaDeauthorizeOrigin(input('solana:mainnet', new Uint8Array(32)), apps)).toBeNull();
+    expect(mwaDeauthorizeOrigin(input('solana:devnet', token), apps)).toBeNull();
+    expect(mwaDeauthorizeOrigin(input('solana:mainnet', token, ''), apps)).toBeNull();
   });
 });

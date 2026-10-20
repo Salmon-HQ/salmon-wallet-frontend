@@ -26,6 +26,7 @@ export {
   MWA_MAX_PAYLOADS,
   mwaAuthorizedAccount,
   mwaChainToNetworkId,
+  mwaDeauthorizeOrigin,
   mwaDisplayName,
   mwaIconUrl,
   mwaIdentityOrigin,
