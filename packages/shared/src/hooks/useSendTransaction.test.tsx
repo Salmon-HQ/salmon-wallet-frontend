@@ -11,6 +11,12 @@ import React from 'react';
 import { useSendTransaction } from './useSendTransaction';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 import { queryKeys } from '../query/keys';
+import { trackEvent } from '../analytics';
+
+vi.mock('../analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../analytics')>()),
+  trackEvent: vi.fn(),
+}));
 
 function makeWrapper() {
   const client = createTestQueryClient();
@@ -532,6 +538,28 @@ describe('useSendTransaction', () => {
     expect(result.current.pending.pendingTransactions).toEqual([
       expect.objectContaining({ signature: 'sig-maybe', kind: 'send', status: 'pending' }),
     ]);
+    // It may have landed, so it is not reported as a failed send.
+    expect(trackEvent).not.toHaveBeenCalledWith('send_completed', expect.anything());
+  });
+
+  it('reports a send that fails for a known reason as success: false', async () => {
+    mockAccount.transfer.mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current
+        .sendTransaction({
+          token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+          recipientAddress: RAW_RECIPIENT,
+          amount: AMOUNT,
+        })
+        .catch(() => undefined);
+    });
+
+    expect(trackEvent).toHaveBeenCalledWith('send_completed', { chain: 'solana', success: false });
   });
 
   it('resets state after an error', async () => {

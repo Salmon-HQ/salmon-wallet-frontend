@@ -12,6 +12,10 @@ const mockSignAndSend = vi.fn();
 // The Solana path no longer issues a plain SPL transfer: that fails on
 // programmable NFTs with `Account is frozen`. It asks the backend for a
 // Metaplex-built transaction and signs it locally.
+vi.mock('../analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../analytics')>()),
+  trackEvent: vi.fn(),
+}));
 vi.mock('../api/services/nft-transfer', () => ({
   createNftTransferTransaction: (...args: unknown[]) => mockCreateTransferTransaction(...args),
 }));
@@ -23,6 +27,7 @@ vi.mock('../blockchain/solana/prepared-transactions', () => ({
 import { useNftTransfer } from './useNftTransfer';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 import { SolanaOutcomeUnknownError } from '../blockchain/solana/confirm';
+import { trackEvent } from '../analytics';
 import {
   PendingTransactionsProvider,
   usePendingTransactions,
@@ -161,6 +166,8 @@ describe('useNftTransfer', () => {
       expect.objectContaining({ signature: 'sig-maybe', kind: 'send', summary: 'Test NFT' }),
     ]);
     expect(result.current.nft.error).toBe('transaction.errors.broadcastUnknown');
+    // It may have landed, so it is not reported as a failed transfer.
+    expect(trackEvent).not.toHaveBeenCalledWith('nft_sent', expect.anything());
   });
 
   it('surfaces transfer failures and allows reset', async () => {

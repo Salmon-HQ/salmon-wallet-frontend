@@ -288,10 +288,13 @@ export function useSendTransaction({
         // `success` into a real completion-vs-failure rate instead of a
         // constant. Coarse chain family only — never the address, amount or
         // token mint. No `first_send_completed`: that milestone is success-only.
-        trackEvent('send_completed', {
-          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
-          success: false,
-        });
+        // An unknown outcome reports nothing: it may have landed.
+        if (!(err instanceof SolanaOutcomeUnknownError)) {
+          trackEvent('send_completed', {
+            chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+            success: false,
+          });
+        }
         if (err instanceof SolanaOutcomeUnknownError) {
           // It may have landed: the banner follows the signature until the
           // chain answers, and the failure surface offers no retry.

@@ -155,11 +155,14 @@ export function useNftTransfer({
         console.error('[useNftTransfer] Transfer failed:', err);
         // Failed NFT transfer — the same event with success:false, so the NFT
         // send has a real completion-vs-failure rate too (this path is exactly
-        // where the frozen-pNFT failures used to surface). Solana only.
-        trackEvent('nft_sent', {
-          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
-          success: false,
-        });
+        // where the frozen-pNFT failures used to surface). Solana only. An
+        // unknown outcome reports nothing: it may have landed.
+        if (!(err instanceof SolanaOutcomeUnknownError)) {
+          trackEvent('nft_sent', {
+            chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+            success: false,
+          });
+        }
         if (err instanceof SolanaOutcomeUnknownError) {
           // It may have landed: the banner follows the signature until the
           // chain answers, as for a token send.
