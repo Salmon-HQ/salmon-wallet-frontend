@@ -9,12 +9,11 @@
 
 import { getStorage, STORAGE_KEYS } from '../storage';
 
-/** Generates a random id, preferring the platform CSPRNG. */
+/** Generates a random id from the platform CSPRNG (polyfilled on mobile by `index.js`). */
 function randomId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /** Returns the stored install id, creating and persisting one if absent. */
