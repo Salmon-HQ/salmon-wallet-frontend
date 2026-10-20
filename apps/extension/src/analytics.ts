@@ -7,7 +7,7 @@
  * The store package and the unpacked e2e build are the same bytes (AMO rebuilds
  * them), so the browser is asked at runtime how this copy was installed.
  */
-import { APP_VERSION, getAnalytics, initAnalytics, trackEvent } from '@salmon/shared';
+import { APP_VERSION, getAnalytics, initAnalytics, STORAGE_KEYS, trackEvent } from '@salmon/shared';
 import { browser } from 'wxt/browser';
 
 /** Whether this window was launched to approve a dApp request (the background puts it in the hash). */
@@ -37,6 +37,14 @@ export function startExtensionAnalytics(): void {
   // A window often closes before the 30-second send; the flush reaches `fetch`
   // (keepalive) before the page is gone.
   window.addEventListener('pagehide', () => void getAnalytics()?.flush());
+
+  // Every window has its own client but they share storage: a withdrawal made
+  // in one window stops the others too, before they send anything more.
+  browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') return;
+    const consent = changes[STORAGE_KEYS.ANALYTICS_CONSENT];
+    if (consent && consent.newValue !== JSON.stringify(true)) getAnalytics()?.forgetConsent();
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') void getAnalytics()?.flush();
   });

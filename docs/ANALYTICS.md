@@ -9,7 +9,7 @@ Analytics are **pseudonymous and opt-in**. A random `installId` singles out one 
 Payload safety is guaranteed by an **allow-list, not a deny-list**:
 
 - Only the 20 catalog events may be emitted.
-- An event may only carry the 6 prop keys below, each with a closed list of values (or a boolean for `success`).
+- An event may only carry the 5 prop keys below, each with a closed list of values (or a boolean for `success`).
 - A guardrail rejects any value that looks like an address or mint (base58 of 32–44 characters, `0x` + 40 hex), any number, and any string over 32 characters.
 - **Never** does an address, an amount, a balance, a mint, anything derived from the seed, or anything that identifies a dApp (name, origin, domain, icon) travel.
 
@@ -17,7 +17,7 @@ Validation runs **twice, independently**: in the app before sending, and again i
 
 **No IP reaches Google.** The ingest handler never reads the client IP, and Google Analytics 4 attributes an event to whoever calls it — the backend — so Google only sees the server's IP. No Google or Firebase SDK runs in the app; no device talks to Google directly. The only persistent identifier involved is `installId`, sent to GA4 as `client_id`.
 
-Withdrawing consent **clears the queue, the install id and the consent version**. Granting it again creates a new install id.
+Withdrawing consent **clears the queue, the install id and the consent version**, in every open window of the extension, not only the one where it was withdrawn. Granting it again creates a new install id.
 
 ### Consent version
 
@@ -49,7 +49,7 @@ Granting consent stores `v2`: both consent surfaces show the v2 text (`settings.
 | Backend ingest and platform list         | `salmon-wallet-backend/src/analytics/handler.js` (`POST /v1/events`) |
 | Backend sink (file or GA4)               | `salmon-wallet-backend/src/analytics/sink.js`                        |
 
-> The wallet catalog and the backend mirror **must be kept in sync**. A change in one forces the other, and the backend ships first: it must accept a new event, prop or platform on staging and production before any build that sends it is distributed, internal builds included. An event the backend does not accept is dropped at ingest (a batch holding only such events is refused and retried every send), so it never reaches GA4.
+> The wallet catalog and the backend mirror **must be kept in sync**. A change in one forces the other, and the backend ships first: it must accept a new event, prop or platform on staging and production before any build that sends it is distributed, internal builds included. An event the backend does not accept is dropped at ingest (a batch holding only such events is refused, and the client drops it), so it never reaches GA4.
 
 ## Batch context
 
@@ -81,7 +81,7 @@ The backend stores any other value as `unknown`. No batch leaves before the plat
 
 ## Allowed props
 
-Only these six keys. Anything else is rejected, on both sides.
+Only these five keys. Anything else is rejected, on both sides.
 
 | Prop                              | Values                                                          |
 | --------------------------------- | --------------------------------------------------------------- |
@@ -180,13 +180,13 @@ Events wait in memory and leave in batches. A send starts:
 - on the extension, when its window is hidden or closed (`pagehide`, `visibilitychange` to hidden), and right after a dApp approval is tracked;
 - on mobile, when the app goes to the background, and before a new session starts at an app open.
 
-A send is split into requests of at most 100 events, the backend's per-request cap. No request leaves before the client knows the stored consent, the platform and the build kind. The queue holds at most 200 events (the oldest are dropped past that) and is **not** persisted. A request that fails or is answered with a non-2xx status puts its events back for the next send, unless consent was withdrawn meanwhile.
+A send is split into requests of at most 100 events, the backend's per-request cap. No request leaves before the client knows the stored consent, the platform and the build kind. The queue holds at most 200 events (the oldest are dropped past that) and is **not** persisted. A request lost to the network or a timeout, or answered with a 5xx, 408 or 429, puts its events back for the next send, unless consent was withdrawn meanwhile or the install id changed. A request the backend refused with any other 4xx is dropped.
 
 The transport posts `{base}/v1/events` with `fetch` and `keepalive: true` (a request started as a window closes still arrives), a `text/plain` JSON body and no other header (no CORS preflight), and gives up after 10 seconds.
 
 ### Routing by build
 
-Only store builds reach production analytics, so team devices, simulators and e2e runs never pad the reported figures. The routing adds no field to any event or batch.
+Only store builds reach production analytics, so simulators, development builds and e2e runs never pad the reported figures. A team device running the store binary (the Play internal track, a production build in TestFlight, the production APK) is a store build and does report to production. The routing adds no field to any event or batch.
 
 | Build                                                                                                     | Store build?                             | `{base}`                                                                            |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -201,7 +201,7 @@ Mobile reads `Updates.channel` (`expo-updates`); EAS writes `production` into th
 
 ### Ingest and Google Analytics
 
-A batch is POSTed to an **isolated ingest Lambda** (`salmon-wallet-backend/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. It re-validates every event against the allow-list and answers `202 {"accepted": n, "rejected": m}`; a batch with no valid event gets `400` (the client re-queues it). Production forwards accepted events to **GA4** through the Measurement Protocol, in requests of 25, with `client_id = installId` and these params on every event: `session_id`, `platform`, `app_version`, `engagement_time_msec: 1` (so GA4 counts the event as engaged), plus the event's props. Staging writes to a file in the Lambda's temporary storage and forwards nothing to GA4; the local backend writes NDJSON.
+A batch is POSTed to an **isolated ingest Lambda** (`salmon-wallet-backend/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. It re-validates every event against the allow-list and answers `202 {"accepted": n, "rejected": m}`; a batch with no valid event gets `400`. The client drops a batch the backend refused with a 4xx other than 408 or 429, since sending it again cannot help, and re-queues one lost to the network, a timeout, a 5xx, 408 or 429. Production forwards accepted events to **GA4** through the Measurement Protocol, in requests of 25, with `client_id = installId` and these params on every event: `session_id`, `platform`, `app_version`, `engagement_time_msec: 1` (so GA4 counts the event as engaged), plus the event's props. Staging writes to a file in the Lambda's temporary storage and forwards nothing to GA4; the local backend writes NDJSON.
 
 Delivery is best-effort: the Measurement Protocol answers `2xx` for any well-formed request without validating event contents, so a data point can be lost server-side without an error. See `salmon-wallet-backend/docs/ANALYTICS.md` for the sink and its environment variables.
 

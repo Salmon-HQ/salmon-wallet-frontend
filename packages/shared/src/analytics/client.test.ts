@@ -28,7 +28,7 @@ vi.mock('../storage', () => ({
 
 import { initAnalytics, resetAnalytics, type AnalyticsClient } from './client';
 import { ANALYTICS_EVENTS } from './events';
-import { createMemoryTransport } from './transport';
+import { AnalyticsIngestRefusedError, createMemoryTransport } from './transport';
 import type { AnalyticsBatch, AnalyticsPlatform } from './types';
 
 /** Lets any `void flush()` microtasks/promises settle. */
@@ -209,6 +209,49 @@ describe('AnalyticsClient withdrawing consent', () => {
     await client.flush();
 
     expect(attempts).toHaveLength(1);
+  });
+
+  it('drops a batch the backend refused, and retries one the network lost', async () => {
+    const attempts: AnalyticsBatch[] = [];
+    const failures = [new AnalyticsIngestRefusedError(400), new Error('network down')];
+    const transport = {
+      send: async (batch: AnalyticsBatch): Promise<void> => {
+        attempts.push(batch);
+        const failure = failures.shift();
+        if (failure) throw failure;
+      },
+    };
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('nft_viewed');
+    await client.flush(); // refused: gone for good
+    client.track('network_switched', { chain: 'solana' });
+    await client.flush(); // lost: put back
+    await client.flush(); // delivered
+    await client.flush(); // nothing left
+
+    expect(attempts.map((batch) => batch.events.map((event) => event.event))).toEqual([
+      ['nft_viewed'],
+      ['network_switched'],
+      ['network_switched'],
+    ]);
+  });
+
+  it('forgets consent in memory when another window withdrew it', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    client.track('nft_viewed');
+
+    client.forgetConsent();
+    client.track('nft_viewed');
+    await client.flush();
+
+    expect(transport.batches).toHaveLength(0);
+    expect(client.getConsent()).toBe(false);
   });
 });
 

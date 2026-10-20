@@ -39,7 +39,7 @@ describe('analytics catalog', () => {
     expect(ANALYTICS_EVENTS).toEqual([...V1_EVENTS, ...V2_EVENTS]);
   });
 
-  it('allows exactly the 6 prop keys', () => {
+  it('allows exactly the 5 prop keys', () => {
     expect([...ALLOWED_PROP_KEYS].sort()).toEqual(
       ['chain', 'from_chain', 'powerup', 'success', 'to_chain'].sort()
     );

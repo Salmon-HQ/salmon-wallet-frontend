@@ -13,6 +13,7 @@ import { fakeBrowser } from 'wxt/testing/fake-browser';
 // The barrel drags the Solana stack in; the real analytics client is all this needs.
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual<object>('@salmon/shared/analytics')),
+  ...(await vi.importActual<object>('@salmon/shared/storage/types')),
   APP_VERSION: '0.17.1',
 }));
 
@@ -97,6 +98,19 @@ describe('startExtensionAnalytics', () => {
 
     const batches = await sent();
     expect(batches.flatMap((b) => b.events).map((e) => e.event)).toEqual(['wallet_switched']);
+  });
+
+  // Each window runs its own client: a withdrawal in the side panel must stop
+  // an approval window that read consent before it.
+  it('stops sending when another window withdraws consent', async () => {
+    startExtensionAnalytics();
+    await getAnalytics()!.whenReady();
+
+    await fakeBrowser.storage.local.set({ salmon_analytics_consent: 'false' });
+    trackEvent('wallet_switched');
+
+    expect(await sent()).toEqual([]);
+    expect(getAnalytics()!.getConsent()).toBe(false);
   });
 });
 

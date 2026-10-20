@@ -28,7 +28,7 @@ import type {
   AnalyticsTransport,
 } from './types';
 import { V1_EVENTS, type AnalyticsEventName } from './events';
-import { createHttpTransport } from './transport';
+import { createHttpTransport, isRetryable } from './transport';
 
 const DEFAULT_BATCH_SIZE = 20;
 const DEFAULT_FLUSH_INTERVAL_MS = 30_000;
@@ -143,13 +143,11 @@ class AnalyticsClient {
    * collection has already stopped either way.
    */
   async setConsent(enabled: boolean): Promise<void> {
-    this.consent = enabled;
-    this.consentV2 = enabled;
-
-    if (!enabled) {
-      this.stopTimer();
-      this.queue = [];
-      this.installId = null;
+    if (enabled) {
+      this.consent = true;
+      this.consentV2 = true;
+    } else {
+      this.forgetConsent();
     }
 
     const storage = getStorage();
@@ -174,6 +172,19 @@ class AnalyticsClient {
     await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION, 'v2');
     this.installId = await getOrCreateInstallId();
     this.startTimer();
+  }
+
+  /**
+   * Stops collecting in memory only: no timer, no queue, no identity. For a
+   * withdrawal made elsewhere (another extension window) that already wrote
+   * the storage this client would otherwise keep sending from.
+   */
+  forgetConsent(): void {
+    this.consent = false;
+    this.consentV2 = false;
+    this.stopTimer();
+    this.queue = [];
+    this.installId = null;
   }
 
   /**
@@ -224,11 +235,12 @@ class AnalyticsClient {
       chunk(events, MAX_EVENTS_PER_REQUEST).map(async (part) => {
         try {
           await transport.send({ context, events: part });
-        } catch {
+        } catch (error) {
           // Best-effort delivery: put the events back (bounded) to retry next
-          // tick — unless consent was withdrawn while this batch was in flight,
-          // in which case the withdrawal's queue wipe wins and they are dropped.
-          if (this.consent) {
+          // tick. Not when the backend refused them (resending cannot help), and
+          // not under another identity: a withdrawal while this batch was in
+          // flight, or a withdrawal and a new grant, drops them.
+          if (isRetryable(error) && this.consent && this.installId === installId) {
             this.queue = [...part, ...this.queue].slice(-MAX_QUEUE_LENGTH);
           }
         }

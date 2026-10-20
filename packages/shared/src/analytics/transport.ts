@@ -17,6 +17,19 @@ import type { AnalyticsBatch, AnalyticsTransport } from './types';
 /** Endpoint path on salmon-api. Follows the existing `/v1/...` convention. */
 export const EVENTS_ENDPOINT = '/v1/events';
 
+/** The backend refused the batch itself (a 4xx other than 408 or 429): resending it cannot help. */
+export class AnalyticsIngestRefusedError extends Error {
+  constructor(readonly status: number) {
+    super(`analytics ingest refused the batch with ${status}`);
+    this.name = 'AnalyticsIngestRefusedError';
+  }
+}
+
+/** Whether a failed send is worth repeating: a network error, a timeout, a 5xx, 408 or 429. */
+export function isRetryable(error: unknown): boolean {
+  return !(error instanceof AnalyticsIngestRefusedError);
+}
+
 /** Timeout for an analytics POST. Short: delivery is best-effort. */
 const ANALYTICS_POST_TIMEOUT_MS = 10_000;
 
@@ -36,7 +49,11 @@ export function createHttpTransport(storeBuild = false): AnalyticsTransport {
           body: JSON.stringify(batch),
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error(`analytics ingest answered ${response.status}`);
+        const { status } = response;
+        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+          throw new AnalyticsIngestRefusedError(status);
+        }
+        if (!response.ok) throw new Error(`analytics ingest answered ${status}`);
       } finally {
         clearTimeout(timer);
       }
