@@ -36,15 +36,15 @@ Withdrawing consent **clears the queue and the install id**.
 
 Not sent by each event: the batch envelope and the handler add it.
 
-| Field         | What it is                                                       |
-| ------------- | ---------------------------------------------------------------- |
-| `install_id`  | Random per install. **Not** derived from the wallet or the seed. |
-| `session_id`  | Ephemeral, rotates per session.                                  |
-| `platform`    | `mobile` \| `web` \| `extension`                                 |
-| `app_version` | App version.                                                     |
-| `ts`          | Client epoch ms (when it happened).                              |
-| `received_at` | Server epoch ms (when it was ingested).                          |
-| `dt`          | `YYYY-MM-DD` — partition key.                                    |
+| Field         | What it is                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `install_id`  | Random per install. **Not** derived from the wallet or the seed.                                                            |
+| `session_id`  | Ephemeral, rotates per session.                                                                                             |
+| `platform`    | `mobile` \| `web` \| `extension`                                                                                            |
+| `app_version` | App version.                                                                                                                |
+| `ts`          | Client epoch ms (when it happened); for `send_completed`, `first_send_completed` and `nft_sent`, the start of that UTC day. |
+| `received_at` | Server epoch ms (when it was ingested).                                                                                     |
+| `dt`          | `YYYY-MM-DD` — partition key.                                                                                               |
 
 ## Allowed props
 
@@ -99,11 +99,11 @@ What we will compute with each one.
 
 ### Activation and time-to-value
 
-| Metric               | How it is computed                                              |
-| -------------------- | --------------------------------------------------------------- |
-| Send activation rate | `installs with first_send_completed / consented installs`       |
-| Time-to-first-send   | `ts` of the `first_*` − `ts` of that `install_id`'s first event |
-| Activation order     | Which `first_*` happens first per `install_id`                  |
+| Metric               | How it is computed                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Send activation rate | `installs with first_send_completed / consented installs`                                                          |
+| Time-to-first-send   | `ts` of the `first_*` − `ts` of that `install_id`'s first event, in days: a transaction event carries only its day |
+| Activation order     | Which `first_*` happens first per `install_id`                                                                     |
 
 ### Recurring use and engagement
 
@@ -166,6 +166,8 @@ The prop exists in the allow-list and the `toAmountBucket()` helper is already i
 ### 4. No identity, no value
 
 By design there is no way to: attribute to a real user, cohort by wallet, measure balances/TVL, or tie events to an address. `install_id` is lost if the user reinstalls or withdraws consent.
+
+A transaction event (`send_completed`, `first_send_completed`, `nft_sent`) carries only its UTC day in `ts`, because an exact time lines up with the transaction on the public chain. The backend's `received_at` is still the millisecond the batch arrived, which follows such an event by at most the 30-second flush interval, so the same match remains possible for whoever holds `received_at` until the backend coarsens it for these events.
 
 ## Verification status
 
