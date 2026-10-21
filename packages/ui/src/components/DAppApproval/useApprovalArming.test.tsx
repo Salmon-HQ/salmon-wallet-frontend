@@ -51,13 +51,18 @@ describe('useApprovalArming', () => {
     expect(result.current).toBe(false);
   });
 
-  it('arms on keyboard focus moving, for a person who does not use a pointer', () => {
+  // Tab, or a screen reader moving focus: the person is in the window. A
+  // click cannot do this from the predictable spot, which is Approve itself
+  // and takes no focus while disabled.
+  it('arms on focus moving in the window, for a person who does not use a pointer', () => {
+    const button = document.body.appendChild(document.createElement('button'));
     const { result } = renderHook(() => useApprovalArming());
     act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
 
-    act(() => void window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' })));
+    act(() => button.focus());
 
     expect(result.current).toBe(true);
+    button.remove();
   });
 
   it('disarms when the window loses focus and re-arms only after the delay and a move', () => {

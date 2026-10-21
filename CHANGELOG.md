@@ -10,7 +10,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Signing requests from a site approved for another account than the active one are refused until the site connects again. The sign-message and transaction screens name the account that signs.
 - Approval screens show a site's port and scheme when they are not the default, so `http://example.com` or `localhost:3000` no longer read as `example.com` or `localhost`.
 - After you reject or close a site's approval window, its requests are refused for 30 seconds, so other sites can still reach you.
-- Approve in a dApp request window also waits for the pointer to move over the window (or Tab to move focus) after the window comes to the front.
+- Approve in a dApp request window also waits for the pointer to move over the window, or for focus to move to one of its controls with the keyboard or a screen reader, after the window comes to the front.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - Unlocking no longer copies the key that opens the wallet into the extension's storage. Reported by iblitzc0de.
 
