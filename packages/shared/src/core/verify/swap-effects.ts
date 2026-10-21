@@ -18,7 +18,7 @@ import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
 import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
-import { SolanaTransactionMismatchError } from './solana-transaction';
+import { MAX_PRIORITY_FEE_LAMPORTS, SolanaTransactionMismatchError } from './solana-transaction';
 import type { SwapRouteExpectation } from './solana-transaction';
 
 // ponytail: fixed allowances. Rent of a Token-2022 ATA with extensions is
@@ -28,6 +28,12 @@ import type { SwapRouteExpectation } from './solana-transaction';
 export const ATA_RENT_ALLOWANCE = 2_100_000n;
 /** The network fee assumed when the node does not report one. */
 export const FEE_ALLOWANCE = 1_000_000n;
+/**
+ * The most fee the simulation allows for: one signature's base fee plus the
+ * priority-fee cap the byte check enforces. A larger fee the node reports is
+ * the wallet's loss, not an allowance.
+ */
+export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.
@@ -65,8 +71,9 @@ export function assertSwapEffects(
   }
   if (paid > inAmount) refuse('The swap takes more than the amount on screen');
 
+  const fee = effects.sol.feeLamports ?? FEE_ALLOWANCE;
   const costs =
-    (effects.sol.feeLamports ?? FEE_ALLOWANCE) + ATA_RENT_ALLOWANCE * BigInt(ataCreates);
+    (fee < MAX_FEE_LAMPORTS ? fee : MAX_FEE_LAMPORTS) + ATA_RENT_ALLOWANCE * BigInt(ataCreates);
   const sol = effects.sol.lamports + costs;
   if (route.outputMint === WRAPPED_SOL) {
     received += sol;

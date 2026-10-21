@@ -142,3 +142,19 @@ describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => 
     expect(() => assertSwapEffects({ kind: 'no-effect', account: WALLET }, solToUsdc, 0)).toThrow();
   });
 });
+
+describe('assertSwapEffects — the fee it allows for', () => {
+  // A fee the node reports is not an allowance in itself: a v1 message can
+  // set any priority fee in its header, and the fee is the wallet's loss.
+  it('allows no more than the base fee plus the priority-fee cap', () => {
+    const fee = 5_000_000_000n;
+    const drained: TransactionEffects = {
+      kind: 'effects',
+      account: WALLET,
+      sol: { lamports: 8_441_000n - fee, feeLamports: fee },
+      tokens: [token(USDC, -1_000_000n)],
+      approvals: [],
+    };
+    expect(() => assertSwapEffects(drained, usdcToSol, 0)).toThrow(/less than the minimum/);
+  });
+});

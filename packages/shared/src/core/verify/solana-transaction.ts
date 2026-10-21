@@ -165,28 +165,22 @@ interface CompiledInstruction {
  * The instructions the message carries: which static account each invokes, and
  * the data it carries.
  *
- * Legacy and v0 messages carry `instructions`; a v1 message splits the same
- * thing into `instructionHeaders` and `instructionPayloads`. A shape that is
- * neither is refused rather than waved through: a check that cannot read a
+ * Only legacy and v0 messages are read: they are all the backend builds. A v1
+ * message also sets its priority fee and compute limit in its own header,
+ * outside any instruction, so a check written for instructions would wave
+ * that fee through. Any other version is refused: a check that cannot read a
  * transaction has not approved it.
  */
 function compiledInstructions(message: CompiledMessage): CompiledInstruction[] {
-  if ('instructions' in message) {
+  if ((message.version === 'legacy' || message.version === 0) && 'instructions' in message) {
     return message.instructions.map((instruction) => ({
       programAddressIndex: instruction.programAddressIndex,
       accountIndices: instruction.accountIndices ?? [],
       data: instruction.data,
     }));
   }
-  if ('instructionHeaders' in message) {
-    return message.instructionHeaders.map((header, index) => ({
-      programAddressIndex: header.programAccountIndex,
-      accountIndices: message.instructionPayloads[index]?.instructionAccountIndices ?? [],
-      data: message.instructionPayloads[index]?.instructionData,
-    }));
-  }
   throw new SolanaTransactionMismatchError(
-    'Transaction uses a message version this wallet cannot read before signing'
+    `Transaction uses message version ${String(message.version)}, which backend-built flows never carry`
   );
 }
 

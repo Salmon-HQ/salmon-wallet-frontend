@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  address,
+  appendTransactionMessageInstruction,
+  compileTransactionMessage,
+  createTransactionMessage,
+  generateKeyPairSigner,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
   getTransactionEncoder,
+  setTransactionMessageConfig,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  type Blockhash,
 } from '@solana/kit';
 import {
   assertSolanaTransactionMatches,
@@ -601,5 +610,54 @@ describe('NFT steps — account creation and Token Metadata amounts', () => {
         nft({ asset: ASSET, destination: DESTINATION })
       )
     ).toThrow(/invokes ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL/);
+  });
+});
+
+/**
+ * A v1 message sets its priority fee and compute limit in its own header
+ * rather than in Compute Budget instructions. The backend builds legacy and
+ * v0 messages only, so a v1 message is refused before anything else is read.
+ */
+describe('message versions', () => {
+  it('refuses a v1 message in a backend-built flow, whatever its header sets', async () => {
+    const signer = await generateKeyPairSigner();
+    let tx = setTransactionMessageLifetimeUsingBlockhash(
+      {
+        blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as Blockhash,
+        lastValidBlockHeight: 1n,
+      },
+      setTransactionMessageFeePayer(signer.address, createTransactionMessage({ version: 1 }))
+    );
+    tx = setTransactionMessageConfig({ priorityFeeLamports: 5_000_000_000n }, tx) as never;
+    tx = appendTransactionMessageInstruction(
+      {
+        programAddress: address(ADDRESS_LOOKUP_TABLE_PROGRAM),
+        accounts: [
+          { address: address('HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms'), role: 1 },
+          { address: signer.address, role: 3 },
+          { address: signer.address, role: 3 },
+          { address: address(SYSTEM_PROGRAM), role: 0 },
+        ],
+        data: new Uint8Array([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      } as never,
+      tx
+    ) as never;
+    const messageBytes = getCompiledTransactionMessageEncoder().encode(
+      compileTransactionMessage(tx) as never
+    );
+    const wire = Buffer.from(
+      getTransactionEncoder().encode({
+        messageBytes: messageBytes as never,
+        signatures: { [signer.address]: null } as never,
+      })
+    ).toString('base64');
+
+    expect(() =>
+      assertSolanaTransactionMatches(wire, {
+        feePayer: String(signer.address),
+        allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+        allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+      })
+    ).toThrow(/version/);
   });
 });
