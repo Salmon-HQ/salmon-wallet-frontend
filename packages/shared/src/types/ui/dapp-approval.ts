@@ -31,8 +31,11 @@ export interface DAppConnectApprovalViewPropsBase extends DAppApprovalBase {
 }
 
 export interface DAppSignMessageApprovalViewPropsBase extends DAppApprovalBase {
-  /** Shown so the user sees which of their accounts the site gets a signature from. */
-  signingAccount: SigningAccount;
+  /**
+   * Shown so the user sees which of their accounts the site gets a signature
+   * from. Absent only while no account can sign, when approval is disabled.
+   */
+  signingAccount?: SigningAccount;
   messageText: string;
   /** Raw message bytes, as received from the dApp. Enables the tx-lookalike guard
    * and, when `requiredSigners` is also set, OCMS content parsing. */
@@ -69,8 +72,8 @@ export interface DAppSignInApprovalViewPropsBase extends DAppApprovalBase {
 }
 
 export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
-  /** Shown so the user sees which of their accounts signs. */
-  signingAccount: SigningAccount;
+  /** Shown so the user sees which of their accounts signs. Absent while none can. */
+  signingAccount?: SigningAccount;
   requestSummary: string;
   /** Pre-signature effect preview. `null` while it is still being simulated. */
   effects: TransactionEffects | null;

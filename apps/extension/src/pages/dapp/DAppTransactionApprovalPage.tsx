@@ -105,7 +105,9 @@ export function DAppTransactionApprovalPage({
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
-      signingAccount={{ name: accountName, address: account?.getReceiveAddress() ?? '' }}
+      signingAccount={
+        account ? { name: accountName, address: account.getReceiveAddress() } : undefined
+      }
       requestSummary={getDAppTransactionRequestSummary(request.method)}
       effects={effects}
       effectsLoading={effectsLoading}

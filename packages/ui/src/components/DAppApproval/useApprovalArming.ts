@@ -41,7 +41,9 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): boolean {
     };
     const arm = () => {
       disarm();
-      timer = setTimeout(() => (waited = true), delayMs);
+      timer = setTimeout(() => {
+        waited = true;
+      }, delayMs);
     };
     const onPointerMove = (event: MouseEvent) => {
       if (!waited) return;

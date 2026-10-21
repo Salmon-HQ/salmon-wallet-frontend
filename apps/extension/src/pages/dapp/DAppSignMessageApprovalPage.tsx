@@ -85,7 +85,9 @@ export function DAppSignMessageApprovalPage({
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
-      signingAccount={{ name: accountName, address: account?.getReceiveAddress() ?? '' }}
+      signingAccount={
+        account ? { name: accountName, address: account.getReceiveAddress() } : undefined
+      }
       messageText={messageData?.text ?? ''}
       data={request.params?.data}
       requiredSigners={requiredSigners}

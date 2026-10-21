@@ -88,7 +88,7 @@ export function DAppTransactionApprovalView({
             </p>
           </Card>
 
-          <SigningAccountCard account={signingAccount} />
+          {signingAccount && <SigningAccountCard account={signingAccount} />}
 
           <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 

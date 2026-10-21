@@ -3,14 +3,11 @@ import { vi } from 'vitest';
 
 import { APPROVE_ARM_MS } from '../components/DAppApproval/useApprovalArming';
 
-let x = 0;
-
-/** A person moving the pointer across the approval window. */
+/** A person moving the pointer across the approval window: two positions. */
 export function movePointer(): void {
   act(() => {
-    x += 10;
-    window.dispatchEvent(new MouseEvent('pointermove', { screenX: x, screenY: 200 }));
-    window.dispatchEvent(new MouseEvent('pointermove', { screenX: x + 5, screenY: 205 }));
+    window.dispatchEvent(new MouseEvent('pointermove', { screenX: 10, screenY: 200 }));
+    window.dispatchEvent(new MouseEvent('pointermove', { screenX: 15, screenY: 205 }));
   });
 }
 

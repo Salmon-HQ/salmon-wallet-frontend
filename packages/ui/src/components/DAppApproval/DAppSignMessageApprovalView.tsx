@@ -89,7 +89,7 @@ export function DAppSignMessageApprovalView({
             </p>
           </Card>
 
-          <SigningAccountCard account={signingAccount} />
+          {signingAccount && <SigningAccountCard account={signingAccount} />}
 
           <Card padding="lg" gap={spacing.md} style={cardColumn}>
             <CardHead

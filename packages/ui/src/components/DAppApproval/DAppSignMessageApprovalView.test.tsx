@@ -70,6 +70,12 @@ describe('DAppSignMessageApprovalView', () => {
     expect(row).toHaveTextContent('4Nd1...DB4T');
   });
 
+  it('leaves the account card out when no account can sign', () => {
+    render(<DAppSignMessageApprovalView {...baseProps} signingAccount={undefined} disabled />);
+
+    expect(screen.queryByTestId('signing-account')).not.toBeInTheDocument();
+  });
+
   it('renders the parsed OCMS content and required signers when requiredSigners is set', () => {
     // Arrange
     mockedParseOffchainMessageForApproval.mockReturnValue({

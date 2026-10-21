@@ -88,6 +88,16 @@ describe('DAppTransactionApprovalPage', () => {
     });
   });
 
+  it('names no signing account when there is no account', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} account={undefined} />
+    );
+
+    expect(getByTestId('tx-approval-view').dataset.signingAccount).toBeUndefined();
+  });
+
   it('tells the view which account signs', () => {
     mockUseDAppMetadata.mockReturnValue({ metadata: null });
 
