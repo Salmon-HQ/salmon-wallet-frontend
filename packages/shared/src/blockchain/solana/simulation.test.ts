@@ -207,6 +207,22 @@ describe('deriveEffects', () => {
     }
   });
 
+  // A wallet with no SOL has no account yet. A dApp paying the fee can fund
+  // it and hand it to another program in one transaction: the screen showed
+  // only the SOL arriving.
+  it('never reports a wallet account created for another program as a deposit', () => {
+    const ATTACKER_PROGRAM = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' as Address;
+
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([[WALLET, null]]),
+        after: new Map([[WALLET, solAccount(890_880n, ATTACKER_PROGRAM)]]),
+      })
+    );
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'ownership-change' });
+  });
+
   it('derives a plain SOL transfer as a negative lamport change including the fee', () => {
     // 1 SOL out plus a 5000 lamport fee, as observed on the account itself.
     const result = deriveEffects(
@@ -855,6 +871,28 @@ describe('previewTransactionEffects', () => {
       {
         [WALLET]: {
           ...rawSol(999_995_000n),
+          data: [getBase64Decoder().decode(new Uint8Array(8)), 'base64'] as const,
+        } as unknown as Raw,
+      }
+    );
+
+    expect(await previewTransactionEffects(rpc, wire, WALLET)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  it('never reports data written into a wallet account the transaction creates', async () => {
+    const wire = wireOf(
+      [getAllocateInstruction({ newAccount: createNoopSigner(WALLET), space: 8 })],
+      OTHER
+    );
+    const rpc = rpcFor(
+      { [OTHER]: rawSol(1_000_000_000n) },
+      {
+        [OTHER]: rawSol(999_995_000n),
+        [WALLET]: {
+          ...rawSol(890_880n),
           data: [getBase64Decoder().decode(new Uint8Array(8)), 'base64'] as const,
         } as unknown as Raw,
       }

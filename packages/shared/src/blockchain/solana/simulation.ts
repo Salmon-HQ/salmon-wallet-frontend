@@ -274,9 +274,9 @@ export async function previewTransactionEffects(
   // System Allocate writes data into the account itself. Nothing moves and
   // the owner stays put, so the diff below sees nothing, yet an account that
   // holds data can no longer send SOL with a System transfer.
-  const walletBefore = before.get(account);
+  // A wallet account the transaction creates starts with no data either.
   const walletAfter = after.get(account);
-  if (walletBefore && walletAfter && walletBefore.data[0] !== walletAfter.data[0]) {
+  if (walletAfter && (before.get(account)?.data[0] ?? '') !== walletAfter.data[0]) {
     return undetermined(
       account,
       'unanalysed-account',

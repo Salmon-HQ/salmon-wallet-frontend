@@ -5,6 +5,7 @@
  */
 
 import type { Address } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 
 import { decodeAccountState, decodeMintState, toBytes } from './simulation-decode';
 import type {
@@ -89,9 +90,11 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
   // then debit every lamport in it. No lamports move, so every diff below would
   // report no-effect or the fee alone. Same treatment as a token account
   // changing owner: undetermined, which the approval screen holds.
-  const ownerBefore = before.get(account)?.owner;
+  // A wallet that holds no SOL has no account yet; the transaction can create
+  // it already assigned, so a missing "before" counts as the System Program.
+  const ownerBefore = before.get(account)?.owner ?? SYSTEM_PROGRAM_ADDRESS;
   const ownerAfter = after.get(account)?.owner;
-  if (ownerBefore && ownerAfter && ownerBefore !== ownerAfter) {
+  if (ownerAfter && ownerBefore !== ownerAfter) {
     return {
       kind: 'undetermined',
       account,
