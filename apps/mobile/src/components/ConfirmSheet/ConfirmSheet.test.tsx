@@ -70,13 +70,14 @@ jest.mock('../Button/SecondaryButton', () => ({
 }));
 
 jest.mock('../PasswordInput', () => ({
-  PasswordInput: ({ value, onChangeText }: any) => {
+  PasswordInput: ({ value, onChangeText, onSubmitEditing }: any) => {
     const RN = require('react-native');
     const R = require('react');
     return R.createElement(RN.TextInput, {
       testID: 'password-input',
       value,
       onChangeText,
+      onSubmitEditing,
     });
   },
 }));
@@ -179,6 +180,24 @@ describe('ConfirmSheet held confirm', () => {
       jest.advanceTimersByTime(700);
     });
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  // The keyboard's return key confirms a password sheet; on a held sheet it
+  // must not stand in for the hold.
+  it('does not confirm from the keyboard when the confirm must be held', async () => {
+    const validatePassword = jest.fn().mockResolvedValue(true);
+    const { onConfirm } = renderSheet({
+      requiresHold: true,
+      requirePassword: true,
+      validatePassword,
+    });
+    await settle();
+
+    fireEvent.changeText(screen.getByTestId('password-input'), PASSWORD);
+    fireEvent(screen.getByTestId('password-input'), 'submitEditing');
+    await settle();
+
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it('does not start a hold while confirm is disabled', async () => {

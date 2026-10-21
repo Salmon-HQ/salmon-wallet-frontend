@@ -104,7 +104,8 @@ export function ConfirmSheet({
               editable={!loading}
               testID="confirm-dialog-password"
               autoFocus
-              onSubmitEditing={handleConfirm}
+              // On a held sheet the return key must not stand in for the hold.
+              onSubmitEditing={requiresHold ? undefined : handleConfirm}
             />
           </View>
         )}
