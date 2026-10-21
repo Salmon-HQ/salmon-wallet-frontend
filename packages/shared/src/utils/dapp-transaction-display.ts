@@ -4,7 +4,11 @@
  * `TransactionEffectsCard`: every balance that moves is named, a token without
  * a ticker shows its mint, and "could not tell" never reads as "nothing happens".
  */
-import type { TransactionEffects, UndeterminedReason } from '../blockchain/solana/simulation-types';
+import type {
+  EffectDetails,
+  TransactionEffects,
+  UndeterminedReason,
+} from '../blockchain/solana/simulation-types';
 import type { ConfirmationRow, ProposalDisplay } from '../core/confirmation/types';
 import type { SigningAccount } from '../types/ui/dapp-approval';
 import { formatBaseUnits } from './formatting';
@@ -54,6 +58,34 @@ function amountRow(t: Translate, amount: bigint, decimals: number, asset: string
   };
 }
 
+function movementRows(t: Translate, details: EffectDetails): ConfirmationRow[] {
+  return [
+    ...(details.sol.lamports !== 0n
+      ? [amountRow(t, details.sol.lamports, SOL_DECIMALS, 'SOL')]
+      : []),
+    ...details.tokens.map((change) =>
+      amountRow(t, change.amount, change.decimals, change.symbol ?? change.mint)
+    ),
+  ];
+}
+
+/** Every delegation, named: a harmless first one must not hide the next. */
+function approvalsText(t: Translate, details: EffectDetails): string | undefined {
+  if (details.approvals.length === 0) return undefined;
+  return details.approvals
+    .map((grant) =>
+      t('dapp.effects_approval_body', {
+        spender: getShortAddress(grant.spender, 4) ?? grant.spender,
+        amount:
+          grant.scope === 'unlimited'
+            ? t('dapp.effects_approval_unlimited')
+            : formatBaseUnits(grant.amount, grant.decimals),
+        token: grant.symbol ?? grant.mint,
+      })
+    )
+    .join('\n\n');
+}
+
 export function dappTransactionDisplay(
   input: DAppTransactionDisplayInput,
   t: Translate
@@ -70,30 +102,17 @@ export function dappTransactionDisplay(
   } else if (input.effectsLoading) {
     rows.push({ label: t('dapp.effects_title'), value: t('dapp.effects_loading'), pending: true });
   } else if (effects?.kind === 'effects') {
-    if (effects.sol.lamports !== 0n) {
-      rows.push(amountRow(t, effects.sol.lamports, SOL_DECIMALS, 'SOL'));
-    }
-    for (const change of effects.tokens) {
-      rows.push(amountRow(t, change.amount, change.decimals, change.symbol ?? change.mint));
-    }
-    // Every delegation is named: a harmless first one must not hide the next.
-    if (effects.approvals.length > 0) {
-      warning = {
-        title: t('dapp.effects_approval_title'),
-        body: effects.approvals
-          .map((grant) =>
-            t('dapp.effects_approval_body', {
-              spender: getShortAddress(grant.spender, 4) ?? grant.spender,
-              amount:
-                grant.scope === 'unlimited'
-                  ? t('dapp.effects_approval_unlimited')
-                  : formatBaseUnits(grant.amount, grant.decimals),
-              token: grant.symbol ?? grant.mint,
-            })
-          )
-          .join('\n\n'),
-      };
-    }
+    rows.push(...movementRows(t, effects));
+    const approvals = approvalsText(t, effects);
+    if (approvals) warning = { title: t('dapp.effects_approval_title'), body: approvals };
+  } else if (effects?.kind === 'undetermined' && effects.known) {
+    // What the preview read, then why it cannot vouch for the rest.
+    rows.push(...movementRows(t, effects.known));
+    const approvals = approvalsText(t, effects.known);
+    warning = {
+      title: t(UNDETERMINED_REASON_KEYS[effects.reason]),
+      ...(approvals ? { body: approvals } : {}),
+    };
   } else if (effects?.kind === 'no-effect') {
     warning = { title: t('dapp.effects_none_title'), body: t('dapp.effects_none_body') };
   } else if (effects?.kind === 'transaction-would-fail') {

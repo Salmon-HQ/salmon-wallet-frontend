@@ -615,9 +615,12 @@ function wireTransfer(): Base64EncodedWireTransaction {
 }
 
 /** Raw RPC account payload for a plain lamport-only account. */
-const rawSol = (lamports: bigint) => ({
+const rawSol = (
+  lamports: bigint,
+  owner: Address = address('11111111111111111111111111111111')
+) => ({
   lamports,
-  owner: address('11111111111111111111111111111111'),
+  owner,
   data: ['', 'base64'] as const,
 });
 
@@ -958,22 +961,79 @@ describe('previewTransactionEffects in strict mode', () => {
   // A stake authority change moves no lamports and no tokens of the wallet's,
   // so the balance diff reported "No balance changes" with a one-tap approve
   // while the wallet's staked SOL changed hands.
-  it('reports a program it cannot read as unanalysed, without trusting its simulation', async () => {
-    const authorize: Instruction = {
-      programAddress: STAKE_PROGRAM,
+  const authorize: Instruction = {
+    programAddress: STAKE_PROGRAM,
+    accounts: [
+      { address: STAKE_ACCOUNT, role: AccountRole.WRITABLE },
+      { address: CLOCK_SYSVAR, role: AccountRole.READONLY },
+      { address: WALLET, role: AccountRole.WRITABLE_SIGNER },
+    ],
+    data: new Uint8Array([1, 0, 0, 0]),
+  };
+
+  it('reports a program it cannot read as unanalysed, with the movements it did read', async () => {
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [STAKE_ACCOUNT]: rawSol(3_000_000_000n, STAKE_PROGRAM) },
+      { [WALLET]: rawSol(999_995_000n), [STAKE_ACCOUNT]: rawSol(3_000_000_000n, STAKE_PROGRAM) }
+    );
+
+    const result = await strict(rpc, wireOf([authorize]));
+
+    expect(result).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+      known: { sol: { lamports: -5_000n, feeLamports: 5_000n }, tokens: [], approvals: [] },
+    });
+  });
+
+  // A swap through a router: the screen shows what the wallet gives and gets,
+  // beside the warning, instead of an empty "could not determine" card.
+  it('keeps the token movements of a swap through a program it cannot read', async () => {
+    const swap: Instruction = {
+      programAddress: SPENDER,
       accounts: [
-        { address: STAKE_ACCOUNT, role: AccountRole.WRITABLE },
-        { address: CLOCK_SYSVAR, role: AccountRole.READONLY },
         { address: WALLET, role: AccountRole.WRITABLE_SIGNER },
+        { address: USDC_ATA, role: AccountRole.WRITABLE },
+        { address: POOL_ATA, role: AccountRole.WRITABLE },
       ],
-      data: new Uint8Array([1, 0, 0, 0]),
+      data: new Uint8Array([9]),
     };
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [USDC_ATA]: rawToken(WALLET, 30_000_000n),
+        [POOL_ATA]: rawToken(OTHER, 1_000_000_000n),
+      },
+      {
+        [WALLET]: rawSol(1_049_995_000n),
+        [USDC_ATA]: rawToken(WALLET, 20_000_000n),
+        [POOL_ATA]: rawToken(OTHER, 1_010_000_000n),
+      }
+    );
+
+    const result = await strict(rpc, wireOf([swap]));
+
+    if (result.kind !== 'undetermined')
+      throw new Error(`expected undetermined, got ${result.kind}`);
+    expect(result.reason).toBe('unanalysed-program');
+    expect(result.known?.sol.lamports).toBe(49_995_000n);
+    expect(result.known?.tokens).toEqual([expect.objectContaining({ amount: -10_000_000n })]);
+  });
+
+  // "Would fail" is the simulation's word, and the simulation of a program
+  // this module cannot read is not one to repeat to the user.
+  it('does not pass on a failing simulation of a program it cannot read', async () => {
     const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n) });
+    vi.mocked(rpc.simulateTransaction).mockReturnValue({
+      send: async () => ({
+        value: { err: { InstructionError: [0, { Custom: 1 }] }, logs: ['x'], accounts: null },
+      }),
+    } as never);
 
     const result = await strict(rpc, wireOf([authorize]));
 
     expect(result).toMatchObject({ kind: 'undetermined', reason: 'unanalysed-program' });
-    expect(rpc.simulateTransaction).not.toHaveBeenCalled();
+    expect(result).not.toHaveProperty('known');
   });
 
   // An account derived from the wallet with a seed is the wallet's money, but
@@ -997,7 +1057,11 @@ describe('previewTransactionEffects in strict mode', () => {
 
     const result = await strict(rpc, wire);
 
-    expect(result).toMatchObject({ kind: 'undetermined', reason: 'unanalysed-account' });
+    expect(result).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+      known: { sol: { lamports: -5_000n } },
+    });
   });
 
   it('reports a mint authority handed over as unanalysed, though no balance moves', async () => {

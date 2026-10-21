@@ -52,6 +52,26 @@ describe('applySymbols', () => {
     expect(named?.kind === 'effects' && named.tokens[0].symbol).toBeNull();
   });
 
+  it('names the tokens in the movements a held preview did read', () => {
+    const held: TransactionEffects = {
+      kind: 'undetermined',
+      account: ACCOUNT,
+      reason: 'unanalysed-program',
+      detail: '',
+      known: {
+        sol: { lamports: 0n, feeLamports: 5_000n },
+        tokens: [
+          { tokenAccount: TOKEN_ACCOUNT, mint: MINT, amount: -1n, decimals: 6, symbol: null },
+        ],
+        approvals: [],
+      },
+    };
+
+    const named = applySymbols(held, (mint) => (mint === MINT ? 'USDC' : undefined));
+
+    expect(named?.kind === 'undetermined' && named.known?.tokens[0].symbol).toBe('USDC');
+  });
+
   it('passes the non-effect outcomes through untouched', () => {
     const undetermined: TransactionEffects = {
       kind: 'undetermined',

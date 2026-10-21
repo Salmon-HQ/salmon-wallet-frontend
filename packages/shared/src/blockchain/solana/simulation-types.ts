@@ -205,6 +205,13 @@ export interface UndeterminedEffects {
   readonly reason: UndeterminedReason;
   /** Human-readable cause, for logs and a details drawer. */
   readonly detail: string;
+  /**
+   * `unanalysed-program` and `unanalysed-account` only, when the simulation
+   * ran: the movements the preview did read for the account. A floor, never
+   * the whole effect — the screen shows them beside the reason, under the
+   * same hold.
+   */
+  readonly known?: EffectDetails;
 }
 
 // ============================================================================

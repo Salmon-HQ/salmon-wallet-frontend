@@ -137,6 +137,42 @@ describe('TransactionEffectsCard', () => {
     }
   );
 
+  // A swap through a router: what the wallet gives and gets, then the reason,
+  // in place of the bare "could not determine" notice.
+  it('shows the movements a held preview read, under the reason it is held', () => {
+    render(
+      <TransactionEffectsCard
+        loading={false}
+        effects={{
+          kind: 'undetermined',
+          account: ACCOUNT,
+          reason: 'unanalysed-program',
+          detail: '',
+          known: {
+            sol: { lamports: 50_000_000n, feeLamports: 5_000n },
+            tokens: [
+              {
+                tokenAccount: TOKEN_ACCOUNT,
+                mint: MINT,
+                amount: -10_000_000n,
+                decimals: 6,
+                symbol: 'USDC',
+              },
+            ],
+            approvals: [],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText('+0.05')).toBeInTheDocument();
+    expect(screen.getByText('−10')).toBeInTheDocument();
+    expect(screen.getByTestId('effects-unanalysed')).toHaveTextContent(
+      'uses programs or accounts Salmon cannot preview'
+    );
+    expect(screen.queryByText('Salmon could not determine what this does')).not.toBeInTheDocument();
+  });
+
   it('warns that a durable-nonce signature never expires', () => {
     render(
       <TransactionEffectsCard

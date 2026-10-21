@@ -57,6 +57,7 @@ import { deriveEffects, findUnreadChange } from './simulation-derive';
 import { fetchAccountsAt, fetchMints, resolveMessage, simulate } from './simulation-rpc';
 import type { ResolvedMessage } from './simulation-rpc';
 import type {
+  EffectDetails,
   PreviewOptions,
   RawAccount,
   TransactionEffects,
@@ -102,6 +103,18 @@ const ANALYSABLE_PROGRAMS: ReadonlySet<Address> = new Set<Address>([
   LEGACY_MEMO_PROGRAM_ADDRESS_V1,
   LEGACY_MEMO_PROGRAM_ADDRESS_V3,
 ]);
+
+/**
+ * The first program the transaction runs that this module cannot read, by
+ * name, or `null` when it reads them all.
+ */
+function findUnreadProgram(programs: readonly (Address | undefined)[]): string | null {
+  for (const program of programs) {
+    if (!program) return 'an unknown program';
+    if (!ANALYSABLE_PROGRAMS.has(program)) return program;
+  }
+  return null;
+}
 
 /** Builds an `undetermined` result. */
 function undetermined(
@@ -171,17 +184,19 @@ export async function previewTransactionEffects(
   }
   const { addresses } = message;
 
-  // Decided before simulating: a program this module cannot read can behave
-  // one way in a simulation and another on chain, so even "would fail" is
-  // not something to tell the user about it.
-  const unread = message.programs.findIndex((p) => !p || !ANALYSABLE_PROGRAMS.has(p));
-  if (options.strict && unread !== -1) {
-    return undetermined(
+  // In strict mode a program this module cannot read decides the outcome. Its
+  // simulation shows what it did once, not what it will do on chain, so no
+  // verdict of the simulation's (not even "would fail") is passed on; the
+  // movements it read are kept as `known`, a floor shown beside the warning.
+  const unreadProgram = options.strict ? findUnreadProgram(message.programs) : null;
+  const unanalysed = (known?: EffectDetails): UndeterminedEffects => ({
+    ...undetermined(
       account,
       'unanalysed-program',
-      `The transaction invokes ${message.programs[unread] ?? 'an unknown program'}, which this preview cannot read.`
-    );
-  }
+      `The transaction runs ${unreadProgram}, which this preview cannot read.`
+    ),
+    ...(known ? { known } : {}),
+  });
 
   let before: Map<Address, RawAccount | null>;
   let simulation: Awaited<ReturnType<typeof simulate>>;
@@ -190,34 +205,37 @@ export async function previewTransactionEffects(
     before = read.accounts;
     simulation = await simulate(rpc, wireTransaction, addresses, read.slot);
   } catch (error) {
-    return undetermined(account, 'simulation-unavailable', errorMessage(error));
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
 
   // `logs === null` means the node rejected the transaction before running it,
   // so there is nothing to diff and nothing to reassure the user with.
   if (simulation.logs === null) {
-    return undetermined(
-      account,
-      'simulation-not-executed',
-      'The node did not execute the transaction, so its effects are unknown.'
-    );
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(
+          account,
+          'simulation-not-executed',
+          'The node did not execute the transaction, so its effects are unknown.'
+        );
   }
 
   if (simulation.err !== null) {
-    return {
-      kind: 'transaction-would-fail',
-      account,
-      error: simulation.err,
-      logs: simulation.logs,
-    };
+    return unreadProgram
+      ? unanalysed()
+      : { kind: 'transaction-would-fail', account, error: simulation.err, logs: simulation.logs };
   }
 
   if (!simulation.accounts) {
-    return undetermined(
-      account,
-      'account-state-unavailable',
-      'The node executed the transaction but returned no post-execution account state.'
-    );
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(
+          account,
+          'account-state-unavailable',
+          'The node executed the transaction but returned no post-execution account state.'
+        );
   }
 
   const after = new Map<Address, RawAccount | null>();
@@ -250,23 +268,33 @@ export async function previewTransactionEffects(
     return undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
 
+  const feeLamports =
+    simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee);
   const effects = deriveEffects({
     account,
     before: beforeStates,
     after: afterStates,
     mints,
-    feeLamports:
-      simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee),
+    feeLamports,
     resolveSymbol: options.resolveSymbol,
   });
   if (!options.strict || effects.kind === 'undetermined') return effects;
 
+  const known: EffectDetails =
+    effects.kind === 'effects'
+      ? { sol: effects.sol, tokens: effects.tokens, approvals: effects.approvals }
+      : { sol: { lamports: 0n, feeLamports }, tokens: [], approvals: [] };
+  if (unreadProgram) return unanalysed(known);
+
   const changed = findUnreadChange({ ...message, account, before, after });
   return changed
-    ? undetermined(
-        account,
-        'unanalysed-account',
-        `Account ${changed} changes in a way this preview cannot show.`
-      )
+    ? {
+        ...undetermined(
+          account,
+          'unanalysed-account',
+          `Account ${changed} changes in a way this preview cannot show.`
+        ),
+        known,
+      }
     : effects;
 }

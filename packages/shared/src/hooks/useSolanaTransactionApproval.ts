@@ -20,7 +20,7 @@ import {
 } from '../utils/dapp-approval';
 import type { SolanaTransactionApprovalDetails } from '../utils/dapp-approval';
 import { useTokenCatalog } from './useTokenCatalog';
-import type { ResolveSymbolFn, TransactionEffects } from '../blockchain/solana';
+import type { EffectDetails, ResolveSymbolFn, TransactionEffects } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type { DAppTransactionRequest } from '../types/dapp-approval';
 import type { SolanaNetworkId } from '../types/blockchain';
@@ -67,17 +67,21 @@ export function applySymbols(
   effects: TransactionEffects | null,
   resolveSymbol: ResolveSymbolFn
 ): TransactionEffects | null {
-  if (effects?.kind !== 'effects') return effects;
-
-  return {
-    ...effects,
-    tokens: effects.tokens.map((token) =>
+  const name = <T extends EffectDetails>(details: T): T => ({
+    ...details,
+    tokens: details.tokens.map((token) =>
       token.symbol ? token : { ...token, symbol: resolveSymbol(token.mint) ?? null }
     ),
-    approvals: effects.approvals.map((grant) =>
+    approvals: details.approvals.map((grant) =>
       grant.symbol ? grant : { ...grant, symbol: resolveSymbol(grant.mint) ?? null }
     ),
-  };
+  });
+
+  if (effects?.kind === 'effects') return name(effects);
+  if (effects?.kind === 'undetermined' && effects.known) {
+    return { ...effects, known: name(effects.known) };
+  }
+  return effects;
 }
 
 /** Lamports as a trimmed SOL string, or `null` when the amount is not known. */

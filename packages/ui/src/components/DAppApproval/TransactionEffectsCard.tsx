@@ -7,6 +7,7 @@ import {
   spacing,
   UNDETERMINED_REASON_KEYS,
   type ApprovalGrant,
+  type EffectDetails,
   type SolChange,
   type TokenChange,
   type UndeterminedReason,
@@ -139,6 +140,21 @@ function ApprovalRow({ grant }: { grant: ApprovalGrant }): React.ReactElement {
   );
 }
 
+/** Every balance that moves, then every delegation granted. */
+function Movements({ details }: { details: EffectDetails }): React.ReactElement {
+  return (
+    <>
+      <SolRow sol={details.sol} />
+      {details.tokens.map((change) => (
+        <TokenRow key={change.tokenAccount} change={change} />
+      ))}
+      {details.approvals.map((grant) => (
+        <ApprovalRow key={`${grant.tokenAccount}-${grant.spender}`} grant={grant} />
+      ))}
+    </>
+  );
+}
+
 /**
  * States what a dApp's transaction would actually do to the user's balances.
  *
@@ -170,15 +186,16 @@ export function TransactionEffectsCard({
         </WarningNotice>
       ) : null}
 
-      {effects?.kind === 'effects' ? (
+      {effects?.kind === 'effects' ? <Movements details={effects} /> : null}
+
+      {effects?.kind === 'undetermined' && effects.known ? (
         <>
-          <SolRow sol={effects.sol} />
-          {effects.tokens.map((change) => (
-            <TokenRow key={change.tokenAccount} change={change} />
-          ))}
-          {effects.approvals.map((grant) => (
-            <ApprovalRow key={`${grant.tokenAccount}-${grant.spender}`} grant={grant} />
-          ))}
+          <Movements details={effects.known} />
+          <WarningNotice
+            tone="warning"
+            title={t(UNDETERMINED_REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}
+            testID="effects-unanalysed"
+          />
         </>
       ) : null}
 
@@ -195,7 +212,7 @@ export function TransactionEffectsCard({
         </WarningNotice>
       ) : null}
 
-      {effects?.kind === 'undetermined' ? (
+      {effects?.kind === 'undetermined' && !effects.known ? (
         <WarningNotice
           tone="warning"
           title={t('dapp.effects_undetermined_title', 'Salmon could not determine what this does')}

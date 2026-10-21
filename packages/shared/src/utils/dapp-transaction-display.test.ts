@@ -141,6 +141,45 @@ describe('dappTransactionDisplay', () => {
     ]);
   });
 
+  // A swap through a router: what the wallet gives and gets, then the reason,
+  // instead of a bare "could not determine".
+  it('lists the movements a held preview read, with the reason as the warning', () => {
+    const display = dappTransactionDisplay(
+      {
+        ...base,
+        effects: {
+          kind: 'undetermined',
+          account: ACCOUNT,
+          reason: 'unanalysed-program',
+          detail: '',
+          known: {
+            sol: { lamports: 50_000_000n, feeLamports: 5000n },
+            tokens: [
+              {
+                tokenAccount: ACCOUNT,
+                mint: MINT,
+                amount: -10_000_000n,
+                decimals: 6,
+                symbol: 'USDC',
+              },
+            ],
+            approvals: [],
+          },
+        },
+      },
+      t
+    );
+
+    expect(display.rows).toEqual([
+      { label: 'dapp.requesting_site', value: 'https://jup.ag' },
+      { label: 'dapp.wallet_address', value: 'Savings · Fg6P...KzXf' },
+      { label: 'dapp.effects_in', value: '+0.05 SOL' },
+      { label: 'dapp.effects_out', value: '−10 USDC' },
+      { label: 'dapp.transaction_fee', value: '0.000005 SOL' },
+    ]);
+    expect(display.warning).toEqual({ title: 'dapp.effects_reason_unanalysed' });
+  });
+
   it('marks the balance rows pending while the simulation runs', () => {
     const display = dappTransactionDisplay({ ...base, effectsLoading: true }, t);
     expect(display.rows).toContainEqual({
