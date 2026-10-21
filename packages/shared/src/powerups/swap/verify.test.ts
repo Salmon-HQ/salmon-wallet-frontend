@@ -356,13 +356,48 @@ describe('swap bytes — where the router pays the output', () => {
 
     it('lists the token accounts a swap creates for the wallet and 0x’s settlement account', async () => {
       const [settlementUsdc] = await walletTokenAccounts(ZEROEX_SETTLEMENT_OWNER, USDC);
+      const [walletOther] = await walletTokenAccounts(WALLET, OTHER_MINT);
       const tx = transaction([
         createAta(WALLET_WSOL, WALLET, SOL),
         createAta(WALLET_WSOL, WALLET, SOL),
+        createAta(walletOther as string, WALLET, OTHER_MINT),
         createAta(settlementUsdc as string, ZEROEX_SETTLEMENT_OWNER, USDC),
         route(),
       ]);
-      expect(swapAccountCreates(tx).sort()).toEqual([WALLET_WSOL, settlementUsdc].sort());
+      expect(swapAccountCreates(tx)).toEqual([
+        { address: WALLET_WSOL, owner: WALLET },
+        { address: walletOther, owner: WALLET },
+        { address: settlementUsdc, owner: ZEROEX_SETTLEMENT_OWNER },
+      ]);
+    });
+
+    const closeToWallet = (account: string): Ix => ({
+      programAddress: address(TOKEN_PROGRAM),
+      accounts: [
+        { address: address(account), role: 1 },
+        { address: address(WALLET), role: 1 },
+        { address: address(WALLET), role: 2 },
+      ],
+      data: new Uint8Array([9]),
+    });
+
+    // A swap closes its own pass-through account, the wrapped-SOL one it
+    // created, and nothing else: closing another of the wallet's accounts
+    // would hand its rent back as if the swap had paid it.
+    it('closes only a token account the message creates for the wallet', () => {
+      expect(() =>
+        verify(
+          transaction([
+            createAta(WALLET_WSOL, WALLET, SOL),
+            wrap(WALLET_WSOL, 10_000_000n),
+            route(),
+            closeToWallet(WALLET_WSOL),
+          ])
+        )
+      ).not.toThrow();
+      expect(() => verify(transaction([route(), closeToWallet(WALLET_USDC)]))).toThrow(
+        /instruction 9 on .* to 9SHQTA.*not the wallet's own/
+      );
     });
   });
 

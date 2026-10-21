@@ -19,11 +19,19 @@ import {
   TOKEN_PROGRAM,
 } from '../../core/verify';
 
-/** SPL Token: CloseAccount (9, rent to the wallet), SyncNative (17), InitializeAccount3 (18). */
+/**
+ * SPL Token: CloseAccount (9), SyncNative (17), InitializeAccount3 (18). A
+ * close is of a token account this message creates for the wallet (its
+ * pass-through wrapped-SOL account) and pays the rent to the wallet: closing
+ * any other account would hand its rent back as if the swap had paid it.
+ */
 const TOKEN_RULE: ProgramInstructionRule = {
   width: 1,
   codes: [9, 17, 18],
-  binds: [{ code: 9, index: 1, mustBe: 'feePayer' }],
+  binds: [
+    { code: 9, index: 0, mustBe: 'ownAtaCreatedHere' },
+    { code: 9, index: 1, mustBe: 'feePayer' },
+  ],
 };
 
 export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>> = {

@@ -24,8 +24,12 @@ import type { Base64EncodedWireTransaction } from '@solana/kit';
 
 import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
-import type { TransactionEffects } from '../../blockchain/solana/simulation';
-import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
+import type { AccountChange, TransactionEffects } from '../../blockchain/solana/simulation';
+import {
+  TOKEN_2022_PROGRAM,
+  TOKEN_PROGRAM,
+  WRAPPED_SOL_MINT as WRAPPED_SOL,
+} from './solana-programs';
 import {
   MAX_PRIORITY_FEE_LAMPORTS,
   SolanaTransactionMismatchError,
@@ -33,10 +37,10 @@ import {
 } from './solana-transaction';
 import type { SwapRouteExpectation } from './solana-transaction';
 
-// ponytail: fixed allowances. Rent of a Token-2022 ATA with extensions is
-// ~0.0021 SOL; the fee cap only applies when the node does not report the fee.
-// Upgrade path: read the compute-budget price and each created account's size.
-/** Rent the wallet may spend per token account the message opens (see `assertSwapPaysWallet`). */
+// ponytail: fixed cap. Rent of a Token-2022 ATA with extensions is ~0.0021 SOL;
+// the fee cap only applies when the node does not report the fee. Upgrade
+// path: read the compute-budget price and each created account's size.
+/** The most rent one created token account may cost the wallet (see `assertSwapPaysWallet`). */
 export const ATA_RENT_ALLOWANCE = 2_100_000n;
 /** The network fee assumed when the node does not report one. */
 export const FEE_ALLOWANCE = 1_000_000n;
@@ -50,14 +54,16 @@ export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.
  *
- * @param ataCreates - How many token accounts the message opens and leaves
- *   open: the rent they cost is the one SOL movement besides the fee and the
- *   swap itself.
+ * @param rent - Lamports the swap parks as rent in token accounts it creates:
+ *   the one SOL movement besides the fee and the swap itself.
+ * @param reclaimed - Rent the swap returns to the wallet by closing one of the
+ *   wallet's own token accounts: the wallet's already, never swap proceeds.
  */
 export function assertSwapEffects(
   effects: TransactionEffects,
   route: SwapRouteExpectation,
-  ataCreates: number
+  rent: bigint,
+  reclaimed = 0n
 ): void {
   const refuse = (why: string): never => {
     throw new SolanaTransactionMismatchError(why);
@@ -84,9 +90,8 @@ export function assertSwapEffects(
   if (paid > inAmount) refuse('The swap takes more than the amount on screen');
 
   const fee = effects.sol.feeLamports ?? FEE_ALLOWANCE;
-  const costs =
-    (fee < MAX_FEE_LAMPORTS ? fee : MAX_FEE_LAMPORTS) + ATA_RENT_ALLOWANCE * BigInt(ataCreates);
-  const sol = effects.sol.lamports + costs;
+  const costs = (fee < MAX_FEE_LAMPORTS ? fee : MAX_FEE_LAMPORTS) + rent;
+  const sol = effects.sol.lamports + costs - reclaimed;
   if (route.outputMint === WRAPPED_SOL) {
     received += sol;
   } else if (sol < 0n) {
@@ -99,16 +104,65 @@ export function assertSwapEffects(
   }
 }
 
+const TOKEN_PROGRAMS = new Set<string>([TOKEN_PROGRAM, TOKEN_2022_PROGRAM]);
+
+/**
+ * The rent the swap parks in the token accounts it may create: for each, the
+ * lamports it gains, up to one account's rent, when it ends a token account of
+ * the owner it was created for. A token account that already existed opens
+ * nothing, whatever is pushed into it; one opened and closed again ends empty;
+ * one handed to another owner is not the wallet's or 0x's to count; an address
+ * someone funded first costs the wallet only the rest. A wrapped-SOL
+ * account's balance is a token row, not rent. The cap still leaves up to
+ * ~60,720 lamports of slack per account above a plain account's 2,039,280.
+ */
+function rentParked(
+  accounts: ReadonlyMap<string, AccountChange>,
+  created: { address: string; owner: string }[]
+): bigint {
+  let rent = 0n;
+  for (const { address: account, owner } of created) {
+    const change = accounts.get(account);
+    const token = change?.after?.token;
+    if (!change?.after || !token || !TOKEN_PROGRAMS.has(change.after.owner)) continue;
+    if (token.owner !== owner) continue;
+    const before = change.before;
+    if (before?.token || (before && TOKEN_PROGRAMS.has(before.owner))) continue;
+    const gained =
+      change.after.lamports - (token.isNative ? token.amount : 0n) - (before?.lamports ?? 0n);
+    if (gained > 0n) rent += gained < ATA_RENT_ALLOWANCE ? gained : ATA_RENT_ALLOWANCE;
+  }
+  return rent;
+}
+
+/**
+ * The rent of the wallet's own token accounts the swap closes, by its own
+ * instruction or inside the route. A wrapped-SOL account's lamports above its
+ * rent are its balance, which its token row already counts.
+ */
+function rentReclaimed(accounts: Iterable<AccountChange>, wallet: string): bigint {
+  let rent = 0n;
+  for (const { before, after } of accounts) {
+    const token = before?.token;
+    if (!token || token.owner !== wallet || (after?.lamports ?? 0n) > 0n) continue;
+    rent += before.lamports - (token.isNative ? token.amount : 0n);
+  }
+  return rent;
+}
+
 /**
  * Simulates `transactionBase64` for `feePayer` and holds the result to `route`.
  *
- * Rent is allowed only for the token accounts the swap creates (for the wallet
- * or 0x's settlement account) that the simulation shows it opening and leaving
- * open. An idempotent create of an existing account costs nothing, and an
- * account opened and closed again in the same swap — by its own instruction or
- * inside the route — holds no rent once the swap ends, so neither earns an
- * allowance; otherwise either would cover SOL leaving the wallet for something
- * else.
+ * Rent is allowed only for what the swap parks in the token accounts it
+ * creates for the wallet or 0x's settlement account (`swapAccountCreates`) —
+ * the lamports each one gains, up to one account's rent (`rentParked`) — so an
+ * existing token account, one opened and closed again, or one handed to
+ * another owner covers nothing. Any token's account counts for the wallet:
+ * Jupiter can leave the wallet's account of an intermediate token open (a SOL
+ * to USDC route through USD1, seen live), and its rent stays the wallet's,
+ * recoverable by closing it. Rent the swap reclaims by closing
+ * one of the wallet's own token accounts is not counted as SOL in. Otherwise
+ * either would cover SOL leaving the wallet for something else.
  */
 export async function assertSwapPaysWallet(
   rpc: SolanaRpc,
@@ -121,7 +175,16 @@ export async function assertSwapPaysWallet(
     transactionBase64 as Base64EncodedWireTransaction,
     address(feePayer)
   );
-  const opened = new Set<string>(effects.kind === 'effects' ? (effects.opened ?? []) : []);
-  const rented = swapAccountCreates(transactionBase64).filter((account) => opened.has(account));
-  assertSwapEffects(effects, route, rented.length);
+  const accounts = new Map<string, AccountChange>(
+    (effects.kind === 'effects' ? (effects.accounts ?? []) : []).map((change) => [
+      change.address,
+      change,
+    ])
+  );
+  assertSwapEffects(
+    effects,
+    route,
+    rentParked(accounts, swapAccountCreates(transactionBase64)),
+    rentReclaimed(accounts.values(), feePayer)
+  );
 }

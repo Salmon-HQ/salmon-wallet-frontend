@@ -12,9 +12,14 @@ import {
   type Blockhash,
 } from '@solana/kit';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
-import type { TransactionEffects } from '../../blockchain/solana/simulation';
+import type { AccountState, TransactionEffects } from '../../blockchain/solana/simulation';
 import { assertSwapEffects, assertSwapPaysWallet, ATA_RENT_ALLOWANCE } from './swap-effects';
-import { ASSOCIATED_TOKEN_PROGRAM, SYSTEM_PROGRAM, TOKEN_PROGRAM } from './solana-programs';
+import {
+  ASSOCIATED_TOKEN_PROGRAM,
+  SYSTEM_PROGRAM,
+  TOKEN_PROGRAM,
+  ZEROEX_SETTLEMENT_OWNER,
+} from './solana-programs';
 
 vi.mock('../../blockchain/solana/simulation', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -69,49 +74,49 @@ function effects(lamports: bigint, tokens: ReturnType<typeof token>[]): Transact
 describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => {
   it('accepts a token swap that pays at least the minimum, after creating the output account', () => {
     const paid = effects(-10_000_000n - FEE - 2_039_280n, [token(USDC, 1_168_000n)]);
-    expect(() => assertSwapEffects(paid, solToUsdc, 1)).not.toThrow();
+    expect(() => assertSwapEffects(paid, solToUsdc, 2_039_280n)).not.toThrow();
   });
 
   it('accepts a swap into native SOL that pays at least the minimum, net of the fee', () => {
     const paid = effects(8_441_000n - FEE, [token(USDC, -1_000_000n)]);
-    expect(() => assertSwapEffects(paid, usdcToSol, 0)).not.toThrow();
+    expect(() => assertSwapEffects(paid, usdcToSol, 0n)).not.toThrow();
   });
 
   it('refuses a swap whose output never reaches the wallet', () => {
     const stolen = effects(-10_000_000n - FEE, []);
-    expect(() => assertSwapEffects(stolen, solToUsdc, 0)).toThrow(/less than the minimum/);
+    expect(() => assertSwapEffects(stolen, solToUsdc, 0n)).toThrow(/less than the minimum/);
     const stolenSol = effects(-FEE, [token(USDC, -1_000_000n)]);
-    expect(() => assertSwapEffects(stolenSol, usdcToSol, 0)).toThrow(/less than the minimum/);
+    expect(() => assertSwapEffects(stolenSol, usdcToSol, 0n)).toThrow(/less than the minimum/);
   });
 
   it('refuses a swap that pays short of the minimum on screen', () => {
     const short = effects(-10_000_000n - FEE, [token(USDC, 1_000_000n)]);
-    expect(() => assertSwapEffects(short, solToUsdc, 0)).toThrow(/less than the minimum/);
+    expect(() => assertSwapEffects(short, solToUsdc, 0n)).toThrow(/less than the minimum/);
   });
 
   it('refuses a swap that takes more than the amount on screen, in the token or in SOL', () => {
     const tokenOver = effects(8_441_000n - FEE, [token(USDC, -2_000_000n)]);
-    expect(() => assertSwapEffects(tokenOver, usdcToSol, 0)).toThrow(/more than the amount/);
+    expect(() => assertSwapEffects(tokenOver, usdcToSol, 0n)).toThrow(/more than the amount/);
     const solOver = effects(-20_000_000n - FEE, [token(USDC, 1_168_000n)]);
-    expect(() => assertSwapEffects(solOver, solToUsdc, 0)).toThrow(/more than the amount/);
+    expect(() => assertSwapEffects(solOver, solToUsdc, 0n)).toThrow(/more than the amount/);
   });
 
   it('refuses a swap that also takes another token, or SOL when SOL is not the input', () => {
     const drained = effects(-10_000_000n - FEE, [token(USDC, 1_168_000n), token(BONK, -1n)]);
-    expect(() => assertSwapEffects(drained, solToUsdc, 0)).toThrow(new RegExp(`takes ${BONK}`));
+    expect(() => assertSwapEffects(drained, solToUsdc, 0n)).toThrow(new RegExp(`takes ${BONK}`));
     const usdcToBonk = { ...usdcToSol, outputMint: BONK, minOutAmount: '1' };
     const solTaken = effects(-1_000_000n - FEE, [token(USDC, -1_000_000n), token(BONK, 5n)]);
-    expect(() => assertSwapEffects(solTaken, usdcToBonk, 0)).toThrow(/takes SOL/);
+    expect(() => assertSwapEffects(solTaken, usdcToBonk, 0n)).toThrow(/takes SOL/);
   });
 
   it('allows only the rent of the accounts the message creates', () => {
     const rent = -10_000_000n - FEE - ATA_RENT_ALLOWANCE;
     expect(() =>
-      assertSwapEffects(effects(rent, [token(USDC, 1_168_000n)]), solToUsdc, 1)
+      assertSwapEffects(effects(rent, [token(USDC, 1_168_000n)]), solToUsdc, ATA_RENT_ALLOWANCE)
     ).not.toThrow();
-    expect(() => assertSwapEffects(effects(rent, [token(USDC, 1_168_000n)]), solToUsdc, 0)).toThrow(
-      /more than the amount/
-    );
+    expect(() =>
+      assertSwapEffects(effects(rent, [token(USDC, 1_168_000n)]), solToUsdc, 0n)
+    ).toThrow(/more than the amount/);
   });
 
   it('refuses a swap that grants a delegate, fails, or cannot be read', () => {
@@ -132,7 +137,7 @@ describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => 
         },
       ],
     };
-    expect(() => assertSwapEffects(delegated, solToUsdc, 0)).toThrow(/delegate/);
+    expect(() => assertSwapEffects(delegated, solToUsdc, 0n)).toThrow(/delegate/);
     expect(() =>
       assertSwapEffects(
         {
@@ -142,7 +147,7 @@ describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => 
           logs: [],
         },
         solToUsdc,
-        0
+        0n
       )
     ).toThrow(/would fail/);
     expect(() =>
@@ -154,10 +159,12 @@ describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => 
           detail: 'offline',
         },
         solToUsdc,
-        0
+        0n
       )
     ).toThrow(/could not be checked/);
-    expect(() => assertSwapEffects({ kind: 'no-effect', account: WALLET }, solToUsdc, 0)).toThrow();
+    expect(() =>
+      assertSwapEffects({ kind: 'no-effect', account: WALLET }, solToUsdc, 0n)
+    ).toThrow();
   });
 });
 
@@ -173,33 +180,41 @@ describe('assertSwapEffects — the fee it allows for', () => {
       tokens: [token(USDC, -1_000_000n)],
       approvals: [],
     };
-    expect(() => assertSwapEffects(drained, usdcToSol, 0)).toThrow(/less than the minimum/);
+    expect(() => assertSwapEffects(drained, usdcToSol, 0n)).toThrow(/less than the minimum/);
   });
 });
 
 /**
- * Rent is allowed for a token account the swap opens and leaves open. An
- * idempotent create of an account that already exists costs nothing, and an
- * account the swap opens and closes again hands its rent back to the wallet,
- * so neither earns anything: otherwise each would cover SOL leaving the wallet
- * for something else.
+ * Rent is allowed for what the swap actually parks in a token account it
+ * creates for the route's own tokens (or 0x's settlement account): the
+ * lamports that account gains, up to one account's rent, when it ends owned by
+ * a token program. An idempotent create of an existing account gains nothing,
+ * an account opened and closed again ends empty, and an account for a token
+ * the route does not trade earns nothing, so none of them can cover SOL leaving
+ * the wallet for something else. Rent the route reclaims by closing one of the
+ * wallet's own token accounts is not swap proceeds either.
  */
 describe('assertSwapPaysWallet — the rent it allows for', () => {
   const WALLET_BONK = 'qCZEE1btHeVPFFa3kSWk8Gz9u6aTWSGwUwj4PhnEmuR';
   const WALLET_WSOL = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  const WALLET_JUNK = '9Ad9sA9ReVJ6JZuNFQnVNFt3QZ4kD2tU81jpqVihQFmL';
+  const JUNK_MINT = 'pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn';
+  const RENT = 2_039_280n;
   const usdcToBonk: SwapRouteExpectation = {
     ...usdcToSol,
     outputMint: BONK,
     quotedOutAmount: '31564956924',
     minOutAmount: '31407132140',
+    // The wallet's own BONK account: the output side of the route.
+    destinations: [WALLET_BONK],
   };
 
-  const createWalletAta = (ata: string, mint: string) => ({
+  const createAta = (ata: string, mint: string, owner: string = WALLET) => ({
     programAddress: address(ASSOCIATED_TOKEN_PROGRAM),
     accounts: [
       { address: WALLET, role: 3 },
       { address: address(ata), role: 1 },
-      { address: WALLET, role: 0 },
+      { address: address(owner), role: 0 },
       { address: address(mint), role: 0 },
       { address: address(SYSTEM_PROGRAM), role: 0 },
       { address: address(TOKEN_PROGRAM), role: 0 },
@@ -239,34 +254,184 @@ describe('assertSwapPaysWallet — the rent it allows for', () => {
     ).toString('base64');
   }
 
-  /** Only the simulation is read: what each account holds comes from its `opened`. */
+  /** Only the simulation is read: what each account holds comes from its `accounts`. */
   const rpc = {} as never;
 
+  const tokenAccount = (
+    lamports: bigint,
+    mint: string,
+    amount = 0n,
+    owner: string = WALLET
+  ): AccountState => ({
+    lamports,
+    owner: TOKEN_PROGRAM as Address,
+    token: {
+      mint: mint as Address,
+      owner: owner as Address,
+      amount,
+      delegate: null,
+      delegatedAmount: 0n,
+      isNative: mint === SOL,
+    },
+  });
+  const plain = (lamports: bigint): AccountState => ({
+    lamports,
+    owner: SYSTEM_PROGRAM as Address,
+    token: null,
+  });
+  const change = (account: string, before: AccountState | null, after: AccountState | null) => ({
+    address: address(account),
+    before,
+    after,
+  });
+
   /** A token-to-token swap that costs the wallet `lamports` besides the fee. */
-  const losing = (lamports: bigint, opened: string[]) => ({
-    ...effects(-FEE - lamports, [token(USDC, -1_000_000n), token(BONK, 31_500_000_000n)]),
-    opened: opened.map((account) => address(account)),
+  const losing = (lamports: bigint, accounts: ReturnType<typeof change>[]): TransactionEffects => ({
+    ...(effects(-FEE - lamports, [
+      token(USDC, -1_000_000n),
+      token(BONK, 31_500_000_000n),
+    ]) as Extract<TransactionEffects, { kind: 'effects' }>),
+    accounts,
+  });
+
+  it('allows the rent of a token account the swap opens for its output and leaves open', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT, [change(WALLET_BONK, null, tokenAccount(RENT, BONK))])
+    );
+    await expect(
+      assertSwapPaysWallet(rpc, swapOf([createAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
+    ).resolves.toBeUndefined();
   });
 
   it('refuses SOL leaving the wallet when the account it creates already existed', async () => {
-    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_039_280n, []));
+    const existing = tokenAccount(RENT, BONK, 5n);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT, [change(WALLET_BONK, existing, existing)])
+    );
     await expect(
-      assertSwapPaysWallet(rpc, swapOf([createWalletAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
+      assertSwapPaysWallet(rpc, swapOf([createAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
     ).rejects.toThrow(/takes SOL from the wallet/);
   });
 
   it('refuses SOL leaving the wallet behind an account the swap opens and closes again', async () => {
-    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_000_000n, []));
-    const createAndClose = swapOf([createWalletAta(WALLET_WSOL, SOL), closeToWallet(WALLET_WSOL)]);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(2_000_000n, [change(WALLET_WSOL, null, plain(0n))])
+    );
+    const createAndClose = swapOf([createAta(WALLET_WSOL, SOL), closeToWallet(WALLET_WSOL)]);
     await expect(assertSwapPaysWallet(rpc, createAndClose, WALLET, usdcToBonk)).rejects.toThrow(
       /takes SOL from the wallet/
     );
   });
 
-  it('allows the rent of a token account the swap opens and leaves open', async () => {
-    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_039_280n, [WALLET_BONK]));
+  // Jupiter can leave the wallet's account of an intermediate token open (a
+  // SOL to USDC route through USD1, seen live): its rent stays the wallet's,
+  // recoverable by closing it, so it is allowed like the output's.
+  it('allows the rent an account of an intermediate token keeps for the wallet', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(1_488_440n, [change(WALLET_JUNK, null, tokenAccount(1_488_440n, JUNK_MINT))])
+    );
+    const intermediate = swapOf([createAta(WALLET_JUNK, JUNK_MINT)]);
     await expect(
-      assertSwapPaysWallet(rpc, swapOf([createWalletAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
+      assertSwapPaysWallet(rpc, intermediate, WALLET, usdcToBonk)
+    ).resolves.toBeUndefined();
+  });
+
+  // Anyone can send lamports to an address before the account exists there:
+  // the wallet then pays only the rest of the rent, and that rest is allowed.
+  it('allows exactly what the wallet adds to an address someone funded first', async () => {
+    const prefunded = [change(WALLET_BONK, plain(1_000_000n), tokenAccount(RENT, BONK))];
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT - 1_000_000n, prefunded)
+    );
+    const create = swapOf([createAta(WALLET_BONK, BONK)]);
+    await expect(assertSwapPaysWallet(rpc, create, WALLET, usdcToBonk)).resolves.toBeUndefined();
+
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(RENT, prefunded));
+    await expect(assertSwapPaysWallet(rpc, create, WALLET, usdcToBonk)).rejects.toThrow(
+      /takes SOL from the wallet/
+    );
+  });
+
+  // A classic token account's owner can be moved: a build could create the
+  // wallet's account and hand it to someone else in the same transaction.
+  it('allows no rent for a created account that ends owned by someone else', async () => {
+    const ATTACKER = '8pM1YsWLwCoU4nNGUzgjQZ8iBfTFtfkDfsfnayrHRJrQ';
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT, [change(WALLET_BONK, null, tokenAccount(RENT, BONK, 0n, ATTACKER))])
+    );
+    await expect(
+      assertSwapPaysWallet(rpc, swapOf([createAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
+    ).rejects.toThrow(/takes SOL from the wallet/);
+  });
+
+  // An idempotent create of a token account that already exists opens
+  // nothing: SOL pushed into it is not rent.
+  it('allows no rent for SOL pushed into a token account that already existed', async () => {
+    const SETTLEMENT_ATA = '8ShFWr3iHxibdJuE7vEw6jk6gALRHmGvaAFrQuahP49a';
+    const settlementAccount = (lamports: bigint) =>
+      tokenAccount(lamports, USDC, 0n, ZEROEX_SETTLEMENT_OWNER);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(2_000_000n, [
+        change(SETTLEMENT_ATA, settlementAccount(RENT), settlementAccount(RENT + 2_000_000n)),
+      ])
+    );
+    const pushed = swapOf([createAta(SETTLEMENT_ATA, USDC, ZEROEX_SETTLEMENT_OWNER)]);
+    await expect(assertSwapPaysWallet(rpc, pushed, WALLET, usdcToBonk)).rejects.toThrow(
+      /takes SOL from the wallet/
+    );
+  });
+
+  // A created wrapped-SOL account that stays open holds its rent and a
+  // balance; only the rent is an allowance (the balance is a token row).
+  it('allows only the rent of a created wrapped-SOL account, not its balance', async () => {
+    const wrapped = 50_000n;
+    const wsolAccount = tokenAccount(RENT + wrapped, SOL, wrapped);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT + wrapped, [change(WALLET_WSOL, null, wsolAccount)])
+    );
+    const create = swapOf([createAta(WALLET_WSOL, SOL)]);
+    await expect(assertSwapPaysWallet(rpc, create, WALLET, usdcToBonk)).rejects.toThrow(
+      /takes SOL from the wallet/
+    );
+  });
+
+  it('allows no rent for a created address that does not end as a token account', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(RENT, [change(WALLET_BONK, null, plain(RENT))])
+    );
+    await expect(
+      assertSwapPaysWallet(rpc, swapOf([createAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
+    ).rejects.toThrow(/takes SOL from the wallet/);
+  });
+
+  // The route can close one of the wallet's own empty token accounts inside
+  // its own calls: the rent that comes back is the wallet's, not swap
+  // proceeds, and cannot cover SOL leaving for something else.
+  it('does not count the rent of a closed wallet token account as SOL in', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(
+      losing(2_000_000n - RENT, [change(WALLET_JUNK, tokenAccount(RENT, JUNK_MINT), null)])
+    );
+    await expect(assertSwapPaysWallet(rpc, swapOf([]), WALLET, usdcToBonk)).rejects.toThrow(
+      /takes SOL from the wallet/
+    );
+  });
+
+  // A wrapped-SOL account's lamports above its rent are its balance, already
+  // counted in the token row: only the rent is held back.
+  // SOL to USDC paying 13,000,000: 3,000,000 already wrapped, 10,000,000
+  // wrapped now; closing the wrapped-SOL account returns only its rent.
+  it('holds back only the rent of a closed wrapped-SOL account, not its balance', async () => {
+    const wrapped = 3_000_000n;
+    const solToUsdcWithWsol: SwapRouteExpectation = { ...solToUsdc, inAmount: '13000000' };
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce({
+      ...(effects(-10_000_000n - FEE + RENT, [
+        token(SOL, -wrapped),
+        token(USDC, 1_168_000n),
+      ]) as Extract<TransactionEffects, { kind: 'effects' }>),
+      accounts: [change(WALLET_WSOL, tokenAccount(RENT + wrapped, SOL, wrapped), null)],
+    });
+    await expect(
+      assertSwapPaysWallet(rpc, swapOf([]), WALLET, solToUsdcWithWsol)
     ).resolves.toBeUndefined();
   });
 });

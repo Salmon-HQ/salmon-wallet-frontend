@@ -224,18 +224,23 @@ function staticAccount(
 /** ATA `create` (0, or no data) and `createIdempotent` (1): payer, ata, owner, mint, … */
 const ATA_CREATE_CODES = new Set([0, 1]);
 
-/** The associated token accounts this message creates, each with its owner. */
+/** The associated token accounts this message creates, each with its owner and mint. */
 function atasCreated(
   accounts: readonly string[],
   instructions: readonly CompiledInstruction[]
-): Map<string, string | undefined> {
-  const created = new Map<string, string | undefined>();
+): Map<string, { owner: string | undefined; mint: string | undefined }> {
+  const created = new Map<string, { owner: string | undefined; mint: string | undefined }>();
   for (const instruction of instructions) {
     if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
     const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
     if (!ATA_CREATE_CODES.has(code as number)) continue;
     const ata = accounts[instruction.accountIndices[1] ?? -1];
-    if (ata !== undefined) created.set(ata, accounts[instruction.accountIndices[2] ?? -1]);
+    if (ata !== undefined) {
+      created.set(ata, {
+        owner: accounts[instruction.accountIndices[2] ?? -1],
+        mint: accounts[instruction.accountIndices[3] ?? -1],
+      });
+    }
   }
   return created;
 }
@@ -247,7 +252,7 @@ function ownAtasCreated(
   owner: string
 ): Set<string> {
   const created = new Set<string>();
-  for (const [ata, ataOwner] of atasCreated(accounts, instructions)) {
+  for (const [ata, { owner: ataOwner }] of atasCreated(accounts, instructions)) {
     if (ataOwner === owner) created.add(ata);
   }
   return created;
@@ -255,16 +260,18 @@ function ownAtasCreated(
 
 /**
  * The associated token accounts a swap creates for its fee payer or for 0x's
- * settlement account: the only ones whose rent the swap may spend, and only
- * for those it opens and leaves open (`assertSwapPaysWallet` reads which).
+ * settlement account, each with its owner: the only ones whose rent the swap
+ * may spend (`assertSwapPaysWallet` reads how much each one actually keeps).
  */
-export function swapAccountCreates(transactionBase64: string): string[] {
+export function swapAccountCreates(
+  transactionBase64: string
+): { address: string; owner: string }[] {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
   const owners = new Set([accounts[0], ZEROEX_SETTLEMENT_OWNER]);
   return [...atasCreated(accounts, compiledInstructions(message))]
-    .filter(([, owner]) => owner !== undefined && owners.has(owner))
-    .map(([ata]) => ata);
+    .filter(([, { owner }]) => owner !== undefined && owners.has(owner))
+    .map(([ata, { owner }]) => ({ address: ata, owner: owner as string }));
 }
 
 /** The lookup-table instructions a message carries: each one's code and the table it acts on. */

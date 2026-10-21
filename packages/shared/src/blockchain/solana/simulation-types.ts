@@ -180,11 +180,21 @@ export interface Effects extends EffectDetails {
   /** The account these effects are reported for. */
   readonly account: Address;
   /**
-   * The transaction's accounts that hold no lamports before it runs and some
-   * after: what it opens and leaves open. One it opens and closes again is
-   * not here. Absent when the effects were not read from a simulation.
+   * Every account the transaction names, decoded, before and after it runs:
+   * what a caller holding the transaction to a narrower rule (the swap check)
+   * reads beyond the balance rows. Absent when the effects were not read from
+   * a simulation.
    */
-  readonly opened?: readonly Address[];
+  readonly accounts?: readonly AccountChange[];
+}
+
+/** One account of a simulated transaction, before and after it runs. */
+export interface AccountChange {
+  readonly address: Address;
+  /** `null` when the account does not exist yet. */
+  readonly before: AccountState | null;
+  /** A closed account comes back with zero lamports, or `null`. */
+  readonly after: AccountState | null;
 }
 
 /**
