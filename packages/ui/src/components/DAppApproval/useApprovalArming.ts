@@ -15,15 +15,14 @@ export const APPROVE_ARM_MS = 750;
 /**
  * Whether the approval window's Approve button may take a click yet.
  *
- * False until the window has been visible for `delayMs` AND, after that, the
+ * False until the window has been visible for `delayMs` and, after that, the
  * pointer has moved inside it or focus has moved to one of its controls (Tab,
- * a screen reader). False again
- * the moment it loses focus or is hidden, and armed afresh the same way when
- * it comes back — the same trick works on a window brought forward as on one
- * just opened. The delay alone is a wait a page can time ("click, pause,
- * click again"); a pointer the user moves over the window after it appeared
- * is not something the page can predict. Reject never waits: refusing is
- * always safe.
+ * a screen reader). False again the moment it loses focus or is hidden, and
+ * armed afresh the same way when it comes back — the same trick works on a
+ * window brought forward as on one just opened. The delay alone is a wait a
+ * page can time ("click, pause, click again"); a pointer the user moves over
+ * the window after that is not something the page can predict. Reject never
+ * waits: refusing is always safe.
  */
 export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): boolean {
   const [armed, setArmed] = useState(false);

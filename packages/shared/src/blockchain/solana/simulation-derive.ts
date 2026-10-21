@@ -222,10 +222,11 @@ export function findUnreadChange({
   after,
 }: UnreadChangeInput): Address | null {
   for (const address of writable) {
+    if (address === account || signers.has(address)) continue;
     const pre = before.get(address) ?? null;
     const post = after.get(address) ?? null;
     // Created by the transaction: whatever funded it shows in the diff.
-    if (address === account || signers.has(address) || !pre) continue;
+    if (!pre) continue;
 
     const preToken = decodeAccountState(pre)?.token ?? null;
     const postToken = decodeAccountState(post)?.token ?? null;
