@@ -65,6 +65,21 @@ describe('DAppConnectApprovalView', () => {
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
+  // Trust is per origin: another port or plain http on the same host is
+  // another site, and the screen must not make it look like the trusted one.
+  it('shows the scheme and port of an origin that does not use the defaults', () => {
+    render(
+      <DAppConnectApprovalView
+        origin="http://localhost:3000"
+        address={ADDRESS}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('dapp-origin')).toHaveTextContent('http://localhost:3000');
+  });
+
   it('stands on bedrock in the live mode with the mark in the brand accent', () => {
     const light = createSemantic('light');
     const value = {
