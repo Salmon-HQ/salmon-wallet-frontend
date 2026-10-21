@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { applySymbols } from './useSolanaTransactionApproval';
+// @vitest-environment jsdom
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+vi.mock('./useTokenCatalog', () => ({ useTokenCatalog: () => ({ tokens: [] }) }));
+
+import { applySymbols, useSolanaTransactionApproval } from './useSolanaTransactionApproval';
 import type { Address } from '@solana/kit';
 import type { TransactionEffects } from '../blockchain/solana';
 
@@ -82,5 +89,27 @@ describe('applySymbols', () => {
 
     expect(applySymbols(undetermined, () => 'USDC')).toBe(undetermined);
     expect(applySymbols(null, () => 'USDC')).toBeNull();
+  });
+});
+
+describe('useSolanaTransactionApproval', () => {
+  // With no message there is nothing to preview and nothing loading; the
+  // screens read that as "still simulating" with a live button.
+  it('reports a request that carries no message as unreadable', () => {
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client }, children);
+
+    const { result } = renderHook(
+      () =>
+        useSolanaTransactionApproval({
+          account: { getReceiveAddress: () => ACCOUNT, network: { id: 'solana-mainnet' } } as never,
+          request: { id: 'req-empty', method: 'signTransaction', params: {} } as never,
+        }),
+      { wrapper }
+    );
+
+    expect(result.current.parsingError).not.toBeNull();
+    expect(result.current.effectsLoading).toBe(false);
   });
 });

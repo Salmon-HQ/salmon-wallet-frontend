@@ -164,7 +164,12 @@ export function useSolanaTransactionApproval({
     details: details.data ?? null,
     feeSol,
     priorityFeeSol,
-    parsingError: details.isError ? 'Failed to decode transaction' : null,
+    // A request with no message has nothing to preview and nothing loading;
+    // left alone, the screens would read that as "still simulating".
+    parsingError:
+      details.isError || (!!account && !!request && !fingerprint)
+        ? 'Failed to decode transaction'
+        : null,
     effects: namedEffects,
     effectsLoading: isEnabled && effects.isPending,
   };
