@@ -64,6 +64,7 @@ const baseProps = {
   request: baseRequest,
   account: fakeAccount,
   accountName: 'Savings',
+  approvedAddress: 'Signer1111111111111111111111111111111111111',
   onDismiss: vi.fn(),
 };
 
@@ -71,6 +72,31 @@ describe('DAppSignMessageApprovalPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDecodeDAppMessage.mockReturnValue({ text: 'Hello' });
+  });
+
+  // The background checked the site's grant against the account active
+  // then; another account active by the time this window loads must not sign.
+  it('refuses without showing the request when another account is active', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+
+    const { queryByTestId } = render(
+      <DAppSignMessageApprovalPage
+        {...baseProps}
+        approvedAddress="Other11111111111111111111111111111111111111"
+        onDismiss={onDismiss}
+      />
+    );
+
+    expect(queryByTestId('sign-message-view')).toBeNull();
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Not connected', id: 'req-msg-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    vi.unstubAllGlobals();
   });
 
   it('tells the view which account signs', () => {

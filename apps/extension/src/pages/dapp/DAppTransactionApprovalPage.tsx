@@ -17,6 +17,8 @@ interface Props {
   account: BlockchainAccount | undefined;
   /** The signing account's name, shown beside its address. */
   accountName?: string;
+  /** The account the background checked the site against, from the window's URL. */
+  approvedAddress: string | null;
   networkId: string | null;
   onDismiss: (approved: boolean) => void;
 }
@@ -46,17 +48,20 @@ export function DAppTransactionApprovalPage({
   request,
   account,
   accountName,
+  approvedAddress,
   networkId,
   onDismiss,
-}: Props): React.ReactElement {
+}: Props): React.ReactElement | null {
   const { metadata } = useDAppMetadata(origin);
   const {
     loading,
     reject: handleReject,
     approve,
+    refused,
   } = useDAppApproval({
     requestId: request.id,
     onDismiss,
+    binding: { approved: approvedAddress, active: account?.getReceiveAddress() },
   });
   const solanaAccount = useMemo(
     () => (account && isSignableSolanaAccount(account) ? account : null),
@@ -64,7 +69,7 @@ export function DAppTransactionApprovalPage({
   );
   const { details, feeSol, priorityFeeSol, parsingError, effects, effectsLoading } =
     useSolanaTransactionApproval({
-      account: solanaAccount,
+      account: refused ? null : solanaAccount,
       request,
     });
 
@@ -99,6 +104,8 @@ export function DAppTransactionApprovalPage({
       ),
     [account, approve, networkMismatch, request]
   );
+
+  if (refused) return null;
 
   return (
     <DAppTransactionApprovalView

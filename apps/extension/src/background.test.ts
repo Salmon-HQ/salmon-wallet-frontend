@@ -257,6 +257,19 @@ describe('what an unapproved origin can make the wallet do', () => {
     }
   );
 
+  // The popup signs with whatever account is active when it loads; the
+  // account checked here travels with the request so the popup can refuse
+  // if that changed in between.
+  it('names the account it checked in the approval window it opens', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('sign', 'req-bound'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    expect(parsePopupUrl(windowsCreate).get('address')).toBe('TrustedPubkey111');
+  });
+
   it('keeps a site connected for its account after a network switch', async () => {
     await approveOrigin();
     await fakeBrowser.storage.local.set({

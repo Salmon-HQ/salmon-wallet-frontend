@@ -171,7 +171,8 @@ export default defineBackground(() => {
   const launchPopupWindow = async (
     message: Message,
     sender: chrome.runtime.MessageSender,
-    sendResponse: ResponseHandler
+    sendResponse: ResponseHandler,
+    boundAddress?: string
   ): Promise<void> => {
     const origin = sender.origin || '';
 
@@ -200,6 +201,11 @@ export default defineBackground(() => {
     searchParams.set('request', JSON.stringify(message.data));
     if (message.data.params?.network) {
       searchParams.set('network', message.data.params.network);
+    }
+    // The account the site's grant was checked against. The window signs with
+    // whatever account is active when it loads, and refuses if that differs.
+    if (boundAddress) {
+      searchParams.set('address', boundAddress);
     }
 
     const windowOptions = {
@@ -274,7 +280,8 @@ export default defineBackground(() => {
   const routeApproval = (
     message: Message,
     sender: chrome.runtime.MessageSender,
-    sendResponse: ResponseHandler
+    sendResponse: ResponseHandler,
+    boundAddress?: string
   ): void => {
     // dApp approvals always open in a dedicated popup window: it is predictable
     // (one window) and auto-closes on response. The side panel is reserved for
@@ -282,7 +289,7 @@ export default defineBackground(() => {
     // triggered from a message relayed by the content script (the user gesture
     // does not survive the hop), which previously raced this popup window and
     // sometimes left both the panel and the window open.
-    launchPopupWindow(message, sender, sendResponse);
+    launchPopupWindow(message, sender, sendResponse, boundAddress);
   };
 
   /**
@@ -466,15 +473,16 @@ export default defineBackground(() => {
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): Promise<void> => {
-    if (!CONNECTIONLESS_METHODS.has(message.data.method)) {
-      const data = await readStorageData();
-      if (!isApprovedForActiveAccount(sender.origin || '', data)) {
-        await sendResponse({ error: 'Not connected', id: message.data.id });
-        return;
-      }
+    if (CONNECTIONLESS_METHODS.has(message.data.method)) {
+      routeApproval(message, sender, sendResponse);
+      return;
     }
-
-    routeApproval(message, sender, sendResponse);
+    const data = await readStorageData();
+    if (!isApprovedForActiveAccount(sender.origin || '', data)) {
+      await sendResponse({ error: 'Not connected', id: message.data.id });
+      return;
+    }
+    routeApproval(message, sender, sendResponse, data.connection?.address);
   };
 
   // Main message listener
