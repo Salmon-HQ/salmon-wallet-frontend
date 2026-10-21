@@ -24,7 +24,10 @@ import {
   getTransactionMessageLoadedAccountsDataSizeLimit,
 } from '@solana/kit';
 import type { Address } from '@solana/kit';
-import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
+import {
+  TOKEN_2022_PROGRAM_ADDRESS,
+  getTransferCheckedWithFeeInstructionDataDecoder,
+} from '@solana-program/token-2022';
 import { COMPUTE_BUDGET_PROGRAM_ADDRESS } from '@solana-program/compute-budget';
 
 vi.mock('@solana-program/token-2022', async (importOriginal) => ({
@@ -118,6 +121,28 @@ const mockMint = (decimals: number, extensions: unknown = none()) => {
 // ============================================================================
 
 describe('createSolTransaction', () => {
+  const lamports = (transaction: Awaited<ReturnType<typeof createSolTransaction>>) =>
+    Buffer.from(payload(transaction).at(-1)!.data!).readBigUInt64LE(4);
+
+  it('sends the lamports the amount holds, exactly', async () => {
+    const recipient = address(Keypair.generate().publicKey.toBase58());
+    // Math.floor(1e9 * 8.2) is 8,199,999,999.
+    const transaction = await createSolTransaction(
+      createRpc(),
+      await testSigner(1),
+      recipient,
+      8.2
+    );
+    expect(lamports(transaction)).toBe(8_200_000_000n);
+  });
+
+  it('refuses an amount finer than a lamport, or none at all', async () => {
+    const signer = await testSigner(1);
+    const recipient = address(Keypair.generate().publicKey.toBase58());
+    await expect(createSolTransaction(createRpc(), signer, recipient, 1e-10)).rejects.toThrow();
+    await expect(createSolTransaction(createRpc(), signer, recipient, 0)).rejects.toThrow();
+  });
+
   it('should create valid SOL transaction with a stubbed rpc', async () => {
     const rpc = createRpc();
     const signer = await testSigner(1);
@@ -425,6 +450,40 @@ describe('createSplTransaction', () => {
 // Test 2b: a Token-2022 mint whose displayed amount carries a multiplier
 // ============================================================================
 
+describe('createSplTransaction on a mint without a display multiplier', () => {
+  const send = async (amount: number, opts: Record<string, unknown> = {}) =>
+    createSplTransaction(
+      createRpc(),
+      await testSigner(1),
+      address(Keypair.generate().publicKey.toBase58()),
+      USDC_MINT,
+      amount,
+      opts
+    );
+  const sent = (transaction: Awaited<ReturnType<typeof send>>) =>
+    Buffer.from(payload(transaction).at(-1)!.data!).readBigUInt64LE(1);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sends the amount exactly as typed, with no floating point between', async () => {
+    mockMint(0);
+    expect(sent(await send(2 ** 53, { amountText: '9007199254740993' }))).toBe(
+      9_007_199_254_740_993n
+    );
+  });
+
+  // Rounding such an amount sends something else: 2.5 of a whole-unit token
+  // went out as 3.
+  it('refuses an amount with more decimal places than the token has', async () => {
+    mockMint(0);
+    await expect(send(2.5, { amountText: '2.5' })).rejects.toThrow();
+    mockMint(6);
+    await expect(send(0.0000005, { amountText: '0.0000005' })).rejects.toThrow();
+  });
+});
+
 describe('createSplTransaction on a mint with a display multiplier', () => {
   const CLOCK = 'SysvarC1ock11111111111111111111111111111111';
   const NOW = 1_800_000_000n;
@@ -508,6 +567,12 @@ describe('createSplTransaction on a mint with a display multiplier', () => {
     // At x3 with no decimals each raw unit shows as 3: 10 is unreachable, 9 is below it.
     mockMint(0, some([scaled(3)]));
     expect(sent(await send(rpcAt(NOW), 10))).toBe(3n);
+  });
+
+  it('refuses an amount that comes to no raw units at all', async () => {
+    // At x2, one display unit is half a raw unit: nothing can show as 0.000001.
+    mockMint(6, some([scaled(2)]));
+    await expect(send(rpcAt(NOW), 0.000001, { amountText: '0.000001' })).rejects.toThrow();
   });
 
   it('switches to the new multiplier once the chain clock is past its effective time', async () => {
@@ -642,11 +707,11 @@ describe('createSplTransaction on a mint with a display multiplier', () => {
         ])
       );
       holding(12_345_679n);
-      const owner = address(Keypair.generate().publicKey.toBase58());
-      expect(
-        await calculateTransferFee(rpcAt(NOW), USDC_MINT, 6.172839, { max: true, owner })
-      ).toBe(12_345_679n);
-      expect(await calculateTransferFee(rpcAt(NOW), USDC_MINT, 6.172839)).toBe(12_345_678n);
+      const transfer = getTransferCheckedWithFeeInstructionDataDecoder().decode(
+        payload(await send(rpcAt(NOW), 6.172839, { max: true })).at(-1)!.data!
+      );
+      expect(transfer.amount).toBe(12_345_679n);
+      expect(transfer.fee).toBe(12_345_679n);
     });
   });
 });

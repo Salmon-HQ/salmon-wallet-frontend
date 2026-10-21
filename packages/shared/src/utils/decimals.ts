@@ -102,6 +102,25 @@ export function toBaseUnits(value: number | string, decimals: number): bigint {
   return shiftDecimal(units, exponent + decimals);
 }
 
+/**
+ * Whether an amount names no more decimal places than the token has: "2.5"
+ * names one, too many for a token with none. The rule a Solana Pay request is
+ * held to, and every typed amount with it: converting a finer amount could
+ * only round it to a different one.
+ */
+export function withinDecimals(amount: string, decimals: number): boolean {
+  return (amount.split('.')[1] ?? '').length <= decimals;
+}
+
+/**
+ * A typed amount a send can take: positive, no larger than the balance, and
+ * within the token's decimal places.
+ */
+export function isSendableAmount(amount: string, balance: number, decimals: number): boolean {
+  const value = parseFloat(amount);
+  return value > 0 && value <= balance && withinDecimals(amount, decimals);
+}
+
 /** Base units as the shortest decimal string: 1,150,000 at 6 places is "1.15". */
 export function fromBaseUnits(units: bigint, decimals: number): string {
   if (decimals === 0) return units.toString();

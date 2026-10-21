@@ -17,6 +17,7 @@ import type { TransferRequest } from '../blockchain/solana/transfer-request';
 import type { BlockchainAccount, BlockchainType } from '../types/blockchain';
 import type { SendRecipient, SendRequest, SendToken } from '../types/ui/send-sheet';
 import { SOL_CONSTANTS } from '../utils/balance';
+import { withinDecimals } from '../utils/decimals';
 import type { AmountShortcutKey } from './useAmountShortcuts';
 import { useSendTransaction } from './useSendTransaction';
 
@@ -156,8 +157,10 @@ export function useSendFlowState({
       const held = holdings.find((tok) => tok.address === mint);
       if (!held) return { ok: false, reason: 'tokenNotHeld' };
 
-      const fraction = transferRequest.amount?.split('.')[1] ?? '';
-      if (fraction.length > (held.decimals ?? SOL_CONSTANTS.DECIMALS)) {
+      if (
+        transferRequest.amount !== undefined &&
+        !withinDecimals(transferRequest.amount, held.decimals ?? SOL_CONSTANTS.DECIMALS)
+      ) {
         return { ok: false, reason: 'amountDecimals' };
       }
 

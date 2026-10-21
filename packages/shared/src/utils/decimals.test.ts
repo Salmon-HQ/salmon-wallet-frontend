@@ -13,6 +13,8 @@ import {
   satoshisToBtc,
   resolveUiAmount,
   fromBaseUnits,
+  withinDecimals,
+  isSendableAmount,
 } from './decimals';
 
 describe('decimals', () => {
@@ -119,5 +121,32 @@ describe('fromBaseUnits', () => {
 
   it('keeps the significant decimals', () => {
     expect(fromBaseUnits(1_150_000n, 6)).toBe('1.15');
+  });
+});
+
+describe('withinDecimals', () => {
+  it('takes an amount the token has places for', () => {
+    expect(withinDecimals('2', 0)).toBe(true);
+    expect(withinDecimals('2.', 0)).toBe(true);
+    expect(withinDecimals('0.000001', 6)).toBe(true);
+  });
+
+  it('refuses one that names more places than the token has', () => {
+    expect(withinDecimals('2.5', 0)).toBe(false);
+    expect(withinDecimals('0.0000005', 6)).toBe(false);
+  });
+});
+
+describe('isSendableAmount', () => {
+  it('takes a positive amount within the balance at the token places', () => {
+    expect(isSendableAmount('1.5', 2, 6)).toBe(true);
+  });
+
+  it('refuses nothing, too much, too fine, or not a number', () => {
+    expect(isSendableAmount('', 2, 6)).toBe(false);
+    expect(isSendableAmount('0', 2, 6)).toBe(false);
+    expect(isSendableAmount('3', 2, 6)).toBe(false);
+    expect(isSendableAmount('2.5', 5, 0)).toBe(false);
+    expect(isSendableAmount('0.0000005', 2, 6)).toBe(false);
   });
 });

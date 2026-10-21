@@ -142,6 +142,7 @@ jest.mock('react-i18next', () => {
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimals'),
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // What the review shows about a payment request is real: the suite pins it.
   ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
@@ -636,6 +637,16 @@ describe('the amount screen — the shortcuts', () => {
 
   it('keeps Review dead when the amount exceeds the balance', () => {
     mockFlow.amount = '99';
+
+    render(<SendAmountScreen />);
+
+    expect(screen.getByTestId('send-review-button').props.accessibilityState.disabled).toBe(true);
+  });
+
+  // The transfer could only round such an amount to another one: 2.5 of a
+  // whole-unit token used to go out as 3.
+  it('keeps Review dead on an amount finer than the token', () => {
+    mockFlow.amount = '0.0000000001';
 
     render(<SendAmountScreen />);
 

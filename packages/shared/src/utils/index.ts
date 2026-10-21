@@ -188,6 +188,8 @@ export {
   applyDecimals,
   removeDecimals,
   parseAmount,
+  withinDecimals,
+  isSendableAmount,
   // ETH conversions
   ethToWei,
   weiToEth,

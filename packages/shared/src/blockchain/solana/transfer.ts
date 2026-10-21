@@ -65,9 +65,9 @@ import {
 } from '@solana-program/token-2022';
 import type { Extension, TransferFee } from '@solana-program/token-2022';
 
-import { applyDecimals, parseDecimal, shiftDecimal, toBaseUnits } from '../../utils/decimals';
+import { parseDecimal, shiftDecimal, toBaseUnits, withinDecimals } from '../../utils/decimals';
 import { isNativeSol } from '../../utils/tokens';
-import { LAMPORTS_PER_SOL, SOL_CONSTANTS } from '../../utils/balance';
+import { SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaRpc } from './networks';
 import { resolvePriorityFeeMicroLamports, toPriorityFeeLamports } from './priority-fee';
 
@@ -121,8 +121,8 @@ export interface TransferOptions {
    */
   max?: boolean;
   /**
-   * The amount exactly as typed. On a mint with a display multiplier it is
-   * converted from this text, which a floating-point `amount` can misread.
+   * The amount exactly as typed. The transfer converts this text, which a
+   * floating-point `amount` can misread.
    */
   amountText?: string;
 }
@@ -334,8 +334,24 @@ function displayToRawAmount(target: bigint, multiplier: ExactMultiplier): bigint
 }
 
 /**
+ * The base units of an amount as typed. One that names more places than the
+ * token has is refused: converting it could only round it to another amount.
+ */
+function typedBaseUnits(amount: number | string, decimals: number): bigint {
+  if (!withinDecimals(String(amount), decimals)) {
+    throw new Error('The amount has more decimal places than the token');
+  }
+  return toBaseUnits(amount, decimals);
+}
+
+/** A transfer that would move nothing is refused rather than sent. */
+function assertMovesSomething(rawAmount: bigint): void {
+  if (rawAmount === 0n) throw new Error('The amount is too small to send');
+}
+
+/**
  * The raw amount a transfer of `amount` (as the holder sees it, typed as
- * `amountText` when known) moves. Unchanged for a mint without a display
+ * `amountText` when known) moves: its base units on a mint without a display
  * multiplier; on one with, converted at the multiplier in force now. On Max it
  * is the whole raw balance of `maxSource` — but only when that balance shows
  * as the amount on screen: exactly on a scaled mint, within one display unit on
@@ -350,10 +366,10 @@ async function rawTransferAmount(
   { amountText, maxSource }: { amountText?: string; maxSource?: Address } = {}
 ): Promise<bigint> {
   const display = await readDisplayMultiplier(rpc, extensions);
-  if (display === null) return BigInt(applyDecimals(amount, decimals));
+  const target = typedBaseUnits(amountText ?? amount, decimals);
+  if (display === null) return target;
 
   const multiplier = parseDecimal(display.multiplier);
-  const target = toBaseUnits(amountText ?? amount, decimals);
   const shown = displayToRawAmount(target, multiplier);
   if (!maxSource) return shown;
 
@@ -533,8 +549,10 @@ export async function createSolTransaction(
   signer: TransactionSigner,
   to: Address,
   amount: number,
-  opts: Pick<TransferOptions, 'version' | 'memo' | 'references'> = {}
+  opts: Pick<TransferOptions, 'version' | 'memo' | 'references' | 'amountText'> = {}
 ) {
+  const lamports = typedBaseUnits(opts.amountText ?? amount, SOL_CONSTANTS.DECIMALS);
+  assertMovesSomething(lamports);
   const instructions: Instruction[] = [];
   if (opts.memo) {
     instructions.push(
@@ -549,7 +567,7 @@ export async function createSolTransaction(
       getTransferSolInstruction({
         source: signer,
         destination: to,
-        amount: BigInt(Math.floor(LAMPORTS_PER_SOL * amount)),
+        amount: lamports,
       }),
       opts.references
     )
@@ -613,6 +631,7 @@ export async function createSplTransaction(
     amountText: opts.amountText,
     maxSource: opts.max ? fromTokenAddress : undefined,
   });
+  assertMovesSomething(transferAmount);
 
   const instructions: Instruction[] = [
     // Idempotent ATA creation: adds the instruction to the same transaction.
@@ -790,15 +809,12 @@ export async function estimateFee(
  * @param rpc - Solana RPC client
  * @param mint - Token mint address
  * @param amount - Transfer amount (human-readable)
- * @param opts - The same Max and typed-amount inputs the transfer takes, so the
- *   fee is the one the transfer will be charged; Max needs the sending `owner`
  * @returns Fee amount in token's smallest unit, or null if no fee
  */
 export async function calculateTransferFee(
   rpc: SolanaRpc,
   mint: string,
-  amount: number,
-  opts: { max?: boolean; owner?: Address; amountText?: string } = {}
+  amount: number
 ): Promise<bigint | null> {
   if (!mint || isNativeSol(mint)) {
     return null;
@@ -819,20 +835,7 @@ export async function calculateTransferFee(
     return null;
   }
 
-  const maxSource =
-    opts.max && opts.owner
-      ? (
-          await findAssociatedTokenPda({
-            owner: opts.owner,
-            mint: mintAddress,
-            tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
-          })
-        )[0]
-      : undefined;
-  const transferAmount = await rawTransferAmount(rpc, extensions, amount, mintInfo.data.decimals, {
-    amountText: opts.amountText,
-    maxSource,
-  });
+  const transferAmount = await rawTransferAmount(rpc, extensions, amount, mintInfo.data.decimals);
   return transferFeeFor(rpc, transferFeeConfig, transferAmount);
 }
 
