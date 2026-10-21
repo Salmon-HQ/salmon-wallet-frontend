@@ -435,3 +435,82 @@ describe('assertSwapPaysWallet — the rent it allows for', () => {
     ).resolves.toBeUndefined();
   });
 });
+
+/**
+ * A route that runs with the wallet's signature (0x Settler, through its own
+ * calls) can set the close authority of one of the wallet's funded token
+ * accounts to someone else: no balance moves, so the swap reads clean, and
+ * later that someone closes the account and takes what it holds.
+ */
+describe("assertSwapPaysWallet — who may close the wallet's accounts", () => {
+  const WALLET_WSOL = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  const ATTACKER = '8pM1YsWLwCoU4nNGUzgjQZ8iBfTFtfkDfsfnayrHRJrQ' as Address;
+  const funded = (closeAuthority: Address | null): AccountState => ({
+    lamports: 5_002_039_280n,
+    owner: TOKEN_PROGRAM as Address,
+    token: {
+      mint: SOL as Address,
+      owner: WALLET,
+      amount: 5_000_000_000n,
+      delegate: null,
+      delegatedAmount: 0n,
+      closeAuthority,
+      isNative: true,
+    },
+  });
+  const paidSwap = (closeAuthorityAfter: Address | null): TransactionEffects => ({
+    ...(effects(-FEE, [token(USDC, -1_000_000n), token(BONK, 31_500_000_000n)]) as Extract<
+      TransactionEffects,
+      { kind: 'effects' }
+    >),
+    accounts: [
+      {
+        address: address(WALLET_WSOL),
+        before: funded(null),
+        after: funded(closeAuthorityAfter),
+      },
+    ],
+  });
+  const usdcToBonk: SwapRouteExpectation = {
+    ...usdcToSol,
+    outputMint: BONK,
+    quotedOutAmount: '31564956924',
+    minOutAmount: '31407132140',
+  };
+  const anySwap = () => {
+    const message = setTransactionMessageLifetimeUsingBlockhash(
+      {
+        blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as Blockhash,
+        lastValidBlockHeight: 1n,
+      },
+      setTransactionMessageFeePayer(WALLET, createTransactionMessage({ version: 0 }))
+    );
+    const messageBytes = getCompiledTransactionMessageEncoder().encode(
+      compileTransactionMessage(message as never)
+    );
+    return Buffer.from(
+      getTransactionEncoder().encode({
+        messageBytes: messageBytes as never,
+        signatures: { [WALLET]: null } as never,
+      })
+    ).toString('base64');
+  };
+
+  it('refuses a swap that hands another the close authority of a funded wallet account', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(paidSwap(ATTACKER));
+    await expect(assertSwapPaysWallet({} as never, anySwap(), WALLET, usdcToBonk)).rejects.toThrow(
+      /close/
+    );
+  });
+
+  it('accepts the same swap when the close authority stays as it was, or is the wallet', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(paidSwap(null));
+    await expect(
+      assertSwapPaysWallet({} as never, anySwap(), WALLET, usdcToBonk)
+    ).resolves.toBeUndefined();
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(paidSwap(WALLET));
+    await expect(
+      assertSwapPaysWallet({} as never, anySwap(), WALLET, usdcToBonk)
+    ).resolves.toBeUndefined();
+  });
+});

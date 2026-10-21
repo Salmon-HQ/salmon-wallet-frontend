@@ -151,6 +151,26 @@ function rentReclaimed(accounts: Iterable<AccountChange>, wallet: string): bigin
 }
 
 /**
+ * Refuses a swap that lets someone else close one of the wallet's token
+ * accounts. A route running with the wallet's signature can set a close
+ * authority through its own calls; no balance moves, so nothing else here
+ * would see it, and that someone could later close the account and take
+ * what it holds. Delegates and owner changes are already refused through the
+ * effects (an approval, or an undetermined ownership change).
+ */
+function assertNoForeignCloseAuthority(accounts: Iterable<AccountChange>, wallet: string): void {
+  for (const { address: account, before, after } of accounts) {
+    const token = after?.token;
+    const authority = token?.closeAuthority ?? null;
+    if (!token || token.owner !== wallet || !authority || authority === wallet) continue;
+    if (authority === (before?.token?.closeAuthority ?? null)) continue;
+    throw new SolanaTransactionMismatchError(
+      `The swap lets ${authority} close the wallet's token account ${account}`
+    );
+  }
+}
+
+/**
  * Simulates `transactionBase64` for `feePayer` and holds the result to `route`.
  *
  * Rent is allowed only for what the swap parks in the token accounts it
@@ -181,6 +201,7 @@ export async function assertSwapPaysWallet(
       change,
     ])
   );
+  assertNoForeignCloseAuthority(accounts.values(), feePayer);
   assertSwapEffects(
     effects,
     route,
