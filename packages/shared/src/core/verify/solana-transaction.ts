@@ -80,7 +80,7 @@ export interface SolanaTransactionExpectation {
   swapRoute?: SwapRouteExpectation;
 }
 
-/** What a Jupiter `route_v2` call must say, all taken from the build the screen draws. */
+/** What a Jupiter router call must say, all taken from the build the screen draws. */
 export interface SwapRouteExpectation {
   /** The wallet's own token accounts of the input mint: its SPL and Token-2022 ATAs. */
   sources: readonly string[];
@@ -389,15 +389,45 @@ function assertNftAction(
   if (!actsOnAsset) refuse(`Transaction does not act on ${action.asset}`);
 }
 
-/** Anchor discriminator of Jupiter's `route_v2`, the only call its build endpoint returns. */
-const JUPITER_ROUTE_V2 = [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14];
-/** `route_v2` accounts: 0 the authority, 1 what it spends, 2 where the output lands, 7 an optional override of it. */
-const ROUTE_AUTHORITY = 0;
-const ROUTE_SOURCE = 1;
-const ROUTE_DESTINATION = 2;
-const ROUTE_DESTINATION_OVERRIDE = 7;
-/** `route_v2` data after the discriminator: in u64, quoted out u64, slippage u16, platform fee u16. */
-const ROUTE_ARGS_BYTES = 8 + 8 + 8 + 2 + 2;
+/** Where one Jupiter router call keeps what the check reads: account slots, and where its arguments start. */
+interface JupiterRouteLayout {
+  /** Anchor discriminator: the first 8 bytes of sha256("global:<name>"). */
+  discriminator: readonly number[];
+  args: number;
+  authority: number;
+  source: number;
+  destination: number;
+  /** An optional override of the destination; empty is the program's own address. */
+  override?: number;
+}
+
+/**
+ * The two router calls Jupiter's build endpoint answers with, chosen per
+ * request. `shared_accounts_route_v2` puts a one-byte route id ahead of the
+ * arguments and has no override slot.
+ */
+const JUPITER_ROUTES: readonly JupiterRouteLayout[] = [
+  {
+    discriminator: [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14], // route_v2
+    args: 8,
+    authority: 0,
+    source: 1,
+    destination: 2,
+    override: 7,
+  },
+  {
+    discriminator: [0xd1, 0x98, 0x53, 0x93, 0x7c, 0xfe, 0xd8, 0xe9], // shared_accounts_route_v2
+    args: 9,
+    authority: 1,
+    source: 2,
+    destination: 5,
+  },
+];
+/**
+ * The fixed arguments both calls start with: in u64, quoted out u64, slippage
+ * u16, platform fee u16. A route plan of any length follows and is not read.
+ */
+const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2;
 
 /**
  * Every Jupiter call spends the token on screen from the wallet's own account
@@ -409,9 +439,10 @@ const ROUTE_ARGS_BYTES = 8 + 8 + 8 + 2 + 2;
  * account as the destination would pass every other check while the screen
  * still showed the quote, and one naming another of the wallet's token
  * accounts as the source would spend a different token — the wallet signs as
- * authority over all of them. Both are the instruction's own slots, and the
- * optional override slot must be empty, which Anchor encodes as the program's
- * own address. The amounts are bound so the minimum Jupiter enforces on chain
+ * authority over all of them. Both are the instruction's own slots, in either
+ * router call, and `route_v2`'s optional override slot must be empty, which
+ * Anchor encodes as the program's own address. Any other Jupiter instruction
+ * is refused. The amounts are bound so the minimum Jupiter enforces on chain
  * is the minimum the screen shows.
  *
  * The mints are not read, and need not be: an associated token account's
@@ -435,43 +466,43 @@ function assertJupiterRoute(
       accounts[instruction.accountIndices[slot] ?? -1] ??
       refuse('Transaction resolves a Jupiter account through a lookup table it cannot verify');
 
-    const data = instruction.data;
-    if (
-      !data ||
-      data.length < 8 + ROUTE_ARGS_BYTES ||
-      JUPITER_ROUTE_V2.some((byte, index) => data[index] !== byte)
-    ) {
-      throw new SolanaTransactionMismatchError(
-        'Transaction carries a Jupiter instruction other than route_v2'
-      );
+    const data = instruction.data ?? new Uint8Array();
+    const layout = JUPITER_ROUTES.find(({ discriminator }) =>
+      discriminator.every((byte, index) => data[index] === byte)
+    );
+    if (!layout || data.length < layout.args + ROUTE_ARGS_BYTES) {
+      return refuse('Transaction carries a Jupiter instruction other than a swap route');
     }
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    if (accountAt(ROUTE_AUTHORITY) !== feePayer) {
+    if (accountAt(layout.authority) !== feePayer) {
       refuse('Transaction swaps tokens the wallet does not authorize');
     }
-    const source = accountAt(ROUTE_SOURCE);
+    const source = accountAt(layout.source);
     if (!route.sources.includes(source)) {
       refuse(
         `Transaction spends from ${source}, which is not the wallet's account of the token on screen`
       );
     }
-    const destination = accountAt(ROUTE_DESTINATION);
+    const destination = accountAt(layout.destination);
     if (!route.destinations.includes(destination)) {
       refuse(`Transaction pays the swap to ${destination}, which is not the wallet's own`);
     }
-    if (accountAt(ROUTE_DESTINATION_OVERRIDE) !== JUPITER_AGGREGATOR_PROGRAM) {
+    if (
+      layout.override !== undefined &&
+      accountAt(layout.override) !== JUPITER_AGGREGATOR_PROGRAM
+    ) {
       refuse('Transaction redirects the swap output to another account');
     }
-    if (view.getBigUint64(8, true).toString() !== route.inAmount) {
+    if (view.getBigUint64(layout.args, true).toString() !== route.inAmount) {
       refuse('Transaction swaps an amount other than the one on screen');
     }
-    if (view.getBigUint64(16, true).toString() !== route.quotedOutAmount) {
+    if (view.getBigUint64(layout.args + 8, true).toString() !== route.quotedOutAmount) {
       refuse('Transaction quotes an output other than the one on screen');
     }
-    if (view.getUint16(24, true) > route.slippageBps) {
+    if (view.getUint16(layout.args + 16, true) > route.slippageBps) {
       refuse('Transaction allows more slippage than the screen shows');
     }
-    if (view.getUint16(26, true) > route.platformFeeBps) {
+    if (view.getUint16(layout.args + 18, true) > route.platformFeeBps) {
       refuse('Transaction takes a larger fee than the screen shows');
     }
   }

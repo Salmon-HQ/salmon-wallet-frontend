@@ -110,9 +110,9 @@ describe('signAndSendSolanaTransaction — a 0x swap is simulated before it is s
     vi.mocked(previewTransactionEffects).mockClear();
     const { tx, account, expectation } = await setup(JUPITER_AGGREGATOR_PROGRAM);
 
-    // The byte check refuses this route (data is not route_v2) before any simulation.
+    // The byte check refuses this route (data is no swap route) before any simulation.
     await expect(signAndSendSolanaTransaction(account, tx, expectation)).rejects.toThrow(
-      /other than route_v2/
+      /other than a swap route/
     );
     expect(previewTransactionEffects).not.toHaveBeenCalled();
   });

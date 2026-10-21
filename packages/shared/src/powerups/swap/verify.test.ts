@@ -174,10 +174,10 @@ describe('swap bytes — where the router pays the output', () => {
     expect(() => verify(transaction([route({ feeBps: 9_000 })]))).toThrow(/larger fee/);
   });
 
-  it('refuses a Jupiter instruction other than route_v2', () => {
+  it('refuses a Jupiter instruction other than its two swap routes', () => {
     const legacyRoute = [0xe5, 0x17, 0xcb, 0x97, 0x7a, 0xe3, 0xad, 0x2a];
     expect(() => verify(transaction([route({ discriminator: legacyRoute })]))).toThrow(
-      /other than route_v2/
+      /Jupiter instruction other than/
     );
   });
 
@@ -255,6 +255,7 @@ const toIx = ({ programId, accounts, data }: JupiterInstruction): Ix => ({
 /** Where each Jupiter router call keeps what the check reads, as the real builds lay it out. */
 const LAYOUTS = {
   bb64facc31c4af14: { args: 8, authority: 0, source: 1, destination: 2 }, // route_v2
+  d19853937cfed8e9: { args: 9, authority: 1, source: 2, destination: 5 }, // shared_accounts_route_v2
 } as Record<string, { args: number; authority: number; source: number; destination: number }>;
 
 /**
@@ -327,18 +328,28 @@ const setU16 = (data: Uint8Array, offset: number, value: number) =>
   new DataView(data.buffer, data.byteOffset).setUint16(offset, value, true);
 
 /**
- * The real Jupiter builds on the backend's fixtures, by shape: a single-hop
- * route_v2 with Salmon's fee (SOL in, wrapped and unwrapped), one paying out
- * SOL, a multi-hop route_v2, and one paying a Token-2022 mint.
+ * The real Jupiter builds on the backend's fixtures, by shape. Jupiter answers
+ * with either router call, chosen per request: route_v2 single-hop with
+ * Salmon's fee (SOL in, wrapped and unwrapped), paying out SOL, multi-hop, and
+ * paying a Token-2022 mint; shared_accounts_route_v2 multi-hop, spending a
+ * Token-2022 mint, and with SOL wrapped and unwrapped.
  */
-const ROUTE_V2_BUILDS = ['sol-usdc-fee', 'usdc-sol', 'usdc-bonk-multihop', 'usdc-pyusd'];
+const REAL_BUILDS = [
+  'sol-usdc-fee',
+  'usdc-sol',
+  'usdc-bonk-multihop',
+  'usdc-pyusd',
+  'usdc-bonk-shared',
+  'pyusd-usdc-shared',
+  'sol-jup-shared',
+];
 
 describe('swap bytes — real Jupiter builds', () => {
-  it.each(ROUTE_V2_BUILDS)('accepts the real %s build', async (name) => {
+  it.each(REAL_BUILDS)('accepts the real %s build', async (name) => {
     expect(await realBuild(name)).not.toThrow();
   });
 
-  describe.each(ROUTE_V2_BUILDS)('refuses a tampered %s build', (name) => {
+  describe.each(REAL_BUILDS)('refuses a tampered %s build', (name) => {
     it('spending another of the wallet’s tokens', async () => {
       const other = await walletTokenAccounts(WALLET, OTHER_MINT);
       const check = await realBuild(name, (swap, layout) => {
