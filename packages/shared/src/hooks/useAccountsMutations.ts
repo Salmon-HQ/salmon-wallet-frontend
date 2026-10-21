@@ -6,13 +6,14 @@ import type { Account, EditAccountParams, StoredAccount } from '../types/account
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
 import { resolveActiveSlot } from '../utils/active-selection';
-import { seedVaultAccessToRelease } from '../utils/account-secret';
+import { seedVaultAccessToRelease, toStoredSecret } from '../utils/account-secret';
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
-  buildSecretVault,
   clearAccountsStorage,
   persistAccounts,
   persistActiveSelection,
+  readStoredAccounts,
+  readStoredSecrets,
 } from './useAccountsMutationHelpers';
 
 interface UseAccountsMutationsParams {
@@ -99,7 +100,17 @@ export function useAccountsMutations({
       // chain page the user happened to be reading — persisted, and therefore
       // still there on the next launch.
       const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
-      const newVault = buildSecretVault(newAccounts);
+
+      // The change lands on what storage holds, not on this window's copy:
+      // another window may have added a wallet this one has not loaded.
+      const secrets = await readStoredSecrets(password);
+      const stored = await readStoredAccounts();
+      const newVault = { ...secrets, [account.id]: toStoredSecret(account.secret) };
+      if (replaces) delete newVault[replaces];
+      const newStored = [
+        ...stored.filter(({ id }) => id !== replaces && id !== account.id),
+        formatAccountForStorage(account),
+      ];
 
       // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
       // cached derived key has expired and no password was supplied), abort
@@ -123,11 +134,12 @@ export function useAccountsMutations({
       }
 
       await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
-      await persistAccounts(newAccounts, formatAccountForStorage);
       // The same pair the runtime was just put on: a wallet whose only address
       // sits at a derived path, or on a single network, would otherwise come
       // back on an empty slot after the next launch.
       await persistActiveSelection(newAccountId, newSlot);
+      // The list goes last: a window that re-reads on it finds the rest written.
+      await setStorageItem(STORAGE_KEYS.ACCOUNTS, newStored);
     },
     [
       accounts,
@@ -186,12 +198,16 @@ export function useAccountsMutations({
     async (targetId: string, password?: string): Promise<void> => {
       const newAccounts = accounts.filter(({ id }) => id !== targetId);
 
-      if (newAccounts.length === 0) {
+      // Removed from what storage holds, not from this window's copy: the
+      // last wallet here need not be the last one stored.
+      const newStored = (await readStoredAccounts()).filter(({ id }) => id !== targetId);
+      if (newStored.length === 0) {
         await removeAllAccounts();
         return;
       }
 
-      const newVault = buildSecretVault(newAccounts);
+      const newVault = await readStoredSecrets(password);
+      delete newVault[targetId];
 
       // Re-encrypt first. If we cannot produce an encrypted vault, abort
       // before mutating state so runtime, persisted accounts, and the
@@ -217,7 +233,7 @@ export function useAccountsMutations({
         }
       }
 
-      await persistAccounts(newAccounts, formatAccountForStorage);
+      await setStorageItem(STORAGE_KEYS.ACCOUNTS, newStored);
 
       await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
       if (password) {
@@ -233,7 +249,6 @@ export function useAccountsMutations({
     [
       accountId,
       accounts,
-      formatAccountForStorage,
       networkId,
       removeAllAccounts,
       setAccountId,

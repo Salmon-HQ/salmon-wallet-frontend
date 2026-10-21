@@ -1,8 +1,45 @@
-import { removeStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
+import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
+import { EncryptionMaterialMissingError } from '../crypto/encrypt-mnemonics';
+import {
+  getStashItem,
+  getStorageItem,
+  removeStorageItem,
+  setStorageItem,
+  STASH_KEYS,
+  STORAGE_KEYS,
+} from '../storage';
 import type { Account, StoredAccount } from '../types/account';
+import type { SecretVault } from '../utils/account-secret';
 import type { ActiveSlot } from '../utils/active-selection';
+import {
+  getStoredMnemonics,
+  resolveMnemonicsWithCachedKey,
+  resolveMnemonicsWithPassword,
+} from './useAccountsSecurityHelpers';
 
 export { buildSecretVault } from '../utils/account-secret';
+
+/**
+ * The wallet secrets as storage holds them now. Another wallet window may have
+ * added or removed a wallet since this one loaded its copy, so a change is
+ * applied to these and not to the copy in memory. The vault opens with the
+ * cached key, else the password; with neither it could not be re-encrypted
+ * either, so nothing is changed.
+ */
+export async function readStoredSecrets(password?: string): Promise<SecretVault> {
+  const vault = await getStoredMnemonics();
+  if (!vault) return {};
+
+  const cachedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+  if (isKeyCacheValid(cachedKey)) return resolveMnemonicsWithCachedKey(vault, cachedKey);
+  if (password) return resolveMnemonicsWithPassword(vault, password);
+  throw new EncryptionMaterialMissingError();
+}
+
+/** The wallet list as storage holds it now (see `readStoredSecrets`). */
+export async function readStoredAccounts(): Promise<StoredAccount[]> {
+  return (await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS)) ?? [];
+}
 
 export async function persistAccounts(
   accounts: Account[],

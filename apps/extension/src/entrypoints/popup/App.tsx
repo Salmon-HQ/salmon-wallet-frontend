@@ -9,6 +9,9 @@ import {
   useWaitExit,
   useWaitGate,
   DerivedKeyCache,
+  getStashItem,
+  isKeyCacheValid,
+  STASH_KEYS,
   type NetworkId,
   type TrustedApp,
 } from '@salmon/shared';
@@ -216,7 +219,21 @@ function App() {
     void clearSessionKey();
     void actions.lockAccounts();
   }, [actions]);
-  useLockAcrossWindows({ ready, locked, closing: closeLockTriggeredRef, lock: lockThisWindow });
+  // A wallet added or removed in another window is re-read here through the
+  // cached key; without one this window cannot re-read, and is locked instead.
+  const accountIds = useMemo(() => accounts.map(({ id }) => id), [accounts]);
+  const reloadWallets = useCallback(async () => {
+    const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+    return isKeyCacheValid(keyCache) ? actions.unlockWithCachedKey(keyCache) : false;
+  }, [actions]);
+  useLockAcrossWindows({
+    ready,
+    locked,
+    closing: closeLockTriggeredRef,
+    lock: lockThisWindow,
+    accountIds,
+    reload: reloadWallets,
+  });
 
   useEffect(() => {
     if (!ready || locked || accounts.length === 0) {
