@@ -123,6 +123,9 @@ function findUnreadProgram(
     if (hasTransferHook(raw)) return `the transfer hook of ${address}`;
   }
   for (const line of logs ?? []) {
+    // Past the node's log limit the rest of the run goes unlogged, nested
+    // calls included.
+    if (line === 'Log truncated') return 'programs whose logs were cut short';
     const invoked = /^Program (\S+) invoke \[(\d+)\]$/.exec(line);
     if (invoked && Number(invoked[2]) > 1 && !ANALYSABLE_PROGRAMS.has(invoked[1] as Address)) {
       return invoked[1]!;
@@ -258,6 +261,9 @@ export async function previewTransactionEffects(
   addresses.forEach((address, index) => {
     after.set(address, simulation.accounts?.[index] ?? null);
   });
+  // A mint the transaction creates, or extends, has its transfer hook only
+  // in the state after.
+  if (options.strict) unreadProgram ??= findUnreadProgram([], after);
 
   // The previewed account existing before but not after is not a drain to
   // zero — it is the node declining to report the one account whose numbers
