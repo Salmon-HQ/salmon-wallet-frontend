@@ -207,8 +207,12 @@ const shortcuts = useAmountShortcuts({ balance, decimals, setAmount, maxLabel: t
   attribution and the `contributor` ("Made by") slot filled from the
   envelope, the back/confirm controls, the refresh on `expiresAt`, the
   watch-only refusal (`NoSigningAccountError`), the cancel
-  (`SignatureRequestCancelledError`). The Powerup never sees signed bytes and
-  never adds an element to this screen.
+  (`SignatureRequestCancelledError`), and the unknown outcome: when the
+  network cannot say whether the transaction landed, the screen offers only
+  Close and the request rejects with `SolanaOutcomeUnknownError`. The Powerup
+  then clears what was typed, shows that error's message and never submits
+  again: the first transaction may have landed. The Powerup never sees signed
+  bytes and never adds an element to this screen.
 - The backend sends no i18n keys; the client builds the rows from typed
   fields (spec 029 §8.1).
 - **Several transactions, one id.** A capability whose actions are several
@@ -454,7 +458,9 @@ Apply in order; a "no" on any line blocks.
    easing. DOM reads colour through `useSemantic()` only.
 5. **States.** Loading, empty, error (with retry when retryable), and — for
    a builder — every `describePowerupBuildError` outcome has a screen, with
-   `testID`s on each state.
+   `testID`s on each state. A transaction Powerup also handles
+   `SolanaOutcomeUnknownError` from `requestSignature`: clear the form, show
+   its message, never retry.
 6. **Core does the money.** Transaction bytes come from
    `/v1/{networkId}/powerups/{id}/build` only; `requestSignature` is the one
    door; no confirm, wait, or receipt drawn by the Powerup; `pending` and

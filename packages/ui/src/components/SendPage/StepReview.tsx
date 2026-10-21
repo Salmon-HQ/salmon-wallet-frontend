@@ -125,7 +125,8 @@ export function StepReview({
           <PrimaryButton
             testID="nft-send-confirm-button"
             onPress={onConfirm}
-            disabled={isSending}
+            // It may have landed: a second press would sign a second transfer.
+            disabled={isSending || nftError === 'transaction.errors.broadcastUnknown'}
             loading={isSending}
           >
             {t('actions.send')}

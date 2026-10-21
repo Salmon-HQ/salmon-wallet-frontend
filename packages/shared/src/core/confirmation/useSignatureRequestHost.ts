@@ -17,9 +17,9 @@ export interface SignatureRequestHost {
   secondsLeft: number | null;
   /** True while a refreshed proposal is being built. */
   refreshing: boolean;
-  /** The confirm control's label: "Confirm (12)" or "Refresh Quote" once expired. */
+  /** The confirm control's label: "Confirm (12)", "Refresh Quote" once expired, or "Close" after an unknown outcome. */
   confirmLabel: string;
-  /** Confirm, or rebuild first when the quote expired. */
+  /** Confirm, rebuild first when the quote expired, or only close after an unknown outcome: never sign again. */
   confirmOrRefresh: () => Promise<void>;
   cancel: () => void;
   /** The receipt's one button: close the window, hand the Powerup back. */
@@ -52,6 +52,11 @@ export function useSignatureRequestHost(): SignatureRequestHost {
 
   const confirmOrRefresh = useCallback(async () => {
     if (!pending) return;
+    // The last attempt may have landed: another press must never sign again.
+    if (pending.unresolved) {
+      cancel();
+      return;
+    }
     if (expired) {
       // A build that has run out is not signable. When the Powerup can rebuild
       // it, the press rebuilds; when it cannot, the press dismisses. What it
@@ -75,6 +80,7 @@ export function useSignatureRequestHost(): SignatureRequestHost {
   }, [pending, expired, refresh, confirm, cancel]);
 
   const confirmLabel = useMemo(() => {
+    if (pending?.unresolved) return i18n.t('actions.close', { defaultValue: 'Close' });
     if (expired) {
       return pending?.proposal.refresh
         ? i18n.t('confirmation.refreshQuote', { defaultValue: 'Refresh Quote' })

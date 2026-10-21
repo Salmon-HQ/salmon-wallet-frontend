@@ -54,6 +54,8 @@ export default function NftSendReviewScreen() {
     validatedRecipient !== null &&
     recipient === validatedRecipient &&
     !sending &&
+    // The last send may have landed: confirming again would send it twice.
+    sendError !== 'transaction.errors.broadcastUnknown' &&
     nft?.blockchain !== 'bitcoin' &&
     canSignAccount;
 

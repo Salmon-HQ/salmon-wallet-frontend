@@ -354,6 +354,8 @@ describe('SendPage — the passage', () => {
     expect(screen.getByTestId('send-failure-title').textContent).toBe(
       'transaction.sendUnconfirmed'
     );
+    // The transaction may have landed: a retry would send it twice.
+    expect(screen.queryByTestId('send-failure-retry')).toBeNull();
   });
 
   it('paints the failure surface off the live mode', () => {

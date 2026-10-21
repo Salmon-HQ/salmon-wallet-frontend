@@ -27,6 +27,7 @@ import {
   createTransactionMessage,
   getBase64Decoder,
   getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   pipe,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
@@ -44,6 +45,7 @@ import type {
   V1TransactionConfig,
 } from '@solana/kit';
 import { getTransferSolInstruction } from '@solana-program/system';
+import { sendExpectingOutcome } from './confirm';
 import { getAddMemoInstruction } from '@solana-program/memo';
 import { getSetComputeUnitPriceInstruction } from '@solana-program/compute-budget';
 import {
@@ -532,14 +534,20 @@ async function executeTransaction(
   // exactly this pairing: "set maxRetries to 0 and manually rebroadcast via a
   // custom algorithm".
   // @see https://solana.com/developers/guides/advanced/retry
-  const result = await rpc
-    .sendTransaction(wireTransaction, {
-      encoding: 'base64',
-      skipPreflight: false,
-      preflightCommitment: 'confirmed',
-      maxRetries: 0n,
-    })
-    .send();
+  // A lost answer can follow a broadcast the node accepted: the caller's
+  // confirmation wait settles it by this signature (see `sendExpectingOutcome`).
+  const result = await sendExpectingOutcome(
+    () =>
+      rpc
+        .sendTransaction(wireTransaction, {
+          encoding: 'base64',
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+          maxRetries: 0n,
+        })
+        .send(),
+    getSignatureFromTransaction(signed)
+  );
   return { result, wireTransaction };
 }
 

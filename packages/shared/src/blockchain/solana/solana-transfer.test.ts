@@ -828,6 +828,27 @@ describe('retry ownership', () => {
     expect(sendConfigOf(send)).toMatchObject({ maxRetries: 0n, skipPreflight: false });
   });
 
+  it('returns the signed signature when the send answer is lost, so the wait settles it', async () => {
+    const send = vi.fn().mockReturnValue({
+      send: async () => {
+        throw new Error('fetch failed');
+      },
+    });
+    const rpc = createRpc({ sendTransaction: send });
+    const signer = await testSigner(1);
+
+    const result = await createTransfer(
+      rpc,
+      signer,
+      address(Keypair.generate().publicKey.toBase58()),
+      SOL_ADDRESS,
+      1
+    );
+
+    expect(String(result.txId)).toMatch(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+    expect(result.wireTransaction).toBeTruthy();
+  });
+
   it('tells the node not to retry a re-broadcast either', async () => {
     const send = vi.fn().mockReturnValue({ send: async () => 'a-signature' });
     const rpc = createRpc({ sendTransaction: send });

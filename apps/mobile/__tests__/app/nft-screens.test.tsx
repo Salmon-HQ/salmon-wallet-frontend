@@ -331,6 +331,15 @@ describe('the NFT review screen', () => {
     expect(screen.getByText('bob.sol')).toBeTruthy();
   });
 
+  it('never offers a second send after an unknown outcome: it may have landed', () => {
+    mockFlow.sendError = 'transaction.errors.broadcastUnknown';
+    render(<NftSendReviewScreen />);
+
+    expect(screen.getByTestId('nft-send-confirm-button').props.accessibilityState.disabled).toBe(
+      true
+    );
+  });
+
   it('refuses to confirm for a wallet that cannot sign', () => {
     mockIsSignable = false;
 

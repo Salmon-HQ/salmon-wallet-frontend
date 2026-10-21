@@ -15,11 +15,12 @@ import {
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
+  getSignatureFromTransaction,
   getTransactionDecoder,
 } from '@solana/kit';
 import type { Commitment, Signature, TransactionMessageBytes } from '@solana/kit';
 import { signTransactionWith, type SolanaSigner } from '../../blockchain/solana/signing';
-import { confirmSolanaSignature } from '../../blockchain/solana/confirm';
+import { confirmSolanaSignature, sendExpectingOutcome } from '../../blockchain/solana/confirm';
 import type { SolanaRpc, SolanaRpcSubscriptions } from '../../blockchain/solana/networks';
 import {
   assertSolanaTransactionMatches,
@@ -60,10 +61,11 @@ export interface SolanaBroadcastOptions {
  * co-signer's signature on a prepared transaction survives; this wallet only
  * ever fills its own slot.
  *
- * Confirmation has no polling fallback: a broken WebSocket endpoint fails
- * loudly rather than degrading into a silent slow path. The signature is
- * returned to the caller only once the cluster reports it at `commitment`;
- * the wait ends otherwise only when the blockhash expires (see `confirm.ts`).
+ * The signature is returned to the caller only once the cluster reports it at
+ * `commitment`. Every verdict the subscription cannot settle goes to an HTTP
+ * poll of the ledger (see `confirm.ts`); when neither can tell whether the
+ * transaction landed, the wait throws `SolanaOutcomeUnknownError`, which a
+ * caller must never treat as a failure it can retry.
  *
  * @param account - The signing account and its RPC clients.
  * @param transactionBase64 - The unsigned transaction, base64 wire format.
@@ -72,6 +74,7 @@ export interface SolanaBroadcastOptions {
  * @returns The confirmed signature.
  * @throws SolanaTransactionMismatchError - When the transaction disagrees with
  *   the expectation; nothing is signed or sent.
+ * @throws SolanaOutcomeUnknownError - When the transaction may have landed.
  * @throws The RPC's or the confirmation's error, unchanged.
  */
 export async function signAndSendSolanaTransaction(
@@ -119,13 +122,19 @@ export async function signAndSendSolanaTransaction(
     signatures: decoded.signatures,
   });
 
-  const signature = await rpc
-    .sendTransaction(getBase64EncodedWireTransaction(signed), {
-      encoding: 'base64',
-      preflightCommitment: commitment,
-      skipPreflight: options.skipPreflight ?? false,
-    })
-    .send();
+  // A lost answer can follow a broadcast the node accepted: the wait below
+  // settles it by this signature rather than reporting a retryable failure.
+  const signature = await sendExpectingOutcome(
+    () =>
+      rpc
+        .sendTransaction(getBase64EncodedWireTransaction(signed), {
+          encoding: 'base64',
+          preflightCommitment: commitment,
+          skipPreflight: options.skipPreflight ?? false,
+        })
+        .send(),
+    getSignatureFromTransaction(signed)
+  );
 
   await confirmSolanaSignature(
     { rpc, rpcSubscriptions: account.getRpcSubscriptions() },

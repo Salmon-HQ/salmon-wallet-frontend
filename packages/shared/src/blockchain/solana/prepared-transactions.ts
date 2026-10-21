@@ -2,6 +2,7 @@ import { address } from '@solana/kit';
 import type { Address, Commitment } from '@solana/kit';
 import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
 import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
+import { SolanaOutcomeUnknownError } from './confirm';
 import {
   LOOKUP_TABLE_STEP_INSTRUCTIONS,
   LOOKUP_TABLE_STEP_PROGRAMS,
@@ -227,6 +228,9 @@ export async function signAndSendPreparedSolanaTransactions(
         );
       }
     } catch (error) {
+      // It may have landed: wrapping would hide that from the screen, which
+      // must not offer a retry that sends twice.
+      if (error instanceof SolanaOutcomeUnknownError) throw error;
       const step = preparedTransaction.step ?? 'transaction';
       const message = error instanceof Error ? error.message : 'Unknown Solana transaction error';
       // The original error carries the stack that says which call failed;

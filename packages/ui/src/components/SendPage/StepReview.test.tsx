@@ -75,3 +75,27 @@ describe('StepReview with a payment request', () => {
     expect(screen.queryByTestId('send-review-requested-by')).toBeNull();
   });
 });
+
+describe('StepReview for a collectible', () => {
+  const nft = { mint: 'Mint', name: 'Fish #1', image: '' } as never;
+
+  it('offers the send again after an ordinary failure', () => {
+    renderInMode(
+      'dark',
+      <StepReview {...baseProps()} nft={nft} nftError="transaction.errors.networkBusy" />
+    );
+    expect((screen.getByTestId('nft-send-confirm-button') as HTMLButtonElement).disabled).toBe(
+      false
+    );
+  });
+
+  it('never offers it again when the outcome is unknown', () => {
+    renderInMode(
+      'dark',
+      <StepReview {...baseProps()} nft={nft} nftError="transaction.errors.broadcastUnknown" />
+    );
+    expect((screen.getByTestId('nft-send-confirm-button') as HTMLButtonElement).disabled).toBe(
+      true
+    );
+  });
+});
