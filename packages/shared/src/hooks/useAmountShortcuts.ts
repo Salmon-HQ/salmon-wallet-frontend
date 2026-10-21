@@ -13,12 +13,12 @@ import { useCallback, useMemo, useState } from 'react';
 import type { ChipOption } from '../types/ui/chip';
 import { fromBaseUnits, toBaseUnits } from '../utils/decimals';
 
-/** `1` is MAX — the whole balance. */
+/** Whole percents of the balance, so a fill is computed on integers; `100` is MAX. */
 export const AMOUNT_SHORTCUTS = [
-  { key: '25', value: 0.25 },
-  { key: '50', value: 0.5 },
-  { key: '75', value: 0.75 },
-  { key: 'max', value: 1 },
+  { key: '25', percent: 25 },
+  { key: '50', percent: 50 },
+  { key: '75', percent: 75 },
+  { key: 'max', percent: 100 },
 ] as const;
 
 export type AmountShortcutKey = (typeof AMOUNT_SHORTCUTS)[number]['key'];
@@ -72,7 +72,7 @@ export function useAmountShortcuts({
       // On integers, so the fill never loses its last unit to floating point
       // (1.15 * 1e6 is 1149999.9999999998).
       const places = decimals ?? 9;
-      const units = (toBaseUnits(balance, places) * BigInt(option.value * 100)) / 100n;
+      const units = (toBaseUnits(balance, places) * BigInt(option.percent)) / 100n;
       setAmount(fromBaseUnits(units, places), option.key);
       setSelected(key);
     },

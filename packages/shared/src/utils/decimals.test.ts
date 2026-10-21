@@ -12,6 +12,7 @@ import {
   btcToSatoshis,
   satoshisToBtc,
   resolveUiAmount,
+  fromBaseUnits,
 } from './decimals';
 
 describe('decimals', () => {
@@ -104,5 +105,19 @@ describe('decimals', () => {
     it('keeps the long-standing fallback for a zero uiAmount', () => {
       expect(resolveUiAmount({ amount: '5000000', decimals: 6, uiAmount: 0 })).toBe(5);
     });
+  });
+});
+
+describe('fromBaseUnits', () => {
+  it('writes zero as 0', () => {
+    expect(fromBaseUnits(0n, 6)).toBe('0');
+  });
+
+  it('drops the zeros a whole amount leaves after the point', () => {
+    expect(fromBaseUnits(100_000_000n, 6)).toBe('100');
+  });
+
+  it('keeps the significant decimals', () => {
+    expect(fromBaseUnits(1_150_000n, 6)).toBe('1.15');
   });
 });

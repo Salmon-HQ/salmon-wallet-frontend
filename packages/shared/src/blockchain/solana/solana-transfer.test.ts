@@ -510,10 +510,41 @@ describe('createSplTransaction on a mint with a display multiplier', () => {
     expect(sent(await send(rpcAt(NOW), 10))).toBe(3n);
   });
 
-  it('switches to the new multiplier once the chain clock reaches its effective time', async () => {
-    mockMint(6, some([scaled(1, 2, 1_700_000_000n)]));
-    expect(sent(await send(rpcAt(1_699_999_999n), 10))).toBe(10_000_000n);
-    expect(sent(await send(rpcAt(1_700_000_000n), 10))).toBe(5_000_000n);
+  it('switches to the new multiplier once the chain clock is past its effective time', async () => {
+    mockMint(6, some([scaled(1, 2, NOW)]));
+    expect(sent(await send(rpcAt(NOW - 600n), 10))).toBe(10_000_000n);
+    expect(sent(await send(rpcAt(NOW + 600n), 10))).toBe(5_000_000n);
+  });
+
+  it('refuses to build within five minutes either side of a scheduled multiplier change', async () => {
+    // The transaction can land after the switch it was converted before.
+    mockMint(6, some([scaled(1, 2, NOW)]));
+    await expect(send(rpcAt(NOW - 120n), 10)).rejects.toThrow();
+    await expect(send(rpcAt(NOW + 120n), 10)).rejects.toThrow();
+  });
+
+  it('does not refuse a scheduled change that keeps the same multiplier', async () => {
+    mockMint(6, some([scaled(2, 2, NOW)]));
+    expect(sent(await send(rpcAt(NOW - 60n), 10))).toBe(5_000_000n);
+  });
+
+  it('reads the chain clock at confirmed commitment', async () => {
+    mockMint(6, some([scaled(2)]));
+    const rpc = rpcAt(NOW);
+    await send(rpc, 10);
+    const clockCall = vi
+      .mocked(rpc.getAccountInfo)
+      .mock.calls.find(([account]) => account === CLOCK);
+    expect(clockCall?.[1]).toMatchObject({ commitment: 'confirmed' });
+  });
+
+  it('converts the amount as typed, not its floating-point reading', async () => {
+    // 2^53 + 1 has no exact double: the number reads as ...992.
+    mockMint(0, some([scaled(1)]));
+    const typed = '9007199254740993';
+    expect(sent(await send(rpcAt(NOW), Number(typed), { amountText: typed }))).toBe(
+      9_007_199_254_740_993n
+    );
   });
 
   it('converts an interest-bearing amount at the interest accrued by the chain clock', async () => {
@@ -572,6 +603,51 @@ describe('createSplTransaction on a mint with a display multiplier', () => {
   it('refuses a multiplier that is not a positive number', async () => {
     mockMint(6, some([scaled(Number.NaN)]));
     await expect(send(rpcAt(NOW), 10)).rejects.toThrow();
+  });
+
+  describe('Max', () => {
+    const holding = (amount: bigint) =>
+      vi.mocked(fetchMaybeToken).mockResolvedValue({ exists: true, data: { amount } } as never);
+
+    it('sends the amount shown when the balance has grown past it', async () => {
+      // 20,000,000 raw units at x0.5 show as 10; the screen said 6.172839.
+      mockMint(6, some([scaled(0.5)]));
+      holding(20_000_000n);
+      expect(sent(await send(rpcAt(NOW), 6.172839, { max: true }))).toBe(12_345_678n);
+    });
+
+    it('allows no difference on a scaled mint: one display unit off sends the amount shown', async () => {
+      // 12,345,679 raw units at x0.5 show as 6.172839; the screen said 6.172838.
+      mockMint(6, some([scaled(0.5)]));
+      holding(12_345_679n);
+      expect(sent(await send(rpcAt(NOW), 6.172838, { max: true }))).toBe(12_345_676n);
+    });
+
+    it('allows one display unit of interest accrued since the balance was read', async () => {
+      // At xe one raw token shows as 2.718281; the screen, read a moment
+      // earlier, said 2.718280.
+      mockMint(6, some([interestBearing(10_000)]));
+      holding(1_000_000n);
+      expect(sent(await send(rpcAt(31_556_736n), 2.71828, { max: true }))).toBe(1_000_000n);
+    });
+
+    it('charges the transfer fee on what Max sends', async () => {
+      // A fee of the whole amount makes the fee name the amount it was taken on.
+      const all = { epoch: 0n, transferFeeBasisPoints: 10_000, maximumFee: 1_000_000_000n };
+      mockMint(
+        6,
+        some([
+          scaled(0.5),
+          { __kind: 'TransferFeeConfig', olderTransferFee: all, newerTransferFee: all },
+        ])
+      );
+      holding(12_345_679n);
+      const owner = address(Keypair.generate().publicKey.toBase58());
+      expect(
+        await calculateTransferFee(rpcAt(NOW), USDC_MINT, 6.172839, { max: true, owner })
+      ).toBe(12_345_679n);
+      expect(await calculateTransferFee(rpcAt(NOW), USDC_MINT, 6.172839)).toBe(12_345_678n);
+    });
   });
 });
 

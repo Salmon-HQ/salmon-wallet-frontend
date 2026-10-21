@@ -248,6 +248,7 @@ export function useSendTransaction({
             memo: params.memo,
             references: params.references,
             max: params.max,
+            amountText: params.amountText,
           }
         );
 

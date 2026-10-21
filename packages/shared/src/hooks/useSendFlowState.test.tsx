@@ -88,6 +88,9 @@ describe('useSendFlowState', () => {
       recipientAddress: 'alice.sol',
       resolvedRecipientAddress: 'dest',
       amount: 0.5,
+      // The text as typed rides along: a mint with a display multiplier is
+      // converted from it, not from its floating-point reading.
+      amountText: '0.5',
     });
     expect(result.current.txId).toBe('sig-1');
 
@@ -180,6 +183,7 @@ describe('useSendFlowState', () => {
         recipientAddress: 'dest',
         resolvedRecipientAddress: undefined,
         amount: 2.5,
+        amountText: '2.5',
         memo: 'pr_1',
         references: ['ref-1', 'ref-2'],
       });

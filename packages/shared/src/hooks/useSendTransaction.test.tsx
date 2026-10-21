@@ -254,6 +254,7 @@ describe('useSendTransaction', () => {
         token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
         recipientAddress: RAW_RECIPIENT,
         amount: AMOUNT,
+        amountText: '1.5',
         max: true,
       });
     });
@@ -262,7 +263,7 @@ describe('useSendTransaction', () => {
       RAW_RECIPIENT,
       TOKEN_ADDRESS,
       AMOUNT,
-      expect.objectContaining({ max: true })
+      expect.objectContaining({ max: true, amountText: '1.5' })
     );
   });
 

@@ -192,6 +192,7 @@ export function useSendFlowState({
         recipientAddress: recipient.address,
         resolvedRecipientAddress: recipient.resolvedAddress,
         amount: parseFloat(amount),
+        amountText: amount,
         ...(maxFor === token.address ? { max: true } : {}),
         ...(request ? { memo: request.request.memo, references: request.request.references } : {}),
       });

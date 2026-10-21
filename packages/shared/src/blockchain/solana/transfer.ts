@@ -117,9 +117,14 @@ export interface TransferOptions {
    * The user asked for the whole balance (Max). On a mint whose displayed
    * amount carries a multiplier, the shown balance converted back can fall
    * short of the raw balance, so the transfer sends the account's raw balance
-   * instead — never less than the amount shown.
+   * when it shows as the amount on screen.
    */
   max?: boolean;
+  /**
+   * The amount exactly as typed. On a mint with a display multiplier it is
+   * converted from this text, which a floating-point `amount` can misread.
+   */
+  amountText?: string;
 }
 
 /** Payload returned by `simulateTransaction` when `TransferOptions.simulate` is set. */
@@ -230,29 +235,53 @@ const clockDecoder = getStructDecoder([
 const SECONDS_PER_YEAR = 60 * 60 * 24 * 365.24;
 
 /**
+ * How close to a scheduled multiplier change a transfer is refused. A
+ * transaction converted before the switch can land after it — its blockhash
+ * stays valid for about a minute, and the chain clock follows validators'
+ * votes rather than the wall — so within this window the amount shown and the
+ * amount signed could part.
+ */
+const MULTIPLIER_SWITCH_MARGIN_SECONDS = 5n * 60n;
+
+/** A mint's display multiplier and the extension it comes from. */
+interface DisplayMultiplier {
+  multiplier: number;
+  kind: 'scaled' | 'interest';
+}
+
+/**
  * The multiplier a Token-2022 mint applies to the amount its holders see, or
  * `null` for a mint that shows its raw amount. Scaled UI Amount stores one
  * (a split, a rebase) and swaps in its scheduled successor once the chain
  * clock reaches the effective time; Interest Bearing compounds a rate
  * continuously, so it grows with every second. Both are read from the mint and
- * the chain's own clock, the inputs the token program itself uses, and
- * computed as the program does (`interface/src/extension/scaled_ui_amount`
- * and `interest_bearing_mint` in solana-program/token-2022).
+ * the chain's own clock (at `confirmed`), the inputs the token program itself
+ * uses, and computed as the program does (`interface/src/extension/
+ * scaled_ui_amount` and `interest_bearing_mint` in solana-program/token-2022).
  *
- * @throws When the clock cannot be read or the multiplier is not a positive
- * number: an amount that cannot be converted is not sent.
+ * @throws When the clock cannot be read, the multiplier is not a positive
+ * number, or a change of multiplier is due within the margin: an amount that
+ * cannot be converted reliably is not sent.
  */
 async function readDisplayMultiplier(
   rpc: SolanaRpc,
   extensions: Extension[]
-): Promise<number | null> {
+): Promise<DisplayMultiplier | null> {
   const scaled = extensions.find((ext) => ext.__kind === 'ScaledUiAmountConfig');
   const interest = extensions.find((ext) => ext.__kind === 'InterestBearingConfig');
   if (!scaled && !interest) return null;
 
-  const clock = await fetchEncodedAccount(rpc, CLOCK_SYSVAR_ADDRESS);
+  const clock = await fetchEncodedAccount(rpc, CLOCK_SYSVAR_ADDRESS, { commitment: 'confirmed' });
   assertAccountExists(clock);
   const now = decodeAccount(clock, clockDecoder).data.unixTimestamp;
+
+  if (scaled && scaled.newMultiplier !== scaled.multiplier) {
+    const untilSwitch = scaled.newMultiplierEffectiveTimestamp - now;
+    const distance = untilSwitch < 0n ? -untilSwitch : untilSwitch;
+    if (distance <= MULTIPLIER_SWITCH_MARGIN_SECONDS) {
+      throw new Error('Token mint display multiplier is about to change');
+    }
+  }
 
   const growth = (rate: number, from: bigint, to: bigint) =>
     Math.exp((rate * Number(to - from)) / SECONDS_PER_YEAR / Number(ONE_IN_BASIS_POINTS));
@@ -270,7 +299,15 @@ async function readDisplayMultiplier(
   if (!Number.isFinite(multiplier) || multiplier <= 0) {
     throw new Error(`Token mint display multiplier is not usable: ${multiplier}`);
   }
-  return multiplier;
+  return { multiplier, kind: scaled ? 'scaled' : 'interest' };
+}
+
+/** A multiplier as an exact decimal, `units × 10^exponent`. */
+type ExactMultiplier = ReturnType<typeof parseDecimal>;
+
+/** How `raw` shows, in the mint's base units: `trunc(raw × multiplier)`. */
+function shownBaseUnits(raw: bigint, { units, exponent }: ExactMultiplier): bigint {
+  return shiftDecimal(raw * units, exponent);
 }
 
 /**
@@ -281,44 +318,50 @@ async function readDisplayMultiplier(
  * when no raw amount does (a large multiplier leaves gaps), the largest that
  * shows as less, so the transfer never moves more than the user saw. Token-2022's
  * own UiAmountToAmount does this in floating point, which its interface says
- * is "not guaranteed to give consistent behavior"; here the amount and the
- * multiplier are read as decimals (each number's shortest round-trip form)
- * and the division is done on integers.
+ * is "not guaranteed to give consistent behavior"; here the amount is read as
+ * the text typed and the multiplier as its shortest round-trip decimal, and the
+ * division is done on integers.
  */
-function displayToRawAmount(amount: number, decimals: number, multiplier: number): bigint {
-  const target = toBaseUnits(amount, decimals);
-  const { units, exponent } = parseDecimal(multiplier);
+function displayToRawAmount(target: bigint, multiplier: ExactMultiplier): bigint {
+  const { units, exponent } = multiplier;
   // target / multiplier, as numerator / denominator.
   const [numerator, denominator] =
     exponent >= 0
       ? [target, shiftDecimal(units, exponent)]
       : [shiftDecimal(target, -exponent), units];
   const smallest = (numerator + denominator - 1n) / denominator;
-  return shiftDecimal(smallest * units, exponent) === target ? smallest : smallest - 1n;
+  return shownBaseUnits(smallest, multiplier) === target ? smallest : smallest - 1n;
 }
 
 /**
- * The raw amount a transfer of `amount` (as the holder sees it) moves.
- * Unchanged for a mint without a display multiplier; on one with, converted
- * at the multiplier in force now, and on Max the whole raw balance of
- * `maxSource` when it is worth at least the amount shown.
+ * The raw amount a transfer of `amount` (as the holder sees it, typed as
+ * `amountText` when known) moves. Unchanged for a mint without a display
+ * multiplier; on one with, converted at the multiplier in force now. On Max it
+ * is the whole raw balance of `maxSource` — but only when that balance shows
+ * as the amount on screen: exactly on a scaled mint, within one display unit on
+ * an interest-bearing one, whose balance grows between the read and the send.
+ * Otherwise (funds arrived, or left) it is the amount shown.
  */
 async function rawTransferAmount(
   rpc: SolanaRpc,
   extensions: Extension[],
   amount: number,
   decimals: number,
-  maxSource?: Address
+  { amountText, maxSource }: { amountText?: string; maxSource?: Address } = {}
 ): Promise<bigint> {
-  const multiplier = await readDisplayMultiplier(rpc, extensions);
-  if (multiplier === null) return BigInt(applyDecimals(amount, decimals));
+  const display = await readDisplayMultiplier(rpc, extensions);
+  if (display === null) return BigInt(applyDecimals(amount, decimals));
 
-  const shown = displayToRawAmount(amount, decimals, multiplier);
+  const multiplier = parseDecimal(display.multiplier);
+  const target = toBaseUnits(amountText ?? amount, decimals);
+  const shown = displayToRawAmount(target, multiplier);
   if (!maxSource) return shown;
-  // A holding worth less than the amount shown is not sent in its place: the
-  // transfer asks for what the user saw, and the chain refuses it if short.
+
   const source = await fetchMaybeToken(rpc, maxSource);
-  return source.exists && source.data.amount >= shown ? source.data.amount : shown;
+  if (!source.exists) return shown;
+  const gap = shownBaseUnits(source.data.amount, multiplier) - target;
+  const tolerance = display.kind === 'interest' ? 1n : 0n;
+  return gap >= -tolerance && gap <= tolerance ? source.data.amount : shown;
 }
 
 /**
@@ -566,13 +609,10 @@ export async function createSplTransaction(
     tokenProgram === TOKEN_2022_PROGRAM_ADDRESS
       ? getExtensions(unwrapOption(mint.data.extensions))
       : [];
-  const transferAmount = await rawTransferAmount(
-    rpc,
-    extensions,
-    amount,
-    decimals,
-    opts.max ? fromTokenAddress : undefined
-  );
+  const transferAmount = await rawTransferAmount(rpc, extensions, amount, decimals, {
+    amountText: opts.amountText,
+    maxSource: opts.max ? fromTokenAddress : undefined,
+  });
 
   const instructions: Instruction[] = [
     // Idempotent ATA creation: adds the instruction to the same transaction.
@@ -750,12 +790,15 @@ export async function estimateFee(
  * @param rpc - Solana RPC client
  * @param mint - Token mint address
  * @param amount - Transfer amount (human-readable)
+ * @param opts - The same Max and typed-amount inputs the transfer takes, so the
+ *   fee is the one the transfer will be charged; Max needs the sending `owner`
  * @returns Fee amount in token's smallest unit, or null if no fee
  */
 export async function calculateTransferFee(
   rpc: SolanaRpc,
   mint: string,
-  amount: number
+  amount: number,
+  opts: { max?: boolean; owner?: Address; amountText?: string } = {}
 ): Promise<bigint | null> {
   if (!mint || isNativeSol(mint)) {
     return null;
@@ -776,7 +819,20 @@ export async function calculateTransferFee(
     return null;
   }
 
-  const transferAmount = await rawTransferAmount(rpc, extensions, amount, mintInfo.data.decimals);
+  const maxSource =
+    opts.max && opts.owner
+      ? (
+          await findAssociatedTokenPda({
+            owner: opts.owner,
+            mint: mintAddress,
+            tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+          })
+        )[0]
+      : undefined;
+  const transferAmount = await rawTransferAmount(rpc, extensions, amount, mintInfo.data.decimals, {
+    amountText: opts.amountText,
+    maxSource,
+  });
   return transferFeeFor(rpc, transferFeeConfig, transferAmount);
 }
 
