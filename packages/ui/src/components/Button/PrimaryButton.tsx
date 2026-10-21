@@ -34,6 +34,7 @@ export function PrimaryButton({
   style,
   className,
   testID,
+  ariaDescribedBy,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
   const { text, accent, surface } = useSemantic();
@@ -47,6 +48,7 @@ export function PrimaryButton({
       aria-label={typeof children === 'string' ? children : undefined}
       aria-disabled={isDisabled || undefined}
       aria-busy={loading || undefined}
+      aria-describedby={ariaDescribedBy}
       onClick={onPress}
       disabled={isDisabled}
       className={className}

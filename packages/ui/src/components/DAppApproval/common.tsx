@@ -21,9 +21,11 @@ import {
 import { WalletIcon, iconSize } from '../../icons';
 import type { IconComponent } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
+import { visuallyHidden } from '../../utils/visuallyHidden';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { SectionLabel } from '../SectionLabel';
+import type { ApprovalArming } from './useApprovalArming';
 
 /** Body copy: a hint under a card's fields, a note over the hold. */
 export const bodyText = (t: Semantic): React.CSSProperties => ({
@@ -78,19 +80,29 @@ export function SigningAccountCard({ account }: { account: SigningAccount }) {
 }
 
 /**
- * Wraps Approve so the pointer coming onto it reaches `onApproveEnter`. It
- * draws no box of its own, so the layout around the button is unchanged.
+ * Wraps Approve with the arming handlers, and, while Approve waits, the hint
+ * its `aria-describedby` names. It draws no box of its own, so the layout
+ * around the button is unchanged.
  */
 export function ApproveArea({
-  onApproveEnter,
+  arming,
   children,
 }: {
-  onApproveEnter: () => void;
+  arming: ApprovalArming;
   children: React.ReactNode;
 }): React.ReactElement {
+  const { t } = useTranslation();
   return (
-    <span style={{ display: 'contents' }} onPointerEnter={onApproveEnter}>
+    <span style={{ display: 'contents' }} {...arming.handlers}>
       {children}
+      {arming.armed ? null : (
+        <span id={arming.hintId} style={visuallyHidden}>
+          {t(
+            'dapp.approve_arming_hint',
+            'To turn this button on, move the pointer onto it or move the keyboard focus.'
+          )}
+        </span>
+      )}
     </span>
   );
 }

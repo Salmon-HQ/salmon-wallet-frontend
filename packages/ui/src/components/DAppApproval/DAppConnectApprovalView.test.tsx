@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -19,6 +19,7 @@ import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
 import { DAppConnectApprovalView } from './DAppConnectApprovalView';
 import { armApproval } from '../../test/armApproval';
+import { APPROVE_ARM_MS } from './useApprovalArming';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -63,6 +64,51 @@ describe('DAppConnectApprovalView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'DENY' }));
     expect(onApprove).toHaveBeenCalledTimes(1);
     expect(onReject).toHaveBeenCalledTimes(1);
+  });
+
+  // A page can ask for keys pressed in a rhythm, as it can for clicks. A key
+  // press reaches Approve only after Approve has held the focus a moment, and
+  // only when the press began after it got the focus.
+  it('takes a key press only after Approve has held the focus for the arming delay', () => {
+    vi.useFakeTimers();
+    render(
+      <DAppConnectApprovalView
+        origin="https://app.example.com"
+        address={ADDRESS}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+      />
+    );
+    armApproval();
+    const approve = screen.getByTestId('dapp-approve-button');
+
+    act(() => approve.focus());
+    expect(fireEvent.keyDown(approve, { key: 'Enter' })).toBe(false);
+    expect(fireEvent.keyUp(approve, { key: 'Enter' })).toBe(false);
+
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
+    expect(fireEvent.keyDown(approve, { key: 'Enter', repeat: true })).toBe(false);
+    expect(fireEvent.keyDown(approve, { key: ' ' })).toBe(true);
+    expect(fireEvent.keyUp(approve, { key: ' ' })).toBe(true);
+  });
+
+  it('tells assistive technology how to turn a waiting Approve on', () => {
+    vi.useFakeTimers();
+    render(
+      <DAppConnectApprovalView
+        origin="https://app.example.com"
+        address={ADDRESS}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+      />
+    );
+    const approve = screen.getByTestId('dapp-approve-button');
+
+    const hint = document.getElementById(approve.getAttribute('aria-describedby') ?? '');
+    expect(hint).toHaveTextContent('move the pointer onto it or move the keyboard focus');
+
+    armApproval();
+    expect(approve).not.toHaveAttribute('aria-describedby');
   });
 
   // Trust is per origin: another port or plain http on the same host is

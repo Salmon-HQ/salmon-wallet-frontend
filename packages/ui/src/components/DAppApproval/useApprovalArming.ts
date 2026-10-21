@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 
 /**
  * How long an approval window must have been in front of the user before its
@@ -12,13 +13,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  */
 export const APPROVE_ARM_MS = 750;
 
+/** The handlers `ApproveArea` puts on the element around Approve. */
+export interface ApproveAreaHandlers {
+  onPointerEnter: () => void;
+  onFocus: () => void;
+  onBlur: () => void;
+  onKeyDownCapture: (event: KeyboardEvent<HTMLElement>) => void;
+  onKeyUpCapture: (event: KeyboardEvent<HTMLElement>) => void;
+}
+
 /** What `useApprovalArming` hands a view. */
 export interface ApprovalArming {
   /** Whether Approve may take a click yet. */
   armed: boolean;
-  /** Put on the element around Approve, as `onPointerEnter`. */
-  onApproveEnter: () => void;
+  /** For `ApproveArea`. */
+  handlers: ApproveAreaHandlers;
+  /** The id of the hint saying how to turn a waiting Approve on. */
+  hintId: string;
 }
+
+const isActivationKey = (key: string) => key === 'Enter' || key === ' ' || key === 'Spacebar';
 
 /**
  * Whether the approval window's Approve button may take a click yet.
@@ -32,14 +46,47 @@ export interface ApprovalArming {
  * again"), and a pointer left resting where Approve appeared is where the
  * page's lure put it; a pointer the user brings onto Approve after that is not
  * something the page can predict. Reject never waits: refusing is always safe.
+ * Keys pressed on Approve wait too (see `handlers`).
  */
 export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArming {
   const [armed, setArmed] = useState(false);
   // waiting → (delay) → ready → (pointer moved) → moved → (enters Approve) → armed
   const stage = useRef<'waiting' | 'ready' | 'moved'>('waiting');
-  const onApproveEnter = useCallback(() => {
-    if (stage.current === 'moved') setArmed(true);
-  }, []);
+  const hintId = useId();
+  // A page can ask for keys pressed in a rhythm as it can for clicks: a key
+  // press reaches Approve only once Approve has held the focus for `delayMs`,
+  // and only a press that began after it got the focus (no auto-repeat).
+  const focusedAt = useRef<number | null>(null);
+  const pressBlocked = useRef(false);
+  const handlers = useMemo<ApproveAreaHandlers>(
+    () => ({
+      onPointerEnter: () => {
+        if (stage.current === 'moved') setArmed(true);
+      },
+      onFocus: () => {
+        focusedAt.current = Date.now();
+      },
+      onBlur: () => {
+        focusedAt.current = null;
+      },
+      onKeyDownCapture: (event) => {
+        if (!isActivationKey(event.key)) return;
+        const held = focusedAt.current === null ? 0 : Date.now() - focusedAt.current;
+        pressBlocked.current = event.repeat || held < delayMs;
+        if (pressBlocked.current) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      onKeyUpCapture: (event) => {
+        if (!isActivationKey(event.key) || !pressBlocked.current) return;
+        pressBlocked.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      },
+    }),
+    [delayMs]
+  );
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -85,5 +132,5 @@ export function useApprovalArming(delayMs: number = APPROVE_ARM_MS): ApprovalArm
     };
   }, [delayMs]);
 
-  return { armed, onApproveEnter };
+  return { armed, handlers, hintId };
 }

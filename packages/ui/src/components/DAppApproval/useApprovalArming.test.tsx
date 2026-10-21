@@ -8,7 +8,7 @@ import { APPROVE_ARM_MS, useApprovalArming } from './useApprovalArming';
 type Arming = { current: ReturnType<typeof useApprovalArming> };
 
 const wait = (ms = APPROVE_ARM_MS) => act(() => vi.advanceTimersByTime(ms));
-const enterApprove = (result: Arming) => act(() => result.current.onApproveEnter());
+const enterApprove = (result: Arming) => act(() => result.current.handlers.onPointerEnter());
 
 describe('useApprovalArming', () => {
   beforeEach(() => vi.useFakeTimers());

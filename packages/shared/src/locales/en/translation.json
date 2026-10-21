@@ -148,6 +148,7 @@
     "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.",
     "hold_to_approve": "Hold to Approve",
     "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
+    "approve_arming_hint": "To turn this button on, move the pointer onto it or move the keyboard focus.",
     "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
     "effects_reason_unanalysed": "This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.",
     "effects_simulated_label": "Simulation: the real result may differ",

@@ -41,7 +41,8 @@ export function DAppSignMessageApprovalView({
   onReject,
 }: DAppSignMessageApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const { armed, onApproveEnter } = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -151,9 +152,10 @@ export function DAppSignMessageApprovalView({
         </SecondaryButton>
       }
       action={
-        <ApproveArea onApproveEnter={onApproveEnter}>
+        <ApproveArea arming={arming}>
           <PrimaryButton
             testID="dapp-approve-button"
+            ariaDescribedBy={armed ? undefined : arming.hintId}
             onPress={onApprove}
             loading={loading}
             disabled={

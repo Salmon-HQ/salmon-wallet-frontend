@@ -37,7 +37,8 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const { armed, onApproveEnter } = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -194,10 +195,11 @@ export function DAppTransactionApprovalView({
         </SecondaryButton>
       }
       action={
-        <ApproveArea onApproveEnter={onApproveEnter}>
+        <ApproveArea arming={arming}>
           {requiresHold ? (
             <HoldToApproveButton
               testID="dapp-approve-button"
+              ariaDescribedBy={armed ? undefined : arming.hintId}
               onApprove={onApprove}
               loading={loading}
               disabled={cannotApprove}
@@ -207,6 +209,7 @@ export function DAppTransactionApprovalView({
           ) : (
             <PrimaryButton
               testID="dapp-approve-button"
+              ariaDescribedBy={armed ? undefined : arming.hintId}
               onPress={onApprove}
               loading={loading}
               disabled={cannotApprove}

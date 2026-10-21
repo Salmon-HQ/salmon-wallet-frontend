@@ -26,7 +26,8 @@ export function DAppConnectApprovalView({
   onReject,
 }: DAppConnectApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const { armed, onApproveEnter } = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
   const shortAddress = address ? (getShortAddress(address, 4) ?? '') : '';
@@ -89,9 +90,10 @@ export function DAppConnectApprovalView({
         </SecondaryButton>
       }
       action={
-        <ApproveArea onApproveEnter={onApproveEnter}>
+        <ApproveArea arming={arming}>
           <PrimaryButton
             testID="dapp-approve-button"
+            ariaDescribedBy={armed ? undefined : arming.hintId}
             onPress={onApprove}
             loading={loading}
             disabled={disabled || loading || !armed}
