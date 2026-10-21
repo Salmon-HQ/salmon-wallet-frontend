@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  address,
+  appendTransactionMessageInstruction,
+  compileTransactionMessage,
+  createTransactionMessage,
+  generateKeyPairSigner,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
   getTransactionEncoder,
+  setTransactionMessageConfig,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  type Blockhash,
 } from '@solana/kit';
 import {
   assertSolanaTransactionMatches,
@@ -11,8 +20,12 @@ import {
   SolanaTransactionMismatchError,
 } from './solana-transaction';
 import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  COMPUTE_BUDGET_PROGRAM,
+  LOOKUP_TABLE_STEP_INSTRUCTIONS,
+  LOOKUP_TABLE_STEP_PROGRAMS,
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
   SYSTEM_PROGRAM,
@@ -55,11 +68,9 @@ describe('assertSolanaTransactionMatches', () => {
     ).toThrow(SolanaTransactionMismatchError);
   });
 
-  // The program list is a vocabulary: System is on the NFT list so a builder
-  // can create an account, and that same entry would let a compromised backend
-  // append a transfer that empties the wallet's SOL. Nothing on the
-  // confirmation screen would show it — the screen is drawn from the
-  // response's own fields.
+  // A System transfer appended to an NFT transaction would empty the wallet's
+  // SOL, and nothing on the confirmation screen would show it — the screen is
+  // drawn from the response's own fields.
   it('refuses a System transfer appended to an NFT transaction', () => {
     expect(() =>
       assertSolanaTransactionMatches(NO_LOOKUPS, {
@@ -67,7 +78,7 @@ describe('assertSolanaTransactionMatches', () => {
         allowedPrograms: NFT_TRANSACTION_PROGRAMS,
         allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
       })
-    ).toThrow(/instruction 2 on 11111111111111111111111111111111/);
+    ).toThrow(/invokes 11111111111111111111111111111111/);
   });
 
   it('leaves a program the flow did not bind to the program list alone', () => {
@@ -381,5 +392,272 @@ describe("account binds — an instruction may only reach the wallet's own accou
     expect(() =>
       assertSolanaTransactionMatches(message(ACCOUNTS, [setAuthority]), expectation)
     ).toThrow(/instruction 6 on/);
+  });
+});
+
+/**
+ * The backend's NFT and lookup-table builders emit no top-level System
+ * instruction; the table program funds its own account by cross-program call.
+ * Each System instruction is one the wallet can sign alone that moves or
+ * re-owns its SOL: CreateAccountWithSeed with the wallet as base funds an
+ * account another program controls, Assign hands the wallet itself away.
+ */
+describe('NFT and lookup-table steps carry no System instruction', () => {
+  const ATTACKER_PROGRAM = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  const SEEDED = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  // 0 owner, 1 seeded account, 2 attacker program, 3 system, 4 lookup-table program
+  const ACCOUNTS = [OWNER, SEEDED, ATTACKER_PROGRAM, SYSTEM_PROGRAM, ADDRESS_LOOKUP_TABLE_PROGRAM];
+  const u32 = (value: number) => [value, 0, 0, 0];
+  const steps = {
+    nft: {
+      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    },
+    'lookup-table': {
+      allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+      allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+    },
+  };
+
+  it.each(Object.keys(steps))('refuses every System instruction in an %s step', (step) => {
+    const rules = steps[step as keyof typeof steps];
+    const cases: [number, number[]][] = [
+      [0, [0, 1]], // CreateAccount
+      [1, [0]], // Assign the wallet
+      [3, [0, 1, 0]], // CreateAccountWithSeed, base = wallet
+      [8, [0]], // Allocate
+      [9, [1, 0]], // AllocateWithSeed
+      [10, [1, 0]], // AssignWithSeed
+    ];
+    for (const [code, accounts] of cases) {
+      const system = {
+        program: SYSTEM_PROGRAM,
+        accounts,
+        data: [...u32(code), ...new Array(40).fill(0)],
+      };
+      expect(() =>
+        assertSolanaTransactionMatches(message(ACCOUNTS, [system]), { feePayer: OWNER, ...rules })
+      ).toThrow(/invokes 11111111111111111111111111111111/);
+    }
+  });
+
+  it('lets a lookup-table step create and extend a table, and nothing else on that program', () => {
+    const check = (code: number) => () =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [
+          {
+            program: ADDRESS_LOOKUP_TABLE_PROGRAM,
+            accounts: [1, 0, 0, 3],
+            data: [...u32(code), ...new Array(9).fill(0)],
+          },
+        ]),
+        { feePayer: OWNER, ...steps['lookup-table'] }
+      );
+    expect(check(0)).not.toThrow(); // CreateLookupTable
+    expect(check(2)).not.toThrow(); // ExtendLookupTable
+    expect(check(3)).toThrow(/instruction 3 on/); // DeactivateLookupTable
+    expect(check(4)).toThrow(/instruction 4 on/); // CloseLookupTable
+  });
+
+  // The table's authority can close it and send its rent anywhere; whoever
+  // pays is whoever the wallet funds.
+  it('holds a table step’s authority and payer to the wallet', () => {
+    const check = (code: number, accounts: number[]) => () =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [
+          {
+            program: ADDRESS_LOOKUP_TABLE_PROGRAM,
+            accounts,
+            data: [...u32(code), ...new Array(9).fill(0)],
+          },
+        ]),
+        { feePayer: OWNER, ...steps['lookup-table'] }
+      );
+    for (const code of [0, 2]) {
+      expect(check(code, [1, 2, 0, 3])).toThrow(/not the wallet's own/); // authority
+      expect(check(code, [1, 0, 2, 3])).toThrow(/not the wallet's own/); // payer
+      expect(check(code, [1, 0])).toThrow(/too few accounts/);
+    }
+  });
+});
+
+/**
+ * Compute Budget instructions set what the wallet pays on top of the network
+ * fee; the screen never shows it. A flow may set a unit limit and a unit
+ * price, and the two together are capped.
+ */
+describe('compute budget', () => {
+  // 0 owner, 1 compute budget program
+  const ACCOUNTS = [OWNER, COMPUTE_BUDGET_PROGRAM];
+  const le = (value: bigint, bytes: number) =>
+    Array.from({ length: bytes }, (_, i) => Number((value >> BigInt(8 * i)) & 0xffn));
+  const limit = (units: number) => ({
+    program: COMPUTE_BUDGET_PROGRAM,
+    accounts: [],
+    data: [2, ...le(BigInt(units), 4)],
+  });
+  const price = (microLamports: bigint) => ({
+    program: COMPUTE_BUDGET_PROGRAM,
+    accounts: [],
+    data: [3, ...le(microLamports, 8)],
+  });
+  const flows = {
+    nft: {
+      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    },
+    'lookup-table': {
+      allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+      allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+    },
+  };
+  const check = (flow: keyof typeof flows, instructions: Parameters<typeof message>[1]) => () =>
+    assertSolanaTransactionMatches(message(ACCOUNTS, instructions), {
+      feePayer: OWNER,
+      ...flows[flow],
+    });
+
+  it.each(Object.keys(flows) as (keyof typeof flows)[])(
+    'lets an %s step set a unit limit and price, and nothing else',
+    (flow) => {
+      expect(check(flow, [limit(400_000), price(20_000n)])).not.toThrow();
+      const heapFrame = {
+        program: COMPUTE_BUDGET_PROGRAM,
+        accounts: [],
+        data: [1, ...le(256n * 1024n, 4)],
+      };
+      expect(check(flow, [heapFrame])).toThrow(/instruction 1 on/);
+      const dataSize = {
+        program: COMPUTE_BUDGET_PROGRAM,
+        accounts: [],
+        data: [4, ...le(1024n, 4)],
+      };
+      expect(check(flow, [dataSize])).toThrow(/instruction 4 on/);
+    }
+  );
+
+  it('refuses a priority fee above the cap in any flow', () => {
+    const anyFlow = (instructions: Parameters<typeof message>[1]) => () =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, instructions), {
+        feePayer: OWNER,
+        allowedPrograms: [COMPUTE_BUDGET_PROGRAM],
+      });
+    // 1.4M units at 10 lamports each: 0.014 SOL.
+    expect(anyFlow([limit(1_400_000), price(10_000_000n)])).toThrow(/priority fee/);
+    // A price with no limit is charged at the most units a transaction can use.
+    expect(anyFlow([price(8_000_000n)])).toThrow(/priority fee/);
+    expect(anyFlow([limit(200_000), price(8_000_000n)])).not.toThrow();
+  });
+});
+
+describe('NFT steps — account creation and Token Metadata amounts', () => {
+  const ASSET = 'CgHasf5U6aaT6oYPrKWHfKByBGeQpiPmac2YKWpE2Mek';
+  const DESTINATION = '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3';
+  const TOKEN_ACCOUNT = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  // 0 owner, 1 token account, 2 destination, 3 asset, 4 token metadata, 5 ATA program, 6 system, 7 token
+  const ACCOUNTS = [
+    OWNER,
+    TOKEN_ACCOUNT,
+    DESTINATION,
+    ASSET,
+    TOKEN_METADATA_PROGRAM,
+    ASSOCIATED_TOKEN_PROGRAM,
+    SYSTEM_PROGRAM,
+    TOKEN_PROGRAM,
+  ];
+  const le = (value: bigint) =>
+    Array.from({ length: 8 }, (_, i) => Number((value >> BigInt(8 * i)) & 0xffn));
+  // transferV1 / burnV1 accounts: token, tokenOwner, destinationToken, destinationOwner, mint, …
+  const metadata = (code: number, amount: bigint) => ({
+    program: TOKEN_METADATA_PROGRAM,
+    accounts: [1, 0, 1, 2, 3],
+    data: [code, 0, ...le(amount), 0],
+  });
+  const nft = (nftAction: { asset: string; destination?: string }) => ({
+    feePayer: OWNER,
+    allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+    allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    nftAction,
+  });
+
+  it('holds a Token Metadata transfer or burn to one token', () => {
+    const transfer = { asset: ASSET, destination: DESTINATION };
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(49, 1n)]), nft(transfer))
+    ).not.toThrow();
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(49, 2n)]), nft(transfer))
+    ).toThrow(/other than one/);
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(41, 1n)]), nft({ asset: ASSET }))
+    ).not.toThrow();
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(41, 5n)]), nft({ asset: ASSET }))
+    ).toThrow(/other than one/);
+  });
+
+  // Token Metadata creates the destination's account itself, by cross-program
+  // call; no backend NFT builder creates one at top level.
+  it('refuses an associated token account created at top level', () => {
+    const create = {
+      program: ASSOCIATED_TOKEN_PROGRAM,
+      accounts: [0, 1, 2, 3, 6, 7],
+      data: [1],
+    };
+    expect(() =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [create, metadata(49, 1n)]),
+        nft({ asset: ASSET, destination: DESTINATION })
+      )
+    ).toThrow(/invokes ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL/);
+  });
+});
+
+/**
+ * A v1 message sets its priority fee and compute limit in its own header
+ * rather than in Compute Budget instructions. The backend builds legacy and
+ * v0 messages only, so a v1 message is refused before anything else is read.
+ */
+describe('message versions', () => {
+  it('refuses a v1 message in a backend-built flow, whatever its header sets', async () => {
+    const signer = await generateKeyPairSigner();
+    let tx = setTransactionMessageLifetimeUsingBlockhash(
+      {
+        blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as Blockhash,
+        lastValidBlockHeight: 1n,
+      },
+      setTransactionMessageFeePayer(signer.address, createTransactionMessage({ version: 1 }))
+    );
+    tx = setTransactionMessageConfig({ priorityFeeLamports: 5_000_000_000n }, tx) as never;
+    tx = appendTransactionMessageInstruction(
+      {
+        programAddress: address(ADDRESS_LOOKUP_TABLE_PROGRAM),
+        accounts: [
+          { address: address('HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms'), role: 1 },
+          { address: signer.address, role: 3 },
+          { address: signer.address, role: 3 },
+          { address: address(SYSTEM_PROGRAM), role: 0 },
+        ],
+        data: new Uint8Array([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      } as never,
+      tx
+    ) as never;
+    const messageBytes = getCompiledTransactionMessageEncoder().encode(
+      compileTransactionMessage(tx) as never
+    );
+    const wire = Buffer.from(
+      getTransactionEncoder().encode({
+        messageBytes: messageBytes as never,
+        signatures: { [signer.address]: null } as never,
+      })
+    ).toString('base64');
+
+    expect(() =>
+      assertSolanaTransactionMatches(wire, {
+        feePayer: String(signer.address),
+        allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+        allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+      })
+    ).toThrow(/version/);
   });
 });

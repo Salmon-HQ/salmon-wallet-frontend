@@ -6,6 +6,12 @@ vi.mock('../../core/broadcast/solana', () => ({
     throw new SolanaOutcomeUnknownError('sig-maybe' as never);
   }),
 }));
+// The flow checks every step before sending; this test is about the send.
+vi.mock('../../core/verify', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  assertSolanaTransactionMatches: vi.fn(),
+  bubblegumAssets: vi.fn(async () => new Map()),
+}));
 
 const { signAndSendPreparedSolanaTransactions } = await import('./prepared-transactions');
 

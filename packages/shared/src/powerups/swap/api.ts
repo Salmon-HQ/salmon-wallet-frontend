@@ -11,6 +11,7 @@ export interface SwapBuildLeg {
   mint: string;
   /** Base units, as a string. */
   amount: string;
+  /** Must equal the wallet's own decimals for the mint, or the build is refused. */
   decimals?: number;
   symbol?: string;
   name?: string;
@@ -37,8 +38,9 @@ export interface SwapBuildEnvelope extends Omit<
   input: SwapBuildLeg;
   output: SwapBuildLeg & { minAmount: string };
   route: SwapRouteLeg[];
-  priceImpactPct: number | null;
   slippageBps: number;
+  /** Not shown: the review computes these from the wallet's own prices. */
+  priceImpactPct: number | null;
   inUsdValue: number | null;
   outUsdValue: number | null;
   salmonFee: SwapFeeLine | null;

@@ -4,10 +4,14 @@ import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-tab
 import { signAndSendSolanaTransaction } from '../../core/broadcast/solana';
 import { SolanaOutcomeUnknownError } from './confirm';
 import {
+  assertSolanaTransactionMatches,
+  bubblegumAssets,
+  lookupTableActions,
   LOOKUP_TABLE_STEP_INSTRUCTIONS,
   LOOKUP_TABLE_STEP_PROGRAMS,
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
+  SolanaTransactionMismatchError,
 } from '../../core/verify';
 import type { NftActionExpectation, SolanaTransactionExpectation } from '../../core/verify';
 import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
@@ -65,6 +69,43 @@ function expectationForStep(
     allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
     nftAction,
   };
+}
+
+/**
+ * The most extends one table needs: it holds 256 addresses and the backend
+ * adds them 20 at a time.
+ */
+const MAX_LOOKUP_TABLE_EXTENDS = 13;
+
+/**
+ * Holds the table steps together: each carries exactly one table instruction,
+ * all of them act on the same table, and there is at most one create and
+ * `MAX_LOOKUP_TABLE_EXTENDS` extends.
+ */
+function assertLookupTableSteps(tableSteps: readonly PreparedNftTransaction[]): void {
+  let table: string | undefined;
+  let creates = 0;
+  let extendCount = 0;
+  for (const step of tableSteps) {
+    const actions = lookupTableActions(step.transaction);
+    const [action] = actions;
+    if (!action || actions.length !== 1) {
+      throw new SolanaTransactionMismatchError(
+        'A lookup-table step must carry exactly one table instruction'
+      );
+    }
+    table ??= action.table;
+    if (action.table !== table) {
+      throw new SolanaTransactionMismatchError('The lookup-table steps act on more than one table');
+    }
+    if (action.code === 0) creates += 1;
+    else extendCount += 1;
+  }
+  if (creates > 1 || extendCount > MAX_LOOKUP_TABLE_EXTENDS) {
+    throw new SolanaTransactionMismatchError(
+      `A flow may carry at most one create and ${MAX_LOOKUP_TABLE_EXTENDS} extends of its table`
+    );
+  }
 }
 
 const LOOKUP_TABLE_POLL_INTERVAL_MS = 400;
@@ -196,6 +237,35 @@ export async function signAndSendPreparedSolanaTransactions(
   // not this wallet's to sign, whichever account the screen was showing.
   const feePayer = String(account.signer.address);
   const signatures: string[] = [];
+  const expectations = preparedTransactions.map((preparedTransaction, index) =>
+    expectationForStep(
+      preparedTransaction,
+      index,
+      preparedTransactions.length,
+      feePayer,
+      options.nftAction
+    )
+  );
+
+  // Every step is checked before the first is sent: a table step that lands
+  // has spent its rent even when a later step turns out to be refused.
+  for (const [index, preparedTransaction] of preparedTransactions.entries()) {
+    try {
+      assertSolanaTransactionMatches(
+        preparedTransaction.transaction,
+        expectations[index] as SolanaTransactionExpectation,
+        await bubblegumAssets(preparedTransaction.transaction)
+      );
+    } catch (error) {
+      throw stepError(preparedTransaction, error);
+    }
+  }
+  assertLookupTableSteps(
+    preparedTransactions.filter(
+      (preparedTransaction, index) =>
+        index < preparedTransactions.length - 1 && isLookupTableStep(preparedTransaction.step)
+    )
+  );
 
   for (const [index, preparedTransaction] of preparedTransactions.entries()) {
     try {
@@ -204,13 +274,7 @@ export async function signAndSendPreparedSolanaTransactions(
       const signature = await signAndSendSolanaTransaction(
         account,
         preparedTransaction.transaction,
-        expectationForStep(
-          preparedTransaction,
-          index,
-          preparedTransactions.length,
-          feePayer,
-          options.nftAction
-        ),
+        expectations[index] as SolanaTransactionExpectation,
         { commitment }
       );
       signatures.push(signature);
@@ -231,15 +295,21 @@ export async function signAndSendPreparedSolanaTransactions(
       // It may have landed: wrapping would hide that from the screen, which
       // must not offer a retry that sends twice.
       if (error instanceof SolanaOutcomeUnknownError) throw error;
-      const step = preparedTransaction.step ?? 'transaction';
-      const message = error instanceof Error ? error.message : 'Unknown Solana transaction error';
-      // The original error carries the stack that says which call failed;
-      // dropping it leaves only the step name to debug from. Attached with
-      // Object.assign because this package targets the ES2020 lib, which
-      // predates the ErrorOptions constructor overload.
-      throw Object.assign(new Error(`Failed during ${step}: ${message}`), { cause: error });
+      throw stepError(preparedTransaction, error);
     }
   }
 
   return signatures;
+}
+
+/**
+ * The error a failed step surfaces, named after the step. The original error
+ * carries the stack that says which call failed; dropping it leaves only the
+ * step name to debug from. Attached with Object.assign because this package
+ * targets the ES2020 lib, which predates the ErrorOptions constructor overload.
+ */
+function stepError(preparedTransaction: PreparedNftTransaction, error: unknown): Error {
+  const step = preparedTransaction.step ?? 'transaction';
+  const message = error instanceof Error ? error.message : 'Unknown Solana transaction error';
+  return Object.assign(new Error(`Failed during ${step}: ${message}`), { cause: error });
 }
