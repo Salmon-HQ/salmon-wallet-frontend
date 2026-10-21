@@ -208,13 +208,20 @@ type Verification = 'checking' | 'verified' | 'unverified';
 /**
  * Digital Asset Links: does the calling app really belong to the site it names?
  * Nothing is approvable while the answer is pending, and no answer is a no.
+ *
+ * It is given the origin the sheet shows, already normalised in JS
+ * (`mwaIdentityOrigin`), never the dApp's raw identity URI: the check then
+ * judges exactly what the user reads, and the native module, which parses the
+ * URI outside its own error handling, only ever sees a plain origin. A failure
+ * of any kind, thrown or rejected, is unverified.
  */
-export function useIdentityVerification(identityUri: string | undefined): Verification {
-  const [state, setState] = useState<Verification>(identityUri ? 'checking' : 'unverified');
+export function useIdentityVerification(origin: string | null | undefined): Verification {
+  const [state, setState] = useState<Verification>(origin ? 'checking' : 'unverified');
   useEffect(() => {
-    if (!identityUri) return undefined;
+    if (!origin) return undefined;
     let cancelled = false;
-    verifyCallingPackage(identityUri)
+    Promise.resolve()
+      .then(() => verifyCallingPackage(origin))
       .then((ok: unknown) => {
         if (!cancelled) setState(ok ? 'verified' : 'unverified');
       })
@@ -224,7 +231,7 @@ export function useIdentityVerification(identityUri: string | undefined): Verifi
     return () => {
       cancelled = true;
     };
-  }, [identityUri]);
+  }, [origin]);
   return state;
 }
 
@@ -261,7 +268,7 @@ function ConnectApproval({
 }: ApprovalProps<AuthorizeDappRequest>) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const verification = useIdentityVerification(origin);
   const { run } = useOnce();
   const address = account.getReceiveAddress();
   const name = mwaDisplayName(request.appIdentity?.identityName, origin);
@@ -342,7 +349,7 @@ function SignMessagesApproval({
 }: ApprovalProps<SignMessagesRequest>) {
   const { t } = useTranslation();
   const [state] = useAccountsContext();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const verification = useIdentityVerification(origin);
   const unverified = verification === 'unverified';
   const { run } = useOnce();
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
@@ -398,7 +405,7 @@ function TransactionApproval({
   const { t } = useTranslation();
   const [state] = useAccountsContext();
   const insets = useSafeAreaInsets();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const verification = useIdentityVerification(origin);
   const unverified = verification === 'unverified';
   const { run, running, busy } = useOnce();
   const [error, setError] = useState<string | null>(null);

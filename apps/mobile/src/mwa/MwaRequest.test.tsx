@@ -257,3 +257,56 @@ describe('MwaRequest — later requests from an unverified app', () => {
     expect(screen.getByTestId('tx-hold').props.children).toBe('tap');
   });
 });
+
+/**
+ * The native check gets the origin the sheet shows, normalised in JS, never
+ * the raw identity URI: the two parsers then cannot disagree, and the native
+ * module parses the URI outside its own error handling, so a string Java
+ * rejects could take the approval down. A failed check is unverified.
+ */
+describe('MwaRequest — what the identity check is given', () => {
+  const account = { getReceiveAddress: () => mockAddress } as never;
+  beforeEach(() => {
+    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+  });
+  const request = (type: string, identityUri: string) =>
+    ({
+      __type: type,
+      requestId: 'r3',
+      chain: 'solana:mainnet',
+      appIdentity: { identityUri, identityName: 'Example' },
+      authorizationScope: mockToken,
+      payloads: [[104, 105]],
+    }) as never;
+
+  it.each(['AUTHORIZE_DAPP', 'SIGN_MESSAGES', 'SIGN_TRANSACTIONS'])(
+    'checks the normalised origin for %s',
+    async (type) => {
+      render(
+        <MwaRequest
+          account={account}
+          respond={jest.fn()}
+          request={request(type, `${mockOrigin}/app?ref=1`)}
+        />
+      );
+      await waitFor(() => expect(verifyCallingPackage).toHaveBeenCalled());
+      expect(verifyCallingPackage).toHaveBeenCalledWith(mockOrigin);
+    }
+  );
+
+  it('treats a native failure as unverified', async () => {
+    jest
+      .mocked(verifyCallingPackage)
+      .mockReset()
+      .mockRejectedValue(new Error('URISyntaxException'));
+    render(
+      <MwaRequest
+        account={account}
+        respond={jest.fn()}
+        request={request('SIGN_MESSAGES', mockOrigin)}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByTestId('sheet-hold').props.children).toBe('hold'));
+  });
+});

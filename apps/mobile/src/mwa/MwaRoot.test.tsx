@@ -11,6 +11,7 @@ const mockLockAccounts = jest.fn().mockResolvedValue(undefined);
 const mockSession: { current: unknown } = { current: null };
 const mockState: Record<string, unknown> = {};
 const mockVerification = { current: 'verified' };
+const mockVerifiedOrigins: unknown[] = [];
 
 // `@solana/kit` is ESM Jest cannot load; the MWA helpers only use it inside
 // the signing functions, which this host never reaches.
@@ -56,7 +57,10 @@ jest.mock('./MwaRequest', () => ({
     const { Text: MockText } = jest.requireActual('react-native');
     return <MockText>{`request ${request.requestId}`}</MockText>;
   },
-  useIdentityVerification: () => mockVerification.current,
+  useIdentityVerification: (origin: unknown) => {
+    mockVerifiedOrigins.push(origin);
+    return mockVerification.current;
+  },
 }));
 
 // The sheet is the kit's; what is under test is which one the host shows and
@@ -232,6 +236,19 @@ describe('MwaHost — a devnet dApp on a mainnet wallet', () => {
     const message = screen.getByText(/dapp\.mwa_switch_message/).props.children as string;
     expect(message.split('\n\n')[0]).toBe('https://dapp.example');
     expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
+  });
+
+  // The native check gets the origin the sheet shows, never the raw URI.
+  it('checks the normalised origin, not the raw identity URI', () => {
+    mockVerifiedOrigins.length = 0;
+    given(walletOn('solana-mainnet'), {
+      ...connect('solana:devnet'),
+      appIdentity: { identityName: 'Playground', identityUri: 'https://dapp.example/app?ref=1' },
+    });
+    render(<MwaHost />);
+
+    expect(mockVerifiedOrigins).toContain('https://dapp.example');
+    expect(mockVerifiedOrigins).not.toContain('https://dapp.example/app?ref=1');
   });
 
   it('shows the request itself once the wallet is on the network asked for', () => {

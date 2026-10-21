@@ -264,9 +264,9 @@ function NetworkSwitchSheet({
 }) {
   const { t } = useTranslation();
   const { choose, closedWithoutChoice } = useChoice();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
-  const [failed, setFailed] = useState(false);
   const origin = mwaIdentityOrigin(request.appIdentity?.identityUri) ?? '';
+  const verification = useIdentityVerification(origin);
+  const [failed, setFailed] = useState(false);
   const target = t(`dapp.mwa_network_names.${to}`);
 
   // The user asked to switch: say it did not happen before the dApp hears no.
