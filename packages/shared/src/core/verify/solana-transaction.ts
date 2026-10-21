@@ -82,6 +82,8 @@ export interface SolanaTransactionExpectation {
 
 /** What a Jupiter `route_v2` call must say, all taken from the build the screen draws. */
 export interface SwapRouteExpectation {
+  /** The wallet's own token accounts of the input mint: its SPL and Token-2022 ATAs. */
+  sources: readonly string[];
   /** The wallet's own token accounts of the output mint: its SPL and Token-2022 ATAs. */
   destinations: readonly string[];
   inputMint: string;
@@ -389,26 +391,34 @@ function assertNftAction(
 
 /** Anchor discriminator of Jupiter's `route_v2`, the only call its build endpoint returns. */
 const JUPITER_ROUTE_V2 = [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14];
-/** `route_v2` accounts: 0 the authority, 2 where the output lands, 7 an optional override of it. */
+/** `route_v2` accounts: 0 the authority, 1 what it spends, 2 where the output lands, 7 an optional override of it. */
 const ROUTE_AUTHORITY = 0;
+const ROUTE_SOURCE = 1;
 const ROUTE_DESTINATION = 2;
 const ROUTE_DESTINATION_OVERRIDE = 7;
 /** `route_v2` data after the discriminator: in u64, quoted out u64, slippage u16, platform fee u16. */
 const ROUTE_ARGS_BYTES = 8 + 8 + 8 + 2 + 2;
 
 /**
- * Every Jupiter call pays the swap's output to the wallet's own account, with
- * the amounts the screen shows.
+ * Every Jupiter call spends the token on screen from the wallet's own account
+ * and pays the output to the wallet's own account, with the amounts the screen
+ * shows.
  *
  * The router instruction is the one that moves a swap's whole value, and the
  * program allowlist says nothing about its accounts: a build naming another
  * account as the destination would pass every other check while the screen
- * still showed the quote. The destination is the instruction's own slot —
- * where Jupiter pays — and the optional override slot must be empty, which
- * Anchor encodes as the program's own address. The amounts are bound so the
- * minimum Jupiter enforces on chain is the minimum the screen shows. The mint
- * is not read: the destination is an ATA derived from the output mint, and the
- * token program refuses to credit an account of another mint.
+ * still showed the quote, and one naming another of the wallet's token
+ * accounts as the source would spend a different token — the wallet signs as
+ * authority over all of them. Both are the instruction's own slots, and the
+ * optional override slot must be empty, which Anchor encodes as the program's
+ * own address. The amounts are bound so the minimum Jupiter enforces on chain
+ * is the minimum the screen shows.
+ *
+ * The mints are not read, and need not be: an associated token account's
+ * address is derived from its mint, so holding the source and destination to
+ * the wallet's ATAs of the mints on screen holds the mints too. Real builds
+ * resolve the mint slots through Jupiter's lookup tables, where this check
+ * could not read them anyway.
  */
 function assertJupiterRoute(
   accounts: readonly string[],
@@ -438,6 +448,12 @@ function assertJupiterRoute(
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     if (accountAt(ROUTE_AUTHORITY) !== feePayer) {
       refuse('Transaction swaps tokens the wallet does not authorize');
+    }
+    const source = accountAt(ROUTE_SOURCE);
+    if (!route.sources.includes(source)) {
+      refuse(
+        `Transaction spends from ${source}, which is not the wallet's account of the token on screen`
+      );
     }
     const destination = accountAt(ROUTE_DESTINATION);
     if (!route.destinations.includes(destination)) {

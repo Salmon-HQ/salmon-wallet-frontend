@@ -11,6 +11,7 @@ const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
 const FEE = 5_000n;
 
 const usdcToSol: SwapRouteExpectation = {
+  sources: [],
   destinations: [],
   inputMint: USDC,
   outputMint: SOL,

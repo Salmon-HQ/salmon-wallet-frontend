@@ -56,6 +56,7 @@ describe('swap — the proposal core signs', () => {
       networkId: 'solana-mainnet',
       formatValue,
       destinations: [],
+      sources: [],
     });
 
     expect(proposal.transaction).toBe('AQ==');
@@ -96,7 +97,7 @@ describe('swap — the proposal core signs', () => {
   it('warns on a high price impact and shows a provider fee when one is reported', () => {
     const proposal = buildSwapProposal(
       envelope({ priceImpactPct: 7.5, routeFee: { bps: 15 }, salmonFee: null, provider: '0x' }),
-      { networkId: 'solana-mainnet', formatValue, destinations: [] }
+      { networkId: 'solana-mainnet', formatValue, destinations: [], sources: [] }
     );
     expect(proposal.display.warning).toEqual({
       title: 'swap.review.highImpactTitle',
@@ -117,6 +118,7 @@ describe('swap — the proposal core signs', () => {
           networkId: 'solana-mainnet',
           formatValue,
           destinations: [],
+          sources: [],
         }).display.rows.map((row) => [row.label, row.value])
       );
 
@@ -170,11 +172,13 @@ describe('swap — the proposal core signs', () => {
       networkId: 'solana-mainnet',
       formatValue,
       destinations: [],
+      sources: [],
     });
     const proposal = buildSwapProposal(envelope(), {
       networkId: 'solana-mainnet',
       formatValue,
       destinations: [],
+      sources: [],
       refresh: async () => refreshed,
     });
     await expect(proposal.refresh?.()).resolves.toBe(refreshed);
@@ -288,7 +292,13 @@ describe('swap — the proposal core signs', () => {
           input: { ...envelope().input, symbol: 'USDC', logo: 'evil.png' },
           output: { ...envelope().output, symbol: 'SOL', logo: 'evil2.png' },
         }),
-        { networkId: 'solana-mainnet', formatValue, destinations: [], tokens: { pay, receive } }
+        {
+          networkId: 'solana-mainnet',
+          formatValue,
+          destinations: [],
+          sources: [],
+          tokens: { pay, receive },
+        }
       );
       expect(proposal.display.exchange?.send).toMatchObject({ symbol: 'SOL', logo: undefined });
       expect(proposal.display.exchange?.receive).toMatchObject({ symbol: 'USDC', logo: undefined });

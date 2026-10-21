@@ -70,6 +70,7 @@ async function setup(router: string) {
     getRpcSubscriptions: () => ({}) as never,
   };
   const swapRoute: SwapRouteExpectation = {
+    sources: [],
     destinations: [],
     inputMint: SOL,
     outputMint: USDC,

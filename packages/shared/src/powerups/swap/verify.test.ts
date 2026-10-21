@@ -12,7 +12,7 @@ import {
   type Address,
   type Blockhash,
 } from '@solana/kit';
-import { buildSwapProposal, outputDestinations } from './useSwapScreenLogic';
+import { buildSwapProposal, walletTokenAccounts } from './useSwapScreenLogic';
 import {
   assertSolanaTransactionMatches,
   JUPITER_AGGREGATOR_PROGRAM,
@@ -20,6 +20,7 @@ import {
   TOKEN_PROGRAM,
 } from '../../core/verify';
 import type { SwapBuildEnvelope } from './api';
+import jupiterBuilds from './fixtures/jupiter-builds.json';
 
 /** The wallet, mints and accounts of the real `jupiter-build-sol-usdc-fee` build on the backend. */
 const WALLET = '86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY';
@@ -133,15 +134,17 @@ const envelope = {
 } as unknown as SwapBuildEnvelope;
 
 let destinations: string[];
+let sources: string[];
 beforeAll(async () => {
-  destinations = await outputDestinations(WALLET, USDC);
+  destinations = await walletTokenAccounts(WALLET, USDC);
+  sources = await walletTokenAccounts(WALLET, SOL);
 });
 
 /** What the wallet checks before signing: the proposal's own expectation, the signer as fee payer. */
 function verify(tx: string): void {
   const proposal = buildSwapProposal(
     { ...envelope, transaction: tx },
-    { networkId: 'solana-mainnet', formatValue: () => '', destinations }
+    { networkId: 'solana-mainnet', formatValue: () => '', destinations, sources }
   );
   assertSolanaTransactionMatches(proposal.transaction, { feePayer: WALLET, ...proposal.expect });
 }
@@ -178,6 +181,12 @@ describe('swap bytes — where the router pays the output', () => {
     );
   });
 
+  it('refuses a Jupiter route that spends from an account other than the wallet’s own of the input token', () => {
+    const otherToken: Ix = route();
+    otherToken.accounts[1] = { address: address(WALLET_USDC), role: 1 };
+    expect(() => verify(transaction([otherToken]))).toThrow(/spends from/);
+  });
+
   it('refuses a destination it cannot read because a lookup table hides it', () => {
     expect(() =>
       verify(transaction([route({ destination: ATTACKER_USDC })], [address(ATTACKER_USDC)]))
@@ -207,5 +216,169 @@ describe('swap bytes — where the router pays the output', () => {
       data: new Uint8Array([4, 1, 0, 0, 0, 0, 0, 0, 0]),
     };
     expect(() => verify(transaction([route(), approve]))).toThrow(/instruction 4 on/);
+  });
+});
+
+/** A Jupiter /build answer, as the backend's fixtures record it. */
+interface JupiterInstruction {
+  programId: string;
+  accounts: { pubkey: string; isSigner: boolean; isWritable: boolean }[];
+  data: string;
+}
+interface JupiterBuild {
+  inputMint: string;
+  outputMint: string;
+  inAmount: string;
+  outAmount: string;
+  otherAmountThreshold: string;
+  slippageBps: number;
+  setupInstructions: JupiterInstruction[];
+  swapInstruction: JupiterInstruction;
+  cleanupInstruction: JupiterInstruction | null;
+  otherInstructions: JupiterInstruction[];
+}
+const BUILDS: Record<string, JupiterBuild> = jupiterBuilds;
+/** A mint the fixtures' wallet could hold besides the pair: where a tampered build would spend from. */
+const OTHER_MINT = 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So';
+/** An account no fixture names, so a tampered slot holding it stays in the static list. */
+const OUTSIDER = '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3';
+
+const toIx = ({ programId, accounts, data }: JupiterInstruction): Ix => ({
+  programAddress: address(programId),
+  accounts: accounts.map(({ pubkey, isSigner, isWritable }) => ({
+    address: address(pubkey),
+    role: (isSigner ? 2 : 0) + (isWritable ? 1 : 0),
+  })),
+  data: new Uint8Array(Buffer.from(data, 'base64')),
+});
+
+/** Where each Jupiter router call keeps what the check reads, as the real builds lay it out. */
+const LAYOUTS = {
+  bb64facc31c4af14: { args: 8, authority: 0, source: 1, destination: 2 }, // route_v2
+} as Record<string, { args: number; authority: number; source: number; destination: number }>;
+
+/**
+ * A real Jupiter /build answer compiled the way the backend assembles it
+ * (setup, router, cleanup, others), with an optional edit of the router call.
+ *
+ * The real builds resolve every shared account — mints, token programs, pools —
+ * through Jupiter's lookup tables, so the same is done here: everything but the
+ * signer, the invoked programs and the wallet's own token accounts goes in one
+ * table. Whatever the check needs from a table is then hidden from it, as it is
+ * in the bytes the wallet receives. The table is drawn before the edit, so an
+ * account the edit brings in stays visible and the check has to judge it.
+ */
+async function realBuild(
+  name: string,
+  edit?: (swap: Ix, layout: (typeof LAYOUTS)[string]) => void
+) {
+  const build = BUILDS[name];
+  if (!build) throw new Error(`no fixture named ${name}`);
+  const own = [
+    ...(await walletTokenAccounts(WALLET, build.inputMint)),
+    ...(await walletTokenAccounts(WALLET, build.outputMint)),
+  ];
+  const swap = toIx(build.swapInstruction);
+  const layout = LAYOUTS[Buffer.from(swap.data.slice(0, 8)).toString('hex')];
+  if (!layout) throw new Error(`${name} is not a router call this test knows`);
+  const instructions = [
+    ...build.setupInstructions.map(toIx),
+    swap,
+    ...(build.cleanupInstruction ? [toIx(build.cleanupInstruction)] : []),
+    ...build.otherInstructions.map(toIx),
+  ];
+  const invoked = new Set(instructions.map((ix) => String(ix.programAddress)));
+  const keep = new Set([WALLET, ...own, ...invoked]);
+  const table = [
+    ...new Set(instructions.flatMap((ix) => ix.accounts.map((meta) => String(meta.address)))),
+  ].filter((account) => !keep.has(account));
+  edit?.(swap, layout);
+  const tx = transaction(
+    instructions,
+    table.map((account) => address(account))
+  );
+  const proposal = buildSwapProposal(
+    {
+      ...envelope,
+      transaction: tx,
+      input: { mint: build.inputMint, amount: build.inAmount, decimals: 6 },
+      output: {
+        mint: build.outputMint,
+        amount: build.outAmount,
+        minAmount: build.otherAmountThreshold,
+        decimals: 6,
+      },
+      slippageBps: build.slippageBps,
+    },
+    {
+      networkId: 'solana-mainnet',
+      formatValue: () => '',
+      destinations: await walletTokenAccounts(WALLET, build.outputMint),
+      sources: await walletTokenAccounts(WALLET, build.inputMint),
+    }
+  );
+  return () =>
+    assertSolanaTransactionMatches(proposal.transaction, { feePayer: WALLET, ...proposal.expect });
+}
+
+const setU64 = (data: Uint8Array, offset: number, value: bigint) =>
+  new DataView(data.buffer, data.byteOffset).setBigUint64(offset, value, true);
+const setU16 = (data: Uint8Array, offset: number, value: number) =>
+  new DataView(data.buffer, data.byteOffset).setUint16(offset, value, true);
+
+/**
+ * The real Jupiter builds on the backend's fixtures, by shape: a single-hop
+ * route_v2 with Salmon's fee (SOL in, wrapped and unwrapped), one paying out
+ * SOL, a multi-hop route_v2, and one paying a Token-2022 mint.
+ */
+const ROUTE_V2_BUILDS = ['sol-usdc-fee', 'usdc-sol', 'usdc-bonk-multihop', 'usdc-pyusd'];
+
+describe('swap bytes — real Jupiter builds', () => {
+  it.each(ROUTE_V2_BUILDS)('accepts the real %s build', async (name) => {
+    expect(await realBuild(name)).not.toThrow();
+  });
+
+  describe.each(ROUTE_V2_BUILDS)('refuses a tampered %s build', (name) => {
+    it('spending another of the wallet’s tokens', async () => {
+      const other = await walletTokenAccounts(WALLET, OTHER_MINT);
+      const check = await realBuild(name, (swap, layout) => {
+        swap.accounts[layout.source] = { address: address(other[0] as string), role: 1 };
+      });
+      expect(check).toThrow(/spends from/);
+    });
+
+    it('paying the output elsewhere', async () => {
+      const check = await realBuild(name, (swap, layout) => {
+        swap.accounts[layout.destination] = { address: address(OUTSIDER), role: 1 };
+      });
+      expect(check).toThrow(/not the wallet's own/);
+    });
+
+    it('naming another authority', async () => {
+      const check = await realBuild(name, (swap, layout) => {
+        swap.accounts[layout.authority] = { address: address(OUTSIDER), role: 0 };
+      });
+      expect(check).toThrow(/does not authorize/);
+    });
+
+    it('carrying other amounts, slippage or fee', async () => {
+      const edits: [(data: Uint8Array, args: number) => void, RegExp][] = [
+        [(data, args) => setU64(data, args, 20_000_000n), /amount other/],
+        [(data, args) => setU64(data, args + 8, 1n), /quotes an output/],
+        [(data, args) => setU16(data, args + 16, 10_000), /more slippage/],
+        [(data, args) => setU16(data, args + 18, 9_000), /larger fee/],
+      ];
+      for (const [edit, why] of edits) {
+        const check = await realBuild(name, (swap, layout) => edit(swap.data, layout.args));
+        expect(check).toThrow(why);
+      }
+    });
+
+    it('calling a Jupiter instruction the wallet does not know', async () => {
+      const check = await realBuild(name, (swap) => {
+        swap.data[0] ^= 0xff;
+      });
+      expect(check).toThrow(/Jupiter instruction other than/);
+    });
   });
 });

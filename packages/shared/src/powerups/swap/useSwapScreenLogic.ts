@@ -184,12 +184,14 @@ export interface SwapProposalContext {
   /** The tokens the user picked: the screen names and draws these, never what the backend says. */
   tokens?: { pay: SwapToken; receive: SwapToken };
   refresh?: () => Promise<TransactionProposal>;
-  /** The wallet's own accounts of the output mint, from `outputDestinations`: the only places the swap may pay. */
+  /** The wallet's own accounts of the output mint, from `walletTokenAccounts`: the only places the swap may pay. */
   destinations: readonly string[];
+  /** The wallet's own accounts of the input mint, from `walletTokenAccounts`: the only places the swap may spend from. */
+  sources: readonly string[];
 }
 
 /** The wallet's associated token accounts of `mint`, under SPL Token and Token-2022. */
-export async function outputDestinations(owner: string, mint: string): Promise<string[]> {
+export async function walletTokenAccounts(owner: string, mint: string): Promise<string[]> {
   return Promise.all(
     [TOKEN_PROGRAM, TOKEN_2022_PROGRAM].map(async (tokenProgram) => {
       const [ata] = await findAssociatedTokenPda({
@@ -205,7 +207,7 @@ export async function outputDestinations(owner: string, mint: string): Promise<s
 /** Pure: what core renders for a built swap. Every string is already translated. */
 export function buildSwapProposal(
   envelope: SwapBuildEnvelope,
-  { networkId, formatValue, tokens, refresh, destinations }: SwapProposalContext
+  { networkId, formatValue, tokens, refresh, destinations, sources }: SwapProposalContext
 ): TransactionProposal {
   // The key itself when i18n has nothing for it (tests, a build with the
   // namespace missing): a row with a key is readable, a row with nothing is not.
@@ -275,6 +277,7 @@ export function buildSwapProposal(
         allowedPrograms: swapManifest.programs,
         allowedInstructions: SWAP_INSTRUCTIONS,
         swapRoute: {
+          sources,
           destinations,
           inputMint: envelope.input.mint,
           outputMint: envelope.output.mint,
@@ -508,7 +511,8 @@ export function useSwapScreenLogic({
         formatValue,
         tokens: { pay: payToken, receive: receiveToken },
         refresh: propose,
-        destinations: await outputDestinations(publicKey, envelope.output.mint),
+        destinations: await walletTokenAccounts(publicKey, envelope.output.mint),
+        sources: await walletTokenAccounts(publicKey, envelope.input.mint),
       });
     };
     try {
