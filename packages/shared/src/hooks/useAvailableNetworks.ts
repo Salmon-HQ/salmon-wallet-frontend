@@ -24,6 +24,7 @@ import type {
 } from '../types/blockchain';
 import { sortNetworks, visibleNetworkIds } from '../utils/network';
 import { getNetworks } from '../api/services/network';
+import { detectEnvironment } from '../api/config';
 
 /**
  * Return type for the useAvailableNetworks hook.
@@ -72,30 +73,44 @@ const NETWORK_ORDER = {
 
 /**
  * Accepts a backend-supplied endpoint only when it is a well-formed URL on an
- * expected scheme.
+ * encrypted scheme.
  *
  * These values become the wallet's whole view of the chain: `nodeUrl` feeds
  * `createSolanaRpc`, and from there simulation, blockhash, `sendTransaction`
- * and confirmation. Written through unchecked, whoever answers `/v1/networks`
- * chooses which chain the wallet simulates against and where signed
- * transactions go. A malformed or non-network scheme must leave the compiled
- * default in place rather than replace it.
+ * and confirmation — including the simulations that decide what an approval
+ * screen shows before the user signs. Written through unchecked, whoever
+ * answers `/v1/networks` chooses which chain the wallet simulates against and
+ * where signed transactions go; over plain http, so does anyone on the network
+ * path. A malformed, unencrypted or non-network scheme must leave the compiled
+ * default in place rather than replace it. The one exception is a node on this
+ * machine's loopback in a local build: a validator a developer runs.
  *
  * @param value - the candidate endpoint from the catalogue response.
- * @param schemes - the schemes this field is allowed to use.
+ * @param schemes - the encrypted scheme this field must use, and its plain
+ *   counterpart a local build may use on loopback.
  * @returns the value when it is usable, or null to keep the existing default.
  */
-function acceptEndpoint(value: unknown, schemes: readonly string[]): string | null {
+function acceptEndpoint(
+  value: unknown,
+  schemes: { secure: string; loopback: string }
+): string | null {
   if (typeof value !== 'string' || value.length === 0) return null;
   try {
-    return schemes.includes(new URL(value).protocol) ? value : null;
+    const url = new URL(value);
+    if (url.protocol === schemes.secure) return value;
+    const onLoopback =
+      url.protocol === schemes.loopback &&
+      LOOPBACK_HOSTS.includes(url.hostname) &&
+      detectEnvironment() === 'local';
+    return onLoopback ? value : null;
   } catch {
     return null;
   }
 }
 
-const HTTP_SCHEMES = ['https:', 'http:'] as const;
-const WS_SCHEMES = ['wss:', 'ws:'] as const;
+const LOOPBACK_HOSTS = ['localhost', '127.0.0.1'];
+const HTTP_SCHEMES = { secure: 'https:', loopback: 'http:' };
+const WS_SCHEMES = { secure: 'wss:', loopback: 'ws:' };
 
 export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
   try {
@@ -162,10 +177,9 @@ const mergeSolanaNetwork = (net: NetworkCatalogEntry): SolanaNetwork | null => {
     id: net.id as SolanaNetwork['id'],
     networkId: net.id as SolanaNetwork['networkId'],
     name: net.name || local.name,
-    config: {
-      ...local.config,
-      ...(net.config || {}),
-    },
+    // The local entry already carries the catalogue's endpoints that passed
+    // `acceptEndpoint`; spreading `net.config` here would hand out raw ones.
+    config: { ...local.config },
   };
 };
 
@@ -179,10 +193,7 @@ const mergeBitcoinNetwork = (net: NetworkCatalogEntry): BitcoinNetwork | null =>
     networkId: net.id as BitcoinNetwork['networkId'],
     name: net.name || local.name,
     environment: net.environment as BitcoinNetwork['environment'],
-    config: {
-      ...local.config,
-      ...(net.config || {}),
-    },
+    config: { ...local.config },
   };
 };
 
@@ -196,10 +207,7 @@ const mergeEthereumNetwork = (net: NetworkCatalogEntry): EthereumNetwork | null 
     networkId: net.id as EthereumNetwork['networkId'],
     name: net.name || local.name,
     environment: net.environment as EthereumNetwork['environment'],
-    config: {
-      ...local.config,
-      ...(net.config || {}),
-    },
+    config: { ...local.config },
   };
 };
 

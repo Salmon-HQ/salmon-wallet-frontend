@@ -218,6 +218,31 @@ describe('useAvailableNetworks Hook', () => {
       });
     });
 
+    it('hands out the endpoint it validated, never the backend’s raw one', () => {
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        {
+          id: 'solana-mainnet',
+          name: 'Solana',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'http://rpc.example' },
+          enabled: true,
+          sections: {} as never,
+        },
+      ]);
+      const { result } = renderHook(() =>
+        useAvailableNetworks({ activeBlockchainAccount: mockActiveAccount })
+      );
+
+      return waitFor(() => {
+        expect(result.current.networks.solana).toHaveLength(1);
+        expect(result.current.networks.solana[0].config.nodeUrl).toBe(
+          SOLANA_NETWORKS['solana-mainnet'].config.nodeUrl
+        );
+        expect(result.current.networks.solana[0].config.nodeUrl).not.toBe('http://rpc.example');
+      });
+    });
+
     it('keeps offering the devnet the session is standing on', () => {
       const { result } = renderHook(() =>
         useAvailableNetworks({
@@ -604,5 +629,55 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
     await fetchAndMergeNetworkConfigs();
 
     expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('https://rpc.example/x');
+  });
+
+  // The RPC answers the simulations that gate signing; over plain http anyone
+  // on the path can answer them instead.
+  it('keeps the compiled default when the backend sends a plain http or ws endpoint', async () => {
+    const before = { ...SOLANA_NETWORKS[MAINNET].config };
+    vi.mocked(networkService.getNetworks).mockResolvedValue([
+      {
+        id: MAINNET,
+        blockchain: 'solana',
+        config: { nodeUrl: 'http://rpc.example/x', wsUrl: 'ws://rpc.example/x' },
+      },
+    ] as any);
+
+    await fetchAndMergeNetworkConfigs();
+
+    expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe(before.nodeUrl);
+    expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBe(before.wsUrl);
+  });
+
+  describe('a validator on this machine', () => {
+    const local = { nodeUrl: 'http://localhost:8899', wsUrl: 'ws://127.0.0.1:8900' };
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      SOLANA_NETWORKS[MAINNET].config.nodeUrl = 'https://api.mainnet-beta.solana.com';
+      delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
+    });
+
+    it('is accepted over plain http in a local build', async () => {
+      vi.stubEnv('VITE_SALMON_ENV', 'local');
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        { id: MAINNET, blockchain: 'solana', config: local },
+      ] as any);
+
+      await fetchAndMergeNetworkConfigs();
+
+      expect(SOLANA_NETWORKS[MAINNET].config).toMatchObject(local);
+    });
+
+    it.each(['production', 'staging'])('is refused in a %s build', async (env) => {
+      vi.stubEnv('VITE_SALMON_ENV', env);
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        { id: MAINNET, blockchain: 'solana', config: local },
+      ] as any);
+
+      await fetchAndMergeNetworkConfigs();
+
+      expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('https://api.mainnet-beta.solana.com');
+      expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBeUndefined();
+    });
   });
 });
