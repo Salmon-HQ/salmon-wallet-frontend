@@ -30,8 +30,10 @@ import {
   preventScreenCaptureAsync,
   allowScreenCaptureAsync,
   enableAppSwitcherProtectionAsync,
-  disableAppSwitcherProtectionAsync,
 } from 'expo-screen-capture';
+
+/** Set once the blur is on: it stays on for the life of the process. */
+let appSwitcherProtected = false;
 
 /**
  * iOS: blur the whole app whenever it is not in focus, so the app-switcher
@@ -40,17 +42,19 @@ import {
  * `useSecretScreen`, which also blanks their Recents thumbnail, and the rest
  * of the app stays screenshottable on purpose.
  *
- * The native call has no key or count, so this is its only caller: a secret
- * screen disabling it on unmount would switch it off for the whole app.
+ * It is never turned off — not when a secret screen leaves, not when the root
+ * remounts after an error — and it is turned on once, because each native call
+ * adds another observer and the call has no count. Full intensity (1.0; the
+ * library's default is 0.5) so nothing on the screen stays legible.
  */
 export function useAppSwitcherProtection(): void {
   useEffect(() => {
-    if (Platform.OS !== 'ios') return;
+    if (Platform.OS !== 'ios' || appSwitcherProtected) return;
+    appSwitcherProtected = true;
+    // The blur covers the key window only: content in a React Native <Modal>
+    // is not documented as covered, and no secret renders in one today.
     // Fire-and-forget: a failure here must never break the app.
-    void enableAppSwitcherProtectionAsync().catch(() => {});
-    return () => {
-      void disableAppSwitcherProtectionAsync().catch(() => {});
-    };
+    void enableAppSwitcherProtectionAsync(1).catch(() => {});
   }, []);
 }
 

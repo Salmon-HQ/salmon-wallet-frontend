@@ -14,7 +14,7 @@ import { render } from '@testing-library/react-native';
 
 const mockPreventScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockAllowScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
-const mockEnableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
+const mockEnableAppSwitcherProtectionAsync = jest.fn((_intensity?: number) => Promise.resolve());
 const mockDisableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
 
 // Mirrors the real module's keyed refcounting so the test exercises the key
@@ -39,7 +39,8 @@ jest.mock('expo-screen-capture', () => {
       }
       return Promise.resolve();
     },
-    enableAppSwitcherProtectionAsync: () => mockEnableAppSwitcherProtectionAsync(),
+    enableAppSwitcherProtectionAsync: (intensity?: number) =>
+      mockEnableAppSwitcherProtectionAsync(intensity),
     disableAppSwitcherProtectionAsync: () => mockDisableAppSwitcherProtectionAsync(),
   };
 });
@@ -123,19 +124,24 @@ describe('useSecretScreen', () => {
     // The blur covers the whole app from the root (balances and the address
     // were in the app-switcher snapshot). A secret screen leaving must not
     // switch it off underneath the rest of the app.
-    it('leaves the app switcher blur to the root, so a secret screen cannot turn it off', () => {
+    // The blur covers the whole app for the life of the process: a secret
+    // screen leaving, or the root remounting after an error, never switches it
+    // off, and it is turned on once (each call adds another native observer).
+    it('turns the full blur on once for the process, and nothing turns it off', () => {
       const root = render(<AppRoot />);
       expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+      expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledWith(1);
 
       const secret = render(<SecretScreen label="ios-a" />);
       secret.unmount();
-      expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
       // Never on iOS: the secure-field workaround blacks out the live screen
       // on some devices (expo/expo#24041).
       expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
 
       root.unmount();
-      expect(mockDisableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+      render(<AppRoot />);
+      expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+      expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
     });
   });
 

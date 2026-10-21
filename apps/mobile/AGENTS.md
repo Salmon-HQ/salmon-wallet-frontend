@@ -26,11 +26,13 @@ key, recovery phrase) must call `useSecretScreen(label)` from
 which blocks screenshots and screen recording and blanks the Recents
 thumbnail — the snapshot the OS takes before JS can react, which
 lock-on-background cannot prevent. On iOS the app-switcher snapshot is
-covered for the whole app instead: `useAppSwitcherProtection`, called once
-from the root layout, blurs the window whenever the app is not in focus, so
-balances and the address stay out of it too. Never call
-`disableAppSwitcherProtectionAsync` anywhere else: the native call has no
-count, so any caller switches the blur off for the whole app.
+covered for the whole app instead: `useAppSwitcherProtection`, called from
+the root layout, turns a full-strength blur on once for the life of the
+process, whenever the app is not in focus, so balances and the address stay
+out of it too. Never call `disableAppSwitcherProtectionAsync`: the native call
+has no count, so any caller switches the blur off for the whole app. The blur
+covers the key window only, so do not render a secret inside a React Native
+`<Modal>`.
 
 The `SeedWordGrid` and `SeedWordInput` primitives already call it, so any
 screen built from them inherits protection with no extra step. Build seed UI
