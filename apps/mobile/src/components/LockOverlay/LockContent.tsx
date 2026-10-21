@@ -79,6 +79,7 @@ export function LockContent({
   onUnlockExited,
   biometric,
   allowReset = true,
+  autoPrompt = true,
 }: LockContentProps) {
   const { t } = useTranslation();
   const mode = useThemeMode();
@@ -151,23 +152,17 @@ export function LockContent({
 
   // Track if we've already auto-prompted biometric for this lock session
   const hasAutoPromptedBiometric = useRef(false);
+  // Held back while the dApp's lock was up: the prompt waits for the app's
+  // own return to the front, not the `active` that state already reports.
+  const waitForReturn = useRef(false);
   const biometricInProgress = useRef(false);
 
   // Can we use biometric for unlock?
   const canUseBiometric = !!biometric?.available && !!biometric?.armed && !!biometricUnlock;
 
-  const biometricActionLabel = (() => {
-    switch (biometric?.kind) {
-      case 'facial':
-        return t('lock.use_face_id');
-      case 'fingerprint':
-        return t('lock.use_touch_id');
-      case 'iris':
-        return t('lock.use_iris');
-      default:
-        return t('lock.use_biometric');
-    }
-  })();
+  // One neutral label: the sensor kind Android reports does not match what the
+  // user calls it (a fingerprint phone was offered "Face ID").
+  const biometricActionLabel = t('lock.use_biometric');
 
   // Reset state on *entering* locked, never on leaving it. After a successful
   // unlock `locked` flips false while the gate is still held and this
@@ -177,6 +172,7 @@ export function LockContent({
   useEffect(() => {
     if (locked) {
       hasAutoPromptedBiometric.current = false;
+      waitForReturn.current = false;
       setBiometricReady(false);
       setShowPasswordFallback(false);
       setPassword('');
@@ -413,18 +409,26 @@ export function LockContent({
       return;
     }
 
+    if (!autoPrompt) {
+      waitForReturn.current = true;
+      return;
+    }
+
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let fired = false;
     let subscription: ReturnType<typeof AppState.addEventListener> | null = null;
 
     const prompt = () => {
       if (hasAutoPromptedBiometric.current) return;
       hasAutoPromptedBiometric.current = true;
+      waitForReturn.current = false;
       timer = setTimeout(() => {
+        fired = true;
         void handleBiometricUnlock();
       }, PROMPT_SETTLE_MS);
     };
 
-    if (AppState.currentState === 'active') {
+    if (AppState.currentState === 'active' && !waitForReturn.current) {
       prompt();
     } else {
       subscription = AppState.addEventListener('change', (nextState) => {
@@ -437,14 +441,19 @@ export function LockContent({
     }
 
     return () => {
-      if (timer !== null) clearTimeout(timer);
+      // A prompt cancelled before it opened (the dApp's lock arrived inside
+      // the settle beat) was never shown, so the session still owes one.
+      if (timer !== null && !fired) {
+        clearTimeout(timer);
+        hasAutoPromptedBiometric.current = false;
+      }
       subscription?.remove();
     };
     // `handleBiometricUnlock` is deliberately not a dependency: it changes
     // identity with every unlock attempt, and re-running this effect would
     // re-prompt. The one-shot ref above is what gates the session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locked, biometricReady, canUseBiometric]);
+  }, [locked, biometricReady, canUseBiometric, autoPrompt]);
 
   // Forgot password
   const handleForgotPassword = useCallback(() => {
