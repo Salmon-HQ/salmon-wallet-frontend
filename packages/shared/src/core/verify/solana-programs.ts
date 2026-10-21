@@ -162,9 +162,20 @@ export const LOOKUP_TABLE_STEP_PROGRAMS = [
  * The table steps build a table and nothing else: `CreateLookupTable` (0) and
  * `ExtendLookupTable` (2), u32 codes. `CloseLookupTable` would send a table's
  * rent wherever the transaction says, and `Freeze` / `Deactivate` are not a
- * build step.
+ * build step. Both hold the authority (1) and the payer (2) to the wallet: the
+ * authority is who may later close the table and take its rent, and the payer
+ * is whose SOL funds it.
  */
 export const LOOKUP_TABLE_STEP_INSTRUCTIONS = {
-  [ADDRESS_LOOKUP_TABLE_PROGRAM]: { width: 4, codes: [0, 2] },
+  [ADDRESS_LOOKUP_TABLE_PROGRAM]: {
+    width: 4,
+    codes: [0, 2],
+    binds: [
+      { code: 0, index: 1, mustBe: 'feePayer' },
+      { code: 0, index: 2, mustBe: 'feePayer' },
+      { code: 2, index: 1, mustBe: 'feePayer' },
+      { code: 2, index: 2, mustBe: 'feePayer' },
+    ],
+  },
   [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 } as const;

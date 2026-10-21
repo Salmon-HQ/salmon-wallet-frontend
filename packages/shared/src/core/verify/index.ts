@@ -1,6 +1,7 @@
 export {
   assertSolanaTransactionMatches,
   bubblegumAssets,
+  lookupTableActions,
   ownAtaCreates,
   SolanaTransactionMismatchError,
   UNVERIFIED,

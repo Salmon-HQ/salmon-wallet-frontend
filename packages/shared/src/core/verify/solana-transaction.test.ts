@@ -438,7 +438,7 @@ describe('NFT and lookup-table steps carry no System instruction', () => {
         message(ACCOUNTS, [
           {
             program: ADDRESS_LOOKUP_TABLE_PROGRAM,
-            accounts: [1, 0, 0],
+            accounts: [1, 0, 0, 3],
             data: [...u32(code), ...new Array(9).fill(0)],
           },
         ]),
@@ -448,6 +448,27 @@ describe('NFT and lookup-table steps carry no System instruction', () => {
     expect(check(2)).not.toThrow(); // ExtendLookupTable
     expect(check(3)).toThrow(/instruction 3 on/); // DeactivateLookupTable
     expect(check(4)).toThrow(/instruction 4 on/); // CloseLookupTable
+  });
+
+  // The table's authority can close it and send its rent anywhere; whoever
+  // pays is whoever the wallet funds.
+  it('holds a table step’s authority and payer to the wallet', () => {
+    const check = (code: number, accounts: number[]) => () =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [
+          {
+            program: ADDRESS_LOOKUP_TABLE_PROGRAM,
+            accounts,
+            data: [...u32(code), ...new Array(9).fill(0)],
+          },
+        ]),
+        { feePayer: OWNER, ...steps['lookup-table'] }
+      );
+    for (const code of [0, 2]) {
+      expect(check(code, [1, 2, 0, 3])).toThrow(/not the wallet's own/); // authority
+      expect(check(code, [1, 0, 2, 3])).toThrow(/not the wallet's own/); // payer
+      expect(check(code, [1, 0])).toThrow(/too few accounts/);
+    }
   });
 });
 

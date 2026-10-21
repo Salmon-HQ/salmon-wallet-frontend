@@ -38,6 +38,7 @@ import {
 import type { ReadonlyUint8Array } from '@solana/kit';
 
 import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
   COMPUTE_BUDGET_PROGRAM,
@@ -255,6 +256,22 @@ export function ownAtaCreates(transactionBase64: string): number {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
   return ownAtasCreated(accounts, compiledInstructions(message), accounts[0] ?? '').size;
+}
+
+/** The lookup-table instructions a message carries: each one's code and the table it acts on. */
+export function lookupTableActions(
+  transactionBase64: string
+): { code: number | null; table: string }[] {
+  const message = decodeMessage(transactionBase64);
+  const accounts = message.staticAccounts.map(String);
+  return compiledInstructions(message)
+    .filter(
+      (instruction) => accounts[instruction.programAddressIndex] === ADDRESS_LOOKUP_TABLE_PROGRAM
+    )
+    .map((instruction) => ({
+      code: discriminator(instruction.data, 4),
+      table: staticAccount(accounts, instruction, 0, 'a lookup table'),
+    }));
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
