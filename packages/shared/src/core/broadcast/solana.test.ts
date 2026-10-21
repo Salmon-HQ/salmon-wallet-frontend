@@ -33,7 +33,9 @@ function createRpc(overrides: Record<string, unknown> = {}) {
       send: async () => ({ value: { blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1n } }),
     }),
     sendTransaction: vi.fn().mockReturnValue({ send: async () => 'signature-1' }),
-    getSignatureStatuses: vi.fn().mockReturnValue({ send: async () => ({ value: [null] }) }),
+    getSignatureStatuses: vi
+      .fn()
+      .mockReturnValue({ send: async () => ({ context: { slot: 5n }, value: [null] }) }),
     getEpochInfo: vi.fn().mockReturnValue({
       send: async () => ({ absoluteSlot: 0n, blockHeight: 0n }),
     }),
@@ -87,8 +89,38 @@ describe('signAndSendSolanaTransaction', () => {
     expect(transaction.signatures[account.signer.address]).not.toBeNull();
   });
 
+  it('waits for the verdict when the send answer is lost, instead of inviting a second send', async () => {
+    const rpc = createRpc({
+      sendTransaction: vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('fetch failed');
+        },
+      }),
+    });
+    const account = await createAccount(rpc);
+
+    const signature = await signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED);
+
+    // The signature it signed, confirmed by the chain — not an error the user could retry.
+    expect(signature).toMatch(/^[1-9A-HJ-NP-Za-km-z]{64,88}$/);
+    expect(rpc.sendTransaction).toHaveBeenCalledTimes(1);
+  });
+
   it('propagates a confirmation failure instead of returning the signature', async () => {
-    const account = await createAccount(createRpc(), createRpcSubscriptions(failedNotification));
+    const rpc = createRpc({
+      getSignatureStatuses: vi.fn().mockReturnValue({
+        send: async () => ({
+          context: { slot: 5n },
+          value: [
+            {
+              confirmationStatus: 'confirmed',
+              err: { InstructionError: [0, 'InvalidAccountData'] },
+            },
+          ],
+        }),
+      }),
+    });
+    const account = await createAccount(rpc, createRpcSubscriptions(failedNotification));
 
     await expect(signAndSendSolanaTransaction(account, FIXTURE_B64, UNVERIFIED)).rejects.toThrow();
   });
@@ -115,6 +147,9 @@ describe('signAndSendSolanaTransaction', () => {
     );
     // The verdict the error decoder maps to `transaction.errors.expired`.
     expect(isSolanaError(outcome, SOLANA_ERROR__BLOCK_HEIGHT_EXCEEDED)).toBe(true);
+    expect(rpc.getSignatureStatuses).toHaveBeenCalledWith(expect.anything(), {
+      searchTransactionHistory: true,
+    });
   });
 
   it('honours skipPreflight and the commitment it is given', async () => {

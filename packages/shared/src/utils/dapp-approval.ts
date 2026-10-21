@@ -6,6 +6,7 @@ import {
   getBase64Decoder,
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
+  getSignatureFromTransaction,
   getTransactionDecoder,
   getTransactionEncoder,
   isSolanaError,
@@ -33,6 +34,7 @@ import {
   signOffchainMessage,
   signSiwsMessage,
 } from '../blockchain/solana';
+import { sendExpectingOutcome } from '../blockchain/solana/confirm';
 import { assertSiwsTextBoundToOrigin } from '../blockchain/solana/sign-in';
 import {
   signBytesWith,
@@ -136,6 +138,29 @@ function toSendConfig(options: Record<string, unknown> | undefined) {
       ? { minContextSlot: BigInt(minContextSlot as number) as Slot }
       : {}),
   };
+}
+
+/**
+ * Broadcasts a dApp's signAndSend. A lost answer still returns the signature,
+ * which is what the method promises: the dApp follows it to a verdict, where
+ * an error would make it rebuild and send a second transaction.
+ */
+async function broadcastForDApp(
+  rpc: ReturnType<SolanaAccount['getRpc']>,
+  signed: Parameters<typeof getSignatureFromTransaction>[0],
+  sendConfig: ReturnType<typeof toSendConfig>
+) {
+  const send = () =>
+    rpc.sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig).send();
+  let signature;
+  try {
+    signature = getSignatureFromTransaction(signed);
+  } catch {
+    // No fee-payer signature yet: the cluster can never accept it, so there
+    // is no outcome to lose.
+    return send();
+  }
+  return sendExpectingOutcome(send, signature);
 }
 
 function toHex(bytes: Uint8Array): string {
@@ -575,17 +600,11 @@ export async function approveSolanaTransactionRequest(
     }
 
     const signed = await signTransactionWith(account.signer, decoded);
-    const signature = await rpc
-      .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
-      .send();
-    return { signature };
+    return { signature: await broadcastForDApp(rpc, signed, sendConfig) };
   }
 
   const signed = await signApprovedMessage(account, encodedMessage);
-  const signature = await rpc
-    .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
-    .send();
-  return { signature };
+  return { signature: await broadcastForDApp(rpc, signed, sendConfig) };
 }
 
 export function serializeSignedTransactionFromApproval(

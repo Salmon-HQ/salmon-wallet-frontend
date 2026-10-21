@@ -110,6 +110,12 @@ export interface SendFailurePropsBase {
    * says it all.
    */
   detail?: string;
+  /**
+   * The transaction may already have landed (`sendFailureReport`'s
+   * `outcomeUnknown`): no retry is offered, since a retry signs and sends a
+   * second one.
+   */
+  outcomeUnknown?: boolean;
   /** Re-run the same transfer, without leaving this screen. */
   onRetry: () => void;
   /** Retry's label. */

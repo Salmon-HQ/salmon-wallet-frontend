@@ -21,6 +21,7 @@ import {
   setTransactionMessageConfig,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  SolanaError,
 } from '@solana/kit';
 import { getAddMemoInstruction } from '@solana-program/memo';
 import { getTransferSolInstruction } from '@solana-program/system';
@@ -285,6 +286,62 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const submitted = submittedTransaction(sendTransaction);
     expect(submitted.signatures[0].every((byte) => byte === 0)).toBe(true);
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
+  });
+
+  // A dApp told "failed" rebuilds with a fresh blockhash and sends again, so a
+  // lost answer must come back as the signature for the dApp to follow.
+  describe('when the send answer is lost', () => {
+    const coSignedTransaction = () => {
+      const message = new TransactionMessage({
+        payerKey: coSigner.publicKey,
+        recentBlockhash: BLOCKHASH,
+        instructions: transferInstructions(),
+      }).compileToV0Message();
+      const partiallySigned = new VersionedTransaction(message);
+      partiallySigned.sign([coSigner]);
+      return {
+        message: bs58.encode(message.serialize()),
+        transaction: bs58.encode(partiallySigned.serialize()),
+        feePayerSignature: bs58.encode(partiallySigned.signatures[0]),
+      };
+    };
+
+    it('returns the transaction signature instead of an error', async () => {
+      const { message, transaction, feePayerSignature } = coSignedTransaction();
+      const sendTransaction = vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('fetch failed');
+        },
+      });
+      const account = await makeAccount({ sendTransaction });
+
+      const result = await approveSolanaTransactionRequest(account as never, {
+        id: 'req-lost',
+        method: 'signAndSendTransaction',
+        params: { message, transaction },
+      });
+
+      expect(result).toEqual({ signature: feePayerSignature });
+    });
+
+    it('still reports a refusal the node answered', async () => {
+      const { message, transaction } = coSignedTransaction();
+      const refused = new SolanaError(-32002 as never, { __serverMessage: 'preflight' } as never);
+      const sendTransaction = vi.fn().mockReturnValue({
+        send: async () => {
+          throw refused;
+        },
+      });
+      const account = await makeAccount({ sendTransaction });
+
+      await expect(
+        approveSolanaTransactionRequest(account as never, {
+          id: 'req-refused',
+          method: 'signAndSendTransaction',
+          params: { message, transaction },
+        })
+      ).rejects.toBe(refused);
+    });
   });
 
   // `params.options` is untrusted JSON from the page. Anything the wallet does
