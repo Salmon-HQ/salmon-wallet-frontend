@@ -236,3 +236,68 @@ test('a finding names its line', () => {
     [2]
   );
 });
+
+test('a run of numbers between two words is read in linear time', () => {
+  const numbers = Array.from({ length: 32 }, (_, i) => 100 + i).join(', ');
+  const started = performance.now();
+  scanText(`const key = Buffer.from([${numbers}]).toString('hex');`);
+  assert.ok(performance.now() - started < 1000);
+});
+
+test('a long numbered list that is no phrase is read in linear time', () => {
+  const items = Array.from({ length: 40 }, (_, i) => `${i + 1}) `).join('');
+  const started = performance.now();
+  scanText(`alpha ${items}/ omega`);
+  assert.ok(performance.now() - started < 1000);
+});
+
+test('a phrase split into strings joined by + is a finding', () => {
+  const words = phrase();
+  assert.equal(
+    flagged(
+      `const words =\n  '${words.slice(0, 6).join(' ')} ' +\n  '${words.slice(6).join(' ')}';`
+    ),
+    true
+  );
+});
+
+test('a key whose name sits on the line above it is a finding', () => {
+  assert.equal(
+    flagged(`const SIGNER_PRIVATE_KEY =\n  '${randomBytes(32).toString('hex')}';`),
+    true
+  );
+  assert.equal(flagged(`const secretKey =\n  '${base58(keyBytes(32))}';`), true);
+});
+
+test('a hash whose name sits on the line above it is not a finding', () => {
+  assert.equal(flagged(`const TX_HASH =\n  '${randomBytes(32).toString('hex')}';`), false);
+});
+
+test('a seed is a key name', () => {
+  assert.equal(flagged(`seed: '${randomBytes(32).toString('hex')}',`), true);
+  assert.equal(flagged(`const TEST_SEED = '${randomBytes(64).toString('hex')}';`), true);
+  assert.equal(flagged(`const rootSeed = '${randomBytes(64).toString('hex')}';`), true);
+});
+
+test('seed inside a longer name is not a key name', () => {
+  assert.equal(flagged(`seedVaultAddress: '${base58(keyBytes(32))}',`), false);
+  assert.equal(flagged(`const seeds = '${randomBytes(32).toString('hex')}';`), false);
+});
+
+test('a keypair written as hex bytes or through Uint8Array.of is a finding', () => {
+  const bytes = Array.from(randomBytes(64));
+  const hex = bytes.map((byte) => `0x${byte.toString(16).padStart(2, '0')}`);
+  assert.equal(flagged(`const keypair = [${hex.join(', ')}];`), true);
+  assert.equal(flagged(`const keypair = Uint8Array.of(${bytes.join(', ')});`), true);
+});
+
+test('a 32-byte array is a finding beside a key name, on its line or the one above', () => {
+  const bytes = Array.from(randomBytes(32)).join(', ');
+  assert.equal(flagged(`const secretKey = new Uint8Array([${bytes}]);`), true);
+  assert.equal(flagged(`const secretKey =\n  [${bytes}];`), true);
+});
+
+test('a 32-byte array with no key name beside it, such as a public key, is not a finding', () => {
+  const bytes = Array.from(randomBytes(32)).join(', ');
+  assert.equal(flagged(`const publicKeyBytes = new Uint8Array([${bytes}]);`), false);
+});

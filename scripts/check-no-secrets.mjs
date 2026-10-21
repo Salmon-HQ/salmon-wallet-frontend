@@ -7,17 +7,19 @@
 // What it flags:
 //   - twelve or more consecutive BIP39 (English) words, on one line or across
 //     lines, separated by spaces, commas, quotes, brackets, "1." numbering,
-//     "-" / "*" / "•" bullets, escaped "\n" / "\t", or a `// …` comment
-//     after each word
+//     "-" / "*" / "•" bullets, escaped "\n" / "\t", strings joined by "+",
+//     or a `// …` comment after each word
 //   - a base58 run of 86–90 characters (a 64-byte Solana keypair)
-//   - a bracketed array of 64 integers from 0 to 255 (a keypair as JSON), on
-//     one line or many
+//   - an array of 64 bytes (a keypair as JSON), decimal or 0x hex, in
+//     brackets or `Uint8Array.of(…)`, on one line or many; one of 32 bytes
+//     when a key name sits on its opening line or the line above
 //   - a Bitcoin WIF private key (base58check, 51–52 characters, checksum valid)
 //   - a BIP32 extended private key (xprv, tprv and their SLIP-132 variants)
 //   - a PEM (or PGP armoured) private key header
 //   - 32- or 64-byte hex, and a 32-byte base58 string, on a line that names a
-//     private or secret key: those shapes are also hashes, signatures and
-//     addresses, so only the name beside them tells a key apart
+//     private or secret key or a seed, or below such a line: those shapes are
+//     also hashes, signatures and addresses, so only the name beside them
+//     tells a key apart
 //
 // A known public fixture passes: a run of words that is exactly one of the
 // public BIP39 test vectors is recognised, and any other line is allowed by a
@@ -62,8 +64,12 @@ const KNOWN_VECTORS = [
   [...Array(11).fill('test'), 'junk'],
 ];
 const IGNORE_MARKER = 'no-secrets-ignore';
-const BYTE = '(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)';
-const BYTE_ARRAY_KEYPAIR = new RegExp(`\\[\\s*(?:${BYTE}\\s*,\\s*){63}${BYTE}\\s*,?\\s*\\]`, 'g');
+const BYTE = '(?:0x[0-9a-fA-F]{1,2}|25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)';
+/** An array of exactly `length` bytes, in brackets or as `Uint8Array.of(…)` arguments. */
+const byteArray = (length) =>
+  new RegExp(`(?:\\[|\\bof\\()\\s*(?:${BYTE}\\s*,\\s*){${length - 1}}${BYTE}\\s*,?\\s*[\\])]`, 'g');
+const BYTE_ARRAY_KEYPAIR = byteArray(64);
+const BYTE_ARRAY_KEY = byteArray(32);
 const EXTENDED_PRIVATE_KEY =
   /(?<![A-Za-z0-9])[xtyzuvYZUV]prv[1-9A-HJ-NP-Za-km-z]{107,108}(?![A-Za-z0-9])/;
 const PEM_PRIVATE_KEY = /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/;
@@ -72,14 +78,18 @@ const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvw
 const WIF_CANDIDATE = /(?<![A-Za-z0-9+\/=])[59KLc][1-9A-HJ-NP-Za-km-z]{50,51}(?![A-Za-z0-9+\/=])/g;
 const BASE58_32_CANDIDATE = /(?<![A-Za-z0-9+\/=])[1-9A-HJ-NP-Za-km-z]{43,44}(?![A-Za-z0-9+\/=])/g;
 const HEX_KEY = /(?<![0-9a-fA-F])(?:[0-9a-fA-F]{64}|[0-9a-fA-F]{128})(?![0-9a-fA-F])/;
-const KEY_NAME = /(?:priv(?:ate)?|secret|signing)[\s_-]*key|\bsecret\b|\bwif\b/i;
+const KEY_NAME =
+  /(?:priv(?:ate)?|secret|signing)[\s_-]*key|\bsecret\b|\bwif\b|(?<![A-Za-z])seed(?![A-Za-z])|Seed(?![A-Za-z])|SEED(?![A-Za-z])/i;
 
 // A word of a phrase stands alone: `word1` is a placeholder and `seed_phrase`
 // an identifier, not BIP39 words.
 const WORD = /(?<![A-Za-z0-9_])[A-Za-z]+(?![A-Za-z0-9_])/g;
 // What may sit between two words of a written-down phrase: whitespace and
-// line breaks, list punctuation and bullets, and "1." / "2)" numbering.
-const PHRASE_GAP = /^(?:[\s,;'"`[\](){}|*•-]|\d{1,2}[.):]?)*$/;
+// line breaks, list punctuation and bullets, "+" joining strings, and "1." /
+// "2)" numbering. Each character can be read only one way — a number whole
+// (`(?!\d)`), and its ")" as punctuation — because a gap that could be split
+// several ways made a failing match backtrack exponentially.
+const PHRASE_GAP = /^(?:[\s,;'"`[\](){}|*•+-]|\d{1,2}(?!\d)[.:]?)*$/;
 // Escaped line breaks and tabs inside a string read as the space they stand for.
 const ESCAPED_SPACE = /\\[nrt]/g;
 const TRAILING_COMMENT = /\/\/.*$/;
@@ -191,27 +201,37 @@ export function scanText(text) {
   for (const run of [...phraseRuns(lines), ...phraseRuns(lines, { stripComments: true })]) {
     found.set(run[0].line, `${MIN_PHRASE_WORDS}+ consecutive BIP39 words (a seed phrase?)`);
   }
-  // A keypair array is often spread over many lines, so it is matched on the
+  // A name on the line above counts too: Prettier moves a long value under the
+  // name it is assigned to.
+  const named = (index) =>
+    KEY_NAME.test(lines[index]) || (index > 0 && KEY_NAME.test(lines[index - 1]));
+  // A key array is often spread over many lines, so it is matched on the
   // whole text and reported on the line it opens; a marker on any of its lines
   // allows it.
-  for (const match of text.matchAll(BYTE_ARRAY_KEYPAIR)) {
-    const first = lineOf(text, match.index);
-    const last = lineOf(text, match.index + match[0].length);
-    if (lines.slice(first - 1, last).some((line) => line.includes(IGNORE_MARKER))) continue;
-    if (!found.has(first)) found.set(first, '64-byte integer array (a keypair?)');
+  const arrays = [
+    [BYTE_ARRAY_KEYPAIR, '64-byte integer array (a keypair?)', () => true],
+    [BYTE_ARRAY_KEY, '32-byte integer array beside a key name', named],
+  ];
+  for (const [pattern, reason, applies] of arrays) {
+    for (const match of text.matchAll(pattern)) {
+      const first = lineOf(text, match.index);
+      const last = lineOf(text, match.index + match[0].length);
+      if (lines.slice(first - 1, last).some((line) => line.includes(IGNORE_MARKER))) continue;
+      if (applies(first - 1) && !found.has(first)) found.set(first, reason);
+    }
   }
   lines.forEach((line, index) => {
     if (found.has(index + 1) || line.includes(IGNORE_MARKER)) return;
-    const named = KEY_NAME.test(line);
+    const keyNamed = named(index);
     let reason = null;
     if (BASE58_KEYPAIR.test(line)) reason = '64-byte base58 string (a keypair?)';
     else if (EXTENDED_PRIVATE_KEY.test(line)) reason = 'BIP32 extended private key';
     else if (PEM_PRIVATE_KEY.test(line)) reason = 'PEM private key';
     else if ([...line.matchAll(WIF_CANDIDATE)].some(([token]) => isWif(token))) {
       reason = 'Bitcoin WIF private key';
-    } else if (named && HEX_KEY.test(line)) reason = 'hex key beside a key name';
+    } else if (keyNamed && HEX_KEY.test(line)) reason = 'hex key beside a key name';
     else if (
-      named &&
+      keyNamed &&
       [...line.matchAll(BASE58_32_CANDIDATE)].some(([token]) => decodeBase58(token).length === 32)
     ) {
       reason = '32-byte base58 key beside a key name';
