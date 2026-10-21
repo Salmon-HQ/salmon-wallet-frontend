@@ -76,3 +76,21 @@ export function SigningAccountCard({ account }: { account: SigningAccount }) {
     </Card>
   );
 }
+
+/**
+ * Wraps Approve so the pointer coming onto it reaches `onApproveEnter`. It
+ * draws no box of its own, so the layout around the button is unchanged.
+ */
+export function ApproveArea({
+  onApproveEnter,
+  children,
+}: {
+  onApproveEnter: () => void;
+  children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <span style={{ display: 'contents' }} onPointerEnter={onApproveEnter}>
+      {children}
+    </span>
+  );
+}

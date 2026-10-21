@@ -91,14 +91,15 @@ const approvalWindows = (context: BrowserContext) =>
 
 /**
  * Approve the way a person does: Approve arms only once the window has been
- * in front a moment and the pointer has moved over it, so keep moving until
- * it takes the click.
+ * in front a moment, the pointer has moved over it, and the pointer then
+ * comes onto Approve, so keep doing that until it takes the click.
  */
 async function approve(window: Page): Promise<void> {
   const button = window.getByTestId('dapp-approve-button');
   await expect(async () => {
     await window.mouse.move(100, 200);
     await window.mouse.move(140, 260);
+    await button.hover();
     await expect(button).toBeEnabled({ timeout: 250 });
   }).toPass({ timeout: 30_000 });
   await button.click();

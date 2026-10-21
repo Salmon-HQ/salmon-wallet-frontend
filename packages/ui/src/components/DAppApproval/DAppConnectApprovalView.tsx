@@ -10,7 +10,7 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn } from './common';
+import { ApproveArea, CardHead, bodyText, cardColumn } from './common';
 import type { DAppConnectApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -26,7 +26,7 @@ export function DAppConnectApprovalView({
   onReject,
 }: DAppConnectApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const { armed, onApproveEnter } = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
   const shortAddress = address ? (getShortAddress(address, 4) ?? '') : '';
@@ -89,15 +89,17 @@ export function DAppConnectApprovalView({
         </SecondaryButton>
       }
       action={
-        <PrimaryButton
-          testID="dapp-approve-button"
-          onPress={onApprove}
-          loading={loading}
-          disabled={disabled || loading || !armed}
-          fullWidth
-        >
-          {t('dapp.approve', 'Approve').toUpperCase()}
-        </PrimaryButton>
+        <ApproveArea onApproveEnter={onApproveEnter}>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            onPress={onApprove}
+            loading={loading}
+            disabled={disabled || loading || !armed}
+            fullWidth
+          >
+            {t('dapp.approve', 'Approve').toUpperCase()}
+          </PrimaryButton>
+        </ApproveArea>
       }
     />
   );

@@ -1,4 +1,4 @@
-import { act } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import { APPROVE_ARM_MS } from '../components/DAppApproval/useApprovalArming';
@@ -11,8 +11,12 @@ export function movePointer(): void {
   });
 }
 
-/** What a person does before Approve takes a click: waits, then moves the pointer. */
+/**
+ * What a person does before a rendered Approve takes a click: waits, moves
+ * the pointer, then brings it onto Approve.
+ */
 export function armApproval(): void {
   act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
   movePointer();
+  fireEvent.pointerEnter(screen.getByTestId('dapp-approve-button'));
 }

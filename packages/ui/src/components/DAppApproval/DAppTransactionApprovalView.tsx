@@ -9,7 +9,7 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, SigningAccountCard, bodyText, cardColumn } from './common';
+import { ApproveArea, CardHead, SigningAccountCard, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
@@ -37,7 +37,7 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const { armed, onApproveEnter } = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -194,26 +194,28 @@ export function DAppTransactionApprovalView({
         </SecondaryButton>
       }
       action={
-        requiresHold ? (
-          <HoldToApproveButton
-            testID="dapp-approve-button"
-            onApprove={onApprove}
-            loading={loading}
-            disabled={cannotApprove}
-          >
-            {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
-          </HoldToApproveButton>
-        ) : (
-          <PrimaryButton
-            testID="dapp-approve-button"
-            onPress={onApprove}
-            loading={loading}
-            disabled={cannotApprove}
-            fullWidth
-          >
-            {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
-          </PrimaryButton>
-        )
+        <ApproveArea onApproveEnter={onApproveEnter}>
+          {requiresHold ? (
+            <HoldToApproveButton
+              testID="dapp-approve-button"
+              onApprove={onApprove}
+              loading={loading}
+              disabled={cannotApprove}
+            >
+              {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
+            </HoldToApproveButton>
+          ) : (
+            <PrimaryButton
+              testID="dapp-approve-button"
+              onPress={onApprove}
+              loading={loading}
+              disabled={cannotApprove}
+              fullWidth
+            >
+              {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
+            </PrimaryButton>
+          )}
+        </ApproveArea>
       }
     />
   );

@@ -16,7 +16,14 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, SigningAccountCard, bodyText, cardColumn, monoText } from './common';
+import {
+  ApproveArea,
+  CardHead,
+  SigningAccountCard,
+  bodyText,
+  cardColumn,
+  monoText,
+} from './common';
 import type { DAppSignMessageApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -34,7 +41,7 @@ export function DAppSignMessageApprovalView({
   onReject,
 }: DAppSignMessageApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const { armed, onApproveEnter } = useApprovalArming();
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -144,23 +151,25 @@ export function DAppSignMessageApprovalView({
         </SecondaryButton>
       }
       action={
-        <PrimaryButton
-          testID="dapp-approve-button"
-          onPress={onApprove}
-          loading={loading}
-          disabled={
-            disabled ||
-            loading ||
-            !armed ||
-            isLookalikeTransaction ||
-            // Never offer to sign an OCMS request whose exact signing bytes could
-            // not be built and rendered — the user must see what they sign.
-            (isOffchainMessage && !offchainParsed)
-          }
-          fullWidth
-        >
-          {t('dapp.sign', 'Sign').toUpperCase()}
-        </PrimaryButton>
+        <ApproveArea onApproveEnter={onApproveEnter}>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            onPress={onApprove}
+            loading={loading}
+            disabled={
+              disabled ||
+              loading ||
+              !armed ||
+              isLookalikeTransaction ||
+              // Never offer to sign an OCMS request whose exact signing bytes could
+              // not be built and rendered — the user must see what they sign.
+              (isOffchainMessage && !offchainParsed)
+            }
+            fullWidth
+          >
+            {t('dapp.sign', 'Sign').toUpperCase()}
+          </PrimaryButton>
+        </ApproveArea>
       }
     />
   );
