@@ -297,6 +297,27 @@ describe('swap bytes — where the router pays the output', () => {
       expect(() => verify(tx)).toThrow(/sends SOL to/);
     });
 
+    it('creates accounts only idempotently, and only with the wallet paying', () => {
+      const create = createAta(WALLET_USDC, WALLET, USDC);
+      expect(() => verify(transaction([{ ...create, data: new Uint8Array() }, route()]))).toThrow(
+        /too short to identify/
+      );
+      expect(() =>
+        verify(transaction([{ ...create, data: new Uint8Array([0]) }, route()]))
+      ).toThrow(/instruction 0 on/);
+      const paidByOther = { ...create, accounts: [...create.accounts] };
+      paidByOther.accounts[0] = { address: address(EVENT_AUTHORITY), role: 1 };
+      expect(() => verify(transaction([paidByOther, route()]))).toThrow(/not the wallet's own/);
+    });
+
+    // 0x settles through its own account's token accounts and creates them
+    // idempotently in the build (seen live; they already exist, so the create
+    // is a no-op). The rent a new one would cost earns no allowance.
+    it('lets the wallet create a token account another owner holds', () => {
+      const settlement = createAta(ATTACKER_USDC, EVENT_AUTHORITY, USDC);
+      expect(() => verify(transaction([settlement, route()]))).not.toThrow();
+    });
+
     it('counts only the wallet’s own account creations toward the rent it may spend', () => {
       const tx = transaction([
         createAta(WALLET_WSOL, WALLET, SOL),

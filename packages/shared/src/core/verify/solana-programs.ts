@@ -28,7 +28,7 @@ export const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 /** SPL Token-2022, for mints that use it. */
 export const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 
-/** Associated Token Account — creating the destination's account on transfer. */
+/** Associated Token Account — creating the wallet's token accounts in a swap. */
 export const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
 /** System program — wrapping SOL in a swap; no NFT flow invokes it. */
@@ -66,23 +66,22 @@ export const COMPUTE_BUDGET_INSTRUCTIONS = { width: 1, codes: [2, 3] } as const;
  *
  * Wider than any single asset would use, because one list covers every variant
  * the wallet can hold: a regular NFT burns through Token Metadata and closes
- * its account through SPL Token, a compressed one goes through Bubblegum, and a
- * transfer may have to create the destination's associated account first.
+ * its account through SPL Token, and a compressed one goes through Bubblegum.
  *
  * The System program is left out: none of the backend's NFT builders emits a
  * top-level System instruction, and those instructions are the ones the wallet
  * can sign alone to move its SOL or change who controls an account —
  * `CreateAccountWithSeed` with the wallet as base funds an account another
  * program controls, `Assign` hands the wallet itself to another program.
- * Accounts a Metaplex program needs are created inside that program, by
- * cross-program call.
+ * Accounts a Metaplex program needs — the destination's token account in a
+ * transfer among them — are created inside that program, by cross-program
+ * call, so the Associated Token program is left out for the same reason.
  */
 export const NFT_TRANSACTION_PROGRAMS = [
   TOKEN_METADATA_PROGRAM,
   BUBBLEGUM_PROGRAM,
   TOKEN_PROGRAM,
   TOKEN_2022_PROGRAM,
-  ASSOCIATED_TOKEN_PROGRAM,
   COMPUTE_BUDGET_PROGRAM,
 ] as const;
 
@@ -100,8 +99,8 @@ export const NFT_TRANSACTION_PROGRAMS = [
  * instructions any burn emits are the `Burn` and the `CloseAccount` that
  * reclaims the rent.
  *
- * Programs absent from this map — Token Metadata, Bubblegum, the Associated
- * Token program — are bound by the program list alone.
+ * Token Metadata and Bubblegum are absent from this map: `assertNftAction`
+ * holds each of their instructions to the NFT on screen.
  */
 export const NFT_TRANSACTION_INSTRUCTIONS = {
   // SPL Token, u8 codes. Allowed: InitializeAccount(1), Revoke(5), Burn(8),
@@ -133,11 +132,12 @@ export const NFT_ACTION_LAYOUTS = {
     /** transfer, transferV2 → index of `newLeafOwner`. */
     transferNewOwnerIndex: { a334c8e78c0345ba: 3, '772806ebeaddf831': 5 } as Record<string, number>,
   },
-  /** Token Metadata `burnV1` / `transferV1`: code, then the `V1` variant byte. */
+  /** Token Metadata `burnV1` / `transferV1`: code, the `V1` variant byte, then the amount as u64. */
   tokenMetadata: {
     burnCode: 41,
     transferCode: 49,
     variantV1: 0,
+    amountOffset: 2,
     mintIndex: 4,
     transferDestinationOwnerIndex: 3,
   },

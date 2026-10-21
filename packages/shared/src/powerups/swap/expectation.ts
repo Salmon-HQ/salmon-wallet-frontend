@@ -11,6 +11,7 @@
  */
 import type { ProgramInstructionRule } from '../../core/verify';
 import {
+  ASSOCIATED_TOKEN_PROGRAM,
   COMPUTE_BUDGET_INSTRUCTIONS,
   COMPUTE_BUDGET_PROGRAM,
   SYSTEM_PROGRAM,
@@ -35,6 +36,18 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
   [TOKEN_PROGRAM]: TOKEN_RULE,
   [TOKEN_2022_PROGRAM]: TOKEN_RULE,
   [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
+  /**
+   * Associated Token: `createIdempotent` (1) only, paid by the wallet — what
+   * both providers emit. The owner is not bound: 0x settles through its own
+   * account's token accounts and creates them in the build (seen live; they
+   * already exist, so the create is a no-op). A new one's rent earns no
+   * allowance in the swap's simulation (`ownAtaCreates`).
+   */
+  [ASSOCIATED_TOKEN_PROGRAM]: {
+    width: 1,
+    codes: [1],
+    binds: [{ code: 1, index: 0, mustBe: 'feePayer' }],
+  },
 };
 
 /** The largest slippage a build may carry; the backend defaults to 50. */

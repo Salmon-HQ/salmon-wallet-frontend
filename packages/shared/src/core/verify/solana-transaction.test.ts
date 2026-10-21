@@ -519,3 +519,66 @@ describe('compute budget', () => {
     expect(anyFlow([limit(200_000), price(8_000_000n)])).not.toThrow();
   });
 });
+
+describe('NFT steps — account creation and Token Metadata amounts', () => {
+  const ASSET = 'CgHasf5U6aaT6oYPrKWHfKByBGeQpiPmac2YKWpE2Mek';
+  const DESTINATION = '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3';
+  const TOKEN_ACCOUNT = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  // 0 owner, 1 token account, 2 destination, 3 asset, 4 token metadata, 5 ATA program, 6 system, 7 token
+  const ACCOUNTS = [
+    OWNER,
+    TOKEN_ACCOUNT,
+    DESTINATION,
+    ASSET,
+    TOKEN_METADATA_PROGRAM,
+    ASSOCIATED_TOKEN_PROGRAM,
+    SYSTEM_PROGRAM,
+    TOKEN_PROGRAM,
+  ];
+  const le = (value: bigint) =>
+    Array.from({ length: 8 }, (_, i) => Number((value >> BigInt(8 * i)) & 0xffn));
+  // transferV1 / burnV1 accounts: token, tokenOwner, destinationToken, destinationOwner, mint, …
+  const metadata = (code: number, amount: bigint) => ({
+    program: TOKEN_METADATA_PROGRAM,
+    accounts: [1, 0, 1, 2, 3],
+    data: [code, 0, ...le(amount), 0],
+  });
+  const nft = (nftAction: { asset: string; destination?: string }) => ({
+    feePayer: OWNER,
+    allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+    allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    nftAction,
+  });
+
+  it('holds a Token Metadata transfer or burn to one token', () => {
+    const transfer = { asset: ASSET, destination: DESTINATION };
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(49, 1n)]), nft(transfer))
+    ).not.toThrow();
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(49, 2n)]), nft(transfer))
+    ).toThrow(/other than one/);
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(41, 1n)]), nft({ asset: ASSET }))
+    ).not.toThrow();
+    expect(() =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, [metadata(41, 5n)]), nft({ asset: ASSET }))
+    ).toThrow(/other than one/);
+  });
+
+  // Token Metadata creates the destination's account itself, by cross-program
+  // call; no backend NFT builder creates one at top level.
+  it('refuses an associated token account created at top level', () => {
+    const create = {
+      program: ASSOCIATED_TOKEN_PROGRAM,
+      accounts: [0, 1, 2, 3, 6, 7],
+      data: [1],
+    };
+    expect(() =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [create, metadata(49, 1n)]),
+        nft({ asset: ASSET, destination: DESTINATION })
+      )
+    ).toThrow(/invokes ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL/);
+  });
+});

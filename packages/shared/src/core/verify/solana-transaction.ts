@@ -376,6 +376,16 @@ function assertNftAction(
       if (data[0] !== verb || data[1] !== tm.variantV1) {
         refuse('Transaction carries a Token Metadata instruction this flow does not use');
       }
+      // An NFT is one token; an amount of more would move or burn other
+      // tokens of the same mint, which a fungible or semi-fungible asset has.
+      const amount =
+        data.length >= tm.amountOffset + 8
+          ? new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(
+              tm.amountOffset,
+              true
+            )
+          : null;
+      if (amount !== 1n) refuse('Transaction moves an amount other than one NFT');
       if (accountAt(instruction, tm.mintIndex) !== action.asset) {
         refuse(`Transaction acts on an NFT other than ${action.asset}`);
       }
