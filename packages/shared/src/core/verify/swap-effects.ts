@@ -1,38 +1,58 @@
 /**
- * What a 0x swap does to the wallet, read from a simulation before signing.
+ * What a swap does to the wallet, read from a simulation before signing.
  *
- * Jupiter's router call has a published account layout, so its destination is
- * bound in the bytes (`assertJupiterRoute`). 0x Settler's is not published:
- * there is no slot to hold to the wallet's own account, and a build paying its
- * output elsewhere would pass every byte check. So a transaction that invokes
- * 0x is simulated, and the wallet signs only if the simulation shows what the
- * screen shows: the input leaving, no more than the amount on screen, and at
- * least the minimum output arriving in the wallet's own accounts.
+ * Jupiter's router call has a published account layout, so its accounts and
+ * amounts are bound in the bytes (`assertJupiterRoute`). 0x Settler's is not
+ * published: there is no slot to hold to the wallet's own account, and a build
+ * paying its output elsewhere would pass every byte check. Neither layout says
+ * what the route's own steps do once running. So every swap is simulated, and
+ * the wallet signs only if the simulation shows what the screen shows: the
+ * input leaving, no more than the amount on screen, no other token leaving and
+ * no approval granted, and at least the minimum output arriving in the
+ * wallet's own accounts.
+ *
+ * Known limit: 0x's own on-chain minimum is not decoded. Jupiter's is read
+ * from its bytes and held to the screen (`assertJupiterRoute`); 0x Settler's
+ * argument layout is not published, so its minimum is left as built. The
+ * simulation shows the swap paying at least the screen's minimum at the moment
+ * it runs, but a 0x build that encodes a lower minimum could pay less if the
+ * price moves between that simulation and the swap landing. Jupiter's formula
+ * is deliberately not applied to 0x: its minimum comes from 0x's own quote.
  */
 import { address } from '@solana/kit';
 import type { Base64EncodedWireTransaction } from '@solana/kit';
 
 import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
+import { fetchAccounts } from '../../blockchain/solana/simulation-rpc';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
-import { SolanaTransactionMismatchError } from './solana-transaction';
+import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
+import {
+  MAX_PRIORITY_FEE_LAMPORTS,
+  SolanaTransactionMismatchError,
+  swapAccountCreates,
+} from './solana-transaction';
 import type { SwapRouteExpectation } from './solana-transaction';
 
-const WRAPPED_SOL = 'So11111111111111111111111111111111111111112';
 // ponytail: fixed allowances. Rent of a Token-2022 ATA with extensions is
 // ~0.0021 SOL; the fee cap only applies when the node does not report the fee.
 // Upgrade path: read the compute-budget price and each created account's size.
-/** Rent the wallet may spend per token account the message creates for it. */
+/** Rent the wallet may spend per token account the message opens (see `assertSwapPaysWallet`). */
 export const ATA_RENT_ALLOWANCE = 2_100_000n;
 /** The network fee assumed when the node does not report one. */
 export const FEE_ALLOWANCE = 1_000_000n;
+/**
+ * The most fee the simulation allows for: one signature's base fee plus the
+ * priority-fee cap the byte check enforces. A larger fee the node reports is
+ * the wallet's loss, not an allowance.
+ */
+export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.
  *
- * @param ataCreates - How many associated token account creates the message
- *   carries: the rent they cost is the one SOL movement besides the fee and
- *   the swap itself.
+ * @param ataCreates - How many token accounts the message opens: the rent
+ *   they cost is the one SOL movement besides the fee and the swap itself.
  */
 export function assertSwapEffects(
   effects: TransactionEffects,
@@ -63,8 +83,9 @@ export function assertSwapEffects(
   }
   if (paid > inAmount) refuse('The swap takes more than the amount on screen');
 
+  const fee = effects.sol.feeLamports ?? FEE_ALLOWANCE;
   const costs =
-    (effects.sol.feeLamports ?? FEE_ALLOWANCE) + ATA_RENT_ALLOWANCE * BigInt(ataCreates);
+    (fee < MAX_FEE_LAMPORTS ? fee : MAX_FEE_LAMPORTS) + ATA_RENT_ALLOWANCE * BigInt(ataCreates);
   const sol = effects.sol.lamports + costs;
   if (route.outputMint === WRAPPED_SOL) {
     received += sol;
@@ -78,18 +99,27 @@ export function assertSwapEffects(
   }
 }
 
-/** Simulates `transactionBase64` for `feePayer` and holds the result to `route`. */
+/**
+ * Simulates `transactionBase64` for `feePayer` and holds the result to `route`.
+ *
+ * Rent is allowed only for the token accounts the swap creates (for the wallet
+ * or 0x's settlement account) that do not exist yet. An idempotent create of
+ * an existing account costs nothing, so it earns nothing; otherwise it would
+ * cover SOL leaving the wallet for something else.
+ */
 export async function assertSwapPaysWallet(
   rpc: SolanaRpc,
   transactionBase64: string,
   feePayer: string,
-  route: SwapRouteExpectation,
-  ataCreates: number
+  route: SwapRouteExpectation
 ): Promise<void> {
+  const created = swapAccountCreates(transactionBase64).map((account) => address(account));
+  const existing = await fetchAccounts(rpc, created);
+  const opened = created.filter((account) => !existing.get(account)).length;
   const effects = await previewTransactionEffects(
     rpc,
     transactionBase64 as Base64EncodedWireTransaction,
     address(feePayer)
   );
-  assertSwapEffects(effects, route, ataCreates);
+  assertSwapEffects(effects, route, opened);
 }

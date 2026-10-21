@@ -18,7 +18,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import background from './entrypoints/background';
+import background, { DECLINE_COOLDOWN_MS } from './entrypoints/background';
 
 const DAPP_ORIGIN = 'https://dapp.example';
 const POPUP_WINDOW_ID = 777;
@@ -235,6 +235,53 @@ describe('what an unapproved origin can make the wallet do', () => {
     expect(windowsCreate).not.toHaveBeenCalled();
   });
 
+  // The grant names the account the user saw on the connect screen. After a
+  // switch, a sign request still opened a window that signed with the new
+  // account and handed the site its address.
+  it.each(['sign', 'signOffchain', 'signTransaction', 'signAllTransactions'])(
+    'refuses a %s request after a switch to an account the site was not approved for',
+    async (method) => {
+      await approveOrigin();
+      await fakeBrowser.storage.local.set({
+        salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+      });
+      const { route, windowsCreate } = startBackground();
+      const sendResponse = vi.fn();
+
+      route(dappRequest(method, 'req-switched'), ownSender(), sendResponse);
+
+      await vi.waitFor(() =>
+        expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-switched' })
+      );
+      expect(windowsCreate).not.toHaveBeenCalled();
+    }
+  );
+
+  // The popup signs with whatever account is active when it loads; the
+  // account checked here travels with the request so the popup can refuse
+  // if that changed in between.
+  it('names the account it checked in the approval window it opens', async () => {
+    await approveOrigin();
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('sign', 'req-bound'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    expect(parsePopupUrl(windowsCreate).get('address')).toBe('TrustedPubkey111');
+  });
+
+  it('keeps a site connected for its account after a network switch', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_active_network_id: JSON.stringify('solana-devnet'),
+    });
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('signTransaction', 'req-devnet'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
   it('still lets signIn through, since connecting is part of what it does', async () => {
     const { route, windowsCreate } = startBackground();
 
@@ -394,6 +441,115 @@ describe('what an unapproved origin can make the wallet do', () => {
     expect(sendResponse).not.toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Operation cancelled' })
     );
+  });
+});
+
+describe('after the user turns a site down', () => {
+  const OTHER_ORIGIN = 'https://other.example';
+
+  const inTab = (origin: string, tabId: number) => ({ ...ownSender(origin), tab: { id: tabId } });
+
+  /** Opens a connect window for `origin` and returns how to answer or close it. */
+  async function openWindow(origin: string = DAPP_ORIGIN, sender = ownSender(origin)) {
+    const started = startBackground();
+    started.route(dappRequest('connect', 'req-first'), sender, vi.fn());
+    await vi.waitFor(() => expect(started.windowsCreate).toHaveBeenCalledTimes(1));
+    const closeWindow = () =>
+      (started.onWindowRemoved.mock.calls.at(-1)?.[0] as (id: number) => void)(POPUP_WINDOW_ID);
+    const answer = (data: Record<string, unknown>) => {
+      started.route(
+        { channel: EXTENSION_CHANNEL, data: { id: 'req-first', ...data } },
+        extensionPage(),
+        vi.fn()
+      );
+      closeWindow();
+    };
+    return { ...started, answer, closeWindow };
+  }
+
+  // A page could ask again the moment its window closed and keep the one
+  // approval slot for as long as its tab stayed open, so no other site was
+  // ever served.
+  it.each([
+    [
+      'rejects it',
+      (w: Awaited<ReturnType<typeof openWindow>>) =>
+        w.answer({ error: 'User rejected the request' }),
+    ],
+    ['closes its window', (w: Awaited<ReturnType<typeof openWindow>>) => w.closeWindow()],
+  ])('refuses the same site for a while when the user %s', async (_name, turnDown) => {
+    const opened = await openWindow();
+    turnDown(opened);
+    const again = vi.fn();
+
+    opened.route(dappRequest('connect', 'req-again'), ownSender(), again);
+
+    await vi.waitFor(() =>
+      expect(again.mock.calls[0]?.[0]).toEqual({
+        error: 'Declined moments ago, try again later',
+        id: 'req-again',
+      })
+    );
+    expect(opened.windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  // A request that failed, or that the screen refused (a network mismatch,
+  // no account), is not the user turning the site down.
+  it('does not hold back a site whose request failed rather than being rejected', async () => {
+    const opened = await openWindow();
+    opened.answer({ error: 'Transaction approval failed' });
+
+    opened.route(dappRequest('connect', 'req-retry'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+  });
+
+  it('holds back the tab too, whatever origin it moves on to', async () => {
+    const opened = await openWindow(DAPP_ORIGIN, inTab(DAPP_ORIGIN, 7));
+    opened.closeWindow();
+    const again = vi.fn();
+
+    opened.route(dappRequest('connect', 'req-moved'), inTab('https://a.dapp.example', 7), again);
+
+    await vi.waitFor(() =>
+      expect(again.mock.calls[0]?.[0]).toMatchObject({
+        error: 'Declined moments ago, try again later',
+      })
+    );
+    expect(opened.windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('serves another site meanwhile', async () => {
+    const opened = await openWindow();
+    opened.closeWindow();
+
+    opened.route(dappRequest('connect', 'req-other'), ownSender(OTHER_ORIGIN), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+  });
+
+  it('serves the site again once the cool-down is over', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const opened = await openWindow();
+      opened.closeWindow();
+      vi.setSystemTime(Date.now() + DECLINE_COOLDOWN_MS + 1);
+
+      opened.route(dappRequest('connect', 'req-later'), ownSender(), vi.fn());
+
+      await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not hold back a site whose request the user approved', async () => {
+    const opened = await openWindow();
+    opened.answer({ method: 'connected', params: { publicKey: 'TrustedPubkey111' } });
+
+    opened.route(dappRequest('connect', 'req-next'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
   });
 });
 

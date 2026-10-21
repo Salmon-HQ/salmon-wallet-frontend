@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -24,7 +24,7 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
 import { DAppSignInApprovalView } from './DAppSignInApprovalView';
-import { APPROVE_ARM_MS } from './useApprovalArming';
+import { armApproval } from '../../test/armApproval';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -65,7 +65,7 @@ describe('DAppSignInApprovalView', () => {
     expect(screen.getByText('Fg6P...KzXf')).toBeInTheDocument();
     expect(screen.getByText('https://app.example.com/login')).toBeInTheDocument();
     expect(screen.getByText('abcd1234')).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
+    armApproval();
     expect(screen.getByRole('button', { name: 'SIGN IN' })).not.toBeDisabled();
   });
 

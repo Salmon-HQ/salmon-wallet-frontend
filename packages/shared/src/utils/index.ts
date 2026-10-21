@@ -40,7 +40,13 @@ export {
 export type { MwaFailReason, MwaPrecheck, MwaSendOptions } from './mwa';
 export { mwaSignAndSend, mwaSignIn, mwaSignMessages, mwaSignTransactions } from './mwa-sign';
 export type { MwaSignInResult } from './mwa-sign';
-export { dappTransactionDisplay, dappTransactionGate } from './dapp-transaction-display';
+export {
+  dappTransactionDisplay,
+  dappTransactionGate,
+  formatSigningAccount,
+  simulatedMovementLine,
+  UNDETERMINED_REASON_KEYS,
+} from './dapp-transaction-display';
 export type { DAppTransactionDisplayInput } from './dapp-transaction-display';
 
 // Account utilities

@@ -1,7 +1,25 @@
-import { describe, expect, it } from 'vitest';
-import type { Address } from '@solana/kit';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  address,
+  appendTransactionMessageInstruction,
+  compileTransactionMessage,
+  createTransactionMessage,
+  getCompiledTransactionMessageEncoder,
+  getTransactionEncoder,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  type Address,
+  type Blockhash,
+} from '@solana/kit';
+import { previewTransactionEffects } from '../../blockchain/solana/simulation';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
-import { assertSwapEffects, ATA_RENT_ALLOWANCE } from './swap-effects';
+import { assertSwapEffects, assertSwapPaysWallet, ATA_RENT_ALLOWANCE } from './swap-effects';
+import { ASSOCIATED_TOKEN_PROGRAM, SYSTEM_PROGRAM, TOKEN_PROGRAM } from './solana-programs';
+
+vi.mock('../../blockchain/solana/simulation', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  previewTransactionEffects: vi.fn(),
+}));
 import type { SwapRouteExpectation } from './solana-transaction';
 
 const WALLET = '86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY' as Address;
@@ -11,6 +29,7 @@ const BONK = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
 const FEE = 5_000n;
 
 const usdcToSol: SwapRouteExpectation = {
+  sources: [],
   destinations: [],
   inputMint: USDC,
   outputMint: SOL,
@@ -139,5 +158,102 @@ describe('assertSwapEffects — a simulated 0x swap must pay the wallet', () => 
       )
     ).toThrow(/could not be checked/);
     expect(() => assertSwapEffects({ kind: 'no-effect', account: WALLET }, solToUsdc, 0)).toThrow();
+  });
+});
+
+describe('assertSwapEffects — the fee it allows for', () => {
+  // A fee the node reports is not an allowance in itself: a v1 message can
+  // set any priority fee in its header, and the fee is the wallet's loss.
+  it('allows no more than the base fee plus the priority-fee cap', () => {
+    const fee = 5_000_000_000n;
+    const drained: TransactionEffects = {
+      kind: 'effects',
+      account: WALLET,
+      sol: { lamports: 8_441_000n - fee, feeLamports: fee },
+      tokens: [token(USDC, -1_000_000n)],
+      approvals: [],
+    };
+    expect(() => assertSwapEffects(drained, usdcToSol, 0)).toThrow(/less than the minimum/);
+  });
+});
+
+/**
+ * Rent is allowed for a token account the swap actually opens. An idempotent
+ * create of an account that already exists costs nothing, so it earns nothing:
+ * otherwise it would cover SOL leaving the wallet for something else.
+ */
+describe('assertSwapPaysWallet — the rent it allows for', () => {
+  const WALLET_BONK = 'qCZEE1btHeVPFFa3kSWk8Gz9u6aTWSGwUwj4PhnEmuR';
+  const usdcToBonk: SwapRouteExpectation = {
+    ...usdcToSol,
+    outputMint: BONK,
+    quotedOutAmount: '31564956924',
+    minOutAmount: '31407132140',
+  };
+
+  function swapCreatingWalletBonk(): string {
+    let message = setTransactionMessageLifetimeUsingBlockhash(
+      {
+        blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as Blockhash,
+        lastValidBlockHeight: 1n,
+      },
+      setTransactionMessageFeePayer(WALLET, createTransactionMessage({ version: 0 }))
+    );
+    message = appendTransactionMessageInstruction(
+      {
+        programAddress: address(ASSOCIATED_TOKEN_PROGRAM),
+        accounts: [
+          { address: WALLET, role: 3 },
+          { address: address(WALLET_BONK), role: 1 },
+          { address: WALLET, role: 0 },
+          { address: address(BONK), role: 0 },
+          { address: address(SYSTEM_PROGRAM), role: 0 },
+          { address: address(TOKEN_PROGRAM), role: 0 },
+        ],
+        data: new Uint8Array([1]),
+      } as never,
+      message
+    ) as never;
+    const messageBytes = getCompiledTransactionMessageEncoder().encode(
+      compileTransactionMessage(message)
+    );
+    return Buffer.from(
+      getTransactionEncoder().encode({
+        messageBytes: messageBytes as never,
+        signatures: { [WALLET]: null } as never,
+      })
+    ).toString('base64');
+  }
+
+  const rpcWhere = (bonkAccountExists: boolean) => ({
+    getMultipleAccounts: (addresses: string[]) => ({
+      send: async () => ({
+        value: addresses.map((account) =>
+          account === WALLET_BONK && bonkAccountExists
+            ? { lamports: 2_039_280n, owner: TOKEN_PROGRAM, data: ['', 'base64'] }
+            : null
+        ),
+      }),
+    }),
+  });
+
+  // 2,039,280 lamports leave the wallet on a token-to-token swap.
+  const losing = effects(-FEE - 2_039_280n, [
+    token(USDC, -1_000_000n),
+    token(BONK, 31_500_000_000n),
+  ]);
+
+  it('refuses SOL leaving the wallet when the account it creates already existed', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing);
+    await expect(
+      assertSwapPaysWallet(rpcWhere(true) as never, swapCreatingWalletBonk(), WALLET, usdcToBonk)
+    ).rejects.toThrow(/takes SOL from the wallet/);
+  });
+
+  it('allows the rent of a token account the swap opens', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing);
+    await expect(
+      assertSwapPaysWallet(rpcWhere(false) as never, swapCreatingWalletBonk(), WALLET, usdcToBonk)
+    ).resolves.toBeUndefined();
   });
 });

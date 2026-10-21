@@ -26,9 +26,7 @@ import {
   assertSolanaTransactionMatches,
   assertSwapPaysWallet,
   bubblegumAssets,
-  invocationsOf,
   UNVERIFIED,
-  ZEROEX_SETTLER_PROGRAM,
 } from '../verify';
 import type { SolanaTransactionExpectation, Unverified } from '../verify';
 
@@ -92,17 +90,11 @@ export async function signAndSendSolanaTransaction(
   }
 
   const rpc = account.getRpc();
+  // Every swap, whichever provider routed it: the byte check binds what it
+  // can read, and the simulation catches what it cannot — another token
+  // debited or an approval granted inside the route.
   if (expectation !== UNVERIFIED && expectation.swapRoute) {
-    const { programs, ataCreates } = invocationsOf(transactionBase64);
-    if (programs.has(ZEROEX_SETTLER_PROGRAM)) {
-      await assertSwapPaysWallet(
-        rpc,
-        transactionBase64,
-        expectation.feePayer,
-        expectation.swapRoute,
-        ataCreates
-      );
-    }
+    await assertSwapPaysWallet(rpc, transactionBase64, expectation.feePayer, expectation.swapRoute);
   }
   const commitment = options.commitment ?? 'confirmed';
 

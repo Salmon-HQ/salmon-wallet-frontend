@@ -14,6 +14,7 @@ import {
   dappTransactionGate,
   decodeDAppMessage,
   encodeMwaAuthToken,
+  formatSigningAccount,
   getShortAddress,
   getStorageItem,
   mwaAuthorizedAccount,
@@ -329,6 +330,7 @@ function SignMessagesApproval({
   respond,
 }: ApprovalProps<SignMessagesRequest>) {
   const { t } = useTranslation();
+  const [state] = useAccountsContext();
   const { run } = useOnce();
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
   // The extension's reading of a message: text only when it is plain text,
@@ -354,7 +356,15 @@ function SignMessagesApproval({
     <ConfirmSheet
       visible
       title={t('dapp.sign_message_title')}
-      message={`${origin}\n\n${shown}\n\n${t('dapp.sign_message_hint')}`}
+      message={[
+        origin,
+        `${t('dapp.wallet_address')}: ${formatSigningAccount({
+          name: state.activeAccount?.name,
+          address: account.getReceiveAddress(),
+        })}`,
+        shown,
+        t('dapp.sign_message_hint'),
+      ].join('\n\n')}
       confirmText={t('dapp.sign')}
       cancelText={t('dapp.reject')}
       onClose={() => respond(declined)}
@@ -370,6 +380,7 @@ function TransactionApproval({
   respond,
 }: ApprovalProps<SignTransactionsRequest | SignAndSendTransactionsRequest>) {
   const { t } = useTranslation();
+  const [state] = useAccountsContext();
   const insets = useSafeAreaInsets();
   const { run, running, busy } = useOnce();
   const [error, setError] = useState<string | null>(null);
@@ -404,6 +415,7 @@ function TransactionApproval({
   const display = dappTransactionDisplay(
     {
       origin,
+      signingAccount: { name: state.activeAccount?.name, address: account.getReceiveAddress() },
       effects,
       effectsLoading,
       feeSol,

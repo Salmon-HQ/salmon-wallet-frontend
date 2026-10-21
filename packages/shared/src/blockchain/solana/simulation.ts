@@ -39,12 +39,25 @@ import {
   SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
 } from '@solana/kit';
 import type { Address, Base64EncodedWireTransaction } from '@solana/kit';
+import { COMPUTE_BUDGET_PROGRAM_ADDRESS } from '@solana-program/compute-budget';
+import {
+  LEGACY_MEMO_PROGRAM_ADDRESS_V1,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V3,
+} from '@solana-program/memo';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token-2022';
 
 import type { SolanaRpc } from './networks';
-import { decodeAccountState } from './simulation-decode';
-import { deriveEffects } from './simulation-derive';
-import { fetchAccounts, fetchMints, resolveAccountKeys, simulate } from './simulation-rpc';
+import { decodeAccountState, hasTransferHook } from './simulation-decode';
+import { deriveEffects, findUnreadChange } from './simulation-derive';
+import { fetchAccountsAt, fetchMints, resolveMessage, simulate } from './simulation-rpc';
+import type { ResolvedMessage } from './simulation-rpc';
 import type {
+  EffectDetails,
   PreviewOptions,
   RawAccount,
   TransactionEffects,
@@ -73,6 +86,53 @@ export type {
   UndeterminedEffects,
   UndeterminedReason,
 } from './simulation-types';
+
+/**
+ * Programs whose every effect on the wallet shows up in the balance diff, and
+ * whose behaviour cannot change between the preview and the transaction
+ * landing. Compute Budget and the immutable Memo programs write no account;
+ * Associated Token only creates token accounts through System and SPL Token.
+ * Memo v4 is left out because it is upgradeable.
+ */
+const ANALYSABLE_PROGRAMS: ReadonlySet<Address> = new Set<Address>([
+  SYSTEM_PROGRAM_ADDRESS,
+  COMPUTE_BUDGET_PROGRAM_ADDRESS,
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V1,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V3,
+]);
+
+/**
+ * The first program the transaction runs that this module cannot read, by
+ * name, or `null` when it reads them all. Before the simulation only the
+ * top-level programs are known; after it, the loaded accounts and the logs
+ * name the programs run through another one.
+ */
+function findUnreadProgram(
+  programs: readonly (Address | undefined)[],
+  loaded?: ReadonlyMap<Address, RawAccount | null>,
+  logs?: readonly string[] | null
+): string | null {
+  for (const program of programs) {
+    if (!program) return 'an unknown program';
+    if (!ANALYSABLE_PROGRAMS.has(program)) return program;
+  }
+  for (const [address, raw] of loaded ?? []) {
+    if (hasTransferHook(raw)) return `the transfer hook of ${address}`;
+  }
+  for (const line of logs ?? []) {
+    // Past the node's log limit the rest of the run goes unlogged, nested
+    // calls included.
+    if (line === 'Log truncated') return 'programs whose logs were cut short';
+    const invoked = /^Program (\S+) invoke \[(\d+)\]$/.exec(line);
+    if (invoked && Number(invoked[2]) > 1 && !ANALYSABLE_PROGRAMS.has(invoked[1] as Address)) {
+      return invoked[1]!;
+    }
+  }
+  return null;
+}
 
 /** Builds an `undetermined` result. */
 function undetermined(
@@ -124,65 +184,87 @@ export async function previewTransactionEffects(
   account: Address,
   options: PreviewOptions = {}
 ): Promise<TransactionEffects> {
-  let addresses: readonly Address[] | null;
+  let message: ResolvedMessage | null;
   try {
-    addresses = await resolveAccountKeys(rpc, wireTransaction);
+    message = await resolveMessage(rpc, wireTransaction);
   } catch (error) {
     const reason = isSolanaError(error, SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED)
       ? 'unsupported-transaction-version'
       : 'malformed-transaction';
     return undetermined(account, reason, errorMessage(error));
   }
-  if (!addresses) {
+  if (!message) {
     return undetermined(
       account,
       'account-state-unavailable',
       'An address lookup table this transaction uses could not be read.'
     );
   }
+  const { addresses } = message;
+
+  // In strict mode a program this module cannot read decides the outcome. Its
+  // simulation shows what it did once, not what it will do on chain, so no
+  // verdict of the simulation's (not even "would fail") is passed on; the
+  // movements it showed are kept as `known`, for the screen to show as a
+  // simulation beside the warning.
+  let unreadProgram = options.strict ? findUnreadProgram(message.programs) : null;
+  const unanalysed = (known?: EffectDetails): UndeterminedEffects => ({
+    ...undetermined(
+      account,
+      'unanalysed-program',
+      `The transaction runs ${unreadProgram}, which this preview cannot read.`
+    ),
+    ...(known ? { known } : {}),
+  });
 
   let before: Map<Address, RawAccount | null>;
   let simulation: Awaited<ReturnType<typeof simulate>>;
   try {
-    [before, simulation] = await Promise.all([
-      fetchAccounts(rpc, addresses),
-      simulate(rpc, wireTransaction, addresses),
-    ]);
+    const read = await fetchAccountsAt(rpc, addresses);
+    before = read.accounts;
+    simulation = await simulate(rpc, wireTransaction, addresses, read.slot);
   } catch (error) {
-    return undetermined(account, 'simulation-unavailable', errorMessage(error));
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
+  if (options.strict) unreadProgram = findUnreadProgram(message.programs, before, simulation.logs);
 
   // `logs === null` means the node rejected the transaction before running it,
   // so there is nothing to diff and nothing to reassure the user with.
   if (simulation.logs === null) {
-    return undetermined(
-      account,
-      'simulation-not-executed',
-      'The node did not execute the transaction, so its effects are unknown.'
-    );
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(
+          account,
+          'simulation-not-executed',
+          'The node did not execute the transaction, so its effects are unknown.'
+        );
   }
 
   if (simulation.err !== null) {
-    return {
-      kind: 'transaction-would-fail',
-      account,
-      error: simulation.err,
-      logs: simulation.logs,
-    };
+    return unreadProgram
+      ? unanalysed()
+      : { kind: 'transaction-would-fail', account, error: simulation.err, logs: simulation.logs };
   }
 
   if (!simulation.accounts) {
-    return undetermined(
-      account,
-      'account-state-unavailable',
-      'The node executed the transaction but returned no post-execution account state.'
-    );
+    return unreadProgram
+      ? unanalysed()
+      : undetermined(
+          account,
+          'account-state-unavailable',
+          'The node executed the transaction but returned no post-execution account state.'
+        );
   }
 
   const after = new Map<Address, RawAccount | null>();
   addresses.forEach((address, index) => {
     after.set(address, simulation.accounts?.[index] ?? null);
   });
+  // A mint the transaction creates, or extends, has its transfer hook only
+  // in the state after.
+  if (options.strict) unreadProgram ??= findUnreadProgram([], after);
 
   // The previewed account existing before but not after is not a drain to
   // zero — it is the node declining to report the one account whose numbers
@@ -196,21 +278,65 @@ export async function previewTransactionEffects(
     );
   }
 
+  // System Allocate writes data into the account itself. Nothing moves and
+  // the owner stays put, so the diff below sees nothing, yet an account that
+  // holds data can no longer send SOL with a System transfer.
+  // A wallet account the transaction creates starts with no data either.
+  const walletAfter = after.get(account);
+  if (walletAfter && (before.get(account)?.data[0] ?? '') !== walletAfter.data[0]) {
+    return undetermined(
+      account,
+      'unanalysed-account',
+      `The transaction writes data into account ${account}.`
+    );
+  }
+
   const decode = (accounts: ReadonlyMap<Address, RawAccount | null>) =>
     new Map([...accounts].map(([address, raw]) => [address, decodeAccountState(raw)] as const));
 
   const beforeStates = decode(before);
   const afterStates = decode(after);
 
-  const mints = await fetchMints(rpc, [beforeStates, afterStates], [before, after]);
+  let mints: Awaited<ReturnType<typeof fetchMints>>;
+  try {
+    mints = await fetchMints(rpc, [beforeStates, afterStates], [before, after]);
+  } catch (error) {
+    return undetermined(account, 'simulation-unavailable', errorMessage(error));
+  }
 
-  return deriveEffects({
+  const feeLamports =
+    simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee);
+  const effects = deriveEffects({
     account,
     before: beforeStates,
     after: afterStates,
     mints,
-    feeLamports:
-      simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee),
+    feeLamports,
     resolveSymbol: options.resolveSymbol,
   });
+  if (!options.strict || effects.kind === 'undetermined') return effects;
+
+  const known: EffectDetails =
+    effects.kind === 'effects'
+      ? { sol: effects.sol, tokens: effects.tokens, approvals: effects.approvals }
+      : { sol: { lamports: 0n, feeLamports }, tokens: [], approvals: [] };
+  if (unreadProgram) return unanalysed(known);
+
+  const changed = findUnreadChange({
+    ...message,
+    account,
+    before,
+    after,
+    accountFee: message.feePayer === account ? (feeLamports ?? 0n) : 0n,
+  });
+  return changed
+    ? {
+        ...undetermined(
+          account,
+          'unanalysed-account',
+          `Account ${changed} changes in a way this preview cannot show.`
+        ),
+        known,
+      }
+    : effects;
 }

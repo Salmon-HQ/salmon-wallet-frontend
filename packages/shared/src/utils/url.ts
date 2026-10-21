@@ -190,13 +190,16 @@ export function normalizeIpfsUrl(url: string | undefined | null): string | undef
 // ============================================================================
 
 /**
- * Extracts the hostname from a URL string.
+ * An origin as an approval screen shows it: the host, with the port when it
+ * is not the default and the scheme when it is not https. Trust is granted per
+ * full origin, so two sites on one host must never read the same.
  * Returns the original string if parsing fails.
  */
 export function formatOrigin(origin: string): string {
   try {
     const url = new URL(origin);
-    return url.hostname || origin;
+    if (!url.host) return origin;
+    return url.protocol === 'https:' ? url.host : `${url.protocol}//${url.host}`;
   } catch {
     return origin;
   }
