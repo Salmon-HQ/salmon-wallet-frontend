@@ -20,6 +20,7 @@ import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
+import type { PrimaryButtonProps } from './types';
 
 /** How long the control must be held before it commits — same as the DOM. */
 const HOLD_MS = 500;
@@ -42,6 +43,11 @@ export interface HoldToApproveButtonProps extends Testable {
   onApprove: () => void | Promise<void>;
   children: string;
   disabled?: boolean;
+  /**
+   * On a danger sheet the held action keeps the danger sheet's look: the
+   * secondary shell with the danger fill, under the primary way out.
+   */
+  danger?: boolean;
 }
 
 /**
@@ -53,20 +59,30 @@ export function HoldToApproveButton({
   onApprove,
   children,
   disabled,
+  danger,
   testID,
 }: HoldToApproveButtonProps) {
   return (
-    <HoldButton onCommit={onApprove} disabled={disabled} testID={testID} Button={PrimaryButton}>
+    <HoldButton
+      onCommit={onApprove}
+      disabled={disabled}
+      testID={testID}
+      Button={danger ? DangerFillButton : PrimaryButton}
+    >
       {children}
     </HoldButton>
   );
+}
+
+function DangerFillButton(props: PrimaryButtonProps) {
+  return <SecondaryButton {...props} tone="danger-fill" />;
 }
 
 interface HoldButtonProps extends Testable {
   onCommit: () => void | Promise<void>;
   children: string;
   disabled?: boolean;
-  Button: typeof PrimaryButton | typeof SecondaryButton;
+  Button: typeof PrimaryButton | typeof SecondaryButton | typeof DangerFillButton;
 }
 
 function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButtonProps) {

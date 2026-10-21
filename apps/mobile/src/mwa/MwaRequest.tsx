@@ -268,9 +268,13 @@ function ConnectApproval({
   const signIn = request.signInPayload;
 
   // The origin and the warning come first: the name is the dApp's own claim.
+  // Digital Asset Links vouch only for native apps, so any page or app can
+  // claim any site: an unverified one is named as a claim, and its approval
+  // (a SIWS signature for that site included) costs a hold.
+  const unverified = verification === 'unverified';
   const lines = [
-    origin,
-    ...(verification === 'unverified' ? [t('dapp.mwa_unverified', { origin })] : []),
+    unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
+    ...(unverified ? [t('dapp.mwa_unverified', { origin })] : []),
     name,
     `${t('dapp.wallet_address')}: ${getShortAddress(address, 4) ?? address}`,
     signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint'),
@@ -313,10 +317,17 @@ function ConnectApproval({
       visible
       title={signIn ? t('dapp.sign_in_title') : t('dapp.connect_title')}
       message={lines.join('\n\n')}
-      confirmText={signIn ? t('dapp.sign_in_action') : t('dapp.approve')}
+      confirmText={
+        unverified
+          ? t('dapp.hold_to_approve')
+          : signIn
+            ? t('dapp.sign_in_action')
+            : t('dapp.approve')
+      }
       cancelText={t('dapp.deny')}
       isDanger={verification !== 'verified'}
       confirmDisabled={verification === 'checking'}
+      requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
     />

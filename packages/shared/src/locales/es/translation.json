@@ -158,6 +158,7 @@
     "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
     "mwa_refused_title": "Solicitud rechazada",
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
+    "mwa_unverified_origin": "App no verificada que dice ser {{origin}}",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
     "mwa_network_unsupported": "Esta app pidió {{requested}}. Salmon funciona solo con Solana Mainnet y Devnet, así que la solicitud se rechazó.",
