@@ -621,14 +621,49 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
     expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe(before);
   });
 
-  it('accepts an https nodeUrl', async () => {
-    vi.mocked(networkService.getNetworks).mockResolvedValue([
-      { id: MAINNET, blockchain: 'solana', config: { nodeUrl: 'https://rpc.example/x' } },
-    ] as any);
+  describe('the Solana RPC hosts a production build accepts', () => {
+    const DEFAULT = 'https://api.mainnet-beta.solana.com';
+    const merge = async (nodeUrl: string) => {
+      SOLANA_NETWORKS[MAINNET].config.nodeUrl = DEFAULT;
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        { id: MAINNET, blockchain: 'solana', config: { nodeUrl } },
+      ] as any);
+      await fetchAndMergeNetworkConfigs();
+      return SOLANA_NETWORKS[MAINNET].config.nodeUrl;
+    };
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      SOLANA_NETWORKS[MAINNET].config.nodeUrl = DEFAULT;
+    });
 
-    await fetchAndMergeNetworkConfigs();
+    it.each([
+      'https://salmon-mainnet-1.mainnet.rpcpool.com/token',
+      'https://api.mainnet-beta.solana.com',
+      'https://api.devnet.solana.com',
+    ])('accepts %s', async (nodeUrl) => {
+      expect(await merge(nodeUrl)).toBe(nodeUrl);
+    });
 
-    expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('https://rpc.example/x');
+    it.each([
+      'https://rpc.example/x',
+      'https://evilrpcpool.com',
+      'https://rpcpool.com.example',
+      'https://user@evil.example/?h=x.rpcpool.com',
+    ])('ignores %s and keeps the compiled default', async (nodeUrl) => {
+      expect(await merge(nodeUrl)).toBe(DEFAULT);
+    });
+
+    it('treats a build that declares no environment as production', async () => {
+      vi.stubEnv('NODE_ENV', 'development');
+      expect(await merge('https://rpc.example/x')).toBe(DEFAULT);
+    });
+
+    it('lets a staging or local build use any https host', async () => {
+      for (const env of ['staging', 'local']) {
+        vi.stubEnv('VITE_SALMON_ENV', env);
+        expect(await merge('https://rpc.example/x')).toBe('https://rpc.example/x');
+      }
+    });
   });
 
   // The RPC answers the simulations that gate signing; over plain http anyone
@@ -657,7 +692,7 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
     });
 
-    it('is accepted over plain http in a local build', async () => {
+    it('is accepted over plain http in a build that declares itself local', async () => {
       vi.stubEnv('VITE_SALMON_ENV', 'local');
       vi.mocked(networkService.getNetworks).mockResolvedValue([
         { id: MAINNET, blockchain: 'solana', config: local },
@@ -666,6 +701,28 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       await fetchAndMergeNetworkConfigs();
 
       expect(SOLANA_NETWORKS[MAINNET].config).toMatchObject(local);
+    });
+
+    it('is accepted on the IPv6 loopback too', async () => {
+      vi.stubEnv('VITE_SALMON_ENV', 'local');
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        { id: MAINNET, blockchain: 'solana', config: { nodeUrl: 'http://[::1]:8899' } },
+      ] as any);
+
+      await fetchAndMergeNetworkConfigs();
+
+      expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('http://[::1]:8899');
+    });
+
+    it('is refused when the build only runs in development without declaring itself local', async () => {
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.mocked(networkService.getNetworks).mockResolvedValue([
+        { id: MAINNET, blockchain: 'solana', config: local },
+      ] as any);
+
+      await fetchAndMergeNetworkConfigs();
+
+      expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('https://api.mainnet-beta.solana.com');
     });
 
     it.each(['production', 'staging'])('is refused in a %s build', async (env) => {

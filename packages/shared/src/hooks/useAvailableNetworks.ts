@@ -24,7 +24,7 @@ import type {
 } from '../types/blockchain';
 import { sortNetworks, visibleNetworkIds } from '../utils/network';
 import { getNetworks } from '../api/services/network';
-import { detectEnvironment } from '../api/config';
+import { declaredEnvironment } from '../api/config';
 
 /**
  * Return type for the useAvailableNetworks hook.
@@ -73,42 +73,62 @@ const NETWORK_ORDER = {
 
 /**
  * Accepts a backend-supplied endpoint only when it is a well-formed URL on an
- * encrypted scheme.
+ * encrypted scheme, and, for the Solana RPC of a production build, on a host
+ * compiled into the wallet.
  *
  * These values become the wallet's whole view of the chain: `nodeUrl` feeds
  * `createSolanaRpc`, and from there simulation, blockhash, `sendTransaction`
  * and confirmation — including the simulations that decide what an approval
- * screen shows before the user signs. Written through unchecked, whoever
- * answers `/v1/networks` chooses which chain the wallet simulates against and
- * where signed transactions go; over plain http, so does anyone on the network
- * path. A malformed, unencrypted or non-network scheme must leave the compiled
- * default in place rather than replace it. The one exception is a node on this
- * machine's loopback in a local build: a validator a developer runs.
+ * or swap screen shows before the user signs. Written through unchecked,
+ * whoever answers `/v1/networks` chooses which chain the wallet simulates
+ * against and where signed transactions go; over plain http, so does anyone on
+ * the network path. Anything refused leaves the compiled default in place.
+ *
+ * What a build accepts depends on what it declares in SALMON_ENV (a build that
+ * declares nothing is production):
+ * - production: https/wss only, and the Solana RPC only on
+ *   `SOLANA_RPC_HOSTS` — Triton, which the wallet uses, and the public
+ *   clusters. A new provider ships with a release.
+ * - staging: https/wss on any host, so a test provider can be tried.
+ * - local: as staging, plus plain http/ws on this machine's loopback, for a
+ *   validator a developer runs.
  *
  * @param value - the candidate endpoint from the catalogue response.
  * @param schemes - the encrypted scheme this field must use, and its plain
  *   counterpart a local build may use on loopback.
+ * @param pinned - whether a production build holds this field to `SOLANA_RPC_HOSTS`.
  * @returns the value when it is usable, or null to keep the existing default.
  */
 function acceptEndpoint(
   value: unknown,
-  schemes: { secure: string; loopback: string }
+  schemes: { secure: string; loopback: string },
+  pinned = false
 ): string | null {
   if (typeof value !== 'string' || value.length === 0) return null;
+  const environment = declaredEnvironment() ?? 'production';
   try {
     const url = new URL(value);
-    if (url.protocol === schemes.secure) return value;
+    if (url.protocol === schemes.secure) {
+      const allowed = !pinned || environment !== 'production' || isSolanaRpcHost(url.hostname);
+      return allowed ? value : null;
+    }
     const onLoopback =
       url.protocol === schemes.loopback &&
       LOOPBACK_HOSTS.includes(url.hostname) &&
-      detectEnvironment() === 'local';
+      environment === 'local';
     return onLoopback ? value : null;
   } catch {
     return null;
   }
 }
 
-const LOOPBACK_HOSTS = ['localhost', '127.0.0.1'];
+/** The Solana RPC hosts a production build accepts: Triton's, and the public clusters. */
+const SOLANA_RPC_HOSTS = ['api.mainnet-beta.solana.com', 'api.devnet.solana.com'];
+const SOLANA_RPC_DOMAIN = '.rpcpool.com';
+const isSolanaRpcHost = (hostname: string): boolean =>
+  SOLANA_RPC_HOSTS.includes(hostname) || hostname.endsWith(SOLANA_RPC_DOMAIN);
+
+const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 const HTTP_SCHEMES = { secure: 'https:', loopback: 'http:' };
 const WS_SCHEMES = { secure: 'wss:', loopback: 'ws:' };
 
@@ -121,9 +141,9 @@ export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
 
       const chain = blockchain?.toLowerCase();
       if (chain === 'solana' && SOLANA_NETWORKS[id]) {
-        const nodeUrl = 'nodeUrl' in cfg ? acceptEndpoint(cfg.nodeUrl, HTTP_SCHEMES) : null;
+        const nodeUrl = 'nodeUrl' in cfg ? acceptEndpoint(cfg.nodeUrl, HTTP_SCHEMES, true) : null;
         if (nodeUrl) SOLANA_NETWORKS[id].config.nodeUrl = nodeUrl;
-        const wsUrl = 'wsUrl' in cfg ? acceptEndpoint(cfg.wsUrl, WS_SCHEMES) : null;
+        const wsUrl = 'wsUrl' in cfg ? acceptEndpoint(cfg.wsUrl, WS_SCHEMES, true) : null;
         if (wsUrl) SOLANA_NETWORKS[id].config.wsUrl = wsUrl;
       } else if (chain === 'ethereum' && ETHEREUM_NETWORKS[id]) {
         const rpcUrl = 'rpcUrl' in cfg ? acceptEndpoint(cfg.rpcUrl, HTTP_SCHEMES) : null;
