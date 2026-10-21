@@ -73,8 +73,8 @@ const NETWORK_ORDER = {
 
 /**
  * Accepts a backend-supplied endpoint only when it is a well-formed URL on an
- * encrypted scheme, and, for the Solana RPC of a production build, on a host
- * compiled into the wallet.
+ * encrypted scheme, and, for the Solana RPC of any build but a local one, on a
+ * host compiled into the wallet.
  *
  * These values become the wallet's whole view of the chain: `nodeUrl` feeds
  * `createSolanaRpc`, and from there simulation, blockhash, `sendTransaction`
@@ -86,17 +86,16 @@ const NETWORK_ORDER = {
  *
  * What a build accepts depends on what it declares in SALMON_ENV (a build that
  * declares nothing is production):
- * - production: https/wss only, and the Solana RPC only on
- *   `SOLANA_RPC_HOSTS` — Triton, which the wallet uses, and the public
- *   clusters. A new provider ships with a release.
- * - staging: https/wss on any host, so a test provider can be tried.
- * - local: as staging, plus plain http/ws on this machine's loopback, for a
- *   validator a developer runs.
+ * - production and staging (TestFlight builds run as staging): https/wss only,
+ *   and the Solana RPC only on `SOLANA_RPC_HOSTS` — Triton, which the wallet
+ *   uses, and the public clusters. A new provider ships with a release.
+ * - local: https/wss on any host, plus plain http/ws on this machine's
+ *   loopback, for a validator or test provider a developer runs.
  *
  * @param value - the candidate endpoint from the catalogue response.
  * @param schemes - the encrypted scheme this field must use, and its plain
  *   counterpart a local build may use on loopback.
- * @param pinned - whether a production build holds this field to `SOLANA_RPC_HOSTS`.
+ * @param pinned - whether a non-local build holds this field to `SOLANA_RPC_HOSTS`.
  * @returns the value when it is usable, or null to keep the existing default.
  */
 function acceptEndpoint(
@@ -114,7 +113,7 @@ function acceptEndpoint(
     const url = new URL(value);
     if (url.username || url.password) return null;
     if (url.protocol === schemes.secure) {
-      const allowed = !pinned || environment !== 'production' || isSolanaRpcHost(url.hostname);
+      const allowed = !pinned || environment === 'local' || isSolanaRpcHost(url.hostname);
       return allowed ? url.href : null;
     }
     const onLoopback =
@@ -127,8 +126,10 @@ function acceptEndpoint(
   }
 }
 
-/** The Solana RPC hosts a production build accepts: Triton's, and the public clusters. */
+/** The Solana RPC hosts a non-local build accepts: Triton's, and the public clusters. */
 const SOLANA_RPC_HOSTS = ['api.mainnet-beta.solana.com', 'api.devnet.solana.com'];
+// A wildcard because Salmon's exact Triton host is a tenant subdomain the
+// backend holds as a secret; it is not in this repository to pin.
 const SOLANA_RPC_DOMAIN = '.rpcpool.com';
 const isSolanaRpcHost = (hostname: string): boolean =>
   SOLANA_RPC_HOSTS.includes(hostname) || hostname.endsWith(SOLANA_RPC_DOMAIN);

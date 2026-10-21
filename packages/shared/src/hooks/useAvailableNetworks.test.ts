@@ -673,11 +673,15 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       expect(await merge('https://rpc.example/x')).toBe(DEFAULT);
     });
 
-    it('lets a staging or local build use any https host', async () => {
-      for (const env of ['staging', 'local']) {
-        vi.stubEnv('VITE_SALMON_ENV', env);
-        expect(await merge('https://rpc.example/x')).toBe('https://rpc.example/x');
-      }
+    // TestFlight builds run as staging: they get the same pinned hosts.
+    it('holds a staging build to the same hosts', async () => {
+      vi.stubEnv('VITE_SALMON_ENV', 'staging');
+      expect(await merge('https://rpc.example/x')).toBe(DEFAULT);
+    });
+
+    it('lets only a local build use any https host', async () => {
+      vi.stubEnv('VITE_SALMON_ENV', 'local');
+      expect(await merge('https://rpc.example/x')).toBe('https://rpc.example/x');
     });
   });
 

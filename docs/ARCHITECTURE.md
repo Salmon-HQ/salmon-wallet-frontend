@@ -38,7 +38,7 @@ Los mapas dentro del script (`MAP`, `MOBILE_ONLY`, `DOM_ONLY`, `SCREENS`, `MOBIL
 Es el núcleo. Capas, de abajo hacia arriba:
 
 - `api/` — el contrato con el backend (`../salmon-wallet-backend`): cliente, configuración de entorno, servicios.
-- `blockchain/` — lógica por cadena (`solana` sobre `@solana/kit`, `bitcoin`, `ethereum` como andamiaje futuro). Firma en el cliente. Solana envía al RPC que el backend nombra en `/v1/networks` cuando es https y, en un build de producción, uno de los hosts compilados (Triton `*.rpcpool.com` y los clústeres públicos de Solana); si no, usa el endpoint compilado (`hooks/useAvailableNetworks.ts`). Bitcoin publica el hex firmado directamente a los relays públicos (`config/bitcoin-relays.ts`), nunca a nuestro backend.
+- `blockchain/` — lógica por cadena (`solana` sobre `@solana/kit`, `bitcoin`, `ethereum` como andamiaje futuro). Firma en el cliente. Solana envía al RPC que el backend nombra en `/v1/networks` cuando es https y, en todo build que no sea local (staging y TestFlight incluidos), uno de los hosts compilados (Triton `*.rpcpool.com` y los clústeres públicos de Solana); si no, usa el endpoint compilado (`hooks/useAvailableNetworks.ts`). Bitcoin publica el hex firmado directamente a los relays públicos (`config/bitcoin-relays.ts`), nunca a nuestro backend.
 - `crypto/`, `storage/` — material de claves, cifrado del vault, persistencia. Área sensible: no se cambia sin firma humana.
 - `theme/` — la única fuente de tokens (`createSemantic(mode)` para claro y oscuro, spacing, tipografía, sombras, geometría de la marca).
 - `motion/` — las constantes de movimiento que ambas plataformas leen.
