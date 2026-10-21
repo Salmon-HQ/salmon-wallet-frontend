@@ -52,7 +52,7 @@ import {
 } from '@solana-program/token-2022';
 
 import type { SolanaRpc } from './networks';
-import { decodeAccountState } from './simulation-decode';
+import { decodeAccountState, hasTransferHook } from './simulation-decode';
 import { deriveEffects, findUnreadChange } from './simulation-derive';
 import { fetchAccountsAt, fetchMints, resolveMessage, simulate } from './simulation-rpc';
 import type { ResolvedMessage } from './simulation-rpc';
@@ -106,12 +106,27 @@ const ANALYSABLE_PROGRAMS: ReadonlySet<Address> = new Set<Address>([
 
 /**
  * The first program the transaction runs that this module cannot read, by
- * name, or `null` when it reads them all.
+ * name, or `null` when it reads them all. Before the simulation only the
+ * top-level programs are known; after it, the loaded accounts and the logs
+ * name the programs run through another one.
  */
-function findUnreadProgram(programs: readonly (Address | undefined)[]): string | null {
+function findUnreadProgram(
+  programs: readonly (Address | undefined)[],
+  loaded?: ReadonlyMap<Address, RawAccount | null>,
+  logs?: readonly string[] | null
+): string | null {
   for (const program of programs) {
     if (!program) return 'an unknown program';
     if (!ANALYSABLE_PROGRAMS.has(program)) return program;
+  }
+  for (const [address, raw] of loaded ?? []) {
+    if (hasTransferHook(raw)) return `the transfer hook of ${address}`;
+  }
+  for (const line of logs ?? []) {
+    const invoked = /^Program (\S+) invoke \[(\d+)\]$/.exec(line);
+    if (invoked && Number(invoked[2]) > 1 && !ANALYSABLE_PROGRAMS.has(invoked[1] as Address)) {
+      return invoked[1]!;
+    }
   }
   return null;
 }
@@ -188,7 +203,7 @@ export async function previewTransactionEffects(
   // simulation shows what it did once, not what it will do on chain, so no
   // verdict of the simulation's (not even "would fail") is passed on; the
   // movements it read are kept as `known`, a floor shown beside the warning.
-  const unreadProgram = options.strict ? findUnreadProgram(message.programs) : null;
+  let unreadProgram = options.strict ? findUnreadProgram(message.programs) : null;
   const unanalysed = (known?: EffectDetails): UndeterminedEffects => ({
     ...undetermined(
       account,
@@ -209,6 +224,7 @@ export async function previewTransactionEffects(
       ? unanalysed()
       : undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
+  if (options.strict) unreadProgram = findUnreadProgram(message.programs, before, simulation.logs);
 
   // `logs === null` means the node rejected the transaction before running it,
   // so there is nothing to diff and nothing to reassure the user with.

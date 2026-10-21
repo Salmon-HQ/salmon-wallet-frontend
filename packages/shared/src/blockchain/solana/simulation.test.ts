@@ -1020,6 +1020,73 @@ describe('previewTransactionEffects in strict mode', () => {
     expect(result.known?.tokens).toEqual([expect.objectContaining({ amount: -10_000_000n })]);
   });
 
+  // A Token-2022 mint with a transfer hook runs code its creator chose on
+  // every transfer, through Token-2022 itself, so the top-level program list
+  // looks harmless.
+  it('reports a transfer of a token with a transfer hook as unanalysed', async () => {
+    const HOOKED_MINT = address('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU');
+    const mintData = getMintEncoder().encode({
+      mintAuthority: none(),
+      supply: 1_000_000_000n,
+      decimals: 6,
+      isInitialized: true,
+      freezeAuthority: none(),
+      extensions: some([{ __kind: 'TransferHook', authority: OTHER, programId: SPENDER }]),
+    });
+    const hookedMint = {
+      lamports: 1_461_600n,
+      owner: TOKEN_2022_PROGRAM_ADDRESS,
+      data: [getBase64Decoder().decode(new Uint8Array(mintData)), 'base64'],
+    } as unknown as Raw;
+    const wire = wireOf([
+      getTransferCheckedInstruction({
+        source: USDC_ATA,
+        mint: HOOKED_MINT,
+        destination: MERCHANT_ATA,
+        authority: createNoopSigner(WALLET),
+        amount: 1n,
+        decimals: 6,
+      }),
+    ]);
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n), [HOOKED_MINT]: hookedMint });
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
+  it('reports a program the node logged being invoked through another as unanalysed', async () => {
+    const wire = wireOf([
+      getTransferSolInstruction({
+        source: createNoopSigner(WALLET),
+        destination: MERCHANT,
+        amount: 1n,
+      }),
+    ]);
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n), [MERCHANT]: rawSol(10n) });
+    vi.mocked(rpc.simulateTransaction).mockReturnValue({
+      send: async () => ({
+        value: {
+          err: null,
+          fee: 5_000n,
+          logs: [
+            'Program 11111111111111111111111111111111 invoke [1]',
+            `Program ${SPENDER} invoke [2]`,
+            `Program ${SPENDER} success`,
+            'Program 11111111111111111111111111111111 success',
+          ],
+          accounts: [rawSol(999_994_999n), rawSol(11n), rawSol(1n)],
+        },
+      }),
+    } as never);
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
   // "Would fail" is the simulation's word, and the simulation of a program
   // this module cannot read is not one to repeat to the user.
   it('does not pass on a failing simulation of a program it cannot read', async () => {
