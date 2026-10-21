@@ -31,6 +31,7 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
+import { useAppSwitcherProtection } from '../hooks/useSecretScreen';
 import {
   isSeedVaultScreenOpen,
   onSeedVaultScreensClosed,
@@ -58,6 +59,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useAppFonts();
+  // iOS: blur the app whenever it is not in focus, so the app-switcher
+  // snapshot never shows balances, the address or a secret.
+  useAppSwitcherProtection();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {

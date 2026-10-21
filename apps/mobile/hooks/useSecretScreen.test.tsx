@@ -6,7 +6,8 @@
  * screenshot, and one that releases too early re-exposes key material while
  * a sibling secret component is still mounted. Capture prevention is
  * Android-only — on iOS the workaround behind it blacks out the live screen
- * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur.
+ * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur,
+ * which the root turns on for the whole app (`useAppSwitcherProtection`).
  */
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
@@ -44,11 +45,16 @@ jest.mock('expo-screen-capture', () => {
 });
 
 import { Platform } from 'react-native';
-import { useSecretScreen, __resetAppSwitcherRefCountForTests } from './useSecretScreen';
+import { useAppSwitcherProtection, useSecretScreen } from './useSecretScreen';
 
 function SecretScreen({ label = 'test-secret' }: { label?: string }) {
   useSecretScreen(label);
   return <Text>secret</Text>;
+}
+
+function AppRoot() {
+  useAppSwitcherProtection();
+  return <Text>app</Text>;
 }
 
 describe('useSecretScreen', () => {
@@ -63,7 +69,6 @@ describe('useSecretScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    __resetAppSwitcherRefCountForTests();
   });
 
   it('requests screen capture protection while mounted and releases it on unmount', () => {
@@ -115,20 +120,21 @@ describe('useSecretScreen', () => {
       Platform.OS = originalOS;
     });
 
-    it('enables the app switcher blur once and disables it after the last unmount', () => {
-      const first = render(<SecretScreen label="ios-a" />);
-      const second = render(<SecretScreen label="ios-b" />);
-
-      // Reference counted: enabled once, not once per component.
+    // The blur covers the whole app from the root (balances and the address
+    // were in the app-switcher snapshot). A secret screen leaving must not
+    // switch it off underneath the rest of the app.
+    it('leaves the app switcher blur to the root, so a secret screen cannot turn it off', () => {
+      const root = render(<AppRoot />);
       expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+
+      const secret = render(<SecretScreen label="ios-a" />);
+      secret.unmount();
+      expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
       // Never on iOS: the secure-field workaround blacks out the live screen
       // on some devices (expo/expo#24041).
       expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
 
-      first.unmount();
-      expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
-
-      second.unmount();
+      root.unmount();
       expect(mockDisableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
     });
   });
@@ -143,6 +149,7 @@ describe('useSecretScreen', () => {
     });
 
     it('skips the iOS-only app switcher call, since FLAG_SECURE already blanks Recents', () => {
+      render(<AppRoot />);
       const screen = render(<SecretScreen label="android" />);
 
       expect(mockPreventScreenCaptureAsync).toHaveBeenCalledTimes(1);
