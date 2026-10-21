@@ -109,7 +109,7 @@ jest.mock('../components/TransactionConfirmation', () => ({
 describe('MwaRequest — sign messages', () => {
   // The extension names the signing account on its sign screen; the mobile
   // sheet named only the site and the text.
-  it('names the account that signs, after the site', () => {
+  it('names the account that signs, after the site', async () => {
     const account = { getReceiveAddress: () => mockAddress } as never;
     render(
       <MwaRequest
@@ -128,6 +128,8 @@ describe('MwaRequest — sign messages', () => {
       />
     );
 
+    // The calling app is checked first; this one is verified.
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
     const lines = (screen.getByTestId('sheet-message').props.children as string).split('\n\n');
     expect(lines.slice(0, 3)).toEqual([mockOrigin, 'dapp.wallet_address: Savings · AKnL', 'hi']);
   });
