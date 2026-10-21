@@ -288,15 +288,23 @@ export default defineBackground(() => {
   };
 
   /**
-   * Has the user ever approved this origin?
+   * Did the user approve this origin for the account that is active now?
    *
    * Any network counts, unlike `getConnection`, which answers for the network
-   * in use. Switching networks after connecting does not un-approve the site,
-   * and this is only used to tell an approved origin from a page the user has
-   * never seen a prompt for.
+   * in use: switching networks after connecting does not un-approve the site.
+   * Switching accounts does. A signature comes from the active account, so a
+   * grant for another one would show the site an account it was never given.
    */
-  const isApprovedOrigin = (origin: string, { trustedApps }: StorageData): boolean =>
-    !!origin && Object.values(trustedApps ?? {}).some((perNetwork) => !!perNetwork?.[origin]);
+  const isApprovedForActiveAccount = (
+    origin: string,
+    { connection, trustedApps }: StorageData
+  ): boolean =>
+    !!origin &&
+    connection?.blockchain?.toLowerCase() === 'solana' &&
+    !!connection.address &&
+    Object.values(trustedApps ?? {}).some(
+      (perNetwork) => perNetwork?.[origin]?.address === connection.address
+    );
 
   /** A concrete web origin — not "null", not an extension page, not empty. */
   const isWebOrigin = (origin: string | undefined): origin is string =>
@@ -426,8 +434,10 @@ export default defineBackground(() => {
   const CONNECTIONLESS_METHODS = new Set(['signIn']);
 
   /**
-   * A signing request from an origin the user never approved — or whose
-   * approval they revoked — is refused before any window opens.
+   * A signing request from an origin the user never approved, whose approval
+   * they revoked, or that was approved for another account than the active
+   * one is refused before any window opens. As with connect after an account
+   * switch, the site has to connect again.
    */
   const handleApprovalMethod = async (
     message: Message,
@@ -436,7 +446,7 @@ export default defineBackground(() => {
   ): Promise<void> => {
     if (!CONNECTIONLESS_METHODS.has(message.data.method)) {
       const data = await readStorageData();
-      if (!isApprovedOrigin(sender.origin || '', data)) {
+      if (!isApprovedForActiveAccount(sender.origin || '', data)) {
         await sendResponse({ error: 'Not connected', id: message.data.id });
         return;
       }

@@ -235,6 +235,40 @@ describe('what an unapproved origin can make the wallet do', () => {
     expect(windowsCreate).not.toHaveBeenCalled();
   });
 
+  // The grant names the account the user saw on the connect screen. After a
+  // switch, a sign request still opened a window that signed with the new
+  // account and handed the site its address.
+  it.each(['sign', 'signOffchain', 'signTransaction', 'signAllTransactions'])(
+    'refuses a %s request after a switch to an account the site was not approved for',
+    async (method) => {
+      await approveOrigin();
+      await fakeBrowser.storage.local.set({
+        salmon_connection: JSON.stringify({ blockchain: 'SOLANA', address: 'OtherPubkey222' }),
+      });
+      const { route, windowsCreate } = startBackground();
+      const sendResponse = vi.fn();
+
+      route(dappRequest(method, 'req-switched'), ownSender(), sendResponse);
+
+      await vi.waitFor(() =>
+        expect(sendResponse).toHaveBeenCalledWith({ error: 'Not connected', id: 'req-switched' })
+      );
+      expect(windowsCreate).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps a site connected for its account after a network switch', async () => {
+    await approveOrigin();
+    await fakeBrowser.storage.local.set({
+      salmon_active_network_id: JSON.stringify('solana-devnet'),
+    });
+    const { route, windowsCreate } = startBackground();
+
+    route(dappRequest('signTransaction', 'req-devnet'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+  });
+
   it('still lets signIn through, since connecting is part of what it does', async () => {
     const { route, windowsCreate } = startBackground();
 
