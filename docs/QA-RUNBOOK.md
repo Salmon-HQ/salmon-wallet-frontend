@@ -264,8 +264,8 @@ any release that touches copy.
   (on a tag) a GitHub Release with the zips, `SHA256SUMS`, the tag's
   CHANGELOG section as notes and a build-provenance attestation (verify with
   `gh attestation verify <zip> --repo Salmon-HQ/salmon-wallet-frontend`);
-  no store auto-publish. The tag is refused when CI did not pass on its
-  commit.
+  no store auto-publish. The build is refused for a commit that is not on
+  main, and the tag also when CI did not pass on its commit.
 - **Mobile**: EAS build (`pnpm build:aab` / `build:apk` from `apps/mobile`) —
   see `apps/mobile/AGENTS.md` for the pre-build checklist and keystore rules.
 

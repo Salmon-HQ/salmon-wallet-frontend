@@ -166,8 +166,8 @@ CodeQL _default setup_, delete `.github/workflows/codeql.yml` — default
 setup refuses uploads from a CodeQL workflow.
 
 Releases are tags, and each tag is checked against a file: `extension/v*`
-against `apps/extension/package.json` (and CI must have passed on that
-commit; the release notes are the tag's `## extension X.Y.Z` section of
+against `apps/extension/package.json` (and the commit must be on main, with
+CI passed on it; the release notes are the tag's `## extension X.Y.Z` section of
 `CHANGELOG.md`, so write it first), `mobile/v*` against `app.json` and the
 fingerprint baseline.
 
