@@ -139,12 +139,22 @@ export function getLocalApiUrl(host?: string, port?: number): string {
 }
 
 /**
+ * The environment the build declares in SALMON_ENV, or undefined when it
+ * declares none. Policies that loosen a check for development read this, not
+ * `detectEnvironment`, so a build has to say it is local to get them.
+ */
+export function declaredEnvironment(): Environment | undefined {
+  const declared = getEnvVar('SALMON_ENV');
+  return declared && isValidEnvironment(declared) ? declared : undefined;
+}
+
+/**
  * Detect the current environment from environment variables
  */
 export function detectEnvironment(): Environment {
-  const envOverride = getEnvVar('SALMON_ENV');
-  if (envOverride && isValidEnvironment(envOverride)) {
-    return envOverride;
+  const declared = declaredEnvironment();
+  if (declared) {
+    return declared;
   }
 
   // Check NODE_ENV as fallback
@@ -157,8 +167,9 @@ export function detectEnvironment(): Environment {
     case 'development': // Map deprecated NODE_ENV=development to 'local'
       return 'local';
     default:
-      // Handles any non-standard NODE_ENV values (including 'local' if ever set)
-      return 'local';
+      // Unset or non-standard: a build that says nothing is treated as the
+      // one that ships.
+      return 'production';
   }
 }
 
