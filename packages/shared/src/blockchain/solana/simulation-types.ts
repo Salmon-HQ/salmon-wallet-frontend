@@ -208,9 +208,12 @@ export interface UndeterminedEffects {
   readonly detail: string;
   /**
    * `unanalysed-program` and `unanalysed-account` only, when the simulation
-   * ran: the movements the preview did read for the account. A floor, never
-   * the whole effect — the screen shows them beside the reason, under the
-   * same hold.
+   * ran: the movements the simulation showed for the account. Under
+   * `unanalysed-program` they are the unreadable program's own account of
+   * itself, which it can fake, so the screen shows them as a simulation with
+   * no colour or direction labels. Under `unanalysed-account` every program
+   * is readable and they are what moves, beside a change the preview cannot
+   * show. Either way the screen keeps the reason and the hold.
    */
   readonly known?: EffectDetails;
 }

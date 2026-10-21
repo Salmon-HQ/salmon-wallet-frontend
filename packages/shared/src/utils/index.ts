@@ -44,6 +44,7 @@ export {
   dappTransactionDisplay,
   dappTransactionGate,
   formatSigningAccount,
+  simulatedMovementLine,
   UNDETERMINED_REASON_KEYS,
 } from './dapp-transaction-display';
 export type { DAppTransactionDisplayInput } from './dapp-transaction-display';

@@ -205,7 +205,8 @@ export async function previewTransactionEffects(
   // In strict mode a program this module cannot read decides the outcome. Its
   // simulation shows what it did once, not what it will do on chain, so no
   // verdict of the simulation's (not even "would fail") is passed on; the
-  // movements it read are kept as `known`, a floor shown beside the warning.
+  // movements it showed are kept as `known`, for the screen to show as a
+  // simulation beside the warning.
   let unreadProgram = options.strict ? findUnreadProgram(message.programs) : null;
   const unanalysed = (known?: EffectDetails): UndeterminedEffects => ({
     ...undetermined(

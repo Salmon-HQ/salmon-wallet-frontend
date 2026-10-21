@@ -121,25 +121,7 @@ describe('TransactionEffectsCard', () => {
     expect(screen.queryByText('No balance changes')).not.toBeInTheDocument();
   });
 
-  it.each(['unanalysed-program', 'unanalysed-account'] as const)(
-    'says a %s preview may move assets it does not list',
-    (reason) => {
-      render(
-        <TransactionEffectsCard
-          loading={false}
-          effects={{ kind: 'undetermined', account: ACCOUNT, reason, detail: '' }}
-        />
-      );
-
-      expect(
-        screen.getByText(/uses programs or accounts Salmon cannot preview/)
-      ).toBeInTheDocument();
-    }
-  );
-
-  // A swap through a router: what the wallet gives and gets, then the reason,
-  // in place of the bare "could not determine" notice.
-  it('shows the movements a held preview read, under the reason it is held', () => {
+  it('says a preview held for a program it cannot read may move assets it does not list', () => {
     render(
       <TransactionEffectsCard
         loading={false}
@@ -148,29 +130,61 @@ describe('TransactionEffectsCard', () => {
           account: ACCOUNT,
           reason: 'unanalysed-program',
           detail: '',
-          known: {
-            sol: { lamports: 50_000_000n, feeLamports: 5_000n },
-            tokens: [
-              {
-                tokenAccount: TOKEN_ACCOUNT,
-                mint: MINT,
-                amount: -10_000_000n,
-                decimals: 6,
-                symbol: 'USDC',
-              },
-            ],
-            approvals: [],
-          },
         }}
       />
     );
 
-    expect(screen.getByText('+0.05')).toBeInTheDocument();
-    expect(screen.getByText('−10')).toBeInTheDocument();
+    expect(screen.getByText(/uses programs or accounts Salmon cannot preview/)).toBeInTheDocument();
+  });
+
+  const held = (reason: 'unanalysed-program' | 'unanalysed-account') =>
+    ({
+      kind: 'undetermined',
+      account: ACCOUNT,
+      reason,
+      detail: '',
+      known: {
+        sol: { lamports: 50_000_000n, feeLamports: 5_000n },
+        tokens: [
+          {
+            tokenAccount: TOKEN_ACCOUNT,
+            mint: MINT,
+            amount: -10_000_000n,
+            decimals: 6,
+            symbol: 'USDC',
+          },
+        ],
+        approvals: [],
+      },
+    }) as const;
+
+  // A program Salmon cannot read can make its simulation show anything: the
+  // numbers read as a simulation, with no colour and no in/out labels.
+  it('shows what a program it cannot read simulated as a simulation, then the reason', () => {
+    render(<TransactionEffectsCard loading={false} effects={held('unanalysed-program')} />);
+
+    expect(screen.getByText('Simulation: the real result may differ')).toBeInTheDocument();
+    expect(screen.getByTestId('effects-simulated')).toHaveTextContent('10 USDC → 0.05 SOL');
+    expect(screen.getByText('0.000005 SOL')).toBeInTheDocument();
+    expect(screen.queryByText('Enters your wallet')).not.toBeInTheDocument();
+    expect(screen.queryByText('Leaves your wallet')).not.toBeInTheDocument();
     expect(screen.getByTestId('effects-unanalysed')).toHaveTextContent(
       'uses programs or accounts Salmon cannot preview'
     );
     expect(screen.queryByText('Salmon could not determine what this does')).not.toBeInTheDocument();
+  });
+
+  // Every program is readable: the rows are what moves, as usual, beside the
+  // account change the preview cannot show.
+  it('shows the movements of a held account change as usual, with its own reason', () => {
+    render(<TransactionEffectsCard loading={false} effects={held('unanalysed-account')} />);
+
+    expect(screen.getByText('Leaves your wallet')).toBeInTheDocument();
+    expect(screen.getByText('+0.05')).toBeInTheDocument();
+    expect(screen.getByTestId('effects-unanalysed')).toHaveTextContent(
+      'changes an account Salmon does not show here'
+    );
+    expect(screen.queryByText('Simulation: the real result may differ')).not.toBeInTheDocument();
   });
 
   it('warns that a durable-nonce signature never expires', () => {

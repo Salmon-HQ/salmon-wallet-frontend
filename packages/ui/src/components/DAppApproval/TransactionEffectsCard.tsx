@@ -4,6 +4,7 @@ import {
   fontSize,
   formatBaseUnits,
   getShortAddress,
+  simulatedMovementLine,
   spacing,
   UNDETERMINED_REASON_KEYS,
   type ApprovalGrant,
@@ -23,9 +24,6 @@ import type { TransactionEffectsCardProps } from './types';
 
 const SOL_DECIMALS = 9;
 
-const UNANALYSED_FALLBACK =
-  'This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.';
-
 const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'malformed-transaction': 'The transaction could not be decoded.',
   'unsupported-transaction-version':
@@ -36,8 +34,10 @@ const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'batch-not-previewable': 'This request contains several transactions that run in sequence.',
   'ownership-change':
     'This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.',
-  'unanalysed-program': UNANALYSED_FALLBACK,
-  'unanalysed-account': UNANALYSED_FALLBACK,
+  'unanalysed-program':
+    'This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.',
+  'unanalysed-account':
+    "This transaction changes an account Salmon does not show here, such as a token account's close permission or its deposit going to someone else.",
   'durable-nonce':
     'This signature never expires, so the site can submit the transaction later, at a time it chooses.',
 };
@@ -156,6 +156,43 @@ function Movements({ details }: { details: EffectDetails }): React.ReactElement 
 }
 
 /**
+ * What a program Salmon cannot read made its simulation show: the program can
+ * make that say anything, so it reads as a simulation — no colour, no
+ * "enters"/"leaves" — under a label that says so. Delegations stay named.
+ */
+function SimulatedMovements({ details }: { details: EffectDetails }): React.ReactElement {
+  const { t } = useTranslation();
+  const tokens = useSemantic();
+  const line = simulatedMovementLine(details);
+  const fee = details.sol.feeLamports;
+
+  return (
+    <>
+      <span style={{ ...bodyText(tokens), fontSize: fontSize.caption }}>
+        {t('dapp.effects_simulated_label', 'Simulation: the real result may differ')}
+      </span>
+      {line ? (
+        <p
+          style={{ ...monoText(tokens), color: tokens.text.primary }}
+          data-testid="effects-simulated"
+        >
+          {line}
+        </p>
+      ) : null}
+      {fee != null && fee > 0n ? (
+        <KeyValueRow
+          label={t('dapp.transaction_fee', 'Estimated fee')}
+          value={`${formatBaseUnits(fee, SOL_DECIMALS)} SOL`}
+        />
+      ) : null}
+      {details.approvals.map((grant) => (
+        <ApprovalRow key={`${grant.tokenAccount}-${grant.spender}`} grant={grant} />
+      ))}
+    </>
+  );
+}
+
+/**
  * States what a dApp's transaction would actually do to the user's balances.
  *
  * The four outcomes render as four visibly different things on purpose. "We
@@ -190,7 +227,11 @@ export function TransactionEffectsCard({
 
       {effects?.kind === 'undetermined' && effects.known ? (
         <>
-          <Movements details={effects.known} />
+          {effects.reason === 'unanalysed-program' ? (
+            <SimulatedMovements details={effects.known} />
+          ) : (
+            <Movements details={effects.known} />
+          )}
           <WarningNotice
             tone="warning"
             title={t(UNDETERMINED_REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}

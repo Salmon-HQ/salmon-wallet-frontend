@@ -28,7 +28,7 @@ export const UNDETERMINED_REASON_KEYS: Record<UndeterminedReason, string> = {
   'batch-not-previewable': 'dapp.effects_reason_batch',
   'ownership-change': 'dapp.effects_reason_ownership_change',
   'unanalysed-program': 'dapp.effects_reason_unanalysed',
-  'unanalysed-account': 'dapp.effects_reason_unanalysed',
+  'unanalysed-account': 'dapp.effects_reason_unanalysed_account',
   'durable-nonce': 'dapp.effects_reason_durable_nonce',
 };
 
@@ -69,6 +69,31 @@ function movementRows(t: Translate, details: EffectDetails): ConfirmationRow[] {
   ];
 }
 
+/**
+ * What a simulation says the account gives and gets, with no sign and no
+ * colour to vouch for it: "10 USDC → 0.05 SOL". The arrow stays when only one
+ * side moves ("10 USDC →"), so the direction is never lost. `null` when
+ * nothing moves.
+ */
+export function simulatedMovementLine(details: EffectDetails): string | null {
+  const assets = [
+    { amount: details.sol.lamports, decimals: SOL_DECIMALS, asset: 'SOL' },
+    ...details.tokens.map((change) => ({
+      amount: change.amount,
+      decimals: change.decimals,
+      asset: change.symbol ?? change.mint,
+    })),
+  ];
+  const side = (leaving: boolean) =>
+    assets
+      .filter(({ amount }) => (leaving ? amount < 0n : amount > 0n))
+      .map(({ amount, decimals, asset }) => `${formatBaseUnits(amount, decimals)} ${asset}`)
+      .join(' + ');
+  const [gives, gets] = [side(true), side(false)];
+  if (!gives && !gets) return null;
+  return [gives, '→', gets].filter(Boolean).join(' ');
+}
+
 /** Every delegation, named: a harmless first one must not hide the next. */
 function approvalsText(t: Translate, details: EffectDetails): string | undefined {
   if (details.approvals.length === 0) return undefined;
@@ -106,13 +131,20 @@ export function dappTransactionDisplay(
     const approvals = approvalsText(t, effects);
     if (approvals) warning = { title: t('dapp.effects_approval_title'), body: approvals };
   } else if (effects?.kind === 'undetermined' && effects.known) {
-    // What the preview read, then why it cannot vouch for the rest.
-    rows.push(...movementRows(t, effects.known));
+    // A program Salmon cannot read can make its simulation say anything, so
+    // its numbers read as a simulation; with every program readable they are
+    // what moves, short of the change the preview cannot show.
+    if (effects.reason === 'unanalysed-program') {
+      const line = simulatedMovementLine(effects.known);
+      if (line) rows.push({ label: t('dapp.effects_simulated_label'), value: line });
+    } else {
+      rows.push(...movementRows(t, effects.known));
+    }
+    const reason = t(UNDETERMINED_REASON_KEYS[effects.reason]);
     const approvals = approvalsText(t, effects.known);
-    warning = {
-      title: t(UNDETERMINED_REASON_KEYS[effects.reason]),
-      ...(approvals ? { body: approvals } : {}),
-    };
+    warning = approvals
+      ? { title: t('dapp.effects_approval_title'), body: `${approvals}\n\n${reason}` }
+      : { title: reason };
   } else if (effects?.kind === 'no-effect') {
     warning = { title: t('dapp.effects_none_title'), body: t('dapp.effects_none_body') };
   } else if (effects?.kind === 'transaction-would-fail') {
