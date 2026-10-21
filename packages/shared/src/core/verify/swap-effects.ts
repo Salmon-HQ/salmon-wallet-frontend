@@ -10,6 +10,14 @@
  * input leaving, no more than the amount on screen, no other token leaving and
  * no approval granted, and at least the minimum output arriving in the
  * wallet's own accounts.
+ *
+ * Known limit: 0x's own on-chain minimum is not decoded. Jupiter's is read
+ * from its bytes and held to the screen (`assertJupiterRoute`); 0x Settler's
+ * argument layout is not published, so its minimum is left as built. The
+ * simulation shows the swap paying at least the screen's minimum at the moment
+ * it runs, but a 0x build that encodes a lower minimum could pay less if the
+ * price moves between that simulation and the swap landing. Jupiter's formula
+ * is deliberately not applied to 0x: its minimum comes from 0x's own quote.
  */
 import { address } from '@solana/kit';
 import type { Base64EncodedWireTransaction } from '@solana/kit';

@@ -677,14 +677,15 @@ const SYSTEM_TRANSFER = 2;
 /**
  * A swap moves SOL only to wrap it: into the wallet's own wrapped-SOL account
  * it spends from, when SOL is what the screen says it pays, and no more than
- * the amount on screen. Any other SOL transfer is value the screen never
- * shows.
+ * the amount on screen across all its transfers. Any other SOL transfer is
+ * value the screen never shows.
  */
 function assertSwapWrapsOnlyInput(
   accounts: readonly string[],
   instructions: readonly CompiledInstruction[],
   route: SwapRouteExpectation
 ): void {
+  let wrapped = 0n;
   for (const instruction of instructions) {
     if (accounts[instruction.programAddressIndex] !== SYSTEM_PROGRAM) continue;
     if (discriminator(instruction.data, 4) !== SYSTEM_TRANSFER) continue;
@@ -699,7 +700,8 @@ function assertSwapWrapsOnlyInput(
       data.length >= 12
         ? new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(4, true)
         : null;
-    if (lamports === null || lamports > BigInt(route.inAmount)) {
+    wrapped += lamports ?? 0n;
+    if (lamports === null || wrapped > BigInt(route.inAmount)) {
       throw new SolanaTransactionMismatchError(
         'Transaction wraps more SOL than the amount on screen'
       );

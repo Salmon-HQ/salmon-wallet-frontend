@@ -289,6 +289,16 @@ describe('swap bytes — where the router pays the output', () => {
       expect(() => verify(tx)).toThrow(/more SOL than/);
     });
 
+    it('refuses wraps that together exceed the amount on screen', () => {
+      const tx = transaction([
+        createAta(WALLET_WSOL, WALLET, SOL),
+        wrap(WALLET_WSOL, 6_000_000n),
+        wrap(WALLET_WSOL, 6_000_000n),
+        route(),
+      ]);
+      expect(() => verify(tx)).toThrow(/more SOL than/);
+    });
+
     it('refuses SOL sent into a wallet account other than the wrapped-SOL one it spends', () => {
       const tx = transaction([
         createAta(WALLET_USDC, WALLET, USDC),
