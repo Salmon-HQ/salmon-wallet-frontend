@@ -196,6 +196,32 @@ function discriminator(data: ReadonlyUint8Array | undefined, width: 1 | 4): numb
   return code;
 }
 
+/**
+ * The static account an instruction names in `slot`.
+ *
+ * Refuses when it names no account there, and when the account is resolved
+ * through a lookup table: absent from the static list, it is not visible
+ * before signing, so it is undecidable rather than assumed.
+ */
+function staticAccount(
+  accounts: readonly string[],
+  instruction: CompiledInstruction,
+  slot: number,
+  what: string
+): string {
+  const index = instruction.accountIndices[slot];
+  if (index === undefined) {
+    throw new SolanaTransactionMismatchError(`Transaction names too few accounts for ${what}`);
+  }
+  const account = accounts[index];
+  if (account === undefined) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction resolves ${what} through a lookup table it cannot verify`
+    );
+  }
+  return account;
+}
+
 /** ATA `create` (0, or no data) and `createIdempotent` (1): payer, ata, owner, mint, … */
 const ATA_CREATE_CODES = new Set([0, 1]);
 
@@ -331,11 +357,8 @@ function assertNftAction(
   const refuse = (why: string): never => {
     throw new SolanaTransactionMismatchError(why);
   };
-  // An account read through a lookup table is not visible here: undecidable,
-  // so refused rather than assumed.
   const accountAt = (instruction: CompiledInstruction, slot: number): string =>
-    accounts[instruction.accountIndices[slot] ?? -1] ??
-    refuse('Transaction resolves an NFT account through a lookup table it cannot verify');
+    staticAccount(accounts, instruction, slot, 'an NFT account');
   let actsOnAsset = false;
 
   for (const [position, instruction] of instructions.entries()) {
@@ -450,10 +473,11 @@ const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2 + 2;
  * authority over all of them. Both are the instruction's own slots, in either
  * router call, and `route_v2`'s optional override slot must be empty, which
  * Anchor encodes as the program's own address. Any other Jupiter instruction
- * is refused. The amounts are bound so the minimum Jupiter enforces on chain
- * is the minimum the screen shows, and positive slippage must be zero: any
- * other value sends output above the quote to the platform fee account rather
- * than to the wallet.
+ * is refused, and so is a second router call. The amounts are bound so the
+ * minimum Jupiter enforces on chain — the quoted output less the slippage,
+ * rounded up — is the minimum the screen shows, and positive slippage must be
+ * zero: any other value sends output above the quote to the platform fee
+ * account rather than to the wallet.
  *
  * A mint slot read from the static list must be the mint on screen. Real
  * builds resolve both mint slots — and the token-program slots — through
@@ -472,11 +496,25 @@ function assertJupiterRoute(
   const refuse = (why: string): never => {
     throw new SolanaTransactionMismatchError(why);
   };
-  for (const instruction of instructions) {
-    if (accounts[instruction.programAddressIndex] !== JUPITER_AGGREGATOR_PROGRAM) continue;
+  const calls = instructions.filter(
+    (instruction) => accounts[instruction.programAddressIndex] === JUPITER_AGGREGATOR_PROGRAM
+  );
+  // One swap is one router call. A second would move value the screen never
+  // shows: the amounts on screen bind each call, not their sum.
+  if (calls.length > 1) refuse('Transaction carries more than one Jupiter swap route');
+  if (calls.length === 1) {
+    const shownMinimum = BigInt(route.minOutAmount);
+    const enforced =
+      (BigInt(route.quotedOutAmount) * BigInt(10_000 - route.slippageBps) + 9_999n) / 10_000n;
+    if (shownMinimum !== enforced) {
+      refuse('Transaction enforces a minimum other than the one on screen');
+    }
+  }
+  for (const instruction of calls) {
+    const visibleAt = (slot: number): string | undefined =>
+      accounts[instruction.accountIndices[slot] ?? -1];
     const accountAt = (slot: number): string =>
-      accounts[instruction.accountIndices[slot] ?? -1] ??
-      refuse('Transaction resolves a Jupiter account through a lookup table it cannot verify');
+      staticAccount(accounts, instruction, slot, 'a Jupiter account');
 
     const data = instruction.data ?? new Uint8Array();
     const layout = JUPITER_ROUTES.find(({ discriminator }) =>
@@ -486,8 +524,6 @@ function assertJupiterRoute(
       return refuse('Transaction carries a Jupiter instruction other than a swap route');
     }
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    const visibleAt = (slot: number): string | undefined =>
-      accounts[instruction.accountIndices[slot] ?? -1];
     if (accountAt(layout.authority) !== feePayer) {
       refuse('Transaction swaps tokens the wallet does not authorize');
     }
@@ -595,12 +631,12 @@ export function assertSolanaTransactionMatches(
     }
     for (const bind of rule.binds ?? []) {
       if (bind.code !== code) continue;
-      const account = accounts[instruction.accountIndices[bind.index] ?? -1];
-      if (account === undefined) {
-        throw new SolanaTransactionMismatchError(
-          `Transaction resolves an account of instruction ${code} on ${program} through a lookup table it cannot verify`
-        );
-      }
+      const account = staticAccount(
+        accounts,
+        instruction,
+        bind.index,
+        `an account of instruction ${code} on ${program}`
+      );
       const ok = bind.mustBe === 'feePayer' ? account === feePayer : ownAtas.has(account);
       if (!ok) {
         throw new SolanaTransactionMismatchError(

@@ -141,15 +141,28 @@ beforeAll(async () => {
 });
 
 /** The picked tokens; their decimals only scale the screen, so one value serves every pair here. */
+const decimalsOf = (mint: string) => (mint === SOL ? 9 : 6);
 const pickedTokens = (inputMint: string, outputMint: string) => ({
-  pay: { address: inputMint, name: 'in', symbol: 'IN', decimals: 6, uiAmount: 1 },
-  receive: { address: outputMint, name: 'out', symbol: 'OUT', decimals: 6, uiAmount: 0 },
+  pay: {
+    address: inputMint,
+    name: 'in',
+    symbol: 'IN',
+    decimals: decimalsOf(inputMint),
+    uiAmount: 1,
+  },
+  receive: {
+    address: outputMint,
+    name: 'out',
+    symbol: 'OUT',
+    decimals: decimalsOf(outputMint),
+    uiAmount: 0,
+  },
 });
 
 /** What the wallet checks before signing: the proposal's own expectation, the signer as fee payer. */
-function verify(tx: string): void {
+function verify(tx: string, overrides: Partial<SwapBuildEnvelope> = {}): void {
   const proposal = buildSwapProposal(
-    { ...envelope, transaction: tx },
+    { ...envelope, transaction: tx, ...overrides },
     {
       networkId: 'solana-mainnet',
       formatValue: () => '',
@@ -197,6 +210,27 @@ describe('swap bytes — where the router pays the output', () => {
     const otherToken: Ix = route();
     otherToken.accounts[1] = { address: address(WALLET_USDC), role: 1 };
     expect(() => verify(transaction([otherToken]))).toThrow(/spends from/);
+  });
+
+  it('refuses a second Jupiter route in the same message', () => {
+    expect(() => verify(transaction([route(), route()]))).toThrow(/more than one Jupiter/);
+  });
+
+  // Jupiter enforces quoted out × (1 − slippage), rounded up; the screen must
+  // show that same minimum.
+  it('refuses a build whose minimum is not the one Jupiter enforces', () => {
+    expect(() =>
+      verify(transaction([route()]), {
+        output: { ...envelope.output, minAmount: '1167272' },
+      })
+    ).toThrow(/minimum/);
+  });
+
+  it('says a route names too few accounts rather than blaming a lookup table', () => {
+    const short = route();
+    short.accounts = short.accounts.slice(0, 2);
+    expect(() => verify(transaction([short]))).toThrow(/too few accounts/);
+    expect(() => verify(transaction([short]))).not.toThrow(/lookup table/);
   });
 
   it('refuses a destination it cannot read because a lookup table hides it', () => {
@@ -265,6 +299,7 @@ const toIx = ({ programId, accounts, data }: JupiterInstruction): Ix => ({
 });
 
 interface Layout {
+  override?: number;
   args: number;
   authority: number;
   source: number;
@@ -272,7 +307,11 @@ interface Layout {
   sourceMint: number;
   destinationMint: number;
 }
-/** Where each Jupiter router call keeps what the check reads (Jupiter v6 on-chain IDL). */
+/**
+ * Where each Jupiter router call keeps what the check reads (Jupiter v6
+ * on-chain IDL). Written out again rather than imported, so a wrong offset in
+ * `JUPITER_ROUTES` (core/verify/solana-transaction.ts) fails here.
+ */
 const LAYOUTS: Record<string, Layout> = {
   // route_v2
   bb64facc31c4af14: {
@@ -282,6 +321,7 @@ const LAYOUTS: Record<string, Layout> = {
     destination: 2,
     sourceMint: 3,
     destinationMint: 4,
+    override: 7,
   },
   // shared_accounts_route_v2
   d19853937cfed8e9: {
@@ -309,7 +349,7 @@ const LAYOUTS: Record<string, Layout> = {
 async function realBuild(
   name: string,
   edit?: (swap: Ix, layout: Layout) => void,
-  { withTable = true } = {}
+  { withTable = true, twice = false } = {}
 ) {
   const build = BUILDS[name];
   if (!build) throw new Error(`no fixture named ${name}`);
@@ -323,6 +363,7 @@ async function realBuild(
   const instructions = [
     ...build.setupInstructions.map(toIx),
     swap,
+    ...(twice ? [swap] : []),
     ...(build.cleanupInstruction ? [toIx(build.cleanupInstruction)] : []),
     ...build.otherInstructions.map(toIx),
   ];
@@ -340,12 +381,16 @@ async function realBuild(
     {
       ...envelope,
       transaction: tx,
-      input: { mint: build.inputMint, amount: build.inAmount, decimals: 6 },
+      input: {
+        mint: build.inputMint,
+        amount: build.inAmount,
+        decimals: decimalsOf(build.inputMint),
+      },
       output: {
         mint: build.outputMint,
         amount: build.outAmount,
         minAmount: build.otherAmountThreshold,
-        decimals: 6,
+        decimals: decimalsOf(build.outputMint),
       },
       slippageBps: build.slippageBps,
     },
@@ -373,15 +418,8 @@ const setU16 = (data: Uint8Array, offset: number, value: number) =>
  * paying a Token-2022 mint; shared_accounts_route_v2 multi-hop, spending a
  * Token-2022 mint, and with SOL wrapped and unwrapped.
  */
-const REAL_BUILDS = [
-  'sol-usdc-fee',
-  'usdc-sol',
-  'usdc-bonk-multihop',
-  'usdc-pyusd',
-  'usdc-bonk-shared',
-  'pyusd-usdc-shared',
-  'sol-jup-shared',
-];
+const ROUTE_V2_BUILDS = ['sol-usdc-fee', 'usdc-sol', 'usdc-bonk-multihop', 'usdc-pyusd'];
+const REAL_BUILDS = [...ROUTE_V2_BUILDS, 'usdc-bonk-shared', 'pyusd-usdc-shared', 'sol-jup-shared'];
 
 describe('swap bytes — real Jupiter builds', () => {
   it.each(REAL_BUILDS)('accepts the real %s build', async (name) => {
@@ -390,6 +428,21 @@ describe('swap bytes — real Jupiter builds', () => {
 
   it.each(REAL_BUILDS)('accepts the real %s build with every account visible', async (name) => {
     expect(await realBuild(name, undefined, { withTable: false })).not.toThrow();
+  });
+
+  it.each(ROUTE_V2_BUILDS)(
+    'refuses the real %s build with its override slot filled',
+    async (name) => {
+      const check = await realBuild(name, (swap, layout) => {
+        swap.accounts[layout.override as number] = { address: address(OUTSIDER), role: 1 };
+      });
+      expect(check).toThrow(/redirects the swap output/);
+    }
+  );
+
+  it.each(REAL_BUILDS)('refuses the real %s build with its router call twice', async (name) => {
+    const check = await realBuild(name, (swap) => swap, { twice: true });
+    expect(check).toThrow(/more than one Jupiter/);
   });
 
   describe.each(REAL_BUILDS)('refuses a tampered %s build', (name) => {
