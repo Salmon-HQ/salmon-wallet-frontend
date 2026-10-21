@@ -1282,6 +1282,25 @@ describe('previewSolanaApprovalEffects', () => {
     expect(effects.kind === 'undetermined' && effects.reason).toBe('malformed-transaction');
   });
 
+  // The approval screens treat a missing preview as "still simulating" and
+  // keep the ordinary Approve button, so the preview must always answer.
+  it('answers undetermined instead of throwing when the preview cannot run', async () => {
+    const broken = {
+      getReceiveAddress: () => payer.publicKey.toBase58(),
+      getRpc: () => {
+        throw new Error('RPC unavailable');
+      },
+    } as never;
+
+    const effects = await previewSolanaApprovalEffects(broken, {
+      id: 'req-throws',
+      method: 'signTransaction',
+      params: { message: encodedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+  });
+
   it('simulates the dApp message unsigned, with signature verification off', async () => {
     const message = encodedMessage();
     const simulateTransaction = vi

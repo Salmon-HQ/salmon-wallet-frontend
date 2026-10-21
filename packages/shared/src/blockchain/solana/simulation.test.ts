@@ -681,6 +681,54 @@ describe('previewTransactionEffects', () => {
     expect(result.detail).toContain('fetch failed');
   });
 
+  // The mints behind a token account are read after the simulation. A failure
+  // there escaped as a thrown error, the approval screen never left
+  // "Simulating…", and with no preview it kept the ordinary one-tap Approve.
+  it('reports undetermined, not an error, when the token mints cannot be read', async () => {
+    const tokenData = getTokenEncoder().encode({
+      mint: USDC,
+      owner: OTHER,
+      amount: 1n,
+      delegate: none(),
+      state: 1,
+      isNative: none(),
+      delegatedAmount: 0n,
+      closeAuthority: none(),
+      extensions: none(),
+    });
+    const rawToken = {
+      lamports: 2_039_280n,
+      owner: TOKEN_PROGRAM_ADDRESS,
+      data: [getBase64Decoder().decode(new Uint8Array(tokenData)), 'base64'] as const,
+    };
+    const rpc = createRpc({
+      getMultipleAccounts: vi
+        .fn()
+        .mockReturnValueOnce({
+          send: async () => ({ value: [rawSol(2_000_000_000n), rawToken, rawSol(1n)] }),
+        })
+        .mockReturnValue({
+          send: async () => {
+            throw new Error('429 Too Many Requests');
+          },
+        }),
+      simulateTransaction: vi.fn().mockReturnValue({
+        send: async () => ({
+          value: {
+            err: null,
+            logs: ['ok'],
+            fee: 5_000n,
+            accounts: [rawSol(1_999_995_000n), rawToken, rawSol(1n)],
+          },
+        }),
+      }),
+    });
+
+    const result = await preview(rpc);
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+  });
+
   it('reports undetermined when the node never executed the transaction', async () => {
     const rpc = createRpc({
       simulateTransaction: vi.fn().mockReturnValue({

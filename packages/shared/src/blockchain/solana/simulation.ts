@@ -202,7 +202,12 @@ export async function previewTransactionEffects(
   const beforeStates = decode(before);
   const afterStates = decode(after);
 
-  const mints = await fetchMints(rpc, [beforeStates, afterStates], [before, after]);
+  let mints: Awaited<ReturnType<typeof fetchMints>>;
+  try {
+    mints = await fetchMints(rpc, [beforeStates, afterStates], [before, after]);
+  } catch (error) {
+    return undetermined(account, 'simulation-unavailable', errorMessage(error));
+  }
 
   return deriveEffects({
     account,

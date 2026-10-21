@@ -419,8 +419,24 @@ export async function previewSolanaApprovalEffects(
     };
   }
 
-  await fetchAndMergeNetworkConfigs();
-  return previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, options);
+  // Both approval screens read a missing preview as "still simulating" and
+  // keep the ordinary Approve button, so this must answer, never throw.
+  try {
+    await fetchAndMergeNetworkConfigs();
+    return await previewTransactionEffects(
+      account.getRpc(),
+      wireTransaction,
+      previewedAccount,
+      options
+    );
+  } catch (error) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'simulation-unavailable',
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 export async function approveSolanaSignMessage(
