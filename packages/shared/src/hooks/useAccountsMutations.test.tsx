@@ -38,8 +38,13 @@ vi.mock('../storage', () => ({
     TRUSTED_APPS: 'salmon_trusted_apps',
     CUSTOM_TOKENS: 'salmon_custom_tokens',
     CONNECTION: 'salmon_connection',
+    UNLOCK_ATTEMPTS: 'salmon_unlock_attempts',
   },
   STASH_KEYS: { DERIVED_KEY: 'derived_key_cache' },
+}));
+
+vi.mock('../blockchain/solana/seed-vault-signer', () => ({
+  releaseSeedVaultAccess: vi.fn(),
 }));
 
 // A see-through cipher: tweetnacl refuses jsdom's typed arrays, and what is
@@ -59,7 +64,11 @@ vi.mock('../crypto/encryption', () => {
     })),
     lockWithKey: vi.fn(seal),
     unlockWithKey: vi.fn((vault: { encrypted: string }) => JSON.parse(vault.encrypted)),
-    unlockAndGetKey: vi.fn(),
+    // The password that opens the see-through vault is `right-password`.
+    unlockAndGetKey: vi.fn(async (vault: { encrypted: string }, password: string) => {
+      if (password !== 'right-password') throw new Error('Decryption failed');
+      return { data: JSON.parse(vault.encrypted), keyCache: { key: [1], salt: 's' } };
+    }),
     isKeyCacheValid: vi.fn((key: unknown) => !!key),
     refreshCachedKey: vi.fn((key: unknown) => key),
     DEFAULT_ITERATIONS: 1,
@@ -68,6 +77,14 @@ vi.mock('../crypto/encryption', () => {
 });
 
 import { useAccountsMutations } from './useAccountsMutations';
+import { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
+import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
+import {
+  getUnlockPenalty,
+  recordFailedUnlock,
+  UnlockThrottledError,
+} from '../utils/unlock-throttle';
+import * as storage from '../storage';
 import type { Account, StoredAccount } from '../types/account';
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
@@ -89,11 +106,18 @@ const formatAccountForStorage = ({ id, name, avatar }: Account): StoredAccount =
   pathIndexes: {},
 });
 
+/** What happened, in order, across the windows' state and storage. */
+const events: string[] = [];
+
 /** One wallet window: its own in-memory list, loaded from storage when it opened. */
 function openWindow(loaded: Account[]) {
   return renderHook(() => {
     const [counter, setCounter] = useState(loaded.length);
-    const [accounts, setAccounts] = useState(loaded);
+    const [accounts, setAccountsState] = useState(loaded);
+    const setAccounts: typeof setAccountsState = (next) => {
+      events.push('memory:accounts');
+      setAccountsState(next);
+    };
     const [accountId, setAccountId] = useState<string | null>(loaded[0]?.id ?? null);
     const [networkId, setNetworkId] = useState<string | null>(null);
     const [, setPathIndex] = useState(0);
@@ -127,6 +151,9 @@ const storedSecrets = () =>
   Object.keys(JSON.parse((storageMap.get('salmon_mnemonics') as { encrypted: string }).encrypted));
 
 beforeEach(() => {
+  events.length = 0;
+  vi.mocked(storage.setStorageItem).mockClear();
+  vi.mocked(storage.removeStorageItem).mockClear();
   storageMap.clear();
   stashMap.clear();
   storageMap.set('salmon_mnemonics', {
@@ -161,5 +188,150 @@ describe('useAccountsMutations across two windows', () => {
 
     expect(storedIds()).toEqual(['X']);
     expect(storedSecrets()).toEqual(['X']);
+  });
+});
+
+const seedVaultWallet = (id: string, authToken: string): Account => ({
+  ...wallet(id),
+  secret: {
+    kind: 'seedVault',
+    authToken,
+    derivationPath: "m/44'/501'/0'/0'",
+    address: `addr-${id}`,
+    networkId: 'solana-mainnet',
+  } as Account['secret'],
+});
+
+const storeVault = (secrets: Record<string, unknown>) =>
+  storageMap.set('salmon_mnemonics', {
+    isEncrypted: true,
+    encrypted: JSON.stringify(secrets),
+    nonce: 'n',
+    salt: 's',
+    iterations: 1,
+  });
+
+describe('useAccountsMutations writing one change at a time', () => {
+  it('lands two writes started together in one window', async () => {
+    const sidePanel = openWindow([wallet('W')]);
+
+    await act(() =>
+      Promise.all([
+        sidePanel.result.current.addAccount(wallet('X')),
+        sidePanel.result.current.addAccount(wallet('Y')),
+      ])
+    );
+
+    expect(storedIds().sort()).toEqual(['W', 'X', 'Y']);
+    expect(storedSecrets().sort()).toEqual(['W', 'X', 'Y']);
+  });
+
+  it('takes the Web Locks lock where the runtime has one', async () => {
+    const request = vi.fn((_name: string, write: () => Promise<unknown>) => write());
+    vi.stubGlobal('navigator', { ...navigator, locks: { request } });
+    try {
+      const sidePanel = openWindow([wallet('W')]);
+      await act(() => sidePanel.result.current.addAccount(wallet('X')));
+      expect(request).toHaveBeenCalledWith('salmon-vault-write', expect.any(Function));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('marks the list it wrote, so its own window is not taken for stale', async () => {
+    const sidePanel = openWindow([wallet('W')]);
+
+    await act(() => sidePanel.result.current.addAccount(wallet('X')));
+
+    expect(isOwnStoredAccountsWrite(['X', 'W'])).toBe(true);
+    expect(isOwnStoredAccountsWrite(['W'])).toBe(false);
+  });
+});
+
+describe('useAccountsMutations removing', () => {
+  it('writes the vault before the list', async () => {
+    storageMap.set('salmon_accounts', [wallet('W'), wallet('X')].map(formatAccountForStorage));
+    storeVault({ W: 'secret-of-W', X: 'secret-of-X' });
+    const sidePanel = openWindow([wallet('W'), wallet('X')]);
+
+    await act(() => sidePanel.result.current.removeAccount('X'));
+
+    const keys = vi.mocked(storage.setStorageItem).mock.calls.map(([key]) => key);
+    expect(keys.indexOf('salmon_mnemonics')).toBeLessThan(keys.indexOf('salmon_accounts'));
+  });
+
+  it('keeps seeds the list no longer names when its last entry goes', async () => {
+    storeVault({ W: 'secret-of-W', Z: 'secret-of-Z' });
+    const sidePanel = openWindow([wallet('W')]);
+
+    await act(() => sidePanel.result.current.removeAccount('W'));
+
+    expect(storedIds()).toEqual([]);
+    expect(storedSecrets()).toEqual(['Z']);
+  });
+
+  it('gives up Seed Vault access only when no stored wallet still uses it', async () => {
+    const one = seedVaultWallet('S1', 'token-7');
+    const two = seedVaultWallet('S2', 'token-7');
+    storageMap.set('salmon_accounts', [one, two].map(formatAccountForStorage));
+    storeVault({ S1: one.secret, S2: two.secret });
+    // This window loaded before the other one added S2.
+    const sidePanel = openWindow([one, wallet('W')]);
+
+    await act(() => sidePanel.result.current.removeAccount('S1'));
+
+    expect(releaseSeedVaultAccess).not.toHaveBeenCalled();
+  });
+
+  it('counts a wrong password against the unlock throttle', async () => {
+    stashMap.clear();
+    storageMap.set('salmon_accounts', [wallet('W'), wallet('X')].map(formatAccountForStorage));
+    const sidePanel = openWindow([wallet('W'), wallet('X')]);
+
+    await act(async () => {
+      await expect(sidePanel.result.current.removeAccount('X', 'wrong-password')).rejects.toThrow();
+    });
+
+    expect((await getUnlockPenalty()).failedAttempts).toBe(1);
+  });
+
+  it('refuses a password while a penalty stands, without trying it', async () => {
+    stashMap.clear();
+    storageMap.set('salmon_accounts', [wallet('W'), wallet('X')].map(formatAccountForStorage));
+    for (let i = 0; i < 4; i += 1) await recordFailedUnlock();
+    const sidePanel = openWindow([wallet('W'), wallet('X')]);
+
+    await act(async () => {
+      await expect(
+        sidePanel.result.current.removeAccount('X', 'right-password')
+      ).rejects.toBeInstanceOf(UnlockThrottledError);
+    });
+
+    expect(storedSecrets().sort()).toEqual(['W']);
+  });
+});
+
+describe('useAccountsMutations removing every wallet', () => {
+  it('forgets the wallets in memory before it touches storage', async () => {
+    const sidePanel = openWindow([wallet('W')]);
+    vi.mocked(storage.removeStorageItem).mockImplementation(async (key: string) => {
+      events.push(`storage:remove:${key}`);
+      storageMap.delete(key);
+    });
+
+    await act(() => sidePanel.result.current.removeAllAccounts());
+
+    expect(events.indexOf('memory:accounts')).toBeLessThan(
+      events.indexOf('storage:remove:salmon_mnemonics')
+    );
+  });
+
+  it('lets another window forget its wallets without touching storage', async () => {
+    const sidePanel = openWindow([wallet('W')]);
+
+    await act(async () => sidePanel.result.current.forgetAccounts());
+
+    expect(storageMap.get('salmon_mnemonics')).toBeDefined();
+    expect(events).toContain('memory:accounts');
   });
 });

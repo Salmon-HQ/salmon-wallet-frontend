@@ -468,10 +468,18 @@ describe('useAccounts Hook', () => {
       expect(encryption.unlockAndGetKey).toHaveBeenCalledWith(encryptedData, MOCK_PASSWORD);
     });
 
-    it('opens the init-error state, not the wallet, on a cleartext vault', async () => {
+    it('opens a cleartext vault only to have it protected, naming its addresses', async () => {
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_mnemonics') return Promise.resolve({ test: 'plain-mnemonic' });
-        if (key === 'salmon_accounts') return Promise.resolve([{ id: 'test', name: 'Plain' }]);
+        if (key === 'salmon_mnemonics') return Promise.resolve({ test: MOCK_MNEMONIC });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: 'test',
+              name: 'Plain',
+              avatar: 'default',
+              pathIndexes: { 'solana-mainnet': [0] },
+            },
+          ]);
         return Promise.resolve(null);
       });
 
@@ -482,13 +490,26 @@ describe('useAccounts Hook', () => {
       });
 
       const [state, actions] = result.current;
-      expect(state.error).not.toBeNull();
-      expect(state.accounts).toEqual([]);
-      expect(state.locked).toBe(false);
+      expect(state.error).toBeNull();
+      expect(state.requiredLock).toBe(false);
+      expect(state.unprotectedAddresses).toEqual(['TestAddress111111111111111111111111111111']);
 
       await act(async () => {
         expect(await actions.checkPassword(MOCK_PASSWORD)).toBe(false);
       });
+    });
+
+    it('asks nothing of a wallet whose vault is encrypted', async () => {
+      (storage.getStorageItem as any).mockImplementation((key: string) =>
+        Promise.resolve(key === 'salmon_mnemonics' ? { isEncrypted: true, encrypted: 'x' } : null)
+      );
+
+      const { result } = renderHook(() => useAccounts());
+
+      await waitFor(() => {
+        expect(result.current[0].ready).toBe(true);
+      });
+      expect(result.current[0].unprotectedAddresses).toBeNull();
     });
 
     it('should lock accounts', async () => {

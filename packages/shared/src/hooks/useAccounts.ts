@@ -10,7 +10,7 @@
  * @module hooks/useAccounts
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import mapValues from 'lodash-es/mapValues';
 
 import { type DerivedKeyCache } from '../crypto/encryption';
@@ -19,7 +19,8 @@ import { useAccountsConnection } from './useAccountsConnection';
 import { useAccountsMutations } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
-import { useAccountsSecurity } from './useAccountsSecurity';
+import { useAccountsSecurity, type UnprotectedWallet } from './useAccountsSecurity';
+import { isMainnetNetworkId } from '../utils/network';
 import {
   generateAccountId,
   createBlockchainAccountForNetwork,
@@ -78,6 +79,12 @@ export interface UseAccountsState {
   error: string | null;
   /** Whether an error is present (derived from error !== null) */
   isError: boolean;
+  /**
+   * Set while the stored seeds have no password: the wallet's mainnet
+   * addresses, for the owner to recognise before choosing one
+   * (`protectWallet`). Nothing else may open until then. `null` otherwise.
+   */
+  unprotectedAddresses: string[] | null;
 }
 
 /**
@@ -94,6 +101,8 @@ export interface UseAccountsActions {
   unlockAccounts: (password: string) => Promise<boolean>;
   /** Unlock accounts with a cached derived key (for biometric unlock) */
   unlockWithCachedKey: (keyCache: DerivedKeyCache) => Promise<boolean>;
+  /** Encrypt a wallet stored without a password under a newly chosen one; whether it worked */
+  protectWallet: (password: string) => Promise<boolean>;
   /** Change the active account */
   changeAccount: (targetId: string) => Promise<void>;
   /** Clear the network switching flag */
@@ -114,6 +123,8 @@ export interface UseAccountsActions {
   removeAccount: (targetId: string, password?: string) => Promise<void>;
   /** Remove all accounts */
   removeAllAccounts: () => Promise<void>;
+  /** Drop the wallets held in memory, keys included, without touching storage */
+  forgetAccounts: () => void;
   /** Add a trusted app */
   addTrustedApp: (domain: string, app?: TrustedApp, targetNetworkId?: string) => Promise<void>;
   /** Remove a trusted app */
@@ -340,6 +351,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [tokens, setTokens] = useState<CustomTokens>({});
   const [switchingNetwork, setSwitchingNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unprotected, setUnprotected] = useState<UnprotectedWallet | null>(null);
 
   // --------------------------------------------------------------------------
   // Account Loading
@@ -364,12 +376,14 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     unlockAccounts,
     unlockWithCachedKey,
     initAccounts,
+    protectWallet,
   } = useAccountsSecurity({
     setLocked,
     setRequiredLock,
     setReady,
     setLoaded,
     setError,
+    setUnprotected,
     loadMetadata,
     loadAccounts,
     restoreAccount,
@@ -418,24 +432,38 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     networkId,
   });
 
-  const { addAccount, editAccount, removeAccount, removeAllAccounts } = useAccountsMutations({
-    counter,
-    setCounter,
-    accounts,
-    setAccounts,
-    accountId,
-    setAccountId,
-    networkId,
-    setNetworkId,
-    setPathIndex,
-    setLocked,
-    setRequiredLock,
-    setTrustedApps,
-    setTokens,
-    formatAccountForStorage,
-  });
+  const { addAccount, editAccount, removeAccount, removeAllAccounts, forgetAccounts } =
+    useAccountsMutations({
+      counter,
+      setCounter,
+      accounts,
+      setAccounts,
+      accountId,
+      setAccountId,
+      networkId,
+      setNetworkId,
+      setPathIndex,
+      setLocked,
+      setRequiredLock,
+      setTrustedApps,
+      setTokens,
+      formatAccountForStorage,
+    });
 
   const resetError = useCallback(() => setError(null), []);
+
+  const unprotectedAddresses = useMemo(() => {
+    if (!unprotected) return null;
+    if (unprotected.kind === 'legacy') return unprotected.addresses;
+    const addresses = accounts.flatMap(({ networksAccounts }) =>
+      Object.entries(networksAccounts)
+        .filter(([id]) => isMainnetNetworkId(id))
+        .flatMap(([, slots]) =>
+          (slots ?? []).flatMap((slot) => (slot ? [slot.getReceiveAddress()] : []))
+        )
+    );
+    return [...new Set(addresses)];
+  }, [unprotected, accounts]);
 
   // --------------------------------------------------------------------------
   // Return State and Actions
@@ -457,6 +485,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     switchingNetwork,
     error,
     isError: error !== null,
+    unprotectedAddresses,
   };
 
   const actions: UseAccountsActions = {
@@ -465,6 +494,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     lockAccounts,
     unlockAccounts,
     unlockWithCachedKey,
+    protectWallet,
     changeAccount,
     clearSwitchingNetwork,
     changeNetwork,
@@ -475,6 +505,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     editAccount,
     removeAccount,
     removeAllAccounts,
+    forgetAccounts,
     addTrustedApp,
     removeTrustedApp,
     importTokens,

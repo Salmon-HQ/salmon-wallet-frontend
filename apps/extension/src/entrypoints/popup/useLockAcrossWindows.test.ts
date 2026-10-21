@@ -9,6 +9,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
+
+const ownWrite = vi.fn((_ids: readonly string[]) => false);
+vi.mock('@salmon/shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@salmon/shared')>()),
+  isOwnStoredAccountsWrite: (ids: readonly string[]) => ownWrite(ids),
+}));
+
 import { useLockAcrossWindows } from './useLockAcrossWindows';
 
 interface WindowState {
@@ -21,18 +28,21 @@ interface WindowState {
  * Mounts one wallet window. `closing` is that window's pagehide flag; `reload`
  * re-reads its wallets from storage and answers whether it could.
  */
-function openWindow(initial: WindowState, reloadResult = true) {
+function openWindow(initial: WindowState, reloadResult: boolean | (() => Promise<boolean>) = true) {
   const lock = vi.fn();
-  const reload = vi.fn(async () => reloadResult);
+  const forget = vi.fn();
+  const reload = vi.fn(
+    typeof reloadResult === 'function' ? reloadResult : async () => reloadResult
+  );
   const closing = { current: false };
   const view = renderHook(
     (state: WindowState) =>
-      useLockAcrossWindows({ accountIds: ['W'], ...state, closing, lock, reload }),
+      useLockAcrossWindows({ accountIds: ['W'], ...state, closing, lock, reload, forget }),
     {
       initialProps: initial,
     }
   );
-  return { ...view, lock, reload, closing };
+  return { ...view, lock, reload, forget, closing };
 }
 
 /** Another window writes the stored wallet list, as the shared storage does: JSON. */
@@ -135,10 +145,60 @@ describe('useLockAcrossWindows — a wallet list changed in another window', () 
     expect(writer.lock).not.toHaveBeenCalled();
   });
 
-  it('does not lock over an emptied list: the window that removed every wallet is that writer', async () => {
-    const sidePanel = openWindow({ ready: true, locked: false, accountIds: ['W'] }, false);
+  it('makes every other window forget its wallets when the list is emptied, locked ones too', async () => {
+    const unlocked = openWindow({ ready: true, locked: false, accountIds: ['W'] });
+    const locked = openWindow({ ready: true, locked: true, accountIds: ['W'] });
 
     await fakeBrowser.storage.local.remove('salmon_accounts');
+    await settle();
+
+    expect(unlocked.forget).toHaveBeenCalledTimes(1);
+    expect(locked.forget).toHaveBeenCalledTimes(1);
+    expect(unlocked.lock).not.toHaveBeenCalled();
+  });
+
+  it('leaves alone the window that emptied the list, which already holds nothing', async () => {
+    const writer = openWindow({ ready: true, locked: false, accountIds: [] });
+
+    await fakeBrowser.storage.local.remove('salmon_accounts');
+    await settle();
+
+    expect(writer.forget).not.toHaveBeenCalled();
+    expect(writer.reload).not.toHaveBeenCalled();
+  });
+
+  it('leaves alone a list its own window wrote, before its state has caught up', async () => {
+    ownWrite.mockReturnValueOnce(true);
+    const writer = openWindow({ ready: true, locked: false, accountIds: ['W'] });
+
+    await storeWalletList(['W', 'X']);
+    await settle();
+
+    expect(writer.reload).not.toHaveBeenCalled();
+  });
+
+  it('reads only string ids from the stored list', async () => {
+    const sidePanel = openWindow({ ready: true, locked: false, accountIds: ['W'] });
+
+    await fakeBrowser.storage.local.set({
+      salmon_accounts: JSON.stringify([{ id: 'W' }, { id: 7 }, {}, null]),
+    });
+    await settle();
+
+    expect(sidePanel.reload).not.toHaveBeenCalled();
+  });
+
+  it('does nothing more once its window has closed', async () => {
+    let answer: (reloaded: boolean) => void = () => {};
+    const sidePanel = openWindow(
+      { ready: true, locked: false, accountIds: ['W'] },
+      () => new Promise<boolean>((resolve) => (answer = resolve))
+    );
+
+    await storeWalletList(['W', 'X']);
+    await waitFor(() => expect(sidePanel.reload).toHaveBeenCalledTimes(1));
+    sidePanel.unmount();
+    answer(false);
     await settle();
 
     expect(sidePanel.lock).not.toHaveBeenCalled();

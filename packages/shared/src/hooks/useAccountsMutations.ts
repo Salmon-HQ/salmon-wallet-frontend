@@ -6,7 +6,7 @@ import type { Account, EditAccountParams, StoredAccount } from '../types/account
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
 import { resolveActiveSlot } from '../utils/active-selection';
-import { seedVaultAccessToRelease, toStoredSecret } from '../utils/account-secret';
+import { seedVaultAccessToRelease, toAccountSecret, toStoredSecret } from '../utils/account-secret';
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
   clearAccountsStorage,
@@ -14,6 +14,8 @@ import {
   persistActiveSelection,
   readStoredAccounts,
   readStoredSecrets,
+  withVaultWriteLock,
+  writeStoredAccounts,
 } from './useAccountsMutationHelpers';
 
 interface UseAccountsMutationsParams {
@@ -39,6 +41,11 @@ interface UseAccountsMutationsResult {
   editAccount: (targetId: string, params: EditAccountParams) => Promise<void>;
   removeAccount: (targetId: string, password?: string) => Promise<void>;
   removeAllAccounts: () => Promise<void>;
+  /**
+   * Drops the wallets this window holds in memory, keys included, and touches
+   * no storage: for a window whose wallets another one removed.
+   */
+  forgetAccounts: () => void;
 }
 
 export function useAccountsMutations({
@@ -57,16 +64,7 @@ export function useAccountsMutations({
   setTokens,
   formatAccountForStorage,
 }: UseAccountsMutationsParams): UseAccountsMutationsResult {
-  const removeAllAccounts = useCallback(async (): Promise<void> => {
-    await clearAccountsStorage();
-    await removeStashItem(STASH_KEYS.DERIVED_KEY);
-    // Every Seed Vault seed Salmon was using is given up with the wallets.
-    // (A reset from the lock screen has no wallets in memory; Seed Vault's
-    // own settings still list Salmon then, and the user can revoke there.)
-    new Set(
-      accounts.flatMap(({ secret }) => (secret.kind === 'seedVault' ? [secret.authToken] : []))
-    ).forEach(releaseSeedVaultAccess);
-
+  const forgetAccounts = useCallback((): void => {
     setLocked(false);
     setRequiredLock(false);
     setCounter(0);
@@ -77,7 +75,6 @@ export function useAccountsMutations({
     setTrustedApps({});
     setTokens({});
   }, [
-    accounts,
     setAccountId,
     setAccounts,
     setCounter,
@@ -89,58 +86,79 @@ export function useAccountsMutations({
     setTrustedApps,
   ]);
 
+  /** Removes every wallet; the caller holds the vault write lock. */
+  const clearAll = useCallback(async (): Promise<void> => {
+    const seedVaultTokens = new Set(
+      accounts.flatMap(({ secret }) => (secret.kind === 'seedVault' ? [secret.authToken] : []))
+    );
+    // Memory first: the decrypted keys go before anything else can fail.
+    forgetAccounts();
+    await clearAccountsStorage();
+    await removeStashItem(STASH_KEYS.DERIVED_KEY);
+    // Every Seed Vault seed Salmon was using is given up with the wallets.
+    // (A reset from the lock screen has no wallets in memory; Seed Vault's
+    // own settings still list Salmon then, and the user can revoke there.)
+    seedVaultTokens.forEach(releaseSeedVaultAccess);
+  }, [accounts, forgetAccounts]);
+
+  const removeAllAccounts = useCallback(
+    (): Promise<void> => withVaultWriteLock(clearAll),
+    [clearAll]
+  );
+
   const addAccount = useCallback(
-    async (account: Account, password?: string, replaces?: string): Promise<void> => {
-      const newCounter = counter + 1;
-      const newAccounts = [...accounts.filter(({ id }) => id !== replaces), account];
-      const newAccountId = account.id;
-      // The new wallet becomes the active one, so the session's network and
-      // slot must be ones *it* holds. Keeping the session's network unchecked
-      // is what stranded a watch-only import (Solana-mainnet only) on whatever
-      // chain page the user happened to be reading — persisted, and therefore
-      // still there on the next launch.
-      const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
+    (account: Account, password?: string, replaces?: string): Promise<void> =>
+      withVaultWriteLock(async () => {
+        const newCounter = counter + 1;
+        const newAccounts = [...accounts.filter(({ id }) => id !== replaces), account];
+        const newAccountId = account.id;
+        // The new wallet becomes the active one, so the session's network and
+        // slot must be ones *it* holds. Keeping the session's network unchecked
+        // is what stranded a watch-only import (Solana-mainnet only) on whatever
+        // chain page the user happened to be reading — persisted, and therefore
+        // still there on the next launch.
+        const newSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
 
-      // The change lands on what storage holds, not on this window's copy:
-      // another window may have added a wallet this one has not loaded.
-      const secrets = await readStoredSecrets(password);
-      const stored = await readStoredAccounts();
-      const newVault = { ...secrets, [account.id]: toStoredSecret(account.secret) };
-      if (replaces) delete newVault[replaces];
-      const newStored = [
-        ...stored.filter(({ id }) => id !== replaces && id !== account.id),
-        formatAccountForStorage(account),
-      ];
+        // The change lands on what storage holds, not on this window's copy:
+        // another window may have added a wallet this one has not loaded.
+        const secrets = await readStoredSecrets(password);
+        const stored = await readStoredAccounts();
+        const newVault = { ...secrets, [account.id]: toStoredSecret(account.secret) };
+        if (replaces) delete newVault[replaces];
+        const newStored = [
+          ...stored.filter(({ id }) => id !== replaces && id !== account.id),
+          formatAccountForStorage(account),
+        ];
 
-      // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
-      // cached derived key has expired and no password was supplied), abort
-      // before touching any state — runtime and storage stay consistent and
-      // the caller can surface the error to prompt the user for a password.
-      const encryptResult = await encryptMnemonics(newVault, password, {
-        cacheNewKey: !!password,
-      });
+        // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
+        // cached derived key has expired and no password was supplied), abort
+        // before touching any state — runtime and storage stay consistent and
+        // the caller can surface the error to prompt the user for a password.
+        const encryptResult = await encryptMnemonics(newVault, password, {
+          cacheNewKey: !!password,
+        });
 
-      setCounter(newCounter);
-      setAccounts(newAccounts);
-      setAccountId(newAccountId);
-      if (newSlot) {
-        setNetworkId(newSlot.networkId);
-        setPathIndex(newSlot.pathIndex);
-      }
+        setCounter(newCounter);
+        setAccounts(newAccounts);
+        setAccountId(newAccountId);
+        if (newSlot) {
+          setNetworkId(newSlot.networkId);
+          setPathIndex(newSlot.pathIndex);
+        }
 
-      await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
-      if (password) {
-        setRequiredLock(true);
-      }
+        await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
+        if (password) {
+          setRequiredLock(true);
+        }
 
-      await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
-      // The same pair the runtime was just put on: a wallet whose only address
-      // sits at a derived path, or on a single network, would otherwise come
-      // back on an empty slot after the next launch.
-      await persistActiveSelection(newAccountId, newSlot);
-      // The list goes last: a window that re-reads on it finds the rest written.
-      await setStorageItem(STORAGE_KEYS.ACCOUNTS, newStored);
-    },
+        await setStorageItem(STORAGE_KEYS.COUNTER, newCounter);
+        // The same pair the runtime was just put on: a wallet whose only address
+        // sits at a derived path, or on a single network, would otherwise come
+        // back on an empty slot after the next launch.
+        await persistActiveSelection(newAccountId, newSlot);
+        // The list goes last: a window that re-reads on it finds the rest written.
+        await writeStoredAccounts(newStored);
+      }),
     [
       accounts,
       counter,
@@ -189,68 +207,78 @@ export function useAccountsMutations({
 
       newAccounts[index] = newAccount;
       setAccounts(newAccounts);
-      await persistAccounts(newAccounts, formatAccountForStorage);
+      await withVaultWriteLock(() => persistAccounts(newAccounts, formatAccountForStorage));
     },
     [accounts, formatAccountForStorage, setAccounts]
   );
 
   const removeAccount = useCallback(
-    async (targetId: string, password?: string): Promise<void> => {
-      const newAccounts = accounts.filter(({ id }) => id !== targetId);
+    (targetId: string, password?: string): Promise<void> =>
+      withVaultWriteLock(async () => {
+        const newAccounts = accounts.filter(({ id }) => id !== targetId);
 
-      // Removed from what storage holds, not from this window's copy: the
-      // last wallet here need not be the last one stored.
-      const newStored = (await readStoredAccounts()).filter(({ id }) => id !== targetId);
-      if (newStored.length === 0) {
-        await removeAllAccounts();
-        return;
-      }
-
-      const newVault = await readStoredSecrets(password);
-      delete newVault[targetId];
-
-      // Re-encrypt first. If we cannot produce an encrypted vault, abort
-      // before mutating state so runtime, persisted accounts, and the
-      // active selection do not drift apart from storage.
-      const encryptResult = await encryptMnemonics(newVault, password, { cacheNewKey: false });
-
-      setAccounts(newAccounts);
-
-      if (accountId === targetId) {
-        const account = accounts.find(({ id }) => id !== targetId);
-        if (account) {
-          // Removing the active wallet hands the session to another one, which
-          // holds its own networks: the pair moves with it, exactly as it does
-          // on an explicit switch.
-          const nextSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
-          setAccountId(account.id);
-          if (nextSlot) {
-            setNetworkId(nextSlot.networkId);
-            setPathIndex(nextSlot.pathIndex);
-          }
-
-          await persistActiveSelection(account.id, nextSlot);
+        // Removed from what storage holds, not from this window's copy: the
+        // last wallet here need not be the last one stored, and the vault can
+        // hold a seed the list no longer names.
+        const newStored = (await readStoredAccounts()).filter(({ id }) => id !== targetId);
+        const secrets = await readStoredSecrets(password);
+        const removedSecret = secrets[targetId];
+        const newVault = { ...secrets };
+        delete newVault[targetId];
+        if (newStored.length === 0 && Object.keys(newVault).length === 0) {
+          await clearAll();
+          return;
         }
-      }
 
-      await setStorageItem(STORAGE_KEYS.ACCOUNTS, newStored);
+        // Re-encrypt first. If we cannot produce an encrypted vault, abort
+        // before mutating state so runtime, persisted accounts, and the
+        // active selection do not drift apart from storage.
+        const encryptResult = await encryptMnemonics(newVault, password, { cacheNewKey: false });
 
-      await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
-      if (password) {
-        setRequiredLock(true);
-      }
+        setAccounts(newAccounts);
 
-      // Removing the last wallet of a Seed Vault seed gives up Salmon's access
-      // to it, so Seed Vault no longer lists Salmon among the apps using it.
-      const removed = accounts.find(({ id }) => id === targetId);
-      const release = removed && seedVaultAccessToRelease(removed, newAccounts);
-      if (release) releaseSeedVaultAccess(release);
-    },
+        if (accountId === targetId) {
+          const account = accounts.find(({ id }) => id !== targetId);
+          if (account) {
+            // Removing the active wallet hands the session to another one, which
+            // holds its own networks: the pair moves with it, exactly as it does
+            // on an explicit switch.
+            const nextSlot = resolveActiveSlot(account, { networkId, pathIndex: null });
+            setAccountId(account.id);
+            if (nextSlot) {
+              setNetworkId(nextSlot.networkId);
+              setPathIndex(nextSlot.pathIndex);
+            }
+
+            await persistActiveSelection(account.id, nextSlot);
+          }
+        }
+
+        // The vault, then the list: a window that re-reads on the list finds
+        // the vault it describes.
+        await setStorageItem(STORAGE_KEYS.MNEMONICS, encryptResult.vault);
+        await writeStoredAccounts(newStored);
+        if (password) {
+          setRequiredLock(true);
+        }
+
+        // Removing the last wallet of a Seed Vault seed gives up Salmon's access
+        // to it, so Seed Vault no longer lists Salmon among the apps using it —
+        // judged on what is stored, which can hold wallets this window has not
+        // loaded.
+        const release =
+          removedSecret !== undefined &&
+          seedVaultAccessToRelease(
+            { secret: toAccountSecret(removedSecret) },
+            Object.values(newVault).map((secret) => ({ secret: toAccountSecret(secret) }))
+          );
+        if (release) releaseSeedVaultAccess(release);
+      }),
     [
       accountId,
       accounts,
+      clearAll,
       networkId,
-      removeAllAccounts,
       setAccountId,
       setAccounts,
       setNetworkId,
@@ -264,5 +292,6 @@ export function useAccountsMutations({
     editAccount,
     removeAccount,
     removeAllAccounts,
+    forgetAccounts,
   };
 }

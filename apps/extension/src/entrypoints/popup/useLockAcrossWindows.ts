@@ -1,6 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { browser } from 'wxt/browser';
-import { STORAGE_KEYS } from '@salmon/shared';
+import { isOwnStoredAccountsWrite, STORAGE_KEYS } from '@salmon/shared';
 import { sessionArea } from '../../utils/storageCompat';
 
 /** Written to session storage when a window locks; every other window reads it. */
@@ -19,13 +19,19 @@ interface UseLockAcrossWindowsParams {
   accountIds: readonly string[];
   /** Re-reads this window's wallets from storage; false when it could not. */
   reload: () => Promise<boolean>;
+  /** Drops the wallets this window holds in memory, keys included. */
+  forget: () => void;
 }
 
 /** The wallet ids in a stored list, as the shared storage writes it (JSON). */
 function storedAccountIds(value: unknown): string[] {
   try {
     const list: unknown = typeof value === 'string' ? JSON.parse(value) : value;
-    return Array.isArray(list) ? list.map((entry) => String(entry?.id)) : [];
+    if (!Array.isArray(list)) return [];
+    return list.flatMap((entry: unknown) => {
+      const id = (entry as { id?: unknown } | null)?.id;
+      return typeof id === 'string' ? [id] : [];
+    });
   } catch {
     return [];
   }
@@ -46,7 +52,9 @@ function storedAccountIds(value: unknown): string[] {
  * An unlocked window whose wallets no longer match the stored list re-reads
  * them through the cached key; one that cannot is locked, so it never acts on
  * a list storage no longer holds. The window that made the change already
- * matches and is left alone.
+ * matches and is left alone. When the list is emptied (every wallet removed),
+ * every window that still holds wallets forgets them, locked or not, so no
+ * window keeps decrypted keys the user asked to remove.
  */
 export function useLockAcrossWindows({
   ready,
@@ -55,6 +63,7 @@ export function useLockAcrossWindows({
   lock,
   accountIds,
   reload,
+  forget,
 }: UseLockAcrossWindowsParams): void {
   const wasUnlocked = useRef(false);
   const lockedRef = useRef(locked);
@@ -86,38 +95,46 @@ export function useLockAcrossWindows({
   }, [ready, locked, closing]);
 
   useEffect(() => {
+    // A re-read that answers after the window closed acts on nothing.
+    let cancelled = false;
+
     const lockFromElsewhere = () => {
+      if (cancelled || lockedRef.current) return;
       lockedBySignal.current = true;
       lock();
     };
 
+    const onWalletListChanged = (value: unknown) => {
+      const stored = storedAccountIds(value);
+      const held = accountIdsRef.current;
+      if (stored.length === 0) {
+        if (held.length > 0) forget();
+        return;
+      }
+      if (lockedRef.current || !readyRef.current || isOwnStoredAccountsWrite(stored)) return;
+      const storedSet = new Set(stored);
+      if (storedSet.size === held.length && held.every((id) => storedSet.has(id))) return;
+      reloading.current = reloading.current
+        .then(reload)
+        .then((reloaded) => {
+          if (!reloaded) lockFromElsewhere();
+        })
+        .catch(lockFromElsewhere);
+    };
+
     const onChanged = (changes: Record<string, { newValue?: unknown }>, areaName: string) => {
       if (areaName !== 'session' && areaName !== 'local') return;
-      if (lockedRef.current) return;
       if (changes[LOCK_SIGNAL_KEY]) {
         lockFromElsewhere();
         return;
       }
-
       const listChange = areaName === 'local' ? changes[STORAGE_KEYS.ACCOUNTS] : undefined;
-      if (!listChange || !readyRef.current) return;
-      const stored = new Set(storedAccountIds(listChange.newValue));
-      const held = accountIdsRef.current;
-      if (stored.size === held.length && held.every((id) => stored.has(id))) return;
-      // An emptied list leaves nothing to act on, and its writer is the window
-      // that removed every wallet — locking that one would land it on the lock
-      // screen instead of onboarding.
-      const lockUnlessEmptied = () => {
-        if (stored.size > 0 && !lockedRef.current) lockFromElsewhere();
-      };
-      reloading.current = reloading.current
-        .then(reload)
-        .then((reloaded) => {
-          if (!reloaded) lockUnlessEmptied();
-        })
-        .catch(lockUnlessEmptied);
+      if (listChange) onWalletListChanged(listChange.newValue);
     };
     browser.storage.onChanged.addListener(onChanged);
-    return () => browser.storage.onChanged.removeListener(onChanged);
-  }, [lock, reload]);
+    return () => {
+      cancelled = true;
+      browser.storage.onChanged.removeListener(onChanged);
+    };
+  }, [forget, lock, reload]);
 }

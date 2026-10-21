@@ -36,6 +36,7 @@ const { MockApiError } = vi.hoisted(() => {
 const mockCreateAccount = vi.fn();
 const mockCheckPassword = vi.fn();
 const mockAddAccount = vi.fn();
+const mockProtectWallet = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -59,7 +60,11 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
   trackOnboardingEvent: async () => undefined,
   useAccountsContext: () => [
     accountsState,
-    { checkPassword: mockCheckPassword, addAccount: mockAddAccount },
+    {
+      checkPassword: mockCheckPassword,
+      addAccount: mockAddAccount,
+      protectWallet: mockProtectWallet,
+    },
   ],
   validatePassword: () => ({ isValid: true, strength: 'strong' }),
   getPasswordIssue: () => null,
@@ -170,5 +175,66 @@ describe('PasswordPage reserved slots', () => {
     // The strength slot flipped visible; the error slot is still reserved.
     expect(container.querySelectorAll('div[inert]')).toHaveLength(1);
     expect(screen.getByText('strength-strong')).toBeTruthy();
+  });
+});
+
+/**
+ * A wallet stored without a password: the same screen shows its addresses and
+ * asks for a new password, with confirmation, and protects the wallet with it.
+ */
+describe('PasswordPage protecting a wallet that has no password', () => {
+  const ADDRESSES = ['AddressOne111', 'AddressTwo222'];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // A cleartext vault opens unlocked with no lock required: the screen must
+    // still ask for a new password twice, never check an existing one.
+    accountsState.requiredLock = false;
+    mockProtectWallet.mockResolvedValue(true);
+  });
+
+  afterEach(cleanup);
+
+  function renderProtect() {
+    return render(<PasswordPage flowType="protect" addresses={ADDRESSES} onSuccess={vi.fn()} />);
+  }
+
+  it('lists the addresses for the owner to recognise', () => {
+    renderProtect();
+
+    for (const address of ADDRESSES) expect(screen.getByText(address)).toBeTruthy();
+    expect(screen.getByText('wallet.protect.body')).toBeTruthy();
+  });
+
+  it('protects the wallet with the confirmed password, creating nothing', async () => {
+    renderProtect();
+
+    fireEvent.change(screen.getByTestId('password-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.change(screen.getByTestId('password-confirm-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.click(screen.getByTestId('password-submit-button'));
+
+    await waitFor(() => expect(mockProtectWallet).toHaveBeenCalledWith('correct horse battery'));
+    expect(mockCreateAccount).not.toHaveBeenCalled();
+    expect(mockAddAccount).not.toHaveBeenCalled();
+    expect(mockCheckPassword).not.toHaveBeenCalled();
+  });
+
+  it('says so when the wallet could not be protected', async () => {
+    mockProtectWallet.mockResolvedValue(false);
+    renderProtect();
+
+    fireEvent.change(screen.getByTestId('password-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.change(screen.getByTestId('password-confirm-input'), {
+      target: { value: 'correct horse battery' },
+    });
+    fireEvent.click(screen.getByTestId('password-submit-button'));
+
+    await waitFor(() => expect(screen.getByText('wallet.protect.error')).toBeTruthy());
   });
 });

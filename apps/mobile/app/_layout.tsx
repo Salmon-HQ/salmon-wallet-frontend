@@ -190,6 +190,16 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
 
+    // A wallet stored without a password goes to the password screen and
+    // nowhere else: it lists the wallet's addresses and protects it. The screen
+    // itself moves on once the wallet has a password.
+    if (state.unprotectedAddresses) {
+      if (!(inAuthGroup && segments[1] === 'password')) {
+        router.replace({ pathname: '/(auth)/password', params: { type: 'protect' } });
+      }
+      return;
+    }
+
     const hasAccounts = state.accounts.length > 0;
 
     // Determine where the user should be
@@ -235,6 +245,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     state.ready,
     state.accounts.length,
     state.locked,
+    state.unprotectedAddresses,
     segments,
     navigationState?.key,
     hasNavigated,

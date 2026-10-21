@@ -46,6 +46,8 @@ import { useLockAcrossWindows } from './useLockAcrossWindows';
 
 type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'success' | 'analytics-consent';
 
+const noop = () => {};
+
 interface AuthData {
   mnemonic: string;
   flowType: 'create' | 'recover';
@@ -76,6 +78,7 @@ function App() {
     activeBlockchainAccount,
     networkId,
     pathIndex,
+    unprotectedAddresses,
   } = state;
   const settleAfterTx = useSettleAfterTx();
   // `useWaitGate` first: below `motionMs.waitDelay` the wait never mounts at
@@ -221,6 +224,7 @@ function App() {
   }, [actions]);
   // A wallet added or removed in another window is re-read here through the
   // cached key; without one this window cannot re-read, and is locked instead.
+  // Every wallet removed elsewhere is forgotten here too.
   const accountIds = useMemo(() => accounts.map(({ id }) => id), [accounts]);
   const reloadWallets = useCallback(async () => {
     const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
@@ -233,6 +237,7 @@ function App() {
     lock: lockThisWindow,
     accountIds,
     reload: reloadWallets,
+    forget: actions.forgetAccounts,
   });
 
   useEffect(() => {
@@ -453,6 +458,12 @@ function App() {
         onUnlockExited={handleUnlockExited}
       />
     );
+  }
+
+  // A wallet stored without a password opens to nothing but its addresses and
+  // the password that protects it; once protected, this screen gives way.
+  if (unprotectedAddresses) {
+    return <PasswordPage flowType="protect" addresses={unprotectedAddresses} onSuccess={noop} />;
   }
 
   // Wallet initialization failed and nothing loaded — block instead of showing

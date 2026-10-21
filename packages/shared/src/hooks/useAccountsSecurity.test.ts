@@ -23,6 +23,7 @@ import {
   UnlockThrottledError,
 } from '../utils/unlock-throttle';
 import * as encryption from '../crypto/encryption';
+import { migrateLegacyWallets } from '../utils/legacy-migration';
 
 // ---------------------------------------------------------------------------
 // Mocks — a stateful storage so persistence across hook instances is testable
@@ -92,20 +93,23 @@ const ENCRYPTED_VAULT = {
 /** Obviously fake — never a real password. */
 const WRONG_PASSWORD = 'not-the-password-000';
 
-function renderSecurity() {
-  return renderHook(() =>
-    useAccountsSecurity({
-      setLocked: vi.fn(),
-      setRequiredLock: vi.fn(),
-      setReady: vi.fn(),
-      setLoaded: vi.fn(),
-      setError: vi.fn(),
-      loadMetadata: vi.fn(async () => {}),
-      loadAccounts: vi.fn(async () => {}),
-      restoreAccount: vi.fn(),
-      formatAccountForStorage: vi.fn(),
-    })
-  );
+function securityParams() {
+  return {
+    setLocked: vi.fn(),
+    setRequiredLock: vi.fn(),
+    setReady: vi.fn(),
+    setLoaded: vi.fn(),
+    setError: vi.fn(),
+    setUnprotected: vi.fn(),
+    loadMetadata: vi.fn(async () => {}),
+    loadAccounts: vi.fn(async () => {}),
+    restoreAccount: vi.fn(),
+    formatAccountForStorage: vi.fn(),
+  };
+}
+
+function renderSecurity(params = securityParams()) {
+  return renderHook(() => useAccountsSecurity(params));
 }
 
 async function failUnlock(unlock: (password: string) => Promise<boolean>, times: number) {
@@ -324,6 +328,104 @@ describe('useAccountsSecurity — the password gate with no vault behind it', ()
     });
 
     expect(accepted).toBe(false);
+  });
+});
+
+describe('useAccountsSecurity — protecting a wallet that has no password', () => {
+  const STRONG = 'Correct-Horse-Battery-9!';
+  const LOCKED = { encrypted: 'stub-ciphertext', nonce: 'n', salt: 's', iterations: 210000 };
+  const KEY_CACHE = { key: [1], salt: 's', expiresAt: Number.MAX_SAFE_INTEGER };
+
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+    vi.mocked(encryption.lockAndGetKey).mockResolvedValue({
+      vault: LOCKED,
+      keyCache: KEY_CACHE,
+    } as never);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('encrypts a cleartext vault in place under the chosen password', async () => {
+    const record = { 'account-1': 'stub mnemonic value' };
+    storageMap.set('salmon_mnemonics', record);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    let protectedNow = false;
+    await act(async () => {
+      protectedNow = await result.current.protectWallet(STRONG);
+    });
+
+    expect(protectedNow).toBe(true);
+    expect(encryption.lockAndGetKey).toHaveBeenCalledWith(record, STRONG);
+    expect(storageMap.get('salmon_mnemonics')).toEqual({ ...LOCKED, isEncrypted: true });
+    expect(stashMap.get('derived_key_cache')).toEqual(KEY_CACHE);
+    expect(params.setRequiredLock).toHaveBeenCalledWith(true);
+    expect(params.setUnprotected).toHaveBeenLastCalledWith(null);
+  });
+
+  it('migrates an unprotected legacy record under the chosen password, and opens it', async () => {
+    const secrets = { 'account-1': 'stub mnemonic value' };
+    vi.mocked(migrateLegacyWallets).mockImplementationOnce(async () => {
+      storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+      return { status: 'migrated' } as never;
+    });
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: secrets,
+      keyCache: KEY_CACHE,
+    } as never);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.protectWallet(STRONG));
+
+    expect(migrateLegacyWallets).toHaveBeenCalledWith(expect.anything(), STRONG, {
+      newPassword: true,
+    });
+    expect(params.loadAccounts).toHaveBeenCalledWith(secrets);
+    expect(params.setLocked).toHaveBeenLastCalledWith(false);
+    expect(params.setRequiredLock).toHaveBeenCalledWith(true);
+    expect(params.setUnprotected).toHaveBeenLastCalledWith(null);
+  });
+
+  it('refuses a password the strength check refuses, and writes nothing', async () => {
+    storageMap.set('salmon_mnemonics', { 'account-1': 'stub mnemonic value' });
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      expect(await result.current.protectWallet('short')).toBe(false);
+    });
+
+    expect(storageMap.get('salmon_mnemonics')).toEqual({ 'account-1': 'stub mnemonic value' });
+  });
+
+  it('refuses when the wallet already has a password', async () => {
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      expect(await result.current.protectWallet(STRONG)).toBe(false);
+    });
+
+    expect(encryption.lockAndGetKey).not.toHaveBeenCalled();
+  });
+
+  it('names the addresses of an unprotected legacy record when the wallet starts', async () => {
+    vi.mocked(migrateLegacyWallets).mockResolvedValueOnce({
+      status: 'needs-new-password',
+      addresses: ['Addr1'],
+    } as never);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.initAccounts());
+
+    expect(params.setUnprotected).toHaveBeenCalledWith({ kind: 'legacy', addresses: ['Addr1'] });
+    expect(params.setLocked).not.toHaveBeenCalledWith(true);
   });
 });
 

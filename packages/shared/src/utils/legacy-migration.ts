@@ -102,6 +102,8 @@ export interface MigrationDeps {
 export type MigrationResult =
   | { status: 'no-migration' }
   | { status: 'needs-password' }
+  /** An unprotected v2 record: it migrates only under a newly chosen password. */
+  | { status: 'needs-new-password'; addresses: string[] }
   | {
       status: 'migrated';
       accounts: Account[];
@@ -130,7 +132,13 @@ export type MigrationResult =
  */
 export async function migrateLegacyWallets(
   deps: MigrationDeps,
-  password?: string
+  password?: string,
+  /**
+   * `newPassword`: the password was just chosen and confirmed on the
+   * create-password screen, not typed at the lock screen. Only such a password
+   * may protect a record that had none.
+   */
+  options: { newPassword?: boolean } = {}
 ): Promise<MigrationResult> {
   const storedWallets = await getStorageItem<LegacyWallets>(STORAGE_KEYS.WALLETS);
   if (!storedWallets) return { status: 'no-migration' };
@@ -139,18 +147,37 @@ export async function migrateLegacyWallets(
   // beside it is left as it is and never written over the vault.
   if (await getStorageItem<unknown>(STORAGE_KEYS.MNEMONICS)) return { status: 'no-migration' };
 
-  // v2 let an owner keep seed phrases with no password, and no such install is
-  // left to migrate, so a record without one is refused rather than encrypted
-  // under whatever is typed at the lock screen.
-  if (!storedWallets.passwordRequired) {
-    throw new Error('The legacy wallet record is not password-protected');
+  // v2 let an owner keep seed phrases with no password. Such a record is never
+  // encrypted under whatever is typed at the lock screen: it waits for a
+  // password chosen and confirmed for it, and until then names its addresses so
+  // the owner can tell whether the wallet is theirs.
+  if (!storedWallets.passwordRequired && !(password && options.newPassword)) {
+    return {
+      status: 'needs-new-password',
+      addresses: storedWallets.wallets.map(({ address }) => address),
+    };
   }
 
   if (!password) {
     return { status: 'needs-password' };
   }
 
-  if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
+  if (!storedWallets.passwordRequired) {
+    // Unprotected: the record holds its mnemonics in the clear, beside the
+    // wallets in the oldest format.
+    if (!storedWallets.mnemonics) {
+      storedWallets.mnemonics = storedWallets.wallets.reduce(
+        (m, wallet) => {
+          if (wallet.mnemonic) {
+            m[wallet.address] = wallet.mnemonic;
+            delete wallet.mnemonic;
+          }
+          return m;
+        },
+        {} as Record<string, string>
+      );
+    }
+  } else if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
     // Migrate from old format where mnemonic was in wallet
     const decryptedWallets = await unlock<typeof storedWallets.wallets>(
       storedWallets.wallets as unknown as LockedVault,
@@ -291,7 +318,8 @@ export async function migrateLegacyWallets(
     }
   }
 
-  // One write, always encrypted, under the password the legacy record opened with.
+  // One write, always encrypted: under the password the record opened with, or
+  // the one just chosen for a record that had none.
   const lockedMnemonics = await lock(newMnemonics, password);
   await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...lockedMnemonics, isEncrypted: true });
 

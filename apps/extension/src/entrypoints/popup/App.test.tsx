@@ -14,6 +14,9 @@ const mockUnlockWithCachedKey = vi.fn();
 const mockUseInactivityTimeout = vi.fn();
 const mockClearSessionKey = vi.fn();
 const eventListeners = new Map<string, EventListener>();
+const { accountsState } = vi.hoisted(() => ({
+  accountsState: { unprotectedAddresses: null as string[] | null },
+}));
 
 vi.mock('@salmon/shared', () => ({
   SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -32,6 +35,7 @@ vi.mock('@salmon/shared', () => ({
       accountId: 'account-1',
       networkId: 'solana-mainnet',
       pathIndex: 0,
+      unprotectedAddresses: accountsState.unprotectedAddresses,
     },
     {
       lockAccounts: mockLockAccounts,
@@ -103,7 +107,11 @@ vi.mock('../../pages/auth/RecoverWalletPage', () => ({
 }));
 
 vi.mock('../../pages/auth/PasswordPage', () => ({
-  PasswordPage: () => null,
+  PasswordPage: (props: { flowType: string; addresses?: string[] }) => (
+    <div data-testid="password-page" data-flow={props.flowType}>
+      {props.addresses?.join(',')}
+    </div>
+  ),
 }));
 
 vi.mock('../../pages/auth/SuccessPage', () => ({
@@ -177,5 +185,35 @@ describe('Extension popup inactivity lock', () => {
 
     expect(mockClearSessionKey).toHaveBeenCalledTimes(1);
     expect(mockLockAccounts).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Extension popup with a wallet stored without a password', () => {
+  afterEach(() => {
+    cleanup();
+    accountsState.unprotectedAddresses = null;
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('chrome', {
+      storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } },
+    });
+  });
+
+  it('opens on the password screen listing its addresses, and on nothing else', () => {
+    accountsState.unprotectedAddresses = ['AddrOne', 'AddrTwo'];
+
+    const { getByTestId } = render(<App />);
+
+    const page = getByTestId('password-page');
+    expect(page.getAttribute('data-flow')).toBe('protect');
+    expect(page.textContent).toBe('AddrOne,AddrTwo');
+  });
+
+  it('opens normally once the wallet has a password', () => {
+    const { queryByTestId } = render(<App />);
+
+    expect(queryByTestId('password-page')).toBeNull();
   });
 });

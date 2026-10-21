@@ -48,9 +48,8 @@ export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is E
 }
 
 /**
- * Every write site encrypts the seeds, so a stored record that is not a vault
- * was not written by the wallet. It is refused rather than opened as a wallet
- * with no password.
+ * Neither a password nor a cached key opens a record that is not a vault: a
+ * cleartext record is only ever protected (`initializeAccountsSecurity`).
  */
 function assertEncrypted(mnemonics: StoredMnemonics): asserts mnemonics is EncryptedMnemonics {
   if (!isEncryptedMnemonics(mnemonics)) {
@@ -136,21 +135,26 @@ export async function finalizeUnlockedAccounts(
 }
 
 interface InitializeAccountsSecurityParams {
+  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   loadMetadata: () => Promise<void>;
   setLoaded: (loaded: boolean) => void;
   setLocked: (locked: boolean) => void;
   setRequiredLock: (requiredLock: boolean) => void;
   unlockWithCachedKey: (keyCache: DerivedKeyCache) => Promise<boolean>;
   isKeyCacheValidFn: (keyCache: DerivedKeyCache) => boolean;
+  /** The stored secrets are in the clear and are waiting for a password. */
+  onUnprotected: () => void;
 }
 
 export async function initializeAccountsSecurity({
+  loadAccounts,
   loadMetadata,
   setLoaded,
   setLocked,
   setRequiredLock,
   unlockWithCachedKey,
   isKeyCacheValidFn,
+  onUnprotected,
 }: InitializeAccountsSecurityParams): Promise<boolean> {
   const storedMnemonics = await getStoredMnemonics();
 
@@ -159,8 +163,17 @@ export async function initializeAccountsSecurity({
     return false;
   }
 
-  // Thrown to the caller's init-error state: no wallet opens from it.
-  assertEncrypted(storedMnemonics);
+  // Releases that migrated a password-less v2 wallet wrote its seeds in the
+  // clear, and that record is its owner's only copy. It opens to show the
+  // wallet's addresses — a planted record shows addresses the owner does not
+  // know — and nothing else happens until it is encrypted under a password
+  // chosen for it (`protectWallet`).
+  if (!isEncryptedMnemonics(storedMnemonics)) {
+    await loadAccounts(storedMnemonics);
+    setRequiredLock(false);
+    onUnprotected();
+    return true;
+  }
 
   setRequiredLock(true);
 

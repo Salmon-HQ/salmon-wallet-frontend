@@ -11,6 +11,7 @@
 // Account management hook
 export { useAccounts } from './useAccounts';
 export type { UseAccountsState, UseAccountsActions } from './useAccounts';
+export { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
 
 // User configuration hook
 export { useUserConfig } from './useUserConfig';

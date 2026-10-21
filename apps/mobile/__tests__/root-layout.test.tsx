@@ -307,6 +307,55 @@ describe('RootLayout mobile lock lifecycle', () => {
     expect(router.replace).not.toHaveBeenCalledWith('/(app)/(tabs)');
   });
 
+  describe('a wallet stored without a password', () => {
+    const PROTECT = { pathname: '/(auth)/password', params: { type: 'protect' } };
+
+    it.each([
+      ['a cleartext vault, opened in the app', ['(app)', '(tabs)'], [{ id: 'account-1' }]],
+      ['an unprotected v2 record, on the welcome screen', ['(auth)'], []],
+    ])('sends %s to the password screen', async (_label, segments, accounts) => {
+      const { router, useSegments } = require('expo-router');
+      (useSegments as jest.Mock).mockReturnValue(segments);
+      mockUseAccountsContext.mockReturnValue([
+        {
+          ready: true,
+          locked: false,
+          requiredLock: false,
+          accounts,
+          unprotectedAddresses: ['AddressOne111'],
+        },
+        { lockAccounts: mockLockAccounts },
+      ]);
+
+      render(<RootLayout />);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(router.replace).toHaveBeenCalledWith(PROTECT);
+      expect(router.replace).not.toHaveBeenCalledWith('/(auth)');
+      expect(router.replace).not.toHaveBeenCalledWith('/(app)/(tabs)');
+    });
+
+    it('leaves it on the password screen once there', async () => {
+      const { router, useSegments } = require('expo-router');
+      (useSegments as jest.Mock).mockReturnValue(['(auth)', 'password']);
+      mockUseAccountsContext.mockReturnValue([
+        {
+          ready: true,
+          locked: false,
+          requiredLock: false,
+          accounts: [{ id: 'account-1' }],
+          unprotectedAddresses: ['AddressOne111'],
+        },
+        { lockAccounts: mockLockAccounts },
+      ]);
+
+      render(<RootLayout />);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(router.replace).not.toHaveBeenCalled();
+    });
+  });
+
   it('blocks with the init-error screen when init failed and no accounts loaded', async () => {
     const { router } = jest.requireMock('expo-router');
     mockUseAccountsContext.mockReturnValue([

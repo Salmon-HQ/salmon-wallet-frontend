@@ -4,11 +4,13 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## extension 0.17.1 — unreleased
 
+- A wallet that came over from the old version without a password, which some earlier releases stored unencrypted, now opens on the password screen: it lists the wallet's addresses so you can check they are yours, and encrypts the wallet under the password you choose there.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - Unlocking no longer copies the key that opens the wallet into the extension's storage. Reported by iblitzc0de.
 
 ## mobile 1.4.0 — unreleased
 
+- A wallet that came over from the old version without a password, which some earlier releases stored unencrypted, now opens on the password screen: it lists the wallet's addresses so you can check they are yours, and encrypts the wallet under the password you choose there.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - A dApp on the other Solana network no longer dead-ends: when it asks to connect on Devnet (or Mainnet) and your wallet holds that network, Salmon offers to switch, then shows the usual connect approval. A network Salmon does not support is named in the refusal.
 - A dApp that reaches Salmon before any wallet exists is told so, with a button that opens Salmon to create or import one.

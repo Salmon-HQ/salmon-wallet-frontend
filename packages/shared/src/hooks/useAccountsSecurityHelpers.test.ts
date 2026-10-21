@@ -43,6 +43,7 @@ function makeParams() {
     setRequiredLock: vi.fn(),
     unlockWithCachedKey: vi.fn(async () => false),
     isKeyCacheValidFn: vi.fn(() => false),
+    onUnprotected: vi.fn(),
   };
 }
 
@@ -92,19 +93,29 @@ describe('initializeAccountsSecurity — a corrupt vault does not skip the lock'
     expect(params.setLoaded).toHaveBeenCalledWith(true);
   });
 
-  // The wallet never writes its seeds unencrypted, so a cleartext record in
-  // their place was written by something else. Opening it as a wallet with no
-  // password would hand that something the wallet.
-  it('refuses a cleartext record instead of opening it without a password', async () => {
+  // Releases that migrated a password-less v2 wallet stored its seeds in the
+  // clear. That record is the owner's only copy, so it opens — to show its
+  // addresses and ask for a password before anything else.
+  it('opens a cleartext record only to have it protected', async () => {
     const record = { 'account-1': 'word1 word2 word3' };
     mockGetStorageItem.mockResolvedValue(record as never);
     const params = makeParams();
 
-    await expect(initializeAccountsSecurity(params)).rejects.toThrow();
+    expect(await initializeAccountsSecurity(params)).toBe(true);
 
-    expect(params.loadAccounts).not.toHaveBeenCalled();
-    expect(params.setRequiredLock).not.toHaveBeenCalled();
+    expect(params.loadAccounts).toHaveBeenCalledWith(record);
+    expect(params.setRequiredLock).toHaveBeenCalledWith(false);
+    expect(params.onUnprotected).toHaveBeenCalledTimes(1);
     expect(params.setLocked).not.toHaveBeenCalled();
+  });
+
+  it('does not ask an encrypted vault to be protected', async () => {
+    mockGetStorageItem.mockResolvedValue({ isEncrypted: true, encrypted: 'x' } as never);
+    const params = makeParams();
+
+    await initializeAccountsSecurity(params);
+
+    expect(params.onUnprotected).not.toHaveBeenCalled();
   });
 });
 
