@@ -9,7 +9,7 @@ import {
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
 } from '@solana/kit';
-import type { Address, Base64EncodedWireTransaction } from '@solana/kit';
+import type { Address, Base64EncodedWireTransaction, Slot } from '@solana/kit';
 import { getAddressLookupTableDecoder } from '@solana-program/address-lookup-table';
 
 import type { SolanaRpc } from './networks';
@@ -19,20 +19,36 @@ import type { AccountState, MintState, RawAccount, SimulationResponse } from './
 /** `getMultipleAccounts` refuses more than 100 addresses per call. */
 const MAX_ACCOUNTS_PER_REQUEST = 100;
 
+/**
+ * Reads accounts in chunks, because the RPC caps a request at 100 addresses,
+ * and reports the latest slot any chunk was read at (`undefined` when the node
+ * reports none).
+ */
+export async function fetchAccountsAt(
+  rpc: SolanaRpc,
+  addresses: readonly Address[]
+): Promise<{ accounts: Map<Address, RawAccount | null>; slot: Slot | undefined }> {
+  const accounts = new Map<Address, RawAccount | null>();
+  let slot: Slot | undefined;
+  for (let i = 0; i < addresses.length; i += MAX_ACCOUNTS_PER_REQUEST) {
+    const chunk = addresses.slice(i, i + MAX_ACCOUNTS_PER_REQUEST);
+    const { context, value } = await rpc.getMultipleAccounts(chunk, { encoding: 'base64' }).send();
+    if (context?.slot !== undefined && (slot === undefined || context.slot > slot)) {
+      slot = context.slot;
+    }
+    chunk.forEach((address, index) => {
+      accounts.set(address, (value[index] as RawAccount | null) ?? null);
+    });
+  }
+  return { accounts, slot };
+}
+
 /** Reads accounts in chunks, because the RPC caps a request at 100 addresses. */
 export async function fetchAccounts(
   rpc: SolanaRpc,
   addresses: readonly Address[]
 ): Promise<Map<Address, RawAccount | null>> {
-  const result = new Map<Address, RawAccount | null>();
-  for (let i = 0; i < addresses.length; i += MAX_ACCOUNTS_PER_REQUEST) {
-    const chunk = addresses.slice(i, i + MAX_ACCOUNTS_PER_REQUEST);
-    const { value } = await rpc.getMultipleAccounts(chunk, { encoding: 'base64' }).send();
-    chunk.forEach((address, index) => {
-      result.set(address, (value[index] as RawAccount | null) ?? null);
-    });
-  }
-  return result;
+  return (await fetchAccountsAt(rpc, addresses)).accounts;
 }
 
 /** What the preview reads off a transaction's message. */
@@ -118,6 +134,9 @@ export async function resolveMessage(
  * Asks the node to run the transaction and hand back the post-execution state
  * of every account it loads.
  *
+ * `minContextSlot` is the slot the pre-state was read at, so the post-state
+ * never comes from an older one.
+ *
  * `sigVerify: false` with `replaceRecentBlockhash: true` is what allows an
  * unsigned transaction to be previewed; the two options are mutually exclusive
  * at the RPC, and signature verification is the one worth giving up, since a
@@ -126,7 +145,8 @@ export async function resolveMessage(
 export async function simulate(
   rpc: SolanaRpc,
   wireTransaction: Base64EncodedWireTransaction,
-  addresses: readonly Address[]
+  addresses: readonly Address[],
+  minContextSlot?: Slot
 ): Promise<SimulationResponse> {
   const { value } = await rpc
     .simulateTransaction(wireTransaction, {
@@ -134,6 +154,7 @@ export async function simulate(
       encoding: 'base64',
       replaceRecentBlockhash: true,
       sigVerify: false,
+      ...(minContextSlot !== undefined ? { minContextSlot } : {}),
     })
     .send();
   return value as unknown as SimulationResponse;

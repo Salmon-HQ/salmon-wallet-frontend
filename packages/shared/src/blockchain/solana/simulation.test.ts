@@ -675,6 +675,28 @@ describe('previewTransactionEffects', () => {
     expect((rpc as unknown as Record<string, unknown>).sendTransaction).toBeUndefined();
   });
 
+  // Reading the accounts and simulating in parallel let the two answers come
+  // from different slots, so a diff could compare a later "before" with an
+  // earlier "after". The simulation now runs no earlier than the read.
+  it('simulates no earlier than the slot the accounts were read at', async () => {
+    const rpc = createRpc({
+      getMultipleAccounts: vi.fn().mockReturnValue({
+        send: async () => ({
+          context: { slot: 4242n },
+          value: [rawSol(2_000_000_000n), rawSol(0n), rawSol(1n)],
+        }),
+      }),
+    });
+
+    await preview(rpc);
+
+    const read = vi.mocked(rpc.getMultipleAccounts).mock.invocationCallOrder[0]!;
+    const simulated = vi.mocked(rpc.simulateTransaction).mock.invocationCallOrder[0]!;
+    expect(read).toBeLessThan(simulated);
+    const [, config] = vi.mocked(rpc.simulateTransaction).mock.calls[0]!;
+    expect(config).toMatchObject({ minContextSlot: 4242n });
+  });
+
   it('reports undetermined, not no-change, when the RPC is unreachable', async () => {
     const rpc = createRpc({
       simulateTransaction: vi.fn().mockReturnValue({

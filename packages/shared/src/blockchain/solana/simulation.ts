@@ -54,7 +54,7 @@ import {
 import type { SolanaRpc } from './networks';
 import { decodeAccountState } from './simulation-decode';
 import { deriveEffects, findUnreadChange } from './simulation-derive';
-import { fetchAccounts, fetchMints, resolveMessage, simulate } from './simulation-rpc';
+import { fetchAccountsAt, fetchMints, resolveMessage, simulate } from './simulation-rpc';
 import type { ResolvedMessage } from './simulation-rpc';
 import type {
   PreviewOptions,
@@ -186,10 +186,9 @@ export async function previewTransactionEffects(
   let before: Map<Address, RawAccount | null>;
   let simulation: Awaited<ReturnType<typeof simulate>>;
   try {
-    [before, simulation] = await Promise.all([
-      fetchAccounts(rpc, addresses),
-      simulate(rpc, wireTransaction, addresses),
-    ]);
+    const read = await fetchAccountsAt(rpc, addresses);
+    before = read.accounts;
+    simulation = await simulate(rpc, wireTransaction, addresses, read.slot);
   } catch (error) {
     return undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
