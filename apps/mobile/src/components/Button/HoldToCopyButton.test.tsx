@@ -36,7 +36,8 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-import { HoldToCopyButton } from './HoldToCopyButton';
+import { Platform } from 'react-native';
+import { HoldToApproveButton, HoldToCopyButton } from './HoldToCopyButton';
 
 describe('HoldToCopyButton', () => {
   beforeEach(() => {
@@ -89,5 +90,59 @@ describe('HoldToCopyButton', () => {
       jest.advanceTimersByTime(1000);
     });
     expect(onCopy).not.toHaveBeenCalled();
+  });
+
+  // Switch Access, Voice Access, Switch Control and Voice Control cannot hold
+  // a finger down: they perform the control's accessibility action instead.
+  // The action commits once, as a completed hold does; a finger tap still
+  // does nothing.
+  it('commits from the assistive activate action, but not from a tap', () => {
+    const onCopy = jest.fn();
+    render(
+      <HoldToCopyButton onCopy={onCopy} testID="hold-copy">
+        Hold to copy
+      </HoldToCopyButton>
+    );
+    const button = screen.getByTestId('hold-copy');
+
+    fireEvent.press(button);
+    expect(onCopy).not.toHaveBeenCalled();
+
+    fireEvent(button, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+    expect(onCopy).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the long-press action on Android and commits from it', () => {
+    const original = Platform.OS;
+    Platform.OS = 'android';
+    const onApprove = jest.fn();
+    render(
+      <HoldToApproveButton onApprove={onApprove} testID="hold-approve">
+        Hold to Approve
+      </HoldToApproveButton>
+    );
+    const button = screen.getByTestId('hold-approve');
+
+    expect(button.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual([
+      'activate',
+      'longpress',
+    ]);
+    fireEvent(button, 'accessibilityAction', { nativeEvent: { actionName: 'longpress' } });
+    expect(onApprove).toHaveBeenCalledTimes(1);
+    Platform.OS = original;
+  });
+
+  it('does nothing from the action while disabled', () => {
+    const onApprove = jest.fn();
+    render(
+      <HoldToApproveButton onApprove={onApprove} disabled danger testID="hold-approve">
+        Hold to Approve
+      </HoldToApproveButton>
+    );
+
+    fireEvent(screen.getByTestId('hold-approve'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'activate' },
+    });
+    expect(onApprove).not.toHaveBeenCalled();
   });
 });

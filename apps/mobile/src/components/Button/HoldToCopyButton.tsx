@@ -15,7 +15,8 @@
  */
 import type { Semantic, Testable } from '@salmon/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
+import type { AccessibilityActionEvent } from 'react-native';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 import { PrimaryButton } from './PrimaryButton';
@@ -143,6 +144,14 @@ function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButton
         // Touch presses are the hold; only a screen reader's synthesized
         // activation goes straight through.
         onPress={screenReaderOn ? () => void onCommit() : noop}
+        // Switch and voice control cannot hold a finger down: they perform the
+        // control's action, which commits like a completed hold. Only an
+        // accessibility service performs it (React Native dispatches it from
+        // the native accessibility delegate, never from a touch or a key).
+        accessibilityActions={assistiveActions(children)}
+        onAccessibilityAction={(event: AccessibilityActionEvent) => {
+          if (!disabled && ASSISTIVE_ACTIONS.has(event.nativeEvent.actionName)) void onCommit();
+        }}
         disabled={disabled}
         testID={testID}
       >
@@ -157,6 +166,18 @@ function HoldButton({ onCommit, children, disabled, testID, Button }: HoldButton
       )}
     </View>
   );
+}
+
+/** `activate` on both platforms; Android also offers `longpress`. */
+const ASSISTIVE_ACTIONS = new Set(['activate', 'longpress']);
+
+function assistiveActions(label: string) {
+  return Platform.OS === 'android'
+    ? [
+        { name: 'activate', label },
+        { name: 'longpress', label },
+      ]
+    : [{ name: 'activate', label }];
 }
 
 function noop() {
