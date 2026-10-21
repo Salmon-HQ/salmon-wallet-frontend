@@ -49,6 +49,13 @@ export const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 /** Jupiter's aggregator (Swap API v2 Router path): the one program a Jupiter-routed swap invokes at top level. */
 export const JUPITER_AGGREGATOR_PROGRAM = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4';
 
+/**
+ * The owner of the token accounts 0x settles a swap through. Its builds create
+ * them idempotently in the swap (seen live on 2026-10-21); they already exist
+ * for common mints, so the create is usually a no-op.
+ */
+export const ZEROEX_SETTLEMENT_OWNER = 'EPLJ3CRxz887UcMPwJL9GSnYPmg42TZSBVvAJ2tzqd44';
+
 /** 0x's Solana settler: the one program a 0x-routed swap invokes at top level (probed 2026-09-30). */
 export const ZEROEX_SETTLER_PROGRAM = 'Sett1erwx2eqT5A8uvu8GBxDFT2W5TNnhirL7hLmb8m';
 

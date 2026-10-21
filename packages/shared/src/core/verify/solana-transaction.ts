@@ -49,6 +49,7 @@ import {
   TOKEN_METADATA_PROGRAM,
   TOKEN_PROGRAM,
   WRAPPED_SOL_MINT,
+  ZEROEX_SETTLEMENT_OWNER,
 } from './solana-programs';
 
 /** What a flow declares about the transaction it asked the backend to build. */
@@ -223,6 +224,22 @@ function staticAccount(
 /** ATA `create` (0, or no data) and `createIdempotent` (1): payer, ata, owner, mint, … */
 const ATA_CREATE_CODES = new Set([0, 1]);
 
+/** The associated token accounts this message creates, each with its owner. */
+function atasCreated(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[]
+): Map<string, string | undefined> {
+  const created = new Map<string, string | undefined>();
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
+    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
+    if (!ATA_CREATE_CODES.has(code as number)) continue;
+    const ata = accounts[instruction.accountIndices[1] ?? -1];
+    if (ata !== undefined) created.set(ata, accounts[instruction.accountIndices[2] ?? -1]);
+  }
+  return created;
+}
+
 /** The associated token accounts this message creates for `owner`. */
 function ownAtasCreated(
   accounts: readonly string[],
@@ -230,26 +247,24 @@ function ownAtasCreated(
   owner: string
 ): Set<string> {
   const created = new Set<string>();
-  for (const instruction of instructions) {
-    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
-    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
-    if (!ATA_CREATE_CODES.has(code as number)) continue;
-    const ata = accounts[instruction.accountIndices[1] ?? -1];
-    const ataOwner = accounts[instruction.accountIndices[2] ?? -1];
-    if (ata !== undefined && ataOwner === owner) created.add(ata);
+  for (const [ata, ataOwner] of atasCreated(accounts, instructions)) {
+    if (ataOwner === owner) created.add(ata);
   }
   return created;
 }
 
 /**
- * How many associated token accounts the message creates for its fee payer:
- * the rent a swap may spend besides the fee. Accounts it creates for anyone
- * else earn no allowance.
+ * The associated token accounts a swap creates for its fee payer or for 0x's
+ * settlement account: the only ones whose rent the swap may spend, and only
+ * for those that do not exist yet (`assertSwapPaysWallet` reads which).
  */
-export function ownAtaCreates(transactionBase64: string): number {
+export function swapAccountCreates(transactionBase64: string): string[] {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
-  return ownAtasCreated(accounts, compiledInstructions(message), accounts[0] ?? '').size;
+  const owners = new Set([accounts[0], ZEROEX_SETTLEMENT_OWNER]);
+  return [...atasCreated(accounts, compiledInstructions(message))]
+    .filter(([, owner]) => owner !== undefined && owners.has(owner))
+    .map(([ata]) => ata);
 }
 
 /** The lookup-table instructions a message carries: each one's code and the table it acts on. */
@@ -624,6 +639,38 @@ function assertPriorityFeeCapped(
   }
 }
 
+/** How many token accounts a swap may create for 0x's settlement account (owner decision). */
+const MAX_SETTLEMENT_CREATES = 2;
+
+/**
+ * A swap creates token accounts for the wallet, and for 0x's settlement
+ * account at most twice; any other owner is refused, because the wallet pays
+ * the rent of each account it creates and whoever owns it can close it and
+ * take that rent.
+ */
+function assertSwapAccountCreates(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  feePayer: string
+): void {
+  let settlement = 0;
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
+    const owner = staticAccount(accounts, instruction, 2, 'the owner of a created token account');
+    if (owner === ZEROEX_SETTLEMENT_OWNER) settlement += 1;
+    else if (owner !== feePayer) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction creates a token account for an owner other than the wallet (${owner})`
+      );
+    }
+  }
+  if (settlement > MAX_SETTLEMENT_CREATES) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction creates more than two token accounts for 0x's settlement account`
+    );
+  }
+}
+
 /** The System program's `Transfer`: u32 code 2, then the lamports as u64. */
 const SYSTEM_TRANSFER = 2;
 
@@ -741,6 +788,7 @@ export function assertSolanaTransactionMatches(
   if (expectation.swapRoute) {
     assertJupiterRoute(accounts, instructions, expectation.swapRoute, feePayer);
     assertSwapWrapsOnlyInput(accounts, instructions, expectation.swapRoute);
+    assertSwapAccountCreates(accounts, instructions, feePayer);
   }
 
   if (expectation.nftAction) {

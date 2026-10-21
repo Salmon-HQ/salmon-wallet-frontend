@@ -26,7 +26,6 @@ import {
   assertSolanaTransactionMatches,
   assertSwapPaysWallet,
   bubblegumAssets,
-  ownAtaCreates,
   UNVERIFIED,
 } from '../verify';
 import type { SolanaTransactionExpectation, Unverified } from '../verify';
@@ -95,13 +94,7 @@ export async function signAndSendSolanaTransaction(
   // can read, and the simulation catches what it cannot — another token
   // debited or an approval granted inside the route.
   if (expectation !== UNVERIFIED && expectation.swapRoute) {
-    await assertSwapPaysWallet(
-      rpc,
-      transactionBase64,
-      expectation.feePayer,
-      expectation.swapRoute,
-      ownAtaCreates(transactionBase64)
-    );
+    await assertSwapPaysWallet(rpc, transactionBase64, expectation.feePayer, expectation.swapRoute);
   }
   const commitment = options.commitment ?? 'confirmed';
 

@@ -16,15 +16,20 @@ import type { Base64EncodedWireTransaction } from '@solana/kit';
 
 import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
+import { fetchAccounts } from '../../blockchain/solana/simulation-rpc';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
 import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
-import { MAX_PRIORITY_FEE_LAMPORTS, SolanaTransactionMismatchError } from './solana-transaction';
+import {
+  MAX_PRIORITY_FEE_LAMPORTS,
+  SolanaTransactionMismatchError,
+  swapAccountCreates,
+} from './solana-transaction';
 import type { SwapRouteExpectation } from './solana-transaction';
 
 // ponytail: fixed allowances. Rent of a Token-2022 ATA with extensions is
 // ~0.0021 SOL; the fee cap only applies when the node does not report the fee.
 // Upgrade path: read the compute-budget price and each created account's size.
-/** Rent the wallet may spend per token account the message creates for it. */
+/** Rent the wallet may spend per token account the message opens (see `assertSwapPaysWallet`). */
 export const ATA_RENT_ALLOWANCE = 2_100_000n;
 /** The network fee assumed when the node does not report one. */
 export const FEE_ALLOWANCE = 1_000_000n;
@@ -38,9 +43,8 @@ export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.
  *
- * @param ataCreates - How many associated token account creates the message
- *   carries: the rent they cost is the one SOL movement besides the fee and
- *   the swap itself.
+ * @param ataCreates - How many token accounts the message opens: the rent
+ *   they cost is the one SOL movement besides the fee and the swap itself.
  */
 export function assertSwapEffects(
   effects: TransactionEffects,
@@ -87,18 +91,27 @@ export function assertSwapEffects(
   }
 }
 
-/** Simulates `transactionBase64` for `feePayer` and holds the result to `route`. */
+/**
+ * Simulates `transactionBase64` for `feePayer` and holds the result to `route`.
+ *
+ * Rent is allowed only for the token accounts the swap creates (for the wallet
+ * or 0x's settlement account) that do not exist yet. An idempotent create of
+ * an existing account costs nothing, so it earns nothing; otherwise it would
+ * cover SOL leaving the wallet for something else.
+ */
 export async function assertSwapPaysWallet(
   rpc: SolanaRpc,
   transactionBase64: string,
   feePayer: string,
-  route: SwapRouteExpectation,
-  ataCreates: number
+  route: SwapRouteExpectation
 ): Promise<void> {
+  const created = swapAccountCreates(transactionBase64).map((account) => address(account));
+  const existing = await fetchAccounts(rpc, created);
+  const opened = created.filter((account) => !existing.get(account)).length;
   const effects = await previewTransactionEffects(
     rpc,
     transactionBase64 as Base64EncodedWireTransaction,
     address(feePayer)
   );
-  assertSwapEffects(effects, route, ataCreates);
+  assertSwapEffects(effects, route, opened);
 }

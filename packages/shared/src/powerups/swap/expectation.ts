@@ -38,10 +38,9 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
   [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
   /**
    * Associated Token: `createIdempotent` (1) only, paid by the wallet — what
-   * both providers emit. The owner is not bound: 0x settles through its own
-   * account's token accounts and creates them in the build (seen live; they
-   * already exist, so the create is a no-op). A new one's rent earns no
-   * allowance in the swap's simulation (`ownAtaCreates`).
+   * both providers emit. The owner is the wallet, or 0x's settlement account
+   * at most twice (`assertSwapAccountCreates` in core/verify); rent is allowed
+   * only for an account that does not exist yet (`assertSwapPaysWallet`).
    */
   [ASSOCIATED_TOKEN_PROGRAM]: {
     width: 1,

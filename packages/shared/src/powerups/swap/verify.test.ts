@@ -17,7 +17,8 @@ import {
   ASSOCIATED_TOKEN_PROGRAM,
   assertSolanaTransactionMatches,
   COMPUTE_BUDGET_PROGRAM,
-  ownAtaCreates,
+  swapAccountCreates,
+  ZEROEX_SETTLEMENT_OWNER,
   JUPITER_AGGREGATOR_PROGRAM,
   SYSTEM_PROGRAM,
   TOKEN_PROGRAM,
@@ -311,20 +312,47 @@ describe('swap bytes — where the router pays the output', () => {
     });
 
     // 0x settles through its own account's token accounts and creates them
-    // idempotently in the build (seen live; they already exist, so the create
-    // is a no-op). The rent a new one would cost earns no allowance.
-    it('lets the wallet create a token account another owner holds', () => {
-      const settlement = createAta(ATTACKER_USDC, EVENT_AUTHORITY, USDC);
-      expect(() => verify(transaction([settlement, route()]))).not.toThrow();
+    // idempotently in the build (seen live). Up to two such creates are
+    // allowed; an account created for anyone else is refused.
+    it('lets the wallet create token accounts for itself and, twice at most, for 0x’s settlement account', async () => {
+      const [settlementUsdc] = await walletTokenAccounts(ZEROEX_SETTLEMENT_OWNER, USDC);
+      const [settlementSol] = await walletTokenAccounts(ZEROEX_SETTLEMENT_OWNER, SOL);
+      const [settlementOther] = await walletTokenAccounts(ZEROEX_SETTLEMENT_OWNER, OTHER_MINT);
+      const settlement = (ata: string, mint: string) =>
+        createAta(ata, ZEROEX_SETTLEMENT_OWNER, mint);
+      expect(() =>
+        verify(
+          transaction([
+            settlement(settlementUsdc as string, USDC),
+            settlement(settlementSol as string, SOL),
+            route(),
+          ])
+        )
+      ).not.toThrow();
+      expect(() =>
+        verify(
+          transaction([
+            settlement(settlementUsdc as string, USDC),
+            settlement(settlementSol as string, SOL),
+            settlement(settlementOther as string, OTHER_MINT),
+            route(),
+          ])
+        )
+      ).toThrow(/more than two/);
+      expect(() =>
+        verify(transaction([createAta(ATTACKER_USDC, EVENT_AUTHORITY, USDC), route()]))
+      ).toThrow(/for an owner other than/);
     });
 
-    it('counts only the wallet’s own account creations toward the rent it may spend', () => {
+    it('lists the token accounts a swap creates for the wallet and 0x’s settlement account', async () => {
+      const [settlementUsdc] = await walletTokenAccounts(ZEROEX_SETTLEMENT_OWNER, USDC);
       const tx = transaction([
         createAta(WALLET_WSOL, WALLET, SOL),
-        createAta(ATTACKER_USDC, EVENT_AUTHORITY, USDC),
+        createAta(WALLET_WSOL, WALLET, SOL),
+        createAta(settlementUsdc as string, ZEROEX_SETTLEMENT_OWNER, USDC),
         route(),
       ]);
-      expect(ownAtaCreates(tx)).toBe(1);
+      expect(swapAccountCreates(tx).sort()).toEqual([WALLET_WSOL, settlementUsdc].sort());
     });
   });
 
