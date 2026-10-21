@@ -5,9 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, randomBytes } from 'node:crypto';
 
-import { scanText } from './check-no-secrets.mjs';
-
-const { wordlist } = await import('@scure/bip39/wordlists/english.js');
+import { scanText, wordlist } from './check-no-secrets.mjs';
 
 const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
@@ -27,6 +25,16 @@ function base58(bytes) {
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest();
 
+/** Random bytes with the top bit set, so their base58 form always has the same length. */
+function keyBytes(length) {
+  const bytes = randomBytes(length);
+  bytes[0] |= 0x80;
+  return bytes;
+}
+
+const base58check = (payload) =>
+  base58(Buffer.concat([payload, sha256(sha256(payload)).subarray(0, 4)]));
+
 /** A Bitcoin WIF for a random key: version byte, key, optional compression flag, checksum. */
 function wif(version, compressed) {
   const payload = Buffer.concat([
@@ -34,7 +42,20 @@ function wif(version, compressed) {
     randomBytes(32),
     compressed ? Buffer.from([1]) : Buffer.alloc(0),
   ]);
-  return base58(Buffer.concat([payload, sha256(sha256(payload)).subarray(0, 4)]));
+  return base58check(payload);
+}
+
+/** A BIP32 extended private key: version, depth, parent, child, chain code, 0x00, key. */
+function extendedPrivateKey(version) {
+  return base58check(
+    Buffer.concat([
+      Buffer.from(version, 'hex'),
+      Buffer.alloc(9),
+      randomBytes(32),
+      Buffer.alloc(1),
+      randomBytes(32),
+    ])
+  );
 }
 
 /** Twelve real BIP39 words that are not a public test vector. */
@@ -121,16 +142,92 @@ test('hex with no key name beside it, such as a transaction hash, is not a findi
 });
 
 test('a 32-byte base58 secret key is a finding', () => {
-  assert.equal(flagged(`secretKey: '${base58(randomBytes(32))}',`), true);
+  assert.equal(flagged(`secretKey: '${base58(keyBytes(32))}',`), true);
 });
 
 test('a base58 address, the same shape as a 32-byte key, is not a finding', () => {
-  assert.equal(flagged(`address: '${base58(randomBytes(32))}',`), false);
+  assert.equal(flagged(`address: '${base58(keyBytes(32))}',`), false);
 });
 
 test('a 64-byte keypair stays a finding in base58 and as a byte array', () => {
-  assert.equal(flagged(`'${base58(randomBytes(64))}'`), true);
+  assert.equal(flagged(`'${base58(keyBytes(64))}'`), true);
   assert.equal(flagged(`[${Array.from(randomBytes(64)).join(', ')}]`), true);
+});
+
+test('a byte array written over many lines is a finding on the line it opens', () => {
+  const array = Array.from(randomBytes(64), (byte) => `  ${byte},`).join('\n');
+  assert.deepEqual(
+    scanText(`ok\nconst keypair = Uint8Array.from([\n${array}\n]);`).map(({ line }) => line),
+    [2]
+  );
+});
+
+test('64 integers that do not all fit in a byte are not a keypair', () => {
+  const words = Array.from({ length: 64 }, (_, i) => 256 + i * 11);
+  assert.equal(flagged(`const table = [${words.join(', ')}];`), false);
+});
+
+test('a phrase written as a bulleted list is a finding', () => {
+  for (const bullet of ['-', '*', '•']) {
+    assert.equal(
+      flagged(
+        phrase()
+          .map((word) => `${bullet} ${word}`)
+          .join('\n')
+      ),
+      true,
+      bullet
+    );
+  }
+});
+
+test('a phrase joined by escaped line breaks or tabs inside a string is a finding', () => {
+  assert.equal(flagged(`const words = '${phrase().join('\\n')}';`), true);
+  assert.equal(flagged(`const words = '${phrase().join('\\t')}';`), true);
+});
+
+test('a phrase with a comment after each word is a finding', () => {
+  const lines = phrase().map((word, i) => `  '${word}', // the ${i + 1}th one`);
+  assert.equal(flagged(lines.join('\n')), true);
+});
+
+test('a phrase inside a comment stays a finding', () => {
+  assert.equal(flagged(`const words = []; // ${phrase().join(' ')}`), true);
+});
+
+test('only a whole public vector passes: its first words do not cover a phrase after them', () => {
+  const vector = [...Array(11).fill('abandon'), 'about'];
+  assert.equal(flagged(`'abandon abandon abandon ${phrase().join(' ')}'`), true);
+  assert.equal(flagged(`'${[...vector, ...phrase()].join(' ')}'`), true);
+});
+
+test('a public vector next to an unrelated word on the next line passes', () => {
+  const vector = [...Array(11).fill('abandon'), 'about'];
+  assert.equal(flagged(`  mnemonic: '${vector.join(' ')}',\n  network: 'mainnet',`), false);
+});
+
+test('a public vector on a line does not hide a key on it', () => {
+  const vector = [...Array(11).fill('abandon'), 'about'].join(' ');
+  assert.equal(flagged(`['${vector}', '${base58(keyBytes(64))}']`), true);
+});
+
+test('a BIP32 extended private key is a finding, mainnet or testnet', () => {
+  assert.equal(flagged(`const key = '${extendedPrivateKey('0488ade4')}';`), true);
+  assert.equal(flagged(`const key = '${extendedPrivateKey('04358394')}';`), true);
+});
+
+test('a PEM private key header is a finding and a public key header is not', () => {
+  const header = (label) => ['-----BEGIN', `${label}-----`].join(' ');
+  for (const label of [
+    'PRIVATE KEY',
+    'EC PRIVATE KEY',
+    'OPENSSH PRIVATE KEY',
+    'ENCRYPTED PRIVATE KEY',
+    'PGP PRIVATE KEY BLOCK',
+  ]) {
+    assert.equal(flagged(`${header(label)}\nMIIE`), true, label);
+  }
+  assert.equal(flagged(`${header('PUBLIC KEY')}\nMIIB`), false);
 });
 
 test('a finding names its line', () => {
