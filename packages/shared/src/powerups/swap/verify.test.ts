@@ -264,11 +264,35 @@ const toIx = ({ programId, accounts, data }: JupiterInstruction): Ix => ({
   data: new Uint8Array(Buffer.from(data, 'base64')),
 });
 
-/** Where each Jupiter router call keeps what the check reads, as the real builds lay it out. */
-const LAYOUTS = {
-  bb64facc31c4af14: { args: 8, authority: 0, source: 1, destination: 2 }, // route_v2
-  d19853937cfed8e9: { args: 9, authority: 1, source: 2, destination: 5 }, // shared_accounts_route_v2
-} as Record<string, { args: number; authority: number; source: number; destination: number }>;
+interface Layout {
+  args: number;
+  authority: number;
+  source: number;
+  destination: number;
+  sourceMint: number;
+  destinationMint: number;
+}
+/** Where each Jupiter router call keeps what the check reads (Jupiter v6 on-chain IDL). */
+const LAYOUTS: Record<string, Layout> = {
+  // route_v2
+  bb64facc31c4af14: {
+    args: 8,
+    authority: 0,
+    source: 1,
+    destination: 2,
+    sourceMint: 3,
+    destinationMint: 4,
+  },
+  // shared_accounts_route_v2
+  d19853937cfed8e9: {
+    args: 9,
+    authority: 1,
+    source: 2,
+    destination: 5,
+    sourceMint: 6,
+    destinationMint: 7,
+  },
+};
 
 /**
  * A real Jupiter /build answer compiled the way the backend assembles it
@@ -280,10 +304,12 @@ const LAYOUTS = {
  * table. Whatever the check needs from a table is then hidden from it, as it is
  * in the bytes the wallet receives. The table is drawn before the edit, so an
  * account the edit brings in stays visible and the check has to judge it.
+ * `withTable: false` compiles every account into the static list instead.
  */
 async function realBuild(
   name: string,
-  edit?: (swap: Ix, layout: (typeof LAYOUTS)[string]) => void
+  edit?: (swap: Ix, layout: Layout) => void,
+  { withTable = true } = {}
 ) {
   const build = BUILDS[name];
   if (!build) throw new Error(`no fixture named ${name}`);
@@ -308,7 +334,7 @@ async function realBuild(
   edit?.(swap, layout);
   const tx = transaction(
     instructions,
-    table.map((account) => address(account))
+    withTable ? table.map((account) => address(account)) : undefined
   );
   const proposal = buildSwapProposal(
     {
@@ -362,6 +388,10 @@ describe('swap bytes — real Jupiter builds', () => {
     expect(await realBuild(name)).not.toThrow();
   });
 
+  it.each(REAL_BUILDS)('accepts the real %s build with every account visible', async (name) => {
+    expect(await realBuild(name, undefined, { withTable: false })).not.toThrow();
+  });
+
   describe.each(REAL_BUILDS)('refuses a tampered %s build', (name) => {
     it('spending another of the wallet’s tokens', async () => {
       const other = await walletTokenAccounts(WALLET, OTHER_MINT);
@@ -385,12 +415,22 @@ describe('swap bytes — real Jupiter builds', () => {
       expect(check).toThrow(/does not authorize/);
     });
 
-    it('carrying other amounts, slippage or fee', async () => {
+    it('naming another mint on either side', async () => {
+      for (const slot of ['sourceMint', 'destinationMint'] as const) {
+        const check = await realBuild(name, (swap, layout) => {
+          swap.accounts[layout[slot]] = { address: address(OUTSIDER), role: 0 };
+        });
+        expect(check).toThrow(/mint other than/);
+      }
+    });
+
+    it('carrying other amounts, slippage, fee or positive slippage', async () => {
       const edits: [(data: Uint8Array, args: number) => void, RegExp][] = [
         [(data, args) => setU64(data, args, 20_000_000n), /amount other/],
         [(data, args) => setU64(data, args + 8, 1n), /quotes an output/],
         [(data, args) => setU16(data, args + 16, 10_000), /more slippage/],
         [(data, args) => setU16(data, args + 18, 9_000), /larger fee/],
+        [(data, args) => setU16(data, args + 20, 100), /above the quote/],
       ];
       for (const [edit, why] of edits) {
         const check = await realBuild(name, (swap, layout) => edit(swap.data, layout.args));

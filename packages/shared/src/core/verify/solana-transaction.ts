@@ -397,14 +397,17 @@ interface JupiterRouteLayout {
   authority: number;
   source: number;
   destination: number;
+  sourceMint: number;
+  destinationMint: number;
   /** An optional override of the destination; empty is the program's own address. */
   override?: number;
 }
 
 /**
  * The two router calls Jupiter's build endpoint answers with, chosen per
- * request. `shared_accounts_route_v2` puts a one-byte route id ahead of the
- * arguments and has no override slot.
+ * request, laid out as the Jupiter v6 on-chain IDL declares them.
+ * `shared_accounts_route_v2` puts a one-byte route id ahead of the arguments
+ * and has no override slot.
  */
 const JUPITER_ROUTES: readonly JupiterRouteLayout[] = [
   {
@@ -413,6 +416,8 @@ const JUPITER_ROUTES: readonly JupiterRouteLayout[] = [
     authority: 0,
     source: 1,
     destination: 2,
+    sourceMint: 3,
+    destinationMint: 4,
     override: 7,
   },
   {
@@ -421,13 +426,16 @@ const JUPITER_ROUTES: readonly JupiterRouteLayout[] = [
     authority: 1,
     source: 2,
     destination: 5,
+    sourceMint: 6,
+    destinationMint: 7,
   },
 ];
 /**
  * The fixed arguments both calls start with: in u64, quoted out u64, slippage
- * u16, platform fee u16. A route plan of any length follows and is not read.
+ * u16, platform fee u16, positive slippage u16. A route plan of any length
+ * follows and is not read.
  */
-const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2;
+const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2 + 2;
 
 /**
  * Every Jupiter call spends the token on screen from the wallet's own account
@@ -443,13 +451,17 @@ const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2;
  * router call, and `route_v2`'s optional override slot must be empty, which
  * Anchor encodes as the program's own address. Any other Jupiter instruction
  * is refused. The amounts are bound so the minimum Jupiter enforces on chain
- * is the minimum the screen shows.
+ * is the minimum the screen shows, and positive slippage must be zero: any
+ * other value sends output above the quote to the platform fee account rather
+ * than to the wallet.
  *
- * The mints are not read, and need not be: an associated token account's
- * address is derived from its mint, so holding the source and destination to
- * the wallet's ATAs of the mints on screen holds the mints too. Real builds
- * resolve the mint slots through Jupiter's lookup tables, where this check
- * could not read them anyway.
+ * A mint slot read from the static list must be the mint on screen. Real
+ * builds resolve both mint slots — and the token-program slots — through
+ * Jupiter's lookup tables, where this check cannot read them; requiring them
+ * would refuse every real swap. Nothing is lost there: an associated token
+ * account's address is derived from its owner, its token program and its
+ * mint, so holding the source and destination to the wallet's ATAs of the
+ * mints on screen already holds the mints and the token programs.
  */
 function assertJupiterRoute(
   accounts: readonly string[],
@@ -474,6 +486,8 @@ function assertJupiterRoute(
       return refuse('Transaction carries a Jupiter instruction other than a swap route');
     }
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const visibleAt = (slot: number): string | undefined =>
+      accounts[instruction.accountIndices[slot] ?? -1];
     if (accountAt(layout.authority) !== feePayer) {
       refuse('Transaction swaps tokens the wallet does not authorize');
     }
@@ -493,6 +507,15 @@ function assertJupiterRoute(
     ) {
       refuse('Transaction redirects the swap output to another account');
     }
+    for (const [slot, mint] of [
+      [layout.sourceMint, route.inputMint],
+      [layout.destinationMint, route.outputMint],
+    ] as const) {
+      const named = visibleAt(slot);
+      if (named !== undefined && named !== mint) {
+        refuse(`Transaction swaps a mint other than ${mint}`);
+      }
+    }
     if (view.getBigUint64(layout.args, true).toString() !== route.inAmount) {
       refuse('Transaction swaps an amount other than the one on screen');
     }
@@ -504,6 +527,9 @@ function assertJupiterRoute(
     }
     if (view.getUint16(layout.args + 18, true) > route.platformFeeBps) {
       refuse('Transaction takes a larger fee than the screen shows');
+    }
+    if (view.getUint16(layout.args + 20, true) !== 0) {
+      refuse('Transaction sends output above the quote to another account');
     }
   }
 }
