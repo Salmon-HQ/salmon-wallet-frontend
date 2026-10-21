@@ -179,17 +179,28 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
 }
 
 /** Bytes 36..44 of a mint hold its supply, the one field minting and burning change. */
-const MINT_SUPPLY_START = 36;
-const MINT_SUPPLY_END = 44;
+const MINT_SUPPLY: readonly [number, number] = [36, 44];
+/** Bytes 64..72 of a token account hold its amount, the one field a deposit changes. */
+const TOKEN_AMOUNT: readonly [number, number] = [64, 72];
+
+/** Same bytes, apart from the `[start, end)` range. */
+function sameDataExcept(
+  pre: RawAccount,
+  post: RawAccount,
+  [start, end]: readonly [number, number]
+) {
+  if (pre.data[0] === post.data[0]) return true;
+  const [a, b] = [toBytes(pre.data), toBytes(post.data)];
+  a.fill(0, start, end);
+  b.fill(0, start, end);
+  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+}
 
 /** Same data, or the same mint with only its supply moved (see `mintedToOthers`). */
 function sameData(pre: RawAccount, post: RawAccount): boolean {
   if (pre.data[0] === post.data[0]) return true;
   if (!decodeMintState(pre) || !decodeMintState(post)) return false;
-  const [a, b] = [toBytes(pre.data), toBytes(post.data)];
-  a.fill(0, MINT_SUPPLY_START, MINT_SUPPLY_END);
-  b.fill(0, MINT_SUPPLY_START, MINT_SUPPLY_END);
-  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+  return sameDataExcept(pre, post, MINT_SUPPLY);
 }
 
 /** Everything `findUnreadChange` compares. */
@@ -284,13 +295,14 @@ export function findUnreadChange(input: UnreadChangeInput): Address | null {
 
     if (!post || post.lamports < pre.lamports || post.owner !== pre.owner) return address;
     if (preToken || postToken) {
+      // A deposit changes the amount and nothing else: an authority (close,
+      // freeze, a delegate), the state or an extension's record moving too is
+      // the wallet's signature at work on someone else's account.
       if (
         !preToken ||
         !postToken ||
         postToken.amount < preToken.amount ||
-        postToken.owner !== preToken.owner ||
-        postToken.delegate !== preToken.delegate ||
-        postToken.delegatedAmount !== preToken.delegatedAmount
+        !sameDataExcept(pre, post, TOKEN_AMOUNT)
       ) {
         return address;
       }

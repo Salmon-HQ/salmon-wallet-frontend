@@ -1392,6 +1392,37 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 
+  // The wallet can hold an authority over someone else's token account: a
+  // close authority it hands on moves no amount, owner or delegate.
+  it("reports an authority the wallet hands on over another's token account", async () => {
+    const wire = wireOf([
+      getSetAuthorityInstruction(
+        {
+          owned: MERCHANT_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 5n, { closeAuthority: WALLET }),
+      },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 5n, { closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   it('reports a wallet token account closed into someone else as unanalysed', async () => {
     const wire = wireOf([
       getCloseAccountInstruction(
