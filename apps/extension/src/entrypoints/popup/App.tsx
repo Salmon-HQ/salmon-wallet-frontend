@@ -511,6 +511,7 @@ function App() {
         origin={pendingDAppSignMessageRequest.origin}
         request={pendingDAppSignMessageRequest.request}
         account={solanaApprovalAccount}
+        accountName={activeAccount?.name}
         onDismiss={dismissApprovalWithRefresh}
       />
     );
@@ -523,6 +524,7 @@ function App() {
         origin={pendingDAppTxRequest.origin}
         request={pendingDAppTxRequest.request}
         account={solanaApprovalAccount}
+        accountName={activeAccount?.name}
         networkId={solanaApprovalNetworkId}
         onDismiss={dismissApprovalWithRefresh}
       />

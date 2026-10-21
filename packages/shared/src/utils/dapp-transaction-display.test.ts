@@ -10,6 +10,7 @@ const ACCOUNT = 'Acc1111111111111111111111111111111111111111' as Address;
 const MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as Address;
 const base = {
   origin: 'https://jup.ag',
+  signingAccount: { name: 'Savings', address: 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' },
   effects: null,
   effectsLoading: false,
   feeSol: '0.000005',
@@ -38,6 +39,7 @@ describe('dappTransactionDisplay', () => {
     expect(display.title).toBe('dapp.transaction_title');
     expect(display.rows).toEqual([
       { label: 'dapp.requesting_site', value: 'https://jup.ag' },
+      { label: 'dapp.wallet_address', value: 'Savings · Fg6P...KzXf' },
       { label: 'dapp.effects_out', value: '−1.5 SOL' },
       { label: 'dapp.effects_in', value: '+25 USDC' },
       { label: 'dapp.transaction_fee', value: '0.000005 SOL' },
@@ -128,6 +130,15 @@ describe('dappTransactionDisplay', () => {
     expect(display.warning?.body).toBe(
       'dapp.effects_reason_unanalysed\n\ndapp.effects_undetermined_body'
     );
+  });
+
+  it('names the account that signs, after the site', () => {
+    const display = dappTransactionDisplay(base, t);
+
+    expect(display.rows.slice(0, 2)).toEqual([
+      { label: 'dapp.requesting_site', value: 'https://jup.ag' },
+      { label: 'dapp.wallet_address', value: 'Savings · Fg6P...KzXf' },
+    ]);
   });
 
   it('marks the balance rows pending while the simulation runs', () => {

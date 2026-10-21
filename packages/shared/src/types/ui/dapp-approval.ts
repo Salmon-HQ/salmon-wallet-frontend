@@ -19,12 +19,20 @@ interface DAppApprovalBase {
   onReject: () => void;
 }
 
+/** The account a signature comes from: its name, when it has one, and its address. */
+export interface SigningAccount {
+  name?: string;
+  address: string;
+}
+
 export interface DAppConnectApprovalViewPropsBase extends DAppApprovalBase {
   address?: string;
   showOriginWarning?: boolean;
 }
 
 export interface DAppSignMessageApprovalViewPropsBase extends DAppApprovalBase {
+  /** Shown so the user sees which of their accounts the site gets a signature from. */
+  signingAccount: SigningAccount;
   messageText: string;
   /** Raw message bytes, as received from the dApp. Enables the tx-lookalike guard
    * and, when `requiredSigners` is also set, OCMS content parsing. */
@@ -61,6 +69,8 @@ export interface DAppSignInApprovalViewPropsBase extends DAppApprovalBase {
 }
 
 export interface DAppTransactionApprovalViewPropsBase extends DAppApprovalBase {
+  /** Shown so the user sees which of their accounts signs. */
+  signingAccount: SigningAccount;
   requestSummary: string;
   /** Pre-signature effect preview. `null` while it is still being simulated. */
   effects: TransactionEffects | null;

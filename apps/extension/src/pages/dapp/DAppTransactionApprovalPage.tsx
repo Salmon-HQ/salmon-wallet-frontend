@@ -15,6 +15,8 @@ interface Props {
   origin: string;
   request: DAppTransactionRequest;
   account: BlockchainAccount | undefined;
+  /** The signing account's name, shown beside its address. */
+  accountName?: string;
   networkId: string | null;
   onDismiss: (approved: boolean) => void;
 }
@@ -43,6 +45,7 @@ export function DAppTransactionApprovalPage({
   origin,
   request,
   account,
+  accountName,
   networkId,
   onDismiss,
 }: Props): React.ReactElement {
@@ -102,6 +105,7 @@ export function DAppTransactionApprovalPage({
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
+      signingAccount={{ name: accountName, address: account?.getReceiveAddress() ?? '' }}
       requestSummary={getDAppTransactionRequestSummary(request.method)}
       effects={effects}
       effectsLoading={effectsLoading}

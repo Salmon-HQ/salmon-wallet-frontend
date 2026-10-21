@@ -36,6 +36,7 @@ vi.mock('@salmon/ui', () => ({
       data-parsing-error={String(props.parsingError ?? '')}
       data-effects-kind={String((props.effects as { kind?: string } | null)?.kind ?? '')}
       data-effects-loading={String(props.effectsLoading ?? '')}
+      data-signing-account={JSON.stringify(props.signingAccount)}
       data-disabled={String(props.disabled ?? '')}
       data-network-mismatch={
         props.networkMismatch
@@ -55,14 +56,16 @@ const baseRequest: DAppTransactionRequest = {
   params: { transaction: 'base64-tx' },
 } as unknown as DAppTransactionRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<
-  typeof DAppTransactionApprovalPage
->[0]['account'];
+const fakeAccount = {
+  kind: 'solana',
+  getReceiveAddress: () => 'Signer1111111111111111111111111111111111111',
+} as unknown as Parameters<typeof DAppTransactionApprovalPage>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
   request: baseRequest,
   account: fakeAccount,
+  accountName: 'Savings',
   networkId: 'solana-mainnet',
   onDismiss: vi.fn(),
 };
@@ -85,6 +88,16 @@ describe('DAppTransactionApprovalPage', () => {
     });
   });
 
+  it('tells the view which account signs', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(<DAppTransactionApprovalPage {...baseProps} />);
+
+    expect(JSON.parse(getByTestId('tx-approval-view').dataset.signingAccount ?? 'null')).toEqual({
+      name: 'Savings',
+      address: 'Signer1111111111111111111111111111111111111',
+    });
+  });
   it('renders the approval view with metadata and decoded transaction details', () => {
     mockUseDAppMetadata.mockReturnValue({
       metadata: { name: 'Tx dApp', icon: 'https://dapp.example/icon.png' },

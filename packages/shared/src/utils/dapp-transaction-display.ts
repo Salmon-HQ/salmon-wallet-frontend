@@ -6,6 +6,7 @@
  */
 import type { TransactionEffects, UndeterminedReason } from '../blockchain/solana/simulation-types';
 import type { ConfirmationRow, ProposalDisplay } from '../core/confirmation/types';
+import type { SigningAccount } from '../types/ui/dapp-approval';
 import { formatBaseUnits } from './formatting';
 import { getShortAddress } from './address';
 
@@ -27,8 +28,16 @@ export const UNDETERMINED_REASON_KEYS: Record<UndeterminedReason, string> = {
   'durable-nonce': 'dapp.effects_reason_durable_nonce',
 };
 
+/** "Savings · Fg6P...KzXf", or the short address alone for an unnamed account. */
+export function formatSigningAccount({ name, address }: SigningAccount): string {
+  const short = getShortAddress(address, 4) ?? address;
+  return name ? `${name} · ${short}` : short;
+}
+
 export interface DAppTransactionDisplayInput {
   origin: string;
+  /** The account that signs, named so the user sees which one the site gets. */
+  signingAccount: SigningAccount;
   /** `null` while the preview runs or when it could not start. */
   effects: TransactionEffects | null;
   effectsLoading: boolean;
@@ -50,7 +59,10 @@ export function dappTransactionDisplay(
   t: Translate
 ): ProposalDisplay {
   const { effects } = input;
-  const rows: ConfirmationRow[] = [{ label: t('dapp.requesting_site'), value: input.origin }];
+  const rows: ConfirmationRow[] = [
+    { label: t('dapp.requesting_site'), value: input.origin },
+    { label: t('dapp.wallet_address'), value: formatSigningAccount(input.signingAccount) },
+  ];
   let warning: ProposalDisplay['warning'];
 
   if (input.parsingError) {

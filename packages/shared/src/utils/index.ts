@@ -43,6 +43,7 @@ export type { MwaSignInResult } from './mwa-sign';
 export {
   dappTransactionDisplay,
   dappTransactionGate,
+  formatSigningAccount,
   UNDETERMINED_REASON_KEYS,
 } from './dapp-transaction-display';
 export type { DAppTransactionDisplayInput } from './dapp-transaction-display';

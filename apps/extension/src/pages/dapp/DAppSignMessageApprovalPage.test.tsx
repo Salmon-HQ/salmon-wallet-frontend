@@ -31,6 +31,7 @@ vi.mock('@salmon/ui', () => ({
       data-app-name={String(props.appName ?? '')}
       data-app-icon={String(props.appIcon ?? '')}
       data-message={String(props.messageText ?? '')}
+      data-signing-account={JSON.stringify(props.signingAccount)}
       data-disabled={String(props.disabled ?? '')}
       data-data={props.data === undefined ? 'undefined' : JSON.stringify(props.data)}
       data-required-signers={
@@ -53,14 +54,16 @@ const baseRequest: DAppSignMessageRequest = {
   params: { data: messageBytes },
 } as unknown as DAppSignMessageRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<
-  typeof DAppSignMessageApprovalPage
->[0]['account'];
+const fakeAccount = {
+  kind: 'solana',
+  getReceiveAddress: () => 'Signer1111111111111111111111111111111111111',
+} as unknown as Parameters<typeof DAppSignMessageApprovalPage>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
   request: baseRequest,
   account: fakeAccount,
+  accountName: 'Savings',
   onDismiss: vi.fn(),
 };
 
@@ -70,6 +73,16 @@ describe('DAppSignMessageApprovalPage', () => {
     mockDecodeDAppMessage.mockReturnValue({ text: 'Hello' });
   });
 
+  it('tells the view which account signs', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(<DAppSignMessageApprovalPage {...baseProps} />);
+
+    expect(JSON.parse(getByTestId('sign-message-view').dataset.signingAccount ?? 'null')).toEqual({
+      name: 'Savings',
+      address: 'Signer1111111111111111111111111111111111111',
+    });
+  });
   it('renders sign-message view with metadata and decoded message', () => {
     mockUseDAppMetadata.mockReturnValue({
       metadata: { name: 'Signer dApp', icon: 'https://dapp.example/icon.png' },

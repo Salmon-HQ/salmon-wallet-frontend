@@ -9,7 +9,7 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn } from './common';
+import { CardHead, SigningAccountCard, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
@@ -19,6 +19,7 @@ export function DAppTransactionApprovalView({
   origin,
   appName,
   appIcon,
+  signingAccount,
   requestSummary,
   effects,
   effectsLoading,
@@ -90,6 +91,8 @@ export function DAppTransactionApprovalView({
               )}
             </p>
           </Card>
+
+          <SigningAccountCard account={signingAccount} />
 
           <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 

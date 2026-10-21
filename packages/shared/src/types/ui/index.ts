@@ -300,6 +300,7 @@ export type {
   DAppSignInApprovalViewPropsBase,
   DAppSignMessageApprovalViewPropsBase,
   DAppTransactionApprovalViewPropsBase,
+  SigningAccount,
   SiwsFields,
   TransactionEffectsCardPropsBase,
 } from './dapp-approval';

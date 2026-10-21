@@ -16,6 +16,8 @@ interface Props {
   origin: string;
   request: DAppSignMessageRequest | DAppSignOffchainMessageRequest;
   account: BlockchainAccount | undefined;
+  /** The signing account's name, shown beside its address. */
+  accountName?: string;
   onDismiss: (approved: boolean) => void;
 }
 
@@ -23,6 +25,7 @@ export function DAppSignMessageApprovalPage({
   origin,
   request,
   account,
+  accountName,
   onDismiss,
 }: Props): React.ReactElement {
   const { metadata } = useDAppMetadata(origin);
@@ -82,6 +85,7 @@ export function DAppSignMessageApprovalPage({
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
+      signingAccount={{ name: accountName, address: account?.getReceiveAddress() ?? '' }}
       messageText={messageData?.text ?? ''}
       data={request.params?.data}
       requiredSigners={requiredSigners}

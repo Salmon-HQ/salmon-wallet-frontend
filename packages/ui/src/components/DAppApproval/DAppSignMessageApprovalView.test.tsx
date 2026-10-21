@@ -39,9 +39,12 @@ function hexToRgb(hex: string): string {
 const mockedIsTransactionLookalike = vi.mocked(isTransactionLookalike);
 const mockedParseOffchainMessageForApproval = vi.mocked(parseOffchainMessageForApproval);
 
+const SIGNER = '4Nd1mBQtrMJVYVfKf2PJy9NZUZdTAsp7D4xWLs4gDB4T';
+
 const baseProps = {
   origin: 'https://example.com',
   messageText: 'raw fallback text',
+  signingAccount: { name: 'Savings', address: SIGNER },
   onApprove: vi.fn(),
   onReject: vi.fn(),
 };
@@ -55,6 +58,16 @@ describe('DAppSignMessageApprovalView', () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  // A site approved for one account could ask the next active one to sign,
+  // and nothing on this screen said which account that was.
+  it('names the account that signs', () => {
+    render(<DAppSignMessageApprovalView {...baseProps} />);
+
+    const row = screen.getByTestId('signing-account');
+    expect(row).toHaveTextContent('Savings');
+    expect(row).toHaveTextContent('4Nd1...DB4T');
   });
 
   it('renders the parsed OCMS content and required signers when requiredSigners is set', () => {

@@ -41,6 +41,7 @@ const baseProps = {
   feePayer: 'FeePayer1111111111111111111111111111111111',
   recentBlockhash: 'Block1111111111111111111111111111111111111',
   parsingError: null,
+  signingAccount: { address: 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' },
   onApprove: vi.fn(),
   onReject: vi.fn(),
 };
@@ -48,6 +49,14 @@ const baseProps = {
 describe('DAppTransactionApprovalView', () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it('names the account that signs, as the current wallet when it has no name', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effects={null} effectsLoading />);
+
+    const row = screen.getByTestId('signing-account');
+    expect(row).toHaveTextContent('Current wallet');
+    expect(row).toHaveTextContent('Fg6P...KzXf');
   });
 
   it('says the overview covers only the first transaction of a batch', () => {

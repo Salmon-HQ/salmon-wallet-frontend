@@ -1,22 +1,28 @@
 /**
  * What the four approval views share that the kit does not already carry:
- * two typography styles and the card's head row. Everything else the gate
- * draws is a kit piece — `OnboardingLayout` on bedrock, `Card`, `ListRow`,
- * `KeyValueRow`, `SectionLabel`, `WarningNotice`, the buttons.
+ * two typography styles, the card's head row and the signing account card.
+ * Everything else the gate draws is a kit piece — `OnboardingLayout` on
+ * bedrock, `Card`, `ListRow`, `KeyValueRow`, `SectionLabel`, `WarningNotice`,
+ * the buttons.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   fontFamily,
   fontSize,
   fontWeight,
+  getShortAddress,
   lineHeight,
   spacing,
   type Semantic,
+  type SigningAccount,
 } from '@salmon/shared';
 
-import { iconSize } from '../../icons';
+import { WalletIcon, iconSize } from '../../icons';
 import type { IconComponent } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
+import { Card } from '../Card';
+import { KeyValueRow } from '../KeyValueRow';
 import { SectionLabel } from '../SectionLabel';
 
 /** Body copy: a hint under a card's fields, a note over the hold. */
@@ -54,3 +60,19 @@ export function CardHead({ icon: Icon, label }: { icon: IconComponent; label: st
 
 /** A card's column: the kit `Card` takes a gap, this is the direction. */
 export const cardColumn: React.CSSProperties = { flexDirection: 'column' };
+
+/** The account a signature comes from, by name and short address. */
+export function SigningAccountCard({ account }: { account: SigningAccount }) {
+  const { t } = useTranslation();
+  return (
+    <Card padding="lg" gap={spacing.md} style={cardColumn}>
+      <CardHead icon={WalletIcon} label={t('dapp.wallet_address', 'Wallet')} />
+      <KeyValueRow
+        label={account.name || t('dapp.current_wallet', 'Current wallet')}
+        value={getShortAddress(account.address, 4) ?? account.address}
+        valueFont="mono"
+        testID="signing-account"
+      />
+    </Card>
+  );
+}

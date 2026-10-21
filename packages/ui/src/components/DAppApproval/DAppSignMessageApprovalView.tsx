@@ -16,7 +16,7 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn, monoText } from './common';
+import { CardHead, SigningAccountCard, bodyText, cardColumn, monoText } from './common';
 import type { DAppSignMessageApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -24,6 +24,7 @@ export function DAppSignMessageApprovalView({
   origin,
   appName,
   appIcon,
+  signingAccount,
   messageText,
   data,
   requiredSigners,
@@ -87,6 +88,8 @@ export function DAppSignMessageApprovalView({
               )}
             </p>
           </Card>
+
+          <SigningAccountCard account={signingAccount} />
 
           <Card padding="lg" gap={spacing.md} style={cardColumn}>
             <CardHead
