@@ -134,6 +134,35 @@ describe('createSecretClipboard', () => {
     expect(after.deps.clear).toHaveBeenCalledTimes(1);
   });
 
+  // A copy landing while the previous clear is still running is a new secret
+  // with its own 60 s: the finishing clear must not drop its schedule.
+  it('still clears a secret copied while a clear is in flight', async () => {
+    const { clipboard, deps } = platform();
+    let finishClear: () => void = () => undefined;
+    deps.clear.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishClear = () => {
+            clipboard.text = '';
+            resolve();
+          };
+        })
+    );
+    const secret = createSecretClipboard(deps);
+    await secret.copy(PHRASE);
+    await vi.advanceTimersByTimeAsync(SECRET_CLIPBOARD_CLEAR_MS);
+    expect(deps.clear).toHaveBeenCalledTimes(1);
+
+    await secret.copy('second secret');
+    finishClear();
+    await vi.advanceTimersByTimeAsync(0);
+    clipboard.text = 'second secret';
+
+    await vi.advanceTimersByTimeAsync(SECRET_CLIPBOARD_CLEAR_MS);
+    expect(deps.clear).toHaveBeenCalledTimes(2);
+    expect(clipboard.text).toBe('');
+  });
+
   it('still clears in-session when storage is not available', async () => {
     resetStorage();
     const { clipboard, deps } = platform();

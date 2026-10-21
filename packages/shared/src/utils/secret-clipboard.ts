@@ -68,9 +68,13 @@ export function createSecretClipboard(platform: SecretClipboardPlatform): Secret
   const clearIfDue = async () => {
     const at = await copiedAt();
     if (at === null || Date.now() - at < SECRET_CLIPBOARD_CLEAR_MS) return;
-    if (copied?.text != null && platform.holds) {
-      const stillOurs = await platform.holds(copied.text).catch(() => true);
-      if (!stillOurs) return forget();
+    // A copy made while this runs is a new secret with its own schedule: only
+    // the copy this clear is about may be forgotten afterwards.
+    const pending = copied;
+    const forgetPending = () => (copied === pending ? forget() : undefined);
+    if (pending?.text != null && platform.holds) {
+      const stillOurs = await platform.holds(pending.text).catch(() => true);
+      if (!stillOurs) return forgetPending();
     }
     try {
       await platform.clear();
@@ -78,7 +82,7 @@ export function createSecretClipboard(platform: SecretClipboardPlatform): Secret
       // A page out of focus cannot write the clipboard: the next return tries again.
       return;
     }
-    await forget();
+    await forgetPending();
   };
 
   return {
