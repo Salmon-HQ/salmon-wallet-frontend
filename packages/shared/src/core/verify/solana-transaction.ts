@@ -42,9 +42,11 @@ import {
   BUBBLEGUM_PROGRAM,
   JUPITER_AGGREGATOR_PROGRAM,
   NFT_ACTION_LAYOUTS,
+  SYSTEM_PROGRAM,
   TOKEN_2022_PROGRAM,
   TOKEN_METADATA_PROGRAM,
   TOKEN_PROGRAM,
+  WRAPPED_SOL_MINT,
 } from './solana-programs';
 
 /** What a flow declares about the transaction it asked the backend to build. */
@@ -243,24 +245,15 @@ function ownAtasCreated(
   return created;
 }
 
-/** Which programs the message invokes, and how many associated token accounts it creates. */
-export function invocationsOf(transactionBase64: string): {
-  programs: Set<string>;
-  ataCreates: number;
-} {
+/**
+ * How many associated token accounts the message creates for its fee payer:
+ * the rent a swap may spend besides the fee. Accounts it creates for anyone
+ * else earn no allowance.
+ */
+export function ownAtaCreates(transactionBase64: string): number {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
-  const programs = new Set<string>();
-  let ataCreates = 0;
-  for (const instruction of compiledInstructions(message)) {
-    const program = accounts[instruction.programAddressIndex];
-    if (program === undefined) continue;
-    programs.add(program);
-    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
-    if (program === ASSOCIATED_TOKEN_PROGRAM && ATA_CREATE_CODES.has(code as number))
-      ataCreates += 1;
-  }
-  return { programs, ataCreates };
+  return ownAtasCreated(accounts, compiledInstructions(message), accounts[0] ?? '').size;
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
@@ -570,6 +563,42 @@ function assertJupiterRoute(
   }
 }
 
+/** The System program's `Transfer`: u32 code 2, then the lamports as u64. */
+const SYSTEM_TRANSFER = 2;
+
+/**
+ * A swap moves SOL only to wrap it: into the wallet's own wrapped-SOL account
+ * it spends from, when SOL is what the screen says it pays, and no more than
+ * the amount on screen. Any other SOL transfer is value the screen never
+ * shows.
+ */
+function assertSwapWrapsOnlyInput(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  route: SwapRouteExpectation
+): void {
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== SYSTEM_PROGRAM) continue;
+    if (discriminator(instruction.data, 4) !== SYSTEM_TRANSFER) continue;
+    const to = staticAccount(accounts, instruction, 1, 'a SOL transfer');
+    if (route.inputMint !== WRAPPED_SOL_MINT || !route.sources.includes(to)) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction sends SOL to ${to}, which is not the wrapped-SOL account the swap spends`
+      );
+    }
+    const data = instruction.data as ReadonlyUint8Array;
+    const lamports =
+      data.length >= 12
+        ? new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(4, true)
+        : null;
+    if (lamports === null || lamports > BigInt(route.inAmount)) {
+      throw new SolanaTransactionMismatchError(
+        'Transaction wraps more SOL than the amount on screen'
+      );
+    }
+  }
+}
+
 /**
  * Refuses a transaction that disagrees with what the flow declared.
  *
@@ -648,6 +677,7 @@ export function assertSolanaTransactionMatches(
 
   if (expectation.swapRoute) {
     assertJupiterRoute(accounts, instructions, expectation.swapRoute, feePayer);
+    assertSwapWrapsOnlyInput(accounts, instructions, expectation.swapRoute);
   }
 
   if (expectation.nftAction) {

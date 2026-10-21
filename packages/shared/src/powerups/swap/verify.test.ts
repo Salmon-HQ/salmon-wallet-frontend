@@ -14,7 +14,9 @@ import {
 } from '@solana/kit';
 import { buildSwapProposal, walletTokenAccounts } from './useSwapScreenLogic';
 import {
+  ASSOCIATED_TOKEN_PROGRAM,
   assertSolanaTransactionMatches,
+  ownAtaCreates,
   JUPITER_AGGREGATOR_PROGRAM,
   SYSTEM_PROGRAM,
   TOKEN_PROGRAM,
@@ -237,6 +239,71 @@ describe('swap bytes — where the router pays the output', () => {
     expect(() =>
       verify(transaction([route({ destination: ATTACKER_USDC })], [address(ATTACKER_USDC)]))
     ).toThrow(/lookup table/);
+  });
+
+  describe('wrapping SOL', () => {
+    const createAta = (ata: string, owner: string, mint: string): Ix => ({
+      programAddress: address(ASSOCIATED_TOKEN_PROGRAM),
+      accounts: [
+        { address: address(WALLET), role: 3 },
+        { address: address(ata), role: 1 },
+        { address: address(owner), role: 0 },
+        { address: address(mint), role: 0 },
+        { address: address(SYSTEM_PROGRAM), role: 0 },
+        { address: address(TOKEN_PROGRAM), role: 0 },
+      ],
+      data: new Uint8Array([1]),
+    });
+    const wrap = (to: string, lamports: bigint): Ix => {
+      const data = new Uint8Array(12);
+      const view = new DataView(data.buffer);
+      view.setUint32(0, 2, true);
+      view.setBigUint64(4, lamports, true);
+      return {
+        programAddress: address(SYSTEM_PROGRAM),
+        accounts: [
+          { address: address(WALLET), role: 3 },
+          { address: address(to), role: 1 },
+        ],
+        data,
+      };
+    };
+
+    it('accepts wrapping the amount on screen into the wallet’s wrapped-SOL account', () => {
+      const tx = transaction([
+        createAta(WALLET_WSOL, WALLET, SOL),
+        wrap(WALLET_WSOL, 10_000_000n),
+        route(),
+      ]);
+      expect(() => verify(tx)).not.toThrow();
+    });
+
+    it('refuses wrapping more SOL than the amount on screen', () => {
+      const tx = transaction([
+        createAta(WALLET_WSOL, WALLET, SOL),
+        wrap(WALLET_WSOL, 10_000_001n),
+        route(),
+      ]);
+      expect(() => verify(tx)).toThrow(/more SOL than/);
+    });
+
+    it('refuses SOL sent into a wallet account other than the wrapped-SOL one it spends', () => {
+      const tx = transaction([
+        createAta(WALLET_USDC, WALLET, USDC),
+        wrap(WALLET_USDC, 1n),
+        route(),
+      ]);
+      expect(() => verify(tx)).toThrow(/sends SOL to/);
+    });
+
+    it('counts only the wallet’s own account creations toward the rent it may spend', () => {
+      const tx = transaction([
+        createAta(WALLET_WSOL, WALLET, SOL),
+        createAta(ATTACKER_USDC, EVENT_AUTHORITY, USDC),
+        route(),
+      ]);
+      expect(ownAtaCreates(tx)).toBe(1);
+    });
   });
 
   it('control: a direct SOL transfer to the attacker is refused', () => {

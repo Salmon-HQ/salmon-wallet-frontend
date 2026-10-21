@@ -1,13 +1,15 @@
 /**
- * What a 0x swap does to the wallet, read from a simulation before signing.
+ * What a swap does to the wallet, read from a simulation before signing.
  *
- * Jupiter's router call has a published account layout, so its destination is
- * bound in the bytes (`assertJupiterRoute`). 0x Settler's is not published:
- * there is no slot to hold to the wallet's own account, and a build paying its
- * output elsewhere would pass every byte check. So a transaction that invokes
- * 0x is simulated, and the wallet signs only if the simulation shows what the
- * screen shows: the input leaving, no more than the amount on screen, and at
- * least the minimum output arriving in the wallet's own accounts.
+ * Jupiter's router call has a published account layout, so its accounts and
+ * amounts are bound in the bytes (`assertJupiterRoute`). 0x Settler's is not
+ * published: there is no slot to hold to the wallet's own account, and a build
+ * paying its output elsewhere would pass every byte check. Neither layout says
+ * what the route's own steps do once running. So every swap is simulated, and
+ * the wallet signs only if the simulation shows what the screen shows: the
+ * input leaving, no more than the amount on screen, no other token leaving and
+ * no approval granted, and at least the minimum output arriving in the
+ * wallet's own accounts.
  */
 import { address } from '@solana/kit';
 import type { Base64EncodedWireTransaction } from '@solana/kit';
@@ -15,10 +17,10 @@ import type { Base64EncodedWireTransaction } from '@solana/kit';
 import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
+import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
 import { SolanaTransactionMismatchError } from './solana-transaction';
 import type { SwapRouteExpectation } from './solana-transaction';
 
-const WRAPPED_SOL = 'So11111111111111111111111111111111111111112';
 // ponytail: fixed allowances. Rent of a Token-2022 ATA with extensions is
 // ~0.0021 SOL; the fee cap only applies when the node does not report the fee.
 // Upgrade path: read the compute-budget price and each created account's size.

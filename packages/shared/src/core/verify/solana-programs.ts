@@ -34,6 +34,9 @@ export const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJ
 /** System program — wrapping SOL in a swap; no NFT flow invokes it. */
 export const SYSTEM_PROGRAM = '11111111111111111111111111111111';
 
+/** The wrapped-SOL mint: SOL as an SPL token, the mint a swap wraps SOL into. */
+export const WRAPPED_SOL_MINT = 'So11111111111111111111111111111111111111112';
+
 /** Compute Budget — a unit limit or price the builder attaches. */
 export const COMPUTE_BUDGET_PROGRAM = 'ComputeBudget111111111111111111111111111111';
 

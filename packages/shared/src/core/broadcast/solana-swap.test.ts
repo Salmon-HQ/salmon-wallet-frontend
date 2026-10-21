@@ -15,6 +15,7 @@ import {
 import { signAndSendSolanaTransaction } from './solana';
 import {
   JUPITER_AGGREGATOR_PROGRAM,
+  MEMO_PROGRAM,
   SolanaTransactionMismatchError,
   ZEROEX_SETTLER_PROGRAM,
   type SwapRouteExpectation,
@@ -88,7 +89,7 @@ async function setup(router: string) {
   return { tx, rpc, account, expectation, payer };
 }
 
-describe('signAndSendSolanaTransaction — a 0x swap is simulated before it is signed', () => {
+describe('signAndSendSolanaTransaction — a swap is simulated before it is signed', () => {
   it('refuses, without sending, a 0x swap whose output never reaches the wallet', async () => {
     const { tx, rpc, account, expectation, payer } = await setup(ZEROEX_SETTLER_PROGRAM);
     vi.mocked(previewTransactionEffects).mockResolvedValueOnce({
@@ -106,7 +107,7 @@ describe('signAndSendSolanaTransaction — a 0x swap is simulated before it is s
     expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
-  it('leaves a swap with no 0x call to the byte check alone', async () => {
+  it('runs the byte check before any simulation', async () => {
     vi.mocked(previewTransactionEffects).mockClear();
     const { tx, account, expectation } = await setup(JUPITER_AGGREGATOR_PROGRAM);
 
@@ -115,5 +116,25 @@ describe('signAndSendSolanaTransaction — a 0x swap is simulated before it is s
       /other than a swap route/
     );
     expect(previewTransactionEffects).not.toHaveBeenCalled();
+  });
+
+  // The byte check binds what it can read; the simulation catches what it
+  // cannot — a debit of another token or an approval made inside the route —
+  // whichever provider built the swap.
+  it('simulates a swap that invokes no 0x program too', async () => {
+    const { tx, rpc, account, expectation, payer } = await setup(MEMO_PROGRAM);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce({
+      kind: 'effects',
+      account: payer as Address,
+      sol: { lamports: -5_000n, feeLamports: 5_000n },
+      tokens: [{ mint: ATTACKER as Address, amount: -1n } as never],
+      approvals: [],
+    });
+
+    await expect(signAndSendSolanaTransaction(account, tx, expectation)).rejects.toThrow(
+      /takes .* from the wallet/
+    );
+    expect(previewTransactionEffects).toHaveBeenCalledWith(rpc, tx, payer);
+    expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 });
