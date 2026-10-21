@@ -57,7 +57,9 @@ export default defineConfig({
         // dynamic (process.env[key]) access work at runtime.
         // esbuild/Rollup use the most specific match: process.env wins over process.
         'process.env': JSON.stringify({
-          VITE_SALMON_ENV: env.VITE_SALMON_ENV ?? 'local',
+          // A build that names no environment is the one that ships; local is
+          // only ever asked for, in `.env`, never assumed.
+          VITE_SALMON_ENV: env.VITE_SALMON_ENV ?? 'production',
           VITE_API_HOST: env.VITE_API_HOST ?? '',
           VITE_API_PORT: env.VITE_API_PORT ?? '',
           VITE_API_URL: env.VITE_API_URL ?? '',
