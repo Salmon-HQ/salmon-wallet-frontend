@@ -1310,6 +1310,52 @@ describe('previewSolanaApprovalEffects', () => {
     expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
   });
 
+  // A durable nonce takes the place of the blockhash: the signature never
+  // expires, and the site can hold it and submit it whenever it likes.
+  const noncedMessage = () =>
+    bs58.encode(
+      new TransactionMessage({
+        payerKey: payer.publicKey,
+        recentBlockhash: BLOCKHASH,
+        instructions: [
+          SystemProgram.nonceAdvance({
+            noncePubkey: testKeypair(10).publicKey,
+            authorizedPubkey: payer.publicKey,
+          }),
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: testKeypair(8).publicKey,
+            lamports: 1,
+          }),
+        ],
+      })
+        .compileToV0Message()
+        .serialize()
+    );
+
+  it('holds a transaction whose signature never expires', async () => {
+    const simulateTransaction = vi.fn();
+
+    const effects = await previewSolanaApprovalEffects(account({ simulateTransaction }), {
+      id: 'req-nonce',
+      method: 'signTransaction',
+      params: { message: noncedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'durable-nonce' });
+    expect(simulateTransaction).not.toHaveBeenCalled();
+  });
+
+  it('names a never-expiring transaction inside a batch too', async () => {
+    const effects = await previewSolanaApprovalEffects(account(), {
+      id: 'req-nonce-batch',
+      method: 'signAllTransactions',
+      params: { messages: [encodedMessage(), noncedMessage()] },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'durable-nonce' });
+  });
+
   it('holds a transaction that runs a program the preview cannot read', async () => {
     const simulateTransaction = vi.fn();
     const message = new TransactionMessage({

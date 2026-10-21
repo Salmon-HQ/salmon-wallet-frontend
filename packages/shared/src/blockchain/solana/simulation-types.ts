@@ -67,7 +67,14 @@ export type UndeterminedReason =
    * answers for it: it loses lamports or tokens, changes owner, or has its
    * data rewritten (a nonce or mint authority, a transfer-hook record).
    */
-  | 'unanalysed-account';
+  | 'unanalysed-account'
+  /**
+   * The transaction opens with System `AdvanceNonceAccount`: a durable nonce
+   * stands in for the blockhash, so the signature never expires. The site can
+   * keep it and submit it whenever it chooses, against whatever the chain
+   * holds by then, which a preview of today cannot speak for.
+   */
+  | 'durable-nonce';
 
 /** The signer's native SOL movement, in lamports. */
 export interface SolChange {

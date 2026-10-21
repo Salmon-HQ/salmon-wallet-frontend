@@ -137,6 +137,17 @@ describe('TransactionEffectsCard', () => {
     }
   );
 
+  it('warns that a durable-nonce signature never expires', () => {
+    render(
+      <TransactionEffectsCard
+        loading={false}
+        effects={{ kind: 'undetermined', account: ACCOUNT, reason: 'durable-nonce', detail: '' }}
+      />
+    );
+
+    expect(screen.getByText(/This signature never expires/)).toBeInTheDocument();
+  });
+
   it('distinguishes a transaction that would fail from one that changes nothing', () => {
     const { rerender } = render(
       <TransactionEffectsCard

@@ -26,6 +26,7 @@ import type {
   V1TransactionConfig,
 } from '@solana/kit';
 import { address } from '@solana/addresses';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -302,6 +303,35 @@ function isValidUtf8(bytes: Uint8Array): boolean {
   }
 }
 
+/**
+ * True when the message opens with System `AdvanceNonceAccount` (instruction
+ * 4), the mark of a durable-nonce transaction. The runtime ignores bytes after
+ * the instruction tag, so only the first four are compared.
+ */
+function usesDurableNonce(encodedMessage: string): boolean {
+  let message: ParsedSolanaTransaction['message'];
+  try {
+    message = buildTransactionFromEncodedMessage(encodedMessage).message;
+  } catch {
+    return false;
+  }
+  const [program, data] =
+    'instructions' in message
+      ? [message.instructions[0]?.programAddressIndex, message.instructions[0]?.data]
+      : [
+          message.instructionHeaders[0]?.programAccountIndex,
+          message.instructionPayloads[0]?.instructionData,
+        ];
+  return (
+    program !== undefined &&
+    message.staticAccounts[program] === SYSTEM_PROGRAM_ADDRESS &&
+    data?.[0] === 4 &&
+    data[1] === 0 &&
+    data[2] === 0 &&
+    data[3] === 0
+  );
+}
+
 export function getDAppTransactionRequestSummary(
   method: DAppTransactionRequest['method']
 ): DAppTransactionRequest['method'] {
@@ -380,6 +410,17 @@ export async function previewSolanaApprovalEffects(
     request.method === 'signAllTransactions'
       ? (request.params?.messages ?? [])
       : [request.params?.message ?? ''];
+
+  // Checked first, batch included: of everything the screen can say about
+  // such a request, that the signature never expires matters most.
+  if (encodedMessages.some(usesDurableNonce)) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'durable-nonce',
+      detail: 'The request uses a durable nonce, so its signature does not expire.',
+    };
+  }
 
   // Each transaction in a batch executes against the state the previous one
   // left, so previewing them one by one would produce numbers that are right

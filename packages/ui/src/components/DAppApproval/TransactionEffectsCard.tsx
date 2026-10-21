@@ -37,6 +37,8 @@ const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
     'This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.',
   'unanalysed-program': UNANALYSED_FALLBACK,
   'unanalysed-account': UNANALYSED_FALLBACK,
+  'durable-nonce':
+    'This signature never expires, so the site can submit the transaction later, at a time it chooses.',
 };
 
 interface AmountRowProps {

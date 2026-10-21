@@ -150,6 +150,7 @@
     "hold_to_approve_hint": "Esta solicitud necesita una aprobación deliberada. Mantené presionado el botón para firmarla.",
     "effects_reason_ownership_change": "Esta transacción entrega el control de una de tus cuentas de tokens a otra persona, así que los saldos posteriores ya no serían tuyos.",
     "effects_reason_unanalysed": "Esta transacción usa programas o cuentas que Salmon no puede analizar, así que podría mover activos que no aparecen acá, como SOL en staking o NFTs.",
+    "effects_reason_durable_nonce": "Esta firma no vence nunca, así que el sitio puede enviar la transacción más adelante, cuando quiera.",
     "batch_size": "Transacciones en esta solicitud",
     "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
     "mwa_refused_title": "Solicitud rechazada",

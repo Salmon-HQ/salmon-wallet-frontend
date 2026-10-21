@@ -24,6 +24,7 @@ export const UNDETERMINED_REASON_KEYS: Record<UndeterminedReason, string> = {
   'ownership-change': 'dapp.effects_reason_ownership_change',
   'unanalysed-program': 'dapp.effects_reason_unanalysed',
   'unanalysed-account': 'dapp.effects_reason_unanalysed',
+  'durable-nonce': 'dapp.effects_reason_durable_nonce',
 };
 
 export interface DAppTransactionDisplayInput {
