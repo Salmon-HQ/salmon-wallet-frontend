@@ -16,7 +16,14 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn, monoText } from './common';
+import {
+  ApproveArea,
+  CardHead,
+  SigningAccountCard,
+  bodyText,
+  cardColumn,
+  monoText,
+} from './common';
 import type { DAppSignMessageApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -24,6 +31,7 @@ export function DAppSignMessageApprovalView({
   origin,
   appName,
   appIcon,
+  signingAccount,
   messageText,
   data,
   requiredSigners,
@@ -33,7 +41,8 @@ export function DAppSignMessageApprovalView({
   onReject,
 }: DAppSignMessageApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -88,6 +97,8 @@ export function DAppSignMessageApprovalView({
             </p>
           </Card>
 
+          {signingAccount && <SigningAccountCard account={signingAccount} />}
+
           <Card padding="lg" gap={spacing.md} style={cardColumn}>
             <CardHead
               icon={isOffchainMessage ? LockIcon : PenNibIcon}
@@ -141,23 +152,26 @@ export function DAppSignMessageApprovalView({
         </SecondaryButton>
       }
       action={
-        <PrimaryButton
-          testID="dapp-approve-button"
-          onPress={onApprove}
-          loading={loading}
-          disabled={
-            disabled ||
-            loading ||
-            !armed ||
-            isLookalikeTransaction ||
-            // Never offer to sign an OCMS request whose exact signing bytes could
-            // not be built and rendered — the user must see what they sign.
-            (isOffchainMessage && !offchainParsed)
-          }
-          fullWidth
-        >
-          {t('dapp.sign', 'Sign').toUpperCase()}
-        </PrimaryButton>
+        <ApproveArea arming={arming}>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            ariaDescribedBy={armed ? undefined : arming.hintId}
+            onPress={onApprove}
+            loading={loading}
+            disabled={
+              disabled ||
+              loading ||
+              !armed ||
+              isLookalikeTransaction ||
+              // Never offer to sign an OCMS request whose exact signing bytes could
+              // not be built and rendered — the user must see what they sign.
+              (isOffchainMessage && !offchainParsed)
+            }
+            fullWidth
+          >
+            {t('dapp.sign', 'Sign').toUpperCase()}
+          </PrimaryButton>
+        </ApproveArea>
       }
     />
   );

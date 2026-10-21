@@ -104,12 +104,32 @@ export function decodeAccountState(account: RawAccount | null): AccountState | n
         amount: token.amount,
         delegate: unwrapOption(token.delegate),
         delegatedAmount: token.delegatedAmount,
+        closeAuthority: unwrapOption(token.closeAuthority),
+        isNative: unwrapOption(token.isNative) !== null,
       },
     };
   } catch {
     // Malformed or a layout we do not know. Lamports are still valid, and the
     // caller reports the token side as unknown rather than as zero.
     return state;
+  }
+}
+
+/**
+ * True when the account is a Token-2022 mint carrying the TransferHook
+ * extension, whatever program it currently names: every transfer of the token
+ * then runs code the mint's creator chose, through Token-2022 itself.
+ */
+export function hasTransferHook(account: RawAccount | null): boolean {
+  if (!account || account.owner !== TOKEN_2022_PROGRAM_ADDRESS) return false;
+  const bytes = toBytes(account.data);
+  if (classifySplAccount(bytes) !== 'mint') return false;
+  try {
+    const extensions = unwrapOption(getMintDecoder().decode(bytes).extensions) ?? [];
+    return extensions.some((extension) => extension.__kind === 'TransferHook');
+  } catch {
+    // An extended mint whose extensions do not decode: no way to rule a hook out.
+    return true;
   }
 }
 

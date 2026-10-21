@@ -26,6 +26,7 @@ import type {
   V1TransactionConfig,
 } from '@solana/kit';
 import { address } from '@solana/addresses';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -302,6 +303,37 @@ function isValidUtf8(bytes: Uint8Array): boolean {
   }
 }
 
+/**
+ * True when the message opens with System `AdvanceNonceAccount` (instruction
+ * 4), the mark of a durable-nonce transaction. The runtime ignores bytes after
+ * the instruction tag, so only the first four are compared.
+ */
+function usesDurableNonce(encodedMessage: string): boolean {
+  let message: ParsedSolanaTransaction['message'];
+  try {
+    message = buildTransactionFromEncodedMessage(encodedMessage).message;
+  } catch {
+    // Not a nonce question: the preview decodes the message again and
+    // reports one it cannot read as malformed.
+    return false;
+  }
+  const [program, data] =
+    'instructions' in message
+      ? [message.instructions[0]?.programAddressIndex, message.instructions[0]?.data]
+      : [
+          message.instructionHeaders[0]?.programAccountIndex,
+          message.instructionPayloads[0]?.instructionData,
+        ];
+  return (
+    program !== undefined &&
+    message.staticAccounts[program] === SYSTEM_PROGRAM_ADDRESS &&
+    data?.[0] === 4 &&
+    data[1] === 0 &&
+    data[2] === 0 &&
+    data[3] === 0
+  );
+}
+
 export function getDAppTransactionRequestSummary(
   method: DAppTransactionRequest['method']
 ): DAppTransactionRequest['method'] {
@@ -358,6 +390,10 @@ export async function loadSolanaTransactionApprovalDetails(
  * The transaction is assembled with every signature slot empty and simulated
  * with `sigVerify: false`, so no key is touched and nothing is broadcast.
  *
+ * The preview runs strict: a transaction that runs a program the diff cannot
+ * read, or changes an account it does not show, answers `undetermined`, so
+ * the screen never offers its numbers as the whole story.
+ *
  * @param account - The account being asked to sign, and the account the deltas
  * are reported for.
  * @param request - The dApp request, exactly as received over the bridge.
@@ -370,12 +406,43 @@ export async function previewSolanaApprovalEffects(
   request: DAppTransactionRequest,
   options: { resolveSymbol?: ResolveSymbolFn } = {}
 ): Promise<TransactionEffects> {
+  // Both approval screens read a missing preview as "still simulating", so
+  // this must answer, never throw. The warning keeps a real bug visible.
+  try {
+    return await previewApprovalEffects(account, request, options);
+  } catch (error) {
+    console.warn('[dapp-approval] preview failed', error);
+    return {
+      kind: 'undetermined',
+      account: account.getReceiveAddress() as Address,
+      reason: 'simulation-unavailable',
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function previewApprovalEffects(
+  account: SolanaAccount,
+  request: DAppTransactionRequest,
+  options: { resolveSymbol?: ResolveSymbolFn }
+): Promise<TransactionEffects> {
   const previewedAccount = address(account.getReceiveAddress());
 
   const encodedMessages =
     request.method === 'signAllTransactions'
       ? (request.params?.messages ?? [])
       : [request.params?.message ?? ''];
+
+  // Checked first, batch included: of everything the screen can say about
+  // such a request, that the signature never expires matters most.
+  if (encodedMessages.some(usesDurableNonce)) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'durable-nonce',
+      detail: 'The request uses a durable nonce, so its signature does not expire.',
+    };
+  }
 
   // Each transaction in a batch executes against the state the previous one
   // left, so previewing them one by one would produce numbers that are right
@@ -420,7 +487,10 @@ export async function previewSolanaApprovalEffects(
   }
 
   await fetchAndMergeNetworkConfigs();
-  return previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, options);
+  return previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, {
+    ...options,
+    strict: true,
+  });
 }
 
 export async function approveSolanaSignMessage(

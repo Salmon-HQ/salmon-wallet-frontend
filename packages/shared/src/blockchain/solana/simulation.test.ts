@@ -26,13 +26,27 @@ import {
   createNoopSigner,
   some,
 } from '@solana/kit';
-import type { Address, Base64EncodedWireTransaction, Blockhash } from '@solana/kit';
-import { getTransferSolInstruction } from '@solana-program/system';
+import { AccountRole } from '@solana/kit';
+import type { Address, Base64EncodedWireTransaction, Blockhash, Instruction } from '@solana/kit';
 import {
+  getAllocateInstruction,
+  getTransferSolInstruction,
+  getTransferSolWithSeedInstruction,
+} from '@solana-program/system';
+import { getSetComputeUnitLimitInstruction } from '@solana-program/compute-budget';
+import { getAddMemoInstruction, LEGACY_MEMO_PROGRAM_ADDRESS_V3 } from '@solana-program/memo';
+import {
+  AuthorityType,
   TOKEN_2022_PROGRAM_ADDRESS,
   TOKEN_PROGRAM_ADDRESS,
+  getBurnCheckedInstruction,
+  getCloseAccountInstruction,
+  getCreateAssociatedTokenIdempotentInstruction,
   getMintEncoder,
+  getMintToCheckedInstruction,
+  getSetAuthorityInstruction,
   getTokenEncoder,
+  getTransferCheckedInstruction,
 } from '@solana-program/token-2022';
 
 import {
@@ -191,6 +205,22 @@ describe('deriveEffects', () => {
 
       expect(result).toMatchObject({ kind: 'undetermined', reason: 'ownership-change' });
     }
+  });
+
+  // A wallet with no SOL has no account yet. A dApp paying the fee can fund
+  // it and hand it to another program in one transaction: the screen showed
+  // only the SOL arriving.
+  it('never reports a wallet account created for another program as a deposit', () => {
+    const ATTACKER_PROGRAM = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' as Address;
+
+    const result = deriveEffects(
+      derivationInput({
+        before: new Map([[WALLET, null]]),
+        after: new Map([[WALLET, solAccount(890_880n, ATTACKER_PROGRAM)]]),
+      })
+    );
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'ownership-change' });
   });
 
   it('derives a plain SOL transfer as a negative lamport change including the fee', () => {
@@ -520,6 +550,8 @@ describe('decodeAccountState', () => {
       amount: 123n,
       delegate: SPENDER,
       delegatedAmount: U64_MAX,
+      closeAuthority: null,
+      isNative: false,
     });
     expect(state?.lamports).toBe(2_039_280n);
   });
@@ -604,9 +636,12 @@ function wireTransfer(): Base64EncodedWireTransaction {
 }
 
 /** Raw RPC account payload for a plain lamport-only account. */
-const rawSol = (lamports: bigint) => ({
+const rawSol = (
+  lamports: bigint,
+  owner: Address = address('11111111111111111111111111111111')
+) => ({
   lamports,
-  owner: address('11111111111111111111111111111111'),
+  owner,
   data: ['', 'base64'] as const,
 });
 
@@ -664,6 +699,28 @@ describe('previewTransactionEffects', () => {
     expect((rpc as unknown as Record<string, unknown>).sendTransaction).toBeUndefined();
   });
 
+  // Reading the accounts and simulating in parallel let the two answers come
+  // from different slots, so a diff could compare a later "before" with an
+  // earlier "after". The simulation now runs no earlier than the read.
+  it('simulates no earlier than the slot the accounts were read at', async () => {
+    const rpc = createRpc({
+      getMultipleAccounts: vi.fn().mockReturnValue({
+        send: async () => ({
+          context: { slot: 4242n },
+          value: [rawSol(2_000_000_000n), rawSol(0n), rawSol(1n)],
+        }),
+      }),
+    });
+
+    await preview(rpc);
+
+    const read = vi.mocked(rpc.getMultipleAccounts).mock.invocationCallOrder[0]!;
+    const simulated = vi.mocked(rpc.simulateTransaction).mock.invocationCallOrder[0]!;
+    expect(read).toBeLessThan(simulated);
+    const [, config] = vi.mocked(rpc.simulateTransaction).mock.calls[0]!;
+    expect(config).toMatchObject({ minContextSlot: 4242n });
+  });
+
   it('reports undetermined, not no-change, when the RPC is unreachable', async () => {
     const rpc = createRpc({
       simulateTransaction: vi.fn().mockReturnValue({
@@ -679,6 +736,54 @@ describe('previewTransactionEffects', () => {
     if (result.kind !== 'undetermined') throw new Error('expected undetermined');
     expect(result.reason).toBe('simulation-unavailable');
     expect(result.detail).toContain('fetch failed');
+  });
+
+  // The mints behind a token account are read after the simulation. A failure
+  // there escaped as a thrown error, the approval screen never left
+  // "Simulating…", and with no preview it kept the ordinary one-tap Approve.
+  it('reports undetermined, not an error, when the token mints cannot be read', async () => {
+    const tokenData = getTokenEncoder().encode({
+      mint: USDC,
+      owner: OTHER,
+      amount: 1n,
+      delegate: none(),
+      state: 1,
+      isNative: none(),
+      delegatedAmount: 0n,
+      closeAuthority: none(),
+      extensions: none(),
+    });
+    const rawToken = {
+      lamports: 2_039_280n,
+      owner: TOKEN_PROGRAM_ADDRESS,
+      data: [getBase64Decoder().decode(new Uint8Array(tokenData)), 'base64'] as const,
+    };
+    const rpc = createRpc({
+      getMultipleAccounts: vi
+        .fn()
+        .mockReturnValueOnce({
+          send: async () => ({ value: [rawSol(2_000_000_000n), rawToken, rawSol(1n)] }),
+        })
+        .mockReturnValue({
+          send: async () => {
+            throw new Error('429 Too Many Requests');
+          },
+        }),
+      simulateTransaction: vi.fn().mockReturnValue({
+        send: async () => ({
+          value: {
+            err: null,
+            logs: ['ok'],
+            fee: 5_000n,
+            accounts: [rawSol(1_999_995_000n), rawToken, rawSol(1n)],
+          },
+        }),
+      }),
+    });
+
+    const result = await preview(rpc);
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
   });
 
   it('reports undetermined when the node never executed the transaction', async () => {
@@ -754,6 +859,51 @@ describe('previewTransactionEffects', () => {
     expect(result.reason).toBe('malformed-transaction');
   });
 
+  // System Allocate gives the wallet's own account data. No lamport moves and
+  // the owner stays the System Program, yet an account with data can no
+  // longer send SOL with a System transfer.
+  it('never reports data written into the previewed account as no change', async () => {
+    const wire = wireOf([
+      getAllocateInstruction({ newAccount: createNoopSigner(WALLET), space: 8 }),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n) },
+      {
+        [WALLET]: {
+          ...rawSol(999_995_000n),
+          data: [getBase64Decoder().decode(new Uint8Array(8)), 'base64'] as const,
+        } as unknown as Raw,
+      }
+    );
+
+    expect(await previewTransactionEffects(rpc, wire, WALLET)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  it('never reports data written into a wallet account the transaction creates', async () => {
+    const wire = wireOf(
+      [getAllocateInstruction({ newAccount: createNoopSigner(WALLET), space: 8 })],
+      OTHER
+    );
+    const rpc = rpcFor(
+      { [OTHER]: rawSol(1_000_000_000n) },
+      {
+        [OTHER]: rawSol(999_995_000n),
+        [WALLET]: {
+          ...rawSol(890_880n),
+          data: [getBase64Decoder().decode(new Uint8Array(8)), 'base64'] as const,
+        } as unknown as Raw,
+      }
+    );
+
+    expect(await previewTransactionEffects(rpc, wire, WALLET)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   it('reports no-effect when the previewed account is untouched by a real transaction', async () => {
     const rpc = createRpc({
       getMultipleAccounts: vi.fn().mockReturnValue({
@@ -774,5 +924,843 @@ describe('previewTransactionEffects', () => {
     const result = await preview(rpc);
 
     expect(result.kind).toBe('no-effect');
+  });
+});
+
+// ============================================================================
+// previewTransactionEffects — strict mode (dApp approvals)
+// ============================================================================
+
+const STAKE_PROGRAM: Address = address('Stake11111111111111111111111111111111111111');
+const STAKE_ACCOUNT: Address = address('8pM1YsWLwCoU4nNGUzgjQZ8iBfTFtfkDfsfnayrHRJrQ');
+const CLOCK_SYSVAR: Address = address('SysvarC1ock11111111111111111111111111111111');
+
+/** A v0 wire transaction carrying `instructions`, unsigned. */
+function wireOf(instructions: Instruction[], feePayer: Address = WALLET) {
+  const message = pipe(
+    createTransactionMessage({ version: 0 }),
+    (m) => setTransactionMessageFeePayer(feePayer, m),
+    (m) =>
+      setTransactionMessageLifetimeUsingBlockhash(
+        { blockhash: BLOCKHASH, lastValidBlockHeight: 1_000n },
+        m
+      ),
+    (m) => appendTransactionMessageInstructions(instructions, m)
+  );
+  return getBase64EncodedWireTransaction(compileTransaction(message));
+}
+
+type Raw = ReturnType<typeof rawSol>;
+
+/**
+ * Mock RPC that answers from two address books: what each account holds
+ * before the transaction, and what the simulation says it holds after.
+ */
+function rpcFor(before: Record<string, Raw | null>, after: Record<string, Raw | null> = before) {
+  return {
+    getMultipleAccounts: vi.fn((addresses: readonly Address[]) => ({
+      send: async () => ({ value: addresses.map((key) => before[key] ?? null) }),
+    })),
+    simulateTransaction: vi.fn(
+      (_wire: unknown, config: { accounts: { addresses: readonly Address[] } }) => ({
+        send: async () => ({
+          value: {
+            err: null,
+            logs: ['ok'],
+            fee: 5_000n,
+            accounts: config.accounts.addresses.map((key) => after[key] ?? null),
+          },
+        }),
+      })
+    ),
+  } as unknown as SolanaRpc;
+}
+
+const strict = (rpc: SolanaRpc, wire: Base64EncodedWireTransaction) =>
+  previewTransactionEffects(rpc, wire, WALLET, { strict: true });
+
+const MERCHANT: Address = address('7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj');
+const RELAYER: Address = address('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4');
+const RELAYER_ATA: Address = address('AeMuAqDcw2nWnCUnkqNXTVfWjRqPZ4uHzHUgBvBmnGXK');
+const MERCHANT_ATA: Address = address('9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM');
+
+/** Raw RPC payload for a classic SPL token account. */
+function rawToken(
+  owner: Address,
+  amount: bigint,
+  { closeAuthority, native }: { closeAuthority?: Address; native?: boolean } = {}
+): Raw {
+  const data = getTokenEncoder().encode({
+    mint: native ? WSOL : USDC,
+    owner,
+    amount,
+    delegate: none(),
+    state: 1,
+    isNative: native ? some(2_039_280n) : none(),
+    delegatedAmount: 0n,
+    closeAuthority: closeAuthority ? some(closeAuthority) : none(),
+    extensions: none(),
+  });
+  return {
+    lamports: 2_039_280n + (native ? amount : 0n),
+    owner: TOKEN_PROGRAM_ADDRESS,
+    data: [getBase64Decoder().decode(new Uint8Array(data)), 'base64'],
+  } as unknown as Raw;
+}
+
+/** Raw RPC payload for the USDC mint, with `authority` able to mint. */
+function rawMint(supply: bigint, authority: Address): Raw {
+  const data = getMintEncoder().encode({
+    mintAuthority: some(authority),
+    supply,
+    decimals: 6,
+    isInitialized: true,
+    freezeAuthority: none(),
+    extensions: none(),
+  });
+  return {
+    lamports: 1_461_600n,
+    owner: TOKEN_PROGRAM_ADDRESS,
+    data: [getBase64Decoder().decode(new Uint8Array(data)), 'base64'],
+  } as unknown as Raw;
+}
+
+const classic = { programAddress: TOKEN_PROGRAM_ADDRESS };
+
+describe('previewTransactionEffects in strict mode', () => {
+  // A stake authority change moves no lamports and no tokens of the wallet's,
+  // so the balance diff reported "No balance changes" with a one-tap approve
+  // while the wallet's staked SOL changed hands.
+  const authorize: Instruction = {
+    programAddress: STAKE_PROGRAM,
+    accounts: [
+      { address: STAKE_ACCOUNT, role: AccountRole.WRITABLE },
+      { address: CLOCK_SYSVAR, role: AccountRole.READONLY },
+      { address: WALLET, role: AccountRole.WRITABLE_SIGNER },
+    ],
+    data: new Uint8Array([1, 0, 0, 0]),
+  };
+
+  it('reports a program it cannot read as unanalysed, with the movements it did read', async () => {
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [STAKE_ACCOUNT]: rawSol(3_000_000_000n, STAKE_PROGRAM) },
+      { [WALLET]: rawSol(999_995_000n), [STAKE_ACCOUNT]: rawSol(3_000_000_000n, STAKE_PROGRAM) }
+    );
+
+    const result = await strict(rpc, wireOf([authorize]));
+
+    expect(result).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+      known: { sol: { lamports: -5_000n, feeLamports: 5_000n }, tokens: [], approvals: [] },
+    });
+  });
+
+  // A swap through a router: the screen shows what the wallet gives and gets,
+  // beside the warning, instead of an empty "could not determine" card.
+  it('keeps the token movements of a swap through a program it cannot read', async () => {
+    const swap: Instruction = {
+      programAddress: SPENDER,
+      accounts: [
+        { address: WALLET, role: AccountRole.WRITABLE_SIGNER },
+        { address: USDC_ATA, role: AccountRole.WRITABLE },
+        { address: POOL_ATA, role: AccountRole.WRITABLE },
+      ],
+      data: new Uint8Array([9]),
+    };
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [USDC_ATA]: rawToken(WALLET, 30_000_000n),
+        [POOL_ATA]: rawToken(OTHER, 1_000_000_000n),
+      },
+      {
+        [WALLET]: rawSol(1_049_995_000n),
+        [USDC_ATA]: rawToken(WALLET, 20_000_000n),
+        [POOL_ATA]: rawToken(OTHER, 1_010_000_000n),
+      }
+    );
+
+    const result = await strict(rpc, wireOf([swap]));
+
+    if (result.kind !== 'undetermined')
+      throw new Error(`expected undetermined, got ${result.kind}`);
+    expect(result.reason).toBe('unanalysed-program');
+    expect(result.known?.sol.lamports).toBe(49_995_000n);
+    expect(result.known?.tokens).toEqual([expect.objectContaining({ amount: -10_000_000n })]);
+  });
+
+  // A Token-2022 mint with a transfer hook runs code its creator chose on
+  // every transfer, through Token-2022 itself, so the top-level program list
+  // looks harmless.
+  it('reports a transfer of a token with a transfer hook as unanalysed', async () => {
+    const HOOKED_MINT = address('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU');
+    const mintData = getMintEncoder().encode({
+      mintAuthority: none(),
+      supply: 1_000_000_000n,
+      decimals: 6,
+      isInitialized: true,
+      freezeAuthority: none(),
+      extensions: some([{ __kind: 'TransferHook', authority: OTHER, programId: SPENDER }]),
+    });
+    const hookedMint = {
+      lamports: 1_461_600n,
+      owner: TOKEN_2022_PROGRAM_ADDRESS,
+      data: [getBase64Decoder().decode(new Uint8Array(mintData)), 'base64'],
+    } as unknown as Raw;
+    const wire = wireOf([
+      getTransferCheckedInstruction({
+        source: USDC_ATA,
+        mint: HOOKED_MINT,
+        destination: MERCHANT_ATA,
+        authority: createNoopSigner(WALLET),
+        amount: 1n,
+        decimals: 6,
+      }),
+    ]);
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n), [HOOKED_MINT]: hookedMint });
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
+  // A mint the transaction creates has no "before"; the hook is in its
+  // state after.
+  it('reports a token whose transfer hook the transaction sets up as unanalysed', async () => {
+    const HOOKED_MINT = address('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU');
+    const mintData = getMintEncoder().encode({
+      mintAuthority: none(),
+      supply: 1_000_000_000n,
+      decimals: 6,
+      isInitialized: true,
+      freezeAuthority: none(),
+      extensions: some([{ __kind: 'TransferHook', authority: OTHER, programId: SPENDER }]),
+    });
+    const hookedMint = {
+      lamports: 1_461_600n,
+      owner: TOKEN_2022_PROGRAM_ADDRESS,
+      data: [getBase64Decoder().decode(new Uint8Array(mintData)), 'base64'],
+    } as unknown as Raw;
+    const wire = wireOf([
+      getTransferCheckedInstruction({
+        source: USDC_ATA,
+        mint: HOOKED_MINT,
+        destination: MERCHANT_ATA,
+        authority: createNoopSigner(WALLET),
+        amount: 1n,
+        decimals: 6,
+      }),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n) },
+      { [WALLET]: rawSol(1_000_000_000n), [HOOKED_MINT]: hookedMint }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
+  // Past the node's log limit the rest of the run is not logged, so a nested
+  // call to any program could be in the part that is missing.
+  it('reports logs the node cut short as an unread program', async () => {
+    const wire = wireOf([
+      getTransferSolInstruction({
+        source: createNoopSigner(WALLET),
+        destination: MERCHANT,
+        amount: 1n,
+      }),
+    ]);
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n), [MERCHANT]: rawSol(10n) });
+    vi.mocked(rpc.simulateTransaction).mockReturnValue({
+      send: async () => ({
+        value: {
+          err: null,
+          fee: 5_000n,
+          logs: ['Program 11111111111111111111111111111111 invoke [1]', 'Log truncated'],
+          accounts: [rawSol(999_994_999n), rawSol(11n), rawSol(1n)],
+        },
+      }),
+    } as never);
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
+  it('reports a program the node logged being invoked through another as unanalysed', async () => {
+    const wire = wireOf([
+      getTransferSolInstruction({
+        source: createNoopSigner(WALLET),
+        destination: MERCHANT,
+        amount: 1n,
+      }),
+    ]);
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n), [MERCHANT]: rawSol(10n) });
+    vi.mocked(rpc.simulateTransaction).mockReturnValue({
+      send: async () => ({
+        value: {
+          err: null,
+          fee: 5_000n,
+          logs: [
+            'Program 11111111111111111111111111111111 invoke [1]',
+            `Program ${SPENDER} invoke [2]`,
+            `Program ${SPENDER} success`,
+            'Program 11111111111111111111111111111111 success',
+          ],
+          accounts: [rawSol(999_994_999n), rawSol(11n), rawSol(1n)],
+        },
+      }),
+    } as never);
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-program',
+    });
+  });
+
+  // "Would fail" is the simulation's word, and the simulation of a program
+  // this module cannot read is not one to repeat to the user.
+  it('does not pass on a failing simulation of a program it cannot read', async () => {
+    const rpc = rpcFor({ [WALLET]: rawSol(1_000_000_000n) });
+    vi.mocked(rpc.simulateTransaction).mockReturnValue({
+      send: async () => ({
+        value: { err: { InstructionError: [0, { Custom: 1 }] }, logs: ['x'], accounts: null },
+      }),
+    } as never);
+
+    const result = await strict(rpc, wireOf([authorize]));
+
+    expect(result).toMatchObject({ kind: 'undetermined', reason: 'unanalysed-program' });
+    expect(result).not.toHaveProperty('known');
+  });
+
+  // An account derived from the wallet with a seed is the wallet's money, but
+  // not a balance the diff reads: draining it showed only the fee.
+  it('reports an account that loses funds outside the diff as unanalysed', async () => {
+    const SEEDED: Address = STAKE_ACCOUNT;
+    const wire = wireOf([
+      getTransferSolWithSeedInstruction({
+        source: SEEDED,
+        baseAccount: createNoopSigner(WALLET),
+        destination: OTHER,
+        amount: 5_000_000_000n,
+        fromSeed: 'savings',
+        fromOwner: SYSTEM_PROGRAM,
+      }),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [SEEDED]: rawSol(5_000_000_000n), [OTHER]: rawSol(0n) },
+      { [WALLET]: rawSol(999_995_000n), [SEEDED]: rawSol(0n), [OTHER]: rawSol(5_000_000_000n) }
+    );
+
+    const result = await strict(rpc, wire);
+
+    expect(result).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+      known: { sol: { lamports: -5_000n } },
+    });
+  });
+
+  it('reports a mint authority handed over as unanalysed, though no balance moves', async () => {
+    const wire = wireOf([
+      getSetAuthorityInstruction(
+        {
+          owned: USDC,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.MintTokens,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [USDC]: rawMint(1_000n, WALLET) },
+      { [WALLET]: rawSol(999_995_000n), [USDC]: rawMint(1_000n, OTHER) }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  // A new close authority can close the account once it is empty and keep
+  // its rent; nothing in the balance or the delegate moves.
+  it('reports a new close authority on a wallet token account as unanalysed', async () => {
+    const wire = wireOf([
+      getSetAuthorityInstruction(
+        {
+          owned: USDC_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 5n) },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [USDC_ATA]: rawToken(WALLET, 5n, { closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  // A token account the transaction opens for the wallet has no "before" to
+  // compare with, and it can be born with someone else allowed to close it.
+  it('reports a wallet token account opened with someone else as close authority', async () => {
+    const wire = wireOf([
+      getCreateAssociatedTokenIdempotentInstruction({
+        payer: createNoopSigner(WALLET),
+        ata: WSOL_ATA,
+        owner: WALLET,
+        mint: WSOL,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      }),
+      getTransferSolInstruction({
+        source: createNoopSigner(WALLET),
+        destination: WSOL_ATA,
+        amount: 100_000_000n,
+      }),
+      getSetAuthorityInstruction(
+        {
+          owned: WSOL_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n) },
+      {
+        [WALLET]: rawSol(1_000_000_000n - 102_039_280n - 5_000n),
+        [WSOL_ATA]: rawToken(WALLET, 100_000_000n, { native: true, closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  // Unwrapping SOL into the wallet raises its balance by the wrapped amount,
+  // which already shows as a row; it must not cover rent sent elsewhere.
+  it('does not let unwrapped SOL cover rent closed into someone else', async () => {
+    const wire = wireOf([
+      getCloseAccountInstruction(
+        { account: WSOL_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+      getCloseAccountInstruction(
+        { account: USDC_ATA, destination: OTHER, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+        [USDC_ATA]: rawToken(WALLET, 0n),
+        [OTHER]: rawSol(0n),
+      },
+      {
+        [WALLET]: rawSol(1_000_000_000n + 302_039_280n - 5_000n),
+        [WSOL_ATA]: null,
+        [USDC_ATA]: null,
+        [OTHER]: rawSol(2_039_280n),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  // The wallet can hold an authority over someone else's token account: a
+  // close authority it hands on moves no amount, owner or delegate.
+  it("reports an authority the wallet hands on over another's token account", async () => {
+    const wire = wireOf([
+      getSetAuthorityInstruction(
+        {
+          owned: MERCHANT_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 5n, { closeAuthority: WALLET }),
+      },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 5n, { closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  it('reports a wallet token account closed into someone else as unanalysed', async () => {
+    const wire = wireOf([
+      getCloseAccountInstruction(
+        { account: USDC_ATA, destination: OTHER, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 0n), [OTHER]: rawSol(0n) },
+      { [WALLET]: rawSol(999_995_000n), [USDC_ATA]: null, [OTHER]: rawSol(2_039_280n) }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  // Minting is the wallet's signature at work too: new tokens in someone
+  // else's account dilute every holder, and no balance of the wallet moves.
+  it('reports tokens minted by the wallet into another account as unanalysed', async () => {
+    const wire = wireOf([
+      getMintToCheckedInstruction(
+        {
+          mint: USDC,
+          token: MERCHANT_ATA,
+          mintAuthority: createNoopSigner(WALLET),
+          amount: 1_000_000n,
+          decimals: 6,
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [USDC]: rawMint(9_000_000_000n, WALLET),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 0n),
+      },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [USDC]: rawMint(9_001_000_000n, WALLET),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 1_000_000n),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  describe('keeps the preview for what it reads in full', () => {
+    it('tokens the wallet mints into its own account', async () => {
+      const wire = wireOf([
+        getMintToCheckedInstruction(
+          {
+            mint: USDC,
+            token: USDC_ATA,
+            mintAuthority: createNoopSigner(WALLET),
+            amount: 1_000_000n,
+            decimals: 6,
+          },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [USDC]: rawMint(9_000_000_000n, WALLET),
+          [USDC_ATA]: rawToken(WALLET, 0n),
+        },
+        {
+          [WALLET]: rawSol(999_995_000n),
+          [USDC]: rawMint(9_001_000_000n, WALLET),
+          [USDC_ATA]: rawToken(WALLET, 1_000_000n),
+        }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('an empty token account closed back into the wallet', async () => {
+      const wire = wireOf([
+        getCloseAccountInstruction(
+          { account: USDC_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 0n) },
+        { [WALLET]: rawSol(1_000_000_000n + 2_039_280n - 5_000n), [USDC_ATA]: null }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('a wrapped SOL payment, whose lamports leave as tokens', async () => {
+      const wire = wireOf([
+        getTransferCheckedInstruction(
+          {
+            source: WSOL_ATA,
+            mint: WSOL,
+            destination: MERCHANT_ATA,
+            authority: createNoopSigner(WALLET),
+            amount: 100_000_000n,
+            decimals: 9,
+          },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 0n, { native: true }),
+        },
+        {
+          [WALLET]: rawSol(999_995_000n),
+          [WSOL_ATA]: rawToken(WALLET, 200_000_000n, { native: true }),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 100_000_000n, { native: true }),
+        }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('wrapped SOL unwrapped back into the wallet', async () => {
+      const wire = wireOf([
+        getCloseAccountInstruction(
+          { account: WSOL_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+        },
+        { [WALLET]: rawSol(1_000_000_000n + 302_039_280n - 5_000n), [WSOL_ATA]: null }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('a SOL payment with a compute limit and a memo', async () => {
+      const wire = wireOf([
+        getSetComputeUnitLimitInstruction({ units: 50_000 }),
+        getTransferSolInstruction({
+          source: createNoopSigner(WALLET),
+          destination: MERCHANT,
+          amount: 1_000_000_000n,
+        }),
+        getAddMemoInstruction(
+          { memo: 'order 42' },
+          { programAddress: LEGACY_MEMO_PROGRAM_ADDRESS_V3 }
+        ),
+      ]);
+      const rpc = rpcFor(
+        { [WALLET]: rawSol(2_000_000_000n), [MERCHANT]: rawSol(10n) },
+        { [WALLET]: rawSol(999_995_000n), [MERCHANT]: rawSol(1_000_000_010n) }
+      );
+
+      const result = await strict(rpc, wire);
+
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.sol.lamports).toBe(-1_000_005_000n);
+    });
+
+    it('a token payment that opens the recipient’s token account', async () => {
+      const wire = wireOf([
+        getCreateAssociatedTokenIdempotentInstruction({
+          payer: createNoopSigner(WALLET),
+          ata: MERCHANT_ATA,
+          owner: MERCHANT,
+          mint: USDC,
+          tokenProgram: TOKEN_PROGRAM_ADDRESS,
+        }),
+        getTransferCheckedInstruction(
+          {
+            source: USDC_ATA,
+            mint: USDC,
+            destination: MERCHANT_ATA,
+            authority: createNoopSigner(WALLET),
+            amount: 5_000_000n,
+            decimals: 6,
+          },
+          classic
+        ),
+      ]);
+      const mint = rawMint(9_000_000_000n, OTHER);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 7_000_000n),
+          [USDC]: mint,
+        },
+        {
+          [WALLET]: rawSol(1_000_000_000n - 5_000n - 2_039_280n),
+          [USDC_ATA]: rawToken(WALLET, 2_000_000n),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 5_000_000n),
+          [USDC]: mint,
+        }
+      );
+
+      const result = await strict(rpc, wire);
+
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.tokens).toEqual([expect.objectContaining({ mint: USDC, amount: -5_000_000n })]);
+    });
+
+    it('a payment whose network fee another signer pays', async () => {
+      const wire = wireOf(
+        [
+          getTransferCheckedInstruction(
+            {
+              source: USDC_ATA,
+              mint: USDC,
+              destination: MERCHANT_ATA,
+              authority: createNoopSigner(WALLET),
+              amount: 5_000_000n,
+              decimals: 6,
+            },
+            classic
+          ),
+          getTransferCheckedInstruction(
+            {
+              source: USDC_ATA,
+              mint: USDC,
+              destination: RELAYER_ATA,
+              authority: createNoopSigner(WALLET),
+              amount: 10_000n,
+              decimals: 6,
+            },
+            classic
+          ),
+        ],
+        RELAYER
+      );
+      const mint = rawMint(9_000_000_000n, OTHER);
+      const rpc = rpcFor(
+        {
+          [RELAYER]: rawSol(50_000_000n),
+          [WALLET]: rawSol(1_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 7_000_000n),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 0n),
+          [RELAYER_ATA]: rawToken(RELAYER, 0n),
+          [USDC]: mint,
+        },
+        {
+          [RELAYER]: rawSol(49_995_000n),
+          [WALLET]: rawSol(1_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 1_990_000n),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 5_000_000n),
+          [RELAYER_ATA]: rawToken(RELAYER, 10_000n),
+          [USDC]: mint,
+        }
+      );
+
+      const result = await strict(rpc, wire);
+
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.tokens).toEqual([expect.objectContaining({ amount: -5_010_000n })]);
+    });
+
+    it('a trade where the other party signs and pays from its own token account', async () => {
+      const wire = wireOf([
+        getTransferSolInstruction({
+          source: createNoopSigner(WALLET),
+          destination: MERCHANT,
+          amount: 100_000_000n,
+        }),
+        getTransferCheckedInstruction(
+          {
+            source: MERCHANT_ATA,
+            mint: USDC,
+            destination: USDC_ATA,
+            authority: createNoopSigner(MERCHANT),
+            amount: 20_000_000n,
+            decimals: 6,
+          },
+          classic
+        ),
+      ]);
+      const mint = rawMint(9_000_000_000n, OTHER);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [MERCHANT]: rawSol(5_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 0n),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 50_000_000n),
+          [USDC]: mint,
+        },
+        {
+          [WALLET]: rawSol(899_995_000n),
+          [MERCHANT]: rawSol(105_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 20_000_000n),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 30_000_000n),
+          [USDC]: mint,
+        }
+      );
+
+      const result = await strict(rpc, wire);
+
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.tokens).toEqual([expect.objectContaining({ amount: 20_000_000n })]);
+    });
+
+    it('a burn of the wallet’s own tokens, which moves the mint’s supply', async () => {
+      const wire = wireOf([
+        getBurnCheckedInstruction(
+          {
+            account: USDC_ATA,
+            mint: USDC,
+            authority: createNoopSigner(WALLET),
+            amount: 1_000_000n,
+            decimals: 6,
+          },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [USDC_ATA]: rawToken(WALLET, 3_000_000n),
+          [USDC]: rawMint(9_000_000_000n, OTHER),
+        },
+        {
+          [WALLET]: rawSol(999_995_000n),
+          [USDC_ATA]: rawToken(WALLET, 2_000_000n),
+          [USDC]: rawMint(8_999_000_000n, OTHER),
+        }
+      );
+
+      const result = await strict(rpc, wire);
+
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.tokens).toEqual([expect.objectContaining({ amount: -1_000_000n })]);
+    });
   });
 });

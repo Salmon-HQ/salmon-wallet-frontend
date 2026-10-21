@@ -3,6 +3,7 @@ import { DAppConnectApprovalView } from '@salmon/ui';
 import { useDAppMetadata, type TrustedApp } from '@salmon/shared';
 import type { DAppConnectRequest } from '@salmon/shared';
 import { useDAppApproval } from './useDAppApproval';
+import { USER_REJECTED_ERROR } from '../../utils/types';
 
 interface DAppConnectPageProps {
   origin: string;
@@ -47,7 +48,7 @@ export function DAppConnectPage({
   }, [address, metadata, onApprove, onDismiss, origin, sendToBackground, setLoading]);
 
   const handleReject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
+    sendToBackground({ error: USER_REJECTED_ERROR });
     onDeny();
     onDismiss();
   }, [onDeny, onDismiss, sendToBackground]);

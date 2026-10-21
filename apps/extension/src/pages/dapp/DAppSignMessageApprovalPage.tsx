@@ -16,6 +16,10 @@ interface Props {
   origin: string;
   request: DAppSignMessageRequest | DAppSignOffchainMessageRequest;
   account: BlockchainAccount | undefined;
+  /** The signing account's name, shown beside its address. */
+  accountName?: string;
+  /** The account the background checked the site against, from the window's URL. */
+  approvedAddress: string | null;
   onDismiss: (approved: boolean) => void;
 }
 
@@ -23,16 +27,20 @@ export function DAppSignMessageApprovalPage({
   origin,
   request,
   account,
+  accountName,
+  approvedAddress,
   onDismiss,
-}: Props): React.ReactElement {
+}: Props): React.ReactElement | null {
   const { metadata } = useDAppMetadata(origin);
   const {
     loading,
     reject: handleReject,
     approve,
+    refused,
   } = useDAppApproval({
     requestId: request.id,
     onDismiss,
+    binding: { approved: approvedAddress, active: account?.getReceiveAddress() },
   });
 
   const messageData = useMemo(() => {
@@ -77,11 +85,16 @@ export function DAppSignMessageApprovalPage({
     );
   }, [account, approve, origin, request]);
 
+  if (refused) return null;
+
   return (
     <DAppSignMessageApprovalView
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
+      signingAccount={
+        account ? { name: accountName, address: account.getReceiveAddress() } : undefined
+      }
       messageText={messageData?.text ?? ''}
       data={request.params?.data}
       requiredSigners={requiredSigners}
