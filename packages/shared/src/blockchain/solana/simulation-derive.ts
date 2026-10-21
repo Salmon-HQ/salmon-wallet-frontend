@@ -221,6 +221,16 @@ function findUnreadWalletTokenChange({
     const post = after.get(address) ?? null;
     const preToken = decodeAccountState(pre)?.token ?? null;
     const postToken = decodeAccountState(post)?.token ?? null;
+    // Opened by the transaction too: no "before" to compare, but it can be
+    // born with someone else allowed to close it.
+    if (
+      postToken?.owner === account &&
+      postToken.closeAuthority &&
+      postToken.closeAuthority !== account &&
+      postToken.closeAuthority !== (preToken?.closeAuthority ?? null)
+    ) {
+      return address;
+    }
     if (preToken?.owner !== account || !pre) continue;
     if (postToken && postToken.closeAuthority !== preToken.closeAuthority) return address;
     const leftAsTokens = preToken.isNative ? preToken.amount - (postToken?.amount ?? 0n) : 0n;

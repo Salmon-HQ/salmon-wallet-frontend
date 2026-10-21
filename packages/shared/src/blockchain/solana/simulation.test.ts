@@ -1214,6 +1214,46 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 
+  // A token account the transaction opens for the wallet has no "before" to
+  // compare with, and it can be born with someone else allowed to close it.
+  it('reports a wallet token account opened with someone else as close authority', async () => {
+    const wire = wireOf([
+      getCreateAssociatedTokenIdempotentInstruction({
+        payer: createNoopSigner(WALLET),
+        ata: WSOL_ATA,
+        owner: WALLET,
+        mint: WSOL,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      }),
+      getTransferSolInstruction({
+        source: createNoopSigner(WALLET),
+        destination: WSOL_ATA,
+        amount: 100_000_000n,
+      }),
+      getSetAuthorityInstruction(
+        {
+          owned: WSOL_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n) },
+      {
+        [WALLET]: rawSol(1_000_000_000n - 102_039_280n - 5_000n),
+        [WSOL_ATA]: rawToken(WALLET, 100_000_000n, { native: true, closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   it('reports a wallet token account closed into someone else as unanalysed', async () => {
     const wire = wireOf([
       getCloseAccountInstruction(
