@@ -179,7 +179,7 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
 const MINT_SUPPLY_START = 36;
 const MINT_SUPPLY_END = 44;
 
-/** Same data, or the same mint with only its supply moved. */
+/** Same data, or the same mint with only its supply moved (see `mintedToOthers`). */
 function sameData(pre: RawAccount, post: RawAccount): boolean {
   if (pre.data[0] === post.data[0]) return true;
   if (!decodeMintState(pre) || !decodeMintState(post)) return false;
@@ -276,9 +276,33 @@ export function findUnreadChange(input: UnreadChangeInput): Address | null {
       ) {
         return address;
       }
-    } else if (!sameData(pre, post)) {
+    } else if (!sameData(pre, post) || mintedToOthers(address, pre, post, input)) {
       return address;
     }
   }
   return null;
+}
+
+/**
+ * True when a mint's supply grows by more than the previewed account's own
+ * token accounts received: the wallet, as mint authority, minting into
+ * someone else's account. A burn, or minting to itself, is in the diff.
+ */
+function mintedToOthers(
+  mint: Address,
+  pre: RawAccount,
+  post: RawAccount,
+  { account, before, after }: UnreadChangeInput
+): boolean {
+  const supplyBefore = decodeMintState(pre)?.supply;
+  const supplyAfter = decodeMintState(post)?.supply;
+  if (supplyBefore === undefined || supplyAfter === undefined) return false;
+  let received = 0n;
+  for (const [address, raw] of after) {
+    const postToken = decodeAccountState(raw)?.token;
+    if (postToken?.owner !== account || postToken.mint !== mint) continue;
+    received +=
+      postToken.amount - (decodeAccountState(before.get(address) ?? null)?.token?.amount ?? 0n);
+  }
+  return supplyAfter - supplyBefore > received;
 }

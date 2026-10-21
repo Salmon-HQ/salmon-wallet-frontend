@@ -43,6 +43,7 @@ import {
   getCloseAccountInstruction,
   getCreateAssociatedTokenIdempotentInstruction,
   getMintEncoder,
+  getMintToCheckedInstruction,
   getSetAuthorityInstruction,
   getTokenEncoder,
   getTransferCheckedInstruction,
@@ -1231,7 +1232,70 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 
+  // Minting is the wallet's signature at work too: new tokens in someone
+  // else's account dilute every holder, and no balance of the wallet moves.
+  it('reports tokens minted by the wallet into another account as unanalysed', async () => {
+    const wire = wireOf([
+      getMintToCheckedInstruction(
+        {
+          mint: USDC,
+          token: MERCHANT_ATA,
+          mintAuthority: createNoopSigner(WALLET),
+          amount: 1_000_000n,
+          decimals: 6,
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [USDC]: rawMint(9_000_000_000n, WALLET),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 0n),
+      },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [USDC]: rawMint(9_001_000_000n, WALLET),
+        [MERCHANT_ATA]: rawToken(MERCHANT, 1_000_000n),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   describe('keeps the preview for what it reads in full', () => {
+    it('tokens the wallet mints into its own account', async () => {
+      const wire = wireOf([
+        getMintToCheckedInstruction(
+          {
+            mint: USDC,
+            token: USDC_ATA,
+            mintAuthority: createNoopSigner(WALLET),
+            amount: 1_000_000n,
+            decimals: 6,
+          },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [USDC]: rawMint(9_000_000_000n, WALLET),
+          [USDC_ATA]: rawToken(WALLET, 0n),
+        },
+        {
+          [WALLET]: rawSol(999_995_000n),
+          [USDC]: rawMint(9_001_000_000n, WALLET),
+          [USDC_ATA]: rawToken(WALLET, 1_000_000n),
+        }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
     it('an empty token account closed back into the wallet', async () => {
       const wire = wireOf([
         getCloseAccountInstruction(
