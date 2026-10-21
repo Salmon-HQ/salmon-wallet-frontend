@@ -1,5 +1,5 @@
 import bs58 from 'bs58';
-import type { TrustedApp } from '../types/trusted-app';
+import type { TrustedApp, TrustedApps } from '../types/trusted-app';
 import type {
   DAppSignAllTransactionsRequest,
   DAppSignAndSendTransactionRequest,
@@ -181,6 +181,26 @@ export function isMwaAuthorizationValid(
   );
 }
 
+/**
+ * A disconnect can arrive while Salmon is on another network than the one the
+ * dApp connected on. Its token names that network, so it is checked there:
+ * the site to forget when the token is the one Salmon issued it, else `null`.
+ */
+export function mwaDeauthorizeOrigin(
+  input: {
+    chain: string | undefined;
+    identityUri: string | undefined;
+    authorizationScope: Uint8Array;
+  },
+  trustedApps: TrustedApps
+): string | null {
+  const networkId = mwaChainToNetworkId(input.chain);
+  const origin = mwaIdentityOrigin(input.identityUri);
+  if (!networkId || !origin) return null;
+  const token = trustedApps[networkId]?.[origin]?.authToken;
+  return token && token === encodeMwaAuthToken(input.authorizationScope) ? origin : null;
+}
+
 /** The four refusals the MWA wallet bridge can return. */
 export type MwaFailReason =
   'USER_DECLINED' | 'TOO_MANY_PAYLOADS' | 'INVALID_SIGNATURES' | 'AUTHORIZATION_NOT_VALID';
@@ -210,10 +230,19 @@ export type MwaPrecheck =
   | {
       ok: false;
       failReason: MwaFailReason;
-      /** Set when the user should be told why before the dApp hears no. */
-      reason?: 'network' | 'identity' | 'watch-only';
+      /**
+       * Set when the user should be told why before the dApp hears no.
+       * `network`: one Salmon supports but is not on; `network-unsupported`:
+       * one it does not support at all.
+       */
+      reason?: 'network' | 'network-unsupported' | 'identity' | 'watch-only';
       requested?: string;
     };
+
+/** The dApp's chain as a short identifier, so a refusal cannot carry its sentences. */
+function mwaChainLabel(chain: string | undefined): string {
+  return (chain ?? '').replace(/[^A-Za-z0-9:_-]/g, '').slice(0, 32) || '?';
+}
 
 /**
  * Everything a dApp request must pass before the user is asked anything:
@@ -222,7 +251,18 @@ export type MwaPrecheck =
  */
 export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): MwaPrecheck {
   const networkId = mwaChainToNetworkId(input.chain);
-  if (!networkId || networkId !== ctx.networkId) {
+  if (!networkId) {
+    return {
+      ok: false,
+      reason: 'network-unsupported',
+      requested: mwaChainLabel(input.chain),
+      failReason: 'USER_DECLINED',
+    };
+  }
+  if (networkId !== ctx.networkId) {
+    // A token belongs to the network it was issued on; the dApp connects again,
+    // and only a connect may offer to move the wallet (`mwaNetworkSwitch`).
+    if (!input.authorize) return { ok: false, failReason: 'AUTHORIZATION_NOT_VALID' };
     return { ok: false, reason: 'network', requested: input.chain, failReason: 'USER_DECLINED' };
   }
   const origin = mwaIdentityOrigin(input.identityUri);
@@ -242,6 +282,23 @@ export function mwaPrecheck(input: MwaPrecheckInput, ctx: MwaPrecheckContext): M
     return { ok: false, failReason: 'TOO_MANY_PAYLOADS' };
   }
   return { ok: true, origin, networkId };
+}
+
+/**
+ * The network to offer switching to before a request is shown: the one a
+ * connecting dApp with a verifiable origin asks for, when Salmon supports it,
+ * is not on it, and the active account holds an account there (`changeNetwork` does nothing otherwise). Null when no
+ * switch applies, and the precheck then judges the request as it stands.
+ */
+export function mwaNetworkSwitch(
+  request: { authorize: boolean; chain: string | undefined; identityUri: string | undefined },
+  activeNetworkId: string | null,
+  holds: (networkId: string) => boolean
+): 'solana-mainnet' | 'solana-devnet' | null {
+  if (!request.authorize || !mwaIdentityOrigin(request.identityUri)) return null;
+  const target = mwaChainToNetworkId(request.chain);
+  if (!target || target === activeNetworkId || !holds(target)) return null;
+  return target;
 }
 
 /** The account an approved `authorize` hands the dApp: the raw key of the address the user saw. */
