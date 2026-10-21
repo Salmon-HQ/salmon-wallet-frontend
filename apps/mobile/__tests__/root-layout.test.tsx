@@ -17,6 +17,11 @@ jest.mock('../hooks/useSecretScreen', () => ({
   useAppSwitcherProtection: () => mockUseAppSwitcherProtection(),
 }));
 
+const mockUseSecretClipboardResume = jest.fn();
+jest.mock('../hooks/useSecretClipboard', () => ({
+  useSecretClipboardResume: () => mockUseSecretClipboardResume(),
+}));
+
 jest.mock('react-native-reanimated', () => ({}));
 
 // The root `GestureHandlerRootView` reaches the native module at import time
@@ -399,7 +404,7 @@ describe('RootLayout mobile lock lifecycle', () => {
   });
 });
 
-describe('RootLayout app switcher', () => {
+describe('RootLayout privacy hooks', () => {
   // Balances and the address were in the iOS app-switcher snapshot: the blur
   // covers the whole app from the root, before the first screen is ready.
   it('turns on the app-wide app-switcher blur from the root', () => {
@@ -409,6 +414,15 @@ describe('RootLayout app switcher', () => {
     render(<RootLayout />);
 
     expect(mockUseAppSwitcherProtection).toHaveBeenCalled();
+  });
+
+  it('clears a secret left on the clipboard from the root, on launch and on return', () => {
+    mockUseStoreUpdateGate.mockReturnValue({ checking: true, required: false });
+    mockUseAccountsContext.mockReturnValue([{ ready: false, accounts: [] }, {}]);
+
+    render(<RootLayout />);
+
+    expect(mockUseSecretClipboardResume).toHaveBeenCalled();
   });
 });
 

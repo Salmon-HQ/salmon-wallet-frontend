@@ -123,6 +123,31 @@ describe('useBackupPanelLogic', () => {
     expect(result.current.copyFailed).toBe(false);
   });
 
+  // The confirmation says when Salmon clears the clipboard: a sentence, so it
+  // stays up rather than flashing for the length of "Copied".
+  it('keeps saying the clipboard will be cleared once a copy succeeded, and not before', async () => {
+    vi.useFakeTimers();
+    const copyToClipboard = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      useBackupPanelLogic({ activeAccount: accountWithMnemonic(TEST_MNEMONIC), copyToClipboard })
+    );
+    expect(result.current.secretCopied).toBe(false);
+
+    await act(async () => {
+      await result.current.handleReauthenticated();
+    });
+    await act(async () => {
+      await result.current.handleCopy();
+    });
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(result.current.copied).toBe(false);
+    expect(result.current.secretCopied).toBe(true);
+    vi.useRealTimers();
+  });
+
   it('a rejected copy surfaces the failure and reports the error', async () => {
     const error = new Error('clipboard denied');
     const copyToClipboard = vi.fn().mockRejectedValue(error);

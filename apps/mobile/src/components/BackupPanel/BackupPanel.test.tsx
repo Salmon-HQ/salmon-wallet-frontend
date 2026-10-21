@@ -15,6 +15,11 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => true),
 }));
 
+const mockSecretCopy = jest.fn(async (_text: string) => undefined);
+jest.mock('../../../hooks/useSecretClipboard', () => ({
+  secretClipboard: { copy: (text: string) => mockSecretCopy(text) },
+}));
+
 const mockActiveAccount: { secret: { kind: string; mnemonic?: string } } = {
   secret: { kind: 'mnemonic', mnemonic: TEST_PHRASE },
 };
@@ -169,6 +174,21 @@ describe('BackupPanel', () => {
     await waitFor(() => {
       expect(screen.getByTestId('backup-seed-clipboard-warning')).toBeTruthy();
     });
+  });
+
+  // The phrase goes through the clipboard Salmon clears, and the screen says so.
+  it('copies through the clearing clipboard and says when it is cleared', async () => {
+    render(<BackupPanel onBack={jest.fn()} />);
+    fireEvent.press(screen.getByTestId('backup-seed-reveal-overlay'));
+    fireEvent.press(screen.getByTestId('backup-reauth-confirm'));
+    await waitFor(() => expect(screen.getByText('alpha')).toBeTruthy());
+    expect(screen.queryByTestId('backup-seed-clipboard-clears')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('backup-seed-copy-button'));
+
+    await waitFor(() => expect(screen.getByTestId('backup-seed-clipboard-clears')).toBeTruthy());
+    expect(mockSecretCopy).toHaveBeenCalledWith(TEST_PHRASE);
+    expect(screen.getByText('settings.secret_copied')).toBeTruthy();
   });
 
   it('takes the biometric prompt as the equivalent of the password when it is available', async () => {

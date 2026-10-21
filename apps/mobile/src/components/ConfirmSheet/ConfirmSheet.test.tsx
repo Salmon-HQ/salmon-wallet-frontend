@@ -164,21 +164,26 @@ describe('ConfirmSheet held confirm', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('ignores a tap and confirms once the hold completes', () => {
+  // The hold asks the OS whether a screen reader is on; let that answer land.
+  const settle = () => act(async () => {});
+
+  it('ignores a tap and confirms once the hold completes', async () => {
     const { onConfirm } = renderSheet({ isDanger: true, requiresHold: true });
+    await settle();
 
     fireEvent.press(screen.getByText('Confirm'));
     expect(onConfirm).not.toHaveBeenCalled();
 
     fireEvent(screen.getByTestId('confirm-dialog-hold'), 'touchStart');
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(700);
     });
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('does not start a hold while confirm is disabled', () => {
+  it('does not start a hold while confirm is disabled', async () => {
     const { onConfirm } = renderSheet({ requiresHold: true, confirmDisabled: true });
+    await settle();
 
     fireEvent(screen.getByTestId('confirm-dialog-hold'), 'touchStart');
     act(() => {

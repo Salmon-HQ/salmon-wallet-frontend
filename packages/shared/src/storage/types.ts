@@ -196,6 +196,8 @@ export const STORAGE_KEYS = {
   CONNECTION: 'salmon_connection',
   /** Consecutive failed unlock attempts and when the last one happened */
   UNLOCK_ATTEMPTS: 'salmon_unlock_attempts',
+  /** When a recovery phrase or private key was copied and not yet cleared (never the secret) */
+  SECRET_COPIED_AT: 'salmon_secret_copied_at',
 
   // -- User preferences --
   /** User settings and preferences (useUserConfig) */

@@ -31,6 +31,7 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
+import { useSecretClipboardResume } from '../hooks/useSecretClipboard';
 import { useAppSwitcherProtection } from '../hooks/useSecretScreen';
 import {
   isSeedVaultScreenOpen,
@@ -62,6 +63,9 @@ export default function RootLayout() {
   // iOS: blur the app whenever it is not in focus, so the app-switcher
   // snapshot never shows balances, the address or a secret.
   useAppSwitcherProtection();
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard on launch and on every return to the app.
+  useSecretClipboardResume();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {

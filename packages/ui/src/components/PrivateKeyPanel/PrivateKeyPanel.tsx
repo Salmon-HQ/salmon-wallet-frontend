@@ -26,6 +26,7 @@ import {
   getAccountKeysForNetwork,
 } from '@salmon/shared/utils/account';
 
+import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { GlobeIcon, iconSize } from '../../icons';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -94,6 +95,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   const {
     revealedIndexes,
     copiedIndex,
+    secretCopiedIndex,
     copyFailedIndex,
     reauthIndex,
     setReauthIndex,
@@ -102,7 +104,8 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     handleReauthenticated,
     handleCopy,
   } = usePrivateKeyPanelLogic({
-    copyToClipboard: (privateKey) => navigator.clipboard.writeText(privateKey),
+    // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
+    copyToClipboard: (privateKey) => secretClipboard.copy(privateKey),
   });
 
   const handleSelectNetwork = useCallback(
@@ -270,6 +273,11 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
               {copyFailedIndex === index && (
                 <div data-testid={`private-key-copy-error-${index}`}>
                   <WarningNotice tone="error" title={t('settings.copy_failed')} />
+                </div>
+              )}
+              {secretCopiedIndex === index && (
+                <div data-testid={`private-key-clipboard-clears-${index}`}>
+                  <WarningNotice tone="info" title={t('settings.secret_copied')} />
                 </div>
               )}
             </Card>

@@ -13,6 +13,7 @@ const mockRemoveAllAccounts = vi.fn();
 const mockUnlockWithCachedKey = vi.fn();
 const mockUseInactivityTimeout = vi.fn();
 const mockClearSessionKey = vi.fn();
+const mockUseSecretClipboardResume = vi.fn();
 const eventListeners = new Map<string, EventListener>();
 
 vi.mock('@salmon/shared', () => ({
@@ -62,6 +63,7 @@ vi.mock('@salmon/ui', () => ({
   // The popup publishes the surfacing itself when the lock's overlay is
   // released — the lock's own wait opts out of it (spec 031).
   useTaskChrome: () => ({ surface: () => {} }),
+  useSecretClipboardResume: () => mockUseSecretClipboardResume(),
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({
@@ -139,6 +141,14 @@ describe('Extension popup inactivity lock', () => {
         },
       },
     });
+  });
+
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard when the panel opens or comes back into focus.
+  it('clears a secret left on the clipboard from the root', () => {
+    render(<App />);
+
+    expect(mockUseSecretClipboardResume).toHaveBeenCalled();
   });
 
   it('configures inactivity lock when wallet is unlocked and has accounts', () => {

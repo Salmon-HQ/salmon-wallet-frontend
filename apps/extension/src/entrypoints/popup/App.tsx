@@ -13,7 +13,13 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { ConfirmationHost, LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
+import {
+  ConfirmationHost,
+  LoadingScreen,
+  WalletInitErrorScreen,
+  useSecretClipboardResume,
+  useTaskChrome,
+} from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -75,6 +81,9 @@ function App() {
     pathIndex,
   } = state;
   const settleAfterTx = useSettleAfterTx();
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard when the panel opens and whenever it comes back into focus.
+  useSecretClipboardResume();
   // `useWaitGate` first: below `motionMs.waitDelay` the wait never mounts at
   // all, so a boot that resolves in 200ms shows nothing rather than a 2s wave
   // train that would make the extension feel slower than the spinner it
