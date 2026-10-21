@@ -5,6 +5,7 @@
  * the page; only the plumbing lives here.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { USER_REJECTED_ERROR } from '../../utils/types';
 
 export const BACKGROUND_CHANNEL = 'salmon_extension_background_channel';
 
@@ -35,7 +36,7 @@ export function useDAppApproval({ requestId, onDismiss, binding }: UseDAppApprov
   );
 
   const reject = useCallback(() => {
-    sendToBackground({ error: 'User rejected the request' });
+    sendToBackground({ error: USER_REJECTED_ERROR });
     onDismiss(false);
   }, [onDismiss, sendToBackground]);
 

@@ -447,10 +447,12 @@ describe('what an unapproved origin can make the wallet do', () => {
 describe('after the user turns a site down', () => {
   const OTHER_ORIGIN = 'https://other.example';
 
+  const inTab = (origin: string, tabId: number) => ({ ...ownSender(origin), tab: { id: tabId } });
+
   /** Opens a connect window for `origin` and returns how to answer or close it. */
-  async function openWindow(origin: string = DAPP_ORIGIN) {
+  async function openWindow(origin: string = DAPP_ORIGIN, sender = ownSender(origin)) {
     const started = startBackground();
-    started.route(dappRequest('connect', 'req-first'), ownSender(origin), vi.fn());
+    started.route(dappRequest('connect', 'req-first'), sender, vi.fn());
     await vi.waitFor(() => expect(started.windowsCreate).toHaveBeenCalledTimes(1));
     const closeWindow = () =>
       (started.onWindowRemoved.mock.calls.at(-1)?.[0] as (id: number) => void)(POPUP_WINDOW_ID);
@@ -486,6 +488,32 @@ describe('after the user turns a site down', () => {
       expect(again.mock.calls[0]?.[0]).toEqual({
         error: 'Declined moments ago, try again later',
         id: 'req-again',
+      })
+    );
+    expect(opened.windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  // A request that failed, or that the screen refused (a network mismatch,
+  // no account), is not the user turning the site down.
+  it('does not hold back a site whose request failed rather than being rejected', async () => {
+    const opened = await openWindow();
+    opened.answer({ error: 'Transaction approval failed' });
+
+    opened.route(dappRequest('connect', 'req-retry'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+  });
+
+  it('holds back the tab too, whatever origin it moves on to', async () => {
+    const opened = await openWindow(DAPP_ORIGIN, inTab(DAPP_ORIGIN, 7));
+    opened.closeWindow();
+    const again = vi.fn();
+
+    opened.route(dappRequest('connect', 'req-moved'), inTab('https://a.dapp.example', 7), again);
+
+    await vi.waitFor(() =>
+      expect(again.mock.calls[0]?.[0]).toMatchObject({
+        error: 'Declined moments ago, try again later',
       })
     );
     expect(opened.windowsCreate).toHaveBeenCalledTimes(1);

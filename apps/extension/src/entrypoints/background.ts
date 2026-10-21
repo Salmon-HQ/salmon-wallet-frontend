@@ -7,6 +7,8 @@
 
 import { browser } from 'wxt/browser';
 
+import { USER_REJECTED_ERROR } from '../utils/types';
+
 // Chrome MV3 and Firefox 115+ (MV2 included) have storage.session; the
 // storage.local fallback only serves older browsers the manifest excludes.
 const sessionArea = browser.storage.session ?? browser.storage.local;
@@ -29,6 +31,8 @@ const SESSION_KEY_STORAGE_KEY = 'salmon_session_key';
 interface MessageData {
   id: string;
   method: string;
+  /** Set on an approval page's answer that refuses the request. */
+  error?: unknown;
   params?: {
     network?: string;
     [key: string]: unknown;
@@ -64,10 +68,13 @@ interface StorageData {
 type ResponseHandler = (data: unknown, id?: string) => void;
 
 /**
- * How long a site is refused after the user rejects or closes its approval
- * window. Without it a page asks again the moment the window closes and keeps
- * the single approval slot for as long as its tab stays open, so no other site
- * can be served.
+ * How long a site, and the tab it asked from, are refused after the user
+ * rejects or closes its approval window. Without it a page asks again the
+ * moment the window closes and keeps the single approval slot for as long as
+ * its tab stays open, so no other site can be served.
+ *
+ * Best effort: a page that opens another tab on another subdomain is a new
+ * origin and a new tab, and a service-worker restart forgets every entry.
  */
 export const DECLINE_COOLDOWN_MS = 30_000;
 
@@ -95,8 +102,28 @@ export default defineBackground(() => {
    * while it is still being created). At most one entry: see launchPopupWindow.
    */
   const approvalWindowOrigins = new Map<string, number | null>();
-  /** Origin -> the time until which its requests are refused. */
+  /** An origin, or `tab:<id>` -> the time until which its requests are refused. */
   const declinedUntil = new Map<string, number>();
+  /** requestId -> the origin and tab it came from, while its window is open. */
+  const requestSources = new Map<string, { origin: string; tabId?: number }>();
+
+  /** Whether `key` is cooling down; an expired entry is dropped on the way. */
+  const isCoolingDown = (key: string): boolean => {
+    const until = declinedUntil.get(key);
+    if (until === undefined) return false;
+    if (until > Date.now()) return true;
+    declinedUntil.delete(key);
+    return false;
+  };
+
+  /** Starts the cool-down of the origin and tab a request came from. */
+  const startCoolDown = (requestId: string): void => {
+    const source = requestSources.get(requestId);
+    if (!source) return;
+    const until = Date.now() + DECLINE_COOLDOWN_MS;
+    declinedUntil.set(source.origin, until);
+    if (source.tabId !== undefined) declinedUntil.set(`tab:${source.tabId}`, until);
+  };
 
   // Accept the side panel's persistent port. No messages flow over it now; the
   // open connection just keeps the service worker alive while the side panel is
@@ -175,8 +202,9 @@ export default defineBackground(() => {
     boundAddress?: string
   ): Promise<void> => {
     const origin = sender.origin || '';
+    const tabId = sender.tab?.id;
 
-    if ((declinedUntil.get(origin) ?? 0) > Date.now()) {
+    if (isCoolingDown(origin) || (tabId !== undefined && isCoolingDown(`tab:${tabId}`))) {
       sendResponse({ error: 'Declined moments ago, try again later', id: message.data.id });
       return;
     }
@@ -240,6 +268,7 @@ export default defineBackground(() => {
     }
     approvalWindows.set(message.data.id, popupId);
     approvalWindowOrigins.set(origin, popupId);
+    requestSources.set(message.data.id, { origin, tabId });
 
     const listener = (windowId: number): void => {
       if (windowId === popupId) {
@@ -249,12 +278,15 @@ export default defineBackground(() => {
         }
         const responseHandler = responseHandlers.get(message.data.id);
         if (responseHandler) {
+          // Closed without an answer: the user turned the site down.
+          startCoolDown(message.data.id);
           responseHandlers.delete(message.data.id);
           responseHandler({
             error: 'Operation cancelled',
             id: message.data.id,
           });
         }
+        requestSources.delete(message.data.id);
 
         browser.windows.onRemoved.removeListener(listener);
       }
@@ -262,14 +294,7 @@ export default defineBackground(() => {
 
     browser.windows.onRemoved.addListener(listener);
 
-    // Any answer but an approval — a rejection, a failure, a closed window —
-    // starts the origin's cool-down.
-    responseHandlers.set(message.data.id, (...answer) => {
-      if ((answer[0] as { error?: unknown } | null)?.error) {
-        declinedUntil.set(origin, Date.now() + DECLINE_COOLDOWN_MS);
-      }
-      sendResponse(...answer);
-    });
+    responseHandlers.set(message.data.id, sendResponse);
   };
 
   /**
@@ -549,7 +574,11 @@ export default defineBackground(() => {
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
           responseHandler(msg.data, msg.data.id);
+          // Only the user's own rejection cools the site down: a failed
+          // signature or a request the screen could not take is not that.
+          if (msg.data.error === USER_REJECTED_ERROR) startCoolDown(msg.data.id);
         }
+        requestSources.delete(msg.data.id);
         // Request answered — close its approval popup window. The onRemoved
         // listener is now a no-op (the response handler is already deleted), so
         // closing here does not emit a spurious cancellation.
