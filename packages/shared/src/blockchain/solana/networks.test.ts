@@ -54,6 +54,21 @@ describe('resolveSolanaWsUrl', () => {
   it('derives when no wsUrl is configured', () => {
     expect(resolveSolanaWsUrl('http://127.0.0.1:8899')).toBe('ws://127.0.0.1:8900/');
   });
+
+  // A backslash is a path separator to the WHATWG parser and part of the
+  // userinfo to iOS Foundation: the raw string would be checked against one
+  // host and opened against another. The normalized URL names one host to both.
+  it('returns the backend wsUrl normalized, never as sent', () => {
+    expect(resolveSolanaWsUrl(NODE_URL, 'wss://mainnet.helius-rpc.com\\@evil.example/ws')).toBe(
+      'wss://mainnet.helius-rpc.com/@evil.example/ws'
+    );
+  });
+
+  it('ignores a backend wsUrl that carries credentials', () => {
+    expect(resolveSolanaWsUrl(NODE_URL, 'wss://user:pass@mainnet.helius-rpc.com/ws')).toBe(
+      'wss://mainnet.helius-rpc.com/?api-key=K'
+    );
+  });
 });
 
 describe('SOLANA_TRANSACTION_VERSION', () => {

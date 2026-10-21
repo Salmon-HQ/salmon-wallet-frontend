@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { fetchAndMergeNetworkConfigs, useAvailableNetworks } from './useAvailableNetworks';
 import { SOLANA_NETWORKS } from '../blockchain/solana/networks';
+import { BITCOIN_NETWORKS } from '../blockchain/bitcoin/networks';
 import * as useUserConfigModule from './useUserConfig';
 import * as networkService from '../api/services/network';
 import type { ActiveBlockchainAccount } from '../types/account';
@@ -641,7 +642,7 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       'https://api.mainnet-beta.solana.com',
       'https://api.devnet.solana.com',
     ])('accepts %s', async (nodeUrl) => {
-      expect(await merge(nodeUrl)).toBe(nodeUrl);
+      expect(await merge(nodeUrl)).toBe(new URL(nodeUrl).href);
     });
 
     it.each([
@@ -651,6 +652,20 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
       'https://user@evil.example/?h=x.rpcpool.com',
     ])('ignores %s and keeps the compiled default', async (nodeUrl) => {
       expect(await merge(nodeUrl)).toBe(DEFAULT);
+    });
+
+    // WHATWG reads the backslash as a path separator (host api.mainnet-beta…),
+    // iOS Foundation as part of the userinfo (host evil.example). Storing the
+    // normalized URL makes the host that was checked the host that is opened.
+    it('stores the normalized URL, never the string as sent', async () => {
+      expect(await merge('https://api.mainnet-beta.solana.com\\@evil.example/')).toBe(
+        'https://api.mainnet-beta.solana.com/@evil.example/'
+      );
+    });
+
+    it('ignores a URL that carries credentials', async () => {
+      expect(await merge('https://user:pass@api.mainnet-beta.solana.com/')).toBe(DEFAULT);
+      expect(await merge('https://evil@api.mainnet-beta.solana.com/')).toBe(DEFAULT);
     });
 
     it('treats a build that declares no environment as production', async () => {
@@ -684,6 +699,34 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
     expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBe(before.wsUrl);
   });
 
+  it('stores the websocket and Bitcoin endpoints normalized too', async () => {
+    vi.mocked(networkService.getNetworks).mockResolvedValue([
+      {
+        id: MAINNET,
+        blockchain: 'solana',
+        config: {
+          nodeUrl: 'https://api.mainnet-beta.solana.com',
+          wsUrl: 'wss://api.mainnet-beta.solana.com\\@evil.example/',
+        },
+      },
+      {
+        id: 'bitcoin-mainnet',
+        blockchain: 'bitcoin',
+        config: { apiUrl: 'https://mempool.space\\@evil.example/api' },
+      },
+    ] as any);
+
+    await fetchAndMergeNetworkConfigs();
+
+    expect(SOLANA_NETWORKS[MAINNET].config.wsUrl).toBe(
+      'wss://api.mainnet-beta.solana.com/@evil.example/'
+    );
+    expect(BITCOIN_NETWORKS['bitcoin-mainnet'].config.apiUrl).toBe(
+      'https://mempool.space/@evil.example/api'
+    );
+    delete SOLANA_NETWORKS[MAINNET].config.wsUrl;
+  });
+
   describe('a validator on this machine', () => {
     const local = { nodeUrl: 'http://localhost:8899', wsUrl: 'ws://127.0.0.1:8900' };
     afterEach(() => {
@@ -700,7 +743,10 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
 
       await fetchAndMergeNetworkConfigs();
 
-      expect(SOLANA_NETWORKS[MAINNET].config).toMatchObject(local);
+      expect(SOLANA_NETWORKS[MAINNET].config).toMatchObject({
+        nodeUrl: 'http://localhost:8899/',
+        wsUrl: 'ws://127.0.0.1:8900/',
+      });
     });
 
     it('is accepted on the IPv6 loopback too', async () => {
@@ -711,7 +757,7 @@ describe('fetchAndMergeNetworkConfigs endpoint validation', () => {
 
       await fetchAndMergeNetworkConfigs();
 
-      expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('http://[::1]:8899');
+      expect(SOLANA_NETWORKS[MAINNET].config.nodeUrl).toBe('http://[::1]:8899/');
     });
 
     it('is refused when the build only runs in development without declaring itself local', async () => {

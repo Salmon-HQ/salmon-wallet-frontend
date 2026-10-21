@@ -107,16 +107,21 @@ function acceptEndpoint(
   if (typeof value !== 'string' || value.length === 0) return null;
   const environment = declaredEnvironment() ?? 'production';
   try {
+    // The normalized URL is what is stored, never the string as sent: parsers
+    // disagree on odd input (WHATWG reads `\\` as a path separator, iOS
+    // Foundation as part of the userinfo), so the raw string could be checked
+    // against one host here and opened against another by the platform.
     const url = new URL(value);
+    if (url.username || url.password) return null;
     if (url.protocol === schemes.secure) {
       const allowed = !pinned || environment !== 'production' || isSolanaRpcHost(url.hostname);
-      return allowed ? value : null;
+      return allowed ? url.href : null;
     }
     const onLoopback =
       url.protocol === schemes.loopback &&
       LOOPBACK_HOSTS.includes(url.hostname) &&
       environment === 'local';
-    return onLoopback ? value : null;
+    return onLoopback ? url.href : null;
   } catch {
     return null;
   }
