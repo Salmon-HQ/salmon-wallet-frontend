@@ -25,12 +25,11 @@ const nodeRefusal = () =>
 // ============================================================================
 
 /**
- * Unsigned v0 transaction carrying one address-table lookup and one System
- * instruction an NFT flow may carry. The instruction code matters: the flow's
- * expectation refuses the System instructions that move lamports.
+ * A table step: an unsigned v0 `ExtendLookupTable` of `LOOKUP_TABLE_ADDRESS`
+ * by the test wallet, the one instruction a table step carries.
  */
-const FIXTURE_B64 =
-  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAAAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
+const TABLE_STEP_B64 =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQACBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ3pq+XM5t6yI0YkskERvUAAjCSZvYuU8EYJEmCAAAA4zLa+S+r7Oi2P/ekQAXl/f2a+hWHVrYcWpX5BLO40IEBAwQBAAACLAIAAAABAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAA==';
 
 /**
  * The work step: the same lookup, and an SPL Token `Burn` of `NFT_MINT` by the
@@ -191,10 +190,10 @@ describe('prepared-transactions', () => {
     await expect(
       signAndSendPreparedSolanaTransactions(
         account as never,
-        { transactions: [{ transaction: FIXTURE_B64, step: 'lookup_table_create' }] },
+        { transactions: [{ transaction: TABLE_STEP_B64, step: 'lookup_table_create' }] },
         BURN_NFT
       )
-    ).rejects.toThrow(/does not act on/);
+    ).rejects.toThrow(/invokes AddressLookupTab1e1111111111111111111111111/);
     expect(rpc.sendTransaction).not.toHaveBeenCalled();
   });
 
@@ -283,7 +282,7 @@ describe('prepared-transactions', () => {
     const response: PreparedNftTransactionResponse = {
       transactions: [
         {
-          transaction: FIXTURE_B64,
+          transaction: TABLE_STEP_B64,
           step: 'lookup_table_extend',
           lookupTableAddress: LOOKUP_TABLE_ADDRESS,
           expectedLookupTableAddressCount: 20,

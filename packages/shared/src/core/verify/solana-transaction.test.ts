@@ -11,8 +11,11 @@ import {
   SolanaTransactionMismatchError,
 } from './solana-transaction';
 import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  LOOKUP_TABLE_STEP_INSTRUCTIONS,
+  LOOKUP_TABLE_STEP_PROGRAMS,
   NFT_TRANSACTION_INSTRUCTIONS,
   NFT_TRANSACTION_PROGRAMS,
   SYSTEM_PROGRAM,
@@ -55,11 +58,9 @@ describe('assertSolanaTransactionMatches', () => {
     ).toThrow(SolanaTransactionMismatchError);
   });
 
-  // The program list is a vocabulary: System is on the NFT list so a builder
-  // can create an account, and that same entry would let a compromised backend
-  // append a transfer that empties the wallet's SOL. Nothing on the
-  // confirmation screen would show it — the screen is drawn from the
-  // response's own fields.
+  // A System transfer appended to an NFT transaction would empty the wallet's
+  // SOL, and nothing on the confirmation screen would show it — the screen is
+  // drawn from the response's own fields.
   it('refuses a System transfer appended to an NFT transaction', () => {
     expect(() =>
       assertSolanaTransactionMatches(NO_LOOKUPS, {
@@ -67,7 +68,7 @@ describe('assertSolanaTransactionMatches', () => {
         allowedPrograms: NFT_TRANSACTION_PROGRAMS,
         allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
       })
-    ).toThrow(/instruction 2 on 11111111111111111111111111111111/);
+    ).toThrow(/invokes 11111111111111111111111111111111/);
   });
 
   it('leaves a program the flow did not bind to the program list alone', () => {
@@ -381,5 +382,70 @@ describe("account binds — an instruction may only reach the wallet's own accou
     expect(() =>
       assertSolanaTransactionMatches(message(ACCOUNTS, [setAuthority]), expectation)
     ).toThrow(/instruction 6 on/);
+  });
+});
+
+/**
+ * The backend's NFT and lookup-table builders emit no top-level System
+ * instruction; the table program funds its own account by cross-program call.
+ * Each System instruction is one the wallet can sign alone that moves or
+ * re-owns its SOL: CreateAccountWithSeed with the wallet as base funds an
+ * account another program controls, Assign hands the wallet itself away.
+ */
+describe('NFT and lookup-table steps carry no System instruction', () => {
+  const ATTACKER_PROGRAM = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  const SEEDED = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  // 0 owner, 1 seeded account, 2 attacker program, 3 system, 4 lookup-table program
+  const ACCOUNTS = [OWNER, SEEDED, ATTACKER_PROGRAM, SYSTEM_PROGRAM, ADDRESS_LOOKUP_TABLE_PROGRAM];
+  const u32 = (value: number) => [value, 0, 0, 0];
+  const steps = {
+    nft: {
+      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    },
+    'lookup-table': {
+      allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+      allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+    },
+  };
+
+  it.each(Object.keys(steps))('refuses every System instruction in an %s step', (step) => {
+    const rules = steps[step as keyof typeof steps];
+    const cases: [number, number[]][] = [
+      [0, [0, 1]], // CreateAccount
+      [1, [0]], // Assign the wallet
+      [3, [0, 1, 0]], // CreateAccountWithSeed, base = wallet
+      [8, [0]], // Allocate
+      [9, [1, 0]], // AllocateWithSeed
+      [10, [1, 0]], // AssignWithSeed
+    ];
+    for (const [code, accounts] of cases) {
+      const system = {
+        program: SYSTEM_PROGRAM,
+        accounts,
+        data: [...u32(code), ...new Array(40).fill(0)],
+      };
+      expect(() =>
+        assertSolanaTransactionMatches(message(ACCOUNTS, [system]), { feePayer: OWNER, ...rules })
+      ).toThrow(/invokes 11111111111111111111111111111111/);
+    }
+  });
+
+  it('lets a lookup-table step create and extend a table, and nothing else on that program', () => {
+    const check = (code: number) => () =>
+      assertSolanaTransactionMatches(
+        message(ACCOUNTS, [
+          {
+            program: ADDRESS_LOOKUP_TABLE_PROGRAM,
+            accounts: [1, 0, 0],
+            data: [...u32(code), ...new Array(9).fill(0)],
+          },
+        ]),
+        { feePayer: OWNER, ...steps['lookup-table'] }
+      );
+    expect(check(0)).not.toThrow(); // CreateLookupTable
+    expect(check(2)).not.toThrow(); // ExtendLookupTable
+    expect(check(3)).toThrow(/instruction 3 on/); // DeactivateLookupTable
+    expect(check(4)).toThrow(/instruction 4 on/); // CloseLookupTable
   });
 });
