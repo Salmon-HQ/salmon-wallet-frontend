@@ -9,16 +9,10 @@ appId: io.salmonwallet.app
 - tapOn: 'Connect'
 - extendedWaitUntil:
     visible:
-      id: 'mwa-lock|confirm-dialog-confirm'
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 30000
 - runFlow: ../../../subflows/mwa-unlock.yaml
-- extendedWaitUntil:
-    visible:
-      id: 'confirm-dialog-confirm'
-      enabled: true
-    timeout: 30000
-- tapOn:
-    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/mwa-approve-connect.yaml
 - runFlow:
     when:
       visible:
@@ -28,7 +22,7 @@ appId: io.salmonwallet.app
 # so the wait is on Salmon's sheet leaving, not on the page's text.
 - extendedWaitUntil:
     notVisible:
-      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 5000

@@ -21,11 +21,10 @@ appId: io.salmonwallet.app
 - extendedWaitUntil:
     visible: 'Connect to dApp'
     timeout: 30000
-- tapOn:
-    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/mwa-approve-connect.yaml
 # Back on the dApp. Chrome exposes the page to Maestro only intermittently,
 # so the wait is on Salmon's sheet leaving, not on the page's text.
 - extendedWaitUntil:
     notVisible:
-      id: 'confirm-dialog-confirm'
+      id: 'confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 20000
