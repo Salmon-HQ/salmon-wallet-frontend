@@ -75,6 +75,8 @@ type ResponseHandler = (data: unknown, id?: string) => void;
  *
  * Best effort: a page that opens another tab on another subdomain is a new
  * origin and a new tab, and a service-worker restart forgets every entry.
+ * Keying by tab also holds back, for those seconds, another site the user
+ * opens in the same tab; accepted for a wait this short.
  */
 export const DECLINE_COOLDOWN_MS = 30_000;
 
