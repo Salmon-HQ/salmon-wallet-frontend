@@ -53,6 +53,15 @@ export const JUPITER_AGGREGATOR_PROGRAM = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QN
 export const ZEROEX_SETTLER_PROGRAM = 'Sett1erwx2eqT5A8uvu8GBxDFT2W5TNnhirL7hLmb8m';
 
 /**
+ * The Compute Budget instructions any backend-built flow may carry:
+ * `SetComputeUnitLimit` (2) and `SetComputeUnitPrice` (3), u8 codes. The
+ * backend's builder attaches exactly these two; a heap frame or a loaded-data
+ * limit is no build's business. What the pair may cost together is capped by
+ * the verifier (`MAX_PRIORITY_FEE_LAMPORTS`).
+ */
+export const COMPUTE_BUDGET_INSTRUCTIONS = { width: 1, codes: [2, 3] } as const;
+
+/**
  * What an NFT transfer or burn may invoke.
  *
  * Wider than any single asset would use, because one list covers every variant
@@ -92,7 +101,7 @@ export const NFT_TRANSACTION_PROGRAMS = [
  * reclaims the rent.
  *
  * Programs absent from this map — Token Metadata, Bubblegum, the Associated
- * Token program, Compute Budget — are bound by the program list alone.
+ * Token program — are bound by the program list alone.
  */
 export const NFT_TRANSACTION_INSTRUCTIONS = {
   // SPL Token, u8 codes. Allowed: InitializeAccount(1), Revoke(5), Burn(8),
@@ -104,6 +113,7 @@ export const NFT_TRANSACTION_INSTRUCTIONS = {
   // wallet's to sign.
   [TOKEN_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
   [TOKEN_2022_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 } as const;
 
 /**
@@ -156,4 +166,5 @@ export const LOOKUP_TABLE_STEP_PROGRAMS = [
  */
 export const LOOKUP_TABLE_STEP_INSTRUCTIONS = {
   [ADDRESS_LOOKUP_TABLE_PROGRAM]: { width: 4, codes: [0, 2] },
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 } as const;

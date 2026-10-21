@@ -14,6 +14,7 @@ import {
   ADDRESS_LOOKUP_TABLE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  COMPUTE_BUDGET_PROGRAM,
   LOOKUP_TABLE_STEP_INSTRUCTIONS,
   LOOKUP_TABLE_STEP_PROGRAMS,
   NFT_TRANSACTION_INSTRUCTIONS,
@@ -447,5 +448,74 @@ describe('NFT and lookup-table steps carry no System instruction', () => {
     expect(check(2)).not.toThrow(); // ExtendLookupTable
     expect(check(3)).toThrow(/instruction 3 on/); // DeactivateLookupTable
     expect(check(4)).toThrow(/instruction 4 on/); // CloseLookupTable
+  });
+});
+
+/**
+ * Compute Budget instructions set what the wallet pays on top of the network
+ * fee; the screen never shows it. A flow may set a unit limit and a unit
+ * price, and the two together are capped.
+ */
+describe('compute budget', () => {
+  // 0 owner, 1 compute budget program
+  const ACCOUNTS = [OWNER, COMPUTE_BUDGET_PROGRAM];
+  const le = (value: bigint, bytes: number) =>
+    Array.from({ length: bytes }, (_, i) => Number((value >> BigInt(8 * i)) & 0xffn));
+  const limit = (units: number) => ({
+    program: COMPUTE_BUDGET_PROGRAM,
+    accounts: [],
+    data: [2, ...le(BigInt(units), 4)],
+  });
+  const price = (microLamports: bigint) => ({
+    program: COMPUTE_BUDGET_PROGRAM,
+    accounts: [],
+    data: [3, ...le(microLamports, 8)],
+  });
+  const flows = {
+    nft: {
+      allowedPrograms: NFT_TRANSACTION_PROGRAMS,
+      allowedInstructions: NFT_TRANSACTION_INSTRUCTIONS,
+    },
+    'lookup-table': {
+      allowedPrograms: LOOKUP_TABLE_STEP_PROGRAMS,
+      allowedInstructions: LOOKUP_TABLE_STEP_INSTRUCTIONS,
+    },
+  };
+  const check = (flow: keyof typeof flows, instructions: Parameters<typeof message>[1]) => () =>
+    assertSolanaTransactionMatches(message(ACCOUNTS, instructions), {
+      feePayer: OWNER,
+      ...flows[flow],
+    });
+
+  it.each(Object.keys(flows) as (keyof typeof flows)[])(
+    'lets an %s step set a unit limit and price, and nothing else',
+    (flow) => {
+      expect(check(flow, [limit(400_000), price(20_000n)])).not.toThrow();
+      const heapFrame = {
+        program: COMPUTE_BUDGET_PROGRAM,
+        accounts: [],
+        data: [1, ...le(256n * 1024n, 4)],
+      };
+      expect(check(flow, [heapFrame])).toThrow(/instruction 1 on/);
+      const dataSize = {
+        program: COMPUTE_BUDGET_PROGRAM,
+        accounts: [],
+        data: [4, ...le(1024n, 4)],
+      };
+      expect(check(flow, [dataSize])).toThrow(/instruction 4 on/);
+    }
+  );
+
+  it('refuses a priority fee above the cap in any flow', () => {
+    const anyFlow = (instructions: Parameters<typeof message>[1]) => () =>
+      assertSolanaTransactionMatches(message(ACCOUNTS, instructions), {
+        feePayer: OWNER,
+        allowedPrograms: [COMPUTE_BUDGET_PROGRAM],
+      });
+    // 1.4M units at 10 lamports each: 0.014 SOL.
+    expect(anyFlow([limit(1_400_000), price(10_000_000n)])).toThrow(/priority fee/);
+    // A price with no limit is charged at the most units a transaction can use.
+    expect(anyFlow([price(8_000_000n)])).toThrow(/priority fee/);
+    expect(anyFlow([limit(200_000), price(8_000_000n)])).not.toThrow();
   });
 });

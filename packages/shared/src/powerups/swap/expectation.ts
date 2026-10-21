@@ -10,7 +10,13 @@
  * account that is not the wallet's own is refused too.
  */
 import type { ProgramInstructionRule } from '../../core/verify';
-import { SYSTEM_PROGRAM, TOKEN_2022_PROGRAM, TOKEN_PROGRAM } from '../../core/verify';
+import {
+  COMPUTE_BUDGET_INSTRUCTIONS,
+  COMPUTE_BUDGET_PROGRAM,
+  SYSTEM_PROGRAM,
+  TOKEN_2022_PROGRAM,
+  TOKEN_PROGRAM,
+} from '../../core/verify';
 
 /** SPL Token: CloseAccount (9, rent to the wallet), SyncNative (17), InitializeAccount3 (18). */
 const TOKEN_RULE: ProgramInstructionRule = {
@@ -28,6 +34,7 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
   },
   [TOKEN_PROGRAM]: TOKEN_RULE,
   [TOKEN_2022_PROGRAM]: TOKEN_RULE,
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 };
 
 /** The largest slippage a build may carry; the backend defaults to 50. */

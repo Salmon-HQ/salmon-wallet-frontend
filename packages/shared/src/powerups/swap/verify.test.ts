@@ -16,6 +16,7 @@ import { buildSwapProposal, walletTokenAccounts } from './useSwapScreenLogic';
 import {
   ASSOCIATED_TOKEN_PROGRAM,
   assertSolanaTransactionMatches,
+  COMPUTE_BUDGET_PROGRAM,
   ownAtaCreates,
   JUPITER_AGGREGATOR_PROGRAM,
   SYSTEM_PROGRAM,
@@ -304,6 +305,28 @@ describe('swap bytes — where the router pays the output', () => {
       ]);
       expect(ownAtaCreates(tx)).toBe(1);
     });
+  });
+
+  it('lets a swap set a compute unit limit and price, and no other Compute Budget instruction', () => {
+    const budget = (code: number, value: number): Ix => ({
+      programAddress: address(COMPUTE_BUDGET_PROGRAM),
+      accounts: [],
+      data: new Uint8Array([
+        code,
+        value & 0xff,
+        (value >> 8) & 0xff,
+        (value >> 16) & 0xff,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ]),
+    });
+    expect(() =>
+      verify(transaction([budget(2, 400_000), budget(3, 20_000), route()]))
+    ).not.toThrow();
+    expect(() => verify(transaction([budget(1, 262_144), route()]))).toThrow(/instruction 1 on/);
   });
 
   it('control: a direct SOL transfer to the attacker is refused', () => {

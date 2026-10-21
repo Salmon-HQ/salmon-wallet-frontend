@@ -40,6 +40,7 @@ import type { ReadonlyUint8Array } from '@solana/kit';
 import {
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  COMPUTE_BUDGET_PROGRAM,
   JUPITER_AGGREGATOR_PROGRAM,
   NFT_ACTION_LAYOUTS,
   SYSTEM_PROGRAM,
@@ -563,6 +564,45 @@ function assertJupiterRoute(
   }
 }
 
+/**
+ * The most a backend-built transaction may set the wallet's priority fee to:
+ * unit limit × unit price, on top of the network fee, and never shown on the
+ * confirmation screen. 0.01 SOL is several hundred times what the backend's
+ * own bounds produce (at most 20,000 micro-lamports per unit over 1.4M units,
+ * 0.000028 SOL), so a busy network never trips it, and it keeps a tampered
+ * price from draining the wallet one transaction at a time.
+ */
+export const MAX_PRIORITY_FEE_LAMPORTS = 10_000_000n;
+/** The most compute units a transaction may use: what a price is charged on when no limit is set. */
+const MAX_COMPUTE_UNITS = 1_400_000n;
+
+function assertPriorityFeeCapped(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[]
+): void {
+  let units: bigint | null = null;
+  let microLamportsPerUnit = 0n;
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== COMPUTE_BUDGET_PROGRAM) continue;
+    const data = instruction.data;
+    if (!data) continue;
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    if (data[0] === 2 && data.length >= 5) {
+      const set = BigInt(view.getUint32(1, true));
+      units = units === null || set > units ? set : units;
+    } else if (data[0] === 3 && data.length >= 9) {
+      const set = view.getBigUint64(1, true);
+      if (set > microLamportsPerUnit) microLamportsPerUnit = set;
+    }
+  }
+  const fee = ((units ?? MAX_COMPUTE_UNITS) * microLamportsPerUnit + 999_999n) / 1_000_000n;
+  if (fee > MAX_PRIORITY_FEE_LAMPORTS) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction sets a priority fee of ${fee} lamports, above the cap of ${MAX_PRIORITY_FEE_LAMPORTS}`
+    );
+  }
+}
+
 /** The System program's `Transfer`: u32 code 2, then the lamports as u64. */
 const SYSTEM_TRANSFER = 2;
 
@@ -674,6 +714,8 @@ export function assertSolanaTransactionMatches(
       }
     }
   }
+
+  assertPriorityFeeCapped(accounts, instructions);
 
   if (expectation.swapRoute) {
     assertJupiterRoute(accounts, instructions, expectation.swapRoute, feePayer);
