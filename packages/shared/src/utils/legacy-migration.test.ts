@@ -104,10 +104,10 @@ describe('migrateLegacyWallets — password-protected path', () => {
     expect(result.status).toBe('needs-password');
   });
 
-  // v2 let its owner keep seed phrases with no password at all. Migrating that
-  // state as it stood wrote them to storage in cleartext, and nothing in the
-  // wallet could encrypt them afterwards.
-  it('will not migrate an unprotected legacy wallet until a password is chosen', async () => {
+  // No v2 install without a password is left to migrate, so a record that says
+  // it has none is not one; carrying it across would turn whatever is typed at
+  // the lock screen into the password of seeds someone else chose.
+  it('refuses an unprotected legacy record, with or without a password, and writes nothing', async () => {
     mockGet.mockImplementation(async (key: string) => {
       if (key === STORAGE_KEYS.WALLETS) {
         return {
@@ -120,37 +120,32 @@ describe('migrateLegacyWallets — password-protected path', () => {
       return null as never;
     });
 
-    const result = await migrateLegacyWallets(makeDeps());
+    await expect(migrateLegacyWallets(makeDeps())).rejects.toThrow();
+    await expect(migrateLegacyWallets(makeDeps(), PASSWORD)).rejects.toThrow();
 
-    expect(result.status).toBe('needs-password');
     expect(mockSet).not.toHaveBeenCalled();
-    // The legacy record survives, so nothing is lost by refusing.
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('encrypts an unprotected legacy wallet under the password its owner chooses', async () => {
+  it('leaves an existing vault alone: a legacy record beside it is never migrated over it', async () => {
+    const encryptedMnemonics = await lock({ [ADDRESS]: MNEMONIC }, PASSWORD);
     mockGet.mockImplementation(async (key: string) => {
       if (key === STORAGE_KEYS.WALLETS) {
         return {
-          passwordRequired: false,
-          wallets: [
-            { address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana', mnemonic: MNEMONIC },
-          ],
+          passwordRequired: true,
+          wallets: [{ address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana' }],
+          mnemonics: encryptedMnemonics,
         } as never;
       }
+      if (key === STORAGE_KEYS.MNEMONICS) return { isEncrypted: true } as never;
       return null as never;
     });
 
     const result = await migrateLegacyWallets(makeDeps(), PASSWORD);
 
-    expect(result.status).toBe('migrated');
-    const storedVault = mockSet.mock.calls.find(([key]) => key === STORAGE_KEYS.MNEMONICS)?.[1] as {
-      isEncrypted: boolean;
-    };
-    expect(storedVault.isEncrypted).toBe(true);
-    expect(await unlock<Record<string, string>>(storedVault as never, PASSWORD)).toEqual({
-      'acc-1': MNEMONIC,
-    });
+    expect(result.status).toBe('no-migration');
+    expect(mockSet).not.toHaveBeenCalled();
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it('returns no-migration when there is no legacy wallet', async () => {

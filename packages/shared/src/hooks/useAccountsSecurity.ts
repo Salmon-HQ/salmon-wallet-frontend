@@ -90,9 +90,11 @@ export function useAccountsSecurity({
     }
 
     try {
+      // Nothing encrypted to check the password against means nothing has
+      // proven it, so the gate stays shut.
       const storedMnemonics = await getEncryptedStoredMnemonics();
       if (!storedMnemonics) {
-        return true;
+        return false;
       }
 
       try {
@@ -235,7 +237,6 @@ export function useAccountsSecurity({
     try {
       const upgraded = await runUpgrades();
       const hasStoredAccounts = await initializeAccountsSecurity({
-        loadAccounts,
         loadMetadata,
         setLoaded,
         setLocked,
@@ -258,7 +259,6 @@ export function useAccountsSecurity({
       setReady(true);
     }
   }, [
-    loadAccounts,
     loadMetadata,
     runUpgrades,
     setError,

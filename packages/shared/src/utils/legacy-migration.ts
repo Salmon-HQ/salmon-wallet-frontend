@@ -135,44 +135,28 @@ export async function migrateLegacyWallets(
   const storedWallets = await getStorageItem<LegacyWallets>(STORAGE_KEYS.WALLETS);
   if (!storedWallets) return { status: 'no-migration' };
 
-  // A password is required whether or not the legacy record had one. The v2
-  // wallet let its owner keep seed phrases with no password at all, and
-  // migrating that state as it stood wrote them to AsyncStorage and
-  // chrome.storage.local in cleartext, where the wallet had no way of ever
-  // encrypting them again. v3 has one rule for stored mnemonics — encrypted or
-  // not written — and the migration is not an exception to it.
+  // A wallet that already has its vault is past migrating: the legacy record
+  // beside it is left as it is and never written over the vault.
+  if (await getStorageItem<unknown>(STORAGE_KEYS.MNEMONICS)) return { status: 'no-migration' };
+
+  // v2 let an owner keep seed phrases with no password, and no such install is
+  // left to migrate, so a record without one is refused rather than encrypted
+  // under whatever is typed at the lock screen.
+  if (!storedWallets.passwordRequired) {
+    throw new Error('The legacy wallet record is not password-protected');
+  }
+
   if (!password) {
     return { status: 'needs-password' };
   }
 
-  // Handle password-protected wallets
-  if (storedWallets.passwordRequired) {
-    if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
-      // Migrate from old format where mnemonic was in wallet
-      const decryptedWallets = await unlock<typeof storedWallets.wallets>(
-        storedWallets.wallets as unknown as LockedVault,
-        password
-      );
-      storedWallets.wallets = decryptedWallets;
-      storedWallets.mnemonics = storedWallets.wallets.reduce(
-        (m, wallet) => {
-          if (wallet.mnemonic) {
-            m[wallet.address] = wallet.mnemonic;
-            delete wallet.mnemonic;
-          }
-          return m;
-        },
-        {} as Record<string, string>
-      );
-    } else {
-      // New format with separate mnemonics
-      storedWallets.mnemonics = await unlock<Record<string, string>>(
-        storedWallets.mnemonics as unknown as LockedVault,
-        password
-      );
-    }
-  } else if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
-    // Unprotected wallet, migrate mnemonics
+  if (!('mnemonics' in storedWallets) || !storedWallets.mnemonics) {
+    // Migrate from old format where mnemonic was in wallet
+    const decryptedWallets = await unlock<typeof storedWallets.wallets>(
+      storedWallets.wallets as unknown as LockedVault,
+      password
+    );
+    storedWallets.wallets = decryptedWallets;
     storedWallets.mnemonics = storedWallets.wallets.reduce(
       (m, wallet) => {
         if (wallet.mnemonic) {
@@ -182,6 +166,12 @@ export async function migrateLegacyWallets(
         return m;
       },
       {} as Record<string, string>
+    );
+  } else {
+    // New format with separate mnemonics
+    storedWallets.mnemonics = await unlock<Record<string, string>>(
+      storedWallets.mnemonics as unknown as LockedVault,
+      password
     );
   }
 
@@ -301,8 +291,7 @@ export async function migrateLegacyWallets(
     }
   }
 
-  // One write, always encrypted. A record that arrived without a password is
-  // encrypted under the one its owner just chose.
+  // One write, always encrypted, under the password the legacy record opened with.
   const lockedMnemonics = await lock(newMnemonics, password);
   await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...lockedMnemonics, isEncrypted: true });
 

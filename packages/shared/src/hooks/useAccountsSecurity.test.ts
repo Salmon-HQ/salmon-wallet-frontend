@@ -298,6 +298,35 @@ describe('useAccountsSecurity — re-auth throttling', () => {
   });
 });
 
+describe('useAccountsSecurity — the password gate with no vault behind it', () => {
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // The gate stands in front of revealing a seed or key and removing a
+  // wallet; with nothing encrypted to check the password against, nothing has
+  // proven the password, so the gate stays shut.
+  it.each([
+    ['no stored vault', undefined],
+    ['a cleartext record', { 'account-1': 'stub mnemonic value' }],
+  ])('refuses every password when there is %s', async (_label, stored) => {
+    if (stored) storageMap.set('salmon_mnemonics', stored);
+    const { result } = renderSecurity();
+
+    let accepted = true;
+    await act(async () => {
+      accepted = await result.current.checkPassword('any-password-000');
+    });
+
+    expect(accepted).toBe(false);
+  });
+});
+
 describe('useAccountsSecurity — what counts as activity', () => {
   const KEY_CACHE = { key: 'stub-key', salt: 'stub-salt', expiresAt: Number.MAX_SAFE_INTEGER };
 

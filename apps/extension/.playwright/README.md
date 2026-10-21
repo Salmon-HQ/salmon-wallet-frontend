@@ -78,7 +78,7 @@ unset; it fails when a prerequisite is present but misbehaves.
 | `activity`, `receive`, `settings` | Those screens by their testIDs                                       | —              |
 | `send`                            | Send up to the amount step on devnet, then cancel                    | —              |
 | `nft-spam-filter`                 | Spam NFTs are requested only with "Show unverified tokens" on        | —              |
-| `legacy-migration`                | A v2 install with no password is migrated encrypted                  | —              |
+| `legacy-migration`                | A v2 record with no password is refused, storage left untouched      | —              |
 | `analytics-coverage-onchain`      | Devnet SOL send and NFT transfer A → B fire their events             | devnet, opt-in |
 | `nft-burn`                        | Burns the devnet fixture NFT                                         | devnet, opt-in |
 

@@ -23,6 +23,7 @@ import {
   getStoredMnemonics,
   isEncryptedMnemonics,
   initializeAccountsSecurity,
+  resolveMnemonicsWithCachedKey,
   resolveMnemonicsWithPassword,
   type StoredMnemonics,
 } from './useAccountsSecurityHelpers';
@@ -58,7 +59,7 @@ describe('getStoredMnemonics — fail closed on a corrupt vault', () => {
     expect(await getStoredMnemonics()).toBeNull();
   });
 
-  it('still returns a legitimate plaintext-legacy record (an object)', async () => {
+  it('returns any stored object; whether it is a vault is decided by its reader', async () => {
     const record = { 'account-1': 'word1 word2 word3' };
     mockGetStorageItem.mockResolvedValue(record as never);
 
@@ -91,16 +92,33 @@ describe('initializeAccountsSecurity — a corrupt vault does not skip the lock'
     expect(params.setLoaded).toHaveBeenCalledWith(true);
   });
 
-  it('keeps the legacy plaintext path working (loads accounts, requiredLock=false)', async () => {
+  // The wallet never writes its seeds unencrypted, so a cleartext record in
+  // their place was written by something else. Opening it as a wallet with no
+  // password would hand that something the wallet.
+  it('refuses a cleartext record instead of opening it without a password', async () => {
     const record = { 'account-1': 'word1 word2 word3' };
     mockGetStorageItem.mockResolvedValue(record as never);
     const params = makeParams();
 
-    const result = await initializeAccountsSecurity(params);
+    await expect(initializeAccountsSecurity(params)).rejects.toThrow();
 
-    expect(result).toBe(true);
-    expect(params.loadAccounts).toHaveBeenCalledWith(record);
-    expect(params.setRequiredLock).toHaveBeenCalledWith(false);
+    expect(params.loadAccounts).not.toHaveBeenCalled();
+    expect(params.setRequiredLock).not.toHaveBeenCalled();
+    expect(params.setLocked).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolving a cleartext record', () => {
+  const record = { 'account-1': 'word1 word2 word3' } as StoredMnemonics;
+
+  it('does not accept any password for it', async () => {
+    await expect(resolveMnemonicsWithPassword(record, 'anything at all')).rejects.toThrow();
+  });
+
+  it('does not accept a cached key for it', async () => {
+    await expect(
+      resolveMnemonicsWithCachedKey(record, { key: 'k', salt: 's' } as never)
+    ).rejects.toThrow();
   });
 });
 

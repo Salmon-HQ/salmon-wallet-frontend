@@ -272,6 +272,23 @@ describe('useAccounts Hook', () => {
     stashStore = {};
   });
 
+  /**
+   * The vault as the wallet writes it — encrypted — with its key cached, so the
+   * wallet opens unlocked on `secrets` without a password.
+   */
+  function unlockedVault(secrets: Record<string, string>) {
+    stashStore.derived_key_cache = { key: [1], salt: 'stub-salt', expiresAt: Date.now() + 300_000 };
+    (encryption.isKeyCacheValid as any).mockReturnValue(true);
+    (encryption.unlockWithKey as any).mockResolvedValue(secrets);
+    return {
+      isEncrypted: true,
+      encrypted: 'stub',
+      nonce: 'stub',
+      salt: 'stub',
+      iterations: 210000,
+    };
+  }
+
   describe('Initialization', () => {
     it('should initialize with default state when no stored data', async () => {
       const { result } = renderHook(() => useAccounts());
@@ -303,7 +320,8 @@ describe('useAccounts Hook', () => {
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_accounts') return Promise.resolve(storedAccounts);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_active_path_index') return Promise.resolve(0);
@@ -450,10 +468,10 @@ describe('useAccounts Hook', () => {
       expect(encryption.unlockAndGetKey).toHaveBeenCalledWith(encryptedData, MOCK_PASSWORD);
     });
 
-    it('should return true for checkPassword when no encryption', async () => {
+    it('opens the init-error state, not the wallet, on a cleartext vault', async () => {
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_mnemonics') return Promise.resolve({ test: 'plain-mnemonic' });
-        if (key === 'salmon_wallets') return Promise.resolve(null);
+        if (key === 'salmon_accounts') return Promise.resolve([{ id: 'test', name: 'Plain' }]);
         return Promise.resolve(null);
       });
 
@@ -463,11 +481,13 @@ describe('useAccounts Hook', () => {
         expect(result.current[0].ready).toBe(true);
       });
 
-      const [, actions] = result.current;
+      const [state, actions] = result.current;
+      expect(state.error).not.toBeNull();
+      expect(state.accounts).toEqual([]);
+      expect(state.locked).toBe(false);
 
       await act(async () => {
-        const isValid = await actions.checkPassword(MOCK_PASSWORD);
-        expect(isValid).toBe(true);
+        expect(await actions.checkPassword(MOCK_PASSWORD)).toBe(false);
       });
     });
 
@@ -980,10 +1000,12 @@ describe('useAccounts Hook', () => {
             },
           ]);
         if (key === 'salmon_mnemonics')
-          return Promise.resolve({
-            [mockAccount1.id]: MOCK_MNEMONIC,
-            [mockAccount2.id]: MOCK_MNEMONIC,
-          });
+          return Promise.resolve(
+            unlockedVault({
+              [mockAccount1.id]: MOCK_MNEMONIC,
+              [mockAccount2.id]: MOCK_MNEMONIC,
+            })
+          );
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1041,10 +1063,12 @@ describe('useAccounts Hook', () => {
             },
           ]);
         if (key === 'salmon_mnemonics')
-          return Promise.resolve({
-            [mockAccount1.id]: MOCK_MNEMONIC,
-            [mockAccount2.id]: MOCK_MNEMONIC,
-          });
+          return Promise.resolve(
+            unlockedVault({
+              [mockAccount1.id]: MOCK_MNEMONIC,
+              [mockAccount2.id]: MOCK_MNEMONIC,
+            })
+          );
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1086,7 +1110,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1119,7 +1144,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1152,7 +1178,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1202,10 +1229,12 @@ describe('useAccounts Hook', () => {
             },
           ]);
         if (key === 'salmon_mnemonics')
-          return Promise.resolve({
-            [mockAccount1.id]: MOCK_MNEMONIC,
-            [mockAccount2.id]: MOCK_MNEMONIC,
-          });
+          return Promise.resolve(
+            unlockedVault({
+              [mockAccount1.id]: MOCK_MNEMONIC,
+              [mockAccount2.id]: MOCK_MNEMONIC,
+            })
+          );
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1242,7 +1271,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1276,7 +1306,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1321,7 +1352,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         return Promise.resolve(null);
       });
 
@@ -1365,10 +1397,12 @@ describe('useAccounts Hook', () => {
             },
           ]);
         if (key === 'salmon_mnemonics')
-          return Promise.resolve({
-            [mockAccount1.id]: MOCK_MNEMONIC,
-            [mockAccount2.id]: MOCK_MNEMONIC,
-          });
+          return Promise.resolve(
+            unlockedVault({
+              [mockAccount1.id]: MOCK_MNEMONIC,
+              [mockAccount2.id]: MOCK_MNEMONIC,
+            })
+          );
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1409,7 +1443,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1562,7 +1597,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_active_path_index') return Promise.resolve(0);
@@ -1603,7 +1639,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1642,7 +1679,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1680,7 +1718,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1725,7 +1764,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_trusted_apps') return Promise.resolve({});
         return Promise.resolve(null);
@@ -1766,7 +1806,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_trusted_apps') return Promise.resolve(initialTrustedApps);
         return Promise.resolve(null);
@@ -1802,7 +1843,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_custom_tokens') return Promise.resolve({});
         return Promise.resolve(null);
@@ -1847,7 +1889,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         return Promise.resolve(null);
       });
@@ -1875,7 +1918,8 @@ describe('useAccounts Hook', () => {
               pathIndexes: mockAccount.pathIndexes,
             },
           ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve(unlockedVault({ [mockAccount.id]: MOCK_MNEMONIC }));
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_active_path_index') return Promise.resolve(0);

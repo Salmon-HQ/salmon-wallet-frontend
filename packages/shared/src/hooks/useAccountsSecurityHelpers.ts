@@ -47,6 +47,17 @@ export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is E
   );
 }
 
+/**
+ * Every write site encrypts the seeds, so a stored record that is not a vault
+ * was not written by the wallet. It is refused rather than opened as a wallet
+ * with no password.
+ */
+function assertEncrypted(mnemonics: StoredMnemonics): asserts mnemonics is EncryptedMnemonics {
+  if (!isEncryptedMnemonics(mnemonics)) {
+    throw new Error('The stored wallet secrets are not encrypted');
+  }
+}
+
 function needsMnemonicUpgrade(vault: EncryptedMnemonics): boolean {
   return vault.digest !== DEFAULT_DIGEST || vault.iterations !== DEFAULT_ITERATIONS;
 }
@@ -74,9 +85,7 @@ export async function resolveMnemonicsWithPassword(
   password: string,
   options: { upgradeOutdatedVault?: boolean } = {}
 ): Promise<SecretVault> {
-  if (!isEncryptedMnemonics(storedMnemonics)) {
-    return storedMnemonics;
-  }
+  assertEncrypted(storedMnemonics);
 
   const { data, keyCache } = await unlockAndGetKey<SecretVault>(storedMnemonics, password);
   await setStashItem(STASH_KEYS.DERIVED_KEY, keyCache);
@@ -94,9 +103,7 @@ export async function resolveMnemonicsWithCachedKey(
   storedMnemonics: StoredMnemonics,
   keyCache: DerivedKeyCache
 ): Promise<SecretVault> {
-  if (!isEncryptedMnemonics(storedMnemonics)) {
-    return storedMnemonics;
-  }
+  assertEncrypted(storedMnemonics);
 
   // Read, not renewed: a window opening is not the user acting, and writing
   // the key would re-arm the background auto-lock (see updateLastActivity).
@@ -129,7 +136,6 @@ export async function finalizeUnlockedAccounts(
 }
 
 interface InitializeAccountsSecurityParams {
-  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   loadMetadata: () => Promise<void>;
   setLoaded: (loaded: boolean) => void;
   setLocked: (locked: boolean) => void;
@@ -139,7 +145,6 @@ interface InitializeAccountsSecurityParams {
 }
 
 export async function initializeAccountsSecurity({
-  loadAccounts,
   loadMetadata,
   setLoaded,
   setLocked,
@@ -154,11 +159,8 @@ export async function initializeAccountsSecurity({
     return false;
   }
 
-  if (!isEncryptedMnemonics(storedMnemonics)) {
-    await loadAccounts(storedMnemonics);
-    setRequiredLock(false);
-    return true;
-  }
+  // Thrown to the caller's init-error state: no wallet opens from it.
+  assertEncrypted(storedMnemonics);
 
   setRequiredLock(true);
 
