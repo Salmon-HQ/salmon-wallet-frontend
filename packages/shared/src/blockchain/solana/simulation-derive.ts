@@ -199,6 +199,39 @@ export interface UnreadChangeInput {
   readonly signers: ReadonlySet<Address>;
   readonly before: ReadonlyMap<Address, RawAccount | null>;
   readonly after: ReadonlyMap<Address, RawAccount | null>;
+  /** The fee the previewed account pays: 0 when another signer pays it. */
+  readonly accountFee: bigint;
+}
+
+/**
+ * The first of the previewed account's token accounts that hands over what
+ * the diff does not show, or `null`: a new close authority, or lamports that
+ * leave — the account closed, or its excess withdrawn — without reaching the
+ * account itself. Wrapped SOL that leaves as tokens is a row of its own.
+ */
+function findUnreadWalletTokenChange({
+  account,
+  before,
+  after,
+  accountFee,
+}: UnreadChangeInput): Address | null {
+  let lost = 0n;
+  let firstLoser: Address | null = null;
+  for (const [address, pre] of before) {
+    const post = after.get(address) ?? null;
+    const preToken = decodeAccountState(pre)?.token ?? null;
+    const postToken = decodeAccountState(post)?.token ?? null;
+    if (preToken?.owner !== account || !pre) continue;
+    if (postToken && postToken.closeAuthority !== preToken.closeAuthority) return address;
+    const leftAsTokens = preToken.isNative ? preToken.amount - (postToken?.amount ?? 0n) : 0n;
+    const loss = pre.lamports - (post?.lamports ?? 0n) - leftAsTokens;
+    if (loss > 0n) {
+      lost += loss;
+      firstLoser ??= address;
+    }
+  }
+  const received = (after.get(account)?.lamports ?? 0n) - (before.get(account)?.lamports ?? 0n);
+  return firstLoser && lost > received + accountFee ? firstLoser : null;
 }
 
 /**
@@ -214,13 +247,11 @@ export interface UnreadChangeInput {
  * the wallet is a delegate of, an authority rewritten in a mint or a nonce
  * account.
  */
-export function findUnreadChange({
-  account,
-  writable,
-  signers,
-  before,
-  after,
-}: UnreadChangeInput): Address | null {
+export function findUnreadChange(input: UnreadChangeInput): Address | null {
+  const { account, writable, signers, before, after } = input;
+  const walletChange = findUnreadWalletTokenChange(input);
+  if (walletChange) return walletChange;
+
   for (const address of writable) {
     if (address === account || signers.has(address)) continue;
     const pre = before.get(address) ?? null;

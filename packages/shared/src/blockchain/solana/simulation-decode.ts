@@ -104,6 +104,8 @@ export function decodeAccountState(account: RawAccount | null): AccountState | n
         amount: token.amount,
         delegate: unwrapOption(token.delegate),
         delegatedAmount: token.delegatedAmount,
+        closeAuthority: unwrapOption(token.closeAuthority),
+        isNative: unwrapOption(token.isNative) !== null,
       },
     };
   } catch {

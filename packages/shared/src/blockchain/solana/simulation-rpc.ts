@@ -59,6 +59,8 @@ export interface ResolvedMessage {
   readonly writable: ReadonlySet<Address>;
   /** The keys that sign it. */
   readonly signers: ReadonlySet<Address>;
+  /** The signer that pays the fee. */
+  readonly feePayer: Address | undefined;
   /**
    * The program each top-level instruction invokes, in order. `undefined`
    * when an instruction points past the static keys, which no node accepts.
@@ -103,7 +105,7 @@ export async function resolveMessage(
 
   const lookups = 'addressTableLookups' in message ? (message.addressTableLookups ?? []) : [];
   if (lookups.length === 0) {
-    return { addresses: staticAccounts, writable, signers, programs };
+    return { addresses: staticAccounts, writable, signers, feePayer: staticAccounts[0], programs };
   }
 
   const tables = await fetchAccounts(
@@ -127,7 +129,13 @@ export async function resolveMessage(
       if (i < lookup.writableIndexes.length) writable.add(address);
     }
   }
-  return { addresses: [...staticAccounts, ...loaded], writable, signers, programs };
+  return {
+    addresses: [...staticAccounts, ...loaded],
+    writable,
+    signers,
+    feePayer: staticAccounts[0],
+    programs,
+  };
 }
 
 /**

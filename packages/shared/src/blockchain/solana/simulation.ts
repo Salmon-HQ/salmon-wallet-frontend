@@ -315,7 +315,13 @@ export async function previewTransactionEffects(
       : { sol: { lamports: 0n, feeLamports }, tokens: [], approvals: [] };
   if (unreadProgram) return unanalysed(known);
 
-  const changed = findUnreadChange({ ...message, account, before, after });
+  const changed = findUnreadChange({
+    ...message,
+    account,
+    before,
+    after,
+    accountFee: message.feePayer === account ? (feeLamports ?? 0n) : 0n,
+  });
   return changed
     ? {
         ...undetermined(

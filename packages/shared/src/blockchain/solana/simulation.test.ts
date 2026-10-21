@@ -40,6 +40,7 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
   TOKEN_PROGRAM_ADDRESS,
   getBurnCheckedInstruction,
+  getCloseAccountInstruction,
   getCreateAssociatedTokenIdempotentInstruction,
   getMintEncoder,
   getSetAuthorityInstruction,
@@ -532,6 +533,8 @@ describe('decodeAccountState', () => {
       amount: 123n,
       delegate: SPENDER,
       delegatedAmount: U64_MAX,
+      closeAuthority: null,
+      isNative: false,
     });
     expect(state?.lamports).toBe(2_039_280n);
   });
@@ -943,20 +946,24 @@ const RELAYER_ATA: Address = address('AeMuAqDcw2nWnCUnkqNXTVfWjRqPZ4uHzHUgBvBmnG
 const MERCHANT_ATA: Address = address('9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM');
 
 /** Raw RPC payload for a classic SPL token account. */
-function rawToken(owner: Address, amount: bigint): Raw {
+function rawToken(
+  owner: Address,
+  amount: bigint,
+  { closeAuthority, native }: { closeAuthority?: Address; native?: boolean } = {}
+): Raw {
   const data = getTokenEncoder().encode({
-    mint: USDC,
+    mint: native ? WSOL : USDC,
     owner,
     amount,
     delegate: none(),
     state: 1,
-    isNative: none(),
+    isNative: native ? some(2_039_280n) : none(),
     delegatedAmount: 0n,
-    closeAuthority: none(),
+    closeAuthority: closeAuthority ? some(closeAuthority) : none(),
     extensions: none(),
   });
   return {
-    lamports: 2_039_280n,
+    lamports: 2_039_280n + (native ? amount : 0n),
     owner: TOKEN_PROGRAM_ADDRESS,
     data: [getBase64Decoder().decode(new Uint8Array(data)), 'base64'],
   } as unknown as Raw;
@@ -1178,7 +1185,116 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 
+  // A new close authority can close the account once it is empty and keep
+  // its rent; nothing in the balance or the delegate moves.
+  it('reports a new close authority on a wallet token account as unanalysed', async () => {
+    const wire = wireOf([
+      getSetAuthorityInstruction(
+        {
+          owned: USDC_ATA,
+          owner: createNoopSigner(WALLET),
+          authorityType: AuthorityType.CloseAccount,
+          newAuthority: some(OTHER),
+        },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 5n) },
+      {
+        [WALLET]: rawSol(999_995_000n),
+        [USDC_ATA]: rawToken(WALLET, 5n, { closeAuthority: OTHER }),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
+  it('reports a wallet token account closed into someone else as unanalysed', async () => {
+    const wire = wireOf([
+      getCloseAccountInstruction(
+        { account: USDC_ATA, destination: OTHER, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 0n), [OTHER]: rawSol(0n) },
+      { [WALLET]: rawSol(999_995_000n), [USDC_ATA]: null, [OTHER]: rawSol(2_039_280n) }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   describe('keeps the preview for what it reads in full', () => {
+    it('an empty token account closed back into the wallet', async () => {
+      const wire = wireOf([
+        getCloseAccountInstruction(
+          { account: USDC_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        { [WALLET]: rawSol(1_000_000_000n), [USDC_ATA]: rawToken(WALLET, 0n) },
+        { [WALLET]: rawSol(1_000_000_000n + 2_039_280n - 5_000n), [USDC_ATA]: null }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('a wrapped SOL payment, whose lamports leave as tokens', async () => {
+      const wire = wireOf([
+        getTransferCheckedInstruction(
+          {
+            source: WSOL_ATA,
+            mint: WSOL,
+            destination: MERCHANT_ATA,
+            authority: createNoopSigner(WALLET),
+            amount: 100_000_000n,
+            decimals: 9,
+          },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 0n, { native: true }),
+        },
+        {
+          [WALLET]: rawSol(999_995_000n),
+          [WSOL_ATA]: rawToken(WALLET, 200_000_000n, { native: true }),
+          [MERCHANT_ATA]: rawToken(MERCHANT, 100_000_000n, { native: true }),
+        }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
+    it('wrapped SOL unwrapped back into the wallet', async () => {
+      const wire = wireOf([
+        getCloseAccountInstruction(
+          { account: WSOL_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+          classic
+        ),
+      ]);
+      const rpc = rpcFor(
+        {
+          [WALLET]: rawSol(1_000_000_000n),
+          [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+        },
+        { [WALLET]: rawSol(1_000_000_000n + 302_039_280n - 5_000n), [WSOL_ATA]: null }
+      );
+
+      expect(await strict(rpc, wire)).toMatchObject({ kind: 'effects' });
+    });
+
     it('a SOL payment with a compute limit and a memo', async () => {
       const wire = wireOf([
         getSetComputeUnitLimitInstruction({ units: 50_000 }),

@@ -228,6 +228,10 @@ export interface TokenAccountState {
   readonly delegate: Address | null;
   /** Amount the delegate may move. Meaningless when `delegate` is `null`. */
   readonly delegatedAmount: bigint;
+  /** Who may close the account besides its owner, or `null`. */
+  readonly closeAuthority?: Address | null;
+  /** Wrapped SOL: the account's lamports above rent are its balance. */
+  readonly isNative?: boolean;
 }
 
 /** The parts of a mint this layer needs. */
