@@ -63,6 +63,14 @@ interface StorageData {
 
 type ResponseHandler = (data: unknown, id?: string) => void;
 
+/**
+ * How long a site is refused after the user rejects or closes its approval
+ * window. Without it a page asks again the moment the window closes and keeps
+ * the single approval slot for as long as its tab stays open, so no other site
+ * can be served.
+ */
+export const DECLINE_COOLDOWN_MS = 30_000;
+
 export default defineBackground(() => {
   // storage.local holds the encrypted vault and the trusted-apps list, and
   // Chrome lets content scripts read and write it by default. A compromised
@@ -87,6 +95,8 @@ export default defineBackground(() => {
    * while it is still being created). At most one entry: see launchPopupWindow.
    */
   const approvalWindowOrigins = new Map<string, number | null>();
+  /** Origin -> the time until which its requests are refused. */
+  const declinedUntil = new Map<string, number>();
 
   // Accept the side panel's persistent port. No messages flow over it now; the
   // open connection just keeps the service worker alive while the side panel is
@@ -165,6 +175,11 @@ export default defineBackground(() => {
   ): Promise<void> => {
     const origin = sender.origin || '';
 
+    if ((declinedUntil.get(origin) ?? 0) > Date.now()) {
+      sendResponse({ error: 'Declined moments ago, try again later', id: message.data.id });
+      return;
+    }
+
     // One approval window at a time, across all origins. Without this a page
     // can call a method in a loop, or navigate itself through subdomains, and
     // each call opens another focused OS-level window the user cannot get out
@@ -241,7 +256,14 @@ export default defineBackground(() => {
 
     browser.windows.onRemoved.addListener(listener);
 
-    responseHandlers.set(message.data.id, sendResponse);
+    // Any answer but an approval — a rejection, a failure, a closed window —
+    // starts the origin's cool-down.
+    responseHandlers.set(message.data.id, (...answer) => {
+      if ((answer[0] as { error?: unknown } | null)?.error) {
+        declinedUntil.set(origin, Date.now() + DECLINE_COOLDOWN_MS);
+      }
+      sendResponse(...answer);
+    });
   };
 
   /**

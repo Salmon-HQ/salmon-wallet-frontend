@@ -4,7 +4,8 @@
  * nothing is signed or sent.
  *
  * - One approval window at a time, across every origin, and a refused request
- *   does not raise another window.
+ *   does not raise another window. A site the user just turned down waits
+ *   before it may ask again.
  * - A lock in one wallet window locks the others; closing an approval window
  *   does not lock the side panel.
  * - Trust is per account: a site connected with account A is not connected for
@@ -121,6 +122,13 @@ test.describe('dApp security', () => {
 
     await window.getByTestId('dapp-reject-button').click();
     expect((await connectResult(first)).ok).toBe(false);
+
+    // The site the user just turned down waits before it may ask again.
+    await startConnect(first);
+    expect(await connectResult(first)).toEqual({
+      ok: false,
+      error: expect.stringContaining('Declined moments ago'),
+    });
   });
 
   test('a lock in one window locks the others; closing an approval window does not', async ({
@@ -148,15 +156,17 @@ test.describe('dApp security', () => {
     await window.close();
     await connectResult(dapp);
 
-    // Closing an approval window leaves the side panel unlocked.
+    // Closing an approval window leaves the side panel unlocked. Closing it
+    // also holds that site back for a while, so the next prompt is another's.
     expect(await unlockOrRecover(sidePanel)).toBe('unlocked');
     await waitHome(sidePanel);
+    const other = await openDapp(context, '127.0.0.1');
     opened = approvalWindow(context);
-    await startConnect(dapp);
+    await startConnect(other);
     window = await opened;
     await expect(window.getByTestId('dapp-connect-approval')).toBeVisible({ timeout: 30_000 });
     await window.close();
-    await connectResult(dapp);
+    await connectResult(other);
     await expect(sidePanel.getByTestId('home-screen')).toBeVisible();
     await expect(sidePanel.getByTestId('lock-password-input')).toHaveCount(0);
   });

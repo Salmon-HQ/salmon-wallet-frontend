@@ -18,7 +18,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import background from './entrypoints/background';
+import background, { DECLINE_COOLDOWN_MS } from './entrypoints/background';
 
 const DAPP_ORIGIN = 'https://dapp.example';
 const POPUP_WINDOW_ID = 777;
@@ -428,6 +428,87 @@ describe('what an unapproved origin can make the wallet do', () => {
     expect(sendResponse).not.toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Operation cancelled' })
     );
+  });
+});
+
+describe('after the user turns a site down', () => {
+  const OTHER_ORIGIN = 'https://other.example';
+
+  /** Opens a connect window for `origin` and returns how to answer or close it. */
+  async function openWindow(origin: string = DAPP_ORIGIN) {
+    const started = startBackground();
+    started.route(dappRequest('connect', 'req-first'), ownSender(origin), vi.fn());
+    await vi.waitFor(() => expect(started.windowsCreate).toHaveBeenCalledTimes(1));
+    const closeWindow = () =>
+      (started.onWindowRemoved.mock.calls.at(-1)?.[0] as (id: number) => void)(POPUP_WINDOW_ID);
+    const answer = (data: Record<string, unknown>) => {
+      started.route(
+        { channel: EXTENSION_CHANNEL, data: { id: 'req-first', ...data } },
+        extensionPage(),
+        vi.fn()
+      );
+      closeWindow();
+    };
+    return { ...started, answer, closeWindow };
+  }
+
+  // A page could ask again the moment its window closed and keep the one
+  // approval slot for as long as its tab stayed open, so no other site was
+  // ever served.
+  it.each([
+    [
+      'rejects it',
+      (w: Awaited<ReturnType<typeof openWindow>>) =>
+        w.answer({ error: 'User rejected the request' }),
+    ],
+    ['closes its window', (w: Awaited<ReturnType<typeof openWindow>>) => w.closeWindow()],
+  ])('refuses the same site for a while when the user %s', async (_name, turnDown) => {
+    const opened = await openWindow();
+    turnDown(opened);
+    const again = vi.fn();
+
+    opened.route(dappRequest('connect', 'req-again'), ownSender(), again);
+
+    await vi.waitFor(() =>
+      expect(again.mock.calls[0]?.[0]).toEqual({
+        error: 'Declined moments ago, try again later',
+        id: 'req-again',
+      })
+    );
+    expect(opened.windowsCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('serves another site meanwhile', async () => {
+    const opened = await openWindow();
+    opened.closeWindow();
+
+    opened.route(dappRequest('connect', 'req-other'), ownSender(OTHER_ORIGIN), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+  });
+
+  it('serves the site again once the cool-down is over', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const opened = await openWindow();
+      opened.closeWindow();
+      vi.setSystemTime(Date.now() + DECLINE_COOLDOWN_MS + 1);
+
+      opened.route(dappRequest('connect', 'req-later'), ownSender(), vi.fn());
+
+      await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not hold back a site whose request the user approved', async () => {
+    const opened = await openWindow();
+    opened.answer({ method: 'connected', params: { publicKey: 'TrustedPubkey111' } });
+
+    opened.route(dappRequest('connect', 'req-next'), ownSender(), vi.fn());
+
+    await vi.waitFor(() => expect(opened.windowsCreate).toHaveBeenCalledTimes(2));
   });
 });
 
