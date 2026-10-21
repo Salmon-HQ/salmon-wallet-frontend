@@ -4,11 +4,13 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 
 ## extension 0.17.1 — unreleased
 
+- Sending a token whose shown balance carries a multiplier (Token-2022 Scaled UI Amount or Interest Bearing, such as tokenised shares) moves the amount on screen, converted at the multiplier in force at that moment, and Max sends the whole balance. Max on any token now fills the balance to its last unit.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - Unlocking no longer copies the key that opens the wallet into the extension's storage. Reported by iblitzc0de.
 
 ## mobile 1.4.0 — unreleased
 
+- Sending a token whose shown balance carries a multiplier (Token-2022 Scaled UI Amount or Interest Bearing, such as tokenised shares) moves the amount on screen, converted at the multiplier in force at that moment, and Max sends the whole balance. Max on any token now fills the balance to its last unit.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - A dApp on the other Solana network no longer dead-ends: when it asks to connect on Devnet (or Mainnet) and your wallet holds that network, Salmon offers to switch, then shows the usual connect approval. A network Salmon does not support is named in the refusal.
 - A dApp that reaches Salmon before any wallet exists is told so, with a button that opens Salmon to create or import one.

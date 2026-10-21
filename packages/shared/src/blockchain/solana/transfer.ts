@@ -23,8 +23,14 @@ import {
   AccountRole,
   address,
   appendTransactionMessageInstructions,
+  assertAccountExists,
   compileTransaction,
   createTransactionMessage,
+  decodeAccount,
+  fetchEncodedAccount,
+  getI64Decoder,
+  getStructDecoder,
+  getU64Decoder,
   getBase64Decoder,
   getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
@@ -59,7 +65,7 @@ import {
 } from '@solana-program/token-2022';
 import type { Extension, TransferFee } from '@solana-program/token-2022';
 
-import { applyDecimals } from '../../utils/decimals';
+import { applyDecimals, parseDecimal, shiftDecimal, toBaseUnits } from '../../utils/decimals';
 import { isNativeSol } from '../../utils/tokens';
 import { LAMPORTS_PER_SOL, SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaRpc } from './networks';
@@ -107,6 +113,13 @@ export interface TransferOptions {
    * non-signers, in order, so the receiver's wallet finds the payment by them.
    */
   references?: readonly string[];
+  /**
+   * The user asked for the whole balance (Max). On a mint whose displayed
+   * amount carries a multiplier, the shown balance converted back can fall
+   * short of the raw balance, so the transfer sends the account's raw balance
+   * instead — never less than the amount shown.
+   */
+  max?: boolean;
 }
 
 /** Payload returned by `simulateTransaction` when `TransferOptions.simulate` is set. */
@@ -184,6 +197,128 @@ function calculateFee(transferFee: TransferFee, preFeeAmount: bigint): bigint {
   const numerator = preFeeAmount * basisPoints;
   const rawFee = (numerator + ONE_IN_BASIS_POINTS - 1n) / ONE_IN_BASIS_POINTS;
   return rawFee > transferFee.maximumFee ? transferFee.maximumFee : rawFee;
+}
+
+/** The fee a Token-2022 transfer-fee schedule takes from `rawAmount`, in the current epoch. */
+async function transferFeeFor(
+  rpc: SolanaRpc,
+  config: Extract<Extension, { __kind: 'TransferFeeConfig' }>,
+  rawAmount: bigint
+): Promise<bigint> {
+  // Token-2022 mints can schedule a fee change for a future epoch; the older
+  // schedule stays in force until that epoch is reached.
+  const { epoch } = await rpc.getEpochInfo().send();
+  const schedule =
+    BigInt(epoch) >= config.newerTransferFee.epoch
+      ? config.newerTransferFee
+      : config.olderTransferFee;
+  return calculateFee(schedule, rawAmount);
+}
+
+const CLOCK_SYSVAR_ADDRESS = address('SysvarC1ock11111111111111111111111111111111');
+
+/** The Clock sysvar's layout (`solana-clock`); only the unix timestamp is read. */
+const clockDecoder = getStructDecoder([
+  ['slot', getU64Decoder()],
+  ['epochStartTimestamp', getI64Decoder()],
+  ['epoch', getU64Decoder()],
+  ['leaderScheduleEpoch', getU64Decoder()],
+  ['unixTimestamp', getI64Decoder()],
+]);
+
+/** Seconds in the 365.24-day year `interest_bearing_mint` compounds over. */
+const SECONDS_PER_YEAR = 60 * 60 * 24 * 365.24;
+
+/**
+ * The multiplier a Token-2022 mint applies to the amount its holders see, or
+ * `null` for a mint that shows its raw amount. Scaled UI Amount stores one
+ * (a split, a rebase) and swaps in its scheduled successor once the chain
+ * clock reaches the effective time; Interest Bearing compounds a rate
+ * continuously, so it grows with every second. Both are read from the mint and
+ * the chain's own clock, the inputs the token program itself uses, and
+ * computed as the program does (`interface/src/extension/scaled_ui_amount`
+ * and `interest_bearing_mint` in solana-program/token-2022).
+ *
+ * @throws When the clock cannot be read or the multiplier is not a positive
+ * number: an amount that cannot be converted is not sent.
+ */
+async function readDisplayMultiplier(
+  rpc: SolanaRpc,
+  extensions: Extension[]
+): Promise<number | null> {
+  const scaled = extensions.find((ext) => ext.__kind === 'ScaledUiAmountConfig');
+  const interest = extensions.find((ext) => ext.__kind === 'InterestBearingConfig');
+  if (!scaled && !interest) return null;
+
+  const clock = await fetchEncodedAccount(rpc, CLOCK_SYSVAR_ADDRESS);
+  assertAccountExists(clock);
+  const now = decodeAccount(clock, clockDecoder).data.unixTimestamp;
+
+  const growth = (rate: number, from: bigint, to: bigint) =>
+    Math.exp((rate * Number(to - from)) / SECONDS_PER_YEAR / Number(ONE_IN_BASIS_POINTS));
+  const multiplier = scaled
+    ? now >= scaled.newMultiplierEffectiveTimestamp
+      ? scaled.newMultiplier
+      : scaled.multiplier
+    : interest
+      ? growth(
+          interest.preUpdateAverageRate,
+          interest.initializationTimestamp,
+          interest.lastUpdateTimestamp
+        ) * growth(interest.currentRate, interest.lastUpdateTimestamp, now)
+      : Number.NaN;
+  if (!Number.isFinite(multiplier) || multiplier <= 0) {
+    throw new Error(`Token mint display multiplier is not usable: ${multiplier}`);
+  }
+  return multiplier;
+}
+
+/**
+ * Raw base units for an amount typed as the holder sees it, on a mint whose
+ * displayed amount is `raw × multiplier`, truncated to the mint's decimals.
+ *
+ * The answer is the smallest raw amount that shows as exactly what was typed;
+ * when no raw amount does (a large multiplier leaves gaps), the largest that
+ * shows as less, so the transfer never moves more than the user saw. Token-2022's
+ * own UiAmountToAmount does this in floating point, which its interface says
+ * is "not guaranteed to give consistent behavior"; here the amount and the
+ * multiplier are read as decimals (each number's shortest round-trip form)
+ * and the division is done on integers.
+ */
+function displayToRawAmount(amount: number, decimals: number, multiplier: number): bigint {
+  const target = toBaseUnits(amount, decimals);
+  const { units, exponent } = parseDecimal(multiplier);
+  // target / multiplier, as numerator / denominator.
+  const [numerator, denominator] =
+    exponent >= 0
+      ? [target, shiftDecimal(units, exponent)]
+      : [shiftDecimal(target, -exponent), units];
+  const smallest = (numerator + denominator - 1n) / denominator;
+  return shiftDecimal(smallest * units, exponent) === target ? smallest : smallest - 1n;
+}
+
+/**
+ * The raw amount a transfer of `amount` (as the holder sees it) moves.
+ * Unchanged for a mint without a display multiplier; on one with, converted
+ * at the multiplier in force now, and on Max the whole raw balance of
+ * `maxSource` when it is worth at least the amount shown.
+ */
+async function rawTransferAmount(
+  rpc: SolanaRpc,
+  extensions: Extension[],
+  amount: number,
+  decimals: number,
+  maxSource?: Address
+): Promise<bigint> {
+  const multiplier = await readDisplayMultiplier(rpc, extensions);
+  if (multiplier === null) return BigInt(applyDecimals(amount, decimals));
+
+  const shown = displayToRawAmount(amount, decimals, multiplier);
+  if (!maxSource) return shown;
+  // A holding worth less than the amount shown is not sent in its place: the
+  // transfer asks for what the user saw, and the chain refuses it if short.
+  const source = await fetchMaybeToken(rpc, maxSource);
+  return source.exists && source.data.amount >= shown ? source.data.amount : shown;
 }
 
 /**
@@ -427,7 +562,17 @@ export async function createSplTransaction(
 
   const mint = await fetchMint(rpc, mintAddress);
   const decimals = mint.data.decimals ?? opts?.decimals ?? 0;
-  const transferAmount = applyDecimals(amount, decimals);
+  const extensions =
+    tokenProgram === TOKEN_2022_PROGRAM_ADDRESS
+      ? getExtensions(unwrapOption(mint.data.extensions))
+      : [];
+  const transferAmount = await rawTransferAmount(
+    rpc,
+    extensions,
+    amount,
+    decimals,
+    opts.max ? fromTokenAddress : undefined
+  );
 
   const instructions: Instruction[] = [
     // Idempotent ATA creation: adds the instruction to the same transaction.
@@ -452,15 +597,10 @@ export async function createSplTransaction(
     );
   }
 
-  const transferFeeConfig =
-    tokenProgram === TOKEN_2022_PROGRAM_ADDRESS
-      ? getExtensions(unwrapOption(mint.data.extensions)).find(
-          (ext) => ext.__kind === 'TransferFeeConfig'
-        )
-      : undefined;
+  const transferFeeConfig = extensions.find((ext) => ext.__kind === 'TransferFeeConfig');
 
   if (transferFeeConfig) {
-    const fee = await calculateTransferFee(rpc, tokenAddress, amount);
+    const fee = await transferFeeFor(rpc, transferFeeConfig, transferAmount);
 
     instructions.push(
       withReferences(
@@ -471,9 +611,9 @@ export async function createSplTransaction(
           // Must be the signer, not its address: a bare Address yields a
           // READONLY account meta and the authority silently loses isSigner.
           authority: signer,
-          amount: BigInt(transferAmount),
+          amount: transferAmount,
           decimals,
-          fee: fee ?? 0n,
+          fee,
         }),
         references
       )
@@ -487,7 +627,7 @@ export async function createSplTransaction(
             destination: toTokenAddress,
             // Same signer-vs-address constraint as above.
             authority: signer,
-            amount: BigInt(transferAmount),
+            amount: transferAmount,
           },
           { programAddress: tokenProgram }
         ),
@@ -629,24 +769,15 @@ export async function calculateTransferFee(
   }
 
   const mintInfo = await fetchMint(rpc, mintAddress);
-  const transferFeeConfig = getExtensions(unwrapOption(mintInfo.data.extensions)).find(
-    (ext) => ext.__kind === 'TransferFeeConfig'
-  );
+  const extensions = getExtensions(unwrapOption(mintInfo.data.extensions));
+  const transferFeeConfig = extensions.find((ext) => ext.__kind === 'TransferFeeConfig');
 
   if (!transferFeeConfig) {
     return null;
   }
 
-  // Token-2022 mints can schedule a fee change for a future epoch; the older
-  // schedule stays in force until that epoch is reached.
-  const { epoch } = await rpc.getEpochInfo().send();
-  const transferAmount = BigInt(Math.floor(amount * 10 ** mintInfo.data.decimals));
-  const schedule =
-    BigInt(epoch) >= transferFeeConfig.newerTransferFee.epoch
-      ? transferFeeConfig.newerTransferFee
-      : transferFeeConfig.olderTransferFee;
-
-  return calculateFee(schedule, transferAmount);
+  const transferAmount = await rawTransferAmount(rpc, extensions, amount, mintInfo.data.decimals);
+  return transferFeeFor(rpc, transferFeeConfig, transferAmount);
 }
 
 // ============================================================================

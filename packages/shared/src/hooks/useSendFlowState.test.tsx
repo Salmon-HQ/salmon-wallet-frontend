@@ -98,6 +98,51 @@ describe('useSendFlowState', () => {
     expect(reset).toHaveBeenCalled();
   });
 
+  describe('Max', () => {
+    const ready = async () => {
+      const hook = renderHook(() => useSendFlowState({ ...params, initialTokenAddress: 'USDC' }));
+      await waitFor(() => expect(hook.result.current.token?.address).toBe('USDC'));
+      act(() => hook.result.current.setRecipient({ address: 'dest' }));
+      return hook.result;
+    };
+
+    it('tells the transfer the user asked for the whole balance', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      await act(() => result.current.submit());
+      expect(sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ max: true }));
+    });
+
+    it('drops it once the user types over the fill', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => result.current.setAmount('9'));
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
+
+    it('does not carry over to another token', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => result.current.setToken(sol));
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
+
+    it('never applies to the amount a payment request fixed', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => {
+        result.current.startFromRequest(
+          { recipient: 'dest', amount: '10', splToken: 'USDC', references: [] },
+          params.tokens
+        );
+      });
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
+  });
+
   describe('a Send started from a transfer request', () => {
     const request = {
       recipient: 'dest',

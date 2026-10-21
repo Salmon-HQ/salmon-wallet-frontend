@@ -243,6 +243,29 @@ describe('useSendTransaction', () => {
     });
   });
 
+  it('passes a Max send through to the transfer', async () => {
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.sendTransaction({
+        token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+        recipientAddress: RAW_RECIPIENT,
+        amount: AMOUNT,
+        max: true,
+      });
+    });
+
+    expect(mockAccount.transfer).toHaveBeenCalledWith(
+      RAW_RECIPIENT,
+      TOKEN_ADDRESS,
+      AMOUNT,
+      expect.objectContaining({ max: true })
+    );
+  });
+
   it('uses the resolved recipient address for transfer execution when provided', async () => {
     const { result } = renderHook(
       () =>

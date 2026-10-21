@@ -70,6 +70,46 @@ export function resolveUiAmount(item: {
 }
 
 /**
+ * A non-negative decimal as an exact integer and a power of ten:
+ * `value = units × 10^exponent`. A number is read through its shortest
+ * round-trip form, so 1.15 is 115 × 10^-2 rather than the binary
+ * 1.149999…, and `1e-7` is read as written.
+ *
+ * @throws When the value is negative, not finite, or not a decimal.
+ */
+export function parseDecimal(value: number | string): { units: bigint; exponent: number } {
+  const text = String(value).trim();
+  const match = /^(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(text);
+  if (!match || (!match[1] && !match[2])) {
+    throw new Error(`Not a non-negative decimal: ${text}`);
+  }
+  const [, whole, fraction = '', exponent = '0'] = match;
+  return { units: BigInt(`${whole}${fraction}`), exponent: Number(exponent) - fraction.length };
+}
+
+/** `floor(units × 10^exponent)`, exactly. */
+export function shiftDecimal(units: bigint, exponent: number): bigint {
+  return exponent >= 0 ? units * 10n ** BigInt(exponent) : units / 10n ** BigInt(-exponent);
+}
+
+/**
+ * The base units a decimal amount holds at `decimals` places, exactly and
+ * truncated: 1.15 at 6 places is 1,150,000, where
+ * `Math.floor(1.15 * 1e6)` gives 1,149,999.
+ */
+export function toBaseUnits(value: number | string, decimals: number): bigint {
+  const { units, exponent } = parseDecimal(value);
+  return shiftDecimal(units, exponent + decimals);
+}
+
+/** Base units as the shortest decimal string: 1,150,000 at 6 places is "1.15". */
+export function fromBaseUnits(units: bigint, decimals: number): string {
+  if (decimals === 0) return units.toString();
+  const digits = units.toString().padStart(decimals + 1, '0');
+  return `${digits.slice(0, -decimals)}.${digits.slice(-decimals)}`.replace(/\.?0+$/, '');
+}
+
+/**
  * Parses a human-readable amount to smallest unit as bigint
  *
  * @param amount - Human-readable amount (e.g., '1.5')

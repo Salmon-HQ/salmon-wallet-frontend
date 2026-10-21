@@ -422,6 +422,160 @@ describe('createSplTransaction', () => {
 });
 
 // ============================================================================
+// Test 2b: a Token-2022 mint whose displayed amount carries a multiplier
+// ============================================================================
+
+describe('createSplTransaction on a mint with a display multiplier', () => {
+  const CLOCK = 'SysvarC1ock11111111111111111111111111111111';
+  const NOW = 1_800_000_000n;
+
+  /** A Token-2022 mint's rpc, with the chain clock at `unixTimestamp` (`null`: no clock account). */
+  const rpcAt = (unixTimestamp: bigint | null) =>
+    createRpc({
+      getAccountInfo: vi.fn((account: string) => ({
+        send: async () => {
+          if (account !== CLOCK) return { value: { owner: TOKEN_2022_PROGRAM_ADDRESS } };
+          if (unixTimestamp === null) return { value: null };
+          // Clock: slot, epoch start, epoch, leader schedule epoch, then the unix timestamp.
+          const clock = Buffer.alloc(40);
+          clock.writeBigInt64LE(unixTimestamp, 32);
+          return {
+            value: {
+              data: [clock.toString('base64'), 'base64'],
+              executable: false,
+              lamports: 1n,
+              owner: 'Sysvar1111111111111111111111111111111111111',
+              space: 40n,
+            },
+          };
+        },
+      })),
+    });
+
+  const scaled = (multiplier: number, newMultiplier = multiplier, effectiveAt = 0n) => ({
+    __kind: 'ScaledUiAmountConfig' as const,
+    authority: address(USDC_MINT),
+    multiplier,
+    newMultiplierEffectiveTimestamp: effectiveAt,
+    newMultiplier,
+  });
+
+  const interestBearing = (currentRate: number) => ({
+    __kind: 'InterestBearingConfig' as const,
+    rateAuthority: address(USDC_MINT),
+    initializationTimestamp: 0n,
+    preUpdateAverageRate: 0,
+    lastUpdateTimestamp: 0n,
+    currentRate,
+  });
+
+  const send = async (rpc: SolanaRpc, amount: number, opts: Record<string, unknown> = {}) =>
+    createSplTransaction(
+      rpc,
+      await testSigner(1),
+      address(Keypair.generate().publicKey.toBase58()),
+      USDC_MINT,
+      amount,
+      opts
+    );
+
+  /** The raw amount a Transfer instruction carries: a u64 after its one-byte discriminator. */
+  const sent = (transaction: Awaited<ReturnType<typeof send>>) =>
+    Buffer.from(payload(transaction).at(-1)!.data!).readBigUInt64LE(1);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sends half the raw units when the multiplier doubles what the holder sees', async () => {
+    mockMint(6, some([scaled(2)]));
+    expect(sent(await send(rpcAt(NOW), 10))).toBe(5_000_000n);
+  });
+
+  it('sends twice the raw units when the multiplier halves what the holder sees', async () => {
+    mockMint(6, some([scaled(0.5)]));
+    expect(sent(await send(rpcAt(NOW), 10))).toBe(20_000_000n);
+  });
+
+  it('rounds up when that is what makes the recipient see exactly the amount typed', async () => {
+    // 10 / 1.0000001 is 999,999,900.00001 raw units: 999,999,900 shows as
+    // 9.99999999, 999,999,901 shows as 10.
+    mockMint(8, some([scaled(1.0000001)]));
+    expect(sent(await send(rpcAt(NOW), 10))).toBe(999_999_901n);
+  });
+
+  it('sends the closest amount below when no raw amount shows as exactly what was typed', async () => {
+    // At x3 with no decimals each raw unit shows as 3: 10 is unreachable, 9 is below it.
+    mockMint(0, some([scaled(3)]));
+    expect(sent(await send(rpcAt(NOW), 10))).toBe(3n);
+  });
+
+  it('switches to the new multiplier once the chain clock reaches its effective time', async () => {
+    mockMint(6, some([scaled(1, 2, 1_700_000_000n)]));
+    expect(sent(await send(rpcAt(1_699_999_999n), 10))).toBe(10_000_000n);
+    expect(sent(await send(rpcAt(1_700_000_000n), 10))).toBe(5_000_000n);
+  });
+
+  it('converts an interest-bearing amount at the interest accrued by the chain clock', async () => {
+    // 100% a year for one 365.24-day year compounds continuously to xe: one
+    // raw token (1,000,000 units) shows as 2.718281.
+    mockMint(6, some([interestBearing(10_000)]));
+    expect(sent(await send(rpcAt(31_556_736n), 2.718281))).toBe(1_000_000n);
+  });
+
+  it('sends the whole raw balance on Max, not the amount shown converted back', async () => {
+    // 12,345,679 raw units at x0.5 show as 6.172839, which converts back to 12,345,678.
+    mockMint(6, some([scaled(0.5)]));
+    vi.mocked(fetchMaybeToken).mockResolvedValue({
+      exists: true,
+      data: { amount: 12_345_679n },
+    } as never);
+    expect(sent(await send(rpcAt(NOW), 6.172839))).toBe(12_345_678n);
+    expect(sent(await send(rpcAt(NOW), 6.172839, { max: true }))).toBe(12_345_679n);
+  });
+
+  it('never lets Max send a holding worth less than the amount shown', async () => {
+    // 1,000,000 raw units at x2 show as 2; the screen said 3. The transfer asks
+    // for the 3 shown, and the chain refuses it for lack of funds.
+    mockMint(6, some([scaled(2)]));
+    vi.mocked(fetchMaybeToken).mockResolvedValue({
+      exists: true,
+      data: { amount: 1_000_000n },
+    } as never);
+    expect(sent(await send(rpcAt(NOW), 3, { max: true }))).toBe(1_500_000n);
+  });
+
+  it('charges the transfer fee on the raw amount sent', async () => {
+    const onePercent = { epoch: 0n, transferFeeBasisPoints: 100, maximumFee: 1_000_000_000n };
+    mockMint(
+      6,
+      some([
+        scaled(2),
+        {
+          __kind: 'TransferFeeConfig',
+          olderTransferFee: onePercent,
+          newerTransferFee: onePercent,
+        },
+      ])
+    );
+    const data = Buffer.from(payload(await send(rpcAt(NOW), 10)).at(-1)!.data!);
+    // TransferCheckedWithFee: discriminators (2 bytes), amount u64, decimals u8, fee u64.
+    expect(data.readBigUInt64LE(2)).toBe(5_000_000n);
+    expect(data.readBigUInt64LE(11)).toBe(50_000n);
+  });
+
+  it('refuses to build when the chain clock cannot be read', async () => {
+    mockMint(6, some([scaled(2)]));
+    await expect(send(rpcAt(null), 10)).rejects.toThrow();
+  });
+
+  it('refuses a multiplier that is not a positive number', async () => {
+    mockMint(6, some([scaled(Number.NaN)]));
+    await expect(send(rpcAt(NOW), 10)).rejects.toThrow();
+  });
+});
+
+// ============================================================================
 // Test 3: estimateFee
 // ============================================================================
 

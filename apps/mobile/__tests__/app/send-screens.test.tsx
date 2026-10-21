@@ -616,7 +616,8 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId(`send-shortcuts-${key}`));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected);
+    // The fill names itself, so the transfer can tell Max from a typed amount.
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected, key);
   });
 
   it('MAX is the whole balance — it has never subtracted a fee', () => {
@@ -624,7 +625,7 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId('send-shortcuts-max'));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance));
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance), 'max');
   });
 
   it('keeps Review dead on an empty amount', () => {
