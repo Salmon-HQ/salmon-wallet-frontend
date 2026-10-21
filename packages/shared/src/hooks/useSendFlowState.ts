@@ -121,7 +121,7 @@ export function useSendFlowState({
   // request reaches the review with the same verdict as a typed address.
   const recipientWarning = useRecipientWarning(
     account,
-    recipient ? recipient.resolvedAddress || recipient.address : null
+    recipient ? (recipient.resolvedAddress ?? recipient.address) : null
   );
 
   const reset = useCallback(() => {

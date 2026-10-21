@@ -226,7 +226,9 @@ describe('a request whose amount the token cannot hold', () => {
  * state, so the review's warning is judged here once for every way in.
  */
 describe('the warning about a recipient no key controls', () => {
-  const OFF_CURVE = 'pda-recipient';
+  // An associated token account: derived from a program, so off the curve.
+  const OFF_CURVE = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  const WALLET = '86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY';
   const validateDestinationAccount = vi.fn(async (address: string) =>
     address === OFF_CURVE
       ? { type: 'SUCCESS', code: 'off_curve_no_funds', addressType: 'PUBLIC_KEY' }
@@ -260,9 +262,42 @@ describe('the warning about a recipient no key controls', () => {
       expect(result.current.recipientWarning).toBe('send.validation.off_curve_no_funds')
     );
 
-    act(() => result.current.setRecipient({ address: 'wallet' }));
+    act(() => result.current.setRecipient({ address: WALLET }));
     expect(result.current.recipientWarning).toBeNull();
-    await waitFor(() => expect(validateDestinationAccount).toHaveBeenCalledWith('wallet'));
+  });
+
+  // Off the curve is a property of the address itself: a failed lookup only
+  // loses whether the account holds funds, never the warning.
+  it('still warns when the network check fails', async () => {
+    const failing = {
+      ...params,
+      account: { validateDestinationAccount: vi.fn().mockRejectedValue(new Error('fetch failed')) },
+    } as never;
+    const offline = {
+      ...params,
+      account: {
+        validateDestinationAccount: vi.fn(async () => ({ type: 'ERROR', code: 'network_error' })),
+      },
+    } as never;
+
+    for (const flowParams of [failing, offline]) {
+      const { result } = renderHook(() => useSendFlowState(flowParams));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+      act(() => result.current.setRecipient({ address: OFF_CURVE }));
+      await act(async () => {});
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_has_funds');
+    }
+  });
+
+  // The transfer pays `resolvedAddress ?? address`; the warning judges the same.
+  it('judges exactly the address the transfer pays', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => result.current.setRecipient({ address: OFF_CURVE, resolvedAddress: '' }));
+    await act(async () => {});
+
+    expect(validateDestinationAccount).not.toHaveBeenCalledWith(OFF_CURVE);
     expect(result.current.recipientWarning).toBeNull();
   });
 });
