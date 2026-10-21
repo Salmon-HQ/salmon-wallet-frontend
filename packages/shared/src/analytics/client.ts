@@ -3,32 +3,39 @@
  *
  * A singleton, framework-agnostic client (mirrors the storage module's
  * init/get pattern). It is opt-in by default: until the user grants consent,
- * `track` is a total no-op — nothing is validated, queued, stored, or sent.
+ * nothing is queued, stored, or sent. An event recorded before the stored
+ * consent has been read waits in memory for it, then is queued or dropped.
  *
  * Design invariants:
  * - No wallet material ever leaves the device (enforced by `./schema`).
  * - `track` never throws in production; bad events are dropped (or throw in
  *   strict/dev mode so mistakes surface during development).
- * - Withdrawing consent clears the queue and the install id.
+ * - Withdrawing consent clears the queue, the install id and the consent version.
+ * - A consent given under the v1 text sends only the v1 events (FR-021); the
+ *   version stays on the device.
  */
 
+import chunk from 'lodash-es/chunk';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import { validateEvent, safeValidateEvent } from './schema';
 import { getOrCreateInstallId, clearInstallId, createSessionId } from './install-id';
 import type {
-  AnalyticsBatch,
   AnalyticsClientConfig,
+  AnalyticsContext,
   AnalyticsEventPayload,
+  AnalyticsPlatform,
   AnalyticsProps,
   AnalyticsTransport,
 } from './types';
-import type { AnalyticsEventName } from './events';
-import { createHttpTransport } from './transport';
+import { V1_EVENTS, type AnalyticsEventName } from './events';
+import { createHttpTransport, isRetryable } from './transport';
 
 const DEFAULT_BATCH_SIZE = 20;
 const DEFAULT_FLUSH_INTERVAL_MS = 30_000;
 /** Upper bound on buffered events, so an offline device can't grow unbounded. */
 const MAX_QUEUE_LENGTH = 200;
+/** The backend's per-batch cap; it drops everything past it. */
+const MAX_EVENTS_PER_REQUEST = 100;
 
 function isDevEnvironment(): boolean {
   return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';
@@ -36,15 +43,18 @@ function isDevEnvironment(): boolean {
 
 class AnalyticsClient {
   private readonly config: Required<Omit<AnalyticsClientConfig, 'transport' | 'strict'>>;
-  private readonly transport: AnalyticsTransport;
+  private transport: AnalyticsTransport | null;
   private readonly strict: boolean;
 
-  private readonly sessionId = createSessionId();
+  private sessionId = createSessionId();
+  private platform: AnalyticsPlatform | null = null;
   private installId: string | null = null;
   private consent = false;
+  /** Whether consent was given under the v2 text; stored consent without a version is v1. */
+  private consentV2 = false;
   private prompted = false;
+  private bootstrapped = false;
   private queue: AnalyticsEventPayload[] = [];
-  private flushing = false;
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly ready: Promise<void>;
 
@@ -52,24 +62,33 @@ class AnalyticsClient {
     this.config = {
       platform: config.platform,
       appVersion: config.appVersion,
+      storeBuild: config.storeBuild ?? false,
       batchSize: config.batchSize ?? DEFAULT_BATCH_SIZE,
       flushIntervalMs: config.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS,
     };
-    this.transport = config.transport ?? createHttpTransport();
+    this.transport = config.transport ?? null;
     this.strict = config.strict ?? isDevEnvironment();
     this.ready = this.bootstrap();
   }
 
-  /** Resolves once persisted consent + install id have been loaded. */
+  /** Resolves once the platform, build kind, persisted consent and install id are known. */
   whenReady(): Promise<void> {
     return this.ready;
   }
 
   private async bootstrap(): Promise<void> {
     try {
+      const [platform, storeBuild] = await Promise.all([
+        this.config.platform,
+        this.config.storeBuild,
+      ]);
+      this.transport ??= createHttpTransport(storeBuild);
+      this.platform = platform;
       const storage = getStorage();
       const consent = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT);
       this.consent = consent === true;
+      const version = await storage.getItem<string>(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION);
+      this.consentV2 = version === 'v2';
       const prompted = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT_PROMPTED);
       this.prompted = prompted === true;
       if (this.consent) {
@@ -78,11 +97,21 @@ class AnalyticsClient {
       }
     } catch {
       this.consent = false;
+    } finally {
+      this.bootstrapped = true;
     }
   }
 
   getConsent(): boolean {
     return this.consent;
+  }
+
+  /**
+   * Whether `event` recorded now would be queued: consent is given and covers
+   * it. A v1 consent covers only {@link V1_EVENTS} (FR-021).
+   */
+  allows(event: AnalyticsEventName): boolean {
+    return this.consent && (this.consentV2 || V1_EVENTS.includes(event));
   }
 
   /** Whether the user has already answered the first-run consent prompt. */
@@ -101,7 +130,8 @@ class AnalyticsClient {
   }
 
   /**
-   * Grants or withdraws consent, persisting the choice.
+   * Grants or withdraws consent, persisting the choice. Granting records the
+   * v2 text, the one both consent surfaces show (FR-017, FR-021).
    *
    * A withdrawal stops collecting before it tries to write anything, and the
    * write is not allowed to fail quietly. It used to: the persisted flag stayed
@@ -113,12 +143,11 @@ class AnalyticsClient {
    * collection has already stopped either way.
    */
   async setConsent(enabled: boolean): Promise<void> {
-    this.consent = enabled;
-
-    if (!enabled) {
-      this.stopTimer();
-      this.queue = [];
-      this.installId = null;
+    if (enabled) {
+      this.consent = true;
+      this.consentV2 = true;
+    } else {
+      this.forgetConsent();
     }
 
     const storage = getStorage();
@@ -135,20 +164,42 @@ class AnalyticsClient {
         console.warn('Analytics consent withdrawal fell back to removing the key:', error);
       }
       await clearInstallId();
+      await storage.removeItem(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION);
       return;
     }
 
     await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT, true);
+    await storage.setItem(STORAGE_KEYS.ANALYTICS_CONSENT_VERSION, 'v2');
     this.installId = await getOrCreateInstallId();
     this.startTimer();
   }
 
   /**
-   * Records an event. No-op without consent. Invalid events are dropped (or
-   * throw in strict mode).
+   * Stops collecting in memory only: no timer, no queue, no identity. For a
+   * withdrawal made elsewhere (another extension window) that already wrote
+   * the storage this client would otherwise keep sending from.
+   */
+  forgetConsent(): void {
+    this.consent = false;
+    this.consentV2 = false;
+    this.stopTimer();
+    this.queue = [];
+    this.installId = null;
+  }
+
+  /**
+   * Records an event. No-op without consent, or for an event a v1 consent
+   * does not cover (FR-021). Invalid events are dropped (or throw in strict
+   * mode). Before stored consent has been read, the event waits for it instead
+   * of being dropped as "no consent" (FR-016).
    */
   track(event: AnalyticsEventName, props: AnalyticsProps = {}): void {
-    if (!this.consent) return;
+    if (!this.bootstrapped) {
+      if (this.strict) validateEvent(event, props);
+      void this.ready.then(() => this.track(event, props));
+      return;
+    }
+    if (!this.allows(event)) return;
 
     const validated = this.strict ? validateEvent(event, props) : safeValidateEvent(event, props);
     if (!validated) return;
@@ -162,36 +213,48 @@ class AnalyticsClient {
     }
   }
 
-  /** Sends buffered events. Re-queues on failure for a later retry. */
+  /**
+   * Sends buffered events, in requests of at most 100. Re-queues on failure for
+   * a later retry. Every request starts before the first `await`, so a flush
+   * called as a window closes reaches the transport before the page is gone.
+   */
   async flush(): Promise<void> {
-    if (this.flushing || !this.consent || !this.installId || this.queue.length === 0) return;
+    const { platform, transport, installId } = this;
+    if (!platform || !transport || !this.consent || !installId || this.queue.length === 0) return;
 
-    this.flushing = true;
+    const context: AnalyticsContext = {
+      installId,
+      sessionId: this.sessionId,
+      platform,
+      appVersion: this.config.appVersion,
+    };
     const events = this.queue;
     this.queue = [];
 
-    const batch: AnalyticsBatch = {
-      context: {
-        installId: this.installId,
-        sessionId: this.sessionId,
-        platform: this.config.platform,
-        appVersion: this.config.appVersion,
-      },
-      events,
-    };
+    await Promise.all(
+      chunk(events, MAX_EVENTS_PER_REQUEST).map(async (part) => {
+        try {
+          await transport.send({ context, events: part });
+        } catch (error) {
+          // Best-effort delivery: put the events back (bounded) to retry next
+          // tick. Not when the backend refused them (resending cannot help), and
+          // not under another identity: a withdrawal while this batch was in
+          // flight, or a withdrawal and a new grant, drops them.
+          if (isRetryable(error) && this.consent && this.installId === installId) {
+            this.queue = [...part, ...this.queue].slice(-MAX_QUEUE_LENGTH);
+          }
+        }
+      })
+    );
+  }
 
-    try {
-      await this.transport.send(batch);
-    } catch {
-      // Best-effort delivery: put the events back (bounded) to retry next tick —
-      // unless consent was withdrawn while this batch was in flight, in which
-      // case the withdrawal's queue wipe wins and the events are dropped.
-      if (this.consent) {
-        this.queue = [...events, ...this.queue].slice(-MAX_QUEUE_LENGTH);
-      }
-    } finally {
-      this.flushing = false;
-    }
+  /**
+   * Starts a new session: what is queued leaves under the current session id,
+   * and the next event gets a new one. Mobile calls it at each app open (FR-004).
+   */
+  startSession(): void {
+    void this.flush();
+    this.sessionId = createSessionId();
   }
 
   /** Stops the flush timer. Call on teardown; safe to call repeatedly. */

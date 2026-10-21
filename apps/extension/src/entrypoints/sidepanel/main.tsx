@@ -11,7 +11,8 @@ import '../../assets/fonts.css';
 import '../../i18n/config';
 
 // Initialize storage and stash for extension platform
-import { APP_VERSION, initStorage, initStash, initAnalytics, setApiPlatform } from '@salmon/shared';
+import { initStorage, initStash, setApiPlatform } from '@salmon/shared';
+import { startExtensionAnalytics } from '../../analytics';
 
 initStorage({ platform: 'extension' });
 initStash('extension');
@@ -19,7 +20,7 @@ initStash('extension');
 // The backend's availability gate reads the platform on every request (spec 018).
 setApiPlatform('extension');
 // Anonymous, opt-in usage analytics (no events until the user opts in).
-initAnalytics({ platform: 'extension', appVersion: APP_VERSION });
+startExtensionAnalytics();
 
 // Wait for the viewport to have dimensions before importing App.
 // The side panel may not be sized yet at script execution time, and

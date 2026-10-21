@@ -92,6 +92,7 @@ export function DAppTransactionApprovalPage({
               ? 'Solana account not available'
               : null,
           failureError: 'Transaction approval failed',
+          event: 'dapp_transaction_signed',
         }
       ),
     [account, approve, networkMismatch, request]

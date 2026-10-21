@@ -1,9 +1,9 @@
 /**
- * Client behaviour tests: consent gating, batching, retry, and the invariant
- * that withdrawing consent wipes the queue and the install id.
+ * Client behaviour tests: consent gating, batching, retry, delivery, sessions,
+ * and the invariant that withdrawing consent wipes the queue and the install id.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const store = new Map<string, unknown>();
 const memStorage = {
@@ -22,12 +22,14 @@ vi.mock('../storage', () => ({
     ANALYTICS_CONSENT: 'salmon_analytics_consent',
     ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
     ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
+    ANALYTICS_CONSENT_VERSION: 'salmon_analytics_consent_version',
   },
 }));
 
-import { initAnalytics, resetAnalytics } from './client';
-import { createMemoryTransport } from './transport';
-import type { AnalyticsBatch } from './types';
+import { initAnalytics, resetAnalytics, type AnalyticsClient } from './client';
+import { ANALYTICS_EVENTS } from './events';
+import { AnalyticsIngestRefusedError, createMemoryTransport } from './transport';
+import type { AnalyticsBatch, AnalyticsPlatform } from './types';
 
 /** Lets any `void flush()` microtasks/promises settle. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -53,7 +55,7 @@ describe('AnalyticsClient consent gating', () => {
 
   it('sends events once consent is granted', async () => {
     const transport = createMemoryTransport();
-    const client = initAnalytics({ platform: 'mobile', appVersion: '3.1.0', transport });
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.1.0', transport });
     await client.whenReady();
 
     await client.setConsent(true);
@@ -62,7 +64,7 @@ describe('AnalyticsClient consent gating', () => {
 
     expect(transport.batches).toHaveLength(1);
     const [batch] = transport.batches;
-    expect(batch.context.platform).toBe('mobile');
+    expect(batch.context.platform).toBe('ios');
     expect(batch.context.installId).toBeTruthy();
     expect(batch.events[0]).toMatchObject({
       event: 'send_completed',
@@ -208,6 +210,49 @@ describe('AnalyticsClient withdrawing consent', () => {
 
     expect(attempts).toHaveLength(1);
   });
+
+  it('drops a batch the backend refused, and retries one the network lost', async () => {
+    const attempts: AnalyticsBatch[] = [];
+    const failures = [new AnalyticsIngestRefusedError(400), new Error('network down')];
+    const transport = {
+      send: async (batch: AnalyticsBatch): Promise<void> => {
+        attempts.push(batch);
+        const failure = failures.shift();
+        if (failure) throw failure;
+      },
+    };
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('nft_viewed');
+    await client.flush(); // refused: gone for good
+    client.track('network_switched', { chain: 'solana' });
+    await client.flush(); // lost: put back
+    await client.flush(); // delivered
+    await client.flush(); // nothing left
+
+    expect(attempts.map((batch) => batch.events.map((event) => event.event))).toEqual([
+      ['nft_viewed'],
+      ['network_switched'],
+      ['network_switched'],
+    ]);
+  });
+
+  it('forgets consent in memory when another window withdrew it', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    client.track('nft_viewed');
+
+    client.forgetConsent();
+    client.track('nft_viewed');
+    await client.flush();
+
+    expect(transport.batches).toHaveLength(0);
+    expect(client.getConsent()).toBe(false);
+  });
 });
 
 describe('AnalyticsClient consent persistence across restarts', () => {
@@ -255,5 +300,322 @@ describe('AnalyticsClient consent persistence across restarts', () => {
     restarted.track('nft_viewed');
     await restarted.flush();
     expect(transport.batches).toHaveLength(1);
+  });
+});
+
+/** Event names per batch, in the order the batches left. */
+const sentEvents = (batches: AnalyticsBatch[]) => batches.map((b) => b.events.map((e) => e.event));
+
+// FR-021: an install keeps the catalog its consent text described. A consent
+// given before the v2 text (stored with no version) sends only the 9 v1 events.
+describe('AnalyticsClient consent version', () => {
+  const V1 = [
+    'wallet_created',
+    'wallet_recovered',
+    'first_send_completed',
+    'send_completed',
+    'nft_viewed',
+    'nft_sent',
+    'network_switched',
+    'wallet_switched',
+    'address_book_used',
+  ];
+  const NEW = ANALYTICS_EVENTS.filter((event) => !V1.includes(event));
+  const trackAll = (client: AnalyticsClient) =>
+    ANALYTICS_EVENTS.forEach((event) => client.track(event));
+
+  it('the catalog adds 11 events to the 9 of v1, app_opened among them', () => {
+    expect(NEW).toHaveLength(11);
+    expect(NEW).toContain('app_opened');
+  });
+
+  it('reads a stored consent with no version as v1: the 9 v1 events leave, the 11 new ones never do', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    // The cold open, recorded before consent is read.
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    trackAll(client);
+    await client.flush();
+    expect(sentEvents(transport.batches).flat()).toEqual(V1);
+
+    // Accepting the v2 text later does not release what was recorded under v1.
+    await client.setConsent(true);
+    await client.flush();
+    expect(sentEvents(transport.batches).flat()).toEqual(V1);
+  });
+
+  it('granting consent through the client records v2, and the install sends all 20', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+
+    await client.setConsent(true);
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+    trackAll(client);
+    await client.flush();
+
+    expect(sentEvents(transport.batches).flat()).toEqual([...ANALYTICS_EVENTS]);
+    // The version stays on the device.
+    for (const batch of transport.batches) {
+      expect(Object.keys(batch.context).sort()).toEqual([
+        'appVersion',
+        'installId',
+        'platform',
+        'sessionId',
+      ]);
+    }
+  });
+
+  it('a v1 install that grants consent again records v2 and sends the new events', async () => {
+    store.set('salmon_analytics_consent', true);
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+
+    await client.setConsent(true);
+    client.track('app_opened');
+    await client.flush();
+
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+    expect(sentEvents(transport.batches).flat()).toEqual(['app_opened']);
+  });
+
+  it('a stored v2 consent sends all 20 after a restart', async () => {
+    store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    ANALYTICS_EVENTS.filter((event) => event !== 'app_opened').forEach((event) =>
+      client.track(event)
+    );
+    await client.flush();
+
+    expect(sentEvents(transport.batches).flat().sort()).toEqual([...ANALYTICS_EVENTS].sort());
+  });
+
+  it('withdrawing consent clears the version together with the install id', async () => {
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+    });
+    await client.whenReady();
+    await client.setConsent(true);
+    expect(store.get('salmon_analytics_consent_version')).toBe('v2');
+
+    await client.setConsent(false);
+
+    expect(store.has('salmon_analytics_consent_version')).toBe(false);
+    expect(store.has('salmon_analytics_install_id')).toBe(false);
+  });
+});
+
+// FR-016: consent is read asynchronously; an event recorded in the first
+// moments of a window or an app start must wait for it, not be dropped.
+describe('AnalyticsClient before consent is read', () => {
+  it('sends an early event when consent is stored', async () => {
+    store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['app_opened']]);
+  });
+
+  it('drops an early event when no consent is stored', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+
+    client.track('app_opened');
+    await client.whenReady();
+    await settle();
+    await client.setConsent(true);
+    await client.flush();
+
+    expect(transport.batches).toHaveLength(0);
+  });
+
+  it('still throws at the call site in strict mode', () => {
+    store.set('salmon_analytics_consent', true);
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+      strict: true,
+    });
+
+    expect(() =>
+      client.track('send_completed', { chain: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' })
+    ).toThrow();
+  });
+});
+
+// FR-005: on Android the platform waits for the Seed Vault check.
+describe('AnalyticsClient with a platform still being decided', () => {
+  it('sends no batch before the platform is known, then carries it', async () => {
+    store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
+    let resolvePlatform: (platform: AnalyticsPlatform) => void = () => {};
+    const platform = new Promise<AnalyticsPlatform>((resolve) => {
+      resolvePlatform = resolve;
+    });
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform, appVersion: '3.0.0', transport });
+
+    await settle();
+    client.track('app_opened');
+    await client.flush();
+    expect(transport.batches).toHaveLength(0);
+
+    resolvePlatform('seeker');
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['app_opened']]);
+    expect(transport.batches[0].context.platform).toBe('seeker');
+  });
+});
+
+// FR-015: a window can close while a send is in flight; whatever it recorded
+// since must leave on the flush its closing triggers.
+describe('AnalyticsClient delivery', () => {
+  it('sends an event tracked during an in-flight send on the next flush', async () => {
+    const sent: AnalyticsBatch[] = [];
+    const transport = {
+      send: (batch: AnalyticsBatch): Promise<void> => {
+        sent.push(batch);
+        return new Promise<void>(() => {});
+      },
+    };
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('nft_viewed');
+    void client.flush();
+    client.track('wallet_switched');
+    void client.flush();
+
+    expect(sentEvents(sent)).toEqual([['nft_viewed'], ['wallet_switched']]);
+  });
+
+  // The backend takes at most 100 events per batch and drops the rest.
+  it('sends 150 queued events as two requests of at most 100', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({
+      platform: 'extension',
+      appVersion: '3.0.0',
+      transport,
+      batchSize: 1000,
+    });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    for (let i = 0; i < 150; i++) client.track('nft_viewed');
+    await client.flush();
+
+    expect(transport.batches.map((b) => b.events.length)).toEqual([100, 50]);
+  });
+});
+
+// FR-004: on mobile each open starts a session.
+describe('AnalyticsClient sessions', () => {
+  it('sends queued events under the old session id and the next event under a new one', async () => {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+
+    client.track('wallet_switched');
+    client.startSession();
+    client.track('app_opened');
+    await client.flush();
+
+    expect(sentEvents(transport.batches)).toEqual([['wallet_switched'], ['app_opened']]);
+    const [before, after] = transport.batches;
+    expect(after.context.sessionId).not.toBe(before.context.sessionId);
+  });
+});
+
+// FR-014: the build kind picks the ingest; a store build's answer can arrive
+// asynchronously (the extension asks the browser), and nothing leaves before it.
+describe('AnalyticsClient build routing', () => {
+  const STAGING = 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging';
+  const PRODUCTION = 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod';
+  const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+  const postedTo = () => fetchMock.mock.calls.map((call) => (call as unknown[])[0]);
+
+  beforeEach(() => {
+    fetchMock.mockClear();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('EXPO_PUBLIC_SALMON_ENV', 'production');
+    vi.stubEnv('EXPO_PUBLIC_API_URL', '');
+    vi.stubEnv('VITE_API_URL', '');
+    vi.stubEnv('EXPO_PUBLIC_ANALYTICS_URL', '');
+    vi.stubEnv('VITE_ANALYTICS_URL', '');
+    store.set('salmon_analytics_consent', true);
+    store.set('salmon_analytics_consent_version', 'v2');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('sends nothing while the build kind is unknown, then posts where it says', async () => {
+    let resolveStoreBuild: (storeBuild: boolean) => void = () => {};
+    const storeBuild = new Promise<boolean>((resolve) => {
+      resolveStoreBuild = resolve;
+    });
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', storeBuild });
+
+    await settle();
+    client.track('app_opened');
+    await client.flush();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    resolveStoreBuild(true);
+    await client.whenReady();
+    await settle();
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${PRODUCTION}/v1/events`]);
+  });
+
+  it.each([
+    [true, PRODUCTION],
+    [false, STAGING],
+  ])('a build whose store answer is %s posts to %s', async (storeBuild, base) => {
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', storeBuild });
+    await client.whenReady();
+
+    client.track('app_opened');
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${base}/v1/events`]);
+  });
+
+  it('treats a build that does not say as not a store build', async () => {
+    const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0' });
+    await client.whenReady();
+
+    client.track('app_opened');
+    await client.flush();
+
+    expect(postedTo()).toEqual([`${STAGING}/v1/events`]);
   });
 });

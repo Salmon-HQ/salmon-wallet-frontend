@@ -80,6 +80,15 @@ export interface SignatureRequestContextValue {
 
 const SignatureRequestContext = createContext<SignatureRequestContextValue | null>(null);
 
+function reportOutcome(proposal: TransactionProposal, success: boolean): void {
+  try {
+    // An async callback's rejection is caught here too, not left unhandled.
+    void Promise.resolve(proposal.onOutcome?.(success)).catch(() => undefined);
+  } catch {
+    // The Powerup's bookkeeping never turns a signed transaction into a failure.
+  }
+}
+
 interface ParkedRequest {
   proposal: TransactionProposal;
   resolve: (result: SignedResult) => void;
@@ -150,8 +159,11 @@ export function SignatureRequestProvider({
       return;
     }
 
+    let signed = false;
     try {
       const result = await signProposal(signer, parked.proposal);
+      signed = true;
+      reportOutcome(parked.proposal, true);
       // Signing waited for the chain, so the banner reports the transaction as
       // done from the same moment the receipt shows — never "in progress"
       // beside it.
@@ -174,7 +186,8 @@ export function SignatureRequestProvider({
     } catch (error) {
       if (error instanceof SolanaOutcomeUnknownError) {
         // It may have landed: the banner follows the signature until the
-        // chain answers, and the host offers only a way out.
+        // chain answers, and the host offers only a way out. Analytics hears
+        // nothing, because neither outcome is known.
         parked.unresolved = error;
         const { pending: report, networkId } = parked.proposal;
         if (report) {
@@ -191,6 +204,8 @@ export function SignatureRequestProvider({
         );
         return;
       }
+      // A throw after signing is not a failed attempt: it was already reported.
+      if (!signed) reportOutcome(parked.proposal, false);
       // The parked request stays: the host shows the failure and the user
       // retries or backs out. The rejection reaches the Powerup only on cancel.
       const message = error instanceof Error ? error.message : String(error);

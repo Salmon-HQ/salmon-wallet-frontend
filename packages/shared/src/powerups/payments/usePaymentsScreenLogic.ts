@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from 'i18next';
 import { generateKeyPair, getAddressFromPublicKey } from '@solana/kit';
 
+import { trackEvent } from '../../analytics';
 import { USDC_DECIMALS, USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
 import { solanaRpcFor } from '../../blockchain/solana/networks';
 import { getShortAddress } from '../../utils/address';
@@ -327,6 +328,7 @@ export function usePaymentsScreenLogic({
       setNested(true);
       setOpenId(request.id);
       setIsAsking(false);
+      trackEvent('payment_request_created');
     } catch (caught) {
       console.error('[payments] Failed to create the request:', caught);
       setError('payments.errors.createFailed');
@@ -351,6 +353,10 @@ export function usePaymentsScreenLogic({
 
   const open = useMemo(() => list.find((request) => request.id === openId) ?? null, [list, openId]);
 
+  // The poll and the list refresh can check the same request at once; both
+  // see it unpaid, so this set keeps the payment to one report.
+  const reportedPaid = useRef(new Set<string>());
+
   // One check of a pending request; a failure keeps the last known state.
   const check = useCallback(
     async (request: PaymentRequest) => {
@@ -367,6 +373,10 @@ export function usePaymentsScreenLogic({
             ? { status: 'paid', settlement, lastCheckedAt, lastCheckError: false }
             : { lastCheckedAt, lastCheckError: false }
         );
+        if (settlement && request.status !== 'paid' && !reportedPaid.current.has(request.id)) {
+          reportedPaid.current.add(request.id);
+          trackEvent('payment_request_paid');
+        }
       } catch {
         update(request.id, { lastCheckError: true });
       }

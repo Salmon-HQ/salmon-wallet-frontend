@@ -8,7 +8,8 @@ const NONE: readonly DeviceCapability[] = [];
 let known: readonly DeviceCapability[] | undefined;
 let asking: Promise<readonly DeviceCapability[]> | undefined;
 
-function ask(): Promise<readonly DeviceCapability[]> {
+/** The same single answer the hook uses; analytics reads it to tell a Seeker apart (spec 042). */
+export function loadDeviceCapabilities(): Promise<readonly DeviceCapability[]> {
   asking ??= isSeedVaultAvailable().then((yes) => {
     known = yes ? ['seed-vault'] : NONE;
     return known;
@@ -26,7 +27,7 @@ export function useDeviceCapabilities(): readonly DeviceCapability[] {
   useEffect(() => {
     if (known) return;
     let live = true;
-    void ask().then((answer) => live && setCapabilities(answer));
+    void loadDeviceCapabilities().then((answer) => live && setCapabilities(answer));
     return () => {
       live = false;
     };

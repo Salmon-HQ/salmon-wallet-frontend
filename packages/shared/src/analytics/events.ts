@@ -30,9 +30,29 @@ export const ANALYTICS_EVENTS = [
   'network_switched',
   'wallet_switched',
   'address_book_used',
+  // App use
+  'app_opened',
+  // Powerups
+  'powerup_installed',
+  'powerup_uninstalled',
+  'swap_completed',
+  'first_swap_completed',
+  'memo_sent',
+  'payment_request_created',
+  'payment_request_paid',
+  // dApps (never with anything that identifies the dApp)
+  'dapp_connected',
+  'dapp_message_signed',
+  'dapp_transaction_signed',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];
+
+/**
+ * The 9 events the v1 consent text described. An install that consented under
+ * that text sends only these until it accepts the v2 text (FR-021).
+ */
+export const V1_EVENTS: readonly AnalyticsEventName[] = ANALYTICS_EVENTS.slice(0, 9);
 
 const EVENT_SET: ReadonlySet<string> = new Set(ANALYTICS_EVENTS);
 
@@ -49,24 +69,17 @@ export const CHAINS = ['solana', 'bitcoin', 'ethereum'] as const;
 export type Chain = (typeof CHAINS)[number];
 
 /**
- * Coarse magnitude buckets. When a size genuinely matters for a funnel it is
- * reported as one of these ranges (USD-ish, unit-agnostic) — never the exact
- * amount, and never how much money a user holds.
+ * The Powerups registry's ids, written out rather than derived: the list must
+ * stay closed and identical on the backend, and a build with Powerups compiled
+ * out would derive an empty one. `events.test.ts` checks the registry against it.
  */
-export const AMOUNT_BUCKETS = ['0-10', '10-100', '100-1k', '1k-10k', '10k+'] as const;
-export type AmountBucket = (typeof AMOUNT_BUCKETS)[number];
+export const POWERUP_IDS = ['swap', 'payments', 'memo', 'skr'] as const;
 
 /**
  * The only prop keys any event may carry. Values are further constrained by
  * `PROP_ENUMS` and the guardrail in `./schema`.
  */
-export const ALLOWED_PROP_KEYS = [
-  'chain',
-  'from_chain',
-  'to_chain',
-  'success',
-  'amount_bucket',
-] as const;
+export const ALLOWED_PROP_KEYS = ['chain', 'from_chain', 'to_chain', 'success', 'powerup'] as const;
 
 export type AllowedPropKey = (typeof ALLOWED_PROP_KEYS)[number];
 
@@ -86,21 +99,9 @@ export const PROP_ENUMS: Partial<Record<AllowedPropKey, readonly string[]>> = {
   chain: CHAINS,
   from_chain: CHAINS,
   to_chain: CHAINS,
-  amount_bucket: AMOUNT_BUCKETS,
+  powerup: POWERUP_IDS,
   // Every caller passes a boolean, which skips the string checks entirely. The
   // empty list is for the other case: a string reaching `success` is a mistake
   // or a smuggled value, and there is no spelling of it that is right.
   success: [],
 };
-
-/**
- * Maps a raw numeric magnitude to a coarse bucket. Callers should bucket at the
- * edge and pass the string, so raw numbers never enter an event.
- */
-export function toAmountBucket(value: number): AmountBucket {
-  if (!Number.isFinite(value) || value < 10) return '0-10';
-  if (value < 100) return '10-100';
-  if (value < 1_000) return '100-1k';
-  if (value < 10_000) return '1k-10k';
-  return '10k+';
-}

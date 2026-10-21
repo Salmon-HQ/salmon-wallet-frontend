@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { DAppConnectApprovalView } from '@salmon/ui';
 import { useDAppMetadata, type TrustedApp } from '@salmon/shared';
 import type { DAppConnectRequest } from '@salmon/shared';
-import { useDAppApproval } from './useDAppApproval';
+import { trackDAppApproval, useDAppApproval } from './useDAppApproval';
 
 interface DAppConnectPageProps {
   origin: string;
@@ -35,6 +35,7 @@ export function DAppConnectPage({
     setLoading(true);
     try {
       await onApprove(origin, metadata ? { name: metadata.name, icon: metadata.icon } : undefined);
+      trackDAppApproval('dapp_connected');
       sendToBackground({ method: 'connected', params: { publicKey: address } });
       onDismiss();
     } catch (err) {

@@ -26,6 +26,7 @@ vi.mock('../storage', () => ({
     ANALYTICS_CONSENT: 'salmon_analytics_consent',
     ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
     ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
+    ANALYTICS_CONSENT_VERSION: 'salmon_analytics_consent_version',
     ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
   },
 }));
@@ -39,7 +40,7 @@ async function initClient(): Promise<{
   transport: ReturnType<typeof createMemoryTransport>;
 }> {
   const transport = createMemoryTransport();
-  const client = initAnalytics({ platform: 'mobile', appVersion: '3.0.0', transport });
+  const client = initAnalytics({ platform: 'ios', appVersion: '3.0.0', transport });
   await client.whenReady();
   return { client, transport };
 }

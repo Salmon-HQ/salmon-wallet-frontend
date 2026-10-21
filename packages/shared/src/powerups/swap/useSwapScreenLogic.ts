@@ -11,6 +11,7 @@ import i18n from 'i18next';
 import { address } from '@solana/kit';
 import { findAssociatedTokenPda } from '@solana-program/token-2022';
 import { useTranslation } from 'react-i18next';
+import { trackEvent, trackFirstSwapCompleted } from '../../analytics';
 import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
 import { useAccountsContext } from '../../contexts/AccountsContext';
@@ -202,6 +203,12 @@ export async function outputDestinations(owner: string, mint: string): Promise<s
   );
 }
 
+/** One `swap_completed` per attempt; the first confirmed one also counts as the install's first swap. */
+function reportSwapOutcome(success: boolean): void {
+  trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success });
+  if (success) void trackFirstSwapCompleted();
+}
+
 /** Pure: what core renders for a built swap. Every string is already translated. */
 export function buildSwapProposal(
   envelope: SwapBuildEnvelope,
@@ -286,6 +293,7 @@ export function buildSwapProposal(
         },
       },
       refresh,
+      onOutcome: reportSwapOutcome,
       pending: { kind: 'send', summary },
       display: {
         title: t('swap.review.title'),
