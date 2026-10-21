@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -29,7 +29,7 @@ import {
 } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
 import { DAppSignMessageApprovalView } from './DAppSignMessageApprovalView';
-import { APPROVE_ARM_MS } from './useApprovalArming';
+import { armApproval } from '../../test/armApproval';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -169,7 +169,7 @@ describe('DAppSignMessageApprovalView', () => {
 
     // Assert
     expect(screen.queryByText('Signing blocked')).not.toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
+    armApproval();
     expect(screen.getByRole('button', { name: 'SIGN' })).not.toBeDisabled();
     expect(mockedIsTransactionLookalike).not.toHaveBeenCalled();
   });

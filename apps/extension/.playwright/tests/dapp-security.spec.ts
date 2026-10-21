@@ -89,6 +89,21 @@ const approvalWindow = (context: BrowserContext) =>
 const approvalWindows = (context: BrowserContext) =>
   context.pages().filter((p) => p.url().includes('popup.html#'));
 
+/**
+ * Approve the way a person does: Approve arms only once the window has been
+ * in front a moment and the pointer has moved over it, so keep moving until
+ * it takes the click.
+ */
+async function approve(window: Page): Promise<void> {
+  const button = window.getByTestId('dapp-approve-button');
+  await expect(async () => {
+    await window.mouse.move(100, 200);
+    await window.mouse.move(140, 260);
+    await expect(button).toBeEnabled({ timeout: 250 });
+  }).toPass({ timeout: 30_000 });
+  await button.click();
+}
+
 /** Unlock the fresh profile with the test vector and land on Home. */
 async function onboard(popup: Page): Promise<void> {
   await unlockOrRecover(popup, { seed: TEST_VECTOR });
@@ -182,7 +197,7 @@ test.describe('dApp security', () => {
     let opened = approvalWindow(context);
     await startConnect(dapp);
     let window = await opened;
-    await window.getByTestId('dapp-approve-button').click();
+    await approve(window);
     expect(await connectResult(dapp)).toEqual({ ok: true });
 
     // Silent connect answers for the account that approved.
