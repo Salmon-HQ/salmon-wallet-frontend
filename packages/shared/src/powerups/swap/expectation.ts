@@ -40,7 +40,7 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
    * Associated Token: `createIdempotent` (1) only, paid by the wallet — what
    * both providers emit. The owner is the wallet, or 0x's settlement account
    * at most twice (`assertSwapAccountCreates` in core/verify); rent is allowed
-   * only for an account that does not exist yet (`assertSwapPaysWallet`).
+   * only for an account the swap opens and leaves open (`assertSwapPaysWallet`).
    */
   [ASSOCIATED_TOKEN_PROGRAM]: {
     width: 1,

@@ -256,7 +256,7 @@ function ownAtasCreated(
 /**
  * The associated token accounts a swap creates for its fee payer or for 0x's
  * settlement account: the only ones whose rent the swap may spend, and only
- * for those that do not exist yet (`assertSwapPaysWallet` reads which).
+ * for those it opens and leaves open (`assertSwapPaysWallet` reads which).
  */
 export function swapAccountCreates(transactionBase64: string): string[] {
   const message = decodeMessage(transactionBase64);

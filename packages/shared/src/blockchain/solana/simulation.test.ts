@@ -1764,3 +1764,40 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 });
+
+/**
+ * The swap check allows rent only for the token accounts a swap leaves open.
+ * The node reports an account the transaction closes with zero lamports, not
+ * as missing (agave `simulate_transaction` returns every loaded account), so
+ * "opened" means no lamports before and some after.
+ */
+describe('previewTransactionEffects — the accounts it opens', () => {
+  it('lists an account with no lamports before and some after', async () => {
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(2_000_000_000n) },
+      { [WALLET]: rawSol(999_995_000n), [OTHER]: rawSol(1_000_000_000n) }
+    );
+
+    const result = await previewTransactionEffects(rpc, wireTransfer(), WALLET);
+
+    if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+    expect(result.opened).toEqual([OTHER]);
+  });
+
+  it('leaves out an account it opens and closes again, and one that already existed', async () => {
+    const opensAndCloses = rpcFor(
+      { [WALLET]: rawSol(2_000_000_000n) },
+      { [WALLET]: rawSol(999_995_000n), [OTHER]: rawSol(0n) }
+    );
+    const existed = rpcFor(
+      { [WALLET]: rawSol(2_000_000_000n), [OTHER]: rawSol(1n) },
+      { [WALLET]: rawSol(999_995_000n), [OTHER]: rawSol(1_000_000_001n) }
+    );
+
+    for (const rpc of [opensAndCloses, existed]) {
+      const result = await previewTransactionEffects(rpc, wireTransfer(), WALLET);
+      if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+      expect(result.opened).toEqual([]);
+    }
+  });
+});

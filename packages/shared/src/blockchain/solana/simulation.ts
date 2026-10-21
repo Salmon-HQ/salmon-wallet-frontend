@@ -306,7 +306,7 @@ export async function previewTransactionEffects(
 
   const feeLamports =
     simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee);
-  const effects = deriveEffects({
+  const derived = deriveEffects({
     account,
     before: beforeStates,
     after: afterStates,
@@ -314,6 +314,15 @@ export async function previewTransactionEffects(
     feeLamports,
     resolveSymbol: options.resolveSymbol,
   });
+  // A closed account comes back with zero lamports rather than missing.
+  const funded = (raw: RawAccount | null | undefined) => (raw?.lamports ?? 0n) > 0n;
+  const effects: TransactionEffects =
+    derived.kind === 'effects'
+      ? {
+          ...derived,
+          opened: addresses.filter((key) => !funded(before.get(key)) && funded(after.get(key))),
+        }
+      : derived;
   if (!options.strict || effects.kind === 'undetermined') return effects;
 
   const known: EffectDetails =

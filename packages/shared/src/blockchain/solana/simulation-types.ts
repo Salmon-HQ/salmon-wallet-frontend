@@ -179,6 +179,12 @@ export interface Effects extends EffectDetails {
   readonly kind: 'effects';
   /** The account these effects are reported for. */
   readonly account: Address;
+  /**
+   * The transaction's accounts that hold no lamports before it runs and some
+   * after: what it opens and leaves open. One it opens and closes again is
+   * not here. Absent when the effects were not read from a simulation.
+   */
+  readonly opened?: readonly Address[];
 }
 
 /**

@@ -178,12 +178,15 @@ describe('assertSwapEffects — the fee it allows for', () => {
 });
 
 /**
- * Rent is allowed for a token account the swap actually opens. An idempotent
- * create of an account that already exists costs nothing, so it earns nothing:
- * otherwise it would cover SOL leaving the wallet for something else.
+ * Rent is allowed for a token account the swap opens and leaves open. An
+ * idempotent create of an account that already exists costs nothing, and an
+ * account the swap opens and closes again hands its rent back to the wallet,
+ * so neither earns anything: otherwise each would cover SOL leaving the wallet
+ * for something else.
  */
 describe('assertSwapPaysWallet — the rent it allows for', () => {
   const WALLET_BONK = 'qCZEE1btHeVPFFa3kSWk8Gz9u6aTWSGwUwj4PhnEmuR';
+  const WALLET_WSOL = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
   const usdcToBonk: SwapRouteExpectation = {
     ...usdcToSol,
     outputMint: BONK,
@@ -191,7 +194,30 @@ describe('assertSwapPaysWallet — the rent it allows for', () => {
     minOutAmount: '31407132140',
   };
 
-  function swapCreatingWalletBonk(): string {
+  const createWalletAta = (ata: string, mint: string) => ({
+    programAddress: address(ASSOCIATED_TOKEN_PROGRAM),
+    accounts: [
+      { address: WALLET, role: 3 },
+      { address: address(ata), role: 1 },
+      { address: WALLET, role: 0 },
+      { address: address(mint), role: 0 },
+      { address: address(SYSTEM_PROGRAM), role: 0 },
+      { address: address(TOKEN_PROGRAM), role: 0 },
+    ],
+    data: new Uint8Array([1]),
+  });
+  /** SPL Token CloseAccount (9): the account, its rent's destination (the wallet), its owner. */
+  const closeToWallet = (ata: string) => ({
+    programAddress: address(TOKEN_PROGRAM),
+    accounts: [
+      { address: address(ata), role: 1 },
+      { address: WALLET, role: 1 },
+      { address: WALLET, role: 2 },
+    ],
+    data: new Uint8Array([9]),
+  });
+
+  function swapOf(instructions: object[]): string {
     let message = setTransactionMessageLifetimeUsingBlockhash(
       {
         blockhash: 'EkSnNWid2cvwEVnVx9aBqawnmiCNiDgp3gUdkDPTKN1N' as Blockhash,
@@ -199,21 +225,9 @@ describe('assertSwapPaysWallet — the rent it allows for', () => {
       },
       setTransactionMessageFeePayer(WALLET, createTransactionMessage({ version: 0 }))
     );
-    message = appendTransactionMessageInstruction(
-      {
-        programAddress: address(ASSOCIATED_TOKEN_PROGRAM),
-        accounts: [
-          { address: WALLET, role: 3 },
-          { address: address(WALLET_BONK), role: 1 },
-          { address: WALLET, role: 0 },
-          { address: address(BONK), role: 0 },
-          { address: address(SYSTEM_PROGRAM), role: 0 },
-          { address: address(TOKEN_PROGRAM), role: 0 },
-        ],
-        data: new Uint8Array([1]),
-      } as never,
-      message
-    ) as never;
+    for (const instruction of instructions) {
+      message = appendTransactionMessageInstruction(instruction as never, message) as never;
+    }
     const messageBytes = getCompiledTransactionMessageEncoder().encode(
       compileTransactionMessage(message)
     );
@@ -225,35 +239,34 @@ describe('assertSwapPaysWallet — the rent it allows for', () => {
     ).toString('base64');
   }
 
-  const rpcWhere = (bonkAccountExists: boolean) => ({
-    getMultipleAccounts: (addresses: string[]) => ({
-      send: async () => ({
-        value: addresses.map((account) =>
-          account === WALLET_BONK && bonkAccountExists
-            ? { lamports: 2_039_280n, owner: TOKEN_PROGRAM, data: ['', 'base64'] }
-            : null
-        ),
-      }),
-    }),
+  /** Only the simulation is read: what each account holds comes from its `opened`. */
+  const rpc = {} as never;
+
+  /** A token-to-token swap that costs the wallet `lamports` besides the fee. */
+  const losing = (lamports: bigint, opened: string[]) => ({
+    ...effects(-FEE - lamports, [token(USDC, -1_000_000n), token(BONK, 31_500_000_000n)]),
+    opened: opened.map((account) => address(account)),
   });
 
-  // 2,039,280 lamports leave the wallet on a token-to-token swap.
-  const losing = effects(-FEE - 2_039_280n, [
-    token(USDC, -1_000_000n),
-    token(BONK, 31_500_000_000n),
-  ]);
-
   it('refuses SOL leaving the wallet when the account it creates already existed', async () => {
-    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing);
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_039_280n, []));
     await expect(
-      assertSwapPaysWallet(rpcWhere(true) as never, swapCreatingWalletBonk(), WALLET, usdcToBonk)
+      assertSwapPaysWallet(rpc, swapOf([createWalletAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
     ).rejects.toThrow(/takes SOL from the wallet/);
   });
 
-  it('allows the rent of a token account the swap opens', async () => {
-    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing);
+  it('refuses SOL leaving the wallet behind an account the swap opens and closes again', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_000_000n, []));
+    const createAndClose = swapOf([createWalletAta(WALLET_WSOL, SOL), closeToWallet(WALLET_WSOL)]);
+    await expect(assertSwapPaysWallet(rpc, createAndClose, WALLET, usdcToBonk)).rejects.toThrow(
+      /takes SOL from the wallet/
+    );
+  });
+
+  it('allows the rent of a token account the swap opens and leaves open', async () => {
+    vi.mocked(previewTransactionEffects).mockResolvedValueOnce(losing(2_039_280n, [WALLET_BONK]));
     await expect(
-      assertSwapPaysWallet(rpcWhere(false) as never, swapCreatingWalletBonk(), WALLET, usdcToBonk)
+      assertSwapPaysWallet(rpc, swapOf([createWalletAta(WALLET_BONK, BONK)]), WALLET, usdcToBonk)
     ).resolves.toBeUndefined();
   });
 });

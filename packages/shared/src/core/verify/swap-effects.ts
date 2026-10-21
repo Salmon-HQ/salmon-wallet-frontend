@@ -24,7 +24,6 @@ import type { Base64EncodedWireTransaction } from '@solana/kit';
 
 import type { SolanaRpc } from '../../blockchain/solana/networks';
 import { previewTransactionEffects } from '../../blockchain/solana/simulation';
-import { fetchAccounts } from '../../blockchain/solana/simulation-rpc';
 import type { TransactionEffects } from '../../blockchain/solana/simulation';
 import { WRAPPED_SOL_MINT as WRAPPED_SOL } from './solana-programs';
 import {
@@ -51,8 +50,9 @@ export const MAX_FEE_LAMPORTS = 5_000n + MAX_PRIORITY_FEE_LAMPORTS;
 /**
  * Refuses unless the effects are a swap of `route` for the wallet.
  *
- * @param ataCreates - How many token accounts the message opens: the rent
- *   they cost is the one SOL movement besides the fee and the swap itself.
+ * @param ataCreates - How many token accounts the message opens and leaves
+ *   open: the rent they cost is the one SOL movement besides the fee and the
+ *   swap itself.
  */
 export function assertSwapEffects(
   effects: TransactionEffects,
@@ -103,9 +103,12 @@ export function assertSwapEffects(
  * Simulates `transactionBase64` for `feePayer` and holds the result to `route`.
  *
  * Rent is allowed only for the token accounts the swap creates (for the wallet
- * or 0x's settlement account) that do not exist yet. An idempotent create of
- * an existing account costs nothing, so it earns nothing; otherwise it would
- * cover SOL leaving the wallet for something else.
+ * or 0x's settlement account) that the simulation shows it opening and leaving
+ * open. An idempotent create of an existing account costs nothing, and an
+ * account opened and closed again in the same swap — by its own instruction or
+ * inside the route — holds no rent once the swap ends, so neither earns an
+ * allowance; otherwise either would cover SOL leaving the wallet for something
+ * else.
  */
 export async function assertSwapPaysWallet(
   rpc: SolanaRpc,
@@ -113,13 +116,12 @@ export async function assertSwapPaysWallet(
   feePayer: string,
   route: SwapRouteExpectation
 ): Promise<void> {
-  const created = swapAccountCreates(transactionBase64).map((account) => address(account));
-  const existing = await fetchAccounts(rpc, created);
-  const opened = created.filter((account) => !existing.get(account)).length;
   const effects = await previewTransactionEffects(
     rpc,
     transactionBase64 as Base64EncodedWireTransaction,
     address(feePayer)
   );
-  assertSwapEffects(effects, route, opened);
+  const opened = new Set<string>(effects.kind === 'effects' ? (effects.opened ?? []) : []);
+  const rented = swapAccountCreates(transactionBase64).filter((account) => opened.has(account));
+  assertSwapEffects(effects, route, rented.length);
 }
