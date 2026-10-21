@@ -20,6 +20,18 @@ jest.mock('@salmon/shared', () => {
       `${name} · ${address.slice(0, 4)}`,
     decodeDAppMessage: (data: number[]) => ({ text: String.fromCharCode(...data) }),
     spacing: { lg: 16 },
+    // The transaction sheet's own preview is not under test: what is, is the
+    // site line it is handed and whether its confirm is held.
+    toSignAllTransactionsRequest: () => ({}),
+    useSolanaTransactionApproval: () => ({
+      feeSol: null,
+      parsingError: null,
+      effects: null,
+      effectsLoading: false,
+      details: null,
+    }),
+    dappTransactionDisplay: (input: { origin: string }) => ({ rows: [{ value: input.origin }] }),
+    dappTransactionGate: () => ({ requiresHold: false, canApprove: true }),
     useAccountsContext: () => [
       {
         networkId: 'solana-mainnet',
@@ -36,7 +48,11 @@ jest.mock('@salmon/shared', () => {
 jest.mock('@solana-mobile/mobile-wallet-adapter-walletlib', () => ({
   __esModule: true,
   MWARequestFailReason: { UserDeclined: 'USER_DECLINED' },
-  MWARequestType: { AuthorizeDappRequest: 'AUTHORIZE_DAPP', SignMessagesRequest: 'SIGN_MESSAGES' },
+  MWARequestType: {
+    AuthorizeDappRequest: 'AUTHORIZE_DAPP',
+    SignMessagesRequest: 'SIGN_MESSAGES',
+    SignTransactionsRequest: 'SIGN_TRANSACTIONS',
+  },
   verifyCallingPackage: jest.fn().mockResolvedValue(true),
 }));
 
@@ -68,7 +84,27 @@ jest.mock('../components/ConfirmSheet', () => ({
   },
 }));
 jest.mock('../components/DepthBackground', () => ({ DepthBackground: () => null }));
-jest.mock('../components/TransactionConfirmation', () => ({ TransactionConfirmation: () => null }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
+}));
+jest.mock('../components/TransactionConfirmation', () => ({
+  TransactionConfirmation: (props: {
+    display: { rows: { value: string }[] };
+    confirmLabel?: string;
+    requiresHold?: boolean;
+    confirmDisabled?: boolean;
+  }) => {
+    const { Text: T, View: V } = jest.requireActual('react-native');
+    return (
+      <V>
+        <T testID="tx-site">{props.display.rows[0]?.value}</T>
+        <T testID="tx-confirm">{props.confirmLabel}</T>
+        <T testID="tx-hold">{props.requiresHold ? 'hold' : 'tap'}</T>
+        <T testID="tx-ready">{props.confirmDisabled ? 'checking' : 'ready'}</T>
+      </V>
+    );
+  },
+}));
 
 describe('MwaRequest — sign messages', () => {
   // The extension names the signing account on its sign screen; the mobile
@@ -147,5 +183,75 @@ describe('MwaRequest — connect and sign in', () => {
     expect(firstLine()).toBe(mockOrigin);
     expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
     expect(screen.getByTestId('sheet-confirm').props.children).toBe(confirm);
+  });
+});
+
+/**
+ * The token a connect hands out is the dApp's from then on, but whether the
+ * app asking now is the site it names is checked again in every session: an
+ * unverified one is named as a claim on every sheet, and each approval costs
+ * a hold, not only the connect.
+ */
+describe('MwaRequest — later requests from an unverified app', () => {
+  const account = { getReceiveAddress: () => mockAddress } as never;
+  beforeEach(() => {
+    jest.mocked(verifyCallingPackage).mockReset().mockResolvedValue(true);
+  });
+  const signed = (type: 'SIGN_MESSAGES' | 'SIGN_TRANSACTIONS') => (
+    <MwaRequest
+      account={account}
+      respond={jest.fn()}
+      request={
+        {
+          __type: type,
+          requestId: 'r2',
+          chain: 'solana:mainnet',
+          appIdentity: { identityUri: mockOrigin },
+          authorizationScope: mockToken,
+          payloads: [[104, 105]],
+        } as never
+      }
+    />
+  );
+
+  it('names the claim on the message sheet and asks for a hold', async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(false);
+    render(signed('SIGN_MESSAGES'));
+
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    const lines = (screen.getByTestId('sheet-message').props.children as string).split('\n\n');
+    expect(lines[0]).toBe(`dapp.mwa_unverified_origin ${mockOrigin}`);
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.hold_to_approve');
+  });
+
+  it("keeps a verified app's message sheet a plain tap under the site", async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(true);
+    render(signed('SIGN_MESSAGES'));
+
+    await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
+    expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.sign');
+  });
+
+  it('names the claim on the transaction sheet and asks for a hold', async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(false);
+    render(signed('SIGN_TRANSACTIONS'));
+
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('tx-site').props.children).toBe(
+      `dapp.mwa_unverified_origin ${mockOrigin}`
+    );
+    expect(screen.getByTestId('tx-hold').props.children).toBe('hold');
+    expect(screen.getByTestId('tx-confirm').props.children).toBe('dapp.hold_to_approve');
+  });
+
+  it("keeps a verified app's transaction a plain tap when its effects need none", async () => {
+    jest.mocked(verifyCallingPackage).mockResolvedValueOnce(true);
+    render(signed('SIGN_TRANSACTIONS'));
+
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    expect(screen.getByTestId('tx-site').props.children).toBe(mockOrigin);
+    expect(screen.getByTestId('tx-hold').props.children).toBe('tap');
   });
 });

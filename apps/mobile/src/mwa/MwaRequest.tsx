@@ -342,6 +342,8 @@ function SignMessagesApproval({
 }: ApprovalProps<SignMessagesRequest>) {
   const { t } = useTranslation();
   const [state] = useAccountsContext();
+  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const unverified = verification === 'unverified';
   const { run } = useOnce();
   const payloads = useMemo(() => request.payloads.map(bytes), [request]);
   // The extension's reading of a message: text only when it is plain text,
@@ -368,7 +370,7 @@ function SignMessagesApproval({
       visible
       title={t('dapp.sign_message_title')}
       message={[
-        origin,
+        unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
         `${t('dapp.wallet_address')}: ${formatSigningAccount({
           name: state.activeAccount?.name,
           address: account.getReceiveAddress(),
@@ -376,8 +378,11 @@ function SignMessagesApproval({
         shown,
         t('dapp.sign_message_hint'),
       ].join('\n\n')}
-      confirmText={t('dapp.sign')}
+      confirmText={unverified ? t('dapp.hold_to_approve') : t('dapp.sign')}
       cancelText={t('dapp.reject')}
+      isDanger={verification !== 'verified'}
+      confirmDisabled={verification === 'checking'}
+      requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
     />
@@ -393,6 +398,8 @@ function TransactionApproval({
   const { t } = useTranslation();
   const [state] = useAccountsContext();
   const insets = useSafeAreaInsets();
+  const verification = useIdentityVerification(request.appIdentity?.identityUri);
+  const unverified = verification === 'unverified';
   const { run, running, busy } = useOnce();
   const [error, setError] = useState<string | null>(null);
   const answered = useRef(false);
@@ -425,7 +432,7 @@ function TransactionApproval({
 
   const display = dappTransactionDisplay(
     {
-      origin,
+      origin: unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
       signingAccount: { name: state.activeAccount?.name, address: account.getReceiveAddress() },
       effects,
       effectsLoading,
@@ -436,6 +443,7 @@ function TransactionApproval({
     t
   );
   const gate = dappTransactionGate({ effects, effectsLoading, parsingError });
+  const requiresHold = gate.requiresHold || unverified;
 
   const approve = () =>
     run(async () => {
@@ -480,10 +488,10 @@ function TransactionApproval({
           if (!busy.current) answer(declined);
         }}
         onConfirm={() => void approve()}
-        confirmLabel={gate.requiresHold ? t('dapp.hold_to_approve') : t('dapp.approve_and_sign')}
+        confirmLabel={requiresHold ? t('dapp.hold_to_approve') : t('dapp.approve_and_sign')}
         isRefreshing={running}
-        confirmDisabled={!gate.canApprove}
-        requiresHold={gate.requiresHold}
+        confirmDisabled={!gate.canApprove || verification === 'checking'}
+        requiresHold={requiresHold}
         error={error}
         style={{ paddingBottom: insets.bottom + spacing.lg }}
       />

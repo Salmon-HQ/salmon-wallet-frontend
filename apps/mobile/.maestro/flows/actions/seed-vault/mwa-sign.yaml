@@ -12,7 +12,7 @@ appId: io.salmonwallet.app
       id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 30000
 - runFlow: ../../../subflows/mwa-unlock.yaml
-- runFlow: ../../../subflows/mwa-approve-connect.yaml
+- runFlow: ../../../subflows/mwa-approve-sheet.yaml
 - runFlow:
     when:
       visible:
@@ -34,23 +34,17 @@ appId: io.salmonwallet.app
 # Every session ends with the wallet locked, so each request starts at the lock.
 - extendedWaitUntil:
     visible:
-      id: 'mwa-lock|confirm-dialog-confirm'
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 30000
 - runFlow: ../../../subflows/mwa-unlock.yaml
-- extendedWaitUntil:
-    visible:
-      id: 'confirm-dialog-confirm'
-      enabled: true
-    timeout: 30000
-- tapOn:
-    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/mwa-approve-sheet.yaml
 # Seed Vault's own confirmation, over Salmon's sheet.
 - runFlow: ../../../subflows/seed-vault-confirm.yaml
 # Back on the dApp. Chrome exposes the page to Maestro only intermittently,
 # so the wait is on Salmon's sheet leaving, not on the page's text.
 - extendedWaitUntil:
     notVisible:
-      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 5000
@@ -87,7 +81,7 @@ appId: io.salmonwallet.app
 # so the wait is on Salmon's sheet leaving, not on the page's text.
 - extendedWaitUntil:
     notVisible:
-      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 5000
@@ -121,7 +115,7 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/seed-vault-confirm.yaml
 - extendedWaitUntil:
     notVisible:
-      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 5000
@@ -131,20 +125,14 @@ appId: io.salmonwallet.app
 - tapOn: 'Sign In (SIWS)'
 - extendedWaitUntil:
     visible:
-      id: 'mwa-lock|confirm-dialog-confirm'
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 30000
 - runFlow: ../../../subflows/mwa-unlock.yaml
-- extendedWaitUntil:
-    visible:
-      id: 'confirm-dialog-confirm'
-      enabled: true
-    timeout: 30000
-- tapOn:
-    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/mwa-approve-sheet.yaml
 - runFlow: ../../../subflows/seed-vault-confirm.yaml
 - extendedWaitUntil:
     notVisible:
-      id: 'confirmation-window|confirm-dialog-confirm|UsePin'
+      id: 'confirmation-window|confirm-dialog-confirm|confirm-dialog-hold|UsePin'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 5000
@@ -154,16 +142,10 @@ appId: io.salmonwallet.app
 - tapOn: 'Sign Message'
 - extendedWaitUntil:
     visible:
-      id: 'mwa-lock|confirm-dialog-confirm'
+      id: 'mwa-lock|confirm-dialog-confirm|confirm-dialog-hold'
     timeout: 30000
 - runFlow: ../../../subflows/mwa-unlock.yaml
-- extendedWaitUntil:
-    visible:
-      id: 'confirm-dialog-confirm'
-      enabled: true
-    timeout: 30000
-- tapOn:
-    id: 'confirm-dialog-confirm'
+- runFlow: ../../../subflows/mwa-approve-sheet.yaml
 - extendedWaitUntil:
     visible:
       id: 'UsePin'
