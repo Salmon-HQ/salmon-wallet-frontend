@@ -219,6 +219,9 @@ function findUnreadWalletTokenChange({
   accountFee,
 }: UnreadChangeInput): Address | null {
   let lost = 0n;
+  // Wrapped SOL closed into the wallet: already a token row, so it is not
+  // there to cover lamports that went elsewhere.
+  let unwrapped = 0n;
   let firstLoser: Address | null = null;
   for (const [address, pre] of before) {
     const post = after.get(address) ?? null;
@@ -237,13 +240,15 @@ function findUnreadWalletTokenChange({
     if (preToken?.owner !== account || !pre) continue;
     if (postToken && postToken.closeAuthority !== preToken.closeAuthority) return address;
     const leftAsTokens = preToken.isNative ? preToken.amount - (postToken?.amount ?? 0n) : 0n;
+    if (preToken.isNative && !post) unwrapped += preToken.amount;
     const loss = pre.lamports - (post?.lamports ?? 0n) - leftAsTokens;
     if (loss > 0n) {
       lost += loss;
       firstLoser ??= address;
     }
   }
-  const received = (after.get(account)?.lamports ?? 0n) - (before.get(account)?.lamports ?? 0n);
+  const received =
+    (after.get(account)?.lamports ?? 0n) - (before.get(account)?.lamports ?? 0n) - unwrapped;
   return firstLoser && lost > received + accountFee ? firstLoser : null;
 }
 

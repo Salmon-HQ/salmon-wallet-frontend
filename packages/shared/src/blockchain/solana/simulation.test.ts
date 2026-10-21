@@ -1292,6 +1292,40 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 
+  // Unwrapping SOL into the wallet raises its balance by the wrapped amount,
+  // which already shows as a row; it must not cover rent sent elsewhere.
+  it('does not let unwrapped SOL cover rent closed into someone else', async () => {
+    const wire = wireOf([
+      getCloseAccountInstruction(
+        { account: WSOL_ATA, destination: WALLET, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+      getCloseAccountInstruction(
+        { account: USDC_ATA, destination: OTHER, owner: createNoopSigner(WALLET) },
+        classic
+      ),
+    ]);
+    const rpc = rpcFor(
+      {
+        [WALLET]: rawSol(1_000_000_000n),
+        [WSOL_ATA]: rawToken(WALLET, 300_000_000n, { native: true }),
+        [USDC_ATA]: rawToken(WALLET, 0n),
+        [OTHER]: rawSol(0n),
+      },
+      {
+        [WALLET]: rawSol(1_000_000_000n + 302_039_280n - 5_000n),
+        [WSOL_ATA]: null,
+        [USDC_ATA]: null,
+        [OTHER]: rawSol(2_039_280n),
+      }
+    );
+
+    expect(await strict(rpc, wire)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
+  });
+
   it('reports a wallet token account closed into someone else as unanalysed', async () => {
     const wire = wireOf([
       getCloseAccountInstruction(
