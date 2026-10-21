@@ -44,7 +44,8 @@ export interface ConfirmationRow {
 
 export interface ConfirmationWarning {
   title: string;
-  body: string;
+  /** Omitted when the title says all there is to say. */
+  body?: string;
 }
 
 /** What the confirmation screen shows. */

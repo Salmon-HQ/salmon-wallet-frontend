@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeIpfsUrl } from './url';
+import { formatOrigin, normalizeIpfsUrl } from './url';
 
 describe('normalizeIpfsUrl', () => {
   // Anyone can mint an NFT into someone else's wallet, and the grid fetches
@@ -41,5 +41,24 @@ describe('normalizeIpfsUrl', () => {
     const started = performance.now();
     normalizeIpfsUrl(hostile);
     expect(performance.now() - started).toBeLessThan(200);
+  });
+});
+
+describe('formatOrigin', () => {
+  // Trust is granted per origin — scheme, host and port — so two sites on one
+  // host must not look the same on an approval screen.
+  it.each([
+    ['https://app.example.com', 'app.example.com'],
+    ['https://app.example.com:443', 'app.example.com'],
+    ['https://localhost:3000', 'localhost:3000'],
+    ['http://example.com', 'http://example.com'],
+    ['http://localhost:3000', 'http://localhost:3000'],
+    ['http://127.0.0.1:8080', 'http://127.0.0.1:8080'],
+  ])('shows %s as %s', (origin, shown) => {
+    expect(formatOrigin(origin)).toBe(shown);
+  });
+
+  it('returns what it cannot parse unchanged', () => {
+    expect(formatOrigin('not an origin')).toBe('not an origin');
   });
 });

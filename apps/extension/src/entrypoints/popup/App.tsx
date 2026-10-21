@@ -110,12 +110,14 @@ function App() {
   const [pendingDAppTxRequest, setPendingDAppTxRequest] = useState<{
     origin: string;
     request: DAppTransactionRequest;
+    approvedAddress: string | null;
   } | null>(null);
 
   // dApp sign message / sign-in flow (when popup is launched for message signing)
   const [pendingDAppSignMessageRequest, setPendingDAppSignMessageRequest] = useState<{
     origin: string;
     request: DAppSignMessageRequest | DAppSignOffchainMessageRequest | DAppSignInRequest;
+    approvedAddress: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -124,6 +126,8 @@ function App() {
     const params = new URLSearchParams(hash);
     const origin = params.get('origin') ?? '';
     const requestStr = params.get('request');
+    // Set by the background for signing requests: the account it checked.
+    const approvedAddress = params.get('address');
     if (origin && requestStr) {
       try {
         const request = JSON.parse(requestStr) as DAppApprovalRequest;
@@ -135,14 +139,14 @@ function App() {
             request.method === 'signIn') &&
           request.id != null
         ) {
-          setPendingDAppSignMessageRequest({ origin, request });
+          setPendingDAppSignMessageRequest({ origin, request, approvedAddress });
         } else if (
           (request.method === 'signTransaction' ||
             request.method === 'signAllTransactions' ||
             request.method === 'signAndSendTransaction') &&
           request.id != null
         ) {
-          setPendingDAppTxRequest({ origin, request });
+          setPendingDAppTxRequest({ origin, request, approvedAddress });
         }
       } catch {
         // Ignore malformed request
@@ -511,6 +515,8 @@ function App() {
         origin={pendingDAppSignMessageRequest.origin}
         request={pendingDAppSignMessageRequest.request}
         account={solanaApprovalAccount}
+        accountName={activeAccount?.name}
+        approvedAddress={pendingDAppSignMessageRequest.approvedAddress}
         onDismiss={dismissApprovalWithRefresh}
       />
     );
@@ -523,6 +529,8 @@ function App() {
         origin={pendingDAppTxRequest.origin}
         request={pendingDAppTxRequest.request}
         account={solanaApprovalAccount}
+        accountName={activeAccount?.name}
+        approvedAddress={pendingDAppTxRequest.approvedAddress}
         networkId={solanaApprovalNetworkId}
         onDismiss={dismissApprovalWithRefresh}
       />
