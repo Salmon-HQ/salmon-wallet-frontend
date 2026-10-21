@@ -32,8 +32,12 @@ import {
   enableAppSwitcherProtectionAsync,
 } from 'expo-screen-capture';
 
-/** Set once the blur is on: it stays on for the life of the process. */
-let appSwitcherProtected = false;
+/**
+ * The native call that turned the blur on, in flight or done: it stays on for
+ * the life of the process. Cleared when the call is refused, so the next mount
+ * tries again.
+ */
+let appSwitcherProtection: Promise<void> | null = null;
 
 /**
  * iOS: blur the whole app whenever it is not in focus, so the app-switcher
@@ -49,12 +53,13 @@ let appSwitcherProtected = false;
  */
 export function useAppSwitcherProtection(): void {
   useEffect(() => {
-    if (Platform.OS !== 'ios' || appSwitcherProtected) return;
-    appSwitcherProtected = true;
+    if (Platform.OS !== 'ios' || appSwitcherProtection) return;
     // The blur covers the key window only: content in a React Native <Modal>
     // is not documented as covered, and no secret renders in one today.
-    // Fire-and-forget: a failure here must never break the app.
-    void enableAppSwitcherProtectionAsync(1).catch(() => {});
+    // A failure must never break the app; it is retried on the next mount.
+    appSwitcherProtection = enableAppSwitcherProtectionAsync(1).catch(() => {
+      appSwitcherProtection = null;
+    });
   }, []);
 }
 

@@ -9,8 +9,9 @@
  * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur,
  * which the root turns on for the whole app (`useAppSwitcherProtection`).
  */
+import React from 'react';
 import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 const mockPreventScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockAllowScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
@@ -143,6 +144,38 @@ describe('useSecretScreen', () => {
       expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
       expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
     });
+  });
+
+  // A refused native call is not protection: the next mount tries again,
+  // and once it has worked nothing calls it a second time.
+  it('tries the blur again after a refused call, and stops once it is on', async () => {
+    const originalOS = Platform.OS;
+    Platform.OS = 'ios';
+    // A fresh copy of the hook's module (its process-wide flag starts empty),
+    // sharing this test's React and React Native.
+    let fresh: () => void = () => undefined;
+    function FreshRoot() {
+      fresh();
+      return <Text>app</Text>;
+    }
+    const sharedReact = React;
+    const sharedNative = jest.requireActual('react-native');
+    jest.isolateModules(() => {
+      jest.doMock('react', () => sharedReact);
+      jest.doMock('react-native', () => sharedNative);
+      fresh = require('./useSecretScreen').useAppSwitcherProtection;
+    });
+    mockEnableAppSwitcherProtectionAsync.mockRejectedValueOnce(new Error('no key window'));
+
+    render(<FreshRoot />).unmount();
+    await act(async () => {});
+    render(<FreshRoot />).unmount();
+    await act(async () => {});
+    render(<FreshRoot />);
+    await act(async () => {});
+
+    expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(2);
+    Platform.OS = originalOS;
   });
 
   describe('on Android', () => {
