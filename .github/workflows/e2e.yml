@@ -79,21 +79,6 @@ jobs:
           SALMON_E2E_HEADLESS: '1'
         run: pnpm --filter @salmon/extension e2e
 
-      # Only a run without the test wallets' phrases writes this report: one
-      # with them writes none (playwright.config.ts), because traces and fill
-      # steps would carry the phrases and an artifact is not masked like the
-      # log. So this uploads the smoke subset's report, traces and screenshots
-      # of a run without the phrases (a fork PR), and nothing from a run with
-      # them (nightly, manual, labelled same-repo PRs).
-      - name: Upload report on failure
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: extension-playwright-report
-          path: apps/extension/.playwright/playwright-report
-          if-no-files-found: ignore
-          retention-days: 3
-
       # A red nightly used to be visible only to whoever opened the Actions
       # tab: it stayed red for 18 nights in a row once. Now one open issue
       # tracks it — created on the first failure, appended on the next ones,
