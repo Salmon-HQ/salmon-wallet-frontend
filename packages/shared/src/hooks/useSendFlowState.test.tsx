@@ -219,3 +219,50 @@ describe('a request whose amount the token cannot hold', () => {
     expect(started).toEqual({ ok: true, next: 'review' });
   });
 });
+
+/**
+ * An off-curve address has no private key behind it. Typed, picked, scanned or
+ * pasted as a payment request, the recipient reaches the review through this
+ * state, so the review's warning is judged here once for every way in.
+ */
+describe('the warning about a recipient no key controls', () => {
+  const OFF_CURVE = 'pda-recipient';
+  const validateDestinationAccount = vi.fn(async (address: string) =>
+    address === OFF_CURVE
+      ? { type: 'SUCCESS', code: 'off_curve_no_funds', addressType: 'PUBLIC_KEY' }
+      : { type: 'SUCCESS', code: 'valid', addressType: 'PUBLIC_KEY' }
+  );
+  const withValidation = { ...params, account: { validateDestinationAccount } as never };
+
+  it('warns about an off-curve recipient that arrived in a payment request', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => {
+      result.current.startFromRequest(
+        { recipient: OFF_CURVE, amount: '1', references: [] },
+        params.tokens
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_no_funds')
+    );
+    expect(validateDestinationAccount).toHaveBeenCalledWith(OFF_CURVE);
+  });
+
+  it('judges the resolved address of a typed name, and says nothing for an ordinary one', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => result.current.setRecipient({ address: 'alice.sol', resolvedAddress: OFF_CURVE }));
+    await waitFor(() =>
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_no_funds')
+    );
+
+    act(() => result.current.setRecipient({ address: 'wallet' }));
+    expect(result.current.recipientWarning).toBeNull();
+    await waitFor(() => expect(validateDestinationAccount).toHaveBeenCalledWith('wallet'));
+    expect(result.current.recipientWarning).toBeNull();
+  });
+});

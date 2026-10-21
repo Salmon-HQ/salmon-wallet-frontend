@@ -76,6 +76,25 @@ describe('StepReview with a payment request', () => {
   });
 });
 
+describe('StepReview with a recipient no key controls', () => {
+  // Scanned, pasted or typed, the recipient reaches the review through the
+  // flow's state; the review warns and still lets the user confirm.
+  it('warns about an off-curve recipient without blocking the commit', () => {
+    renderInMode(
+      'dark',
+      <StepReview {...baseProps()} recipientWarning="send.validation.off_curve_no_funds" />
+    );
+    expect(screen.getByTestId('send-review-recipient-warning')).toBeTruthy();
+    expect(screen.getByText('send.validation.off_curve_no_funds')).toBeTruthy();
+    expect((screen.getByTestId('send-confirm-button') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('shows no warning for an ordinary recipient', () => {
+    renderInMode('dark', <StepReview {...baseProps()} />);
+    expect(screen.queryByTestId('send-review-recipient-warning')).toBeNull();
+  });
+});
+
 describe('StepReview for a collectible', () => {
   const nft = { mint: 'Mint', name: 'Fish #1', image: '' } as never;
 
