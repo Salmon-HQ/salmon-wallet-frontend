@@ -131,9 +131,13 @@ export interface SwapRequestFacts {
 
 /**
  * Refuses a build that is not the one the user asked for: another mint on
- * either side, another amount, other decimals (which would rescale every
- * number on the screen), a minimum above the quote, or a slippage past the
- * cap. The bytes are then never proposed, whatever the screen would say.
+ * either side, another amount, decimals that are missing or differ from the
+ * wallet's own for that token (they would rescale every number on the
+ * screen), a fee in a token other than its side's, a minimum above the
+ * quote, or a slippage past the cap. A token whose decimals the wallet itself
+ * does not know is refused too: the screen could only scale it by the
+ * backend's word. The bytes are then never proposed, whatever the screen
+ * would say.
  */
 export function assertEnvelopeMatches(
   envelope: SwapBuildEnvelope,
@@ -144,15 +148,16 @@ export function assertEnvelopeMatches(
   };
   if (envelope.input.mint !== payToken.address) refuse('input mint');
   if (envelope.output.mint !== receiveToken.address) refuse('output mint');
-  if (envelope.input.decimals !== undefined && envelope.input.decimals !== payToken.decimals) {
+  const knows = (decimals: number) => Number.isInteger(decimals) && decimals >= 0;
+  if (!knows(payToken.decimals) || envelope.input.decimals !== payToken.decimals) {
     refuse('input decimals');
   }
-  if (
-    envelope.output.decimals !== undefined &&
-    receiveToken.decimals > 0 &&
-    envelope.output.decimals !== receiveToken.decimals
-  ) {
+  if (!knows(receiveToken.decimals) || envelope.output.decimals !== receiveToken.decimals) {
     refuse('output decimals');
+  }
+  const fee = envelope.salmonFee;
+  if (fee && fee.mint !== (fee.side === 'input' ? envelope.input.mint : envelope.output.mint)) {
+    refuse('fee mint');
   }
   if (envelope.input.amount !== toBaseUnits(amount, payToken.decimals)) refuse('input amount');
   if (!/^\d+$/.test(envelope.output.amount) || !/^\d+$/.test(envelope.output.minAmount)) {
@@ -169,8 +174,7 @@ export function sortNativeFirst(tokens: SwapToken[]): SwapToken[] {
   return [tokens[index], ...tokens.slice(0, index), ...tokens.slice(index + 1)];
 }
 
-const uiAmountOf = (amount: string, decimals: number | undefined): number =>
-  Number(amount) / 10 ** (decimals ?? 0);
+const uiAmountOf = (amount: string, decimals: number): number => Number(amount) / 10 ** decimals;
 
 const withSymbol = (value: number, symbol: string | undefined): string =>
   `${formatTokenAmount(value)} ${symbol ?? ''}`.trim();
@@ -181,8 +185,12 @@ export interface SwapProposalContext {
   networkId: SolanaNetworkId;
   /** The user's display currency, from `useCurrencyContext`. */
   formatValue: (usd: number | null | undefined) => string;
-  /** The tokens the user picked: the screen names and draws these, never what the backend says. */
-  tokens?: { pay: SwapToken; receive: SwapToken };
+  /**
+   * The tokens the user picked: the screen names, draws, scales and values
+   * every amount by these — their decimals and USD price from the wallet's own
+   * lists — never by what the backend says.
+   */
+  tokens: { pay: SwapToken; receive: SwapToken };
   refresh?: () => Promise<TransactionProposal>;
   /** The wallet's own accounts of the output mint, from `walletTokenAccounts`: the only places the swap may pay. */
   destinations: readonly string[];
@@ -215,17 +223,24 @@ export function buildSwapProposal(
     const translated = i18n.t(key, options);
     return typeof translated === 'string' && translated.length > 0 ? translated : key;
   };
-  const amountIn = uiAmountOf(envelope.input.amount, envelope.input.decimals);
-  const amountOut = uiAmountOf(envelope.output.amount, envelope.output.decimals);
-  const minOut = uiAmountOf(envelope.output.minAmount, envelope.output.decimals);
-  // With the picked tokens in hand, the backend's names and marks are not consulted at all.
-  const inSymbol = tokens ? tokens.pay.symbol : envelope.input.symbol;
-  const outSymbol = tokens ? tokens.receive.symbol : envelope.output.symbol;
-  const inLogo = tokens ? tokens.pay.logo : envelope.input.logo;
-  const outLogo = tokens ? tokens.receive.logo : envelope.output.logo;
-  const rate =
-    amountIn > 0 ? `1 ${inSymbol ?? ''} ≈ ${withSymbol(amountOut / amountIn, outSymbol)}` : '';
+  const { pay, receive } = tokens;
+  const amountIn = uiAmountOf(envelope.input.amount, pay.decimals);
+  const amountOut = uiAmountOf(envelope.output.amount, receive.decimals);
+  const minOut = uiAmountOf(envelope.output.minAmount, receive.decimals);
+  const inSymbol = pay.symbol;
+  const outSymbol = receive.symbol;
+  const rate = amountIn > 0 ? `1 ${inSymbol} ≈ ${withSymbol(amountOut / amountIn, outSymbol)}` : '';
   const fee = envelope.salmonFee;
+  const feeToken = fee?.side === 'input' ? pay : receive;
+  // Valued at the wallet's own prices, or not at all: the build's dollar
+  // figures and price impact are not shown, because nothing on the device
+  // could check them, and the impact drives the warning below.
+  const inUsd = pay.price ? amountIn * pay.price : null;
+  const outUsd = receive.price ? amountOut * receive.price : null;
+  const priceImpactPct =
+    inUsd !== null && outUsd !== null
+      ? Number((((inUsd - outUsd) / inUsd) * 100).toFixed(2))
+      : null;
 
   const rows: ConfirmationRow[] = [{ label: t('swap.review.rate'), value: rate }];
   // T&C Power-ups §10.2: the row always shows, says which side the fee is
@@ -234,7 +249,7 @@ export function buildSwapProposal(
     label: t('swap.review.salmonFee'),
     value: fee
       ? t(fee.side === 'input' ? 'swap.review.salmonFeeInput' : 'swap.review.salmonFeeOutput', {
-          amount: withSymbol(uiAmountOf(fee.amount, fee.decimals), fee.symbol),
+          amount: withSymbol(uiAmountOf(fee.amount, feeToken.decimals), feeToken.symbol),
           percent: percent(fee.bps),
         })
       : t('swap.review.noSalmonFee'),
@@ -257,7 +272,7 @@ export function buildSwapProposal(
     { label: t('swap.review.slippage'), value: percent(envelope.slippageBps) },
     {
       label: t('swap.review.priceImpact'),
-      value: envelope.priceImpactPct === null ? '—' : `${envelope.priceImpactPct}%`,
+      value: priceImpactPct === null ? '—' : `${priceImpactPct}%`,
     },
     { label: t('swap.review.route'), value: routeLabels || envelope.providerDisplayName },
     // The mints, so a lookalike symbol is never the whole story.
@@ -266,8 +281,7 @@ export function buildSwapProposal(
   ];
 
   const summary = `${withSymbol(amountIn, inSymbol)} → ${withSymbol(amountOut, outSymbol)}`;
-  const highImpact =
-    envelope.priceImpactPct !== null && envelope.priceImpactPct > HIGH_PRICE_IMPACT_PCT;
+  const highImpact = priceImpactPct !== null && priceImpactPct > HIGH_PRICE_IMPACT_PCT;
 
   return toPowerupProposal(
     { ...envelope, salmonFee: null, routeFee: null, contributor: envelope.contributor ?? null },
@@ -295,17 +309,17 @@ export function buildSwapProposal(
         exchange: {
           send: {
             label: t('swap.review.youPay'),
-            logo: inLogo,
-            symbol: inSymbol ?? '',
+            logo: pay.logo,
+            symbol: inSymbol,
             amount: withSymbol(amountIn, inSymbol),
-            usdValue: envelope.inUsdValue === null ? undefined : formatValue(envelope.inUsdValue),
+            usdValue: inUsd === null ? undefined : formatValue(inUsd),
           },
           receive: {
             label: t('swap.review.youReceive'),
-            logo: outLogo,
-            symbol: outSymbol ?? '',
+            logo: receive.logo,
+            symbol: outSymbol,
             amount: withSymbol(amountOut, outSymbol),
-            usdValue: envelope.outUsdValue === null ? undefined : formatValue(envelope.outUsdValue),
+            usdValue: outUsd === null ? undefined : formatValue(outUsd),
             emphasis: true,
           },
         },
@@ -314,7 +328,7 @@ export function buildSwapProposal(
         warning: highImpact
           ? {
               title: t('swap.review.highImpactTitle'),
-              body: t('swap.review.highImpactBody', { percent: envelope.priceImpactPct }),
+              body: t('swap.review.highImpactBody', { percent: priceImpactPct }),
             }
           : undefined,
         receipt: { title: t('swap.complete'), rate, fee: fee ? percent(fee.bps) : undefined },

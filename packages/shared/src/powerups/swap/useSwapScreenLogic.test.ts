@@ -48,7 +48,19 @@ const envelope = (overrides: Partial<SwapBuildEnvelope> = {}): SwapBuildEnvelope
   ...overrides,
 });
 
-const formatValue = (usd: number | null | undefined) => `$${usd}`;
+const formatValue = (usd: number | null | undefined) => `$${usd?.toFixed(2)}`;
+
+/** The picked tokens, as the wallet's own lists carry them: decimals and USD price. */
+const pay = { address: SOL, name: 'Solana', symbol: 'SOL', decimals: 9, uiAmount: 1, price: 118 };
+const receive = {
+  address: USDC,
+  name: 'USD Coin',
+  symbol: 'USDC',
+  decimals: 6,
+  uiAmount: 0,
+  price: 1,
+};
+const tokens = { pay, receive };
 
 describe('swap — the proposal core signs', () => {
   it('maps the build into exchange sides, fee and quote rows, receipt and pending summary', () => {
@@ -57,6 +69,7 @@ describe('swap — the proposal core signs', () => {
       formatValue,
       destinations: [],
       sources: [],
+      tokens,
     });
 
     expect(proposal.transaction).toBe('AQ==');
@@ -70,6 +83,7 @@ describe('swap — the proposal core signs', () => {
     expect(proposal.display.exchange?.receive).toMatchObject({
       symbol: 'USDC',
       amount: '1.174479 USDC',
+      usdValue: '$1.17',
       emphasis: true,
     });
     const rows = Object.fromEntries(proposal.display.rows.map((row) => [row.label, row.value]));
@@ -81,7 +95,7 @@ describe('swap — the proposal core signs', () => {
       (proposal.display.advancedRows ?? []).map((row) => [row.label, row.value])
     );
     expect(advanced['swap.review.slippage']).toBe('0.5%');
-    expect(advanced['swap.review.priceImpact']).toBe('0.36%');
+    expect(advanced['swap.review.priceImpact']).toBe('0.47%');
     expect(advanced['swap.review.route']).toBe('Whirlpool');
     expect(proposal.display.attribution).toBe('Powered by Metis (Jupiter)');
     expect(proposal.display.warning).toBeUndefined();
@@ -96,8 +110,14 @@ describe('swap — the proposal core signs', () => {
 
   it('warns on a high price impact and shows a provider fee when one is reported', () => {
     const proposal = buildSwapProposal(
-      envelope({ priceImpactPct: 7.5, routeFee: { bps: 15 }, salmonFee: null, provider: '0x' }),
-      { networkId: 'solana-mainnet', formatValue, destinations: [], sources: [] }
+      envelope({ priceImpactPct: 0, routeFee: { bps: 15 }, salmonFee: null, provider: '0x' }),
+      {
+        networkId: 'solana-mainnet',
+        formatValue,
+        destinations: [],
+        sources: [],
+        tokens: { pay, receive: { ...receive, price: 0.9 } },
+      }
     );
     expect(proposal.display.warning).toEqual({
       title: 'swap.review.highImpactTitle',
@@ -119,6 +139,7 @@ describe('swap — the proposal core signs', () => {
           formatValue,
           destinations: [],
           sources: [],
+          tokens,
         }).display.rows.map((row) => [row.label, row.value])
       );
 
@@ -173,12 +194,14 @@ describe('swap — the proposal core signs', () => {
       formatValue,
       destinations: [],
       sources: [],
+      tokens,
     });
     const proposal = buildSwapProposal(envelope(), {
       networkId: 'solana-mainnet',
       formatValue,
       destinations: [],
       sources: [],
+      tokens,
       refresh: async () => refreshed,
     });
     await expect(proposal.refresh?.()).resolves.toBe(refreshed);
@@ -258,8 +281,6 @@ describe('swap — the proposal core signs', () => {
   });
 
   describe('holding the build to the request', () => {
-    const pay = { address: SOL, name: 'Solana', symbol: 'SOL', decimals: 9, uiAmount: 1 };
-    const receive = { address: USDC, name: 'USD Coin', symbol: 'USDC', decimals: 6, uiAmount: 0 };
     const facts = { payToken: pay, receiveToken: receive, amount: '0.01' };
 
     it('converts a typed amount to base units exactly', () => {
@@ -278,12 +299,81 @@ describe('swap — the proposal core signs', () => {
       ['input mint', { input: { ...envelope().input, mint: USDC } }],
       ['output mint', { output: { ...envelope().output, mint: SOL } }],
       ['input decimals', { input: { ...envelope().input, decimals: 6 } }],
+      ['input decimals', { input: { ...envelope().input, decimals: undefined } }],
+      ['output decimals', { output: { ...envelope().output, decimals: 9 } }],
+      ['output decimals', { output: { ...envelope().output, decimals: undefined } }],
+      [
+        'fee mint',
+        {
+          salmonFee: {
+            ...envelope().salmonFee,
+            mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+          },
+        },
+      ],
       ['input amount', { input: { ...envelope().input, amount: '10000001' } }],
       ['minimum', { output: { ...envelope().output, minAmount: '9999999999' } }],
       ['slippage', { slippageBps: 5000 }],
       ['output amount', { output: { ...envelope().output, amount: 'lots' } }],
     ])("refuses a build whose %s is not the request's", (why, overrides) => {
       expect(() => assertEnvelopeMatches(envelope(overrides as never), facts)).toThrow(why);
+    });
+
+    it('refuses a build for a token whose decimals the wallet does not know', () => {
+      const unknown = { ...receive, decimals: undefined as unknown as number };
+      expect(() => assertEnvelopeMatches(envelope(), { ...facts, receiveToken: unknown })).toThrow(
+        'output decimals'
+      );
+    });
+
+    // The backend's figures are not shown: a build that says it pays 15,000
+    // USDC worth $15,000 is drawn from the bytes' base units, the wallet's own
+    // decimals and the wallet's own prices.
+    it('scales and values every amount by the wallet’s own token data, never the build’s', () => {
+      const proposal = buildSwapProposal(
+        envelope({
+          output: { ...envelope().output, decimals: 0 },
+          inUsdValue: 15_000,
+          outUsdValue: 15_000,
+          priceImpactPct: 0,
+        }),
+        { networkId: 'solana-mainnet', formatValue, destinations: [], sources: [], tokens }
+      );
+      expect(proposal.display.exchange?.send).toMatchObject({
+        amount: '0.01 SOL',
+        usdValue: '$1.18',
+      });
+      expect(proposal.display.exchange?.receive).toMatchObject({
+        amount: '1.174479 USDC',
+        usdValue: '$1.17',
+      });
+      const rows = Object.fromEntries(proposal.display.rows.map((row) => [row.label, row.value]));
+      expect(rows['swap.review.minReceived']).toBe('1.168607 USDC');
+      expect(proposal.pending).toEqual({ kind: 'send', summary: '0.01 SOL → 1.174479 USDC' });
+    });
+
+    it('drops the dollar values and the price impact it cannot check', () => {
+      const unpriced = {
+        pay: { ...pay, price: undefined },
+        receive: { ...receive, price: undefined },
+      };
+      const proposal = buildSwapProposal(
+        envelope({ inUsdValue: 15_000, outUsdValue: 15_000, priceImpactPct: 0.01 }),
+        {
+          networkId: 'solana-mainnet',
+          formatValue,
+          destinations: [],
+          sources: [],
+          tokens: unpriced,
+        }
+      );
+      expect(proposal.display.exchange?.send.usdValue).toBeUndefined();
+      expect(proposal.display.exchange?.receive.usdValue).toBeUndefined();
+      const advanced = Object.fromEntries(
+        (proposal.display.advancedRows ?? []).map((row) => [row.label, row.value])
+      );
+      expect(advanced['swap.review.priceImpact']).toBe('—');
+      expect(proposal.display.warning).toBeUndefined();
     });
 
     it('names and draws the picked tokens, not what the backend says', () => {

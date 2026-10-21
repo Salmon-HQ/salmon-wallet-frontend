@@ -140,11 +140,23 @@ beforeAll(async () => {
   sources = await walletTokenAccounts(WALLET, SOL);
 });
 
+/** The picked tokens; their decimals only scale the screen, so one value serves every pair here. */
+const pickedTokens = (inputMint: string, outputMint: string) => ({
+  pay: { address: inputMint, name: 'in', symbol: 'IN', decimals: 6, uiAmount: 1 },
+  receive: { address: outputMint, name: 'out', symbol: 'OUT', decimals: 6, uiAmount: 0 },
+});
+
 /** What the wallet checks before signing: the proposal's own expectation, the signer as fee payer. */
 function verify(tx: string): void {
   const proposal = buildSwapProposal(
     { ...envelope, transaction: tx },
-    { networkId: 'solana-mainnet', formatValue: () => '', destinations, sources }
+    {
+      networkId: 'solana-mainnet',
+      formatValue: () => '',
+      destinations,
+      sources,
+      tokens: pickedTokens(SOL, USDC),
+    }
   );
   assertSolanaTransactionMatches(proposal.transaction, { feePayer: WALLET, ...proposal.expect });
 }
@@ -316,6 +328,7 @@ async function realBuild(
       formatValue: () => '',
       destinations: await walletTokenAccounts(WALLET, build.outputMint),
       sources: await walletTokenAccounts(WALLET, build.inputMint),
+      tokens: pickedTokens(build.inputMint, build.outputMint),
     }
   );
   return () =>
