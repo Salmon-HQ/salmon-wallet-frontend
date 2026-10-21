@@ -153,7 +153,7 @@ export function PowerupsPage({
             <WarningNotice
               tone="warning"
               testID={`powerups-disabled-${entry.disabledReason}`}
-              title={t(`powerups.disabled.${entry.disabledReason}`)}
+              title={t(`powerups.disabled.${entry.disabledReason}`, { name: t(entry.nameKey) })}
             />
           ) : null}
 
