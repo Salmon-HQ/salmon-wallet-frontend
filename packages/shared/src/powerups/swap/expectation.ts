@@ -52,3 +52,10 @@ export const SWAP_INSTRUCTIONS: Readonly<Record<string, ProgramInstructionRule>>
 
 /** The largest slippage a build may carry; the backend defaults to 50. */
 export const MAX_SLIPPAGE_BPS = 1000;
+
+/**
+ * The largest Salmon fee a build may carry, in basis points. The fee is 50
+ * today (0.5%); the cap leaves room to change it without a wallet release
+ * while refusing a fee no one declared.
+ */
+export const MAX_SALMON_FEE_BPS = 100;

@@ -1,12 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import i18n from 'i18next';
 import {
   SWAP_CODES,
   assertEnvelopeMatches,
   buildSwapProposal,
+  mintDecimalsOnChain,
+  priceFromHeld,
   sortNativeFirst,
   swapBlocker,
   toBaseUnits,
   toSwapToken,
+  type SwapToken,
 } from './useSwapScreenLogic';
 import { SWAP_INSTRUCTIONS } from './expectation';
 import { describePowerupBuildError } from '../backend/errors';
@@ -281,7 +285,12 @@ describe('swap — the proposal core signs', () => {
   });
 
   describe('holding the build to the request', () => {
-    const facts = { payToken: pay, receiveToken: receive, amount: '0.01' };
+    const facts = {
+      payToken: pay,
+      receiveToken: receive,
+      amount: '0.01',
+      mintDecimals: { pay: 9, receive: 6 },
+    };
 
     it('converts a typed amount to base units exactly', () => {
       expect(toBaseUnits('0.01', 9)).toBe('10000000');
@@ -311,12 +320,60 @@ describe('swap — the proposal core signs', () => {
           },
         },
       ],
+      ['fee', { salmonFee: { ...envelope().salmonFee, bps: 1.5 } }],
+      ['fee', { salmonFee: { ...envelope().salmonFee, bps: 101 } }],
       ['input amount', { input: { ...envelope().input, amount: '10000001' } }],
       ['minimum', { output: { ...envelope().output, minAmount: '9999999999' } }],
       ['slippage', { slippageBps: 5000 }],
       ['output amount', { output: { ...envelope().output, amount: 'lots' } }],
     ])("refuses a build whose %s is not the request's", (why, overrides) => {
       expect(() => assertEnvelopeMatches(envelope(overrides as never), facts)).toThrow(why);
+    });
+
+    // The token lists and the build both come from the backend; the mint
+    // account on chain is the one source neither controls.
+    it('refuses a build whose decimals disagree with the mint on chain', () => {
+      expect(() =>
+        assertEnvelopeMatches(envelope(), { ...facts, mintDecimals: { pay: 9, receive: 8 } })
+      ).toThrow('output decimals');
+      expect(() =>
+        assertEnvelopeMatches(envelope(), { ...facts, mintDecimals: { pay: null, receive: 6 } })
+      ).toThrow('input decimals');
+    });
+
+    it('reads a mint’s decimals from its account on chain, SPL Token or Token-2022', async () => {
+      const mintBytes = (decimals: number) => {
+        const data = new Uint8Array(82);
+        data[44] = decimals;
+        data[45] = 1; // initialized
+        return [Buffer.from(data).toString('base64'), 'base64'];
+      };
+      const accounts: Record<string, unknown> = {
+        [SOL]: {
+          lamports: 1n,
+          owner: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          data: mintBytes(9),
+        },
+        [USDC]: {
+          lamports: 1n,
+          owner: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+          data: mintBytes(6),
+        },
+        '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3': {
+          lamports: 1n,
+          owner: '11111111111111111111111111111111',
+          data: ['', 'base64'],
+        },
+      };
+      const rpc = {
+        getMultipleAccounts: (addresses: string[]) => ({
+          send: async () => ({ value: addresses.map((address) => accounts[address] ?? null) }),
+        }),
+      };
+      expect(await mintDecimalsOnChain(rpc as never, [SOL, USDC])).toEqual([9, 6]);
+      expect(
+        await mintDecimalsOnChain(rpc as never, ['9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3'])
+      ).toEqual([null]);
     });
 
     it('refuses a build for a token whose decimals the wallet does not know', () => {
@@ -352,28 +409,70 @@ describe('swap — the proposal core signs', () => {
       expect(proposal.pending).toEqual({ kind: 'send', summary: '0.01 SOL → 1.174479 USDC' });
     });
 
-    it('drops the dollar values and the price impact it cannot check', () => {
+    const reviewOf = (env: SwapBuildEnvelope, picked: { pay: SwapToken; receive: SwapToken }) => {
+      const proposal = buildSwapProposal(env, {
+        networkId: 'solana-mainnet',
+        formatValue,
+        destinations: [],
+        sources: [],
+        tokens: picked,
+      });
+      const advanced = Object.fromEntries(
+        (proposal.display.advancedRows ?? []).map((row) => [row.label, row.value])
+      );
+      return { proposal, impact: advanced['swap.review.priceImpact'] };
+    };
+
+    it('drops the dollar values it cannot check, and shows the build’s impact without a wallet price', () => {
       const unpriced = {
         pay: { ...pay, price: undefined },
         receive: { ...receive, price: undefined },
       };
-      const proposal = buildSwapProposal(
+      const { proposal, impact } = reviewOf(
         envelope({ inUsdValue: 15_000, outUsdValue: 15_000, priceImpactPct: 0.01 }),
-        {
-          networkId: 'solana-mainnet',
-          formatValue,
-          destinations: [],
-          sources: [],
-          tokens: unpriced,
-        }
+        unpriced
       );
       expect(proposal.display.exchange?.send.usdValue).toBeUndefined();
       expect(proposal.display.exchange?.receive.usdValue).toBeUndefined();
-      const advanced = Object.fromEntries(
-        (proposal.display.advancedRows ?? []).map((row) => [row.label, row.value])
-      );
-      expect(advanced['swap.review.priceImpact']).toBe('—');
+      expect(impact).toBe('0.01%');
       expect(proposal.display.warning).toBeUndefined();
+    });
+
+    // The build's figure may add a warning, never take one away.
+    it('warns when either the wallet’s impact or the build’s is high', () => {
+      const fromBuild = reviewOf(envelope({ priceImpactPct: 7.5 }), tokens);
+      expect(fromBuild.proposal.display.warning?.title).toBe('swap.review.highImpactTitle');
+      const fromWallet = reviewOf(envelope({ priceImpactPct: 0 }), {
+        pay,
+        receive: { ...receive, price: 0.9 },
+      });
+      expect(fromWallet.proposal.display.warning?.title).toBe('swap.review.highImpactTitle');
+    });
+
+    it('never shows an impact it cannot compute as a number', () => {
+      for (const price of [0, Number.POSITIVE_INFINITY, Number.NaN]) {
+        const { impact } = reviewOf(envelope({ priceImpactPct: null }), {
+          pay: { ...pay, price },
+          receive,
+        });
+        expect(impact).toBe('—');
+      }
+    });
+
+    it('shows the Salmon fee computed from its rate, not the amount the build states', () => {
+      const t = vi.spyOn(i18n, 't');
+      reviewOf(envelope({ salmonFee: { ...envelope().salmonFee!, amount: '1' } }), tokens);
+      expect(t).toHaveBeenCalledWith(
+        'swap.review.salmonFeeOutput',
+        expect.objectContaining({ amount: '0.005902 USDC' })
+      );
+      t.mockRestore();
+    });
+
+    it('prices the received token from the held list when the wallet holds it', () => {
+      const held = [{ ...receive, price: 0.98, uiAmount: 3 }];
+      expect(priceFromHeld({ ...receive, price: 1 }, held).price).toBe(0.98);
+      expect(priceFromHeld({ ...receive, price: 1 }, []).price).toBe(1);
     });
 
     it('names and draws the picked tokens, not what the backend says', () => {
