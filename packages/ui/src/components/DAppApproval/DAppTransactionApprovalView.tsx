@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatOrigin, getNetworkName, spacing } from '@salmon/shared';
+import { dappTransactionGate, formatOrigin, getNetworkName, spacing } from '@salmon/shared';
 
 import { GlobeIcon, ReceiptIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -41,15 +41,11 @@ export function DAppTransactionApprovalView({
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
-  // A delegation, a failing transaction and an unreadable one are the three
-  // things a reflex tap should not be able to sign. A plain send that the
-  // preview understood keeps the ordinary button — friction everywhere is
-  // friction nowhere.
-  const requiresHold =
-    effects != null &&
-    (effects.kind === 'undetermined' ||
-      effects.kind === 'transaction-would-fail' ||
-      (effects.kind === 'effects' && effects.approvals.length > 0));
+  // A delegation, a failing transaction, an unreadable one and a preview that
+  // settled with no answer are what a reflex tap should not be able to sign.
+  // A plain send that the preview understood keeps the ordinary button —
+  // friction everywhere is friction nowhere. Mobile applies the same gate.
+  const { requiresHold } = dappTransactionGate({ effects, effectsLoading, parsingError });
 
   // A preview that has not answered yet is not an absence of warnings. Until it
   // does, `requiresHold` is false whatever the transaction turns out to do, so

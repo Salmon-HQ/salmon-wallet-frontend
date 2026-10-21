@@ -173,6 +173,13 @@ describe('DAppTransactionApprovalView', () => {
     ).toBe(hexToRgb(light.status.danger));
   });
 
+  // A preview that settled with no answer is not an absence of warnings.
+  it('demands a hold when the preview settled with no answer', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effects={null} effectsLoading={false} />);
+
+    expect(screen.getByRole('button', { name: 'HOLD TO APPROVE' })).toBeInTheDocument();
+  });
+
   it('demands a hold when the effects could not be established at all', () => {
     render(
       <DAppTransactionApprovalView

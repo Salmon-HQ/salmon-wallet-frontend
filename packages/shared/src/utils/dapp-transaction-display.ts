@@ -151,7 +151,8 @@ export interface DAppTransactionGateInput {
  * The extension's approval rules (`DAppTransactionApprovalView`): nothing is
  * signable before the preview answers or when it could not read the bytes —
  * the requesting site controls how long the preview takes — and a delegation,
- * an undetermined preview or a failing transaction needs a deliberate hold.
+ * an undetermined preview, a failing transaction or a preview that settled
+ * with no answer needs a deliberate hold.
  */
 export function dappTransactionGate({
   effects,
@@ -159,9 +160,10 @@ export function dappTransactionGate({
   parsingError,
 }: DAppTransactionGateInput): { canApprove: boolean; requiresHold: boolean } {
   const requiresHold =
-    effects != null &&
-    (effects.kind === 'undetermined' ||
-      effects.kind === 'transaction-would-fail' ||
-      (effects.kind === 'effects' && effects.approvals.length > 0));
+    effects == null
+      ? !effectsLoading
+      : effects.kind === 'undetermined' ||
+        effects.kind === 'transaction-would-fail' ||
+        (effects.kind === 'effects' && effects.approvals.length > 0);
   return { canApprove: !effectsLoading && !parsingError, requiresHold };
 }

@@ -259,6 +259,13 @@ describe("dappTransactionGate (the extension's approval rules)", () => {
     ).toBe(false);
   });
 
+  // A preview that settled without an answer is not an absence of warnings.
+  it('asks for a hold when the preview settled with no answer', () => {
+    expect(
+      dappTransactionGate({ effects: null, effectsLoading: false, parsingError: null })
+    ).toEqual({ canApprove: true, requiresHold: true });
+  });
+
   it.each([
     ['a spending permission', effects('effects', { approvals: [{}] })],
     ['an undetermined preview', effects('undetermined')],

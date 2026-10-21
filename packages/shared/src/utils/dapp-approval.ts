@@ -313,6 +313,8 @@ function usesDurableNonce(encodedMessage: string): boolean {
   try {
     message = buildTransactionFromEncodedMessage(encodedMessage).message;
   } catch {
+    // Not a nonce question: the preview decodes the message again and
+    // reports one it cannot read as malformed.
     return false;
   }
   const [program, data] =
@@ -404,6 +406,26 @@ export async function previewSolanaApprovalEffects(
   request: DAppTransactionRequest,
   options: { resolveSymbol?: ResolveSymbolFn } = {}
 ): Promise<TransactionEffects> {
+  // Both approval screens read a missing preview as "still simulating", so
+  // this must answer, never throw. The warning keeps a real bug visible.
+  try {
+    return await previewApprovalEffects(account, request, options);
+  } catch (error) {
+    console.warn('[dapp-approval] preview failed', error);
+    return {
+      kind: 'undetermined',
+      account: account.getReceiveAddress() as Address,
+      reason: 'simulation-unavailable',
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function previewApprovalEffects(
+  account: SolanaAccount,
+  request: DAppTransactionRequest,
+  options: { resolveSymbol?: ResolveSymbolFn }
+): Promise<TransactionEffects> {
   const previewedAccount = address(account.getReceiveAddress());
 
   const encodedMessages =
@@ -464,22 +486,11 @@ export async function previewSolanaApprovalEffects(
     };
   }
 
-  // Both approval screens read a missing preview as "still simulating" and
-  // keep the ordinary Approve button, so this must answer, never throw.
-  try {
-    await fetchAndMergeNetworkConfigs();
-    return await previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, {
-      ...options,
-      strict: true,
-    });
-  } catch (error) {
-    return {
-      kind: 'undetermined',
-      account: previewedAccount,
-      reason: 'simulation-unavailable',
-      detail: error instanceof Error ? error.message : String(error),
-    };
-  }
+  await fetchAndMergeNetworkConfigs();
+  return previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, {
+    ...options,
+    strict: true,
+  });
 }
 
 export async function approveSolanaSignMessage(

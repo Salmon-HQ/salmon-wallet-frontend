@@ -1294,6 +1294,7 @@ describe('previewSolanaApprovalEffects', () => {
   // The approval screens treat a missing preview as "still simulating" and
   // keep the ordinary Approve button, so the preview must always answer.
   it('answers undetermined instead of throwing when the preview cannot run', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const broken = {
       getReceiveAddress: () => payer.publicKey.toBase58(),
       getRpc: () => {
@@ -1308,6 +1309,23 @@ describe('previewSolanaApprovalEffects', () => {
     });
 
     expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+    // Answering keeps the screen on a hold; the warning keeps a real bug visible.
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('answers undetermined, whatever fails before the transaction is read', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const odd = { getReceiveAddress: () => 'not-an-address', getRpc: () => ({}) } as never;
+
+    const effects = await previewSolanaApprovalEffects(odd, {
+      id: 'req-odd',
+      method: 'signTransaction',
+      params: { message: encodedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+    warn.mockRestore();
   });
 
   // A durable nonce takes the place of the blockhash: the signature never
