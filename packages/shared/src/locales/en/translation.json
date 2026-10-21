@@ -149,6 +149,7 @@
     "hold_to_approve": "Hold to Approve",
     "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
     "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
+    "effects_reason_unanalysed": "This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.",
     "batch_size": "Transactions in this request",
     "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.",
     "mwa_refused_title": "Request refused",

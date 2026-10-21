@@ -5,6 +5,7 @@ import {
   formatBaseUnits,
   getShortAddress,
   spacing,
+  UNDETERMINED_REASON_KEYS,
   type ApprovalGrant,
   type SolChange,
   type TokenChange,
@@ -21,16 +22,8 @@ import type { TransactionEffectsCardProps } from './types';
 
 const SOL_DECIMALS = 9;
 
-/** Every `UndeterminedReason` gets its own sentence — none of them mean "safe". */
-const REASON_KEYS: Record<UndeterminedReason, string> = {
-  'malformed-transaction': 'dapp.effects_reason_malformed',
-  'unsupported-transaction-version': 'dapp.effects_reason_unsupported_version',
-  'simulation-unavailable': 'dapp.effects_reason_unavailable',
-  'simulation-not-executed': 'dapp.effects_reason_not_executed',
-  'account-state-unavailable': 'dapp.effects_reason_no_state',
-  'batch-not-previewable': 'dapp.effects_reason_batch',
-  'ownership-change': 'dapp.effects_reason_ownership_change',
-};
+const UNANALYSED_FALLBACK =
+  'This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.';
 
 const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'malformed-transaction': 'The transaction could not be decoded.',
@@ -42,6 +35,8 @@ const REASON_FALLBACKS: Record<UndeterminedReason, string> = {
   'batch-not-previewable': 'This request contains several transactions that run in sequence.',
   'ownership-change':
     'This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.',
+  'unanalysed-program': UNANALYSED_FALLBACK,
+  'unanalysed-account': UNANALYSED_FALLBACK,
 };
 
 interface AmountRowProps {
@@ -204,7 +199,7 @@ export function TransactionEffectsCard({
           title={t('dapp.effects_undetermined_title', 'Salmon could not determine what this does')}
           testID="effects-undetermined"
         >
-          {t(REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}
+          {t(UNDETERMINED_REASON_KEYS[effects.reason], REASON_FALLBACKS[effects.reason])}
           <span style={{ display: 'block', marginTop: spacing.xs }}>
             {t(
               'dapp.effects_undetermined_body',

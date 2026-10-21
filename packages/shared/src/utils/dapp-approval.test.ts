@@ -3,6 +3,8 @@ import nacl from 'tweetnacl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Keypair,
+  StakeAuthorizationLayout,
+  StakeProgram,
   SystemProgram,
   Transaction,
   TransactionMessage,
@@ -23,7 +25,7 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
   SolanaError,
 } from '@solana/kit';
-import { getAddMemoInstruction } from '@solana-program/memo';
+import { getAddMemoInstruction, LEGACY_MEMO_PROGRAM_ADDRESS_V3 } from '@solana-program/memo';
 import { getTransferSolInstruction } from '@solana-program/system';
 import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
@@ -795,7 +797,14 @@ async function v1Fixture(options: { extraMemoBytes?: number; withConfig?: boolea
             amount: 2n,
           }),
           ...(extraMemoBytes > 0
-            ? [getAddMemoInstruction({ memo: 'x'.repeat(extraMemoBytes) })]
+            ? [
+                // The immutable Memo v3, as the wallet's own sends use: the
+                // upgradeable v4 is a program the dApp preview holds.
+                getAddMemoInstruction(
+                  { memo: 'x'.repeat(extraMemoBytes) },
+                  { programAddress: LEGACY_MEMO_PROGRAM_ADDRESS_V3 }
+                ),
+              ]
             : []),
         ],
         m
@@ -1299,6 +1308,28 @@ describe('previewSolanaApprovalEffects', () => {
     });
 
     expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+  });
+
+  it('holds a transaction that runs a program the preview cannot read', async () => {
+    const simulateTransaction = vi.fn();
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: StakeProgram.authorize({
+        stakePubkey: testKeypair(8).publicKey,
+        authorizedPubkey: payer.publicKey,
+        newAuthorizedPubkey: testKeypair(9).publicKey,
+        stakeAuthorizationType: StakeAuthorizationLayout.Withdrawer,
+      }).instructions,
+    }).compileToV0Message();
+
+    const effects = await previewSolanaApprovalEffects(account({ simulateTransaction }), {
+      id: 'req-stake',
+      method: 'signTransaction',
+      params: { message: bs58.encode(message.serialize()) },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'unanalysed-program' });
   });
 
   it('simulates the dApp message unsigned, with signature verification off', async () => {

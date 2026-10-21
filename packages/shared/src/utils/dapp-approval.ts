@@ -358,6 +358,10 @@ export async function loadSolanaTransactionApprovalDetails(
  * The transaction is assembled with every signature slot empty and simulated
  * with `sigVerify: false`, so no key is touched and nothing is broadcast.
  *
+ * The preview runs strict: a transaction that runs a program the diff cannot
+ * read, or changes an account it does not show, answers `undetermined`, so
+ * the screen never offers its numbers as the whole story.
+ *
  * @param account - The account being asked to sign, and the account the deltas
  * are reported for.
  * @param request - The dApp request, exactly as received over the bridge.
@@ -423,12 +427,10 @@ export async function previewSolanaApprovalEffects(
   // keep the ordinary Approve button, so this must answer, never throw.
   try {
     await fetchAndMergeNetworkConfigs();
-    return await previewTransactionEffects(
-      account.getRpc(),
-      wireTransaction,
-      previewedAccount,
-      options
-    );
+    return await previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, {
+      ...options,
+      strict: true,
+    });
   } catch (error) {
     return {
       kind: 'undetermined',

@@ -109,6 +109,27 @@ describe('dappTransactionDisplay', () => {
     expect(display.warning?.title).toBe(title);
   });
 
+  // The extension's card names the reason; mobile showed only the generic
+  // line, so a transaction held for running programs Salmon cannot read
+  // looked the same as a network hiccup.
+  it('says why a preview is undetermined before the generic caution', () => {
+    const display = dappTransactionDisplay(
+      {
+        ...base,
+        effects: {
+          kind: 'undetermined',
+          account: ACCOUNT,
+          reason: 'unanalysed-program',
+          detail: '',
+        },
+      },
+      t
+    );
+    expect(display.warning?.body).toBe(
+      'dapp.effects_reason_unanalysed\n\ndapp.effects_undetermined_body'
+    );
+  });
+
   it('marks the balance rows pending while the simulation runs', () => {
     const display = dappTransactionDisplay({ ...base, effectsLoading: true }, t);
     expect(display.rows).toContainEqual({

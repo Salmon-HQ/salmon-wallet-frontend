@@ -52,7 +52,22 @@ export type UndeterminedReason =
    * independently would report numbers that are wrong for every transaction but
    * the first — worse than reporting nothing.
    */
-  | 'batch-not-previewable';
+  | 'batch-not-previewable'
+  /**
+   * Strict mode only. The transaction runs a program outside the set this
+   * preview can read in full (System, Compute Budget, SPL Token, Token-2022,
+   * Associated Token, Memo v1/v3). Its simulation shows what that program did
+   * once, not what it will do when the transaction lands, and what it moves —
+   * staked SOL, compressed or Core NFTs — is not a balance this preview diffs.
+   */
+  | 'unanalysed-program'
+  /**
+   * Strict mode only. An account other than the previewed one and its token
+   * accounts changes in a way that is not a plain deposit, and no other signer
+   * answers for it: it loses lamports or tokens, changes owner, or has its
+   * data rewritten (a nonce or mint authority, a transfer-hook record).
+   */
+  | 'unanalysed-account';
 
 /** The signer's native SOL movement, in lamports. */
 export interface SolChange {
@@ -247,6 +262,13 @@ export interface PreviewOptions {
    * preview never blocks on, or fails because of, a token-list request.
    */
   readonly resolveSymbol?: ResolveSymbolFn;
+  /**
+   * Report `undetermined` unless the preview accounts for everything the
+   * transaction does. dApp approvals set it: the transaction is the site's,
+   * and a partial picture reads as a complete one. The swap check leaves it
+   * off, because it holds an unknown router to the route itself.
+   */
+  readonly strict?: boolean;
 }
 
 // ============================================================================

@@ -121,6 +121,22 @@ describe('TransactionEffectsCard', () => {
     expect(screen.queryByText('No balance changes')).not.toBeInTheDocument();
   });
 
+  it.each(['unanalysed-program', 'unanalysed-account'] as const)(
+    'says a %s preview may move assets it does not list',
+    (reason) => {
+      render(
+        <TransactionEffectsCard
+          loading={false}
+          effects={{ kind: 'undetermined', account: ACCOUNT, reason, detail: '' }}
+        />
+      );
+
+      expect(
+        screen.getByText(/uses programs or accounts Salmon cannot preview/)
+      ).toBeInTheDocument();
+    }
+  );
+
   it('distinguishes a transaction that would fail from one that changes nothing', () => {
     const { rerender } = render(
       <TransactionEffectsCard

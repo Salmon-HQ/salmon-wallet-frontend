@@ -35,8 +35,23 @@ export async function fetchAccounts(
   return result;
 }
 
+/** What the preview reads off a transaction's message. */
+export interface ResolvedMessage {
+  /** Every account key the transaction loads, static keys first. */
+  readonly addresses: readonly Address[];
+  /** The keys the transaction may write. */
+  readonly writable: ReadonlySet<Address>;
+  /** The keys that sign it. */
+  readonly signers: ReadonlySet<Address>;
+  /**
+   * The program each top-level instruction invokes, in order. `undefined`
+   * when an instruction points past the static keys, which no node accepts.
+   */
+  readonly programs: readonly (Address | undefined)[];
+}
+
 /**
- * Every account key the transaction will load.
+ * Every account key the transaction will load, and the programs it invokes.
  *
  * Static keys come straight out of the compiled message; the rest are resolved
  * by reading the address lookup tables the message points at. Read-only
@@ -44,19 +59,35 @@ export async function fetchAccounts(
  * of a bad index calculation silently dropping the user's own token account and
  * turning a real balance change into a confident "nothing happens".
  *
- * @returns The account keys, or `null` when a lookup table could not be read.
+ * @returns The message's keys, or `null` when a lookup table could not be read.
  */
-export async function resolveAccountKeys(
+export async function resolveMessage(
   rpc: SolanaRpc,
   wireTransaction: Base64EncodedWireTransaction
-): Promise<readonly Address[] | null> {
+): Promise<ResolvedMessage | null> {
   const bytes = new Uint8Array(getBase64Encoder().encode(wireTransaction));
   const { messageBytes } = getTransactionDecoder().decode(bytes);
   const message = getCompiledTransactionMessageDecoder().decode(messageBytes);
+  const { staticAccounts } = message;
+  const { numSignerAccounts, numReadonlySignerAccounts, numReadonlyNonSignerAccounts } =
+    message.header;
+  // Signers come first, writable before read-only; read-only non-signers last.
+  const writable = new Set(
+    staticAccounts.filter((_, i) =>
+      i < numSignerAccounts
+        ? i < numSignerAccounts - numReadonlySignerAccounts
+        : i < staticAccounts.length - numReadonlyNonSignerAccounts
+    )
+  );
+  const signers = new Set(staticAccounts.slice(0, numSignerAccounts));
+  const programs =
+    'instructions' in message
+      ? message.instructions.map((ix) => staticAccounts[ix.programAddressIndex])
+      : message.instructionHeaders.map((header) => staticAccounts[header.programAccountIndex]);
 
   const lookups = 'addressTableLookups' in message ? (message.addressTableLookups ?? []) : [];
   if (lookups.length === 0) {
-    return message.staticAccounts;
+    return { addresses: staticAccounts, writable, signers, programs };
   }
 
   const tables = await fetchAccounts(
@@ -71,15 +102,16 @@ export async function resolveAccountKeys(
       return null;
     }
     const table = getAddressLookupTableDecoder().decode(toBytes(account.data));
-    for (const index of [...lookup.writableIndexes, ...lookup.readonlyIndexes]) {
+    for (const [i, index] of [...lookup.writableIndexes, ...lookup.readonlyIndexes].entries()) {
       const address = table.addresses[index];
       if (!address) {
         return null;
       }
       loaded.push(address);
+      if (i < lookup.writableIndexes.length) writable.add(address);
     }
   }
-  return [...message.staticAccounts, ...loaded];
+  return { addresses: [...staticAccounts, ...loaded], writable, signers, programs };
 }
 
 /**

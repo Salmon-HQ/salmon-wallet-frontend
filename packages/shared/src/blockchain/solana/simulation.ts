@@ -39,11 +39,23 @@ import {
   SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED,
 } from '@solana/kit';
 import type { Address, Base64EncodedWireTransaction } from '@solana/kit';
+import { COMPUTE_BUDGET_PROGRAM_ADDRESS } from '@solana-program/compute-budget';
+import {
+  LEGACY_MEMO_PROGRAM_ADDRESS_V1,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V3,
+} from '@solana-program/memo';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token-2022';
 
 import type { SolanaRpc } from './networks';
 import { decodeAccountState } from './simulation-decode';
-import { deriveEffects } from './simulation-derive';
-import { fetchAccounts, fetchMints, resolveAccountKeys, simulate } from './simulation-rpc';
+import { deriveEffects, findUnreadChange } from './simulation-derive';
+import { fetchAccounts, fetchMints, resolveMessage, simulate } from './simulation-rpc';
+import type { ResolvedMessage } from './simulation-rpc';
 import type {
   PreviewOptions,
   RawAccount,
@@ -73,6 +85,23 @@ export type {
   UndeterminedEffects,
   UndeterminedReason,
 } from './simulation-types';
+
+/**
+ * Programs whose every effect on the wallet shows up in the balance diff, and
+ * whose behaviour cannot change between the preview and the transaction
+ * landing. Compute Budget and the immutable Memo programs write no account;
+ * Associated Token only creates token accounts through System and SPL Token.
+ * Memo v4 is left out because it is upgradeable.
+ */
+const ANALYSABLE_PROGRAMS: ReadonlySet<Address> = new Set<Address>([
+  SYSTEM_PROGRAM_ADDRESS,
+  COMPUTE_BUDGET_PROGRAM_ADDRESS,
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V1,
+  LEGACY_MEMO_PROGRAM_ADDRESS_V3,
+]);
 
 /** Builds an `undetermined` result. */
 function undetermined(
@@ -124,20 +153,33 @@ export async function previewTransactionEffects(
   account: Address,
   options: PreviewOptions = {}
 ): Promise<TransactionEffects> {
-  let addresses: readonly Address[] | null;
+  let message: ResolvedMessage | null;
   try {
-    addresses = await resolveAccountKeys(rpc, wireTransaction);
+    message = await resolveMessage(rpc, wireTransaction);
   } catch (error) {
     const reason = isSolanaError(error, SOLANA_ERROR__TRANSACTION__VERSION_NUMBER_NOT_SUPPORTED)
       ? 'unsupported-transaction-version'
       : 'malformed-transaction';
     return undetermined(account, reason, errorMessage(error));
   }
-  if (!addresses) {
+  if (!message) {
     return undetermined(
       account,
       'account-state-unavailable',
       'An address lookup table this transaction uses could not be read.'
+    );
+  }
+  const { addresses } = message;
+
+  // Decided before simulating: a program this module cannot read can behave
+  // one way in a simulation and another on chain, so even "would fail" is
+  // not something to tell the user about it.
+  const unread = message.programs.findIndex((p) => !p || !ANALYSABLE_PROGRAMS.has(p));
+  if (options.strict && unread !== -1) {
+    return undetermined(
+      account,
+      'unanalysed-program',
+      `The transaction invokes ${message.programs[unread] ?? 'an unknown program'}, which this preview cannot read.`
     );
   }
 
@@ -209,7 +251,7 @@ export async function previewTransactionEffects(
     return undetermined(account, 'simulation-unavailable', errorMessage(error));
   }
 
-  return deriveEffects({
+  const effects = deriveEffects({
     account,
     before: beforeStates,
     after: afterStates,
@@ -218,4 +260,14 @@ export async function previewTransactionEffects(
       simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee),
     resolveSymbol: options.resolveSymbol,
   });
+  if (!options.strict || effects.kind === 'undetermined') return effects;
+
+  const changed = findUnreadChange({ ...message, account, before, after });
+  return changed
+    ? undetermined(
+        account,
+        'unanalysed-account',
+        `Account ${changed} changes in a way this preview cannot show.`
+      )
+    : effects;
 }

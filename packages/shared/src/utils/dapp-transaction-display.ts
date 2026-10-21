@@ -4,7 +4,7 @@
  * `TransactionEffectsCard`: every balance that moves is named, a token without
  * a ticker shows its mint, and "could not tell" never reads as "nothing happens".
  */
-import type { TransactionEffects } from '../blockchain/solana/simulation-types';
+import type { TransactionEffects, UndeterminedReason } from '../blockchain/solana/simulation-types';
 import type { ConfirmationRow, ProposalDisplay } from '../core/confirmation/types';
 import { formatBaseUnits } from './formatting';
 import { getShortAddress } from './address';
@@ -12,6 +12,19 @@ import { getShortAddress } from './address';
 const SOL_DECIMALS = 9;
 
 type Translate = (key: string, values?: Record<string, unknown>) => string;
+
+/** Every `UndeterminedReason` gets its own sentence — none of them mean "safe". */
+export const UNDETERMINED_REASON_KEYS: Record<UndeterminedReason, string> = {
+  'malformed-transaction': 'dapp.effects_reason_malformed',
+  'unsupported-transaction-version': 'dapp.effects_reason_unsupported_version',
+  'simulation-unavailable': 'dapp.effects_reason_unavailable',
+  'simulation-not-executed': 'dapp.effects_reason_not_executed',
+  'account-state-unavailable': 'dapp.effects_reason_no_state',
+  'batch-not-previewable': 'dapp.effects_reason_batch',
+  'ownership-change': 'dapp.effects_reason_ownership_change',
+  'unanalysed-program': 'dapp.effects_reason_unanalysed',
+  'unanalysed-account': 'dapp.effects_reason_unanalysed',
+};
 
 export interface DAppTransactionDisplayInput {
   origin: string;
@@ -78,7 +91,7 @@ export function dappTransactionDisplay(
   } else if (effects?.kind === 'undetermined') {
     warning = {
       title: t('dapp.effects_undetermined_title'),
-      body: t('dapp.effects_undetermined_body'),
+      body: `${t(UNDETERMINED_REASON_KEYS[effects.reason])}\n\n${t('dapp.effects_undetermined_body')}`,
     };
   }
 

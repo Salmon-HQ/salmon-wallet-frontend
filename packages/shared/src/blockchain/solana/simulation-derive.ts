@@ -6,12 +6,14 @@
 
 import type { Address } from '@solana/kit';
 
+import { decodeAccountState, decodeMintState, toBytes } from './simulation-decode';
 import type {
   ApprovalGrant,
   ApprovalScope,
   DerivationInput,
   Effects,
   NoEffect,
+  RawAccount,
   UndeterminedEffects,
   SolChange,
   TokenChange,
@@ -171,4 +173,80 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
     return { kind: 'no-effect', account };
   }
   return { kind: 'effects', account, sol, tokens, approvals };
+}
+
+/** Bytes 36..44 of a mint hold its supply, the one field minting and burning change. */
+const MINT_SUPPLY_START = 36;
+const MINT_SUPPLY_END = 44;
+
+/** Same data, or the same mint with only its supply moved. */
+function sameData(pre: RawAccount, post: RawAccount): boolean {
+  if (pre.data[0] === post.data[0]) return true;
+  if (!decodeMintState(pre) || !decodeMintState(post)) return false;
+  const [a, b] = [toBytes(pre.data), toBytes(post.data)];
+  a.fill(0, MINT_SUPPLY_START, MINT_SUPPLY_END);
+  b.fill(0, MINT_SUPPLY_START, MINT_SUPPLY_END);
+  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+}
+
+/** Everything `findUnreadChange` compares. */
+export interface UnreadChangeInput {
+  /** The account whose balances `deriveEffects` reports. */
+  readonly account: Address;
+  /** The keys the transaction may write. */
+  readonly writable: ReadonlySet<Address>;
+  /** The keys that sign it. */
+  readonly signers: ReadonlySet<Address>;
+  readonly before: ReadonlyMap<Address, RawAccount | null>;
+  readonly after: ReadonlyMap<Address, RawAccount | null>;
+}
+
+/**
+ * The first account the transaction changes in a way the balance diff does
+ * not show, or `null`.
+ *
+ * `deriveEffects` reads the previewed account and its token accounts. Any
+ * other writable account is fine when it only receives — the other side of a
+ * movement the diff already shows — or when it, or the owner of its tokens,
+ * signs the transaction too, since that signer answers for its own funds.
+ * Anything else is value or control the wallet's signature hands over out of
+ * sight: lamports leaving an account derived from the wallet, a token account
+ * the wallet is a delegate of, an authority rewritten in a mint or a nonce
+ * account.
+ */
+export function findUnreadChange({
+  account,
+  writable,
+  signers,
+  before,
+  after,
+}: UnreadChangeInput): Address | null {
+  for (const address of writable) {
+    const pre = before.get(address) ?? null;
+    const post = after.get(address) ?? null;
+    // Created by the transaction: whatever funded it shows in the diff.
+    if (address === account || signers.has(address) || !pre) continue;
+
+    const preToken = decodeAccountState(pre)?.token ?? null;
+    const postToken = decodeAccountState(post)?.token ?? null;
+    if (preToken?.owner === account || postToken?.owner === account) continue;
+    if (preToken && signers.has(preToken.owner)) continue;
+
+    if (!post || post.lamports < pre.lamports || post.owner !== pre.owner) return address;
+    if (preToken || postToken) {
+      if (
+        !preToken ||
+        !postToken ||
+        postToken.amount < preToken.amount ||
+        postToken.owner !== preToken.owner ||
+        postToken.delegate !== preToken.delegate ||
+        postToken.delegatedAmount !== preToken.delegatedAmount
+      ) {
+        return address;
+      }
+    } else if (!sameData(pre, post)) {
+      return address;
+    }
+  }
+  return null;
 }
