@@ -915,7 +915,7 @@
       "uses": "Uses"
     },
     "disabled": {
-      "region": "This Powerup isn't available in your region.",
+      "region": "{{name}} isn't available in this region.",
       "maintenance": "This Powerup is paused for maintenance. Check back soon.",
       "deprecated": "This Powerup has been retired. You can remove it from Home."
     },
@@ -930,7 +930,7 @@
     },
     "unavailable": {
       "network": "This Powerup is available on Solana mainnet only.",
-      "region": "This Powerup is not available in your region.",
+      "region": "This Powerup isn't available in this region.",
       "wallet": "This Powerup is not available for this wallet."
     }
   },

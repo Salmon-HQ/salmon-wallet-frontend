@@ -89,6 +89,7 @@ import {
   contentRegionStyle,
   fillColumnStyle,
   pinnedHeaderStyle,
+  tabGutterStyle,
   risenSubTabsStyle,
   subTabsStyle,
   balanceBlockStyle,
@@ -659,9 +660,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [skrOffered]
   );
 
-  const activePowerupDisabledReason = powerupTabs.find(
-    (tab) => tab.key === effectiveSubTab
-  )?.disabledReason;
+  const activePowerupTab = powerupTabs.find((tab) => tab.key === effectiveSubTab);
+  const activePowerupDisabledReason = activePowerupTab?.disabledReason;
 
   const renderPage = (): React.ReactElement => {
     switch (currentPage) {
@@ -990,7 +990,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   <StateBlock
                     tone="empty"
                     testID={`home-powerup-disabled-${activePowerupDisabledReason}`}
-                    title={t(`powerups.disabled.${activePowerupDisabledReason}`)}
+                    style={tabGutterStyle}
+                    title={t(`powerups.disabled.${activePowerupDisabledReason}`, {
+                      name: activePowerupTab?.label,
+                    })}
                   />
                 ) : !activeBlockchainAccount ? (
                   // The account is Home's business, not each Powerup's: with
@@ -1001,6 +1004,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     tone="empty"
                     testID="home-powerup-no-account"
                     title={t('powerups.no_account')}
+                    style={tabGutterStyle}
                   />
                 ) : (
                   // Which surface this id draws is `powerupBodies.tsx`'s, the
