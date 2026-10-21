@@ -271,6 +271,19 @@ export async function previewTransactionEffects(
     );
   }
 
+  // System Allocate writes data into the account itself. Nothing moves and
+  // the owner stays put, so the diff below sees nothing, yet an account that
+  // holds data can no longer send SOL with a System transfer.
+  const walletBefore = before.get(account);
+  const walletAfter = after.get(account);
+  if (walletBefore && walletAfter && walletBefore.data[0] !== walletAfter.data[0]) {
+    return undetermined(
+      account,
+      'unanalysed-account',
+      `The transaction writes data into account ${account}.`
+    );
+  }
+
   const decode = (accounts: ReadonlyMap<Address, RawAccount | null>) =>
     new Map([...accounts].map(([address, raw]) => [address, decodeAccountState(raw)] as const));
 

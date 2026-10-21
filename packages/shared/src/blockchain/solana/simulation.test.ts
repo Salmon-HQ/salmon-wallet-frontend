@@ -29,6 +29,7 @@ import {
 import { AccountRole } from '@solana/kit';
 import type { Address, Base64EncodedWireTransaction, Blockhash, Instruction } from '@solana/kit';
 import {
+  getAllocateInstruction,
   getTransferSolInstruction,
   getTransferSolWithSeedInstruction,
 } from '@solana-program/system';
@@ -836,6 +837,29 @@ describe('previewTransactionEffects', () => {
 
     if (result.kind !== 'undetermined') throw new Error('expected undetermined');
     expect(result.reason).toBe('malformed-transaction');
+  });
+
+  // System Allocate gives the wallet's own account data. No lamport moves and
+  // the owner stays the System Program, yet an account with data can no
+  // longer send SOL with a System transfer.
+  it('never reports data written into the previewed account as no change', async () => {
+    const wire = wireOf([
+      getAllocateInstruction({ newAccount: createNoopSigner(WALLET), space: 8 }),
+    ]);
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(1_000_000_000n) },
+      {
+        [WALLET]: {
+          ...rawSol(999_995_000n),
+          data: [getBase64Decoder().decode(new Uint8Array(8)), 'base64'] as const,
+        } as unknown as Raw,
+      }
+    );
+
+    expect(await previewTransactionEffects(rpc, wire, WALLET)).toMatchObject({
+      kind: 'undetermined',
+      reason: 'unanalysed-account',
+    });
   });
 
   it('reports no-effect when the previewed account is untouched by a real transaction', async () => {

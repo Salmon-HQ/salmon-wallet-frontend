@@ -62,10 +62,11 @@ export type UndeterminedReason =
    */
   | 'unanalysed-program'
   /**
-   * Strict mode only. An account other than the previewed one and its token
-   * accounts changes in a way that is not a plain deposit, and no other signer
-   * answers for it: it loses lamports or tokens, changes owner, or has its
-   * data rewritten (a nonce or mint authority, a transfer-hook record).
+   * The previewed account has data written into it (System Allocate), or, in
+   * strict mode, another account changes in a way the diff does not show and
+   * no other signer answers for: it loses lamports or tokens, changes owner,
+   * or has its data rewritten (a nonce or mint authority, a close authority,
+   * a mint's supply raised for someone else).
    */
   | 'unanalysed-account'
   /**
