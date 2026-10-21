@@ -135,19 +135,20 @@ export async function finalizeUnlockedAccounts(
 }
 
 interface InitializeAccountsSecurityParams {
-  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   loadMetadata: () => Promise<void>;
   setLoaded: (loaded: boolean) => void;
   setLocked: (locked: boolean) => void;
   setRequiredLock: (requiredLock: boolean) => void;
   unlockWithCachedKey: (keyCache: DerivedKeyCache) => Promise<boolean>;
   isKeyCacheValidFn: (keyCache: DerivedKeyCache) => boolean;
-  /** The stored secrets are in the clear and are waiting for a password. */
-  onUnprotected: () => void;
+  /**
+   * The stored secrets are in the clear and wait for a password: shows the
+   * addresses they derive. Rejects when there is nothing to show.
+   */
+  onUnprotected: (secrets: SecretVault) => Promise<void>;
 }
 
 export async function initializeAccountsSecurity({
-  loadAccounts,
   loadMetadata,
   setLoaded,
   setLocked,
@@ -165,13 +166,12 @@ export async function initializeAccountsSecurity({
 
   // Releases that migrated a password-less v2 wallet wrote its seeds in the
   // clear, and that record is its owner's only copy. It opens to show the
-  // wallet's addresses — a planted record shows addresses the owner does not
-  // know — and nothing else happens until it is encrypted under a password
-  // chosen for it (`protectWallet`).
+  // addresses its seeds derive — a planted record shows addresses the owner
+  // does not know — and no wallet loads from it until it is encrypted under a
+  // password chosen for it (`protectWallet`).
   if (!isEncryptedMnemonics(storedMnemonics)) {
-    await loadAccounts(storedMnemonics);
     setRequiredLock(false);
-    onUnprotected();
+    await onUnprotected(storedMnemonics);
     return true;
   }
 

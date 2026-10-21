@@ -10,7 +10,7 @@
  * @module hooks/useAccounts
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import mapValues from 'lodash-es/mapValues';
 
 import { type DerivedKeyCache } from '../crypto/encryption';
@@ -19,8 +19,7 @@ import { useAccountsConnection } from './useAccountsConnection';
 import { useAccountsMutations } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
-import { useAccountsSecurity, type UnprotectedWallet } from './useAccountsSecurity';
-import { isMainnetNetworkId } from '../utils/network';
+import { useAccountsSecurity } from './useAccountsSecurity';
 import {
   generateAccountId,
   createBlockchainAccountForNetwork,
@@ -80,8 +79,8 @@ export interface UseAccountsState {
   /** Whether an error is present (derived from error !== null) */
   isError: boolean;
   /**
-   * Set while the stored seeds have no password: the wallet's mainnet
-   * addresses, for the owner to recognise before choosing one
+   * Set while the stored seeds have no password: the mainnet addresses those
+   * seeds derive, for the owner to recognise before choosing one
    * (`protectWallet`). Nothing else may open until then. `null` otherwise.
    */
   unprotectedAddresses: string[] | null;
@@ -351,7 +350,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
   const [tokens, setTokens] = useState<CustomTokens>({});
   const [switchingNetwork, setSwitchingNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [unprotected, setUnprotected] = useState<UnprotectedWallet | null>(null);
+  const [unprotectedAddresses, setUnprotectedAddresses] = useState<string[] | null>(null);
 
   // --------------------------------------------------------------------------
   // Account Loading
@@ -383,7 +382,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     setReady,
     setLoaded,
     setError,
-    setUnprotected,
+    setUnprotectedAddresses,
     loadMetadata,
     loadAccounts,
     restoreAccount,
@@ -451,19 +450,6 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     });
 
   const resetError = useCallback(() => setError(null), []);
-
-  const unprotectedAddresses = useMemo(() => {
-    if (!unprotected) return null;
-    if (unprotected.kind === 'legacy') return unprotected.addresses;
-    const addresses = accounts.flatMap(({ networksAccounts }) =>
-      Object.entries(networksAccounts)
-        .filter(([id]) => isMainnetNetworkId(id))
-        .flatMap(([, slots]) =>
-          (slots ?? []).flatMap((slot) => (slot ? [slot.getReceiveAddress()] : []))
-        )
-    );
-    return [...new Set(addresses)];
-  }, [unprotected, accounts]);
 
   // --------------------------------------------------------------------------
   // Return State and Actions

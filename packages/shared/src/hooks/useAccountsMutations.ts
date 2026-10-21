@@ -10,7 +10,6 @@ import { seedVaultAccessToRelease, toAccountSecret, toStoredSecret } from '../ut
 import { releaseSeedVaultAccess } from '../blockchain/solana/seed-vault-signer';
 import {
   clearAccountsStorage,
-  persistAccounts,
   persistActiveSelection,
   readStoredAccounts,
   readStoredSecrets,
@@ -174,41 +173,48 @@ export function useAccountsMutations({
   );
 
   const editAccount = useCallback(
-    async (
-      targetId: string,
-      { name, avatar, newDerivedAccounts }: EditAccountParams
-    ): Promise<void> => {
-      const index = accounts.findIndex(({ id }) => id === targetId);
-      if (index < 0) return;
+    (targetId: string, { name, avatar, newDerivedAccounts }: EditAccountParams): Promise<void> =>
+      withVaultWriteLock(async () => {
+        const current = accounts.find(({ id }) => id === targetId);
+        if (!current) return;
 
-      const newAccounts = [...accounts];
-      // Copy the nested map too: a top-level spread shares `networksAccounts`
-      // and every per-network array with the account still held in state, so
-      // the pads below would mutate it in place under whoever captured it.
-      const newAccount = {
-        ...accounts[index],
-        networksAccounts: { ...accounts[index].networksAccounts },
-      };
+        // Copy the nested map too: a top-level spread shares `networksAccounts`
+        // and every per-network array with the account still held in state, so
+        // the pads below would mutate it in place under whoever captured it.
+        const newAccount = {
+          ...current,
+          networksAccounts: { ...current.networksAccounts },
+        };
 
-      if (name) newAccount.name = name;
-      if (avatar) newAccount.avatar = avatar;
+        if (name) newAccount.name = name;
+        if (avatar) newAccount.avatar = avatar;
 
-      if (newDerivedAccounts) {
-        for (const derivedAccount of newDerivedAccounts) {
-          const { network, index: accountIndex } = derivedAccount;
-          const slots = [...(newAccount.networksAccounts[network.id] ?? [])];
-          while (slots.length <= accountIndex) {
-            slots.push(null);
+        if (newDerivedAccounts) {
+          for (const derivedAccount of newDerivedAccounts) {
+            const { network, index: accountIndex } = derivedAccount;
+            const slots = [...(newAccount.networksAccounts[network.id] ?? [])];
+            while (slots.length <= accountIndex) {
+              slots.push(null);
+            }
+            slots[accountIndex] = derivedAccount;
+            newAccount.networksAccounts[network.id] = slots;
           }
-          slots[accountIndex] = derivedAccount;
-          newAccount.networksAccounts[network.id] = slots;
         }
-      }
 
-      newAccounts[index] = newAccount;
-      setAccounts(newAccounts);
-      await withVaultWriteLock(() => persistAccounts(newAccounts, formatAccountForStorage));
-    },
+        // Only this wallet's entry changes, in the list storage holds: this
+        // window's copy may still hold a wallet another window removed, and
+        // writing that copy back would list a wallet whose seed is gone.
+        const stored = await readStoredAccounts();
+        const index = stored.findIndex(({ id }) => id === targetId);
+        if (index < 0) return;
+        const newStored = [...stored];
+        newStored[index] = formatAccountForStorage(newAccount);
+
+        setAccounts((held) =>
+          held.map((account) => (account.id === targetId ? newAccount : account))
+        );
+        await writeStoredAccounts(newStored);
+      }),
     [accounts, formatAccountForStorage, setAccounts]
   );
 

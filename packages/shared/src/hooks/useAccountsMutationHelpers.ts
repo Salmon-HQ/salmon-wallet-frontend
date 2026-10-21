@@ -8,7 +8,7 @@ import {
   STASH_KEYS,
   STORAGE_KEYS,
 } from '../storage';
-import type { Account, StoredAccount } from '../types/account';
+import type { StoredAccount } from '../types/account';
 import type { SecretVault } from '../utils/account-secret';
 import type { ActiveSlot } from '../utils/active-selection';
 import {
@@ -93,22 +93,19 @@ export async function writeStoredAccounts(stored: StoredAccount[]): Promise<void
 /**
  * Whether a stored list with these ids is the one this window last wrote. A
  * window re-reads its wallets when the stored list stops matching its own; its
- * own write matches by definition, even before its state has caught up.
+ * own write matches by definition, even before its state has caught up. The
+ * mark is spent by the first change checked against it, so a later list from
+ * another window with the same ids is never taken for this window's own.
  */
 export function isOwnStoredAccountsWrite(ids: readonly string[]): boolean {
-  return ownAccountsWrite === idsKey(ids);
+  const own = ownAccountsWrite === idsKey(ids);
+  ownAccountsWrite = null;
+  return own;
 }
 
 /** The wallet list as storage holds it now (see `readStoredSecrets`). */
 export async function readStoredAccounts(): Promise<StoredAccount[]> {
   return (await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS)) ?? [];
-}
-
-export async function persistAccounts(
-  accounts: Account[],
-  formatAccountForStorage: (account: Account) => StoredAccount
-): Promise<void> {
-  await writeStoredAccounts(accounts.map(formatAccountForStorage));
 }
 
 /**

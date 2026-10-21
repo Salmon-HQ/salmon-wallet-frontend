@@ -3,12 +3,15 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { isKeyCacheValid, lockAndGetKey, type DerivedKeyCache } from '../crypto/encryption';
 import { validatePassword } from '../crypto/password';
 import {
+  getStorageItem,
   removeStashItem,
   setStashItem,
   setStorageItem,
   STORAGE_KEYS,
   updateLastActivity,
 } from '../storage';
+import { mainnetReceiveAddresses } from '../utils/account';
+import { toAccountSecret } from '../utils/account-secret';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
 import {
   clearUnlockPenalty,
@@ -29,13 +32,7 @@ import {
   resolveMnemonicsWithPassword,
 } from './useAccountsSecurityHelpers';
 import { STASH_KEYS } from '../storage';
-
-/**
- * A wallet whose seeds are stored without a password, waiting for one: a
- * cleartext vault (its accounts are loaded, so their addresses can be shown),
- * or an unprotected v2 record not migrated yet (its addresses come with it).
- */
-export type UnprotectedWallet = { kind: 'vault' } | { kind: 'legacy'; addresses: string[] };
+import { withVaultWriteLock } from './useAccountsMutationHelpers';
 
 interface UseAccountsSecurityParams {
   setLocked: Dispatch<SetStateAction<boolean>>;
@@ -43,7 +40,12 @@ interface UseAccountsSecurityParams {
   setReady: Dispatch<SetStateAction<boolean>>;
   setLoaded: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
-  setUnprotected: Dispatch<SetStateAction<UnprotectedWallet | null>>;
+  /**
+   * The addresses of a wallet whose seeds are stored without a password (a
+   * cleartext vault, or an unprotected v2 record), derived from those seeds;
+   * null once it has one.
+   */
+  setUnprotectedAddresses: Dispatch<SetStateAction<string[] | null>>;
   loadMetadata: () => Promise<void>;
   loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   restoreAccount: (options: {
@@ -71,7 +73,7 @@ export function useAccountsSecurity({
   setReady,
   setLoaded,
   setError,
-  setUnprotected,
+  setUnprotectedAddresses,
   loadMetadata,
   loadAccounts,
   restoreAccount,
@@ -92,13 +94,38 @@ export function useAccountsSecurity({
       }
 
       if (result.status === 'needs-new-password') {
-        setUnprotected({ kind: 'legacy', addresses: result.addresses });
+        setUnprotectedAddresses(result.addresses);
         return false;
       }
 
       return true;
     },
-    [formatAccountForStorage, restoreAccount, setLocked, setUnprotected]
+    [formatAccountForStorage, restoreAccount, setLocked, setUnprotectedAddresses]
+  );
+
+  /**
+   * Shows the addresses a cleartext vault's keys derive, at the slots the stored
+   * list names. A watched address or a Seed Vault key is only what the record
+   * claims, so it is not shown; a vault with nothing derivable is refused.
+   */
+  const showUnprotectedVault = useCallback(
+    async (secrets: SecretVault): Promise<void> => {
+      const stored = (await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS)) ?? [];
+      const accounts = await Promise.all(
+        Object.entries(secrets).flatMap(([id, value]) => {
+          const secret = toAccountSecret(value);
+          if (secret.kind !== 'mnemonic' && secret.kind !== 'privateKey') return [];
+          const pathIndexes = stored.find((account) => account.id === id)?.pathIndexes;
+          return [restoreAccount({ secret, pathIndexes })];
+        })
+      );
+      const addresses = mainnetReceiveAddresses(accounts);
+      if (addresses.length === 0) {
+        throw new Error('The unprotected wallet has no key to derive an address from');
+      }
+      setUnprotectedAddresses(addresses);
+    },
+    [restoreAccount, setUnprotectedAddresses]
   );
 
   const checkPassword = useCallback(async (password: string): Promise<boolean> => {
@@ -260,8 +287,7 @@ export function useAccountsSecurity({
     try {
       const upgraded = await runUpgrades();
       const hasStoredAccounts = await initializeAccountsSecurity({
-        loadAccounts,
-        onUnprotected: () => setUnprotected({ kind: 'vault' }),
+        onUnprotected: showUnprotectedVault,
         loadMetadata,
         setLoaded,
         setLocked,
@@ -284,7 +310,6 @@ export function useAccountsSecurity({
       setReady(true);
     }
   }, [
-    loadAccounts,
     loadMetadata,
     runUpgrades,
     setError,
@@ -292,7 +317,7 @@ export function useAccountsSecurity({
     setLocked,
     setReady,
     setRequiredLock,
-    setUnprotected,
+    showUnprotectedVault,
     unlockWithCachedKey,
   ]);
 
@@ -302,6 +327,9 @@ export function useAccountsSecurity({
    * record is migrated encrypted. The password must pass the same strength
    * check as any new password. Answers whether the wallet is protected now; a
    * failure leaves it as it was, for the screen to say so.
+   *
+   * It holds the lock every wallet write takes, and reads what storage holds
+   * once it has it: another window may have protected the wallet meanwhile.
    */
   const protectWallet = useCallback(
     async (password: string): Promise<boolean> => {
@@ -310,16 +338,20 @@ export function useAccountsSecurity({
           throw new Error('The password does not meet the strength rules');
         }
 
-        const stored = await getStoredMnemonics();
-        if (stored && isEncryptedMnemonics(stored)) {
-          throw new Error('This wallet already has a password');
-        }
+        await withVaultWriteLock(async () => {
+          const stored = await getStoredMnemonics();
+          if (stored && isEncryptedMnemonics(stored)) {
+            throw new Error('This wallet already has a password');
+          }
 
-        if (stored) {
-          const { vault, keyCache } = await lockAndGetKey(stored, password);
-          await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...vault, isEncrypted: true });
-          await setStashItem(STASH_KEYS.DERIVED_KEY, keyCache);
-        } else {
+          if (stored) {
+            const { vault, keyCache } = await lockAndGetKey(stored, password);
+            await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...vault, isEncrypted: true });
+            await setStashItem(STASH_KEYS.DERIVED_KEY, keyCache);
+            await finalizeUnlockedAccounts(stored, loadAccounts, setLocked);
+            return;
+          }
+
           const result = await migrateLegacyWallets(
             { restoreAccount, formatAccountForStorage },
             password,
@@ -331,14 +363,14 @@ export function useAccountsSecurity({
           }
           const mnemonics = await resolveMnemonicsWithPassword(migrated, password);
           await finalizeUnlockedAccounts(mnemonics, loadAccounts, setLocked);
-        }
+        });
       } catch (err) {
         console.warn('Failed to protect the wallet:', err);
         return false;
       }
 
       setRequiredLock(true);
-      setUnprotected(null);
+      setUnprotectedAddresses(null);
       await updateLastActivity();
       return true;
     },
@@ -348,7 +380,7 @@ export function useAccountsSecurity({
       restoreAccount,
       setLocked,
       setRequiredLock,
-      setUnprotected,
+      setUnprotectedAddresses,
     ]
   );
 

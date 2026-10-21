@@ -36,6 +36,7 @@ jest.mock('expo-router', () => {
     Stack: MockStack,
     router: { replace: jest.fn() },
     useSegments: jest.fn(() => ['(app)', '(tabs)']),
+    useGlobalSearchParams: jest.fn(() => ({})),
     useRootNavigationState: jest.fn(() => ({ key: 'root' })),
     ErrorBoundary: () => null,
     DarkTheme: jest.requireActual('expo-router/build/react-navigation/native/theming/DarkTheme')
@@ -336,8 +337,9 @@ describe('RootLayout mobile lock lifecycle', () => {
     });
 
     it('leaves it on the password screen once there', async () => {
-      const { router, useSegments } = require('expo-router');
+      const { router, useSegments, useGlobalSearchParams } = require('expo-router');
       (useSegments as jest.Mock).mockReturnValue(['(auth)', 'password']);
+      (useGlobalSearchParams as jest.Mock).mockReturnValue({ type: 'protect' });
       mockUseAccountsContext.mockReturnValue([
         {
           ready: true,
@@ -353,6 +355,62 @@ describe('RootLayout mobile lock lifecycle', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(router.replace).not.toHaveBeenCalled();
+    });
+
+    // The same screen in its create or recover mode would set a password on a
+    // new wallet, over the seeds waiting for theirs.
+    it('moves it from the password screen in another mode to the protect mode', async () => {
+      const { router, useSegments, useGlobalSearchParams } = require('expo-router');
+      (useSegments as jest.Mock).mockReturnValue(['(auth)', 'password']);
+      (useGlobalSearchParams as jest.Mock).mockReturnValue({ type: 'create' });
+      mockUseAccountsContext.mockReturnValue([
+        {
+          ready: true,
+          locked: false,
+          requiredLock: false,
+          accounts: [],
+          unprotectedAddresses: ['AddressOne111'],
+        },
+        { lockAccounts: mockLockAccounts },
+      ]);
+
+      render(<RootLayout />);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(router.replace).toHaveBeenCalledWith(PROTECT);
+    });
+
+    it('does not lock it when the app goes to the background', async () => {
+      jest
+        .spyOn(AppState, 'addEventListener')
+        .mockImplementation((eventType: any, listener: any) => {
+          listeners[eventType] ??= [];
+          listeners[eventType].push(listener);
+          return { remove: jest.fn() } as any;
+        });
+      const { useSegments, useGlobalSearchParams } = require('expo-router');
+      (useSegments as jest.Mock).mockReturnValue(['(auth)', 'password']);
+      (useGlobalSearchParams as jest.Mock).mockReturnValue({ type: 'protect' });
+      mockUseAccountsContext.mockReturnValue([
+        {
+          ready: true,
+          locked: false,
+          requiredLock: true,
+          accounts: [{ id: 'account-1' }],
+          unprotectedAddresses: ['AddressOne111'],
+        },
+        { lockAccounts: mockLockAccounts },
+      ]);
+
+      render(<RootLayout />);
+      await waitFor(() => {
+        expect(listeners.change).toHaveLength(1);
+      });
+      listeners.change[0]('active');
+      listeners.change[0]('background');
+      await Promise.resolve();
+
+      expect(mockLockAccounts).not.toHaveBeenCalled();
     });
   });
 

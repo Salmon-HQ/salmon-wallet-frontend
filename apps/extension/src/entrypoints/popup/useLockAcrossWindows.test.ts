@@ -204,3 +204,37 @@ describe('useLockAcrossWindows — a wallet list changed in another window', () 
     expect(sidePanel.lock).not.toHaveBeenCalled();
   });
 });
+
+describe('useLockAcrossWindows — callbacks that change between renders', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+  });
+
+  // The window passes new callbacks on every render; subscribing anew each time
+  // would drop and re-add the storage listener on every keystroke.
+  it('subscribes once and calls the latest callbacks', async () => {
+    const addListener = vi.spyOn(fakeBrowser.storage.onChanged, 'addListener');
+    const closing = { current: false };
+    const first = { lock: vi.fn(), reload: vi.fn(async () => true), forget: vi.fn() };
+    const latest = { lock: vi.fn(), reload: vi.fn(async () => true), forget: vi.fn() };
+    const view = renderHook(
+      (callbacks: typeof first) =>
+        useLockAcrossWindows({
+          ready: true,
+          locked: false,
+          accountIds: ['W'],
+          closing,
+          ...callbacks,
+        }),
+      { initialProps: first }
+    );
+
+    view.rerender(latest);
+    await fakeBrowser.storage.session.set({ salmon_lock_signal: Date.now() });
+    await settle();
+
+    expect(addListener).toHaveBeenCalledTimes(1);
+    expect(first.lock).not.toHaveBeenCalled();
+    expect(latest.lock).toHaveBeenCalledTimes(1);
+  });
+});

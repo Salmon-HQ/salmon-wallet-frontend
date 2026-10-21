@@ -70,13 +70,17 @@ export function useLockAcrossWindows({
   const lockedBySignal = useRef(false);
   const readyRef = useRef(ready);
   const accountIdsRef = useRef(accountIds);
+  // The window hands in new callbacks on every render; the storage listener
+  // reads the latest through these instead of subscribing again each time.
+  const callbacks = useRef({ lock, reload, forget });
   // One re-read at a time, so an earlier one cannot land last with an older list.
   const reloading = useRef(Promise.resolve());
 
   useEffect(() => {
     readyRef.current = ready;
     accountIdsRef.current = accountIds;
-  }, [ready, accountIds]);
+    callbacks.current = { lock, reload, forget };
+  }, [ready, accountIds, lock, reload, forget]);
 
   useEffect(() => {
     lockedRef.current = locked;
@@ -101,21 +105,21 @@ export function useLockAcrossWindows({
     const lockFromElsewhere = () => {
       if (cancelled || lockedRef.current) return;
       lockedBySignal.current = true;
-      lock();
+      callbacks.current.lock();
     };
 
     const onWalletListChanged = (value: unknown) => {
       const stored = storedAccountIds(value);
       const held = accountIdsRef.current;
       if (stored.length === 0) {
-        if (held.length > 0) forget();
+        if (held.length > 0) callbacks.current.forget();
         return;
       }
       if (lockedRef.current || !readyRef.current || isOwnStoredAccountsWrite(stored)) return;
       const storedSet = new Set(stored);
       if (storedSet.size === held.length && held.every((id) => storedSet.has(id))) return;
       reloading.current = reloading.current
-        .then(reload)
+        .then(() => callbacks.current.reload())
         .then((reloaded) => {
           if (!reloaded) lockFromElsewhere();
         })
@@ -136,5 +140,5 @@ export function useLockAcrossWindows({
       cancelled = true;
       browser.storage.onChanged.removeListener(onChanged);
     };
-  }, [forget, lock, reload]);
+  }, []);
 }

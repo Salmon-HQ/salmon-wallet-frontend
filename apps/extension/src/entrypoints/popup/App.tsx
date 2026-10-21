@@ -210,18 +210,22 @@ function App() {
     // the panel left an unlocked wallet unlocked indefinitely — the background
     // alarm that fires instead cannot lock a panel that is already open. The
     // flow generates plenty of real activity, which is what should hold the
-    // timer off.
-    enabled: ready && !locked && accounts.length > 0 && !justCreated,
+    // timer off. Off while a wallet with no password waits for one: a lock
+    // there could only be answered with a password the wallet does not have.
+    enabled: ready && !locked && accounts.length > 0 && !justCreated && !unprotectedAddresses,
   });
 
   // A lock here locks every other open wallet window, and theirs locks this
   // one. Declared before the close handler below: that effect clears the
   // closing flag as soon as this window is locked, and this one must read it
   // first so closing a window does not lock the rest.
+  // Not while a wallet with no password waits for one, for the same reason as
+  // the inactivity lock above.
   const lockThisWindow = useCallback(() => {
+    if (unprotectedAddresses) return;
     void clearSessionKey();
     void actions.lockAccounts();
-  }, [actions]);
+  }, [actions, unprotectedAddresses]);
   // A wallet added or removed in another window is re-read here through the
   // cached key; without one this window cannot re-read, and is locked instead.
   // Every wallet removed elsewhere is forgotten here too.
@@ -446,6 +450,14 @@ function App() {
     return null;
   }
 
+  // A wallet stored without a password opens to nothing but its addresses and
+  // the password that protects it; once protected, this screen gives way. It
+  // comes before the lock screen, which could only refuse every password and
+  // offer to remove the wallet: its seeds have no other copy.
+  if (unprotectedAddresses) {
+    return <PasswordPage flowType="protect" addresses={unprotectedAddresses} onSuccess={noop} />;
+  }
+
   // Wallet is locked — show lock screen even if account metadata failed to load.
   // This must be checked BEFORE accounts.length === 0 to prevent showing onboarding
   // when encrypted mnemonics exist but account metadata is missing from storage.
@@ -458,12 +470,6 @@ function App() {
         onUnlockExited={handleUnlockExited}
       />
     );
-  }
-
-  // A wallet stored without a password opens to nothing but its addresses and
-  // the password that protects it; once protected, this screen gives way.
-  if (unprotectedAddresses) {
-    return <PasswordPage flowType="protect" addresses={unprotectedAddresses} onSuccess={noop} />;
   }
 
   // Wallet initialization failed and nothing loaded — block instead of showing

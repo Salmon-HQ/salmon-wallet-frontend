@@ -493,6 +493,8 @@ describe('useAccounts Hook', () => {
       expect(state.error).toBeNull();
       expect(state.requiredLock).toBe(false);
       expect(state.unprotectedAddresses).toEqual(['TestAddress111111111111111111111111111111']);
+      // No wallet is usable before it has a password.
+      expect(state.accounts).toEqual([]);
 
       await act(async () => {
         expect(await actions.checkPassword(MOCK_PASSWORD)).toBe(false);

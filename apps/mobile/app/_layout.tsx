@@ -9,6 +9,7 @@ import {
   Stack,
   ThemeProvider as NavigationThemeProvider,
   router,
+  useGlobalSearchParams,
   useSegments,
   useRootNavigationState,
 } from 'expo-router';
@@ -154,6 +155,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   }, [semantic]);
   const [state, actions] = useAccountsContext();
   const segments = useSegments();
+  const { type: routeType } = useGlobalSearchParams<{ type?: string }>();
   const navigationState = useRootNavigationState();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lockInFlightRef = useRef(false);
@@ -190,11 +192,12 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
 
-    // A wallet stored without a password goes to the password screen and
-    // nowhere else: it lists the wallet's addresses and protects it. The screen
-    // itself moves on once the wallet has a password.
+    // A wallet stored without a password goes to the password screen in its
+    // protect mode and nowhere else: it lists the wallet's addresses and
+    // protects it. The same screen in another mode would set a password on a
+    // new wallet instead. The screen itself moves on once the wallet has one.
     if (state.unprotectedAddresses) {
-      if (!(inAuthGroup && segments[1] === 'password')) {
+      if (!(inAuthGroup && segments[1] === 'password' && routeType === 'protect')) {
         router.replace({ pathname: '/(auth)/password', params: { type: 'protect' } });
       }
       return;
@@ -247,6 +250,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     state.locked,
     state.unprotectedAddresses,
     segments,
+    routeType,
     navigationState?.key,
     hasNavigated,
     initFailed,
@@ -262,8 +266,11 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     }
 
     const tryLock = (): void => {
+      // Never while a wallet with no password waits for one: the lock could
+      // only be answered with a password it does not have.
       if (
         !state.requiredLock ||
+        state.unprotectedAddresses ||
         state.locked ||
         state.accounts.length === 0 ||
         lockInFlightRef.current
@@ -309,7 +316,14 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       changeSubscription.remove();
       unsubscribeSeedVault();
     };
-  }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
+  }, [
+    actions,
+    state.accounts.length,
+    state.locked,
+    state.ready,
+    state.requiredLock,
+    state.unprotectedAddresses,
+  ]);
 
   // An unsupported build is not opened at all: this gate precedes the lock
   // screen and the init-failed gate, and the store is the only way out.

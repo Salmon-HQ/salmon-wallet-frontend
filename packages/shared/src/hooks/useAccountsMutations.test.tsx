@@ -244,7 +244,72 @@ describe('useAccountsMutations writing one change at a time', () => {
     await act(() => sidePanel.result.current.addAccount(wallet('X')));
 
     expect(isOwnStoredAccountsWrite(['X', 'W'])).toBe(true);
+  });
+
+  // The mark answers for the one change its write caused. Left standing, a later
+  // list from another window with the same ids would pass for this window's own.
+  it('spends the mark on the first change it is checked against', async () => {
+    const sidePanel = openWindow([wallet('W')]);
+
+    await act(() => sidePanel.result.current.addAccount(wallet('X')));
+    expect(isOwnStoredAccountsWrite(['W', 'X'])).toBe(true);
+    expect(isOwnStoredAccountsWrite(['W', 'X'])).toBe(false);
+
+    await act(() => sidePanel.result.current.addAccount(wallet('Y')));
     expect(isOwnStoredAccountsWrite(['W'])).toBe(false);
+    expect(isOwnStoredAccountsWrite(['W', 'X', 'Y'])).toBe(false);
+  });
+});
+
+describe('useAccountsMutations editing from a stale window', () => {
+  beforeEach(() => {
+    storageMap.set('salmon_accounts', [wallet('W'), wallet('X')].map(formatAccountForStorage));
+    storeVault({ W: 'secret-of-W', X: 'secret-of-X' });
+  });
+
+  // 1. both windows hold W and X; 2. B removes X; 3. A, still holding X, renames
+  // W; 4. A derives a new slot for W. X must not come back: a listed wallet with
+  // no seed in the vault fails every unlock after.
+  it('never writes back a wallet another window removed', async () => {
+    const sidePanelA = openWindow([wallet('W'), wallet('X')]);
+    const sidePanelB = openWindow([wallet('W'), wallet('X')]);
+
+    await act(() => sidePanelB.result.current.removeAccount('X'));
+    await act(() => sidePanelA.result.current.editAccount('W', { name: 'Renamed' }));
+    await act(() =>
+      sidePanelA.result.current.editAccount('W', {
+        newDerivedAccounts: [{ network: { id: 'solana-devnet' }, index: 0 }] as never,
+      })
+    );
+
+    expect(storedIds()).toEqual(['W']);
+    expect(storedSecrets()).toEqual(['W']);
+    const stored = storageMap.get('salmon_accounts') as StoredAccount[];
+    expect(stored[0].name).toBe('Renamed');
+  });
+
+  it('writes nothing when the wallet it edits is no longer stored', async () => {
+    const sidePanelA = openWindow([wallet('W'), wallet('X')]);
+    const sidePanelB = openWindow([wallet('W'), wallet('X')]);
+
+    await act(() => sidePanelB.result.current.removeAccount('X'));
+    vi.mocked(storage.setStorageItem).mockClear();
+    await act(() => sidePanelA.result.current.editAccount('X', { name: 'Gone' }));
+
+    expect(storage.setStorageItem).not.toHaveBeenCalled();
+    expect(storedIds()).toEqual(['W']);
+  });
+
+  it('takes the wallet write lock', async () => {
+    const request = vi.fn((_name: string, write: () => Promise<unknown>) => write());
+    vi.stubGlobal('navigator', { ...navigator, locks: { request } });
+    try {
+      const sidePanel = openWindow([wallet('W'), wallet('X')]);
+      await act(() => sidePanel.result.current.editAccount('W', { name: 'Renamed' }));
+      expect(request).toHaveBeenCalledWith('salmon-vault-write', expect.any(Function));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 
