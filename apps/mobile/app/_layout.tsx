@@ -197,7 +197,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     // protects it. The same screen in another mode would set a password on a
     // new wallet instead. The screen itself moves on once the wallet has one.
     if (state.unprotectedAddresses) {
-      if (!(inAuthGroup && segments[1] === 'password' && routeType === 'protect')) {
+      if (!(inAuthGroup && segments.at(1) === 'password' && routeType === 'protect')) {
         router.replace({ pathname: '/(auth)/password', params: { type: 'protect' } });
       }
       return;
