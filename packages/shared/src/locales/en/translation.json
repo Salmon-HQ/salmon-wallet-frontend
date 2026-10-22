@@ -897,8 +897,8 @@
       "sol_domain_paused": "“.sol” names are paused while SNS moves to “.sns”. Use the same name with .sns.",
       "same_address": "Cannot send to your own address",
       "no_info": "This account does not exist on-chain yet. The recipient will need to fund it.",
-      "off_curve_no_funds": "This is a program-derived address without funds",
-      "off_curve_has_funds": "This is a program-derived address",
+      "off_curve_no_funds": "No person controls this address. Anything you send to it may be lost forever.",
+      "off_curve_has_funds": "No person controls this address. Anything you send to it may be lost forever.",
       "no_funds": "This address has no ETH balance",
       "unknown": "Unknown validation error"
     }

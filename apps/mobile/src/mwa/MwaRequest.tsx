@@ -26,7 +26,6 @@ import {
   mwaSignMessages,
   mwaSignTransactions,
   newMwaAuthToken,
-  spacing,
   toSignAllTransactionsRequest,
   useAccountsContext,
   useSolanaTransactionApproval,
@@ -40,6 +39,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabChrome } from '../../hooks/useTabChrome';
 
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { TransactionConfirmation } from '../components/TransactionConfirmation';
@@ -407,6 +407,7 @@ function TransactionApproval({
   const [state] = useAccountsContext();
   const { surface } = useSemantic();
   const insets = useSafeAreaInsets();
+  const { floatingBottomOffset } = useTabChrome();
   const verification = useIdentityVerification(origin);
   const unverified = verification === 'unverified';
   const { run, running, busy } = useOnce();
@@ -506,7 +507,7 @@ function TransactionApproval({
         confirmDisabled={!gate.canApprove || verification === 'checking'}
         requiresHold={requiresHold}
         error={error}
-        style={{ paddingBottom: insets.bottom + spacing.lg }}
+        style={{ paddingBottom: floatingBottomOffset }}
       />
     </View>
   );

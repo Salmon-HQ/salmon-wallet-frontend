@@ -158,7 +158,9 @@ export function StepAmount({
       {/* Who this pays, restated where the amount is decided. */}
       <Card padding="sm" gap={spacing.sm} testID="send-amount-recipient">
         <KeyValueRow label={t('transactions.to')} value={recipient.name ?? recipientShort} />
-        <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+        {!!recipient.name && (
+          <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+        )}
       </Card>
 
       {/* What the transfer costs and how long it takes. */}

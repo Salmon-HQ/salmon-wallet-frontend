@@ -250,13 +250,15 @@ export function StepReview({
           label={t('transactions.to')}
           value={recipient.name ?? getShortAddress(destinationAddress) ?? destinationAddress}
         />
-        {/* Mono in 4-character chunks: fixed-width chunks are what let the
-            eye compare a prefix and suffix positionally. */}
-        <KeyValueRow
-          testID="send-confirm-address"
-          label={t('send.screens.address')}
-          value={getShortAddress(destinationAddress) ?? destinationAddress}
-        />
+        {/* The address gets its own row only when "To" shows a contact's name;
+            otherwise "To" already is the address. */}
+        {!!recipient.name && (
+          <KeyValueRow
+            testID="send-confirm-address"
+            label={t('send.screens.address')}
+            value={getShortAddress(destinationAddress) ?? destinationAddress}
+          />
+        )}
         {resolvedFromDomain !== null && (
           <KeyValueRow
             testID="send-confirm-resolved-from"

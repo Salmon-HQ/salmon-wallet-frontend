@@ -83,7 +83,10 @@ const mockFlow = {
   setToken: jest.fn(),
   liveBalance: 2.5,
   nativeBalance: 2.5,
-  recipient: { address: 'Dest111111111111111111111111111111111111111' },
+  recipient: { address: 'Dest111111111111111111111111111111111111111' } as {
+    address: string;
+    name?: string;
+  },
   setRecipient: jest.fn(),
   amount: '',
   setAmount: jest.fn(),
@@ -538,6 +541,26 @@ describe('the review screen — a recipient no key controls', () => {
     mockFlow.amount = '1';
     render(<SendReviewScreen />);
     expect(screen.queryByTestId('send-review-recipient-warning')).toBeNull();
+  });
+});
+
+describe('the review screen — the address row', () => {
+  afterEach(() => {
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111' };
+  });
+
+  it('shows no second address row when "To" already is the address', () => {
+    mockFlow.request = null;
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-to')).toBeTruthy();
+    expect(screen.queryByTestId('send-confirm-address')).toBeNull();
+  });
+
+  it('shows the address under a contact name', () => {
+    mockFlow.request = null;
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111', name: 'Ana' };
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-confirm-address')).toBeTruthy();
   });
 });
 

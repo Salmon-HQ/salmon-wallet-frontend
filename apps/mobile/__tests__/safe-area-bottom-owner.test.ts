@@ -59,4 +59,20 @@ describe('the bottom safe-area inset has one owner', () => {
   it("keeps Home's Powerups button on floatingBottomOffset", () => {
     expect(read('app/(app)/(tabs)/index.tsx')).toMatch(/bottomOffset=\{floatingBottomOffset\}/);
   });
+
+  // Full-screen hosts with no bottom edge own the inset themselves and sit at
+  // the Powerups button's height, not at a spacing of their own.
+  it.each([
+    'src/components/TransactionConfirmation/ConfirmationHost.tsx',
+    'src/mwa/MwaRequest.tsx',
+  ])('%s lifts its confirmation by floatingBottomOffset', (file) => {
+    expect(read(file)).toMatch(/paddingBottom: floatingBottomOffset/);
+    expect(read(file)).not.toMatch(/insets\.bottom \+/);
+  });
+
+  it('keeps the exchange receipt’s actions at screenBottom over its own inset', () => {
+    const receipt = read('src/components/ReceiptScreen/ExchangeReceipt.tsx');
+    expect(receipt).toMatch(/paddingBottom: insets\.bottom/);
+    expect(receipt).toMatch(/paddingBottom: vs\(spacing\.screenBottom\)/);
+  });
 });

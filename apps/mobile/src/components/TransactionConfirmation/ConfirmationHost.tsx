@@ -17,9 +17,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabChrome } from '../../../hooks/useTabChrome';
 import {
   buildConfirmationReceipt,
-  spacing,
   useSignatureRequestHost,
   useWaitExit,
   type Semantic,
@@ -36,6 +36,7 @@ import { TransactionConfirmation } from './TransactionConfirmation';
 export function ConfirmationHost() {
   const styles = useThemedStyles(stylesFor);
   const insets = useSafeAreaInsets();
+  const { floatingBottomOffset } = useTabChrome();
   const isReduceMotionEnabled = useReducedMotion();
   const { request, receipt, refreshing, confirmLabel, confirmOrRefresh, cancel, dismissReceipt } =
     useSignatureRequestHost();
@@ -110,7 +111,7 @@ export function ConfirmationHost() {
               confirmLabel={confirmLabel}
               isRefreshing={refreshing}
               error={request.error}
-              style={{ paddingBottom: insets.bottom + spacing.lg }}
+              style={{ paddingBottom: floatingBottomOffset }}
             />
           </Animated.View>
         )}
