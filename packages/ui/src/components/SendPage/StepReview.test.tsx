@@ -95,6 +95,22 @@ describe('StepReview with a recipient no key controls', () => {
   });
 });
 
+describe('StepReview address row', () => {
+  it('shows no second address row when "To" already is the address', () => {
+    renderInMode('dark', <StepReview {...baseProps()} />);
+    expect(screen.getByTestId('send-review-to')).toBeTruthy();
+    expect(screen.queryByTestId('send-confirm-address')).toBeNull();
+  });
+
+  it('shows the address under a contact name', () => {
+    renderInMode(
+      'dark',
+      <StepReview {...baseProps()} recipient={{ address: 'Dest', name: 'Ana' }} />
+    );
+    expect(screen.getByTestId('send-confirm-address')).toBeTruthy();
+  });
+});
+
 describe('StepReview for a collectible', () => {
   const nft = { mint: 'Mint', name: 'Fish #1', image: '' } as never;
 

@@ -33,7 +33,18 @@ export function useTabChrome() {
     // keeping the wallet header itself below the system UI.
     const heroCardTopInset = Platform.OS === 'ios' ? topInset : 0;
 
-    const floatingBottomOffset = bottomInset + vs(spacing.screenBottom);
+    // A screen's bottom action sits 20 (`screenBottom`) above the system bar,
+    // the same distance as Home's Powerups button. Who adds the inset decides
+    // which of the two values a screen reads:
+    //  - `floatingBottomOffset` — the CTA owns the inset: nothing around it
+    //    already clears the system bar (Home's FAB, a layout with no
+    //    SafeAreaView bottom edge).
+    //  - `screenActionBottomPadding` — a SafeAreaView with a bottom edge
+    //    already owns the inset, so the action row adds only the air above
+    //    it. Reading `floatingBottomOffset` there counts the inset twice.
+    // One derives from the other, so the two distances can never drift.
+    const screenActionBottomPadding = vs(spacing.screenBottom);
+    const floatingBottomOffset = bottomInset + screenActionBottomPadding;
 
     return {
       insets,
@@ -42,6 +53,7 @@ export function useTabChrome() {
       headerChromeHeight,
       heroCardTopInset,
       floatingBottomOffset,
+      screenActionBottomPadding,
       stickyCtaScrollPadding:
         floatingBottomOffset + vs(componentSizes.buttonHeightCompact + STICKY_CTA_SCROLL_GAP),
       scrollBottomPadding: floatingBottomOffset + vs(spacing['3xl']),

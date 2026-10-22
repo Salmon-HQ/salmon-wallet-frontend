@@ -124,7 +124,11 @@ jest.mock('expo-linear-gradient', () => ({ LinearGradient: () => null }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
 
 jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0, scrollBottomPadding: 0 }),
+  useTabChrome: () => ({
+    floatingBottomOffset: 0,
+    screenActionBottomPadding: 0,
+    scrollBottomPadding: 0,
+  }),
 }));
 jest.mock('../../hooks/useKeyboardHeight', () => ({ useKeyboardHeight: () => 0 }));
 jest.mock('../../hooks/useCopyFeedback', () => ({

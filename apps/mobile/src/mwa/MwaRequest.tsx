@@ -14,8 +14,6 @@ import {
   dappTransactionGate,
   decodeDAppMessage,
   encodeMwaAuthToken,
-  formatSigningAccount,
-  getShortAddress,
   getStorageItem,
   mwaAuthorizedAccount,
   mwaChainToNetworkId,
@@ -28,7 +26,6 @@ import {
   mwaSignMessages,
   mwaSignTransactions,
   newMwaAuthToken,
-  spacing,
   toSignAllTransactionsRequest,
   useAccountsContext,
   useSolanaTransactionApproval,
@@ -43,10 +40,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabChrome } from '../../hooks/useTabChrome';
 
 import { ConfirmSheet } from '../components/ConfirmSheet';
-import { DepthBackground } from '../components/DepthBackground';
 import { TransactionConfirmation } from '../components/TransactionConfirmation';
+import { useSemantic } from '../theme/useThemedStyles';
+import { MwaRequestDetails } from './MwaRequestDetails';
 
 /** Counts a completed approval; a tracking failure must never become a failure answer. */
 function countApproval(
@@ -291,13 +290,6 @@ function ConnectApproval({
   // claim any site: an unverified one is named as a claim, and its approval
   // (a SIWS signature for that site included) costs a hold.
   const unverified = verification === 'unverified';
-  const lines = [
-    unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
-    ...(unverified ? [t('dapp.mwa_unverified', { origin })] : []),
-    name,
-    `${t('dapp.wallet_address')}: ${getShortAddress(address, 4) ?? address}`,
-    signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint'),
-  ];
 
   const approve = () =>
     run(async () => {
@@ -335,8 +327,9 @@ function ConnectApproval({
   return (
     <ConfirmSheet
       visible
+      bedrock
       title={signIn ? t('dapp.sign_in_title') : t('dapp.connect_title')}
-      message={lines.join('\n\n')}
+      message={signIn ? t('dapp.sign_in_subtitle') : t('dapp.connect_permissions_hint')}
       confirmText={
         unverified
           ? t('dapp.hold_to_approve')
@@ -350,7 +343,14 @@ function ConnectApproval({
       requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
-    />
+    >
+      <MwaRequestDetails
+        origin={origin}
+        name={name}
+        unverified={unverified}
+        account={{ name: state.activeAccount?.name, address }}
+      />
+    </ConfirmSheet>
   );
 }
 
@@ -390,16 +390,9 @@ function SignMessagesApproval({
   return (
     <ConfirmSheet
       visible
+      bedrock
       title={t('dapp.sign_message_title')}
-      message={[
-        unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
-        `${t('dapp.wallet_address')}: ${formatSigningAccount({
-          name: state.activeAccount?.name,
-          address: account.getReceiveAddress(),
-        })}`,
-        shown,
-        t('dapp.sign_message_hint'),
-      ].join('\n\n')}
+      message={t('dapp.sign_message_hint')}
       confirmText={unverified ? t('dapp.hold_to_approve') : t('dapp.sign')}
       cancelText={t('dapp.reject')}
       isDanger={verification !== 'verified'}
@@ -407,7 +400,15 @@ function SignMessagesApproval({
       requiresHold={unverified}
       onClose={() => respond(declined)}
       onConfirm={approve}
-    />
+    >
+      <MwaRequestDetails
+        origin={origin}
+        name={mwaDisplayName(request.appIdentity?.identityName, origin)}
+        unverified={unverified}
+        account={{ name: state.activeAccount?.name, address: account.getReceiveAddress() }}
+        message={shown}
+      />
+    </ConfirmSheet>
   );
 }
 
@@ -419,7 +420,9 @@ function TransactionApproval({
 }: ApprovalProps<SignTransactionsRequest | SignAndSendTransactionsRequest>) {
   const { t } = useTranslation();
   const [state] = useAccountsContext();
+  const { surface } = useSemantic();
   const insets = useSafeAreaInsets();
+  const { floatingBottomOffset } = useTabChrome();
   const verification = useIdentityVerification(origin);
   const unverified = verification === 'unverified';
   const { run, running, busy } = useOnce();
@@ -503,8 +506,12 @@ function TransactionApproval({
     });
 
   return (
-    <View style={[styles.surface, { paddingTop: insets.top }]}>
-      <DepthBackground />
+    // The Bedrock Rule: an approval stands on opaque bedrock, never on the
+    // water column, so nothing of the dApp or the motif shows through it.
+    <View
+      testID="mwa-transaction-surface"
+      style={[styles.surface, { paddingTop: insets.top, backgroundColor: surface.bedrock }]}
+    >
       <TransactionConfirmation
         display={display}
         // Backing out while signing would tell the dApp "no" while the wallet
@@ -518,7 +525,7 @@ function TransactionApproval({
         confirmDisabled={!gate.canApprove || verification === 'checking'}
         requiresHold={requiresHold}
         error={error}
-        style={{ paddingBottom: insets.bottom + spacing.lg }}
+        style={{ paddingBottom: floatingBottomOffset }}
       />
     </View>
   );

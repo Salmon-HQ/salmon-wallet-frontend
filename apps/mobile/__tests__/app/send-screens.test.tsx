@@ -83,7 +83,10 @@ const mockFlow = {
   setToken: jest.fn(),
   liveBalance: 2.5,
   nativeBalance: 2.5,
-  recipient: { address: 'Dest111111111111111111111111111111111111111' },
+  recipient: { address: 'Dest111111111111111111111111111111111111111' } as {
+    address: string;
+    name?: string;
+  },
   setRecipient: jest.fn(),
   amount: '',
   setAmount: jest.fn(),
@@ -165,7 +168,8 @@ jest.mock('@salmon/shared', () => ({
     `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
-  sanitizeDecimalInput: (value: string) => value,
+  // Real: the amount field's limit to the token's places is what it pins.
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimal-input'),
   getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
   chunkAddress: (value: string) => value,
   tabularNums: { native: { fontVariant: ['tabular-nums'] } },
@@ -274,6 +278,7 @@ jest.mock('../../src/components/TokenSelectList', () => {
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({
     floatingBottomOffset: 0,
+    screenActionBottomPadding: 0,
     scrollBottomPadding: 0,
     insets: { top: 0, bottom: 0 },
   }),
@@ -539,6 +544,26 @@ describe('the review screen — a recipient no key controls', () => {
   });
 });
 
+describe('the review screen — the address row', () => {
+  afterEach(() => {
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111' };
+  });
+
+  it('shows no second address row when "To" already is the address', () => {
+    mockFlow.request = null;
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-to')).toBeTruthy();
+    expect(screen.queryByTestId('send-confirm-address')).toBeNull();
+  });
+
+  it('shows the address under a contact name', () => {
+    mockFlow.request = null;
+    mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111', name: 'Ana' };
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-confirm-address')).toBeTruthy();
+  });
+});
+
 describe('the recipient screen — 04A and 04B', () => {
   it('04A: an address the validator rejects blocks Continue and says why', () => {
     mockValidation = {
@@ -655,6 +680,27 @@ describe('the amount screen — the shortcuts', () => {
     fireEvent.press(screen.getByTestId('send-shortcuts-max'));
 
     expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance), 'max');
+  });
+
+  // A digit past the token's places is simply not taken (owner, option a).
+  it("takes no digit past the token's decimal places", () => {
+    mockFlow.token = USDC_TOKEN;
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '0.1234567');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('0.123456');
+    mockFlow.token = SOL_TOKEN;
+  });
+
+  it('takes no separator for a token with no decimals', () => {
+    mockFlow.token = { ...USDC_TOKEN, decimals: 0 };
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '5.');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('5');
+    mockFlow.token = SOL_TOKEN;
   });
 
   it('keeps Review dead on an empty amount', () => {

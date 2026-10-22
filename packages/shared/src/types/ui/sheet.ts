@@ -7,6 +7,12 @@ export interface SheetTitlePropsBase {
   /** Optional element drawn before the title text, inline (e.g. a warning icon). */
   leading?: ReactNode;
   children: string;
+  /**
+   * One line under the title, in the screen header's subtitle voice — what
+   * the sheet is for or how to use it. It belongs to the header, never to
+   * the body.
+   */
+  subtitle?: string;
 }
 
 /**

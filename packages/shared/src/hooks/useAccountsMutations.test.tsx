@@ -125,6 +125,7 @@ function openWindow(loaded: Account[]) {
     const [, setRequiredLock] = useState(true);
     const [, setTrustedApps] = useState<TrustedApps>({});
     const [, setTokens] = useState<CustomTokens>({});
+    const [, setUnprotectedAddresses] = useState<string[] | null>(null);
     return useAccountsMutations({
       counter,
       setCounter,
@@ -139,6 +140,7 @@ function openWindow(loaded: Account[]) {
       setRequiredLock,
       setTrustedApps,
       setTokens,
+      setUnprotectedAddresses,
       formatAccountForStorage,
     });
   });

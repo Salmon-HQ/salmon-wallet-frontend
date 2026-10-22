@@ -114,9 +114,16 @@ vi.mock('../../pages/auth/RecoverWalletPage', () => ({
 }));
 
 vi.mock('../../pages/auth/PasswordPage', () => ({
-  PasswordPage: (props: { flowType: string; addresses?: string[] }) => (
+  PasswordPage: (props: {
+    flowType: string;
+    addresses?: string[];
+    onRemoveWallet?: () => Promise<void>;
+  }) => (
     <div data-testid="password-page" data-flow={props.flowType}>
       {props.addresses?.join(',')}
+      {props.onRemoveWallet && (
+        <button data-testid="password-remove" onClick={() => void props.onRemoveWallet?.()} />
+      )}
     </div>
   ),
 }));
@@ -237,6 +244,19 @@ describe('Extension popup with a wallet stored without a password', () => {
 
     expect(getByTestId('password-page').getAttribute('data-flow')).toBe('protect');
     expect(queryByTestId('lock-page')).toBeNull();
+  });
+
+  // The protect screen's way out is the lock screen's reset: the session key
+  // and every wallet go, in that order of trust, and the welcome screen opens.
+  it('removes the wallet the way the lock screen resets it', async () => {
+    accountsState.unprotectedAddresses = ['AddrOne'];
+    mockRemoveAllAccounts.mockResolvedValue(undefined);
+
+    const { getByTestId } = render(<App />);
+    getByTestId('password-remove').click();
+
+    await vi.waitFor(() => expect(mockRemoveAllAccounts).toHaveBeenCalledTimes(1));
+    expect(mockClearSessionKey).toHaveBeenCalledTimes(1);
   });
 
   it('runs no inactivity lock while the wallet waits for its password', () => {

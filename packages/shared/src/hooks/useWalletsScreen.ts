@@ -7,8 +7,8 @@
  * (`groupWalletFamilies`) the screen lists — a wallet and the wallets
  * derived from it. Each platform still owns its own navigation
  * (select/rename/add-wallet routing) and how it tells the user a toggle was
- * refused (`toggleInclude` returns `true` on refusal; mobile shows an Alert,
- * the DOM twin shows a `ConfirmDialog`).
+ * refused (`toggleInclude` returns `true` on refusal; both twins say so in an
+ * acknowledge-only confirm sheet).
  *
  * `useWalletCardDerived` is the per-card twin: the derived-path chips a
  * wallet holds on the network being read, and whether it is even eligible

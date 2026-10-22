@@ -499,15 +499,14 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       </SettingsScreenLayout>
 
       {/* Failure notice as a sheet: there is nothing to confirm here, so it
-          carries one dismiss button instead of a cancel/confirm pair that both
-          did the same thing. */}
+          carries no buttons — it leaves by the handle, the backdrop or the
+          back gesture, like every sheet. */}
       <ConfirmSheet
         visible={creationError !== null}
         onClose={() => setCreationError(null)}
         title={creationError?.title ?? ''}
         message={creationError?.message ?? ''}
         acknowledgeOnly
-        confirmText={t('actions.close')}
         onConfirm={async () => {}}
       />
     </>

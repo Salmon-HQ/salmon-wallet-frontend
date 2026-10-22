@@ -71,8 +71,10 @@ export default function SendAmountScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const amountFocus = useFieldFocus();
-  const { floatingBottomOffset } = useTabChrome();
-  const actionLift = useKeyboardLift(floatingBottomOffset, vs(spacing.sm));
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
+  const actionLift = useKeyboardLift(screenActionBottomPadding, vs(spacing.sm));
   const {
     blockchain,
     token,
@@ -172,6 +174,7 @@ export default function SendAmountScreen() {
           testID="send-amount"
           value={amount}
           onChangeValue={shortcuts.onAmountChange}
+          maxDecimals={token ? (token.decimals ?? SOL_CONSTANTS.DECIMALS) : undefined}
           subtext={fiatDisplay}
           focused={amountFocus.focused || shortcuts.selected !== ''}
           onFocus={amountFocus.onFocus}
@@ -192,7 +195,9 @@ export default function SendAmountScreen() {
         {/* Who this pays, restated where the amount is decided. */}
         <Card padding="sm" gap={spacing.sm} testID="send-amount-recipient">
           <KeyValueRow label={t('transactions.to')} value={recipient?.name ?? recipientShort} />
-          <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+          {!!recipient?.name && (
+            <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+          )}
         </Card>
 
         {/* What the transfer costs and how long it takes — the two questions

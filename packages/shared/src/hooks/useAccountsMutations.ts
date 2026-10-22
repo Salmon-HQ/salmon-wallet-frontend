@@ -31,6 +31,8 @@ interface UseAccountsMutationsParams {
   setRequiredLock: Dispatch<SetStateAction<boolean>>;
   setTrustedApps: Dispatch<SetStateAction<TrustedApps>>;
   setTokens: Dispatch<SetStateAction<CustomTokens>>;
+  /** A wallet waiting for a password is one this window holds too. */
+  setUnprotectedAddresses: Dispatch<SetStateAction<string[] | null>>;
   formatAccountForStorage: (account: Account) => StoredAccount;
 }
 
@@ -61,6 +63,7 @@ export function useAccountsMutations({
   setRequiredLock,
   setTrustedApps,
   setTokens,
+  setUnprotectedAddresses,
   formatAccountForStorage,
 }: UseAccountsMutationsParams): UseAccountsMutationsResult {
   const forgetAccounts = useCallback((): void => {
@@ -73,6 +76,7 @@ export function useAccountsMutations({
     setPathIndex(0);
     setTrustedApps({});
     setTokens({});
+    setUnprotectedAddresses(null);
   }, [
     setAccountId,
     setAccounts,
@@ -83,6 +87,7 @@ export function useAccountsMutations({
     setRequiredLock,
     setTokens,
     setTrustedApps,
+    setUnprotectedAddresses,
   ]);
 
   /** Removes every wallet; the caller holds the vault write lock. */

@@ -117,17 +117,17 @@ export const TokenSelectList: React.FC<TokenSelectListProps> = ({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    // The component gap — sheet title to search, search to list, and row to
-    // row — is the screen's 20. The top gap used to be a stray margin on the
-    // title itself; it belongs to this container, the content below the title.
+    // 12 under the sheet's title, then the component gap — search to list,
+    // and row to row — of 20 (DESIGN.md §Layout). The gap under the title
+    // belongs to this container, the content below it.
     container: {
       flex: 1,
       paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.screenGutter),
-      gap: vs(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.xl),
     },
     list: {
-      gap: vs(spacing.screenGutter),
+      gap: vs(spacing.xl),
     },
     skeletonRow: {
       flexDirection: 'row',

@@ -47,11 +47,11 @@ appId: io.salmonwallet.app
     id: 'powerups-fab'
 - extendedWaitUntil:
     visible:
-      id: 'powerups-row-toggle-.*'
+      id: 'powerups-row-.*'
     timeout: 20000
 - takeScreenshot: screenshots/smoke/home/shell-powerups
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertNotVisible:
-    id: 'powerups-row-toggle-.*'
+    id: 'powerups-row-.*'
 - assertVisible:
     id: 'powerups-fab'

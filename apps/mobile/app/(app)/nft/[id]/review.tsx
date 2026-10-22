@@ -35,7 +35,9 @@ import { useTabChrome } from '../../../../hooks/useTabChrome';
 export default function NftSendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const {
     nft,
     account,
@@ -81,7 +83,7 @@ export default function NftSendReviewScreen() {
       subtitle={nft?.name}
       onBack={() => router.back()}
       backDisabled={sending}
-      footerBottomInset={floatingBottomOffset}
+      footerBottomInset={screenActionBottomPadding}
       footer={
         <PrimaryButton
           testID="nft-send-confirm-button"

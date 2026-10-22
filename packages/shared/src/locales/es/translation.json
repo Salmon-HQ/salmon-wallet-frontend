@@ -606,7 +606,10 @@
       "addresses_label": "Tus direcciones",
       "button": "Proteger billetera",
       "protecting": "Protegiendo tu billetera",
-      "error": "No pudimos proteger la billetera. Intentá de nuevo."
+      "error": "No pudimos proteger la billetera. Intentá de nuevo.",
+      "remove_button": "Eliminar esta billetera",
+      "remove_title": "¿Eliminar esta billetera?",
+      "remove_message": "Se borra de este dispositivo junto con su frase de recuperación. Si es tuya, solo vas a poder recuperarla con esa frase."
     }
   },
   "transactions": {
@@ -894,8 +897,8 @@
       "sol_domain_paused": "Los nombres “.sol” están pausados mientras SNS pasa a “.sns”. Usá el mismo nombre con .sns.",
       "same_address": "No podés enviarte a tu propia dirección",
       "no_info": "Esta cuenta todavía no existe on-chain. El destinatario va a tener que fondearla.",
-      "off_curve_no_funds": "Esta es una dirección derivada de programa sin fondos",
-      "off_curve_has_funds": "Esta es una dirección derivada de programa",
+      "off_curve_no_funds": "Ninguna persona controla esta dirección. Lo que envíes puede perderse para siempre.",
+      "off_curve_has_funds": "Ninguna persona controla esta dirección. Lo que envíes puede perderse para siempre.",
       "no_funds": "Esta dirección no tiene saldo de ETH",
       "unknown": "Error de validación desconocido"
     }
