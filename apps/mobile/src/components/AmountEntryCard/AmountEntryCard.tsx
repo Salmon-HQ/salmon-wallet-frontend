@@ -34,6 +34,7 @@ export function AmountEntryCard({
   onChangeValue,
   editable = true,
   placeholder = '0',
+  maxDecimals,
   subtext,
   loading = false,
   focused = false,
@@ -63,7 +64,7 @@ export function AmountEntryCard({
           placeholder={placeholder}
           placeholderTextColor={semantic.text.tertiary}
           value={value}
-          onChangeText={(text) => onChangeValue(sanitizeDecimalInput(text))}
+          onChangeText={(text) => onChangeValue(sanitizeDecimalInput(text, maxDecimals))}
           onFocus={onFocus}
           onBlur={onBlur}
           editable={editable && !loading}
