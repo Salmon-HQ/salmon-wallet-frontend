@@ -64,6 +64,7 @@ export function DAppSignInApprovalPage({
           guardError:
             !account || !isSignableSolanaAccount(account) ? 'Solana account not available' : null,
           failureError: 'Sign-in failed',
+          event: 'dapp_message_signed',
         }
       ),
     [account, approve, origin, request]

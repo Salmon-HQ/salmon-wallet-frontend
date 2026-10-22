@@ -10,12 +10,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-vi.mock('../storage', () => ({
+vi.mock('../storage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../storage')>()),
   getStorage: vi.fn(),
-  STORAGE_KEYS: { INSTALLED_POWERUPS: 'salmon_installed_powerups' },
 }));
 
 import * as storage from '../storage';
+import { startTestAnalytics } from '../test-utils/analytics';
 import { resetInstalledPowerupsForTest, useInstalledPowerups } from './useInstalledPowerups';
 
 const mockStorage = {
@@ -76,5 +77,23 @@ describe('useInstalledPowerups', () => {
     act(() => sheet.result.current.install('memo'));
 
     expect(row.result.current.installed).toEqual(['memo']);
+  });
+
+  it('reports each install and removal once, and a repeat not at all', async () => {
+    const analytics = await startTestAnalytics();
+    const { result } = renderHook(() => useInstalledPowerups());
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
+
+    act(() => result.current.install('memo'));
+    act(() => result.current.install('memo'));
+    act(() => result.current.install('swap'));
+    act(() => result.current.uninstall('memo'));
+    act(() => result.current.uninstall('memo'));
+
+    expect(await analytics.sent()).toEqual([
+      { event: 'powerup_installed', props: { powerup: 'memo' } },
+      { event: 'powerup_installed', props: { powerup: 'swap' } },
+      { event: 'powerup_uninstalled', props: { powerup: 'memo' } },
+    ]);
   });
 });

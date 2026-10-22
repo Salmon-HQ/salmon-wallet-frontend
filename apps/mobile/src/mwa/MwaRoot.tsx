@@ -18,6 +18,7 @@ import { AppState, BackHandler, Linking, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { setMwaOnScreen } from '../analytics/appAnalytics';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { LockContent } from '../components/LockOverlay';
 import { DepthBackground } from '../components/DepthBackground';
@@ -49,6 +50,8 @@ export function MwaRoot() {
 
   // A font that fails to load must not leave the dApp waiting on a blank sheet.
   const [fontsLoaded, fontError] = useAppFonts();
+  // `index.js` marks this root on screen as the activity starts (spec 042).
+  useEffect(() => () => setMwaOnScreen(false), []);
   if (!fontsLoaded && !fontError) return null;
 
   return (

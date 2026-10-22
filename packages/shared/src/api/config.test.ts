@@ -8,6 +8,7 @@ import {
   detectEnvironment,
   getApiUrl,
   getStaticApiUrl,
+  getAnalyticsUrl,
   apiConfig,
   API_URL_MAP,
   STATIC_API_URL_MAP,
@@ -32,6 +33,8 @@ describe('API Config Module', () => {
     delete process.env.VITE_API_URL;
     delete process.env.VITE_STATIC_API_URL;
     delete process.env.VITE_SALMON_ENV;
+    delete process.env.EXPO_PUBLIC_ANALYTICS_URL;
+    delete process.env.VITE_ANALYTICS_URL;
     delete process.env.NODE_ENV;
   });
 
@@ -406,6 +409,55 @@ describe('API Config Module', () => {
     it('should never point staging at a production host', () => {
       expect(getStaticApiUrl('staging')).not.toBe(getStaticApiUrl('production'));
       expect(getApiUrl('staging')).not.toBe(getApiUrl('production'));
+    });
+  });
+
+  // FR-014: only a build the public installs from a store reaches production
+  // analytics; team, test and e2e builds post to staging or a local backend.
+  describe('getAnalyticsUrl', () => {
+    const STAGING = 'https://vdlgzf8qjd.execute-api.us-east-1.amazonaws.com/staging';
+    const PRODUCTION = 'https://te4x28v8e0.execute-api.us-east-1.amazonaws.com/prod';
+
+    it.each([
+      ['EXPO_PUBLIC_ANALYTICS_URL', 'http://192.168.1.10:3001/local'],
+      ['VITE_ANALYTICS_URL', 'http://localhost:3001/local'],
+    ])('posts to an explicit %s whatever the build', (name, url) => {
+      process.env.EXPO_PUBLIC_SALMON_ENV = 'production';
+      process.env[name] = url;
+
+      expect(getAnalyticsUrl(false)).toBe(url);
+      expect(getAnalyticsUrl(true)).toBe(url);
+    });
+
+    it('sends a build that is not from a store, talking to the production API, to staging', () => {
+      process.env.EXPO_PUBLIC_SALMON_ENV = 'production';
+      expect(getAnalyticsUrl(false)).toBe(STAGING);
+    });
+
+    // A local Release build reads `.env.production`, which names the production API outright.
+    it('sends a non-store build to staging when the production API is set as an explicit URL', () => {
+      process.env.VITE_SALMON_ENV = 'production';
+      process.env.VITE_API_URL = PRODUCTION;
+      expect(getAnalyticsUrl(false)).toBe(STAGING);
+    });
+
+    it('sends a store build to the production API', () => {
+      process.env.EXPO_PUBLIC_SALMON_ENV = 'production';
+      expect(getAnalyticsUrl(true)).toBe(PRODUCTION);
+    });
+
+    it.each([
+      ['local', 'http://localhost:3000/local'],
+      ['staging', STAGING],
+    ])('follows the API in %s mode, store build or not', (env, url) => {
+      process.env.EXPO_PUBLIC_SALMON_ENV = env;
+      expect(getAnalyticsUrl(false)).toBe(url);
+      expect(getAnalyticsUrl(true)).toBe(url);
+    });
+
+    it('follows an explicit API URL that is not production', () => {
+      process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.10:3000/local';
+      expect(getAnalyticsUrl(false)).toBe('http://192.168.1.10:3000/local');
     });
   });
 

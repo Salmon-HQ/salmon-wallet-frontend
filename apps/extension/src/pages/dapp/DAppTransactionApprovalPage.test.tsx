@@ -3,16 +3,20 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { fireEvent, render, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
+import { startTestAnalytics, type SentEvent } from '@salmon/shared/test-utils/analytics';
 
 const mockUseDAppMetadata = vi.fn();
 const mockGetSummary = vi.fn();
 const mockUseApproval = vi.fn();
+const mockApproveTransactionRequest = vi.fn();
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  // The real analytics client: the test reads what leaves the window.
+  ...(await vi.importActual<object>('@salmon/shared/analytics')),
   useDAppMetadata: (origin: string) => mockUseDAppMetadata(origin),
-  approveSolanaTransactionRequest: vi.fn(),
+  approveSolanaTransactionRequest: (...args: unknown[]) => mockApproveTransactionRequest(...args),
   getDAppTransactionRequestSummary: (method: string) => mockGetSummary(method),
   useSolanaTransactionApproval: (params: unknown) => mockUseApproval(params),
 }));
@@ -43,7 +47,10 @@ vi.mock('@salmon/ui', () => ({
           ? `${(props.networkMismatch as { requested: string }).requested}->${(props.networkMismatch as { active: string }).active}`
           : undefined
       }
-    />
+    >
+      <button type="button" data-testid="approve-button" onClick={props.onApprove as () => void} />
+      <button type="button" data-testid="reject-button" onClick={props.onReject as () => void} />
+    </div>
   ),
 }));
 
@@ -266,4 +273,93 @@ describe('DAppTransactionApprovalPage network mismatch', () => {
       expect(view.dataset.networkMismatch).toBeDefined();
     }
   );
+});
+
+// FR-011–FR-013, FR-015: one prop-less event per approved request, however many
+// transactions it holds, already on its way when the background hears the
+// answer (it closes this window on it); nothing for a refusal, a guard error or
+// a failed signature.
+describe('DAppTransactionApprovalPage analytics', () => {
+  let analytics: Awaited<ReturnType<typeof startTestAnalytics>>;
+  let atAnswer: SentEvent[][];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockGetSummary.mockReturnValue('Sign transaction');
+    mockUseApproval.mockReturnValue({
+      details: null,
+      feeSol: null,
+      parsingError: null,
+      effects: null,
+      effectsLoading: false,
+    });
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    analytics = await startTestAnalytics();
+    atAnswer = [];
+    vi.stubGlobal('chrome', {
+      runtime: { sendMessage: vi.fn(() => atAnswer.push(analytics.delivered())) },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each(['signTransaction', 'signAllTransactions', 'signAndSendTransaction'])(
+    'counts an approved %s request once before answering, with no props',
+    async (method) => {
+      mockApproveTransactionRequest.mockResolvedValue({ signatures: ['a', 'b'] });
+      const onDismiss = vi.fn();
+      const request = { ...baseRequest, method } as DAppTransactionRequest;
+
+      const { getByTestId } = render(
+        <DAppTransactionApprovalPage {...baseProps} request={request} onDismiss={onDismiss} />
+      );
+      fireEvent.click(getByTestId('approve-button'));
+      await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
+
+      expect(atAnswer).toEqual([[{ event: 'dapp_transaction_signed', props: {} }]]);
+      expect(await analytics.sent()).toEqual([{ event: 'dapp_transaction_signed', props: {} }]);
+    }
+  );
+
+  it('records nothing when the user rejects', async () => {
+    const { getByTestId } = render(<DAppTransactionApprovalPage {...baseProps} />);
+    fireEvent.click(getByTestId('reject-button'));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+  });
+
+  it('records nothing when the approval is refused before signing', async () => {
+    const request = {
+      ...baseRequest,
+      params: { ...baseRequest.params, network: 'solana-devnet' },
+    } as DAppTransactionRequest;
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} request={request} />
+    );
+    fireEvent.click(getByTestId('approve-button'));
+
+    expect(mockApproveTransactionRequest).not.toHaveBeenCalled();
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+  });
+
+  it('records nothing when signing or sending fails', async () => {
+    mockApproveTransactionRequest.mockRejectedValue(new Error('rpc'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} onDismiss={onDismiss} />
+    );
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+    consoleError.mockRestore();
+  });
 });

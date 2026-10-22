@@ -10,7 +10,7 @@
  * ```ts
  * import { initAnalytics, trackEvent } from '@salmon/shared';
  *
- * initAnalytics({ platform: 'mobile', appVersion: APP_VERSION });
+ * initAnalytics({ platform: 'ios', appVersion: APP_VERSION, storeBuild: Updates.channel === 'production' });
  * // ...after the user opts in via Settings...
  * trackEvent('send_completed', { chain: 'solana', success: true });
  * ```
@@ -19,15 +19,12 @@
 export {
   ANALYTICS_EVENTS,
   CHAINS,
-  AMOUNT_BUCKETS,
   ALLOWED_PROP_KEYS,
   PROP_ENUMS,
   isAnalyticsEvent,
   isAllowedPropKey,
-  toAmountBucket,
   type AnalyticsEventName,
   type Chain,
-  type AmountBucket,
   type AllowedPropKey,
 } from './events';
 
@@ -53,7 +50,7 @@ export {
   type AnalyticsClient,
 } from './client';
 
-export { trackFirstTime } from './first-time';
+export { trackFirstSwapCompleted, trackFirstTime } from './first-time';
 
 export {
   trackOnboardingEvent,

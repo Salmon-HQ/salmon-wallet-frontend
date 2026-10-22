@@ -18,6 +18,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 
+import { trackEvent } from '../analytics';
 import { getStorage, STORAGE_KEYS } from '../storage';
 
 const EMPTY: readonly string[] = [];
@@ -103,6 +104,7 @@ export function useInstalledPowerups(): UseInstalledPowerupsResult {
     (id: string) => {
       if (installed.includes(id)) return;
       persist([...installed, id]);
+      trackEvent('powerup_installed', { powerup: id });
     },
     // `installed` is read from the module, not from the render — the callback
     // never goes stale and never needs to change identity.
@@ -111,6 +113,7 @@ export function useInstalledPowerups(): UseInstalledPowerupsResult {
   const uninstall = useCallback((id: string) => {
     if (!installed.includes(id)) return;
     persist(installed.filter((entry) => entry !== id));
+    trackEvent('powerup_uninstalled', { powerup: id });
   }, []);
 
   return { installed: ids, hydrated: isHydrated, isInstalled, install, uninstall };

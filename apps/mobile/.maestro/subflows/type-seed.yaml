@@ -21,5 +21,9 @@ appId: io.salmonwallet.app
       - inputText: ${output.seedWords[output.seedIndex]}
       # The keyboard covers the lower boxes; close it so the next one can be
       # found and tapped.
-      - hideKeyboard
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
       - evalScript: ${output.seedIndex = output.seedIndex + 1}

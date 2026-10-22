@@ -3,12 +3,15 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { fireEvent, render, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
+import { startTestAnalytics, type SentEvent } from '@salmon/shared/test-utils/analytics';
 
 const mockUseDAppMetadata = vi.fn();
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  // The real analytics client: the test reads what leaves the window.
+  ...(await vi.importActual<object>('@salmon/shared/analytics')),
   useDAppMetadata: (origin: string) => mockUseDAppMetadata(origin),
 }));
 
@@ -21,7 +24,10 @@ vi.mock('@salmon/ui', () => ({
       data-origin={String(props.origin ?? '')}
       data-address={String(props.address ?? '')}
       data-disabled={String(props.disabled ?? '')}
-    />
+    >
+      <button type="button" data-testid="approve-button" onClick={props.onApprove as () => void} />
+      <button type="button" data-testid="reject-button" onClick={props.onReject as () => void} />
+    </div>
   ),
 }));
 
@@ -80,5 +86,71 @@ describe('DAppConnectPage', () => {
     const { getByTestId } = render(<DAppConnectPage {...baseProps} address="" networkId={null} />);
 
     expect(getByTestId('dapp-connect-view').dataset.disabled).toBe('true');
+  });
+});
+
+// FR-011–FR-013, FR-015: one prop-less event per granted connection, already on
+// its way when the background hears the answer (it closes this window on it);
+// nothing for a denial or a grant that failed.
+describe('DAppConnectPage analytics', () => {
+  let analytics: Awaited<ReturnType<typeof startTestAnalytics>>;
+  let atAnswer: SentEvent[][];
+  let sendMessage: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockUseDAppMetadata.mockReturnValue({
+      metadata: { name: 'Example dApp', icon: 'https://dapp.example/icon.png' },
+    });
+    analytics = await startTestAnalytics();
+    atAnswer = [];
+    sendMessage = vi.fn(() => atAnswer.push(analytics.delivered()));
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('counts an approved connection before answering, with no props', async () => {
+    const onApprove = vi.fn().mockResolvedValue(undefined);
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(
+      <DAppConnectPage {...baseProps} onApprove={onApprove} onDismiss={onDismiss} />
+    );
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalled());
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { method: 'connected', params: { publicKey: baseProps.address }, id: 'req-1' },
+    });
+    expect(atAnswer).toEqual([[{ event: 'dapp_connected', props: {} }]]);
+    expect(await analytics.sent()).toEqual([{ event: 'dapp_connected', props: {} }]);
+  });
+
+  it('records nothing when the user denies', async () => {
+    const { getByTestId } = render(<DAppConnectPage {...baseProps} />);
+    fireEvent.click(getByTestId('reject-button'));
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+  });
+
+  it('records nothing when the connection could not be granted', async () => {
+    const onApprove = vi.fn().mockRejectedValue(new Error('storage'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(
+      <DAppConnectPage {...baseProps} onApprove={onApprove} onDismiss={onDismiss} />
+    );
+    fireEvent.click(getByTestId('approve-button'));
+    await waitFor(() => expect(onDismiss).toHaveBeenCalled());
+
+    expect(atAnswer).toEqual([[]]);
+    expect(await analytics.sent()).toEqual([]);
+    consoleError.mockRestore();
   });
 });
