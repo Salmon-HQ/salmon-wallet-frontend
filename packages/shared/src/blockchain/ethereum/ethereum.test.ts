@@ -59,6 +59,9 @@ const mockEthereumApiFunctions = {
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
+/** Digits counting up, key-shaped but not a key anyone holds. */
+const PLACEHOLDER_KEY = '0123456789012345678901234567890123456789012345678901234567890123'; // no-secrets-ignore: placeholder digits
+
 /**
  * Known addresses derived from TEST_MNEMONIC at different indices
  * These addresses are deterministic and can be verified externally
@@ -1416,7 +1419,7 @@ describe('Token Service Integration Tests', () => {
 
 describe('Factory - createEthereumAccountFromWallet', () => {
   it('should create account from existing wallet', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const wallet = new Wallet(privateKey);
 
     const account = createEthereumAccountFromWallet(
@@ -1433,7 +1436,7 @@ describe('Factory - createEthereumAccountFromWallet', () => {
   });
 
   it('should create account with custom index', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const wallet = new Wallet(privateKey);
 
     const account = createEthereumAccountFromWallet(
@@ -1448,7 +1451,7 @@ describe('Factory - createEthereumAccountFromWallet', () => {
   });
 
   it('should create account with default index', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const wallet = new Wallet(privateKey);
 
     const account = createEthereumAccountFromWallet(
@@ -1468,7 +1471,7 @@ describe('Factory - createEthereumAccountFromWallet', () => {
 
 describe('Factory - createEthereumAccountFromPrivateKey', () => {
   it('should create account from private key with 0x prefix', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const account = createEthereumAccountFromPrivateKey(
       ETHEREUM_NETWORKS['ethereum-mainnet'],
       privateKey,
@@ -1482,7 +1485,7 @@ describe('Factory - createEthereumAccountFromPrivateKey', () => {
   });
 
   it('should create account from private key without 0x prefix', () => {
-    const privateKey = '0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = PLACEHOLDER_KEY;
     const account = createEthereumAccountFromPrivateKey(
       ETHEREUM_NETWORKS['ethereum-mainnet'],
       `0x${privateKey}`,
@@ -1495,7 +1498,7 @@ describe('Factory - createEthereumAccountFromPrivateKey', () => {
   });
 
   it('should create account with custom index', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const account = createEthereumAccountFromPrivateKey(
       ETHEREUM_NETWORKS['ethereum-mainnet'],
       privateKey,
@@ -1507,7 +1510,7 @@ describe('Factory - createEthereumAccountFromPrivateKey', () => {
   });
 
   it('should create account with default index', () => {
-    const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
+    const privateKey = `0x${PLACEHOLDER_KEY}`;
     const account = createEthereumAccountFromPrivateKey(
       ETHEREUM_NETWORKS['ethereum-mainnet'],
       privateKey,

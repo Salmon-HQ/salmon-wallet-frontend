@@ -50,7 +50,9 @@ pnpm --filter @salmon/extension e2e:ui                                       # P
 
 Headless keeps the browser off your screen — a headed window that your mouse
 crosses counts as wallet activity. Reports land in `playwright-report/`,
-failure traces and screenshots in `test-results/`.
+failure traces and screenshots in `test-results/`. A CI run writes none of the
+three (they would record the test wallets' phrases in a downloadable
+artifact), so the run log is its only record.
 
 ## Preflight
 
