@@ -501,6 +501,42 @@ describe('useAccounts Hook', () => {
       });
     });
 
+    // The protect screen offers to remove the wallet instead: the same removal
+    // as "remove all wallets", and nothing of it may come back on the next
+    // launch — a v2 record that was never migrated included.
+    it('removes a wallet that waits for a password, record and all, and leaves the protect state', async () => {
+      (storage.getStorageItem as any).mockImplementation((key: string) => {
+        if (key === 'salmon_mnemonics') return Promise.resolve({ test: MOCK_MNEMONIC });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: 'test',
+              name: 'Plain',
+              avatar: 'default',
+              pathIndexes: { 'solana-mainnet': [0] },
+            },
+          ]);
+        return Promise.resolve(null);
+      });
+
+      const { result } = renderHook(() => useAccounts());
+      await waitFor(() => {
+        expect(result.current[0].unprotectedAddresses).not.toBeNull();
+      });
+
+      await act(async () => {
+        await result.current[1].removeAllAccounts();
+      });
+
+      expect(result.current[0].unprotectedAddresses).toBeNull();
+      expect(result.current[0].accounts).toEqual([]);
+      expect(storage.removeStorageItem).toHaveBeenCalledWith('salmon_mnemonics');
+      expect(storage.removeStorageItem).toHaveBeenCalledWith('salmon_accounts');
+      expect(storage.removeStorageItem).toHaveBeenCalledWith('salmon_wallets');
+      expect(storage.removeStorageItem).toHaveBeenCalledWith('salmon_active');
+      expect(storage.removeStorageItem).toHaveBeenCalledWith('salmon_endpoints');
+    });
+
     it('asks nothing of a wallet whose vault is encrypted', async () => {
       (storage.getStorageItem as any).mockImplementation((key: string) =>
         Promise.resolve(key === 'salmon_mnemonics' ? { isEncrypted: true, encrypted: 'x' } : null)

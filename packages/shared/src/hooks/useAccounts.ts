@@ -446,6 +446,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
       setRequiredLock,
       setTrustedApps,
       setTokens,
+      setUnprotectedAddresses,
       formatAccountForStorage,
     });
 
