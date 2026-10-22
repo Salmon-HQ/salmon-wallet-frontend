@@ -96,6 +96,7 @@ export { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
 export { MoneyIcon } from 'phosphor-react-native/src/icons/Money';
 export { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
 export { SunIcon } from 'phosphor-react-native/src/icons/Sun';
+export { PenNibIcon } from 'phosphor-react-native/src/icons/PenNib';
 export { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
 export { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 export { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';

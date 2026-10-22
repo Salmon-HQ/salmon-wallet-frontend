@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { render, screen, waitFor, within } from '@testing-library/react-native';
 import { verifyCallingPackage } from '@solana-mobile/mobile-wallet-adapter-walletlib';
 
 import { MwaRequest } from './MwaRequest';
@@ -14,12 +15,12 @@ jest.mock('@solana/kit', () => ({}));
 jest.mock('@salmon/shared', () => {
   const mwa = jest.requireActual('@salmon/shared/src/utils/mwa');
   return {
+    // The detail cards are the kit's, drawn for real: what they say about who
+    // is asking is what these tests pin.
+    ...jest.requireActual('../../test-utils/themeTokens'),
     ...mwa,
     ...jest.requireActual('@salmon/shared/src/utils/address'),
-    formatSigningAccount: ({ name, address }: { name?: string; address: string }) =>
-      `${name} · ${address.slice(0, 4)}`,
     decodeDAppMessage: (data: number[]) => ({ text: String.fromCharCode(...data) }),
-    spacing: { lg: 16 },
     // The transaction sheet's own preview is not under test: what is, is the
     // site line it is handed and whether its confirm is held.
     toSignAllTransactionsRequest: () => ({}),
@@ -70,12 +71,16 @@ jest.mock('../components/ConfirmSheet', () => ({
     confirmText?: string;
     requiresHold?: boolean;
     confirmDisabled?: boolean;
+    bedrock?: boolean;
+    children?: React.ReactNode;
   }) => {
     const { Text: T, View: V } = jest.requireActual('react-native');
     return (
       <V>
         <T testID="sheet-title">{props.title}</T>
+        {props.children}
         <T testID="sheet-message">{props.message}</T>
+        <T testID="sheet-ground">{props.bedrock ? 'bedrock' : 'thermocline'}</T>
         <T testID="sheet-confirm">{props.confirmText}</T>
         <T testID="sheet-hold">{props.requiresHold ? 'hold' : 'tap'}</T>
         <T testID="sheet-ready">{props.confirmDisabled ? 'checking' : 'ready'}</T>
@@ -83,7 +88,8 @@ jest.mock('../components/ConfirmSheet', () => ({
     );
   },
 }));
-jest.mock('../components/DepthBackground', () => ({ DepthBackground: () => null }));
+// The bubble rides reanimated, which has no worklets runtime in Jest.
+jest.mock('../components/IconBubble', () => ({ IconBubble: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0 }),
 }));
@@ -109,7 +115,7 @@ jest.mock('../components/TransactionConfirmation', () => ({
 describe('MwaRequest — sign messages', () => {
   // The extension names the signing account on its sign screen; the mobile
   // sheet named only the site and the text.
-  it('names the account that signs, after the site', async () => {
+  it('names the site, the account that signs and the message, each in its card, on bedrock', async () => {
     const account = { getReceiveAddress: () => mockAddress } as never;
     render(
       <MwaRequest
@@ -130,8 +136,13 @@ describe('MwaRequest — sign messages', () => {
 
     // The calling app is checked first; this one is verified.
     await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
-    const lines = (screen.getByTestId('sheet-message').props.children as string).split('\n\n');
-    expect(lines.slice(0, 3)).toEqual([mockOrigin, 'dapp.wallet_address: Savings · AKnL', 'hi']);
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe(mockOrigin);
+    const wallet = screen.getByTestId('mwa-wallet');
+    expect(within(wallet).getByText('Savings')).toBeTruthy();
+    expect(within(wallet).getByText(mockAddress)).toBeTruthy();
+    expect(screen.getByTestId('mwa-message-text').props.children).toBe('hi');
+    expect(screen.getByTestId('sheet-message').props.children).toBe('dapp.sign_message_hint');
+    expect(screen.getByTestId('sheet-ground').props.children).toBe('bedrock');
   });
 });
 
@@ -157,8 +168,7 @@ describe('MwaRequest — connect and sign in', () => {
       }
     />
   );
-  const firstLine = () =>
-    (screen.getByTestId('sheet-message').props.children as string).split('\n\n')[0];
+  const siteLine = () => screen.getByTestId('mwa-site-origin').props.children;
 
   it.each([
     ['connect', undefined, 'dapp.connect_title'],
@@ -169,7 +179,9 @@ describe('MwaRequest — connect and sign in', () => {
 
     await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
     expect(screen.getByTestId('sheet-title').props.children).toBe(title);
-    expect(firstLine()).toBe(`dapp.mwa_unverified_origin ${mockOrigin}`);
+    expect(siteLine()).toBe(`dapp.mwa_unverified_origin ${mockOrigin}`);
+    expect(screen.getByTestId('mwa-unverified')).toBeTruthy();
+    expect(screen.getByTestId('sheet-ground').props.children).toBe('bedrock');
     expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
     expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.hold_to_approve');
   });
@@ -182,7 +194,8 @@ describe('MwaRequest — connect and sign in', () => {
     render(connect(signIn));
 
     await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
-    expect(firstLine()).toBe(mockOrigin);
+    expect(siteLine()).toBe(mockOrigin);
+    expect(screen.queryByTestId('mwa-unverified')).toBeNull();
     expect(screen.getByTestId('sheet-hold').props.children).toBe('tap');
     expect(screen.getByTestId('sheet-confirm').props.children).toBe(confirm);
   });
@@ -221,8 +234,10 @@ describe('MwaRequest — later requests from an unverified app', () => {
     render(signed('SIGN_MESSAGES'));
 
     await waitFor(() => expect(screen.getByTestId('sheet-ready').props.children).toBe('ready'));
-    const lines = (screen.getByTestId('sheet-message').props.children as string).split('\n\n');
-    expect(lines[0]).toBe(`dapp.mwa_unverified_origin ${mockOrigin}`);
+    expect(screen.getByTestId('mwa-site-origin').props.children).toBe(
+      `dapp.mwa_unverified_origin ${mockOrigin}`
+    );
+    expect(screen.getByTestId('mwa-unverified')).toBeTruthy();
     expect(screen.getByTestId('sheet-hold').props.children).toBe('hold');
     expect(screen.getByTestId('sheet-confirm').props.children).toBe('dapp.hold_to_approve');
   });
@@ -255,6 +270,17 @@ describe('MwaRequest — later requests from an unverified app', () => {
     await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
     expect(screen.getByTestId('tx-site').props.children).toBe(mockOrigin);
     expect(screen.getByTestId('tx-hold').props.children).toBe('tap');
+  });
+
+  // The Bedrock Rule: the transaction approval stands on opaque bedrock, not on
+  // the water column — nothing of the dApp or the motif shows through it.
+  it('stands the transaction approval on bedrock', async () => {
+    const { semantic } = jest.requireActual('../../test-utils/themeTokens');
+    render(signed('SIGN_TRANSACTIONS'));
+
+    await waitFor(() => expect(screen.getByTestId('tx-ready').props.children).toBe('ready'));
+    const surface = StyleSheet.flatten(screen.getByTestId('mwa-transaction-surface').props.style);
+    expect(surface.backgroundColor).toBe(semantic.surface.bedrock);
   });
 });
 

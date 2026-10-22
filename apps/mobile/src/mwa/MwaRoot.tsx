@@ -25,6 +25,7 @@ import { useBiometric } from '../contexts/BiometricContext';
 import { I18nProvider } from '../i18n';
 import { AppProviders, useAppFonts } from '../providers/AppProviders';
 import { MwaRequest, useIdentityVerification } from './MwaRequest';
+import { MwaRequestDetails } from './MwaRequestDetails';
 import {
   isSeedVaultScreenOpen,
   onSeedVaultScreensClosed,
@@ -287,20 +288,17 @@ function NetworkSwitchSheet({
   // is the dApp's own claim, and the switch holds for the whole app. An app
   // Salmon cannot verify is named as a claim, and the switch costs a hold.
   const unverified = verification === 'unverified';
-  const lines = [
-    unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
-    ...(unverified ? [t('dapp.mwa_unverified', { origin })] : []),
-    t('dapp.mwa_switch_message', {
-      origin: mwaDisplayName(request.appIdentity?.identityName, origin),
-      target,
-      current: t(`dapp.mwa_network_names.${from}`),
-    }),
-  ];
+  const name = mwaDisplayName(request.appIdentity?.identityName, origin);
   return (
     <ConfirmSheet
       visible
+      bedrock
       title={t('dapp.mwa_switch_title')}
-      message={lines.join('\n\n')}
+      message={t('dapp.mwa_switch_message', {
+        origin: name,
+        target,
+        current: t(`dapp.mwa_network_names.${from}`),
+      })}
       confirmText={
         unverified ? t('dapp.hold_to_approve') : t('dapp.mwa_switch_confirm', { target })
       }
@@ -317,7 +315,9 @@ function NetworkSwitchSheet({
       onClose={() => {
         if (closedWithoutChoice()) respond(declined);
       }}
-    />
+    >
+      <MwaRequestDetails origin={origin} name={name} unverified={unverified} />
+    </ConfirmSheet>
   );
 }
 
