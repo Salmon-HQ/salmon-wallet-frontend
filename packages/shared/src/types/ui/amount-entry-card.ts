@@ -15,6 +15,11 @@ export interface AmountEntryCardPropsBase<TStyle> extends Testable {
   onChangeValue: (value: string) => void;
   editable?: boolean;
   placeholder?: string;
+  /**
+   * The token's decimal places: a fraction digit past them is not taken, and
+   * a token with none takes no separator. Left out, the field limits nothing.
+   */
+  maxDecimals?: number;
   /** The line under the number, e.g. "≈ 0.00 USD". Omitted when there is none. */
   subtext?: string;
   /** True while the amount waits on something else (a quote). */

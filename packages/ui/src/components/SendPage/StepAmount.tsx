@@ -140,6 +140,7 @@ export function StepAmount({
         testID="send-amount"
         value={amount}
         onChangeValue={shortcuts.onAmountChange}
+        maxDecimals={token.decimals ?? SOL_CONSTANTS.DECIMALS}
         focused={shortcuts.selected !== ''}
         subtext={fiatDisplay}
       />
