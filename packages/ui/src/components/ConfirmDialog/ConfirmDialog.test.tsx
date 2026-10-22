@@ -105,7 +105,9 @@ describe('ConfirmDialog: the safe path is the default one', () => {
     await waitFor(() => expect(onConfirm).toHaveBeenCalledWith('ok-000'));
   });
 
-  it('offers one way out on an acknowledge-only sheet', () => {
+  // DESIGN.md §Sheets: a sheet has no Close button. One that only reports
+  // something leaves the way every sheet does — Escape or the backdrop.
+  it('draws no buttons on an acknowledge-only sheet', () => {
     stubMatchMedia();
     renderInMode(
       'dark',
@@ -116,9 +118,26 @@ describe('ConfirmDialog: the safe path is the default one', () => {
         acknowledgeOnly
         title="Something failed"
         message="Nothing to do here."
-        confirmText="Close"
       />
     );
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByText('Nothing to do here.')).toBeTruthy();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  // Who is asking, with what, comes before what confirming does.
+  it('draws the detail above the message', () => {
+    renderConfirm(false, { children: <p>Site</p> });
+    const site = screen.getByText('Site');
+    const message = screen.getByTestId('confirm-dialog-message');
+    expect(site.compareDocumentPosition(message) & 4).toBeTruthy();
+  });
+
+  // The Bedrock Rule: an approval never shows the page through itself.
+  it('stands on opaque bedrock when asked to, and on the thermocline otherwise', () => {
+    renderConfirm(false, { bedrock: true });
+    expect(screen.getByTestId('confirm-dialog-bedrock')).toBeTruthy();
+    cleanup();
+    renderConfirm(false);
+    expect(screen.queryByTestId('confirm-dialog-bedrock')).toBeNull();
   });
 });

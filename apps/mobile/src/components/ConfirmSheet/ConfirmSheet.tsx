@@ -2,14 +2,18 @@
  * ConfirmSheet - Generic confirmation bottom sheet for destructive/sensitive actions
  *
  * Mobile equivalent of the web ConfirmDialog. Supports danger styling,
- * optional password verification, and loading states.
+ * optional password verification, and loading states. The body is the sheet
+ * standard (DESIGN.md §Sheets): 12 under the title, every piece of
+ * information in a card, 20 between blocks, and it scrolls inside the
+ * container's 92% ceiling.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
 import {
+  borderRadius,
   spacing,
   fontSize,
   fontFamilyNative,
@@ -21,6 +25,7 @@ import {
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { Card } from '../Card';
 import { HoldToApproveButton } from '../Button/HoldToCopyButton';
 import { PrimaryButton } from '../Button/PrimaryButton';
 import { SecondaryButton } from '../Button/SecondaryButton';
@@ -48,6 +53,7 @@ export interface ConfirmSheetProps extends ConfirmSheetPropsBase {
 export function ConfirmSheet({
   visible,
   onClose,
+  onClosed,
   title,
   message,
   confirmText,
@@ -59,6 +65,8 @@ export function ConfirmSheet({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  children,
+  bedrock = false,
 }: ConfirmSheetProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
@@ -78,6 +86,7 @@ export function ConfirmSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
+      onClosed={onClosed}
       title={
         <SheetTitle
           // Colour is never the only channel: glyph, fill and label all say it
@@ -89,25 +98,34 @@ export function ConfirmSheet({
       // A password sheet stands full height with its content from the top, so
       // the keyboard opening under the autofocused field never covers Confirm.
       forTyping={!!requirePassword}
-      style={styles.sheet}
+      background={
+        bedrock ? <View testID="confirm-sheet-bedrock" style={styles.bedrock} /> : undefined
+      }
     >
-      <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
-        <Text style={styles.message}>{message}</Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: compactContentBottomPadding }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+
+        <Card padding="lg" gap={spacing.md}>
+          <Text style={styles.message}>{message}</Text>
+        </Card>
 
         {requirePassword && (
-          <View style={styles.passwordSection}>
-            <PasswordInput
-              value={password}
-              onChangeText={handlePasswordChange}
-              placeholder={t('general.password', 'Password')}
-              error={passwordError}
-              editable={!loading}
-              testID="confirm-dialog-password"
-              autoFocus
-              // On a held sheet the return key must not stand in for the hold.
-              onSubmitEditing={requiresHold ? undefined : handleConfirm}
-            />
-          </View>
+          <PasswordInput
+            value={password}
+            onChangeText={handlePasswordChange}
+            placeholder={t('general.password', 'Password')}
+            error={passwordError}
+            editable={!loading}
+            testID="confirm-dialog-password"
+            autoFocus
+            // On a held sheet the return key must not stand in for the hold.
+            onSubmitEditing={requiresHold ? undefined : handleConfirm}
+          />
         )}
 
         {/*
@@ -118,63 +136,65 @@ export function ConfirmSheet({
             painted into it, so it stays plainly a button without inviting the
             thumb that is already travelling toward the primary.
           */}
-        <View style={styles.actions}>
-          {acknowledgeOnly ? (
-            <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-confirm">
-              {confirmText || t('actions.close', 'Close')}
-            </PrimaryButton>
-          ) : isDanger ? (
-            <>
-              <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
-                {cancelText || t('actions.cancel', 'Cancel')}
-              </PrimaryButton>
-              {requiresHold ? (
-                <HoldToApproveButton
-                  onApprove={handleConfirm}
-                  disabled={!canConfirm || loading || confirmDisabled}
-                  danger
-                  testID="confirm-dialog-hold"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
-                </HoldToApproveButton>
-              ) : (
-                <SecondaryButton
-                  onPress={handleConfirm}
-                  disabled={!canConfirm || loading || confirmDisabled}
-                  tone="danger-fill"
-                  testID="confirm-dialog-confirm"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
-                </SecondaryButton>
-              )}
-            </>
-          ) : (
-            <>
-              <SecondaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
-                {cancelText || t('actions.cancel', 'Cancel')}
-              </SecondaryButton>
-              {requiresHold ? (
-                <HoldToApproveButton
-                  onApprove={handleConfirm}
-                  disabled={!canConfirm || loading || confirmDisabled}
-                  testID="confirm-dialog-hold"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
-                </HoldToApproveButton>
-              ) : (
-                <PrimaryButton
-                  onPress={handleConfirm}
-                  disabled={!canConfirm || confirmDisabled}
-                  loading={loading}
-                  testID="confirm-dialog-confirm"
-                >
-                  {confirmText || t('actions.confirm', 'Confirm')}
+        {acknowledgeOnly ? null : (
+          <View style={styles.actions}>
+            {isDanger ? (
+              <>
+                <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
+                  {cancelText || t('actions.cancel', 'Cancel')}
                 </PrimaryButton>
-              )}
-            </>
-          )}
-        </View>
-      </View>
+                {requiresHold ? (
+                  <HoldToApproveButton
+                    onApprove={handleConfirm}
+                    disabled={!canConfirm || loading || confirmDisabled}
+                    danger
+                    testID="confirm-dialog-hold"
+                  >
+                    {confirmText || t('actions.confirm', 'Confirm')}
+                  </HoldToApproveButton>
+                ) : (
+                  <SecondaryButton
+                    onPress={handleConfirm}
+                    disabled={!canConfirm || loading || confirmDisabled}
+                    tone="danger-fill"
+                    testID="confirm-dialog-confirm"
+                  >
+                    {confirmText || t('actions.confirm', 'Confirm')}
+                  </SecondaryButton>
+                )}
+              </>
+            ) : (
+              <>
+                <SecondaryButton
+                  onPress={onClose}
+                  disabled={loading}
+                  testID="confirm-dialog-cancel"
+                >
+                  {cancelText || t('actions.cancel', 'Cancel')}
+                </SecondaryButton>
+                {requiresHold ? (
+                  <HoldToApproveButton
+                    onApprove={handleConfirm}
+                    disabled={!canConfirm || loading || confirmDisabled}
+                    testID="confirm-dialog-hold"
+                  >
+                    {confirmText || t('actions.confirm', 'Confirm')}
+                  </HoldToApproveButton>
+                ) : (
+                  <PrimaryButton
+                    onPress={handleConfirm}
+                    disabled={!canConfirm || confirmDisabled}
+                    loading={loading}
+                    testID="confirm-dialog-confirm"
+                  >
+                    {confirmText || t('actions.confirm', 'Confirm')}
+                  </PrimaryButton>
+                )}
+              </>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </BottomSheetContainer>
   );
 }
@@ -187,11 +207,20 @@ export default ConfirmSheet;
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    sheet: {
-      maxHeight: undefined,
+    bedrock: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: t.surface.bedrock,
+      borderTopLeftRadius: borderRadius.header,
+      borderTopRightRadius: borderRadius.header,
+    },
+    // Hugs its content until the container's ceiling, then scrolls inside it.
+    scroll: {
+      flexGrow: 0,
     },
     content: {
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.xl),
     },
     message: {
       color: t.text.secondary,
@@ -200,10 +229,6 @@ const stylesFor = (t: Semantic) =>
       // Left-aligned: the message runs to several lines, and a centred block
       // moves the start of every line.
       textAlign: 'left',
-      marginBottom: vs(spacing.screenGutter),
-    },
-    passwordSection: {
-      marginBottom: vs(spacing.screenGutter),
     },
     actions: {
       gap: vs(spacing.sm),

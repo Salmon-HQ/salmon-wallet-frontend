@@ -460,16 +460,15 @@ export function AccountAddPanel({
         {step === 'reauth' && renderReauth()}
       </SettingsPanelContent>
 
-      {/* Failure notice as a sheet: nothing to confirm, one dismiss button. */}
+      {/* Failure notice as a sheet: nothing to confirm, so no buttons — it
+          leaves by Escape or the backdrop, like every sheet. */}
       <ConfirmDialog
         visible={creationError !== null}
         onClose={() => setCreationError(null)}
         title={creationError?.title ?? ''}
         message={creationError?.message ?? ''}
         acknowledgeOnly
-        confirmText={t('actions.close')}
         onConfirm={async () => {}}
-        confirmTestID="account-add-error-close"
       />
     </>
   );

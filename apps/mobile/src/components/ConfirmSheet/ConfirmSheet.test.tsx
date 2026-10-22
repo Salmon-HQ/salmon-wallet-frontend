@@ -1,5 +1,7 @@
 import React from 'react';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { semantic } from '@salmon/shared';
 
 import { ConfirmSheet } from './ConfirmSheet';
 
@@ -22,22 +24,32 @@ jest.mock('../../../hooks/useBottomSheetChrome', () => ({
 
 // The real container drags in Reanimated/expo-blur, which need native modules
 // Jest does not have. Its own behaviour is covered in its own suite.
+const mockContainerProps: { style?: unknown; onClosed?: () => void } = {};
 jest.mock('../BottomSheetContainer', () => ({
   BottomSheetContainer: ({
     visible,
     children,
     forTyping,
+    background,
+    style,
+    onClosed,
   }: {
     visible: boolean;
     children: React.ReactNode;
     forTyping?: boolean;
+    background?: React.ReactNode;
+    style?: unknown;
+    onClosed?: () => void;
   }) => {
     if (!visible) return null;
+    mockContainerProps.style = style;
+    mockContainerProps.onClosed = onClosed;
     const RN = require('react-native');
     const R = require('react');
     return R.createElement(
       RN.View,
       { testID: forTyping ? 'sheet-for-typing' : 'sheet-hugging' },
+      background,
       children
     );
   },
@@ -209,5 +221,66 @@ describe('ConfirmSheet held confirm', () => {
       jest.advanceTimersByTime(700);
     });
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+
+// DESIGN.md §Sheets: a sheet has no Close button. One that only reports
+// something leaves the way every sheet does — handle, backdrop, back gesture.
+describe('ConfirmSheet acknowledge-only', () => {
+  it('draws no buttons at all', () => {
+    renderSheet({ acknowledgeOnly: true, confirmText: 'Close' });
+
+    expect(screen.getByText('Message')).toBeTruthy();
+    expect(screen.queryByTestId('confirm-dialog-confirm')).toBeNull();
+    expect(screen.queryByTestId('confirm-dialog-cancel')).toBeNull();
+    expect(screen.queryByText('Close')).toBeNull();
+  });
+});
+
+describe('ConfirmSheet detail', () => {
+  // Who is asking, with what, comes before what confirming does.
+  it('draws the detail above the message', () => {
+    renderSheet({ children: <Text>Site</Text> });
+
+    const texts = screen.getAllByText(/^(Site|Message)$/).map((node) => node.props.children);
+    expect(texts).toEqual(['Site', 'Message']);
+  });
+});
+
+describe('ConfirmSheet ground', () => {
+  // The Bedrock Rule: a dApp approval never shows the page through itself.
+  it('stands on opaque bedrock when asked to', () => {
+    renderSheet({ bedrock: true });
+
+    const ground = StyleSheet.flatten(screen.getByTestId('confirm-sheet-bedrock').props.style);
+    expect(ground.backgroundColor).toBe(semantic.surface.bedrock);
+  });
+
+  it('keeps the thermocline otherwise', () => {
+    renderSheet();
+    expect(screen.queryByTestId('confirm-sheet-bedrock')).toBeNull();
+  });
+});
+
+// DESIGN.md §Sheets: taller than 92% of the screen, a sheet stops and scrolls
+// inside — a long message to sign must never push Confirm off the screen.
+describe('ConfirmSheet ceiling', () => {
+  it("keeps the container's ceiling and scrolls its body", () => {
+    renderSheet();
+
+    expect(mockContainerProps.style).toBeUndefined();
+    expect(screen.UNSAFE_getByType(ScrollView)).toBeTruthy();
+  });
+});
+
+// A sheet that follows this one opens once it has actually left: iOS presents
+// one sheet at a time.
+describe('ConfirmSheet arrival', () => {
+  it("hands the container's arrival signal through", () => {
+    const onClosed = jest.fn();
+    renderSheet({ onClosed });
+
+    mockContainerProps.onClosed?.();
+    expect(onClosed).toHaveBeenCalledTimes(1);
   });
 });
