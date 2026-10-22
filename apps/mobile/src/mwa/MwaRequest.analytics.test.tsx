@@ -34,6 +34,8 @@ const mockSignAndSend = jest.fn();
 // The barrel drags the Solana stack in: the real analytics client, and the
 // signers and wallet state as stand-ins.
 jest.mock('@salmon/shared', () => ({
+  // The detail cards draw the kit's real tokens.
+  ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/analytics'),
   mwaPrecheck: () => ({ ok: true, origin: 'https://dapp.example' }),
   useAccountsContext: () => [
@@ -67,7 +69,6 @@ jest.mock('@salmon/shared', () => ({
   }),
   dappTransactionDisplay: () => ({}),
   dappTransactionGate: () => ({ canApprove: true, requiresHold: false }),
-  spacing: { lg: 16 },
 }));
 
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -75,6 +76,7 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('../components/DepthBackground', () => ({ DepthBackground: () => null }));
+jest.mock('../components/IconBubble', () => ({ IconBubble: () => null }));
 // Confirm appears only once the sheet allows it: after the calling app's
 // identity check, as the real sheets gate it.
 jest.mock('../components/ConfirmSheet', () => {
