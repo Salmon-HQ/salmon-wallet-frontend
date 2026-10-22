@@ -116,6 +116,28 @@ describe('PrivateKeyPanel reveal', () => {
   });
 });
 
+describe('PrivateKeyPanel copy', () => {
+  it('copies the key and says when Salmon clears the clipboard', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    renderPanel();
+    fireEvent.click(screen.getByTestId('private-key-reveal-overlay-0'));
+    reauthenticate();
+    await waitFor(() => expect(screen.getByText(FAKE_PRIVATE_KEY)).toBeTruthy());
+    expect(screen.queryByTestId('private-key-clipboard-clears-0')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('private-key-copy-button-0'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('private-key-clipboard-clears-0')).toBeTruthy();
+    });
+    expect(writeText).toHaveBeenCalledWith(FAKE_PRIVATE_KEY);
+  });
+});
+
 describe('PrivateKeyPanel key exhibition surface', () => {
   it('exhibits the key on bedrock, not on a translucent card, in both modes', () => {
     renderPanel('light');

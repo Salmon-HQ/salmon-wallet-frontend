@@ -17,6 +17,11 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => true),
 }));
 
+const mockSecretCopy = jest.fn(async (_text: string) => undefined);
+jest.mock('../../../hooks/useSecretClipboard', () => ({
+  secretClipboard: { copy: (text: string) => mockSecretCopy(text) },
+}));
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   ...jest.requireActual('@salmon/shared/src/hooks/usePrivateKeyPanelLogic'),
@@ -195,6 +200,20 @@ describe('PrivateKeyPanel', () => {
     await waitFor(() => {
       expect(screen.getByTestId('private-key-clipboard-warning-0')).toBeTruthy();
     });
+  });
+
+  // The key goes through the clipboard Salmon clears, and the row says so.
+  it('copies through the clearing clipboard and says when it is cleared', async () => {
+    renderPanel();
+    fireEvent.press(screen.getByTestId('private-key-reveal-overlay-0'));
+    fireEvent.press(screen.getByTestId('private-key-reauth-confirm'));
+    await waitFor(() => expect(screen.getByText(FAKE_PRIVATE_KEY)).toBeTruthy());
+    expect(screen.queryByTestId('private-key-clipboard-clears-0')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('private-key-copy-button-0'));
+
+    await waitFor(() => expect(screen.getByTestId('private-key-clipboard-clears-0')).toBeTruthy());
+    expect(mockSecretCopy).toHaveBeenCalledWith(FAKE_PRIVATE_KEY);
   });
 
   it('blocks screen capture and the app-switcher thumbnail while the panel is mounted', () => {

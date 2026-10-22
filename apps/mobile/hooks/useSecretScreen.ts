@@ -12,8 +12,9 @@
  *   blocks screenshots, screen recording / MediaProjection, and blanks the
  *   Recents (app-switcher) thumbnail. A real block.
  *
- * - iOS: only `enableAppSwitcherProtectionAsync`, which blurs the window on
- *   `willResignActive` and keeps key material out of the app-switcher
+ * - iOS: nothing here. `useAppSwitcherProtection`, mounted once at the root,
+ *   blurs the window on `willResignActive` for the whole app, which keeps key
+ *   material — and balances and the address — out of the app-switcher
  *   snapshot. Screenshot prevention is deliberately NOT attempted on iOS:
  *   Apple exposes no API for it, and `preventScreenCaptureAsync`'s
  *   workaround — reparenting the visible layers into a secure
@@ -29,32 +30,37 @@ import {
   preventScreenCaptureAsync,
   allowScreenCaptureAsync,
   enableAppSwitcherProtectionAsync,
-  disableAppSwitcherProtectionAsync,
 } from 'expo-screen-capture';
 
 /**
- * Several secret components can be mounted at once (for example one
- * SeedWordInput per word). `enableAppSwitcherProtectionAsync` has no key
- * argument, so it is reference counted here: enable on the first mount,
- * disable only once the last one unmounts. `preventScreenCaptureAsync` does
- * its own keyed refcounting, which is why each caller passes a unique key.
+ * The native call that turned the blur on, in flight or done: it stays on for
+ * the life of the process. Cleared when the call is refused, so the next mount
+ * tries again.
  */
-let appSwitcherRefCount = 0;
+let appSwitcherProtection: Promise<void> | null = null;
 
-function acquireAppSwitcherProtection(): void {
-  appSwitcherRefCount += 1;
-  if (appSwitcherRefCount === 1) {
-    // Fire-and-forget: a failure here must never break a wallet screen, and
-    // there is no meaningful recovery beyond the weaker protections above.
-    void enableAppSwitcherProtectionAsync().catch(() => {});
-  }
-}
-
-function releaseAppSwitcherProtection(): void {
-  appSwitcherRefCount = Math.max(0, appSwitcherRefCount - 1);
-  if (appSwitcherRefCount === 0) {
-    void disableAppSwitcherProtectionAsync().catch(() => {});
-  }
+/**
+ * iOS: blur the whole app whenever it is not in focus, so the app-switcher
+ * snapshot never shows balances, the address or key material. Mount once, at
+ * the root. Android is untouched: its secret screens set FLAG_SECURE through
+ * `useSecretScreen`, which also blanks their Recents thumbnail, and the rest
+ * of the app stays screenshottable on purpose.
+ *
+ * It is never turned off — not when a secret screen leaves, not when the root
+ * remounts after an error — and it is turned on once, because each native call
+ * adds another observer and the call has no count. Full intensity (1.0; the
+ * library's default is 0.5) so nothing on the screen stays legible.
+ */
+export function useAppSwitcherProtection(): void {
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || appSwitcherProtection) return;
+    // The blur covers the key window only: content in a React Native <Modal>
+    // is not documented as covered, and no secret renders in one today.
+    // A failure must never break the app; it is retried on the next mount.
+    appSwitcherProtection = enableAppSwitcherProtectionAsync(1).catch(() => {
+      appSwitcherProtection = null;
+    });
+  }, []);
 }
 
 /**
@@ -75,16 +81,4 @@ export function useSecretScreen(label: string): void {
       void allowScreenCaptureAsync(key).catch(() => {});
     };
   }, [label, instanceId]);
-
-  useEffect(() => {
-    if (Platform.OS !== 'ios') return;
-
-    acquireAppSwitcherProtection();
-    return releaseAppSwitcherProtection;
-  }, []);
-}
-
-/** Test-only: reset the module-level refcount between cases. */
-export function __resetAppSwitcherRefCountForTests(): void {
-  appSwitcherRefCount = 0;
 }

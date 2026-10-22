@@ -104,6 +104,7 @@ const mockFlow = {
   request: null as unknown,
   startFromRequest: jest.fn(),
   clearRequest: jest.fn(),
+  recipientWarning: null as string | null,
 };
 
 /** The last `onScan` the recipient screen handed the scanner, and whether it was up. */
@@ -507,6 +508,33 @@ describe('the review screen — what a payment request locks (spec 033 US3)', ()
     expect(screen.getByTestId('send-review-insufficient')).toBeTruthy();
     expect(screen.getByTestId('send-confirm-button').props.accessibilityState.disabled).toBe(true);
     expect(screen.queryByTestId('send-review-change-token')).toBeNull();
+  });
+});
+
+describe('the review screen — a recipient no key controls', () => {
+  afterEach(() => {
+    mockFlow.recipientWarning = null;
+  });
+
+  // Whichever way the recipient arrived, scanned or pasted requests included,
+  // the review warns and still lets the user confirm.
+  it('warns about an off-curve recipient without blocking the commit', () => {
+    mockFlow.request = null;
+    mockFlow.token = SOL_TOKEN;
+    mockFlow.amount = '1';
+    mockFlow.liveBalance = 2.5;
+    mockFlow.recipientWarning = 'send.validation.off_curve_no_funds';
+    render(<SendReviewScreen />);
+    expect(screen.getByTestId('send-review-recipient-warning')).toBeTruthy();
+    expect(screen.getByTestId('send-confirm-button').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('shows no warning for an ordinary recipient', () => {
+    mockFlow.request = null;
+    mockFlow.token = SOL_TOKEN;
+    mockFlow.amount = '1';
+    render(<SendReviewScreen />);
+    expect(screen.queryByTestId('send-review-recipient-warning')).toBeNull();
   });
 });
 

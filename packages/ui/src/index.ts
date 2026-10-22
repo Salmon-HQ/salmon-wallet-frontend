@@ -6,7 +6,7 @@
 
 // Components
 export * from './components';
-export { useOpenExternalLink } from './hooks';
+export { secretClipboard, useOpenExternalLink, useSecretClipboardResume } from './hooks';
 
 // Layouts
 

@@ -128,6 +128,8 @@ export type { DistributedPhrase } from './seed-phrase';
 
 // Clipboard utilities (web only - use expo-clipboard for native)
 export { copyToClipboard, pasteFromClipboard } from './clipboard';
+export { SECRET_CLIPBOARD_CLEAR_MS, createSecretClipboard } from './secret-clipboard';
+export type { SecretClipboard, SecretClipboardPlatform } from './secret-clipboard';
 
 // Responsive scaling utilities
 export {

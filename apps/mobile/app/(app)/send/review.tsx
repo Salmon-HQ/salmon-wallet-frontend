@@ -69,6 +69,7 @@ export default function SendReviewScreen() {
     estimateFee,
     request,
     liveBalance,
+    recipientWarning,
   } = useSendFlow();
 
   // Started from a payment request: the requester fixed the token and the
@@ -218,6 +219,18 @@ export default function SendReviewScreen() {
             title={t('transaction.errors.insufficientFunds')}
             style={styles.notice}
             testID="send-review-insufficient"
+          />
+        )}
+
+        {/* Judged by the flow on whatever recipient it holds, so a scanned or
+            pasted request warns here like a typed address. A warning, not a
+            block. */}
+        {recipientWarning && (
+          <WarningNotice
+            tone="warning"
+            title={t(recipientWarning)}
+            style={styles.notice}
+            testID="send-review-recipient-warning"
           />
         )}
       </ScrollView>

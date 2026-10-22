@@ -264,9 +264,9 @@ function NetworkSwitchSheet({
 }) {
   const { t } = useTranslation();
   const { choose, closedWithoutChoice } = useChoice();
-  const verification = useIdentityVerification(request.appIdentity?.identityUri);
-  const [failed, setFailed] = useState(false);
   const origin = mwaIdentityOrigin(request.appIdentity?.identityUri) ?? '';
+  const verification = useIdentityVerification(origin);
+  const [failed, setFailed] = useState(false);
   const target = t(`dapp.mwa_network_names.${to}`);
 
   // The user asked to switch: say it did not happen before the dApp hears no.
@@ -284,10 +284,12 @@ function NetworkSwitchSheet({
   }
 
   // As on the connect sheet, the origin and the warning come first: the name
-  // is the dApp's own claim, and the switch holds for the whole app.
+  // is the dApp's own claim, and the switch holds for the whole app. An app
+  // Salmon cannot verify is named as a claim, and the switch costs a hold.
+  const unverified = verification === 'unverified';
   const lines = [
-    origin,
-    ...(verification === 'unverified' ? [t('dapp.mwa_unverified', { origin })] : []),
+    unverified ? t('dapp.mwa_unverified_origin', { origin }) : origin,
+    ...(unverified ? [t('dapp.mwa_unverified', { origin })] : []),
     t('dapp.mwa_switch_message', {
       origin: mwaDisplayName(request.appIdentity?.identityName, origin),
       target,
@@ -299,9 +301,12 @@ function NetworkSwitchSheet({
       visible
       title={t('dapp.mwa_switch_title')}
       message={lines.join('\n\n')}
-      confirmText={t('dapp.mwa_switch_confirm', { target })}
+      confirmText={
+        unverified ? t('dapp.hold_to_approve') : t('dapp.mwa_switch_confirm', { target })
+      }
       isDanger={verification !== 'verified'}
       confirmDisabled={verification === 'checking'}
+      requiresHold={unverified}
       onConfirm={async () => {
         await onSwitch().then(choose, (error: unknown) => {
           console.warn('[mwa] network switch failed', error);

@@ -22,10 +22,17 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
 
 Any component that renders or accepts secret material (mnemonic, private
 key, recovery phrase) must call `useSecretScreen(label)` from
-`apps/mobile/hooks/useSecretScreen.ts`. It blocks screenshots and screen
-recording, and keeps the screen out of the OS app-switcher thumbnail — the
-snapshot the OS takes before JS can react, which lock-on-background cannot
-prevent.
+`apps/mobile/hooks/useSecretScreen.ts`. On Android it sets `FLAG_SECURE`,
+which blocks screenshots and screen recording and blanks the Recents
+thumbnail — the snapshot the OS takes before JS can react, which
+lock-on-background cannot prevent. On iOS the app-switcher snapshot is
+covered for the whole app instead: `useAppSwitcherProtection`, called from
+the root layout, turns a full-strength blur on once for the life of the
+process, whenever the app is not in focus, so balances and the address stay
+out of it too. Never call `disableAppSwitcherProtectionAsync`: the native call
+has no count, so any caller switches the blur off for the whole app. The blur
+covers the key window only, so do not render a secret inside a React Native
+`<Modal>`.
 
 The `SeedWordGrid` and `SeedWordInput` primitives already call it, so any
 screen built from them inherits protection with no extra step. Build seed UI
@@ -34,9 +41,10 @@ markup (as `BackupPanel`, `PrivateKeyPanel`, and `app/(auth)/recover.tsx`
 do) needs to call the hook itself.
 
 Protect the whole component, not just the revealed state — the secret is in
-memory and one tap away for the panel's entire lifetime. Do not extend this
-to balances, addresses, or receipts: users legitimately screenshot those for
-support, and blanket protection trains people to work around it.
+memory and one tap away for the panel's entire lifetime. Do not extend the
+screenshot block to balances, addresses, or receipts: users legitimately
+screenshot those for support, and blanket protection trains people to work
+around it. The iOS blur blocks no screenshot, so it does not cost them that.
 
 ## Testing
 
