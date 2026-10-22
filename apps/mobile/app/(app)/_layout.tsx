@@ -146,6 +146,10 @@ export default function AppLayout() {
       ? accountState.activeBlockchainAccount
       : null;
 
+  // A wallet with no password belongs on the password screen the root layout
+  // sends it to; no app screen paints a frame before it gets there.
+  if (accountState.unprotectedAddresses) return null;
+
   return (
     <TaskChromeProvider covered={isLocked}>
       <DerivedAccountsProvider>

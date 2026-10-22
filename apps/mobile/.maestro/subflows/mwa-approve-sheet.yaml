@@ -1,0 +1,25 @@
+appId: io.salmonwallet.app
+---
+# Approves a dApp sheet: connect, sign-in, network switch or message. A dApp
+# Salmon could not verify — any web page, the playground in Chrome included —
+# must be held rather than tapped, so the sheet carries a hold control instead
+# of the tap one.
+- extendedWaitUntil:
+    visible:
+      id: 'confirm-dialog-confirm|confirm-dialog-hold'
+      enabled: true
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: 'confirm-dialog-hold'
+    commands:
+      - longPressOn:
+          id: 'confirm-dialog-hold'
+- runFlow:
+    when:
+      visible:
+        id: 'confirm-dialog-confirm'
+    commands:
+      - tapOn:
+          id: 'confirm-dialog-confirm'

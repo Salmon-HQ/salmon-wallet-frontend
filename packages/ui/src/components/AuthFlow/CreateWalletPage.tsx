@@ -48,6 +48,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { CheckCircleIcon, iconSize, SparkleIcon, WarningIcon } from '../../icons';
+import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton } from '../Button';
 import { HoldToApproveButton } from '../HoldToApproveButton';
@@ -227,11 +228,14 @@ function SeedPhraseStep({
   // app, kept by clipboard histories — the one mandatory step. It is optional
   // now, with its warning.
   const [acknowledged, setAcknowledged] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   const words = mnemonic.split(' ');
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(mnemonic);
+      // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
+      await secretClipboard.copy(mnemonic);
+      setSecretCopied(true);
       setShowToast(true);
       setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch {
@@ -276,6 +280,11 @@ function SeedPhraseStep({
                 {t('settings.clipboard_warning_description')}
               </WarningNotice>
             </div>
+            {secretCopied && (
+              <div style={{ paddingTop: spacing.md }} data-testid="create-seed-clipboard-clears">
+                <WarningNotice tone="info" title={t('settings.secret_copied')} />
+              </div>
+            )}
             <div
               style={{
                 display: 'flex',

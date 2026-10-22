@@ -11,6 +11,7 @@ const mockGetStashItem = jest.fn();
 const mockRemoveStashItem = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockUseAccountsContext = jest.fn();
+const mockProtectWallet = jest.fn();
 /**
  * The wait's exit handoff, captured instead of auto-fired: navigation now
  * waits for the LoadingScreen's `onExited` (the wave must leave the screen
@@ -298,5 +299,71 @@ describe('PasswordScreen', () => {
 
     // The same slot, now revealed — nothing was added to the tree.
     expect(screen.getByText('strength:medium')).toBeTruthy();
+  });
+
+  describe('protecting a wallet stored without a password', () => {
+    const ADDRESSES = ['AddressOne111', 'AddressTwo222'];
+
+    beforeEach(() => {
+      mockGetStashItem.mockResolvedValue(null);
+      mockProtectWallet.mockResolvedValue(true);
+      useLocalSearchParams.mockReturnValue({ type: 'protect' });
+      mockUseAccountsContext.mockReturnValue([
+        // A cleartext vault opens unlocked, with no lock required.
+        { requiredLock: false, counter: 1, unprotectedAddresses: ADDRESSES },
+        {
+          checkPassword: mockCheckPassword,
+          addAccount: mockAddAccount,
+          unlockAccounts: mockUnlockAccounts,
+          protectWallet: mockProtectWallet,
+        },
+      ]);
+    });
+
+    it('lists the addresses the wallet holds', () => {
+      render(<PasswordScreen />);
+
+      for (const address of ADDRESSES) expect(screen.getByText(address)).toBeTruthy();
+      expect(screen.getByText('wallet.protect.body')).toBeTruthy();
+    });
+
+    it('protects the wallet with the confirmed password, then opens it', async () => {
+      render(<PasswordScreen />);
+
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordNew'),
+        'pw-fixture-valid'
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+        'pw-fixture-valid'
+      );
+      fireEvent.press(screen.getByText('wallet.protect.button'));
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+
+      await waitFor(() => expect(mockProtectWallet).toHaveBeenCalledWith('pw-fixture-valid'));
+      expect(mockCreateAccount).not.toHaveBeenCalled();
+      expect(mockAddAccount).not.toHaveBeenCalled();
+      expect(mockCheckPassword).not.toHaveBeenCalled();
+
+      act(() => {
+        mockWaitOnExited.current?.();
+      });
+      expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
+    });
+
+    it('takes the addresses from the wallet, never from the link that opened the screen', () => {
+      mockUseAccountsContext.mockReturnValue([
+        { requiredLock: true, counter: 1, unprotectedAddresses: null },
+        { protectWallet: mockProtectWallet },
+      ]);
+
+      render(<PasswordScreen />);
+
+      expect(screen.queryByText('wallet.protect.button')).toBeNull();
+    });
   });
 });

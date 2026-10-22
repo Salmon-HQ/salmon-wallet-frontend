@@ -41,7 +41,7 @@ const EXPECTED_SOLANA_ADDRESS_INDEX_0 = 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3
  */
 const INVALID_MNEMONIC = 'invalid mnemonic phrase that should fail validation';
 const INVALID_MNEMONIC_WRONG_CHECKSUM =
-  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon';
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon'; // no-secrets-ignore: one word twelve times fails the checksum, so it is no wallet's phrase
 
 // ============================================================================
 // generateMnemonic Tests

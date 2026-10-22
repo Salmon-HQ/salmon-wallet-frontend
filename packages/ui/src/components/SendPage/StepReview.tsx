@@ -58,6 +58,8 @@ export interface StepReviewProps {
   request?: SendRequest | null;
   /** The live balance of the token, to refuse a request it does not cover. */
   liveBalance?: number;
+  /** Translation key of the flow's warning about an off-curve recipient. */
+  recipientWarning?: string | null;
 }
 
 export function StepReview({
@@ -78,6 +80,7 @@ export function StepReview({
   nftError,
   request = null,
   liveBalance,
+  recipientWarning = null,
 }: StepReviewProps) {
   const { t } = useTranslation();
   const semantic = useSemantic();
@@ -285,6 +288,17 @@ export function StepReview({
           tone="error"
           title={t('transaction.errors.insufficientFunds')}
           testID="send-review-insufficient"
+        />
+      )}
+
+      {/* Judged by the flow on whatever recipient it holds, so a scanned or
+          pasted request warns here like a typed address. A warning, not a
+          block. */}
+      {recipientWarning && (
+        <WarningNotice
+          tone="warning"
+          title={t(recipientWarning)}
+          testID="send-review-recipient-warning"
         />
       )}
 

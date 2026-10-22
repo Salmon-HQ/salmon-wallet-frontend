@@ -19,6 +19,7 @@ import type { SendRecipient, SendRequest, SendToken } from '../types/ui/send-she
 import { SOL_CONSTANTS } from '../utils/balance';
 import { withinDecimals } from '../utils/decimals';
 import type { AmountShortcutKey } from './useAmountShortcuts';
+import { useRecipientWarning } from './useRecipientWarning';
 import { useSendTransaction } from './useSendTransaction';
 
 /** Where a request-started Send lands, or why it could not start. */
@@ -130,6 +131,13 @@ export function useSendFlowState({
     })();
   }, [feeKey, token, recipient, sendHook]);
 
+  // Judged on whatever recipient the flow holds, so a scanned or pasted
+  // request reaches the review with the same verdict as a typed address.
+  const recipientWarning = useRecipientWarning(
+    account,
+    recipient ? (recipient.resolvedAddress ?? recipient.address) : null
+  );
+
   const reset = useCallback(() => {
     setFee(null);
     feeRequestedFor.current = null;
@@ -223,6 +231,8 @@ export function useSendFlowState({
     request,
     startFromRequest,
     clearRequest,
+    /** Translation key of the warning about an off-curve recipient, or null. */
+    recipientWarning,
   };
 }
 

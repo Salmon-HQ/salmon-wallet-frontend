@@ -9,6 +9,7 @@ import {
   Stack,
   ThemeProvider as NavigationThemeProvider,
   router,
+  useGlobalSearchParams,
   useSegments,
   useRootNavigationState,
 } from 'expo-router';
@@ -31,6 +32,8 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
+import { useSecretClipboardResume } from '../hooks/useSecretClipboard';
+import { useAppSwitcherProtection } from '../hooks/useSecretScreen';
 import {
   isSeedVaultScreenOpen,
   onSeedVaultScreensClosed,
@@ -58,6 +61,12 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useAppFonts();
+  // iOS: blur the app whenever it is not in focus, so the app-switcher
+  // snapshot never shows balances, the address or a secret.
+  useAppSwitcherProtection();
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard on launch and on every return to the app.
+  useSecretClipboardResume();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -154,6 +163,7 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   }, [semantic]);
   const [state, actions] = useAccountsContext();
   const segments = useSegments();
+  const { type: routeType } = useGlobalSearchParams<{ type?: string }>();
   const navigationState = useRootNavigationState();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lockInFlightRef = useRef(false);
@@ -189,6 +199,17 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
+
+    // A wallet stored without a password goes to the password screen in its
+    // protect mode and nowhere else: it lists the wallet's addresses and
+    // protects it. The same screen in another mode would set a password on a
+    // new wallet instead. The screen itself moves on once the wallet has one.
+    if (state.unprotectedAddresses) {
+      if (!(inAuthGroup && segments.at(1) === 'password' && routeType === 'protect')) {
+        router.replace({ pathname: '/(auth)/password', params: { type: 'protect' } });
+      }
+      return;
+    }
 
     const hasAccounts = state.accounts.length > 0;
 
@@ -235,7 +256,9 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     state.ready,
     state.accounts.length,
     state.locked,
+    state.unprotectedAddresses,
     segments,
+    routeType,
     navigationState?.key,
     hasNavigated,
     initFailed,
@@ -251,8 +274,11 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
     }
 
     const tryLock = (): void => {
+      // Never while a wallet with no password waits for one: the lock could
+      // only be answered with a password it does not have.
       if (
         !state.requiredLock ||
+        state.unprotectedAddresses ||
         state.locked ||
         state.accounts.length === 0 ||
         lockInFlightRef.current
@@ -298,7 +324,14 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       changeSubscription.remove();
       unsubscribeSeedVault();
     };
-  }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
+  }, [
+    actions,
+    state.accounts.length,
+    state.locked,
+    state.ready,
+    state.requiredLock,
+    state.unprotectedAddresses,
+  ]);
 
   // An unsupported build is not opened at all: this gate precedes the lock
   // screen and the init-failed gate, and the store is the only way out.

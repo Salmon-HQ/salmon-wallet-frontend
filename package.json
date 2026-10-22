@@ -46,6 +46,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:no-secrets": "node scripts/check-no-secrets.mjs",
+    "check:no-secrets:test": "node --test scripts/check-no-secrets.test.mjs",
     "check:manifest": "node scripts/check-manifest-permissions.mjs",
     "check:fingerprint": "pnpm --filter @salmon/mobile fingerprint:check",
     "check:powerups-bundle": "node scripts/check-powerups-bundle.mjs"

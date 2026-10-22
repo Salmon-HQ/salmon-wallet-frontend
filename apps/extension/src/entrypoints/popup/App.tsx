@@ -9,11 +9,20 @@ import {
   useWaitExit,
   useWaitGate,
   DerivedKeyCache,
+  getStashItem,
+  isKeyCacheValid,
+  STASH_KEYS,
   type NetworkId,
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { ConfirmationHost, LoadingScreen, WalletInitErrorScreen, useTaskChrome } from '@salmon/ui';
+import {
+  ConfirmationHost,
+  LoadingScreen,
+  WalletInitErrorScreen,
+  useSecretClipboardResume,
+  useTaskChrome,
+} from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -42,6 +51,8 @@ import { useLockAcrossWindows } from './useLockAcrossWindows';
 // ============================================================================
 
 type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'success' | 'analytics-consent';
+
+const noop = () => {};
 
 interface AuthData {
   mnemonic: string;
@@ -73,8 +84,12 @@ function App() {
     activeBlockchainAccount,
     networkId,
     pathIndex,
+    unprotectedAddresses,
   } = state;
   const settleAfterTx = useSettleAfterTx();
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard when the panel opens and whenever it comes back into focus.
+  useSecretClipboardResume();
   // `useWaitGate` first: below `motionMs.waitDelay` the wait never mounts at
   // all, so a boot that resolves in 200ms shows nothing rather than a 2s wave
   // train that would make the extension feel slower than the spinner it
@@ -208,19 +223,39 @@ function App() {
     // the panel left an unlocked wallet unlocked indefinitely — the background
     // alarm that fires instead cannot lock a panel that is already open. The
     // flow generates plenty of real activity, which is what should hold the
-    // timer off.
-    enabled: ready && !locked && accounts.length > 0 && !justCreated,
+    // timer off. Off while a wallet with no password waits for one: a lock
+    // there could only be answered with a password the wallet does not have.
+    enabled: ready && !locked && accounts.length > 0 && !justCreated && !unprotectedAddresses,
   });
 
   // A lock here locks every other open wallet window, and theirs locks this
   // one. Declared before the close handler below: that effect clears the
   // closing flag as soon as this window is locked, and this one must read it
   // first so closing a window does not lock the rest.
+  // Not while a wallet with no password waits for one, for the same reason as
+  // the inactivity lock above.
   const lockThisWindow = useCallback(() => {
+    if (unprotectedAddresses) return;
     void clearSessionKey();
     void actions.lockAccounts();
+  }, [actions, unprotectedAddresses]);
+  // A wallet added or removed in another window is re-read here through the
+  // cached key; without one this window cannot re-read, and is locked instead.
+  // Every wallet removed elsewhere is forgotten here too.
+  const accountIds = useMemo(() => accounts.map(({ id }) => id), [accounts]);
+  const reloadWallets = useCallback(async () => {
+    const keyCache = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+    return isKeyCacheValid(keyCache) ? actions.unlockWithCachedKey(keyCache) : false;
   }, [actions]);
-  useLockAcrossWindows({ ready, locked, closing: closeLockTriggeredRef, lock: lockThisWindow });
+  useLockAcrossWindows({
+    ready,
+    locked,
+    closing: closeLockTriggeredRef,
+    lock: lockThisWindow,
+    accountIds,
+    reload: reloadWallets,
+    forget: actions.forgetAccounts,
+  });
 
   useEffect(() => {
     if (!ready || locked || accounts.length === 0) {
@@ -426,6 +461,14 @@ function App() {
   // branch chosen from state that has not finished loading.
   if (!ready) {
     return null;
+  }
+
+  // A wallet stored without a password opens to nothing but its addresses and
+  // the password that protects it; once protected, this screen gives way. It
+  // comes before the lock screen, which could only refuse every password and
+  // offer to remove the wallet: its seeds have no other copy.
+  if (unprotectedAddresses) {
+    return <PasswordPage flowType="protect" addresses={unprotectedAddresses} onSuccess={noop} />;
   }
 
   // Wallet is locked — show lock screen even if account metadata failed to load.

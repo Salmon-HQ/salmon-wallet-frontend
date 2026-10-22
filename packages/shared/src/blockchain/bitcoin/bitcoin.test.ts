@@ -59,6 +59,9 @@ const mockApiFunctions: BitcoinAccountApiFunctions = {
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
+/** A WIF published in bitpay/wallet's test suite: public, never a funded key. */
+const PUBLIC_WIF = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ'; // no-secrets-ignore: public test WIF
+
 /**
  * Expected Bitcoin address for the test mnemonic at index 0
  * Path: m/44'/0'/0'/0/0
@@ -1455,7 +1458,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should throw error for invalid address', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const invalidAddress = 'invalid-address';
 
       expect(() => {
@@ -1470,7 +1473,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should throw error for testnet address on mainnet', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
 
       expect(() => {
         createBitcoinAccountFromWIF(
@@ -1484,7 +1487,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should accept valid mainnet P2PKH address', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const address = SAMPLE_ADDRESSES.p2pkh_mainnet;
 
       const account = createBitcoinAccountFromWIF(
@@ -1499,7 +1502,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should default to index 0', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const address = SAMPLE_ADDRESSES.p2pkh_mainnet;
 
       const account = createBitcoinAccountFromWIF(
@@ -1514,7 +1517,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should support custom index', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const address = SAMPLE_ADDRESSES.p2pkh_mainnet;
 
       const account = createBitcoinAccountFromWIF(
@@ -1553,7 +1556,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should accept bech32 addresses', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const address = SAMPLE_ADDRESSES.p2wpkh_mainnet;
 
       const account = createBitcoinAccountFromWIF(
@@ -1568,7 +1571,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should have correct network configuration', () => {
-      const wif = 'L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ';
+      const wif = PUBLIC_WIF;
       const address = SAMPLE_ADDRESSES.p2pkh_mainnet;
 
       const account = createBitcoinAccountFromWIF(

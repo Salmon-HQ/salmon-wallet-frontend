@@ -13,7 +13,16 @@ const mockRemoveAllAccounts = vi.fn();
 const mockUnlockWithCachedKey = vi.fn();
 const mockUseInactivityTimeout = vi.fn();
 const mockClearSessionKey = vi.fn();
+const mockUseSecretClipboardResume = vi.fn();
 const eventListeners = new Map<string, EventListener>();
+const { accountsState, mockUseLockAcrossWindows } = vi.hoisted(() => ({
+  accountsState: { unprotectedAddresses: null as string[] | null, locked: false },
+  mockUseLockAcrossWindows: vi.fn(),
+}));
+
+vi.mock('./useLockAcrossWindows', () => ({
+  useLockAcrossWindows: (params: unknown) => mockUseLockAcrossWindows(params),
+}));
 
 vi.mock('@salmon/shared', () => ({
   SignatureRequestProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -25,13 +34,14 @@ vi.mock('@salmon/shared', () => ({
   useAccountsContext: () => [
     {
       ready: true,
-      locked: false,
+      locked: accountsState.locked,
       accounts: [{ id: 'account-1' }],
       activeAccount: null,
       activeBlockchainAccount: null,
       accountId: 'account-1',
       networkId: 'solana-mainnet',
       pathIndex: 0,
+      unprotectedAddresses: accountsState.unprotectedAddresses,
     },
     {
       lockAccounts: mockLockAccounts,
@@ -62,6 +72,7 @@ vi.mock('@salmon/ui', () => ({
   // The popup publishes the surfacing itself when the lock's overlay is
   // released — the lock's own wait opts out of it (spec 031).
   useTaskChrome: () => ({ surface: () => {} }),
+  useSecretClipboardResume: () => mockUseSecretClipboardResume(),
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({
@@ -77,7 +88,7 @@ vi.mock('../../utils/storageCompat', () => ({
 }));
 
 vi.mock('../../pages/lock/LockPage', () => ({
-  LockPage: () => null,
+  LockPage: () => <div data-testid="lock-page" />,
 }));
 
 vi.mock('../../pages/home/HomePage', () => ({
@@ -103,7 +114,11 @@ vi.mock('../../pages/auth/RecoverWalletPage', () => ({
 }));
 
 vi.mock('../../pages/auth/PasswordPage', () => ({
-  PasswordPage: () => null,
+  PasswordPage: (props: { flowType: string; addresses?: string[] }) => (
+    <div data-testid="password-page" data-flow={props.flowType}>
+      {props.addresses?.join(',')}
+    </div>
+  ),
 }));
 
 vi.mock('../../pages/auth/SuccessPage', () => ({
@@ -139,6 +154,14 @@ describe('Extension popup inactivity lock', () => {
         },
       },
     });
+  });
+
+  // A recovery phrase or private key copied 60 s ago or more leaves the
+  // clipboard when the panel opens or comes back into focus.
+  it('clears a secret left on the clipboard from the root', () => {
+    render(<App />);
+
+    expect(mockUseSecretClipboardResume).toHaveBeenCalled();
   });
 
   it('configures inactivity lock when wallet is unlocked and has accounts', () => {
@@ -177,5 +200,70 @@ describe('Extension popup inactivity lock', () => {
 
     expect(mockClearSessionKey).toHaveBeenCalledTimes(1);
     expect(mockLockAccounts).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Extension popup with a wallet stored without a password', () => {
+  afterEach(() => {
+    cleanup();
+    accountsState.unprotectedAddresses = null;
+    accountsState.locked = false;
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('chrome', {
+      storage: { onChanged: { addListener: vi.fn(), removeListener: vi.fn() } },
+    });
+  });
+
+  it('opens on the password screen listing its addresses, and on nothing else', () => {
+    accountsState.unprotectedAddresses = ['AddrOne', 'AddrTwo'];
+
+    const { getByTestId } = render(<App />);
+
+    const page = getByTestId('password-page');
+    expect(page.getAttribute('data-flow')).toBe('protect');
+    expect(page.textContent).toBe('AddrOne,AddrTwo');
+  });
+
+  // The lock screen over it would take every attempt as a wrong password and
+  // offer to remove the wallet, deleting the only copy of its seeds.
+  it('stays on the password screen even when the wallet reads as locked', () => {
+    accountsState.unprotectedAddresses = ['AddrOne'];
+    accountsState.locked = true;
+
+    const { getByTestId, queryByTestId } = render(<App />);
+
+    expect(getByTestId('password-page').getAttribute('data-flow')).toBe('protect');
+    expect(queryByTestId('lock-page')).toBeNull();
+  });
+
+  it('runs no inactivity lock while the wallet waits for its password', () => {
+    accountsState.unprotectedAddresses = ['AddrOne'];
+
+    render(<App />);
+
+    expect(mockUseInactivityTimeout).toHaveBeenLastCalledWith(
+      expect.objectContaining({ enabled: false })
+    );
+  });
+
+  it('ignores a lock from another window while the wallet waits for its password', async () => {
+    accountsState.unprotectedAddresses = ['AddrOne'];
+
+    render(<App />);
+    const { lock } = mockUseLockAcrossWindows.mock.lastCall?.[0] as { lock: () => void };
+    lock();
+    await Promise.resolve();
+
+    expect(mockLockAccounts).not.toHaveBeenCalled();
+    expect(mockClearSessionKey).not.toHaveBeenCalled();
+  });
+
+  it('opens normally once the wallet has a password', () => {
+    const { queryByTestId } = render(<App />);
+
+    expect(queryByTestId('password-page')).toBeNull();
   });
 });

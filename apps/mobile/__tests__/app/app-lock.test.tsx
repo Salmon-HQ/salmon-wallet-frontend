@@ -28,7 +28,9 @@ jest.mock('expo-router', () => {
   };
 });
 
-const accountState = { locked: false };
+const accountState: { locked: boolean; unprotectedAddresses?: string[] | null } = {
+  locked: false,
+};
 /** One entry per commit of the tree, holding the surface count that commit saw. */
 const surfaceTrace: string[] = [];
 /** The callbacks the layout hands the lock, captured by the mock below. */
@@ -145,6 +147,7 @@ describe('the (app) shell', () => {
   beforeEach(() => {
     for (const key of Object.keys(screensByName)) delete screensByName[key];
     accountState.locked = false;
+    accountState.unprotectedAddresses = null;
     lockContentProps = null;
     surfaceTrace.length = 0;
   });
@@ -158,6 +161,17 @@ describe('the (app) shell', () => {
     // layout's overlay — a lock landing on a settings sub-screen left secrets
     // sitting on top of it. On this stack it is covered like anything else.
     expect('settings' in screensByName).toBe(true);
+  });
+
+  // The root layout sends such a wallet to the password screen; until it gets
+  // there, no app screen may paint a frame.
+  it('renders nothing while the stored wallet waits for a password', () => {
+    accountState.unprotectedAddresses = ['AddressOne111'];
+
+    const { toJSON } = render(<AppLayout />);
+
+    expect(toJSON()).toBeNull();
+    expect(Object.keys(screensByName)).toEqual([]);
   });
 
   it('does not render the lock overlay while unlocked', () => {

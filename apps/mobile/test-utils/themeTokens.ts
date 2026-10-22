@@ -92,3 +92,7 @@ export {
   CARD_RADII,
   cardTonesFor,
 } from '../../../packages/shared/src/types/ui/card';
+// The clipboard that clears copied secrets: the secret panels create their
+// instance at import time, so every mock of the barrel that reaches the
+// components barrel needs the factory.
+export { createSecretClipboard } from '../../../packages/shared/src/utils/secret-clipboard';

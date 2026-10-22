@@ -158,6 +158,7 @@
     "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
     "mwa_refused_title": "Solicitud rechazada",
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
+    "mwa_unverified_origin": "App no verificada que dice ser {{origin}}",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
     "mwa_network_unsupported": "Esta app pidió {{requested}}. Salmon funciona solo con Solana Mainnet y Devnet, así que la solicitud se rechazó.",
@@ -387,6 +388,7 @@
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
     "clipboard_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Mejor anotá la frase en papel.",
+    "secret_copied": "Copiado. Salmon lo borra a los 60 s o cuando vuelvas a la app.",
     "clipboard_key_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Pegá la clave solo donde querías, y limpiá el portapapeles después.",
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
@@ -598,6 +600,13 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Abrir Ajustes"
+    },
+    "protect": {
+      "body": "Tu billetera todavía no tiene contraseña. Revisá que estas direcciones sean tuyas y elegí una contraseña para protegerla. Si no las reconocés, no uses esta billetera.",
+      "addresses_label": "Tus direcciones",
+      "button": "Proteger billetera",
+      "protecting": "Protegiendo tu billetera",
+      "error": "No pudimos proteger la billetera. Intentá de nuevo."
     }
   },
   "transactions": {
