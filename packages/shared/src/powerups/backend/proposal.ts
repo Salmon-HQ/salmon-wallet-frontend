@@ -23,6 +23,7 @@ export interface PowerupProposalContext {
   /** How the pending banner reports the signed transaction. */
   pending?: TransactionProposal['pending'];
   refresh?: () => Promise<TransactionProposal>;
+  onOutcome?: TransactionProposal['onOutcome'];
 }
 
 export function powerupProposalId(envelope: PowerupBuildEnvelope): string {
@@ -31,7 +32,7 @@ export function powerupProposalId(envelope: PowerupBuildEnvelope): string {
 
 export function toPowerupProposal(
   envelope: PowerupBuildEnvelope,
-  { networkId, display, expect, pending, refresh }: PowerupProposalContext
+  { networkId, display, expect, pending, refresh, onOutcome }: PowerupProposalContext
 ): TransactionProposal {
   return {
     id: powerupProposalId(envelope),
@@ -41,6 +42,7 @@ export function toPowerupProposal(
     expiresAt: envelope.expiresAt,
     refresh,
     pending,
+    onOutcome,
     display: {
       ...display,
       attribution: envelope.attribution ?? undefined,

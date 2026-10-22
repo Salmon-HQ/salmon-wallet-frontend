@@ -227,18 +227,23 @@ export function getStaticApiUrl(env?: Environment): string {
 }
 
 /**
- * Optional dedicated ingest URL for anonymous usage analytics.
+ * Base URL anonymous usage analytics post to (FR-014): only a store build
+ * reaches production.
  *
- * When set (`EXPO_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`), analytics
- * batches POST here instead of the wallet's `API_URL`. This lets the wallet keep
- * talking to its normal backend (e.g. prod, so onboarding still loads balances)
- * while events are routed to a separate sink — a local dev server, for example.
- *
- * Returns `undefined` when unset; the transport then falls back to the shared
- * API client / `API_URL`.
+ * 1. An explicit `EXPO_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL` wins, so a
+ *    developer can keep the wallet on its normal backend (e.g. prod, so
+ *    onboarding still loads balances) while events go to a local sink.
+ * 2. A build the public did not install from a store whose API is production
+ *    (a local Release build, `dapp-store-test`, an unpacked extension, an e2e
+ *    run) posts to staging.
+ * 3. Otherwise it follows {@link getApiUrl}: local mode stays local, staging
+ *    stays staging, a store build reaches production.
  */
-export function getAnalyticsUrl(): string | undefined {
-  return getEnvVar('ANALYTICS_URL');
+export function getAnalyticsUrl(storeBuild: boolean): string {
+  const override = getEnvVar('ANALYTICS_URL');
+  if (override) return override;
+  const apiUrl = getApiUrl();
+  return !storeBuild && apiUrl === API_URLS.production ? API_URLS.staging : apiUrl;
 }
 
 /**

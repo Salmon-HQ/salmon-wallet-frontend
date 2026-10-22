@@ -9,12 +9,17 @@
 
 import { getStorage, STORAGE_KEYS } from '../storage';
 
-/** Generates a random id, preferring the platform CSPRNG. */
+/**
+ * A random v4 UUID from the platform CSPRNG. Mobile's Hermes has no
+ * `randomUUID`; `getRandomValues` is polyfilled there by `index.js`.
+ */
 function randomId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /** Returns the stored install id, creating and persisting one if absent. */

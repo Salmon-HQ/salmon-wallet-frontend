@@ -48,6 +48,7 @@ vi.mock('../../hooks/usePowerupState', () => ({
 vi.mock('../../blockchain/solana/networks', () => ({ solanaRpcFor: () => ({}) }));
 
 import { parseTransferRequest } from '../../blockchain/solana/transfer-request';
+import { startTestAnalytics } from '../../test-utils/analytics';
 import { PAYMENTS_COUNTDOWN_TICK_MS, PAYMENTS_STATUS_POLL_MS } from './constants';
 import { usePaymentsScreenLogic } from './usePaymentsScreenLogic';
 
@@ -248,6 +249,63 @@ describe('usePaymentsScreenLogic', () => {
 
     hook.rerender({ onHistory: undefined });
     expect(hook.result.current.actions.history).toBeNull();
+  });
+});
+
+describe('what Payments reports (FR-010)', () => {
+  const settlement = { signature: 'sig', payer: RECIPIENT, blockTime: 1_700_000_000 };
+
+  it('reports a request once it is saved and shown, and a failed create not at all', async () => {
+    const analytics = await startTestAnalytics();
+    const failing = setup(undefined, undefined, undefined, {
+      newReference: async () => {
+        throw new Error('no entropy');
+      },
+    });
+    act(() => failing.hook.result.current.ask.form.amountCard.onChangeValue('1'));
+    await act(() => failing.hook.result.current.create());
+    expect(failing.hook.result.current.open).toBeNull();
+
+    const { hook } = setup();
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
+    await act(() => hook.result.current.create());
+    expect(hook.result.current.open).not.toBeNull();
+
+    expect(await analytics.sent()).toEqual([{ event: 'payment_request_created', props: {} }]);
+  });
+
+  it('reports a payment once, when two checks in flight both find it, and never again', async () => {
+    const analytics = await startTestAnalytics();
+    const answers: Array<(found: typeof settlement) => void> = [];
+    const findSettlement = vi.fn(
+      () => new Promise<typeof settlement>((resolve) => answers.push(resolve))
+    );
+    const { hook } = setup(findSettlement);
+    act(() => hook.result.current.ask.form.amountCard.onChangeValue('1'));
+    await act(() => hook.result.current.create());
+    // The open request's first check is still out when the poll asks again.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAYMENTS_STATUS_POLL_MS + 1);
+    });
+    expect(answers).toHaveLength(2);
+
+    await act(async () => {
+      for (const answer of answers) answer(settlement);
+    });
+    expect(hook.result.current.open?.status).toBe('paid');
+
+    // Already paid: closing, reopening and waiting out more polls report nothing.
+    const id = hook.result.current.open!.id;
+    act(() => hook.result.current.closeRequest());
+    act(() => hook.result.current.openRequest(id));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3 * PAYMENTS_STATUS_POLL_MS);
+    });
+
+    expect(await analytics.sent()).toEqual([
+      { event: 'payment_request_created', props: {} },
+      { event: 'payment_request_paid', props: {} },
+    ]);
   });
 });
 

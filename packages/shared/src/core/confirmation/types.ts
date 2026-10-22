@@ -117,6 +117,14 @@ export interface TransactionProposal {
     /** Amounts and symbols only — rendered verbatim beside translated copy. */
     summary?: string;
   };
+  /**
+   * How each signing attempt ended: `true` once the network confirmed it,
+   * `false` when signing or sending failed. Backing out is not an attempt,
+   * and an outcome the network could not confirm either way reports nothing.
+   * Core ignores whatever this throws, so it never changes what is signed or
+   * what the user sees.
+   */
+  onOutcome?: (success: boolean) => void;
 }
 
 export interface SignedResult {

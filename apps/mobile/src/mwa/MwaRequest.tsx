@@ -34,6 +34,7 @@ import {
   type TrustedApps,
   isSeedVaultError,
   STORAGE_KEYS,
+  trackEvent,
 } from '@salmon/shared';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +46,17 @@ import { ConfirmSheet } from '../components/ConfirmSheet';
 import { TransactionConfirmation } from '../components/TransactionConfirmation';
 import { useSemantic } from '../theme/useThemedStyles';
 import { MwaRequestDetails } from './MwaRequestDetails';
+
+/** Counts a completed approval; a tracking failure must never become a failure answer. */
+function countApproval(
+  event: 'dapp_connected' | 'dapp_message_signed' | 'dapp_transaction_signed'
+): void {
+  try {
+    trackEvent(event);
+  } catch {
+    // Best-effort analytics.
+  }
+}
 
 type Respond = (response: MWAResponse) => void;
 
@@ -300,6 +312,7 @@ function ConnectApproval({
           },
           state.networkId ?? undefined
         );
+        countApproval('dapp_connected');
         respond({
           accounts: [mwaAuthorizedAccount(address, request.chain, state.activeAccount?.name)],
           authorizationScope: token,
@@ -365,7 +378,9 @@ function SignMessagesApproval({
   const approve = () =>
     run(async () => {
       try {
-        respond({ signedPayloads: await mwaSignMessages(account, payloads, origin) });
+        const signedPayloads = await mwaSignMessages(account, payloads, origin);
+        countApproval('dapp_message_signed');
+        respond({ signedPayloads });
       } catch (error) {
         console.warn('[mwa] message refused', error);
         respond(refusedInSeedVault(error) ? declined : invalid(payloads.map(() => false)));
@@ -460,7 +475,9 @@ function TransactionApproval({
       setError(null);
       try {
         if (request.__type === MWARequestType.SignTransactionsRequest) {
-          answer({ signedPayloads: await mwaSignTransactions(account, payloads) });
+          const signedPayloads = await mwaSignTransactions(account, payloads);
+          countApproval('dapp_transaction_signed');
+          answer({ signedPayloads });
           return;
         }
         const result = await mwaSignAndSend(
@@ -475,6 +492,7 @@ function TransactionApproval({
           () => !answered.current
         );
         if (!answered.current) {
+          if ('signatures' in result) countApproval('dapp_transaction_signed');
           answer(
             'signatures' in result
               ? { signedTransactions: result.signatures }

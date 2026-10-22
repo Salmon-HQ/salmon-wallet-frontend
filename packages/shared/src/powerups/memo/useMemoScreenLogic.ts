@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react';
 import i18n from 'i18next';
+import { trackEvent } from '../../analytics';
 import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
 import {
@@ -43,6 +44,7 @@ export function buildMemoProposal(
     // The banner follows the signature, so a memo whose outcome is unknown is
     // not written twice by a user who thinks it failed.
     pending: { kind: 'send', summary: envelope.note },
+    onOutcome: (success) => trackEvent('memo_sent', { success }),
     display: {
       title: t('memo.review.title'),
       rows: [

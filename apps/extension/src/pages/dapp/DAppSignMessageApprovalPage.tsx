@@ -81,6 +81,7 @@ export function DAppSignMessageApprovalPage({
             ? 'Missing message data'
             : null,
         failureError: 'Message signing failed',
+        event: 'dapp_message_signed',
       }
     );
   }, [account, approve, origin, request]);

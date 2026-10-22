@@ -32,6 +32,7 @@ import { UpdateRequiredScreen } from '../src/components/UpdateRequiredScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import { useSemantic } from '../src/theme/useThemedStyles';
+import { noteAppLeft, trackColdOpen } from '../src/analytics/appAnalytics';
 import { useSecretClipboardResume } from '../hooks/useSecretClipboard';
 import { useAppSwitcherProtection } from '../hooks/useSecretScreen';
 import {
@@ -167,6 +168,9 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
   const navigationState = useRootNavigationState();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lockInFlightRef = useRef(false);
+
+  // Mounts after the update gate, so an update applied at launch is one open.
+  useEffect(() => trackColdOpen(), []);
 
   // Inactivity timeout disabled on mobile — lock is handled by AppState (background).
   // The timeout only makes sense on web/extension where tabs stay open indefinitely.
@@ -310,13 +314,18 @@ function RootLayoutNav({ updateRequired }: { updateRequired: boolean }) {
       }
 
       tryLock();
+      // The next return to the screen is an app open (spec 042).
+      noteAppLeft();
     });
 
     // The user can leave Salmon while a Seed Vault screen is on top; no new
     // `background` event comes then, so the lock is checked once it closes.
     const unsubscribeSeedVault = onSeedVaultScreensClosed(() => {
       setTimeout(() => {
-        if (AppState.currentState !== 'active') tryLock();
+        if (AppState.currentState !== 'active') {
+          tryLock();
+          noteAppLeft();
+        }
       }, SEED_VAULT_CLOSE_SETTLE_MS);
     });
 

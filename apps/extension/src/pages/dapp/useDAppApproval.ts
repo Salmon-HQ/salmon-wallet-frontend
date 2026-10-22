@@ -5,9 +5,27 @@
  * the page; only the plumbing lives here.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { getAnalytics, trackEvent } from '@salmon/shared';
 import { USER_REJECTED_ERROR } from '../../utils/types';
 
 export const BACKGROUND_CHANNEL = 'salmon_extension_background_channel';
+
+type DAppApprovalEvent = 'dapp_connected' | 'dapp_message_signed' | 'dapp_transaction_signed';
+
+/**
+ * Counts an approval the wallet completed, with nothing about the dApp
+ * (FR-011–FR-013). Call it before answering: the background closes this window
+ * on the answer, and the flush reaches `fetch` (keepalive) before then.
+ */
+export function trackDAppApproval(event: DAppApprovalEvent): void {
+  // Counting must never turn a completed approval into a failure answer.
+  try {
+    trackEvent(event);
+    void getAnalytics()?.flush();
+  } catch {
+    // Best-effort analytics.
+  }
+}
 
 interface UseDAppApprovalParams {
   requestId: string | number;
@@ -44,11 +62,16 @@ export function useDAppApproval({ requestId, onDismiss, binding }: UseDAppApprov
    * Run the page's approval, report its result, and dismiss. `guardError`
    * short-circuits before anything is signed (a missing account, a malformed
    * request); `failureError` is what the dApp hears if the approval throws.
+   * `event` is counted only once `run` has produced the result.
    */
   const approve = useCallback(
     async (
       run: () => Promise<unknown>,
-      { guardError, failureError }: { guardError?: string | null; failureError: string }
+      {
+        guardError,
+        failureError,
+        event,
+      }: { guardError?: string | null; failureError: string; event: DAppApprovalEvent }
     ) => {
       if (guardError) {
         sendToBackground({ error: guardError });
@@ -58,6 +81,7 @@ export function useDAppApproval({ requestId, onDismiss, binding }: UseDAppApprov
       setLoading(true);
       try {
         const result = await run();
+        trackDAppApproval(event);
         sendToBackground({ result });
         onDismiss(true);
       } catch (error) {

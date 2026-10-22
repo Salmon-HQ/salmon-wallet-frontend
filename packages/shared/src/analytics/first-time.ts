@@ -2,16 +2,16 @@
  * "First-time" activation events.
  *
  * Some funnel events matter only the first time they happen per install — the
- * first send, the first time the receive screen is opened. This
- * helper emits such an event at most once, guarded by a persisted flag, and —
- * like {@link trackEvent} — is a total no-op without consent.
+ * first send, the first swap. This helper emits such an event at most once,
+ * guarded by a persisted flag, and — like {@link trackEvent} — is a total no-op
+ * without consent.
  *
  * The flag is written only after the event has actually been emitted (which
  * requires consent), so a user who first acts *before* opting in is still
  * counted on their first action *after* opting in.
  */
 
-import { getStorage, type StorageKey } from '../storage';
+import { getStorage, STORAGE_KEYS, type StorageKey } from '../storage';
 import { getAnalytics, trackEvent } from './client';
 import type { AnalyticsEventName } from './events';
 import type { AnalyticsProps } from './types';
@@ -25,10 +25,11 @@ export async function trackFirstTime(
   flagKey: StorageKey,
   props?: AnalyticsProps
 ): Promise<void> {
-  // Gate on consent before touching the flag: without consent we neither emit
-  // nor mark the "first" as spent, preserving it until the user opts in.
+  // Gate on consent before touching the flag: without consent (or with a v1
+  // consent that does not cover the event, FR-021) we neither emit nor mark
+  // the "first" as spent, preserving it until the user opts in.
   const client = getAnalytics();
-  if (!client || !client.getConsent()) return;
+  if (!client || !client.allows(event)) return;
 
   try {
     const storage = getStorage();
@@ -39,4 +40,13 @@ export async function trackFirstTime(
   } catch {
     // Best-effort: analytics must never surface a failure into the app.
   }
+}
+
+/**
+ * The first successful swap, once per install. Wrapped here so the Swap
+ * Powerup names the event and nothing else — `powerups/**` cannot import
+ * `storage` (spec 027 §2).
+ */
+export function trackFirstSwapCompleted(): Promise<void> {
+  return trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
 }

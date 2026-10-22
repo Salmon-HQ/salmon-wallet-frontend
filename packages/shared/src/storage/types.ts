@@ -224,8 +224,12 @@ export const STORAGE_KEYS = {
   ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
   /** Whether the first-run analytics consent prompt has been answered */
   ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
+  /** Device-only: the consent text the user accepted ('v2'); absent with consent stored means 'v1' */
+  ANALYTICS_CONSENT_VERSION: 'salmon_analytics_consent_version',
   /** One-shot flag: the first successful send has been reported (activation) */
   ANALYTICS_FIRST_SEND: 'salmon_analytics_first_send',
+  /** One-shot flag: the first successful swap has been reported (activation) */
+  ANALYTICS_FIRST_SWAP: 'salmon_analytics_first_swap',
   /** Device-only onboarding event ('wallet_created' | 'wallet_recovered') parked until the consent prompt is answered */
   ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
 

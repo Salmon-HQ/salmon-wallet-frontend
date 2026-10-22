@@ -156,12 +156,7 @@ if (typeof process === 'undefined') {
 // =============================================================================
 // 4. Initialize Storage & Stash - Required before useAccounts hook
 // =============================================================================
-const {
-  initStorage,
-  initStash,
-  initAnalytics,
-  createAsyncStorageAdapter,
-} = require('@salmon/shared');
+const { initStorage, initStash, createAsyncStorageAdapter } = require('@salmon/shared');
 const AsyncStorage = require('@react-native-async-storage/async-storage').default;
 
 // Create adapter using AsyncStorage for persistent storage
@@ -179,15 +174,18 @@ initStash('mobile');
 // app.json is what Expo reads for the version the user sees in Settings, so
 // reading it here keeps the reported and displayed versions the same value.
 const { version: appVersion } = require('./app.json').expo;
-initAnalytics({ platform: 'mobile', appVersion });
+const appAnalytics = require('./src/analytics/appAnalytics');
+appAnalytics.startAnalytics(appVersion);
 
 // Android: dApps reach Salmon through Mobile Wallet Adapter in their own
 // activity (plugins/withMobileWalletAdapter), rendered by this root.
 if (require('react-native').Platform.OS === 'android') {
-  require('react-native').AppRegistry.registerComponent(
-    'MobileWalletAdapterEntrypoint',
-    () => require('./src/mwa/MwaRoot').MwaRoot
-  );
+  require('react-native').AppRegistry.registerComponent('MobileWalletAdapterEntrypoint', () => {
+    // Runs as the activity is created, before it reaches the screen: its
+    // `active` is the dApp's sheet, not an app open (spec 042).
+    appAnalytics.setMwaOnScreen(true);
+    return require('./src/mwa/MwaRoot').MwaRoot;
+  });
 }
 
 // =============================================================================
