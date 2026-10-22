@@ -23,6 +23,7 @@ import type { Account, AccountSecret } from '../types/account';
 import type { AccountKeyInfo } from '../types/settings';
 import { getBlockchainFromNetworkId } from '../config/blockchains';
 import { isSeedVaultAccount } from './account-secret';
+import { isMainnetNetworkId } from './network';
 import { isBackendNetworkEnabled } from '../api/services/network';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 
@@ -479,4 +480,19 @@ export function getAccountKeysForNetwork(
       address: account.getReceiveAddress(),
       privateKey: account.retrieveSecurePrivateKey(),
     }));
+}
+
+/**
+ * The receive address of every mainnet slot the accounts hold, once each: what
+ * an owner can recognise a wallet by before it is theirs to use.
+ */
+export function mainnetReceiveAddresses(accounts: Pick<Account, 'networksAccounts'>[]): string[] {
+  const addresses = accounts.flatMap(({ networksAccounts }) =>
+    Object.entries(networksAccounts)
+      .filter(([networkId]) => isMainnetNetworkId(networkId))
+      .flatMap(([, slots]) =>
+        (slots ?? []).flatMap((slot) => (slot ? [slot.getReceiveAddress()] : []))
+      )
+  );
+  return [...new Set(addresses)];
 }

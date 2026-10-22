@@ -598,6 +598,13 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Abrir Ajustes"
+    },
+    "protect": {
+      "body": "Tu billetera todavía no tiene contraseña. Revisá que estas direcciones sean tuyas y elegí una contraseña para protegerla. Si no las reconocés, no uses esta billetera.",
+      "addresses_label": "Tus direcciones",
+      "button": "Proteger billetera",
+      "protecting": "Protegiendo tu billetera",
+      "error": "No pudimos proteger la billetera. Intentá de nuevo."
     }
   },
   "transactions": {

@@ -81,11 +81,15 @@ type ResponseHandler = (data: unknown, id?: string) => void;
 export const DECLINE_COOLDOWN_MS = 30_000;
 
 export default defineBackground(() => {
-  // storage.local holds the encrypted vault and the trusted-apps list, and
-  // Chrome lets content scripts read and write it by default. A compromised
-  // renderer could then copy the vault or mark its own origin trusted and
-  // connect without approval. No content script here uses storage, so only
-  // the extension's own pages keep access. Firefox has no access levels.
+  // storage.local holds the encrypted vault and the trusted-apps list, and by
+  // default every extension context can read and write it, content scripts
+  // included. A compromised renderer could then copy the vault or mark its own
+  // origin trusted and connect without approval. No content script here uses
+  // storage, so this limits it to the extension's own pages — where the
+  // browser can: Chrome applies access levels to storage.local from version
+  // 140. Firefox does not implement setAccessLevel at all (bug 1724754), so on
+  // Firefox, and on Chrome before 140, a compromised page process can still
+  // read and write storage.local, vault ciphertext and trusted apps included.
   const localArea = browser.storage.local as typeof browser.storage.local & {
     setAccessLevel?: (options: { accessLevel: 'TRUSTED_CONTEXTS' }) => Promise<void>;
   };

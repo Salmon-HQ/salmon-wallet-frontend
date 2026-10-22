@@ -23,6 +23,7 @@ import {
   UnlockThrottledError,
 } from '../utils/unlock-throttle';
 import * as encryption from '../crypto/encryption';
+import { migrateLegacyWallets } from '../utils/legacy-migration';
 
 // ---------------------------------------------------------------------------
 // Mocks — a stateful storage so persistence across hook instances is testable
@@ -92,20 +93,23 @@ const ENCRYPTED_VAULT = {
 /** Obviously fake — never a real password. */
 const WRONG_PASSWORD = 'not-the-password-000';
 
-function renderSecurity() {
-  return renderHook(() =>
-    useAccountsSecurity({
-      setLocked: vi.fn(),
-      setRequiredLock: vi.fn(),
-      setReady: vi.fn(),
-      setLoaded: vi.fn(),
-      setError: vi.fn(),
-      loadMetadata: vi.fn(async () => {}),
-      loadAccounts: vi.fn(async () => {}),
-      restoreAccount: vi.fn(),
-      formatAccountForStorage: vi.fn(),
-    })
-  );
+function securityParams() {
+  return {
+    setLocked: vi.fn(),
+    setRequiredLock: vi.fn(),
+    setReady: vi.fn(),
+    setLoaded: vi.fn(),
+    setError: vi.fn(),
+    setUnprotectedAddresses: vi.fn(),
+    loadMetadata: vi.fn(async () => {}),
+    loadAccounts: vi.fn(async () => {}),
+    restoreAccount: vi.fn(),
+    formatAccountForStorage: vi.fn(),
+  };
+}
+
+function renderSecurity(params = securityParams()) {
+  return renderHook(() => useAccountsSecurity(params));
 }
 
 async function failUnlock(unlock: (password: string) => Promise<boolean>, times: number) {
@@ -295,6 +299,210 @@ describe('useAccountsSecurity — re-auth throttling', () => {
 
     expect(accepted).toBe(true);
     expect(await getUnlockPenalty()).toEqual({ failedAttempts: 0, remainingMs: 0 });
+  });
+});
+
+describe('useAccountsSecurity — the password gate with no vault behind it', () => {
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // The gate stands in front of revealing a seed or key and removing a
+  // wallet; with nothing encrypted to check the password against, nothing has
+  // proven the password, so the gate stays shut.
+  it.each([
+    ['no stored vault', undefined],
+    ['a cleartext record', { 'account-1': 'stub mnemonic value' }],
+  ])('refuses every password when there is %s', async (_label, stored) => {
+    if (stored) storageMap.set('salmon_mnemonics', stored);
+    const { result } = renderSecurity();
+
+    let accepted = true;
+    await act(async () => {
+      accepted = await result.current.checkPassword('any-password-000');
+    });
+
+    expect(accepted).toBe(false);
+  });
+});
+
+describe('useAccountsSecurity — protecting a wallet that has no password', () => {
+  const STRONG = 'Correct-Horse-Battery-9!';
+  const LOCKED = { encrypted: 'stub-ciphertext', nonce: 'n', salt: 's', iterations: 210000 };
+  const KEY_CACHE = { key: [1], salt: 's', expiresAt: Number.MAX_SAFE_INTEGER };
+
+  beforeEach(() => {
+    storageMap.clear();
+    stashMap.clear();
+    vi.mocked(encryption.lockAndGetKey).mockResolvedValue({
+      vault: LOCKED,
+      keyCache: KEY_CACHE,
+    } as never);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('encrypts a cleartext vault in place under the chosen password', async () => {
+    const record = { 'account-1': 'stub mnemonic value' };
+    storageMap.set('salmon_mnemonics', record);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    let protectedNow = false;
+    await act(async () => {
+      protectedNow = await result.current.protectWallet(STRONG);
+    });
+
+    expect(protectedNow).toBe(true);
+    expect(encryption.lockAndGetKey).toHaveBeenCalledWith(record, STRONG);
+    expect(storageMap.get('salmon_mnemonics')).toEqual({ ...LOCKED, isEncrypted: true });
+    expect(stashMap.get('derived_key_cache')).toEqual(KEY_CACHE);
+    expect(params.loadAccounts).toHaveBeenCalledWith(record);
+    expect(params.setLocked).toHaveBeenLastCalledWith(false);
+    expect(params.setRequiredLock).toHaveBeenCalledWith(true);
+    expect(params.setUnprotectedAddresses).toHaveBeenLastCalledWith(null);
+  });
+
+  it('migrates an unprotected legacy record under the chosen password, and opens it', async () => {
+    const secrets = { 'account-1': 'stub mnemonic value' };
+    vi.mocked(migrateLegacyWallets).mockImplementationOnce(async () => {
+      storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+      return { status: 'migrated' } as never;
+    });
+    vi.mocked(encryption.unlockAndGetKey).mockResolvedValue({
+      data: secrets,
+      keyCache: KEY_CACHE,
+    } as never);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.protectWallet(STRONG));
+
+    expect(migrateLegacyWallets).toHaveBeenCalledWith(expect.anything(), STRONG, {
+      newPassword: true,
+    });
+    expect(params.loadAccounts).toHaveBeenCalledWith(secrets);
+    expect(params.setLocked).toHaveBeenLastCalledWith(false);
+    expect(params.setRequiredLock).toHaveBeenCalledWith(true);
+    expect(params.setUnprotectedAddresses).toHaveBeenLastCalledWith(null);
+  });
+
+  it('refuses a password the strength check refuses, and writes nothing', async () => {
+    storageMap.set('salmon_mnemonics', { 'account-1': 'stub mnemonic value' });
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      expect(await result.current.protectWallet('short')).toBe(false);
+    });
+
+    expect(storageMap.get('salmon_mnemonics')).toEqual({ 'account-1': 'stub mnemonic value' });
+  });
+
+  it('refuses when the wallet already has a password', async () => {
+    storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+    const { result } = renderSecurity();
+
+    await act(async () => {
+      expect(await result.current.protectWallet(STRONG)).toBe(false);
+    });
+
+    expect(encryption.lockAndGetKey).not.toHaveBeenCalled();
+  });
+
+  it('names the addresses of an unprotected legacy record when the wallet starts', async () => {
+    vi.mocked(migrateLegacyWallets).mockResolvedValueOnce({
+      status: 'needs-new-password',
+      addresses: ['Addr1'],
+    } as never);
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.initAccounts());
+
+    expect(params.setUnprotectedAddresses).toHaveBeenCalledWith(['Addr1']);
+    expect(params.setLocked).not.toHaveBeenCalledWith(true);
+  });
+
+  /** An account whose mainnet slot "derives" `address` (the real derivation is mnemonic.test.ts's). */
+  const restoredWith = (address: string) => ({
+    networksAccounts: { 'solana-mainnet': [{ getReceiveAddress: () => address }] },
+  });
+
+  it('names the addresses a cleartext vault derives when the wallet starts, loading no wallet', async () => {
+    storageMap.set('salmon_mnemonics', { 'account-1': 'stub mnemonic value' });
+    storageMap.set('salmon_accounts', [
+      { id: 'account-1', pathIndexes: { 'solana-mainnet': [0] } },
+    ]);
+    const params = securityParams();
+    params.restoreAccount.mockResolvedValue(restoredWith('Derived1'));
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.initAccounts());
+
+    expect(params.restoreAccount).toHaveBeenCalledWith({
+      secret: { kind: 'mnemonic', mnemonic: 'stub mnemonic value' },
+      pathIndexes: { 'solana-mainnet': [0] },
+    });
+    expect(params.setUnprotectedAddresses).toHaveBeenCalledWith(['Derived1']);
+    expect(params.loadAccounts).not.toHaveBeenCalled();
+    expect(params.setError).toHaveBeenLastCalledWith(null);
+  });
+
+  it('fails the start when a cleartext vault derives no address to recognise', async () => {
+    storageMap.set('salmon_mnemonics', {
+      'account-1': { kind: 'watchOnly', networkId: 'solana-mainnet', address: 'Claimed1' },
+    });
+    const params = securityParams();
+    const { result } = renderSecurity(params);
+
+    await act(() => result.current.initAccounts());
+
+    expect(params.restoreAccount).not.toHaveBeenCalled();
+    expect(params.setUnprotectedAddresses).not.toHaveBeenCalled();
+    expect(params.setError).toHaveBeenLastCalledWith(expect.any(String));
+  });
+
+  describe('under the wallet write lock', () => {
+    const request = vi.fn();
+    beforeEach(() => {
+      request.mockImplementation((_name: string, write: () => Promise<unknown>) => write());
+      Object.defineProperty(navigator, 'locks', { value: { request }, configurable: true });
+    });
+    afterEach(() => {
+      Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true });
+    });
+
+    it('protects while holding the lock every wallet write takes', async () => {
+      storageMap.set('salmon_mnemonics', { 'account-1': 'stub mnemonic value' });
+      const { result } = renderSecurity();
+
+      await act(() => result.current.protectWallet(STRONG));
+
+      expect(request).toHaveBeenCalledWith('salmon-vault-write', expect.any(Function));
+    });
+
+    it('re-reads the vault once it holds the lock: one another window protected first is left alone', async () => {
+      storageMap.set('salmon_mnemonics', { 'account-1': 'stub mnemonic value' });
+      request.mockImplementation(async (_name: string, write: () => Promise<unknown>) => {
+        storageMap.set('salmon_mnemonics', ENCRYPTED_VAULT);
+        return write();
+      });
+      const { result } = renderSecurity();
+
+      await act(async () => {
+        expect(await result.current.protectWallet(STRONG)).toBe(false);
+      });
+
+      expect(encryption.lockAndGetKey).not.toHaveBeenCalled();
+      expect(storageMap.get('salmon_mnemonics')).toEqual(ENCRYPTED_VAULT);
+    });
   });
 });
 

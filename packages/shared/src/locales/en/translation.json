@@ -598,6 +598,13 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Open Settings"
+    },
+    "protect": {
+      "body": "Your wallet has no password yet. Check that these addresses are yours, then choose a password to protect it. If you don't recognise them, don't use this wallet.",
+      "addresses_label": "Your addresses",
+      "button": "Protect wallet",
+      "protecting": "Protecting your wallet",
+      "error": "Could not protect the wallet. Try again."
     }
   },
   "transactions": {
