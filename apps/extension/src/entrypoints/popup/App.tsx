@@ -468,7 +468,15 @@ function App() {
   // comes before the lock screen, which could only refuse every password and
   // offer to remove the wallet: its seeds have no other copy.
   if (unprotectedAddresses) {
-    return <PasswordPage flowType="protect" addresses={unprotectedAddresses} onSuccess={noop} />;
+    return (
+      <PasswordPage
+        flowType="protect"
+        addresses={unprotectedAddresses}
+        onSuccess={noop}
+        // The lock screen's reset: the same removal, then the welcome screen.
+        onRemoveWallet={handleRemoveAllAccounts}
+      />
+    );
   }
 
   // Wallet is locked — show lock screen even if account metadata failed to load.

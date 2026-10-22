@@ -195,8 +195,17 @@ describe('PasswordPage protecting a wallet that has no password', () => {
 
   afterEach(cleanup);
 
+  const mockRemoveWallet = vi.fn();
+
   function renderProtect() {
-    return render(<PasswordPage flowType="protect" addresses={ADDRESSES} onSuccess={vi.fn()} />);
+    return render(
+      <PasswordPage
+        flowType="protect"
+        addresses={ADDRESSES}
+        onSuccess={vi.fn()}
+        onRemoveWallet={mockRemoveWallet}
+      />
+    );
   }
 
   it('lists the addresses for the owner to recognise', () => {
@@ -236,5 +245,30 @@ describe('PasswordPage protecting a wallet that has no password', () => {
     fireEvent.click(screen.getByTestId('password-submit-button'));
 
     await waitFor(() => expect(screen.getByText('wallet.protect.error')).toBeTruthy());
+  });
+
+  // A wallet the owner does not recognise has a way out that is not a
+  // password: removing it, after a sheet that says what that costs.
+  it('removes the wallet only once the sheet is confirmed', async () => {
+    mockRemoveWallet.mockResolvedValue(undefined);
+    renderProtect();
+
+    fireEvent.click(screen.getByTestId('password-protect-remove-button'));
+    expect(screen.getByText('wallet.protect.remove_title')).toBeTruthy();
+    expect(screen.getByText('wallet.protect.remove_message')).toBeTruthy();
+    expect(mockRemoveWallet).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+    await waitFor(() => expect(mockRemoveWallet).toHaveBeenCalledTimes(1));
+    expect(mockProtectWallet).not.toHaveBeenCalled();
+  });
+
+  it('keeps the wallet when the sheet is cancelled', () => {
+    renderProtect();
+
+    fireEvent.click(screen.getByTestId('password-protect-remove-button'));
+    fireEvent.click(screen.getByTestId('confirm-dialog-cancel'));
+
+    expect(mockRemoveWallet).not.toHaveBeenCalled();
   });
 });

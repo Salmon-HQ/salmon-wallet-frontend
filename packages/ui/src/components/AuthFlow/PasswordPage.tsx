@@ -30,7 +30,8 @@ import {
 import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
 import { useSemantic } from '../../theme/ThemeProvider';
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton } from '../Button';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
@@ -116,6 +117,8 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
 
   // Protecting asks for a new password, never an existing one.
   const showSingleInput = !protect && state.requiredLock;
+  // A wallet the owner does not recognise leaves by removal, after its sheet.
+  const [removeOpen, setRemoveOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -410,6 +413,19 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
             </p>
           )
         }
+        secondary={
+          protect ? (
+            <SecondaryButton
+              tone="danger"
+              onPress={() => setRemoveOpen(true)}
+              disabled={isLoading || isChecking}
+              fullWidth
+              testID="password-protect-remove-button"
+            >
+              {t('wallet.protect.remove_button')}
+            </SecondaryButton>
+          ) : undefined
+        }
         action={
           <PrimaryButton
             onPress={handleSubmit}
@@ -422,6 +438,19 @@ export function PasswordPage(props: PasswordPageProps): React.ReactElement {
           </PrimaryButton>
         }
       />
+
+      {protect && (
+        <ConfirmDialog
+          visible={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          title={t('wallet.protect.remove_title')}
+          message={t('wallet.protect.remove_message')}
+          confirmText={t('settings.confirm_remove')}
+          cancelText={t('actions.cancel')}
+          isDanger
+          onConfirm={protect.onRemoveWallet}
+        />
+      )}
 
       {held && (
         <LoadingScreen

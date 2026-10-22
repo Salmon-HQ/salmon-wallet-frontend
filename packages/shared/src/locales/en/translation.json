@@ -606,7 +606,10 @@
       "addresses_label": "Your addresses",
       "button": "Protect wallet",
       "protecting": "Protecting your wallet",
-      "error": "Could not protect the wallet. Try again."
+      "error": "Could not protect the wallet. Try again.",
+      "remove_button": "Remove this wallet",
+      "remove_title": "Remove this wallet?",
+      "remove_message": "It is erased from this device together with its recovery phrase. If it is yours, you can only restore it with that phrase."
     }
   },
   "transactions": {
