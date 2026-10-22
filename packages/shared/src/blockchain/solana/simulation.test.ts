@@ -1764,3 +1764,41 @@ describe('previewTransactionEffects in strict mode', () => {
     });
   });
 });
+
+/**
+ * The swap check reads, for each account the transaction names, what it held
+ * before and after: the rent a created account keeps, and the rent a closed
+ * one returns. The node reports an account the transaction closes with zero
+ * lamports, not as missing (agave `simulate_transaction` returns every loaded
+ * account).
+ */
+describe('previewTransactionEffects — each account before and after', () => {
+  it('reports every account of the transaction, decoded, before and after', async () => {
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(2_000_000_000n) },
+      { [WALLET]: rawSol(999_995_000n), [OTHER]: rawSol(1_000_000_000n) }
+    );
+
+    const result = await previewTransactionEffects(rpc, wireTransfer(), WALLET);
+
+    if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+    const other = result.accounts?.find((entry) => entry.address === OTHER);
+    expect(other?.before).toBeNull();
+    expect(other?.after).toEqual({ lamports: 1_000_000_000n, owner: SYSTEM_PROGRAM, token: null });
+    expect(result.accounts?.map((entry) => entry.address)).toEqual([WALLET, OTHER, SYSTEM_PROGRAM]);
+  });
+
+  it('reports an account the transaction closes with no lamports after', async () => {
+    const rpc = rpcFor(
+      { [WALLET]: rawSol(2_000_000_000n), [OTHER]: rawSol(1n) },
+      { [WALLET]: rawSol(999_995_000n), [OTHER]: rawSol(0n) }
+    );
+
+    const result = await previewTransactionEffects(rpc, wireTransfer(), WALLET);
+
+    if (result.kind !== 'effects') throw new Error(`expected effects, got ${result.kind}`);
+    const other = result.accounts?.find((entry) => entry.address === OTHER);
+    expect(other?.before?.lamports).toBe(1n);
+    expect(other?.after?.lamports ?? 0n).toBe(0n);
+  });
+});

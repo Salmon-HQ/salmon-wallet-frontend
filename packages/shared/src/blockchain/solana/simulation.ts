@@ -68,6 +68,7 @@ import type {
 export { U64_MAX, classifyApprovalScope, deriveEffects } from './simulation-derive';
 export { decodeAccountState } from './simulation-decode';
 export type {
+  AccountChange,
   AccountState,
   ApprovalGrant,
   ApprovalScope,
@@ -306,7 +307,7 @@ export async function previewTransactionEffects(
 
   const feeLamports =
     simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee);
-  const effects = deriveEffects({
+  const derived = deriveEffects({
     account,
     before: beforeStates,
     after: afterStates,
@@ -314,6 +315,17 @@ export async function previewTransactionEffects(
     feeLamports,
     resolveSymbol: options.resolveSymbol,
   });
+  const effects: TransactionEffects =
+    derived.kind === 'effects'
+      ? {
+          ...derived,
+          accounts: addresses.map((key) => ({
+            address: key,
+            before: beforeStates.get(key) ?? null,
+            after: afterStates.get(key) ?? null,
+          })),
+        }
+      : derived;
   if (!options.strict || effects.kind === 'undetermined') return effects;
 
   const known: EffectDetails =
