@@ -24,6 +24,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - The warning for an address no one controls reads "No person controls this address. Anything you send to it may be lost forever." Send review shows the address once, and adds an Address row only when "To" shows a contact's name.
 - A Powerup switched off in your region names itself in the notice ("Swap isn't available in this region.").
 - Sheets and confirmation dialogs share one layout: the details sit in cards with the same spacing in every sheet, and a dialog that only offered a Close button closes from its backdrop.
+- Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
 
 ## mobile 1.4.0 — unreleased
 
@@ -51,6 +52,7 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - The iOS app switcher shows no wallet content.
 - Sheets share one layout: the details sit in cards with the same spacing in every sheet, a sheet that only offered a Close button closes from its handle, backdrop or Back, and the confirmations that used the system alert use Salmon's own sheet.
 - Bottom buttons on send, collectible, confirmation, dApp approval and receipt screens sit as far from the bottom edge as the Powerups button.
+- Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
 
 ## mobile 1.2.0 — 2026-09-28
 
