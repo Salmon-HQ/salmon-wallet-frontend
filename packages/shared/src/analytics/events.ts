@@ -55,17 +55,23 @@ export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];
 export const V1_EVENTS: readonly AnalyticsEventName[] = ANALYTICS_EVENTS.slice(0, 9);
 
 /**
- * Events sent the moment a transaction confirms. They carry the UTC day they
+ * Events that follow an on-chain transaction. They carry the UTC day they
  * happened on, not the millisecond: an exact time lines up with the
  * transaction on the public chain and would tie the install to the wallet
  * that sent it. A day rather than an hour, because daily counts are what the
- * funnels read, and over several sends, intersecting the hours a wallet was
- * active singles it out far sooner than intersecting days.
+ * funnels read, and over several transactions, intersecting the hours a wallet
+ * was active singles it out far sooner than intersecting days. The backend's
+ * `TRANSACTION_EVENTS` holds the same list.
  */
 export const TRANSACTION_EVENTS: ReadonlySet<AnalyticsEventName> = new Set([
   'first_send_completed',
   'send_completed',
   'nft_sent',
+  'first_swap_completed',
+  'swap_completed',
+  'memo_sent',
+  'payment_request_paid',
+  'dapp_transaction_signed',
 ]);
 
 const EVENT_SET: ReadonlySet<string> = new Set(ANALYTICS_EVENTS);
