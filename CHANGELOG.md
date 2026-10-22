@@ -2,7 +2,7 @@
 
 All notable, user-visible changes to the wallet apps are recorded here, newest first. Extension and mobile releases follow store submissions; the web wallet was retired on 2026-09-02. Each entry should list what a user or dApp developer can observe: new/changed flows, fixed bugs, behavior changes.
 
-## extension 0.17.1 — unreleased
+## extension 0.18.0 — unreleased
 
 - Sending a token whose shown balance carries a multiplier (Token-2022 Scaled UI Amount or Interest Bearing, such as tokenised shares) moves the amount on screen, converted at the multiplier in force at that moment, and Max sends the whole balance when the amount on screen is all of it. Within five minutes of a scheduled multiplier change the send stops, so the amount converted is the one the user saw. Max on any token now fills the balance to its last unit. Every Solana send moves the amount exactly as typed, and Review stays closed on an amount with more decimal places than the token has, which a send used to round to a different amount.
 - A wallet that came over from the old version without a password, which some earlier releases stored unencrypted, now opens on the password screen: it lists the addresses the wallet's recovery phrases produce so you can check they are yours, and encrypts the wallet under the password you choose there. Nothing else opens, and the wallet does not lock, until it has a password.
@@ -15,6 +15,16 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - Approve in a dApp request window also waits, after the window comes to the front, for the pointer to move over the window and then come onto Approve, or for focus to move to one of its controls with the keyboard or a screen reader. A key press on Approve counts only after Approve has held the focus for three quarters of a second, and a waiting Approve tells screen readers how to turn it on.
 - Swap checks, before you sign, that the swap pays you: a Jupiter route must send the output to your own account with the amounts on screen, and a 0x route is simulated and refused unless you receive at least the minimum shown. Reported by iblitzc0de.
 - Unlocking no longer copies the key that opens the wallet into the extension's storage. Reported by iblitzc0de.
+- When the network cannot tell whether a transaction went through, Salmon no longer offers to try again: it keeps following that transaction until the network answers, so a slow network cannot lead to sending twice.
+- Transactions Salmon's backend prepares (sending or burning a collectible, Swap) are checked against what the screen shows before you sign, and Solana network addresses are limited to Salmon's provider and Solana's public nodes. Jupiter swaps that take a shared-accounts route, which the wallet refused, go through.
+- Swap also refuses a route that would let someone else close one of your token accounts.
+- A recovery phrase or private key you copy leaves the clipboard after 60 seconds while Salmon is open, or when you come back to it, as long as the clipboard still holds it.
+- The amount field takes no more decimal places than the token has.
+- The password screen for a wallet that came over without a password also offers to remove that wallet from this device, after a confirmation. Removing all wallets also removes a wallet left over from the old version, which could come back afterwards.
+- The warning for an address no one controls reads "No person controls this address. Anything you send to it may be lost forever." Send review shows the address once, and adds an Address row only when "To" shows a contact's name.
+- A Powerup switched off in your region names itself in the notice ("Swap isn't available in this region.").
+- Sheets and confirmation dialogs share one layout: the details sit in cards with the same spacing in every sheet, and a dialog that only offered a Close button closes from its backdrop.
+- Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
 
 ## mobile 1.4.0 — unreleased
 
@@ -29,6 +39,20 @@ All notable, user-visible changes to the wallet apps are recorded here, newest f
 - A dApp that reaches Salmon before any wallet exists is told so, with a button that opens Salmon to create or import one.
 - Returning to a dApp to sign takes one fingerprint: the app's own lock no longer competes with the dApp's for the biometric prompt, which showed "Biometric unlock failed" until tapped again.
 - The unlock button reads "Use Biometrics" on every device, instead of naming a sensor the phone may not have.
+- When the network cannot tell whether a transaction went through, Salmon no longer offers to try again: it keeps following that transaction until the network answers, so a slow network cannot lead to sending twice.
+- Transactions Salmon's backend prepares (sending or burning a collectible, Swap) are checked against what the screen shows before you sign, and Solana network addresses are limited to Salmon's provider and Solana's public nodes. Jupiter swaps that take a shared-accounts route, which the wallet refused, go through.
+- Swap also refuses a route that would let someone else close one of your token accounts.
+- A recovery phrase or private key you copy leaves the clipboard after 60 seconds while Salmon is open, or when you come back to it, as long as the clipboard still holds it.
+- The amount field takes no more decimal places than the token has.
+- The password screen for a wallet that came over without a password also offers to remove that wallet from this device, after a confirmation. Removing all wallets also removes a wallet left over from the old version, which could come back afterwards.
+- The warning for an address no one controls reads "No person controls this address. Anything you send to it may be lost forever." Send review shows the address once, and adds an Address row only when "To" shows a contact's name.
+- Powerup availability is checked again each time Salmon returns to the foreground, so travelling into a region where Swap is unavailable hides it, and the notice names the Powerup. When that check fails, the last answer stays.
+- A dApp whose identity Salmon cannot verify is shown as "Unverified app claiming to be" its site, and each of its requests needs Hold to Approve. Nothing can be approved while the check runs. Hold to Approve also completes from screen reader actions.
+- The warning for an address no one controls appears however the recipient was entered: typed, pasted, scanned, or a .sol domain.
+- The iOS app switcher shows no wallet content.
+- Sheets share one layout: the details sit in cards with the same spacing in every sheet, a sheet that only offered a Close button closes from its handle, backdrop or Back, and the confirmations that used the system alert use Salmon's own sheet.
+- Bottom buttons on send, collectible, confirmation, dApp approval and receipt screens sit as far from the bottom edge as the Powerups button.
+- Optional analytics asks for your consent again, because it now counts more: how often the app opens, which Powerups you turn on and use, and the dApp connections and signatures you approve (never which dApp), together with the platform and the app version. Events carry no amounts, and the ones that follow a transaction carry only its day. A consent given to the earlier analytics keeps covering only the earlier list.
 
 ## mobile 1.2.0 — 2026-09-28
 
