@@ -34,12 +34,18 @@ export interface CreatePasswordPageProps {
 /**
  * The same step for a wallet stored without a password: it lists the wallet's
  * addresses and protects the wallet with the password chosen. There is no way
- * back — nothing else opens until the wallet has a password.
+ * back — nothing else opens until the wallet has a password, or until it is
+ * removed.
  */
 export interface ProtectPasswordPageProps {
   flowType: 'protect';
   addresses: string[];
   onSuccess: () => void;
+  /**
+   * Removes the wallet, the same removal as removing every wallet, and leaves
+   * for the welcome screen. Runs only once its danger sheet is confirmed.
+   */
+  onRemoveWallet: () => Promise<void> | void;
 }
 
 export type PasswordPageProps = CreatePasswordPageProps | ProtectPasswordPageProps;

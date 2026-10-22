@@ -76,8 +76,10 @@ import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-nati
 import Animated from 'react-native-reanimated';
 import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import { useEnrolmentPassword } from '../../src/contexts/EnrolmentPasswordContext';
+import { useBiometric } from '../../src/contexts/BiometricContext';
 import { useSemantic, useThemedStyles, useThemeMode } from '../../src/theme/useThemedStyles';
 import {
+  ConfirmSheet,
   LoadingScreen,
   OnboardingDescription,
   OnboardingLayout,
@@ -87,6 +89,7 @@ import {
   PrimaryButton,
   ReservedSlot,
   ScreenHeader,
+  SecondaryButton,
 } from '../../src/components';
 
 /** Warning, phrase, confirmation, password. */
@@ -144,6 +147,16 @@ export default function PasswordScreen() {
 
   // Where the password waits for the biometric enrolment step.
   const enrolmentPassword = useEnrolmentPassword();
+
+  // A wallet the owner does not recognise leaves by removal, after its sheet:
+  // the same removal as removing every wallet, then the welcome screen.
+  const { disarm: disarmBiometric } = useBiometric();
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const handleRemoveWallet = useCallback(async () => {
+    await disarmBiometric();
+    await actions.removeAllAccounts();
+    router.replace('/(auth)');
+  }, [actions, disarmBiometric]);
 
   // State
   const [password, setPassword] = useState('');
@@ -576,6 +589,18 @@ export default function PasswordScreen() {
                 </Text>
               )
             }
+            secondary={
+              protect ? (
+                <SecondaryButton
+                  tone="danger"
+                  onPress={() => setRemoveOpen(true)}
+                  disabled={isLoading || isChecking}
+                  testID="password-protect-remove-button"
+                >
+                  {t('wallet.protect.remove_button')}
+                </SecondaryButton>
+              ) : undefined
+            }
             action={
               <PrimaryButton
                 onPress={handleSubmit}
@@ -588,6 +613,19 @@ export default function PasswordScreen() {
             }
           />
         </Animated.View>
+      )}
+
+      {protect && (
+        <ConfirmSheet
+          visible={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+          title={t('wallet.protect.remove_title')}
+          message={t('wallet.protect.remove_message')}
+          confirmText={t('settings.confirm_remove')}
+          cancelText={t('actions.cancel')}
+          isDanger
+          onConfirm={handleRemoveWallet}
+        />
       )}
 
       {/* Loading Screen Overlay */}

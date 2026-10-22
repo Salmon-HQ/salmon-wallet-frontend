@@ -606,7 +606,10 @@
       "addresses_label": "Tus direcciones",
       "button": "Proteger billetera",
       "protecting": "Protegiendo tu billetera",
-      "error": "No pudimos proteger la billetera. Intentá de nuevo."
+      "error": "No pudimos proteger la billetera. Intentá de nuevo.",
+      "remove_button": "Eliminar esta billetera",
+      "remove_title": "¿Eliminar esta billetera?",
+      "remove_message": "Se borra de este dispositivo junto con su frase de recuperación. Si es tuya, solo vas a poder recuperarla con esa frase."
     }
   },
   "transactions": {
