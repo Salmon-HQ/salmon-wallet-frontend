@@ -187,6 +187,12 @@ describe('PaymentsPage', () => {
     render();
     expect(screen.getByTestId('qr').getAttribute('data-value')).toBe('solana:abc?amount=1');
     expect(screen.getByTestId('payments-sheet-amount').textContent).toBe('1.00 USDC');
+    // The amount sits in a card like every piece of information on a sheet.
+    expect(
+      screen
+        .getByTestId('payments-sheet-amount-card')
+        .contains(screen.getByTestId('payments-sheet-amount'))
+    ).toBe(true);
     expect(screen.getByTestId('payments-sheet-facts').textContent).toContain('Waiting');
     fireEvent.click(screen.getByTestId('payments-sheet-copy'));
     expect(logic.sheet.copyButton.onPress).toHaveBeenCalled();

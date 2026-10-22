@@ -27,14 +27,13 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { Thermocline } from '../Thermocline';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
 import QRCode from '../QRCode';
 import type { ReceiveSheetProps } from './types';
 
-// Layout constants
-const CONTENT_PADDING_HORIZONTAL = 24;
+// The sheet's own gutter: the QR spans the width inside it.
+const CONTENT_PADDING_HORIZONTAL = spacing.screenGutter;
 
 /**
  * ReceiveSheet - Bottom sheet modal for receiving tokens
@@ -107,11 +106,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
       onClose={onClose}
       title={title}
       testID="receive-sheet"
-      style={[styles.sheetContainer, style]}
-      // The sheet's ground is the thermocline at its thick tier — a sheet is
-      // the one surface Android may blur (at most one per screen), and thick
-      // is what lets the secondary copy below keep its contrast floor.
-      background={<Thermocline tier="thick" style={styles.thermocline} />}
+      style={style}
     >
       {/* Content */}
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
@@ -120,9 +115,18 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
         <View style={styles.qrGroup}>
           {/* Chain badge — opaque fill and a written label, so it survives a
               colorblind reader, a narrow column and a screenshot. */}
+          {/* Off mainnet the environment rides in the badge: it says "Solana"
+              on devnet too, and a deposit made to a test address is not money
+              (spec 026 D6). */}
           <View style={styles.chainBadge} testID="receive-chain-badge">
             <Text style={styles.chainBadgeText}>
               {t('token.send.blockchainAddress', { blockchain: chainName })}
+              {networkLabel ? (
+                <>
+                  {' · '}
+                  <Text testID="receive-network-label">{networkLabel}</Text>
+                </>
+              ) : null}
             </Text>
           </View>
 
@@ -144,15 +148,6 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
             />
           </View>
         </View>
-
-        {/* Off mainnet the environment is named under the code: the chain
-            badge above says "Solana" on devnet too, and a deposit made to a
-            test address is not money (spec 026 D6). */}
-        {!!networkLabel && (
-          <Text style={styles.networkLabel} testID="receive-network-label">
-            {networkLabel}
-          </Text>
-        )}
 
         {/* Wrong-network deposits are unrecoverable, so say so here rather
             than leaving the chain to be inferred from the address format. */}
@@ -202,28 +197,19 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    sheetContainer: {
-      maxHeight: '92%',
-      overflow: 'hidden',
-    },
-    // The material fills the sheet and clips itself to the sheet's own top
-    // corners; the refraction strip rides its top edge.
-    thermocline: {
-      ...StyleSheet.absoluteFill,
-      borderTopLeftRadius: borderRadius.card,
-      borderTopRightRadius: borderRadius.card,
-    },
+    // 12 under the sheet's title, then the component gap of 20 between
+    // blocks (DESIGN.md §Layout).
     content: {
       alignItems: 'center',
       paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
-      gap: vs(componentSizes.receiveContentGap),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.xl),
     },
-    // The badge sits `spacing.md` over the QR it labels — clearly tighter than
-    // the content gap that separates the group from the sheet title above it.
+    // The badge sits `spacing.md` over the QR it labels — tighter than the
+    // component gap that separates the group from what follows.
     qrGroup: {
       alignItems: 'center',
       gap: vs(spacing.md),
-      marginTop: vs(spacing.headerPadding),
     },
     qrContainer: {
       borderRadius: ms(borderRadius.xl),
@@ -246,13 +232,6 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.semiBold,
       color: t.text.primary,
       letterSpacing: letterSpacing.label,
-    },
-    networkLabel: {
-      fontSize: ms(fontSize.caption),
-      fontFamily: fontFamilyNative.semiBold,
-      color: t.text.tertiary,
-      letterSpacing: letterSpacing.label,
-      textAlign: 'center',
     },
     copyButton: {
       flexDirection: 'row',

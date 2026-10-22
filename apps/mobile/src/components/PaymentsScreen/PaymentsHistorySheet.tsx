@@ -7,17 +7,9 @@
  * `PaymentsPage/PaymentsHistoryPage`.
  */
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  fontFamilyNative,
-  fontSize,
-  lineHeight,
-  s,
-  spacing,
-  vs,
-  type Semantic,
-} from '@salmon/shared';
+import { s, spacing, vs, type Semantic } from '@salmon/shared';
 import { usePaymentsScreenLogic } from '@salmon/shared/powerups';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -53,11 +45,10 @@ export function PaymentsHistorySheet({
       height={height}
       testID={testID}
       style={style}
-      headerContent={
-        <View style={styles.header}>
-          <SheetTitle>{t('payments.history.title')}</SheetTitle>
-          <Text style={styles.subtitle}>{t('payments.history.subtitle')}</Text>
-        </View>
+      title={
+        <SheetTitle subtitle={t('payments.history.subtitle')}>
+          {t('payments.history.title')}
+        </SheetTitle>
       }
     >
       <ScrollView
@@ -75,26 +66,13 @@ export function PaymentsHistorySheet({
   );
 }
 
-const stylesFor = (t: Semantic) =>
+const stylesFor = (_t: Semantic) =>
   StyleSheet.create({
-    header: {
-      alignItems: 'center',
-      gap: vs(spacing.xs),
-      paddingHorizontal: s(spacing.screenGutter),
-    },
-    // The screen header's subtitle, centred under the sheet's title.
-    subtitle: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.subtitle),
-      lineHeight: s(fontSize.subtitle) * lineHeight.snug,
-      color: t.text.secondary,
-      textAlign: 'center',
-    },
     scroll: {
       flex: 1,
     },
     content: {
       paddingHorizontal: s(spacing.screenGutter),
-      paddingTop: vs(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
     },
   });

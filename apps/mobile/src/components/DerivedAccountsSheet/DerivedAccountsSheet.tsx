@@ -19,7 +19,6 @@ import {
   fontSize,
   getInitials,
   getShortAddress,
-  lineHeight,
   ms,
   s,
   spacing,
@@ -75,7 +74,13 @@ export function DerivedAccountsSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={scanning ? IGNORE_DISMISS : onDismiss}
-      title={<SheetTitle>{title}</SheetTitle>}
+      title={
+        <SheetTitle
+          subtitle={!scanning && rows.length > 0 ? t('wallet.derived.found_body') : undefined}
+        >
+          {title}
+        </SheetTitle>
+      }
       testID={testID}
       style={style}
     >
@@ -91,8 +96,6 @@ export function DerivedAccountsSheet({
           />
         ) : (
           <>
-            <Text style={styles.hint}>{t('wallet.derived.found_body')}</Text>
-
             <View style={styles.list}>
               {rows.map(({ index, address, balanceFormatted, name }) => {
                 const isChecked = checked.includes(index);
@@ -165,15 +168,8 @@ const stylesFor = (t: Semantic) =>
       // The component gap (DESIGN.md §Layout): 20 between sibling blocks.
       gap: vs(spacing.xl),
     },
-    hint: {
-      fontFamily: fontFamilyNative.medium,
-      fontSize: s(fontSize.body),
-      lineHeight: s(fontSize.body) * lineHeight.snug,
-      color: t.text.secondary,
-      textAlign: 'center',
-    },
     list: {
-      gap: vs(spacing.md),
+      gap: vs(spacing.xl),
     },
     actions: {
       gap: vs(spacing.md),

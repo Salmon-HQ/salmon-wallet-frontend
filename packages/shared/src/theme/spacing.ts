@@ -327,7 +327,6 @@ export const componentSizes = {
 
   // ReceiveSheet
   qrBorderWidth: 22,
-  receiveContentGap: 32,
   copyButtonWidth: 180,
 
   // Scrollbar widths

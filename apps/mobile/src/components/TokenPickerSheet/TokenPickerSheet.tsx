@@ -12,7 +12,6 @@ import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
-import { Thermocline } from '../Thermocline';
 import { TokenSelectList } from '../TokenSelectList';
 import type { TokenPickerSheetProps } from './types';
 
@@ -35,9 +34,6 @@ export function TokenPickerSheet({
       forTyping
       style={styles.sheet}
       title={<SheetTitle>{t('wallet.select_token', 'Select Token')}</SheetTitle>}
-      // The sheet's ground is the thermocline at its thick tier, the same
-      // material Receive rides.
-      background={<Thermocline tier="thick" style={styles.thermocline} />}
     >
       <TokenSelectList {...list} />
     </BottomSheetContainer>
@@ -49,9 +45,6 @@ const styles = StyleSheet.create({
   // full height, and the list fills it.
   sheet: {
     overflow: 'hidden',
-  },
-  thermocline: {
-    ...StyleSheet.absoluteFill,
   },
 });
 
