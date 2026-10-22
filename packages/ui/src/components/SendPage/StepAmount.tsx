@@ -14,6 +14,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
+  isSendableAmount,
   spacing,
   useFiatLine,
   type BlockchainType,
@@ -80,11 +81,12 @@ export function StepAmount({
     });
   }, [blockchain, nativeBalance, token.address]);
 
-  const isValid = useMemo(() => {
-    const numAmount = parseFloat(amount);
-    const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    return amountValid && !solShortfall;
-  }, [amount, tokenBalance, solShortfall]);
+  const isValid = useMemo(
+    () =>
+      isSendableAmount(amount, tokenBalance, token.decimals ?? SOL_CONSTANTS.DECIMALS) &&
+      !solShortfall,
+    [amount, tokenBalance, token.decimals, solShortfall]
+  );
 
   // The balance fills; a fill stays lit until the user types over it.
   const shortcuts = useAmountShortcuts({

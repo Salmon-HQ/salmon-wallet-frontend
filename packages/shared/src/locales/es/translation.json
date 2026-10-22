@@ -148,14 +148,32 @@
     "effects_approval_body": "{{spender}} podría mover {{amount}} {{token}} de tu billetera, ahora y en el futuro, hasta que lo revoques.",
     "hold_to_approve": "Mantené para aprobar",
     "hold_to_approve_hint": "Esta solicitud necesita una aprobación deliberada. Mantené presionado el botón para firmarla.",
+    "approve_arming_hint": "Para activar este botón, llevá el puntero hasta él o mové el foco con el teclado.",
     "effects_reason_ownership_change": "Esta transacción entrega el control de una de tus cuentas de tokens a otra persona, así que los saldos posteriores ya no serían tuyos.",
+    "effects_reason_unanalysed": "Esta transacción usa programas o cuentas que Salmon no puede analizar, así que podría mover activos que no aparecen acá, como SOL en staking o NFTs.",
+    "effects_simulated_label": "Simulación: el resultado real puede ser distinto",
+    "effects_reason_unanalysed_account": "Esta transacción cambia una cuenta que Salmon no muestra acá, como el permiso para cerrar una cuenta de tokens o su depósito, que pasa a otra persona.",
+    "effects_reason_durable_nonce": "Esta firma no vence nunca, así que el sitio puede enviar la transacción más adelante, cuando quiera.",
     "batch_size": "Transacciones en esta solicitud",
     "batch_first_only": "Se van a firmar {{count}} transacciones. La comisión, la cantidad de instrucciones, quien paga la comisión y el blockhash de abajo describen solo la primera.",
     "mwa_refused_title": "Solicitud rechazada",
     "mwa_unverified": "Salmon no pudo confirmar que esta solicitud venga de {{origin}}. Aprobá solo si abriste esa app o sitio vos mismo.",
+    "mwa_unverified_origin": "App no verificada que dice ser {{origin}}",
     "mwa_watch_only": "La billetera activa solo observa saldos, así que no puede conectarse ni firmar. Cambiá a una billetera que tenga sus claves y volvé a intentar.",
     "mwa_identity_missing": "Esta app no dijo qué sitio es, así que Salmon no puede mostrarte quién lo pide. La solicitud se rechazó.",
-    "mwa_network_unsupported": "Esta app pidió {{requested}}, una red que tu billetera no está usando. Cambiá Salmon a esa red, si la soporta, y volvé a intentar."
+    "mwa_network_unsupported": "Esta app pidió {{requested}}. Salmon funciona solo con Solana Mainnet y Devnet, así que la solicitud se rechazó.",
+    "mwa_network_not_held": "Esta app pidió {{network}}, pero la billetera activa no tiene una cuenta ahí. Cambiá a una billetera que la tenga y volvé a intentar.",
+    "mwa_switch_title": "¿Cambiar de red?",
+    "mwa_switch_message": "{{origin}} pide {{target}}. Salmon está en {{current}}.",
+    "mwa_switch_confirm": "Cambiar a {{target}}",
+    "mwa_switch_failed": "Salmon no pudo cambiar a {{target}}, así que se rechazó la solicitud. Volvé a pedirlo desde la app o el sitio.",
+    "mwa_no_wallet_title": "Todavía no hay billetera",
+    "mwa_no_wallet_message": "Creá o importá una billetera en Salmon y después volvé a conectarte.",
+    "mwa_no_wallet_open": "Abrir Salmon",
+    "mwa_network_names": {
+      "solana-mainnet": "Mainnet",
+      "solana-devnet": "Devnet"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -370,6 +388,7 @@
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
     "clipboard_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Mejor anotá la frase en papel.",
+    "secret_copied": "Copiado. Salmon lo borra a los 60 s o cuando vuelvas a la app.",
     "clipboard_key_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Pegá la clave solo donde querías, y limpiá el portapapeles después.",
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
@@ -442,9 +461,6 @@
     "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo.",
     "unlocking": "Desbloqueando billetera",
     "use_biometric": "Usar Biometría",
-    "use_face_id": "Usar Face ID",
-    "use_touch_id": "Usar Touch ID",
-    "use_iris": "Usar Iris",
     "biometric_unlock_failed": "Error al desbloquear con biometría",
     "biometric_needs_rearm": "Después de esta actualización hay que volver a configurar el desbloqueo biométrico. Ingresá tu contraseña y activalo de nuevo en Ajustes → Seguridad.",
     "biometric_invalidated": "La biometría cambió en este dispositivo, así que se desactivó acá. Ingresá tu contraseña y volvé a activarla en Ajustes → Seguridad.",
@@ -584,6 +600,13 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Abrir Ajustes"
+    },
+    "protect": {
+      "body": "Tu billetera todavía no tiene contraseña. Revisá que estas direcciones sean tuyas y elegí una contraseña para protegerla. Si no las reconocés, no uses esta billetera.",
+      "addresses_label": "Tus direcciones",
+      "button": "Proteger billetera",
+      "protecting": "Protegiendo tu billetera",
+      "error": "No pudimos proteger la billetera. Intentá de nuevo."
     }
   },
   "transactions": {
@@ -915,7 +938,7 @@
       "uses": "Usa"
     },
     "disabled": {
-      "region": "Este Powerup no está disponible en tu región.",
+      "region": "{{name}} no está disponible en la región en donde te encontrás.",
       "maintenance": "Este Powerup está en pausa por mantenimiento. Volvé a probar en un rato.",
       "deprecated": "Este Powerup fue retirado. Podés quitarlo de Home."
     },
@@ -930,7 +953,7 @@
     },
     "unavailable": {
       "network": "Este Powerup solo está disponible en Solana mainnet.",
-      "region": "Este Powerup no está disponible en tu región.",
+      "region": "Este Powerup no está disponible en la región en donde te encontrás.",
       "wallet": "Este Powerup no está disponible para esta billetera."
     }
   },

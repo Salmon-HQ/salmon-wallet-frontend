@@ -148,14 +148,32 @@
     "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.",
     "hold_to_approve": "Hold to Approve",
     "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it.",
+    "approve_arming_hint": "To turn this button on, move the pointer onto it or move the keyboard focus.",
     "effects_reason_ownership_change": "This transaction hands control of one of your token accounts to someone else, so the balances afterwards would no longer be yours.",
+    "effects_reason_unanalysed": "This transaction uses programs or accounts Salmon cannot preview, so it could move assets that are not listed here, such as staked SOL or NFTs.",
+    "effects_simulated_label": "Simulation: the real result may differ",
+    "effects_reason_unanalysed_account": "This transaction changes an account Salmon does not show here, such as a token account's close permission or its deposit going to someone else.",
+    "effects_reason_durable_nonce": "This signature never expires, so the site can submit the transaction later, at a time it chooses.",
     "batch_size": "Transactions in this request",
     "batch_first_only": "{{count}} transactions will be signed. The fee, instruction count, fee payer and blockhash below describe only the first one.",
     "mwa_refused_title": "Request refused",
     "mwa_unverified": "Salmon could not confirm that this request comes from {{origin}}. Approve only if you opened that app or site yourself.",
+    "mwa_unverified_origin": "Unverified app claiming to be {{origin}}",
     "mwa_watch_only": "The active wallet only watches balances, so it cannot connect or sign. Switch to a wallet that holds its keys and try again.",
     "mwa_identity_missing": "This app did not say which site it is, so Salmon cannot show you who is asking. The request was refused.",
-    "mwa_network_unsupported": "This app asked for {{requested}}, a network your wallet is not using. Switch Salmon to that network, if it supports it, and try again."
+    "mwa_network_unsupported": "This app asked for {{requested}}. Salmon works with Solana Mainnet and Devnet only, so the request was refused.",
+    "mwa_network_not_held": "This app asked for {{network}}, but the active wallet has no account there. Switch to a wallet that does and try again.",
+    "mwa_switch_title": "Switch network?",
+    "mwa_switch_message": "{{origin}} asks for {{target}}. Salmon is on {{current}}.",
+    "mwa_switch_confirm": "Switch to {{target}}",
+    "mwa_switch_failed": "Salmon could not switch to {{target}}, so the request was refused. Ask again from the app or site.",
+    "mwa_no_wallet_title": "No wallet yet",
+    "mwa_no_wallet_message": "Create or import a wallet in Salmon, then come back and connect.",
+    "mwa_no_wallet_open": "Open Salmon",
+    "mwa_network_names": {
+      "solana-mainnet": "Mainnet",
+      "solana-devnet": "Devnet"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -370,6 +388,7 @@
     "reveal_phrase_message": "Enter your password to show the recovery phrase. Anyone who sees it owns every account in this wallet, forever.",
     "clipboard_warning_title": "The clipboard is not private",
     "clipboard_warning_description": "Any other app on this device can read what you copy, and some systems keep a clipboard history. Prefer writing the phrase down on paper.",
+    "secret_copied": "Copied. Salmon clears it after 60 s or when you come back to the app.",
     "clipboard_key_warning_description": "Any other app on this device can read what you copy, and some systems keep a clipboard history. Paste the key only where you meant to, and clear the clipboard afterwards.",
     "reveal_private_key_title": "Confirm it is you",
     "reveal_private_key_message": "Enter your password to show the private key. Anyone who sees it can spend everything in this account, and there is no way to undo it.",
@@ -442,9 +461,6 @@
     "reset_failed": "Failed to reset wallet. Please try again.",
     "unlocking": "Unlocking Wallet",
     "use_biometric": "Use Biometrics",
-    "use_face_id": "Use Face ID",
-    "use_touch_id": "Use Touch ID",
-    "use_iris": "Use Iris",
     "biometric_unlock_failed": "Biometric unlock failed",
     "biometric_needs_rearm": "Biometric unlock needs to be set up again after this update. Enter your password, then turn it back on in Settings → Security.",
     "biometric_invalidated": "Biometrics changed on this device, so it was turned off here. Enter your password, then turn it back on in Settings → Security.",
@@ -584,6 +600,13 @@
       },
       "badge": "Seed Vault",
       "open_settings": "Open Settings"
+    },
+    "protect": {
+      "body": "Your wallet has no password yet. Check that these addresses are yours, then choose a password to protect it. If you don't recognise them, don't use this wallet.",
+      "addresses_label": "Your addresses",
+      "button": "Protect wallet",
+      "protecting": "Protecting your wallet",
+      "error": "Could not protect the wallet. Try again."
     }
   },
   "transactions": {
@@ -915,7 +938,7 @@
       "uses": "Uses"
     },
     "disabled": {
-      "region": "This Powerup isn't available in your region.",
+      "region": "{{name}} isn't available in this region.",
       "maintenance": "This Powerup is paused for maintenance. Check back soon.",
       "deprecated": "This Powerup has been retired. You can remove it from Home."
     },
@@ -930,7 +953,7 @@
     },
     "unavailable": {
       "network": "This Powerup is available on Solana mainnet only.",
-      "region": "This Powerup is not available in your region.",
+      "region": "This Powerup isn't available in this region.",
       "wallet": "This Powerup is not available for this wallet."
     }
   },

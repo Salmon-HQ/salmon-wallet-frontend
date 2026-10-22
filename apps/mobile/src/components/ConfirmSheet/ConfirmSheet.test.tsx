@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 import { ConfirmSheet } from './ConfirmSheet';
 
@@ -46,37 +46,38 @@ jest.mock('../BottomSheetContainer', () => ({
 // Buttons and the password field are Reanimated-backed; stubbed to plain RN so
 // this suite can exercise the sheet's gate without a native runtime.
 jest.mock('../Button/PrimaryButton', () => ({
-  PrimaryButton: ({ children, onPress, disabled }: any) => {
+  PrimaryButton: ({ children, onPress, disabled, testID }: any) => {
     const RN = require('react-native');
     const R = require('react');
     return R.createElement(
       RN.TouchableOpacity,
-      { onPress, disabled, testID: 'primary-button' },
+      { onPress, disabled, testID: testID ?? 'primary-button' },
       R.createElement(RN.Text, null, children)
     );
   },
 }));
 
 jest.mock('../Button/SecondaryButton', () => ({
-  SecondaryButton: ({ children, onPress, disabled }: any) => {
+  SecondaryButton: ({ children, onPress, disabled, testID }: any) => {
     const RN = require('react-native');
     const R = require('react');
     return R.createElement(
       RN.TouchableOpacity,
-      { onPress, disabled, testID: 'secondary-button' },
+      { onPress, disabled, testID: testID ?? 'secondary-button' },
       R.createElement(RN.Text, null, children)
     );
   },
 }));
 
 jest.mock('../PasswordInput', () => ({
-  PasswordInput: ({ value, onChangeText }: any) => {
+  PasswordInput: ({ value, onChangeText, onSubmitEditing }: any) => {
     const RN = require('react-native');
     const R = require('react');
     return R.createElement(RN.TextInput, {
       testID: 'password-input',
       value,
       onChangeText,
+      onSubmitEditing,
     });
   },
 }));
@@ -155,6 +156,58 @@ describe('ConfirmSheet not ready', () => {
     fireEvent.press(screen.getByText('Confirm'));
 
     await new Promise((r) => setTimeout(r, 0));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+
+// An MWA dApp whose identity could not be verified: the approval is held.
+describe('ConfirmSheet held confirm', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  // The hold asks the OS whether a screen reader is on; let that answer land.
+  const settle = () => act(async () => {});
+
+  it('ignores a tap and confirms once the hold completes', async () => {
+    const { onConfirm } = renderSheet({ isDanger: true, requiresHold: true });
+    await settle();
+
+    fireEvent.press(screen.getByText('Confirm'));
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    fireEvent(screen.getByTestId('confirm-dialog-hold'), 'touchStart');
+    await act(async () => {
+      jest.advanceTimersByTime(700);
+    });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  // The keyboard's return key confirms a password sheet; on a held sheet it
+  // must not stand in for the hold.
+  it('does not confirm from the keyboard when the confirm must be held', async () => {
+    const validatePassword = jest.fn().mockResolvedValue(true);
+    const { onConfirm } = renderSheet({
+      requiresHold: true,
+      requirePassword: true,
+      validatePassword,
+    });
+    await settle();
+
+    fireEvent.changeText(screen.getByTestId('password-input'), PASSWORD);
+    fireEvent(screen.getByTestId('password-input'), 'submitEditing');
+    await settle();
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('does not start a hold while confirm is disabled', async () => {
+    const { onConfirm } = renderSheet({ requiresHold: true, confirmDisabled: true });
+    await settle();
+
+    fireEvent(screen.getByTestId('confirm-dialog-hold'), 'touchStart');
+    act(() => {
+      jest.advanceTimersByTime(700);
+    });
     expect(onConfirm).not.toHaveBeenCalled();
   });
 });

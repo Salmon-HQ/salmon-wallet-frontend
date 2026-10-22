@@ -50,7 +50,9 @@ pnpm --filter @salmon/extension e2e:ui                                       # P
 
 Headless keeps the browser off your screen — a headed window that your mouse
 crosses counts as wallet activity. Reports land in `playwright-report/`,
-failure traces and screenshots in `test-results/`.
+failure traces and screenshots in `test-results/`. A CI run writes none of the
+three (they would record the test wallets' phrases in a downloadable
+artifact), so the run log is its only record.
 
 ## Preflight
 
@@ -78,7 +80,7 @@ unset; it fails when a prerequisite is present but misbehaves.
 | `activity`, `receive`, `settings` | Those screens by their testIDs                                       | —              |
 | `send`                            | Send up to the amount step on devnet, then cancel                    | —              |
 | `nft-spam-filter`                 | Spam NFTs are requested only with "Show unverified tokens" on        | —              |
-| `legacy-migration`                | A v2 install with no password is migrated encrypted                  | —              |
+| `legacy-migration`                | A v2 record with no password gets a new password, then is migrated   | —              |
 | `analytics-coverage-onchain`      | Devnet SOL send and NFT transfer A → B fire their events             | devnet, opt-in |
 | `nft-burn`                        | Burns the devnet fixture NFT                                         | devnet, opt-in |
 

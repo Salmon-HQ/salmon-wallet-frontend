@@ -6,6 +6,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SignatureRequestProvider, useSignatureRequestContext } from './SignatureRequestContext';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import {
   PendingTransactionsProvider,
   usePendingTransactions,
@@ -318,6 +319,74 @@ describe('SignatureRequestProvider', () => {
       expect(view.result.current.ctx.receipt).toBeNull();
       act(() => view.result.current.ctx.cancel());
     });
+
+    it('hears nothing when the outcome is unknown, since it may have landed', async () => {
+      const onOutcome = vi.fn();
+      const signProposal = vi
+        .fn()
+        .mockRejectedValue(new SolanaOutcomeUnknownError('sig-maybe' as never));
+      const { view } = setup({ signProposal });
+
+      act(() => {
+        void view.result.current.ctx
+          .requestSignature(proposal({ onOutcome }))
+          .catch(() => undefined);
+      });
+      await act(async () => {
+        await view.result.current.ctx.confirm();
+      });
+      act(() => view.result.current.ctx.cancel());
+
+      expect(onOutcome).not.toHaveBeenCalled();
+    });
+  });
+
+  it('never signs again after an unknown outcome: it only closes', async () => {
+    const signProposal = vi
+      .fn()
+      .mockRejectedValue(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const { view } = setup({ signProposal });
+    let outcome: Promise<unknown> | undefined;
+
+    act(() => {
+      outcome = view.result.current.ctx.requestSignature(proposal()).catch((error) => error);
+    });
+    await act(async () => {
+      await view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(view.result.current.ctx.pending?.error).toBe('transaction.errors.broadcastUnknown');
+    expect(view.result.current.host.confirmLabel).toBe('Close');
+
+    await act(async () => {
+      await view.result.current.host.confirmOrRefresh();
+    });
+
+    expect(signProposal).toHaveBeenCalledTimes(1);
+    expect(view.result.current.ctx.pending).toBeNull();
+    // The Powerup learns it may have landed, not that the user backed out.
+    await expect(outcome).resolves.toBeInstanceOf(SolanaOutcomeUnknownError);
+  });
+
+  it('refuses to sign again after an unknown outcome, even when confirm is called directly', async () => {
+    const signProposal = vi
+      .fn()
+      .mockRejectedValue(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const { view } = setup({ signProposal });
+
+    act(() => {
+      void view.result.current.ctx.requestSignature(proposal()).catch(() => undefined);
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+    await act(async () => {
+      await view.result.current.ctx.confirm();
+    });
+
+    expect(signProposal).toHaveBeenCalledTimes(1);
+    expect(view.result.current.ctx.pending?.error).toBe('transaction.errors.broadcastUnknown');
+    act(() => view.result.current.ctx.cancel());
   });
 
   // The one Powerup that builds transactions today passes no `refresh`, so

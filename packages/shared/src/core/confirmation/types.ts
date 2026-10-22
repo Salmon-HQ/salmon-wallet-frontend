@@ -44,7 +44,8 @@ export interface ConfirmationRow {
 
 export interface ConfirmationWarning {
   title: string;
-  body: string;
+  /** Omitted when the title says all there is to say. */
+  body?: string;
 }
 
 /** What the confirmation screen shows. */
@@ -118,7 +119,8 @@ export interface TransactionProposal {
   };
   /**
    * How each signing attempt ended: `true` once the network confirmed it,
-   * `false` when signing or sending failed. Backing out is not an attempt.
+   * `false` when signing or sending failed. Backing out is not an attempt,
+   * and an outcome the network could not confirm either way reports nothing.
    * Core ignores whatever this throws, so it never changes what is signed or
    * what the user sees.
    */

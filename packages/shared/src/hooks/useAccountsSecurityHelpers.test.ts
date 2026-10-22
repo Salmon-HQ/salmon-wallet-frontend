@@ -23,6 +23,7 @@ import {
   getStoredMnemonics,
   isEncryptedMnemonics,
   initializeAccountsSecurity,
+  resolveMnemonicsWithCachedKey,
   resolveMnemonicsWithPassword,
   type StoredMnemonics,
 } from './useAccountsSecurityHelpers';
@@ -42,6 +43,7 @@ function makeParams() {
     setRequiredLock: vi.fn(),
     unlockWithCachedKey: vi.fn(async () => false),
     isKeyCacheValidFn: vi.fn(() => false),
+    onUnprotected: vi.fn(async () => {}),
   };
 }
 
@@ -58,7 +60,7 @@ describe('getStoredMnemonics — fail closed on a corrupt vault', () => {
     expect(await getStoredMnemonics()).toBeNull();
   });
 
-  it('still returns a legitimate plaintext-legacy record (an object)', async () => {
+  it('returns any stored object; whether it is a vault is decided by its reader', async () => {
     const record = { 'account-1': 'word1 word2 word3' };
     mockGetStorageItem.mockResolvedValue(record as never);
 
@@ -91,16 +93,52 @@ describe('initializeAccountsSecurity — a corrupt vault does not skip the lock'
     expect(params.setLoaded).toHaveBeenCalledWith(true);
   });
 
-  it('keeps the legacy plaintext path working (loads accounts, requiredLock=false)', async () => {
+  // Releases that migrated a password-less v2 wallet stored its seeds in the
+  // clear. That record is the owner's only copy, so it opens — to show its
+  // addresses and ask for a password before anything else. No wallet loads
+  // from it until then.
+  it('opens a cleartext record only to have it protected', async () => {
     const record = { 'account-1': 'word1 word2 word3' };
     mockGetStorageItem.mockResolvedValue(record as never);
     const params = makeParams();
 
-    const result = await initializeAccountsSecurity(params);
+    expect(await initializeAccountsSecurity(params)).toBe(true);
 
-    expect(result).toBe(true);
-    expect(params.loadAccounts).toHaveBeenCalledWith(record);
+    expect(params.onUnprotected).toHaveBeenCalledWith(record);
+    expect(params.loadAccounts).not.toHaveBeenCalled();
     expect(params.setRequiredLock).toHaveBeenCalledWith(false);
+    expect(params.setLocked).not.toHaveBeenCalled();
+  });
+
+  it('fails the start when a cleartext record cannot be shown for protection', async () => {
+    mockGetStorageItem.mockResolvedValue({ 'account-1': 'word1 word2 word3' } as never);
+    const params = makeParams();
+    params.onUnprotected.mockRejectedValueOnce(new Error('nothing to show'));
+
+    await expect(initializeAccountsSecurity(params)).rejects.toThrow('nothing to show');
+  });
+
+  it('does not ask an encrypted vault to be protected', async () => {
+    mockGetStorageItem.mockResolvedValue({ isEncrypted: true, encrypted: 'x' } as never);
+    const params = makeParams();
+
+    await initializeAccountsSecurity(params);
+
+    expect(params.onUnprotected).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolving a cleartext record', () => {
+  const record = { 'account-1': 'word1 word2 word3' } as StoredMnemonics;
+
+  it('does not accept any password for it', async () => {
+    await expect(resolveMnemonicsWithPassword(record, 'anything at all')).rejects.toThrow();
+  });
+
+  it('does not accept a cached key for it', async () => {
+    await expect(
+      resolveMnemonicsWithCachedKey(record, { key: 'k', salt: 's' } as never)
+    ).rejects.toThrow();
   });
 });
 

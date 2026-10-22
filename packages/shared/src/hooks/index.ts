@@ -11,6 +11,7 @@
 // Account management hook
 export { useAccounts } from './useAccounts';
 export type { UseAccountsState, UseAccountsActions } from './useAccounts';
+export { isOwnStoredAccountsWrite } from './useAccountsMutationHelpers';
 
 // User configuration hook
 export { useUserConfig } from './useUserConfig';
@@ -84,6 +85,7 @@ export type { UseSendTransactionParams, UseSendTransactionResult } from './useSe
 // The send flow's state (token, recipient, amount, fee, submit) — one
 // implementation; mobile wraps it in a provider, the DOM calls it directly.
 export { useSendFlowState } from './useSendFlowState';
+export { useRecipientWarning } from './useRecipientWarning';
 export type {
   UseSendFlowStateParams,
   SendFlowState,

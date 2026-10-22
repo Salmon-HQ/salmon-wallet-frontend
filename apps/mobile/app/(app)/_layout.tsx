@@ -12,6 +12,7 @@ import { useBiometric } from '../../src/contexts/BiometricContext';
 import { TaskChromeProvider } from '../../src/contexts/TaskChromeContext';
 import { DerivedAccountsProvider } from '../../src/contexts/DerivedAccountsContext';
 import { DeveloperModeProvider } from '../../src/contexts/DeveloperModeContext';
+import { useMwaSessionOpen } from '../../src/mwa/sessionOpen';
 import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
 
 /**
@@ -34,6 +35,7 @@ import { FLOAT_DELAY_MS } from '../../src/utils/sinkAndFloat';
 export default function AppLayout() {
   const router = useRouter();
   const [accountState, accountActions] = useAccountsContext();
+  const mwaSessionOpen = useMwaSessionOpen();
 
   const {
     available: biometricAvailable,
@@ -144,6 +146,10 @@ export default function AppLayout() {
       ? accountState.activeBlockchainAccount
       : null;
 
+  // A wallet with no password belongs on the password screen the root layout
+  // sends it to; no app screen paints a frame before it gets there.
+  if (accountState.unprotectedAddresses) return null;
+
   return (
     <TaskChromeProvider covered={isLocked}>
       <DerivedAccountsProvider>
@@ -211,6 +217,7 @@ export default function AppLayout() {
                   onUnlockExited={handleUnlockExited}
                   onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
                   biometric={lockBiometricConfig}
+                  autoPrompt={!mwaSessionOpen}
                 />
               </LockOverlay>
             )}

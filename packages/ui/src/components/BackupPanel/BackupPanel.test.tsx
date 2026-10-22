@@ -161,6 +161,19 @@ describe('BackupPanel seed copy failure', () => {
     expect(screen.queryByTestId('backup-seed-copy-error')).toBeNull();
   });
 
+  it('says when Salmon clears the clipboard once the copy succeeded', async () => {
+    setClipboardWriteText(() => Promise.resolve());
+    await renderPanelWithRevealedSeed();
+    expect(screen.queryByTestId('backup-seed-clipboard-clears')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('backup-seed-copy-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('backup-seed-clipboard-clears')).toBeTruthy();
+    });
+    expect(screen.getByText('settings.secret_copied')).toBeTruthy();
+  });
+
   it('clears the warning once a retry succeeds', async () => {
     setClipboardWriteText(() => Promise.reject(new Error('denied')));
     await renderPanelWithRevealedSeed();

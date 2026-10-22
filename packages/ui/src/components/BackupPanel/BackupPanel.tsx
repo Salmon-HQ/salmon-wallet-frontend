@@ -22,6 +22,7 @@ import {
   useBackupPanelLogic,
 } from '@salmon/shared';
 
+import { secretClipboard } from '../../hooks/useSecretClipboard';
 import { useSemantic } from '../../theme/ThemeProvider';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
@@ -47,13 +48,15 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
     reauthVisible: reauthOpen,
     setReauthVisible: setReauthOpen,
     copied,
+    secretCopied,
     copyFailed,
     handleReveal,
     handleReauthenticated,
     handleCopy,
   } = useBackupPanelLogic({
     activeAccount,
-    copyToClipboard: (mnemonic) => navigator.clipboard.writeText(mnemonic),
+    // Cleared 60 s later, or on the return to the panel (useSecretClipboard).
+    copyToClipboard: (mnemonic) => secretClipboard.copy(mnemonic),
   });
 
   return (
@@ -103,6 +106,12 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
       {copyFailed && (
         <div data-testid="backup-seed-copy-error">
           <WarningNotice tone="error" title={t('settings.copy_failed')} />
+        </div>
+      )}
+
+      {secretCopied && (
+        <div data-testid="backup-seed-clipboard-clears">
+          <WarningNotice tone="info" title={t('settings.secret_copied')} />
         </div>
       )}
 

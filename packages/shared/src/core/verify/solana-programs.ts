@@ -3,9 +3,9 @@
  *
  * Each list is what the backend's own builders can produce for that flow, read
  * from `salmon-wallet-backend` rather than assumed: the NFT services build with
- * Metaplex Umi (`mplTokenMetadata`, `mplBubblegum`), close token accounts
- * through the SPL Token program, and create accounts through the System
- * program. Every address below was confirmed executable on mainnet.
+ * Metaplex Umi (`mplTokenMetadata`, `mplBubblegum`) and close token accounts
+ * through the SPL Token program. Every address below was confirmed executable
+ * on mainnet.
  *
  * These constrain the transaction's OWN instructions. A program reached by
  * cross-program invocation — Token Metadata calling the auth-rules program for
@@ -28,11 +28,14 @@ export const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 /** SPL Token-2022, for mints that use it. */
 export const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
 
-/** Associated Token Account — creating the destination's account on transfer. */
+/** Associated Token Account — creating the wallet's token accounts in a swap. */
 export const ASSOCIATED_TOKEN_PROGRAM = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
-/** System program — account creation and rent. */
+/** System program — wrapping SOL in a swap; no NFT flow invokes it. */
 export const SYSTEM_PROGRAM = '11111111111111111111111111111111';
+
+/** The wrapped-SOL mint: SOL as an SPL token, the mint a swap wraps SOL into. */
+export const WRAPPED_SOL_MINT = 'So11111111111111111111111111111111111111112';
 
 /** Compute Budget — a unit limit or price the builder attaches. */
 export const COMPUTE_BUDGET_PROGRAM = 'ComputeBudget111111111111111111111111111111';
@@ -46,24 +49,46 @@ export const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 /** Jupiter's aggregator (Swap API v2 Router path): the one program a Jupiter-routed swap invokes at top level. */
 export const JUPITER_AGGREGATOR_PROGRAM = 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4';
 
+/**
+ * The owner of the token accounts 0x settles a swap through. Its builds create
+ * them idempotently in the swap (seen live on 2026-10-21); they already exist
+ * for common mints, so the create is usually a no-op.
+ */
+export const ZEROEX_SETTLEMENT_OWNER = 'EPLJ3CRxz887UcMPwJL9GSnYPmg42TZSBVvAJ2tzqd44';
+
 /** 0x's Solana settler: the one program a 0x-routed swap invokes at top level (probed 2026-09-30). */
 export const ZEROEX_SETTLER_PROGRAM = 'Sett1erwx2eqT5A8uvu8GBxDFT2W5TNnhirL7hLmb8m';
+
+/**
+ * The Compute Budget instructions any backend-built flow may carry:
+ * `SetComputeUnitLimit` (2) and `SetComputeUnitPrice` (3), u8 codes. The
+ * backend's builder attaches exactly these two; a heap frame or a loaded-data
+ * limit is no build's business. What the pair may cost together is capped by
+ * the verifier (`MAX_PRIORITY_FEE_LAMPORTS`).
+ */
+export const COMPUTE_BUDGET_INSTRUCTIONS = { width: 1, codes: [2, 3] } as const;
 
 /**
  * What an NFT transfer or burn may invoke.
  *
  * Wider than any single asset would use, because one list covers every variant
  * the wallet can hold: a regular NFT burns through Token Metadata and closes
- * its account through SPL Token, a compressed one goes through Bubblegum, and a
- * transfer may have to create the destination's associated account first.
+ * its account through SPL Token, and a compressed one goes through Bubblegum.
+ *
+ * The System program is left out: none of the backend's NFT builders emits a
+ * top-level System instruction, and those instructions are the ones the wallet
+ * can sign alone to move its SOL or change who controls an account —
+ * `CreateAccountWithSeed` with the wallet as base funds an account another
+ * program controls, `Assign` hands the wallet itself to another program.
+ * Accounts a Metaplex program needs — the destination's token account in a
+ * transfer among them — are created inside that program, by cross-program
+ * call, so the Associated Token program is left out for the same reason.
  */
 export const NFT_TRANSACTION_PROGRAMS = [
   TOKEN_METADATA_PROGRAM,
   BUBBLEGUM_PROGRAM,
   TOKEN_PROGRAM,
   TOKEN_2022_PROGRAM,
-  ASSOCIATED_TOKEN_PROGRAM,
-  SYSTEM_PROGRAM,
   COMPUTE_BUDGET_PROGRAM,
 ] as const;
 
@@ -71,21 +96,18 @@ export const NFT_TRANSACTION_PROGRAMS = [
  * Which instructions of the value-moving programs an NFT flow may carry.
  *
  * The program list is a vocabulary, not a sentence. On its own it admits an
- * SPL Token `Approve` that hands a delegate every token in the wallet, or a
- * System `Transfer` that empties the SOL balance — both programs are on the
- * list for closing and creating accounts. Neither would show on the
- * confirmation screen, which is drawn from the response's own fields.
+ * SPL Token `Approve` that hands a delegate every token in the wallet — the
+ * program is on the list for burning and closing accounts. It would not show on
+ * the confirmation screen, which is drawn from the response's own fields.
  *
  * The codes below are what `salmon-wallet-backend` builds for these flows:
  * every move of the asset goes through Token Metadata's `transferV1` or
  * Bubblegum, never a top-level SPL Token transfer, and the only SPL Token
- * instruction any burn emits is the `CloseAccount` that reclaims the rent.
- * Nothing in those services emits a top-level System instruction at all; the
- * System codes here are the harmless half of the program, kept so a builder
- * that creates an account still works.
+ * instructions any burn emits are the `Burn` and the `CloseAccount` that
+ * reclaims the rent.
  *
- * Programs absent from this map — Token Metadata, Bubblegum, the Associated
- * Token program, Compute Budget — are bound by the program list alone.
+ * Token Metadata and Bubblegum are absent from this map: `assertNftAction`
+ * holds each of their instructions to the NFT on screen.
  */
 export const NFT_TRANSACTION_INSTRUCTIONS = {
   // SPL Token, u8 codes. Allowed: InitializeAccount(1), Revoke(5), Burn(8),
@@ -97,12 +119,7 @@ export const NFT_TRANSACTION_INSTRUCTIONS = {
   // wallet's to sign.
   [TOKEN_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
   [TOKEN_2022_PROGRAM]: { width: 1, codes: [1, 5, 8, 9, 15, 16, 17, 18] },
-  // System program, u32 codes. Allowed: CreateAccount(0), Assign(1),
-  // CreateAccountWithSeed(3), Allocate(8), AllocateWithSeed(9),
-  // AssignWithSeed(10). Refused: Transfer(2), WithdrawNonceAccount(5) and
-  // TransferWithSeed(11) — the three that move lamports to an account the flow
-  // never named.
-  [SYSTEM_PROGRAM]: { width: 4, codes: [0, 1, 3, 8, 9, 10] },
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 } as const;
 
 /**
@@ -122,11 +139,12 @@ export const NFT_ACTION_LAYOUTS = {
     /** transfer, transferV2 → index of `newLeafOwner`. */
     transferNewOwnerIndex: { a334c8e78c0345ba: 3, '772806ebeaddf831': 5 } as Record<string, number>,
   },
-  /** Token Metadata `burnV1` / `transferV1`: code, then the `V1` variant byte. */
+  /** Token Metadata `burnV1` / `transferV1`: code, the `V1` variant byte, then the amount as u64. */
   tokenMetadata: {
     burnCode: 41,
     transferCode: 49,
     variantV1: 0,
+    amountOffset: 2,
     mintIndex: 4,
     transferDestinationOwnerIndex: 3,
   },
@@ -138,15 +156,33 @@ export const NFT_ACTION_LAYOUTS = {
  * What the lookup-table steps of a multi-step flow may invoke.
  *
  * A compressed-NFT burn can arrive as three transactions: create a table,
- * extend it, then do the work. The first two touch nothing but the table.
+ * extend it, then do the work. The first two touch nothing but the table, and
+ * the table program pays the table's rent itself, by cross-program call — so
+ * the System program is not on this list either.
  */
 export const LOOKUP_TABLE_STEP_PROGRAMS = [
   ADDRESS_LOOKUP_TABLE_PROGRAM,
-  SYSTEM_PROGRAM,
   COMPUTE_BUDGET_PROGRAM,
 ] as const;
 
-/** The same bound for the table steps, which build a table and nothing else. */
+/**
+ * The table steps build a table and nothing else: `CreateLookupTable` (0) and
+ * `ExtendLookupTable` (2), u32 codes. `CloseLookupTable` would send a table's
+ * rent wherever the transaction says, and `Freeze` / `Deactivate` are not a
+ * build step. Both hold the authority (1) and the payer (2) to the wallet: the
+ * authority is who may later close the table and take its rent, and the payer
+ * is whose SOL funds it.
+ */
 export const LOOKUP_TABLE_STEP_INSTRUCTIONS = {
-  [SYSTEM_PROGRAM]: { width: 4, codes: [0, 1, 3, 8, 9, 10] },
+  [ADDRESS_LOOKUP_TABLE_PROGRAM]: {
+    width: 4,
+    codes: [0, 2],
+    binds: [
+      { code: 0, index: 1, mustBe: 'feePayer' },
+      { code: 0, index: 2, mustBe: 'feePayer' },
+      { code: 2, index: 1, mustBe: 'feePayer' },
+      { code: 2, index: 2, mustBe: 'feePayer' },
+    ],
+  },
+  [COMPUTE_BUDGET_PROGRAM]: COMPUTE_BUDGET_INSTRUCTIONS,
 } as const;

@@ -18,6 +18,7 @@ export function SendFailure({
   title,
   message,
   detail,
+  outcomeUnknown,
   onRetry,
   onDismiss,
   retryLabel,
@@ -97,9 +98,11 @@ export function SendFailure({
           padding: `0 ${spacing.headerPadding}px ${spacing.xl}px`,
         }}
       >
-        <PrimaryButton testID="send-failure-retry" onPress={onRetry}>
-          {retryLabel}
-        </PrimaryButton>
+        {outcomeUnknown ? null : (
+          <PrimaryButton testID="send-failure-retry" onPress={onRetry}>
+            {retryLabel}
+          </PrimaryButton>
+        )}
         <SecondaryButton testID="send-failure-dismiss" onPress={onDismiss}>
           {dismissLabel}
         </SecondaryButton>

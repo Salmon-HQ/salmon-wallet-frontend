@@ -5,13 +5,16 @@
  */
 
 import type { Address } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '@solana-program/system';
 
+import { decodeAccountState, decodeMintState, toBytes } from './simulation-decode';
 import type {
   ApprovalGrant,
   ApprovalScope,
   DerivationInput,
   Effects,
   NoEffect,
+  RawAccount,
   UndeterminedEffects,
   SolChange,
   TokenChange,
@@ -87,9 +90,11 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
   // then debit every lamport in it. No lamports move, so every diff below would
   // report no-effect or the fee alone. Same treatment as a token account
   // changing owner: undetermined, which the approval screen holds.
-  const ownerBefore = before.get(account)?.owner;
+  // A wallet that holds no SOL has no account yet; the transaction can create
+  // it already assigned, so a missing "before" counts as the System Program.
+  const ownerBefore = before.get(account)?.owner ?? SYSTEM_PROGRAM_ADDRESS;
   const ownerAfter = after.get(account)?.owner;
-  if (ownerBefore && ownerAfter && ownerBefore !== ownerAfter) {
+  if (ownerAfter && ownerBefore !== ownerAfter) {
     return {
       kind: 'undetermined',
       account,
@@ -171,4 +176,163 @@ export function deriveEffects(input: DerivationInput): NoEffect | Effects | Unde
     return { kind: 'no-effect', account };
   }
   return { kind: 'effects', account, sol, tokens, approvals };
+}
+
+/** Bytes 36..44 of a mint hold its supply, the one field minting and burning change. */
+const MINT_SUPPLY: readonly [number, number] = [36, 44];
+/** Bytes 64..72 of a token account hold its amount, the one field a deposit changes. */
+const TOKEN_AMOUNT: readonly [number, number] = [64, 72];
+
+/** Same bytes, apart from the `[start, end)` range. */
+function sameDataExcept(
+  pre: RawAccount,
+  post: RawAccount,
+  [start, end]: readonly [number, number]
+) {
+  if (pre.data[0] === post.data[0]) return true;
+  const [a, b] = [toBytes(pre.data), toBytes(post.data)];
+  a.fill(0, start, end);
+  b.fill(0, start, end);
+  return a.length === b.length && a.every((byte, i) => byte === b[i]);
+}
+
+/** Same data, or the same mint with only its supply moved (see `mintedToOthers`). */
+function sameData(pre: RawAccount, post: RawAccount): boolean {
+  if (pre.data[0] === post.data[0]) return true;
+  if (!decodeMintState(pre) || !decodeMintState(post)) return false;
+  return sameDataExcept(pre, post, MINT_SUPPLY);
+}
+
+/** Everything `findUnreadChange` compares. */
+export interface UnreadChangeInput {
+  /** The account whose balances `deriveEffects` reports. */
+  readonly account: Address;
+  /** The keys the transaction may write. */
+  readonly writable: ReadonlySet<Address>;
+  /** The keys that sign it. */
+  readonly signers: ReadonlySet<Address>;
+  readonly before: ReadonlyMap<Address, RawAccount | null>;
+  readonly after: ReadonlyMap<Address, RawAccount | null>;
+  /** The fee the previewed account pays: 0 when another signer pays it. */
+  readonly accountFee: bigint;
+}
+
+/**
+ * The first of the previewed account's token accounts that hands over what
+ * the diff does not show, or `null`: a new close authority, or lamports that
+ * leave — the account closed, or its excess withdrawn — without reaching the
+ * account itself. Wrapped SOL that leaves as tokens is a row of its own.
+ */
+function findUnreadWalletTokenChange({
+  account,
+  before,
+  after,
+  accountFee,
+}: UnreadChangeInput): Address | null {
+  let lost = 0n;
+  // Wrapped SOL closed into the wallet: already a token row, so it is not
+  // there to cover lamports that went elsewhere.
+  let unwrapped = 0n;
+  let firstLoser: Address | null = null;
+  for (const [address, pre] of before) {
+    const post = after.get(address) ?? null;
+    const preToken = decodeAccountState(pre)?.token ?? null;
+    const postToken = decodeAccountState(post)?.token ?? null;
+    // Opened by the transaction too: no "before" to compare, but it can be
+    // born with someone else allowed to close it.
+    if (
+      postToken?.owner === account &&
+      postToken.closeAuthority &&
+      postToken.closeAuthority !== account &&
+      postToken.closeAuthority !== (preToken?.closeAuthority ?? null)
+    ) {
+      return address;
+    }
+    if (preToken?.owner !== account || !pre) continue;
+    if (postToken && postToken.closeAuthority !== preToken.closeAuthority) return address;
+    const leftAsTokens = preToken.isNative ? preToken.amount - (postToken?.amount ?? 0n) : 0n;
+    if (preToken.isNative && !post) unwrapped += preToken.amount;
+    const loss = pre.lamports - (post?.lamports ?? 0n) - leftAsTokens;
+    if (loss > 0n) {
+      lost += loss;
+      firstLoser ??= address;
+    }
+  }
+  const received =
+    (after.get(account)?.lamports ?? 0n) - (before.get(account)?.lamports ?? 0n) - unwrapped;
+  return firstLoser && lost > received + accountFee ? firstLoser : null;
+}
+
+/**
+ * The first account the transaction changes in a way the balance diff does
+ * not show, or `null`.
+ *
+ * `deriveEffects` reads the previewed account and its token accounts. Any
+ * other writable account is fine when it only receives — the other side of a
+ * movement the diff already shows — or when it, or the owner of its tokens,
+ * signs the transaction too, since that signer answers for its own funds.
+ * Anything else is value or control the wallet's signature hands over out of
+ * sight: lamports leaving an account derived from the wallet, a token account
+ * the wallet is a delegate of, an authority rewritten in a mint or a nonce
+ * account.
+ */
+export function findUnreadChange(input: UnreadChangeInput): Address | null {
+  const { account, writable, signers, before, after } = input;
+  const walletChange = findUnreadWalletTokenChange(input);
+  if (walletChange) return walletChange;
+
+  for (const address of writable) {
+    if (address === account || signers.has(address)) continue;
+    const pre = before.get(address) ?? null;
+    const post = after.get(address) ?? null;
+    // Created by the transaction: whatever funded it shows in the diff.
+    if (!pre) continue;
+
+    const preToken = decodeAccountState(pre)?.token ?? null;
+    const postToken = decodeAccountState(post)?.token ?? null;
+    if (preToken?.owner === account || postToken?.owner === account) continue;
+    if (preToken && signers.has(preToken.owner)) continue;
+
+    if (!post || post.lamports < pre.lamports || post.owner !== pre.owner) return address;
+    if (preToken || postToken) {
+      // A deposit changes the amount and nothing else: an authority (close,
+      // freeze, a delegate), the state or an extension's record moving too is
+      // the wallet's signature at work on someone else's account.
+      if (
+        !preToken ||
+        !postToken ||
+        postToken.amount < preToken.amount ||
+        !sameDataExcept(pre, post, TOKEN_AMOUNT)
+      ) {
+        return address;
+      }
+    } else if (!sameData(pre, post) || mintedToOthers(address, pre, post, input)) {
+      return address;
+    }
+  }
+  return null;
+}
+
+/**
+ * True when a mint's supply grows by more than the previewed account's own
+ * token accounts received: the wallet, as mint authority, minting into
+ * someone else's account. A burn, or minting to itself, is in the diff.
+ */
+function mintedToOthers(
+  mint: Address,
+  pre: RawAccount,
+  post: RawAccount,
+  { account, before, after }: UnreadChangeInput
+): boolean {
+  const supplyBefore = decodeMintState(pre)?.supply;
+  const supplyAfter = decodeMintState(post)?.supply;
+  if (supplyBefore === undefined || supplyAfter === undefined) return false;
+  let received = 0n;
+  for (const [address, raw] of after) {
+    const postToken = decodeAccountState(raw)?.token;
+    if (postToken?.owner !== account || postToken.mint !== mint) continue;
+    received +=
+      postToken.amount - (decodeAccountState(before.get(address) ?? null)?.token?.amount ?? 0n);
+  }
+  return supplyAfter - supplyBefore > received;
 }

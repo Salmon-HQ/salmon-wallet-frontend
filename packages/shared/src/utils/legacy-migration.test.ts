@@ -20,6 +20,7 @@ vi.mock('../storage', async (importActual) => {
 });
 
 import { migrateLegacyWallets, type MigrationDeps } from './legacy-migration';
+import type { RestoreAccountOptions } from '../types/account';
 import * as storage from '../storage';
 import { STORAGE_KEYS } from '../storage';
 
@@ -32,13 +33,28 @@ const mockGet = vi.mocked(storage.getStorageItem);
 const mockSet = vi.mocked(storage.setStorageItem);
 const mockRemove = vi.mocked(storage.removeStorageItem);
 
-/** Minimal deps: restoreAccount returns a fixed account, no real derivation. */
+/**
+ * A stand-in for deriving an address from a seed: which address a seed owns is
+ * the point here, not the real derivation (covered in mnemonic.test.ts).
+ */
+const derivedFrom = (mnemonic: string) => (mnemonic === MNEMONIC ? ADDRESS : `derived:${mnemonic}`);
+
+/** Minimal deps: restoreAccount "derives" each slot through `derivedFrom`. */
 function makeDeps(): MigrationDeps {
   return {
-    restoreAccount: vi.fn(async () => ({
+    restoreAccount: vi.fn(async ({ secret, pathIndexes = {} }: RestoreAccountOptions) => ({
       id: 'acc-1',
-      pathIndexes: { 'solana-mainnet': [0] },
-      networksAccounts: {},
+      pathIndexes,
+      networksAccounts: Object.fromEntries(
+        Object.entries(pathIndexes).map(([networkId, indexes]) => [
+          networkId,
+          indexes.map((index: number | null) => ({
+            path: `m/44'/501'/${index}'/0'`,
+            network: { id: networkId },
+            getReceiveAddress: () => derivedFrom(secret.kind === 'mnemonic' ? secret.mnemonic : ''),
+          })),
+        ])
+      ),
     })) as unknown as MigrationDeps['restoreAccount'],
     formatAccountForStorage: vi.fn(
       (account) => account
@@ -104,10 +120,10 @@ describe('migrateLegacyWallets — password-protected path', () => {
     expect(result.status).toBe('needs-password');
   });
 
-  // v2 let its owner keep seed phrases with no password at all. Migrating that
-  // state as it stood wrote them to storage in cleartext, and nothing in the
-  // wallet could encrypt them afterwards.
-  it('will not migrate an unprotected legacy wallet until a password is chosen', async () => {
+  // v2 let an owner keep seed phrases with no password. Such a record is not
+  // migrated through the lock screen, where any typed text would become the
+  // password; it waits for a password chosen on the create-password screen.
+  const unprotected = () =>
     mockGet.mockImplementation(async (key: string) => {
       if (key === STORAGE_KEYS.WALLETS) {
         return {
@@ -120,28 +136,58 @@ describe('migrateLegacyWallets — password-protected path', () => {
       return null as never;
     });
 
-    const result = await migrateLegacyWallets(makeDeps());
+  it('asks for a new password for an unprotected record, naming its addresses, and writes nothing', async () => {
+    unprotected();
 
-    expect(result.status).toBe('needs-password');
+    for (const password of [undefined, PASSWORD]) {
+      expect(await migrateLegacyWallets(makeDeps(), password)).toEqual({
+        status: 'needs-new-password',
+        addresses: [ADDRESS],
+      });
+    }
     expect(mockSet).not.toHaveBeenCalled();
-    // The legacy record survives, so nothing is lost by refusing.
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('encrypts an unprotected legacy wallet under the password its owner chooses', async () => {
+  it('names the addresses its seeds derive, never the ones the record claims', async () => {
+    const OTHER = 'stub seed of another wallet';
     mockGet.mockImplementation(async (key: string) => {
       if (key === STORAGE_KEYS.WALLETS) {
         return {
           passwordRequired: false,
           wallets: [
-            { address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana', mnemonic: MNEMONIC },
+            { address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana', mnemonic: OTHER },
           ],
         } as never;
       }
       return null as never;
     });
 
-    const result = await migrateLegacyWallets(makeDeps(), PASSWORD);
+    expect(await migrateLegacyWallets(makeDeps())).toEqual({
+      status: 'needs-new-password',
+      addresses: [`derived:${OTHER}`],
+    });
+  });
+
+  it('refuses an unprotected record with no seed to derive an address from', async () => {
+    mockGet.mockImplementation(async (key: string) => {
+      if (key === STORAGE_KEYS.WALLETS) {
+        return {
+          passwordRequired: false,
+          wallets: [{ address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana' }],
+        } as never;
+      }
+      return null as never;
+    });
+
+    await expect(migrateLegacyWallets(makeDeps())).rejects.toThrow();
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it('migrates an unprotected record encrypted under a newly chosen password', async () => {
+    unprotected();
+
+    const result = await migrateLegacyWallets(makeDeps(), PASSWORD, { newPassword: true });
 
     expect(result.status).toBe('migrated');
     const storedVault = mockSet.mock.calls.find(([key]) => key === STORAGE_KEYS.MNEMONICS)?.[1] as {
@@ -150,6 +196,71 @@ describe('migrateLegacyWallets — password-protected path', () => {
     expect(storedVault.isEncrypted).toBe(true);
     expect(await unlock<Record<string, string>>(storedVault as never, PASSWORD)).toEqual({
       'acc-1': MNEMONIC,
+    });
+    expect(mockRemove).toHaveBeenCalledWith(STORAGE_KEYS.WALLETS);
+  });
+
+  it('leaves an existing vault alone: a legacy record beside it is never migrated over it', async () => {
+    const encryptedMnemonics = await lock({ [ADDRESS]: MNEMONIC }, PASSWORD);
+    mockGet.mockImplementation(async (key: string) => {
+      if (key === STORAGE_KEYS.WALLETS) {
+        return {
+          passwordRequired: true,
+          wallets: [{ address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana' }],
+          mnemonics: encryptedMnemonics,
+        } as never;
+      }
+      if (key === STORAGE_KEYS.MNEMONICS) return { isEncrypted: true } as never;
+      return null as never;
+    });
+
+    const result = await migrateLegacyWallets(makeDeps(), PASSWORD);
+
+    expect(result.status).toBe('no-migration');
+    expect(mockSet).not.toHaveBeenCalled();
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  // A migration that stopped after writing the vault leaves the cleartext record
+  // behind. It goes once the vault is shown to hold every seed it carries.
+  describe('an unprotected record left beside the vault it migrated into', () => {
+    const leftover = (vault: unknown) =>
+      mockGet.mockImplementation(async (key: string) => {
+        if (key === STORAGE_KEYS.WALLETS) {
+          return {
+            passwordRequired: false,
+            wallets: [
+              { address: ADDRESS, path: "m/44'/501'/0'/0'", chain: 'solana', mnemonic: MNEMONIC },
+            ],
+          } as never;
+        }
+        if (key === STORAGE_KEYS.MNEMONICS) return vault as never;
+        return null as never;
+      });
+
+    it('is removed once the vault opens and holds every one of its seeds', async () => {
+      leftover({ ...(await lock({ 'acc-1': MNEMONIC }, PASSWORD)), isEncrypted: true });
+
+      expect(await migrateLegacyWallets(makeDeps(), PASSWORD)).toEqual({ status: 'no-migration' });
+      expect(mockRemove).toHaveBeenCalledWith(STORAGE_KEYS.WALLETS);
+      expect(mockSet).not.toHaveBeenCalled();
+    });
+
+    it('stays when the vault lacks one of its seeds', async () => {
+      leftover({ ...(await lock({ 'acc-1': 'another seed' }, PASSWORD)), isEncrypted: true });
+
+      expect(await migrateLegacyWallets(makeDeps(), PASSWORD)).toEqual({ status: 'no-migration' });
+      expect(mockRemove).not.toHaveBeenCalled();
+    });
+
+    it('stays when the vault does not open, or with no password to open it', async () => {
+      leftover({ ...(await lock({ 'acc-1': MNEMONIC }, PASSWORD)), isEncrypted: true });
+
+      expect(await migrateLegacyWallets(makeDeps(), 'wrong password')).toEqual({
+        status: 'no-migration',
+      });
+      expect(await migrateLegacyWallets(makeDeps())).toEqual({ status: 'no-migration' });
+      expect(mockRemove).not.toHaveBeenCalled();
     });
   });
 

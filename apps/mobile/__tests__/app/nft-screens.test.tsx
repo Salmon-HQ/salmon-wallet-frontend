@@ -76,8 +76,15 @@ jest.mock('react-i18next', () => {
   };
 });
 
+/** What the flow judged about the destination, scripted per test. */
+const mockRecipientWarning: { key: string | null; calls: unknown[][] } = { key: null, calls: [] };
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
+  useRecipientWarning: (...args: unknown[]) => {
+    mockRecipientWarning.calls.push(args);
+    return mockRecipientWarning.key;
+  },
   // The components barrel is imported whole, so exports that have nothing to
   // do with these screens still have to exist.
   ...jest.requireActual('../../../../packages/shared/src/motion/crest'),
@@ -156,6 +163,7 @@ import NftBurnScreen from '../../app/(app)/nft/[id]/burn';
 beforeEach(() => {
   jest.clearAllMocks();
   mockIsSignable = true;
+  mockRecipientWarning.key = null;
   mockFlow.nft = mockNft;
   mockFlow.account = { getNetworkId: () => 'solana-mainnet' };
   mockFlow.recipient = 'DestAddr111';
@@ -329,6 +337,31 @@ describe('the NFT review screen', () => {
 
     expect(screen.getByTestId('nft-send-review-resolved-from')).toBeTruthy();
     expect(screen.getByText('bob.sol')).toBeTruthy();
+  });
+
+  it('never offers a second send after an unknown outcome: it may have landed', () => {
+    mockFlow.sendError = 'transaction.errors.broadcastUnknown';
+    render(<NftSendReviewScreen />);
+
+    expect(screen.getByTestId('nft-send-confirm-button').props.accessibilityState.disabled).toBe(
+      true
+    );
+  });
+
+  // The DOM review warns about an off-curve recipient for a collectible too.
+  it('warns about a destination no key controls, judged on the resolved address', () => {
+    mockFlow.recipient = 'bob.sol';
+    mockFlow.validatedRecipient = 'bob.sol';
+    mockFlow.resolvedRecipient = 'PdaAddr333';
+    mockRecipientWarning.key = 'send.validation.off_curve_has_funds';
+
+    render(<NftSendReviewScreen />);
+
+    expect(screen.getByTestId('nft-send-review-recipient-warning')).toBeTruthy();
+    expect(mockRecipientWarning.calls.at(-1)).toEqual([mockFlow.account, 'PdaAddr333']);
+    expect(screen.getByTestId('nft-send-confirm-button').props.accessibilityState.disabled).toBe(
+      false
+    );
   });
 
   it('refuses to confirm for a wallet that cannot sign', () => {

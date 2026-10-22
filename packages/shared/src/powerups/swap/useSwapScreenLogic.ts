@@ -12,7 +12,11 @@ import { address } from '@solana/kit';
 import { findAssociatedTokenPda } from '@solana-program/token-2022';
 import { useTranslation } from 'react-i18next';
 import { trackEvent, trackFirstSwapCompleted } from '../../analytics';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { USDC_MINT_BY_NETWORK } from '../../blockchain/solana/known-mints';
+import { solanaRpcFor, type SolanaRpc } from '../../blockchain/solana/networks';
+import { decodeMintState } from '../../blockchain/solana/simulation-decode';
+import { fetchAccounts } from '../../blockchain/solana/simulation-rpc';
 import { useAccountsContext } from '../../contexts/AccountsContext';
 import { useCurrencyContext } from '../../contexts/CurrencyContext';
 import { useRequestSignature } from '../../core/confirmation/SignatureRequestContext';
@@ -37,7 +41,7 @@ import { toPowerupProposal } from '../backend/proposal';
 import { TOKEN_2022_PROGRAM, TOKEN_PROGRAM } from '../../core/verify';
 import type { PowerupUnavailableReason } from '../backend/errors';
 import { buildSwap, type BuildSwapFn, type SwapBuildEnvelope } from './api';
-import { MAX_SLIPPAGE_BPS, SWAP_INSTRUCTIONS } from './expectation';
+import { MAX_SALMON_FEE_BPS, MAX_SLIPPAGE_BPS, SWAP_INSTRUCTIONS } from './expectation';
 import { swapManifest } from './manifest';
 import { useUnverifiedTokens } from '../../contexts/DeveloperModeContext';
 import { getShortAddress } from '../../utils/address';
@@ -127,32 +131,61 @@ export interface SwapRequestFacts {
   payToken: SwapToken;
   receiveToken: SwapToken;
   amount: string;
+  /** Each mint's decimals as its account on chain says, from `mintDecimalsOnChain`; null when it is no mint. */
+  mintDecimals: { pay: number | null; receive: number | null };
+}
+
+/**
+ * Each mint's decimals as its account on chain says — byte 44 of an SPL Token
+ * or Token-2022 mint — or null when the account is missing or is no mint.
+ * The token lists and the build both come from the backend; the mint account
+ * is the one source neither controls.
+ */
+export async function mintDecimalsOnChain(
+  rpc: SolanaRpc,
+  mints: readonly string[]
+): Promise<(number | null)[]> {
+  const accounts = await fetchAccounts(
+    rpc,
+    mints.map((mint) => address(mint))
+  );
+  return mints.map(
+    (mint) => decodeMintState(accounts.get(address(mint)) ?? null)?.decimals ?? null
+  );
 }
 
 /**
  * Refuses a build that is not the one the user asked for: another mint on
- * either side, another amount, other decimals (which would rescale every
- * number on the screen), a minimum above the quote, or a slippage past the
- * cap. The bytes are then never proposed, whatever the screen would say.
+ * either side, another amount, decimals that are missing or differ from the
+ * wallet's own for that token or from its mint on chain (they would rescale
+ * every number on the screen), a fee in a token other than its side's or
+ * above the cap, a minimum above the quote, or a slippage past the cap. A
+ * token whose decimals the wallet itself does not know is refused too. The
+ * bytes are then never proposed, whatever the screen would say.
  */
 export function assertEnvelopeMatches(
   envelope: SwapBuildEnvelope,
-  { payToken, receiveToken, amount }: SwapRequestFacts
+  { payToken, receiveToken, amount, mintDecimals }: SwapRequestFacts
 ): void {
   const refuse = (why: string): never => {
     throw new Error(`swap build does not match the request: ${why}`);
   };
   if (envelope.input.mint !== payToken.address) refuse('input mint');
   if (envelope.output.mint !== receiveToken.address) refuse('output mint');
-  if (envelope.input.decimals !== undefined && envelope.input.decimals !== payToken.decimals) {
+  const agree = (wallet: number, chain: number | null, build: number | undefined) =>
+    Number.isInteger(wallet) && wallet >= 0 && chain === wallet && build === wallet;
+  if (!agree(payToken.decimals, mintDecimals.pay, envelope.input.decimals)) {
     refuse('input decimals');
   }
-  if (
-    envelope.output.decimals !== undefined &&
-    receiveToken.decimals > 0 &&
-    envelope.output.decimals !== receiveToken.decimals
-  ) {
+  if (!agree(receiveToken.decimals, mintDecimals.receive, envelope.output.decimals)) {
     refuse('output decimals');
+  }
+  const fee = envelope.salmonFee;
+  if (fee && fee.mint !== (fee.side === 'input' ? envelope.input.mint : envelope.output.mint)) {
+    refuse('fee mint');
+  }
+  if (fee && !(Number.isInteger(fee.bps) && fee.bps >= 0 && fee.bps <= MAX_SALMON_FEE_BPS)) {
+    refuse('fee');
   }
   if (envelope.input.amount !== toBaseUnits(amount, payToken.decimals)) refuse('input amount');
   if (!/^\d+$/.test(envelope.output.amount) || !/^\d+$/.test(envelope.output.minAmount)) {
@@ -169,27 +202,54 @@ export function sortNativeFirst(tokens: SwapToken[]): SwapToken[] {
   return [tokens[index], ...tokens.slice(0, index), ...tokens.slice(index + 1)];
 }
 
-const uiAmountOf = (amount: string, decimals: number | undefined): number =>
-  Number(amount) / 10 ** (decimals ?? 0);
+const uiAmountOf = (amount: string, decimals: number): number => Number(amount) / 10 ** decimals;
 
 const withSymbol = (value: number, symbol: string | undefined): string =>
   `${formatTokenAmount(value)} ${symbol ?? ''}`.trim();
 
 const percent = (bps: number): string => `${(bps / 100).toString()}%`;
 
+/**
+ * The Salmon fee in base units, from its rate: on the input, that share of
+ * what is paid; on the output, the share taken before the quoted amount, which
+ * is already net of it. Rounded up, as the backend does.
+ */
+function salmonFeeAmount(
+  envelope: SwapBuildEnvelope,
+  bps: number,
+  side: 'input' | 'output'
+): bigint {
+  const rate = BigInt(bps);
+  if (side === 'input') return (BigInt(envelope.input.amount) * rate + 9_999n) / 10_000n;
+  const net = 10_000n - rate;
+  return (BigInt(envelope.output.amount) * rate + net - 1n) / net;
+}
+
+/** The token as the wallet prices it: the held list's price when the user holds it. */
+export function priceFromHeld(token: SwapToken, held: readonly SwapToken[]): SwapToken {
+  const price = held.find((item) => item.address === token.address)?.price;
+  return price === undefined ? token : { ...token, price };
+}
+
 export interface SwapProposalContext {
   networkId: SolanaNetworkId;
   /** The user's display currency, from `useCurrencyContext`. */
   formatValue: (usd: number | null | undefined) => string;
-  /** The tokens the user picked: the screen names and draws these, never what the backend says. */
-  tokens?: { pay: SwapToken; receive: SwapToken };
+  /**
+   * The tokens the user picked: the screen names, draws, scales and values
+   * every amount by these — their decimals and USD price from the wallet's own
+   * lists — never by what the backend says.
+   */
+  tokens: { pay: SwapToken; receive: SwapToken };
   refresh?: () => Promise<TransactionProposal>;
-  /** The wallet's own accounts of the output mint, from `outputDestinations`: the only places the swap may pay. */
+  /** The wallet's own accounts of the output mint, from `walletTokenAccounts`: the only places the swap may pay. */
   destinations: readonly string[];
+  /** The wallet's own accounts of the input mint, from `walletTokenAccounts`: the only places the swap may spend from. */
+  sources: readonly string[];
 }
 
 /** The wallet's associated token accounts of `mint`, under SPL Token and Token-2022. */
-export async function outputDestinations(owner: string, mint: string): Promise<string[]> {
+export async function walletTokenAccounts(owner: string, mint: string): Promise<string[]> {
   return Promise.all(
     [TOKEN_PROGRAM, TOKEN_2022_PROGRAM].map(async (tokenProgram) => {
       const [ata] = await findAssociatedTokenPda({
@@ -211,7 +271,7 @@ function reportSwapOutcome(success: boolean): void {
 /** Pure: what core renders for a built swap. Every string is already translated. */
 export function buildSwapProposal(
   envelope: SwapBuildEnvelope,
-  { networkId, formatValue, tokens, refresh, destinations }: SwapProposalContext
+  { networkId, formatValue, tokens, refresh, destinations, sources }: SwapProposalContext
 ): TransactionProposal {
   // The key itself when i18n has nothing for it (tests, a build with the
   // namespace missing): a row with a key is readable, a row with nothing is not.
@@ -219,17 +279,35 @@ export function buildSwapProposal(
     const translated = i18n.t(key, options);
     return typeof translated === 'string' && translated.length > 0 ? translated : key;
   };
-  const amountIn = uiAmountOf(envelope.input.amount, envelope.input.decimals);
-  const amountOut = uiAmountOf(envelope.output.amount, envelope.output.decimals);
-  const minOut = uiAmountOf(envelope.output.minAmount, envelope.output.decimals);
-  // With the picked tokens in hand, the backend's names and marks are not consulted at all.
-  const inSymbol = tokens ? tokens.pay.symbol : envelope.input.symbol;
-  const outSymbol = tokens ? tokens.receive.symbol : envelope.output.symbol;
-  const inLogo = tokens ? tokens.pay.logo : envelope.input.logo;
-  const outLogo = tokens ? tokens.receive.logo : envelope.output.logo;
-  const rate =
-    amountIn > 0 ? `1 ${inSymbol ?? ''} ≈ ${withSymbol(amountOut / amountIn, outSymbol)}` : '';
+  const { pay, receive } = tokens;
+  const amountIn = uiAmountOf(envelope.input.amount, pay.decimals);
+  const amountOut = uiAmountOf(envelope.output.amount, receive.decimals);
+  const minOut = uiAmountOf(envelope.output.minAmount, receive.decimals);
+  const inSymbol = pay.symbol;
+  const outSymbol = receive.symbol;
+  const rate = amountIn > 0 ? `1 ${inSymbol} ≈ ${withSymbol(amountOut / amountIn, outSymbol)}` : '';
   const fee = envelope.salmonFee;
+  const feeToken = fee?.side === 'input' ? pay : receive;
+  // Valued at the wallet's own prices, or not at all: the build's dollar
+  // figures are not shown, because nothing on the device could check them.
+  const valued = (amount: number, price: number | undefined) => {
+    const usd = price ? amount * price : Number.NaN;
+    return Number.isFinite(usd) && usd > 0 ? usd : null;
+  };
+  const inUsd = valued(amountIn, pay.price);
+  const outUsd = valued(amountOut, receive.price);
+  const walletImpact =
+    inUsd !== null && outUsd !== null
+      ? Number((((inUsd - outUsd) / inUsd) * 100).toFixed(2))
+      : null;
+  const buildImpact =
+    typeof envelope.priceImpactPct === 'number' && Number.isFinite(envelope.priceImpactPct)
+      ? envelope.priceImpactPct
+      : null;
+  // The wallet's own figure when it has prices; the build's otherwise. The
+  // build's may add a warning, never take one away.
+  const shownImpact = walletImpact ?? buildImpact;
+  const warnAt = Math.max(walletImpact ?? -Infinity, buildImpact ?? -Infinity);
 
   const rows: ConfirmationRow[] = [{ label: t('swap.review.rate'), value: rate }];
   // T&C Power-ups §10.2: the row always shows, says which side the fee is
@@ -238,7 +316,10 @@ export function buildSwapProposal(
     label: t('swap.review.salmonFee'),
     value: fee
       ? t(fee.side === 'input' ? 'swap.review.salmonFeeInput' : 'swap.review.salmonFeeOutput', {
-          amount: withSymbol(uiAmountOf(fee.amount, fee.decimals), fee.symbol),
+          amount: withSymbol(
+            uiAmountOf(salmonFeeAmount(envelope, fee.bps, fee.side).toString(), feeToken.decimals),
+            feeToken.symbol
+          ),
           percent: percent(fee.bps),
         })
       : t('swap.review.noSalmonFee'),
@@ -261,7 +342,7 @@ export function buildSwapProposal(
     { label: t('swap.review.slippage'), value: percent(envelope.slippageBps) },
     {
       label: t('swap.review.priceImpact'),
-      value: envelope.priceImpactPct === null ? '—' : `${envelope.priceImpactPct}%`,
+      value: shownImpact === null ? '—' : `${shownImpact}%`,
     },
     { label: t('swap.review.route'), value: routeLabels || envelope.providerDisplayName },
     // The mints, so a lookalike symbol is never the whole story.
@@ -270,8 +351,7 @@ export function buildSwapProposal(
   ];
 
   const summary = `${withSymbol(amountIn, inSymbol)} → ${withSymbol(amountOut, outSymbol)}`;
-  const highImpact =
-    envelope.priceImpactPct !== null && envelope.priceImpactPct > HIGH_PRICE_IMPACT_PCT;
+  const highImpact = warnAt > HIGH_PRICE_IMPACT_PCT;
 
   return toPowerupProposal(
     { ...envelope, salmonFee: null, routeFee: null, contributor: envelope.contributor ?? null },
@@ -281,6 +361,7 @@ export function buildSwapProposal(
         allowedPrograms: swapManifest.programs,
         allowedInstructions: SWAP_INSTRUCTIONS,
         swapRoute: {
+          sources,
           destinations,
           inputMint: envelope.input.mint,
           outputMint: envelope.output.mint,
@@ -299,17 +380,17 @@ export function buildSwapProposal(
         exchange: {
           send: {
             label: t('swap.review.youPay'),
-            logo: inLogo,
-            symbol: inSymbol ?? '',
+            logo: pay.logo,
+            symbol: inSymbol,
             amount: withSymbol(amountIn, inSymbol),
-            usdValue: envelope.inUsdValue === null ? undefined : formatValue(envelope.inUsdValue),
+            usdValue: inUsd === null ? undefined : formatValue(inUsd),
           },
           receive: {
             label: t('swap.review.youReceive'),
-            logo: outLogo,
-            symbol: outSymbol ?? '',
+            logo: receive.logo,
+            symbol: outSymbol,
             amount: withSymbol(amountOut, outSymbol),
-            usdValue: envelope.outUsdValue === null ? undefined : formatValue(envelope.outUsdValue),
+            usdValue: outUsd === null ? undefined : formatValue(outUsd),
             emphasis: true,
           },
         },
@@ -318,7 +399,7 @@ export function buildSwapProposal(
         warning: highImpact
           ? {
               title: t('swap.review.highImpactTitle'),
-              body: t('swap.review.highImpactBody', { percent: envelope.priceImpactPct }),
+              body: t('swap.review.highImpactBody', { percent: warnAt }),
             }
           : undefined,
         receipt: { title: t('swap.complete'), rate, fee: fee ? percent(fee.bps) : undefined },
@@ -443,12 +524,11 @@ export function useSwapScreenLogic({
   }, [payTokens, payAddress]);
   const receiveToken = useMemo(() => {
     const wanted = receiveAddress ?? usdcMint;
-    if (pickedReceive && pickedReceive.address === wanted) return pickedReceive;
-    return (
-      receiveTokens.find((token) => token.address === wanted) ??
-      payTokens.find((token) => token.address === wanted) ??
-      null
-    );
+    const token =
+      (pickedReceive && pickedReceive.address === wanted ? pickedReceive : undefined) ??
+      receiveTokens.find((item) => item.address === wanted) ??
+      payTokens.find((item) => item.address === wanted);
+    return token ? priceFromHeld(token, payTokens) : null;
   }, [receiveTokens, payTokens, receiveAddress, usdcMint, pickedReceive]);
 
   const setAmount = useCallback((next: string) => {
@@ -474,7 +554,9 @@ export function useSwapScreenLogic({
   }, []);
   const selectReceive = useCallback((token: SendToken) => {
     setReceiveAddress(token.address);
-    setPickedReceive({ ...token, decimals: token.decimals ?? 0 });
+    // Decimals the list does not carry stay unknown, so the build is refused
+    // rather than scaled by a guess.
+    setPickedReceive({ ...token, decimals: token.decimals as number });
     setReceivePickerOpen(false);
   }, []);
 
@@ -508,14 +590,26 @@ export function useSwapScreenLogic({
     };
     const facts = { payToken, receiveToken, amount };
     const propose = async (): Promise<TransactionProposal> => {
-      const envelope = await build(solanaNetworkId, params);
-      assertEnvelopeMatches(envelope, facts);
+      const [envelope, [pay, receive], sources, destinations] = await Promise.all([
+        build(solanaNetworkId, params),
+        mintDecimalsOnChain(solanaRpcFor(solanaNetworkId), [
+          payToken.address,
+          receiveToken.address,
+        ]),
+        walletTokenAccounts(publicKey, payToken.address),
+        walletTokenAccounts(publicKey, receiveToken.address),
+      ]);
+      assertEnvelopeMatches(envelope, {
+        ...facts,
+        mintDecimals: { pay: pay ?? null, receive: receive ?? null },
+      });
       return buildSwapProposal(envelope, {
         networkId: solanaNetworkId,
         formatValue,
         tokens: { pay: payToken, receive: receiveToken },
         refresh: propose,
-        destinations: await outputDestinations(publicKey, envelope.output.mint),
+        destinations,
+        sources,
       });
     };
     try {
@@ -524,7 +618,11 @@ export function useSwapScreenLogic({
       setAmountState('');
       onNavigateHome?.();
     } catch (caught) {
-      if (!(caught instanceof SignatureRequestCancelledError)) {
+      if (caught instanceof SolanaOutcomeUnknownError) {
+        // It may have landed: nothing stays typed for a second swap.
+        setAmountState('');
+        setError(caught.message);
+      } else if (!(caught instanceof SignatureRequestCancelledError)) {
         const failure = describePowerupBuildError(caught, {
           codes: SWAP_CODES,
           fallback: 'swap.errors.buildFailed',

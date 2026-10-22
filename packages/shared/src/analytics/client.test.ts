@@ -619,3 +619,34 @@ describe('AnalyticsClient build routing', () => {
     expect(postedTo()).toEqual([`${STAGING}/v1/events`]);
   });
 });
+
+describe('AnalyticsClient event time', () => {
+  // 2026-10-21 15:42:07.123 UTC.
+  const NOW = Date.UTC(2026, 9, 21, 15, 42, 7, 123);
+  const START_OF_DAY = Date.UTC(2026, 9, 21);
+
+  async function trackAt(event: Parameters<ReturnType<typeof initAnalytics>['track']>[0]) {
+    const transport = createMemoryTransport();
+    const client = initAnalytics({ platform: 'extension', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    client.track(event, event === 'send_completed' ? { chain: 'solana', success: true } : {});
+    vi.mocked(Date.now).mockRestore();
+    await client.flush();
+    return transport.batches[0].events[0].ts;
+  }
+
+  // An event sent the moment a transfer confirms, stamped to the millisecond,
+  // lines up with that transfer on the public chain.
+  it.each(['send_completed', 'first_send_completed', 'nft_sent'] as const)(
+    'stamps %s with its UTC day only',
+    async (event) => {
+      expect(await trackAt(event)).toBe(START_OF_DAY);
+    }
+  );
+
+  it('keeps the exact time of an event no transaction follows', async () => {
+    expect(await trackAt('nft_viewed')).toBe(NOW);
+  });
+});

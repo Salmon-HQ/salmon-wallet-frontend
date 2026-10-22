@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/services/powerups', () => ({ getPowerupAvailability: vi.fn() }));
 
+import { focusManager } from '@tanstack/react-query';
 import { getPowerupAvailability } from '../api/services/powerups';
 import { resetNetworkPowerupsCache, useNetworkPowerups } from './useNetworkPowerups';
 import { EMPTY_POWERUP_ALLOWLIST } from '../utils/powerupSwitches';
@@ -17,7 +18,10 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     resetNetworkPowerupsCache();
     availability.mockReset();
   });
-  afterEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    focusManager.setFocused(undefined);
+    vi.clearAllMocks();
+  });
 
   it('is empty until the route answers, then carries ids, reasons and providers', async () => {
     availability.mockResolvedValue([
@@ -58,6 +62,62 @@ describe("useNetworkPowerups — the caller's availability, fail closed", () => 
     const second = renderHook(() => useNetworkPowerups('solana-mainnet'));
     expect(second.result.current.providers).toEqual({ swap: '0x' });
     await waitFor(() => expect(availability).toHaveBeenCalledTimes(2));
+  });
+
+  // A wallet that travelled while in the background must not keep the
+  // answer from where it was: the blocked Powerup's tab shows its reason.
+  it('asks again when the app returns to the foreground', async () => {
+    availability
+      .mockResolvedValueOnce([{ id: 'swap', enabled: true, provider: 'jupiter' }])
+      .mockResolvedValueOnce([{ id: 'swap', enabled: false, reason: 'region' }]);
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    await waitFor(() => expect(result.current.enabled).toEqual(['swap']));
+
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+
+    await waitFor(() => expect(result.current.disabled).toEqual({ swap: 'region' }));
+    expect(result.current.enabled).toEqual([]);
+    unmount();
+  });
+
+  it('asks afresh on return even while an older question is in flight, and the older answer loses', async () => {
+    let answerOld: (entries: unknown) => void = () => {};
+    availability
+      .mockReturnValueOnce(new Promise((resolve) => (answerOld = resolve)) as never)
+      .mockResolvedValueOnce([{ id: 'swap', enabled: false, reason: 'region' }]);
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => expect(result.current.disabled).toEqual({ swap: 'region' }));
+
+    await act(async () => answerOld([{ id: 'swap', enabled: true, provider: 'jupiter' }]));
+    expect(availability).toHaveBeenCalledTimes(2);
+    expect(result.current.disabled).toEqual({ swap: 'region' });
+    expect(result.current.enabled).toEqual([]);
+    unmount();
+  });
+
+  it('keeps the last answer when the re-ask on return fails', async () => {
+    availability
+      .mockResolvedValueOnce([{ id: 'swap', enabled: true, provider: 'jupiter' }])
+      .mockRejectedValueOnce(new Error('offline'));
+    const { result, unmount } = renderHook(() => useNetworkPowerups('solana-mainnet'));
+    await waitFor(() => expect(result.current.enabled).toEqual(['swap']));
+
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+
+    expect(availability).toHaveBeenCalledTimes(2);
+    expect(result.current.enabled).toEqual(['swap']);
+    unmount();
   });
 
   it('closes when the route fails, and offers nothing without a network', async () => {

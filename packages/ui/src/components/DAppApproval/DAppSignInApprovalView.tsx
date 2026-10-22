@@ -27,7 +27,7 @@ import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn, monoText } from './common';
+import { ApproveArea, CardHead, bodyText, cardColumn, monoText } from './common';
 import type { DAppSignInApprovalViewProps } from './types';
 import { useApprovalArming } from './useApprovalArming';
 
@@ -60,7 +60,8 @@ export function DAppSignInApprovalView({
   onReject,
 }: DAppSignInApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
@@ -260,15 +261,18 @@ export function DAppSignInApprovalView({
         </SecondaryButton>
       }
       action={
-        <PrimaryButton
-          testID="dapp-approve-button"
-          onPress={onApprove}
-          loading={loading}
-          disabled={!canApprove}
-          fullWidth
-        >
-          {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
-        </PrimaryButton>
+        <ApproveArea arming={arming}>
+          <PrimaryButton
+            testID="dapp-approve-button"
+            ariaDescribedBy={armed ? undefined : arming.hintId}
+            onPress={onApprove}
+            loading={loading}
+            disabled={!canApprove}
+            fullWidth
+          >
+            {t('dapp.sign_in_action', 'Sign In').toUpperCase()}
+          </PrimaryButton>
+        </ApproveArea>
       }
     />
   );

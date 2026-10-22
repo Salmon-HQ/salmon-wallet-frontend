@@ -21,6 +21,7 @@ import {
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
+import { HoldToApproveButton } from '../Button/HoldToCopyButton';
 import { PrimaryButton } from '../Button/PrimaryButton';
 import { SecondaryButton } from '../Button/SecondaryButton';
 import { PasswordInput } from '../PasswordInput';
@@ -31,7 +32,14 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 // ============================================================================
 
 /** The RN half of `ConfirmSheetPropsBase`. */
-export interface ConfirmSheetProps extends ConfirmSheetPropsBase {}
+export interface ConfirmSheetProps extends ConfirmSheetPropsBase {
+  /**
+   * Confirm must be held, not tapped: a Mobile Wallet Adapter dApp whose
+   * identity could not be verified (Android only, so the DOM twin has no
+   * caller for it).
+   */
+  requiresHold?: boolean;
+}
 
 // ============================================================================
 // Component
@@ -47,6 +55,7 @@ export function ConfirmSheet({
   isDanger = false,
   acknowledgeOnly = false,
   confirmDisabled = false,
+  requiresHold = false,
   requirePassword = false,
   validatePassword,
   onConfirm,
@@ -95,7 +104,8 @@ export function ConfirmSheet({
               editable={!loading}
               testID="confirm-dialog-password"
               autoFocus
-              onSubmitEditing={handleConfirm}
+              // On a held sheet the return key must not stand in for the hold.
+              onSubmitEditing={requiresHold ? undefined : handleConfirm}
             />
           </View>
         )}
@@ -118,28 +128,49 @@ export function ConfirmSheet({
               <PrimaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
                 {cancelText || t('actions.cancel', 'Cancel')}
               </PrimaryButton>
-              <SecondaryButton
-                onPress={handleConfirm}
-                disabled={!canConfirm || loading || confirmDisabled}
-                tone="danger-fill"
-                testID="confirm-dialog-confirm"
-              >
-                {confirmText || t('actions.confirm', 'Confirm')}
-              </SecondaryButton>
+              {requiresHold ? (
+                <HoldToApproveButton
+                  onApprove={handleConfirm}
+                  disabled={!canConfirm || loading || confirmDisabled}
+                  danger
+                  testID="confirm-dialog-hold"
+                >
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </HoldToApproveButton>
+              ) : (
+                <SecondaryButton
+                  onPress={handleConfirm}
+                  disabled={!canConfirm || loading || confirmDisabled}
+                  tone="danger-fill"
+                  testID="confirm-dialog-confirm"
+                >
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </SecondaryButton>
+              )}
             </>
           ) : (
             <>
               <SecondaryButton onPress={onClose} disabled={loading} testID="confirm-dialog-cancel">
                 {cancelText || t('actions.cancel', 'Cancel')}
               </SecondaryButton>
-              <PrimaryButton
-                onPress={handleConfirm}
-                disabled={!canConfirm || confirmDisabled}
-                loading={loading}
-                testID="confirm-dialog-confirm"
-              >
-                {confirmText || t('actions.confirm', 'Confirm')}
-              </PrimaryButton>
+              {requiresHold ? (
+                <HoldToApproveButton
+                  onApprove={handleConfirm}
+                  disabled={!canConfirm || loading || confirmDisabled}
+                  testID="confirm-dialog-hold"
+                >
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </HoldToApproveButton>
+              ) : (
+                <PrimaryButton
+                  onPress={handleConfirm}
+                  disabled={!canConfirm || confirmDisabled}
+                  loading={loading}
+                  testID="confirm-dialog-confirm"
+                >
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </PrimaryButton>
+              )}
             </>
           )}
         </View>

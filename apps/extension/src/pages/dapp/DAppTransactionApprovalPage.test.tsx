@@ -40,6 +40,7 @@ vi.mock('@salmon/ui', () => ({
       data-parsing-error={String(props.parsingError ?? '')}
       data-effects-kind={String((props.effects as { kind?: string } | null)?.kind ?? '')}
       data-effects-loading={String(props.effectsLoading ?? '')}
+      data-signing-account={JSON.stringify(props.signingAccount)}
       data-disabled={String(props.disabled ?? '')}
       data-network-mismatch={
         props.networkMismatch
@@ -62,14 +63,17 @@ const baseRequest: DAppTransactionRequest = {
   params: { transaction: 'base64-tx' },
 } as unknown as DAppTransactionRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<
-  typeof DAppTransactionApprovalPage
->[0]['account'];
+const fakeAccount = {
+  kind: 'solana',
+  getReceiveAddress: () => 'Signer1111111111111111111111111111111111111',
+} as unknown as Parameters<typeof DAppTransactionApprovalPage>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
   request: baseRequest,
   account: fakeAccount,
+  accountName: 'Savings',
+  approvedAddress: 'Signer1111111111111111111111111111111111111',
   networkId: 'solana-mainnet',
   onDismiss: vi.fn(),
 };
@@ -92,6 +96,51 @@ describe('DAppTransactionApprovalPage', () => {
     });
   });
 
+  it('names no signing account when there is no account', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(
+      <DAppTransactionApprovalPage {...baseProps} account={undefined} />
+    );
+
+    expect(getByTestId('tx-approval-view').dataset.signingAccount).toBeUndefined();
+  });
+
+  // The background checked the site's grant against the account active
+  // then; another account active by the time this window loads must not sign.
+  it('refuses without showing the request when another account is active', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+
+    const { queryByTestId } = render(
+      <DAppTransactionApprovalPage
+        {...baseProps}
+        approvedAddress="Other11111111111111111111111111111111111111"
+        onDismiss={onDismiss}
+      />
+    );
+
+    expect(queryByTestId('tx-approval-view')).toBeNull();
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Not connected', id: 'req-tx-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    vi.unstubAllGlobals();
+  });
+
+  it('tells the view which account signs', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+
+    const { getByTestId } = render(<DAppTransactionApprovalPage {...baseProps} />);
+
+    expect(JSON.parse(getByTestId('tx-approval-view').dataset.signingAccount ?? 'null')).toEqual({
+      name: 'Savings',
+      address: 'Signer1111111111111111111111111111111111111',
+    });
+  });
   it('renders the approval view with metadata and decoded transaction details', () => {
     mockUseDAppMetadata.mockReturnValue({
       metadata: { name: 'Tx dApp', icon: 'https://dapp.example/icon.png' },

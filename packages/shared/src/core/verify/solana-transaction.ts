@@ -38,13 +38,18 @@ import {
 import type { ReadonlyUint8Array } from '@solana/kit';
 
 import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   BUBBLEGUM_PROGRAM,
+  COMPUTE_BUDGET_PROGRAM,
   JUPITER_AGGREGATOR_PROGRAM,
   NFT_ACTION_LAYOUTS,
+  SYSTEM_PROGRAM,
   TOKEN_2022_PROGRAM,
   TOKEN_METADATA_PROGRAM,
   TOKEN_PROGRAM,
+  WRAPPED_SOL_MINT,
+  ZEROEX_SETTLEMENT_OWNER,
 } from './solana-programs';
 
 /** What a flow declares about the transaction it asked the backend to build. */
@@ -80,8 +85,10 @@ export interface SolanaTransactionExpectation {
   swapRoute?: SwapRouteExpectation;
 }
 
-/** What a Jupiter `route_v2` call must say, all taken from the build the screen draws. */
+/** What a Jupiter router call must say, all taken from the build the screen draws. */
 export interface SwapRouteExpectation {
+  /** The wallet's own token accounts of the input mint: its SPL and Token-2022 ATAs. */
+  sources: readonly string[];
   /** The wallet's own token accounts of the output mint: its SPL and Token-2022 ATAs. */
   destinations: readonly string[];
   inputMint: string;
@@ -159,28 +166,22 @@ interface CompiledInstruction {
  * The instructions the message carries: which static account each invokes, and
  * the data it carries.
  *
- * Legacy and v0 messages carry `instructions`; a v1 message splits the same
- * thing into `instructionHeaders` and `instructionPayloads`. A shape that is
- * neither is refused rather than waved through: a check that cannot read a
+ * Only legacy and v0 messages are read: they are all the backend builds. A v1
+ * message also sets its priority fee and compute limit in its own header,
+ * outside any instruction, so a check written for instructions would wave
+ * that fee through. Any other version is refused: a check that cannot read a
  * transaction has not approved it.
  */
 function compiledInstructions(message: CompiledMessage): CompiledInstruction[] {
-  if ('instructions' in message) {
+  if ((message.version === 'legacy' || message.version === 0) && 'instructions' in message) {
     return message.instructions.map((instruction) => ({
       programAddressIndex: instruction.programAddressIndex,
       accountIndices: instruction.accountIndices ?? [],
       data: instruction.data,
     }));
   }
-  if ('instructionHeaders' in message) {
-    return message.instructionHeaders.map((header, index) => ({
-      programAddressIndex: header.programAccountIndex,
-      accountIndices: message.instructionPayloads[index]?.instructionAccountIndices ?? [],
-      data: message.instructionPayloads[index]?.instructionData,
-    }));
-  }
   throw new SolanaTransactionMismatchError(
-    'Transaction uses a message version this wallet cannot read before signing'
+    `Transaction uses message version ${String(message.version)}, which backend-built flows never carry`
   );
 }
 
@@ -194,8 +195,55 @@ function discriminator(data: ReadonlyUint8Array | undefined, width: 1 | 4): numb
   return code;
 }
 
+/**
+ * The static account an instruction names in `slot`.
+ *
+ * Refuses when it names no account there, and when the account is resolved
+ * through a lookup table: absent from the static list, it is not visible
+ * before signing, so it is undecidable rather than assumed.
+ */
+function staticAccount(
+  accounts: readonly string[],
+  instruction: CompiledInstruction,
+  slot: number,
+  what: string
+): string {
+  const index = instruction.accountIndices[slot];
+  if (index === undefined) {
+    throw new SolanaTransactionMismatchError(`Transaction names too few accounts for ${what}`);
+  }
+  const account = accounts[index];
+  if (account === undefined) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction resolves ${what} through a lookup table it cannot verify`
+    );
+  }
+  return account;
+}
+
 /** ATA `create` (0, or no data) and `createIdempotent` (1): payer, ata, owner, mint, … */
 const ATA_CREATE_CODES = new Set([0, 1]);
+
+/** The associated token accounts this message creates, each with its owner and mint. */
+function atasCreated(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[]
+): Map<string, { owner: string | undefined; mint: string | undefined }> {
+  const created = new Map<string, { owner: string | undefined; mint: string | undefined }>();
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
+    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
+    if (!ATA_CREATE_CODES.has(code as number)) continue;
+    const ata = accounts[instruction.accountIndices[1] ?? -1];
+    if (ata !== undefined) {
+      created.set(ata, {
+        owner: accounts[instruction.accountIndices[2] ?? -1],
+        mint: accounts[instruction.accountIndices[3] ?? -1],
+      });
+    }
+  }
+  return created;
+}
 
 /** The associated token accounts this message creates for `owner`. */
 function ownAtasCreated(
@@ -204,35 +252,42 @@ function ownAtasCreated(
   owner: string
 ): Set<string> {
   const created = new Set<string>();
-  for (const instruction of instructions) {
-    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
-    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
-    if (!ATA_CREATE_CODES.has(code as number)) continue;
-    const ata = accounts[instruction.accountIndices[1] ?? -1];
-    const ataOwner = accounts[instruction.accountIndices[2] ?? -1];
-    if (ata !== undefined && ataOwner === owner) created.add(ata);
+  for (const [ata, { owner: ataOwner }] of atasCreated(accounts, instructions)) {
+    if (ataOwner === owner) created.add(ata);
   }
   return created;
 }
 
-/** Which programs the message invokes, and how many associated token accounts it creates. */
-export function invocationsOf(transactionBase64: string): {
-  programs: Set<string>;
-  ataCreates: number;
-} {
+/**
+ * The associated token accounts a swap creates for its fee payer or for 0x's
+ * settlement account, each with its owner: the only ones whose rent the swap
+ * may spend (`assertSwapPaysWallet` reads how much each one actually keeps).
+ */
+export function swapAccountCreates(
+  transactionBase64: string
+): { address: string; owner: string }[] {
   const message = decodeMessage(transactionBase64);
   const accounts = message.staticAccounts.map(String);
-  const programs = new Set<string>();
-  let ataCreates = 0;
-  for (const instruction of compiledInstructions(message)) {
-    const program = accounts[instruction.programAddressIndex];
-    if (program === undefined) continue;
-    programs.add(program);
-    const code = instruction.data && instruction.data.length > 0 ? instruction.data[0] : 0;
-    if (program === ASSOCIATED_TOKEN_PROGRAM && ATA_CREATE_CODES.has(code as number))
-      ataCreates += 1;
-  }
-  return { programs, ataCreates };
+  const owners = new Set([accounts[0], ZEROEX_SETTLEMENT_OWNER]);
+  return [...atasCreated(accounts, compiledInstructions(message))]
+    .filter(([, { owner }]) => owner !== undefined && owners.has(owner))
+    .map(([ata, { owner }]) => ({ address: ata, owner: owner as string }));
+}
+
+/** The lookup-table instructions a message carries: each one's code and the table it acts on. */
+export function lookupTableActions(
+  transactionBase64: string
+): { code: number | null; table: string }[] {
+  const message = decodeMessage(transactionBase64);
+  const accounts = message.staticAccounts.map(String);
+  return compiledInstructions(message)
+    .filter(
+      (instruction) => accounts[instruction.programAddressIndex] === ADDRESS_LOOKUP_TABLE_PROGRAM
+    )
+    .map((instruction) => ({
+      code: discriminator(instruction.data, 4),
+      table: staticAccount(accounts, instruction, 0, 'a lookup table'),
+    }));
 }
 
 /** Raised when the built transaction disagrees with what the flow declared. */
@@ -329,11 +384,8 @@ function assertNftAction(
   const refuse = (why: string): never => {
     throw new SolanaTransactionMismatchError(why);
   };
-  // An account read through a lookup table is not visible here: undecidable,
-  // so refused rather than assumed.
   const accountAt = (instruction: CompiledInstruction, slot: number): string =>
-    accounts[instruction.accountIndices[slot] ?? -1] ??
-    refuse('Transaction resolves an NFT account through a lookup table it cannot verify');
+    staticAccount(accounts, instruction, slot, 'an NFT account');
   let actsOnAsset = false;
 
   for (const [position, instruction] of instructions.entries()) {
@@ -357,6 +409,16 @@ function assertNftAction(
       if (data[0] !== verb || data[1] !== tm.variantV1) {
         refuse('Transaction carries a Token Metadata instruction this flow does not use');
       }
+      // An NFT is one token; an amount of more would move or burn other
+      // tokens of the same mint, which a fungible or semi-fungible asset has.
+      const amount =
+        data.length >= tm.amountOffset + 8
+          ? new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(
+              tm.amountOffset,
+              true
+            )
+          : null;
+      if (amount !== 1n) refuse('Transaction moves an amount other than one NFT');
       if (accountAt(instruction, tm.mintIndex) !== action.asset) {
         refuse(`Transaction acts on an NFT other than ${action.asset}`);
       }
@@ -387,28 +449,80 @@ function assertNftAction(
   if (!actsOnAsset) refuse(`Transaction does not act on ${action.asset}`);
 }
 
-/** Anchor discriminator of Jupiter's `route_v2`, the only call its build endpoint returns. */
-const JUPITER_ROUTE_V2 = [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14];
-/** `route_v2` accounts: 0 the authority, 2 where the output lands, 7 an optional override of it. */
-const ROUTE_AUTHORITY = 0;
-const ROUTE_DESTINATION = 2;
-const ROUTE_DESTINATION_OVERRIDE = 7;
-/** `route_v2` data after the discriminator: in u64, quoted out u64, slippage u16, platform fee u16. */
-const ROUTE_ARGS_BYTES = 8 + 8 + 8 + 2 + 2;
+/** Where one Jupiter router call keeps what the check reads: account slots, and where its arguments start. */
+interface JupiterRouteLayout {
+  /** Anchor discriminator: the first 8 bytes of sha256("global:<name>"). */
+  discriminator: readonly number[];
+  args: number;
+  authority: number;
+  source: number;
+  destination: number;
+  sourceMint: number;
+  destinationMint: number;
+  /** An optional override of the destination; empty is the program's own address. */
+  override?: number;
+}
 
 /**
- * Every Jupiter call pays the swap's output to the wallet's own account, with
- * the amounts the screen shows.
+ * The two router calls Jupiter's build endpoint answers with, chosen per
+ * request, laid out as the Jupiter v6 on-chain IDL declares them.
+ * `shared_accounts_route_v2` puts a one-byte route id ahead of the arguments
+ * and has no override slot.
+ */
+const JUPITER_ROUTES: readonly JupiterRouteLayout[] = [
+  {
+    discriminator: [0xbb, 0x64, 0xfa, 0xcc, 0x31, 0xc4, 0xaf, 0x14], // route_v2
+    args: 8,
+    authority: 0,
+    source: 1,
+    destination: 2,
+    sourceMint: 3,
+    destinationMint: 4,
+    override: 7,
+  },
+  {
+    discriminator: [0xd1, 0x98, 0x53, 0x93, 0x7c, 0xfe, 0xd8, 0xe9], // shared_accounts_route_v2
+    args: 9,
+    authority: 1,
+    source: 2,
+    destination: 5,
+    sourceMint: 6,
+    destinationMint: 7,
+  },
+];
+/**
+ * The fixed arguments both calls start with: in u64, quoted out u64, slippage
+ * u16, platform fee u16, positive slippage u16. A route plan of any length
+ * follows and is not read.
+ */
+const ROUTE_ARGS_BYTES = 8 + 8 + 2 + 2 + 2;
+
+/**
+ * Every Jupiter call spends the token on screen from the wallet's own account
+ * and pays the output to the wallet's own account, with the amounts the screen
+ * shows.
  *
  * The router instruction is the one that moves a swap's whole value, and the
  * program allowlist says nothing about its accounts: a build naming another
  * account as the destination would pass every other check while the screen
- * still showed the quote. The destination is the instruction's own slot —
- * where Jupiter pays — and the optional override slot must be empty, which
- * Anchor encodes as the program's own address. The amounts are bound so the
- * minimum Jupiter enforces on chain is the minimum the screen shows. The mint
- * is not read: the destination is an ATA derived from the output mint, and the
- * token program refuses to credit an account of another mint.
+ * still showed the quote, and one naming another of the wallet's token
+ * accounts as the source would spend a different token — the wallet signs as
+ * authority over all of them. Both are the instruction's own slots, in either
+ * router call, and `route_v2`'s optional override slot must be empty, which
+ * Anchor encodes as the program's own address. Any other Jupiter instruction
+ * is refused, and so is a second router call. The amounts are bound so the
+ * minimum Jupiter enforces on chain — the quoted output less the slippage,
+ * rounded up — is the minimum the screen shows, and positive slippage must be
+ * zero: any other value sends output above the quote to the platform fee
+ * account rather than to the wallet.
+ *
+ * A mint slot read from the static list must be the mint on screen. Real
+ * builds resolve both mint slots — and the token-program slots — through
+ * Jupiter's lookup tables, where this check cannot read them; requiring them
+ * would refuse every real swap. Nothing is lost there: an associated token
+ * account's address is derived from its owner, its token program and its
+ * mint, so holding the source and destination to the wallet's ATAs of the
+ * mints on screen already holds the mints and the token programs.
  */
 function assertJupiterRoute(
   accounts: readonly string[],
@@ -419,44 +533,185 @@ function assertJupiterRoute(
   const refuse = (why: string): never => {
     throw new SolanaTransactionMismatchError(why);
   };
-  for (const instruction of instructions) {
-    if (accounts[instruction.programAddressIndex] !== JUPITER_AGGREGATOR_PROGRAM) continue;
+  const calls = instructions.filter(
+    (instruction) => accounts[instruction.programAddressIndex] === JUPITER_AGGREGATOR_PROGRAM
+  );
+  // One swap is one router call. A second would move value the screen never
+  // shows: the amounts on screen bind each call, not their sum.
+  if (calls.length > 1) refuse('Transaction carries more than one Jupiter swap route');
+  if (calls.length === 1) {
+    const shownMinimum = BigInt(route.minOutAmount);
+    const enforced =
+      (BigInt(route.quotedOutAmount) * BigInt(10_000 - route.slippageBps) + 9_999n) / 10_000n;
+    if (shownMinimum !== enforced) {
+      refuse('Transaction enforces a minimum other than the one on screen');
+    }
+  }
+  for (const instruction of calls) {
+    const visibleAt = (slot: number): string | undefined =>
+      accounts[instruction.accountIndices[slot] ?? -1];
     const accountAt = (slot: number): string =>
-      accounts[instruction.accountIndices[slot] ?? -1] ??
-      refuse('Transaction resolves a Jupiter account through a lookup table it cannot verify');
+      staticAccount(accounts, instruction, slot, 'a Jupiter account');
 
-    const data = instruction.data;
-    if (
-      !data ||
-      data.length < 8 + ROUTE_ARGS_BYTES ||
-      JUPITER_ROUTE_V2.some((byte, index) => data[index] !== byte)
-    ) {
-      throw new SolanaTransactionMismatchError(
-        'Transaction carries a Jupiter instruction other than route_v2'
-      );
+    const data = instruction.data ?? new Uint8Array();
+    const layout = JUPITER_ROUTES.find(({ discriminator }) =>
+      discriminator.every((byte, index) => data[index] === byte)
+    );
+    if (!layout || data.length < layout.args + ROUTE_ARGS_BYTES) {
+      return refuse('Transaction carries a Jupiter instruction other than a swap route');
     }
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    if (accountAt(ROUTE_AUTHORITY) !== feePayer) {
+    if (accountAt(layout.authority) !== feePayer) {
       refuse('Transaction swaps tokens the wallet does not authorize');
     }
-    const destination = accountAt(ROUTE_DESTINATION);
+    const source = accountAt(layout.source);
+    if (!route.sources.includes(source)) {
+      refuse(
+        `Transaction spends from ${source}, which is not the wallet's account of the token on screen`
+      );
+    }
+    const destination = accountAt(layout.destination);
     if (!route.destinations.includes(destination)) {
       refuse(`Transaction pays the swap to ${destination}, which is not the wallet's own`);
     }
-    if (accountAt(ROUTE_DESTINATION_OVERRIDE) !== JUPITER_AGGREGATOR_PROGRAM) {
+    if (
+      layout.override !== undefined &&
+      accountAt(layout.override) !== JUPITER_AGGREGATOR_PROGRAM
+    ) {
       refuse('Transaction redirects the swap output to another account');
     }
-    if (view.getBigUint64(8, true).toString() !== route.inAmount) {
+    for (const [slot, mint] of [
+      [layout.sourceMint, route.inputMint],
+      [layout.destinationMint, route.outputMint],
+    ] as const) {
+      const named = visibleAt(slot);
+      if (named !== undefined && named !== mint) {
+        refuse(`Transaction swaps a mint other than ${mint}`);
+      }
+    }
+    if (view.getBigUint64(layout.args, true).toString() !== route.inAmount) {
       refuse('Transaction swaps an amount other than the one on screen');
     }
-    if (view.getBigUint64(16, true).toString() !== route.quotedOutAmount) {
+    if (view.getBigUint64(layout.args + 8, true).toString() !== route.quotedOutAmount) {
       refuse('Transaction quotes an output other than the one on screen');
     }
-    if (view.getUint16(24, true) > route.slippageBps) {
+    if (view.getUint16(layout.args + 16, true) > route.slippageBps) {
       refuse('Transaction allows more slippage than the screen shows');
     }
-    if (view.getUint16(26, true) > route.platformFeeBps) {
+    if (view.getUint16(layout.args + 18, true) > route.platformFeeBps) {
       refuse('Transaction takes a larger fee than the screen shows');
+    }
+    if (view.getUint16(layout.args + 20, true) !== 0) {
+      refuse('Transaction sends output above the quote to another account');
+    }
+  }
+}
+
+/**
+ * The most a backend-built transaction may set the wallet's priority fee to:
+ * unit limit × unit price, on top of the network fee, and never shown on the
+ * confirmation screen. 0.01 SOL is several hundred times what the backend's
+ * own bounds produce (at most 20,000 micro-lamports per unit over 1.4M units,
+ * 0.000028 SOL), so a busy network never trips it, and it keeps a tampered
+ * price from draining the wallet one transaction at a time.
+ */
+export const MAX_PRIORITY_FEE_LAMPORTS = 10_000_000n;
+/** The most compute units a transaction may use: what a price is charged on when no limit is set. */
+const MAX_COMPUTE_UNITS = 1_400_000n;
+
+function assertPriorityFeeCapped(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[]
+): void {
+  let units: bigint | null = null;
+  let microLamportsPerUnit = 0n;
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== COMPUTE_BUDGET_PROGRAM) continue;
+    const data = instruction.data;
+    if (!data) continue;
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    if (data[0] === 2 && data.length >= 5) {
+      const set = BigInt(view.getUint32(1, true));
+      units = units === null || set > units ? set : units;
+    } else if (data[0] === 3 && data.length >= 9) {
+      const set = view.getBigUint64(1, true);
+      if (set > microLamportsPerUnit) microLamportsPerUnit = set;
+    }
+  }
+  const fee = ((units ?? MAX_COMPUTE_UNITS) * microLamportsPerUnit + 999_999n) / 1_000_000n;
+  if (fee > MAX_PRIORITY_FEE_LAMPORTS) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction sets a priority fee of ${fee} lamports, above the cap of ${MAX_PRIORITY_FEE_LAMPORTS}`
+    );
+  }
+}
+
+/** How many token accounts a swap may create for 0x's settlement account (owner decision). */
+const MAX_SETTLEMENT_CREATES = 2;
+
+/**
+ * A swap creates token accounts for the wallet, and for 0x's settlement
+ * account at most twice; any other owner is refused, because the wallet pays
+ * the rent of each account it creates and whoever owns it can close it and
+ * take that rent.
+ */
+function assertSwapAccountCreates(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  feePayer: string
+): void {
+  let settlement = 0;
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== ASSOCIATED_TOKEN_PROGRAM) continue;
+    const owner = staticAccount(accounts, instruction, 2, 'the owner of a created token account');
+    if (owner === ZEROEX_SETTLEMENT_OWNER) settlement += 1;
+    else if (owner !== feePayer) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction creates a token account for an owner other than the wallet (${owner})`
+      );
+    }
+  }
+  if (settlement > MAX_SETTLEMENT_CREATES) {
+    throw new SolanaTransactionMismatchError(
+      `Transaction creates more than two token accounts for 0x's settlement account`
+    );
+  }
+}
+
+/** The System program's `Transfer`: u32 code 2, then the lamports as u64. */
+const SYSTEM_TRANSFER = 2;
+
+/**
+ * A swap moves SOL only to wrap it: into the wallet's own wrapped-SOL account
+ * it spends from, when SOL is what the screen says it pays, and no more than
+ * the amount on screen across all its transfers. Any other SOL transfer is
+ * value the screen never shows.
+ */
+function assertSwapWrapsOnlyInput(
+  accounts: readonly string[],
+  instructions: readonly CompiledInstruction[],
+  route: SwapRouteExpectation
+): void {
+  let wrapped = 0n;
+  for (const instruction of instructions) {
+    if (accounts[instruction.programAddressIndex] !== SYSTEM_PROGRAM) continue;
+    if (discriminator(instruction.data, 4) !== SYSTEM_TRANSFER) continue;
+    const to = staticAccount(accounts, instruction, 1, 'a SOL transfer');
+    if (route.inputMint !== WRAPPED_SOL_MINT || !route.sources.includes(to)) {
+      throw new SolanaTransactionMismatchError(
+        `Transaction sends SOL to ${to}, which is not the wrapped-SOL account the swap spends`
+      );
+    }
+    const data = instruction.data as ReadonlyUint8Array;
+    const lamports =
+      data.length >= 12
+        ? new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(4, true)
+        : null;
+    wrapped += lamports ?? 0n;
+    if (lamports === null || wrapped > BigInt(route.inAmount)) {
+      throw new SolanaTransactionMismatchError(
+        'Transaction wraps more SOL than the amount on screen'
+      );
     }
   }
 }
@@ -522,12 +777,12 @@ export function assertSolanaTransactionMatches(
     }
     for (const bind of rule.binds ?? []) {
       if (bind.code !== code) continue;
-      const account = accounts[instruction.accountIndices[bind.index] ?? -1];
-      if (account === undefined) {
-        throw new SolanaTransactionMismatchError(
-          `Transaction resolves an account of instruction ${code} on ${program} through a lookup table it cannot verify`
-        );
-      }
+      const account = staticAccount(
+        accounts,
+        instruction,
+        bind.index,
+        `an account of instruction ${code} on ${program}`
+      );
       const ok = bind.mustBe === 'feePayer' ? account === feePayer : ownAtas.has(account);
       if (!ok) {
         throw new SolanaTransactionMismatchError(
@@ -537,8 +792,12 @@ export function assertSolanaTransactionMatches(
     }
   }
 
+  assertPriorityFeeCapped(accounts, instructions);
+
   if (expectation.swapRoute) {
     assertJupiterRoute(accounts, instructions, expectation.swapRoute, feePayer);
+    assertSwapWrapsOnlyInput(accounts, instructions, expectation.swapRoute);
+    assertSwapAccountCreates(accounts, instructions, feePayer);
   }
 
   if (expectation.nftAction) {

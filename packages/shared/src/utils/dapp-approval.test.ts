@@ -3,6 +3,8 @@ import nacl from 'tweetnacl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Keypair,
+  StakeAuthorizationLayout,
+  StakeProgram,
   SystemProgram,
   Transaction,
   TransactionMessage,
@@ -21,8 +23,9 @@ import {
   setTransactionMessageConfig,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  SolanaError,
 } from '@solana/kit';
-import { getAddMemoInstruction } from '@solana-program/memo';
+import { getAddMemoInstruction, LEGACY_MEMO_PROGRAM_ADDRESS_V3 } from '@solana-program/memo';
 import { getTransferSolInstruction } from '@solana-program/system';
 import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
@@ -285,6 +288,62 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const submitted = submittedTransaction(sendTransaction);
     expect(submitted.signatures[0].every((byte) => byte === 0)).toBe(true);
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
+  });
+
+  // A dApp told "failed" rebuilds with a fresh blockhash and sends again, so a
+  // lost answer must come back as the signature for the dApp to follow.
+  describe('when the send answer is lost', () => {
+    const coSignedTransaction = () => {
+      const message = new TransactionMessage({
+        payerKey: coSigner.publicKey,
+        recentBlockhash: BLOCKHASH,
+        instructions: transferInstructions(),
+      }).compileToV0Message();
+      const partiallySigned = new VersionedTransaction(message);
+      partiallySigned.sign([coSigner]);
+      return {
+        message: bs58.encode(message.serialize()),
+        transaction: bs58.encode(partiallySigned.serialize()),
+        feePayerSignature: bs58.encode(partiallySigned.signatures[0]),
+      };
+    };
+
+    it('returns the transaction signature instead of an error', async () => {
+      const { message, transaction, feePayerSignature } = coSignedTransaction();
+      const sendTransaction = vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('fetch failed');
+        },
+      });
+      const account = await makeAccount({ sendTransaction });
+
+      const result = await approveSolanaTransactionRequest(account as never, {
+        id: 'req-lost',
+        method: 'signAndSendTransaction',
+        params: { message, transaction },
+      });
+
+      expect(result).toEqual({ signature: feePayerSignature });
+    });
+
+    it('still reports a refusal the node answered', async () => {
+      const { message, transaction } = coSignedTransaction();
+      const refused = new SolanaError(-32002 as never, { __serverMessage: 'preflight' } as never);
+      const sendTransaction = vi.fn().mockReturnValue({
+        send: async () => {
+          throw refused;
+        },
+      });
+      const account = await makeAccount({ sendTransaction });
+
+      await expect(
+        approveSolanaTransactionRequest(account as never, {
+          id: 'req-refused',
+          method: 'signAndSendTransaction',
+          params: { message, transaction },
+        })
+      ).rejects.toBe(refused);
+    });
   });
 
   // `params.options` is untrusted JSON from the page. Anything the wallet does
@@ -738,7 +797,14 @@ async function v1Fixture(options: { extraMemoBytes?: number; withConfig?: boolea
             amount: 2n,
           }),
           ...(extraMemoBytes > 0
-            ? [getAddMemoInstruction({ memo: 'x'.repeat(extraMemoBytes) })]
+            ? [
+                // The immutable Memo v3, as the wallet's own sends use: the
+                // upgradeable v4 is a program the dApp preview holds.
+                getAddMemoInstruction(
+                  { memo: 'x'.repeat(extraMemoBytes) },
+                  { programAddress: LEGACY_MEMO_PROGRAM_ADDRESS_V3 }
+                ),
+              ]
             : []),
         ],
         m
@@ -1223,6 +1289,111 @@ describe('previewSolanaApprovalEffects', () => {
 
     expect(effects.kind).toBe('undetermined');
     expect(effects.kind === 'undetermined' && effects.reason).toBe('malformed-transaction');
+  });
+
+  // The approval screens treat a missing preview as "still simulating" and
+  // keep the ordinary Approve button, so the preview must always answer.
+  it('answers undetermined instead of throwing when the preview cannot run', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = {
+      getReceiveAddress: () => payer.publicKey.toBase58(),
+      getRpc: () => {
+        throw new Error('RPC unavailable');
+      },
+    } as never;
+
+    const effects = await previewSolanaApprovalEffects(broken, {
+      id: 'req-throws',
+      method: 'signTransaction',
+      params: { message: encodedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+    // Answering keeps the screen on a hold; the warning keeps a real bug visible.
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('answers undetermined, whatever fails before the transaction is read', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const odd = { getReceiveAddress: () => 'not-an-address', getRpc: () => ({}) } as never;
+
+    const effects = await previewSolanaApprovalEffects(odd, {
+      id: 'req-odd',
+      method: 'signTransaction',
+      params: { message: encodedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'simulation-unavailable' });
+    warn.mockRestore();
+  });
+
+  // A durable nonce takes the place of the blockhash: the signature never
+  // expires, and the site can hold it and submit it whenever it likes.
+  const noncedMessage = () =>
+    bs58.encode(
+      new TransactionMessage({
+        payerKey: payer.publicKey,
+        recentBlockhash: BLOCKHASH,
+        instructions: [
+          SystemProgram.nonceAdvance({
+            noncePubkey: testKeypair(10).publicKey,
+            authorizedPubkey: payer.publicKey,
+          }),
+          SystemProgram.transfer({
+            fromPubkey: payer.publicKey,
+            toPubkey: testKeypair(8).publicKey,
+            lamports: 1,
+          }),
+        ],
+      })
+        .compileToV0Message()
+        .serialize()
+    );
+
+  it('holds a transaction whose signature never expires', async () => {
+    const simulateTransaction = vi.fn();
+
+    const effects = await previewSolanaApprovalEffects(account({ simulateTransaction }), {
+      id: 'req-nonce',
+      method: 'signTransaction',
+      params: { message: noncedMessage() },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'durable-nonce' });
+    expect(simulateTransaction).not.toHaveBeenCalled();
+  });
+
+  it('names a never-expiring transaction inside a batch too', async () => {
+    const effects = await previewSolanaApprovalEffects(account(), {
+      id: 'req-nonce-batch',
+      method: 'signAllTransactions',
+      params: { messages: [encodedMessage(), noncedMessage()] },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'durable-nonce' });
+  });
+
+  it('holds a transaction that runs a program the preview cannot read', async () => {
+    const simulateTransaction = vi.fn();
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: StakeProgram.authorize({
+        stakePubkey: testKeypair(8).publicKey,
+        authorizedPubkey: payer.publicKey,
+        newAuthorizedPubkey: testKeypair(9).publicKey,
+        stakeAuthorizationType: StakeAuthorizationLayout.Withdrawer,
+      }).instructions,
+    }).compileToV0Message();
+
+    const effects = await previewSolanaApprovalEffects(account({ simulateTransaction }), {
+      id: 'req-stake',
+      method: 'signTransaction',
+      params: { message: bs58.encode(message.serialize()) },
+    });
+
+    expect(effects).toMatchObject({ kind: 'undetermined', reason: 'unanalysed-program' });
   });
 
   it('simulates the dApp message unsigned, with signature verification off', async () => {

@@ -34,3 +34,9 @@ it('draws the detail line only when the chain said more than the message', () =>
   expect(screen.getByTestId('send-failure-message')).toBeTruthy();
   expect(screen.queryByTestId('send-failure-detail')).toBeNull();
 });
+
+it('offers no retry when the outcome is unknown: a retry could send twice', () => {
+  renderInMode('dark', <SendFailure {...props()} outcomeUnknown />);
+  expect(screen.queryByTestId('send-failure-retry')).toBeNull();
+  expect(screen.getByTestId('send-failure-dismiss')).toBeTruthy();
+});

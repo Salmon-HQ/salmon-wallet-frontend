@@ -203,7 +203,7 @@ export function useNftFlowState({
     setBurnError(null);
 
     try {
-      const signatures = await nftBurn.burnNft(burnPreview, nft.mint);
+      const signatures = await nftBurn.burnNft(burnPreview, nft.mint, nft.name);
       setSuccessKind('burn');
       setSuccessTxId(signatures[signatures.length - 1] ?? '');
     } catch (err) {

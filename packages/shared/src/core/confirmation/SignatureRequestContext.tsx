@@ -27,6 +27,7 @@ import React, {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import { SolanaOutcomeUnknownError } from '../../blockchain/solana/confirm';
 import { usePendingTransactionsOptional } from '../../contexts/PendingTransactionsContext';
 import { signProposal as defaultSignProposal, type SignProposalFn } from '../signing';
 import type { SolanaBroadcaster } from '../broadcast';
@@ -44,6 +45,11 @@ export interface PendingSignatureRequest {
   phase: SignatureRequestPhase;
   /** The last failure to sign or refresh — a translation key. Cleared on retry. */
   error: string | null;
+  /**
+   * The last attempt may have landed (the chain could not be asked): signing
+   * again would send a second transaction, so the only way out is to close.
+   */
+  unresolved?: boolean;
 }
 
 /** A signed proposal, waiting to be read: what the host's receipt renders. */
@@ -89,6 +95,11 @@ interface ParkedRequest {
   reject: (error: Error) => void;
   /** Set once signed; the request resolves with it when the receipt is dismissed. */
   result?: SignedResult;
+  /**
+   * Sent, with no verdict: it may have landed, so it is never signed again,
+   * and closing hands the Powerup this error instead of a plain cancel.
+   */
+  unresolved?: SolanaOutcomeUnknownError;
 }
 
 export interface SignatureRequestProviderProps {
@@ -138,7 +149,7 @@ export function SignatureRequestProvider({
 
   const confirm = useCallback(async () => {
     const parked = parkedRef.current;
-    if (!parked) return;
+    if (!parked || parked.unresolved) return;
     setPending((prev) => (prev ? { ...prev, phase: 'signing', error: null } : prev));
 
     const signer = accountRef.current;
@@ -173,6 +184,26 @@ export function SignatureRequestProvider({
       setPending(null);
       setReceipt({ proposal: parked.proposal, signature: result.signature });
     } catch (error) {
+      if (error instanceof SolanaOutcomeUnknownError) {
+        // It may have landed: the banner follows the signature until the
+        // chain answers, and the host offers only a way out. Analytics hears
+        // nothing, because neither outcome is known.
+        parked.unresolved = error;
+        const { pending: report, networkId } = parked.proposal;
+        if (report) {
+          pendingTransactions?.trackPendingTransaction({
+            signature: error.signature,
+            kind: report.kind,
+            networkId,
+            submittedAt: Date.now(),
+            summary: report.summary,
+          });
+        }
+        setPending((prev) =>
+          prev ? { ...prev, phase: 'review', error: error.message, unresolved: true } : prev
+        );
+        return;
+      }
       // A throw after signing is not a failed attempt: it was already reported.
       if (!signed) reportOutcome(parked.proposal, false);
       // The parked request stays: the host shows the failure and the user
@@ -187,7 +218,7 @@ export function SignatureRequestProvider({
     // Nothing backs out of a transaction that is already signed and away.
     if (!parked || parked.result) return;
     settle();
-    parked.reject(new SignatureRequestCancelledError());
+    parked.reject(parked.unresolved ?? new SignatureRequestCancelledError());
   }, [settle]);
 
   const dismissReceipt = useCallback(() => {

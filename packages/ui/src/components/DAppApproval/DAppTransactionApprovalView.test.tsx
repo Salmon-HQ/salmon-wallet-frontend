@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -23,7 +23,9 @@ vi.mock('@salmon/shared', async (importOriginal) => ({
 
 import { createSemantic, shadows, ThemeContext } from '@salmon/shared';
 import type { ThemeContextValue } from '@salmon/shared';
+import { armApproval } from '../../test/armApproval';
 import { DAppTransactionApprovalView } from './DAppTransactionApprovalView';
+import { APPROVE_ARM_MS } from './useApprovalArming';
 
 function hexToRgb(hex: string): string {
   const value = hex.replace('#', '');
@@ -41,6 +43,7 @@ const baseProps = {
   feePayer: 'FeePayer1111111111111111111111111111111111',
   recentBlockhash: 'Block1111111111111111111111111111111111111',
   parsingError: null,
+  signingAccount: { address: 'Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf' },
   onApprove: vi.fn(),
   onReject: vi.fn(),
 };
@@ -48,6 +51,14 @@ const baseProps = {
 describe('DAppTransactionApprovalView', () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it('names the account that signs, as the current wallet when it has no name', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effects={null} effectsLoading />);
+
+    const row = screen.getByTestId('signing-account');
+    expect(row).toHaveTextContent('Current wallet');
+    expect(row).toHaveTextContent('Fg6P...KzXf');
   });
 
   it('says the overview covers only the first transaction of a batch', () => {
@@ -162,6 +173,38 @@ describe('DAppTransactionApprovalView', () => {
         'This transaction could not be decoded. Do not approve unless you trust this site.'
       ).style.color
     ).toBe(hexToRgb(light.status.danger));
+  });
+
+  // The hold has a keyboard path (Enter commits at once); a key press counts
+  // there too only after Approve has held the focus for the arming delay.
+  it('holds back a key press on Hold to Approve until it has had the focus a moment', () => {
+    vi.useFakeTimers();
+    render(
+      <DAppTransactionApprovalView
+        {...baseProps}
+        effects={{
+          kind: 'undetermined',
+          account: ACCOUNT,
+          reason: 'unanalysed-program',
+          detail: '',
+        }}
+      />
+    );
+    armApproval();
+    const hold = screen.getByRole('button', { name: 'HOLD TO APPROVE' });
+
+    act(() => hold.focus());
+    expect(fireEvent.keyDown(hold, { key: 'Enter' })).toBe(false);
+    act(() => vi.advanceTimersByTime(APPROVE_ARM_MS));
+    expect(fireEvent.keyDown(hold, { key: 'Enter' })).toBe(true);
+    vi.useRealTimers();
+  });
+
+  // A preview that settled with no answer is not an absence of warnings.
+  it('demands a hold when the preview settled with no answer', () => {
+    render(<DAppTransactionApprovalView {...baseProps} effects={null} effectsLoading={false} />);
+
+    expect(screen.getByRole('button', { name: 'HOLD TO APPROVE' })).toBeInTheDocument();
   });
 
   it('demands a hold when the effects could not be established at all', () => {

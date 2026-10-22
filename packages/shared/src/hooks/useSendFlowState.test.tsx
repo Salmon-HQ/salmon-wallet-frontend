@@ -88,6 +88,9 @@ describe('useSendFlowState', () => {
       recipientAddress: 'alice.sol',
       resolvedRecipientAddress: 'dest',
       amount: 0.5,
+      // The text as typed rides along: a mint with a display multiplier is
+      // converted from it, not from its floating-point reading.
+      amountText: '0.5',
     });
     expect(result.current.txId).toBe('sig-1');
 
@@ -96,6 +99,51 @@ describe('useSendFlowState', () => {
     expect(result.current.recipient).toBeNull();
     expect(result.current.amount).toBe('');
     expect(reset).toHaveBeenCalled();
+  });
+
+  describe('Max', () => {
+    const ready = async () => {
+      const hook = renderHook(() => useSendFlowState({ ...params, initialTokenAddress: 'USDC' }));
+      await waitFor(() => expect(hook.result.current.token?.address).toBe('USDC'));
+      act(() => hook.result.current.setRecipient({ address: 'dest' }));
+      return hook.result;
+    };
+
+    it('tells the transfer the user asked for the whole balance', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      await act(() => result.current.submit());
+      expect(sendTransaction).toHaveBeenCalledWith(expect.objectContaining({ max: true }));
+    });
+
+    it('drops it once the user types over the fill', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => result.current.setAmount('9'));
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
+
+    it('does not carry over to another token', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => result.current.setToken(sol));
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
+
+    it('never applies to the amount a payment request fixed', async () => {
+      const result = await ready();
+      act(() => result.current.setAmount('10', 'max'));
+      act(() => {
+        result.current.startFromRequest(
+          { recipient: 'dest', amount: '10', splToken: 'USDC', references: [] },
+          params.tokens
+        );
+      });
+      await act(() => result.current.submit());
+      expect(sendTransaction.mock.calls[0][0]).not.toHaveProperty('max');
+    });
   });
 
   describe('a Send started from a transfer request', () => {
@@ -135,6 +183,7 @@ describe('useSendFlowState', () => {
         recipientAddress: 'dest',
         resolvedRecipientAddress: undefined,
         amount: 2.5,
+        amountText: '2.5',
         memo: 'pr_1',
         references: ['ref-1', 'ref-2'],
       });
@@ -217,5 +266,87 @@ describe('a request whose amount the token cannot hold', () => {
       );
     });
     expect(started).toEqual({ ok: true, next: 'review' });
+  });
+});
+
+/**
+ * An off-curve address has no private key behind it. Typed, picked, scanned or
+ * pasted as a payment request, the recipient reaches the review through this
+ * state, so the review's warning is judged here once for every way in.
+ */
+describe('the warning about a recipient no key controls', () => {
+  // An associated token account: derived from a program, so off the curve.
+  const OFF_CURVE = 'HXkHFMCRQP6pw66QEGBqVsduqUQdSyrrrq82S7Rffsms';
+  const WALLET = '86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY';
+  const validateDestinationAccount = vi.fn(async (address: string) =>
+    address === OFF_CURVE
+      ? { type: 'SUCCESS', code: 'off_curve_no_funds', addressType: 'PUBLIC_KEY' }
+      : { type: 'SUCCESS', code: 'valid', addressType: 'PUBLIC_KEY' }
+  );
+  const withValidation = { ...params, account: { validateDestinationAccount } as never };
+
+  it('warns about an off-curve recipient that arrived in a payment request', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => {
+      result.current.startFromRequest(
+        { recipient: OFF_CURVE, amount: '1', references: [] },
+        params.tokens
+      );
+    });
+
+    await waitFor(() =>
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_no_funds')
+    );
+    expect(validateDestinationAccount).toHaveBeenCalledWith(OFF_CURVE);
+  });
+
+  it('judges the resolved address of a typed name, and says nothing for an ordinary one', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => result.current.setRecipient({ address: 'alice.sol', resolvedAddress: OFF_CURVE }));
+    await waitFor(() =>
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_no_funds')
+    );
+
+    act(() => result.current.setRecipient({ address: WALLET }));
+    expect(result.current.recipientWarning).toBeNull();
+  });
+
+  // Off the curve is a property of the address itself: a failed lookup only
+  // loses whether the account holds funds, never the warning.
+  it('still warns when the network check fails', async () => {
+    const failing = {
+      ...params,
+      account: { validateDestinationAccount: vi.fn().mockRejectedValue(new Error('fetch failed')) },
+    } as never;
+    const offline = {
+      ...params,
+      account: {
+        validateDestinationAccount: vi.fn(async () => ({ type: 'ERROR', code: 'network_error' })),
+      },
+    } as never;
+
+    for (const flowParams of [failing, offline]) {
+      const { result } = renderHook(() => useSendFlowState(flowParams));
+      await waitFor(() => expect(result.current.token).not.toBeNull());
+      act(() => result.current.setRecipient({ address: OFF_CURVE }));
+      await act(async () => {});
+      expect(result.current.recipientWarning).toBe('send.validation.off_curve_has_funds');
+    }
+  });
+
+  // The transfer pays `resolvedAddress ?? address`; the warning judges the same.
+  it('judges exactly the address the transfer pays', async () => {
+    const { result } = renderHook(() => useSendFlowState(withValidation));
+    await waitFor(() => expect(result.current.token).not.toBeNull());
+
+    act(() => result.current.setRecipient({ address: OFF_CURVE, resolvedAddress: '' }));
+    await act(async () => {});
+
+    expect(validateDestinationAccount).not.toHaveBeenCalledWith(OFF_CURVE);
+    expect(result.current.recipientWarning).toBeNull();
   });
 });

@@ -34,6 +34,7 @@ import {
   formatTokenAmount,
   getShortAddress,
   getSolShortfall,
+  isSendableAmount,
   useFieldFocus,
   s,
   spacing,
@@ -100,13 +101,16 @@ export default function SendAmountScreen() {
     });
   }, [blockchain, nativeBalance, token]);
 
-  const isValid = useMemo(() => {
-    const numAmount = parseFloat(amount);
-    const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    // Blocked rather than warned: without the fee the network refuses the
-    // transfer outright, so letting it through only spends the user's time.
-    return !!token && !!recipient && amountValid && !solShortfall;
-  }, [amount, tokenBalance, token, recipient, solShortfall]);
+  const isValid = useMemo(
+    () =>
+      !!token &&
+      !!recipient &&
+      isSendableAmount(amount, tokenBalance, token.decimals ?? SOL_CONSTANTS.DECIMALS) &&
+      // Blocked rather than warned: without the fee the network refuses the
+      // transfer outright, so letting it through only spends the user's time.
+      !solShortfall,
+    [amount, tokenBalance, token, recipient, solShortfall]
+  );
 
   // The balance fills; a fill stays lit until the user types over it.
   const shortcuts = useAmountShortcuts({

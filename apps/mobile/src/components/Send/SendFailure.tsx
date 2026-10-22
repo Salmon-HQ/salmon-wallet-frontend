@@ -26,6 +26,7 @@ export const SendFailure: React.FC<SendFailureProps> = ({
   title,
   message,
   detail,
+  outcomeUnknown,
   onRetry,
   onDismiss,
   retryLabel,
@@ -51,9 +52,11 @@ export const SendFailure: React.FC<SendFailureProps> = ({
       </View>
 
       <View style={[styles.actions, { paddingBottom: bottomInset + vs(spacing.xl) }]}>
-        <PrimaryButton testID="send-failure-retry" onPress={onRetry}>
-          {retryLabel}
-        </PrimaryButton>
+        {outcomeUnknown ? null : (
+          <PrimaryButton testID="send-failure-retry" onPress={onRetry}>
+            {retryLabel}
+          </PrimaryButton>
+        )}
         <SecondaryButton testID="send-failure-dismiss" onPress={onDismiss}>
           {dismissLabel}
         </SecondaryButton>

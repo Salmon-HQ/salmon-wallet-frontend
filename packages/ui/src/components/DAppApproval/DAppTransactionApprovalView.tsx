@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatOrigin, getNetworkName, spacing } from '@salmon/shared';
+import { dappTransactionGate, formatOrigin, getNetworkName, spacing } from '@salmon/shared';
 
 import { GlobeIcon, ReceiptIcon } from '../../icons';
 import { useSemantic } from '../../theme/ThemeProvider';
@@ -9,7 +9,7 @@ import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { AppIdentity } from './AppIdentity';
-import { CardHead, bodyText, cardColumn } from './common';
+import { ApproveArea, CardHead, SigningAccountCard, bodyText, cardColumn } from './common';
 import { HoldToApproveButton } from '../HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
@@ -19,6 +19,7 @@ export function DAppTransactionApprovalView({
   origin,
   appName,
   appIcon,
+  signingAccount,
   requestSummary,
   effects,
   effectsLoading,
@@ -36,19 +37,16 @@ export function DAppTransactionApprovalView({
   onReject,
 }: DAppTransactionApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
-  const armed = useApprovalArming();
+  const arming = useApprovalArming();
+  const { armed } = arming;
   const tokens = useSemantic();
   const displayOrigin = formatOrigin(origin);
 
-  // A delegation, a failing transaction and an unreadable one are the three
-  // things a reflex tap should not be able to sign. A plain send that the
-  // preview understood keeps the ordinary button — friction everywhere is
-  // friction nowhere.
-  const requiresHold =
-    effects != null &&
-    (effects.kind === 'undetermined' ||
-      effects.kind === 'transaction-would-fail' ||
-      (effects.kind === 'effects' && effects.approvals.length > 0));
+  // A delegation, a failing transaction, an unreadable one and a preview that
+  // settled with no answer are what a reflex tap should not be able to sign.
+  // A plain send that the preview understood keeps the ordinary button —
+  // friction everywhere is friction nowhere. Mobile applies the same gate.
+  const { requiresHold } = dappTransactionGate({ effects, effectsLoading, parsingError });
 
   // A preview that has not answered yet is not an absence of warnings. Until it
   // does, `requiresHold` is false whatever the transaction turns out to do, so
@@ -90,6 +88,8 @@ export function DAppTransactionApprovalView({
               )}
             </p>
           </Card>
+
+          {signingAccount && <SigningAccountCard account={signingAccount} />}
 
           <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 
@@ -195,26 +195,30 @@ export function DAppTransactionApprovalView({
         </SecondaryButton>
       }
       action={
-        requiresHold ? (
-          <HoldToApproveButton
-            testID="dapp-approve-button"
-            onApprove={onApprove}
-            loading={loading}
-            disabled={cannotApprove}
-          >
-            {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
-          </HoldToApproveButton>
-        ) : (
-          <PrimaryButton
-            testID="dapp-approve-button"
-            onPress={onApprove}
-            loading={loading}
-            disabled={cannotApprove}
-            fullWidth
-          >
-            {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
-          </PrimaryButton>
-        )
+        <ApproveArea arming={arming}>
+          {requiresHold ? (
+            <HoldToApproveButton
+              testID="dapp-approve-button"
+              ariaDescribedBy={armed ? undefined : arming.hintId}
+              onApprove={onApprove}
+              loading={loading}
+              disabled={cannotApprove}
+            >
+              {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
+            </HoldToApproveButton>
+          ) : (
+            <PrimaryButton
+              testID="dapp-approve-button"
+              ariaDescribedBy={armed ? undefined : arming.hintId}
+              onPress={onApprove}
+              loading={loading}
+              disabled={cannotApprove}
+              fullWidth
+            >
+              {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
+            </PrimaryButton>
+          )}
+        </ApproveArea>
       }
     />
   );

@@ -11,6 +11,12 @@ import React from 'react';
 import { useSendTransaction } from './useSendTransaction';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 import { queryKeys } from '../query/keys';
+import { trackEvent } from '../analytics';
+
+vi.mock('../analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../analytics')>()),
+  trackEvent: vi.fn(),
+}));
 
 function makeWrapper() {
   const client = createTestQueryClient();
@@ -235,6 +241,30 @@ describe('useSendTransaction', () => {
       memo: 'pr_1',
       references: ['ref-1'],
     });
+  });
+
+  it('passes a Max send through to the transfer', async () => {
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.sendTransaction({
+        token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+        recipientAddress: RAW_RECIPIENT,
+        amount: AMOUNT,
+        amountText: '1.5',
+        max: true,
+      });
+    });
+
+    expect(mockAccount.transfer).toHaveBeenCalledWith(
+      RAW_RECIPIENT,
+      TOKEN_ADDRESS,
+      AMOUNT,
+      expect.objectContaining({ max: true, amountText: '1.5' })
+    );
   });
 
   it('uses the resolved recipient address for transfer execution when provided', async () => {
@@ -494,6 +524,107 @@ describe('useSendTransaction', () => {
     expect(result.current.status).toBe('failed');
     expect(result.current.error).toBe('transaction.errors.insufficientFunds');
     expect(result.current.isError).toBe(true);
+  });
+
+  it('follows an unknown outcome as pending instead of calling it failed for good', async () => {
+    const { SolanaOutcomeUnknownError } = await import('../blockchain/solana/confirm');
+    const { PendingTransactionsProvider, usePendingTransactions } =
+      await import('../contexts/PendingTransactionsContext');
+    mockAccount.transfer.mockRejectedValueOnce(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const client = createTestQueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryWrapper client={client}>
+        <PendingTransactionsProvider getOutcomes={vi.fn(async () => ({}))} pollIntervalMs={60_000}>
+          {children}
+        </PendingTransactionsProvider>
+      </QueryWrapper>
+    );
+
+    const { result } = renderHook(
+      () => ({
+        send: useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+        pending: usePendingTransactions(),
+      }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.send
+        .sendTransaction({
+          token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+          recipientAddress: RAW_RECIPIENT,
+          amount: AMOUNT,
+        })
+        .catch(() => undefined);
+    });
+
+    expect(result.current.send.error).toBe('transaction.errors.broadcastUnknown');
+    expect(result.current.pending.pendingTransactions).toEqual([
+      expect.objectContaining({ signature: 'sig-maybe', kind: 'send', status: 'pending' }),
+    ]);
+    // It may have landed, so it is not reported as a failed send.
+    expect(trackEvent).not.toHaveBeenCalledWith('send_completed', expect.anything());
+  });
+
+  // The review screen re-estimates when its fee is missing; that estimate used
+  // to clear the failure and re-enable Confirm, so a press sent the funds twice.
+  it('after an unknown outcome, neither an estimate nor a second send gets through until reset', async () => {
+    const { SolanaOutcomeUnknownError } = await import('../blockchain/solana/confirm');
+    mockAccount.transfer.mockRejectedValueOnce(new SolanaOutcomeUnknownError('sig-maybe' as never));
+    const params = {
+      token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+      recipientAddress: RAW_RECIPIENT,
+      amount: AMOUNT,
+    };
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.sendTransaction(params).catch(() => undefined);
+    });
+    mockAccount.estimateTransferFee.mockClear();
+
+    await act(async () => {
+      await expect(result.current.estimateFee(params)).resolves.toBeNull();
+    });
+    expect(mockAccount.estimateTransferFee).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('failed');
+    expect(result.current.error).toBe('transaction.errors.broadcastUnknown');
+
+    await act(async () => {
+      await expect(result.current.sendTransaction(params)).rejects.toThrow(
+        'transaction.errors.broadcastUnknown'
+      );
+    });
+    expect(mockAccount.transfer).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.reset());
+    await act(async () => {
+      await result.current.estimateFee(params);
+    });
+    expect(mockAccount.estimateTransferFee).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a send that fails for a known reason as success: false', async () => {
+    mockAccount.transfer.mockRejectedValueOnce(new Error('boom'));
+    const { result } = renderHook(
+      () => useSendTransaction({ account: mockAccount as any, blockchain: 'solana' }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current
+        .sendTransaction({
+          token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+          recipientAddress: RAW_RECIPIENT,
+          amount: AMOUNT,
+        })
+        .catch(() => undefined);
+    });
+
+    expect(trackEvent).toHaveBeenCalledWith('send_completed', { chain: 'solana', success: false });
   });
 
   it('resets state after an error', async () => {
