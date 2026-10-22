@@ -58,7 +58,9 @@ export default function NftDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; section?: string; sub?: string }>();
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
   const { nft, nftLoading, account, prepareBurn, resetBurn } = useNftFlow();
@@ -256,12 +258,12 @@ export default function NftDetailScreen() {
 
       {/* Gone, not greyed: see the module comment. */}
       {nft && frozen && (
-        <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+        <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
           <WarningNotice tone="info" testID="nft-detail-frozen" title={t('nft.detail.frozen')} />
         </View>
       )}
       {nft && !accountCannotEverSign && !frozen && (
-        <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+        <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
           <PrimaryButton
             testID="nft-detail-send-button"
             onPress={handleSendPress}

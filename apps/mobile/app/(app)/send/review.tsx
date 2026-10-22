@@ -54,7 +54,9 @@ export default function SendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const {
     token,
     setToken,
@@ -235,7 +237,7 @@ export default function SendReviewScreen() {
         )}
       </ScrollView>
 
-      <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>
+      <View style={[styles.action, { paddingBottom: screenActionBottomPadding }]}>
         <SecondaryButton
           testID="send-confirm-cancel-button"
           onPress={handleCancel}

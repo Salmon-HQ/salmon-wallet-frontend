@@ -58,8 +58,9 @@ export interface SettingsScreenLayoutProps extends SettingsScreenLayoutPropsBase
   /** Whether to render the screen header. Default: true */
   showHeader?: boolean;
   /**
-   * Space under the footer, for a screen pushed over the tab shell whose
-   * committing action has to clear the floating chrome (`useTabChrome`).
+   * Space under the footer. The layout's SafeAreaView already owns the
+   * bottom inset, so this is `useTabChrome().screenActionBottomPadding`,
+   * never the floating offset, which would add the inset a second time.
    */
   footerBottomInset?: number;
 }

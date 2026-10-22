@@ -71,8 +71,10 @@ export default function SendAmountScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const amountFocus = useFieldFocus();
-  const { floatingBottomOffset } = useTabChrome();
-  const actionLift = useKeyboardLift(floatingBottomOffset, vs(spacing.sm));
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
+  const actionLift = useKeyboardLift(screenActionBottomPadding, vs(spacing.sm));
   const {
     blockchain,
     token,
