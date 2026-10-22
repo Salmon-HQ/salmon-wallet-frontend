@@ -10,7 +10,6 @@ import {
   ms,
   s,
   spacing,
-  vs,
   type Semantic,
 } from '@salmon/shared';
 import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
@@ -59,7 +58,8 @@ const stylesFor = (t: Semantic) =>
       minHeight: ms(componentSizes.iconSizeMedium),
       justifyContent: 'center',
       paddingHorizontal: s(spacing.xl),
-      marginBottom: vs(spacing.lg),
+      // No gap of its own: the 12 under a sheet's title belongs to the body
+      // (DESIGN.md §Layout), as it does under `SheetTitle`.
       position: 'relative',
     },
     backButton: {

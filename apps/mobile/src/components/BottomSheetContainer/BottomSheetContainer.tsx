@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Modal,
@@ -190,6 +191,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   forTyping = false,
   testID,
 }) => {
+  const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   const { surface } = useSemantic();
   const blurTargetRef = useRef<View>(null);
@@ -424,8 +426,14 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     >
       <GestureHandlerRootView style={styles.gestureRoot}>
         <View style={styles.overlay}>
-          {/* Backdrop */}
-          <TouchableWithoutFeedback onPress={handleBackdropPress}>
+          {/* Backdrop — also the way out a screen reader can reach: a sheet
+              with nothing to confirm has no button of its own. */}
+          <TouchableWithoutFeedback
+            onPress={handleBackdropPress}
+            accessible={dismissible}
+            accessibilityRole="button"
+            accessibilityLabel={t('actions.close', 'Close')}
+          >
             <Reanimated.View
               style={[styles.backdrop, backdropAnimatedStyle]}
               testID={testID ? `${testID}-backdrop` : undefined}

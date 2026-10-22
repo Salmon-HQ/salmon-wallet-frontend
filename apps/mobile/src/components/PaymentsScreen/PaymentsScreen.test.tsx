@@ -3,7 +3,7 @@
  * state, the rows with their state, and the sheet when a request is open.
  */
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
@@ -221,7 +221,10 @@ describe('PaymentsScreen', () => {
     } as never;
     renderScreen();
     expect(screen.getByTestId('qr').props.value).toBe('solana:abc?amount=1');
-    expect(screen.getByText('1.00 USDC')).toBeTruthy();
+    // The amount sits in a card like every piece of information on a sheet.
+    expect(
+      within(screen.getByTestId('payments-sheet-amount-card')).getByText('1.00 USDC')
+    ).toBeTruthy();
     expect(screen.getByText('Waiting')).toBeTruthy();
     expect(screen.queryByTestId('payments-sheet-share')).toBeNull();
     fireEvent.press(screen.getByTestId('payments-sheet-copy'));

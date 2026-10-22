@@ -43,7 +43,8 @@ export function PaymentRequestList({
 }
 
 const styles = StyleSheet.create({
+  // The component gap (DESIGN.md §Layout): 20 between sibling rows.
   list: {
-    gap: vs(spacing.screenGutter),
+    gap: vs(spacing.xl),
   },
 });

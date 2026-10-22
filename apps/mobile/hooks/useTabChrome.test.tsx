@@ -9,6 +9,7 @@
 import { renderHook } from '@testing-library/react-native';
 
 const insets = { top: 59, bottom: 34, left: 0, right: 0 };
+const HEADER_INSETS = { ...insets };
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => insets,
@@ -39,5 +40,38 @@ describe('useTabChrome header metrics', () => {
     expect(result.current.headerChromeHeight).not.toBe(
       insets.top + spacing.screenTop + componentSizes.headerHeight
     );
+  });
+});
+
+/**
+ * A bottom action sits as far above the system bar as Home's Powerups button,
+ * whoever owns the safe-area inset. The FAB is absolute on a screen with no
+ * SafeAreaView bottom edge, at `bottom: floatingBottomOffset`; an action row
+ * inside a SafeAreaView that owns the inset adds `screenActionBottomPadding`
+ * on top of it. Reading `floatingBottomOffset` there counted the inset twice
+ * and floated the button far above the floor on Android.
+ */
+describe('useTabChrome bottom action metrics', () => {
+  afterEach(() => Object.assign(insets, HEADER_INSETS));
+
+  it.each([
+    ['three-button navigation', 48],
+    ['gesture navigation', 24],
+    ['the iPhone home indicator', 34],
+  ])('puts a row inside the safe area where the Powerups button sits, on %s', (_, bottom) => {
+    insets.bottom = bottom;
+    const { result } = renderHook(() => useTabChrome());
+
+    const fabFromFloor = result.current.floatingBottomOffset;
+    const rowFromFloor = bottom + result.current.screenActionBottomPadding;
+    expect(rowFromFloor).toBe(fabFromFloor);
+    expect(fabFromFloor).toBe(bottom + spacing.screenBottom);
+  });
+
+  it('carries no inset in the in-safe-area padding', () => {
+    insets.bottom = 48;
+    const { result } = renderHook(() => useTabChrome());
+
+    expect(result.current.screenActionBottomPadding).toBe(spacing.screenBottom);
   });
 });

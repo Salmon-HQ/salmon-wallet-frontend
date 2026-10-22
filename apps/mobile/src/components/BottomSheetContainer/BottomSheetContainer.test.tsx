@@ -78,6 +78,10 @@ jest.mock('expo-linear-gradient', () => {
   return { LinearGradient: RNView };
 });
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 jest.mock('../BlurContainer', () => ({
   BlurTargetProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -117,6 +121,35 @@ describe('BottomSheetContainer sheet material', () => {
 
     expect(getByTestId('custom-bg')).toBeTruthy();
     expect(queryByTestId('thermocline')).toBeNull();
+  });
+});
+
+// A sheet with nothing to confirm has no button (DESIGN.md §Sheets), so the
+// backdrop is the way out a screen reader can reach: a named button.
+describe('BottomSheetContainer dismissal for assistive tech', () => {
+  it('names the backdrop as the button that closes the sheet', () => {
+    const onClose = jest.fn();
+    const { getByTestId } = render(
+      <BottomSheetContainer visible onClose={onClose} testID="sheet">
+        <Text>body</Text>
+      </BottomSheetContainer>
+    );
+
+    const backdrop = getByTestId('sheet-backdrop');
+    expect(backdrop.props.accessibilityRole).toBe('button');
+    expect(backdrop.props.accessibilityLabel).toBe('actions.close');
+    fireEvent.press(backdrop);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no such button while the sheet may not be dismissed', () => {
+    const { getByTestId } = render(
+      <BottomSheetContainer visible onClose={noop} dismissible={false} testID="sheet">
+        <Text>body</Text>
+      </BottomSheetContainer>
+    );
+
+    expect(getByTestId('sheet-backdrop').props.accessible).toBe(false);
   });
 });
 

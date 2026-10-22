@@ -7,8 +7,8 @@
  * "Include in total" heading, and an outlined "Add wallet" that routes to the
  * same add screen Settings → Accounts → Add opens.
  */
-import React, { useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +37,7 @@ import {
 } from '@salmon/shared';
 import {
   Card,
+  ConfirmSheet,
   DepthBackground,
   AccountAvatar,
   DerivedAccountsSheet,
@@ -140,19 +141,15 @@ export default function WalletsScreen() {
     });
   }, [router]);
 
+  // The total can never be empty: excluding the last included wallet would
+  // leave the card reading a number that belongs to nothing. The refusal is
+  // said in a sheet with nothing to press, as on the DOM twin.
+  const [keepOneNotice, setKeepOneNotice] = useState(false);
   const handleToggleInclude = useCallback(
     (walletId: string) => {
-      // The total can never be empty: excluding the last included wallet would
-      // leave the card reading a number that belongs to nothing.
-      const refused = toggleInclude(walletId);
-      if (refused) {
-        Alert.alert(
-          t('settings.wallets.total_title', 'Total balance'),
-          t('settings.wallets.keep_one_included')
-        );
-      }
+      if (toggleInclude(walletId)) setKeepOneNotice(true);
     },
-    [t, toggleInclude]
+    [toggleInclude]
   );
 
   return (
@@ -257,6 +254,15 @@ export default function WalletsScreen() {
         finds={finds}
         onImport={(indexes) => void importFinds(indexes)}
         onDismiss={() => void dismiss()}
+      />
+
+      <ConfirmSheet
+        visible={keepOneNotice}
+        onClose={() => setKeepOneNotice(false)}
+        title={t('settings.wallets.total_title', 'Total balance')}
+        message={t('settings.wallets.keep_one_included')}
+        acknowledgeOnly
+        onConfirm={() => {}}
       />
     </SafeAreaView>
   );

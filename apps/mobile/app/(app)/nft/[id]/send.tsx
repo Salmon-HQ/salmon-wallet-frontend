@@ -40,7 +40,9 @@ export default function NftSendScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; section?: string; sub?: string }>();
-  const { floatingBottomOffset } = useTabChrome();
+  // The SafeAreaView's bottom edge owns the inset; the action row adds only
+  // the air above it, as far from the floor as Home's Powerups button.
+  const { screenActionBottomPadding } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
   const { nft, account, recipient, setRecipient, setValidatedRecipient } = useNftFlow();
 
@@ -99,9 +101,9 @@ export default function NftSendScreen() {
   ]);
 
   // The shell's KeyboardAvoidingView lifts the footer by the keyboard; the
-  // inset under it is what is left of the old padding — the floating chrome
-  // when there is no keyboard, a step when there is.
-  const footerBottomInset = keyboardHeight > 0 ? vs(spacing.sm) : floatingBottomOffset;
+  // space under it is the screen's bottom air when there is no keyboard, a
+  // step when there is. The shell's SafeAreaView owns the inset itself.
+  const footerBottomInset = keyboardHeight > 0 ? vs(spacing.sm) : screenActionBottomPadding;
 
   return (
     <>

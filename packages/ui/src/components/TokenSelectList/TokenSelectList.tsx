@@ -57,8 +57,10 @@ export function TokenSelectList({
         flexDirection: 'column',
         flex: 1,
         minHeight: 0,
-        padding: `${spacing.screenGutter}px ${spacing.screenGutter}px 0`,
-        gap: spacing.screenGutter,
+        // 12 under the sheet's title, then the component gap of 20 (DESIGN.md
+        // §Layout) between the search, the list and every row.
+        padding: `${spacing.md}px ${spacing.screenGutter}px 0`,
+        gap: spacing.xl,
       }}
     >
       <SearchField
@@ -75,7 +77,7 @@ export function TokenSelectList({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: spacing.screenGutter,
+          gap: spacing.xl,
           paddingBottom: spacing.screenGutter,
         }}
       >

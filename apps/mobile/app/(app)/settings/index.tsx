@@ -104,7 +104,6 @@ export default function SettingsScreenIndex() {
 
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, activeBlockchainAccount, networkId } = accountState;
-  const [removing, setRemoving] = useState(false);
 
   const userConfigAccount = useMemo(
     () => ({
@@ -177,33 +176,20 @@ export default function SettingsScreenIndex() {
     [currentLanguage, currency, explorer, appearanceLabels, appearancePreference]
   );
 
-  const handleRemoveAllWallets = useCallback(() => {
-    Alert.alert(
-      t('settings.remove_all_title'),
-      t('settings.wallets.remove_all_wallets_description'),
-      [
-        { text: t('actions.cancel'), style: 'cancel' },
-        {
-          text: t('actions.remove_all'),
-          style: 'destructive',
-          onPress: async () => {
-            if (removing) return;
-            setRemoving(true);
-            try {
-              await disarmBiometric();
-              await accountActions.removeAllAccounts();
-              router.replace('/(auth)');
-            } catch (error) {
-              console.error('Failed to remove all wallets:', error);
-              Alert.alert(t('general.error'), t('settings.remove_wallets_error'));
-            } finally {
-              setRemoving(false);
-            }
-          },
-        },
-      ]
-    );
-  }, [accountActions, removing, router, disarmBiometric, t]);
+  // Asked in the kit's danger sheet, as the DOM twin does; the sheet's own
+  // loading state keeps a second tap from running the wipe twice.
+  const [removeAllVisible, setRemoveAllVisible] = useState(false);
+  const handleRemoveAllWallets = useCallback(() => setRemoveAllVisible(true), []);
+  const confirmRemoveAllWallets = useCallback(async () => {
+    try {
+      await disarmBiometric();
+      await accountActions.removeAllAccounts();
+      router.replace('/(auth)');
+    } catch (error) {
+      console.error('Failed to remove all wallets:', error);
+      Alert.alert(t('general.error'), t('settings.remove_wallets_error'));
+    }
+  }, [accountActions, router, disarmBiometric, t]);
 
   // Removing one wallet re-encrypts the ones that are left, so it asks for the
   // password whenever the unlock key cache has lapsed — which an `Alert` has
@@ -378,6 +364,16 @@ export default function SettingsScreenIndex() {
         requirePassword={accountRemoval.requiresPassword}
         validatePassword={accountRemoval.validatePassword}
         onConfirm={confirmRemoveWallet}
+      />
+
+      <ConfirmSheet
+        visible={removeAllVisible}
+        onClose={() => setRemoveAllVisible(false)}
+        title={t('settings.remove_all_title')}
+        message={t('settings.wallets.remove_all_wallets_description')}
+        confirmText={t('actions.remove_all')}
+        isDanger
+        onConfirm={confirmRemoveAllWallets}
       />
     </SafeAreaView>
   );

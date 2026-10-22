@@ -98,6 +98,45 @@ jest.mock('../ScalesBackground', () => {
   };
 });
 
+// The reset confirmations are the kit's sheet (DESIGN.md: ConfirmSheet over
+// OS alerts). The stand-in plays the real sheet's order: confirm runs, then
+// the sheet closes, then it reports having left.
+jest.mock('../ConfirmSheet', () => ({
+  ConfirmSheet: (props: {
+    visible: boolean;
+    title: string;
+    confirmText?: string;
+    onConfirm: () => Promise<void> | void;
+    onClose: () => void;
+    onClosed?: () => void;
+  }) => {
+    if (!props.visible) return null;
+    const { Pressable: P, Text: T, View: V } = jest.requireActual('react-native');
+    return (
+      <V testID="lock-reset-sheet">
+        <T>{props.title}</T>
+        <P
+          testID="sheet-confirm"
+          onPress={async () => {
+            await props.onConfirm();
+            props.onClose();
+            props.onClosed?.();
+          }}
+        >
+          <T>{props.confirmText}</T>
+        </P>
+        <P
+          testID="sheet-cancel"
+          onPress={() => {
+            props.onClose();
+            props.onClosed?.();
+          }}
+        />
+      </V>
+    );
+  },
+}));
+
 import { LockContent } from './LockContent';
 
 describe('LockContent', () => {
@@ -386,12 +425,44 @@ describe('LockContent', () => {
 
     fireEvent.press(screen.getByText('lock.forgot_password'));
 
-    const firstAlertActions = mockAlert.mock.calls[0]?.[2] as Array<{ onPress?: () => void }>;
-    firstAlertActions?.[1]?.onPress?.();
-    const secondAlertActions = mockAlert.mock.calls[1]?.[2] as Array<{ onPress?: () => void }>;
-    await secondAlertActions?.[1]?.onPress?.();
+    // Two sheets, one at a time: the warning, then the last word.
+    expect(screen.getByText('lock.reset_wallet_title')).toBeTruthy();
+    expect(mockAlert).not.toHaveBeenCalled();
+    await act(async () => fireEvent.press(screen.getByTestId('sheet-confirm')));
+    expect(screen.queryByText('lock.reset_wallet_title')).toBeNull();
+    expect(screen.getByText('lock.confirm_title')).toBeTruthy();
+    expect(onRemoveAllAccounts).not.toHaveBeenCalled();
 
+    await act(async () => fireEvent.press(screen.getByTestId('sheet-confirm')));
     expect(onRemoveAllAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('erases nothing when the warning is dismissed', async () => {
+    const onRemoveAllAccounts = jest.fn().mockResolvedValue(undefined);
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(true)}
+        onRemoveAllAccounts={onRemoveAllAccounts}
+        biometric={{
+          available: false,
+          armed: false,
+          kind: null,
+          unlock: jest.fn(),
+          refresh: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('lock.forgot_password')).toBeTruthy();
+    });
+    fireEvent.press(screen.getByText('lock.forgot_password'));
+    fireEvent.press(screen.getByTestId('sheet-cancel'));
+
+    expect(screen.queryByTestId('lock-reset-sheet')).toBeNull();
+    expect(onRemoveAllAccounts).not.toHaveBeenCalled();
   });
 
   it('says why the password field stopped accepting attempts', async () => {

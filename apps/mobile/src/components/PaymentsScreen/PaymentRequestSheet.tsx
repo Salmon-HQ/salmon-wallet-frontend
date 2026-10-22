@@ -23,14 +23,15 @@ import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { SecondaryButton } from '../Button';
+import { Card } from '../Card';
 import { ExplorerLinkButton } from '../ExplorerLinkButton';
 import { FactsCard } from '../FactsCard';
-import { Thermocline } from '../Thermocline';
 import { WarningNotice } from '../WarningNotice';
 import QRCode from '../QRCode';
 import type { PaymentRequestSheetProps } from './types';
 
-const CONTENT_PADDING_HORIZONTAL = 24;
+// The sheet's own gutter: the QR spans the width inside it.
+const CONTENT_PADDING_HORIZONTAL = spacing.screenGutter;
 
 export function PaymentRequestSheet({
   visible,
@@ -60,8 +61,7 @@ export function PaymentRequestSheet({
       onClose={onClose}
       title={<SheetTitle>{title}</SheetTitle>}
       testID={testID}
-      style={[styles.sheetContainer, style]}
-      background={<Thermocline tier="thick" style={styles.thermocline} />}
+      style={style}
     >
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
         {showCode && (
@@ -76,9 +76,11 @@ export function PaymentRequestSheet({
             />
           </View>
         )}
-        <Text style={styles.amount} testID={`${testID}-amount`}>
-          {amountLabel}
-        </Text>
+        <Card padding="lg" testID={`${testID}-amount-card`}>
+          <Text style={styles.amount} testID={`${testID}-amount`}>
+            {amountLabel}
+          </Text>
+        </Card>
         {status && <FactsCard testID={`${testID}-facts`} rows={status.rows} />}
         {checkFailedNotice && <WarningNotice tone="info" title={checkFailedNotice} />}
         {status?.explorer && <ExplorerLinkButton {...status.explorer} />}
@@ -97,23 +99,16 @@ export function PaymentRequestSheet({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-    sheetContainer: {
-      maxHeight: '92%',
-      overflow: 'hidden',
-    },
-    thermocline: {
-      ...StyleSheet.absoluteFill,
-      borderTopLeftRadius: borderRadius.card,
-      borderTopRightRadius: borderRadius.card,
-    },
+    // 12 under the sheet's title, then the component gap of 20 between
+    // blocks (DESIGN.md §Layout).
     content: {
       alignItems: 'stretch',
       paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
-      gap: vs(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+      gap: vs(spacing.xl),
     },
     qrContainer: {
       alignSelf: 'center',
-      marginTop: vs(spacing.headerPadding),
       borderRadius: ms(borderRadius.xl),
       borderWidth: componentSizes.qrBorderWidth,
       borderColor: t.text.primary,

@@ -274,6 +274,7 @@ jest.mock('../../src/components/TokenSelectList', () => {
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({
     floatingBottomOffset: 0,
+    screenActionBottomPadding: 0,
     scrollBottomPadding: 0,
     insets: { top: 0, bottom: 0 },
   }),

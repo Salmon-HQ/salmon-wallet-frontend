@@ -18,6 +18,7 @@ import {
 import { useSemantic } from '../../theme/ThemeProvider';
 import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { SecondaryButton } from '../Button';
+import { Card } from '../Card';
 import { ExplorerLinkButton } from '../ExplorerLinkButton';
 import { FactsCard } from '../FactsCard';
 import { QRCode } from '../QRCode';
@@ -76,8 +77,11 @@ export function PaymentRequestSheet({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
+          // 12 under the sheet's title, then the component gap of 20 between
+          // blocks (DESIGN.md §Layout).
+          paddingTop: spacing.md,
           paddingBottom: spacing['2xl'],
-          gap: spacing.screenGutter,
+          gap: spacing.xl,
         }}
       >
         {showCode && (
@@ -85,7 +89,6 @@ export function PaymentRequestSheet({
             data-testid={`${testID}-qr`}
             style={{
               alignSelf: 'center',
-              marginTop: spacing.headerPadding,
               borderRadius: borderRadius.xl,
               border: `${componentSizes.qrBorderWidth}px solid ${semantic.text.primary}`,
               overflow: 'hidden',
@@ -103,18 +106,21 @@ export function PaymentRequestSheet({
             />
           </div>
         )}
-        <span
-          data-testid={`${testID}-amount`}
-          style={{
-            fontFamily: fontFamily.sans,
-            fontWeight: fontWeight.bold,
-            fontSize: fontSize.balance,
-            color: semantic.text.primary,
-            textAlign: 'center',
-          }}
-        >
-          {amountLabel}
-        </span>
+        <Card padding="lg" testID={`${testID}-amount-card`}>
+          <span
+            data-testid={`${testID}-amount`}
+            style={{
+              display: 'block',
+              fontFamily: fontFamily.sans,
+              fontWeight: fontWeight.bold,
+              fontSize: fontSize.balance,
+              color: semantic.text.primary,
+              textAlign: 'center',
+            }}
+          >
+            {amountLabel}
+          </span>
+        </Card>
         {status && <FactsCard testID={`${testID}-facts`} rows={status.rows} />}
         {checkFailedNotice && <WarningNotice tone="info" title={checkFailedNotice} />}
         {status?.explorer && <ExplorerLinkButton {...status.explorer} />}

@@ -16,6 +16,8 @@ import { SectionLabel } from '../SectionLabel';
 import { TextInput } from '../TextInput';
 import type { PaymentsAskSheetProps } from './types';
 
+const field: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: spacing.md };
+
 export function PaymentsAskSheet({
   visible,
   onClose,
@@ -42,16 +44,25 @@ export function PaymentsAskSheet({
         style={{
           display: 'flex',
           flexDirection: 'column',
+          // 12 under the sheet's title, 20 between fields (the component gap,
+          // DESIGN.md §Layout), 12 between a field and its label.
+          paddingTop: spacing.md,
           paddingBottom: spacing['2xl'],
-          gap: spacing.md,
+          gap: spacing.xl,
         }}
       >
-        <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
-        <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
-        <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
-        <TextInput testID="payments-note" {...form.noteField} />
-        <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
-        <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+        <div style={field}>
+          <SectionLabel variant="caps">{form.amountLabel}</SectionLabel>
+          <AmountEntryCard testID="payments-amount" {...form.amountCard} {...focus} />
+        </div>
+        <div style={field}>
+          <SectionLabel variant="caps">{form.noteLabel}</SectionLabel>
+          <TextInput testID="payments-note" {...form.noteField} />
+        </div>
+        <div style={field}>
+          <SectionLabel variant="caps">{form.expiryLabel}</SectionLabel>
+          <ChipGroup testID="payments-expiry" {...form.expiryChips} />
+        </div>
         {form.errorRow && <KeyValueRow testID="payments-error" {...form.errorRow} />}
         <PrimaryButton testID="payments-create" {...createButton} style={{ marginTop: spacing.sm }}>
           {label}
