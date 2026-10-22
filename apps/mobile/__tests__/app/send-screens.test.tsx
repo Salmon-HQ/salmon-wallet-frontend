@@ -165,7 +165,8 @@ jest.mock('@salmon/shared', () => ({
     `≈ ${String((parseFloat(amount) || 0) * (price ?? 0))} USD`,
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   formatTokenAmount: (value: number) => String(value),
-  sanitizeDecimalInput: (value: string) => value,
+  // Real: the amount field's limit to the token's places is what it pins.
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimal-input'),
   getShortAddress: (value: string) => (value ? `${value.slice(0, 4)}…${value.slice(-4)}` : null),
   chunkAddress: (value: string) => value,
   tabularNums: { native: { fontVariant: ['tabular-nums'] } },
@@ -655,6 +656,27 @@ describe('the amount screen — the shortcuts', () => {
     fireEvent.press(screen.getByTestId('send-shortcuts-max'));
 
     expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance), 'max');
+  });
+
+  // A digit past the token's places is simply not taken (owner, option a).
+  it("takes no digit past the token's decimal places", () => {
+    mockFlow.token = USDC_TOKEN;
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '0.1234567');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('0.123456');
+    mockFlow.token = SOL_TOKEN;
+  });
+
+  it('takes no separator for a token with no decimals', () => {
+    mockFlow.token = { ...USDC_TOKEN, decimals: 0 };
+    render(<SendAmountScreen />);
+
+    fireEvent.changeText(screen.getByTestId('send-amount-input'), '5.');
+
+    expect(mockFlow.setAmount).toHaveBeenLastCalledWith('5');
+    mockFlow.token = SOL_TOKEN;
   });
 
   it('keeps Review dead on an empty amount', () => {

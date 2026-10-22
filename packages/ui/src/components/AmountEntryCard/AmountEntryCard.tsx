@@ -28,6 +28,7 @@ export function AmountEntryCard({
   onChangeValue,
   editable = true,
   placeholder = '0',
+  maxDecimals,
   subtext,
   loading = false,
   focused,
@@ -58,7 +59,7 @@ export function AmountEntryCard({
           placeholder={placeholder}
           value={value}
           readOnly={!editable || loading}
-          onChange={(event) => onChangeValue(sanitizeDecimalInput(event.target.value))}
+          onChange={(event) => onChangeValue(sanitizeDecimalInput(event.target.value, maxDecimals))}
           autoCorrect="off"
           autoComplete="off"
           style={{

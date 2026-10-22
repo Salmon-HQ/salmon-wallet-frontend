@@ -172,6 +172,7 @@ export default function SendAmountScreen() {
           testID="send-amount"
           value={amount}
           onChangeValue={shortcuts.onAmountChange}
+          maxDecimals={token ? (token.decimals ?? SOL_CONSTANTS.DECIMALS) : undefined}
           subtext={fiatDisplay}
           focused={amountFocus.focused || shortcuts.selected !== ''}
           onFocus={amountFocus.onFocus}
