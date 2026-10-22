@@ -143,6 +143,7 @@ jest.mock('react-i18next', () => {
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../test-utils/themeTokens'),
   ...jest.requireActual('../../../../packages/shared/src/utils/sol-fees'),
+  ...jest.requireActual('../../../../packages/shared/src/utils/decimals'),
   ...jest.requireActual('../../../../packages/shared/src/utils/send-failure-report'),
   // What the review shows about a payment request is real: the suite pins it.
   ...jest.requireActual('../../../../packages/shared/src/utils/sendRequestReview'),
@@ -644,7 +645,8 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId(`send-shortcuts-${key}`));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected);
+    // The fill names itself, so the transfer can tell Max from a typed amount.
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(expected, key);
   });
 
   it('MAX is the whole balance — it has never subtracted a fee', () => {
@@ -652,7 +654,7 @@ describe('the amount screen — the shortcuts', () => {
 
     fireEvent.press(screen.getByTestId('send-shortcuts-max'));
 
-    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance));
+    expect(mockFlow.setAmount).toHaveBeenCalledWith(String(mockFlow.liveBalance), 'max');
   });
 
   it('keeps Review dead on an empty amount', () => {
@@ -663,6 +665,16 @@ describe('the amount screen — the shortcuts', () => {
 
   it('keeps Review dead when the amount exceeds the balance', () => {
     mockFlow.amount = '99';
+
+    render(<SendAmountScreen />);
+
+    expect(screen.getByTestId('send-review-button').props.accessibilityState.disabled).toBe(true);
+  });
+
+  // The transfer could only round such an amount to another one: 2.5 of a
+  // whole-unit token used to go out as 3.
+  it('keeps Review dead on an amount finer than the token', () => {
+    mockFlow.amount = '0.0000000001';
 
     render(<SendAmountScreen />);
 
