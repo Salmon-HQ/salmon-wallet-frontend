@@ -35,7 +35,7 @@ PHONE_DECK = [
     SWAP,
     ("03-powerups", None, "Switch Powerups on\nwhen you need them", "coral"),
     ("04-payments", None, "Get paid\nwith a QR code", "navy"),
-    ("05-send", None, "Send to any wallet\nor .sol name", "coral"),
+    ("05-send", None, "Send to any wallet\nor .sns name", "coral"),
     ("06-nfts", None, "Your NFTs,\nfront and center", "navy"),
 ]
 # The U.K. listing must not show Swap: token detail takes its place, and the
@@ -60,7 +60,7 @@ CWS_DECK = [
     ("02-swap",         "Swap tokens.\nSee every cost first.",    "navy"),
     ("03-powerups",     "Switch Powerups on\nwhen you need them", "coral"),
     ("04-sign",         "Know what you sign\nbefore you sign",    "navy"),
-    ("05-send",         "Send to any wallet\nor .sol name",       "coral"),
+    ("05-send",         "Send to any wallet\nor .sns name",       "coral"),
 ]
 
 STORES = {
@@ -221,7 +221,7 @@ def compose(store):
         # device->piso y el frame respira parejo.
         gap = round(ch * 0.042)
         avail_h = ch - caption_bottom - gap * 2
-        device = rounded_device(Image.open(shot_path), round(cw * 0.60))
+        device = rounded_device(Image.open(shot_path), round(cw * 0.74))
         if device.height > avail_h:
             scale = avail_h / device.height
             device = device.resize((round(device.width * scale), round(device.height * scale)), Image.LANCZOS)

@@ -144,3 +144,25 @@ export function nfts(owner) {
     },
   };
 }
+
+/** An SKR staking position for `/skr/stake`, over the live share price and APY. */
+export function skrStake(live) {
+  const day = 86_400_000;
+  const anchorMs = ANCHOR * 1000;
+  const units = (ui) => toBase(ui, live.decimals);
+  return {
+    ...live,
+    liquid: units('1250'),
+    positions: [
+      {
+        address: fake('store-staging:skr-position'),
+        staked: units('25000'),
+        earned: units('412.5'),
+        guardian: { pool: fake('store-staging:skr-guardian'), name: null, commissionBps: 500, active: true },
+        unstaking: null,
+        stakedSince: anchorMs - 48 * day,
+        history: [2, 9, 16, 23, 30, 37].map((d, i) => ({ at: anchorMs - d * day, earned: units(String(71 - i * 2)) })),
+      },
+    ],
+  };
+}

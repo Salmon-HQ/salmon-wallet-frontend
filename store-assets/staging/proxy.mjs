@@ -2,7 +2,7 @@
 /**
  * Staging proxy for store screenshots: the app talks to it instead of the
  * production API, and it answers the staged wallets' balance, history and NFTs
- * from `staged.mjs` (Apple 2.3.9 wants fictional account data). Everything else
+ * (and SKR stake) from `staged.mjs` (Apple 2.3.9 wants fictional account data). Everything else
  * passes through, so prices, charts, token lists and Swap quotes are real.
  *
  * Pass-through GETs are recorded in `cache/` the first time and replayed after,
@@ -22,7 +22,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PORTFOLIO, SOL, history, nfts, toBase } from './staged.mjs';
+import { PORTFOLIO, SOL, history, nfts, skrStake, toBase } from './staged.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.STAGING_PORT ?? 3900);
@@ -97,6 +97,9 @@ async function staged(method, url) {
     if (what === 'transactions') return { data: history(owner), meta: { nextPageToken: null, hidden: 0 } };
     // No stake accounts: Home's total is then exactly the sum of the token rows.
     return { ...(await getJson(url.pathname)), data: [] };
+  }
+  if (url.pathname === '/v1/solana-mainnet/skr/stake' && WALLETS.includes(url.searchParams.get('owner'))) {
+    return skrStake(await getJson(url.pathname + url.search));
   }
   if (url.pathname === '/v1/solana-mainnet/nft' && WALLETS.includes(url.searchParams.get('publicKey'))) {
     return nfts(url.searchParams.get('publicKey'));
